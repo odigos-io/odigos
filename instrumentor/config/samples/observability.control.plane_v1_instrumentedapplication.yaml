@@ -1,0 +1,6 @@
+apiVersion: observability.control.plane.keyval.dev/v1
+kind: InstrumentedApplication
+metadata:
+  name: instrumentedapplication-sample
+spec:
+  # TODO(user): Add fields here

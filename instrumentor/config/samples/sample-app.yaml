@@ -1,0 +1,11 @@
+apiVersion: observability.control.plane.keyval.dev/v1
+kind: InstrumentedApplication
+metadata:
+  name: sample-app
+spec:
+  instrumented: false
+  language: java
+  ref:
+    namespace: somens
+    type: deployment
+    name: aaaa
