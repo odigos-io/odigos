@@ -1,0 +1,85 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - keyval.dev
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keyval.dev
+  resources:
+  - pods/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keyval.dev
+  resources:
+  - pods/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - observability.control.plane.keyval.dev
+  resources:
+  - destinations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - observability.control.plane.keyval.dev
+  resources:
+  - destinations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - observability.control.plane.keyval.dev
+  resources:
+  - destinations/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - observability.control.plane.keyval.dev
+  resources:
+  - instrumentedapplications
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - observability.control.plane.keyval.dev
+  resources:
+  - instrumentedapplications/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - observability.control.plane.keyval.dev
+  resources:
+  - instrumentedapplications/status
+  verbs:
+  - get
+  - patch
+  - update

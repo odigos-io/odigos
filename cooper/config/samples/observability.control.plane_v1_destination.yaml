@@ -1,0 +1,11 @@
+apiVersion: observability.control.plane.keyval.dev/v1
+kind: Destination
+metadata:
+  name: destination-sample
+spec:
+  type: grafana
+  data:
+    grafana:
+      apiKey: 1234aaaa
+      user: zzz
+      url: https://acme.com

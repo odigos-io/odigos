@@ -3,11 +3,42 @@ import DatadogLogo from "@/img/vendor/datadog.svg";
 import GrafanaLogo from "@/img/vendor/grafana.svg";
 import HoneycombLogo from "@/img/vendor/honeycomb.svg";
 import Link from "next/link";
+import type { DestResponseItem } from "@/types/dests";
+import useSWR, { Key, Fetcher } from "swr";
 
 export default function Destinations() {
+  const fetcher: Fetcher<DestResponseItem[], any> = (args: any) =>
+    fetch(args).then((res) => res.json());
+  const { data, error } = useSWR<DestResponseItem[]>("/api/dests", fetcher);
+  if (error) return <div>failed to load</div>;
+  if (!data) return <div>loading...</div>;
+
   return (
     <div className="mx-auto mt-24">
-      <AddDestinationCard />
+      <div className="flex flex-col space-y-8">
+        {data.length > 0 &&
+          data.map((dest) => {
+            return (
+              <DestinationCard
+                key={dest.id}
+                name={dest.name}
+                type={dest.type}
+              />
+            );
+          })}
+        <AddDestinationCard />
+      </div>
+    </div>
+  );
+}
+
+function DestinationCard({ name, type }: { name: string; type: string }) {
+  return (
+    <div className="bg-white hover:bg-gray-100 shadow-lg border border-gray-200 rounded-lg w-64">
+      <div className="flex flex-col items-center justify-center p-3 text-center">
+        <div>Name: {name}</div>
+        <div>Type: {type}</div>
+      </div>
     </div>
   );
 }

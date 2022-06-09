@@ -25,8 +25,9 @@ type InstrumentedApplicationSpec struct {
 	Ref ApplicationReference `json:"ref"`
 
 	// +optional
-	Languages    []LanguageByContainer `json:"languages,omitempty"`
-	Instrumented bool                  `json:"instrumented"`
+	Languages     []LanguageByContainer `json:"languages,omitempty"`
+	Instrumented  bool                  `json:"instrumented"`
+	CollectorAddr string                `json:"collectorAddr,omitempty"`
 }
 
 type LanguageByContainer struct {
