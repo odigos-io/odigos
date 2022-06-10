@@ -33,6 +33,7 @@ type InstrumentedApplicationSpec struct {
 type LanguageByContainer struct {
 	ContainerName string              `json:"containerName"`
 	Language      ProgrammingLanguage `json:"language"`
+	ProcessName   string              `json:"processName,omitempty"`
 }
 
 //+kubebuilder:validation:Enum=java;python;go;dotnet;javascript

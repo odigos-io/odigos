@@ -95,6 +95,14 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				Instrumented: false,
 			},
 		}
+
+		// TODO: Set deployment as owner
+		//err = ctrl.SetControllerReference(&dep, &instrumentedApp, r.Scheme)
+		//if err != nil {
+		//	logger.Error(err, "error creating InstrumentedApp object")
+		//	return ctrl.Result{}, err
+		//}
+
 		err = r.Create(ctx, &instrumentedApp)
 		if err != nil {
 			logger.Error(err, "error creating InstrumentedApp object")

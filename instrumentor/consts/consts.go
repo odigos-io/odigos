@@ -10,6 +10,7 @@ const (
 	CurrentNamespaceEnvVar              = "CURRENT_NS"
 	DefaultNamespace                    = "odigos-system"
 	LangDetectorServiceAccount          = "odigos-lang-detector"
+	OTLPPort                            = 4317
 )
 
 var (

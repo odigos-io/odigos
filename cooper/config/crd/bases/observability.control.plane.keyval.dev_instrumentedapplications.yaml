@@ -54,6 +54,8 @@ spec:
                       - dotnet
                       - javascript
                       type: string
+                    processName:
+                      type: string
                   required:
                   - containerName
                   - language

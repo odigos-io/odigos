@@ -28,13 +28,14 @@ func main() {
 			log.Fatalf("could not find processes, error: %s\n", err)
 		}
 
-		processResults := inspectors.DetectLanguage(processes)
+		processResults, processName := inspectors.DetectLanguage(processes)
 		log.Printf("detection result: %s\n", processResults)
 
 		if len(processResults) > 0 {
 			containerResults = append(containerResults, v1.LanguageByContainer{
 				ContainerName: containerName,
 				Language:      processResults[0],
+				ProcessName:   processName,
 			})
 		}
 

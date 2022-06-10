@@ -21,6 +21,7 @@ import (
 	"fmt"
 	v1 "github.com/keyval-dev/odigos/instrumentor/api/v1"
 	"github.com/keyval-dev/odigos/instrumentor/consts"
+	"github.com/keyval-dev/odigos/instrumentor/patch"
 	"github.com/keyval-dev/odigos/instrumentor/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -65,9 +66,35 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 		return ctrl.Result{}, err
 	}
 
+	ref, err := r.getReference(ctx, &instrumentedApp)
+	if err != nil {
+		logger.Error(err, "error fetching ref object")
+		return ctrl.Result{}, err
+	}
+
 	if r.isLangDetected(&instrumentedApp) {
 		if r.shouldInstrument(&instrumentedApp) {
-			// TODO: Patch reference + set spec.instrumented = true
+			err = patch.AccordingToInstrumentationApp(ref.PodTemplateSpec(), &instrumentedApp)
+			if err != nil {
+				logger.Error(err, "error instrumenting application", "app",
+					instrumentedApp.Spec.Ref.Name)
+				return ctrl.Result{}, err
+			}
+
+			err = ref.Update(r.Client, ctx)
+			if err != nil {
+				logger.Error(err, "error instrumenting application", "app",
+					instrumentedApp.Spec.Ref.Name)
+				return ctrl.Result{}, err
+			}
+
+			instrumentedApp.Spec.Instrumented = true
+			err = r.Update(ctx, &instrumentedApp)
+			if err != nil {
+				logger.Error(err, "error instrumenting application", "app",
+					instrumentedApp.Spec.Ref.Name)
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
@@ -81,7 +108,7 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 			return ctrl.Result{}, err
 		}
 
-		err = r.detectLanguage(ctx, &instrumentedApp)
+		err = r.detectLanguage(ctx, &instrumentedApp, ref.PodTemplateSpec().Labels)
 		if err != nil {
 			logger.Error(err, "error detecting language")
 			return ctrl.Result{}, err
@@ -97,19 +124,14 @@ func (r *InstrumentedApplicationReconciler) shouldStartLangDetection(app *v1.Ins
 
 func (r *InstrumentedApplicationReconciler) shouldInstrument(app *v1.InstrumentedApplication) bool {
 	// TODO: check requirments like destinations exists
-	return !app.Spec.Instrumented
+	return !app.Spec.Instrumented && app.Spec.CollectorAddr != ""
 }
 
 func (r *InstrumentedApplicationReconciler) isLangDetected(app *v1.InstrumentedApplication) bool {
 	return len(app.Spec.Languages) > 0
 }
 
-func (r *InstrumentedApplicationReconciler) detectLanguage(ctx context.Context, app *v1.InstrumentedApplication) error {
-	labels, err := r.getRefLabels(ctx, app)
-	if err != nil {
-		return err
-	}
-
+func (r *InstrumentedApplicationReconciler) detectLanguage(ctx context.Context, app *v1.InstrumentedApplication, labels map[string]string) error {
 	pod, err := r.choosePods(ctx, labels, app.Spec.Ref.Namespace)
 	if err != nil {
 		return err
@@ -184,7 +206,7 @@ func (r *InstrumentedApplicationReconciler) getContainerNames(pod *corev1.Pod) [
 	return result
 }
 
-func (r *InstrumentedApplicationReconciler) getRefLabels(ctx context.Context, app *v1.InstrumentedApplication) (map[string]string, error) {
+func (r *InstrumentedApplicationReconciler) getReference(ctx context.Context, app *v1.InstrumentedApplication) (*ReferencedApp, error) {
 	key := client.ObjectKey{
 		Namespace: app.Spec.Ref.Namespace,
 		Name:      app.Spec.Ref.Name,
@@ -197,7 +219,7 @@ func (r *InstrumentedApplicationReconciler) getRefLabels(ctx context.Context, ap
 			return nil, err
 		}
 
-		return dep.Spec.Template.Labels, nil
+		return ReferenceFromDeployment(&dep), nil
 	}
 
 	var ss appsv1.StatefulSet
@@ -206,7 +228,7 @@ func (r *InstrumentedApplicationReconciler) getRefLabels(ctx context.Context, ap
 		return nil, err
 	}
 
-	return ss.Spec.Template.Labels, nil
+	return ReferenceFromStatefulSet(&ss), nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
