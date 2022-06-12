@@ -18,10 +18,10 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	v1 "github.com/keyval-dev/odigos/instrumentor/api/v1"
 	"github.com/keyval-dev/odigos/instrumentor/consts"
-	"github.com/keyval-dev/odigos/instrumentor/utils"
+	"github.com/keyval-dev/odigos/instrumentor/patch"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var IgnoredNamespaces = []string{"kube-system", "local-path-storage", consts.DefaultNamespace}
+var (
+	instAppOwnerKey   = ".metadata.controller"
+	IgnoredNamespaces = []string{"kube-system", "local-path-storage", consts.DefaultNamespace}
+)
 
 // DeploymentReconciler reconciles a Deployment object
 type DeploymentReconciler struct {
@@ -43,11 +46,9 @@ type DeploymentReconciler struct {
 //+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// the Deployment object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
+// Reconcile is responsible for creating InstrumentedApplication objects for every Deployment.
+// In addition, Reconcile patch the deployment according to the discovered language and keeps the `instrumented` field
+// of InstrumentedApplication up to date with the deployment spec.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
@@ -69,13 +70,13 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	isObjectExists, err := r.isInstrumentedAppObjectExists(ctx, &req)
+	instApps, err := r.getInstrumentedApps(ctx, &req)
 	if err != nil {
-		logger.Error(err, "error finding if InstrumentedApp object exists")
+		logger.Error(err, "error finding InstrumentedApp objects")
 		return ctrl.Result{}, err
 	}
 
-	if !isObjectExists {
+	if len(instApps.Items) == 0 {
 		if dep.Status.ReadyReplicas == 0 {
 			logger.V(0).Info("not enough ready replicas, waiting for pods to be ready")
 			return ctrl.Result{}, nil
@@ -83,25 +84,16 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 		instrumentedApp := v1.InstrumentedApplication{
 			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: fmt.Sprintf("%s-", req.Name),
-				Namespace:    utils.GetCurrentNamespace(),
-			},
-			Spec: v1.InstrumentedApplicationSpec{
-				Ref: v1.ApplicationReference{
-					Type:      "deployment",
-					Namespace: req.Namespace,
-					Name:      req.Name,
-				},
-				Instrumented: false,
+				Name:      req.Name,
+				Namespace: req.Namespace,
 			},
 		}
 
-		// TODO: Set deployment as owner
-		//err = ctrl.SetControllerReference(&dep, &instrumentedApp, r.Scheme)
-		//if err != nil {
-		//	logger.Error(err, "error creating InstrumentedApp object")
-		//	return ctrl.Result{}, err
-		//}
+		err = ctrl.SetControllerReference(&dep, &instrumentedApp, r.Scheme)
+		if err != nil {
+			logger.Error(err, "error creating InstrumentedApp object")
+			return ctrl.Result{}, err
+		}
 
 		err = r.Create(ctx, &instrumentedApp)
 		if err != nil {
@@ -119,8 +111,49 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			logger.Error(err, "error creating InstrumentedApp object")
 		}
 
-		logger.V(0).Info("requested language detection")
+		return ctrl.Result{}, nil
 	}
+
+	if len(instApps.Items) > 1 {
+		return ctrl.Result{}, errors.New("found more than one InstrumentedApp per deployment")
+	}
+
+	// If lang not detected yet - nothing to do
+	instApp := instApps.Items[0]
+	if len(instApp.Spec.Languages) == 0 {
+		return ctrl.Result{}, nil
+	}
+
+	// Compute .status.instrumented field
+	instrumneted, err := patch.IsInstrumented(&dep.Spec.Template, &instApp)
+	if err != nil {
+		logger.Error(err, "error computing instrumented status")
+		return ctrl.Result{}, err
+	}
+	if instrumneted != instApp.Status.Instrumented {
+		instApp.Status.Instrumented = instrumneted
+		err = r.Status().Update(ctx, &instApp)
+		if err != nil {
+			logger.Error(err, "error computing instrumented status")
+			return ctrl.Result{}, err
+		}
+	}
+
+	// If not instrumented and scheduled - patch deployment
+	if !instrumneted && instApp.Spec.CollectorAddr != "" {
+		err = patch.ModifyObject(&dep.Spec.Template, &instApp)
+		if err != nil {
+			logger.Error(err, "error patching deployment")
+			return ctrl.Result{}, err
+		}
+
+		err = r.Update(ctx, &dep)
+		if err != nil {
+			logger.Error(err, "error instrumenting application")
+			return ctrl.Result{}, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -134,29 +167,37 @@ func (r *DeploymentReconciler) shouldSkipDeployment(req *ctrl.Request) bool {
 	return false
 }
 
-func (r *DeploymentReconciler) isInstrumentedAppObjectExists(ctx context.Context, req *ctrl.Request) (bool, error) {
+func (r *DeploymentReconciler) getInstrumentedApps(ctx context.Context, req *ctrl.Request) (*v1.InstrumentedApplicationList, error) {
 	var instrumentedApps v1.InstrumentedApplicationList
-	err := r.List(ctx, &instrumentedApps)
-
+	err := r.List(ctx, &instrumentedApps, client.InNamespace(req.Namespace), client.MatchingFields{instAppOwnerKey: req.Name})
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	for _, app := range instrumentedApps.Items {
-		ref := app.Spec.Ref
-		if ref.Type == v1.DeploymentApplicationType &&
-			ref.Name == req.Name &&
-			ref.Namespace == req.Namespace {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return &instrumentedApps, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// Index InstrumentedApps by owner for fast lookup
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &v1.InstrumentedApplication{}, instAppOwnerKey, func(rawObj client.Object) []string {
+		instApp := rawObj.(*v1.InstrumentedApplication)
+		owner := metav1.GetControllerOf(instApp)
+		if owner == nil {
+			return nil
+		}
+
+		if owner.APIVersion != appsv1.SchemeGroupVersion.String() || owner.Kind != "Deployment" {
+			return nil
+		}
+
+		return []string{owner.Name}
+	}); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
+		Owns(&v1.InstrumentedApplication{}).
 		Complete(r)
 }

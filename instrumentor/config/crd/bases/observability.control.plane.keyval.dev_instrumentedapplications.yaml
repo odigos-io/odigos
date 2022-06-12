@@ -39,8 +39,6 @@ spec:
             properties:
               collectorAddr:
                 type: string
-              instrumented:
-                type: boolean
               languages:
                 items:
                   properties:
@@ -61,30 +59,13 @@ spec:
                   - language
                   type: object
                 type: array
-              ref:
-                properties:
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  type:
-                    enum:
-                    - deployment
-                    - statefulset
-                    type: string
-                required:
-                - name
-                - namespace
-                - type
-                type: object
-            required:
-            - instrumented
-            - ref
             type: object
           status:
             description: InstrumentedApplicationStatus defines the observed state
               of InstrumentedApplication
             properties:
+              instrumented:
+                type: boolean
               langDetection:
                 properties:
                   phase:
@@ -95,6 +76,8 @@ spec:
                     - Error
                     type: string
                 type: object
+            required:
+            - instrumented
             type: object
         type: object
     served: true

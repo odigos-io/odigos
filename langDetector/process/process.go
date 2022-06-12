@@ -17,13 +17,13 @@ type Details struct {
 	CmdLine   string
 }
 
-func FindAllInContainer(podUID string, containerName string) ([]*Details, error) {
+func FindAllInContainer(podUID string, containerName string) ([]Details, error) {
 	proc, err := os.Open("/proc")
 	if err != nil {
 		return nil, err
 	}
 
-	var result []*Details
+	var result []Details
 	for {
 		dirs, err := proc.Readdir(15)
 		if err == io.EOF {
@@ -71,7 +71,7 @@ func FindAllInContainer(podUID string, containerName string) ([]*Details, error)
 						cmd = string(cmdLine)
 					}
 
-					result = append(result, &Details{
+					result = append(result, Details{
 						ProcessID: pid,
 						ExeName:   exeName,
 						CmdLine:   cmd,

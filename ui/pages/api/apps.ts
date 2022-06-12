@@ -13,11 +13,9 @@ export default async function handler(
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
-
-  const response: any = await k8sApi.listNamespacedCustomObject(
+  const response: any = await k8sApi.listClusterCustomObject(
     "observability.control.plane.keyval.dev",
     "v1",
-    process.env.CURRENT_NAMESPACE || "odigos-system",
     "instrumentedapplications"
   );
 
@@ -28,7 +26,13 @@ export default async function handler(
   }
 
   const apps: ApplicationData[] = response.body.items
-    .filter((item: any) => item.spec.languages)
+    .filter(
+      (item: any) =>
+        item.spec.languages &&
+        item.spec.languages.length > 0 &&
+        item.metadata.ownerReferences &&
+        item.metadata.ownerReferences.length > 0
+    )
     .map((item: any) => {
       const languages: string[] = item.spec.languages.map(
         (lang: any) => lang.language
@@ -36,11 +40,10 @@ export default async function handler(
 
       return {
         id: item.metadata.uid,
-        name: item.spec.ref.name,
+        name: item.metadata.ownerReferences[0].name,
         languages: languages,
-        instrumented: item.spec.instrumented,
+        instrumented: item.status.instrumented,
       };
     });
-
   return res.status(200).json(apps);
 }

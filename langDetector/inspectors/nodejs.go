@@ -1,7 +1,7 @@
 package inspectors
 
 import (
-	v1 "github.com/keyval-dev/odigos/langDetector/kube/apis/v1"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/langDetector/process"
 	"strings"
 )
@@ -12,9 +12,9 @@ var nodeJs = &nodejsInspector{}
 
 const nodeProcessName = "node"
 
-func (n *nodejsInspector) Inspect(process *process.Details) (v1.ProgrammingLanguage, bool) {
+func (n *nodejsInspector) Inspect(process *process.Details) (common.ProgrammingLanguage, bool) {
 	if strings.Contains(process.ExeName, nodeProcessName) || strings.Contains(process.CmdLine, nodeProcessName) {
-		return v1.JavascriptProgrammingLanguage, true
+		return common.JavascriptProgrammingLanguage, true
 	}
 
 	return "", false

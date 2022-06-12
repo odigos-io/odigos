@@ -2,6 +2,7 @@ package patch
 
 import (
 	"fmt"
+	"github.com/keyval-dev/odigos/common"
 	odigosv1 "github.com/keyval-dev/odigos/instrumentor/api/v1"
 	"github.com/keyval-dev/odigos/instrumentor/consts"
 	"github.com/keyval-dev/odigos/instrumentor/utils"
@@ -25,20 +26,21 @@ type golangPatcher struct{}
 
 func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) {
 	modifiedContainers := podSpec.Spec.Containers
-	patchedAnyContainer := false
 
-	for _, container := range podSpec.Spec.Containers {
-		if shouldPatch(instrumentation, odigosv1.GoProgrammingLanguage, container.Name) {
-			exePath := g.getExe(container.Name, instrumentation)
-			if exePath == "" {
+	for _, l := range instrumentation.Spec.Languages {
+		if shouldPatch(instrumentation, common.GoProgrammingLanguage, l.ContainerName) {
+			if l.ProcessName == "" {
 				ctrl.Log.V(0).Info("could not find binary path for golang application",
-					"container", container.Name)
+					"container", l.ContainerName)
 				continue
 			}
 
-			patchedAnyContainer = true
+			appName := l.ContainerName
+			if len(instrumentation.Spec.Languages) == 1 && len(instrumentation.OwnerReferences) > 0 {
+				appName = instrumentation.OwnerReferences[0].Name
+			}
 			bpfContainer := v1.Container{
-				Name:  fmt.Sprintf("%s-instrumentation", container.Name),
+				Name:  fmt.Sprintf("%s-instrumentation", l.ContainerName),
 				Image: golangAgentName,
 				Env: []v1.EnvVar{
 					{
@@ -47,11 +49,11 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 					},
 					{
 						Name:  golangServiceNameEnv,
-						Value: calculateAppName(podSpec, &container, instrumentation),
+						Value: appName,
 					},
 					{
 						Name:  golangTargetExeEnv,
-						Value: exePath,
+						Value: l.ProcessName,
 					},
 				},
 				VolumeMounts: []v1.VolumeMount{
@@ -75,10 +77,6 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 		}
 	}
 
-	if !patchedAnyContainer {
-		return
-	}
-
 	podSpec.Spec.Containers = modifiedContainers
 	// TODO: if explicitly set to false, fallback to hostPID
 	podSpec.Spec.ShareProcessNamespace = boolPtr(true)
@@ -93,13 +91,19 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	})
 }
 
-func (g *golangPatcher) getExe(containerName string, instrumentation *odigosv1.InstrumentedApplication) string {
+func (g *golangPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) bool {
+	// TODO: Deep comparison
 	for _, l := range instrumentation.Spec.Languages {
-		if l.ContainerName == containerName && l.Language == odigosv1.GoProgrammingLanguage {
-			return l.ProcessName
+		if l.Language == common.GoProgrammingLanguage {
+			for _, c := range podSpec.Spec.Containers {
+				if c.Name == fmt.Sprintf("%s-instrumentation", l.ContainerName) {
+					return true
+				}
+			}
 		}
 	}
-	return ""
+
+	return false
 }
 
 func boolPtr(b bool) *bool {

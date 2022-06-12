@@ -6,6 +6,26 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - apps
   resources:
   - deployments
@@ -27,32 +47,6 @@ rules:
   - apps
   resources:
   - deployments/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - keyval.dev
-  resources:
-  - pods
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - keyval.dev
-  resources:
-  - pods/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - keyval.dev
-  resources:
-  - pods/status
   verbs:
   - get
   - patch

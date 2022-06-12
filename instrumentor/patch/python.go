@@ -2,6 +2,7 @@ package patch
 
 import (
 	"fmt"
+	"github.com/keyval-dev/odigos/common"
 	odigosv1 "github.com/keyval-dev/odigos/instrumentor/api/v1"
 	"github.com/keyval-dev/odigos/instrumentor/consts"
 	"github.com/keyval-dev/odigos/instrumentor/utils"
@@ -10,9 +11,10 @@ import (
 )
 
 const (
-	pythonAgentName  = "edenfed/otel-python-agent:v0.1"
-	pythonVolumeName = "agentdir-python"
-	pythonMountPath  = "/agent"
+	pythonAgentName         = "edenfed/otel-python-agent:v0.1"
+	pythonVolumeName        = "agentdir-python"
+	pythonMountPath         = "/agent"
+	pythonInitContainerName = "copy-python-agent"
 )
 
 var python = &pythonPatcher{}
@@ -28,7 +30,7 @@ func (p *pythonPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	})
 
 	podSpec.Spec.InitContainers = append(podSpec.Spec.InitContainers, v1.Container{
-		Name:  "copy-python-agent",
+		Name:  pythonInitContainerName,
 		Image: pythonAgentName,
 		VolumeMounts: []v1.VolumeMount{
 			{
@@ -40,7 +42,7 @@ func (p *pythonPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 
 	var modifiedContainers []v1.Container
 	for _, container := range podSpec.Spec.Containers {
-		if shouldPatch(instrumentation, odigosv1.PythonProgrammingLanguage, container.Name) {
+		if shouldPatch(instrumentation, common.PythonProgrammingLanguage, container.Name) {
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  "PYTHONPATH",
 				Value: "/agent/deps:/agent/deps/opentelemetry/instrumentation/auto_instrumentation/",
@@ -70,4 +72,14 @@ func (p *pythonPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	}
 
 	podSpec.Spec.Containers = modifiedContainers
+}
+
+func (p *pythonPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) bool {
+	// TODO: Deep comparison
+	for _, c := range podSpec.Spec.InitContainers {
+		if c.Name == pythonInitContainerName {
+			return true
+		}
+	}
+	return false
 }

@@ -17,35 +17,15 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/keyval-dev/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // InstrumentedApplicationSpec defines the desired state of InstrumentedApplication
 type InstrumentedApplicationSpec struct {
-	Ref ApplicationReference `json:"ref"`
-
-	// +optional
-	Languages     []LanguageByContainer `json:"languages,omitempty"`
-	Instrumented  bool                  `json:"instrumented"`
-	CollectorAddr string                `json:"collectorAddr,omitempty"`
+	Languages     []common.LanguageByContainer `json:"languages,omitempty"`
+	CollectorAddr string                       `json:"collectorAddr,omitempty"`
 }
-
-type LanguageByContainer struct {
-	ContainerName string              `json:"containerName"`
-	Language      ProgrammingLanguage `json:"language"`
-	ProcessName   string              `json:"processName,omitempty"`
-}
-
-//+kubebuilder:validation:Enum=java;python;go;dotnet;javascript
-type ProgrammingLanguage string
-
-const (
-	JavaProgrammingLanguage       ProgrammingLanguage = "java"
-	PythonProgrammingLanguage     ProgrammingLanguage = "python"
-	GoProgrammingLanguage         ProgrammingLanguage = "go"
-	DotNetProgrammingLanguage     ProgrammingLanguage = "dotnet"
-	JavascriptProgrammingLanguage ProgrammingLanguage = "javascript"
-)
 
 //+kubebuilder:validation:Enum=deployment;statefulset
 type ApplicationType string
@@ -64,6 +44,7 @@ type ApplicationReference struct {
 // InstrumentedApplicationStatus defines the observed state of InstrumentedApplication
 type InstrumentedApplicationStatus struct {
 	LangDetection LangDetectionStatus `json:"langDetection,omitempty"`
+	Instrumented  bool                `json:"instrumented"`
 }
 
 type LangDetectionStatus struct {

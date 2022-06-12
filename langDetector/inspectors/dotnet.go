@@ -2,7 +2,7 @@ package inspectors
 
 import (
 	"fmt"
-	v1 "github.com/keyval-dev/odigos/langDetector/kube/apis/v1"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/langDetector/process"
 	"io/ioutil"
 	"strings"
@@ -17,12 +17,12 @@ const (
 
 var dotNet = &dotnetInspector{}
 
-func (d *dotnetInspector) Inspect(p *process.Details) (v1.ProgrammingLanguage, bool) {
+func (d *dotnetInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
 	data, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/environ", p.ProcessID))
 	if err == nil {
 		environ := string(data)
 		if strings.Contains(environ, aspnet) || strings.Contains(environ, dotnet) {
-			return v1.DotNetProgrammingLanguage, true
+			return common.DotNetProgrammingLanguage, true
 		}
 	}
 

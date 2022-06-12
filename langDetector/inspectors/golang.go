@@ -2,8 +2,8 @@ package inspectors
 
 import (
 	"fmt"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/langDetector/inspectors/goversion"
-	v1 "github.com/keyval-dev/odigos/langDetector/kube/apis/v1"
 	"github.com/keyval-dev/odigos/langDetector/process"
 	"io/fs"
 	"os"
@@ -15,7 +15,7 @@ type golangInspector struct{}
 
 var golang = &golangInspector{}
 
-func (g *golangInspector) Inspect(p *process.Details) (v1.ProgrammingLanguage, bool) {
+func (g *golangInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
 	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
 	info, err := os.Stat(file)
 	if err != nil {
@@ -44,7 +44,7 @@ func (g *golangInspector) Inspect(p *process.Details) (v1.ProgrammingLanguage, b
 		return "", false
 	}
 
-	return v1.GoProgrammingLanguage, true
+	return common.GoProgrammingLanguage, true
 }
 
 // isExe reports whether the file should be considered executable.

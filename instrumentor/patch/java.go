@@ -2,6 +2,7 @@ package patch
 
 import (
 	"fmt"
+	"github.com/keyval-dev/odigos/common"
 	odigosv1 "github.com/keyval-dev/odigos/instrumentor/api/v1"
 	"github.com/keyval-dev/odigos/instrumentor/consts"
 	"github.com/keyval-dev/odigos/instrumentor/utils"
@@ -46,7 +47,7 @@ func (j *javaPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odigos
 
 	var modifiedContainers []v1.Container
 	for _, container := range podSpec.Spec.Containers {
-		if shouldPatch(instrumentation, odigosv1.JavaProgrammingLanguage, container.Name) {
+		if shouldPatch(instrumentation, common.JavaProgrammingLanguage, container.Name) {
 			idx := getIndexOfEnv(container.Env, javaToolOptionsEnvVar)
 			if idx == -1 {
 				container.Env = append(container.Env, v1.EnvVar{
@@ -72,4 +73,14 @@ func (j *javaPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odigos
 	}
 
 	podSpec.Spec.Containers = modifiedContainers
+}
+
+func (j *javaPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) bool {
+	// TODO: Deep comparison
+	for _, c := range podSpec.Spec.InitContainers {
+		if c.Name == "copy-java-agent" {
+			return true
+		}
+	}
+	return false
 }
