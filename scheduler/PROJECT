@@ -1,0 +1,6 @@
+domain: keyval.dev
+layout:
+- go.kubebuilder.io/v3
+projectName: scheduler
+repo: github.com/keyval-dev/odigos/scheduler
+version: "3"

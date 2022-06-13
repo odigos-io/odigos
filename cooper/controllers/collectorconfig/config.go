@@ -18,27 +18,29 @@ type Config struct {
 	Service    genericMap `json:"service"`
 }
 
-func getExporters(dest *v1.Destination) genericMap {
-	if dest.Spec.Type == v1.GrafanaDestinationType {
-		authString := fmt.Sprintf("%s:%s", dest.Spec.Data.Grafana.User, dest.Spec.Data.Grafana.ApiKey)
-		encodedAuthString := b64.StdEncoding.EncodeToString([]byte(authString))
-		url := strings.TrimSuffix(dest.Spec.Data.Grafana.Url, "/tempo")
-		return genericMap{
-			"otlp": genericMap{
-				"endpoint": fmt.Sprintf("%s:%d", url, 443),
-				"headers": genericMap{
-					"authorization": fmt.Sprintf("Basic %s", encodedAuthString),
+func getExporters(dest *v1.DestinationList) genericMap {
+	for _, dst := range dest.Items {
+		if dst.Spec.Type == v1.GrafanaDestinationType {
+			authString := fmt.Sprintf("%s:%s", dst.Spec.Data.Grafana.User, dst.Spec.Data.Grafana.ApiKey)
+			encodedAuthString := b64.StdEncoding.EncodeToString([]byte(authString))
+			url := strings.TrimSuffix(dst.Spec.Data.Grafana.Url, "/tempo")
+			return genericMap{
+				"otlp": genericMap{
+					"endpoint": fmt.Sprintf("%s:%d", url, 443),
+					"headers": genericMap{
+						"authorization": fmt.Sprintf("Basic %s", encodedAuthString),
+					},
 				},
-			},
+			}
 		}
 	}
 
 	return genericMap{}
 }
 
-func GetConfigForCollector(dest *v1.Destination) (string, error) {
+func GetConfigForCollector(dests *v1.DestinationList) (string, error) {
 	empty := struct{}{}
-	exporters := getExporters(dest)
+	exporters := getExporters(dests)
 	c := &Config{
 		Receivers: genericMap{
 			"zipkin": empty,

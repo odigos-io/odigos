@@ -1,0 +1,24 @@
+# permissions for end users to edit collectors.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: collector-editor-role
+rules:
+- apiGroups:
+  - observability.control.plane.keyval.dev
+  resources:
+  - collectors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - observability.control.plane.keyval.dev
+  resources:
+  - collectors/status
+  verbs:
+  - get

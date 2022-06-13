@@ -8,7 +8,6 @@ const (
 	CurrentNamespaceEnvVar = "CURRENT_NS"
 	DefaultNamespace       = "odigos-system"
 	CollectorLabel         = "odigos.io/collector"
-	CommonConfigMapName    = "collector-conf"
 )
 
 func getEnvVarOrDefault(envKey string, defaultVal string) string {
