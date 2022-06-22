@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/cooper/api/v1"
+	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/autoscaler/api/v1"
 	//+kubebuilder:scaffold:imports
 )
 

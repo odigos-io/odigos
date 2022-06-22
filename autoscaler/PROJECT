@@ -1,8 +1,8 @@
 domain: keyval.dev
 layout:
 - go.kubebuilder.io/v3
-projectName: cooper
-repo: github.com/keyval-dev/odigos/cooper
+projectName: autoscaler
+repo: github.com/keyval-dev/odigos/autoscaler
 resources:
 - api:
     crdVersion: v1
@@ -11,7 +11,7 @@ resources:
   domain: keyval.dev
   group: observability.control.plane
   kind: Destination
-  path: github.com/keyval-dev/odigos/cooper/api/v1
+  path: github.com/keyval-dev/odigos/autoscaler/api/v1
   version: v1
 - api:
     crdVersion: v1
@@ -20,6 +20,6 @@ resources:
   domain: keyval.dev
   group: observability.control.plane
   kind: Collector
-  path: github.com/keyval-dev/odigos/cooper/api/v1
+  path: github.com/keyval-dev/odigos/autoscaler/api/v1
   version: v1
 version: "3"

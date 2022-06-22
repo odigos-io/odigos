@@ -1,4 +1,4 @@
-module github.com/keyval-dev/odigos/cooper
+module github.com/keyval-dev/odigos/autoscaler
 
 go 1.17
 

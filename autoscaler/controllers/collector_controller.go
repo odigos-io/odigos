@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	odigosv1 "github.com/keyval-dev/odigos/cooper/api/v1"
+	odigosv1 "github.com/keyval-dev/odigos/autoscaler/api/v1"
 )
 
 const (

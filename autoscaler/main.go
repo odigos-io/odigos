@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/cooper/api/v1"
-	"github.com/keyval-dev/odigos/cooper/controllers"
+	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/autoscaler/api/v1"
+	"github.com/keyval-dev/odigos/autoscaler/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
