@@ -2,7 +2,8 @@ package controllers
 
 import (
 	"context"
-	odigosv1 "github.com/keyval-dev/odigos/autoscaler/api/v1"
+	odigosv1 "github.com/keyval-dev/odigos/api/v1"
+	v12 "github.com/keyval-dev/odigos/api/v1"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/collectorconfig"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -106,8 +107,8 @@ func (r *CollectorReconciler) listConfigMaps(ctx context.Context, collector *odi
 	return &cmList, nil
 }
 
-func (r *CollectorReconciler) listDestinations(ctx context.Context, collector *odigosv1.Collector) (*odigosv1.DestinationList, error) {
-	var destList odigosv1.DestinationList
+func (r *CollectorReconciler) listDestinations(ctx context.Context, collector *odigosv1.Collector) (*v12.DestinationList, error) {
+	var destList v12.DestinationList
 	err := r.List(ctx, &destList, client.InNamespace(collector.Namespace))
 	if err != nil {
 		return nil, err

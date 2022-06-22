@@ -3,6 +3,7 @@ module github.com/keyval-dev/odigos/instrumentor
 go 1.18
 
 require (
+	github.com/keyval-dev/odigos/api v0.0.0
 	github.com/keyval-dev/odigos/common v0.0.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
@@ -74,4 +75,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/keyval-dev/odigos/common => ../common
+replace (
+	github.com/keyval-dev/odigos/api => ../api
+	github.com/keyval-dev/odigos/common => ../common
+)

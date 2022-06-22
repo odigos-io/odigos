@@ -4,7 +4,7 @@ import (
 	b64 "encoding/base64"
 	"fmt"
 	"github.com/ghodss/yaml"
-	v1 "github.com/keyval-dev/odigos/autoscaler/api/v1"
+	v1 "github.com/keyval-dev/odigos/api/v1"
 	"strings"
 )
 

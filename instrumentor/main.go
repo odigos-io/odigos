@@ -20,7 +20,7 @@ import (
 	"flag"
 	"os"
 
-	v1 "github.com/keyval-dev/odigos/instrumentor/api/v1"
+	v1 "github.com/keyval-dev/odigos/api/v1"
 	"github.com/keyval-dev/odigos/instrumentor/controllers"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)

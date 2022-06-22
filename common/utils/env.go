@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/keyval-dev/odigos/instrumentor/consts"
+	"github.com/keyval-dev/odigos/common/consts"
 	"os"
 )
 

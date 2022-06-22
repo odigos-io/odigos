@@ -2,8 +2,8 @@ package patch
 
 import (
 	"fmt"
+	odigosv1 "github.com/keyval-dev/odigos/api/v1"
 	"github.com/keyval-dev/odigos/common"
-	odigosv1 "github.com/keyval-dev/odigos/instrumentor/api/v1"
 	v1 "k8s.io/api/core/v1"
 )
 

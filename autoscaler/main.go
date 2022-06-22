@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/autoscaler/api/v1"
+	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/api/v1"
 	"github.com/keyval-dev/odigos/autoscaler/controllers"
 	//+kubebuilder:scaffold:imports
 )
@@ -43,7 +43,6 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
 	utilruntime.Must(observabilitycontrolplanev1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }

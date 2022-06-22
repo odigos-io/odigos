@@ -18,13 +18,14 @@ package controllers
 
 import (
 	"context"
+	v12 "github.com/keyval-dev/odigos/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	v1 "github.com/keyval-dev/odigos/autoscaler/api/v1"
+	v1 "github.com/keyval-dev/odigos/api/v1"
 )
 
 // DestinationReconciler reconciles a Destination object
@@ -48,7 +49,7 @@ type DestinationReconciler struct {
 func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var dest v1.Destination
+	var dest v12.Destination
 	err := r.Get(ctx, req.NamespacedName, &dest)
 	if err != nil {
 		err = client.IgnoreNotFound(err)
@@ -78,13 +79,6 @@ func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{}, err
 		}
 	}
-
-	// TODO: move to pod controller
-	//err = r.scheduleAppsToCollectors(collectors)
-	//if err != nil {
-	//	logger.Error(err, "failed scheduling apps to collectors")
-	//	return ctrl.Result{}, err
-	//}
 
 	return ctrl.Result{}, nil
 }
@@ -123,6 +117,6 @@ func (r *DestinationReconciler) updateExistingCollectors(ctx context.Context, co
 // SetupWithManager sets up the controller with the Manager.
 func (r *DestinationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.Destination{}).
+		For(&v12.Destination{}).
 		Complete(r)
 }
