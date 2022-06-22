@@ -27,20 +27,6 @@ type InstrumentedApplicationSpec struct {
 	CollectorAddr string                       `json:"collectorAddr,omitempty"`
 }
 
-//+kubebuilder:validation:Enum=deployment;statefulset
-type ApplicationType string
-
-const (
-	DeploymentApplicationType  ApplicationType = "deployment"
-	StatefulSetApplicationType ApplicationType = "statefulset"
-)
-
-type ApplicationReference struct {
-	Type      ApplicationType `json:"type"`
-	Namespace string          `json:"namespace"`
-	Name      string          `json:"name"`
-}
-
 // InstrumentedApplicationStatus defines the observed state of InstrumentedApplication
 type InstrumentedApplicationStatus struct {
 	LangDetection LangDetectionStatus `json:"langDetection,omitempty"`

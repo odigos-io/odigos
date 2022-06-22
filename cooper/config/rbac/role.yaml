@@ -6,32 +6,6 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - keyval.dev
-  resources:
-  - pods
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - keyval.dev
-  resources:
-  - pods/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - keyval.dev
-  resources:
-  - pods/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - observability.control.plane.keyval.dev
   resources:
   - collectors
@@ -79,32 +53,6 @@ rules:
   - observability.control.plane.keyval.dev
   resources:
   - destinations/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - observability.control.plane.keyval.dev
-  resources:
-  - instrumentedapplications
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - observability.control.plane.keyval.dev
-  resources:
-  - instrumentedapplications/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - observability.control.plane.keyval.dev
-  resources:
-  - instrumentedapplications/status
   verbs:
   - get
   - patch

@@ -13,19 +13,6 @@ resources:
   kind: Destination
   path: github.com/keyval-dev/odigos/cooper/api/v1
   version: v1
-- controller: true
-  domain: keyval.dev
-  kind: Pod
-  version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: keyval.dev
-  group: observability.control.plane
-  kind: InstrumentedApplication
-  path: github.com/keyval-dev/odigos/cooper/api/v1
-  version: v1
 - api:
     crdVersion: v1
     namespaced: true

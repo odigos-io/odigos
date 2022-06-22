@@ -4,6 +4,7 @@ import (
 	"context"
 	odigosv1 "github.com/keyval-dev/odigos/cooper/api/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -123,6 +124,9 @@ func (r *CollectorReconciler) createServices(ctx context.Context, collector *odi
 
 	err = r.Create(ctx, svc)
 	if err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return nil
+		}
 		return err
 	}
 

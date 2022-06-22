@@ -4,6 +4,7 @@ import (
 	"context"
 	odigosv1 "github.com/keyval-dev/odigos/cooper/api/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,14 +38,27 @@ func (r *CollectorReconciler) syncPods(ctx context.Context, collector *odigosv1.
 
 func (r *CollectorReconciler) isPodsUpToDate(podList *v1.PodList) bool {
 	for _, pod := range podList.Items {
-		if len(pod.Spec.Volumes) != 1 || pod.Spec.Volumes[0].Name != "collector-conf" {
+		collectorVolfound := false
+		for _, vol := range pod.Spec.Volumes {
+			if vol.Name == "collector-conf" {
+				collectorVolfound = true
+				break
+			}
+		}
+
+		if !collectorVolfound || len(pod.Spec.Containers) != 1 {
 			return false
 		}
 
-		if len(pod.Spec.Containers) != 1 || len(pod.Spec.Containers[0].VolumeMounts) != 1 ||
-			pod.Spec.Containers[0].VolumeMounts[0].Name != "collector-conf" {
-			return false
+		volMountFound := false
+		for _, volMount := range pod.Spec.Containers[0].VolumeMounts {
+			if volMount.Name == "collector-conf" {
+				volMountFound = true
+				break
+			}
 		}
+
+		return volMountFound
 	}
 
 	return true
@@ -111,6 +125,9 @@ func (r *CollectorReconciler) createPods(ctx context.Context, collector *odigosv
 
 	err = r.Create(ctx, pod)
 	if err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return nil
+		}
 		return err
 	}
 

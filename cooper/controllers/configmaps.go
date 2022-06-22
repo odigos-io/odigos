@@ -5,6 +5,7 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/cooper/api/v1"
 	"github.com/keyval-dev/odigos/cooper/controllers/collectorconfig"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -86,6 +87,9 @@ func (r *CollectorReconciler) createConfigMap(ctx context.Context, collector *od
 
 	err = r.Create(ctx, configmap)
 	if err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return nil
+		}
 		return err
 	}
 

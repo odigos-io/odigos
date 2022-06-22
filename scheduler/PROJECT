@@ -3,4 +3,15 @@ layout:
 - go.kubebuilder.io/v3
 projectName: scheduler
 repo: github.com/keyval-dev/odigos/scheduler
+resources:
+- controller: true
+  domain: keyval.dev
+  group: observability.control.plane
+  kind: InstrumentedApplication
+  version: v1
+- controller: true
+  domain: keyval.dev
+  group: observability.control.plane
+  kind: Collector
+  version: v1
 version: "3"

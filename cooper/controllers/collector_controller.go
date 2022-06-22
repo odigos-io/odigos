@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"github.com/keyval-dev/odigos/cooper/utils"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,11 +30,15 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/cooper/api/v1"
 )
 
+const (
+	CollectorLabel = "odigos.io/collector"
+)
+
 var (
 	ownerKey     = ".metadata.controller"
-	apiGVStr     = v1.SchemeGroupVersion.String()
+	apiGVStr     = odigosv1.GroupVersion.String()
 	commonLabels = map[string]string{
-		utils.CollectorLabel: "true",
+		CollectorLabel: "true",
 	}
 )
 
@@ -77,6 +80,7 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		logger.Error(err, "error syncing config maps")
 		return ctrl.Result{}, err
 	}
+	logger.V(0).Info("synced config maps", "updated", cmUpdated)
 
 	// sync child pods
 	podUpdated, err := r.syncPods(ctx, &collector)
@@ -84,14 +88,16 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		logger.Error(err, "error syncing pods")
 		return ctrl.Result{}, err
 	}
+	logger.V(0).Info("synced pods", "updated", podUpdated)
 
 	// sync child services
 	svcUpdated, err := r.syncServices(ctx, &collector)
 	if err != nil {
 		logger.Error(err, "error syncing services")
 	}
+	logger.V(0).Info("synced services", "updated", svcUpdated)
 
-	// update .status.ready = (cmUpdated && !svcUpdate && !podUpdated (only if different then current status_
+	// update .status.ready = (cmUpdated && !svcUpdate && !podUpdated (only if different from current status_
 	ready := !cmUpdated && !svcUpdated && !podUpdated
 	if ready != collector.Status.Ready {
 		collector.Status.Ready = ready
