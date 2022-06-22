@@ -2,7 +2,7 @@ package patch
 
 import (
 	"fmt"
-	odigosv1 "github.com/keyval-dev/odigos/api/v1"
+	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"

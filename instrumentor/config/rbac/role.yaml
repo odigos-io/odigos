@@ -52,7 +52,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - observability.control.plane.keyval.dev
+  - odigos.io
   resources:
   - instrumentedapplications
   verbs:
@@ -64,13 +64,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - observability.control.plane.keyval.dev
+  - odigos.io
   resources:
   - instrumentedapplications/finalizers
   verbs:
   - update
 - apiGroups:
-  - observability.control.plane.keyval.dev
+  - odigos.io
   resources:
   - instrumentedapplications/status
   verbs:

@@ -19,7 +19,7 @@ package controllers
 import (
 	"context"
 	"errors"
-	v1 "github.com/keyval-dev/odigos/api/v1"
+	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/instrumentor/patch"
 	appsv1 "k8s.io/api/apps/v1"

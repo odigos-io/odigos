@@ -20,7 +20,7 @@ import (
 	"flag"
 	"os"
 
-	v1 "github.com/keyval-dev/odigos/api/v1"
+	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/instrumentor/controllers"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -71,7 +71,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "201bdfa0.keyval.dev",
+		LeaderElectionID:       "201bdfa0.odigos.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

@@ -6,7 +6,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - observability.control.plane.keyval.dev
+  - odigos.io
   resources:
   - collectors
   verbs:
@@ -18,13 +18,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - observability.control.plane.keyval.dev
+  - odigos.io
   resources:
   - collectors/finalizers
   verbs:
   - update
 - apiGroups:
-  - observability.control.plane.keyval.dev
+  - odigos.io
   resources:
   - collectors/status
   verbs:
@@ -32,7 +32,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - observability.control.plane.keyval.dev
+  - odigos.io
   resources:
   - destinations
   verbs:
@@ -44,13 +44,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - observability.control.plane.keyval.dev
+  - odigos.io
   resources:
   - destinations/finalizers
   verbs:
   - update
 - apiGroups:
-  - observability.control.plane.keyval.dev
+  - odigos.io
   resources:
   - destinations/status
   verbs:

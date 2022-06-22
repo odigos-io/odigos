@@ -50,7 +50,7 @@ async function CreateNewDestination(
 
   try {
     const dest: Destination = {
-      apiVersion: "observability.control.plane.keyval.dev/v1",
+      apiVersion: "observability.control.plane.keyval.dev/v1alpha1",
       kind: "Destination",
       metadata: {
         name: req.body.name.toLowerCase(),
@@ -69,7 +69,7 @@ async function CreateNewDestination(
 
     const resp = await k8sApi.createNamespacedCustomObject(
       "observability.control.plane.keyval.dev",
-      "v1",
+      "v1alpha1",
       process.env.CURRENT_NAMESPACE || "odigos-system",
       "destinations",
       dest
@@ -88,7 +88,7 @@ async function GetDestinations(req: NextApiRequest, res: NextApiResponse<any>) {
 
   const response: any = await k8sApi.listNamespacedCustomObject(
     "observability.control.plane.keyval.dev",
-    "v1",
+    "v1alpha1",
     process.env.CURRENT_NAMESPACE || "odigos-system",
     "destinations"
   );

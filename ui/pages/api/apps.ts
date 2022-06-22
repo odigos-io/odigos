@@ -15,7 +15,7 @@ export default async function handler(
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
   const response: any = await k8sApi.listClusterCustomObject(
     "observability.control.plane.keyval.dev",
-    "v1",
+    "v1alpha1",
     "instrumentedapplications"
   );
 

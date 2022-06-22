@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	v1 "github.com/keyval-dev/odigos/api/v1"
+	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
@@ -48,9 +48,9 @@ type InstrumentedApplicationReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=observability.control.plane.keyval.dev,resources=instrumentedapplications,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=observability.control.plane.keyval.dev,resources=instrumentedapplications/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=observability.control.plane.keyval.dev,resources=instrumentedapplications/finalizers,verbs=update
+//+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=pods/status,verbs=get;update;patch
 

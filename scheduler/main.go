@@ -24,7 +24,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/v1"
+	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -70,7 +70,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "ce024640.keyval.dev",
+		LeaderElectionID:       "ce024640.odigos.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

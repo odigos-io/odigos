@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"context"
-	v1 "github.com/keyval-dev/odigos/api/v1"
+	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/scheduler/scheduler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -33,9 +33,9 @@ type InstrumentedApplicationReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=observability.control.plane.keyval.dev,resources=instrumentedapplications,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=observability.control.plane.keyval.dev,resources=instrumentedapplications/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=observability.control.plane.keyval.dev,resources=instrumentedapplications/finalizers,verbs=update
+//+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

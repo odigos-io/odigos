@@ -18,14 +18,13 @@ package controllers
 
 import (
 	"context"
-	v12 "github.com/keyval-dev/odigos/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	v1 "github.com/keyval-dev/odigos/api/v1"
+	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
 )
 
 // DestinationReconciler reconciles a Destination object
@@ -34,9 +33,9 @@ type DestinationReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=observability.control.plane.keyval.dev,resources=destinations,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=observability.control.plane.keyval.dev,resources=destinations/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=observability.control.plane.keyval.dev,resources=destinations/finalizers,verbs=update
+//+kubebuilder:rbac:groups=odigos.io,resources=destinations,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=odigos.io,resources=destinations/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=odigos.io,resources=destinations/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -49,7 +48,7 @@ type DestinationReconciler struct {
 func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var dest v12.Destination
+	var dest v1.Destination
 	err := r.Get(ctx, req.NamespacedName, &dest)
 	if err != nil {
 		err = client.IgnoreNotFound(err)
@@ -117,6 +116,6 @@ func (r *DestinationReconciler) updateExistingCollectors(ctx context.Context, co
 // SetupWithManager sets up the controller with the Manager.
 func (r *DestinationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v12.Destination{}).
+		For(&v1.Destination{}).
 		Complete(r)
 }

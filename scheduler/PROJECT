@@ -1,17 +1,15 @@
-domain: keyval.dev
+domain: odigos.io
 layout:
 - go.kubebuilder.io/v3
 projectName: scheduler
 repo: github.com/keyval-dev/odigos/scheduler
 resources:
 - controller: true
-  domain: keyval.dev
-  group: observability.control.plane
+  domain: odigos.io
   kind: InstrumentedApplication
-  version: v1
+  version: v1alpha1
 - controller: true
-  domain: keyval.dev
-  group: observability.control.plane
+  domain: odigos.io
   kind: Collector
-  version: v1
+  version: v1alpha1
 version: "3"

@@ -1,4 +1,4 @@
-domain: keyval.dev
+domain: odigos.io
 layout:
 - go.kubebuilder.io/v3
 projectName: autoscaler
@@ -8,18 +8,16 @@ resources:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: keyval.dev
-  group: observability.control.plane
+  domain: odigos.io
   kind: Destination
-  path: github.com/keyval-dev/odigos/autoscaler/api/v1
-  version: v1
+  path: github.com/keyval-dev/odigos/api/v1alpha1
+  version: v1alpha1
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: keyval.dev
-  group: observability.control.plane
+  domain: odigos.io
   kind: Collector
-  path: github.com/keyval-dev/odigos/autoscaler/api/v1
-  version: v1
+  path: github.com/keyval-dev/odigos/api/v1alpha1
+  version: v1alpha1
 version: "3"
