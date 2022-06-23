@@ -16,21 +16,22 @@ export default function Sources() {
 
   return (
     <div className="flex flex-col space-y-8">
-      {data
-        .filter((source) => source.languages && source.languages.length > 0)
-        .map((source) => (
-          <Card key={source.id}>
-            {getLangIcon(source.languages[0], "w-8 h-8")}
-            <div className="flex flex-col">
-              <div>{source.name}</div>
-              {source.instrumented ? (
-                <div className="text-green-600">Instrumented</div>
-              ) : (
-                <div className="text-orange-400">Not Instrumented</div>
-              )}
-            </div>
-          </Card>
-        ))}
+      {data.length > 0 &&
+        data
+          .filter((source) => source.languages && source.languages.length > 0)
+          .map((source) => (
+            <Card key={source.id}>
+              {getLangIcon(source.languages[0], "w-8 h-8")}
+              <div className="flex flex-col">
+                <div>{source.name}</div>
+                {source.instrumented ? (
+                  <div className="text-green-600">Instrumented</div>
+                ) : (
+                  <div className="text-orange-400">Not Instrumented</div>
+                )}
+              </div>
+            </Card>
+          ))}
     </div>
   );
 }

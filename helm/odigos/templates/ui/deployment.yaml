@@ -1,0 +1,25 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: odigos-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: odigos-ui
+  template:
+    metadata:
+      labels:
+        app: odigos-ui
+    spec:
+      serviceAccount: odigos-ui
+      containers:
+        - name: odigos-ui
+          image: "{{ .Values.ui.image.repository }}:{{ .Values.ui.image.tag }}"
+          ports:
+            - name: ui
+              containerPort: 3000

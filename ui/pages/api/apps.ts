@@ -20,7 +20,7 @@ export default async function handler(
   );
 
   if (response.body.items.length === 0) {
-    res.status(404).json({
+    return res.status(404).json({
       message: "No apps found",
     });
   }

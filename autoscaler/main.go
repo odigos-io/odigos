@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"github.com/keyval-dev/odigos/common/utils"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -69,6 +70,7 @@ func main() {
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
+		Namespace:              utils.GetCurrentNamespace(),
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "f681cfed.odigos.io",
 	})

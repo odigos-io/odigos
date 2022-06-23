@@ -1,0 +1,94 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: odigos-autoscaler
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups:
+    - ""
+  resources:
+    - configmaps
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - ""
+  resources:
+    - pods
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - ""
+  resources:
+    - services
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - odigos.io
+  resources:
+    - collectors
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - odigos.io
+  resources:
+    - collectors/finalizers
+  verbs:
+    - update
+- apiGroups:
+    - odigos.io
+  resources:
+    - collectors/status
+  verbs:
+    - get
+    - patch
+    - update
+- apiGroups:
+    - odigos.io
+  resources:
+    - destinations
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - odigos.io
+  resources:
+    - destinations/finalizers
+  verbs:
+    - update
+- apiGroups:
+    - odigos.io
+  resources:
+    - destinations/status
+  verbs:
+    - get
+    - patch
+    - update

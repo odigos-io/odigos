@@ -94,7 +94,7 @@ async function GetDestinations(req: NextApiRequest, res: NextApiResponse<any>) {
   );
 
   if (response.body.items.length === 0) {
-    res.status(404).json({
+    return res.status(404).json({
       message: "No dests found",
     });
   }
