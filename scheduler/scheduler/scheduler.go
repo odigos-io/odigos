@@ -22,7 +22,7 @@ func ApplicationsToCollectors(ctx context.Context, c client.Client) error {
 	}
 	var langDetectedApps []v1.InstrumentedApplication
 	for _, app := range appList.Items {
-		if len(app.Spec.Languages) > 0 {
+		if len(app.Spec.Languages) > 0 && app.Status.LangDetection.Phase == v1.CompletedLangDetectionPhase {
 			langDetectedApps = append(langDetectedApps, app)
 		}
 	}

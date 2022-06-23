@@ -120,38 +120,41 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	// If lang not detected yet - nothing to do
 	instApp := instApps.Items[0]
-	if len(instApp.Spec.Languages) == 0 {
+	if len(instApp.Spec.Languages) == 0 || instApp.Status.LangDetection.Phase != v1.CompletedLangDetectionPhase {
 		return ctrl.Result{}, nil
 	}
 
-	// Compute .status.instrumented field
-	instrumneted, err := patch.IsInstrumented(&dep.Spec.Template, &instApp)
-	if err != nil {
-		logger.Error(err, "error computing instrumented status")
-		return ctrl.Result{}, err
-	}
-	if instrumneted != instApp.Status.Instrumented {
-		p := client.MergeFrom(&instApp)
-		instApp.Status.Instrumented = instrumneted
-		err = r.Status().Patch(ctx, &instApp, p)
+	// if scheduled
+	if instApp.Spec.CollectorAddr != "" {
+		// Compute .status.instrumented field
+		instrumneted, err := patch.IsInstrumented(&dep.Spec.Template, &instApp)
 		if err != nil {
 			logger.Error(err, "error computing instrumented status")
 			return ctrl.Result{}, err
 		}
-	}
-
-	// If not instrumented and scheduled - patch deployment
-	if !instrumneted && instApp.Spec.CollectorAddr != "" {
-		err = patch.ModifyObject(&dep.Spec.Template, &instApp)
-		if err != nil {
-			logger.Error(err, "error patching deployment")
-			return ctrl.Result{}, err
+		if instrumneted != instApp.Status.Instrumented {
+			logger.V(0).Info("updating .status.instrumented", "instrumented", instrumneted)
+			instApp.Status.Instrumented = instrumneted
+			err = r.Status().Update(ctx, &instApp)
+			if err != nil {
+				logger.Error(err, "error computing instrumented status")
+				return ctrl.Result{}, err
+			}
 		}
 
-		err = r.Update(ctx, &dep)
-		if err != nil {
-			logger.Error(err, "error instrumenting application")
-			return ctrl.Result{}, err
+		// If not instrumented - patch deployment
+		if !instrumneted {
+			err = patch.ModifyObject(&dep.Spec.Template, &instApp)
+			if err != nil {
+				logger.Error(err, "error patching deployment")
+				return ctrl.Result{}, err
+			}
+
+			err = r.Update(ctx, &dep)
+			if err != nil {
+				logger.Error(err, "error instrumenting application")
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
