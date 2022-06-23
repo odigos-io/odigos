@@ -131,8 +131,9 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 	if instrumneted != instApp.Status.Instrumented {
+		p := client.MergeFrom(&instApp)
 		instApp.Status.Instrumented = instrumneted
-		err = r.Status().Update(ctx, &instApp)
+		err = r.Status().Patch(ctx, &instApp, p)
 		if err != nil {
 			logger.Error(err, "error computing instrumented status")
 			return ctrl.Result{}, err

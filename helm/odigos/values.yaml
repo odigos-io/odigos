@@ -19,6 +19,7 @@ ui:
     tag: v0.0.1
 
 instrumentor:
+  deleteLangDetectionPods: true
   image:
     repository: keyval/odigos-instrumentor
     tag: v0.0.1

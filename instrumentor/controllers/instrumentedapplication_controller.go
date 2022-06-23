@@ -24,7 +24,6 @@ import (
 	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,7 +44,10 @@ var (
 // InstrumentedApplicationReconciler reconciles a InstrumentedApplication object
 type InstrumentedApplicationReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme                 *runtime.Scheme
+	LangDetectorTag        string
+	LangDetectorImage      string
+	DeleteLangDetectorPods bool
 }
 
 //+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications,verbs=get;list;watch;create;update;patch;delete
@@ -138,6 +140,10 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 
 			// Clean up finished pods
 			if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
+				if !r.DeleteLangDetectorPods {
+					return ctrl.Result{}, nil
+				}
+
 				err = r.Client.Delete(ctx, &pod)
 				if client.IgnoreNotFound(err) != nil {
 					logger.Error(err, "failed to delete lang detection pod")
@@ -206,7 +212,7 @@ func (r *InstrumentedApplicationReconciler) createLangDetectionPod(targetPod *co
 			Containers: []corev1.Container{
 				{
 					Name:  "lang-detector",
-					Image: fmt.Sprintf("%s:%s", consts.LangDetectorContainer, utils.GetDetectorVersion()),
+					Image: fmt.Sprintf("%s:%s", r.LangDetectorImage, r.LangDetectorTag),
 					Args: []string{
 						fmt.Sprintf("--pod-uid=%s", targetPod.UID),
 						fmt.Sprintf("--container-names=%s", strings.Join(r.getContainerNames(targetPod), ",")),
