@@ -42,8 +42,6 @@ async function CreateNewDestination(
   req: NextApiRequest,
   res: NextApiResponse<any>
 ) {
-  const { type } = req.body;
-
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
@@ -70,15 +68,16 @@ async function CreateNewDestination(
     const resp = await k8sApi.createNamespacedCustomObject(
       "odigos.io",
       "v1alpha1",
-      process.env.CURRENT_NAMESPACE || "odigos-system",
+      process.env.CURRENT_NS || "odigos-system",
       "destinations",
       dest
     );
   } catch (ex) {
     console.log(`got error: ${JSON.stringify(ex)}`);
+    return res.status(500).json({ message: "could not persist destination" });
   }
 
-  res.redirect("/");
+  return res.status(200).json({ message: "dest created" });
 }
 
 async function GetDestinations(req: NextApiRequest, res: NextApiResponse<any>) {
@@ -89,7 +88,7 @@ async function GetDestinations(req: NextApiRequest, res: NextApiResponse<any>) {
   const response: any = await k8sApi.listNamespacedCustomObject(
     "odigos.io",
     "v1alpha1",
-    process.env.CURRENT_NAMESPACE || "odigos-system",
+    process.env.CURRENT_NS || "odigos-system",
     "destinations"
   );
 
@@ -120,5 +119,5 @@ export default async function handler(
     return GetDestinations(req, res);
   }
 
-  res.status(405).end(`Method ${req.method} Not Allowed`);
+  return res.status(405).end(`Method ${req.method} Not Allowed`);
 }

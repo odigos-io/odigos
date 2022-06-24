@@ -2,7 +2,7 @@
 build-images:
 	docker build -t keyval/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
 	docker build -t keyval/odigos-scheduler:$(TAG) . --build-arg SERVICE_NAME=scheduler
-	docker build -t keyval/odigos-lang-detector:$(TAG) . --build-arg SERVICE_NAME=langDetector
+	docker build -t keyval/odigos-lang-detector:$(TAG)  -f langDetector/Dockerfile . --build-arg SERVICE_NAME=langDetector
 	docker build -t keyval/odigos-ui:$(TAG) ui/ -f ui/Dockerfile
 	docker build -t keyval/odigos-instrumentor:$(TAG) . --build-arg SERVICE_NAME=instrumentor
 

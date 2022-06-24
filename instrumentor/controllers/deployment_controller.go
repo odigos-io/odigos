@@ -34,6 +34,7 @@ import (
 var (
 	instAppOwnerKey   = ".metadata.controller"
 	IgnoredNamespaces = []string{"kube-system", "local-path-storage", consts.DefaultNamespace}
+	SkipAnnotation    = "odigos.io/skip"
 )
 
 // DeploymentReconciler reconciles a Deployment object
@@ -54,10 +55,6 @@ type DeploymentReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	if r.shouldSkipDeployment(&req) {
-		logger.V(5).Info("skipped deployment")
-		return ctrl.Result{}, nil
-	}
 
 	var dep appsv1.Deployment
 	err := r.Get(ctx, req.NamespacedName, &dep)
@@ -68,6 +65,11 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 		logger.Error(err, "error fetching deployment object")
 		return ctrl.Result{}, err
+	}
+
+	if r.shouldSkipDeployment(&dep) {
+		logger.V(5).Info("skipped deployment")
+		return ctrl.Result{}, nil
 	}
 
 	instApps, err := r.getInstrumentedApps(ctx, &req)
@@ -161,9 +163,15 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	return ctrl.Result{}, nil
 }
 
-func (r *DeploymentReconciler) shouldSkipDeployment(req *ctrl.Request) bool {
+func (r *DeploymentReconciler) shouldSkipDeployment(dep *appsv1.Deployment) bool {
+	for k, v := range dep.Annotations {
+		if k == SkipAnnotation && v == "true" {
+			return true
+		}
+	}
+
 	for _, ns := range IgnoredNamespaces {
-		if req.Namespace == ns {
+		if dep.Namespace == ns {
 			return true
 		}
 	}

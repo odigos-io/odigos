@@ -4,6 +4,8 @@ kind: Deployment
 metadata:
   name: odigos-ui
   namespace: {{ .Release.Namespace }}
+  annotations:
+    odigos.io/skip: "true"
   labels:
     app: odigos-ui
 spec:
@@ -20,6 +22,11 @@ spec:
       containers:
         - name: odigos-ui
           image: "{{ .Values.ui.image.repository }}:{{ .Values.ui.image.tag }}"
+          env:
+            - name: CURRENT_NS
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           ports:
             - name: ui
               containerPort: 3000

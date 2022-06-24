@@ -3,6 +3,7 @@ import DatadogLogo from "@/img/vendor/datadog.svg";
 import GrafanaLogo from "@/img/vendor/grafana.svg";
 import HoneycombLogo from "@/img/vendor/honeycomb.svg";
 import Link from "next/link";
+import { forwardRef } from "react";
 import type { DestResponseItem } from "@/types/dests";
 import useSWR, { Key, Fetcher } from "swr";
 
@@ -43,6 +44,17 @@ function DestinationCard({ name, type }: { name: string; type: string }) {
   );
 }
 
+const MenuLink = forwardRef((props: any, ref) => {
+  let { href, children, ...rest } = props;
+  return (
+    <Link href={href}>
+      <a ref={ref} {...rest}>
+        {children}
+      </a>
+    </Link>
+  );
+});
+
 function AddDestinationCard() {
   return (
     <Menu>
@@ -66,44 +78,41 @@ function AddDestinationCard() {
       <Menu.Items className="flex flex-col mt-4 bg-white shadow-md border border-gray-200 divide-gray-200 divide-y">
         <Menu.Item>
           {({ active }) => (
-            <Link href="/dest/new/grafana">
-              <a
-                className={`${
-                  active && "bg-gray-100"
-                } p-3 flex flex-row space-x-2 items-center`}
-              >
-                <GrafanaLogo className="w-10 h-10" />
-                <div>Grafana</div>
-              </a>
-            </Link>
+            <MenuLink
+              href="/dest/new/grafana"
+              className={`${
+                active && "bg-gray-100"
+              } p-3 flex flex-row space-x-2 items-center`}
+            >
+              <GrafanaLogo className="w-10 h-10" />
+              <div>Grafana</div>
+            </MenuLink>
           )}
         </Menu.Item>
         <Menu.Item>
           {({ active }) => (
-            <Link href="/dest/new/datadog">
-              <a
-                className={`${
-                  active && "bg-gray-100"
-                } p-3 flex flex-row space-x-2 items-center`}
-              >
-                <DatadogLogo className="w-10 h-10" />
-                <div>Datadog</div>
-              </a>
-            </Link>
+            <MenuLink
+              href="/dest/new/datadog"
+              className={`${
+                active && "bg-gray-100"
+              } p-3 flex flex-row space-x-2 items-center`}
+            >
+              <DatadogLogo className="w-10 h-10" />
+              <div>Datadog</div>
+            </MenuLink>
           )}
         </Menu.Item>
         <Menu.Item>
           {({ active }) => (
-            <Link href="/dest/new/honeycomb">
-              <a
-                className={`${
-                  active && "bg-gray-100"
-                } p-3 flex flex-row space-x-2 items-center`}
-              >
-                <HoneycombLogo className="w-10 h-10" />
-                <div>Honeycomb</div>
-              </a>
-            </Link>
+            <MenuLink
+              href="/dest/new/honeycomb"
+              className={`${
+                active && "bg-gray-100"
+              } p-3 flex flex-row space-x-2 items-center`}
+            >
+              <HoneycombLogo className="w-10 h-10" />
+              <div>Honeycomb</div>
+            </MenuLink>
           )}
         </Menu.Item>
       </Menu.Items>

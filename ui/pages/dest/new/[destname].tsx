@@ -1,12 +1,38 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import Header from "@/components/Header";
+import { useRouter } from "next/router";
 
 type NewDestinationProps = {
   destname: string;
 };
 
 const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
+  const router = useRouter();
+  const handleSubmit = async (event: any) => {
+    event.preventDefault();
+    const data = {
+      name: event.target.name.value,
+      url: event.target.url.value,
+      apikey: event.target.apikey.value,
+      user: event.target.user.value,
+      type: event.target.type.value,
+    };
+
+    const JSONdata = JSON.stringify(data);
+    const response = await fetch("/api/dests", {
+      body: JSONdata,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+
+    if (response.ok) {
+      router.push("/");
+    }
+  };
+
   return (
     <div className="flex h-screen flex-col">
       <Head>
@@ -20,8 +46,7 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
       <div className="pl-14 max-w-md">
         <form
           className="grid grid-cols-1 gap-6"
-          action="/api/dests"
-          method="POST"
+          onSubmit={handleSubmit}
           name="newdest"
         >
           <label className="block">
