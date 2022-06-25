@@ -53,16 +53,7 @@ async function CreateNewDestination(
       metadata: {
         name: req.body.name.toLowerCase(),
       },
-      spec: {
-        type: DestinationType.Grafana,
-        data: {
-          grafana: {
-            apiKey: req.body.apikey,
-            url: req.body.url,
-            user: req.body.user,
-          },
-        },
-      },
+      spec: getSpecForDest(req, req.body.type),
     };
 
     const resp = await k8sApi.createNamespacedCustomObject(
@@ -78,6 +69,33 @@ async function CreateNewDestination(
   }
 
   return res.status(200).json({ message: "dest created" });
+}
+
+function getSpecForDest(req: NextApiRequest, destName: string): any {
+  switch (destName) {
+    case "grafana":
+      return {
+        type: DestinationType.Grafana,
+        data: {
+          grafana: {
+            apiKey: req.body.apikey,
+            url: req.body.url,
+            user: req.body.user,
+          },
+        },
+      };
+    case "honeycomb":
+      return {
+        type: DestinationType.Honeycomb,
+        data: {
+          honeycomb: {
+            apiKey: req.body.apikey,
+          },
+        },
+      };
+  }
+
+  return null;
 }
 
 async function GetDestinations(req: NextApiRequest, res: NextApiResponse<any>) {

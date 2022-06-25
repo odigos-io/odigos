@@ -2,6 +2,7 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import Header from "@/components/Header";
 import { useRouter } from "next/router";
+import DestinationFields from "@/components/DestFields";
 
 type NewDestinationProps = {
   destname: string;
@@ -9,17 +10,17 @@ type NewDestinationProps = {
 
 const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
   const router = useRouter();
+  const fields = DestinationFields[destname];
+
   const handleSubmit = async (event: any) => {
     event.preventDefault();
-    const data = {
-      name: event.target.name.value,
-      url: event.target.url.value,
-      apikey: event.target.apikey.value,
-      user: event.target.user.value,
-      type: event.target.type.value,
-    };
-
-    const JSONdata = JSON.stringify(data);
+    var formData = new FormData(event.target);
+    var object: { [key: string]: string } = {};
+    formData.forEach(function (value, key) {
+      object[key] = value.toString();
+    });
+    const JSONdata = JSON.stringify(object);
+    console.log(JSONdata);
     const response = await fetch("/api/dests", {
       body: JSONdata,
       headers: {
@@ -68,7 +69,31 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
               required
             />
           </label>
-          <label className="block">
+          {fields &&
+            fields.map((f) => {
+              return (
+                <label className="block">
+                  <span className="text-gray-700">{f.displayName}</span>
+                  <input
+                    id={f.id}
+                    name={f.name}
+                    type={f.type}
+                    className="
+                    mt-1
+                    block
+                    w-full
+                    rounded-md
+                    border-gray-300
+                    shadow-sm
+                    focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50
+                  "
+                    placeholder=""
+                    required
+                  />
+                </label>
+              );
+            })}
+          {/* <label className="block">
             <span className="text-gray-700">URL</span>
             <input
               id="url"
@@ -121,7 +146,7 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
                   "
               required
             />
-          </label>
+          </label> */}
           <input name="type" id="type" hidden value={destname} readOnly />
           <button
             type="submit"

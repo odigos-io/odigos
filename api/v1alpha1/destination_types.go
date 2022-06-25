@@ -52,8 +52,6 @@ type HoneycombData struct {
 
 // DestinationStatus defines the observed state of Destination
 type DestinationStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 }
 
 //+kubebuilder:object:root=true

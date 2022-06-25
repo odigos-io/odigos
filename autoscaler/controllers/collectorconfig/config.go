@@ -32,6 +32,15 @@ func getExporters(dest *v1.DestinationList) genericMap {
 					},
 				},
 			}
+		} else if dst.Spec.Type == v1.HoneycombDestinationType {
+			return genericMap{
+				"otlp": genericMap{
+					"endpoint": "api.honeycomb.io:443",
+					"headers": genericMap{
+						"x-honeycomb-team": dst.Spec.Data.Honeycomb.ApiKey,
+					},
+				},
+			}
 		}
 	}
 
