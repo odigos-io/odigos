@@ -17,4 +17,9 @@ resources:
   kind: Deployment
   path: k8s.io/api/apps/v1
   version: v1
+- controller: true
+  group: apps
+  kind: StatefulSet
+  path: k8s.io/api/apps/v1
+  version: v1
 version: "3"

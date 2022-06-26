@@ -19,9 +19,10 @@ package controllers
 import (
 	"context"
 	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
-	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,47 +30,49 @@ import (
 )
 
 var (
-	instAppDepOwnerKey = ".metadata.deployment.controller"
+	instAppSSOwnerKey = ".metadata.statefulset.controller"
 )
 
-// DeploymentReconciler reconciles a Deployment object
-type DeploymentReconciler struct {
+// StatefulSetReconciler reconciles a StatefulSet object
+type StatefulSetReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=statefulsets/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=apps,resources=statefulsets/finalizers,verbs=update
 
-// Reconcile is responsible for creating InstrumentedApplication objects for every Deployment.
-// In addition, Reconcile patch the deployment according to the discovered language and keeps the `instrumented` field
-// of InstrumentedApplication up to date with the deployment spec.
+// Reconcile is part of the main kubernetes reconciliation loop which aims to
+// move the current state of the cluster closer to the desired state.
+// the StatefulSet object against the actual cluster state, and then
+// perform operations to make the cluster state reflect the state specified by
+// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
-func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var dep appsv1.Deployment
-	err := r.Get(ctx, req.NamespacedName, &dep)
+	var ss appsv1.StatefulSet
+	err := r.Get(ctx, req.NamespacedName, &ss)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
 
-		logger.Error(err, "error fetching deployment object")
+		logger.Error(err, "error fetching statefulset object")
 		return ctrl.Result{}, err
 	}
 
-	if shouldSkip(dep.Annotations, dep.Namespace) {
-		logger.V(5).Info("skipped deployment")
+	if shouldSkip(ss.Annotations, ss.Namespace) {
+		logger.V(5).Info("skipped statefulset")
 		return ctrl.Result{}, nil
 	}
 
-	err = syncInstrumentedApps(ctx, &req, r.Client, r.Scheme, dep.Status.ReadyReplicas, &dep, &dep.Spec.Template, instAppDepOwnerKey)
+	err = syncInstrumentedApps(ctx, &req, r.Client, r.Scheme, ss.Status.ReadyReplicas, &ss, &ss.Spec.Template, instAppSSOwnerKey)
 	if err != nil {
-		logger.Error(err, "error syncing instrumented apps with deployments")
+		logger.Error(err, "error syncing instrumented apps with statefulsets")
 		return ctrl.Result{}, err
 	}
 
@@ -77,16 +80,16 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *StatefulSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// Index InstrumentedApps by owner for fast lookup
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &v1.InstrumentedApplication{}, instAppDepOwnerKey, func(rawObj client.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &v1.InstrumentedApplication{}, instAppSSOwnerKey, func(rawObj client.Object) []string {
 		instApp := rawObj.(*v1.InstrumentedApplication)
 		owner := metav1.GetControllerOf(instApp)
 		if owner == nil {
 			return nil
 		}
 
-		if owner.APIVersion != appsv1.SchemeGroupVersion.String() || owner.Kind != "Deployment" {
+		if owner.APIVersion != appsv1.SchemeGroupVersion.String() || owner.Kind != "StatefulSet" {
 			return nil
 		}
 
@@ -96,7 +99,7 @@ func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&appsv1.Deployment{}).
+		For(&appsv1.StatefulSet{}).
 		Owns(&v1.InstrumentedApplication{}).
 		Complete(r)
 }
