@@ -41,6 +41,15 @@ func getExporters(dest *v1.DestinationList) genericMap {
 					},
 				},
 			}
+		} else if dst.Spec.Type == v1.DatadogDestinationType {
+			return genericMap{
+				"datadog": genericMap{
+					"api": genericMap{
+						"key":  dst.Spec.Data.Datadog.ApiKey,
+						"site": dst.Spec.Data.Datadog.Site,
+					},
+				},
+			}
 		}
 	}
 

@@ -72,7 +72,7 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
           {fields &&
             fields.map((f) => {
               return (
-                <label className="block">
+                <label className="block" key={f.id}>
                   <span className="text-gray-700">{f.displayName}</span>
                   <input
                     id={f.id}

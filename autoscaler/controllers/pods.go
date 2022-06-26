@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 func (r *CollectorReconciler) syncPods(ctx context.Context, collector *odigosv1.Collector) (bool, error) {
@@ -77,6 +78,15 @@ func (r *CollectorReconciler) updatePods(ctx context.Context, podList *v1.PodLis
 }
 
 func (r *CollectorReconciler) createPods(ctx context.Context, collector *odigosv1.Collector) error {
+	img, err := r.getCollectorContainerImage(ctx, collector)
+	if err != nil {
+		return err
+	}
+	cmd := "/otelcol"
+	if strings.Contains(img, "contrib") {
+		cmd = "/otelcol-contrib"
+	}
+
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      collector.Name,
@@ -105,8 +115,8 @@ func (r *CollectorReconciler) createPods(ctx context.Context, collector *odigosv
 			Containers: []v1.Container{
 				{
 					Name:    "collector",
-					Image:   r.getCollectorContainerImage(),
-					Command: []string{"/otelcol", "--config=/conf/collector-conf.yaml"},
+					Image:   img,
+					Command: []string{cmd, "--config=/conf/collector-conf.yaml"},
 					VolumeMounts: []v1.VolumeMount{
 						{
 							Name:      "collector-conf",
@@ -118,7 +128,7 @@ func (r *CollectorReconciler) createPods(ctx context.Context, collector *odigosv
 		},
 	}
 
-	err := ctrl.SetControllerReference(collector, pod, r.Scheme)
+	err = ctrl.SetControllerReference(collector, pod, r.Scheme)
 	if err != nil {
 		return err
 	}
@@ -144,6 +154,18 @@ func (r *CollectorReconciler) listPods(ctx context.Context, collector *odigosv1.
 	return &podList, nil
 }
 
-func (r *CollectorReconciler) getCollectorContainerImage() string {
-	return "otel/opentelemetry-collector:0.53.0"
+func (r *CollectorReconciler) getCollectorContainerImage(ctx context.Context, collector *odigosv1.Collector) (string, error) {
+	destList, err := r.listDestinations(ctx, collector)
+	if err != nil {
+		return "", err
+	}
+
+	for _, dst := range destList.Items {
+		if dst.Spec.Type == odigosv1.DatadogDestinationType {
+			// TODO: Use more minimal image that contains only datadog exporter
+			return "otel/opentelemetry-collector-contrib:0.53.0", nil
+		}
+	}
+
+	return "otel/opentelemetry-collector:0.53.0", nil
 }

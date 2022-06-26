@@ -38,6 +38,7 @@ const (
 type DestinationData struct {
 	Grafana   GrafanaData   `json:"grafana,omitempty"`
 	Honeycomb HoneycombData `json:"honeycomb,omitempty"`
+	Datadog   DatadogData   `json:"datadog,omitempty"`
 }
 
 type GrafanaData struct {
@@ -48,6 +49,11 @@ type GrafanaData struct {
 
 type HoneycombData struct {
 	ApiKey string `json:"apiKey"`
+}
+
+type DatadogData struct {
+	ApiKey string `json:"apiKey"`
+	Site   string `json:"site"`
 }
 
 // DestinationStatus defines the observed state of Destination

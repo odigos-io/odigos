@@ -34,6 +34,20 @@ const DestinationFields: { [destname: string]: IDestField[] } = {
       type: "password",
     },
   ],
+  datadog: [
+    {
+      displayName: "Site",
+      id: "site",
+      name: "site",
+      type: "text",
+    },
+    {
+      displayName: "API Key",
+      id: "apikey",
+      name: "apikey",
+      type: "password",
+    },
+  ],
 };
 
 export default DestinationFields;

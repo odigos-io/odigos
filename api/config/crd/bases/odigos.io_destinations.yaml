@@ -37,6 +37,16 @@ spec:
             properties:
               data:
                 properties:
+                  datadog:
+                    properties:
+                      apiKey:
+                        type: string
+                      site:
+                        type: string
+                    required:
+                    - apiKey
+                    - site
+                    type: object
                   grafana:
                     properties:
                       apiKey:

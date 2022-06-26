@@ -93,6 +93,16 @@ function getSpecForDest(req: NextApiRequest, destName: string): any {
           },
         },
       };
+    case "datadog":
+      return {
+        type: DestinationType.Datadog,
+        data: {
+          datadog: {
+            apiKey: req.body.apikey,
+            site: req.body.site,
+          },
+        },
+      };
   }
 
   return null;
