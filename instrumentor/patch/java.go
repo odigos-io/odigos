@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	javaAgentImage               = "keyval/otel-java-agent:v0.3"
+	javaAgentImage               = "keyval/otel-java-agent:v0.4"
 	javaVolumeName               = "agentdir-java"
 	javaMountPath                = "/agent"
 	otelResourceAttributesEnvVar = "OTEL_RESOURCE_ATTRIBUTES"

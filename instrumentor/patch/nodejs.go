@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	nodeAgentImage       = "keyval/nodejs-agent:v0.1"
+	nodeAgentImage       = "keyval/otel-nodejs-agent:v0.2"
 	nodeVolumeName       = "agentdir-nodejs"
 	nodeMountPath        = "/agent-nodejs"
 	nodeEnvNodeDebug     = "OTEL_NODEJS_DEBUG"

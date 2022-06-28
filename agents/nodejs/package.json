@@ -1,0 +1,22 @@
+{
+  "name": "@opentelemetry/k8s-autoinstrumentation",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "clean": "rimraf build/*",
+    "prepare": "npm run compile",
+    "compile": "tsc -p .",
+    "postcompile": "copyfiles -f 'build/src/**' build/workspace/ && copyfiles 'node_modules/**' build/workspace/"
+  },
+  "devDependencies": {
+    "copyfiles": "^2.4.1",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "1.0.4",
+    "@opentelemetry/auto-instrumentations-node": "0.27.4",
+    "@opentelemetry/exporter-trace-otlp-grpc": "0.27.0",
+    "@opentelemetry/sdk-node": "0.27.0"
+  }
+}
