@@ -45,30 +45,81 @@ async function CreateNewDestination(
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
-
-  try {
-    const dest: Destination = {
-      apiVersion: "odigos.io/v1alpha1",
-      kind: "Destination",
-      metadata: {
-        name: req.body.name.toLowerCase(),
+  const destName = req.body.type;
+  const secretName = await createSecretForDest(kc, req, destName);
+  const dest: Destination = {
+    apiVersion: "odigos.io/v1alpha1",
+    kind: "Destination",
+    metadata: {
+      name: req.body.name.toLowerCase(),
+    },
+    spec: {
+      ...getSpecForDest(req, destName),
+      secretRef: {
+        name: secretName,
       },
-      spec: getSpecForDest(req, req.body.type),
-    };
+    },
+  };
 
-    const resp = await k8sApi.createNamespacedCustomObject(
-      "odigos.io",
-      "v1alpha1",
-      process.env.CURRENT_NS || "odigos-system",
-      "destinations",
-      dest
-    );
-  } catch (ex) {
-    console.log(`got error: ${JSON.stringify(ex)}`);
-    return res.status(500).json({ message: "could not persist destination" });
-  }
+  const resp = await k8sApi.createNamespacedCustomObject(
+    "odigos.io",
+    "v1alpha1",
+    process.env.CURRENT_NS || "odigos-system",
+    "destinations",
+    dest
+  );
 
   return res.status(200).json({ message: "dest created" });
+}
+
+async function createSecretForDest(
+  kc: k8s.KubeConfig,
+  req: NextApiRequest,
+  destName: string
+): Promise<string> {
+  const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+  const secret: k8s.V1Secret = {
+    metadata: {
+      name: req.body.name.toLowerCase(),
+    },
+    data: getSecretForDest(req, destName),
+  };
+
+  const resp = await k8sApi.createNamespacedSecret(
+    process.env.CURRENT_NS || "odigos-system",
+    secret
+  );
+
+  return req.body.name.toLowerCase();
+}
+
+function getSecretForDest(
+  req: NextApiRequest,
+  destName: string
+): { [key: string]: string } {
+  switch (destName) {
+    case "honeycomb": {
+      return {
+        API_KEY: Buffer.from(req.body.apikey).toString("base64"),
+      };
+    }
+    case "datadog": {
+      return {
+        API_KEY: Buffer.from(req.body.apikey).toString("base64"),
+      };
+    }
+    case "grafana": {
+      // Grafana exporter expect token to be bas64 encoded, therefore we encode twice.
+      const authString = Buffer.from(
+        `${req.body.user}:${req.body.apikey}`
+      ).toString("base64");
+      return {
+        AUTH_TOKEN: Buffer.from(authString).toString("base64"),
+      };
+    }
+  }
+
+  throw new TypeError("unrecognized destination");
 }
 
 function getSpecForDest(req: NextApiRequest, destName: string): any {
@@ -78,27 +129,20 @@ function getSpecForDest(req: NextApiRequest, destName: string): any {
         type: DestinationType.Grafana,
         data: {
           grafana: {
-            apiKey: req.body.apikey,
             url: req.body.url,
-            user: req.body.user,
           },
         },
       };
     case "honeycomb":
       return {
         type: DestinationType.Honeycomb,
-        data: {
-          honeycomb: {
-            apiKey: req.body.apikey,
-          },
-        },
+        data: {},
       };
     case "datadog":
       return {
         type: DestinationType.Datadog,
         data: {
           datadog: {
-            apiKey: req.body.apikey,
             site: req.body.site,
           },
         },

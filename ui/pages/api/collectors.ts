@@ -10,25 +10,18 @@ async function GetCollectors(
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
+  const kubeResp: any = await k8sApi.listNamespacedCustomObject(
+    "odigos.io",
+    "v1alpha1",
+    process.env.CURRENT_NS || "odigos-system",
+    "collectors"
+  );
 
-  try {
-    const kubeResp: any = await k8sApi.listNamespacedCustomObject(
-      "odigos.io",
-      "v1alpha1",
-      process.env.CURRENT_NS || "odigos-system",
-      "collectors"
-    );
-
-    const resp: ICollectorsResponse = {
-      total: kubeResp.body.items.length,
-      ready: kubeResp.body.items.filter((item: any) => item.status.ready)
-        .length,
-    };
-    return res.status(200).json(resp);
-  } catch (ex) {
-    console.log(`got error: ${JSON.stringify(ex)}`);
-    return res.status(500).json({ message: "could not get collectors" });
-  }
+  const resp: ICollectorsResponse = {
+    total: kubeResp.body.items.length,
+    ready: kubeResp.body.items.filter((item: any) => item.status.ready).length,
+  };
+  return res.status(200).json(resp);
 }
 
 export default async function handler(

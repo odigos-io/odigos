@@ -78,10 +78,12 @@ func (r *CollectorReconciler) updatePods(ctx context.Context, podList *v1.PodLis
 }
 
 func (r *CollectorReconciler) createPods(ctx context.Context, collector *odigosv1.Collector) error {
-	img, err := r.getCollectorContainerImage(ctx, collector)
+	destList, err := r.listDestinations(ctx, collector)
 	if err != nil {
 		return err
 	}
+
+	img := r.getCollectorContainerImage(ctx, collector, destList)
 	cmd := "/otelcol"
 	if strings.Contains(img, "contrib") {
 		cmd = "/otelcol-contrib"
@@ -117,6 +119,7 @@ func (r *CollectorReconciler) createPods(ctx context.Context, collector *odigosv
 					Name:    "collector",
 					Image:   img,
 					Command: []string{cmd, "--config=/conf/collector-conf.yaml"},
+					EnvFrom: r.getSecretsFromDests(destList),
 					VolumeMounts: []v1.VolumeMount{
 						{
 							Name:      "collector-conf",
@@ -144,6 +147,21 @@ func (r *CollectorReconciler) createPods(ctx context.Context, collector *odigosv
 	return nil
 }
 
+func (r *CollectorReconciler) getSecretsFromDests(destList *odigosv1.DestinationList) []v1.EnvFromSource {
+	var result []v1.EnvFromSource
+	for _, dst := range destList.Items {
+		result = append(result, v1.EnvFromSource{
+			SecretRef: &v1.SecretEnvSource{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: dst.Spec.SecretRef.Name,
+				},
+			},
+		})
+	}
+
+	return result
+}
+
 func (r *CollectorReconciler) listPods(ctx context.Context, collector *odigosv1.Collector) (*v1.PodList, error) {
 	var podList v1.PodList
 	err := r.List(ctx, &podList, client.InNamespace(collector.Namespace), client.MatchingFields{ownerKey: collector.Name})
@@ -154,18 +172,13 @@ func (r *CollectorReconciler) listPods(ctx context.Context, collector *odigosv1.
 	return &podList, nil
 }
 
-func (r *CollectorReconciler) getCollectorContainerImage(ctx context.Context, collector *odigosv1.Collector) (string, error) {
-	destList, err := r.listDestinations(ctx, collector)
-	if err != nil {
-		return "", err
-	}
-
+func (r *CollectorReconciler) getCollectorContainerImage(ctx context.Context, collector *odigosv1.Collector, destList *odigosv1.DestinationList) string {
 	for _, dst := range destList.Items {
 		if dst.Spec.Type == odigosv1.DatadogDestinationType {
 			// TODO: Use more minimal image that contains only datadog exporter
-			return "otel/opentelemetry-collector-contrib:0.53.0", nil
+			return "otel/opentelemetry-collector-contrib:0.53.0"
 		}
 	}
 
-	return "otel/opentelemetry-collector:0.53.0", nil
+	return "otel/opentelemetry-collector:0.53.0"
 }

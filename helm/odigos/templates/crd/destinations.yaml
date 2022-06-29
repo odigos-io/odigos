@@ -38,34 +38,29 @@ spec:
                   properties:
                     datadog:
                       properties:
-                        apiKey:
-                          type: string
                         site:
                           type: string
                       required:
-                        - apiKey
                         - site
                       type: object
                     grafana:
                       properties:
-                        apiKey:
-                          type: string
                         url:
                           type: string
-                        user:
-                          type: string
                       required:
-                        - apiKey
                         - url
-                        - user
                       type: object
                     honeycomb:
-                      properties:
-                        apiKey:
-                          type: string
-                      required:
-                        - apiKey
                       type: object
+                  type: object
+                secretRef:
+                  description: LocalObjectReference contains enough information to let
+                    you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
                   type: object
                 type:
                   enum:
@@ -75,6 +70,7 @@ spec:
                   type: string
               required:
                 - data
+                - secretRef
                 - type
               type: object
             status:

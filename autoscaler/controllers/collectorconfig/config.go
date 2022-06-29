@@ -1,7 +1,6 @@
 package collectorconfig
 
 import (
-	b64 "encoding/base64"
 	"fmt"
 	"github.com/ghodss/yaml"
 	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
@@ -21,14 +20,14 @@ type Config struct {
 func getExporters(dest *v1.DestinationList) genericMap {
 	for _, dst := range dest.Items {
 		if dst.Spec.Type == v1.GrafanaDestinationType {
-			authString := fmt.Sprintf("%s:%s", dst.Spec.Data.Grafana.User, dst.Spec.Data.Grafana.ApiKey)
-			encodedAuthString := b64.StdEncoding.EncodeToString([]byte(authString))
+			//authString := fmt.Sprintf("%s:%s", dst.Spec.Data.Grafana.User, dst.Spec.Data.Grafana.ApiKey)
+			//encodedAuthString := b64.StdEncoding.EncodeToString([]byte(authString))
 			url := strings.TrimSuffix(dst.Spec.Data.Grafana.Url, "/tempo")
 			return genericMap{
 				"otlp": genericMap{
 					"endpoint": fmt.Sprintf("%s:%d", url, 443),
 					"headers": genericMap{
-						"authorization": fmt.Sprintf("Basic %s", encodedAuthString),
+						"authorization": "Basic ${AUTH_TOKEN}",
 					},
 				},
 			}
@@ -37,7 +36,7 @@ func getExporters(dest *v1.DestinationList) genericMap {
 				"otlp": genericMap{
 					"endpoint": "api.honeycomb.io:443",
 					"headers": genericMap{
-						"x-honeycomb-team": dst.Spec.Data.Honeycomb.ApiKey,
+						"x-honeycomb-team": "${API_KEY}",
 					},
 				},
 			}
@@ -45,7 +44,7 @@ func getExporters(dest *v1.DestinationList) genericMap {
 			return genericMap{
 				"datadog": genericMap{
 					"api": genericMap{
-						"key":  dst.Spec.Data.Datadog.ApiKey,
+						"key":  "${API_KEY}",
 						"site": dst.Spec.Data.Datadog.Site,
 					},
 				},

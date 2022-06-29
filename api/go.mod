@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/keyval-dev/odigos/common v0.0.0
+	k8s.io/api v0.23.5
 	k8s.io/apimachinery v0.23.5
 	sigs.k8s.io/controller-runtime v0.11.2
 )
