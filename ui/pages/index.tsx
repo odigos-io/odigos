@@ -8,10 +8,10 @@ const Home: NextPage = () => {
         <div className="text-4xl font-medium">Sources</div>
       </div>
       <div className="h-1/3 w-full">
-        <div className="text-4xl font-medium">Collectors</div>
+        <div className="text-4xl font-medium">Destinations</div>
       </div>
       <div className="h-1/3 w-full">
-        <div className="text-4xl font-medium">Destinations</div>
+        <div className="text-4xl font-medium">Collectors</div>
       </div>
     </div>
   );
