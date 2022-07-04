@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as k8s from "@kubernetes/client-node";
-import type { ApplicationData } from "@/types/apps";
+import type { AppsApiResponse, ApplicationData } from "@/types/apps";
 
 type Error = {
   message: string;
@@ -8,7 +8,7 @@ type Error = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ApplicationData[] | Error>
+  res: NextApiResponse<AppsApiResponse | Error>
 ) {
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
@@ -25,7 +25,7 @@ export default async function handler(
     });
   }
 
-  const apps: ApplicationData[] = response.body.items
+  const appsFound: ApplicationData[] = response.body.items
     .filter(
       (item: any) =>
         item.spec.languages &&
@@ -43,7 +43,15 @@ export default async function handler(
         name: item.metadata.ownerReferences[0].name,
         languages: languages,
         instrumented: item.status.instrumented,
+        kind: item.metadata.ownerReferences[0].kind,
+        namespace: item.metadata.namespace,
       };
     });
-  return res.status(200).json(apps);
+  const discoveryInProgress = response.body.items.some(
+    (i: any) => i.status.langDetection.phase !== "Completed"
+  );
+  return res.status(200).json({
+    apps: appsFound,
+    discovery_in_progress: discoveryInProgress,
+  });
 }

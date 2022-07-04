@@ -93,60 +93,6 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
                 </label>
               );
             })}
-          {/* <label className="block">
-            <span className="text-gray-700">URL</span>
-            <input
-              id="url"
-              name="url"
-              type="url"
-              className="
-                    mt-1
-                    block
-                    w-full
-                    rounded-md
-                    border-gray-300
-                    shadow-sm
-                    focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50
-                  "
-              placeholder=""
-              required
-            />
-          </label>
-          <label className="block">
-            <span className="text-gray-700">User</span>
-            <input
-              type="text"
-              name="user"
-              id="user"
-              className="
-                    mt-1
-                    block
-                    w-full
-                    rounded-md
-                    border-gray-300
-                    shadow-sm
-                    focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-              required
-            />
-          </label>
-          <label className="block">
-            <span className="text-gray-700">API Key</span>
-            <input
-              type="password"
-              name="apikey"
-              id="apikey"
-              className="
-                    block
-                    w-full
-                    mt-1
-                    rounded-md
-                    border-gray-300
-                    shadow-sm
-                    focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50
-                  "
-              required
-            />
-          </label> */}
           <input name="type" id="type" hidden value={destname} readOnly />
           <button
             type="submit"
