@@ -33,7 +33,7 @@ async function submitChanges(instMode: string, selectedApps: string[]) {
   });
 
   if (resp.ok) {
-    window.location.href = "/";
+    window.location.href = "/dest/new";
   }
 }
 

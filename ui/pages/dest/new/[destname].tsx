@@ -2,7 +2,7 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import Header from "@/components/Header";
 import { useRouter } from "next/router";
-import DestinationFields from "@/components/DestFields";
+import Vendors from "@/vendors/index";
 
 type NewDestinationProps = {
   destname: string;
@@ -10,8 +10,14 @@ type NewDestinationProps = {
 
 const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
   const router = useRouter();
-  const fields = DestinationFields[destname];
+  const vendor = Vendors.filter((v) => v.name === destname)[0];
+  if (!vendor) {
+    return (
+      <div className="text-4xl font-medium">Observability Vendor Not Found</div>
+    );
+  }
 
+  const fields = vendor.getFields();
   const handleSubmit = async (event: any) => {
     event.preventDefault();
     var formData = new FormData(event.target);
@@ -35,12 +41,7 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
   };
 
   return (
-    <div className="flex h-screen flex-col">
-      <Head>
-        <title>Observability Control Plane - UI</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <Header />
+    <div className="flex flex-col">
       <div className="text-4xl p-8 capitalize antialiased text-gray-900">
         Add new {destname} destination
       </div>
