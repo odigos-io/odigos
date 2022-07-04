@@ -1,23 +1,14 @@
 import Alert from "@/components/Alert";
 import AppsGrid from "@/components/AppsGrid";
-import Sidebar from "@/components/Sidebar";
 import { NextPage } from "next";
 import type { AppsApiResponse } from "@/types/apps";
-import useSWR, { Key, Fetcher } from "swr";
-import Spinner from "@/components/Spinner";
+import useSWR, { Fetcher } from "swr";
 import { useState } from "react";
 import { getConfiguration } from "@/utils/config";
+import LoadingPage from "@/components/Loading";
 
 interface SetupProps {
   loading: boolean;
-}
-
-function LoadingPage() {
-  return (
-    <div className="flex items-center justify-center w-screen h-screen">
-      <Spinner className="w-12 h-12" />
-    </div>
-  );
 }
 
 async function submitChanges(instMode: string, selectedApps: string[]) {

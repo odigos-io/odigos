@@ -42,7 +42,7 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
 
   return (
     <div className="flex flex-col">
-      <div className="text-4xl p-8 capitalize antialiased text-gray-900">
+      <div className="text-4xl p-8 capitalize text-gray-900">
         Add new {destname} destination
       </div>
       <div className="pl-14 max-w-md">

@@ -1,10 +1,11 @@
+import CurrentDestsGrid from "@/components/CurrentDestsGrid";
 import { getConfiguration } from "@/utils/config";
 import type { NextPage } from "next";
 import Link from "next/link";
 
 const DestinationsPage: NextPage = () => {
   return (
-    <div className="text-3xl">
+    <div className="space-y-12">
       <div className="flex flex-row items-center">
         <div className="text-4xl font-medium">Active Destinations</div>
         <Link href="/dest/new">
@@ -25,6 +26,7 @@ const DestinationsPage: NextPage = () => {
           </a>
         </Link>
       </div>
+      <CurrentDestsGrid />
     </div>
   );
 };
