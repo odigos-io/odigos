@@ -25,6 +25,7 @@ import (
 type InstrumentedApplicationSpec struct {
 	Languages     []common.LanguageByContainer `json:"languages,omitempty"`
 	CollectorAddr string                       `json:"collectorAddr,omitempty"`
+	Enabled       *bool                        `json:"enabled,omitempty"`
 }
 
 // InstrumentedApplicationStatus defines the observed state of InstrumentedApplication

@@ -39,6 +39,8 @@ spec:
             properties:
               collectorAddr:
                 type: string
+              enabled:
+                type: boolean
               languages:
                 items:
                   properties:

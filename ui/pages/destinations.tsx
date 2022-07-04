@@ -1,8 +1,8 @@
-import type { NextPage } from "next";
 import { getConfiguration } from "@/utils/config";
+import type { NextPage } from "next";
 
-const Home: NextPage = () => {
-  return <div className="text-3xl">This is the Overview Screen</div>;
+const DestinationsPage: NextPage = () => {
+  return <div className="text-3xl">This is the Destinations Screen</div>;
 };
 
 export const getServerSideProps = async () => {
@@ -21,4 +21,4 @@ export const getServerSideProps = async () => {
   };
 };
 
-export default Home;
+export default DestinationsPage;
