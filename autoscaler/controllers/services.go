@@ -67,6 +67,12 @@ func (r *CollectorReconciler) updateServices(ctx context.Context, svcList *v1.Se
 				TargetPort: intstr.FromInt(4317),
 			},
 			{
+				Name:       "otlphttp",
+				Protocol:   "TCP",
+				Port:       4318,
+				TargetPort: intstr.FromInt(4318),
+			},
+			{
 				Name:       "zipkin",
 				Protocol:   "TCP",
 				Port:       9411,
@@ -101,6 +107,12 @@ func (r *CollectorReconciler) createServices(ctx context.Context, collector *odi
 					Protocol:   "TCP",
 					Port:       4317,
 					TargetPort: intstr.FromInt(4317),
+				},
+				{
+					Name:       "otlphttp",
+					Protocol:   "TCP",
+					Port:       4318,
+					TargetPort: intstr.FromInt(4318),
 				},
 				{
 					Name:       "zipkin",

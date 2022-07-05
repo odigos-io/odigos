@@ -10,9 +10,12 @@ import (
 )
 
 const (
-	pythonAgentName         = "edenfed/otel-python-agent:v0.1"
+	pythonAgentName         = "edenfed/otel-python-agent:v0.2"
 	pythonVolumeName        = "agentdir-python"
-	pythonMountPath         = "/agent"
+	pythonMountPath         = "/otel-auto-instrumentation"
+	envOtelTracesExporter   = "OTEL_TRACES_EXPORTER"
+	envOtelMetricsExporter  = "OTEL_METRICS_EXPORTER"
+	envValOtelHttpExporter  = "otlp_proto_http"
 	pythonInitContainerName = "copy-python-agent"
 )
 
@@ -29,8 +32,9 @@ func (p *pythonPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	})
 
 	podSpec.Spec.InitContainers = append(podSpec.Spec.InitContainers, v1.Container{
-		Name:  pythonInitContainerName,
-		Image: pythonAgentName,
+		Name:    pythonInitContainerName,
+		Image:   pythonAgentName,
+		Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
 		VolumeMounts: []v1.VolumeMount{
 			{
 				Name:      pythonVolumeName,
@@ -44,22 +48,27 @@ func (p *pythonPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 		if shouldPatch(instrumentation, common.PythonProgrammingLanguage, container.Name) {
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  "PYTHONPATH",
-				Value: "/agent/deps:/agent/deps/opentelemetry/instrumentation/auto_instrumentation/",
+				Value: "/otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation",
 			})
 
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-				Value: fmt.Sprintf("%s.%s:%d", instrumentation.Spec.CollectorAddr, utils.GetCurrentNamespace(), consts.OTLPPort),
-			})
-
-			container.Env = append(container.Env, v1.EnvVar{
-				Name:  "OTEL_EXPORTER_OTLP_INSECURE",
-				Value: "True",
+				Value: fmt.Sprintf("http://%s.%s:%d", instrumentation.Spec.CollectorAddr, utils.GetCurrentNamespace(), consts.OTLPHttpPort),
 			})
 
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  "OTEL_RESOURCE_ATTRIBUTES",
 				Value: fmt.Sprintf("service.name=%s", calculateAppName(podSpec, &container, instrumentation)),
+			})
+
+			container.Env = append(container.Env, v1.EnvVar{
+				Name:  envOtelTracesExporter,
+				Value: envValOtelHttpExporter,
+			})
+
+			container.Env = append(container.Env, v1.EnvVar{
+				Name:  envOtelMetricsExporter,
+				Value: "",
 			})
 
 			container.VolumeMounts = append(container.VolumeMounts, v1.VolumeMount{
