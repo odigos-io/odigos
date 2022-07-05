@@ -1,4 +1,8 @@
+export interface Collector {
+  name: string;
+  ready: boolean;
+}
+
 export interface ICollectorsResponse {
-  ready: number;
-  total: number;
+  collectors: Collector[];
 }

@@ -14,75 +14,77 @@ spec:
     singular: instrumentedapplication
   scope: Namespaced
   versions:
-  - name: v1alpha1
-    schema:
-      openAPIV3Schema:
-        description: InstrumentedApplication is the Schema for the instrumentedapplications
-          API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: InstrumentedApplication is the Schema for the instrumentedapplications
+            API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
               of an object. Servers should convert recognized schemas to the latest
               internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
               object represents. Servers may infer this from the endpoint the client
               submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: InstrumentedApplicationSpec defines the desired state of
-              InstrumentedApplication
-            properties:
-              collectorAddr:
-                type: string
-              languages:
-                items:
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: InstrumentedApplicationSpec defines the desired state of
+                InstrumentedApplication
+              properties:
+                collectorAddr:
+                  type: string
+                enabled:
+                  type: boolean
+                languages:
+                  items:
+                    properties:
+                      containerName:
+                        type: string
+                      language:
+                        enum:
+                          - java
+                          - python
+                          - go
+                          - dotnet
+                          - javascript
+                        type: string
+                      processName:
+                        type: string
+                    required:
+                      - containerName
+                      - language
+                    type: object
+                  type: array
+              type: object
+            status:
+              description: InstrumentedApplicationStatus defines the observed state
+                of InstrumentedApplication
+              properties:
+                instrumented:
+                  type: boolean
+                langDetection:
                   properties:
-                    containerName:
-                      type: string
-                    language:
+                    phase:
                       enum:
-                      - java
-                      - python
-                      - go
-                      - dotnet
-                      - javascript
+                        - Pending
+                        - Running
+                        - Completed
+                        - Error
                       type: string
-                    processName:
-                      type: string
-                  required:
-                  - containerName
-                  - language
                   type: object
-                type: array
-            type: object
-          status:
-            description: InstrumentedApplicationStatus defines the observed state
-              of InstrumentedApplication
-            properties:
-              instrumented:
-                type: boolean
-              langDetection:
-                properties:
-                  phase:
-                    enum:
-                    - Pending
-                    - Running
-                    - Completed
-                    - Error
-                    type: string
-                type: object
-            required:
-            - instrumented
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+              required:
+                - instrumented
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
 status:
   acceptedNames:
     kind: ""

@@ -18,8 +18,12 @@ async function GetCollectors(
   );
 
   const resp: ICollectorsResponse = {
-    total: kubeResp.body.items.length,
-    ready: kubeResp.body.items.filter((item: any) => item.status.ready).length,
+    collectors: kubeResp.body.items.map((item: any) => {
+      return {
+        name: item.metadata.name,
+        ready: item.status.ready,
+      };
+    }),
   };
   return res.status(200).json(resp);
 }

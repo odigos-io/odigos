@@ -164,12 +164,6 @@ async function GetDestinations(req: NextApiRequest, res: NextApiResponse<any>) {
     "destinations"
   );
 
-  if (response.body.items.length === 0) {
-    return res.status(404).json({
-      message: "No dests found",
-    });
-  }
-
   const dests: DestResponseItem[] = response.body.items.map((item: any) => {
     return {
       id: item.metadata.uid,

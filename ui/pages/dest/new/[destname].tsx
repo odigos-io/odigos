@@ -2,7 +2,7 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import Header from "@/components/Header";
 import { useRouter } from "next/router";
-import DestinationFields from "@/components/DestFields";
+import Vendors from "@/vendors/index";
 
 type NewDestinationProps = {
   destname: string;
@@ -10,8 +10,14 @@ type NewDestinationProps = {
 
 const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
   const router = useRouter();
-  const fields = DestinationFields[destname];
+  const vendor = Vendors.filter((v) => v.name === destname)[0];
+  if (!vendor) {
+    return (
+      <div className="text-4xl font-medium">Observability Vendor Not Found</div>
+    );
+  }
 
+  const fields = vendor.getFields();
   const handleSubmit = async (event: any) => {
     event.preventDefault();
     var formData = new FormData(event.target);
@@ -35,13 +41,8 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
   };
 
   return (
-    <div className="flex h-screen flex-col">
-      <Head>
-        <title>Observability Control Plane - UI</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <Header />
-      <div className="text-4xl p-8 capitalize antialiased text-gray-900">
+    <div className="flex flex-col">
+      <div className="text-4xl p-8 capitalize text-gray-900">
         Add new {destname} destination
       </div>
       <div className="pl-14 max-w-md">
@@ -93,60 +94,6 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
                 </label>
               );
             })}
-          {/* <label className="block">
-            <span className="text-gray-700">URL</span>
-            <input
-              id="url"
-              name="url"
-              type="url"
-              className="
-                    mt-1
-                    block
-                    w-full
-                    rounded-md
-                    border-gray-300
-                    shadow-sm
-                    focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50
-                  "
-              placeholder=""
-              required
-            />
-          </label>
-          <label className="block">
-            <span className="text-gray-700">User</span>
-            <input
-              type="text"
-              name="user"
-              id="user"
-              className="
-                    mt-1
-                    block
-                    w-full
-                    rounded-md
-                    border-gray-300
-                    shadow-sm
-                    focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-              required
-            />
-          </label>
-          <label className="block">
-            <span className="text-gray-700">API Key</span>
-            <input
-              type="password"
-              name="apikey"
-              id="apikey"
-              className="
-                    block
-                    w-full
-                    mt-1
-                    rounded-md
-                    border-gray-300
-                    shadow-sm
-                    focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50
-                  "
-              required
-            />
-          </label> */}
           <input name="type" id="type" hidden value={destname} readOnly />
           <button
             type="submit"

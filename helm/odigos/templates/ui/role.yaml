@@ -68,3 +68,21 @@ rules:
     - get
     - patch
     - update
+- apiGroups:
+    - odigos.io
+  resources:
+    - odigosconfigurations
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - odigos.io
+  resources:
+    - odigosconfigurations/finalizers
+  verbs:
+    - update
