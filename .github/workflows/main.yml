@@ -25,3 +25,29 @@ jobs:
           push: true
           tags: ghcr.io/keyval-dev/odigos/autoscaler:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=autoscaler
+      - name: Build Scheduler Image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: ghcr.io/keyval-dev/odigos/scheduler:${{ steps.vars.outputs.tag }}
+          build-args: SERVICE_NAME=scheduler
+      - name: Build Instrumentor Image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: ghcr.io/keyval-dev/odigos/instrumentor:${{ steps.vars.outputs.tag }}
+          build-args: SERVICE_NAME=instrumentor
+      - name: Build Detector Image
+        uses: docker/build-push-action@v2
+        with:
+          file: langDetector/Dockerfile
+          push: true
+          tags: ghcr.io/keyval-dev/odigos/lang-detector:${{ steps.vars.outputs.tag }}
+          build-args: SERVICE_NAME=langDetector
+      - name: Build UI Image
+        uses: docker/build-push-action@v2
+        with:
+          file: ui/Dockerfile
+          context: ui/
+          push: true
+          tags: ghcr.io/keyval-dev/odigos/ui:${{ steps.vars.outputs.tag }}
