@@ -15,7 +15,8 @@ const (
 	javaMountPath                = "/agent"
 	otelResourceAttributesEnvVar = "OTEL_RESOURCE_ATTRIBUTES"
 	otelResourceAttrPatteern     = "service.name=%s"
-	javaToolOptionsEnvVar        = "JAVA_OPTS"
+	javaOptsEnvVar               = "JAVA_OPTS"
+	javaToolOptionsEnvVar        = "JAVA_TOOL_OPTIONS"
 	javaToolOptionsPattern       = "-javaagent:/agent/opentelemetry-javaagent-all.jar " +
 		"-Dotel.metrics.exporter=none -Dotel.traces.sampler=always_on -Dotel.exporter.otlp.endpoint=http://%s.%s:%d"
 )
@@ -57,6 +58,11 @@ func (j *javaPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odigos
 				container.Env[idx].Value = container.Env[idx].Value + " " + fmt.Sprintf(javaToolOptionsPattern, instrumentation.Spec.CollectorAddr,
 					utils.GetCurrentNamespace(), consts.OTLPPort)
 			}
+
+			container.Env = append(container.Env, v1.EnvVar{
+				Name:  javaOptsEnvVar,
+				Value: fmt.Sprintf(javaToolOptionsPattern, instrumentation.Spec.CollectorAddr, utils.GetCurrentNamespace(), consts.OTLPPort),
+			})
 
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  otelResourceAttributesEnvVar,

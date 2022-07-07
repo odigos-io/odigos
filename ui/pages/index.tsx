@@ -30,7 +30,7 @@ const Home: NextPage = () => {
       <div className="h-1/3 w-full">
         <div className="text-4xl font-medium">Sources</div>
         <div className="mt-4 grid grid-flow-col grid-rows-4 gap-x-10 gap-y-2 w-fit">
-          {appsByLang["unrecognized"].length > 0 && (
+          {appsByLang["unrecognized"]?.length > 0 && (
             <div className="flex flex-row items-center space-x-2">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
