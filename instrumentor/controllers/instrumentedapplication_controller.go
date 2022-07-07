@@ -53,6 +53,7 @@ type InstrumentedApplicationReconciler struct {
 //+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications/finalizers,verbs=update
+//+kubebuilder:rbac:groups=odigos.io,resources=odigosconfigurations,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=pods/status,verbs=get;update;patch
 

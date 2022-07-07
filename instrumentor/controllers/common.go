@@ -3,8 +3,10 @@ package controllers
 import (
 	"context"
 	"errors"
+	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
+	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/instrumentor/patch"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -93,8 +95,8 @@ func syncInstrumentedApps(ctx context.Context, req *ctrl.Request, c client.Clien
 		return nil
 	}
 
-	// if scheduled
-	if instApp.Spec.CollectorAddr != "" {
+	// if instrumentation conditions are met
+	if shouldInstrument(ctx, &instApp, c, logger) {
 		// Compute .status.instrumented field
 		instrumneted, err := patch.IsInstrumented(podTemplateSpec, &instApp)
 		if err != nil {
@@ -128,6 +130,41 @@ func syncInstrumentedApps(ctx context.Context, req *ctrl.Request, c client.Clien
 	}
 
 	return nil
+}
+
+func shouldInstrument(ctx context.Context, instApp *odigosv1.InstrumentedApplication, c client.Client, logger logr.Logger) bool {
+	if instApp.Spec.CollectorAddr == "" {
+		logger.V(0).Info("skipping instrumentation, not scheduled")
+		return false
+	}
+
+	config, err := getOdigosConfiguration(ctx, c)
+	if err != nil {
+		logger.Error(err, "could not get odigos configuration, skipping instrumentation")
+		return false
+	}
+
+	if config.Spec.InstrumentationMode == odigosv1.OptOutInstrumentationMode && instApp.Spec.Enabled != nil && !*instApp.Spec.Enabled {
+		logger.V(0).Info("skipping instrumentation, disabled by user", "mode", odigosv1.OptOutInstrumentationMode)
+		return false
+	}
+
+	if config.Spec.InstrumentationMode == odigosv1.OptInInstrumentationMode && (instApp.Spec.Enabled == nil || !*instApp.Spec.Enabled) {
+		logger.V(0).Info("skipping instrumentation, disabled by user", "mode", odigosv1.OptInInstrumentationMode)
+		return false
+	}
+
+	return true
+}
+
+func getOdigosConfiguration(ctx context.Context, c client.Client) (*odigosv1.OdigosConfiguration, error) {
+	var odigosConfig odigosv1.OdigosConfiguration
+	err := c.Get(ctx, client.ObjectKey{Namespace: utils.GetCurrentNamespace(), Name: consts.DefaultOdigosConfigurationName}, &odigosConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return &odigosConfig, nil
 }
 
 func getInstrumentedApps(ctx context.Context, req *ctrl.Request, c client.Client, ownerKey string) (*odigosv1.InstrumentedApplicationList, error) {

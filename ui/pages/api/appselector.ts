@@ -25,5 +25,30 @@ export default async function persistConfiguration(
     }
   );
 
+  if (req.body.instMode === "OPT_IN" && req.body.selectedApps) {
+    const instApps: any = await k8sApi.listClusterCustomObject(
+      "odigos.io",
+      "v1alpha1",
+      "instrumentedapplications"
+    );
+
+    instApps.body.items
+      .filter((item: any) => req.body.selectedApps.includes(item.metadata.uid))
+      .map((item: any) => {
+        item.spec.enabled = true;
+        return item;
+      })
+      .forEach(async (item: any) => {
+        await k8sApi.replaceNamespacedCustomObject(
+          "odigos.io",
+          "v1alpha1",
+          item.metadata.namespace,
+          "instrumentedapplications",
+          item.metadata.name,
+          item
+        );
+      });
+  }
+
   return res.status(200).end();
 }

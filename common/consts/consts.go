@@ -9,7 +9,7 @@ const (
 	DefaultLangDetectionVersion         = "v0.0.249"
 	CurrentNamespaceEnvVar              = "CURRENT_NS"
 	DefaultNamespace                    = "odigos-system"
-	LangDetectorServiceAccount          = "odigos-lang-detector"
+	DefaultOdigosConfigurationName      = "odigos-config"
 	OTLPPort                            = 4317
 	OTLPHttpPort                        = 4318
 )
