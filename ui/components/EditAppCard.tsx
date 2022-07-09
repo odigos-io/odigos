@@ -13,7 +13,7 @@ export default function EditAppCard({
 }: ApplicationData) {
   return (
     <div className="shadow-lg border border-gray-200 rounded-lg bg-white hover:bg-gray-100 cursor-pointer">
-      <Link href={`/source/edit/${name}`}>
+      <Link href={`/source/${namespace}/${name}`}>
         <a className="flex flex-row p-3 items-center space-x-4">
           {getLangIcon(languages[0], "w-12 h-12")}
           <div className="flex flex-col items-start">
