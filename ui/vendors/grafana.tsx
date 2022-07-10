@@ -1,5 +1,10 @@
-import { ObservabilityVendor, ObservabilitySignals } from "@/vendors/index";
+import {
+  ObservabilityVendor,
+  ObservabilitySignals,
+  VendorObjects,
+} from "@/vendors/index";
 import GrafanaLogo from "@/img/vendor/grafana.svg";
+import { NextApiRequest } from "next";
 
 export class Grafana implements ObservabilityVendor {
   name = "grafana";
@@ -35,5 +40,25 @@ export class Grafana implements ObservabilityVendor {
         type: "password",
       },
     ];
+  };
+
+  toObjects = (req: NextApiRequest) => {
+    // Grafana exporter expect token to be bas64 encoded, therefore we encode twice.
+    const authString = Buffer.from(
+      `${req.body.user}:${req.body.apikey}`
+    ).toString("base64");
+
+    return {
+      Data: {
+        url: req.body.url,
+      },
+      Secret: {
+        AUTH_TOKEN: Buffer.from(authString).toString("base64"),
+      },
+    };
+  };
+
+  fromObjects = (vendorObjects: VendorObjects) => {
+    return {};
   };
 }

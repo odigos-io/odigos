@@ -1,5 +1,10 @@
-import { ObservabilitySignals, ObservabilityVendor } from "@/vendors/index";
+import {
+  ObservabilitySignals,
+  ObservabilityVendor,
+  VendorObjects,
+} from "@/vendors/index";
 import HoneycombLogo from "@/img/vendor/honeycomb.svg";
+import { NextApiRequest } from "next";
 
 export class Honeycomb implements ObservabilityVendor {
   name = "honeycomb";
@@ -22,5 +27,17 @@ export class Honeycomb implements ObservabilityVendor {
         type: "password",
       },
     ];
+  };
+
+  toObjects = (req: NextApiRequest) => {
+    return {
+      Secret: {
+        API_KEY: Buffer.from(req.body.apikey).toString("base64"),
+      },
+    };
+  };
+
+  fromObjects = (vendorObjects: VendorObjects) => {
+    return {};
   };
 }

@@ -1,32 +1,32 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as k8s from "@kubernetes/client-node";
 import type { DestResponseItem } from "@/types/dests";
+import Vendors, { ObservabilityVendor, VendorObjects } from "@/vendors/index";
 
-enum DestinationType {
-  Grafana = "grafana",
-  Datadog = "datadog",
-  Honeycomb = "honeycomb",
+interface DestinationSecretRef {
+  name: string;
 }
 
 interface DestinationSpec {
-  type: DestinationType;
-  data: DestinationData;
+  type: string;
+  data?: any;
+  secretRef?: DestinationSecretRef;
 }
 
-interface DestinationData {
-  grafana?: GrafanaData;
-  honeycomb?: HoneycombData;
-}
+// interface DestinationData {
+//   grafana?: GrafanaData;
+//   honeycomb?: HoneycombData;
+// }
 
-interface GrafanaData {
-  url: string;
-  user: string;
-  apiKey: string;
-}
+// interface GrafanaData {
+//   url: string;
+//   user: string;
+//   apiKey: string;
+// }
 
-interface HoneycombData {
-  apiKey: string;
-}
+// interface HoneycombData {
+//   apiKey: string;
+// }
 
 interface DestinationStatus {}
 
@@ -42,11 +42,21 @@ async function CreateNewDestination(
   req: NextApiRequest,
   res: NextApiResponse<any>
 ) {
+  const vendor = Vendors.find(
+    (v: ObservabilityVendor) => v.name === req.body.type
+  );
+
+  if (!vendor) {
+    return res.status(400).json({
+      error: `Vendor ${req.body.type} not found`,
+    });
+  }
+
+  const kubeObjects: VendorObjects = vendor.toObjects(req);
+
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
-  const destName = req.body.type;
-  const secretName = await createSecretForDest(kc, req, destName);
   const dest: Destination = {
     apiVersion: "odigos.io/v1alpha1",
     kind: "Destination",
@@ -54,12 +64,22 @@ async function CreateNewDestination(
       name: req.body.name.toLowerCase(),
     },
     spec: {
-      ...getSpecForDest(req, destName),
-      secretRef: {
-        name: secretName,
-      },
+      type: vendor.name,
     },
   };
+
+  if (kubeObjects.Secret) {
+    const secretName = await createSecretForDest(kc, req, kubeObjects.Secret);
+    dest.spec!.secretRef = {
+      name: secretName,
+    };
+  }
+
+  if (kubeObjects.Data) {
+    dest.spec!.data = {
+      [vendor.name]: kubeObjects.Data,
+    };
+  }
 
   const resp = await k8sApi.createNamespacedCustomObject(
     "odigos.io",
@@ -75,14 +95,14 @@ async function CreateNewDestination(
 async function createSecretForDest(
   kc: k8s.KubeConfig,
   req: NextApiRequest,
-  destName: string
+  secretData: { [key: string]: string }
 ): Promise<string> {
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
   const secret: k8s.V1Secret = {
     metadata: {
       name: req.body.name.toLowerCase(),
     },
-    data: getSecretForDest(req, destName),
+    data: secretData,
   };
 
   const resp = await k8sApi.createNamespacedSecret(
@@ -91,65 +111,6 @@ async function createSecretForDest(
   );
 
   return req.body.name.toLowerCase();
-}
-
-function getSecretForDest(
-  req: NextApiRequest,
-  destName: string
-): { [key: string]: string } {
-  switch (destName) {
-    case "honeycomb": {
-      return {
-        API_KEY: Buffer.from(req.body.apikey).toString("base64"),
-      };
-    }
-    case "datadog": {
-      return {
-        API_KEY: Buffer.from(req.body.apikey).toString("base64"),
-      };
-    }
-    case "grafana": {
-      // Grafana exporter expect token to be bas64 encoded, therefore we encode twice.
-      const authString = Buffer.from(
-        `${req.body.user}:${req.body.apikey}`
-      ).toString("base64");
-      return {
-        AUTH_TOKEN: Buffer.from(authString).toString("base64"),
-      };
-    }
-  }
-
-  throw new TypeError("unrecognized destination");
-}
-
-function getSpecForDest(req: NextApiRequest, destName: string): any {
-  switch (destName) {
-    case "grafana":
-      return {
-        type: DestinationType.Grafana,
-        data: {
-          grafana: {
-            url: req.body.url,
-          },
-        },
-      };
-    case "honeycomb":
-      return {
-        type: DestinationType.Honeycomb,
-        data: {},
-      };
-    case "datadog":
-      return {
-        type: DestinationType.Datadog,
-        data: {
-          datadog: {
-            site: req.body.site,
-          },
-        },
-      };
-  }
-
-  return null;
 }
 
 async function GetDestinations(req: NextApiRequest, res: NextApiResponse<any>) {

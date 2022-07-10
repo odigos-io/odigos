@@ -1,5 +1,10 @@
-import { ObservabilityVendor, ObservabilitySignals } from "@/vendors/index";
+import {
+  ObservabilityVendor,
+  ObservabilitySignals,
+  VendorObjects,
+} from "@/vendors/index";
 import DatadogLogo from "@/img/vendor/datadog.svg";
+import { NextApiRequest } from "next";
 
 export class Datadog implements ObservabilityVendor {
   name = "datadog";
@@ -29,5 +34,20 @@ export class Datadog implements ObservabilityVendor {
         type: "password",
       },
     ];
+  };
+
+  toObjects = (req: NextApiRequest) => {
+    return {
+      Data: {
+        site: req.body.site,
+      },
+      Secret: {
+        API_KEY: Buffer.from(req.body.apikey).toString("base64"),
+      },
+    };
+  };
+
+  fromObjects = (vendorObjects: VendorObjects) => {
+    return {};
   };
 }

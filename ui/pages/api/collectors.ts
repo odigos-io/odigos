@@ -3,6 +3,21 @@ import * as k8s from "@kubernetes/client-node";
 import type { IError } from "@/types/common";
 import type { ICollectorsResponse } from "@/types/collectors";
 
+async function DeleteCollector(req: NextApiRequest, res: NextApiResponse) {
+  console.log(`deleting collector ${req.body.name}`);
+  const kc = new k8s.KubeConfig();
+  kc.loadFromDefault();
+  const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
+  await k8sApi.deleteNamespacedCustomObject(
+    "odigos.io",
+    "v1alpha1",
+    process.env.CURRENT_NS || "odigos-system",
+    "collectors",
+    req.body.name as string
+  );
+  return res.status(200).json({ success: true });
+}
+
 async function GetCollectors(
   req: NextApiRequest,
   res: NextApiResponse<ICollectorsResponse | IError>
@@ -34,6 +49,8 @@ export default async function handler(
 ) {
   if (req.method === "GET") {
     return GetCollectors(req, res);
+  } else if (req.method === "DELETE") {
+    return DeleteCollector(req, res);
   }
 
   return res.status(405).end(`Method ${req.method} Not Allowed`);
