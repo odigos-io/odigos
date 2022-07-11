@@ -47,7 +47,9 @@ export class Datadog implements ObservabilityVendor {
     };
   };
 
-  fromObjects = (vendorObjects: VendorObjects) => {
-    return {};
+  mapDataToFields = (data: any) => {
+    return {
+      site: data.site,
+    };
   };
 }

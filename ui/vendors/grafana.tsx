@@ -58,7 +58,9 @@ export class Grafana implements ObservabilityVendor {
     };
   };
 
-  fromObjects = (vendorObjects: VendorObjects) => {
-    return {};
+  mapDataToFields = (data: any) => {
+    return {
+      url: data.url,
+    };
   };
 }

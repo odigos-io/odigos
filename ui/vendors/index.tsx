@@ -28,7 +28,7 @@ export interface ObservabilityVendor {
   getLogo: (props: any) => any;
   getFields: () => IDestField[];
   toObjects: (req: NextApiRequest) => VendorObjects;
-  fromObjects: (vendorObjects: VendorObjects) => any;
+  mapDataToFields: (data: any) => { [key: string]: string };
 }
 
 const Vendors = [new Honeycomb(), new Datadog(), new Grafana()];

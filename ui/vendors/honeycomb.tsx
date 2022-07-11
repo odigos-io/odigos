@@ -37,7 +37,7 @@ export class Honeycomb implements ObservabilityVendor {
     };
   };
 
-  fromObjects = (vendorObjects: VendorObjects) => {
+  mapDataToFields = (data: any) => {
     return {};
   };
 }
