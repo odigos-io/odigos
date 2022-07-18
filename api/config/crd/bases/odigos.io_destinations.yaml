@@ -63,6 +63,14 @@ spec:
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
+              signals:
+                items:
+                  enum:
+                  - LOGS
+                  - TRACES
+                  - METRICS
+                  type: string
+                type: array
               type:
                 enum:
                 - grafana
@@ -72,6 +80,7 @@ spec:
             required:
             - data
             - secretRef
+            - signals
             - type
             type: object
           status:

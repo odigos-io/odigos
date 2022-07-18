@@ -18,7 +18,7 @@ const (
 	javaOptsEnvVar               = "JAVA_OPTS"
 	javaToolOptionsEnvVar        = "JAVA_TOOL_OPTIONS"
 	javaToolOptionsPattern       = "-javaagent:/agent/opentelemetry-javaagent-all.jar " +
-		"-Dotel.metrics.exporter=none -Dotel.traces.sampler=always_on -Dotel.exporter.otlp.endpoint=http://%s.%s:%d"
+		"-Dotel.traces.sampler=always_on -Dotel.exporter.otlp.endpoint=http://%s.%s:%d"
 )
 
 var java = &javaPatcher{}
