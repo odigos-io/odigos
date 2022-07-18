@@ -10,6 +10,7 @@ interface DestinationSecretRef {
 interface DestinationSpec {
   type: string;
   data?: any;
+  signals: string[];
   secretRef?: DestinationSecretRef;
 }
 
@@ -53,7 +54,10 @@ async function CreateNewDestination(
   }
 
   const kubeObjects: VendorObjects = vendor.toObjects(req);
-
+  const selectedSignals = vendor.supportedSignals
+    .filter((s: string) => req.body[s])
+    .map((s: string) => s.toUpperCase());
+  console.log(selectedSignals);
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
@@ -65,6 +69,7 @@ async function CreateNewDestination(
     },
     spec: {
       type: vendor.name,
+      signals: selectedSignals,
     },
   };
 

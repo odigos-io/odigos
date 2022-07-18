@@ -1,6 +1,7 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import Header from "@/components/Header";
+import { useState } from "react";
 import { useRouter } from "next/router";
 import Vendors from "@/vendors/index";
 
@@ -16,8 +17,13 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
       <div className="text-4xl font-medium">Observability Vendor Not Found</div>
     );
   }
-
   const fields = vendor.getFields();
+  const initialSignalsState = vendor.supportedSignals.reduce((acc, signal) => {
+    Object.assign(acc, { [signal]: true });
+    return acc;
+  }, {});
+  const [signals, setSignals]: [any, any] = useState(initialSignalsState);
+
   const handleSubmit = async (event: any) => {
     event.preventDefault();
     var formData = new FormData(event.target);
@@ -51,6 +57,26 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
           onSubmit={handleSubmit}
           name="newdest"
         >
+          {vendor.supportedSignals && vendor.supportedSignals.length > 0 && (
+            <div className="flex flex-row space-x-10 items-center">
+              {vendor.supportedSignals.map((signal) => (
+                <div key={signal} className="space-x-2 items-center">
+                  <input
+                    type="checkbox"
+                    name={signal}
+                    id={signal}
+                    checked={signals[signal]}
+                    onChange={() => {
+                      const newSignals = { ...signals };
+                      newSignals[signal] = !newSignals[signal];
+                      setSignals(newSignals);
+                    }}
+                  />
+                  <label htmlFor={signal}>{signal}</label>
+                </div>
+              ))}
+            </div>
+          )}
           <label className="block">
             <span className="text-gray-700">Destination Name</span>
             <input

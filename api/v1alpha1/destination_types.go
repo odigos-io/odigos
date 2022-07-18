@@ -17,15 +17,17 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/keyval-dev/odigos/common"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DestinationSpec defines the desired state of Destination
 type DestinationSpec struct {
-	Type      DestinationType         `json:"type"`
-	Data      DestinationData         `json:"data"`
-	SecretRef v1.LocalObjectReference `json:"secretRef"`
+	Type      DestinationType              `json:"type"`
+	Data      DestinationData              `json:"data"`
+	SecretRef v1.LocalObjectReference      `json:"secretRef"`
+	Signals   []common.ObservabilitySignal `json:"signals"`
 }
 
 //+kubebuilder:validation:Enum=grafana;datadog;honeycomb
