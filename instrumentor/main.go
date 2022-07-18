@@ -63,7 +63,7 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&langDetectorTag, "lang-detector-tag", "latest", "container tag to use for lang detection")
-	flag.StringVar(&langDetectorImage, "lang-detector-image", "keyval/odigos-lang-detector", "container image to use for lang detection")
+	flag.StringVar(&langDetectorImage, "lang-detector-image", "ghcr.io/keyval-dev/odigos/lang-detector", "container image to use for lang detection")
 	flag.BoolVar(&deleteLangDetectionPods, "delete-detection-pods", true, "Automatic termination of detection pods")
 
 	opts := zap.Options{

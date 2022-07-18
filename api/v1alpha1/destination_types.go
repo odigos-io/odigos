@@ -30,19 +30,21 @@ type DestinationSpec struct {
 	Signals   []common.ObservabilitySignal `json:"signals"`
 }
 
-//+kubebuilder:validation:Enum=grafana;datadog;honeycomb
+//+kubebuilder:validation:Enum=grafana;datadog;honeycomb;newrelic
 type DestinationType string
 
 const (
 	GrafanaDestinationType   DestinationType = "grafana"
 	DatadogDestinationType   DestinationType = "datadog"
 	HoneycombDestinationType DestinationType = "honeycomb"
+	NewRelicDestinationType  DestinationType = "newrelic"
 )
 
 type DestinationData struct {
 	Grafana   *GrafanaData   `json:"grafana,omitempty"`
 	Honeycomb *HoneycombData `json:"honeycomb,omitempty"`
 	Datadog   *DatadogData   `json:"datadog,omitempty"`
+	NewRelic  *NewRelicData  `json:"newRelic,omitempty"`
 }
 
 type GrafanaData struct {
@@ -50,6 +52,8 @@ type GrafanaData struct {
 }
 
 type HoneycombData struct{}
+
+type NewRelicData struct{}
 
 type DatadogData struct {
 	Site string `json:"site"`

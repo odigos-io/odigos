@@ -53,6 +53,8 @@ spec:
                     type: object
                   honeycomb:
                     type: object
+                  newRelic:
+                    type: object
                 type: object
               secretRef:
                 description: LocalObjectReference contains enough information to let
@@ -76,6 +78,7 @@ spec:
                 - grafana
                 - datadog
                 - honeycomb
+                - newrelic
                 type: string
             required:
             - data

@@ -57,7 +57,7 @@ async function CreateNewDestination(
   const selectedSignals = vendor.supportedSignals
     .filter((s: string) => req.body[s])
     .map((s: string) => s.toUpperCase());
-  console.log(selectedSignals);
+
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
@@ -84,6 +84,8 @@ async function CreateNewDestination(
     dest.spec!.data = {
       [vendor.name]: kubeObjects.Data,
     };
+  } else {
+    dest.spec!.data = {};
   }
 
   const resp = await k8sApi.createNamespacedCustomObject(

@@ -32,7 +32,6 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
       object[key] = value.toString();
     });
     const JSONdata = JSON.stringify(object);
-    console.log(JSONdata);
     const response = await fetch("/api/dests", {
       body: JSONdata,
       headers: {
@@ -49,7 +48,7 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
   return (
     <div className="flex flex-col">
       <div className="text-4xl p-8 capitalize text-gray-900">
-        Add new {destname} destination
+        Add new {vendor.displayName} destination
       </div>
       <div className="pl-14 max-w-md">
         <form

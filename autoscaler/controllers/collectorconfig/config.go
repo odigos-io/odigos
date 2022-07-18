@@ -49,6 +49,15 @@ func getExportersForDest(dst *v1.Destination) genericMap {
 				},
 			},
 		}
+	} else if dst.Spec.Type == v1.NewRelicDestinationType {
+		return genericMap{
+			"otlp": genericMap{
+				"endpoint": "https://otlp.nr-data.net:4317",
+				"headers": genericMap{
+					"api-key": "${API_KEY}",
+				},
+			},
+		}
 	}
 
 	return genericMap{}

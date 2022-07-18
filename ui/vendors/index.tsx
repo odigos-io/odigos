@@ -1,6 +1,7 @@
 import { Honeycomb } from "@/vendors/honeycomb";
 import { Datadog } from "@/vendors/datadog";
 import { Grafana } from "@/vendors/grafana";
+import { NewRelic } from "@/vendors/newrelic";
 import { NextApiRequest } from "next";
 
 export enum ObservabilitySignals {
@@ -31,6 +32,6 @@ export interface ObservabilityVendor {
   mapDataToFields: (data: any) => { [key: string]: string };
 }
 
-const Vendors = [new Honeycomb(), new Datadog(), new Grafana()];
+const Vendors = [new Honeycomb(), new Datadog(), new Grafana(), new NewRelic()];
 
 export default Vendors;
