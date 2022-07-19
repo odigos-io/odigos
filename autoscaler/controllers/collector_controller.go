@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,7 +52,7 @@ type CollectorReconciler struct {
 //+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectors,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectors/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectors/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",namespace=odigos-system,resources=pods,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="apps",namespace=odigos-system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",namespace=odigos-system,resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",namespace=odigos-system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
@@ -85,13 +86,13 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 	logger.V(0).Info("synced config maps", "updated", cmUpdated)
 
-	// sync child pods
-	podUpdated, err := r.syncPods(ctx, &collector)
+	// sync child daemonset
+	dsUpdated, err := r.syncDaemonSets(ctx, &collector)
 	if err != nil {
-		logger.Error(err, "error syncing pods")
+		logger.Error(err, "error syncing daemonsets")
 		return ctrl.Result{}, err
 	}
-	logger.V(0).Info("synced pods", "updated", podUpdated)
+	logger.V(0).Info("synced daemonsets", "updated", dsUpdated)
 
 	// sync child services
 	svcUpdated, err := r.syncServices(ctx, &collector)
@@ -100,8 +101,8 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 	logger.V(0).Info("synced services", "updated", svcUpdated)
 
-	// update .status.ready = (cmUpdated && !svcUpdate && !podUpdated (only if different from current status_
-	ready := !cmUpdated && !svcUpdated && !podUpdated
+	// update .status.ready = (cmUpdated && !svcUpdate && !dsUpdated (only if different from current status_
+	ready := !cmUpdated && !svcUpdated && !dsUpdated
 	if ready != collector.Status.Ready {
 		collector.Status.Ready = ready
 		err = r.Status().Update(ctx, &collector)
@@ -116,10 +117,10 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// Index pods by owner for fast lookup
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &v1.Pod{}, ownerKey, func(rawObj client.Object) []string {
-		pod := rawObj.(*v1.Pod)
-		owner := metav1.GetControllerOf(pod)
+	// Index daemonsets by owner for fast lookup
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &appsv1.DaemonSet{}, ownerKey, func(rawObj client.Object) []string {
+		ds := rawObj.(*appsv1.DaemonSet)
+		owner := metav1.GetControllerOf(ds)
 		if owner == nil {
 			return nil
 		}
@@ -169,7 +170,7 @@ func (r *CollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.Collector{}).
-		Owns(&v1.Pod{}).
+		Owns(&appsv1.DaemonSet{}).
 		Owns(&v1.Service{}).
 		Owns(&v1.ConfigMap{}).
 		Complete(r)

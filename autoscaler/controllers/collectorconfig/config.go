@@ -71,19 +71,137 @@ func getExporters(dest *v1.DestinationList) genericMap {
 	return genericMap{}
 }
 
+func getReceivers(dests *v1.DestinationList) genericMap {
+	empty := struct{}{}
+	receivers := genericMap{
+		"zipkin": empty,
+		"otlp": genericMap{
+			"protocols": genericMap{
+				"grpc": empty,
+				"http": empty,
+			},
+		},
+	}
+
+	shouldRecieveLogs := false
+	for _, dst := range dests.Items {
+		for _, s := range dst.Spec.Signals {
+			if s == common.LogsObservabilitySignal {
+				shouldRecieveLogs = true
+				break
+			}
+		}
+	}
+
+	if shouldRecieveLogs {
+		receivers["filelog"] = genericMap{
+			"include":           []string{"/var/log/pods/*/*/*.log"},
+			"exclude":           []string{"/var/log/pods/kube-system_*/*/*.log"},
+			"start_at":          "beginning",
+			"include_file_path": true,
+			"include_file_name": false,
+			"operators": []genericMap{
+				{
+					"type": "router",
+					"id":   "get-format",
+					"routes": []genericMap{
+						{
+							"output": "parser-docker",
+							"expr":   `body matches "^\\{"`,
+						},
+						{
+							"output": "parser-crio",
+							"expr":   `body matches "^[^ Z]+ "`,
+						},
+						{
+							"output": "parser-containerd",
+							"expr":   `body matches "^[^ Z]+Z"`,
+						},
+					},
+				},
+				{
+					"type":   "regex_parser",
+					"id":     "parser-crio",
+					"regex":  `^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$`,
+					"output": "extract_metadata_from_filepath",
+					"timestamp": genericMap{
+						"parse_from":  "attributes.time",
+						"layout_type": "gotime",
+						"layout":      "2006-01-02T15:04:05.000000000-07:00",
+					},
+				},
+				{
+					"type":   "regex_parser",
+					"id":     "parser-containerd",
+					"regex":  `^(?P<time>[^ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$`,
+					"output": "extract_metadata_from_filepath",
+					"timestamp": genericMap{
+						"parse_from": "attributes.time",
+						"layout":     "%Y-%m-%dT%H:%M:%S.%LZ",
+					},
+				},
+				{
+					"type":   "json_parser",
+					"id":     "parser-docker",
+					"output": "extract_metadata_from_filepath",
+					"timestamp": genericMap{
+						"parse_from": "attributes.time",
+						"layout":     "%Y-%m-%dT%H:%M:%S.%LZ",
+					},
+				},
+				{
+					"type": "move",
+					"from": "attributes.log",
+					"to":   "body",
+				},
+				{
+					"type":       "regex_parser",
+					"id":         "extract_metadata_from_filepath",
+					"regex":      `^.*\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\-]{36})\/(?P<container_name>[^\._]+)\/(?P<restart_count>\d+)\.log$`,
+					"parse_from": `attributes["log.file.path"]`,
+				},
+				{
+					"type": "move",
+					"from": "attributes.stream",
+					"to":   `attributes["log.iostream"]`,
+				},
+				{
+					"type": "move",
+					"from": "attributes.container_name",
+					"to":   `attributes["k8s.container.name"]`,
+				},
+				{
+					"type": "move",
+					"from": "attributes.namespace",
+					"to":   `attributes["k8s.namespace.name"]`,
+				},
+				{
+					"type": "move",
+					"from": "attributes.pod_name",
+					"to":   `attributes["k8s.pod.name"]`,
+				},
+				{
+					"type": "move",
+					"from": "attributes.restart_count",
+					"to":   `attributes["k8s.container.restart_count"]`,
+				},
+				{
+					"type": "move",
+					"from": "attributes.uid",
+					"to":   `attributes["k8s.pod.uid"]`,
+				},
+			},
+		}
+	}
+
+	return receivers
+}
+
 func GetConfigForCollector(dests *v1.DestinationList) (string, error) {
 	empty := struct{}{}
 	exporters := getExporters(dests)
 	c := &Config{
-		Receivers: genericMap{
-			"zipkin": empty,
-			"otlp": genericMap{
-				"protocols": genericMap{
-					"grpc": empty,
-					"http": empty,
-				},
-			},
-		},
+		Receivers: getReceivers(dests),
 		Exporters: exporters,
 		Processors: genericMap{
 			"batch": empty,
@@ -113,6 +231,7 @@ func getService(dests *v1.DestinationList) genericMap {
 func getPipelines(dests *v1.DestinationList) genericMap {
 	traceDests := getDestsForSignal(dests, common.TracesObservabilitySignal)
 	metricsDests := getDestsForSignal(dests, common.MetricsObservabilitySignal)
+	logsDests := getDestsForSignal(dests, common.LogsObservabilitySignal)
 	pipelines := genericMap{}
 
 	if len(traceDests) > 0 {
@@ -121,6 +240,10 @@ func getPipelines(dests *v1.DestinationList) genericMap {
 
 	if len(metricsDests) > 0 {
 		pipelines["metrics"] = getMetricsPipelines(metricsDests)
+	}
+
+	if len(logsDests) > 0 {
+		pipelines["logs"] = getLogsPipelines(logsDests)
 	}
 
 	return pipelines
@@ -167,5 +290,20 @@ func getMetricsPipelines(dests []v1.Destination) genericMap {
 		"receivers":  []string{"otlp"},
 		"processors": []string{"batch"},
 		"exporters":  metricsExporters,
+	}
+}
+
+func getLogsPipelines(dests []v1.Destination) genericMap {
+	var logsExporters []string
+	for _, dst := range dests {
+		for e, _ := range getExportersForDest(&dst) {
+			logsExporters = append(logsExporters, e)
+		}
+	}
+
+	return genericMap{
+		"receivers":  []string{"filelog"},
+		"processors": []string{"batch"},
+		"exporters":  logsExporters,
 	}
 }
