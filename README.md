@@ -23,6 +23,18 @@ Start sending traces, metrics and logs to your favourite observability service (
 
 Many more destinations are coming soon.
 
+## Installation
+
+The easiest way to install Odigos is to use our [Helm chart](https://github.com/keyval-dev/odigos-charts) by running the following commands:
+
+```console
+helm repo add odigos https://keyval-dev.github.io/odigos-charts/
+
+helm install my-odigos odigos/odigos --namespace odigos-system --create-namespace
+```
+
+See the [quickstart guide](https://odigos.io/docs/) for more details and examples.
+
 ## Project Status
 
 This project is actively maintained by [keyval](https://keyval.dev) and is currently in its initial days. We would love to receive your ideas, feedback & contributions.
@@ -30,3 +42,7 @@ This project is actively maintained by [keyval](https://keyval.dev) and is curre
 ## License
 
 This project is licensed under the terms of the [Apache 2.0](LICENSE-Apache-2.0) open source license. Please refer to [LICENSE](LICENSE) for the full terms.
+
+```
+
+```
