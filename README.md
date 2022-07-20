@@ -12,6 +12,21 @@ Start sending traces, metrics and logs to your favourite observability service (
 
 ### For full documentation and getting started guide, visit [odigos.io](https://odigos.io).
 
+## Supported Destinations
+
+|               | Traces | Metrics | Logs |
+| ------------- | ------ | ------- | ---- |
+| New Relic     | ✅     | ✅      | ✅   |
+| Datadog       | ✅     | ✅      |      |
+| Honeycomb     | ✅     |         |      |
+| Grafana Cloud | ✅     |         |      |
+
+Many more destinations are coming soon.
+
+## Project Status
+
+This project is actively maintained by [keyval](https://keyval.dev) and is currently in its initial days. We would love to receive your ideas, feedback & contributions.
+
 ## License
 
 This project is licensed under the terms of the [Apache 2.0](LICENSE-Apache-2.0) open source license. Please refer to [LICENSE](LICENSE) for the full terms.
