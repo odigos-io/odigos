@@ -42,7 +42,3 @@ This project is actively maintained by [keyval](https://keyval.dev) and is curre
 ## License
 
 This project is licensed under the terms of the [Apache 2.0](LICENSE-Apache-2.0) open source license. Please refer to [LICENSE](LICENSE) for the full terms.
-
-```
-
-```
