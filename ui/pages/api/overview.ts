@@ -3,7 +3,7 @@ import * as k8s from "@kubernetes/client-node";
 import type { OverviewApiResponse } from "@/types/overview";
 import { ApplicationData } from "@/types/apps";
 import { Collector } from "@/types/collectors";
-import { DestResponseItem } from "@/types/dests";
+import { OverviewDestResponseItem } from "@/types/dests";
 
 export default async function handler(
   req: NextApiRequest,
@@ -52,13 +52,16 @@ export default async function handler(
     "destinations"
   );
 
-  const dests: DestResponseItem[] = destResp.body.items.map((item: any) => {
-    return {
-      id: item.metadata.uid,
-      name: item.metadata.name,
-      type: item.spec.type,
-    };
-  });
+  const dests: OverviewDestResponseItem[] = destResp.body.items.map(
+    (item: any) => {
+      return {
+        id: item.metadata.uid,
+        name: item.metadata.name,
+        type: item.spec.type,
+        signals: item.spec.signals,
+      };
+    }
+  );
 
   return res.status(200).json({
     sources: appsFound,

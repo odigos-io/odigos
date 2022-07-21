@@ -11,7 +11,7 @@ export default function DestCard({
   return (
     <div className="shadow-lg border border-gray-200 rounded-lg bg-white hover:bg-gray-100 cursor-pointer">
       <Link href={`/dest/new/${name}`}>
-        <a className="flex flex-row p-3 items-center space-x-4">
+        <a className="flex flex-row p-3 items-top space-x-4">
           {getLogo({ className: "w-16 h-16" })}
           <div className="flex flex-col items-start">
             <div className="font-medium">{displayName}</div>

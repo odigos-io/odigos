@@ -79,9 +79,7 @@ const Home: NextPage = () => {
                 <div className="">
                   Sending{" "}
                   <span>
-                    {Vendors.find((v) => v.name === dest.type)
-                      ?.supportedSignals.map((s) => s.toLowerCase())
-                      .join(", ")}
+                    {dest.signals.map((s) => s.toLowerCase()).join(", ")}
                   </span>{" "}
                   to <span className="font-bold">{dest.name}</span>
                 </div>
