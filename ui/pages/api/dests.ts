@@ -14,21 +14,6 @@ interface DestinationSpec {
   secretRef?: DestinationSecretRef;
 }
 
-// interface DestinationData {
-//   grafana?: GrafanaData;
-//   honeycomb?: HoneycombData;
-// }
-
-// interface GrafanaData {
-//   url: string;
-//   user: string;
-//   apiKey: string;
-// }
-
-// interface HoneycombData {
-//   apiKey: string;
-// }
-
 interface DestinationStatus {}
 
 interface Destination {

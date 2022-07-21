@@ -9,11 +9,7 @@ import { NextApiRequest } from "next";
 export class Grafana implements ObservabilityVendor {
   name = "grafana";
   displayName = "Grafana Cloud";
-  supportedSignals = [
-    ObservabilitySignals.Logs,
-    ObservabilitySignals.Metrics,
-    ObservabilitySignals.Traces,
-  ];
+  supportedSignals = [ObservabilitySignals.Traces];
 
   getLogo = (props: any) => {
     return <GrafanaLogo {...props} />;

@@ -3,3 +3,10 @@ export interface DestResponseItem {
   name: string;
   type: string;
 }
+
+export interface OverviewDestResponseItem {
+  id: string;
+  name: string;
+  type: string;
+  signals: string[];
+}
