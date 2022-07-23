@@ -5,7 +5,6 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/utils"
 	v1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -43,8 +42,16 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 				Image: golangAgentName,
 				Env: []v1.EnvVar{
 					{
+						Name: NodeIPEnvName,
+						ValueFrom: &v1.EnvVarSource{
+							FieldRef: &v1.ObjectFieldSelector{
+								FieldPath: "status.hostIP",
+							},
+						},
+					},
+					{
 						Name:  golangExporterEndpoint,
-						Value: fmt.Sprintf("%s.%s:%d", instrumentation.Spec.CollectorAddr, utils.GetCurrentNamespace(), consts.OTLPPort),
+						Value: fmt.Sprintf("%s:%d", HostIPEnvValue, consts.OTLPPort),
 					},
 					{
 						Name:  golangServiceNameEnv,

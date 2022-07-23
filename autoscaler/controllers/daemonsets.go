@@ -102,6 +102,8 @@ func (r *CollectorReconciler) createDaemonSets(ctx context.Context, collector *o
 							},
 						},
 					},
+					HostNetwork: true,
+					DNSPolicy:   corev1.DNSClusterFirstWithHostNet,
 				},
 			},
 		},

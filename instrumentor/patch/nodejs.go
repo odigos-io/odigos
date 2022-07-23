@@ -5,7 +5,6 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/utils"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -47,6 +46,15 @@ func (n *nodeJsPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	var modifiedContainers []v1.Container
 	for _, container := range podSpec.Spec.Containers {
 		if shouldPatch(instrumentation, common.JavascriptProgrammingLanguage, container.Name) {
+			container.Env = append([]v1.EnvVar{{
+				Name: NodeIPEnvName,
+				ValueFrom: &v1.EnvVarSource{
+					FieldRef: &v1.ObjectFieldSelector{
+						FieldPath: "status.hostIP",
+					},
+				},
+			}}, container.Env...)
+
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  nodeEnvNodeDebug,
 				Value: "true",
@@ -59,7 +67,7 @@ func (n *nodeJsPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  nodeEnvEndpoint,
-				Value: fmt.Sprintf("%s.%s:%d", instrumentation.Spec.CollectorAddr, utils.GetCurrentNamespace(), consts.OTLPPort),
+				Value: fmt.Sprintf("%s:%d", HostIPEnvValue, consts.OTLPPort),
 			})
 
 			container.Env = append(container.Env, v1.EnvVar{
