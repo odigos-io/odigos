@@ -10,6 +10,11 @@ resources:
   version: v1alpha1
 - controller: true
   domain: odigos.io
-  kind: Collector
+  kind: CollectorsGroup
+  version: v1alpha1
+- controller: true
+  domain: odigos.io
+  group: odigos.io
+  kind: Destination
   version: v1alpha1
 version: "3"

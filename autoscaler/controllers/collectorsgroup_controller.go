@@ -18,8 +18,9 @@ package controllers
 
 import (
 	"context"
-	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
-	"github.com/keyval-dev/odigos/scheduler/scheduler"
+	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	"github.com/keyval-dev/odigos/autoscaler/controllers/gateway"
+	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,29 +28,33 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// InstrumentedApplicationReconciler reconciles a InstrumentedApplication object
-type InstrumentedApplicationReconciler struct {
+// CollectorsGroupReconciler reconciles a CollectorsGroup object
+type CollectorsGroupReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications/finalizers,verbs=update
+//+kubebuilder:rbac:groups=odigos.io.odigos.io,resources=collectorsgroups,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=odigos.io.odigos.io,resources=collectorsgroups/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=odigos.io.odigos.io,resources=collectorsgroups/finalizers,verbs=update
+//+kubebuilder:rbac:groups="apps",namespace=odigos-system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",namespace=odigos-system,resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",namespace=odigos-system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// the InstrumentedApplication object against the actual cluster state, and then
+// the CollectorsGroup object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
-func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	err := scheduler.ApplicationsToCollectors(ctx, r.Client)
+	logger.V(0).Info("Reconciling CollectorsGroup")
+
+	err := gateway.Sync(ctx, r.Client, r.Scheme)
 	if err != nil {
-		logger.Error(err, "error performing scheduling")
 		return ctrl.Result{}, err
 	}
 
@@ -57,8 +62,9 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *InstrumentedApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *CollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.InstrumentedApplication{}).
+		For(&odigosv1.CollectorsGroup{}).
+		Owns(&v1.ConfigMap{}).
 		Complete(r)
 }

@@ -17,7 +17,7 @@ resources:
     namespaced: true
   controller: true
   domain: odigos.io
-  kind: Collector
+  kind: CollectorsGroup
   path: github.com/keyval-dev/odigos/api/v1alpha1
   version: v1alpha1
 version: "3"

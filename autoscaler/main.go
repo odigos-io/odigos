@@ -18,8 +18,9 @@ package main
 
 import (
 	"flag"
-	"github.com/keyval-dev/odigos/common/utils"
 	"os"
+
+	"github.com/keyval-dev/odigos/common/utils"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -33,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/api/v1alpha1"
+
 	"github.com/keyval-dev/odigos/autoscaler/controllers"
 	//+kubebuilder:scaffold:imports
 )
@@ -86,11 +88,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Destination")
 		os.Exit(1)
 	}
-	if err = (&controllers.CollectorReconciler{
+	if err = (&controllers.CollectorsGroupReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Collector")
+		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

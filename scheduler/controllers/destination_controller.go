@@ -18,13 +18,13 @@ package controllers
 
 import (
 	"context"
-	"github.com/keyval-dev/odigos/autoscaler/controllers/gateway"
+	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	"github.com/keyval-dev/odigos/scheduler/controllers/collectorgroups"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
 )
 
 // DestinationReconciler reconciles a Destination object
@@ -33,9 +33,9 @@ type DestinationReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=destinations,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=destinations/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=destinations/finalizers,verbs=update
+//+kubebuilder:rbac:groups=odigos.io,resources=destinations,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=odigos.io,resources=destinations/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=odigos.io,resources=destinations/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -47,10 +47,30 @@ type DestinationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling Destination")
-	err := gateway.Sync(ctx, r.Client, r.Scheme)
+
+	var dests odigosv1.DestinationList
+	err := r.List(ctx, &dests, client.InNamespace(req.Namespace))
 	if err != nil {
+		logger.Error(err, "failed to list destinations")
 		return ctrl.Result{}, err
+	}
+
+	if len(dests.Items) > 0 {
+		var collectorGroups odigosv1.CollectorsGroupList
+		err := r.List(ctx, &collectorGroups, client.InNamespace(req.Namespace))
+		if err != nil {
+			logger.Error(err, "failed to list collectors groups")
+			return ctrl.Result{}, err
+		}
+
+		if len(collectorGroups.Items) == 0 {
+			logger.V(0).Info("destinations found, but no collectors groups found, creating gateway")
+			err = r.Create(ctx, collectorgroups.NewGateway(req.Namespace))
+			if err != nil {
+				logger.Error(err, "failed to create gateway")
+				return ctrl.Result{}, err
+			}
+		}
 	}
 
 	return ctrl.Result{}, nil
@@ -59,6 +79,6 @@ func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 // SetupWithManager sets up the controller with the Manager.
 func (r *DestinationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.Destination{}).
+		For(&odigosv1.Destination{}).
 		Complete(r)
 }
