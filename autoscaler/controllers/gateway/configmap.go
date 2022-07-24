@@ -19,7 +19,7 @@ const (
 
 func syncConfigMap(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (*v1.ConfigMap, error) {
 	logger := log.FromContext(ctx)
-	desieredData, err := config.Calculate(dests)
+	desireddData, err := config.Calculate(dests)
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
 		return nil, err
@@ -31,7 +31,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, gateway *odigosv1.Collectors
 			Namespace: gateway.Namespace,
 		},
 		Data: map[string]string{
-			configKey: desieredData,
+			configKey: desireddData,
 		},
 	}
 

@@ -4,35 +4,15 @@ import (
 	"fmt"
 	"github.com/ghodss/yaml"
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
 )
 
-var availableConfigers = []Configer{&Honeycomb{}}
-
-type genericMap map[string]interface{}
-
-type Config struct {
-	Receivers  genericMap `json:"receivers"`
-	Exporters  genericMap `json:"exporters"`
-	Processors genericMap `json:"processors"`
-	Extensions genericMap `json:"extensions"`
-	Service    Service    `json:"service"`
-}
-
-type Service struct {
-	Extensions []string            `json:"extensions"`
-	Pipelines  map[string]Pipeline `json:"pipelines"`
-}
-
-type Pipeline struct {
-	Receivers  []string `json:"receivers"`
-	Processors []string `json:"processors"`
-	Exporters  []string `json:"exporters"`
-}
+var availableConfigers = []Configer{&Honeycomb{}, &Grafana{}, &Datadog{}, &NewRelic{}}
 
 type Configer interface {
 	DestType() odigosv1.DestinationType
-	ModifyConfig(dest *odigosv1.Destination, currentConfig *Config)
+	ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config)
 }
 
 func Calculate(dests *odigosv1.DestinationList) (string, error) {
@@ -59,26 +39,26 @@ func Calculate(dests *odigosv1.DestinationList) (string, error) {
 	return string(data), nil
 }
 
-func getBasicConfig() *Config {
+func getBasicConfig() *commonconf.Config {
 	empty := struct{}{}
-	return &Config{
-		Receivers: genericMap{
-			"otlp": genericMap{
-				"protocols": genericMap{
+	return &commonconf.Config{
+		Receivers: commonconf.GenericMap{
+			"otlp": commonconf.GenericMap{
+				"protocols": commonconf.GenericMap{
 					"grpc": empty,
 				},
 			},
 		},
-		Processors: genericMap{
+		Processors: commonconf.GenericMap{
 			"batch": empty,
 		},
-		Extensions: genericMap{
+		Extensions: commonconf.GenericMap{
 			"health_check": empty,
 			"zpages":       empty,
 		},
 		Exporters: map[string]interface{}{},
-		Service: Service{
-			Pipelines:  map[string]Pipeline{},
+		Service: commonconf.Service{
+			Pipelines:  map[string]commonconf.Pipeline{},
 			Extensions: []string{"health_check", "zpages"},
 		},
 	}

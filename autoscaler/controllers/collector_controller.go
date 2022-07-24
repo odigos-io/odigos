@@ -32,7 +32,7 @@ package controllers
 //)
 //
 //const (
-//	CollectorLabel = "odigos.io/collector"
+//
 //)
 //
 //var (

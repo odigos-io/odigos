@@ -19,7 +19,9 @@ package controllers
 import (
 	"context"
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/gateway"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -34,10 +36,11 @@ type CollectorsGroupReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=odigos.io.odigos.io,resources=collectorsgroups,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=odigos.io.odigos.io,resources=collectorsgroups/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=odigos.io.odigos.io,resources=collectorsgroups/finalizers,verbs=update
-//+kubebuilder:rbac:groups="apps",namespace=odigos-system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectorsgroups,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectorsgroups/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectorsgroups/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,namespace=odigos-system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,namespace=odigos-system,resources=deployments/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",namespace=odigos-system,resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",namespace=odigos-system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
@@ -58,6 +61,11 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	err = datacollection.Sync(ctx, r.Client, r.Scheme)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -66,5 +74,8 @@ func (r *CollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.CollectorsGroup{}).
 		Owns(&v1.ConfigMap{}).
+		Owns(&v1.Service{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&appsv1.DaemonSet{}).
 		Complete(r)
 }

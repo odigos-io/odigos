@@ -10,6 +10,13 @@ import (
 
 const (
 	kubeObjectName = "odigos-gateway"
+	collectorLabel = "odigos.io/collector"
+)
+
+var (
+	commonLabels = map[string]string{
+		collectorLabel: "true",
+	}
 )
 
 func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme) error {
@@ -44,12 +51,26 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme) err
 
 func syncGateway(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	logger := log.FromContext(ctx)
+	logger.V(0).Info("syncing gateway")
+
 	_, err := syncConfigMap(dests, gateway, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "failed to sync config map")
 		return err
 	}
 
-	gateway.Status.Ready = true
+	_, err = syncService(gateway, ctx, c, scheme)
+	if err != nil {
+		logger.Error(err, "failed to sync service")
+		return err
+	}
+
+	dep, err := syncDeployment(dests, gateway, ctx, c, scheme)
+	if err != nil {
+		logger.Error(err, "failed to sync deployment")
+		return err
+	}
+
+	gateway.Status.Ready = dep.Status.ReadyReplicas > 0
 	return c.Status().Update(ctx, gateway)
 }
