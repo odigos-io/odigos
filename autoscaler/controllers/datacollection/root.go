@@ -55,5 +55,17 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 		return err
 	}
 
+	ds, err := syncDaemonSet(dataCollection, ctx, c, scheme)
+	if err != nil {
+		logger.Error(err, "failed to sync daemon set")
+		return err
+	}
+
+	dataCollection.Status.Ready = ds.Status.DesiredNumberScheduled == ds.Status.NumberReady
+	if err := c.Status().Update(ctx, dataCollection); err != nil {
+		logger.Error(err, "failed to update data collection status")
+		return err
+	}
+
 	return nil
 }
