@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -57,7 +58,6 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 // SetupWithManager sets up the controller with the Manager.
 func (r *InstrumentedApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
-		// For().
+		For(&odigosv1.InstrumentedApplication{}).
 		Complete(r)
 }

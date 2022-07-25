@@ -13,7 +13,7 @@ func (d *Datadog) DestType() odigosv1.DestinationType {
 
 func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if isTracingEnabled(dest) || isMetricsEnabled(dest) {
-		currentConfig.Exporters["otlp/datadog"] = commonconf.GenericMap{
+		currentConfig.Exporters["datadog"] = commonconf.GenericMap{
 			"api": commonconf.GenericMap{
 				"key":  "${API_KEY}",
 				"site": dest.Spec.Data.Datadog.Site,
@@ -25,7 +25,7 @@ func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 		currentConfig.Service.Pipelines["traces/datadog"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/datadog"},
+			Exporters:  []string{"datadog"},
 		}
 	}
 
@@ -33,7 +33,7 @@ func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 		currentConfig.Service.Pipelines["metrics/datadog"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/datadog"},
+			Exporters:  []string{"datadog"},
 		}
 	}
 }

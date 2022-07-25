@@ -17,7 +17,7 @@ import (
 const (
 	containerName    = "gateway"
 	containerImage   = "otel/opentelemetry-collector-contrib:0.55.0"
-	containerCommand = "/otelcol"
+	containerCommand = "/otelcol-contrib"
 	confDir          = "/conf"
 )
 

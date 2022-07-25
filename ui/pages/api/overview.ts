@@ -35,7 +35,7 @@ export default async function handler(
     "odigos.io",
     "v1alpha1",
     process.env.CURRENT_NS || "odigos-system",
-    "collectors"
+    "collectorsgroups"
   );
 
   const collectors: Collector[] = collectorsResp.body.items.map((item: any) => {

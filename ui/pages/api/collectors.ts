@@ -12,7 +12,7 @@ async function DeleteCollector(req: NextApiRequest, res: NextApiResponse) {
     "odigos.io",
     "v1alpha1",
     process.env.CURRENT_NS || "odigos-system",
-    "collectors",
+    "collectorsgroups",
     req.body.name as string
   );
   return res.status(200).json({ success: true });
@@ -29,7 +29,7 @@ async function GetCollectors(
     "odigos.io",
     "v1alpha1",
     process.env.CURRENT_NS || "odigos-system",
-    "collectors"
+    "collectorsgroups"
   );
 
   const resp: ICollectorsResponse = {

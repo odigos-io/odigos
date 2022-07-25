@@ -41,6 +41,8 @@ type CollectorsGroupReconciler struct {
 //+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectorsgroups/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,namespace=odigos-system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,namespace=odigos-system,resources=deployments/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=apps,namespace=odigos-system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,namespace=odigos-system,resources=daemonsets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",namespace=odigos-system,resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",namespace=odigos-system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
