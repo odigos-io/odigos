@@ -58,6 +58,9 @@ func syncInstrumentedApps(ctx context.Context, req *ctrl.Request, c client.Clien
 				Name:      req.Name,
 				Namespace: req.Namespace,
 			},
+			Spec: odigosv1.InstrumentedApplicationSpec{
+				WaitingForDataCollection: !isDataCollectionReady(ctx, c),
+			},
 		}
 
 		err = ctrl.SetControllerReference(object, &instrumentedApp, scheme)
@@ -133,8 +136,8 @@ func syncInstrumentedApps(ctx context.Context, req *ctrl.Request, c client.Clien
 }
 
 func shouldInstrument(ctx context.Context, instApp *odigosv1.InstrumentedApplication, c client.Client, logger logr.Logger) bool {
-	if instApp.Spec.CollectorAddr == "" {
-		logger.V(0).Info("skipping instrumentation, not scheduled")
+	if instApp.Spec.WaitingForDataCollection {
+		logger.V(0).Info("skipping instrumentation, data collection is not ready yet")
 		return false
 	}
 
@@ -155,6 +158,24 @@ func shouldInstrument(ctx context.Context, instApp *odigosv1.InstrumentedApplica
 	}
 
 	return true
+}
+
+func isDataCollectionReady(ctx context.Context, c client.Client) bool {
+	logger := log.FromContext(ctx)
+	var collectorGroups odigosv1.CollectorsGroupList
+	err := c.List(ctx, &collectorGroups, client.InNamespace(utils.GetCurrentNamespace()))
+	if err != nil {
+		logger.Error(err, "error getting collectors groups, skipping instrumentation")
+		return false
+	}
+
+	for _, cg := range collectorGroups.Items {
+		if cg.Spec.Role == odigosv1.CollectorsGroupRoleDataCollection && cg.Status.Ready {
+			return true
+		}
+	}
+
+	return false
 }
 
 func getOdigosConfiguration(ctx context.Context, c client.Client) (*odigosv1.OdigosConfiguration, error) {

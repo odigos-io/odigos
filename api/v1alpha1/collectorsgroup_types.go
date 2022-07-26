@@ -20,36 +20,46 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// CollectorSpec defines the desired state of Collector
-type CollectorSpec struct {
+//+kubebuilder:validation:Enum=GATEWAY;DATA_COLLECTION
+type CollectorsGroupRole string
+
+const (
+	CollectorsGroupRoleGateway        CollectorsGroupRole = "GATEWAY"
+	CollectorsGroupRoleDataCollection CollectorsGroupRole = "DATA_COLLECTION"
+)
+
+// CollectorsGroupSpec defines the desired state of Collector
+type CollectorsGroupSpec struct {
+	InputSvc string              `json:"inputSvc,omitempty"`
+	Role     CollectorsGroupRole `json:"role"`
 }
 
-// CollectorStatus defines the observed state of Collector
-type CollectorStatus struct {
+// CollectorsGroupStatus defines the observed state of Collector
+type CollectorsGroupStatus struct {
 	Ready bool `json:"ready,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Collector is the Schema for the collectors API
-type Collector struct {
+// CollectorsGroup is the Schema for the collectors API
+type CollectorsGroup struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CollectorSpec   `json:"spec,omitempty"`
-	Status CollectorStatus `json:"status,omitempty"`
+	Spec   CollectorsGroupSpec   `json:"spec,omitempty"`
+	Status CollectorsGroupStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// CollectorList contains a list of Collector
-type CollectorList struct {
+// CollectorsGroupList contains a list of Collector
+type CollectorsGroupList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Collector `json:"items"`
+	Items           []CollectorsGroup `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Collector{}, &CollectorList{})
+	SchemeBuilder.Register(&CollectorsGroup{}, &CollectorsGroupList{})
 }

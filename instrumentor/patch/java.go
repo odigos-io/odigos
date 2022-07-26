@@ -5,7 +5,6 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/utils"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -18,7 +17,7 @@ const (
 	javaOptsEnvVar               = "JAVA_OPTS"
 	javaToolOptionsEnvVar        = "JAVA_TOOL_OPTIONS"
 	javaToolOptionsPattern       = "-javaagent:/agent/opentelemetry-javaagent-all.jar " +
-		"-Dotel.traces.sampler=always_on -Dotel.exporter.otlp.endpoint=http://%s.%s:%d"
+		"-Dotel.traces.sampler=always_on -Dotel.exporter.otlp.endpoint=http://%s:%d"
 )
 
 var java = &javaPatcher{}
@@ -52,22 +51,30 @@ func (j *javaPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odigos
 			if idx == -1 {
 				container.Env = append(container.Env, v1.EnvVar{
 					Name:  javaToolOptionsEnvVar,
-					Value: fmt.Sprintf(javaToolOptionsPattern, instrumentation.Spec.CollectorAddr, utils.GetCurrentNamespace(), consts.OTLPPort),
+					Value: fmt.Sprintf(javaToolOptionsPattern, HostIPEnvValue, consts.OTLPPort),
 				})
 			} else {
-				container.Env[idx].Value = container.Env[idx].Value + " " + fmt.Sprintf(javaToolOptionsPattern, instrumentation.Spec.CollectorAddr,
-					utils.GetCurrentNamespace(), consts.OTLPPort)
+				container.Env[idx].Value = container.Env[idx].Value + " " + fmt.Sprintf(javaToolOptionsPattern, HostIPEnvValue, consts.OTLPPort)
 			}
 
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  javaOptsEnvVar,
-				Value: fmt.Sprintf(javaToolOptionsPattern, instrumentation.Spec.CollectorAddr, utils.GetCurrentNamespace(), consts.OTLPPort),
+				Value: fmt.Sprintf(javaToolOptionsPattern, HostIPEnvValue, consts.OTLPPort),
 			})
 
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  otelResourceAttributesEnvVar,
 				Value: fmt.Sprintf(otelResourceAttrPatteern, calculateAppName(podSpec, &container, instrumentation)),
 			})
+			container.Env = append([]v1.EnvVar{{
+				Name: NodeIPEnvName,
+				ValueFrom: &v1.EnvVarSource{
+					FieldRef: &v1.ObjectFieldSelector{
+						FieldPath: "status.hostIP",
+					},
+				},
+			}}, container.Env...)
+
 			container.VolumeMounts = append(container.VolumeMounts, v1.VolumeMount{
 				MountPath: javaMountPath,
 				Name:      javaVolumeName,

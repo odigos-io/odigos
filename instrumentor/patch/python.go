@@ -5,7 +5,6 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/utils"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -46,6 +45,15 @@ func (p *pythonPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	var modifiedContainers []v1.Container
 	for _, container := range podSpec.Spec.Containers {
 		if shouldPatch(instrumentation, common.PythonProgrammingLanguage, container.Name) {
+			container.Env = append([]v1.EnvVar{{
+				Name: NodeIPEnvName,
+				ValueFrom: &v1.EnvVarSource{
+					FieldRef: &v1.ObjectFieldSelector{
+						FieldPath: "status.hostIP",
+					},
+				},
+			}}, container.Env...)
+
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  "PYTHONPATH",
 				Value: "/otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation",
@@ -53,7 +61,7 @@ func (p *pythonPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-				Value: fmt.Sprintf("http://%s.%s:%d", instrumentation.Spec.CollectorAddr, utils.GetCurrentNamespace(), consts.OTLPHttpPort),
+				Value: fmt.Sprintf("http://%s:%d", HostIPEnvValue, consts.OTLPHttpPort),
 			})
 
 			container.Env = append(container.Env, v1.EnvVar{

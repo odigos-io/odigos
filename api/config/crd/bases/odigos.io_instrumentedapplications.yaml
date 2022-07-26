@@ -37,8 +37,6 @@ spec:
             description: InstrumentedApplicationSpec defines the desired state of
               InstrumentedApplication
             properties:
-              collectorAddr:
-                type: string
               enabled:
                 type: boolean
               languages:
@@ -61,6 +59,10 @@ spec:
                   - language
                   type: object
                 type: array
+              waitingForDataCollection:
+                type: boolean
+            required:
+            - waitingForDataCollection
             type: object
           status:
             description: InstrumentedApplicationStatus defines the observed state
