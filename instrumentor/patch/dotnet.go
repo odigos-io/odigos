@@ -4,7 +4,6 @@ import (
 	"fmt"
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/common/utils"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -53,6 +52,15 @@ func (d *dotNetPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	var modifiedContainers []v1.Container
 	for _, container := range podSpec.Spec.Containers {
 		if shouldPatch(instrumentation, common.DotNetProgrammingLanguage, container.Name) {
+			container.Env = append([]v1.EnvVar{{
+				Name: NodeIPEnvName,
+				ValueFrom: &v1.EnvVarSource{
+					FieldRef: &v1.ObjectFieldSelector{
+						FieldPath: "status.hostIP",
+					},
+				},
+			}}, container.Env...)
+
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  enableProfilingEnvVar,
 				Value: "1",
@@ -86,7 +94,7 @@ func (d *dotNetPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 			// Currently .NET instrumentation only support zipkin format, we should move to OTLP when support is added
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  collectorUrlEnv,
-				Value: fmt.Sprintf("http://%s.%s:9411/api/v2/spans", instrumentation.Spec.CollectorAddr, utils.GetCurrentNamespace()),
+				Value: fmt.Sprintf("http://%s:9411/api/v2/spans", HostIPEnvValue),
 			})
 
 			container.Env = append(container.Env, v1.EnvVar{

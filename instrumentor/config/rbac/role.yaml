@@ -3,7 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: odigos-instrumentor
+  name: manager-role
 rules:
 - apiGroups:
   - ""
@@ -73,6 +73,32 @@ rules:
   - apps
   resources:
   - statefulsets/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - odigos.io
+  resources:
+  - collectorsgroups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - odigos.io
+  resources:
+  - collectorsgroups/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - odigos.io
+  resources:
+  - collectorsgroups/status
   verbs:
   - get
   - patch

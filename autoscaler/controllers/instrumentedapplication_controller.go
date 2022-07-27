@@ -18,13 +18,12 @@ package controllers
 
 import (
 	"context"
-	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
-	"github.com/keyval-dev/odigos/scheduler/scheduler"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
+	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // InstrumentedApplicationReconciler reconciles a InstrumentedApplication object
@@ -47,9 +46,9 @@ type InstrumentedApplicationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	err := scheduler.ApplicationsToCollectors(ctx, r.Client)
+	logger.V(0).Info("Reconciling InstrumentedApps")
+	err := datacollection.Sync(ctx, r.Client, r.Scheme)
 	if err != nil {
-		logger.Error(err, "error performing scheduling")
 		return ctrl.Result{}, err
 	}
 
@@ -59,6 +58,6 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 // SetupWithManager sets up the controller with the Manager.
 func (r *InstrumentedApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.InstrumentedApplication{}).
+		For(&odigosv1.InstrumentedApplication{}).
 		Complete(r)
 }

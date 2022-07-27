@@ -18,8 +18,7 @@ package controllers
 
 import (
 	"context"
-	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
-	"github.com/keyval-dev/odigos/scheduler/scheduler"
+	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -27,38 +26,49 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// CollectorReconciler reconciles a Collector object
-type CollectorReconciler struct {
+// CollectorsGroupReconciler reconciles a CollectorsGroup object
+type CollectorsGroupReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=odigos.io,resources=collectors,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=odigos.io,resources=collectors/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=odigos.io,resources=collectors/finalizers,verbs=update
+//+kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// the Collector object against the actual cluster state, and then
+// the CollectorsGroup object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
-func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	err := scheduler.ApplicationsToCollectors(ctx, r.Client)
-	if err != nil {
-		logger.Error(err, "error performing scheduling")
-		return ctrl.Result{}, err
+	if isDataCollectionReady(ctx, r.Client) {
+		logger.V(0).Info("data collection is ready, stopping wait on InstrumentedApps")
+		var instApps odigosv1.InstrumentedApplicationList
+		if err := r.List(ctx, &instApps); err != nil {
+			logger.Error(err, "failed to list InstrumentedApps")
+			return ctrl.Result{}, err
+		}
+
+		for _, instApp := range instApps.Items {
+			instApp.Spec.WaitingForDataCollection = false
+			if err := r.Update(ctx, &instApp); err != nil {
+				logger.Error(err, "failed to update InstrumentedApp")
+				return ctrl.Result{}, err
+			}
+		}
 	}
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *CollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *CollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.Collector{}).
+		For(&odigosv1.CollectorsGroup{}).
 		Complete(r)
 }
