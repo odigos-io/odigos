@@ -3,6 +3,7 @@ package config
 import (
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
+	"github.com/keyval-dev/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -12,8 +13,8 @@ const (
 
 type Datadog struct{}
 
-func (d *Datadog) DestType() odigosv1.DestinationType {
-	return odigosv1.DatadogDestinationType
+func (d *Datadog) DestType() common.DestinationType {
+	return common.DatadogDestinationType
 }
 
 func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {

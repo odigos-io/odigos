@@ -3,12 +3,13 @@ package config
 import (
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
+	"github.com/keyval-dev/odigos/common"
 )
 
 type NewRelic struct{}
 
-func (n *NewRelic) DestType() odigosv1.DestinationType {
-	return odigosv1.NewRelicDestinationType
+func (n *NewRelic) DestType() common.DestinationType {
+	return common.NewRelicDestinationType
 }
 
 func (n *NewRelic) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
