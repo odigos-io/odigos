@@ -15,7 +15,7 @@ func (n *NewRelic) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 	currentConfig.Exporters["otlp/newrelic"] = commonconf.GenericMap{
 		"endpoint": "https://otlp.nr-data.net:4317",
 		"headers": commonconf.GenericMap{
-			"api-key": "${API_KEY}",
+			"api-key": "${NEWRELIC_API_KEY}",
 		},
 	}
 

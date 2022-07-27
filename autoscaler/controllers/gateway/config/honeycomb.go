@@ -16,7 +16,7 @@ func (h *Honeycomb) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 		currentConfig.Exporters["otlp/honeycomb"] = commonconf.GenericMap{
 			"endpoint": "api.honeycomb.io:443",
 			"headers": commonconf.GenericMap{
-				"x-honeycomb-team": "${API_KEY}",
+				"x-honeycomb-team": "${HONEYCOMB_API_KEY}",
 			},
 		}
 

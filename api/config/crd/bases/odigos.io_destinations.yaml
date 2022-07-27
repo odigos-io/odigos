@@ -36,25 +36,8 @@ spec:
             description: DestinationSpec defines the desired state of Destination
             properties:
               data:
-                properties:
-                  datadog:
-                    properties:
-                      site:
-                        type: string
-                    required:
-                    - site
-                    type: object
-                  grafana:
-                    properties:
-                      url:
-                        type: string
-                    required:
-                    - url
-                    type: object
-                  honeycomb:
-                    type: object
-                  newRelic:
-                    type: object
+                additionalProperties:
+                  type: string
                 type: object
               secretRef:
                 description: LocalObjectReference contains enough information to let

@@ -3,6 +3,11 @@ package config
 import (
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+const (
+	datadogSiteKey = "DATADOG_SITE"
 )
 
 type Datadog struct{}
@@ -13,10 +18,16 @@ func (d *Datadog) DestType() odigosv1.DestinationType {
 
 func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if isTracingEnabled(dest) || isMetricsEnabled(dest) {
+		site, exists := dest.Spec.Data[datadogSiteKey]
+		if !exists {
+			log.Log.V(0).Info("Datadog site not specified, gateway will not be configured for Datadog")
+			return
+		}
+
 		currentConfig.Exporters["datadog"] = commonconf.GenericMap{
 			"api": commonconf.GenericMap{
-				"key":  "${API_KEY}",
-				"site": dest.Spec.Data.Datadog.Site,
+				"key":  "${DATADOG_API_KEY}",
+				"site": site,
 			},
 		}
 	}

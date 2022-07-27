@@ -46,17 +46,17 @@ export class Grafana implements ObservabilityVendor {
 
     return {
       Data: {
-        url: req.body.url,
+        GRAFANA_URL: req.body.url,
       },
       Secret: {
-        AUTH_TOKEN: Buffer.from(authString).toString("base64"),
+        GRAFANA_AUTH_TOKEN: Buffer.from(authString).toString("base64"),
       },
     };
   };
 
   mapDataToFields = (data: any) => {
     return {
-      url: data.url,
+      url: data.GRAFANA_URL,
     };
   };
 }

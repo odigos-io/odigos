@@ -38,17 +38,17 @@ export class Datadog implements ObservabilityVendor {
   toObjects = (req: NextApiRequest) => {
     return {
       Data: {
-        site: req.body.site,
+        DATADOG_SITE: req.body.site,
       },
       Secret: {
-        API_KEY: Buffer.from(req.body.apikey).toString("base64"),
+        DATADOG_API_KEY: Buffer.from(req.body.apikey).toString("base64"),
       },
     };
   };
 
   mapDataToFields = (data: any) => {
     return {
-      site: data.site,
+      site: data.DATADOG_SITE,
     };
   };
 }
