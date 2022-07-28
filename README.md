@@ -20,9 +20,9 @@ Start sending traces, metrics and logs to your favourite observability service (
 | Datadog       | ✅     | ✅      |      |
 | Honeycomb     | ✅     |         |      |
 | Grafana Cloud | ✅     |         |      |
-Can't find the destination you need? Help us by following our quick [adding new destination](https://odigos.io/docs/contribution-guidelines/add-new-destination/) guide and submit a PR.
+**Many more destinations are coming soon.**
 
-Many more destinations are coming soon.
+Can't find the destination you need? Help us by following our quick [adding new destination](https://odigos.io/docs/contribution-guidelines/add-new-destination/) guide and submit a PR.
 
 ## Installation
 
