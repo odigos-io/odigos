@@ -11,7 +11,7 @@ export enum ObservabilitySignals {
 }
 
 export interface VendorObjects {
-  Data?: any;
+  Data?: { [key: string]: string };
   Secret?: { [key: string]: string };
 }
 

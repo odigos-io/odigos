@@ -24,39 +24,10 @@ import (
 
 // DestinationSpec defines the desired state of Destination
 type DestinationSpec struct {
-	Type      DestinationType              `json:"type"`
-	Data      DestinationData              `json:"data"`
+	Type      common.DestinationType       `json:"type"`
+	Data      map[string]string            `json:"data"`
 	SecretRef v1.LocalObjectReference      `json:"secretRef"`
 	Signals   []common.ObservabilitySignal `json:"signals"`
-}
-
-//+kubebuilder:validation:Enum=grafana;datadog;honeycomb;newrelic
-type DestinationType string
-
-const (
-	GrafanaDestinationType   DestinationType = "grafana"
-	DatadogDestinationType   DestinationType = "datadog"
-	HoneycombDestinationType DestinationType = "honeycomb"
-	NewRelicDestinationType  DestinationType = "newrelic"
-)
-
-type DestinationData struct {
-	Grafana   *GrafanaData   `json:"grafana,omitempty"`
-	Honeycomb *HoneycombData `json:"honeycomb,omitempty"`
-	Datadog   *DatadogData   `json:"datadog,omitempty"`
-	NewRelic  *NewRelicData  `json:"newRelic,omitempty"`
-}
-
-type GrafanaData struct {
-	Url string `json:"url"`
-}
-
-type HoneycombData struct{}
-
-type NewRelicData struct{}
-
-type DatadogData struct {
-	Site string `json:"site"`
 }
 
 // DestinationStatus defines the observed state of Destination

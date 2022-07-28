@@ -11,7 +11,7 @@ import (
 var availableConfigers = []Configer{&Honeycomb{}, &Grafana{}, &Datadog{}, &NewRelic{}}
 
 type Configer interface {
-	DestType() odigosv1.DestinationType
+	DestType() common.DestinationType
 	ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config)
 }
 
@@ -64,8 +64,8 @@ func getBasicConfig() *commonconf.Config {
 	}
 }
 
-func loadConfigers() (map[odigosv1.DestinationType]Configer, error) {
-	configers := map[odigosv1.DestinationType]Configer{}
+func loadConfigers() (map[common.DestinationType]Configer, error) {
+	configers := map[common.DestinationType]Configer{}
 	for _, configer := range availableConfigers {
 		if _, exists := configers[configer.DestType()]; exists {
 			return nil, fmt.Errorf("duplicate configer for %s", configer.DestType())
