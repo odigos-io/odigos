@@ -34,7 +34,7 @@ export class NewRelic implements ObservabilityVendor {
   toObjects = (req: NextApiRequest) => {
     return {
       Secret: {
-        API_KEY: Buffer.from(req.body.apikey).toString("base64"),
+        NEWRELIC_API_KEY: Buffer.from(req.body.apikey).toString("base64"),
       },
     };
   };

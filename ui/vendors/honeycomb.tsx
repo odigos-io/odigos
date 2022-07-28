@@ -9,9 +9,7 @@ import { NextApiRequest } from "next";
 export class Honeycomb implements ObservabilityVendor {
   name = "honeycomb";
   displayName = "Honeycomb";
-  supportedSignals = [
-    ObservabilitySignals.Traces,
-  ];
+  supportedSignals = [ObservabilitySignals.Traces];
 
   getLogo = (props: any) => {
     return <HoneycombLogo {...props} />;
@@ -31,7 +29,7 @@ export class Honeycomb implements ObservabilityVendor {
   toObjects = (req: NextApiRequest) => {
     return {
       Secret: {
-        API_KEY: Buffer.from(req.body.apikey).toString("base64"),
+        HONEYCOMB_API_KEY: Buffer.from(req.body.apikey).toString("base64"),
       },
     };
   };

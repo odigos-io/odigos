@@ -3,12 +3,13 @@ package config
 import (
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
+	"github.com/keyval-dev/odigos/common"
 )
 
 type Honeycomb struct{}
 
-func (h *Honeycomb) DestType() odigosv1.DestinationType {
-	return odigosv1.HoneycombDestinationType
+func (h *Honeycomb) DestType() common.DestinationType {
+	return common.HoneycombDestinationType
 }
 
 func (h *Honeycomb) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
@@ -16,7 +17,7 @@ func (h *Honeycomb) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 		currentConfig.Exporters["otlp/honeycomb"] = commonconf.GenericMap{
 			"endpoint": "api.honeycomb.io:443",
 			"headers": commonconf.GenericMap{
-				"x-honeycomb-team": "${API_KEY}",
+				"x-honeycomb-team": "${HONEYCOMB_API_KEY}",
 			},
 		}
 

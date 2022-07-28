@@ -66,9 +66,7 @@ async function CreateNewDestination(
   }
 
   if (kubeObjects.Data) {
-    dest.spec!.data = {
-      [vendor.name]: kubeObjects.Data,
-    };
+    dest.spec!.data = kubeObjects.Data;
   } else {
     dest.spec!.data = {};
   }
