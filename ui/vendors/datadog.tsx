@@ -10,8 +10,8 @@ export class Datadog implements ObservabilityVendor {
   name = "datadog";
   displayName = "Datadog";
   supportedSignals = [
-    ObservabilitySignals.Metrics,
     ObservabilitySignals.Traces,
+    ObservabilitySignals.Metrics,
   ];
 
   getLogo = (props: any) => {

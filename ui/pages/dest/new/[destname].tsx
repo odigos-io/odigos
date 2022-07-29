@@ -71,7 +71,10 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
                       setSignals(newSignals);
                     }}
                   />
-                  <label htmlFor={signal}>{signal}</label>
+                  <label htmlFor={signal}>
+                    {signal.charAt(0).toUpperCase() +
+                      signal.slice(1).toLowerCase()}
+                  </label>
                 </div>
               ))}
             </div>

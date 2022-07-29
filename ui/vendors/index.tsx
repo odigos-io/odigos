@@ -5,9 +5,9 @@ import { NewRelic } from "@/vendors/newrelic";
 import { NextApiRequest } from "next";
 
 export enum ObservabilitySignals {
-  Logs = "Logs",
-  Metrics = "Metrics",
-  Traces = "Traces",
+  Logs = "LOGS",
+  Metrics = "METRICS",
+  Traces = "TRACES",
 }
 
 export interface VendorObjects {

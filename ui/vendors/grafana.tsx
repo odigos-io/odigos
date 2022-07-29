@@ -106,9 +106,9 @@ export class Grafana implements ObservabilityVendor {
 
   mapDataToFields = (data: any) => {
     return {
-      tempo_url: data.GRAFANA_TEMPO_URL,
-      remotewrite_url: data.GRAFANA_REMOTEWRITE_URL,
-      loki_url: data.GRAFANA_LOKI_URL,
+      tempo_url: data.GRAFANA_TEMPO_URL || "",
+      remotewrite_url: data.GRAFANA_REMOTEWRITE_URL || "",
+      loki_url: data.GRAFANA_LOKI_URL || "",
     };
   };
 }

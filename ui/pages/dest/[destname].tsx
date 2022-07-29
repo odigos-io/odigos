@@ -27,7 +27,7 @@ const NewDestination: NextPage<EditDestProps> = ({
   }
 
   const fields = vendor.getFields(signals);
-
+  console.log(fields);
   const deleteDest = async () => {
     const response = await fetch(`/api/dest/${destName}`, {
       method: "DELETE",
@@ -145,8 +145,8 @@ export const getServerSideProps = async ({ query }: any) => {
   const props: EditDestProps = {
     destName: destname,
     destType: spec.type,
-    currentValues: vendor.mapDataToFields(spec.data[vendor.name]),
-    signals: spec.signalsreduce((acc: any, signal: any) => {
+    currentValues: vendor.mapDataToFields(spec.data),
+    signals: spec.signals.reduce((acc: any, signal: any) => {
       Object.assign(acc, { [signal]: true });
       return acc;
     }, {}),
