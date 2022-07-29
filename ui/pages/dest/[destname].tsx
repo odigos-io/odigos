@@ -9,12 +9,14 @@ type EditDestProps = {
   destName: string;
   destType: string;
   currentValues: { [key: string]: string };
+  signals: any;
 };
 
 const NewDestination: NextPage<EditDestProps> = ({
   destType,
   currentValues,
   destName,
+  signals,
 }) => {
   const router = useRouter();
   const vendor = Vendors.filter((v) => v.name === destType)[0];
@@ -24,7 +26,7 @@ const NewDestination: NextPage<EditDestProps> = ({
     );
   }
 
-  const fields = vendor.getFields();
+  const fields = vendor.getFields(signals);
 
   const deleteDest = async () => {
     const response = await fetch(`/api/dest/${destName}`, {
@@ -144,6 +146,10 @@ export const getServerSideProps = async ({ query }: any) => {
     destName: destname,
     destType: spec.type,
     currentValues: vendor.mapDataToFields(spec.data[vendor.name]),
+    signals: spec.signalsreduce((acc: any, signal: any) => {
+      Object.assign(acc, { [signal]: true });
+      return acc;
+    }, {}),
   };
 
   return {

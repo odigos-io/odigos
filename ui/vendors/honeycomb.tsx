@@ -15,7 +15,7 @@ export class Honeycomb implements ObservabilityVendor {
     return <HoneycombLogo {...props} />;
   };
 
-  getFields = () => {
+  getFields = (selectedSignals: any) => {
     return [
       {
         displayName: "API Key",

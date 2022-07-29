@@ -18,8 +18,8 @@ Start sending traces, metrics and logs to your favourite observability service (
 | ------------- | ------ | ------- | ---- |
 | New Relic     | ✅     | ✅      | ✅   |
 | Datadog       | ✅     | ✅      |      |
+| Grafana Cloud | ✅     | ✅      | ✅   |
 | Honeycomb     | ✅     |         |      |
-| Grafana Cloud | ✅     |         |      |
 
 **Many more destinations are coming soon.**
 

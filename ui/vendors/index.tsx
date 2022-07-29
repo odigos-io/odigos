@@ -27,7 +27,7 @@ export interface ObservabilityVendor {
   displayName: string;
   supportedSignals: ObservabilitySignals[];
   getLogo: (props: any) => any;
-  getFields: () => IDestField[];
+  getFields: (selectedSignals: any) => IDestField[];
   toObjects: (req: NextApiRequest) => VendorObjects;
   mapDataToFields: (data: any) => { [key: string]: string };
 }

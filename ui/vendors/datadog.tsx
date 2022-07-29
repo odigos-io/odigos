@@ -18,7 +18,7 @@ export class Datadog implements ObservabilityVendor {
     return <DatadogLogo {...props} />;
   };
 
-  getFields = () => {
+  getFields = (selectedSignals: any) => {
     return [
       {
         displayName: "Site",
