@@ -20,7 +20,7 @@ export class NewRelic implements ObservabilityVendor {
     return <NewRelicLogo {...props} />;
   };
 
-  getFields = () => {
+  getFields = (selectedSignals: any) => {
     return [
       {
         displayName: "License Key",

@@ -19,7 +19,8 @@ export default function DestCard({
               {supportedSignals.map((signal) => {
                 return (
                   <li key={signal} className="text-sm">
-                    {signal}
+                    {signal.charAt(0).toUpperCase() +
+                      signal.slice(1).toLowerCase()}
                   </li>
                 );
               })}

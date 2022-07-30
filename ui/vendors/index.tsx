@@ -5,9 +5,9 @@ import { NewRelic } from "@/vendors/newrelic";
 import { NextApiRequest } from "next";
 
 export enum ObservabilitySignals {
-  Logs = "Logs",
-  Metrics = "Metrics",
-  Traces = "Traces",
+  Logs = "LOGS",
+  Metrics = "METRICS",
+  Traces = "TRACES",
 }
 
 export interface VendorObjects {
@@ -27,7 +27,7 @@ export interface ObservabilityVendor {
   displayName: string;
   supportedSignals: ObservabilitySignals[];
   getLogo: (props: any) => any;
-  getFields: () => IDestField[];
+  getFields: (selectedSignals: any) => IDestField[];
   toObjects: (req: NextApiRequest) => VendorObjects;
   mapDataToFields: (data: any) => { [key: string]: string };
 }
