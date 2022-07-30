@@ -67,9 +67,9 @@ func (g *Grafana) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 			"endpoint": fmt.Sprintf("https://%s:%s@%s", user, "${GRAFANA_API_KEY}", url),
 			"labels": commonconf.GenericMap{
 				"attributes": commonconf.GenericMap{
-					"k8s.container.name": "",
-					"k8s.pod.name":       "",
-					"k8s.namespace.name": "",
+					"k8s.container.name": "k8s_container_name",
+					"k8s.pod.name":       "k8s_pod_name",
+					"k8s.namespace.name": "k8s_namespace_name",
 				},
 			},
 		}
