@@ -23,6 +23,7 @@ package v1alpha1
 
 import (
 	"github.com/keyval-dev/odigos/common"
+	"k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -184,7 +185,11 @@ func (in *DestinationSpec) DeepCopyInto(out *DestinationSpec) {
 			(*out)[key] = val
 		}
 	}
-	out.SecretRef = in.SecretRef
+	if in.SecretRef != nil {
+		in, out := &in.SecretRef, &out.SecretRef
+		*out = new(v1.LocalObjectReference)
+		**out = **in
+	}
 	if in.Signals != nil {
 		in, out := &in.Signals, &out.Signals
 		*out = make([]common.ObservabilitySignal, len(*in))

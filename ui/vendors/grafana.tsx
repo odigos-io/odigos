@@ -2,6 +2,7 @@ import {
   ObservabilityVendor,
   ObservabilitySignals,
   VendorObjects,
+  VendorType,
 } from "@/vendors/index";
 import GrafanaLogo from "@/img/vendor/grafana.svg";
 import { NextApiRequest } from "next";
@@ -9,6 +10,7 @@ import { NextApiRequest } from "next";
 export class Grafana implements ObservabilityVendor {
   name = "grafana";
   displayName = "Grafana Cloud";
+  type = VendorType.MANAGED;
   supportedSignals = [
     ObservabilitySignals.Traces,
     ObservabilitySignals.Metrics,

@@ -153,13 +153,15 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Col
 func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSource {
 	var result []corev1.EnvFromSource
 	for _, dst := range destList.Items {
-		result = append(result, corev1.EnvFromSource{
-			SecretRef: &corev1.SecretEnvSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: dst.Spec.SecretRef.Name,
+		if dst.Spec.SecretRef != nil {
+			result = append(result, corev1.EnvFromSource{
+				SecretRef: &corev1.SecretEnvSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: dst.Spec.SecretRef.Name,
+					},
 				},
-			},
-		})
+			})
+		}
 	}
 
 	return result

@@ -26,7 +26,7 @@ import (
 type DestinationSpec struct {
 	Type      common.DestinationType       `json:"type"`
 	Data      map[string]string            `json:"data"`
-	SecretRef v1.LocalObjectReference      `json:"secretRef"`
+	SecretRef *v1.LocalObjectReference     `json:"secretRef,omitempty"`
 	Signals   []common.ObservabilitySignal `json:"signals"`
 }
 

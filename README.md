@@ -14,12 +14,22 @@ Start sending traces, metrics and logs to your favourite observability service (
 
 ## Supported Destinations
 
+### Managed
+
 |               | Traces | Metrics | Logs |
 | ------------- | ------ | ------- | ---- |
 | New Relic     | ✅     | ✅      | ✅   |
 | Datadog       | ✅     | ✅      |      |
 | Grafana Cloud | ✅     | ✅      | ✅   |
 | Honeycomb     | ✅     |         |      |
+
+### Open Source
+
+|            | Traces | Metrics | Logs |
+| ---------- | ------ | ------- | ---- |
+| Prometheus |        | ✅      |      |
+| Tempo      | ✅     |         |      |
+| Loki       |        |         | ✅   |
 
 **Many more destinations are coming soon.**
 

@@ -59,7 +59,11 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
           {vendor.supportedSignals && vendor.supportedSignals.length > 0 && (
             <div className="flex flex-row space-x-10 items-center">
               {vendor.supportedSignals.map((signal) => (
-                <div key={signal} className="space-x-2 items-center">
+                <div
+                  key={signal}
+                  className="space-x-2 items-center"
+                  hidden={Object.keys(signals).length < 2}
+                >
                   <input
                     type="checkbox"
                     name={signal}

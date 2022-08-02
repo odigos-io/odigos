@@ -3,6 +3,7 @@ import {
   ObservabilitySignals,
   ObservabilityVendor,
   VendorObjects,
+  VendorType,
 } from "@/vendors/index";
 import NewRelicLogo from "@/img/vendor/newrelic.svg";
 import { NextApiRequest } from "next";
@@ -10,6 +11,7 @@ import { NextApiRequest } from "next";
 export class NewRelic implements ObservabilityVendor {
   name = "newrelic";
   displayName = "New Relic";
+  type = VendorType.MANAGED;
   supportedSignals = [
     ObservabilitySignals.Traces,
     ObservabilitySignals.Metrics,

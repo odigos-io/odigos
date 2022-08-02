@@ -2,6 +2,7 @@ import {
   ObservabilityVendor,
   ObservabilitySignals,
   VendorObjects,
+  VendorType,
 } from "@/vendors/index";
 import DatadogLogo from "@/img/vendor/datadog.svg";
 import { NextApiRequest } from "next";
@@ -9,6 +10,7 @@ import { NextApiRequest } from "next";
 export class Datadog implements ObservabilityVendor {
   name = "datadog";
   displayName = "Datadog";
+  type = VendorType.MANAGED;
   supportedSignals = [
     ObservabilitySignals.Traces,
     ObservabilitySignals.Metrics,
