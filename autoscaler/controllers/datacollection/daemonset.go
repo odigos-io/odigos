@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	"github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,11 +16,12 @@ import (
 )
 
 const (
-	collectorLabel   = "odigos.io/data-collection"
-	containerName    = "gateway"
-	containerImage   = "otel/opentelemetry-collector-contrib:0.55.0"
-	containerCommand = "/otelcol-contrib"
-	confDir          = "/conf"
+	collectorLabel       = "odigos.io/data-collection"
+	containerName        = "gateway"
+	containerImage       = "otel/opentelemetry-collector-contrib:0.55.0"
+	containerCommand     = "/otelcol-contrib"
+	confDir              = "/conf"
+	configHashAnnotation = "odigos.io/config-hash"
 )
 
 var (
@@ -28,10 +30,10 @@ var (
 	}
 )
 
-func syncDaemonSet(datacollection *odigosv1.CollectorsGroup, ctx context.Context,
+func syncDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
-	desiredDs, err := getDesiredDaemonSet(datacollection, scheme)
+	desiredDs, err := getDesiredDaemonSet(datacollection, configData, scheme)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -62,7 +64,7 @@ func syncDaemonSet(datacollection *odigosv1.CollectorsGroup, ctx context.Context
 	return updated, nil
 }
 
-func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme) (*appsv1.DaemonSet, error) {
+func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string, scheme *runtime.Scheme) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -77,6 +79,9 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, scheme *runti
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: commonLabels,
+					Annotations: map[string]string{
+						configHashAnnotation: common.Sha256Hash(configData),
+					},
 				},
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{

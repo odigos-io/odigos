@@ -23,38 +23,39 @@ const (
 
 func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList,
 	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme) (*v1.ConfigMap, error) {
+	c client.Client, scheme *runtime.Scheme) (string, error) {
 	logger := log.FromContext(ctx)
 	desired, err := getDesiredConfigMap(apps, dests, datacollection, scheme)
+	desiredData := desired.Data[configKey]
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
-		return nil, err
+		return "", err
 	}
 
 	existing := &v1.ConfigMap{}
 	if err := c.Get(ctx, client.ObjectKey{Namespace: datacollection.Namespace, Name: datacollection.Name}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(0).Info("creating config map")
-			newCm, err := createConfigMap(desired, ctx, c)
+			_, err := createConfigMap(desired, ctx, c)
 			if err != nil {
 				logger.Error(err, "failed to create config map")
-				return nil, err
+				return "", err
 			}
-			return newCm, nil
+			return desiredData, nil
 		} else {
 			logger.Error(err, "failed to get config map")
-			return nil, err
+			return "", err
 		}
 	}
 
 	logger.V(0).Info("patching config map")
-	updatedCm, err := patchConfigMap(existing, desired, ctx, c)
+	_, err = patchConfigMap(existing, desired, ctx, c)
 	if err != nil {
 		logger.Error(err, "failed to patch config map")
-		return nil, err
+		return "", err
 	}
 
-	return updatedCm, nil
+	return desiredData, nil
 }
 
 func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {

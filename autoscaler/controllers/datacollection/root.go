@@ -49,13 +49,13 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("syncing data collection")
 
-	_, err := syncConfigMap(instApps, dests, dataCollection, ctx, c, scheme)
+	configData, err := syncConfigMap(instApps, dests, dataCollection, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "failed to sync config map")
 		return err
 	}
 
-	ds, err := syncDaemonSet(dataCollection, ctx, c, scheme)
+	ds, err := syncDaemonSet(dataCollection, configData, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "failed to sync daemon set")
 		return err

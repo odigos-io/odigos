@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	"github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,15 +16,16 @@ import (
 )
 
 const (
-	containerName    = "gateway"
-	containerImage   = "otel/opentelemetry-collector-contrib:0.55.0"
-	containerCommand = "/otelcol-contrib"
-	confDir          = "/conf"
+	containerName        = "gateway"
+	containerImage       = "otel/opentelemetry-collector-contrib:0.55.0"
+	containerCommand     = "/otelcol-contrib"
+	confDir              = "/conf"
+	configHashAnnotation = "odigos.io/config-hash"
 )
 
-func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (*appsv1.Deployment, error) {
+func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string, ctx context.Context, c client.Client, scheme *runtime.Scheme) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
-	desiredDeployment, err := getDesiredDeployment(dests, gateway, scheme)
+	desiredDeployment, err := getDesiredDeployment(dests, configData, gateway, scheme)
 	if err != nil {
 		logger.Error(err, "Failed to get desired deployment")
 		return nil, err
@@ -88,7 +90,7 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 	return updated, nil
 }
 
-func getDesiredDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme) (*appsv1.Deployment, error) {
+func getDesiredDeployment(dests *odigosv1.DestinationList, configData string, gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme) (*appsv1.Deployment, error) {
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      gateway.Name,
@@ -103,6 +105,9 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Col
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: v1.ObjectMeta{
 					Labels: commonLabels,
+					Annotations: map[string]string{
+						configHashAnnotation: common.Sha256Hash(configData),
+					},
 				},
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
