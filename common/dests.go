@@ -7,4 +7,5 @@ const (
 	DatadogDestinationType   DestinationType = "datadog"
 	HoneycombDestinationType DestinationType = "honeycomb"
 	NewRelicDestinationType  DestinationType = "newrelic"
+	LogzioDestinationType    DestinationType = "logzio"
 )
