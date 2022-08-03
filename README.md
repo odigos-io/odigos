@@ -20,6 +20,8 @@ Start sending traces, metrics and logs to your favourite observability service (
 | Datadog       | ✅     | ✅      |      |
 | Grafana Cloud | ✅     | ✅      | ✅   |
 | Honeycomb     | ✅     |         |      |
+| Logz.io       | ✅     | ✅      | ✅   |
+
 
 **Many more destinations are coming soon.**
 
