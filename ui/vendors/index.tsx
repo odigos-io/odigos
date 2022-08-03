@@ -2,6 +2,7 @@ import { Honeycomb } from "@/vendors/honeycomb";
 import { Datadog } from "@/vendors/datadog";
 import { Grafana } from "@/vendors/grafana";
 import { NewRelic } from "@/vendors/newrelic";
+import { Logzio } from "@/vendors/logzio";
 import { NextApiRequest } from "next";
 import { Prometheus } from "@/vendors/hosted/prometheus";
 import { Tempo } from "@/vendors/hosted/tempo";
@@ -46,6 +47,7 @@ const Vendors = [
   new Datadog(),
   new Grafana(),
   new NewRelic(),
+  new Logzio(),
   new Prometheus(),
   new Tempo(),
   new Loki(),
