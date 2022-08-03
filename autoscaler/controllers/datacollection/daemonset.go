@@ -17,7 +17,7 @@ import (
 
 const (
 	collectorLabel       = "odigos.io/data-collection"
-	containerName        = "gateway"
+	containerName        = "data-collection"
 	containerImage       = "otel/opentelemetry-collector-contrib:0.55.0"
 	containerCommand     = "/otelcol-contrib"
 	confDir              = "/conf"
