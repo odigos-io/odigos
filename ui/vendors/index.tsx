@@ -33,6 +33,12 @@ export interface ObservabilityVendor {
   mapDataToFields: (data: any) => { [key: string]: string };
 }
 
-const Vendors = [ new Logzio(), new Honeycomb(), new Datadog(), new Grafana(), new NewRelic()];
+const Vendors = [
+  new Honeycomb(),
+  new Datadog(),
+  new Grafana(),
+  new NewRelic(),
+  new Logzio(),
+];
 
 export default Vendors;

@@ -110,6 +110,21 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 			return ctrl.Result{}, err
 		}
 
+		if len(childPods.Items) == 0 {
+			logger.V(0).Info("no lang detection pods running. retrying")
+			labels, err := r.getOwnerTemplateLabels(ctx, &instrumentedApp)
+			if err != nil {
+				logger.Error(err, "error getting owner labels")
+				return ctrl.Result{}, err
+			}
+
+			err = r.detectLanguage(ctx, &instrumentedApp, labels)
+			if err != nil {
+				logger.Error(err, "error detecting language")
+			}
+			return ctrl.Result{}, nil
+		}
+
 		for _, pod := range childPods.Items {
 			// If pod finished -  read detection result
 			if pod.Status.Phase == corev1.PodSucceeded && len(pod.Status.ContainerStatuses) > 0 {
