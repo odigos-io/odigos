@@ -104,6 +104,14 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, scheme *runti
 								},
 							},
 						},
+						{
+							Name: "varlibdockercontainers",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/var/lib/docker/containers",
+								},
+							},
+						},
 					},
 					Containers: []corev1.Container{
 						{
@@ -114,6 +122,11 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, scheme *runti
 								{
 									Name:      configKey,
 									MountPath: confDir,
+								},
+								{
+									Name:      "varlibdockercontainers",
+									MountPath: "/var/lib/docker/containers",
+									ReadOnly:  true,
 								},
 								{
 									Name:      "varlog",
