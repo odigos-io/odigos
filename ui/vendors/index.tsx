@@ -4,6 +4,14 @@ import { Grafana } from "@/vendors/grafana";
 import { NewRelic } from "@/vendors/newrelic";
 import { Logzio } from "@/vendors/logzio";
 import { NextApiRequest } from "next";
+import { Prometheus } from "@/vendors/hosted/prometheus";
+import { Tempo } from "@/vendors/hosted/tempo";
+import { Loki } from "@/vendors/hosted/loki";
+
+export enum VendorType {
+  MANAGED = "MANAGED",
+  HOSTED = "HOSTED",
+}
 
 export enum ObservabilitySignals {
   Logs = "LOGS",
@@ -27,6 +35,7 @@ export interface ObservabilityVendor {
   name: string;
   displayName: string;
   supportedSignals: ObservabilitySignals[];
+  type: VendorType;
   getLogo: (props: any) => any;
   getFields: (selectedSignals: any) => IDestField[];
   toObjects: (req: NextApiRequest) => VendorObjects;
@@ -39,6 +48,9 @@ const Vendors = [
   new Grafana(),
   new NewRelic(),
   new Logzio(),
+  new Prometheus(),
+  new Tempo(),
+  new Loki(),
 ];
 
 export default Vendors;

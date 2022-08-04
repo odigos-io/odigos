@@ -8,4 +8,7 @@ const (
 	HoneycombDestinationType DestinationType = "honeycomb"
 	NewRelicDestinationType  DestinationType = "newrelic"
 	LogzioDestinationType    DestinationType = "logzio"
+	PrometheusDestinationType DestinationType = "prometheus"
+	LokiDestinationType       DestinationType = "loki"
+	TempoDestinationType      DestinationType = "tempo"
 )

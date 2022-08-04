@@ -5,7 +5,7 @@ export default function Sidebar() {
   const router = useRouter();
   return (
     <aside className="w-64" aria-label="Sidebar">
-      <div className="h-screen overflow-y-auto py-4 px-3 rounded bg-gray-800">
+      <div className="min-h-screen h-full overflow-y-auto py-4 px-3 rounded bg-gray-800">
         <Link href="/">
           <a className="flex items-center justify-center mb-5">
             <span className="self-center text-2xl font-semibold whitespace-nowrap text-white">

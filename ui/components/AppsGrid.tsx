@@ -23,7 +23,7 @@ export default function AppsGrid({
   };
 
   return (
-    <div className="grid lg:grid-cols-3 2xl:grid-cols-6 gap-4 pr-4">
+    <div className="grid lg:grid-cols-3 2xl:grid-cols-4 max-w-7xl gap-4 pr-4">
       {apps &&
         apps.map((app: ApplicationData) => {
           return (

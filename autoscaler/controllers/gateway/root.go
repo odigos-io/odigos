@@ -53,7 +53,7 @@ func syncGateway(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGr
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("syncing gateway")
 
-	_, err := syncConfigMap(dests, gateway, ctx, c, scheme)
+	configData, err := syncConfigMap(dests, gateway, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "failed to sync config map")
 		return err
@@ -65,7 +65,7 @@ func syncGateway(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGr
 		return err
 	}
 
-	dep, err := syncDeployment(dests, gateway, ctx, c, scheme)
+	dep, err := syncDeployment(dests, gateway, configData, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "failed to sync deployment")
 		return err

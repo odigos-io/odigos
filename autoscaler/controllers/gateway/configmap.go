@@ -17,12 +17,12 @@ const (
 	configKey = "collector-conf"
 )
 
-func syncConfigMap(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (*v1.ConfigMap, error) {
+func syncConfigMap(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (string, error) {
 	logger := log.FromContext(ctx)
 	desireddData, err := config.Calculate(dests)
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
-		return nil, err
+		return "", err
 	}
 
 	desired := &v1.ConfigMap{
@@ -37,37 +37,37 @@ func syncConfigMap(dests *odigosv1.DestinationList, gateway *odigosv1.Collectors
 
 	if err := ctrl.SetControllerReference(gateway, desired, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference")
-		return nil, err
+		return "", err
 	}
 
 	existing := &v1.ConfigMap{}
 	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: kubeObjectName}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(0).Info("Creating config map")
-			newCm, err := createConfigMap(desired, ctx, c)
+			_, err := createConfigMap(desired, ctx, c)
 			if err != nil {
 				logger.Error(err, "failed to create config map")
-				return nil, err
+				return "", err
 			}
-			return newCm, nil
+			return desireddData, nil
 		} else {
 			logger.Error(err, "failed to get config map")
-			return nil, err
+			return "", err
 		}
 	}
 
 	if existing.Data[configKey] != desired.Data[configKey] {
 		logger.V(0).Info("Updating config map")
-		updatedCm, err := patchConfigMap(existing, desired, ctx, c)
+		_, err := patchConfigMap(existing, desired, ctx, c)
 		if err != nil {
 			logger.Error(err, "failed to patch config map")
-			return nil, err
+			return "", err
 		}
 
-		return updatedCm, nil
+		return desireddData, nil
 	}
 
-	return desired, nil
+	return desireddData, nil
 }
 
 func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {

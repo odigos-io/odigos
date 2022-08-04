@@ -2,6 +2,7 @@ import {
   ObservabilitySignals,
   ObservabilityVendor,
   VendorObjects,
+  VendorType,
 } from "@/vendors/index";
 import HoneycombLogo from "@/img/vendor/honeycomb.svg";
 import { NextApiRequest } from "next";
@@ -9,6 +10,7 @@ import { NextApiRequest } from "next";
 export class Honeycomb implements ObservabilityVendor {
   name = "honeycomb";
   displayName = "Honeycomb";
+  type = VendorType.MANAGED;
   supportedSignals = [ObservabilitySignals.Traces];
 
   getLogo = (props: any) => {

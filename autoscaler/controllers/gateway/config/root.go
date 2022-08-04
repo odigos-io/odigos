@@ -8,7 +8,7 @@ import (
 	"github.com/keyval-dev/odigos/common"
 )
 
-var availableConfigers = []Configer{&Honeycomb{}, &Grafana{}, &Datadog{}, &NewRelic{}, &Logzio{}}
+var availableConfigers = []Configer{&Honeycomb{}, &Grafana{}, &Datadog{}, &NewRelic{}, &Logzio{},  &Prometheus{}, &Tempo{}, &Loki{}}
 
 type Configer interface {
 	DestType() common.DestinationType
