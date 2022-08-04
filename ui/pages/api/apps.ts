@@ -48,7 +48,7 @@ export default async function handler(
       };
     });
   const discoveryInProgress = response.body.items.some(
-    (i: any) => i.status.langDetection.phase !== "Completed"
+    (i: any) => i.status.langDetection.phase === "Running"
   );
   return res.status(200).json({
     apps: appsFound,

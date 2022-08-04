@@ -109,22 +109,6 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 			logger.Error(err, "could not find child pods")
 			return ctrl.Result{}, err
 		}
-
-		if len(childPods.Items) == 0 {
-			logger.V(0).Info("no lang detection pods running. retrying")
-			labels, err := r.getOwnerTemplateLabels(ctx, &instrumentedApp)
-			if err != nil {
-				logger.Error(err, "error getting owner labels")
-				return ctrl.Result{}, err
-			}
-
-			err = r.detectLanguage(ctx, &instrumentedApp, labels)
-			if err != nil {
-				logger.Error(err, "error detecting language")
-			}
-			return ctrl.Result{}, nil
-		}
-
 		for _, pod := range childPods.Items {
 			// If pod finished -  read detection result
 			if pod.Status.Phase == corev1.PodSucceeded && len(pod.Status.ContainerStatuses) > 0 {
@@ -155,12 +139,22 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 						return ctrl.Result{}, err
 					}
 				}
+			} else if pod.Status.Phase == corev1.PodFailed {
+				logger.V(0).Info("lang detection pod failed. marking as error")
+				instrumentedApp.Status.LangDetection.Phase = v1.ErrorLangDetectionPhase
+				err = r.Status().Update(ctx, &instrumentedApp)
+				if err != nil {
+					logger.Error(err, "error updating InstrumentedApp status")
+					return ctrl.Result{}, err
+				}
+				return ctrl.Result{}, nil
 			}
 		}
 	}
 
 	// Clean up finished pods
-	if instrumentedApp.Status.LangDetection.Phase == v1.CompletedLangDetectionPhase {
+	if instrumentedApp.Status.LangDetection.Phase == v1.CompletedLangDetectionPhase ||
+		instrumentedApp.Status.LangDetection.Phase == v1.ErrorLangDetectionPhase {
 		var childPods corev1.PodList
 		err = r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingFields{podOwnerKey: req.Name})
 		if err != nil {
