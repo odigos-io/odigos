@@ -46,11 +46,8 @@ const SetupPage: NextPage = () => {
         Please select how odigos should choose which applications to instrument
         <div className="flex items-center mt-4 ml-2">
           <input
-            checked={
-              !data.discovery_in_progress && instrumentationMode === "OPT_OUT"
-            }
+            checked={instrumentationMode === "OPT_OUT"}
             id="OPT_OUT"
-            disabled={data.discovery_in_progress}
             type="radio"
             value="OPT_OUT"
             onChange={(e) => {
@@ -60,13 +57,7 @@ const SetupPage: NextPage = () => {
             name="instrumentation-mode"
             className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2"
           />
-          <label
-            htmlFor="OPT_OUT"
-            className={
-              "ml-2 text-md " +
-              (data.discovery_in_progress ? "text-gray-500" : "")
-            }
-          >
+          <label htmlFor="OPT_OUT" className="ml-2 text-md">
             Instrument any applications found, new application will be
             instrumented automatically (Opt out)
           </label>
@@ -74,23 +65,14 @@ const SetupPage: NextPage = () => {
         <div className="flex items-center mt-1 ml-2">
           <input
             id="OPT_IN"
-            disabled={data.discovery_in_progress}
-            checked={
-              !data.discovery_in_progress && instrumentationMode === "OPT_IN"
-            }
+            checked={instrumentationMode === "OPT_IN"}
             type="radio"
             value="OPT_IN"
             onChange={(e) => setInstrumentationMode(e.currentTarget.value)}
             name="instrumentation-mode"
             className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2"
           />
-          <label
-            htmlFor="OPT_IN"
-            className={
-              "ml-2 text-md " +
-              (data.discovery_in_progress ? "text-gray-500" : "")
-            }
-          >
+          <label htmlFor="OPT_IN" className="ml-2 text-md">
             Instrument only the selected applications, new applications will not
             be instrumented automatically (Opt in)
           </label>
@@ -104,22 +86,18 @@ const SetupPage: NextPage = () => {
       <div className="pt-4">
         <AppsGrid
           apps={data.apps}
-          disabled={
-            data.discovery_in_progress || instrumentationMode === "OPT_OUT"
-          }
+          disabled={instrumentationMode === "OPT_OUT"}
           selectedApps={selectedApps}
           setSelectedApps={setSelectedApps}
         />
       </div>
-      {!data.discovery_in_progress && (
-        <button
-          type="button"
-          onClick={() => submitChanges(instrumentationMode, selectedApps)}
-          className="mt-6 text-white focus:ring-4 font-bold rounded-md text-sm px-14 py-2.5 mr-2 mb-2 bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-blue-800"
-        >
-          Save Changes
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => submitChanges(instrumentationMode, selectedApps)}
+        className="mt-6 text-white focus:ring-4 font-bold rounded-md text-sm px-14 py-2.5 mr-2 mb-2 bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-blue-800"
+      >
+        Save Changes
+      </button>
     </div>
   );
 };
