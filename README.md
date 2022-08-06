@@ -17,20 +17,20 @@ Start sending traces, metrics and logs to your favourite observability service (
 ### Managed
 
 |               | Traces | Metrics | Logs |
-|---------------|--------|---------|------|
-| New Relic     | ✅      | ✅       | ✅    |
-| Datadog       | ✅      | ✅       |      |
-| Grafana Cloud | ✅      | ✅       | ✅    |
-| Honeycomb     | ✅      |         |      |
-| Logz.io       | ✅      | ✅       | ✅    |
+| ------------- | ------ | ------- | ---- |
+| New Relic     | ✅     | ✅      | ✅   |
+| Datadog       | ✅     | ✅      |      |
+| Grafana Cloud | ✅     | ✅      | ✅   |
+| Honeycomb     | ✅     |         |      |
+| Logz.io       | ✅     | ✅      | ✅   |
 
 ### Open Source
 
 |            | Traces | Metrics | Logs |
-|------------|--------|---------|------|
-| Prometheus |        | ✅       |      |
-| Tempo      | ✅      |         |      |
-| Loki       |        |         | ✅    |
+| ---------- | ------ | ------- | ---- |
+| Prometheus |        | ✅      |      |
+| Tempo      | ✅     |         |      |
+| Loki       |        |         | ✅   |
 
 **Many more destinations are coming soon.**
 
@@ -51,6 +51,10 @@ See the [quickstart guide](https://odigos.io/docs/) for more details and example
 ## Project Status
 
 This project is actively maintained by [keyval](https://keyval.dev) and is currently in its initial days. We would love to receive your ideas, feedback & contributions.
+
+## Contributing
+
+Please refer to the [contributing.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests.
 
 ## License
 
