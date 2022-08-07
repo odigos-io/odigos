@@ -3,6 +3,7 @@ package datacollection
 import (
 	"context"
 	"fmt"
+
 	"github.com/ghodss/yaml"
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
@@ -266,8 +267,13 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	}
 
 	if collectMetrics {
+		cfg.Receivers["kubeletstats"] = commonconf.GenericMap{
+			"auth_type":           "serviceAccount",
+			"collection_interval": "10s",
+		}
+
 		cfg.Service.Pipelines["metrics"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
+			Receivers:  []string{"otlp", "kubeletstats"},
 			Processors: []string{"batch"},
 			Exporters:  []string{"otlp/gateway"},
 		}
