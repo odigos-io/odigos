@@ -3,6 +3,7 @@ package datacollection
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/common"
@@ -140,6 +141,22 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 									Name:      "varlog",
 									MountPath: "/var/log",
 									ReadOnly:  true,
+								},
+							},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/",
+										Port: intstr.FromInt(13133),
+									},
+								},
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/",
+										Port: intstr.FromInt(13133),
+									},
 								},
 							},
 						},
