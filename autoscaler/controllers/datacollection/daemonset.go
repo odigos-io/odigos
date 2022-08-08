@@ -3,6 +3,7 @@ package datacollection
 import (
 	"context"
 	"fmt"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	appsv1 "k8s.io/api/apps/v1"
@@ -22,6 +23,7 @@ const (
 	containerCommand     = "/otelcol-contrib"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
+	dataCollectionSA     = "odigos-data-collection"
 )
 
 var (
@@ -84,6 +86,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 					},
 				},
 				Spec: corev1.PodSpec{
+					ServiceAccountName: dataCollectionSA,
 					Volumes: []corev1.Volume{
 						{
 							Name: configKey,
