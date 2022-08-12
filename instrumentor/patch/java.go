@@ -13,7 +13,7 @@ const (
 	javaVolumeName               = "agentdir-java"
 	javaMountPath                = "/agent"
 	otelResourceAttributesEnvVar = "OTEL_RESOURCE_ATTRIBUTES"
-	otelResourceAttrPatteern     = "service.name=%s"
+	otelResourceAttrPatteern     = "service.name=%s,k8s.pod.name=%s"
 	javaOptsEnvVar               = "JAVA_OPTS"
 	javaToolOptionsEnvVar        = "JAVA_TOOL_OPTIONS"
 	javaToolOptionsPattern       = "-javaagent:/agent/opentelemetry-javaagent-all.jar " +
@@ -47,6 +47,24 @@ func (j *javaPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odigos
 	var modifiedContainers []v1.Container
 	for _, container := range podSpec.Spec.Containers {
 		if shouldPatch(instrumentation, common.JavaProgrammingLanguage, container.Name) {
+			container.Env = append([]v1.EnvVar{{
+				Name: NodeIPEnvName,
+				ValueFrom: &v1.EnvVarSource{
+					FieldRef: &v1.ObjectFieldSelector{
+						FieldPath: "status.hostIP",
+					},
+				},
+			},
+				{
+					Name: PodNameEnvVName,
+					ValueFrom: &v1.EnvVarSource{
+						FieldRef: &v1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
+				},
+			}, container.Env...)
+
 			idx := getIndexOfEnv(container.Env, javaToolOptionsEnvVar)
 			if idx == -1 {
 				container.Env = append(container.Env, v1.EnvVar{
@@ -64,16 +82,8 @@ func (j *javaPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odigos
 
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  otelResourceAttributesEnvVar,
-				Value: fmt.Sprintf(otelResourceAttrPatteern, calculateAppName(podSpec, &container, instrumentation)),
+				Value: fmt.Sprintf(otelResourceAttrPatteern, calculateAppName(podSpec, &container, instrumentation), PodNameEnvValue),
 			})
-			container.Env = append([]v1.EnvVar{{
-				Name: NodeIPEnvName,
-				ValueFrom: &v1.EnvVarSource{
-					FieldRef: &v1.ObjectFieldSelector{
-						FieldPath: "status.hostIP",
-					},
-				},
-			}}, container.Env...)
 
 			container.VolumeMounts = append(container.VolumeMounts, v1.VolumeMount{
 				MountPath: javaMountPath,

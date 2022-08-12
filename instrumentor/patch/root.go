@@ -8,8 +8,10 @@ import (
 )
 
 const (
-	NodeIPEnvName  = "NODE_IP"
-	HostIPEnvValue = "$(NODE_IP)"
+	NodeIPEnvName   = "NODE_IP"
+	PodNameEnvVName = "POD_NAME"
+	PodNameEnvValue = "$(POD_NAME)"
+	HostIPEnvValue  = "$(NODE_IP)"
 )
 
 type CollectorInfo struct {
