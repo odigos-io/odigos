@@ -15,6 +15,7 @@ const (
 	envOtelTracesExporter   = "OTEL_TRACES_EXPORTER"
 	envOtelMetricsExporter  = "OTEL_METRICS_EXPORTER"
 	envValOtelHttpExporter  = "otlp_proto_http"
+	envLogCorrelation       = "OTEL_PYTHON_LOG_CORRELATION"
 	pythonInitContainerName = "copy-python-agent"
 )
 
@@ -52,7 +53,21 @@ func (p *pythonPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 						FieldPath: "status.hostIP",
 					},
 				},
-			}}, container.Env...)
+			},
+				{
+					Name: PodNameEnvVName,
+					ValueFrom: &v1.EnvVarSource{
+						FieldRef: &v1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
+				},
+			}, container.Env...)
+
+			container.Env = append(container.Env, v1.EnvVar{
+				Name:  envLogCorrelation,
+				Value: "true",
+			})
 
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  "PYTHONPATH",
@@ -66,7 +81,7 @@ func (p *pythonPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  "OTEL_RESOURCE_ATTRIBUTES",
-				Value: fmt.Sprintf("service.name=%s", calculateAppName(podSpec, &container, instrumentation)),
+				Value: fmt.Sprintf("service.name=%s,k8s.pod.name=%s", calculateAppName(podSpec, &container, instrumentation), PodNameEnvValue),
 			})
 
 			container.Env = append(container.Env, v1.EnvVar{
