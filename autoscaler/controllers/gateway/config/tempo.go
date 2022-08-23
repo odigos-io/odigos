@@ -21,6 +21,7 @@ func (t *Tempo) DestType() common.DestinationType {
 func (t *Tempo) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if url, exists := dest.Spec.Data[tempoUrlKey]; exists && isTracingEnabled(dest) {
 		url = strings.TrimPrefix(url, "http://")
+		url = strings.TrimPrefix(url, "https://")
 		url = strings.TrimSuffix(url, ":4317")
 
 		tempoExporterName := "otlp/tempo"

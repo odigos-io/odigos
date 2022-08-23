@@ -20,11 +20,11 @@ func (p *Prometheus) DestType() common.DestinationType {
 
 func (p *Prometheus) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if url, exists := dest.Spec.Data[promRWurlKey]; exists && isMetricsEnabled(dest) {
-		url := strings.TrimPrefix(url, "http://")
+		url := addProtocol(url)
 		url = strings.TrimSuffix(url, "/api/v1/write")
 		rwExporterName := "prometheusremotewrite/prometheus"
 		currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
-			"endpoint": fmt.Sprintf("http://%s/api/v1/write", url),
+			"endpoint": fmt.Sprintf("%s/api/v1/write", url),
 		}
 
 		currentConfig.Service.Pipelines["metrics/prometheus"] = commonconf.Pipeline{

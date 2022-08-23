@@ -6,9 +6,10 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
+	"strings"
 )
 
-var availableConfigers = []Configer{&Honeycomb{}, &Grafana{}, &Datadog{}, &NewRelic{}, &Logzio{},  &Prometheus{}, &Tempo{}, &Loki{}}
+var availableConfigers = []Configer{&Honeycomb{}, &Grafana{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{}, &Tempo{}, &Loki{}}
 
 type Configer interface {
 	DestType() common.DestinationType
@@ -97,4 +98,12 @@ func isMetricsEnabled(dest *odigosv1.Destination) bool {
 
 func isLoggingEnabled(dest *odigosv1.Destination) bool {
 	return isSignalExists(dest, common.LogsObservabilitySignal)
+}
+
+func addProtocol(s string) string {
+	if strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://") {
+		return s
+	}
+
+	return fmt.Sprintf("http://%s", s)
 }

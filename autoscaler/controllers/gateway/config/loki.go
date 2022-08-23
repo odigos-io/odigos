@@ -20,11 +20,11 @@ func (l *Loki) DestType() common.DestinationType {
 
 func (l *Loki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if url, exists := dest.Spec.Data[lokiUrlKey]; exists && isLoggingEnabled(dest) {
-		url := strings.TrimPrefix(url, "http://")
+		url := addProtocol(url)
 		url = strings.TrimSuffix(url, ":3100")
 		lokiExporterName := "loki/loki"
 		currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
-			"endpoint": fmt.Sprintf("http://%s:3100/loki/api/v1/push", url),
+			"endpoint": fmt.Sprintf("%s:3100/loki/api/v1/push", url),
 			"labels": commonconf.GenericMap{
 				"attributes": commonconf.GenericMap{
 					"k8s.container.name": "k8s_container_name",
