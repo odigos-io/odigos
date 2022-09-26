@@ -12,10 +12,14 @@ import (
 const (
 	golangKernelDebugVolumeName = "kernel-debug"
 	golangKernelDebugHostPath   = "/sys/kernel/debug"
-	golangAgentName             = "keyval/otel-go-agent:v0.5.3"
+	golangAgentName             = "keyval/otel-go-agent:v0.6"
 	golangExporterEndpoint      = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	golangServiceNameEnv        = "OTEL_SERVICE_NAME"
 	golangTargetExeEnv          = "OTEL_TARGET_EXE"
+	kvLauncherImage             = "keyval/launcher:v0.1"
+	launcherVolumeName          = "launcherdir"
+	launcherMountPath           = "/odigos-launcher"
+	launcherExePath             = "/odigos-launcher/launch"
 )
 
 var golang = &golangPatcher{}
@@ -24,6 +28,18 @@ type golangPatcher struct{}
 
 func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) {
 	modifiedContainers := podSpec.Spec.Containers
+
+	podSpec.Spec.InitContainers = append(podSpec.Spec.InitContainers, v1.Container{
+		Name:    "copy-launcher",
+		Image:   kvLauncherImage,
+		Command: []string{"cp", "-a", "/kv-launcher/.", "/odigos-launcher/"},
+		VolumeMounts: []v1.VolumeMount{
+			{
+				Name:      launcherVolumeName,
+				MountPath: launcherMountPath,
+			},
+		},
+	})
 
 	for _, l := range instrumentation.Spec.Languages {
 		if shouldPatch(instrumentation, common.GoProgrammingLanguage, l.ContainerName) {
@@ -79,6 +95,19 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 				},
 			}
 
+			for i, c := range modifiedContainers {
+				if c.Name == l.ContainerName {
+					targetC := &modifiedContainers[i]
+					targetC.Command = []string{launcherExePath, l.ProcessName}
+					targetC.VolumeMounts = append(c.VolumeMounts,
+						v1.VolumeMount{
+							Name:      launcherVolumeName,
+							MountPath: launcherMountPath,
+						},
+					)
+				}
+			}
+
 			modifiedContainers = append(modifiedContainers, bpfContainer)
 		}
 	}
@@ -94,7 +123,13 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 				Path: golangKernelDebugHostPath,
 			},
 		},
-	})
+	},
+		v1.Volume{
+			Name: launcherVolumeName,
+			VolumeSource: v1.VolumeSource{
+				EmptyDir: &v1.EmptyDirVolumeSource{},
+			},
+		})
 }
 
 func (g *golangPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) bool {
