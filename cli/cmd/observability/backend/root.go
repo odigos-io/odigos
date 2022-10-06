@@ -22,7 +22,7 @@ func calcBackendsMap() map[string]ObservabilityBackend {
 }
 
 func GetAvailableBackends() []string {
-	names := make([]string, len(availableBackends))
+	var names []string
 	for n := range backendsMap {
 		names = append(names, n)
 	}

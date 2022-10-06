@@ -7,8 +7,6 @@ package cmd
 import (
 	"fmt"
 	"github.com/keyval-dev/odigos/cli/cmd/observability/backend"
-	"log"
-
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +43,6 @@ var (
 
 func isValidBackend(name string) error {
 	avail := backend.GetAvailableBackends()
-	log.Printf("backends: %s name: %s\n", avail, name)
 	for _, s := range avail {
 		if name == s {
 			return nil

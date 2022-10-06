@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"k8s.io/client-go/util/homedir"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -21,6 +23,10 @@ to quickly create a Cobra application.`,
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
+var (
+	kubeConfig string
+)
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -31,13 +37,9 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cli.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	if home := homedir.HomeDir(); home != "" {
+		rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", "", "(optional) absolute path to the kubeconfig file")
+	}
 }
