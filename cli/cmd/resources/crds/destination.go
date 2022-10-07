@@ -93,7 +93,9 @@ func NewDestination() apiextensionsv1.CustomResourceDefinition {
 							},
 						},
 					},
-					Subresources: &apiextensionsv1.CustomResourceSubresources{},
+					Subresources: &apiextensionsv1.CustomResourceSubresources{
+						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
+					},
 				},
 			},
 		},
