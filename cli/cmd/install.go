@@ -13,10 +13,12 @@ import (
 
 const (
 	defaultNamespace = "odigos-system"
+	defaultVersion   = "v0.1.3"
 )
 
 var (
 	namespaceFlag string
+	versionFlag   string
 )
 
 type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error
@@ -35,14 +37,24 @@ to quickly create a Cobra application.`,
 		client := kube.CreateClient(cmd)
 		ctx := cmd.Context()
 		ns := cmd.Flag("namespace").Value.String()
+		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
 		createKubeResourceWithLogging(ctx, "Creating CRDs",
 			client, cmd, ns, createCRDs)
 		createKubeResourceWithLogging(ctx, "Creating Leader Election Role",
 			client, cmd, ns, createLeaderElectionRole)
+		createKubeResourceWithLogging(ctx, "Creating RBAC",
+			client, cmd, ns, createDataCollectionRBAC)
 		createKubeResourceWithLogging(ctx, "Deploying Instrumentor",
 			client, cmd, ns, createInstrumentor)
+		createKubeResourceWithLogging(ctx, "Deploying Scheduler",
+			client, cmd, ns, createScheduler)
+		createKubeResourceWithLogging(ctx, "Deploying UI",
+			client, cmd, ns, createUI)
+		createKubeResourceWithLogging(ctx, "Deploying Autoscaler",
+			client, cmd, ns, createAutoscaler)
+		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos installed.\n")
 	},
 }
 
@@ -66,6 +78,21 @@ func createLeaderElectionRole(ctx context.Context, cmd *cobra.Command, client *k
 	return err
 }
 
+func createDataCollectionRBAC(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewDataCollectionServiceAccount(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewDataCollectionClusterRole(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewDataCollectionClusterRoleBinding(ns), metav1.CreateOptions{})
+	return err
+}
+
 func createInstrumentor(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewInstrumentorServiceAccount(), metav1.CreateOptions{})
 	if err != nil {
@@ -82,6 +109,107 @@ func createInstrumentor(ctx context.Context, cmd *cobra.Command, client *kube.Cl
 		return err
 	}
 
+	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewInstrumentorClusterRoleBinding(ns), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewInstrumentorDeployment(versionFlag), metav1.CreateOptions{})
+	return err
+}
+
+func createScheduler(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewSchedulerServiceAccount(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewSchedulerRoleBinding(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewSchedulerClusterRole(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewSchedulerClusterRoleBinding(ns), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewSchedulerDeployment(versionFlag), metav1.CreateOptions{})
+	return err
+}
+
+func createUI(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewUIServiceAccount(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().Roles(ns).Create(ctx, resources.NewUIRole(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewUIRoleBinding(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewUIClusterRole(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewUIClusterRoleBinding(ns), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewUIDeployment(versionFlag), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.CoreV1().Services(ns).Create(ctx, resources.NewUIService(), metav1.CreateOptions{})
+	return err
+}
+
+func createAutoscaler(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewAutoscalerServiceAccount(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().Roles(ns).Create(ctx, resources.NewAutoscalerRole(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewAutoscalerRoleBinding(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewAutoscalerClusterRole(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewAutoscalerClusterRoleBinding(ns), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewAutoscalerLeaderElectionRoleBinding(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewAutoscalerDeployment(versionFlag), metav1.CreateOptions{})
 	return err
 }
 
@@ -98,4 +226,5 @@ func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube
 func init() {
 	rootCmd.AddCommand(installCmd)
 	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", defaultNamespace, "target namespace for Odigos installation")
+	installCmd.Flags().StringVar(&versionFlag, "version", defaultVersion, "target version for Odigos installation")
 }

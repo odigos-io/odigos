@@ -11,53 +11,29 @@ import (
 )
 
 const (
-	instrumentorImage = "ghcr.io/keyval-dev/odigos/instrumentor"
-	langDetectorImage = "ghcr.io/keyval-dev/odigos/lang-detector"
+	autoscalerImage = "ghcr.io/keyval-dev/odigos/autoscaler"
 )
 
-func NewInstrumentorServiceAccount() *corev1.ServiceAccount {
+func NewAutoscalerServiceAccount() *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor",
+			Name: "odigos-autoscaler",
 		},
 	}
 }
 
-func NewInstrumentorRoleBinding() *rbacv1.RoleBinding {
-	return &rbacv1.RoleBinding{
+func NewAutoscalerRole() *rbacv1.Role {
+	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "RoleBinding",
+			Kind:       "Role",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor-leader-election",
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind: "ServiceAccount",
-				Name: "odigos-instrumentor",
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
-			Name:     "odigos-leader-election-role",
-		},
-	}
-}
-
-func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ClusterRole",
-			APIVersion: "rbac.authorization.k8s.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor",
+			Name: "odigos-autoscaler",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -72,7 +48,39 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 				},
 				APIGroups: []string{""},
 				Resources: []string{
-					"pods",
+					"configmaps",
+				},
+			},
+			{
+				Verbs: []string{
+					"create",
+					"delete",
+					"get",
+					"list",
+					"patch",
+					"update",
+					"watch",
+				},
+				APIGroups: []string{""},
+				Resources: []string{
+					"services",
+				},
+			},
+			{
+				Verbs: []string{
+					"create",
+					"delete",
+					"get",
+					"list",
+					"patch",
+					"update",
+					"watch",
+				},
+				APIGroups: []string{
+					"apps",
+				},
+				Resources: []string{
+					"daemonsets",
 				},
 			},
 			{
@@ -81,9 +89,11 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 					"patch",
 					"update",
 				},
-				APIGroups: []string{""},
+				APIGroups: []string{
+					"apps",
+				},
 				Resources: []string{
-					"pods/status",
+					"daemonsets/status",
 				},
 			},
 			{
@@ -105,17 +115,6 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			},
 			{
 				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"deployments/finalizers",
-				},
-			},
-			{
-				Verbs: []string{
 					"get",
 					"patch",
 					"update",
@@ -125,47 +124,6 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 				},
 				Resources: []string{
 					"deployments/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"statefulsets",
-				},
-			},
-			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"statefulsets/finalizers",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"statefulsets/status",
 				},
 			},
 			{
@@ -223,6 +181,84 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 					"odigos.io",
 				},
 				Resources: []string{
+					"destinations",
+				},
+			},
+			{
+				Verbs: []string{
+					"update",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"destinations/finalizers",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"patch",
+					"update",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"destinations/status",
+				},
+			},
+		},
+	}
+}
+
+func NewAutoscalerRoleBinding() *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "odigos-autoscaler",
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "ServiceAccount",
+				Name: "odigos-autoscaler",
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     "odigos-autoscaler",
+		},
+	}
+}
+
+func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRole",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "odigos-autoscaler",
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs: []string{
+					"create",
+					"delete",
+					"get",
+					"list",
+					"patch",
+					"update",
+					"watch",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
 					"instrumentedapplications",
 				},
 			},
@@ -250,61 +286,67 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 					"instrumentedapplications/status",
 				},
 			},
-			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"odigosconfigurations",
-				},
-			},
 		},
 	}
 }
 
-func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
+func NewAutoscalerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	return &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRoleBinding",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor",
+			Name: "odigos-autoscaler",
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "odigos-instrumentor",
+				Name:      "odigos-autoscaler",
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     "odigos-instrumentor",
+			Name:     "odigos-autoscaler",
 		},
 	}
 }
 
-func NewInstrumentorDeployment(version string) *appsv1.Deployment {
+func NewAutoscalerLeaderElectionRoleBinding() *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "odigos-autoscaler-leader-election",
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "ServiceAccount",
+				Name: "odigos-autoscaler",
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     "odigos-leader-election-role",
+		},
+	}
+}
+
+func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor",
+			Name: "odigos-autoscaler",
 			Labels: map[string]string{
-				"app": "odigos-instrumentor",
+				"app": "odigos-autoscaler",
 			},
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",
@@ -314,13 +356,13 @@ func NewInstrumentorDeployment(version string) *appsv1.Deployment {
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "odigos-instrumentor",
+					"app": "odigos-autoscaler",
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "odigos-instrumentor",
+						"app": "odigos-autoscaler",
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": "manager",
@@ -349,7 +391,7 @@ func NewInstrumentorDeployment(version string) *appsv1.Deployment {
 						},
 						{
 							Name:  "manager",
-							Image: fmt.Sprintf("%s:%s", instrumentorImage, version),
+							Image: fmt.Sprintf("%s:%s", autoscalerImage, version),
 							Command: []string{
 								"/app",
 							},
@@ -357,8 +399,6 @@ func NewInstrumentorDeployment(version string) *appsv1.Deployment {
 								"--health-probe-bind-address=:8081",
 								"--metrics-bind-address=127.0.0.1:8080",
 								"--leader-elect",
-								fmt.Sprintf("--lang-detector-tag=%s", version),
-								fmt.Sprintf("--lang-detector-image=%s", langDetectorImage),
 							},
 							Env: []corev1.EnvVar{
 								{
@@ -400,7 +440,7 @@ func NewInstrumentorDeployment(version string) *appsv1.Deployment {
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            "odigos-instrumentor",
+					ServiceAccountName:            "odigos-autoscaler",
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
@@ -410,16 +450,4 @@ func NewInstrumentorDeployment(version string) *appsv1.Deployment {
 			MinReadySeconds: 0,
 		},
 	}
-}
-
-func ptrint32(i int32) *int32 {
-	return &i
-}
-
-func ptrint64(i int64) *int64 {
-	return &i
-}
-
-func ptrbool(b bool) *bool {
-	return &b
 }
