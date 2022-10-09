@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"fmt"
+	_ "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/cmd/observability/backend"
 	"github.com/spf13/cobra"
 )
