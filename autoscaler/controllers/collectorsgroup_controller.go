@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"context"
-	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/gateway"
 	appsv1 "k8s.io/api/apps/v1"

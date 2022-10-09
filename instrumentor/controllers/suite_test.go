@@ -17,7 +17,7 @@ limitations under the License.
 package controllers
 
 import (
-	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"path/filepath"
 	"testing"
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/go-logr/logr"
-	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/instrumentor/patch"

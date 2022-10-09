@@ -2,7 +2,7 @@ package datacollection
 
 import (
 	"context"
-	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"

@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/log"
