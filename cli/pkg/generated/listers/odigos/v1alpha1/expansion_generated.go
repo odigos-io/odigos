@@ -17,6 +17,14 @@ limitations under the License.
 
 package v1alpha1
 
+// DestinationListerExpansion allows custom methods to be added to
+// DestinationLister.
+type DestinationListerExpansion interface{}
+
+// DestinationNamespaceListerExpansion allows custom methods to be added to
+// DestinationNamespaceLister.
+type DestinationNamespaceListerExpansion interface{}
+
 // OdigosConfigurationListerExpansion allows custom methods to be added to
 // OdigosConfigurationLister.
 type OdigosConfigurationListerExpansion interface{}

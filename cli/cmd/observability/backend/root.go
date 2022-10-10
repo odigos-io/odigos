@@ -1,10 +1,20 @@
 package backend
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/keyval-dev/odigos/common"
+	"github.com/spf13/cobra"
+	"strings"
+)
+
+type ObservabilityArgs struct {
+	Data   map[string]string
+	Secret map[string]string
+}
 
 type ObservabilityBackend interface {
-	Name() string
-	ValidateFlags(cmd *cobra.Command) error
+	Name() common.DestinationType
+	ParseFlags(cmd *cobra.Command) (*ObservabilityArgs, error)
+	SupportedSignals() []common.ObservabilitySignal
 }
 
 var (
@@ -15,7 +25,7 @@ var (
 func calcBackendsMap() map[string]ObservabilityBackend {
 	backends := make(map[string]ObservabilityBackend, len(availableBackends))
 	for i, b := range availableBackends {
-		backends[b.Name()] = availableBackends[i]
+		backends[strings.ToLower(string(b.Name()))] = availableBackends[i]
 	}
 
 	return backends
@@ -31,7 +41,7 @@ func GetAvailableBackends() []string {
 }
 
 func Get(name string) ObservabilityBackend {
-	b, ok := backendsMap[name]
+	b, ok := backendsMap[strings.ToLower(name)]
 	if !ok {
 		return nil
 	}

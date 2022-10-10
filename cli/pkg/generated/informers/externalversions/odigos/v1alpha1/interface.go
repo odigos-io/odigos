@@ -23,6 +23,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// Destinations returns a DestinationInformer.
+	Destinations() DestinationInformer
 	// OdigosConfigurations returns a OdigosConfigurationInformer.
 	OdigosConfigurations() OdigosConfigurationInformer
 }
@@ -36,6 +38,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// Destinations returns a DestinationInformer.
+func (v *version) Destinations() DestinationInformer {
+	return &destinationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // OdigosConfigurations returns a OdigosConfigurationInformer.

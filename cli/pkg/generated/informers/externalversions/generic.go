@@ -52,6 +52,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=odigos.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("destinations"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Destinations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("odigosconfigurations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().OdigosConfigurations().Informer()}, nil
 

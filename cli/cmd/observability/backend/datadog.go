@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/spf13/cobra"
 	"net/url"
 	"strings"
@@ -9,25 +10,43 @@ import (
 
 type Datadog struct{}
 
-func (d *Datadog) Name() string {
-	return "datadog"
+func (d *Datadog) Name() common.DestinationType {
+	return common.DatadogDestinationType
 }
 
-func (d *Datadog) ValidateFlags(cmd *cobra.Command) error {
+func (d *Datadog) ParseFlags(cmd *cobra.Command) (*ObservabilityArgs, error) {
 	apiKey := cmd.Flag("api-key").Value.String()
 	if apiKey == "" {
-		return fmt.Errorf("API key required for Datadog backend, please specify --api-key")
+		return nil, fmt.Errorf("API key required for Datadog backend, please specify --api-key")
 	}
 
 	targetUrl := cmd.Flag("url").Value.String()
+	if targetUrl == "" {
+		return nil, fmt.Errorf("URL required for Datadog backend, please specify --url")
+	}
+
 	_, err := url.Parse(targetUrl)
 	if err != nil {
-		return fmt.Errorf("invalud url specified: %s", err)
+		return nil, fmt.Errorf("invalud url specified: %s", err)
 	}
 
-	if !strings.Contains(targetUrl, "datadog.com") {
-		return fmt.Errorf("%s is not a valid datadog url", targetUrl)
+	if !strings.Contains(targetUrl, "datadoghq.com") {
+		return nil, fmt.Errorf("%s is not a valid datadog url", targetUrl)
 	}
 
-	return nil
+	return &ObservabilityArgs{
+		Data: map[string]string{
+			"DATADOG_SITE": targetUrl,
+		},
+		Secret: map[string]string{
+			"DATADOG_API_KEY": apiKey,
+		},
+	}, nil
+}
+
+func (d *Datadog) SupportedSignals() []common.ObservabilitySignal {
+	return []common.ObservabilitySignal{
+		common.TracesObservabilitySignal,
+		common.MetricsObservabilitySignal,
+	}
 }

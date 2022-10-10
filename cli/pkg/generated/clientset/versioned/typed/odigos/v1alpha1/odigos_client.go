@@ -27,12 +27,17 @@ import (
 
 type OdigosV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	DestinationsGetter
 	OdigosConfigurationsGetter
 }
 
 // OdigosV1alpha1Client is used to interact with features provided by the odigos.io group.
 type OdigosV1alpha1Client struct {
 	restClient rest.Interface
+}
+
+func (c *OdigosV1alpha1Client) Destinations(namespace string) DestinationInterface {
+	return newDestinations(c, namespace)
 }
 
 func (c *OdigosV1alpha1Client) OdigosConfigurations(namespace string) OdigosConfigurationInterface {

@@ -27,6 +27,10 @@ type FakeOdigosV1alpha1 struct {
 	*testing.Fake
 }
 
+func (c *FakeOdigosV1alpha1) Destinations(namespace string) v1alpha1.DestinationInterface {
+	return &FakeDestinations{c, namespace}
+}
+
 func (c *FakeOdigosV1alpha1) OdigosConfigurations(namespace string) v1alpha1.OdigosConfigurationInterface {
 	return &FakeOdigosConfigurations{c, namespace}
 }
