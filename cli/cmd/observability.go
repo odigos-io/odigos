@@ -1,17 +1,18 @@
 package cmd
 
 import (
-	"bufio"
+	"context"
 	"fmt"
 	_ "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/cmd/observability/backend"
+	"github.com/keyval-dev/odigos/cli/cmd/resources"
+	"github.com/keyval-dev/odigos/cli/pkg/confirm"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/common"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
 	"strings"
 )
 
@@ -46,12 +47,12 @@ to quickly create a Cobra application.`,
 		fmt.Println("Infra: OpenTelemetry Collector")
 		fmt.Printf("Signals: %s\n", strings.Join(signalsToString(signals), ","))
 		if !skipConfirm {
-			confirm, err := askForConfirmation()
+			confirmed, err := confirm.Ask("Do you want to continue?")
 			if err != nil {
 				return err
 			}
 
-			if !confirm {
+			if !confirmed {
 				fmt.Println("Aborting installation.")
 				return nil
 			}
@@ -91,7 +92,7 @@ func isValidBackend(name string) error {
 
 func persistArgs(args *backend.ObservabilityArgs, cmd *cobra.Command, signals []common.ObservabilitySignal, backendName common.DestinationType) error {
 	kc := kube.CreateClient(cmd)
-	ns, err := getOdigosNamespace(kc)
+	ns, err := getOdigosNamespace(kc, cmd.Context())
 	if err != nil {
 		return err
 	}
@@ -171,29 +172,8 @@ func signalsToString(signals []common.ObservabilitySignal) []string {
 	return result
 }
 
-func getOdigosNamespace(kubeClient *kube.Client) (string, error) {
-	// TODO: find namespace by label
-	return "odigos-system", nil
-}
-
-func askForConfirmation() (bool, error) {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Do you want to continue? [Y/n]: ")
-
-	response, err := reader.ReadString('\n')
-	if err != nil {
-		return false, err
-	}
-
-	response = strings.ToLower(strings.TrimSpace(response))
-
-	if response == "y" || response == "yes" {
-		return true, nil
-	} else if response == "n" || response == "no" {
-		return false, nil
-	}
-
-	return false, fmt.Errorf("%s invalid response. Type [y/n/yes/no]", response)
+func getOdigosNamespace(kubeClient *kube.Client, ctx context.Context) (string, error) {
+	return resources.GetOdigosNamespace(kubeClient, ctx)
 }
 
 func init() {
