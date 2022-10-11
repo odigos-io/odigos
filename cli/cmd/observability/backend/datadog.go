@@ -14,7 +14,7 @@ func (d *Datadog) Name() common.DestinationType {
 	return common.DatadogDestinationType
 }
 
-func (d *Datadog) ParseFlags(cmd *cobra.Command) (*ObservabilityArgs, error) {
+func (d *Datadog) ParseFlags(cmd *cobra.Command, selectedSignals []common.ObservabilitySignal) (*ObservabilityArgs, error) {
 	apiKey := cmd.Flag("api-key").Value.String()
 	if apiKey == "" {
 		return nil, fmt.Errorf("API key required for Datadog backend, please specify --api-key")

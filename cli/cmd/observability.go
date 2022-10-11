@@ -32,12 +32,13 @@ to quickly create a Cobra application.`,
 		}
 
 		be := backend.Get(backendFlag)
-		parsedArgs, err := be.ParseFlags(cmd)
+
+		signals, err := calculateSignals(signalsFlag, be.SupportedSignals(), be.Name())
 		if err != nil {
 			return err
 		}
 
-		signals, err := calculateSignals(signalsFlag, be.SupportedSignals(), be.Name())
+		parsedArgs, err := be.ParseFlags(cmd, signals)
 		if err != nil {
 			return err
 		}
@@ -71,8 +72,22 @@ var (
 	backendFlag string
 	apiKeyFlag  string
 	urlFlag     string
+	regionFlag  string
 	signalsFlag []string
 	skipConfirm bool
+
+	// Grafana Cloud flags
+	grafanaTempoUrl       string
+	grafanaTempoUser      string
+	grafanaRemoteWriteUrl string
+	grafanaPromUser       string
+	grafanaLokiUrl        string
+	grafanaLokiUser       string
+
+	// Logz.io flags
+	logzioTracingToken string
+	logzioMetricsToken string
+	logzioLoggingToken string
 )
 
 func isValidBackend(name string) error {
@@ -179,8 +194,22 @@ func getOdigosNamespace(kubeClient *kube.Client, ctx context.Context) (string, e
 func init() {
 	skillCmd.AddCommand(observabilityCmd)
 	observabilityCmd.Flags().StringVar(&backendFlag, "backend", "", "Backend for observability data")
-	observabilityCmd.Flags().StringVarP(&urlFlag, "url", "u", "", "URL of the backend for observability data")
-	observabilityCmd.Flags().StringVar(&apiKeyFlag, "api-key", "", "API key for the selected backend")
 	observabilityCmd.Flags().StringSliceVarP(&signalsFlag, "signal", "s", nil, "Reported signals [traces,metrics,logs]")
 	observabilityCmd.Flags().BoolVarP(&skipConfirm, "no-prompt", "y", false, "Skip install confirmation")
+	observabilityCmd.Flags().StringVarP(&urlFlag, "url", "u", "", "URL of the backend for observability data")
+	observabilityCmd.Flags().StringVar(&apiKeyFlag, "api-key", "", "API key for the selected backend")
+	observabilityCmd.Flags().StringVar(&regionFlag, "region", "", "Region for the selected backend")
+
+	// Grafana Cloud Flags
+	observabilityCmd.Flags().StringVar(&grafanaTempoUrl, backend.GrafanaTempoUrlFlag, "", "URL for Grafana Cloud Tempo instance")
+	observabilityCmd.Flags().StringVar(&grafanaTempoUser, backend.GrafanaTempoUserFlag, "", "User for Grafana Cloud Tempo instance")
+	observabilityCmd.Flags().StringVar(&grafanaRemoteWriteUrl, backend.GrafanaPromUrlFlag, "", "RemoteWrite URL for Grafana Cloud prometheus instance")
+	observabilityCmd.Flags().StringVar(&grafanaPromUser, backend.GrafanaPromUserFlag, "", "User for Grafana Cloud prometheus instance")
+	observabilityCmd.Flags().StringVar(&grafanaLokiUrl, backend.GrafanaLokiUrlFlag, "", "URL for Grafana Cloud Loki instance")
+	observabilityCmd.Flags().StringVar(&grafanaLokiUser, backend.GrafanaLokiUserFlag, "", "User for Grafana Cloud Loki instance")
+
+	// Logz.io Flags
+	observabilityCmd.Flags().StringVar(&logzioTracingToken, backend.LogzioTracingToken, "", "Tracing token for Logz.io")
+	observabilityCmd.Flags().StringVar(&logzioMetricsToken, backend.LogzioMetricsToken, "", "Metrics token for Logz.io")
+	observabilityCmd.Flags().StringVar(&logzioLoggingToken, backend.LogzioLogsToken, "", "Logging token for Logz.io")
 }

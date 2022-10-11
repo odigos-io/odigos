@@ -37,11 +37,11 @@ func (l *Logzio) DestType() common.DestinationType {
 }
 
 func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
-	region := dest.Spec.Data["REGION"]
+	region := dest.Spec.Data["LOGZIO_REGION"]
 	if isTracingEnabled(dest) {
 		currentConfig.Exporters["logzio/tracing"] = commonconf.GenericMap{
 			"region":        region,
-			"account_token": "${TRACING_TOKEN}",
+			"account_token": "${LOGZIO_TRACING_TOKEN}",
 		}
 		currentConfig.Service.Pipelines["traces/logzio"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
@@ -57,7 +57,7 @@ func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 				"p8s_logzio_name": "odigos",
 			},
 			"headers": commonconf.GenericMap{
-				"authorization": "Bearer ${METRICS_TOKEN}",
+				"authorization": "Bearer ${LOGZIO_METRICS_TOKEN}",
 			},
 		}
 		currentConfig.Service.Pipelines["metrics/logzio"] = commonconf.Pipeline{
@@ -70,7 +70,7 @@ func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 	if isLoggingEnabled(dest) {
 		currentConfig.Exporters["logzio/logs"] = commonconf.GenericMap{
 			"region":        region,
-			"account_token": "${LOGS_TOKEN}",
+			"account_token": "${LOGZIO_LOGS_TOKEN}",
 		}
 		currentConfig.Processors["attributes/logzio"] = commonconf.GenericMap{
 			"actions": []commonconf.GenericMap{

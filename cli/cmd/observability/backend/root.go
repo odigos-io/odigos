@@ -13,13 +13,14 @@ type ObservabilityArgs struct {
 
 type ObservabilityBackend interface {
 	Name() common.DestinationType
-	ParseFlags(cmd *cobra.Command) (*ObservabilityArgs, error)
+	ParseFlags(cmd *cobra.Command, selectedSignals []common.ObservabilitySignal) (*ObservabilityArgs, error)
 	SupportedSignals() []common.ObservabilitySignal
 }
 
 var (
-	availableBackends = []ObservabilityBackend{&Datadog{}}
-	backendsMap       = calcBackendsMap()
+	availableBackends = []ObservabilityBackend{&Datadog{}, &Honeycomb{}, &Grafana{},
+		&NewRelic{}, &LogzIO{}, &Prometheus{}, &Tempo{}, &Loki{}}
+	backendsMap = calcBackendsMap()
 )
 
 func calcBackendsMap() map[string]ObservabilityBackend {
