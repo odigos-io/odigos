@@ -1,6 +1,6 @@
 # This is an example .goreleaser.yml file with some sensible defaults.
 # Make sure to check the documentation at https://goreleaser.com
-project_name: odigos-cli
+project_name: odigos
 builds:
   - env:
       - CGO_ENABLED=0
