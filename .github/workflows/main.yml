@@ -59,7 +59,7 @@ jobs:
           context: ui/
           push: true
           tags: ghcr.io/keyval-dev/odigos/ui:${{ steps.vars.outputs.tag }}
-      - uses: goreleaser/goreleaser-action@v2
+      - uses: goreleaser/goreleaser-action@v3
         with:
           distribution: goreleaser
           version: latest
