@@ -38,7 +38,7 @@ import (
 
 var (
 	podOwnerKey = ".metadata.controller"
-	apiGVStr    = v1.GroupVersion.String()
+	apiGVStr    = v1.SchemeGroupVersion.String()
 )
 
 // InstrumentedApplicationReconciler reconciles a InstrumentedApplication object
