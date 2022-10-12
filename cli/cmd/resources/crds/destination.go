@@ -1,6 +1,7 @@
 package crds
 
 import (
+	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -12,7 +13,8 @@ func NewDestination() apiextensionsv1.CustomResourceDefinition {
 			APIVersion: "apiextensions.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "destinations.odigos.io",
+			Name:   "destinations.odigos.io",
+			Labels: labels.OdigosSystem,
 		},
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Group: "odigos.io",

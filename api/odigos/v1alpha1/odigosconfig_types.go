@@ -1,3 +1,5 @@
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,6 +17,7 @@ type OdigosConfigurationSpec struct {
 	InstrumentationMode InstrumentationMode `json:"instrumentationMode"`
 }
 
+//+genclient
 //+kubebuilder:object:root=true
 
 // OdigosConfiguration is the Schema for the odigos configuration

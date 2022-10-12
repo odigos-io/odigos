@@ -34,6 +34,7 @@ type DestinationSpec struct {
 type DestinationStatus struct {
 }
 
+//+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 

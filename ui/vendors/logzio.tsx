@@ -76,18 +76,18 @@ export class Logzio implements ObservabilityVendor {
     }
     return {
       Data: {
-        REGION: req.body.region,
+        LOGZIO_REGION: req.body.region,
       },
       Secret: {
-        TRACING_TOKEN: tracingToken,
-        LOGS_TOKEN: logsToken,
-        METRICS_TOKEN: metricsToken,
+        LOGZIO_TRACING_TOKEN: tracingToken,
+        LOGZIO_LOGS_TOKEN: logsToken,
+        LOGZIO_METRICS_TOKEN: metricsToken,
       },
     };
   };
   mapDataToFields = (data: any) => {
     return {
-      region: data.REGION || "us",
+      region: data.LOGZIO_REGION || "us",
     };
   };
 }

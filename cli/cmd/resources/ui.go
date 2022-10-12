@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -20,7 +21,8 @@ func NewUIServiceAccount() *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-ui",
+			Name:   "odigos-ui",
+			Labels: labels.OdigosSystem,
 		},
 	}
 }
@@ -32,7 +34,8 @@ func NewUIRole() *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-ui",
+			Name:   "odigos-ui",
+			Labels: labels.OdigosSystem,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -171,7 +174,8 @@ func NewUIRoleBinding() *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-ui",
+			Name:   "odigos-ui",
+			Labels: labels.OdigosSystem,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -194,7 +198,8 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-ui",
+			Name:   "odigos-ui",
+			Labels: labels.OdigosSystem,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -249,7 +254,8 @@ func NewUIClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-ui",
+			Name:   "odigos-ui",
+			Labels: labels.OdigosSystem,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -275,7 +281,8 @@ func NewUIDeployment(version string) *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "odigos-ui",
 			Labels: map[string]string{
-				"app": "odigos-ui",
+				"app":                       "odigos-ui",
+				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
 			},
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",
@@ -335,7 +342,8 @@ func NewUIService() *corev1.Service {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-ui",
+			Name:   "odigos-ui",
+			Labels: labels.OdigosSystem,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
