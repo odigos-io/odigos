@@ -9,6 +9,7 @@ import { Tempo } from "@/vendors/hosted/tempo";
 import { Loki } from "@/vendors/hosted/loki";
 import { OpenTelemetry } from "@/vendors/hosted/opentelemetry";
 import { Jaeger } from "@/vendors/hosted/jaeger";
+import { SigNoz } from "@/vendors/hosted/signoz";
 
 export enum VendorType {
   MANAGED = "MANAGED",
@@ -53,7 +54,8 @@ const Vendors = [
   new Prometheus(),
   new Tempo(),
   new Loki(),
-  //new Jaeger(),
+  new Jaeger(),
+  new SigNoz(),
   new OpenTelemetry(),
 ];
 
