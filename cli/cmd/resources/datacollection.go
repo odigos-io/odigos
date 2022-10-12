@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +14,8 @@ func NewDataCollectionServiceAccount() *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-data-collection",
+			Name:   "odigos-data-collection",
+			Labels: labels.OdigosSystem,
 		},
 	}
 }
@@ -25,7 +27,8 @@ func NewDataCollectionClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-data-collection",
+			Name:   "odigos-data-collection",
+			Labels: labels.OdigosSystem,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -48,7 +51,8 @@ func NewDataCollectionClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-data-collection",
+			Name:   "odigos-data-collection",
+			Labels: labels.OdigosSystem,
 		},
 		Subjects: []rbacv1.Subject{
 			{

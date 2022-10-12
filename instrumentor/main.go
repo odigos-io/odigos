@@ -20,7 +20,7 @@ import (
 	"flag"
 	"os"
 
-	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 
 	"github.com/keyval-dev/odigos/instrumentor/controllers"
 

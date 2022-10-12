@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	v1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
 	appsv1 "k8s.io/api/apps/v1"
@@ -38,7 +38,7 @@ import (
 
 var (
 	podOwnerKey = ".metadata.controller"
-	apiGVStr    = v1.GroupVersion.String()
+	apiGVStr    = v1.SchemeGroupVersion.String()
 )
 
 // InstrumentedApplicationReconciler reconciles a InstrumentedApplication object

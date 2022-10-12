@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -21,7 +22,8 @@ func NewAutoscalerServiceAccount() *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-autoscaler",
+			Name:   "odigos-autoscaler",
+			Labels: labels.OdigosSystem,
 		},
 	}
 }
@@ -33,7 +35,8 @@ func NewAutoscalerRole() *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-autoscaler",
+			Name:   "odigos-autoscaler",
+			Labels: labels.OdigosSystem,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -219,7 +222,8 @@ func NewAutoscalerRoleBinding() *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-autoscaler",
+			Name:   "odigos-autoscaler",
+			Labels: labels.OdigosSystem,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -242,7 +246,8 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-autoscaler",
+			Name:   "odigos-autoscaler",
+			Labels: labels.OdigosSystem,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -297,7 +302,8 @@ func NewAutoscalerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-autoscaler",
+			Name:   "odigos-autoscaler",
+			Labels: labels.OdigosSystem,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -321,7 +327,8 @@ func NewAutoscalerLeaderElectionRoleBinding() *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-autoscaler-leader-election",
+			Name:   "odigos-autoscaler-leader-election",
+			Labels: labels.OdigosSystem,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -346,7 +353,8 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "odigos-autoscaler",
 			Labels: map[string]string{
-				"app": "odigos-autoscaler",
+				"app":                       "odigos-autoscaler",
+				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
 			},
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",
