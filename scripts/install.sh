@@ -57,15 +57,15 @@ execute() {
 }
 get_binaries() {
   case "$PLATFORM" in
-    darwin/386) BINARIES="odigos-cli" ;;
-    darwin/amd64) BINARIES="odigos-cli" ;;
-    darwin/arm64) BINARIES="odigos-cli" ;;
-    linux/386) BINARIES="odigos-cli" ;;
-    linux/amd64) BINARIES="odigos-cli" ;;
-    linux/arm64) BINARIES="odigos-cli" ;;
-    windows/386) BINARIES="odigos-cli" ;;
-    windows/amd64) BINARIES="odigos-cli" ;;
-    windows/arm64) BINARIES="odigos-cli" ;;
+    darwin/386) BINARIES="odigos" ;;
+    darwin/amd64) BINARIES="odigos" ;;
+    darwin/arm64) BINARIES="odigos" ;;
+    linux/386) BINARIES="odigos" ;;
+    linux/amd64) BINARIES="odigos" ;;
+    linux/arm64) BINARIES="odigos" ;;
+    windows/386) BINARIES="odigos" ;;
+    windows/amd64) BINARIES="odigos" ;;
+    windows/arm64) BINARIES="odigos" ;;
     *)
       log_crit "platform $PLATFORM is not supported.  Make sure this script is up-to-date and file request at https://github.com/${PREFIX}/issues/new"
       exit 1
@@ -331,10 +331,10 @@ hash_sha256_verify() {
   fi
 }
 
-PROJECT_NAME="odigos-cli"
-OWNER=keyval-dev
+PROJECT_NAME="odigos"
+OWNER=edeNFed
 REPO="odigos"
-BINARY=odigos-cli
+BINARY=odigos
 FORMAT=tar.gz
 OS=$(uname_os)
 ARCH=$(uname_arch)
