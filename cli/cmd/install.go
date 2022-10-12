@@ -8,7 +8,10 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/cli/pkg/log"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"time"
 )
 
 const (
@@ -19,6 +22,7 @@ const (
 var (
 	namespaceFlag string
 	versionFlag   string
+	skipWait      bool
 )
 
 type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error
@@ -54,8 +58,40 @@ to quickly create a Cobra application.`,
 			client, cmd, ns, createUI)
 		createKubeResourceWithLogging(ctx, "Deploying Autoscaler",
 			client, cmd, ns, createAutoscaler)
+
+		if !skipWait {
+			l := log.Print("Waiting for Odigos pods to be ready ...")
+			err := wait.PollImmediate(1*time.Second, 3*time.Minute, arePodsReady(ctx, client, ns))
+			if err != nil {
+				l.Error(err)
+			}
+
+			l.Success()
+		}
+
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos installed.\n")
 	},
+}
+
+func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (bool, error) {
+	return func() (bool, error) {
+		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return false, err
+		}
+		runningPods := 0
+		for _, p := range pods.Items {
+			if p.Status.Phase == corev1.PodFailed {
+				return false, fmt.Errorf("pod %s failed", p.Name)
+			}
+
+			if p.Status.Phase == corev1.PodRunning {
+				runningPods++
+			}
+		}
+
+		return runningPods == len(pods.Items), nil
+	}
 }
 
 func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
@@ -227,4 +263,5 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", defaultNamespace, "target namespace for Odigos installation")
 	installCmd.Flags().StringVar(&versionFlag, "version", defaultVersion, "target version for Odigos installation")
+	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "Skip waiting for pods to be ready")
 }

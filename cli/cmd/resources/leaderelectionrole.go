@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -12,7 +13,8 @@ func NewLeaderElectionRole() *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-leader-election-role",
+			Name:   "odigos-leader-election-role",
+			Labels: labels.OdigosSystem,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
