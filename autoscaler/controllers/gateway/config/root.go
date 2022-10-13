@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-var availableConfigers = []Configer{&Honeycomb{}, &Grafana{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{}, &Tempo{}, &Loki{}}
+var availableConfigers = []Configer{&Honeycomb{}, &Grafana{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{}, &Tempo{}, &Loki{},
+	&Jaeger{}, &GenericOTLP{}, &Signoz{}}
 
 type Configer interface {
 	DestType() common.DestinationType
