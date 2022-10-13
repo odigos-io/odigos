@@ -27,10 +27,12 @@ Start sending traces, metrics and logs to your favourite observability service (
 ### Open Source
 
 |            | Traces | Metrics | Logs |
-| ---------- | ------ | ------- | ---- |
+|------------| ------ | ------- | ---- |
 | Prometheus |        | ✅      |      |
 | Tempo      | ✅     |         |      |
 | Loki       |        |         | ✅   |
+| Jaeger     | ✅     |         |      |
+| SigNoz     | ✅     | ✅      | ✅   |
 
 **Many more destinations are coming soon.**
 
