@@ -16,7 +16,6 @@ import (
 
 const (
 	defaultNamespace = "odigos-system"
-	defaultVersion   = "v0.1.3"
 )
 
 var (
@@ -262,6 +261,6 @@ func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube
 func init() {
 	rootCmd.AddCommand(installCmd)
 	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", defaultNamespace, "target namespace for Odigos installation")
-	installCmd.Flags().StringVar(&versionFlag, "version", defaultVersion, "target version for Odigos installation")
+	installCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "target version for Odigos installation")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "Skip waiting for pods to be ready")
 }
