@@ -284,7 +284,7 @@ func (r *InstrumentedApplicationReconciler) getContainerNames(pod *corev1.Pod) [
 }
 
 func (r *InstrumentedApplicationReconciler) skipContainer(name string) bool {
-	return name == "istio-proxy" || strings.Contains(name, "linkerd")
+	return name == "istio-proxy" || name == "linkerd-proxy"
 }
 
 func (r *InstrumentedApplicationReconciler) getOwnerTemplateLabels(ctx context.Context, instrumentedApp *v1.InstrumentedApplication) (map[string]string, error) {
