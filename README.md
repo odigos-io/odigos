@@ -16,9 +16,12 @@
     <a href="https://goreportcard.com/report/github.com/keyval-dev/odigos/cli" target="_blank">
     <img src="https://goreportcard.com/badge/github.com/keyval-dev/odigos/cli">
     </a>
+    <a href="https://godoc.org/github.com/keyval-dev/odigos/cli" target="_blank">
+    <img src="https://godoc.org/istio.io/istio?status.svg">
+    </a>
 </p>
 
-Start sending traces, metrics and logs to your favourite observability service (such as Datadog, Honeycomb, Grafana, etc) in a few clicks.
+**Get distributed traces, metrics and logs for any application in minutes, without code changes. Use with your existing APM (Datadog, Honeycomb, Grafana, etc).**
 
 - 🧑‍💻 **No code changes** - Odigos detects the programming language of your applications and apply automatic instrumentation accordingly.
 - 📖 **Open Technologies** - Odigos observabiltiy pipelines are based on the best open source observability technologies such as [OpenTelemetry](https://opentelemetry.io) and [eBPF](https://ebpf.io).
