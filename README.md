@@ -1,8 +1,22 @@
-# Odigos
+<p align="center">
+  <img
+    src="assets/odigos-cover.jpg"
+    alt="Odigos - Observability Control Plane"
+    border="0"
+/>
+</p>
+<h1 align="center">
+ Observability Control Plane
+</h1>
 
-[![Release](https://github.com/keyval-dev/odigos/actions/workflows/main.yml/badge.svg)](https://github.com/keyval-dev/odigos/actions/workflows/main.yml) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-
-Odigos is an observability control plane.
+<p align="center">
+    <a href="https://github.com/keyval-dev/odigos/actions/workflows/main.yml" target="_blank">
+    <img src="https://github.com/keyval-dev/odigos/actions/workflows/main.yml/badge.svg" />
+    </a>
+    <a href="https://goreportcard.com/report/github.com/keyval-dev/odigos/cli" target="_blank">
+    <img src="https://goreportcard.com/badge/github.com/keyval-dev/odigos/cli">
+    </a>
+</p>
 
 Start sending traces, metrics and logs to your favourite observability service (such as Datadog, Honeycomb, Grafana, etc) in a few clicks.
 
@@ -27,7 +41,7 @@ Start sending traces, metrics and logs to your favourite observability service (
 ### Open Source
 
 |            | Traces | Metrics | Logs |
-|------------| ------ | ------- | ---- |
+| ---------- | ------ | ------- | ---- |
 | Prometheus |        | ✅      |      |
 | Tempo      | ✅     |         |      |
 | Loki       |        |         | ✅   |
