@@ -6,7 +6,7 @@
 />
 </p>
 <h1 align="center">
- Observability Control Plane
+ Fix Production Issues Faster With Effortless Observability
 </h1>
 
 <p align="center">
@@ -21,11 +21,13 @@
     </a>
 </p>
 
-**Get distributed traces, metrics and logs for any application in minutes, without code changes. Use with your existing APM (Datadog, Honeycomb, Grafana, etc).**
+**Get distributed traces, metrics and logs for any application in minutes, without code changes.**
 
 - 🧑‍💻 **No code changes** - Odigos detects the programming language of your applications and apply automatic instrumentation accordingly.
-- 📖 **Open Technologies** - Odigos observabiltiy pipelines are based on the best open source observability technologies such as [OpenTelemetry](https://opentelemetry.io) and [eBPF](https://ebpf.io).
-- 📝 **Easy to use** - Leverage advanced features such as tail-based sampling without editing complex YAML files.
+- 📖 **Open technologies** - Applications are instrumented using well-known, battle-tested open source observability technologies such as [OpenTelemetry](https://opentelemetry.io) and [eBPF](https://ebpf.io).
+- 🚀 **Boost your existing monitoring tools** - No need for changing tools. Use your favourite tool, with much more data.
+- ✨ **Works on any application** - Get automatic distributed traces and metrics even for applications written in Go. Odigos leverage eBPF in a unique way that removes the need to manually instrument even compiled languages.
+- 🔭 **Observability by default** -
 
 ### For full documentation and getting started guide, visit [odigos.io](https://odigos.io).
 
