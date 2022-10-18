@@ -9,6 +9,10 @@ builds:
       - windows
       - darwin
     dir: ./cli
+    ldflags:
+      - -X github.com/keyval-dev/odigos/cli/cmd.OdigosVersion={{ .Tag }}
+      - -X github.com/keyval-dev/odigos/cli/cmd.OdigosCommit={{ .ShortCommit }}
+      - -X github.com/keyval-dev/odigos/cli/cmd.OdigosDate={{ .Date }}
 archives:
   - replacements:
       darwin: Darwin
