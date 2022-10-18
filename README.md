@@ -29,11 +29,9 @@
 - ✨ **Works on any application** - Get automatic distributed traces and metrics even for applications written in Go. Odigos leverage eBPF in a unique way that removes the need to manually instrument even compiled languages.
 - 🔭 **Observability by default** - Automatically get traces, metrics and logs for every new deployed application.
 
-<p align="center">
-    <h2>
-        <a href="https://odigos.io/docs/getting-started/">Getting Started Guide</a> • <a href="https://odigos.io/docs/">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
-    </h2>
-</p>
+<h2 align="center">
+    <a href="https://odigos.io/docs/getting-started/">Getting Started Guide</a> • <a href="https://odigos.io/docs/">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
+</h2>
 
 ## Supported Destinations
 
