@@ -33,32 +33,6 @@
     <a href="https://odigos.io/docs/getting-started/">Getting Started Guide</a> • <a href="https://odigos.io/docs/">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
 
-## Supported Destinations
-
-### Managed
-
-|               | Traces | Metrics | Logs |
-| ------------- | ------ | ------- | ---- |
-| New Relic     | ✅     | ✅      | ✅   |
-| Datadog       | ✅     | ✅      |      |
-| Grafana Cloud | ✅     | ✅      | ✅   |
-| Honeycomb     | ✅     |         |      |
-| Logz.io       | ✅     | ✅      | ✅   |
-
-### Open Source
-
-|            | Traces | Metrics | Logs |
-| ---------- | ------ | ------- | ---- |
-| Prometheus |        | ✅      |      |
-| Tempo      | ✅     |         |      |
-| Loki       |        |         | ✅   |
-| Jaeger     | ✅     |         |      |
-| SigNoz     | ✅     | ✅      | ✅   |
-
-**Many more destinations are coming soon.**
-
-Can't find the destination you need? Help us by following our quick [adding new destination](https://odigos.io/docs/contribution-guidelines/add-new-destination/) guide and submit a PR.
-
 ## Installation
 
 The easiest way to install Odigos is to use our [Helm chart](https://github.com/keyval-dev/odigos-charts) by running the following commands:
@@ -71,13 +45,19 @@ helm install my-odigos odigos/odigos --namespace odigos-system --create-namespac
 
 See the [quickstart guide](https://odigos.io/docs/) for more details and examples.
 
+## Supported Destinations
+
+See [DESTINATIONS.md](DESTINATIONS.md) file for a complete list of supported destinations and the available signals for every destination.
+
+Can't find the destination you need? Help us by following our quick [adding new destination](https://odigos.io/docs/contribution-guidelines/add-new-destination/) guide and submit a PR.
+
 ## Project Status
 
 This project is actively maintained by [keyval](https://keyval.dev) and is currently in its initial days. We would love to receive your ideas, feedback & contributions.
 
 ## Contributing
 
-Please refer to the [contributing.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests.
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests. You are welcome to join our active [Slack Community](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
 
 ## License
 
