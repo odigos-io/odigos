@@ -9,6 +9,7 @@
 | Grafana Cloud | ✅     | ✅      | ✅   |
 | Honeycomb     | ✅     |         |      |
 | Logz.io       | ✅     | ✅      | ✅   |
+| qryn.dev      | ✅     | ✅      | ✅   |
 
 ## Open Source
 
