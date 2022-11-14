@@ -9,7 +9,7 @@ import OpenTelemetryLogo from "@/img/vendor/opentelemetry.svg";
 import { NextApiRequest } from "next";
 
 export class OpenTelemetry implements ObservabilityVendor {
-  name = "opentelemetry";
+  name = "otlp";
   displayName = "OpenTelemetry";
   type = VendorType.HOSTED;
   supportedSignals = [
