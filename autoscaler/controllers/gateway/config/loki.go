@@ -21,7 +21,6 @@ func (l *Loki) DestType() common.DestinationType {
 func (l *Loki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if url, exists := dest.Spec.Data[lokiUrlKey]; exists && isLoggingEnabled(dest) {
 		url := addProtocol(url)
-		url = strings.TrimSuffix(url, ":3100")
 		lokiExporterName := "loki/loki"
 		currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("%s", url),
