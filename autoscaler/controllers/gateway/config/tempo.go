@@ -22,8 +22,6 @@ func (t *Tempo) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 	if url, exists := dest.Spec.Data[tempoUrlKey]; exists && isTracingEnabled(dest) {
 		url = strings.TrimPrefix(url, "http://")
 		url = strings.TrimPrefix(url, "https://")
-		url = strings.TrimSuffix(url, ":4317")
-
 		tempoExporterName := "otlp/tempo"
 		currentConfig.Exporters[tempoExporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("%s", url),
