@@ -1,42 +1,37 @@
-# Odigos
+<p align="center">
+  <img
+    src="assets/odigos-cover.jpg"
+    alt="Odigos - Observability Control Plane"
+    border="0"
+/>
+</p>
+<h1 align="center">
+ Fix Production Issues Faster With Effortless Observability
+</h1>
 
-[![Release](https://github.com/keyval-dev/odigos/actions/workflows/main.yml/badge.svg)](https://github.com/keyval-dev/odigos/actions/workflows/main.yml) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+<p align="center">
+    <a href="https://github.com/keyval-dev/odigos/actions/workflows/main.yml" target="_blank">
+    <img src="https://github.com/keyval-dev/odigos/actions/workflows/main.yml/badge.svg" />
+    </a>
+    <a href="https://goreportcard.com/report/github.com/keyval-dev/odigos/cli" target="_blank">
+    <img src="https://goreportcard.com/badge/github.com/keyval-dev/odigos/cli">
+    </a>
+    <a href="https://godoc.org/github.com/keyval-dev/odigos/cli" target="_blank">
+    <img src="https://godoc.org/istio.io/istio?status.svg">
+    </a>
+</p>
 
-Odigos is an observability control plane.
-
-Start sending traces, metrics and logs to your favourite observability service (such as Datadog, Honeycomb, Grafana, etc) in a few clicks.
+**Get distributed traces, metrics and logs for any application in minutes, without code changes.**
 
 - 🧑‍💻 **No code changes** - Odigos detects the programming language of your applications and apply automatic instrumentation accordingly.
-- 📖 **Open Technologies** - Odigos observabiltiy pipelines are based on the best open source observability technologies such as [OpenTelemetry](https://opentelemetry.io) and [eBPF](https://ebpf.io).
-- 📝 **Easy to use** - Leverage advanced features such as tail-based sampling without editing complex YAML files.
+- 📖 **Open technologies** - Applications are instrumented using well-known, battle-tested open source observability technologies such as [OpenTelemetry](https://opentelemetry.io) and [eBPF](https://ebpf.io).
+- 🚀 **Boost your existing monitoring tools** - No need for changing tools. Use your favourite tool, with much more data.
+- ✨ **Works on any application** - Get automatic distributed traces and metrics even for applications written in Go. Odigos leverage eBPF in a unique way that removes the need to manually instrument even compiled languages.
+- 🔭 **Observability by default** - Automatically get traces, metrics and logs for every new deployed application.
 
-### For full documentation and getting started guide, visit [odigos.io](https://odigos.io).
-
-## Supported Destinations
-
-### Managed
-
-|               | Traces | Metrics | Logs |
-| ------------- | ------ | ------- | ---- |
-| New Relic     | ✅     | ✅      | ✅   |
-| Datadog       | ✅     | ✅      |      |
-| Grafana Cloud | ✅     | ✅      | ✅   |
-| Honeycomb     | ✅     |         |      |
-| Logz.io       | ✅     | ✅      | ✅   |
-
-### Open Source
-
-|            | Traces | Metrics | Logs |
-|------------| ------ | ------- | ---- |
-| Prometheus |        | ✅      |      |
-| Tempo      | ✅     |         |      |
-| Loki       |        |         | ✅   |
-| Jaeger     | ✅     |         |      |
-| SigNoz     | ✅     | ✅      | ✅   |
-
-**Many more destinations are coming soon.**
-
-Can't find the destination you need? Help us by following our quick [adding new destination](https://odigos.io/docs/contribution-guidelines/add-new-destination/) guide and submit a PR.
+<h2 align="center">
+    <a href="https://odigos.io/docs/getting-started/">Getting Started Guide</a> • <a href="https://odigos.io/docs/">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
+</h2>
 
 ## Installation
 
@@ -50,13 +45,19 @@ helm install my-odigos odigos/odigos --namespace odigos-system --create-namespac
 
 See the [quickstart guide](https://odigos.io/docs/) for more details and examples.
 
+## Supported Destinations
+
+See [DESTINATIONS.md](DESTINATIONS.md) file for a complete list of supported destinations and the available signals for every destination.
+
+Can't find the destination you need? Help us by following our quick [adding new destination](https://odigos.io/docs/contribution-guidelines/add-new-destination/) guide and submit a PR.
+
 ## Project Status
 
 This project is actively maintained by [keyval](https://keyval.dev) and is currently in its initial days. We would love to receive your ideas, feedback & contributions.
 
 ## Contributing
 
-Please refer to the [contributing.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests.
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests. You are welcome to join our active [Slack Community](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
 
 ## License
 
