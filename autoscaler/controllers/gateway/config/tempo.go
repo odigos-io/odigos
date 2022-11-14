@@ -26,7 +26,7 @@ func (t *Tempo) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 
 		tempoExporterName := "otlp/tempo"
 		currentConfig.Exporters[tempoExporterName] = commonconf.GenericMap{
-			"endpoint": fmt.Sprintf("%s:4317", url),
+			"endpoint": fmt.Sprintf("%s", url),
 			"tls": commonconf.GenericMap{
 				"insecure": true,
 			},
