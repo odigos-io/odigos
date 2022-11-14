@@ -24,7 +24,7 @@ func (l *Loki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		url = strings.TrimSuffix(url, ":3100")
 		lokiExporterName := "loki/loki"
 		currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
-			"endpoint": fmt.Sprintf("%s:3100/loki/api/v1/push", url),
+			"endpoint": fmt.Sprintf("%s", url),
 			"labels": commonconf.GenericMap{
 				"attributes": commonconf.GenericMap{
 					"k8s.container.name": "k8s_container_name",
