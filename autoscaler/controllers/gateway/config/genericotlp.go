@@ -17,10 +17,13 @@ func (g *GenericOTLP) DestType() common.DestinationType {
 }
 
 func (g *GenericOTLP) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
-	if url, exists := dest.Spec.Data[jaegerUrlKey]; exists {
+	if url, exists := dest.Spec.Data[genericOtlpUrlKey]; exists {
 		genericOtlpExporterName := "otlp/generic"
 		currentConfig.Exporters[genericOtlpExporterName] = commonconf.GenericMap{
 			"endpoint": url,
+			"tls": commonconf.GenericMap{
+				"insecure": true,
+			},
 		}
 		if isTracingEnabled(dest) {
 			currentConfig.Service.Pipelines["traces/generic"] = commonconf.Pipeline{
