@@ -3,6 +3,7 @@ package datacollection
 import (
 	"context"
 	"fmt"
+	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection/custom"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
@@ -33,13 +34,17 @@ var (
 	}
 )
 
-func syncDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string, ctx context.Context,
+func syncDaemonSet(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup, configData string, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
 	desiredDs, err := getDesiredDaemonSet(datacollection, configData, scheme)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
+	}
+
+	if custom.ShouldApplyCustomDataCollection(dests) {
+		custom.ApplyCustomChangesToDaemonSet(desiredDs, dests)
 	}
 
 	existing := &appsv1.DaemonSet{}
