@@ -55,7 +55,7 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 		return err
 	}
 
-	ds, err := syncDaemonSet(dataCollection, configData, ctx, c, scheme)
+	ds, err := syncDaemonSet(instApps, dests, dataCollection, configData, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "failed to sync daemon set")
 		return err
