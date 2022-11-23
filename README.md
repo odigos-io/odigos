@@ -11,19 +11,20 @@
     </a>
 </p>
 <h1 align="center" font-weight="100">
-     Odigos<br/>
-   Adopt Distributed Tracing in Minutes
+     Odigos - Adopt Distributed Tracing in Minutes
   </h1>
 <p align="center">
+<a href="https://www.youtube.com/watch?v=9d36AmVtuGU">
   <img
     src="assets/odigos.gif"
     width="1000"
     alt="Odigos - Observability Control Plane"
     border="0"
 />
+</a>
 </p>
 
-**Fix production issues faster by generating distributed traces, metrics and logs for any application in minutes, without code changes.**
+### **Fix production issues faster by generating distributed traces, metrics and logs for any application in minutes, without code changes.**
 
 - 🧑‍💻 **No code changes** - Odigos detects the programming language of your applications and apply automatic instrumentation accordingly.
 - 📖 **Open technologies** - Applications are instrumented using well-known, battle-tested open source observability technologies such as [OpenTelemetry](https://opentelemetry.io) and [eBPF](https://ebpf.io).
