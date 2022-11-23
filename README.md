@@ -1,13 +1,3 @@
-<p align="center">
-  <img
-    src="assets/odigos-cover.jpg"
-    alt="Odigos - Observability Control Plane"
-    border="0"
-/>
-</p>
-<h1 align="center">
- Fix Production Issues Faster With Effortless Observability
-</h1>
 
 <p align="center">
     <a href="https://github.com/keyval-dev/odigos/actions/workflows/main.yml" target="_blank">
@@ -20,8 +10,21 @@
     <img src="https://godoc.org/istio.io/istio?status.svg">
     </a>
 </p>
+<h1 align="center" font-weight="100">
+     Odigos - Adopt Distributed Tracing in Minutes
+  </h1>
+<p align="center">
+<a href="https://www.youtube.com/watch?v=9d36AmVtuGU">
+  <img
+    src="assets/odigos.gif"
+    width="1000"
+    alt="Odigos - Observability Control Plane"
+    border="0"
+/>
+</a>
+</p>
 
-**Get distributed traces, metrics and logs for any application in minutes, without code changes.**
+### **Fix production issues faster by generating distributed traces, metrics and logs for any application in minutes, without code changes.**
 
 - 🧑‍💻 **No code changes** - Odigos detects the programming language of your applications and apply automatic instrumentation accordingly.
 - 📖 **Open technologies** - Applications are instrumented using well-known, battle-tested open source observability technologies such as [OpenTelemetry](https://opentelemetry.io) and [eBPF](https://ebpf.io).
@@ -53,7 +56,7 @@ Can't find the destination you need? Help us by following our quick [adding new 
 
 ## Project Status
 
-This project is actively maintained by [keyval](https://keyval.dev) and is currently in its initial days. We would love to receive your ideas, feedback & contributions.
+This project is actively maintained by [keyval](https://keyval.dev). We would love to receive your ideas, feedback & contributions.
 
 ## Contributing
 
