@@ -148,9 +148,11 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 		for _, s := range dst.Spec.Signals {
 			if s == common.LogsObservabilitySignal && !custom.DestRequiresCustom(dst.Spec.Type) {
 				collectLogs = true
-			} else if s == common.TracesObservabilitySignal {
+			}
+			if s == common.TracesObservabilitySignal || dst.Spec.Type == common.PrometheusDestinationType {
 				collectTraces = true
-			} else if s == common.MetricsObservabilitySignal && !custom.DestRequiresCustom(dst.Spec.Type) {
+			}
+			if s == common.MetricsObservabilitySignal && !custom.DestRequiresCustom(dst.Spec.Type) {
 				collectMetrics = true
 			}
 		}
