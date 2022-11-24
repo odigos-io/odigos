@@ -23,6 +23,7 @@ func (p *Prometheus) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 		url := addProtocol(url)
 		url = strings.TrimSuffix(url, "/api/v1/write")
 		rwExporterName := "prometheusremotewrite/prometheus"
+		spanMetricsProcessorName := "spanmetrics"
 		currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("%s/api/v1/write", url),
 		}
@@ -31,6 +32,29 @@ func (p *Prometheus) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
 			Exporters:  []string{rwExporterName},
+		}
+
+		// Send SpanMetrics to prometheus
+		currentConfig.Service.Pipelines["traces/spanmetrics"] = commonconf.Pipeline{
+			Receivers:  []string{"otlp"},
+			Processors: []string{spanMetricsProcessorName},
+			Exporters:  []string{"logging"},
+		}
+		currentConfig.Exporters["logging"] = struct{}{} // Dummy exporter, needed only because pipeline must have an exporter
+		currentConfig.Processors[spanMetricsProcessorName] = commonconf.GenericMap{
+			"metrics_exporter":          rwExporterName,
+			"latency_histogram_buckets": []string{"100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"},
+			"dimensions": []commonconf.GenericMap{
+				{
+					"name":    "http.method",
+					"default": "GET",
+				},
+				{
+					"name": "http.status_code",
+				},
+			},
+			"dimensions_cache_size":   1000,
+			"aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
 		}
 	}
 }
