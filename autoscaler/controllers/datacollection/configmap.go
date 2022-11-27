@@ -3,6 +3,7 @@ package datacollection
 import (
 	"context"
 	"fmt"
+	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection/custom"
 
 	"github.com/ghodss/yaml"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
@@ -19,7 +20,7 @@ import (
 )
 
 const (
-	configKey = "collector-conf"
+	configKey = "conf"
 )
 
 func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList,
@@ -96,6 +97,10 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 		},
 	}
 
+	if custom.ShouldApplyCustomDataCollection(dests) {
+		custom.AddCustomConfigMap(dests, &desired)
+	}
+
 	if err := ctrl.SetControllerReference(datacollection, &desired, scheme); err != nil {
 		return nil, err
 	}
@@ -141,11 +146,13 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	collectLogs := false
 	for _, dst := range dests.Items {
 		for _, s := range dst.Spec.Signals {
-			if s == common.LogsObservabilitySignal {
+			if s == common.LogsObservabilitySignal && !custom.DestRequiresCustom(dst.Spec.Type) {
 				collectLogs = true
-			} else if s == common.TracesObservabilitySignal {
+			}
+			if s == common.TracesObservabilitySignal || dst.Spec.Type == common.PrometheusDestinationType {
 				collectTraces = true
-			} else if s == common.MetricsObservabilitySignal {
+			}
+			if s == common.MetricsObservabilitySignal && !custom.DestRequiresCustom(dst.Spec.Type) {
 				collectMetrics = true
 			}
 		}

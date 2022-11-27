@@ -11,7 +11,11 @@ export class Honeycomb implements ObservabilityVendor {
   name = "honeycomb";
   displayName = "Honeycomb";
   type = VendorType.MANAGED;
-  supportedSignals = [ObservabilitySignals.Traces];
+  supportedSignals = [
+    ObservabilitySignals.Traces,
+    ObservabilitySignals.Metrics,
+    ObservabilitySignals.Logs,
+  ];
 
   getLogo = (props: any) => {
     return <HoneycombLogo {...props} />;
