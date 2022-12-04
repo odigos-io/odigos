@@ -7,7 +7,7 @@
 | New Relic     | ✅     | ✅      | ✅   |
 | Datadog       | ✅     | ✅      |      |
 | Grafana Cloud | ✅     | ✅      | ✅   |
-| Honeycomb     | ✅     |         |      |
+| Honeycomb     | ✅     | ✅      | ✅   |
 | Logz.io       | ✅     | ✅      | ✅   |
 | qryn.dev      | ✅     | ✅      | ✅   |
 

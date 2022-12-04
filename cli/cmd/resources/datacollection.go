@@ -34,10 +34,14 @@ func NewDataCollectionClusterRole() *rbacv1.ClusterRole {
 			{
 				Verbs: []string{
 					"get",
+					"list",
+					"watch",
 				},
 				APIGroups: []string{""},
 				Resources: []string{
+					"pods",
 					"nodes/stats",
+					"nodes/proxy",
 				},
 			},
 		},
