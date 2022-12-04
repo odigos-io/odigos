@@ -14,4 +14,5 @@ const (
 	JaegerDestinationType      DestinationType = "jaeger"
 	GenericOTLPDestinationType DestinationType = "otlp"
 	SignozDestinationType      DestinationType = "signoz"
+	QrynDestinationType        DestinationType = "qryn"
 )
