@@ -49,7 +49,7 @@ export class Qryn implements ObservabilityVendor {
   toObjects = (req: NextApiRequest) => {
     // Tempo exporter expect token to be bas64 encoded, therefore we encode twice.
     const authString = Buffer.from(
-      `${req.body.tempo_user}:${req.body.apikey}`
+      `${req.body.user}:${req.body.apikey}`
     ).toString("base64");
 
     return {
