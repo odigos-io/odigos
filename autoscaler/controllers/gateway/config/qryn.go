@@ -29,7 +29,7 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		}
 		rwExporterName := "prometheusremotewrite/qryn"
 		if g.isQrynAuthExists(dest) {
-			url := strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
+			url = strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
 			user := dest.Spec.Data[qrynUser]
                 	token := dest.Spec.Data[qrynToken]
   			currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
@@ -50,7 +50,7 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 	if isTracingEnabled(dest) && g.isQrynVarsExists(dest) {
 		url := dest.Spec.Data[qrynUrl]
 		if g.isQrynAuthExists(dest) {
-			url := strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
+			url = strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
 			user := dest.Spec.Data[qrynUser]
                 	token := dest.Spec.Data[qrynToken]
   			currentConfig.Exporters["otlp/qryn"] = commonconf.GenericMap{
@@ -76,7 +76,7 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		}
 		lokiExporterName := "loki/qryn"
 		if g.isQrynAuthExists(dest) {
-			url := strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
+			url = strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
 			user := dest.Spec.Data[qrynUser]
                 	token := dest.Spec.Data[qrynToken]
   			currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
