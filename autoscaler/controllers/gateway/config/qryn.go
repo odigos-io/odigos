@@ -31,7 +31,6 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		if g.isQrynAuthExists(dest) {
 			url = strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
 			user := dest.Spec.Data[qrynUser]
-                	token := dest.Spec.Data[qrynToken]
   			currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
 			  "endpoint": fmt.Sprintf("https://%s:%s@%s", user, "${QRYN_TOKEN}", url),
 			}
@@ -52,7 +51,6 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		if g.isQrynAuthExists(dest) {
 			url = strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
 			user := dest.Spec.Data[qrynUser]
-                	token := dest.Spec.Data[qrynToken]
   			currentConfig.Exporters["otlp/qryn"] = commonconf.GenericMap{
 			  "endpoint": fmt.Sprintf("https://%s:%s@%s", user, "${QRYN_TOKEN}", url),
 			}
@@ -78,7 +76,6 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		if g.isQrynAuthExists(dest) {
 			url = strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
 			user := dest.Spec.Data[qrynUser]
-                	token := dest.Spec.Data[qrynToken]
   			currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
 				"endpoint": fmt.Sprintf("https://%s:%s@%s", user, "${QRYN_TOKEN}", url),
 				"labels": commonconf.GenericMap{
