@@ -24,12 +24,6 @@ export class Qryn implements ObservabilityVendor {
   getFields = (selectedSignals: any) => {
     let fields = [
       {
-        displayName: "qryn API Key",
-        id: "apikey",
-        name: "apikey",
-        type: "password",
-      },
-      {
         displayName: "qryn API URL",
         id: "url",
         name: "url",
@@ -40,7 +34,13 @@ export class Qryn implements ObservabilityVendor {
         id: "user",
         name: "user",
         type: "text",
-      }
+      },
+      {
+        displayName: "qryn API Key",
+        id: "apikey",
+        name: "apikey",
+        type: "password",
+      },
     ];
 
     return fields;
@@ -58,7 +58,7 @@ export class Qryn implements ObservabilityVendor {
         QRYN_USER: req.body.user,
       },
       Secret: {
-        QRYN_TOKEN: Buffer.from(req.body.apikey).toString("base64"),
+        QRYN_TOKEN: req.body.apikey,
         QRYN_AUTH_TOKEN: Buffer.from(authString).toString("base64"),
       },
     };
