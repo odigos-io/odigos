@@ -23,17 +23,23 @@ func (g *Qryn) DestType() common.DestinationType {
 
 func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if isMetricsEnabled(dest) && g.isQrynVarsExists(dest) {
-		url := strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
-		user := dest.Spec.Data[qrynUser]
-    token := dest.Spec.Data[qrynToken]
-    if !strings.HasSuffix(url, "/api/prom/remote/write") {
+		url := dest.Spec.Data[qrynUrl]
+                if !strings.HasSuffix(url, "/api/prom/remote/write") {
 			url = fmt.Sprintf("%s/api/prom/remote/write", url)
 		}
 		rwExporterName := "prometheusremotewrite/qryn"
-		currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
-			"endpoint": fmt.Sprintf("https://%s:%s@%s", user, "${QRYN_TOKEN}", url),
+		if g.isQrynAuthExists(dest) {
+			url := strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
+			user := dest.Spec.Data[qrynUser]
+                	token := dest.Spec.Data[qrynToken]
+  			currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
+			  "endpoint": fmt.Sprintf("https://%s:%s@%s", user, "${QRYN_TOKEN}", url),
+			}
+		} else {
+			currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
+			  "endpoint": fmt.Sprintf("%s", url),
+			}
 		}
-
 		currentConfig.Service.Pipelines["metrics/qryn"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
@@ -42,12 +48,20 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 	}
 
 	if isTracingEnabled(dest) && g.isQrynVarsExists(dest) {
-		url := strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
-		user := dest.Spec.Data[qrynUser]
-		currentConfig.Exporters["otlp/qryn"] = commonconf.GenericMap{
-			"endpoint": fmt.Sprintf("https://%s:%s@%s", user, "${QRYN_TOKEN}", url),
+		url := dest.Spec.Data[qrynUrl]
+		if g.isQrynAuthExists(dest) {
+			url := strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
+			user := dest.Spec.Data[qrynUser]
+                	token := dest.Spec.Data[qrynToken]
+  			currentConfig.Exporters["otlp/qryn"] = commonconf.GenericMap{
+			  "endpoint": fmt.Sprintf("https://%s:%s@%s", user, "${QRYN_TOKEN}", url),
+			}
+		} else {
+			currentConfig.Exporters["otlp/qryn"] = commonconf.GenericMap{
+			  "endpoint": fmt.Sprintf("%s", url),
+			}
 		}
-
+		
 		currentConfig.Service.Pipelines["traces/qryn"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
@@ -56,22 +70,36 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 	}
 
 	if isLoggingEnabled(dest) && g.isQrynVarsExists(dest) {
-		url := strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
-		user := dest.Spec.Data[qrynUser]
+		url := dest.Spec.Data[qrynUrl]
 		if !strings.HasSuffix(url, "/loki/api/v1/push") {
 			url = fmt.Sprintf("%s/loki/api/v1/push", url)
 		}
-
 		lokiExporterName := "loki/qryn"
-		currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
-			"endpoint": fmt.Sprintf("https://%s:%s@%s", user, "${QRYN_TOKEN}", url),
-			"labels": commonconf.GenericMap{
-				"attributes": commonconf.GenericMap{
-					"k8s.container.name": "k8s_container_name",
-					"k8s.pod.name":       "k8s_pod_name",
-					"k8s.namespace.name": "k8s_namespace_name",
+		if g.isQrynAuthExists(dest) {
+			url := strings.TrimPrefix(dest.Spec.Data[qrynUrl], "https://")
+			user := dest.Spec.Data[qrynUser]
+                	token := dest.Spec.Data[qrynToken]
+  			currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
+				"endpoint": fmt.Sprintf("https://%s:%s@%s", user, "${QRYN_TOKEN}", url),
+				"labels": commonconf.GenericMap{
+					"attributes": commonconf.GenericMap{
+						"k8s.container.name": "k8s_container_name",
+						"k8s.pod.name":       "k8s_pod_name",
+						"k8s.namespace.name": "k8s_namespace_name",
+					},
 				},
-			},
+			}
+		} else {
+			currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
+				"endpoint": fmt.Sprintf("%s", url),
+				"labels": commonconf.GenericMap{
+					"attributes": commonconf.GenericMap{
+						"k8s.container.name": "k8s_container_name",
+						"k8s.pod.name":       "k8s_pod_name",
+						"k8s.namespace.name": "k8s_namespace_name",
+					},
+				},
+			}
 		}
 
 		currentConfig.Service.Pipelines["logs/qryn"] = commonconf.Pipeline{
@@ -89,10 +117,20 @@ func (g *Qryn) isQrynVarsExists(dest *odigosv1.Destination) bool {
 		log.Log.V(0).Info("Qryn API URL not specified, gateway will not be configured")
 		return false
 	}
+	
+	return true
+}
+
+func (g *Qryn) isQrynAuthExists(dest *odigosv1.Destination) bool {
+	_, exists := dest.Spec.Data[qrynToken]
+	if !exists {
+		log.Log.V(0).Info("Qryn API Token not specified, gateway auth will not be configured")
+		return false
+	}
 
 	_, exists = dest.Spec.Data[qrynUser]
 	if !exists {
-		log.Log.V(0).Info("Qryn API Auth user not specified, gateway will not be configured")
+		log.Log.V(0).Info("Qryn API Auth user not specified, gateway auth will not be configured")
 		return false
 	}
 
