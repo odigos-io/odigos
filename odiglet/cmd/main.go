@@ -108,7 +108,7 @@ func (s *httpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Find container ids
-	containerIds, err := containers.FindIDs(pod)
+	containerIds, err := containers.FindIDs(r.Context(), req.PodName, req.PodNamespace, s.kubeClient)
 	if err != nil {
 		log.Logger.Error(err, "Failed to find target containers")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -138,41 +138,5 @@ func (s *httpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
-		//err = writeFileToContainer(fs, &req)
-		//if err != nil {
-		//	log.Logger.Error(err, "Failed to write file to container")
-		//	w.WriteHeader(http.StatusInternalServerError)
-		//	return
-		//}
 	}
-}
-
-func writeFileToContainer(containerFs string, req *pkg.LaunchRequest) error {
-	rootDir := path.Join(containerFs, "workspace")
-	filePath := path.Join(rootDir, "test.txt")
-
-	//// Create file and directory if not exist
-	//err := os.MkdirAll(rootDir, 0755)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//// Chown
-	//err = os.Chown(rootDir, req.UserID, req.UserID)
-	//if err != nil {
-	//	return err
-	//}
-	file, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	_, err = file.WriteString("Hello World!")
-	if err != nil {
-		return err
-	}
-
-	//err = os.Chown(filePath, req.UserID, req.GroupID)
-	return err
 }
