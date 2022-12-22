@@ -101,7 +101,9 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 			for i, c := range modifiedContainers {
 				if c.Name == l.ContainerName {
 					targetC := &modifiedContainers[i]
-					targetC.Command = []string{initExePath, l.ProcessName}
+					newArgs := calculateInitArgs(targetC.Command, targetC.Args, l.ProcessName)
+					targetC.Command = []string{initExePath}
+					targetC.Args = newArgs
 					targetC.VolumeMounts = append(c.VolumeMounts,
 						v1.VolumeMount{
 							Name:      initVolumeName,
@@ -173,6 +175,25 @@ func (g *golangPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentat
 	}
 
 	return false
+}
+
+func calculateInitArgs(origCommand []string, origArgs []string, exeFile string) []string {
+	args := []string{exeFile}
+	if len(origCommand) > 0 {
+		args = append(args, origCommand...)
+	}
+
+	if len(origArgs) > 0 {
+		// If args are specified, but no command we assume the running command is exePath
+		// TODO: use CRI to figure out what is the real entrypoint
+		if len(origCommand) == 0 {
+			args = append(args, exeFile)
+		}
+
+		args = append(args, origArgs...)
+	}
+
+	return args
 }
 
 func boolPtr(b bool) *bool {

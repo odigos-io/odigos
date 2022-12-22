@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"syscall"
 )
 
@@ -21,6 +22,14 @@ func main() {
 	err := requestAllocation(arguments)
 	if err != nil {
 		log.Fatalf("failed to request allocation: %v", err)
+	}
+
+	// if command is not absolute, search for it in PATH
+	if arguments.Command[0] != '/' {
+		arguments.Command, err = exec.LookPath(arguments.Command)
+		if err != nil {
+			log.Fatalf("failed to find command in PATH: %v", err)
+		}
 	}
 
 	// Execute entrypoint
