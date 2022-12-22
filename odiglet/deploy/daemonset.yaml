@@ -37,7 +37,6 @@ spec:
                         mountPropagation: Bidirectional
             volumes:
                 - name: run-dir
-
                   hostPath:
                       path: /run
                 - name: var-dir

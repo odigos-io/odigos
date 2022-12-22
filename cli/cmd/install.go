@@ -53,6 +53,8 @@ to quickly create a Cobra application.`,
 			client, cmd, ns, createInstrumentor)
 		createKubeResourceWithLogging(ctx, "Deploying Scheduler",
 			client, cmd, ns, createScheduler)
+		createKubeResourceWithLogging(ctx, "Deploying Odiglet",
+			client, cmd, ns, createOdiglet)
 		createKubeResourceWithLogging(ctx, "Deploying UI",
 			client, cmd, ns, createUI)
 		createKubeResourceWithLogging(ctx, "Deploying Autoscaler",
@@ -245,6 +247,26 @@ func createAutoscaler(ctx context.Context, cmd *cobra.Command, client *kube.Clie
 	}
 
 	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewAutoscalerDeployment(versionFlag), metav1.CreateOptions{})
+	return err
+}
+
+func createOdiglet(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewOdigletServiceAccount(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().Roles(ns).Create(ctx, resources.NewOdigletRole(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewOdigletRoleBinding(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AppsV1().DaemonSets(ns).Create(ctx, resources.NewOdigletDaemonSet(versionFlag), metav1.CreateOptions{})
 	return err
 }
 
