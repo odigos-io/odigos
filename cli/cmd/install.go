@@ -256,12 +256,12 @@ func createOdiglet(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 		return err
 	}
 
-	_, err = client.RbacV1().Roles(ns).Create(ctx, resources.NewOdigletRole(), metav1.CreateOptions{})
+	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewOdigletClusterRole(), metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 
-	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewOdigletRoleBinding(), metav1.CreateOptions{})
+	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewOdigletClusterRoleBinding(ns), metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}

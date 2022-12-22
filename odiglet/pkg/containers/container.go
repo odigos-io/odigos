@@ -69,8 +69,12 @@ func isPodRunning(ctx context.Context, kubeClient kubernetes.Interface, podName 
 			return false, err
 		}
 
+		if len(pod.Status.ContainerStatuses) == 0 {
+			return false, nil
+		}
+
 		for _, containerStatus := range pod.Status.ContainerStatuses {
-			if !isInstrumentationContainerStatus(&containerStatus) && !containerStatus.Ready {
+			if !isInstrumentationContainerStatus(&containerStatus) && (containerStatus.Started == nil || !*containerStatus.Started) {
 				log.Logger.V(0).Info("Container not ready", "container", containerStatus)
 				return false, nil
 			}

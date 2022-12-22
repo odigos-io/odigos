@@ -24,7 +24,8 @@ func main() {
 	}
 
 	// Execute entrypoint
-	err = syscall.Exec(arguments.Command, arguments.Arguments, os.Environ())
+	argsWithCmd := append([]string{arguments.Command}, arguments.Arguments...)
+	err = syscall.Exec(arguments.Command, argsWithCmd, os.Environ())
 	if err != nil {
 		log.Printf("Error exec: %s\n", err)
 		return

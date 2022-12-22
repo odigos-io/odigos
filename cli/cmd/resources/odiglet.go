@@ -26,10 +26,10 @@ func NewOdigletServiceAccount() *corev1.ServiceAccount {
 	}
 }
 
-func NewOdigletRole() *rbacv1.Role {
-	return &rbacv1.Role{
+func NewOdigletClusterRole() *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Role",
+			Kind:       "ClusterRole",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -67,10 +67,10 @@ func NewOdigletRole() *rbacv1.Role {
 	}
 }
 
-func NewOdigletRoleBinding() *rbacv1.RoleBinding {
-	return &rbacv1.RoleBinding{
+func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
+	return &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "RoleBinding",
+			Kind:       "ClusterRoleBinding",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -79,13 +79,14 @@ func NewOdigletRoleBinding() *rbacv1.RoleBinding {
 		},
 		Subjects: []rbacv1.Subject{
 			{
-				Kind: "ServiceAccount",
-				Name: "odiglet",
+				Kind:      "ServiceAccount",
+				Name:      "odiglet",
+				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
+			Kind:     "ClusterRole",
 			Name:     "odiglet",
 		},
 	}
