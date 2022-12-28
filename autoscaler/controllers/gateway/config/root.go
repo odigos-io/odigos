@@ -10,7 +10,7 @@ import (
 )
 
 var availableConfigers = []Configer{&Honeycomb{}, &Grafana{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{}, &Tempo{}, &Loki{},
-	&Jaeger{}, &GenericOTLP{}, &Signoz{}}
+				    &Jaeger{}, &GenericOTLP{}, &Signoz{}, &Qryn{}}
 
 type Configer interface {
 	DestType() common.DestinationType
