@@ -53,6 +53,20 @@ jobs:
           push: true
           tags: ghcr.io/keyval-dev/odigos/lang-detector:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=langDetector
+      - name: Build Odiglet Image
+        uses: docker/build-push-action@v3
+        with:
+          file: odiglet/Dockerfile
+          context: odiglet/
+          push: true
+          tags: ghcr.io/keyval-dev/odigos/odiglet:${{ steps.vars.outputs.tag }}
+      - name: Build Init Image
+        uses: docker/build-push-action@v3
+        with:
+          file: init/Dockerfile
+          context: init/
+          push: true
+          tags: ghcr.io/keyval-dev/odigos/init:${{ steps.vars.outputs.tag }}
       - name: Build UI Image
         uses: docker/build-push-action@v3
         with:
