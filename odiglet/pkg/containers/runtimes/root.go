@@ -16,7 +16,7 @@ type Runtime interface {
 }
 
 var (
-	availableRuntimes  = []Runtime{&containerdRuntime{}}
+	availableRuntimes  = []Runtime{&containerdRuntime{}, &dockerRuntime{}, &crioRuntime{}}
 	ErrRuntimeNotFound = errors.New("runtime not found")
 	runtimesMap        = calculateRuntimesMap()
 )

@@ -16,6 +16,7 @@ spec:
         spec:
             serviceAccountName: odiglet
             hostNetwork: true
+            hostPID: true
             dnsPolicy: ClusterFirstWithHostNet
             containers:
                 - name: odiglet

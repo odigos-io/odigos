@@ -172,6 +172,7 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 					DNSPolicy:          "ClusterFirstWithHostNet",
 					ServiceAccountName: "odiglet",
 					HostNetwork:        true,
+					HostPID:            true,
 				},
 			},
 		},
