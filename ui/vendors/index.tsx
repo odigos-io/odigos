@@ -3,6 +3,7 @@ import { Datadog } from "@/vendors/datadog";
 import { Grafana } from "@/vendors/grafana";
 import { NewRelic } from "@/vendors/newrelic";
 import { Logzio } from "@/vendors/logzio";
+import { Qryn } from "@/vendors/qryn";
 import { NextApiRequest } from "next";
 import { Prometheus } from "@/vendors/hosted/prometheus";
 import { Tempo } from "@/vendors/hosted/tempo";
@@ -57,6 +58,7 @@ const Vendors = [
   new Jaeger(),
   new SigNoz(),
   new OpenTelemetry(),
+  new Qryn(),
 ];
 
 export default Vendors;

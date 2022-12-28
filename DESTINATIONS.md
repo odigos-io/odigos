@@ -19,6 +19,8 @@
 | Loki       |        |         | ✅   |
 | Jaeger     | ✅     |         |      |
 | SigNoz     | ✅     | ✅      | ✅   |
+| qryn       | ✅     | ✅      | ✅   |
+
 
 **Many more destinations are coming soon.**
 
