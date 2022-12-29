@@ -18,7 +18,7 @@ func (d *Datadog) DestType() common.DestinationType {
 }
 
 func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
-	if isTracingEnabled(dest) || isMetricsEnabled(dest) {
+	if isTracingEnabled(dest) || isMetricsEnabled(dest) || isLoggingEnabled(dest) {
 		site, exists := dest.Spec.Data[datadogSiteKey]
 		if !exists {
 			log.Log.V(0).Info("Datadog site not specified, gateway will not be configured for Datadog")
@@ -43,6 +43,14 @@ func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 
 	if isMetricsEnabled(dest) {
 		currentConfig.Service.Pipelines["metrics/datadog"] = commonconf.Pipeline{
+			Receivers:  []string{"otlp"},
+			Processors: []string{"batch"},
+			Exporters:  []string{"datadog"},
+		}
+	}
+
+	if isLoggingEnabled(dest) {
+		currentConfig.Service.Pipelines["logs/datadog"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
 			Exporters:  []string{"datadog"},

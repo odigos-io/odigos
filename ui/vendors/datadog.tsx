@@ -14,6 +14,7 @@ export class Datadog implements ObservabilityVendor {
   supportedSignals = [
     ObservabilitySignals.Traces,
     ObservabilitySignals.Metrics,
+    ObservabilitySignals.Logs,
   ];
 
   getLogo = (props: any) => {
