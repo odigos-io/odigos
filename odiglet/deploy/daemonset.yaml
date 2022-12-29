@@ -20,7 +20,7 @@ spec:
             dnsPolicy: ClusterFirstWithHostNet
             containers:
                 - name: odiglet
-                  image: edenfed/odiglet:v0.1
+                  image: ghcr.io/keyval-dev/odigos/odiglet:v0.1.37
                   imagePullPolicy: IfNotPresent
                   env:
                     - name: NODE_NAME

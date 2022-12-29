@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	odigletImage = "edenfed/odiglet"
+	odigletImage = "ghcr.io/keyval-dev/odigos/odiglet"
 )
 
 func NewOdigletServiceAccount() *corev1.ServiceAccount {

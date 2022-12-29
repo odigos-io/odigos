@@ -16,12 +16,10 @@ const (
 	golangExporterEndpoint      = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	golangServiceNameEnv        = "OTEL_SERVICE_NAME"
 	golangTargetExeEnv          = "OTEL_TARGET_EXE"
-
-	// TODO: move to ghcr, release as part of release process (github actions)
-	initImage      = "keyval/init:v0.1"
-	initVolumeName = "odigos"
-	initMountPath  = "/odigos"
-	initExePath    = "/odigos/init"
+	initImage                   = "ghcr.io/keyval-dev/odigos/init"
+	initVolumeName              = "odigos"
+	initMountPath               = "/odigos"
+	initExePath                 = "/odigos/init"
 )
 
 var golang = &golangPatcher{}
