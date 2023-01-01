@@ -31,7 +31,7 @@ func newContainerID(str string) (*ContainerID, error) {
 
 func FindIDs(ctx context.Context, podName string, podNamespace string, kubeClient kubernetes.Interface) ([]*ContainerID, error) {
 	// Wait for all the containers to be running
-	err := wait.PollImmediate(time.Second, 30*time.Second, isPodRunning(ctx, kubeClient, podName, podNamespace))
+	err := wait.PollImmediate(time.Second, 3*time.Minute, isPodRunning(ctx, kubeClient, podName, podNamespace))
 	if err != nil {
 		return nil, err
 	}

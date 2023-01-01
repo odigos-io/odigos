@@ -26,6 +26,7 @@ func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 		}
 
 		currentConfig.Exporters["datadog"] = commonconf.GenericMap{
+			"hostname": "odigos-gateway",
 			"api": commonconf.GenericMap{
 				"key":  "${DATADOG_API_KEY}",
 				"site": site,
