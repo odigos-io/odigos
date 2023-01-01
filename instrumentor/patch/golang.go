@@ -12,14 +12,14 @@ import (
 const (
 	golangKernelDebugVolumeName = "kernel-debug"
 	golangKernelDebugHostPath   = "/sys/kernel/debug"
-	golangAgentName             = "keyval/otel-go-agent:v0.6.0"
+	golangAgentName             = "keyval/otel-go-agent:v0.6.1"
 	golangExporterEndpoint      = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	golangServiceNameEnv        = "OTEL_SERVICE_NAME"
 	golangTargetExeEnv          = "OTEL_TARGET_EXE"
-	kvLauncherImage             = "keyval/launcher:v0.1"
-	launcherVolumeName          = "launcherdir"
-	launcherMountPath           = "/odigos-launcher"
-	launcherExePath             = "/odigos-launcher/launch"
+	initImage                   = "ghcr.io/keyval-dev/odigos/init"
+	initVolumeName              = "odigos"
+	initMountPath               = "/odigos"
+	initExePath                 = "/odigos/init"
 )
 
 var golang = &golangPatcher{}
@@ -30,13 +30,14 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	modifiedContainers := podSpec.Spec.Containers
 
 	podSpec.Spec.InitContainers = append(podSpec.Spec.InitContainers, v1.Container{
-		Name:    "copy-launcher",
-		Image:   kvLauncherImage,
-		Command: []string{"cp", "-a", "/kv-launcher/.", "/odigos-launcher/"},
+		Name:            "odigos-init",
+		Image:           initImage,
+		ImagePullPolicy: "IfNotPresent",
+		Command:         []string{"cp", "-a", "/odigos-init/.", "/odigos/"},
 		VolumeMounts: []v1.VolumeMount{
 			{
-				Name:      launcherVolumeName,
-				MountPath: launcherMountPath,
+				Name:      initVolumeName,
+				MountPath: initMountPath,
 			},
 		},
 	})
@@ -98,13 +99,40 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 			for i, c := range modifiedContainers {
 				if c.Name == l.ContainerName {
 					targetC := &modifiedContainers[i]
-					targetC.Command = []string{launcherExePath, l.ProcessName}
+					newArgs := calculateInitArgs(targetC.Command, targetC.Args, l.ProcessName)
+					targetC.Command = []string{initExePath}
+					targetC.Args = newArgs
 					targetC.VolumeMounts = append(c.VolumeMounts,
 						v1.VolumeMount{
-							Name:      launcherVolumeName,
-							MountPath: launcherMountPath,
+							Name:      initVolumeName,
+							MountPath: initMountPath,
 						},
 					)
+					targetC.Env = append(c.Env,
+						v1.EnvVar{
+							Name: "HOST_IP",
+							ValueFrom: &v1.EnvVarSource{
+								FieldRef: &v1.ObjectFieldSelector{
+									FieldPath: "status.hostIP",
+								},
+							},
+						},
+						v1.EnvVar{
+							Name: "POD_NAME",
+							ValueFrom: &v1.EnvVarSource{
+								FieldRef: &v1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						v1.EnvVar{
+							Name: "POD_NAMESPACE",
+							ValueFrom: &v1.EnvVarSource{
+								FieldRef: &v1.ObjectFieldSelector{
+									FieldPath: "metadata.namespace",
+								},
+							},
+						})
 				}
 			}
 
@@ -125,7 +153,7 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 		},
 	},
 		v1.Volume{
-			Name: launcherVolumeName,
+			Name: initVolumeName,
 			VolumeSource: v1.VolumeSource{
 				EmptyDir: &v1.EmptyDirVolumeSource{},
 			},
@@ -145,6 +173,25 @@ func (g *golangPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentat
 	}
 
 	return false
+}
+
+func calculateInitArgs(origCommand []string, origArgs []string, exeFile string) []string {
+	args := []string{exeFile}
+	if len(origCommand) > 0 {
+		args = append(args, origCommand...)
+	}
+
+	if len(origArgs) > 0 {
+		// If args are specified, but no command we assume the running command is exePath
+		// TODO: use CRI to figure out what is the real entrypoint
+		if len(origCommand) == 0 {
+			args = append(args, exeFile)
+		}
+
+		args = append(args, origArgs...)
+	}
+
+	return args
 }
 
 func boolPtr(b bool) *bool {
