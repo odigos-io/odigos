@@ -16,7 +16,7 @@ const (
 	golangExporterEndpoint      = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	golangServiceNameEnv        = "OTEL_SERVICE_NAME"
 	golangTargetExeEnv          = "OTEL_TARGET_EXE"
-	initImage                   = "ghcr.io/keyval-dev/odigos/init"
+	initImage                   = "ghcr.io/keyval-dev/odigos/init:v0.1.37"
 	initVolumeName              = "odigos"
 	initMountPath               = "/odigos"
 	initExePath                 = "/odigos/init"

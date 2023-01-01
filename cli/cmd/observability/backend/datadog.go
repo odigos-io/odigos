@@ -48,5 +48,6 @@ func (d *Datadog) SupportedSignals() []common.ObservabilitySignal {
 	return []common.ObservabilitySignal{
 		common.TracesObservabilitySignal,
 		common.MetricsObservabilitySignal,
+		common.LogsObservabilitySignal,
 	}
 }
