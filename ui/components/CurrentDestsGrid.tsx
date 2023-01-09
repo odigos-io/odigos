@@ -16,7 +16,7 @@ export default function CurrentDestsGrid() {
         role="alert"
       >
         <div>
-          There are no cofigured destinations, use the top button to add new
+          There are no configured destinations, use the top button to add new
           ones.
         </div>
       </div>

@@ -1,6 +1,5 @@
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -46,6 +45,8 @@ to quickly create a Cobra application.`,
 
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Deployments",
 			client, cmd, ns, uninstallDeployments)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos DaemonSets",
+			client, cmd, ns, uninstallDaemonSets)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos ConfigMaps",
 			client, cmd, ns, uninstallConfigMaps)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
@@ -71,6 +72,26 @@ func uninstallDeployments(ctx context.Context, cmd *cobra.Command, client *kube.
 
 	for _, i := range list.Items {
 		err = client.AppsV1().Deployments(ns).Delete(ctx, i.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func uninstallDaemonSets(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	list, err := client.AppsV1().DaemonSets(ns).List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: labels.OdigosSystem,
+		}),
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, i := range list.Items {
+		err = client.AppsV1().DaemonSets(ns).Delete(ctx, i.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}

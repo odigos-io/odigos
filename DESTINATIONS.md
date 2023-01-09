@@ -5,7 +5,7 @@
 |               | Traces | Metrics | Logs |
 | ------------- | ------ | ------- | ---- |
 | New Relic     | ✅     | ✅      | ✅   |
-| Datadog       | ✅     | ✅      |      |
+| Datadog       | ✅     | ✅      | ✅   |
 | Grafana Cloud | ✅     | ✅      | ✅   |
 | Honeycomb     | ✅     | ✅      | ✅   |
 | Logz.io       | ✅     | ✅      | ✅   |
