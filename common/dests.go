@@ -15,4 +15,5 @@ const (
 	GenericOTLPDestinationType DestinationType = "otlp"
 	SignozDestinationType      DestinationType = "signoz"
 	QrynDestinationType        DestinationType = "qryn"
+	OpsVerseDestinationType    DestinationType = "opsverse"
 )
