@@ -20,6 +20,7 @@
 | Jaeger     | ✅     |         |      |
 | SigNoz     | ✅     | ✅      | ✅   |
 | qryn       | ✅     | ✅      | ✅   |
+| OpsVerse   | ✅     | ✅      | ✅   |
 
 
 **Many more destinations are coming soon.**
