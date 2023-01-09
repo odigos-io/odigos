@@ -16,4 +16,5 @@ const (
 	SignozDestinationType      DestinationType = "signoz"
 	QrynDestinationType        DestinationType = "qryn"
 	OpsVerseDestinationType    DestinationType = "opsverse"
+	SplunkDestinationType      DestinationType = "splunk"
 )

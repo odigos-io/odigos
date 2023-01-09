@@ -4,6 +4,7 @@ import { Grafana } from "@/vendors/grafana";
 import { NewRelic } from "@/vendors/newrelic";
 import { Logzio } from "@/vendors/logzio";
 import { Qryn } from "@/vendors/qryn";
+import { Splunk } from "@/vendors/splunk";
 import { NextApiRequest } from "next";
 import { Prometheus } from "@/vendors/hosted/prometheus";
 import { Tempo } from "@/vendors/hosted/tempo";
@@ -61,6 +62,7 @@ const Vendors = [
   new OpenTelemetry(),
   new Qryn(),
   new OpsVerse(),
+  new Splunk(),
 ];
 
 export default Vendors;

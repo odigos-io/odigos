@@ -9,6 +9,7 @@
 | Grafana Cloud | ✅     | ✅      | ✅   |
 | Honeycomb     | ✅     | ✅      | ✅   |
 | Logz.io       | ✅     | ✅      | ✅   |
+| Splunk        | ✅     |         |      |
 
 ## Open Source
 
@@ -21,7 +22,6 @@
 | SigNoz     | ✅     | ✅      | ✅   |
 | qryn       | ✅     | ✅      | ✅   |
 | OpsVerse   | ✅     | ✅      | ✅   |
-
 
 **Many more destinations are coming soon.**
 
