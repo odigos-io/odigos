@@ -2,15 +2,16 @@ package config
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/ghodss/yaml"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	"strings"
 )
 
 var availableConfigers = []Configer{&Honeycomb{}, &Grafana{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{}, &Tempo{}, &Loki{},
-				    &Jaeger{}, &GenericOTLP{}, &Signoz{}, &Qryn{}}
+	&Jaeger{}, &GenericOTLP{}, &Signoz{}, &Qryn{}, &OpsVerse{}}
 
 type Configer interface {
 	DestType() common.DestinationType
