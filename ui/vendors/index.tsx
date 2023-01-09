@@ -11,6 +11,7 @@ import { Loki } from "@/vendors/hosted/loki";
 import { OpenTelemetry } from "@/vendors/hosted/opentelemetry";
 import { Jaeger } from "@/vendors/hosted/jaeger";
 import { SigNoz } from "@/vendors/hosted/signoz";
+import { OpsVerse } from "@/vendors/opsverse";
 
 export enum VendorType {
   MANAGED = "MANAGED",
@@ -59,6 +60,7 @@ const Vendors = [
   new SigNoz(),
   new OpenTelemetry(),
   new Qryn(),
+  new OpsVerse(),
 ];
 
 export default Vendors;
