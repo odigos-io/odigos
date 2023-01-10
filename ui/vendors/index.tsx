@@ -5,6 +5,7 @@ import { NewRelic } from "@/vendors/newrelic";
 import { Logzio } from "@/vendors/logzio";
 import { Qryn } from "@/vendors/qryn";
 import { Splunk } from "@/vendors/splunk";
+import { Lightstep } from "@/vendors/lightstep";
 import { NextApiRequest } from "next";
 import { Prometheus } from "@/vendors/hosted/prometheus";
 import { Tempo } from "@/vendors/hosted/tempo";
@@ -63,6 +64,7 @@ const Vendors = [
   new Qryn(),
   new OpsVerse(),
   new Splunk(),
+  new Lightstep(),
 ];
 
 export default Vendors;
