@@ -4,6 +4,8 @@ import { Grafana } from "@/vendors/grafana";
 import { NewRelic } from "@/vendors/newrelic";
 import { Logzio } from "@/vendors/logzio";
 import { Qryn } from "@/vendors/qryn";
+import { Splunk } from "@/vendors/splunk";
+import { Lightstep } from "@/vendors/lightstep";
 import { NextApiRequest } from "next";
 import { Prometheus } from "@/vendors/hosted/prometheus";
 import { Tempo } from "@/vendors/hosted/tempo";
@@ -12,6 +14,7 @@ import { OpenTelemetry } from "@/vendors/hosted/opentelemetry";
 import { Jaeger } from "@/vendors/hosted/jaeger";
 import { SigNoz } from "@/vendors/hosted/signoz";
 import { OpsVerse } from "@/vendors/opsverse";
+import { GoogleCloud } from "@/vendors/googlecloud";
 
 export enum VendorType {
   MANAGED = "MANAGED",
@@ -61,6 +64,9 @@ const Vendors = [
   new OpenTelemetry(),
   new Qryn(),
   new OpsVerse(),
+  new Splunk(),
+  new Lightstep(),
+  new GoogleCloud(),
 ];
 
 export default Vendors;
