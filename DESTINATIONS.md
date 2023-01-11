@@ -3,12 +3,13 @@
 ## Managed
 
 |               | Traces | Metrics | Logs |
-|---------------| ------ | ------- | ---- |
-| New Relic     | ✅     | ✅      | ✅   |
-| Datadog       | ✅     | ✅      | ✅   |
-| Grafana Cloud | ✅     | ✅      | ✅   |
-| Honeycomb     | ✅     | ✅      | ✅   |
-| Logz.io       | ✅     | ✅      | ✅   |
+|---------------| ------ |---------| ---- |
+| New Relic     | ✅     | ✅       | ✅   |
+| Datadog       | ✅     | ✅       | ✅   |
+| Grafana Cloud | ✅     | ✅       | ✅   |
+| Honeycomb     | ✅     | ✅       | ✅   |
+| Logz.io       | ✅     | ✅       | ✅   |
+| Google Cloud  | ✅     |         | ✅   |
 | Splunk        | ✅     |         |      |
 | Lightstep     | ✅     |         |      |
 

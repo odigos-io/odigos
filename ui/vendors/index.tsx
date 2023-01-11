@@ -14,6 +14,7 @@ import { OpenTelemetry } from "@/vendors/hosted/opentelemetry";
 import { Jaeger } from "@/vendors/hosted/jaeger";
 import { SigNoz } from "@/vendors/hosted/signoz";
 import { OpsVerse } from "@/vendors/opsverse";
+import { GoogleCloud } from "@/vendors/googlecloud";
 
 export enum VendorType {
   MANAGED = "MANAGED",
@@ -65,6 +66,7 @@ const Vendors = [
   new OpsVerse(),
   new Splunk(),
   new Lightstep(),
+  new GoogleCloud(),
 ];
 
 export default Vendors;

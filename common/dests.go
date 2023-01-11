@@ -18,4 +18,5 @@ const (
 	OpsVerseDestinationType    DestinationType = "opsverse"
 	SplunkDestinationType      DestinationType = "splunk"
 	LightstepDestinationType   DestinationType = "lightstep"
+	GoogleCloudDestinationType DestinationType = "googlecloud"
 )
