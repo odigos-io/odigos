@@ -1,14 +1,16 @@
 # Supported Destinations
 
+**For step by steup instructions detailed for every destination see these [docs](https://docs.odigos.io/backends).**
+
 ## Managed
 
 |               | Traces | Metrics | Logs |
-|---------------| ------ |---------| ---- |
-| New Relic     | ✅     | ✅       | ✅   |
-| Datadog       | ✅     | ✅       | ✅   |
-| Grafana Cloud | ✅     | ✅       | ✅   |
-| Honeycomb     | ✅     | ✅       | ✅   |
-| Logz.io       | ✅     | ✅       | ✅   |
+| ------------- | ------ | ------- | ---- |
+| New Relic     | ✅     | ✅      | ✅   |
+| Datadog       | ✅     | ✅      | ✅   |
+| Grafana Cloud | ✅     | ✅      | ✅   |
+| Honeycomb     | ✅     | ✅      | ✅   |
+| Logz.io       | ✅     | ✅      | ✅   |
 | Google Cloud  | ✅     |         | ✅   |
 | Splunk        | ✅     |         |      |
 | Lightstep     | ✅     |         |      |
