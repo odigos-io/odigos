@@ -1,4 +1,3 @@
-
 <p align="center">
     <a href="https://github.com/keyval-dev/odigos/actions/workflows/main.yml" target="_blank">
     <img src="https://github.com/keyval-dev/odigos/actions/workflows/main.yml/badge.svg" />
@@ -33,7 +32,7 @@
 - 🔭 **Observability by default** - Automatically get traces, metrics and logs for every new deployed application.
 
 <h2 align="center">
-    <a href="https://odigos.io/docs/getting-started/">Getting Started Guide</a> • <a href="https://odigos.io/docs/">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
+    <a href="https://docs.odigos.io/intro">Getting Started Guide</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
 
 ## Installation
@@ -46,13 +45,13 @@ helm repo add odigos https://keyval-dev.github.io/odigos-charts/
 helm install my-odigos odigos/odigos --namespace odigos-system --create-namespace
 ```
 
-See the [quickstart guide](https://odigos.io/docs/) for more details and examples.
+See the [quickstart guide](https://docs.odigos.io/intro) for more details and examples.
 
 ## Supported Destinations
 
 See [DESTINATIONS.md](DESTINATIONS.md) file for a complete list of supported destinations and the available signals for every destination.
 
-Can't find the destination you need? Help us by following our quick [adding new destination](https://odigos.io/docs/contribution-guidelines/add-new-destination/) guide and submit a PR.
+Can't find the destination you need? Help us by following our quick [adding new destination](https://docs.odigos.io/adding-new-dest) guide and submit a PR.
 
 ## Project Status
 
