@@ -9,27 +9,31 @@
     <img src="https://godoc.org/istio.io/istio?status.svg">
     </a>
 </p>
-<h1 align="center" font-weight="100">
-     Odigos - Adopt Distributed Tracing in Minutes
+<p align="center">
+  <h1 align="center" style="border-bottom: none" font-weight="100">
+     Odigos - Observability Control Plane
   </h1>
+  <h2 align="center" font-weight="100">
+     Generate distributed traces instantly for any application without code changes
+  </h2>
+</p>
+
 <p align="center">
 <a href="https://www.youtube.com/watch?v=9d36AmVtuGU">
   <img
     src="assets/odigos.gif"
-    width="1000"
+    width="700"
     alt="Odigos - Observability Control Plane"
     border="0"
 />
 </a>
 </p>
 
-### **Fix production issues faster by generating distributed traces, metrics and logs for any application in minutes, without code changes.**
-
-- 🧑‍💻 **No code changes** - Odigos detects the programming language of your applications and apply automatic instrumentation accordingly.
-- 📖 **Open technologies** - Applications are instrumented using well-known, battle-tested open source observability technologies such as [OpenTelemetry](https://opentelemetry.io) and [eBPF](https://ebpf.io).
-- 🚀 **Boost your existing monitoring tools** - No need for changing tools. Use your favourite tool, with much more data.
-- ✨ **Works on any application** - Get automatic distributed traces and metrics even for applications written in Go. Odigos leverage eBPF in a unique way that removes the need to manually instrument even compiled languages.
-- 🔭 **Observability by default** - Automatically get traces, metrics and logs for every new deployed application.
+- 🚀 **No need to replace existing monitoring tools** - Odigos boosts current observability solutions by generating higher-quality data
+- 🧑‍💻 **Language Agnostic Auto-instrumentation** - Odigos detects the programming language of any applications and automatically instruments it accordingly
+- 📖 **Built with [eBPF](https://ebpf.io) & [OpenTelemetry](https://opentelemetry.io)** - Applications are instrumented using well-known, battle-tested open source observability technologies
+- ✨ **Auto-instrumentation for Go applications** - Odigos leverages eBPF uniquely to instrument compiled languages without code changes
+- 🔭 **Collector Management** - Auto-scale collectors based on application usage. No need to deploy or configure complex pipelines
 
 <h2 align="center">
     <a href="https://docs.odigos.io/intro">Getting Started Guide</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
@@ -37,7 +41,7 @@
 
 ## Installation
 
-The easiest way to install Odigos is to use our [Helm chart](https://github.com/keyval-dev/odigos-charts) by running the following commands:
+The easiest way to install Odigos is to use our [Helm chart](https://github.com/keyval-dev/odigos-charts):
 
 ```console
 helm repo add odigos https://keyval-dev.github.io/odigos-charts/
@@ -49,13 +53,15 @@ See the [quickstart guide](https://docs.odigos.io/intro) for more details and ex
 
 ## Supported Destinations
 
+![Supported Destinations](assets/dests.png)
+
 See [DESTINATIONS.md](DESTINATIONS.md) file for a complete list of supported destinations and the available signals for every destination.
 
 Can't find the destination you need? Help us by following our quick [adding new destination](https://docs.odigos.io/adding-new-dest) guide and submit a PR.
 
 ## Project Status
 
-This project is actively maintained by [keyval](https://keyval.dev). We would love to receive your ideas, feedback & contributions.
+This project is actively maintained by [keyval](https://keyval.dev). We would love to receive your [ideas, feedback & contributions](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
 
 ## Contributing
 
