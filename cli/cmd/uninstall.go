@@ -10,8 +10,10 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/confirm"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
+	"github.com/keyval-dev/odigos/cli/pkg/log"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -32,8 +34,7 @@ to quickly create a Cobra application.`,
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Could not get odigos namespace\n%s\n", err)
-			os.Exit(-1)
+			ns = "odigos-system"
 		}
 
 		fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
@@ -56,8 +57,99 @@ to quickly create a Cobra application.`,
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
 			client, cmd, ns, uninstallNamespace)
 
+		l := log.Print("Rolling back odigos changes to pods")
+		err = rollbackPodChanges(ctx, client)
+		if err != nil {
+			l.Error(err)
+		}
+
+		l.Success()
+
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
+}
+
+func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
+	deps, err := client.AppsV1().Deployments("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, dep := range deps.Items {
+		if dep.Namespace == "odigos-system" {
+			continue
+		}
+
+		if err := rollbackPodTemplateSpec(ctx, client, &dep.Spec.Template); err != nil {
+			return err
+		}
+
+		if _, err := client.AppsV1().Deployments(dep.Namespace).Update(ctx, &dep, metav1.UpdateOptions{}); err != nil {
+			return err
+		}
+	}
+
+	ss, err := client.AppsV1().StatefulSets("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, s := range ss.Items {
+		if s.Namespace == "odigos-system" {
+			continue
+		}
+
+		if err := rollbackPodTemplateSpec(ctx, client, &s.Spec.Template); err != nil {
+			return err
+		}
+
+		if _, err := client.AppsV1().StatefulSets(s.Namespace).Update(ctx, &s, metav1.UpdateOptions{}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func rollbackPodTemplateSpec(ctx context.Context, client *kube.Client, pts *v1.PodTemplateSpec) error {
+	// Remove odigos volumes
+	for i, v := range pts.Spec.Volumes {
+		if strings.Contains(v.Name, "odigos") || strings.Contains(v.Name, "agentdir") {
+			pts.Spec.Volumes = append(pts.Spec.Volumes[:i], pts.Spec.Volumes[i+1:]...)
+		}
+	}
+
+	// Remove containers with keyval image
+	for i, c := range pts.Spec.Containers {
+		if strings.Contains(c.Image, "keyval") || strings.Contains(c.Image, "odigos") {
+			pts.Spec.Containers = append(pts.Spec.Containers[:i], pts.Spec.Containers[i+1:]...)
+		}
+
+		if len(c.Command) > 0 && c.Command[0] == "/odigos/init" {
+			// set container command to be container args
+			pts.Spec.Containers[i].Command = pts.Spec.Containers[i].Args
+			pts.Spec.Containers[i].Args = nil
+		}
+	}
+
+	// Remove volume mounts
+	for i, c := range pts.Spec.Containers {
+		for j, vm := range c.VolumeMounts {
+			if strings.Contains(vm.Name, "odigos") || strings.Contains(vm.Name, "agentdir") {
+				pts.Spec.Containers[i].VolumeMounts = append(c.VolumeMounts[:j], c.VolumeMounts[j+1:]...)
+			}
+		}
+	}
+
+	// Remove odigos init containers
+	for i, c := range pts.Spec.InitContainers {
+		if strings.Contains(c.Image, "keyval") || strings.Contains(c.Image, "odigos") ||
+			strings.Contains(c.Image, "otel") {
+			pts.Spec.InitContainers = append(pts.Spec.InitContainers[:i], pts.Spec.InitContainers[i+1:]...)
+		}
+	}
+
+	return nil
 }
 
 func uninstallDeployments(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
