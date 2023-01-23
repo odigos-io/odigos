@@ -14,7 +14,8 @@
      Odigos - Observability Control Plane
   </h1>
   <h2 align="center" font-weight="100">
-     Generate distributed traces instantly for any application without code changes
+     Generate distributed traces instantly for any application<br/>
+     Without code changes
   </h2>
 </p>
 
@@ -69,4 +70,4 @@ Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information abou
 
 ## License
 
-This project is licensed under the terms of the [Apache 2.0](LICENSE-Apache-2.0) open source license. Please refer to [LICENSE](LICENSE) for the full terms.
+This project is licensed under the terms of the Apache 2.0 open source license. Please refer to [LICENSE](LICENSE) for the full terms.
