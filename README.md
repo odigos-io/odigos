@@ -14,7 +14,8 @@
      Odigos - Observability Control Plane
   </h1>
   <h2 align="center" font-weight="100">
-     Generate distributed traces instantly for any application without code changes
+     Generate distributed traces instantly for any application<br/>
+     Without code changes
   </h2>
 </p>
 
