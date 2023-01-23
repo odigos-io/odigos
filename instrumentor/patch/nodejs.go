@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	nodeAgentImage       = "keyval/otel-nodejs-agent:v0.2"
+	nodeAgentImage       = "keyval/otel-nodejs-agent:v0.3"
 	nodeVolumeName       = "agentdir-nodejs"
 	nodeMountPath        = "/agent-nodejs"
 	nodeEnvNodeDebug     = "OTEL_NODEJS_DEBUG"
@@ -67,7 +67,7 @@ func (n *nodeJsPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  nodeEnvEndpoint,
-				Value: fmt.Sprintf("%s:%d", HostIPEnvValue, consts.OTLPPort),
+				Value: fmt.Sprintf("http://%s:%d", HostIPEnvValue, consts.OTLPPort),
 			})
 
 			container.Env = append(container.Env, v1.EnvVar{
