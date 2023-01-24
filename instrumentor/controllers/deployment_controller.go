@@ -67,6 +67,8 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, nil
 	}
 
+	req.Name = DeploymentPrefix + req.Name
+
 	err = syncInstrumentedApps(ctx, &req, r.Client, r.Scheme, dep.Status.ReadyReplicas, &dep, &dep.Spec.Template, instAppDepOwnerKey)
 	if err != nil {
 		logger.Error(err, "error syncing instrumented apps with deployments")

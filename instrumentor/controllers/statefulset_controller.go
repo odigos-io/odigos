@@ -70,6 +70,8 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, nil
 	}
 
+	req.Name = StatefulSetPrefix + req.Name
+
 	err = syncInstrumentedApps(ctx, &req, r.Client, r.Scheme, ss.Status.ReadyReplicas, &ss, &ss.Spec.Template, instAppSSOwnerKey)
 	if err != nil {
 		logger.Error(err, "error syncing instrumented apps with statefulsets")
