@@ -1,5 +1,5 @@
-const DEPLOYMENT_PREFIX = "Deployment-";
-const STATEFUL_SET_PREFIX = "StatefulSet-";
+const DEPLOYMENT_PREFIX = "deployment-";
+const STATEFUL_SET_PREFIX = "statefulset-";
 
 // stripPrefix removes StatefulSet- and Deployment- prefixes
 export function stripPrefix(name:string):string {
