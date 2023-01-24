@@ -118,6 +118,14 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 					},
 				},
 				Spec: corev1.PodSpec{
+					Tolerations: []corev1.Toleration{
+						{
+							Key:      "node.kubernetes.io/os",
+							Operator: corev1.TolerationOpEqual,
+							Value:    "windows",
+							Effect:   corev1.TaintEffectNoSchedule,
+						},
+					},
 					Volumes: []corev1.Volume{
 						{
 							Name: "run-dir",
