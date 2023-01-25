@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+	"strings"
 
 	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 
@@ -56,6 +57,7 @@ func main() {
 	var langDetectorTag string
 	var langDetectorImage string
 	var deleteLangDetectionPods bool
+	var ignoredNameSpaces stringslice
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -65,12 +67,15 @@ func main() {
 	flag.StringVar(&langDetectorTag, "lang-detector-tag", "latest", "container tag to use for lang detection")
 	flag.StringVar(&langDetectorImage, "lang-detector-image", "ghcr.io/keyval-dev/odigos/lang-detector", "container image to use for lang detection")
 	flag.BoolVar(&deleteLangDetectionPods, "delete-detection-pods", true, "Automatic termination of detection pods")
+	flag.Var(&ignoredNameSpaces, "ignore-namespace", "The ignored namespaces")
 
 	opts := zap.Options{
 		Development: true,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	controllers.IgnoredNamespaces = append(controllers.IgnoredNamespaces, []string(ignoredNameSpaces)...)
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
@@ -134,4 +139,15 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+type stringslice []string
+
+func (s *stringslice) Set(val string) error {
+	*s = append(*s, val)
+	return nil
+}
+
+func (s *stringslice) String() string {
+	return strings.Join(*s, " ")
 }
