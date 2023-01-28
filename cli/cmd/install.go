@@ -151,7 +151,8 @@ func createInstrumentor(ctx context.Context, cmd *cobra.Command, client *kube.Cl
 		return err
 	}
 
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewInstrumentorDeployment(versionFlag), metav1.CreateOptions{})
+	reportingDisabled := cmd.Flag("disable-telemetry").Value.String() == "true"
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewInstrumentorDeployment(versionFlag, reportingDisabled), metav1.CreateOptions{})
 	return err
 }
 
