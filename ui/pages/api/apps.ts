@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as k8s from "@kubernetes/client-node";
 import type { AppsApiResponse, ApplicationData } from "@/types/apps";
+import {stripPrefix} from "@/utils/crd";
 
 type Error = {
   message: string;
@@ -40,13 +41,14 @@ export default async function handler(
 
       return {
         id: item.metadata.uid,
-        name: item.metadata.ownerReferences[0].name,
+        name: stripPrefix(item.metadata.ownerReferences[0].name),
         languages: languages,
         instrumented: item.status.instrumented,
         kind: item.metadata.ownerReferences[0].kind,
         namespace: item.metadata.namespace,
       };
     });
+
   const discoveryInProgress = response.body.items.some(
     (i: any) => i.status.langDetection.phase === "Running"
   );
