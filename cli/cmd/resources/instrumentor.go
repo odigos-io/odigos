@@ -352,7 +352,7 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewInstrumentorDeployment(version string, reportingDisabled bool) *appsv1.Deployment {
+func NewInstrumentorDeployment(version string, telemetryEnabled bool) *appsv1.Deployment {
 	args := []string{
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=127.0.0.1:8080",
@@ -361,7 +361,7 @@ func NewInstrumentorDeployment(version string, reportingDisabled bool) *appsv1.D
 		fmt.Sprintf("--lang-detector-image=%s", langDetectorImage),
 	}
 
-	if reportingDisabled {
+	if !telemetryEnabled {
 		args = append(args, "--telemetry-disabled")
 	}
 	return &appsv1.Deployment{

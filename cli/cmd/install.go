@@ -19,9 +19,10 @@ const (
 )
 
 var (
-	namespaceFlag string
-	versionFlag   string
-	skipWait      bool
+	namespaceFlag    string
+	versionFlag      string
+	skipWait         bool
+	telemetryEnabled bool
 )
 
 type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error
@@ -151,8 +152,7 @@ func createInstrumentor(ctx context.Context, cmd *cobra.Command, client *kube.Cl
 		return err
 	}
 
-	reportingDisabled := cmd.Flag("disable-telemetry").Value.String() == "true"
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewInstrumentorDeployment(versionFlag, reportingDisabled), metav1.CreateOptions{})
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewInstrumentorDeployment(versionFlag, telemetryEnabled), metav1.CreateOptions{})
 	return err
 }
 
@@ -286,4 +286,5 @@ func init() {
 	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", defaultNamespace, "target namespace for Odigos installation")
 	installCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "target version for Odigos installation")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "Skip waiting for pods to be ready")
+	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "Enable telemetry")
 }
