@@ -34,7 +34,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true
-          tags: ghcr.io/edenfed/odigos/autoscaler:${{ steps.vars.outputs.tag }}
+          tags: ghcr.io/keyval-dev/odigos/autoscaler:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=autoscaler
           platforms: linux/amd64,linux/arm64
       - name: Build Scheduler Image
