@@ -81,6 +81,17 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			},
 			{
 				Verbs: []string{
+					"list",
+					"watch",
+					"get",
+				},
+				APIGroups: []string{""},
+				Resources: []string{
+					"nodes",
+				},
+			},
+			{
+				Verbs: []string{
 					"get",
 					"patch",
 					"update",
@@ -271,6 +282,47 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 					"odigosconfigurations",
 				},
 			},
+			{
+				Verbs: []string{
+					"create",
+					"delete",
+					"get",
+					"list",
+					"patch",
+					"update",
+					"watch",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"destinations",
+				},
+			},
+			{
+				Verbs: []string{
+					"update",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"destinations/finalizers",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"patch",
+					"update",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"destinations/status",
+				},
+			},
 		},
 	}
 }
@@ -300,7 +352,18 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewInstrumentorDeployment(version string) *appsv1.Deployment {
+func NewInstrumentorDeployment(version string, telemetryEnabled bool) *appsv1.Deployment {
+	args := []string{
+		"--health-probe-bind-address=:8081",
+		"--metrics-bind-address=127.0.0.1:8080",
+		"--leader-elect",
+		fmt.Sprintf("--lang-detector-tag=%s", version),
+		fmt.Sprintf("--lang-detector-image=%s", langDetectorImage),
+	}
+
+	if !telemetryEnabled {
+		args = append(args, "--telemetry-disabled")
+	}
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -359,13 +422,7 @@ func NewInstrumentorDeployment(version string) *appsv1.Deployment {
 							Command: []string{
 								"/app",
 							},
-							Args: []string{
-								"--health-probe-bind-address=:8081",
-								"--metrics-bind-address=127.0.0.1:8080",
-								"--leader-elect",
-								fmt.Sprintf("--lang-detector-tag=%s", version),
-								fmt.Sprintf("--lang-detector-image=%s", langDetectorImage),
-							},
+							Args: args,
 							Env: []corev1.EnvVar{
 								{
 									Name: "CURRENT_NS",

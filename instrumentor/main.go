@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/instrumentor/report"
 
 	"github.com/keyval-dev/odigos/instrumentor/controllers"
 
@@ -58,6 +59,7 @@ func main() {
 	var langDetectorImage string
 	var deleteLangDetectionPods bool
 	var ignoredNameSpaces stringslice
+	var telemetryDisabled bool
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -68,6 +70,7 @@ func main() {
 	flag.StringVar(&langDetectorImage, "lang-detector-image", "ghcr.io/keyval-dev/odigos/lang-detector", "container image to use for lang detection")
 	flag.BoolVar(&deleteLangDetectionPods, "delete-detection-pods", true, "Automatic termination of detection pods")
 	flag.Var(&ignoredNameSpaces, "ignore-namespace", "The ignored namespaces")
+	flag.BoolVar(&telemetryDisabled, "telemetry-disabled", false, "Disable telemetry")
 
 	opts := zap.Options{
 		Development: true,
@@ -133,6 +136,10 @@ func main() {
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
+	}
+
+	if !telemetryDisabled {
+		go report.Start(mgr.GetClient())
 	}
 
 	setupLog.Info("starting manager")

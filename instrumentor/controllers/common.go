@@ -20,6 +20,9 @@ var (
 	// IgnoredNamespaces have [odigos-system kube-system local-path-storage istio-system linkerd] by default
 	IgnoredNamespaces []string
 	SkipAnnotation    = "odigos.io/skip"
+
+	DeploymentPrefix  = "deployment-"
+	StatefulSetPrefix = "statefulset-"
 )
 
 func shouldSkip(annotations map[string]string, namespace string) bool {
@@ -39,7 +42,7 @@ func shouldSkip(annotations map[string]string, namespace string) bool {
 }
 
 func syncInstrumentedApps(ctx context.Context, req *ctrl.Request, c client.Client, scheme *runtime.Scheme,
-	readyReplicas int32, object client.Object, podTemplateSpec *v1.PodTemplateSpec, ownerKey string) error {
+	readyReplicas int32, object client.Object, podTemplateSpec *v1.PodTemplateSpec, ownerKey string, prefix string) error {
 
 	logger := log.FromContext(ctx)
 	instApps, err := getInstrumentedApps(ctx, req, c, ownerKey)
@@ -56,7 +59,7 @@ func syncInstrumentedApps(ctx context.Context, req *ctrl.Request, c client.Clien
 
 		instrumentedApp := odigosv1.InstrumentedApplication{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      req.Name,
+				Name:      prefix + req.Name,
 				Namespace: req.Namespace,
 			},
 			Spec: odigosv1.InstrumentedApplicationSpec{
