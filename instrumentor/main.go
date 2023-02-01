@@ -75,10 +75,9 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	controllers.IgnoredNamespaces = append(controllers.IgnoredNamespaces, []string(ignoredNameSpaces)...)
-
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	controllers.IgnoredNamespaces = ignoredNameSpaces
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,

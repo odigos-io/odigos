@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	IgnoredNamespaces = []string{"kube-system", "local-path-storage", "istio-system", "linkerd", consts.DefaultNamespace}
+	IgnoredNamespaces []string
 	SkipAnnotation    = "odigos.io/skip"
 )
 
