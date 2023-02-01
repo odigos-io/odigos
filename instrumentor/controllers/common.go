@@ -17,6 +17,7 @@ import (
 )
 
 var (
+	// IgnoredNamespaces have [odigos-system kube-system local-path-storage istio-system linkerd] by default
 	IgnoredNamespaces []string
 	SkipAnnotation    = "odigos.io/skip"
 )

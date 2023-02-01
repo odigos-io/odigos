@@ -78,6 +78,8 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	controllers.IgnoredNamespaces = ignoredNameSpaces
+	setupLog.Info("ignored namespaces from flags", "namespaces", ignoredNameSpaces)
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
