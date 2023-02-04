@@ -80,7 +80,7 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	controllers.IgnoredNamespaces = ignoredNameSpaces
+	controllers.IgnoredNamespaces = generateIgnoredNamesSpacesMap(ignoredNameSpaces)
 	setupLog.Info("ignored namespaces from flags", "namespaces", ignoredNameSpaces)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -158,4 +158,13 @@ func (s *stringslice) Set(val string) error {
 
 func (s *stringslice) String() string {
 	return strings.Join(*s, " ")
+}
+
+func generateIgnoredNamesSpacesMap(nss []string) map[string]bool {
+	m := make(map[string]bool)
+	for _, v := range nss {
+		m[v] = true
+	}
+
+	return m
 }
