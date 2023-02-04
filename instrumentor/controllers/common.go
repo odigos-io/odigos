@@ -17,7 +17,8 @@ import (
 )
 
 var (
-	IgnoredNamespaces = []string{"kube-system", "local-path-storage", "istio-system", "linkerd", consts.DefaultNamespace}
+	// IgnoredNamespaces have [odigos-system kube-system local-path-storage istio-system linkerd] by default
+	IgnoredNamespaces map[string]bool
 	SkipAnnotation    = "odigos.io/skip"
 
 	DeploymentPrefix  = "deployment-"
@@ -25,18 +26,13 @@ var (
 )
 
 func shouldSkip(annotations map[string]string, namespace string) bool {
-	for k, v := range annotations {
-		if k == SkipAnnotation && v == "true" {
-			return true
-		}
+	if val, ok := annotations[SkipAnnotation]; ok && val == "true" {
+		return true
 	}
 
-	for _, ns := range IgnoredNamespaces {
-		if namespace == ns {
-			return true
-		}
+	if _, ok := IgnoredNamespaces[namespace]; ok {
+		return true
 	}
-
 	return false
 }
 

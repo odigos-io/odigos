@@ -357,6 +357,11 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool) *appsv1.De
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=127.0.0.1:8080",
 		"--leader-elect",
+		"--ignore-namespace=odigos-system",
+		"--ignore-namespace=kube-system",
+		"--ignore-namespace=local-path-storage",
+		"--ignore-namespace=istio-system",
+		"--ignore-namespace=linkerd",
 		fmt.Sprintf("--lang-detector-tag=%s", version),
 		fmt.Sprintf("--lang-detector-image=%s", langDetectorImage),
 	}
