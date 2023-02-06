@@ -12,14 +12,10 @@ import (
 const (
 	golangKernelDebugVolumeName = "kernel-debug"
 	golangKernelDebugHostPath   = "/sys/kernel/debug"
-	golangAgentName             = "keyval/otel-go-agent:v0.6.1"
+	golangAgentName             = "keyval/otel-go-agent:v0.6.2"
 	golangExporterEndpoint      = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	golangServiceNameEnv        = "OTEL_SERVICE_NAME"
 	golangTargetExeEnv          = "OTEL_TARGET_EXE"
-	initImage                   = "ghcr.io/keyval-dev/odigos/init:v0.1.37"
-	initVolumeName              = "odigos"
-	initMountPath               = "/odigos"
-	initExePath                 = "/odigos/init"
 )
 
 var golang = &golangPatcher{}
@@ -28,19 +24,6 @@ type golangPatcher struct{}
 
 func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) {
 	modifiedContainers := podSpec.Spec.Containers
-
-	podSpec.Spec.InitContainers = append(podSpec.Spec.InitContainers, v1.Container{
-		Name:            "odigos-init",
-		Image:           initImage,
-		ImagePullPolicy: "IfNotPresent",
-		Command:         []string{"cp", "-a", "/odigos-init/.", "/odigos/"},
-		VolumeMounts: []v1.VolumeMount{
-			{
-				Name:      initVolumeName,
-				MountPath: initMountPath,
-			},
-		},
-	})
 
 	for _, l := range instrumentation.Spec.Languages {
 		if shouldPatch(instrumentation, common.GoProgrammingLanguage, l.ContainerName) {
@@ -96,46 +79,6 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 				},
 			}
 
-			for i, c := range modifiedContainers {
-				if c.Name == l.ContainerName {
-					targetC := &modifiedContainers[i]
-					newArgs := calculateInitArgs(targetC.Command, targetC.Args, l.ProcessName)
-					targetC.Command = []string{initExePath}
-					targetC.Args = newArgs
-					targetC.VolumeMounts = append(c.VolumeMounts,
-						v1.VolumeMount{
-							Name:      initVolumeName,
-							MountPath: initMountPath,
-						},
-					)
-					targetC.Env = append(c.Env,
-						v1.EnvVar{
-							Name: "HOST_IP",
-							ValueFrom: &v1.EnvVarSource{
-								FieldRef: &v1.ObjectFieldSelector{
-									FieldPath: "status.hostIP",
-								},
-							},
-						},
-						v1.EnvVar{
-							Name: "POD_NAME",
-							ValueFrom: &v1.EnvVarSource{
-								FieldRef: &v1.ObjectFieldSelector{
-									FieldPath: "metadata.name",
-								},
-							},
-						},
-						v1.EnvVar{
-							Name: "POD_NAMESPACE",
-							ValueFrom: &v1.EnvVarSource{
-								FieldRef: &v1.ObjectFieldSelector{
-									FieldPath: "metadata.namespace",
-								},
-							},
-						})
-				}
-			}
-
 			modifiedContainers = append(modifiedContainers, bpfContainer)
 		}
 	}
@@ -151,13 +94,7 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 				Path: golangKernelDebugHostPath,
 			},
 		},
-	},
-		v1.Volume{
-			Name: initVolumeName,
-			VolumeSource: v1.VolumeSource{
-				EmptyDir: &v1.EmptyDirVolumeSource{},
-			},
-		})
+	})
 }
 
 func (g *golangPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) bool {
@@ -173,25 +110,6 @@ func (g *golangPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentat
 	}
 
 	return false
-}
-
-func calculateInitArgs(origCommand []string, origArgs []string, exeFile string) []string {
-	args := []string{exeFile}
-	if len(origCommand) > 0 {
-		args = append(args, origCommand...)
-	}
-
-	if len(origArgs) > 0 {
-		// If args are specified, but no command we assume the running command is exePath
-		// TODO: use CRI to figure out what is the real entrypoint
-		if len(origCommand) == 0 {
-			args = append(args, exeFile)
-		}
-
-		args = append(args, origArgs...)
-	}
-
-	return args
 }
 
 func boolPtr(b bool) *bool {
