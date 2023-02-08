@@ -15,6 +15,8 @@ import { Jaeger } from "@/vendors/hosted/jaeger";
 import { SigNoz } from "@/vendors/hosted/signoz";
 import { OpsVerse } from "@/vendors/opsverse";
 import { GoogleCloud } from "@/vendors/googlecloud";
+import { Elasticsearch } from '@/vendors/hosted/elasticsearch';
+import { Sentry } from '@/vendors/sentry';
 
 export enum VendorType {
   MANAGED = "MANAGED",
@@ -60,6 +62,7 @@ const Vendors = [
   new Tempo(),
   new Loki(),
   new Jaeger(),
+  new Elasticsearch(),
   new SigNoz(),
   new OpenTelemetry(),
   new Qryn(),
@@ -67,6 +70,7 @@ const Vendors = [
   new Splunk(),
   new Lightstep(),
   new GoogleCloud(),
+  new Sentry(),
 ];
 
 export default Vendors;
