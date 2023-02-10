@@ -21,4 +21,6 @@ const (
 	LightstepDestinationType     DestinationType = "lightstep"
 	GoogleCloudDestinationType   DestinationType = "googlecloud"
 	SentryDestinationType        DestinationType = "sentry"
+	GCSDestinationType           DestinationType = "gcs"
+	AzureBlobDestinationType     DestinationType = "azureblob"
 )

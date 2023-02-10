@@ -17,6 +17,8 @@ import { OpsVerse } from "@/vendors/opsverse";
 import { GoogleCloud } from "@/vendors/googlecloud";
 import { Elasticsearch } from '@/vendors/hosted/elasticsearch';
 import { Sentry } from '@/vendors/sentry';
+import { GoogleCloudStorage } from "@/vendors/gcs";
+import { AzureBlobStorage } from "@/vendors/azureblobstorage";
 
 export enum VendorType {
   MANAGED = "MANAGED",
@@ -70,6 +72,8 @@ const Vendors = [
   new Splunk(),
   new Lightstep(),
   new GoogleCloud(),
+  new GoogleCloudStorage(),
+  new AzureBlobStorage(),
   new Sentry(),
 ];
 
