@@ -59,7 +59,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
         - name: grpc-instrumentation
-          image: keyval/otel-go-agent:v0.6.0
+          image: keyval/otel-go-agent:v0.6.3
           env:
             - name: OTEL_TARGET_EXE
               value: /workspace/app
