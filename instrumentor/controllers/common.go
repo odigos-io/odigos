@@ -17,7 +17,9 @@ import (
 )
 
 var (
-	// IgnoredNamespaces have [odigos-system kube-system local-path-storage istio-system linkerd] by default
+	// IgnoredNamespaces is filled from either:
+	//   - cmd.DefaultIgnoredNamespaces
+	//   - Helm chart's instrumentor.ignoredNamespaces field
 	IgnoredNamespaces map[string]bool
 	SkipAnnotation    = "odigos.io/skip"
 
