@@ -19,10 +19,12 @@ const (
 )
 
 var (
-	namespaceFlag    string
-	versionFlag      string
-	skipWait         bool
-	telemetryEnabled bool
+	namespaceFlag            string
+	versionFlag              string
+	skipWait                 bool
+	telemetryEnabled         bool
+	ignoredNamespaces        []string
+	DefaultIgnoredNamespaces = []string{"odigos-system", "kube-system", "local-path-storage", "istio-system", "linkerd"}
 )
 
 type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error
@@ -41,6 +43,7 @@ to quickly create a Cobra application.`,
 		client := kube.CreateClient(cmd)
 		ctx := cmd.Context()
 		ns := cmd.Flag("namespace").Value.String()
+		cmd.Flags().StringSliceVar(&ignoredNamespaces, "ignore-namespace", DefaultIgnoredNamespaces, "--ignore-namespace foo logging")
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
@@ -152,7 +155,7 @@ func createInstrumentor(ctx context.Context, cmd *cobra.Command, client *kube.Cl
 		return err
 	}
 
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewInstrumentorDeployment(versionFlag, telemetryEnabled), metav1.CreateOptions{})
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewInstrumentorDeployment(versionFlag, telemetryEnabled, ignoredNamespaces), metav1.CreateOptions{})
 	return err
 }
 
