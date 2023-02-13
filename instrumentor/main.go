@@ -18,10 +18,11 @@ package main
 
 import (
 	"flag"
-	"github.com/keyval-dev/odigos/instrumentor/report"
 	"os"
+	"strings"
 
 	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/instrumentor/report"
 
 	"github.com/keyval-dev/odigos/instrumentor/controllers"
 
@@ -57,6 +58,7 @@ func main() {
 	var langDetectorTag string
 	var langDetectorImage string
 	var deleteLangDetectionPods bool
+	var ignoredNameSpaces stringslice
 	var telemetryDisabled bool
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -67,6 +69,7 @@ func main() {
 	flag.StringVar(&langDetectorTag, "lang-detector-tag", "latest", "container tag to use for lang detection")
 	flag.StringVar(&langDetectorImage, "lang-detector-image", "ghcr.io/keyval-dev/odigos/lang-detector", "container image to use for lang detection")
 	flag.BoolVar(&deleteLangDetectionPods, "delete-detection-pods", true, "Automatic termination of detection pods")
+	flag.Var(&ignoredNameSpaces, "ignore-namespace", "The ignored namespaces")
 	flag.BoolVar(&telemetryDisabled, "telemetry-disabled", false, "Disable telemetry")
 
 	opts := zap.Options{
@@ -76,6 +79,9 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	controllers.IgnoredNamespaces = generateIgnoredNamesSpacesMap(ignoredNameSpaces)
+	setupLog.Info("ignored namespaces from flags", "namespaces", ignoredNameSpaces)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
@@ -141,4 +147,24 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+type stringslice []string
+
+func (s *stringslice) Set(val string) error {
+	*s = append(*s, val)
+	return nil
+}
+
+func (s *stringslice) String() string {
+	return strings.Join(*s, " ")
+}
+
+func generateIgnoredNamesSpacesMap(nss []string) map[string]bool {
+	m := make(map[string]bool)
+	for _, v := range nss {
+		m[v] = true
+	}
+
+	return m
 }
