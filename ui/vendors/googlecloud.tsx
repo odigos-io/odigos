@@ -8,7 +8,7 @@ import { NextApiRequest } from "next";
 
 export class GoogleCloud implements ObservabilityVendor {
   name = "googlecloud";
-  displayName = "Google Cloud";
+  displayName = "Google Cloud Monitoring";
   type = VendorType.MANAGED;
   supportedSignals = [ObservabilitySignals.Traces, ObservabilitySignals.Logs];
   getLogo = (props: any) => {

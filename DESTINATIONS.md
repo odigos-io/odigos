@@ -4,28 +4,32 @@
 
 ## Managed
 
-|               | Traces | Metrics | Logs |
-| ------------- | ------ | ------- | ---- |
-| New Relic     | ✅     | ✅      | ✅   |
-| Datadog       | ✅     | ✅      | ✅   |
-| Grafana Cloud | ✅     | ✅      | ✅   |
-| Honeycomb     | ✅     | ✅      | ✅   |
-| Logz.io       | ✅     | ✅      | ✅   |
-| Google Cloud  | ✅     |         | ✅   |
-| Splunk        | ✅     |         |      |
-| Lightstep     | ✅     |         |      |
+|                         | Traces | Metrics | Logs |
+| ----------------------- | ------ | ------- | ---- |
+| New Relic               | ✅      | ✅      | ✅   |
+| Datadog                 | ✅      | ✅      | ✅   |
+| Grafana Cloud           | ✅      | ✅      | ✅   |
+| Honeycomb               | ✅      | ✅      | ✅   |
+| Logz.io                 | ✅      | ✅      | ✅   |
+| Google Cloud Monitoring | ✅      |         | ✅   |
+| Google Cloud Storage    | ✅      |         | ✅   |
+| Azure Blob Storage      | ✅      |         | ✅   |
+| Splunk                  | ✅      |         |      |
+| Lightstep               | ✅      |         |      |
+| Sentry                  | ✅      |         |      |
 
 ## Open Source
 
-|            | Traces | Metrics | Logs |
-| ---------- | ------ | ------- | ---- |
-| Prometheus |        | ✅      |      |
-| Tempo      | ✅     |         |      |
-| Loki       |        |         | ✅   |
-| Jaeger     | ✅     |         |      |
-| SigNoz     | ✅     | ✅      | ✅   |
-| qryn       | ✅     | ✅      | ✅   |
-| OpsVerse   | ✅     | ✅      | ✅   |
+|               | Traces | Metrics | Logs |
+| ------------- | ------ | ------- | ---- |
+| Prometheus    |        | ✅      |      |
+| Tempo         | ✅     |         |      |
+| Loki          |        |         | ✅   |
+| Jaeger        | ✅     |         |      |
+| SigNoz        | ✅     | ✅      | ✅   |
+| qryn          | ✅     | ✅      | ✅   |
+| OpsVerse      | ✅     | ✅      | ✅   |
+| Elasticsearch | ✅     |         | ✅   |
 
 **Many more destinations are coming soon.**
 

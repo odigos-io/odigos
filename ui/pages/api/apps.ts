@@ -41,7 +41,7 @@ export default async function handler(
 
       return {
         id: item.metadata.uid,
-        name: stripPrefix(item.metadata.ownerReferences[0].name),
+        name: item.metadata.ownerReferences[0].name,
         languages: languages,
         instrumented: item.status.instrumented,
         kind: item.metadata.ownerReferences[0].kind,

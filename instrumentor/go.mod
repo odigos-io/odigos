@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/go-logr/logr v1.2.0
+	github.com/google/uuid v1.1.2
 	github.com/keyval-dev/odigos/api v0.0.0
 	github.com/keyval-dev/odigos/common v0.0.0
 	github.com/onsi/ginkgo v1.16.5
@@ -34,7 +35,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
-	github.com/google/uuid v1.1.2 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
