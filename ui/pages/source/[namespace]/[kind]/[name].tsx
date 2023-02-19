@@ -10,10 +10,10 @@ interface EditAppProps {
 
 const EditAppPage: NextPage<EditAppProps> = ({ enabled }: EditAppProps) => {
   const router = useRouter();
-  const { name, namespace } = router.query;
+  const { name, kind, namespace } = router.query;
   const [isEnabled, setIsEnabled] = useState(enabled);
   const updateApp = async () => {
-    const resp = await fetch(`/api/source/${namespace}/${name}`, {
+    const resp = await fetch(`/api/source/${namespace}/${kind}/${name}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -69,7 +69,7 @@ export const getServerSideProps = async ({ query }: any) => {
     };
   }
 
-  const { name, namespace } = query;
+  const { name, kind, namespace } = query;
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
@@ -78,7 +78,7 @@ export const getServerSideProps = async ({ query }: any) => {
     "v1alpha1",
     namespace,
     "instrumentedapplications",
-    name
+    `${kind}-${name}`
   );
 
   if (!resp) {
