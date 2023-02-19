@@ -14,7 +14,7 @@ export default async function UpdateSource(
     "v1alpha1",
     req.query.namespace as string,
     "instrumentedapplications",
-    req.query.name as string
+    `${req.query.kind}-${req.query.name}`
   );
 
   resp.body.spec.enabled = req.body.enabled;
@@ -23,7 +23,7 @@ export default async function UpdateSource(
     "v1alpha1",
     req.query.namespace as string,
     "instrumentedapplications",
-    req.query.name as string,
+    `${req.query.kind}-${req.query.name}`,
     resp.body
   );
 
