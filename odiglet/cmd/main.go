@@ -7,7 +7,9 @@ import (
 	"github.com/keyval-dev/odigos/odiglet/pkg/containers"
 	"github.com/keyval-dev/odigos/odiglet/pkg/containers/runtimes"
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
+	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
+	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -44,7 +46,20 @@ func main() {
 	http.Handle("/launch", server)
 
 	log.Logger.V(0).Info("Listening on port 8080")
+	go startDeviceManager()
 	log.Logger.V(0).Error(http.ListenAndServe(":8080", nil), "Failed to start http server")
+}
+
+func startDeviceManager() {
+	log.Logger.V(0).Info("Starting device manager")
+	lister, err := instrumentation.NewLister()
+	if err != nil {
+		log.Logger.Error(err, "Failed to create new lister")
+		os.Exit(-1)
+	}
+
+	manager := dpm.NewManager(lister)
+	manager.Run()
 }
 
 type httpServer struct {
