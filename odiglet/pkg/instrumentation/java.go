@@ -10,12 +10,12 @@ import (
 )
 
 type plugin struct {
-	idsManager *devices.IDManager
+	idsManager devices.DeviceManager
 }
 
-func NewInstrumentationPlugin() dpm.PluginInterface {
+func NewJavaPlugin(idManager devices.DeviceManager) dpm.PluginInterface {
 	return &plugin{
-		idsManager: devices.NewIDManager(),
+		idsManager: idManager,
 	}
 }
 
@@ -28,7 +28,7 @@ func (p *plugin) GetDevicePluginOptions(ctx context.Context, empty *v1beta1.Empt
 }
 
 func (p *plugin) ListAndWatch(empty *v1beta1.Empty, server v1beta1.DevicePlugin_ListAndWatchServer) error {
-	for newDevices := range p.idsManager.Channel() {
+	for newDevices := range p.idsManager.UpdatesChannel() {
 		log.Logger.V(0).Info("ListAndWatch", "newDevices", newDevices)
 		err := server.Send(&v1beta1.ListAndWatchResponse{
 			Devices: newDevices,
@@ -53,13 +53,6 @@ func (p *plugin) GetPreferredAllocation(ctx context.Context, request *v1beta1.Pr
 }
 
 func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest) (*v1beta1.AllocateResponse, error) {
-	log.Logger.V(0).Info("Allocate request: %v", request)
-
-	err := getPodResources()
-	if err != nil {
-		return nil, err
-	}
-
 	res := &v1beta1.AllocateResponse{}
 
 	for range request.ContainerRequests {
