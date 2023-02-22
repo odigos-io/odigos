@@ -21,8 +21,8 @@ import (
 const (
 	collectorLabel       = "odigos.io/data-collection"
 	containerName        = "data-collection"
-	containerImage       = "otel/opentelemetry-collector-contrib:0.55.0"
-	containerCommand     = "/otelcol-contrib"
+	containerImage       = "keyval/otel-collector-contrib:v0.1"
+	containerCommand     = "/otelcontribcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
 	dataCollectionSA     = "odigos-data-collection"
@@ -126,6 +126,14 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 								},
 							},
 						},
+						{
+							Name: "kubeletpodresources",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/var/lib/kubelet/pod-resources",
+								},
+							},
+						},
 					},
 					Containers: []corev1.Container{
 						{
@@ -147,6 +155,21 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 									MountPath: "/var/log",
 									ReadOnly:  true,
 								},
+								{
+									Name:      "kubeletpodresources",
+									MountPath: "/var/lib/kubelet/pod-resources",
+									ReadOnly:  true,
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
 							},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -163,6 +186,9 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 										Port: intstr.FromInt(13133),
 									},
 								},
+							},
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: boolPtr(true),
 							},
 						},
 					},
@@ -205,4 +231,8 @@ func patchDaemonSet(existing *appsv1.DaemonSet, desired *appsv1.DaemonSet, ctx c
 	}
 
 	return updated, nil
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }

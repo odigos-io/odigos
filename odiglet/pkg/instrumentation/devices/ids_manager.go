@@ -34,65 +34,43 @@ func (p PodDetails) Details() (string, string) {
 
 type DeviceManager interface {
 	Init(initialDevices int64)
-	Close()
-	UpdatesChannel() chan []*v1beta1.Device
+	GetDevices() []*v1beta1.Device
 }
 
 type IDManager struct {
-	devices       map[string]PodDetails
-	updatesChan   chan []*v1beta1.Device
-	periodicSync  <-chan time.Time
-	stopChan      chan struct{}
-	kubeletClient *kubeletClient
+	devices []string
 }
 
-func NewIDManager(kc *kubeletClient, clientset *kubernetes.Clientset) (*IDManager, error) {
+func NewIDManager(clientset *kubernetes.Clientset) (*IDManager, error) {
 	initalDevices, err := getInitialDeviceAmount(clientset)
 	if err != nil {
 		return nil, err
 	}
 
 	m := &IDManager{
-		devices:       make(map[string]PodDetails),
-		kubeletClient: kc,
-		updatesChan:   make(chan []*v1beta1.Device, initalDevices),
-		periodicSync:  time.NewTicker(defaultPeriod).C,
-		stopChan:      make(chan struct{}),
+		devices: make([]string, initalDevices),
 	}
 
 	m.Init(initalDevices)
-	go m.syncWithKubelet()
 	return m, nil
 }
 
 func (m *IDManager) Init(initialDevices int64) {
 	for i := int64(0); i < initialDevices; i++ {
-		m.devices[uuid.New().String()] = EmptyPodDetails
+		m.devices[i] = uuid.New().String()
 	}
-
-	m.reportUpdates()
 }
 
-func (m *IDManager) Close() {
-	m.stopChan <- struct{}{}
-	m.kubeletClient.Close()
-}
-
-func (m *IDManager) UpdatesChannel() chan []*v1beta1.Device {
-	return m.updatesChan
-}
-
-func (m *IDManager) reportUpdates() {
+func (m *IDManager) GetDevices() []*v1beta1.Device {
 	var devicesList []*v1beta1.Device
-	for deviceId := range m.devices {
+	for _, deviceId := range m.devices {
 		devicesList = append(devicesList, &v1beta1.Device{
 			ID:     deviceId,
 			Health: v1beta1.Healthy,
 		})
 	}
 
-	log.Logger.V(0).Info("Updated devices", "devices", devicesList)
-	m.updatesChan <- devicesList
+	return devicesList
 }
 
 func getInitialDeviceAmount(clientset *kubernetes.Clientset) (int64, error) {
@@ -109,44 +87,4 @@ func getInitialDeviceAmount(clientset *kubernetes.Clientset) (int64, error) {
 	}
 
 	return maxPods, nil
-}
-
-func (m *IDManager) syncWithKubelet() {
-	for {
-		select {
-		case <-m.periodicSync:
-			log.Logger.V(0).Info("Syncing with kubelet")
-			currentAllocs, err := m.kubeletClient.GetAllocations()
-			if err != nil {
-				log.Logger.V(0).Error(err, "Failed to get allocations from kubelet")
-				continue
-			}
-			// Case 1 - new allocation: device shown in currentAllocs but not in m.devices
-			for pod, device := range currentAllocs {
-				if val := m.devices[device]; val == EmptyPodDetails {
-					m.devices[device] = pod
-				}
-			}
-
-			// Case 2 - device released: device shown in m.devices but not in currentAllocs
-			// TODO: WHY DO WE NEED THIS? 
-			for device, pod := range m.devices {
-				if pod == EmptyPodDetails {
-					continue
-				}
-
-				if _, exists := currentAllocs[pod]; !exists {
-					delete(m.devices, device)
-					newId := uuid.New().String()
-					m.devices[newId] = EmptyPodDetails
-					log.Logger.V(0).Info("Device released", "device", device, "newId", newId)
-					m.reportUpdates()
-				}
-			}
-		case <-m.stopChan:
-			log.Logger.V(0).Info("Stopping sync with kubelet")
-			close(m.updatesChan)
-			return
-		}
-	}
 }

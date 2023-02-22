@@ -27,12 +27,7 @@ func (l *lister) NewPlugin(s string) dpm.PluginInterface {
 }
 
 func NewLister(ctx context.Context, clientset *kubernetes.Clientset) (dpm.ListerInterface, error) {
-	kubeletClient, err := devices.NewKubeletClient()
-	if err != nil {
-		return nil, err
-	}
-
-	idManager, err := devices.NewIDManager(kubeletClient, clientset)
+	idManager, err := devices.NewIDManager(clientset)
 	if err != nil {
 		return nil, err
 	}
