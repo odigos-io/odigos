@@ -25,9 +25,8 @@ func (j *javaPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odigos
 }
 
 func (j *javaPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) bool {
-	// TODO: Deep comparison
-	for _, c := range podSpec.Spec.InitContainers {
-		if c.Name == "copy-java-agent" {
+	for _, c := range podSpec.Spec.Containers {
+		if _, exists := c.Resources.Limits["instrumentation.odigos.io/java"]; exists {
 			return true
 		}
 	}

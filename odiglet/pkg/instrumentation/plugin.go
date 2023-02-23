@@ -3,32 +3,26 @@ package instrumentation
 import (
 	"context"
 	"fmt"
-	"github.com/keyval-dev/odigos/odiglet/pkg/env"
-	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/consts"
 	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/devices"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
-const (
-	otelResourceAttributesEnvVar = "OTEL_RESOURCE_ATTRIBUTES"
-	otelResourceAttrPatteern     = "service.name=%s,odigos.device=java"
-	javaToolOptionsEnvVar        = "JAVA_TOOL_OPTIONS"
-	javaOptsEnvVar               = "JAVA_OPTS"
-	javaToolOptionsPattern       = "-javaagent:/odigos/javaagent.jar " +
-		"-Dotel.traces.sampler=always_on -Dotel.exporter.otlp.endpoint=http://%s:%d"
-)
+type LangSpecificFunc func(deviceId string) *v1beta1.ContainerAllocateResponse
 
 type plugin struct {
-	idsManager devices.DeviceManager
-	stopCh     chan struct{}
+	idsManager       devices.DeviceManager
+	stopCh           chan struct{}
+	LangSpecificFunc LangSpecificFunc
 }
 
-func NewJavaPlugin(idManager devices.DeviceManager) dpm.PluginInterface {
+func NewPlugin(maxPods int64, lsf LangSpecificFunc) dpm.PluginInterface {
+	idManager := devices.NewIDManager(maxPods)
 	return &plugin{
-		idsManager: idManager,
-		stopCh:     make(chan struct{}),
+		idsManager:       idManager,
+		stopCh:           make(chan struct{}),
+		LangSpecificFunc: lsf,
 	}
 }
 
@@ -42,7 +36,7 @@ func (p *plugin) GetDevicePluginOptions(ctx context.Context, empty *v1beta1.Empt
 
 func (p *plugin) ListAndWatch(empty *v1beta1.Empty, server v1beta1.DevicePlugin_ListAndWatchServer) error {
 	devicesList := p.idsManager.GetDevices()
-	log.Logger.V(0).Info("ListAndWatch", "devices", devicesList)
+	log.Logger.V(3).Info("ListAndWatch", "devices", devicesList)
 	err := server.Send(&v1beta1.ListAndWatchResponse{
 		Devices: devicesList,
 	})
@@ -78,21 +72,7 @@ func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest)
 		}
 
 		deviceId := req.DevicesIDs[0]
-		javaOpts := fmt.Sprintf(javaToolOptionsPattern, env.Current.NodeIP, consts.OTLPPort)
-		res.ContainerResponses = append(res.ContainerResponses, &v1beta1.ContainerAllocateResponse{
-			Envs: map[string]string{
-				otelResourceAttributesEnvVar: fmt.Sprintf(otelResourceAttrPatteern, deviceId),
-				javaToolOptionsEnvVar:        javaOpts,
-				javaOptsEnvVar:               javaOpts,
-			},
-			Mounts: []*v1beta1.Mount{
-				{
-					ContainerPath: "/odigos",
-					HostPath:      "/odigos",
-					ReadOnly:      true,
-				},
-			},
-		})
+		res.ContainerResponses = append(res.ContainerResponses, p.LangSpecificFunc(deviceId))
 	}
 
 	return res, nil

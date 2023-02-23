@@ -1,19 +1,9 @@
 package devices
 
 import (
-	"context"
 	"github.com/google/uuid"
-	"github.com/keyval-dev/odigos/odiglet/pkg/env"
-	"github.com/keyval-dev/odigos/odiglet/pkg/log"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 	"strings"
-	"time"
-)
-
-const (
-	defaultMaxDevices = 100
 )
 
 type PodDetails string
@@ -21,11 +11,6 @@ type PodDetails string
 func NewPodDetails(name string, namespace string) PodDetails {
 	return PodDetails(name + "_" + namespace)
 }
-
-var (
-	EmptyPodDetails = NewPodDetails("", "")
-	defaultPeriod   = 1 * time.Second
-)
 
 func (p PodDetails) Details() (string, string) {
 	parts := strings.Split(string(p), "_")
@@ -41,18 +26,13 @@ type IDManager struct {
 	devices []string
 }
 
-func NewIDManager(clientset *kubernetes.Clientset) (*IDManager, error) {
-	initalDevices, err := getInitialDeviceAmount(clientset)
-	if err != nil {
-		return nil, err
-	}
-
+func NewIDManager(initialSize int64) *IDManager {
 	m := &IDManager{
-		devices: make([]string, initalDevices),
+		devices: make([]string, initialSize),
 	}
 
-	m.Init(initalDevices)
-	return m, nil
+	m.Init(initialSize)
+	return m
 }
 
 func (m *IDManager) Init(initialDevices int64) {
@@ -71,20 +51,4 @@ func (m *IDManager) GetDevices() []*v1beta1.Device {
 	}
 
 	return devicesList
-}
-
-func getInitialDeviceAmount(clientset *kubernetes.Clientset) (int64, error) {
-	// get max pods per current node
-	node, err := clientset.CoreV1().Nodes().Get(context.Background(), env.Current.NodeName, metav1.GetOptions{})
-	if err != nil {
-		return 0, err
-	}
-
-	maxPods, ok := node.Status.Allocatable.Pods().AsInt64()
-	if !ok {
-		log.Logger.V(0).Info("Failed to get max pods from node status, using default value", "default", defaultMaxDevices)
-		maxPods = defaultMaxDevices
-	}
-
-	return maxPods, nil
 }
