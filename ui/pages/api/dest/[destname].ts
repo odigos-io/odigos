@@ -47,6 +47,21 @@ async function DeleteDest(req: NextApiRequest, res: NextApiResponse) {
     "destinations",
     req.query.destname as string
   );
+
+  // if secret with name req.query.destname exists, delete it
+  const coreApi = kc.makeApiClient(k8s.CoreV1Api);
+  const secret = await coreApi.readNamespacedSecret(
+    req.query.destname as string,
+    process.env.CURRENT_NS || "odigos-system"
+  );
+
+  if (secret) {
+    await coreApi.deleteNamespacedSecret(
+      req.query.destname as string,
+      process.env.CURRENT_NS || "odigos-system"
+    );
+  }
+
   return res.status(200).json({ success: true });
 }
 
