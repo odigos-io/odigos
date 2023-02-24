@@ -3,6 +3,16 @@ WORKDIR /python-instrumentation
 ADD agents/python/requirements.txt .
 RUN mkdir workspace && pip install --target workspace -r requirements.txt
 
+FROM node:16 AS nodejs-builder
+WORKDIR /nodejs-instrumentation
+COPY agents/nodejs .
+RUN npm install
+
+FROM busybox AS dotnet-builder
+WORKDIR /dotnet-instrumentation
+ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v0.0.1/otel-dotnet-autoinstrumentation-0.0.1-musl.tar.gz .
+RUN tar -xvf otel-dotnet-autoinstrumentation-0.0.1-musl.tar.gz && rm otel-dotnet-autoinstrumentation-0.0.1-musl.tar.gz
+
 FROM golang:1.19 AS builder
 WORKDIR /go/src/github.com/keyval-dev/odigos/odiglet
 COPY . .
@@ -17,6 +27,13 @@ ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/release
 
 # Python
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
+
+# NodeJS
+COPY --from=nodejs-builder /nodejs-instrumentation/build/workspace /instrumentations/nodejs
+
+# .NET
+COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
+RUN chmod -R 777 /instrumentations/dotnet
 
 FROM gcr.io/distroless/static-debian10
 WORKDIR /root/

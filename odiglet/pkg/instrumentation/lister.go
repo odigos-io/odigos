@@ -44,6 +44,8 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset) (dpm.Lister
 	var availablePlugins = map[string]dpm.PluginInterface{
 		"java":   NewPlugin(maxPods, instrumentlang.Java),
 		"python": NewPlugin(maxPods, instrumentlang.Python),
+		"nodejs": NewPlugin(maxPods, instrumentlang.NodeJS),
+		"dotnet": NewPlugin(maxPods, instrumentlang.DotNet),
 	}
 
 	err = fs.CopyAgentsDirectoryToHost()
