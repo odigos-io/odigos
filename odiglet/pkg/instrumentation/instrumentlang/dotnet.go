@@ -2,7 +2,9 @@ package instrumentlang
 
 import (
 	"fmt"
+
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
+	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/consts"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
@@ -19,7 +21,7 @@ const (
 	tracerHome            = "/odigos/dotnet"
 	resourceAttrEnv       = "OTEL_RESOURCE_ATTRIBUTES"
 	startupHookEnv        = "DOTNET_STARTUP_HOOKS"
-	startupHook           = "/odigos/dotnet/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	startupHook           = "/odigos/dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 	additonalDepsEnv      = "DOTNET_ADDITIONAL_DEPS"
 	additonalDeps         = "/odigos/dotnet/AdditionalDeps"
 	sharedStoreEnv        = "DOTNET_SHARED_STORE"
@@ -33,7 +35,7 @@ func DotNet(deviceId string) *v1beta1.ContainerAllocateResponse {
 			profilerEndVar:        profilerId,
 			profilerPathEnv:       profilerPath,
 			tracerHomeEnv:         tracerHome,
-			collectorUrlEnv:       fmt.Sprintf("http://%s:9411/api/v2/spans", env.Current.NodeIP),
+			collectorUrlEnv:       fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort),
 			serviceNameEnv:        deviceId,
 			exportTypeEnv:         "otlp",
 			resourceAttrEnv:       "odigos.device=dotnet",
@@ -45,6 +47,7 @@ func DotNet(deviceId string) *v1beta1.ContainerAllocateResponse {
 			{
 				ContainerPath: "/odigos/dotnet",
 				HostPath:      "/odigos/dotnet",
+				ReadOnly:      true,
 			},
 		},
 	}

@@ -12,7 +12,7 @@ FROM busybox AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSIN=0.5.0
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v$DOTNET_OTEL_VERSIN/opentelemetry-dotnet-instrumentation-linux-musl.zip .
-RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip
+RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
 
 FROM golang:1.19 AS builder
 WORKDIR /go/src/github.com/keyval-dev/odigos/odiglet
@@ -34,7 +34,6 @@ COPY --from=nodejs-builder /nodejs-instrumentation/build/workspace /instrumentat
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
-RUN chmod -R 777 /instrumentations/dotnet
 
 FROM gcr.io/distroless/static-debian10
 WORKDIR /root/
