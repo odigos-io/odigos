@@ -10,8 +10,9 @@ RUN npm install
 
 FROM busybox AS dotnet-builder
 WORKDIR /dotnet-instrumentation
-ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v0.0.1/otel-dotnet-autoinstrumentation-0.0.1-musl.tar.gz .
-RUN tar -xvf otel-dotnet-autoinstrumentation-0.0.1-musl.tar.gz && rm otel-dotnet-autoinstrumentation-0.0.1-musl.tar.gz
+ARG DOTNET_OTEL_VERSIN=0.5.0
+ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v$DOTNET_OTEL_VERSIN/opentelemetry-dotnet-instrumentation-linux-musl.zip .
+RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip
 
 FROM golang:1.19 AS builder
 WORKDIR /go/src/github.com/keyval-dev/odigos/odiglet

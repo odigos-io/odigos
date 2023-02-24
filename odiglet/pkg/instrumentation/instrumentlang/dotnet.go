@@ -12,15 +12,18 @@ const (
 	profilerId            = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
 	profilerPathEnv       = "CORECLR_PROFILER_PATH"
 	profilerPath          = "/odigos/dotnet/OpenTelemetry.AutoInstrumentation.ClrProfiler.Native.so"
-	intergationEnv        = "OTEL_INTEGRATIONS"
-	intergations          = "/odigos/dotnet/integrations.json"
-	conventionsEnv        = "OTEL_CONVENTION"
-	serviceNameEnv        = "OTEL_SERVICE"
-	convetions            = "OpenTelemetry"
-	collectorUrlEnv       = "OTEL_TRACE_AGENT_URL"
-	tracerHomeEnv         = "OTEL_DOTNET_TRACER_HOME"
-	exportTypeEnv         = "OTEL_EXPORTER"
+	serviceNameEnv        = "OTEL_SERVICE_NAME"
+	collectorUrlEnv       = "OTEL_EXPORTER_OTLP_ENDPOINT"
+	tracerHomeEnv         = "OTEL_DOTNET_AUTO_HOME"
+	exportTypeEnv         = "OTEL_TRACES_EXPORTER"
 	tracerHome            = "/odigos/dotnet"
+	resourceAttrEnv       = "OTEL_RESOURCE_ATTRIBUTES"
+	startupHookEnv        = "DOTNET_STARTUP_HOOKS"
+	startupHook           = "/odigos/dotnet/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	additonalDepsEnv      = "DOTNET_ADDITIONAL_DEPS"
+	additonalDeps         = "/odigos/dotnet/AdditionalDeps"
+	sharedStoreEnv        = "DOTNET_SHARED_STORE"
+	sharedStore           = "/odigos/dotnet/store"
 )
 
 func DotNet(deviceId string) *v1beta1.ContainerAllocateResponse {
@@ -29,13 +32,14 @@ func DotNet(deviceId string) *v1beta1.ContainerAllocateResponse {
 			enableProfilingEnvVar: "1",
 			profilerEndVar:        profilerId,
 			profilerPathEnv:       profilerPath,
-			intergationEnv:        intergations,
 			tracerHomeEnv:         tracerHome,
-			conventionsEnv:        convetions,
 			collectorUrlEnv:       fmt.Sprintf("http://%s:9411/api/v2/spans", env.Current.NodeIP),
 			serviceNameEnv:        deviceId,
-			exportTypeEnv:         "Zipkin",
-			//resourceAttrEnv:       "odigos.device=dotnet",
+			exportTypeEnv:         "otlp",
+			resourceAttrEnv:       "odigos.device=dotnet",
+			startupHookEnv:        startupHook,
+			additonalDepsEnv:      additonalDeps,
+			sharedStoreEnv:        sharedStore,
 		},
 		Mounts: []*v1beta1.Mount{
 			{
