@@ -1,6 +1,3 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -13,9 +10,17 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
+)
+
+const (
+	odigosDeviceName            = "instrumentation.odigos.io"
+	goAgentImage                = "keyval/otel-go-agent"
+	golangKernelDebugVolumeName = "kernel-debug"
 )
 
 // uninstallCmd represents the uninstall command
@@ -57,6 +62,9 @@ to quickly create a Cobra application.`,
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
 			client, cmd, ns, uninstallNamespace)
 
+		// Wait for namespace to be deleted
+		waitForNamespaceDeletion(ctx, client, ns)
+
 		l := log.Print("Rolling back odigos changes to pods")
 		err = rollbackPodChanges(ctx, client)
 		if err != nil {
@@ -67,6 +75,18 @@ to quickly create a Cobra application.`,
 
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
+}
+
+func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns string) {
+	l := log.Print("Waiting for namespace to be deleted")
+	wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
+		_, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+		if err != nil {
+			l.Success()
+			return true, nil
+		}
+		return false, nil
+	})
 }
 
 func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
@@ -80,10 +100,7 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 			continue
 		}
 
-		if err := rollbackPodTemplateSpec(ctx, client, &dep.Spec.Template); err != nil {
-			return err
-		}
-
+		rollbackPodTemplateSpec(ctx, client, &dep.Spec.Template)
 		if _, err := client.AppsV1().Deployments(dep.Namespace).Update(ctx, &dep, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
@@ -99,10 +116,7 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 			continue
 		}
 
-		if err := rollbackPodTemplateSpec(ctx, client, &s.Spec.Template); err != nil {
-			return err
-		}
-
+		rollbackPodTemplateSpec(ctx, client, &s.Spec.Template)
 		if _, err := client.AppsV1().StatefulSets(s.Namespace).Update(ctx, &s, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
@@ -111,45 +125,43 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 	return nil
 }
 
-func rollbackPodTemplateSpec(ctx context.Context, client *kube.Client, pts *v1.PodTemplateSpec) error {
-	// Remove odigos volumes
-	for i, v := range pts.Spec.Volumes {
-		if strings.Contains(v.Name, "odigos") || strings.Contains(v.Name, "agentdir") {
-			pts.Spec.Volumes = append(pts.Spec.Volumes[:i], pts.Spec.Volumes[i+1:]...)
-		}
-	}
-
-	// Remove containers with keyval image
+func rollbackPodTemplateSpec(ctx context.Context, client *kube.Client, pts *v1.PodTemplateSpec) {
+	// Odigos instruments pods in two ways:
+	// A. For Java/.NET/Python/NodeJS apps, it adds a resource limit to the container
+	instrumentedViaResourceLimit := false
 	for i, c := range pts.Spec.Containers {
-		if strings.Contains(c.Image, "keyval") || strings.Contains(c.Image, "odigos") {
-			pts.Spec.Containers = append(pts.Spec.Containers[:i], pts.Spec.Containers[i+1:]...)
-		}
-
-		if len(c.Command) > 0 && c.Command[0] == "/odigos/init" {
-			// set container command to be container args
-			pts.Spec.Containers[i].Command = pts.Spec.Containers[i].Args
-			pts.Spec.Containers[i].Args = nil
-		}
-	}
-
-	// Remove volume mounts
-	for i, c := range pts.Spec.Containers {
-		for j, vm := range c.VolumeMounts {
-			if strings.Contains(vm.Name, "odigos") || strings.Contains(vm.Name, "agentdir") {
-				pts.Spec.Containers[i].VolumeMounts = append(c.VolumeMounts[:j], c.VolumeMounts[j+1:]...)
+		if c.Resources.Limits != nil {
+			for val, _ := range c.Resources.Limits {
+				if strings.Contains(val.String(), odigosDeviceName) {
+					instrumentedViaResourceLimit = true
+					delete(pts.Spec.Containers[i].Resources.Limits, val)
+				}
 			}
 		}
 	}
 
-	// Remove odigos init containers
-	for i, c := range pts.Spec.InitContainers {
-		if strings.Contains(c.Image, "keyval") || strings.Contains(c.Image, "odigos") ||
-			strings.Contains(c.Image, "otel") {
-			pts.Spec.InitContainers = append(pts.Spec.InitContainers[:i], pts.Spec.InitContainers[i+1:]...)
+	if instrumentedViaResourceLimit {
+		return
+	}
+
+	// B. For Go apps, it adds a sidecar container
+
+	// Remove containers with go agent image
+	for i, c := range pts.Spec.Containers {
+		if strings.Contains(c.Image, goAgentImage) {
+			pts.Spec.Containers = append(pts.Spec.Containers[:i], pts.Spec.Containers[i+1:]...)
 		}
 	}
 
-	return nil
+	// Roll back shared process namespace
+	pts.Spec.ShareProcessNamespace = nil
+
+	// Remove odigos volumes
+	for i, v := range pts.Spec.Volumes {
+		if v.Name == golangKernelDebugVolumeName {
+			pts.Spec.Volumes = append(pts.Spec.Volumes[:i], pts.Spec.Volumes[i+1:]...)
+		}
+	}
 }
 
 func uninstallDeployments(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
