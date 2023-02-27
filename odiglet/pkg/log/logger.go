@@ -1,6 +1,7 @@
 package log
 
 import (
+	"flag"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
@@ -15,5 +16,9 @@ func Init() error {
 	}
 
 	Logger = zapr.NewLogger(zapLog)
+
+	// used by device manager logger
+	flag.Parse()
+
 	return nil
 }
