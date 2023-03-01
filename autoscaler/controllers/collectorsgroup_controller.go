@@ -33,7 +33,8 @@ import (
 // CollectorsGroupReconciler reconciles a CollectorsGroup object
 type CollectorsGroupReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme           *runtime.Scheme
+	ImagePullSecrets []string
 }
 
 //+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectorsgroups,verbs=get;list;watch;create;update;patch;delete
@@ -58,12 +59,12 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling CollectorsGroup")
 
-	err := gateway.Sync(ctx, r.Client, r.Scheme)
+	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	err = datacollection.Sync(ctx, r.Client, r.Scheme)
+	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
