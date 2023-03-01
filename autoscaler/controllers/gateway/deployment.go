@@ -24,9 +24,10 @@ const (
 	configHashAnnotation = "odigos.io/config-hash"
 )
 
-func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string, ctx context.Context, c client.Client, scheme *runtime.Scheme) (*appsv1.Deployment, error) {
+func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
+	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
-	desiredDeployment, err := getDesiredDeployment(dests, configData, gateway, scheme)
+	desiredDeployment, err := getDesiredDeployment(dests, configData, gateway, scheme, imagePullSecrets)
 	if err != nil {
 		logger.Error(err, "Failed to get desired deployment")
 		return nil, err
@@ -91,7 +92,8 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 	return updated, nil
 }
 
-func getDesiredDeployment(dests *odigosv1.DestinationList, configData string, gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme) (*appsv1.Deployment, error) {
+func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string) (*appsv1.Deployment, error) {
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      gateway.Name,
@@ -162,6 +164,13 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string, ga
 				},
 			},
 		},
+	}
+
+	if imagePullSecrets != nil && len(imagePullSecrets) > 0 {
+		desiredDeployment.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
+		for _, secret := range imagePullSecrets {
+			desiredDeployment.Spec.Template.Spec.ImagePullSecrets = append(desiredDeployment.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})
+		}
 	}
 
 	err := ctrl.SetControllerReference(gateway, desiredDeployment, scheme)

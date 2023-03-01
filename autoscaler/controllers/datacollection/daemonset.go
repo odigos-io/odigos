@@ -35,9 +35,9 @@ var (
 )
 
 func syncDaemonSet(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup, configData string, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme) (*appsv1.DaemonSet, error) {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
-	desiredDs, err := getDesiredDaemonSet(datacollection, configData, scheme)
+	desiredDs, err := getDesiredDaemonSet(datacollection, configData, scheme, imagePullSecrets)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -72,7 +72,8 @@ func syncDaemonSet(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 	return updated, nil
 }
 
-func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string, scheme *runtime.Scheme) (*appsv1.DaemonSet, error) {
+func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string,
+	scheme *runtime.Scheme, imagePullSecrets []string) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -197,6 +198,13 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 				},
 			},
 		},
+	}
+
+	if imagePullSecrets != nil && len(imagePullSecrets) > 0 {
+		desiredDs.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
+		for _, secret := range imagePullSecrets {
+			desiredDs.Spec.Template.Spec.ImagePullSecrets = append(desiredDs.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})
+		}
 	}
 
 	err := ctrl.SetControllerReference(datacollection, desiredDs, scheme)

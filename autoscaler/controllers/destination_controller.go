@@ -30,7 +30,8 @@ import (
 // DestinationReconciler reconciles a Destination object
 type DestinationReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme           *runtime.Scheme
+	ImagePullSecrets []string
 }
 
 //+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=destinations,verbs=get;list;watch;create;update;patch;delete
@@ -48,7 +49,7 @@ type DestinationReconciler struct {
 func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Destination")
-	err := gateway.Sync(ctx, r.Client, r.Scheme)
+	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

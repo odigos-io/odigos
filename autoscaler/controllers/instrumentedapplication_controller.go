@@ -29,7 +29,8 @@ import (
 // InstrumentedApplicationReconciler reconciles a InstrumentedApplication object
 type InstrumentedApplicationReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme           *runtime.Scheme
+	ImagePullSecrets []string
 }
 
 //+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications,verbs=get;list;watch;create;update;patch;delete
@@ -47,7 +48,7 @@ type InstrumentedApplicationReconciler struct {
 func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling InstrumentedApps")
-	err := datacollection.Sync(ctx, r.Client, r.Scheme)
+	err := datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
