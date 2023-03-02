@@ -26,6 +26,10 @@ func (p *pythonPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	var modifiedContainers []v1.Container
 	for _, container := range podSpec.Spec.Containers {
 		if shouldPatch(instrumentation, common.PythonProgrammingLanguage, container.Name) {
+			if container.Resources.Limits == nil {
+				container.Resources.Limits = make(map[v1.ResourceName]resource.Quantity)
+			}
+
 			container.Resources.Limits["instrumentation.odigos.io/python"] = resource.MustParse("1")
 		}
 

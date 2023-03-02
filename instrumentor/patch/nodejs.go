@@ -15,6 +15,10 @@ func (n *nodeJsPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	var modifiedContainers []v1.Container
 	for _, container := range podSpec.Spec.Containers {
 		if shouldPatch(instrumentation, common.JavascriptProgrammingLanguage, container.Name) {
+			if container.Resources.Limits == nil {
+				container.Resources.Limits = make(map[v1.ResourceName]resource.Quantity)
+			}
+
 			container.Resources.Limits["instrumentation.odigos.io/nodejs"] = resource.MustParse("1")
 		}
 

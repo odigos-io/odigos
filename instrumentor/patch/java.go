@@ -15,6 +15,10 @@ func (j *javaPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odigos
 	var modifiedContainers []v1.Container
 	for _, container := range podSpec.Spec.Containers {
 		if shouldPatch(instrumentation, common.JavaProgrammingLanguage, container.Name) {
+			if container.Resources.Limits == nil {
+				container.Resources.Limits = make(map[v1.ResourceName]resource.Quantity)
+			}
+
 			container.Resources.Limits["instrumentation.odigos.io/java"] = resource.MustParse("1")
 		}
 
