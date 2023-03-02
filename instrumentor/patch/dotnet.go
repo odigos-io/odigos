@@ -15,6 +15,10 @@ func (d *dotNetPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	var modifiedContainers []v1.Container
 	for _, container := range podSpec.Spec.Containers {
 		if shouldPatch(instrumentation, common.DotNetProgrammingLanguage, container.Name) {
+			if container.Resources.Limits == nil {
+				container.Resources.Limits = make(map[v1.ResourceName]resource.Quantity)
+			}
+
 			container.Resources.Limits["instrumentation.odigos.io/dotnet"] = resource.MustParse("1")
 		}
 
