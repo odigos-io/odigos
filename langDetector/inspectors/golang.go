@@ -5,10 +5,7 @@ import (
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/langDetector/inspectors/goversion"
 	"github.com/keyval-dev/odigos/langDetector/process"
-	"io/fs"
 	"os"
-	"runtime"
-	"strings"
 )
 
 type golangInspector struct{}
@@ -17,24 +14,15 @@ var golang = &golangInspector{}
 
 func (g *golangInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
 	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
-	info, err := os.Stat(file)
+	_, err := os.Stat(file)
 	if err != nil {
 		fmt.Printf("could not perform os.stat: %s\n", err)
-		return "", false
-	}
-
-	if !isExe(file, info) {
-		fmt.Printf("isExe returned false\n")
 		return "", false
 	}
 
 	x, err := goversion.OpenExe(file)
 	if err != nil {
 		fmt.Printf("could not perform OpenExe: %s\n", err)
-		return "", false
-	}
-
-	if x.Elf().Section(".gosymtab") == nil {
 		return "", false
 	}
 
@@ -45,12 +33,4 @@ func (g *golangInspector) Inspect(p *process.Details) (common.ProgrammingLanguag
 	}
 
 	return common.GoProgrammingLanguage, true
-}
-
-// isExe reports whether the file should be considered executable.
-func isExe(file string, info fs.FileInfo) bool {
-	if runtime.GOOS == "windows" {
-		return strings.HasSuffix(strings.ToLower(file), ".exe")
-	}
-	return info.Mode().IsRegular() && info.Mode()&0111 != 0
 }
