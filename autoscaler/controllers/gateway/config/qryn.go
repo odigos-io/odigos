@@ -54,7 +54,7 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 
 	if isTracingEnabled(dest) {
 		currentConfig.Exporters["otlp/qryn"] = commonconf.GenericMap{
-			"endpoint": baseURL,
+			"endpoint": fmt.Sprintf("%s/tempo/spans", baseURL),
 		}
 		currentConfig.Service.Pipelines["traces/qryn"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
