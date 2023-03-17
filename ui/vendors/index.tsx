@@ -1,3 +1,4 @@
+import { Middleware } from "@/vendors/middleware";
 import { Honeycomb } from "@/vendors/honeycomb";
 import { Datadog } from "@/vendors/datadog";
 import { Grafana } from "@/vendors/grafana";
@@ -55,6 +56,7 @@ export interface ObservabilityVendor {
 }
 
 const Vendors = [
+  new Middleware(),
   new Honeycomb(),
   new Datadog(),
   new Grafana(),
