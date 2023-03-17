@@ -11,6 +11,7 @@
 | Grafana Cloud           | ✅      | ✅      | ✅   |
 | Honeycomb               | ✅      | ✅      | ✅   |
 | Logz.io                 | ✅      | ✅      | ✅   |
+| qryn.cloud              | ✅      | ✅      | ✅   |
 | Google Cloud Monitoring | ✅      |         | ✅   |
 | Google Cloud Storage    | ✅      |         | ✅   |
 | Azure Blob Storage      | ✅      |         | ✅   |
