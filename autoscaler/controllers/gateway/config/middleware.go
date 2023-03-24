@@ -1,7 +1,7 @@
 package config
 
 import (
-	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -19,7 +19,7 @@ func (m *Middleware) DestType() common.DestinationType {
 
 func (m *Middleware) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if isTracingEnabled(dest) || isMetricsEnabled(dest) || isLoggingEnabled(dest) {
-		target, exists := dest.Spec.Data[target]
+		_, exists := dest.Spec.Data[target]
 		if !exists {
 			log.Log.V(0).Info("Middleware target not specified, gateway will not be configured for Middleware")
 			return
