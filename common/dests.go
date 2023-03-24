@@ -23,5 +23,6 @@ const (
 	GoogleCloudDestinationType   DestinationType = "googlecloud"
 	SentryDestinationType        DestinationType = "sentry"
 	GCSDestinationType           DestinationType = "gcs"
+	AWSS3DestinationType         DestinationType = "s3"
 	AzureBlobDestinationType     DestinationType = "azureblob"
 )

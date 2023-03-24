@@ -5,7 +5,7 @@
 ## Managed
 
 |                         | Traces | Metrics | Logs |
-| ----------------------- | ------ | ------- | ---- |
+|-------------------------| ------ | ------- | ---- |
 | New Relic               | ✅      | ✅      | ✅   |
 | Datadog                 | ✅      | ✅      | ✅   |
 | Grafana Cloud           | ✅      | ✅      | ✅   |
@@ -15,6 +15,7 @@
 | Google Cloud Monitoring | ✅      |         | ✅   |
 | Google Cloud Storage    | ✅      |         | ✅   |
 | Azure Blob Storage      | ✅      |         | ✅   |
+| AWS S3                  | ✅      |         | ✅   |
 | Splunk                  | ✅      |         |      |
 | Lightstep               | ✅      |         |      |
 | Sentry                  | ✅      |         |      |
