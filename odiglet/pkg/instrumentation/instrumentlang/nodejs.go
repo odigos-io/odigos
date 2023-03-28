@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	nodeMountPath             = "/odigos/nodejs"
+	nodeMountPath             = "/var/odigos/nodejs"
 	nodeEnvNodeDebug          = "OTEL_NODEJS_DEBUG"
 	nodeEnvTraceExporter      = "OTEL_TRACES_EXPORTER"
 	nodeEnvEndpoint           = "OTEL_EXPORTER_OTLP_ENDPOINT"

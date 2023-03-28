@@ -23,7 +23,7 @@ func Python(deviceId string) *v1beta1.ContainerAllocateResponse {
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
 			envLogCorrelation:             "true",
-			envPythonPath:                 "/odigos/python/opentelemetry/instrumentation/auto_instrumentation:/odigos/python",
+			envPythonPath:                 "/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation:/odigos/python",
 			"OTEL_EXPORTER_OTLP_ENDPOINT": otlpEndpoint,
 			"OTEL_RESOURCE_ATTRIBUTES":    fmt.Sprintf("service.name=%s,odigos.device=python", deviceId),
 			envOtelTracesExporter:         envValOtelHttpExporter,
@@ -31,8 +31,8 @@ func Python(deviceId string) *v1beta1.ContainerAllocateResponse {
 		},
 		Mounts: []*v1beta1.Mount{
 			{
-				ContainerPath: "/odigos/python",
-				HostPath:      "/odigos/python",
+				ContainerPath: "/var/odigos/python",
+				HostPath:      "/var/odigos/python",
 				ReadOnly:      true,
 			},
 		},
