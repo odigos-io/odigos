@@ -6,7 +6,7 @@ import (
 
 const (
 	containerDir = "/instrumentations"
-	hostDir      = "/odigos"
+	hostDir      = "/var/odigos"
 )
 
 func CopyAgentsDirectoryToHost() error {

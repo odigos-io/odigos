@@ -12,7 +12,7 @@ const (
 	otelResourceAttrPatteern     = "service.name=%s,odigos.device=java"
 	javaToolOptionsEnvVar        = "JAVA_TOOL_OPTIONS"
 	javaOptsEnvVar               = "JAVA_OPTS"
-	javaToolOptionsPattern       = "-javaagent:/odigos/java/javaagent.jar " +
+	javaToolOptionsPattern       = "-javaagent:/var/odigos/java/javaagent.jar " +
 		"-Dotel.traces.sampler=always_on -Dotel.exporter.otlp.endpoint=http://%s:%d"
 )
 
@@ -26,8 +26,8 @@ func Java(deviceId string) *v1beta1.ContainerAllocateResponse {
 		},
 		Mounts: []*v1beta1.Mount{
 			{
-				ContainerPath: "/odigos/java",
-				HostPath:      "/odigos/java",
+				ContainerPath: "/var/odigos/java",
+				HostPath:      "/var/odigos/java",
 				ReadOnly:      true,
 			},
 		},

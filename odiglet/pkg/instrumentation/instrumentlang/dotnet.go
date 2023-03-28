@@ -13,19 +13,19 @@ const (
 	profilerEndVar        = "CORECLR_PROFILER"
 	profilerId            = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
 	profilerPathEnv       = "CORECLR_PROFILER_PATH"
-	profilerPath          = "/odigos/dotnet/OpenTelemetry.AutoInstrumentation.ClrProfiler.Native.so"
+	profilerPath          = "/var/odigos/dotnet/OpenTelemetry.AutoInstrumentation.ClrProfiler.Native.so"
 	serviceNameEnv        = "OTEL_SERVICE_NAME"
 	collectorUrlEnv       = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	tracerHomeEnv         = "OTEL_DOTNET_AUTO_HOME"
 	exportTypeEnv         = "OTEL_TRACES_EXPORTER"
-	tracerHome            = "/odigos/dotnet"
+	tracerHome            = "/var/odigos/dotnet"
 	resourceAttrEnv       = "OTEL_RESOURCE_ATTRIBUTES"
 	startupHookEnv        = "DOTNET_STARTUP_HOOKS"
-	startupHook           = "/odigos/dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	startupHook           = "/var/odigos/dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 	additonalDepsEnv      = "DOTNET_ADDITIONAL_DEPS"
-	additonalDeps         = "/odigos/dotnet/AdditionalDeps"
+	additonalDeps         = "/var/odigos/dotnet/AdditionalDeps"
 	sharedStoreEnv        = "DOTNET_SHARED_STORE"
-	sharedStore           = "/odigos/dotnet/store"
+	sharedStore           = "/var/odigos/dotnet/store"
 )
 
 func DotNet(deviceId string) *v1beta1.ContainerAllocateResponse {
@@ -45,8 +45,8 @@ func DotNet(deviceId string) *v1beta1.ContainerAllocateResponse {
 		},
 		Mounts: []*v1beta1.Mount{
 			{
-				ContainerPath: "/odigos/dotnet",
-				HostPath:      "/odigos/dotnet",
+				ContainerPath: "/var/odigos/dotnet",
+				HostPath:      "/var/odigos/dotnet",
 				ReadOnly:      true,
 			},
 		},
