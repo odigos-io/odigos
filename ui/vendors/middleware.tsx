@@ -43,7 +43,7 @@ export class Middleware implements ObservabilityVendor {
             MW_TARGET: req.body.target,
           },
           Secret: {
-            MW_API_KEY: Buffer.from(req.body.apikey).toString("base64"),
+            MW_API_KEY: req.body.apikey,
           },
         };
       };
