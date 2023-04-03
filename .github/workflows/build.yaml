@@ -1,0 +1,53 @@
+name: build
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Build Autoscaler Image
+        uses: docker/build-push-action@v4
+        with:
+          push: false
+          tags: autoscaler:pr-${{ github.event.number }}
+          build-args: SERVICE_NAME=autoscaler
+      - name: Build Scheduler Image
+        uses: docker/build-push-action@v4
+        with:
+          push: false
+          tags: scheduler:pr-${{ github.event.number }}
+          build-args: SERVICE_NAME=scheduler
+      - name: Build Instrumentor Image
+        uses: docker/build-push-action@v4
+        with:
+          push: false
+          tags: instrumentor:pr-${{ github.event.number }}
+          build-args: SERVICE_NAME=instrumentor
+      - name: Build Detector Image
+        uses: docker/build-push-action@v4
+        with:
+          file: langDetector/Dockerfile
+          push: false
+          tags: lang-detector:pr-${{ github.event.number }}
+          build-args: SERVICE_NAME=langDetector
+      - name: Build Odiglet Image
+        uses: docker/build-push-action@v4
+        with:
+          file: odiglet/Dockerfile
+          context: odiglet/
+          push: false
+          tags: odiglet:pr-${{ github.event.number }}
+      - name: Build UI Image
+        uses: docker/build-push-action@v4
+        with:
+          file: ui/Dockerfile
+          context: ui/
+          push: false
+          tags: ui:pr-${{ github.event.number }}
