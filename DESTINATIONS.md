@@ -12,6 +12,7 @@
 | Honeycomb               | ✅      | ✅      | ✅   |
 | Logz.io                 | ✅      | ✅      | ✅   |
 | qryn.cloud              | ✅      | ✅      | ✅   |
+| OpsVerse                | ✅      | ✅      | ✅   |
 | Google Cloud Monitoring | ✅      |         | ✅   |
 | Google Cloud Storage    | ✅      |         | ✅   |
 | Azure Blob Storage      | ✅      |         | ✅   |
@@ -30,7 +31,6 @@
 | Jaeger        | ✅     |         |      |
 | SigNoz        | ✅     | ✅      | ✅   |
 | qryn          | ✅     | ✅      | ✅   |
-| OpsVerse      | ✅     | ✅      | ✅   |
 | Elasticsearch | ✅     |         | ✅   |
 
 **Many more destinations are coming soon.**
