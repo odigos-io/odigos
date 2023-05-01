@@ -14,6 +14,9 @@ export default function DestsGrid({ vendors, title }: DestsGridProps) {
         {vendors.map((dest: ObservabilityVendor) => {
           return <DestCard key={dest.name} {...dest} />;
         })}
+        {
+          vendors.length < 1 && <div>No data found</div>
+        }
       </div>
     </div>
   );
