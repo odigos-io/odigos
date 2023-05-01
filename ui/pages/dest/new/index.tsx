@@ -7,15 +7,6 @@ import { useState } from "react";
 
 const AddNewDestinationPage: NextPage = () => {
 
-  const people = [
-  'Durward Reynolds',
-  'Kenton Towne',
-  'Therese Wunsch',
-  'Benedict Kessler',
-  'Katelyn Rohan',
-]
-
-
   const [selectedDest, setSelectedDest] = useState(Vendors[0])
   const [query, setQuery] = useState('')
 
@@ -36,7 +27,7 @@ const AddNewDestinationPage: NextPage = () => {
         <Combobox.Input className="w-full md:w-[600px] rounded-[2px] overflow-hidden list-none" placeholder="Search a destination" onChange={(event) => setQuery(event.target.value)} />
           <Combobox.Options>
             {filteredDest.map((vendor) => (
-              <Combobox.Option onClick={() => setQuery(vendor.name)} key={vendor?.name} value={vendor.name}>
+              <Combobox.Option onClick={() => setQuery(vendor.name)} key={vendor.name} value={vendor.name}>
                 {vendor.name}
               </Combobox.Option>
             ))}
