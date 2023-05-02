@@ -10,8 +10,8 @@ RUN npm install
 
 FROM busybox AS dotnet-builder
 WORKDIR /dotnet-instrumentation
-ARG DOTNET_OTEL_VERSION=0.5.0
-ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
+ARG DOTNET_OTEL_VERSION=v0.5.0
+ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
 
 FROM golang:1.19 AS builder
