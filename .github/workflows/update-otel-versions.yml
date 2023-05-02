@@ -1,0 +1,47 @@
+name: Update OpenTelemetry Instrumentations
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  update_opentelemetry_instrumentations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Fetch latest version of opentelemetry-java-instrumentation
+        run: |
+          latest_version=$(curl --silent "https://api.github.com/repos/open-telemetry/opentelemetry-java-instrumentation/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
+          echo "::set-output name=latest_version::${latest_version}"
+      - name: Replace JAVA_OTEL_VERSIN in Dockerfile
+        run: |
+          cd odiglet
+          latest_version=${{ steps.fetch_latest_version.outputs.latest_version }}
+          sed -i "s/JAVA_OTEL_VERSIN=.*/JAVA_OTEL_VERSIN=${latest_version}/" Dockerfile
+      - name: Check if Dockerfile has changed
+        id: dockerfile_changed
+        run: |
+          cd odigos/java
+          git add Dockerfile
+          git diff-index --quiet HEAD || echo "::set-output name=changed::true"
+
+      - name: Create and push changes to a new branch
+        if: steps.dockerfile_changed.outputs.changed == 'true'
+        run: |
+          cd odigos
+          git checkout -b update-opentelemetry-java-instrumentation
+          git add java/Dockerfile
+          git commit -m "Update OTEL_JAVA_VERSION in Dockerfile"
+          git push origin update-opentelemetry-java-instrumentation
+
+      - name: Open pull request
+        if: steps.dockerfile_changed.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: main
+          head: update-opentelemetry-java-instrumentation
+          title: "Update OTEL_JAVA_VERSION to ${{ steps.fetch_latest_version.outputs.latest_version }} in Dockerfile"
+          body: "This pull request updates the OTEL_JAVA_VERSION in the Dockerfile to the latest version of opentelemetry-java-instrumentation (${latest_version})."
