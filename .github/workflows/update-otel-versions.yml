@@ -16,7 +16,7 @@ jobs:
         id: fetch_latest_version
         run: |
           latest_version=$(curl --silent "https://api.github.com/repos/open-telemetry/opentelemetry-java-instrumentation/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
-          echo "{latest_version}=${latest_version}" >> $GITHUB_OUTPUT
+          echo "latest_version=${latest_version}" >> $GITHUB_OUTPUT
           echo "Latest version of opentelemetry-java-instrumentation is ${latest_version}"
       - name: Replace JAVA_OTEL_VERSION in Dockerfile
         run: |
