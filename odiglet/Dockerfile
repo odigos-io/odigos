@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o odiglet cmd/main.go
 WORKDIR /instrumentations
 
 # Java
-ARG JAVA_OTEL_VERSION=v1.22.1
+ARG JAVA_OTEL_VERSION=
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 
 # Python
