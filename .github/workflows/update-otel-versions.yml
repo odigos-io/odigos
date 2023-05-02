@@ -14,32 +14,22 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Fetch latest version of opentelemetry-java-instrumentation
+      - name: Fetch latest version of OTel Java Instrumentation
+        id: fetch_latest_version
         run: |
           latest_version=$(curl --silent "https://api.github.com/repos/open-telemetry/opentelemetry-java-instrumentation/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
-          echo "::set-output name=latest_version::${latest_version}"
-      - name: Replace JAVA_OTEL_VERSIN in Dockerfile
+          echo "{latest_version}=${latest_version}" >> $GITHUB_OUTPUT
+          echo "Latest version of opentelemetry-java-instrumentation is ${latest_version}"
+      - name: Replace JAVA_OTEL_VERSION in Dockerfile
         run: |
           cd odiglet
           latest_version=${{ steps.fetch_latest_version.outputs.latest_version }}
-          sed -i "s/JAVA_OTEL_VERSIN=.*/JAVA_OTEL_VERSIN=${latest_version}/" Dockerfile
-      - name: Check if Dockerfile has changed
-        id: dockerfile_changed
-        run: |
-          git add Dockerfile
-          git diff-index --quiet HEAD || echo "::set-output name=changed::true"
-      - name: Create and push changes to a new branch
-        if: steps.dockerfile_changed.outputs.changed == 'true'
-        run: |
-          git checkout -b update-opentelemetry-java-instrumentation
-          git commit -m "Update OTEL_JAVA_VERSION in Dockerfile"
-          git push origin update-opentelemetry-java-instrumentation
-      - name: Open pull request
-        if: steps.dockerfile_changed.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v3
+          sed -i "s/JAVA_OTEL_VERSION=.*/JAVA_OTEL_VERSION=${latest_version}/" Dockerfile
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: main
-          head: update-opentelemetry-java-instrumentation
-          title: "Update OTEL_JAVA_VERSION to ${{ steps.fetch_latest_version.outputs.latest_version }} in Dockerfile"
-          body: "This pull request updates the OTEL_JAVA_VERSION in the Dockerfile to the latest version of opentelemetry-java-instrumentation (${latest_version})."
+          commit-message: 'Update Java instrumentation to version ${{ steps.fetch_latest_version.outputs.latest_version }}'
+          branch: automated/update-opentelemetry-instrumentations
+          delete-branch: true
+          title: '[auto] Update Java instrumentation to version ${{ steps.fetch_latest_version.outputs.latest_version }}'
+          body: "This pull request updates the JAVA_OTEL_VERSION in the Dockerfile to the latest version of opentelemetry-java-instrumentation (${latest_version})."

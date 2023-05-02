@@ -36,4 +36,8 @@ updates:
     schedule:
       day: sunday
       interval: weekly
-
+  - package-ecosystem: pip
+    directory: /odiglet/agents/python
+    schedule:
+      day: sunday
+      interval: weekly
