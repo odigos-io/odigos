@@ -1,6 +1,9 @@
 name: Update OpenTelemetry Instrumentations
 
 on:
+  pull_request:
+    branches:
+      - main
   schedule:
     - cron: "0 0 * * *"
 
@@ -23,19 +26,14 @@ jobs:
       - name: Check if Dockerfile has changed
         id: dockerfile_changed
         run: |
-          cd odigos/java
           git add Dockerfile
           git diff-index --quiet HEAD || echo "::set-output name=changed::true"
-
       - name: Create and push changes to a new branch
         if: steps.dockerfile_changed.outputs.changed == 'true'
         run: |
-          cd odigos
           git checkout -b update-opentelemetry-java-instrumentation
-          git add java/Dockerfile
           git commit -m "Update OTEL_JAVA_VERSION in Dockerfile"
           git push origin update-opentelemetry-java-instrumentation
-
       - name: Open pull request
         if: steps.dockerfile_changed.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v3
