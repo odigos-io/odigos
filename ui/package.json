@@ -6,7 +6,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@headlessui/react": "^1.6.4",
+    "@headlessui/react": "^1.7.14",
     "@kubernetes/client-node": "^0.16.3",
     "@svgr/webpack": "^6.2.1",
     "@tailwindcss/forms": "^0.5.3",
