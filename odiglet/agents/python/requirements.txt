@@ -21,7 +21,7 @@ opentelemetry-instrumentation-botocore==0.32b0
 opentelemetry-instrumentation-celery==0.32b0
 opentelemetry-instrumentation-dbapi==0.32b0
 opentelemetry-instrumentation-django==0.32b0
-opentelemetry-instrumentation-elasticsearch==0.32b0
+opentelemetry-instrumentation-elasticsearch==0.38b0
 opentelemetry-instrumentation-falcon==0.32b0
 opentelemetry-instrumentation-fastapi==0.32b0
 opentelemetry-instrumentation-flask==0.32b0
