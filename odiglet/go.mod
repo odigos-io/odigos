@@ -7,7 +7,7 @@ require (
 	github.com/go-logr/zapr v1.2.3
 	github.com/google/uuid v1.3.0
 	github.com/kubevirt/device-plugin-manager v1.19.4
-	github.com/otiai10/copy v1.9.0
+	github.com/otiai10/copy v1.11.0
 	go.uber.org/zap v1.24.0
 	google.golang.org/grpc v1.49.0
 	k8s.io/apimachinery v0.27.1
