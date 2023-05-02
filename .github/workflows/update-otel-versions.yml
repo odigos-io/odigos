@@ -1,0 +1,33 @@
+name: Update OpenTelemetry Instrumentations
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  update_opentelemetry_instrumentations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Fetch latest version of OTel Java Instrumentation
+        id: fetch_latest_version
+        run: |
+          latest_version=$(curl --silent "https://api.github.com/repos/open-telemetry/opentelemetry-java-instrumentation/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
+          echo "{latest_version}=${latest_version}" >> $GITHUB_OUTPUT
+          echo "Latest version of opentelemetry-java-instrumentation is ${latest_version}"
+      - name: Replace JAVA_OTEL_VERSION in Dockerfile
+        run: |
+          cd odiglet
+          latest_version=${{ steps.fetch_latest_version.outputs.latest_version }}
+          sed -i "s/JAVA_OTEL_VERSION=.*/JAVA_OTEL_VERSION=${latest_version}/" Dockerfile
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: 'Update Java instrumentation to version ${{ steps.fetch_latest_version.outputs.latest_version }}'
+          branch: automated/update-opentelemetry-instrumentations
+          delete-branch: true
+          title: '[auto] Update Java instrumentation to version ${{ steps.fetch_latest_version.outputs.latest_version }}'
+          body: "This pull request updates the JAVA_OTEL_VERSION in the Dockerfile to the latest version of opentelemetry-java-instrumentation (${latest_version})."
