@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import Header from "@/components/Header";
-import { useState } from "react";
+import { ReactElement, useState } from "react";
 import { useRouter } from "next/router";
 import Vendors, { ObservabilitySignals } from "@/vendors/index";
 
@@ -23,6 +23,7 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
   }, {});
   const [signals, setSignals]: [any, any] = useState(initialSignalsState);
   const fields = vendor.getFields(signals);
+  const [urlValidateError, setUrlValidateError]: [any, any] = useState('');
 
   const handleSubmit = async (event: any) => {
     event.preventDefault();
@@ -32,17 +33,46 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
       object[key] = value.toString();
     });
     const JSONdata = JSON.stringify(object);
-    const response = await fetch("/api/dests", {
-      body: JSONdata,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    });
 
-    if (response.ok) {
-      router.push("/");
+    // checking for elastic search url pattern match
+    if(object.elasticsearch_url) {
+      const regex = /^(http[s]?:\/\/)([a-zA-Z\d\.]{2,})\.([a-zA-Z]{2,})(:9200)\S*/gm;
+
+      const checkregex = regex.test(object.elasticsearch_url);
+      checkregex === false ? setUrlValidateError("Your URL must contain the port number 9200") : setUrlValidateError('');
     }
+
+    // checking for open telementary url pattern match
+    if(object.otlp_url) {
+      const regex = /^(http[s]?:\/\/)([a-zA-Z\d\.]{2,})\.([a-zA-Z]{2,})(:4317)\S*/gm;
+
+      const checkregex = regex.test(object.otlp_url);
+      checkregex === false ? setUrlValidateError("Your URL must contain the port number 4317") : setUrlValidateError('');
+    }
+
+    // checking for datadog url pattern match
+    if(object.site) {
+      const regex = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
+
+      const checkregex = regex.test(object.site);
+      checkregex === false ? setUrlValidateError("URL entered is not a valid URL") : setUrlValidateError('');
+    }
+
+
+    if(urlValidateError === '') {
+        const response = await fetch("/api/dests", {
+              body: JSONdata,
+              headers: {
+                "Content-Type": "application/json",
+              },
+              method: "POST",
+            });
+
+            if (response.ok) {
+              router.push("/");
+            }
+    }
+    
   };
 
   return (
@@ -123,6 +153,9 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
                     placeholder=""
                     required
                   />
+                  {((f.name === 'elasticsearch_url') || (f.name === 'otlp_url') || (f.name === 'site')) &&
+                    <span className="mt-1 text-red-500 text-sm">{urlValidateError }</span>
+                  }
                 </label>
               );
             })}
