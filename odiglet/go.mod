@@ -3,7 +3,7 @@ module github.com/keyval-dev/odigos/odiglet
 go 1.19
 
 require (
-	github.com/go-logr/logr v1.2.3
+	github.com/go-logr/logr v1.2.4
 	github.com/go-logr/zapr v1.2.3
 	github.com/google/uuid v1.3.0
 	github.com/kubevirt/device-plugin-manager v1.19.4
