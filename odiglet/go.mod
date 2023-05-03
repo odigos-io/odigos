@@ -12,7 +12,7 @@ require (
 	google.golang.org/grpc v1.54.0
 	k8s.io/apimachinery v0.27.1
 	k8s.io/client-go v0.27.1
-	k8s.io/kubelet v0.26.1
+	k8s.io/kubelet v0.27.1
 )
 
 require (
