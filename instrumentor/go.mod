@@ -3,7 +3,7 @@ module github.com/keyval-dev/odigos/instrumentor
 go 1.18
 
 require (
-	github.com/go-logr/logr v1.2.0
+	github.com/go-logr/logr v1.2.4
 	github.com/google/uuid v1.3.0
 	github.com/keyval-dev/odigos/api v0.0.0
 	github.com/keyval-dev/odigos/common v0.0.0
