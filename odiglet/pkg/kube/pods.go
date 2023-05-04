@@ -10,7 +10,9 @@ import (
 	"github.com/keyval-dev/odigos/odiglet/pkg/process"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"strings"
 )
@@ -58,19 +60,63 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 
 func (p *PodsReconciler) persistLanguageDetectionResults(pod *corev1.Pod, results []common.LanguageByContainer) error {
 	// Get owner
-	ownerName, ownerKind, err := p.getPodRootOwner(pod)
+	owner, err := p.getPodRootOwner(pod)
 	if err != nil {
 		log.Logger.Error(err, "Failed to get pod root owner")
 		return err
 	}
 
-	instApp, err := p.getInstrumentedApplication(ownerName, ownerKind, pod.Namespace)
+	updatedIa := &odigosv1.InstrumentedApplication{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      p.getInstrumentedAppName(owner.Name, owner.Kind),
+			Namespace: pod.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*owner,
+			},
+		},
+	}
+
+	operationResult, err := controllerutil.CreateOrPatch(context.Background(), p.kubeClient, updatedIa, func() error {
+		updatedIa.Spec.Languages = results
+		return nil
+	})
+
 	if err != nil {
-		log.Logger.Error(err, "Failed to get instrumented application")
+		log.Logger.Error(err, "Failed to patch instrumented application")
 		return err
 	}
 
+	log.Logger.V(0).Info("instrumented application updated", "name", updatedIa.Name, "namespace", updatedIa.Namespace, "operation", operationResult)
 	return nil
+	//ia, err := p.getInstrumentedApplication(ownerName, ownerKind, pod.Namespace)
+	//if err != nil {
+	//	if apierrors.IsNotFound(err) {
+	//		ia := &odigosv1.InstrumentedApplication{
+	//			ObjectMeta: metav1.ObjectMeta{
+	//				Name: p.getInstrumentedAppName(ownerName, ownerKind),
+	//			},
+	//			Spec: odigosv1.InstrumentedApplicationSpec{
+	//				Languages: results,
+	//			},
+	//		}
+	//
+	//		if err := p.kubeClient.Create(context.Background(), ia); err != nil {
+	//			log.Logger.Error(err, "Failed to create instrumented application")
+	//			return err
+	//		}
+	//	}
+	//
+	//	log.Logger.Error(err, "Failed to get instrumented application")
+	//	return err
+	//}
+	//
+	//// Patch instrumented application
+	//updatedIa := ia.DeepCopy()
+	//updatedIa.Spec.Languages = results
+	//if err := p.kubeClient.Patch(context.Background(), updatedIa, client.MergeFrom(ia)); err != nil {
+	//	log.Logger.Error(err, "Failed to patch instrumented application")
+	//	return err
+	//}
 }
 
 func (p *PodsReconciler) getInstrumentedApplication(ownerName string, ownerKind string, ns string) (*odigosv1.InstrumentedApplication, error) {
@@ -91,10 +137,10 @@ func (p *PodsReconciler) getInstrumentedAppName(name string, kind string) string
 	return strings.ToLower(kind + "-" + name)
 }
 
-func (p *PodsReconciler) getPodRootOwner(pod *corev1.Pod) (string, string, error) {
+func (p *PodsReconciler) getPodRootOwner(pod *corev1.Pod) (*metav1.OwnerReference, error) {
 	for _, owner := range pod.OwnerReferences {
 		if owner.Kind == "DaemonSet" {
-			return owner.Name, owner.Kind, nil
+			return &owner, nil
 		}
 
 		if owner.Kind == "ReplicaSet" {
@@ -104,18 +150,18 @@ func (p *PodsReconciler) getPodRootOwner(pod *corev1.Pod) (string, string, error
 				Namespace: pod.Namespace,
 				Name:      owner.Name,
 			}, replicaSet); err != nil {
-				return "", "", err
+				return nil, err
 			}
 
 			// Get owner of replica set
 			for _, owner := range replicaSet.OwnerReferences {
 				if owner.Kind == "Deployment" || owner.Kind == "StatefulSet" {
-					return owner.Name, owner.Kind, nil
+					return &owner, nil
 				}
 			}
 		}
 	}
-	return "", "", errPodOwnerNotFound
+	return nil, errPodOwnerNotFound
 }
 
 func (p *PodsReconciler) InjectClient(c client.Client) error {

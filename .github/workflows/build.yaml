@@ -34,6 +34,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           file: odiglet/Dockerfile
+          context: .
           push: false
           tags: odiglet:pr-${{ github.event.number }}
       - name: Build UI Image
