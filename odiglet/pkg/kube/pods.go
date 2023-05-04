@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"strings"
 )
 
 var (
@@ -57,9 +58,15 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 
 func (p *PodsReconciler) persistLanguageDetectionResults(pod *corev1.Pod, results []common.LanguageByContainer) error {
 	// Get owner
-	_, err := p.getPodRootOwner(pod)
+	ownerName, ownerKind, err := p.getPodRootOwner(pod)
 	if err != nil {
 		log.Logger.Error(err, "Failed to get pod root owner")
+		return err
+	}
+
+	instApp, err := p.getInstrumentedApplication(ownerName, ownerKind, pod.Namespace)
+	if err != nil {
+		log.Logger.Error(err, "Failed to get instrumented application")
 		return err
 	}
 
@@ -69,13 +76,25 @@ func (p *PodsReconciler) persistLanguageDetectionResults(pod *corev1.Pod, result
 func (p *PodsReconciler) getInstrumentedApplication(ownerName string, ownerKind string, ns string) (*odigosv1.InstrumentedApplication, error) {
 	// Get instrumented application
 	ia := &odigosv1.InstrumentedApplication{}
+	name := p.getInstrumentedAppName(ownerName, ownerKind)
+	if err := p.kubeClient.Get(context.Background(), client.ObjectKey{
+		Namespace: ns,
+		Name:      name,
+	}, ia); err != nil {
+		return nil, err
+	}
+
 	return ia, nil
 }
 
-func (p *PodsReconciler) getPodRootOwner(pod *corev1.Pod) (string, error) {
+func (p *PodsReconciler) getInstrumentedAppName(name string, kind string) string {
+	return strings.ToLower(kind + "-" + name)
+}
+
+func (p *PodsReconciler) getPodRootOwner(pod *corev1.Pod) (string, string, error) {
 	for _, owner := range pod.OwnerReferences {
 		if owner.Kind == "DaemonSet" {
-			return owner.Name, nil
+			return owner.Name, owner.Kind, nil
 		}
 
 		if owner.Kind == "ReplicaSet" {
@@ -85,18 +104,18 @@ func (p *PodsReconciler) getPodRootOwner(pod *corev1.Pod) (string, error) {
 				Namespace: pod.Namespace,
 				Name:      owner.Name,
 			}, replicaSet); err != nil {
-				return "", err
+				return "", "", err
 			}
 
 			// Get owner of replica set
 			for _, owner := range replicaSet.OwnerReferences {
 				if owner.Kind == "Deployment" || owner.Kind == "StatefulSet" {
-					return owner.Name, nil
+					return owner.Name, owner.Kind, nil
 				}
 			}
 		}
 	}
-	return "", errPodOwnerNotFound
+	return "", "", errPodOwnerNotFound
 }
 
 func (p *PodsReconciler) InjectClient(c client.Client) error {
