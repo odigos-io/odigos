@@ -1,6 +1,6 @@
 module github.com/keyval-dev/odigos/instrumentor
 
-go 1.18
+go 1.20.4
 
 require (
 	github.com/go-logr/logr v1.2.4
