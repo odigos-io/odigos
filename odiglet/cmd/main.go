@@ -12,9 +12,11 @@ import (
 	"k8s.io/client-go/rest"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 func main() {
@@ -41,12 +43,12 @@ func main() {
 		os.Exit(-1)
 	}
 
+	go startDeviceManager(clientset)
+
 	if err := startReconciler(); err != nil {
 		log.Logger.Error(err, "Failed to start kube")
 		os.Exit(-1)
 	}
-
-	startDeviceManager(clientset)
 }
 
 func startDeviceManager(clientset *kubernetes.Clientset) {
@@ -65,6 +67,7 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 }
 
 func startReconciler() error {
+	log.Logger.V(0).Info("Starting reconciler")
 	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{})
 	if err != nil {
 		return err
@@ -73,6 +76,10 @@ func startReconciler() error {
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
+		WithEventFilter(predicate.NewPredicateFuncs(func(obj client.Object) bool {
+			pod := obj.(*corev1.Pod)
+			return pod.Spec.NodeName == env.Current.NodeName && pod.Status.Phase == corev1.PodRunning
+		})).
 		Complete(&kube.PodsReconciler{})
 	if err != nil {
 		return err
