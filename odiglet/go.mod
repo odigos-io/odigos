@@ -7,7 +7,8 @@ require (
 	github.com/go-logr/logr v1.2.4
 	github.com/go-logr/zapr v1.2.3
 	github.com/google/uuid v1.3.0
-	github.com/keyval-dev/odigos/common v0.0.0-20230504063001-0538c1780cd0
+	github.com/keyval-dev/odigos/api v0.0.0
+	github.com/keyval-dev/odigos/common v0.0.0
 	github.com/kubevirt/device-plugin-manager v1.19.4
 	github.com/otiai10/copy v1.11.0
 	go.uber.org/zap v1.24.0
@@ -73,4 +74,9 @@ require (
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
+)
+
+replace (
+	github.com/keyval-dev/odigos/api => ../api
+	github.com/keyval-dev/odigos/common => ../common
 )

@@ -51,19 +51,10 @@ jobs:
           tags: ghcr.io/keyval-dev/odigos/instrumentor:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=instrumentor
           platforms: linux/amd64,linux/arm64
-      - name: Build Detector Image
-        uses: docker/build-push-action@v4
-        with:
-          file: langDetector/Dockerfile
-          push: true
-          tags: ghcr.io/keyval-dev/odigos/lang-detector:${{ steps.vars.outputs.tag }}
-          build-args: SERVICE_NAME=langDetector
-          platforms: linux/amd64,linux/arm64
       - name: Build Odiglet Image
         uses: docker/build-push-action@v4
         with:
           file: odiglet/Dockerfile
-          context: odiglet/
           push: true
           tags: ghcr.io/keyval-dev/odigos/odiglet:${{ steps.vars.outputs.tag }}
           platforms: linux/amd64,linux/arm64

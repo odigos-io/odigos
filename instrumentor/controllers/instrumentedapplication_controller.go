@@ -20,16 +20,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/common/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -82,30 +78,6 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	// If language already detected - there is nothing to do
 	if r.isLangDetected(&instrumentedApp) {
 		return ctrl.Result{}, nil
-	}
-
-	// Language not detected yet - start the lang detection process
-	if r.shouldStartLangDetection(&instrumentedApp) {
-		logger.V(0).Info("starting lang detection process")
-
-		instrumentedApp.Status.LangDetection.Phase = v1.RunningLangDetectionPhase
-		err = r.Status().Update(ctx, &instrumentedApp)
-		if err != nil {
-			logger.Error(err, "error updating instrument app status")
-			return ctrl.Result{}, err
-		}
-
-		labels, err := r.getOwnerTemplateLabels(ctx, &instrumentedApp)
-		if err != nil {
-			logger.Error(err, "error getting owner labels")
-			return ctrl.Result{}, err
-		}
-
-		err = r.detectLanguage(ctx, &instrumentedApp, labels)
-		if err != nil {
-			logger.Error(err, "error detecting language")
-		}
-		return ctrl.Result{}, err
 	}
 
 	// Language detection is in progress, check if lang detection pods finished
@@ -187,89 +159,8 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	return ctrl.Result{}, nil
 }
 
-func (r *InstrumentedApplicationReconciler) shouldStartLangDetection(app *v1.InstrumentedApplication) bool {
-	return app.Status.LangDetection.Phase == v1.PendingLangDetectionPhase
-}
-
 func (r *InstrumentedApplicationReconciler) isLangDetected(app *v1.InstrumentedApplication) bool {
 	return len(app.Spec.Languages) > 0
-}
-
-func (r *InstrumentedApplicationReconciler) detectLanguage(ctx context.Context, app *v1.InstrumentedApplication, labels map[string]string) error {
-	pod, err := r.choosePods(ctx, labels, app.Namespace)
-	if err != nil {
-		return err
-	}
-
-	langDetectionPod, err := r.createLangDetectionPod(pod, app)
-	if err != nil {
-		return err
-	}
-
-	err = r.Create(ctx, langDetectionPod)
-	return err
-}
-
-func (r *InstrumentedApplicationReconciler) choosePods(ctx context.Context, labels map[string]string, namespace string) (*corev1.Pod, error) {
-	var podList corev1.PodList
-	err := r.List(ctx, &podList, client.MatchingLabels(labels), client.InNamespace(namespace))
-	if err != nil {
-		return nil, err
-	}
-
-	if len(podList.Items) == 0 {
-		return nil, consts.PodsNotFoundErr
-	}
-
-	for _, pod := range podList.Items {
-		if pod.Status.Phase == corev1.PodRunning {
-			return &pod, nil
-		}
-	}
-
-	return nil, consts.PodsNotFoundErr
-}
-
-func (r *InstrumentedApplicationReconciler) createLangDetectionPod(targetPod *corev1.Pod, instrumentedApp *v1.InstrumentedApplication) (*corev1.Pod, error) {
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: fmt.Sprintf("%s-lang-detection-", targetPod.Name),
-			Namespace:    targetPod.Namespace,
-			Annotations: map[string]string{
-				consts.LangDetectionContainerAnnotationKey: "true",
-				istioAnnotationKey:                         istioAnnotationValue,
-				linkerdAnnotationKey:                       linkerdAnnotationValue,
-			},
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  "lang-detector",
-					Image: fmt.Sprintf("%s:%s", r.LangDetectorImage, r.LangDetectorTag),
-					Args: []string{
-						fmt.Sprintf("--pod-uid=%s", targetPod.UID),
-						fmt.Sprintf("--container-names=%s", strings.Join(r.getContainerNames(targetPod), ",")),
-					},
-					TerminationMessagePath: "/dev/detection-result",
-					SecurityContext: &corev1.SecurityContext{
-						Capabilities: &corev1.Capabilities{
-							Add: []corev1.Capability{"SYS_PTRACE"},
-						},
-					},
-				},
-			},
-			RestartPolicy: "Never",
-			NodeName:      targetPod.Spec.NodeName,
-			HostPID:       true,
-		},
-	}
-
-	err := ctrl.SetControllerReference(instrumentedApp, pod, r.Scheme)
-	if err != nil {
-		return nil, err
-	}
-
-	return pod, nil
 }
 
 func (r *InstrumentedApplicationReconciler) getContainerNames(pod *corev1.Pod) []string {
