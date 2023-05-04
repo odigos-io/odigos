@@ -1,3 +1,3 @@
 module github.com/keyval-dev/odigos/init
 
-go 1.20.4
+go 1.20

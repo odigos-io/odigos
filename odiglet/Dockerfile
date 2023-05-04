@@ -14,7 +14,7 @@ ARG DOTNET_OTEL_VERSION=v0.5.0
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
 
-FROM golang:1.20.4 AS builder
+FROM golang:1.20 AS builder
 WORKDIR /go/src/github.com/keyval-dev/odigos/odiglet
 COPY . .
 RUN go mod download
