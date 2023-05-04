@@ -1,6 +1,6 @@
 module github.com/keyval-dev/odigos/api
 
-go 1.18
+go 1.20
 
 require (
 	github.com/keyval-dev/odigos/common v0.0.0
