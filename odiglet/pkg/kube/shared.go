@@ -36,6 +36,10 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 		return ctrl.Result{}, err
 	}
 
+	if len(runtimeResults) == 0 {
+		return ctrl.Result{}, nil
+	}
+
 	err = persistRuntimeResults(ctx, runtimeResults, object, kubeClient, scheme)
 	if err != nil {
 		logger.Error(err, "error persisting runtime results")
@@ -62,6 +66,8 @@ func runtimeInspection(pods []corev1.Pod) ([]common.LanguageByContainer, error) 
 					Language:      processResults[0],
 					ProcessName:   processName,
 				}
+			} else {
+				log.Logger.V(0).Info("unrecognized processes", "processes", processes, "pod", pod.Name, "container", c.Name, "namespace", pod.Namespace)
 			}
 		}
 	}
@@ -86,9 +92,9 @@ func persistRuntimeResults(ctx context.Context, results []common.LanguageByConta
 		},
 	}
 
-	err := controllerutil.SetOwnerReference(owner, updatedIa, scheme)
+	err := controllerutil.SetControllerReference(owner, updatedIa, scheme)
 	if err != nil {
-		log.Logger.Error(err, "Failed to set owner reference")
+		log.Logger.Error(err, "Failed to set controller reference")
 		return err
 	}
 
@@ -97,7 +103,10 @@ func persistRuntimeResults(ctx context.Context, results []common.LanguageByConta
 		return nil
 	})
 
-	log.Logger.V(0).Info("updated runtime info", "result", operationResult)
+	if operationResult != controllerutil.OperationResultNone {
+		log.Logger.V(0).Info("updated runtime info", "result", operationResult, "name", owner.GetName(), "kind",
+			owner.GetObjectKind().GroupVersionKind().Kind, "namespace", owner.GetNamespace())
+	}
 	return nil
 }
 

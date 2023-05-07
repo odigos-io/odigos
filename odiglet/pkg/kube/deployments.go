@@ -29,5 +29,9 @@ func (d *DeploymentsReconciler) Reconcile(ctx context.Context, request ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	return inspectRuntimesOfRunningPods(ctx, &logger, dep.Spec.Selector.MatchLabels, d.Client, d.Scheme, &dep)
+	if isObjectLabeled(&dep) || isNamespaceLabeled(ctx, &dep, d.Client) {
+		return inspectRuntimesOfRunningPods(ctx, &logger, dep.Spec.Selector.MatchLabels, d.Client, d.Scheme, &dep)
+	}
+
+	return ctrl.Result{}, nil
 }

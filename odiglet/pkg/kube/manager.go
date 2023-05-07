@@ -1,10 +1,12 @@
 package kube
 
 import (
+	"context"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -39,7 +41,6 @@ func StartReconciling() error {
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
-		WithEventFilter(onlyLabeledObjects()).
 		Owns(&odigosv1.InstrumentedApplication{}).
 		Complete(&DeploymentsReconciler{
 			Client: mgr.GetClient(),
@@ -52,7 +53,6 @@ func StartReconciling() error {
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.StatefulSet{}).
-		WithEventFilter(onlyLabeledObjects()).
 		Owns(&odigosv1.InstrumentedApplication{}).
 		Complete(&StatefulSetsReconciler{
 			Client: mgr.GetClient(),
@@ -65,9 +65,23 @@ func StartReconciling() error {
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.DaemonSet{}).
-		WithEventFilter(onlyLabeledObjects()).
 		Owns(&odigosv1.InstrumentedApplication{}).
 		Complete(&DaemonSetsReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		ControllerManagedBy(mgr).
+		For(&corev1.Namespace{}).
+		WithEventFilter(predicate.NewPredicateFuncs(func(obj client.Object) bool {
+			return isObjectLabeled(obj)
+		})).
+		Owns(&odigosv1.InstrumentedApplication{}).
+		Complete(&NamespacesReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
@@ -78,15 +92,25 @@ func StartReconciling() error {
 	return mgr.Start(signals.SetupSignalHandler())
 }
 
-func onlyLabeledObjects() predicate.Predicate {
-	return predicate.NewPredicateFuncs(func(obj client.Object) bool {
-		labels := obj.GetLabels()
-		objectLabeled := false
-		if labels != nil {
-			val, exists := labels[consts.OdigosInstrumentationLabel]
-			objectLabeled = exists && val == consts.InstrumentationEnabled
+func isObjectLabeled(obj client.Object) bool {
+	labels := obj.GetLabels()
+	if labels != nil {
+		val, exists := labels[consts.OdigosInstrumentationLabel]
+		if exists && val == consts.InstrumentationEnabled {
+			return true
 		}
+	}
 
-		return objectLabeled
-	})
+	return false
+}
+
+func isNamespaceLabeled(ctx context.Context, obj client.Object, c client.Client) bool {
+	var ns corev1.Namespace
+	err := c.Get(ctx, client.ObjectKey{Name: obj.GetNamespace()}, &ns)
+	if err != nil {
+		log.Logger.Error(err, "error fetching namespace object")
+		return false
+	}
+
+	return isObjectLabeled(&ns)
 }
