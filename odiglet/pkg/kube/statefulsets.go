@@ -10,24 +10,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type DeploymentsReconciler struct {
+type StatefulSetsReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (d *DeploymentsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
+func (s *StatefulSetsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var dep appsv1.Deployment
-	err := d.Client.Get(ctx, request.NamespacedName, &dep)
+	var ss appsv1.StatefulSet
+	err := s.Client.Get(ctx, request.NamespacedName, &ss)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
 
-		logger.Error(err, "error fetching deployment object")
+		logger.Error(err, "error fetching statefulset object")
 		return ctrl.Result{}, err
 	}
 
-	return inspectRuntimesOfRunningPods(ctx, &logger, dep.Spec.Selector.MatchLabels, d.Client, d.Scheme, &dep)
+	return inspectRuntimesOfRunningPods(ctx, &logger, ss.Spec.Selector.MatchLabels, s.Client, s.Scheme, &ss)
 }

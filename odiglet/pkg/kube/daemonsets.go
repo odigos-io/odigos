@@ -10,24 +10,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type DeploymentsReconciler struct {
+type DaemonSetsReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (d *DeploymentsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
+func (d *DaemonSetsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var dep appsv1.Deployment
-	err := d.Client.Get(ctx, request.NamespacedName, &dep)
+	var ds appsv1.DaemonSet
+	err := d.Client.Get(ctx, request.NamespacedName, &ds)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
 
-		logger.Error(err, "error fetching deployment object")
+		logger.Error(err, "error fetching daemonset object")
 		return ctrl.Result{}, err
 	}
 
-	return inspectRuntimesOfRunningPods(ctx, &logger, dep.Spec.Selector.MatchLabels, d.Client, d.Scheme, &dep)
+	return inspectRuntimesOfRunningPods(ctx, &logger, ds.Spec.Selector.MatchLabels, d.Client, d.Scheme, &ds)
 }

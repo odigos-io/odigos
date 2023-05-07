@@ -49,17 +49,31 @@ func StartReconciling() error {
 		return err
 	}
 
-	//err = builder.
-	//	ControllerManagedBy(mgr).
-	//	For(&corev1.Pod{}).
-	//	WithEventFilter(predicate.NewPredicateFuncs(func(obj client.Object) bool {
-	//		pod := obj.(*corev1.Pod)
-	//		return pod.Spec.NodeName == env.Current.NodeName && pod.Status.Phase == corev1.PodRunning
-	//	})).
-	//	Complete(&PodsReconciler{})
-	//if err != nil {
-	//	return err
-	//}
+	err = builder.
+		ControllerManagedBy(mgr).
+		For(&appsv1.StatefulSet{}).
+		WithEventFilter(onlyLabeledObjects()).
+		Owns(&odigosv1.InstrumentedApplication{}).
+		Complete(&StatefulSetsReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		ControllerManagedBy(mgr).
+		For(&appsv1.DaemonSet{}).
+		WithEventFilter(onlyLabeledObjects()).
+		Owns(&odigosv1.InstrumentedApplication{}).
+		Complete(&DaemonSetsReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
 
 	return mgr.Start(signals.SetupSignalHandler())
 }
