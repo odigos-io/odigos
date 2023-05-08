@@ -50,14 +50,6 @@ const NewDestination: NextPage<NewDestinationProps> = ({ destname }) => {
       checkregex === false ? setUrlValidateError("Your URL must contain the port number 4317") : setUrlValidateError('');
     }
 
-    // checking for datadog url pattern match
-    if(object.site) {
-      const regex = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
-
-      const checkregex = regex.test(object.site);
-      checkregex === false ? setUrlValidateError("URL entered is not a valid URL") : setUrlValidateError('');
-    }
-
 
     if(urlValidateError === '') {
         const response = await fetch("/api/dests", {
