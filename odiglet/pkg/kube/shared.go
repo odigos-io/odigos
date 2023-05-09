@@ -5,6 +5,7 @@ import (
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
+	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	"github.com/keyval-dev/odigos/odiglet/pkg/inspectors"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
@@ -15,7 +16,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"strings"
 )
 
 func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labels map[string]string,
@@ -80,14 +80,10 @@ func runtimeInspection(pods []corev1.Pod) ([]common.LanguageByContainer, error) 
 	return results, nil
 }
 
-func getRuntimeObjectName(name string, kind string) string {
-	return strings.ToLower(kind + "-" + name)
-}
-
 func persistRuntimeResults(ctx context.Context, results []common.LanguageByContainer, owner client.Object, kubeClient client.Client, scheme *runtime.Scheme) error {
 	updatedIa := &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      getRuntimeObjectName(owner.GetName(), owner.GetObjectKind().GroupVersionKind().Kind),
+			Name:      utils.GetRuntimeObjectName(owner.GetName(), owner.GetObjectKind().GroupVersionKind().Kind),
 			Namespace: owner.GetNamespace(),
 		},
 	}

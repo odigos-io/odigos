@@ -9,6 +9,7 @@ import (
 	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/instrumentor/patch"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -197,4 +198,36 @@ func getInstrumentedApps(ctx context.Context, req *ctrl.Request, c client.Client
 	}
 
 	return &instrumentedApps, nil
+}
+
+func removeRuntimeDetails(ctx context.Context, kubeClient client.Client, ns string, name string, kind string, logger logr.Logger) error {
+	runtimeName := utils.GetRuntimeObjectName(name, kind)
+	var runtimeDetails odigosv1.InstrumentedApplication
+	err := kubeClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: runtimeName}, &runtimeDetails)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	err = kubeClient.Delete(ctx, &runtimeDetails)
+	if err != nil {
+		return err
+	}
+
+	logger.V(0).Info("removed runtime details due to label change")
+	return nil
+}
+
+func isObjectLabeled(obj client.Object) bool {
+	labels := obj.GetLabels()
+	if labels != nil {
+		val, exists := labels[consts.OdigosInstrumentationLabel]
+		if exists && val == consts.InstrumentationEnabled {
+			return true
+		}
+	}
+
+	return false
 }

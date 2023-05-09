@@ -18,30 +18,14 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-)
-
-const (
-	istioAnnotationKey     = "sidecar.istio.io/inject"
-	istioAnnotationValue   = "false"
-	linkerdAnnotationKey   = "linkerd.io/inject"
-	linkerdAnnotationValue = "disabled"
-)
-
-var (
-	podOwnerKey = ".metadata.controller"
-	apiGVStr    = v1.SchemeGroupVersion.String()
 )
 
 // InstrumentedApplicationReconciler reconciles a InstrumentedApplication object
@@ -63,98 +47,98 @@ type InstrumentedApplicationReconciler struct {
 // Reconcile is responsible for language detection. The function starts the lang detection process if the InstrumentedApplication
 // object does not have a languages field. In addition, Reconcile will clean up lang detection pods upon completion / error
 func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	var instrumentedApp v1.InstrumentedApplication
-	err := r.Get(ctx, req.NamespacedName, &instrumentedApp)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-
-		logger.Error(err, "error fetching object")
-		return ctrl.Result{}, err
-	}
-
-	// If language already detected - there is nothing to do
-	if r.isLangDetected(&instrumentedApp) {
-		return ctrl.Result{}, nil
-	}
-
-	// Language detection is in progress, check if lang detection pods finished
-	if instrumentedApp.Status.LangDetection.Phase == v1.RunningLangDetectionPhase {
-		var childPods corev1.PodList
-		err = r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingFields{podOwnerKey: req.Name})
-		if err != nil {
-			logger.Error(err, "could not find child pods")
-			return ctrl.Result{}, err
-		}
-		for _, pod := range childPods.Items {
-			// If pod finished -  read detection result
-			if pod.Status.Phase == corev1.PodSucceeded && len(pod.Status.ContainerStatuses) > 0 {
-				containerStatus := pod.Status.ContainerStatuses[0]
-				if containerStatus.State.Terminated == nil {
-					continue
-				}
-
-				// Write detection result
-				result := containerStatus.State.Terminated.Message
-				var detectionResult []common.LanguageByContainer
-				err = json.Unmarshal([]byte(result), &detectionResult)
-				if err != nil {
-					logger.Error(err, "error parsing detection result")
-					return ctrl.Result{}, err
-				} else {
-					instrumentedApp.Spec.Languages = detectionResult
-					err = r.Update(ctx, &instrumentedApp)
-					if err != nil {
-						logger.Error(err, "error updating InstrumentedApp object with detection result")
-						return ctrl.Result{}, err
-					}
-
-					instrumentedApp.Status.LangDetection.Phase = v1.CompletedLangDetectionPhase
-					err = r.Status().Update(ctx, &instrumentedApp)
-					if err != nil {
-						logger.Error(err, "error updating InstrumentedApp status with detection result")
-						return ctrl.Result{}, err
-					}
-				}
-			} else if pod.Status.Phase == corev1.PodFailed {
-				logger.V(0).Info("lang detection pod failed. marking as error")
-				instrumentedApp.Status.LangDetection.Phase = v1.ErrorLangDetectionPhase
-				err = r.Status().Update(ctx, &instrumentedApp)
-				if err != nil {
-					logger.Error(err, "error updating InstrumentedApp status")
-					return ctrl.Result{}, err
-				}
-				return ctrl.Result{}, nil
-			}
-		}
-	}
-
-	// Clean up finished pods
-	if instrumentedApp.Status.LangDetection.Phase == v1.CompletedLangDetectionPhase ||
-		instrumentedApp.Status.LangDetection.Phase == v1.ErrorLangDetectionPhase {
-		var childPods corev1.PodList
-		err = r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingFields{podOwnerKey: req.Name})
-		if err != nil {
-			logger.Error(err, "could not find child pods")
-			return ctrl.Result{}, err
-		}
-
-		for _, pod := range childPods.Items {
-			if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
-				if !r.DeleteLangDetectorPods {
-					return ctrl.Result{}, nil
-				}
-
-				err = r.Client.Delete(ctx, &pod)
-				if client.IgnoreNotFound(err) != nil {
-					logger.Error(err, "failed to delete lang detection pod")
-					return ctrl.Result{}, err
-				}
-			}
-		}
-	}
+	//logger := log.FromContext(ctx)
+	//var instrumentedApp v1.InstrumentedApplication
+	//err := r.Get(ctx, req.NamespacedName, &instrumentedApp)
+	//if err != nil {
+	//	if apierrors.IsNotFound(err) {
+	//		return ctrl.Result{}, nil
+	//	}
+	//
+	//	logger.Error(err, "error fetching object")
+	//	return ctrl.Result{}, err
+	//}
+	//
+	//// If language already detected - there is nothing to do
+	//if r.isLangDetected(&instrumentedApp) {
+	//	return ctrl.Result{}, nil
+	//}
+	//
+	//// Language detection is in progress, check if lang detection pods finished
+	//if instrumentedApp.Status.LangDetection.Phase == v1.RunningLangDetectionPhase {
+	//	var childPods corev1.PodList
+	//	err = r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingFields{podOwnerKey: req.Name})
+	//	if err != nil {
+	//		logger.Error(err, "could not find child pods")
+	//		return ctrl.Result{}, err
+	//	}
+	//	for _, pod := range childPods.Items {
+	//		// If pod finished -  read detection result
+	//		if pod.Status.Phase == corev1.PodSucceeded && len(pod.Status.ContainerStatuses) > 0 {
+	//			containerStatus := pod.Status.ContainerStatuses[0]
+	//			if containerStatus.State.Terminated == nil {
+	//				continue
+	//			}
+	//
+	//			// Write detection result
+	//			result := containerStatus.State.Terminated.Message
+	//			var detectionResult []common.LanguageByContainer
+	//			err = json.Unmarshal([]byte(result), &detectionResult)
+	//			if err != nil {
+	//				logger.Error(err, "error parsing detection result")
+	//				return ctrl.Result{}, err
+	//			} else {
+	//				instrumentedApp.Spec.Languages = detectionResult
+	//				err = r.Update(ctx, &instrumentedApp)
+	//				if err != nil {
+	//					logger.Error(err, "error updating InstrumentedApp object with detection result")
+	//					return ctrl.Result{}, err
+	//				}
+	//
+	//				instrumentedApp.Status.LangDetection.Phase = v1.CompletedLangDetectionPhase
+	//				err = r.Status().Update(ctx, &instrumentedApp)
+	//				if err != nil {
+	//					logger.Error(err, "error updating InstrumentedApp status with detection result")
+	//					return ctrl.Result{}, err
+	//				}
+	//			}
+	//		} else if pod.Status.Phase == corev1.PodFailed {
+	//			logger.V(0).Info("lang detection pod failed. marking as error")
+	//			instrumentedApp.Status.LangDetection.Phase = v1.ErrorLangDetectionPhase
+	//			err = r.Status().Update(ctx, &instrumentedApp)
+	//			if err != nil {
+	//				logger.Error(err, "error updating InstrumentedApp status")
+	//				return ctrl.Result{}, err
+	//			}
+	//			return ctrl.Result{}, nil
+	//		}
+	//	}
+	//}
+	//
+	//// Clean up finished pods
+	//if instrumentedApp.Status.LangDetection.Phase == v1.CompletedLangDetectionPhase ||
+	//	instrumentedApp.Status.LangDetection.Phase == v1.ErrorLangDetectionPhase {
+	//	var childPods corev1.PodList
+	//	err = r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingFields{podOwnerKey: req.Name})
+	//	if err != nil {
+	//		logger.Error(err, "could not find child pods")
+	//		return ctrl.Result{}, err
+	//	}
+	//
+	//	for _, pod := range childPods.Items {
+	//		if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
+	//			if !r.DeleteLangDetectorPods {
+	//				return ctrl.Result{}, nil
+	//			}
+	//
+	//			err = r.Client.Delete(ctx, &pod)
+	//			if client.IgnoreNotFound(err) != nil {
+	//				logger.Error(err, "failed to delete lang detection pod")
+	//				return ctrl.Result{}, err
+	//			}
+	//		}
+	//	}
+	//}
 
 	return ctrl.Result{}, nil
 }
@@ -213,25 +197,7 @@ func (r *InstrumentedApplicationReconciler) getOwnerTemplateLabels(ctx context.C
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *InstrumentedApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// Index pods by owner for fast lookup
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, podOwnerKey, func(rawObj client.Object) []string {
-		pod := rawObj.(*corev1.Pod)
-		owner := metav1.GetControllerOf(pod)
-		if owner == nil {
-			return nil
-		}
-
-		if owner.APIVersion != apiGVStr || owner.Kind != "InstrumentedApplication" {
-			return nil
-		}
-
-		return []string{owner.Name}
-	}); err != nil {
-		return err
-	}
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.InstrumentedApplication{}).
-		Owns(&corev1.Pod{}).
 		Complete(r)
 }
