@@ -45,6 +45,8 @@ type CollectorsGroupReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	// TODO: If delete or data collection not ready -> 
+
 	logger := log.FromContext(ctx)
 	if isDataCollectionReady(ctx, r.Client) {
 		logger.V(0).Info("data collection is ready, stopping wait on InstrumentedApps")

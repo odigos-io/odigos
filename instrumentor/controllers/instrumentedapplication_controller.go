@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // InstrumentedApplicationReconciler reconciles a InstrumentedApplication object
@@ -44,9 +45,36 @@ type InstrumentedApplicationReconciler struct {
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=pods/status,verbs=get;update;patch
 
-// Reconcile is responsible for language detection. The function starts the lang detection process if the InstrumentedApplication
-// object does not have a languages field. In addition, Reconcile will clean up lang detection pods upon completion / error
+// Reconcile is responsible for instrumenting deployment/statefulset/daemonset. In order for instrumentation to happen two things must be true:
+// 1. InstrumentedApplication must have at least one language specified
+// 2. Data collection pods must be running (DataCollection CollectorsGroup .status.ready == true)
 func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+	var runtimeDetails v1.InstrumentedApplication
+	err := r.Get(ctx, req.NamespacedName, &runtimeDetails)
+	if err != nil {
+		if client.IgnoreNotFound(err) != nil {
+			logger.Error(err, "error fetching object")
+			return ctrl.Result{}, err
+		}
+
+		// TODO: remove instrumentation from resource requests
+		removeInstrumentation()
+		return ctrl.Result{}, nil
+	}
+
+	if len(runtimeDetails.Spec.Languages) == 0 {
+		removeInstrumentation()
+		return ctrl.Result{}, nil
+	}
+
+	if !isDataCollectionReady(ctx, r.Client) {
+		removeInstrumentation()
+		return ctrl.Result{}, nil
+	}
+
+	instrument()
+
 	//logger := log.FromContext(ctx)
 	//var instrumentedApp v1.InstrumentedApplication
 	//err := r.Get(ctx, req.NamespacedName, &instrumentedApp)
@@ -141,6 +169,14 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	//}
 
 	return ctrl.Result{}, nil
+}
+
+func instrument() {
+
+}
+
+func removeInstrumentation() {
+
 }
 
 func (r *InstrumentedApplicationReconciler) isLangDetected(app *v1.InstrumentedApplication) bool {
