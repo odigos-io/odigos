@@ -58,16 +58,17 @@ func runtimeInspection(pods []corev1.Pod) ([]common.LanguageByContainer, error) 
 				log.Logger.Error(err, "Failed to find processes")
 				return nil, err
 			}
-
-			processResults, processName := inspectors.DetectLanguage(processes)
-			if len(processResults) > 0 {
-				resultsMap[c.Name] = common.LanguageByContainer{
-					ContainerName: c.Name,
-					Language:      processResults[0],
-					ProcessName:   processName,
+			if processes != nil && len(processes) > 0 {
+				processResults, processName := inspectors.DetectLanguage(processes)
+				if len(processResults) > 0 {
+					resultsMap[c.Name] = common.LanguageByContainer{
+						ContainerName: c.Name,
+						Language:      processResults[0],
+						ProcessName:   processName,
+					}
+				} else {
+					log.Logger.V(0).Info("unrecognized processes", "processes", processes, "pod", pod.Name, "container", c.Name, "namespace", pod.Namespace)
 				}
-			} else {
-				log.Logger.V(0).Info("unrecognized processes", "processes", processes, "pod", pod.Name, "container", c.Name, "namespace", pod.Namespace)
 			}
 		}
 	}
