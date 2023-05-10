@@ -18,7 +18,9 @@ package controllers
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/common/utils"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,11 +47,9 @@ type CollectorsGroupReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	// TODO: If delete or data collection not ready -> 
-
 	logger := log.FromContext(ctx)
 	if isDataCollectionReady(ctx, r.Client) {
-		logger.V(0).Info("data collection is ready, stopping wait on InstrumentedApps")
+		logger.V(0).Info("data collection is ready, instrumenting selected applications")
 		var instApps odigosv1.InstrumentedApplicationList
 		if err := r.List(ctx, &instApps); err != nil {
 			logger.Error(err, "failed to list InstrumentedApps")
@@ -57,15 +57,43 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 
 		for _, instApp := range instApps.Items {
-			instApp.Spec.WaitingForDataCollection = false
-			if err := r.Update(ctx, &instApp); err != nil {
-				logger.Error(err, "failed to update InstrumentedApp")
+			err := instrument(logger, ctx, r.Client, &instApp)
+			if err != nil {
+				logger.Error(err, "failed to instrument application", "application", instApp.Name, "namespace", instApp.Namespace)
 				return ctrl.Result{}, err
 			}
+		}
+	} else {
+		err := r.removeAllInstrumentations(ctx, logger)
+		if err != nil {
+			logger.Error(err, "failed to remove instrumentations")
+			return ctrl.Result{}, err
 		}
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *CollectorsGroupReconciler) removeAllInstrumentations(ctx context.Context, logger logr.Logger) error {
+	var instApps odigosv1.InstrumentedApplicationList
+	if err := r.List(ctx, &instApps); err != nil {
+		return err
+	}
+
+	for _, instApp := range instApps.Items {
+		name, kind, err := utils.GetTargetFromRuntimeName(instApp.Name)
+		if err != nil {
+			return err
+		}
+
+		err = uninstrument(logger, ctx, r.Client, instApp.Namespace, name, kind)
+		if err != nil {
+			logger.Error(err, "failed to remove instrumentation", "application", name, "namespace", instApp.Namespace, "kind", kind)
+			return err
+		}
+	}
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -18,11 +18,9 @@ package controllers
 
 import (
 	"context"
-	"errors"
-	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/go-logr/logr"
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/common/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,7 +48,7 @@ type InstrumentedApplicationReconciler struct {
 // 2. Data collection pods must be running (DataCollection CollectorsGroup .status.ready == true)
 func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	var runtimeDetails v1.InstrumentedApplication
+	var runtimeDetails odigosv1.InstrumentedApplication
 	err := r.Get(ctx, req.NamespacedName, &runtimeDetails)
 	if err != nil {
 		if client.IgnoreNotFound(err) != nil {
@@ -58,182 +56,67 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 			return ctrl.Result{}, err
 		}
 
-		// TODO: remove instrumentation from resource requests
-		removeInstrumentation()
+		// runtime details deleted: remove instrumentation from resource requests
+		err = r.removeInstrumentation(logger, ctx, req.Name, req.Namespace)
+		if err != nil {
+			logger.Error(err, "error removing instrumentation")
+			return ctrl.Result{}, err
+		}
+
 		return ctrl.Result{}, nil
 	}
 
 	if len(runtimeDetails.Spec.Languages) == 0 {
-		removeInstrumentation()
+		err = r.removeInstrumentation(logger, ctx, req.Name, req.Namespace)
+		if err != nil {
+			logger.Error(err, "error removing instrumentation")
+			return ctrl.Result{}, err
+		}
+
 		return ctrl.Result{}, nil
 	}
 
 	if !isDataCollectionReady(ctx, r.Client) {
-		removeInstrumentation()
+		err = r.removeInstrumentation(logger, ctx, req.Name, req.Namespace)
+		if err != nil {
+			logger.Error(err, "error removing instrumentation")
+			return ctrl.Result{}, err
+		}
+
 		return ctrl.Result{}, nil
 	}
 
-	instrument()
-
-	//logger := log.FromContext(ctx)
-	//var instrumentedApp v1.InstrumentedApplication
-	//err := r.Get(ctx, req.NamespacedName, &instrumentedApp)
-	//if err != nil {
-	//	if apierrors.IsNotFound(err) {
-	//		return ctrl.Result{}, nil
-	//	}
-	//
-	//	logger.Error(err, "error fetching object")
-	//	return ctrl.Result{}, err
-	//}
-	//
-	//// If language already detected - there is nothing to do
-	//if r.isLangDetected(&instrumentedApp) {
-	//	return ctrl.Result{}, nil
-	//}
-	//
-	//// Language detection is in progress, check if lang detection pods finished
-	//if instrumentedApp.Status.LangDetection.Phase == v1.RunningLangDetectionPhase {
-	//	var childPods corev1.PodList
-	//	err = r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingFields{podOwnerKey: req.Name})
-	//	if err != nil {
-	//		logger.Error(err, "could not find child pods")
-	//		return ctrl.Result{}, err
-	//	}
-	//	for _, pod := range childPods.Items {
-	//		// If pod finished -  read detection result
-	//		if pod.Status.Phase == corev1.PodSucceeded && len(pod.Status.ContainerStatuses) > 0 {
-	//			containerStatus := pod.Status.ContainerStatuses[0]
-	//			if containerStatus.State.Terminated == nil {
-	//				continue
-	//			}
-	//
-	//			// Write detection result
-	//			result := containerStatus.State.Terminated.Message
-	//			var detectionResult []common.LanguageByContainer
-	//			err = json.Unmarshal([]byte(result), &detectionResult)
-	//			if err != nil {
-	//				logger.Error(err, "error parsing detection result")
-	//				return ctrl.Result{}, err
-	//			} else {
-	//				instrumentedApp.Spec.Languages = detectionResult
-	//				err = r.Update(ctx, &instrumentedApp)
-	//				if err != nil {
-	//					logger.Error(err, "error updating InstrumentedApp object with detection result")
-	//					return ctrl.Result{}, err
-	//				}
-	//
-	//				instrumentedApp.Status.LangDetection.Phase = v1.CompletedLangDetectionPhase
-	//				err = r.Status().Update(ctx, &instrumentedApp)
-	//				if err != nil {
-	//					logger.Error(err, "error updating InstrumentedApp status with detection result")
-	//					return ctrl.Result{}, err
-	//				}
-	//			}
-	//		} else if pod.Status.Phase == corev1.PodFailed {
-	//			logger.V(0).Info("lang detection pod failed. marking as error")
-	//			instrumentedApp.Status.LangDetection.Phase = v1.ErrorLangDetectionPhase
-	//			err = r.Status().Update(ctx, &instrumentedApp)
-	//			if err != nil {
-	//				logger.Error(err, "error updating InstrumentedApp status")
-	//				return ctrl.Result{}, err
-	//			}
-	//			return ctrl.Result{}, nil
-	//		}
-	//	}
-	//}
-	//
-	//// Clean up finished pods
-	//if instrumentedApp.Status.LangDetection.Phase == v1.CompletedLangDetectionPhase ||
-	//	instrumentedApp.Status.LangDetection.Phase == v1.ErrorLangDetectionPhase {
-	//	var childPods corev1.PodList
-	//	err = r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingFields{podOwnerKey: req.Name})
-	//	if err != nil {
-	//		logger.Error(err, "could not find child pods")
-	//		return ctrl.Result{}, err
-	//	}
-	//
-	//	for _, pod := range childPods.Items {
-	//		if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
-	//			if !r.DeleteLangDetectorPods {
-	//				return ctrl.Result{}, nil
-	//			}
-	//
-	//			err = r.Client.Delete(ctx, &pod)
-	//			if client.IgnoreNotFound(err) != nil {
-	//				logger.Error(err, "failed to delete lang detection pod")
-	//				return ctrl.Result{}, err
-	//			}
-	//		}
-	//	}
-	//}
+	err = instrument(logger, ctx, r.Client, &runtimeDetails)
+	if err != nil {
+		logger.Error(err, "error instrumenting")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
 
-func instrument() {
-
-}
-
-func removeInstrumentation() {
-
-}
-
-func (r *InstrumentedApplicationReconciler) isLangDetected(app *v1.InstrumentedApplication) bool {
-	return len(app.Spec.Languages) > 0
-}
-
-func (r *InstrumentedApplicationReconciler) getContainerNames(pod *corev1.Pod) []string {
-	var result []string
-	for _, c := range pod.Spec.Containers {
-		if !r.skipContainer(c.Name) {
-			result = append(result, c.Name)
-		}
+func (r *InstrumentedApplicationReconciler) removeInstrumentation(logger logr.Logger, ctx context.Context, runtimeObjName string, namespace string) error {
+	name, kind, err := utils.GetTargetFromRuntimeName(runtimeObjName)
+	if err != nil {
+		return err
 	}
 
-	return result
+	err = uninstrument(logger, ctx, r.Client, namespace, name, kind)
+	if err != nil {
+		logger.Error(err, "error removing instrumentation")
+		return err
+	}
+
+	return nil
 }
 
 func (r *InstrumentedApplicationReconciler) skipContainer(name string) bool {
 	return name == "istio-proxy" || name == "linkerd-proxy"
 }
 
-func (r *InstrumentedApplicationReconciler) getOwnerTemplateLabels(ctx context.Context, instrumentedApp *v1.InstrumentedApplication) (map[string]string, error) {
-	owner := metav1.GetControllerOf(instrumentedApp)
-	if owner == nil {
-		return nil, errors.New("could not find owner for InstrumentedApp")
-	}
-
-	if owner.Kind == "Deployment" && owner.APIVersion == appsv1.SchemeGroupVersion.String() {
-		var dep appsv1.Deployment
-		err := r.Get(ctx, client.ObjectKey{
-			Namespace: instrumentedApp.Namespace,
-			Name:      owner.Name,
-		}, &dep)
-		if err != nil {
-			return nil, err
-		}
-
-		return dep.Spec.Template.Labels, nil
-	} else if owner.Kind == "StatefulSet" && owner.APIVersion == appsv1.SchemeGroupVersion.String() {
-		var ss appsv1.StatefulSet
-		err := r.Get(ctx, client.ObjectKey{
-			Namespace: instrumentedApp.Namespace,
-			Name:      owner.Name,
-		}, &ss)
-		if err != nil {
-			return nil, err
-		}
-
-		return ss.Spec.Template.Labels, nil
-	}
-
-	return nil, errors.New("unrecognized owner kind")
-}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *InstrumentedApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.InstrumentedApplication{}).
+		For(&odigosv1.InstrumentedApplication{}).
 		Complete(r)
 }

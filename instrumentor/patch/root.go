@@ -8,10 +8,8 @@ import (
 )
 
 const (
-	NodeIPEnvName   = "NODE_IP"
-	PodNameEnvVName = "POD_NAME"
-	PodNameEnvValue = "$(POD_NAME)"
-	HostIPEnvValue  = "$(NODE_IP)"
+	NodeIPEnvName  = "NODE_IP"
+	HostIPEnvValue = "$(NODE_IP)"
 )
 
 type CollectorInfo struct {
@@ -21,7 +19,7 @@ type CollectorInfo struct {
 
 type Patcher interface {
 	Patch(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication)
-	IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) bool
+	Revert(podSpec *v1.PodTemplateSpec)
 }
 
 var patcherMap = map[common.ProgrammingLanguage]Patcher{
@@ -45,18 +43,17 @@ func ModifyObject(original *v1.PodTemplateSpec, instrumentation *odigosv1.Instru
 	return nil
 }
 
-func IsInstrumented(original *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) (bool, error) {
-	instrumented := true
-	for _, l := range getLangsInResult(instrumentation) {
-		p, exists := patcherMap[l]
-		if !exists {
-			return false, fmt.Errorf("unable to find patcher for lang %s", l)
-		}
-
-		instrumented = instrumented && p.IsInstrumented(original, instrumentation)
+func Revert(original *v1.PodTemplateSpec) {
+	for _, p := range patcherMap {
+		p.Revert(original)
 	}
+}
 
-	return instrumented, nil
+func removeDeviceFromPodSpec(deviceName v1.ResourceName, podSpec *v1.PodTemplateSpec) {
+	for _, container := range podSpec.Spec.Containers {
+		delete(container.Resources.Limits, deviceName)
+		delete(container.Resources.Requests, deviceName)
+	}
 }
 
 func getLangsInResult(instrumentation *odigosv1.InstrumentedApplication) []common.ProgrammingLanguage {
@@ -82,21 +79,4 @@ func shouldPatch(instrumentation *odigosv1.InstrumentedApplication, lang common.
 	}
 
 	return false
-}
-
-func getIndexOfEnv(envs []v1.EnvVar, name string) int {
-	for i := range envs {
-		if envs[i].Name == name {
-			return i
-		}
-	}
-	return -1
-}
-
-func calculateAppName(podSpace *v1.PodTemplateSpec, currentContainer *v1.Container, instrumentation *odigosv1.InstrumentedApplication) string {
-	if len(podSpace.Spec.Containers) > 1 {
-		return currentContainer.Name
-	}
-
-	return instrumentation.ObjectMeta.OwnerReferences[0].Name
 }

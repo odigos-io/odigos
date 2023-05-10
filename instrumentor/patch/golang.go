@@ -97,19 +97,24 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	})
 }
 
-func (g *golangPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) bool {
-	// TODO: Deep comparison
-	for _, l := range instrumentation.Spec.Languages {
-		if l.Language == common.GoProgrammingLanguage {
-			for _, c := range podSpec.Spec.Containers {
-				if c.Name == fmt.Sprintf("%s-instrumentation", l.ContainerName) {
-					return true
-				}
-			}
+func (g *golangPatcher) Revert(podSpec *v1.PodTemplateSpec) {
+	for i, c := range podSpec.Spec.Containers {
+		if c.Image == golangAgentName {
+			podSpec.Spec.Containers = append(podSpec.Spec.Containers[:i], podSpec.Spec.Containers[i+1:]...)
+			break
 		}
 	}
 
-	return false
+	if podSpec.Spec.ShareProcessNamespace != nil && *podSpec.Spec.ShareProcessNamespace {
+		podSpec.Spec.ShareProcessNamespace = nil
+	}
+
+	for i, v := range podSpec.Spec.Volumes {
+		if v.Name == golangKernelDebugVolumeName {
+			podSpec.Spec.Volumes = append(podSpec.Spec.Volumes[:i], podSpec.Spec.Volumes[i+1:]...)
+			break
+		}
+	}
 }
 
 func boolPtr(b bool) *bool {
