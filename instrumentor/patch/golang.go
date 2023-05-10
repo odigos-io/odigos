@@ -12,7 +12,7 @@ import (
 const (
 	golangKernelDebugVolumeName = "kernel-debug"
 	golangKernelDebugHostPath   = "/sys/kernel/debug"
-	golangAgentName             = "keyval/otel-go-agent:v0.6.4"
+	golangAgentName             = "keyval/otel-go-agent:v0.6.5"
 	golangExporterEndpoint      = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	golangServiceNameEnv        = "OTEL_SERVICE_NAME"
 	golangTargetExeEnv          = "OTEL_TARGET_EXE"
