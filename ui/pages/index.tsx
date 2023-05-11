@@ -105,10 +105,10 @@ const Home: NextPage = () => {
             </svg>
             <div>
               <span className="font-medium">No destinations configured!</span>{" "}
-              <Link href="/dest/new">
-                <a className="font-medium underline">
+              <Link href="/dest/new" className="font-medium underline">
+                
                   Click here to add a destination
-                </a>
+                
               </Link>
             </div>
           </div>
