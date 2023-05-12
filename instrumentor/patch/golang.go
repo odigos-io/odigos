@@ -37,8 +37,11 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 			if len(instrumentation.Spec.Languages) == 1 && len(instrumentation.OwnerReferences) > 0 {
 				appName = instrumentation.OwnerReferences[0].Name
 			}
+
+			containerName := fmt.Sprintf("%s-instrumentation", l.ContainerName)
+			g.deleteContainerByName(podSpec, containerName)
 			bpfContainer := v1.Container{
-				Name:  fmt.Sprintf("%s-instrumentation", l.ContainerName),
+				Name:  containerName,
 				Image: golangAgentName,
 				Env: []v1.EnvVar{
 					{
@@ -87,6 +90,7 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	// TODO: if explicitly set to false, fallback to hostPID
 	podSpec.Spec.ShareProcessNamespace = boolPtr(true)
 
+	g.deleteVolumeByName(podSpec, golangKernelDebugVolumeName)
 	podSpec.Spec.Volumes = append(podSpec.Spec.Volumes, v1.Volume{
 		Name: golangKernelDebugVolumeName,
 		VolumeSource: v1.VolumeSource{
@@ -111,6 +115,24 @@ func (g *golangPatcher) Revert(podSpec *v1.PodTemplateSpec) {
 
 	for i, v := range podSpec.Spec.Volumes {
 		if v.Name == golangKernelDebugVolumeName {
+			podSpec.Spec.Volumes = append(podSpec.Spec.Volumes[:i], podSpec.Spec.Volumes[i+1:]...)
+			break
+		}
+	}
+}
+
+func (g *golangPatcher) deleteContainerByName(podSpec *v1.PodTemplateSpec, containerName string) {
+	for i, c := range podSpec.Spec.Containers {
+		if c.Name == containerName {
+			podSpec.Spec.Containers = append(podSpec.Spec.Containers[:i], podSpec.Spec.Containers[i+1:]...)
+			break
+		}
+	}
+}
+
+func (g *golangPatcher) deleteVolumeByName(podSpec *v1.PodTemplateSpec, volumeName string) {
+	for i, v := range podSpec.Spec.Volumes {
+		if v.Name == volumeName {
 			podSpec.Spec.Volumes = append(podSpec.Spec.Volumes[:i], podSpec.Spec.Volumes[i+1:]...)
 			break
 		}

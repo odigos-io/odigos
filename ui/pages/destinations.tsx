@@ -1,5 +1,4 @@
 import CurrentDestsGrid from "@/components/CurrentDestsGrid";
-import { getConfiguration } from "@/utils/config";
 import type { NextPage } from "next";
 import Link from "next/link";
 
@@ -29,22 +28,6 @@ const DestinationsPage: NextPage = () => {
       <CurrentDestsGrid />
     </div>
   );
-};
-
-export const getServerSideProps = async () => {
-  const config = await getConfiguration();
-  if (!config) {
-    return {
-      redirect: {
-        destination: "/setup",
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: {},
-  };
 };
 
 export default DestinationsPage;

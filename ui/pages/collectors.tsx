@@ -1,4 +1,3 @@
-import { getConfiguration } from "@/utils/config";
 import type { NextPage } from "next";
 import type { Collector, ICollectorsResponse } from "@/types/collectors";
 import useSWR, { Key, Fetcher } from "swr";
@@ -90,20 +89,5 @@ function CollectorCard({ name, ready }: Collector) {
   );
 }
 
-export const getServerSideProps = async () => {
-  const config = await getConfiguration();
-  if (!config) {
-    return {
-      redirect: {
-        destination: "/setup",
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: {},
-  };
-};
 
 export default CollectorsPage;

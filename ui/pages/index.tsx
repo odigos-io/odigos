@@ -1,5 +1,4 @@
 import type { NextPage } from "next";
-import { getConfiguration } from "@/utils/config";
 import useSWR, { Fetcher } from "swr";
 import { OverviewApiResponse } from "@/types/overview";
 import LoadingPage from "@/components/Loading";
