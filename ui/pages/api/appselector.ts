@@ -1,74 +1,112 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import * as k8s from "@kubernetes/client-node";
-import { KubernetesObjectsInNamespaces } from "@/types/apps";
+import { KubernetesNamespace, KubernetesObjectsInNamespaces, AppKind } from "@/types/apps";
 
-export default async function persistConfiguration(
+const odigosLabelKey = "odigos-instrumentation";
+const odigosLabelValue = "enabled";
+
+export default async function persistApplicationSelection(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { data: KubernetesObjectsInNamespaces } = req.body;
+  const data = req.body.data as KubernetesObjectsInNamespaces;
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
   await k8sApi.listNamespace().then(async (response) => {
     response.body.items.forEach(async (item) => {
-      const labeledReq = data.namespaces.find((ns) => ns.name === item.metadata?.name)?.labeled;
-      const odigosLabeled = item.metadata?.labels?.["odigos.io/odigos-labeled"];
-      if (labeledReq && odigosLabeled !== "true") {
-        console.log("labeling namespace", item.metadata.name);
+      const kubeNamespace = data.namespaces.find((ns) => ns.name === item.metadata?.name);
+      if (!kubeNamespace) {
+        return;
+      }
+
+      const labeledReq = kubeNamespace?.labeled;
+      const odigosLabeled = item.metadata?.labels?.[odigosLabelKey];
+      if (labeledReq && odigosLabeled !== odigosLabelValue) {
+        console.log("labeling namespace", item.metadata?.name);
         item.metadata.labels = {
-          ...item.metadata.labels,
-          "odigos.io/odigos-labeled": "true",
+          ...item.metadata?.labels,
+          [odigosLabelKey]: odigosLabelValue,
         };
         await k8sApi.replaceNamespace(item.metadata.name, item);
-      } else if (!labeledReq && odigosLabeled === "true") {
-        console.log("unlabeling namespace", item.metadata.name);
-        delete item.metadata.labels?.["odigos.io/odigos-labeled"];
+      } else if (!labeledReq && odigosLabeled === odigosLabelValue) {
+        console.log("unlabeling namespace", item.metadata?.name);
+        delete item.metadata.labels?.[odigosLabelKey];
         await k8sApi.replaceNamespace(item.metadata.name, item);
+      }
+      await syncObjectsInNamespace(kc, kubeNamespace);
+    });
+  });
+
+  return res.status(200).end();
+}
+
+async function syncObjectsInNamespace(kc: k8s.KubeConfig, ns: KubernetesNamespace) {
+  const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
+
+  // Deployments
+  await k8sApi.listNamespacedDeployment(ns.name).then(async (response) => {
+    response.body.items.forEach(async (item) => {
+      const labeledReq = ns.objects
+        .find((d) => d.name === item.metadata?.name && d.kind.toString() === AppKind[AppKind.Deployment])
+        ?.labeled;
+      const odigosLabeled = item.metadata?.labels?.[odigosLabelKey];
+      if (labeledReq && odigosLabeled !== odigosLabelValue) {
+        console.log("labeling deployment", item.metadata?.name);
+        item.metadata.labels = {
+          ...item.metadata?.labels,
+          [odigosLabelKey]: odigosLabelValue,
+        };
+        await k8sApi.replaceNamespacedDeployment(item.metadata.name, ns.name, item);
+      } else if (!labeledReq && odigosLabeled === odigosLabelValue) {
+        console.log("unlabeling deployment", item.metadata.name);
+        delete item.metadata?.labels?.[odigosLabelKey];
+        await k8sApi.replaceNamespacedDeployment(item.metadata.name, ns.name, item);
       }
     });
   });
-  return res.status(200).end();
-  // const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
-  // const response: any = await k8sApi.createNamespacedCustomObject(
-  //   "odigos.io",
-  //   "v1alpha1",
-  //   process.env.CURRENT_NS || "odigos-system",
-  //   "odigosconfigurations",
-  //   {
-  //     apiVersion: "odigos.io/v1alpha1",
-  //     kind: "OdigosConfiguration",
-  //     metadata: {
-  //       name: "odigos-config",
-  //     },
-  //     spec: {
-  //       instrumentationMode: req.body.instMode,
-  //     },
-  //   }
-  // );
 
-  // if (req.body.instMode === "OPT_IN" && req.body.selectedApps) {
-  //   const instApps: any = await k8sApi.listClusterCustomObject(
-  //     "odigos.io",
-  //     "v1alpha1",
-  //     "instrumentedapplications"
-  //   );
+  // StatefulSets
+  await k8sApi.listNamespacedStatefulSet(ns.name).then(async (response) => {
+    response.body.items.forEach(async (item) => {
+      const labeledReq = ns.objects
+        .find((d) => d.name === item.metadata?.name && d.kind.toString() === AppKind[AppKind.StatefulSet])
+        ?.labeled;
+      const odigosLabeled = item.metadata?.labels?.[odigosLabelKey];
+      if (labeledReq && odigosLabeled !== odigosLabelValue) {
+        console.log("labeling statefulset", item.metadata?.name);
+        item.metadata.labels = {
+          ...item.metadata?.labels,
+          [odigosLabelKey]: odigosLabelValue,
+        };
+        await k8sApi.replaceNamespacedStatefulSet(item.metadata.name, ns.name, item);
+      } else if (!labeledReq && odigosLabeled === odigosLabelValue) {
+        console.log("unlabeling statefulset", item.metadata.name);
+        delete item.metadata?.labels?.[odigosLabelKey];
+        await k8sApi.replaceNamespacedStatefulSet(item.metadata.name, ns.name, item);
+      }
+    });
+  });
 
-  //   instApps.body.items
-  //     .filter((item: any) => req.body.selectedApps.includes(item.metadata.uid))
-  //     .map((item: any) => {
-  //       item.spec.enabled = true;
-  //       return item;
-  //     })
-  //     .forEach(async (item: any) => {
-  //       await k8sApi.replaceNamespacedCustomObject(
-  //         "odigos.io",
-  //         "v1alpha1",
-  //         item.metadata.namespace,
-  //         "instrumentedapplications",
-  //         item.metadata.name,
-  //         item
-  //       );
-  //     });
-  // }
+  // DaemonSets
+  await k8sApi.listNamespacedDaemonSet(ns.name).then(async (response) => {
+    response.body.items.forEach(async (item) => {
+      const labeledReq = ns.objects
+        .find((d) => d.name === item.metadata?.name && d.kind.toString() === AppKind[AppKind.DaemonSet])
+        ?.labeled;
+      const odigosLabeled = item.metadata?.labels?.[odigosLabelKey];
+      if (labeledReq && odigosLabeled !== odigosLabelValue) {
+        console.log("labeling daemonset", item.metadata?.name);
+        item.metadata.labels = {
+          ...item.metadata?.labels,
+          [odigosLabelKey]: odigosLabelValue,
+        };
+        await k8sApi.replaceNamespacedDaemonSet(item.metadata.name, ns.name, item);
+      } else if (!labeledReq && odigosLabeled === odigosLabelValue) {
+        console.log("unlabeling daemonset", item.metadata.name);
+        delete item.metadata?.labels?.[odigosLabelKey];
+        await k8sApi.replaceNamespacedDaemonSet(item.metadata.name, ns.name, item);
+      }
+    });
+  });
 }

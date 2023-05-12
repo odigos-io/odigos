@@ -2,7 +2,6 @@ import { NextPage } from "next";
 import type { KubernetesNamespace, KubernetesObjectsInNamespaces } from "@/types/apps";
 import useSWR, { Fetcher } from "swr";
 import { useState } from "react";
-import { getConfiguration } from "@/utils/config";
 import LoadingPage from "@/components/Loading";
 import NamespaceSelector from "@/components/namespaces/Selector";
 import AppsGrid from "@/components/namespaces/AppsGrid";
@@ -16,7 +15,7 @@ const emptyNamespace: KubernetesNamespace = {
 
 async function submitChanges(data: KubernetesObjectsInNamespaces | undefined) {
   if (!data) return;
-  
+
   const resp = await fetch("/api/appselector", {
     method: "POST",
     headers: {
@@ -128,21 +127,5 @@ function LabelNamespaceSwitch({ enabled, setEnabled}: any) {
     </Switch>
   )
 }
-
-export const getServerSideProps = async () => {
-  const config = await getConfiguration();
-  if (config) {
-    return {
-      redirect: {
-        destination: "/",
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: {},
-  };
-};
 
 export default SetupPage;

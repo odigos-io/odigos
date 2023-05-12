@@ -177,20 +177,4 @@ const Home: NextPage = () => {
   );
 };
 
-export const getServerSideProps = async () => {
-  const config = await getConfiguration();
-  if (!config) {
-    return {
-      redirect: {
-        destination: "/setup",
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: {},
-  };
-};
-
 export default Home;

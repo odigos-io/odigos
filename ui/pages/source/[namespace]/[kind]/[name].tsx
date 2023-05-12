@@ -1,6 +1,5 @@
 import { useRouter } from "next/router";
 import type { NextPage } from "next";
-import { getConfiguration } from "@/utils/config";
 import * as k8s from "@kubernetes/client-node";
 import { useState } from "react";
 
@@ -59,16 +58,6 @@ const EditAppPage: NextPage<EditAppProps> = ({ enabled }: EditAppProps) => {
 };
 
 export const getServerSideProps = async ({ query }: any) => {
-  const config = await getConfiguration();
-  if (!config) {
-    return {
-      redirect: {
-        destination: "/setup",
-        permanent: false,
-      },
-    };
-  }
-
   const { name, kind, namespace } = query;
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
