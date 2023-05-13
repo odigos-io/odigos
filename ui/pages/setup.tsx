@@ -44,7 +44,7 @@ const SetupPage: NextPage = () => {
   if (appSelection.namespaces.length === 0 && data) {
     setAppSelection(data);
     setSelectedNamespace(data.namespaces[0]);
-    return;
+    return <LoadingPage />;
   }
   return (
     <div>
