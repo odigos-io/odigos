@@ -80,6 +80,10 @@ func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Cli
 		Name:      name,
 	}, obj)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		
 		logger.Error(err, "error getting object")
 		return err
 	}

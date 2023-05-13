@@ -5,6 +5,7 @@ import (
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
+	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	"github.com/keyval-dev/odigos/odiglet/pkg/inspectors"
@@ -53,6 +54,11 @@ func runtimeInspection(pods []corev1.Pod) ([]common.LanguageByContainer, error) 
 	resultsMap := make(map[string]common.LanguageByContainer)
 	for _, pod := range pods {
 		for _, c := range pod.Spec.Containers {
+			// Skip Go instrumentation container
+			if c.Image == consts.GolangInstrumentationImage {
+				continue
+			}
+
 			processes, err := process.FindAllInContainer(string(pod.UID), c.Name)
 			if err != nil {
 				log.Logger.Error(err, "Failed to find processes")
