@@ -16,7 +16,7 @@ export default async function persistApplicationSelection(
   await k8sApi.listNamespace().then(async (response) => {
     response.body.items.forEach(async (item) => {
       const kubeNamespace = data.namespaces.find((ns) => ns.name === item.metadata?.name);
-      if (!kubeNamespace) {
+      if (!kubeNamespace || !item.metadata?.name) {
         return;
       }
 
@@ -47,6 +47,10 @@ async function syncObjectsInNamespace(kc: k8s.KubeConfig, ns: KubernetesNamespac
   // Deployments
   await k8sApi.listNamespacedDeployment(ns.name).then(async (response) => {
     response.body.items.forEach(async (item) => {
+      if (!item.metadata?.name) {
+        return;
+      }
+
       const labeledReq = ns.objects
         .find((d) => d.name === item.metadata?.name && d.kind.toString() === AppKind[AppKind.Deployment])
         ?.labeled;
@@ -57,7 +61,11 @@ async function syncObjectsInNamespace(kc: k8s.KubeConfig, ns: KubernetesNamespac
           ...item.metadata?.labels,
           [odigosLabelKey]: odigosLabelValue,
         };
-        await k8sApi.replaceNamespacedDeployment(item.metadata.name, ns.name, item);
+        try {
+          await k8sApi.replaceNamespacedDeployment(item.metadata.name, ns.name, item);
+        } catch (e) {
+          console.log(e);
+        }
       } else if (!labeledReq && odigosLabeled === odigosLabelValue) {
         console.log("unlabeling deployment", item.metadata.name);
         delete item.metadata?.labels?.[odigosLabelKey];
@@ -69,6 +77,10 @@ async function syncObjectsInNamespace(kc: k8s.KubeConfig, ns: KubernetesNamespac
   // StatefulSets
   await k8sApi.listNamespacedStatefulSet(ns.name).then(async (response) => {
     response.body.items.forEach(async (item) => {
+      if (!item.metadata?.name) {
+        return;
+      }
+
       const labeledReq = ns.objects
         .find((d) => d.name === item.metadata?.name && d.kind.toString() === AppKind[AppKind.StatefulSet])
         ?.labeled;
@@ -91,6 +103,10 @@ async function syncObjectsInNamespace(kc: k8s.KubeConfig, ns: KubernetesNamespac
   // DaemonSets
   await k8sApi.listNamespacedDaemonSet(ns.name).then(async (response) => {
     response.body.items.forEach(async (item) => {
+      if (!item.metadata?.name) {
+        return;
+      }
+
       const labeledReq = ns.objects
         .find((d) => d.name === item.metadata?.name && d.kind.toString() === AppKind[AppKind.DaemonSet])
         ?.labeled;

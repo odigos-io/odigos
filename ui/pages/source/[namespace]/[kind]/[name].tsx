@@ -80,13 +80,13 @@ export const getServerSideProps = async ({ query }: any) => {
   }
 
   const { spec }: any = resp.body;
-  const isEnabled: boolean =
-    config.spec.instrumentationMode === "OPT_IN"
-      ? typeof spec.enabled === "boolean" && spec.enabled
-      : spec.enabled === undefined || spec.enabled;
+  // const isEnabled: boolean =
+  //   config.spec.instrumentationMode === "OPT_IN"
+  //     ? typeof spec.enabled === "boolean" && spec.enabled
+  //     : spec.enabled === undefined || spec.enabled;
   return {
     props: {
-      enabled: isEnabled,
+      enabled: true,
     },
   };
 };

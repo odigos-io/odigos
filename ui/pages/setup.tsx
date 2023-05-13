@@ -34,16 +34,17 @@ async function submitChanges(data: KubernetesObjectsInNamespaces | undefined) {
 const SetupPage: NextPage = () => {
   const [instrumentationMode, setInstrumentationMode] = useState("OPT_OUT");
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
-  const [appSelection, setAppSelection] = useState<KubernetesObjectsInNamespaces>();
+  const [appSelection, setAppSelection] = useState<KubernetesObjectsInNamespaces>({ namespaces: [] });
   const fetcher: Fetcher<KubernetesObjectsInNamespaces, any> = (args: any) =>
     fetch(args).then((res) => res.json());
   const { data, error } = useSWR<KubernetesObjectsInNamespaces>("/api/v2/applications", fetcher);
   const [selectedNamespace, setSelectedNamespace] = useState(emptyNamespace)
   if (error) return <div>failed to load</div>;
   if (!data) return <LoadingPage />;
-  if (!appSelection && data) {
+  if (appSelection.namespaces.length === 0 && data) {
     setAppSelection(data);
     setSelectedNamespace(data.namespaces[0]);
+    return;
   }
   return (
     <div>

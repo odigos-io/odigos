@@ -16,7 +16,7 @@ export default function AppCard({
   selected,
   object,
   onSelection,
-}: ApplicationData & AppCardProps) {
+}: AppCardProps) {
   return (
     <label
       className={`shadow-lg border border-gray-200 rounded-lg ${
