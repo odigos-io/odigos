@@ -4,6 +4,9 @@ import PythonLogo from "@/img/tech/python.svg";
 import DotNetLogo from "@/img/tech/dotnet.svg";
 import JavaLogo from "@/img/tech/java.svg";
 import JavascriptLogo from "@/img/tech/nodejs.svg";
+import DaemonSetLogo from "@/img/tech/ds.svg";
+import DeploymentLogo from "@/img/tech/deployment.svg";
+import StatefulSetLogo from "@/img/tech/sts.svg";
 import { useState } from "react";
 
 interface AppCardProps {
@@ -41,7 +44,7 @@ export default function AppCard({
         }}
       />
       <div className="flex flex-row p-3 items-center space-x-4">
-        {getLangIcon(languages[0], "w-12 h-12")}
+        {getLangIcon(languages[0], kind.toString(), "w-12 h-12")}
         <div className="flex flex-col items-start">
           <div className="font-bold">{name}</div>
           <div>{kind}</div>
@@ -52,7 +55,7 @@ export default function AppCard({
   );
 }
 
-function getLangIcon(lang: string, classes: string) {
+function getLangIcon(lang: string, kind: string, classes: string) {
   switch (lang) {
     case "go":
       return <GolangLogo className={classes} />;
@@ -65,6 +68,13 @@ function getLangIcon(lang: string, classes: string) {
     case "dotnet":
       return <DotNetLogo className={classes} />;
     default:
-      return null;
+      switch (kind) {
+        case "DaemonSet":
+          return <DaemonSetLogo className={classes} />;
+        case "StatefulSet":
+          return <StatefulSetLogo className={classes} />;
+        default:
+          return <DeploymentLogo className={classes} />;
+      }
   }
 }

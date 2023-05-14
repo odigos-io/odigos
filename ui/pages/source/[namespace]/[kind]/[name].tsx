@@ -61,34 +61,77 @@ export const getServerSideProps = async ({ query }: any) => {
   const { name, kind, namespace } = query;
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
-  const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
-  const resp = await k8sApi.getNamespacedCustomObject(
-    "odigos.io",
-    "v1alpha1",
-    namespace,
-    "instrumentedapplications",
-    `${kind}-${name}`
-  );
-
-  if (!resp) {
-    return {
-      redirect: {
-        destination: "/",
-        permanent: false,
-      },
-    };
+  const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
+  var instrumented = false;
+  switch (kind) {
+    case "deployment":
+      instrumented = await isDeploymentInstrumented(name, namespace, kc);
+      break;
+    case "statefulset":
+      instrumented = await isStatefulSetInstrumented(name, namespace, kc);
+      break;
+    case "daemonset":
+      instrumented = await isDaemonSetInstrumented(name, namespace, kc);
+      break;
+    default: 
+      return {
+        redirect: {
+          destination: "/",
+          permanent: false,
+        },
+      };
   }
 
-  const { spec }: any = resp.body;
-  // const isEnabled: boolean =
-  //   config.spec.instrumentationMode === "OPT_IN"
-  //     ? typeof spec.enabled === "boolean" && spec.enabled
-  //     : spec.enabled === undefined || spec.enabled;
   return {
     props: {
-      enabled: true,
+      enabled: instrumented,
     },
   };
 };
+
+async function isDeploymentInstrumented(name: string, namespace: string, kc: k8s.KubeConfig) {
+  const kubeClient = kc.makeApiClient(k8s.AppsV1Api);
+  const resp = await kubeClient.readNamespacedDeployment(name, namespace);
+  if (!resp || !resp.body.metadata) {
+    return false;
+  }
+
+  return isLabeled(resp.body.metadata.labels) || await isNamespaceLabeled(namespace, kc);
+}
+
+async function isStatefulSetInstrumented(name: string, namespace: string, kc: k8s.KubeConfig) {
+  const kubeClient = kc.makeApiClient(k8s.AppsV1Api);
+  const resp = await kubeClient.readNamespacedStatefulSet(name, namespace);
+  if (!resp || !resp.body.metadata) {
+    return false;
+  }
+
+  return isLabeled(resp.body.metadata.labels) || await isNamespaceLabeled(namespace, kc);
+}
+
+async function isDaemonSetInstrumented(name: string, namespace: string, kc: k8s.KubeConfig) {
+  const kubeClient = kc.makeApiClient(k8s.AppsV1Api);
+  const resp = await kubeClient.readNamespacedDaemonSet(name, namespace);
+  if (!resp || !resp.body.metadata) {
+    return false;
+  }
+
+  return isLabeled(resp.body.metadata.labels) || await isNamespaceLabeled(namespace, kc);
+}
+
+function isLabeled(labels: any): boolean {
+  console.log(labels);
+  return labels && labels["odigos-instrumentation"] === "enabled";
+}
+
+async function isNamespaceLabeled(name: string, kc: k8s.KubeConfig) {
+  const kubeClient = kc.makeApiClient(k8s.CoreV1Api);
+  const resp = await kubeClient.readNamespace(name);
+  if (!resp || !resp.body.metadata) {
+    return false;
+  }
+
+  return isLabeled(resp.body.metadata.labels);
+}
 
 export default EditAppPage;

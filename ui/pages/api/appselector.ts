@@ -61,11 +61,7 @@ async function syncObjectsInNamespace(kc: k8s.KubeConfig, ns: KubernetesNamespac
           ...item.metadata?.labels,
           [odigosLabelKey]: odigosLabelValue,
         };
-        try {
-          await k8sApi.replaceNamespacedDeployment(item.metadata.name, ns.name, item);
-        } catch (e) {
-          console.log(e);
-        }
+        await k8sApi.replaceNamespacedDeployment(item.metadata.name, ns.name, item);
       } else if (!labeledReq && odigosLabeled === odigosLabelValue) {
         console.log("unlabeling deployment", item.metadata.name);
         delete item.metadata?.labels?.[odigosLabelKey];

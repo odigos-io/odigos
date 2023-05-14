@@ -17,7 +17,7 @@ export default function EditAppCard({
         href={`/source/${namespace}/${kind.toString().toLowerCase()}/${name}`}
         className="flex flex-row p-3 items-center space-x-4">
 
-        {getLangIcon(languages[0], "w-12 h-12")}
+        {getLangIcon(languages[0], "w-12 h-12", kind.toString())}
         <div className="flex flex-col items-start">
           <div className="font-bold">{name}</div>
           <div>{kind}</div>
