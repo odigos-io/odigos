@@ -43,17 +43,13 @@ export default async function handler(
         id: item.metadata.uid,
         name: item.metadata.ownerReferences[0].name,
         languages: languages,
-        instrumented: item.status.instrumented,
+        instrumented: item.spec.languages.length > 0,
         kind: item.metadata.ownerReferences[0].kind,
         namespace: item.metadata.namespace,
       };
     });
 
-  const discoveryInProgress = response.body.items.some(
-    (i: any) => i.status.langDetection.phase === "Running"
-  );
   return res.status(200).json({
     apps: appsFound,
-    discovery_in_progress: discoveryInProgress,
   });
 }

@@ -15,7 +15,6 @@ export type ApplicationData = {
 
 export type AppsApiResponse = {
   apps: ApplicationData[];
-  discovery_in_progress: boolean;
 };
 
 
