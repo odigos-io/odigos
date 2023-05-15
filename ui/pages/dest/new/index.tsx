@@ -1,5 +1,4 @@
 import DestsGrid from "@/components/DestsGrid";
-import { getConfiguration } from "@/utils/config";
 import Vendors, { VendorType } from "@/vendors/index";
 import { Combobox } from "@headlessui/react";
 import type { NextPage } from "next";
@@ -69,22 +68,6 @@ const AddNewDestinationPage: NextPage = () => {
       }
     </div>
   );
-};
-
-export const getServerSideProps = async () => {
-  const config = await getConfiguration();
-  if (!config) {
-    return {
-      redirect: {
-        destination: "/setup",
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: {},
-  };
 };
 
 export default AddNewDestinationPage;

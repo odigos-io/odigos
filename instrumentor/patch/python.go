@@ -8,14 +8,7 @@ import (
 )
 
 const (
-	pythonAgentName         = "edenfed/otel-python-agent:v0.2"
-	pythonVolumeName        = "agentdir-python"
-	pythonMountPath         = "/otel-auto-instrumentation"
-	envOtelTracesExporter   = "OTEL_TRACES_EXPORTER"
-	envOtelMetricsExporter  = "OTEL_METRICS_EXPORTER"
-	envValOtelHttpExporter  = "otlp_proto_http"
-	envLogCorrelation       = "OTEL_PYTHON_LOG_CORRELATION"
-	pythonInitContainerName = "copy-python-agent"
+	pythonDeviceName = "instrumentation.odigos.io/python"
 )
 
 var python = &pythonPatcher{}
@@ -30,7 +23,7 @@ func (p *pythonPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 				container.Resources.Limits = make(map[v1.ResourceName]resource.Quantity)
 			}
 
-			container.Resources.Limits["instrumentation.odigos.io/python"] = resource.MustParse("1")
+			container.Resources.Limits[pythonDeviceName] = resource.MustParse("1")
 		}
 
 		modifiedContainers = append(modifiedContainers, container)
@@ -39,11 +32,6 @@ func (p *pythonPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	podSpec.Spec.Containers = modifiedContainers
 }
 
-func (p *pythonPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) bool {
-	for _, c := range podSpec.Spec.Containers {
-		if _, exists := c.Resources.Limits["instrumentation.odigos.io/python"]; exists {
-			return true
-		}
-	}
-	return false
+func (p *pythonPatcher) Revert(podSpec *v1.PodTemplateSpec) {
+	removeDeviceFromPodSpec(pythonDeviceName, podSpec)
 }

@@ -48,10 +48,10 @@ export default async function handler(
   res: NextApiResponse<ICollectorsResponse | IError>
 ) {
   if (req.method === "GET") {
-    return GetCollectors(req, res);
-  } else if (req.method === "DELETE") {
-    return DeleteCollector(req, res);
+    await GetCollectors(req, res);
+  } else if (req.method === "POST") {
+    await DeleteCollector(req, res);
+  } else {
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
-
-  return res.status(405).end(`Method ${req.method} Not Allowed`);
 }

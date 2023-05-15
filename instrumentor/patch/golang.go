@@ -12,7 +12,6 @@ import (
 const (
 	golangKernelDebugVolumeName = "kernel-debug"
 	golangKernelDebugHostPath   = "/sys/kernel/debug"
-	golangAgentName             = "keyval/otel-go-agent:v0.6.5"
 	golangExporterEndpoint      = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	golangServiceNameEnv        = "OTEL_SERVICE_NAME"
 	golangTargetExeEnv          = "OTEL_TARGET_EXE"
@@ -37,9 +36,15 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 			if len(instrumentation.Spec.Languages) == 1 && len(instrumentation.OwnerReferences) > 0 {
 				appName = instrumentation.OwnerReferences[0].Name
 			}
+
+			containerName := fmt.Sprintf("%s-instrumentation", l.ContainerName)
+			if g.isContainerExists(podSpec, containerName) {
+				continue
+			}
+
 			bpfContainer := v1.Container{
-				Name:  fmt.Sprintf("%s-instrumentation", l.ContainerName),
-				Image: golangAgentName,
+				Name:  containerName,
+				Image: consts.GolangInstrumentationImage,
 				Env: []v1.EnvVar{
 					{
 						Name: NodeIPEnvName,
@@ -87,25 +92,52 @@ func (g *golangPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	// TODO: if explicitly set to false, fallback to hostPID
 	podSpec.Spec.ShareProcessNamespace = boolPtr(true)
 
-	podSpec.Spec.Volumes = append(podSpec.Spec.Volumes, v1.Volume{
-		Name: golangKernelDebugVolumeName,
-		VolumeSource: v1.VolumeSource{
-			HostPath: &v1.HostPathVolumeSource{
-				Path: golangKernelDebugHostPath,
+	if !g.isVolumeExists(podSpec, golangKernelDebugVolumeName) {
+		podSpec.Spec.Volumes = append(podSpec.Spec.Volumes, v1.Volume{
+			Name: golangKernelDebugVolumeName,
+			VolumeSource: v1.VolumeSource{
+				HostPath: &v1.HostPathVolumeSource{
+					Path: golangKernelDebugHostPath,
+				},
 			},
-		},
-	})
+		})
+	}
 }
 
-func (g *golangPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) bool {
-	// TODO: Deep comparison
-	for _, l := range instrumentation.Spec.Languages {
-		if l.Language == common.GoProgrammingLanguage {
-			for _, c := range podSpec.Spec.Containers {
-				if c.Name == fmt.Sprintf("%s-instrumentation", l.ContainerName) {
-					return true
-				}
-			}
+func (g *golangPatcher) Revert(podSpec *v1.PodTemplateSpec) {
+	for i, c := range podSpec.Spec.Containers {
+		if c.Image == consts.GolangInstrumentationImage {
+			podSpec.Spec.Containers = append(podSpec.Spec.Containers[:i], podSpec.Spec.Containers[i+1:]...)
+			break
+		}
+	}
+
+	if podSpec.Spec.ShareProcessNamespace != nil && *podSpec.Spec.ShareProcessNamespace {
+		podSpec.Spec.ShareProcessNamespace = nil
+	}
+
+	for i, v := range podSpec.Spec.Volumes {
+		if v.Name == golangKernelDebugVolumeName {
+			podSpec.Spec.Volumes = append(podSpec.Spec.Volumes[:i], podSpec.Spec.Volumes[i+1:]...)
+			break
+		}
+	}
+}
+
+func (g *golangPatcher) isContainerExists(podSpec *v1.PodTemplateSpec, containerName string) bool {
+	for _, c := range podSpec.Spec.Containers {
+		if c.Name == containerName {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (g *golangPatcher) isVolumeExists(podSpec *v1.PodTemplateSpec, volumeName string) bool {
+	for _, v := range podSpec.Spec.Volumes {
+		if v.Name == volumeName {
+			return true
 		}
 	}
 

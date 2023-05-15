@@ -23,30 +23,12 @@ import (
 
 // InstrumentedApplicationSpec defines the desired state of InstrumentedApplication
 type InstrumentedApplicationSpec struct {
-	Languages                []common.LanguageByContainer `json:"languages,omitempty"`
-	Enabled                  *bool                        `json:"enabled,omitempty"`
-	WaitingForDataCollection bool                         `json:"waitingForDataCollection"`
+	Languages []common.LanguageByContainer `json:"languages,omitempty"`
 }
 
 // InstrumentedApplicationStatus defines the observed state of InstrumentedApplication
 type InstrumentedApplicationStatus struct {
-	LangDetection LangDetectionStatus `json:"langDetection,omitempty"`
-	Instrumented  bool                `json:"instrumented"`
 }
-
-type LangDetectionStatus struct {
-	Phase LangDetectionPhase `json:"phase,omitempty"`
-}
-
-//+kubebuilder:validation:Enum=Pending;Running;Completed;Error
-type LangDetectionPhase string
-
-const (
-	PendingLangDetectionPhase   LangDetectionPhase = "Pending"
-	RunningLangDetectionPhase   LangDetectionPhase = "Running"
-	CompletedLangDetectionPhase LangDetectionPhase = "Completed"
-	ErrorLangDetectionPhase     LangDetectionPhase = "Error"
-)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

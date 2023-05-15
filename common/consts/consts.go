@@ -12,6 +12,10 @@ const (
 	DefaultOdigosConfigurationName      = "odigos-config"
 	OTLPPort                            = 4317
 	OTLPHttpPort                        = 4318
+	OdigosInstrumentationLabel          = "odigos-instrumentation"
+	InstrumentationEnabled              = "enabled"
+	InstrumentationDisabled             = "disabled"
+	GolangInstrumentationImage          = "keyval/otel-go-agent:v0.6.5"
 )
 
 var (

@@ -1,4 +1,3 @@
-import { getConfiguration } from "@/utils/config";
 import type { NextPage } from "next";
 import type { Collector, ICollectorsResponse } from "@/types/collectors";
 import useSWR, { Key, Fetcher } from "swr";
@@ -44,10 +43,11 @@ function NoCollectorsCard() {
 
 async function deleteCollector(name: string) {
   const response = await fetch(`/api/collectors`, {
-    method: "DELETE",
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
+    
     body: JSON.stringify({ name }),
   });
 
@@ -90,20 +90,5 @@ function CollectorCard({ name, ready }: Collector) {
   );
 }
 
-export const getServerSideProps = async () => {
-  const config = await getConfiguration();
-  if (!config) {
-    return {
-      redirect: {
-        destination: "/setup",
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: {},
-  };
-};
 
 export default CollectorsPage;

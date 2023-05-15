@@ -7,6 +7,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+const (
+	nodeJsDeviceName = "instrumentation.odigos.io/nodejs"
+)
+
 var nodeJs = &nodeJsPatcher{}
 
 type nodeJsPatcher struct{}
@@ -19,7 +23,7 @@ func (n *nodeJsPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 				container.Resources.Limits = make(map[v1.ResourceName]resource.Quantity)
 			}
 
-			container.Resources.Limits["instrumentation.odigos.io/nodejs"] = resource.MustParse("1")
+			container.Resources.Limits[nodeJsDeviceName] = resource.MustParse("1")
 		}
 
 		modifiedContainers = append(modifiedContainers, container)
@@ -28,11 +32,6 @@ func (n *nodeJsPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	podSpec.Spec.Containers = modifiedContainers
 }
 
-func (n *nodeJsPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) bool {
-	for _, c := range podSpec.Spec.Containers {
-		if _, exists := c.Resources.Limits["instrumentation.odigos.io/nodejs"]; exists {
-			return true
-		}
-	}
-	return false
+func (n *nodeJsPatcher) Revert(podSpec *v1.PodTemplateSpec) {
+	removeDeviceFromPodSpec(nodeJsDeviceName, podSpec)
 }
