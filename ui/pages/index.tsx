@@ -6,6 +6,7 @@ import { ApplicationData } from "@/types/apps";
 import { getLangIcon } from "@/utils/icons";
 import Vendors from "@/vendors/index";
 import Link from "next/link";
+import * as k8s from "@kubernetes/client-node";
 
 const Home: NextPage = () => {
   const fetcher: Fetcher<OverviewApiResponse, any> = (args: any) =>
@@ -175,5 +176,91 @@ const Home: NextPage = () => {
     </div>
   );
 };
+
+export const getServerSideProps = async ({ query }: any) => {
+  const kc = new k8s.KubeConfig();
+  kc.loadFromDefault();
+  const foundLabeled = await isSomethingLabeled(kc);
+  if (!foundLabeled) {
+    return {
+      redirect: {
+        destination: "/setup",
+        permanent: false,
+      },
+    };
+  }
+
+  // Check if any destination is configured
+  const kubeCrdApi = kc.makeApiClient(k8s.CustomObjectsApi);
+  const destinations: any = await kubeCrdApi.listNamespacedCustomObject(
+    "odigos.io",
+    "v1alpha1",
+    process.env.CURRENT_NS || "odigos-system",
+    "destinations"
+  );
+
+  if (destinations.body.items && destinations.body.items.length === 0) {
+    return {
+      redirect: {
+        destination: "/dest/new",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
+}
+
+async function isSomethingLabeled(kc: k8s.KubeConfig): Promise<boolean> {
+  // Check if there is any namespace labeled with odigos
+  const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+  const namespaces = await k8sApi.listNamespace();
+  const odigosNamespaces = namespaces.body.items.filter((ns) => {
+    return ns.metadata?.labels && ns.metadata?.labels["odigos-instrumentation"] === "enabled";
+  }
+  );
+
+  if (odigosNamespaces.length > 0) {
+    return true;
+  }
+
+  // Check if there is any deployment labeled with odigos
+  const k8sAppsApi = kc.makeApiClient(k8s.AppsV1Api);
+  const deployments = await k8sAppsApi.listDeploymentForAllNamespaces();
+  const odigosDeployments = deployments.body.items.filter((d) => {
+    return d.metadata?.labels && d.metadata?.labels["odigos-instrumentation"] === "enabled";
+  }
+  );
+
+  if (odigosDeployments.length > 0) {
+    return true;
+  }
+
+  // Check if there is any daemonset labeled with odigos
+  const daemonsets = await k8sAppsApi.listDaemonSetForAllNamespaces();
+  const odigosDaemonsets = daemonsets.body.items.filter((d) => {
+    return d.metadata?.labels && d.metadata?.labels["odigos-instrumentation"] === "enabled";
+  }
+  );
+
+  if (odigosDaemonsets.length > 0) {
+    return true;
+  }
+
+  // Check if there is any statefulset labeled with odigos
+  const statefulsets = await k8sAppsApi.listStatefulSetForAllNamespaces();
+  const odigosStatefulsets = statefulsets.body.items.filter((d) => {
+    return d.metadata?.labels && d.metadata?.labels["odigos-instrumentation"] === "enabled";
+  }
+  );
+
+  if (odigosStatefulsets.length > 0) {
+    return true;
+  }
+
+  return false;
+}
 
 export default Home;
