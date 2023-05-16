@@ -30,18 +30,11 @@ jobs:
           push: false
           tags: instrumentor:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=instrumentor
-      - name: Build Detector Image
-        uses: docker/build-push-action@v4
-        with:
-          file: langDetector/Dockerfile
-          push: false
-          tags: lang-detector:pr-${{ github.event.number }}
-          build-args: SERVICE_NAME=langDetector
       - name: Build Odiglet Image
         uses: docker/build-push-action@v4
         with:
           file: odiglet/Dockerfile
-          context: odiglet/
+          context: .
           push: false
           tags: odiglet:pr-${{ github.event.number }}
       - name: Build UI Image

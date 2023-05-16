@@ -1,5 +1,5 @@
 import AppCard from "@/components/AppCard";
-import type { ApplicationData, AppsApiResponse } from "@/types/apps";
+import type { ApplicationData } from "@/types/apps";
 
 interface AppsGridProps {
   apps: ApplicationData[];

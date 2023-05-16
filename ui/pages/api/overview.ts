@@ -24,7 +24,7 @@ export default async function handler(
         id: item.metadata.uid,
         name: item.metadata.ownerReferences[0].name,
         languages: item.spec.languages?.map((lang: any) => lang.language),
-        instrumented: item.status.instrumented,
+        instrumented: item.spec.languages?.length > 0,
         kind: item.metadata.ownerReferences[0].kind,
         namespace: item.metadata.namespace,
       };

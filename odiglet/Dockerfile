@@ -1,11 +1,11 @@
 FROM python:3.10-alpine AS python-builder
 WORKDIR /python-instrumentation
-ADD agents/python/requirements.txt .
+ADD odiglet/agents/python/requirements.txt .
 RUN mkdir workspace && pip install --target workspace -r requirements.txt
 
 FROM node:16 AS nodejs-builder
 WORKDIR /nodejs-instrumentation
-COPY agents/nodejs .
+COPY odiglet/agents/nodejs .
 RUN npm install
 
 FROM busybox AS dotnet-builder
@@ -17,8 +17,7 @@ RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetr
 FROM golang:1.20 AS builder
 WORKDIR /go/src/github.com/keyval-dev/odigos/odiglet
 COPY . .
-RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux go build -o odiglet cmd/main.go
+RUN cd odiglet && CGO_ENABLED=0 GOOS=linux go build -o odiglet cmd/main.go
 
 WORKDIR /instrumentations
 

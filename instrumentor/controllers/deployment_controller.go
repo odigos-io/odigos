@@ -18,18 +18,13 @@ package controllers
 
 import (
 	"context"
-	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-)
-
-var (
-	instAppDepOwnerKey = ".metadata.deployment.controller"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // DeploymentReconciler reconciles a Deployment object
@@ -62,16 +57,12 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	if shouldSkip(dep.Annotations, dep.Namespace) {
-		logger.V(5).Info("skipped deployment")
-		return ctrl.Result{}, nil
-	}
-
-	err = syncInstrumentedApps(ctx, &req, r.Client, r.Scheme, dep.Status.ReadyReplicas,
-		&dep, &dep.Spec.Template, instAppDepOwnerKey, DeploymentPrefix)
-	if err != nil {
-		logger.Error(err, "error syncing instrumented apps with deployments")
-		return ctrl.Result{}, err
+	if !isObjectLabeled(&dep) {
+		// Remove runtime details is exists
+		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, dep.Kind, logger); err != nil {
+			logger.Error(err, "error removing runtime details")
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
@@ -79,25 +70,8 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// Index InstrumentedApps by owner for fast lookup
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &v1.InstrumentedApplication{}, instAppDepOwnerKey, func(rawObj client.Object) []string {
-		instApp := rawObj.(*v1.InstrumentedApplication)
-		owner := metav1.GetControllerOf(instApp)
-		if owner == nil {
-			return nil
-		}
-
-		if owner.APIVersion != appsv1.SchemeGroupVersion.String() || owner.Kind != "Deployment" {
-			return nil
-		}
-
-		return []string{owner.Name}
-	}); err != nil {
-		return err
-	}
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
-		Owns(&v1.InstrumentedApplication{}).
+		WithEventFilter(predicate.LabelChangedPredicate{}).
 		Complete(r)
 }

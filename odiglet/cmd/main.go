@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation"
+	"github.com/keyval-dev/odigos/odiglet/pkg/kube"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"k8s.io/client-go/kubernetes"
@@ -35,7 +36,12 @@ func main() {
 		os.Exit(-1)
 	}
 
-	startDeviceManager(clientset)
+	go startDeviceManager(clientset)
+
+	if err := kube.StartReconciling(); err != nil {
+		log.Logger.Error(err, "Failed to start reconciling")
+		os.Exit(-1)
+	}
 }
 
 func startDeviceManager(clientset *kubernetes.Clientset) {
