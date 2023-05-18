@@ -29,5 +29,9 @@ func (s *StatefulSetsReconciler) Reconcile(ctx context.Context, request ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	return inspectRuntimesOfRunningPods(ctx, &logger, ss.Spec.Selector.MatchLabels, s.Client, s.Scheme, &ss)
+	if isObjectLabeled(&ss) || isNamespaceLabeled(ctx, &ss, s.Client) {
+		return inspectRuntimesOfRunningPods(ctx, &logger, ss.Spec.Selector.MatchLabels, s.Client, s.Scheme, &ss)
+	}
+
+	return ctrl.Result{}, nil
 }
