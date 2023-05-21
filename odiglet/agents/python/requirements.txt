@@ -41,7 +41,7 @@ opentelemetry-instrumentation-redis==0.32b0
 opentelemetry-instrumentation-requests==0.32b0
 opentelemetry-instrumentation-sklearn==0.32b0
 opentelemetry-instrumentation-sqlalchemy==0.32b0
-opentelemetry-instrumentation-sqlite3==0.32b0
+opentelemetry-instrumentation-sqlite3==0.39b0
 opentelemetry-instrumentation-starlette==0.32b0
 opentelemetry-instrumentation-tornado==0.32b0
 opentelemetry-instrumentation-urllib==0.32b0
