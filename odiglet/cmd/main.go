@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"os"
+
+	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation"
 	"github.com/keyval-dev/odigos/odiglet/pkg/kube"
@@ -9,7 +12,6 @@ import (
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"os"
 )
 
 func main() {
@@ -36,9 +38,15 @@ func main() {
 		os.Exit(-1)
 	}
 
+	ebpfDirector, err := initEBP()
+	if err != nil {
+		log.Logger.Error(err, "Failed to init eBPF director")
+		os.Exit(-1)
+	}
+
 	go startDeviceManager(clientset)
 
-	if err := kube.StartReconciling(); err != nil {
+	if err := kube.StartReconciling(ebpfDirector); err != nil {
 		log.Logger.Error(err, "Failed to start reconciling")
 		os.Exit(-1)
 	}
@@ -57,4 +65,8 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 
 	manager := dpm.NewManager(lister)
 	manager.Run()
+}
+
+func initEBP() (ebpf.Director, error) {
+	return ebpf.NewInstrumentationDirector()
 }

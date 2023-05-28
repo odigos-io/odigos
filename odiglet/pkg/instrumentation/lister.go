@@ -48,6 +48,10 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset) (dpm.Lister
 		"dotnet": NewPlugin(maxPods, instrumentlang.DotNet),
 	}
 
+	if env.Current.IsEBPFSupported() {
+		availablePlugins["go"] = NewPlugin(maxPods, instrumentlang.Go)
+	}
+
 	err = fs.CopyAgentsDirectoryToHost()
 	if err != nil {
 		return nil, err

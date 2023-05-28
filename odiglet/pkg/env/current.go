@@ -3,6 +3,7 @@ package env
 import (
 	"fmt"
 	"os"
+	"runtime"
 )
 
 const (
@@ -33,4 +34,8 @@ func Load() error {
 		NodeIP:   ni,
 	}
 	return nil
+}
+
+func (e *Environment) IsEBPFSupported() bool {
+	return runtime.GOOS == "linux"
 }
