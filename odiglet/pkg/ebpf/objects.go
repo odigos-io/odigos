@@ -47,7 +47,7 @@ func (o *Objects) Init() error {
 }
 
 func (o *Objects) Cleanup() error {
-	//o.Controller.Shutdown()
+	o.Controller.Close()
 	o.InstrumentationManger.Close()
 	return nil
 }

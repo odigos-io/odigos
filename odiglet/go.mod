@@ -96,5 +96,5 @@ require (
 replace (
 	github.com/keyval-dev/odigos/api => ../api
 	github.com/keyval-dev/odigos/common => ../common
-	go.opentelemetry.io/auto => github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230526130541-efd191284a15
+	go.opentelemetry.io/auto => github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230528131811-6469b7b04296
 )

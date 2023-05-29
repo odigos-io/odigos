@@ -66,6 +66,11 @@ func (p *PodsReconciler) instrument(ctx context.Context, pod *corev1.Pod) error 
 	logger := log.FromContext(ctx)
 	containers, ownerName, err := p.findAllGoContainers(ctx, pod)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// Probably shutdown in progress, cleanup will be done as soon as the pod object is deleted
+			return nil
+		}
+
 		logger.Error(err, "error finding go containers")
 		return err
 	}
