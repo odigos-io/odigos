@@ -34,13 +34,14 @@ func (v VictoriaMetrics) ModifyConfig(dest *odigosv1.Destination, currentConfig 
 			promImportApi = "/api/v1/import/prometheus"
 		}
 		promImportApi = strings.TrimPrefix(promImportApi, "/")
+		url = strings.TrimSuffix(url, promImportApi)
 		port, exists := dest.Spec.Data[victoriaMetricsPort]
 		if !exists {
 			log.Log.V(0).Info("Victoria metrics port not specified, defaulting to 8428")
 			port = ":8428"
 		}
+		url = strings.TrimSuffix(url, port)
 		url = addProtocol(url)
-		url = strings.TrimSuffix(url, promImportApi)
 		currentConfig.Exporters["victoriametrics"] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("%s:%s/%s", url, port, promImportApi),
 		}
