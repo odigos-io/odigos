@@ -46,10 +46,14 @@ func main() {
 
 	go startDeviceManager(clientset)
 
-	if err := kube.StartReconciling(ebpfDirector); err != nil {
+	ctx, err := kube.StartReconciling(ebpfDirector)
+	if err != nil {
 		log.Logger.Error(err, "Failed to start reconciling")
 		os.Exit(-1)
 	}
+
+	<-ctx.Done()
+	ebpfDirector.Shutdown()
 }
 
 func startDeviceManager(clientset *kubernetes.Clientset) {

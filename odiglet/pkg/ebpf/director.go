@@ -21,6 +21,7 @@ import (
 type Director interface {
 	Instrument(pid int, podDetails types.NamespacedName, appName string) error
 	Cleanup(podDetails types.NamespacedName)
+	Shutdown()
 }
 
 type InstrumentationDirector struct {
@@ -113,5 +114,12 @@ func (i *InstrumentationDirector) Cleanup(podDetails types.NamespacedName) {
 		if err != nil {
 			log.Logger.Error(err, "error cleaning up objects for process", "pid", pid)
 		}
+	}
+}
+
+func (i *InstrumentationDirector) Shutdown() {
+	log.Logger.V(0).Info("Shutting down instrumentation director")
+	for details := range i.podDetailsToPids {
+		i.Cleanup(details)
 	}
 }

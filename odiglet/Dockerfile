@@ -42,9 +42,8 @@ COPY --from=nodejs-builder /nodejs-instrumentation/build/workspace /instrumentat
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
-FROM cgr.dev/chainguard/glibc-dynamic:latest
-WORKDIR /root/
-COPY --from=builder /go/src/github.com/keyval-dev/odigos/odiglet/odiglet .
+FROM registry.fedoraproject.org/fedora-minimal:38
+COPY --from=builder /go/src/github.com/keyval-dev/odigos/odiglet/odiglet /root/odiglet
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 CMD ["/root/odiglet"]
