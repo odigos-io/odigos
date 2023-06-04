@@ -2,6 +2,7 @@ package kube
 
 import (
 	"context"
+
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,6 +28,10 @@ func (d *DeploymentsReconciler) Reconcile(ctx context.Context, request ctrl.Requ
 
 		logger.Error(err, "error fetching deployment object")
 		return ctrl.Result{}, err
+	}
+
+	if isInstrumentationDisabledExplicitly(&dep) {
+		return ctrl.Result{}, nil
 	}
 
 	if isObjectLabeled(&dep) || isNamespaceLabeled(ctx, &dep, d.Client) {

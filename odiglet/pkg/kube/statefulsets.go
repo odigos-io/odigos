@@ -2,6 +2,7 @@ package kube
 
 import (
 	"context"
+
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,6 +28,10 @@ func (s *StatefulSetsReconciler) Reconcile(ctx context.Context, request ctrl.Req
 
 		logger.Error(err, "error fetching statefulset object")
 		return ctrl.Result{}, err
+	}
+
+	if isInstrumentationDisabledExplicitly(&ss) {
+		return ctrl.Result{}, nil
 	}
 
 	if isObjectLabeled(&ss) || isNamespaceLabeled(ctx, &ss, s.Client) {
