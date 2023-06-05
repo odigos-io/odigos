@@ -2,6 +2,7 @@ package kube
 
 import (
 	"context"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
@@ -97,6 +98,18 @@ func isObjectLabeled(obj client.Object) bool {
 	if labels != nil {
 		val, exists := labels[consts.OdigosInstrumentationLabel]
 		if exists && val == consts.InstrumentationEnabled {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isInstrumentationDisabledExplicitly(obj client.Object) bool {
+	labels := obj.GetLabels()
+	if labels != nil {
+		val, exists := labels[consts.OdigosInstrumentationLabel]
+		if exists && val == consts.InstrumentationDisabled {
 			return true
 		}
 	}
