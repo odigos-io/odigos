@@ -44,6 +44,12 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
+	if pod.Status.Phase != corev1.PodRunning {
+		logger.Info("pod is not running, removing instrumentation")
+		p.Director.Cleanup(request.NamespacedName)
+		return ctrl.Result{}, nil
+	}
+
 	err = p.instrument(ctx, &pod)
 	if err != nil {
 		logger.Error(err, "error instrumenting pod")
@@ -59,7 +65,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 // - it is scheduled on the same node as the odiglet
 // - it has instrumentation.odigos.io/go device attached
 func (p *PodsReconciler) shouldInstrument(pod *corev1.Pod) bool {
-	return pod.Status.Phase == corev1.PodRunning && pod.Spec.NodeName == env.Current.NodeName && hasInstrumentationDevice(pod)
+	return pod.Spec.NodeName == env.Current.NodeName && hasInstrumentationDevice(pod)
 }
 
 func (p *PodsReconciler) instrument(ctx context.Context, pod *corev1.Pod) error {
