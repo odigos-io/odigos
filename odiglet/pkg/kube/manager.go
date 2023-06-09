@@ -125,6 +125,18 @@ func isObjectLabeled(obj client.Object) bool {
 	return false
 }
 
+func isInstrumentationDisabledExplicitly(obj client.Object) bool {
+	labels := obj.GetLabels()
+	if labels != nil {
+		val, exists := labels[consts.OdigosInstrumentationLabel]
+		if exists && val == consts.InstrumentationDisabled {
+			return true
+		}
+	}
+
+	return false
+}
+
 func isNamespaceLabeled(ctx context.Context, obj client.Object, c client.Client) bool {
 	var ns corev1.Namespace
 	err := c.Get(ctx, client.ObjectKey{Name: obj.GetNamespace()}, &ns)
