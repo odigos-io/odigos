@@ -91,8 +91,8 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/docker/spdystream v0.0.0-20160310174837-449fdfce4d96/go.mod h1:Qh8CwZgvJUkLughtfhJv5dyTYa91l1fOUCrgjqmcifM=
 github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815/go.mod h1:WwZ+bS3ebgob9U8Nd0kOddGdZWjyMGR8Wziv+TBNwSE=
-github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230529073255-f3e497a3f4ee h1:fTRZnaXVAD6uYeAd/pybM22O1U1lJr2UMmOfEGshkIo=
-github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230529073255-f3e497a3f4ee/go.mod h1:SYl3vHPGHMCOfF2bbeRBvtVafzEm5HHHsZc4mS02oyo=
+github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230609071249-c38a5c542859 h1:Lpw57OURP6oBYIcS84SGZTnroZ4zWwIWzs1W2RDFJnQ=
+github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230609071249-c38a5c542859/go.mod h1:SYl3vHPGHMCOfF2bbeRBvtVafzEm5HHHsZc4mS02oyo=
 github.com/elazarl/goproxy v0.0.0-20180725130230-947c36da3153/go.mod h1:/Zj4wYkgs4iZTTu3o/KG3Itv/qCCa8VVMlb3i9OVuzc=
 github.com/emicklei/go-restful v0.0.0-20170410110728-ff4f55a20633/go.mod h1:otzb+WCGbkyDHkqmQmT5YD2WR4BBwUdeQoFo8l/7tVs=
 github.com/emicklei/go-restful/v3 v3.9.0 h1:XwGDlfxEnQZzuopoqxwSEllNcCOM9DhhFyhFIIGKwxE=
