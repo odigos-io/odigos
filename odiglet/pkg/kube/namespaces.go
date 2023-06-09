@@ -2,6 +2,7 @@ package kube
 
 import (
 	"context"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,9 +26,11 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 	}
 
 	for _, dep := range deps.Items {
-		_, err = inspectRuntimesOfRunningPods(ctx, &logger, dep.Spec.Selector.MatchLabels, n.Client, n.Scheme, &dep)
-		if err != nil {
-			logger.Error(err, "error inspecting runtimes of running pods", "deployment", dep.Name, "namespace", dep.Namespace)
+		if !isInstrumentationDisabledExplicitly(&dep) {
+			_, err = inspectRuntimesOfRunningPods(ctx, &logger, dep.Spec.Selector.MatchLabels, n.Client, n.Scheme, &dep)
+			if err != nil {
+				logger.Error(err, "error inspecting runtimes of running pods", "deployment", dep.Name, "namespace", dep.Namespace)
+			}
 		}
 	}
 
@@ -39,9 +42,11 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 	}
 
 	for _, st := range sts.Items {
-		_, err = inspectRuntimesOfRunningPods(ctx, &logger, st.Spec.Selector.MatchLabels, n.Client, n.Scheme, &st)
-		if err != nil {
-			logger.Error(err, "error inspecting runtimes of running pods", "statefulset", st.Name, "namespace", st.Namespace)
+		if !isInstrumentationDisabledExplicitly(&st) {
+			_, err = inspectRuntimesOfRunningPods(ctx, &logger, st.Spec.Selector.MatchLabels, n.Client, n.Scheme, &st)
+			if err != nil {
+				logger.Error(err, "error inspecting runtimes of running pods", "statefulset", st.Name, "namespace", st.Namespace)
+			}
 		}
 	}
 
@@ -53,9 +58,11 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 	}
 
 	for _, ds := range dss.Items {
-		_, err = inspectRuntimesOfRunningPods(ctx, &logger, ds.Spec.Selector.MatchLabels, n.Client, n.Scheme, &ds)
-		if err != nil {
-			logger.Error(err, "error inspecting runtimes of running pods", "daemonset", ds.Name, "namespace", ds.Namespace)
+		if !isInstrumentationDisabledExplicitly(&ds) {
+			_, err = inspectRuntimesOfRunningPods(ctx, &logger, ds.Spec.Selector.MatchLabels, n.Client, n.Scheme, &ds)
+			if err != nil {
+				logger.Error(err, "error inspecting runtimes of running pods", "daemonset", ds.Name, "namespace", ds.Namespace)
+			}
 		}
 	}
 

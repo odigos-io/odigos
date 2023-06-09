@@ -2,6 +2,7 @@ package kube
 
 import (
 	"context"
+
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,6 +28,10 @@ func (d *DaemonSetsReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 
 		logger.Error(err, "error fetching daemonset object")
 		return ctrl.Result{}, err
+	}
+
+	if isInstrumentationDisabledExplicitly(&ds) {
+		return ctrl.Result{}, nil
 	}
 
 	if isObjectLabeled(&ds) || isNamespaceLabeled(ctx, &ds, d.Client) {
