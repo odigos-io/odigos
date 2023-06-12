@@ -50,7 +50,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	if pod.Status.Phase != corev1.PodRunning {
+	if pod.Status.Phase == corev1.PodRunning {
 		err = p.instrument(ctx, &pod)
 		if err != nil {
 			logger.Error(err, "error instrumenting pod")
