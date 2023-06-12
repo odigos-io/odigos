@@ -5,6 +5,7 @@ import (
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
+	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,14 +30,14 @@ func init() {
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
 }
 
-func StartReconciling() error {
+func StartReconciling(ebpfDirector ebpf.Director) (context.Context, error) {
 	log.Logger.V(0).Info("Starting reconcileres")
 	ctrl.SetLogger(log.Logger)
 	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{
 		Scheme: scheme,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = builder.
@@ -48,7 +49,7 @@ func StartReconciling() error {
 			Scheme: mgr.GetScheme(),
 		})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = builder.
@@ -60,7 +61,7 @@ func StartReconciling() error {
 			Scheme: mgr.GetScheme(),
 		})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = builder.
@@ -72,7 +73,7 @@ func StartReconciling() error {
 			Scheme: mgr.GetScheme(),
 		})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = builder.
@@ -87,10 +88,29 @@ func StartReconciling() error {
 			Scheme: mgr.GetScheme(),
 		})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return mgr.Start(signals.SetupSignalHandler())
+	err = builder.
+		ControllerManagedBy(mgr).
+		For(&corev1.Pod{}).
+		Complete(&PodsReconciler{
+			Client:   mgr.GetClient(),
+			Scheme:   mgr.GetScheme(),
+			Director: ebpfDirector,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := signals.SetupSignalHandler()
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			log.Logger.Error(err, "error starting manager")
+		}
+	}()
+	return ctx, nil
 }
 
 func isObjectLabeled(obj client.Object) bool {
