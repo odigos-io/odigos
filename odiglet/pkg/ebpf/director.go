@@ -110,10 +110,12 @@ func (i *InstrumentationDirector) Cleanup(podDetails types.NamespacedName) {
 		}
 
 		delete(i.pidsToObjects, pid)
-		err := objs.Cleanup()
-		if err != nil {
-			log.Logger.Error(err, "error cleaning up objects for process", "pid", pid)
-		}
+		go func() {
+			err := objs.Cleanup()
+			if err != nil {
+				log.Logger.Error(err, "error cleaning up objects for process", "pid", pid)
+			}
+		}()
 	}
 }
 
