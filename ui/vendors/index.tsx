@@ -21,6 +21,7 @@ import { Sentry } from '@/vendors/sentry';
 import { GoogleCloudStorage } from "@/vendors/gcs";
 import { AzureBlobStorage } from "@/vendors/azureblobstorage";
 import { AWSS3 } from "@/vendors/s3";
+import { Dynatrace } from "@/vendors/dynatrace";
 
 export enum VendorType {
   MANAGED = "MANAGED",
