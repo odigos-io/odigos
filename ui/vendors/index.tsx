@@ -79,6 +79,7 @@ const Vendors = [
   new GoogleCloudStorage(),
   new AzureBlobStorage(),
   new AWSS3(),
+  new Dynatrace(),
   new Sentry(),
 ];
 

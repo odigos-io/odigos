@@ -8,7 +8,7 @@ import { NextApiRequest } from "next";
 
 export class Dynatrace implements ObservabilityVendor {
   name = "dynatrace";
-  displayName = "dynatrace";
+  displayName = "Dynatrace";
   type = VendorType.MANAGED;
   supportedSignals = [
       ObservabilitySignals.Traces,
