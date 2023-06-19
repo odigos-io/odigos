@@ -7,6 +7,8 @@ import (
 	"os"
 )
 
+//go:generate yarn --cwd ../webapp build
+
 const (
 	assetsDir = "webapp/out"
 	port      = 3000
@@ -22,8 +24,8 @@ func main() {
 	}))
 
 	// Start server
-	log.Println("Starting frontend server ...")
-	log.Printf("Frontend is available at http://localhost:%d", port)
+	log.Println("Starting Odigos UI...")
+	log.Printf("Odigos UI is available at: http://localhost:%d", port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		log.Printf("Error starting server: %s", err)
