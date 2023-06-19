@@ -1,25 +1,28 @@
-import Alert from "@/components/Alert";
-import AppsGrid from "@/components/AppsGrid";
 import { NextPage } from "next";
-import type { AppsApiResponse } from "@/types/apps";
+import type { KubernetesNamespace, KubernetesObjectsInNamespaces } from "@/types/apps";
 import useSWR, { Fetcher } from "swr";
 import { useState } from "react";
-import { getConfiguration } from "@/utils/config";
 import LoadingPage from "@/components/Loading";
+import NamespaceSelector from "@/components/namespaces/Selector";
+import AppsGrid from "@/components/namespaces/AppsGrid";
+import { Switch } from '@headlessui/react'
 
-interface SetupProps {
-  loading: boolean;
+const emptyNamespace: KubernetesNamespace = {
+  name: "namespaces not found",
+  labeled: false,
+  objects: [],
 }
 
-async function submitChanges(instMode: string, selectedApps: string[]) {
+async function submitChanges(data: KubernetesObjectsInNamespaces | undefined) {
+  if (!data) return;
+
   const resp = await fetch("/api/appselector", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      instMode,
-      selectedApps,
+      data
     }),
   });
 
@@ -31,69 +34,76 @@ async function submitChanges(instMode: string, selectedApps: string[]) {
 const SetupPage: NextPage = () => {
   const [instrumentationMode, setInstrumentationMode] = useState("OPT_OUT");
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
-  const fetcher: Fetcher<AppsApiResponse, any> = (args: any) =>
+  const [appSelection, setAppSelection] = useState<KubernetesObjectsInNamespaces>({ namespaces: [] });
+  const fetcher: Fetcher<KubernetesObjectsInNamespaces, any> = (args: any) =>
     fetch(args).then((res) => res.json());
-  const { data, error } = useSWR<AppsApiResponse>("/api/apps", fetcher, {
-    refreshInterval: 2000,
-  });
+  const { data, error } = useSWR<KubernetesObjectsInNamespaces>("/api/v2/applications", fetcher);
+  const [selectedNamespace, setSelectedNamespace] = useState(emptyNamespace)
   if (error) return <div>failed to load</div>;
   if (!data) return <LoadingPage />;
-
+  if (appSelection.namespaces.length === 0 && data) {
+    setAppSelection(data);
+    setSelectedNamespace(data.namespaces[0]);
+    return <LoadingPage />;
+  }
   return (
     <div>
-      <div className="text-5xl mb-6">Choose target applications</div>
-      <div>
-        Please select how odigos should choose which applications to instrument
-        <div className="flex items-center mt-4 ml-2">
-          <input
-            checked={instrumentationMode === "OPT_OUT"}
-            id="OPT_OUT"
-            type="radio"
-            value="OPT_OUT"
-            onChange={(e) => {
-              setInstrumentationMode(e.currentTarget.value);
-              setSelectedApps([]);
-            }}
-            name="instrumentation-mode"
-            className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2"
-          />
-          <label htmlFor="OPT_OUT" className="ml-2 text-md">
-            Instrument any applications found, new application will be
-            instrumented automatically (Opt out)
-          </label>
-        </div>
-        <div className="flex items-center mt-1 ml-2">
-          <input
-            id="OPT_IN"
-            checked={instrumentationMode === "OPT_IN"}
-            type="radio"
-            value="OPT_IN"
-            onChange={(e) => setInstrumentationMode(e.currentTarget.value)}
-            name="instrumentation-mode"
-            className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2"
-          />
-          <label htmlFor="OPT_IN" className="ml-2 text-md">
-            Instrument only the selected applications, new applications will not
-            be instrumented automatically (Opt in)
-          </label>
+      <div className="text-5xl mb-6">Choose Target Applications</div>
+      <div className="flex flex-col space-y-2">
+        <div className="text-xl font-light mb-2">Select namespace:</div>
+        <div className="flex flex-row space-x-10 items-baseline">
+          <div>
+            <NamespaceSelector data={appSelection} selectedNamespace={selectedNamespace} setSelectedNamespace={setSelectedNamespace} />
+          </div>
+          <div className="flex flex-row space-x-2 items-baseline">
+            <LabelNamespaceSwitch enabled={selectedNamespace.labeled} setEnabled={() => {
+              const newNamespace = { ...selectedNamespace };
+              newNamespace.labeled = !newNamespace.labeled;
+              if (newNamespace.labeled) {
+                newNamespace.objects = newNamespace.objects.map((o) => {
+                  return { ...o, labeled: false };
+                });
+              }
+              setAppSelection({
+                namespaces: appSelection.namespaces.map((ns) => {
+                  if (ns.name === newNamespace.name) {
+                    return newNamespace;
+                  }
+                  return ns;
+                }),
+              });
+              setSelectedNamespace(newNamespace);
+            }} />
+            <div className="font-light">Select everything in this namespace</div>
+          </div>
         </div>
       </div>
-      {data.discovery_in_progress && (
-        <div className="pt-4">
-          <Alert message="Applications discovery in progress, this should take a few seconds..." />
-        </div>
-      )}
       <div className="pt-4">
         <AppsGrid
-          apps={data.apps}
-          disabled={instrumentationMode === "OPT_OUT"}
-          selectedApps={selectedApps}
-          setSelectedApps={setSelectedApps}
+          selectedNamespace={selectedNamespace}
+          changeObjectLabel={(obj) => {
+            const newNamespace = { ...selectedNamespace };
+            newNamespace.objects = newNamespace.objects.map((o) => {
+              if (o.name === obj.name && o.kind === obj.kind) {
+                return { ...o, labeled: !o.labeled };
+              }
+              return o;
+            });
+            setAppSelection({
+              namespaces: appSelection.namespaces.map((ns) => {
+                if (ns.name === newNamespace.name) {
+                  return newNamespace;
+                }
+                return ns;
+              }),
+            });
+            setSelectedNamespace(newNamespace);
+          }}
         />
       </div>
       <button
         type="button"
-        onClick={() => submitChanges(instrumentationMode, selectedApps)}
+        onClick={() => submitChanges(appSelection)}
         className="mt-6 text-white focus:ring-4 font-bold rounded-md text-sm px-14 py-2.5 mr-2 mb-2 bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-blue-800"
       >
         Save Changes
@@ -102,20 +112,21 @@ const SetupPage: NextPage = () => {
   );
 };
 
-export const getServerSideProps = async () => {
-  const config = await getConfiguration();
-  if (config) {
-    return {
-      redirect: {
-        destination: "/",
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: {},
-  };
-};
+function LabelNamespaceSwitch({ enabled, setEnabled}: any) {
+  return (
+    <Switch
+      checked={enabled}
+      onChange={setEnabled}
+      className={`${enabled ? 'bg-blue-600' : 'bg-gray-200'
+        } relative inline-flex h-6 w-11 items-center rounded-full`}
+    >
+      <span className="sr-only">Select everything in this namespace</span>
+      <span
+        className={`${enabled ? 'translate-x-6' : 'translate-x-1'
+          } inline-block h-4 w-4 transform rounded-full bg-white transition`}
+      />
+    </Switch>
+  )
+}
 
 export default SetupPage;

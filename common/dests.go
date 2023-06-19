@@ -25,4 +25,6 @@ const (
 	GCSDestinationType           DestinationType = "gcs"
 	AWSS3DestinationType         DestinationType = "s3"
 	AzureBlobDestinationType     DestinationType = "azureblob"
+	DynatraceDestinationType     DestinationType = "dynatrace"
+
 )

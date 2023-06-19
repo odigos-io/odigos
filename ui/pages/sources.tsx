@@ -1,7 +1,6 @@
 import EditAppsGrid from "@/components/EditAppsGrid";
 import LoadingPage from "@/components/Loading";
 import { AppsApiResponse } from "@/types/apps";
-import { getConfiguration } from "@/utils/config";
 import type { NextPage } from "next";
 import useSWR, { Fetcher } from "swr";
 
@@ -18,22 +17,6 @@ const SourcesPage: NextPage = () => {
       <EditAppsGrid {...data} />
     </div>
   );
-};
-
-export const getServerSideProps = async () => {
-  const config = await getConfiguration();
-  if (!config) {
-    return {
-      redirect: {
-        destination: "/setup",
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: {},
-  };
 };
 
 export default SourcesPage;

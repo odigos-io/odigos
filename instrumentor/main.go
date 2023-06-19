@@ -21,7 +21,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/keyval-dev/odigos/instrumentor/patch"
+
 	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+
 	"github.com/keyval-dev/odigos/instrumentor/report"
 
 	"github.com/keyval-dev/odigos/instrumentor/controllers"
@@ -55,9 +58,6 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
-	var langDetectorTag string
-	var langDetectorImage string
-	var deleteLangDetectionPods bool
 	var ignoredNameSpaces stringslice
 	var telemetryDisabled bool
 
@@ -66,11 +66,9 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&langDetectorTag, "lang-detector-tag", "latest", "container tag to use for lang detection")
-	flag.StringVar(&langDetectorImage, "lang-detector-image", "ghcr.io/keyval-dev/odigos/lang-detector", "container image to use for lang detection")
-	flag.BoolVar(&deleteLangDetectionPods, "delete-detection-pods", true, "Automatic termination of detection pods")
 	flag.Var(&ignoredNameSpaces, "ignore-namespace", "The ignored namespaces")
 	flag.BoolVar(&telemetryDisabled, "telemetry-disabled", false, "Disable telemetry")
+	flag.BoolVar(&patch.GolangSidecarInstrumentation, "golang-sidecar-instrumentation", false, "Instrument Go applications with sidecar")
 
 	opts := zap.Options{
 		Development: true,
@@ -97,11 +95,8 @@ func main() {
 	}
 
 	if err = (&controllers.InstrumentedApplicationReconciler{
-		Client:                 mgr.GetClient(),
-		Scheme:                 mgr.GetScheme(),
-		LangDetectorTag:        langDetectorTag,
-		LangDetectorImage:      langDetectorImage,
-		DeleteLangDetectorPods: deleteLangDetectionPods,
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
 		os.Exit(1)
@@ -125,6 +120,20 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
+		os.Exit(1)
+	}
+	if err = (&controllers.NamespaceReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
+		os.Exit(1)
+	}
+	if err = (&controllers.DaemonSetReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DaemonSet")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

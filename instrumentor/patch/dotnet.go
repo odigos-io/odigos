@@ -7,6 +7,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+const (
+	dotNetDeviceName = "instrumentation.odigos.io/dotnet"
+)
+
 var dotNet = &dotNetPatcher{}
 
 type dotNetPatcher struct{}
@@ -19,7 +23,7 @@ func (d *dotNetPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 				container.Resources.Limits = make(map[v1.ResourceName]resource.Quantity)
 			}
 
-			container.Resources.Limits["instrumentation.odigos.io/dotnet"] = resource.MustParse("1")
+			container.Resources.Limits[dotNetDeviceName] = resource.MustParse("1")
 		}
 
 		modifiedContainers = append(modifiedContainers, container)
@@ -28,11 +32,6 @@ func (d *dotNetPatcher) Patch(podSpec *v1.PodTemplateSpec, instrumentation *odig
 	podSpec.Spec.Containers = modifiedContainers
 }
 
-func (d *dotNetPatcher) IsInstrumented(podSpec *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication) bool {
-	for _, c := range podSpec.Spec.Containers {
-		if _, exists := c.Resources.Limits["instrumentation.odigos.io/dotnet"]; exists {
-			return true
-		}
-	}
-	return false
+func (d *dotNetPatcher) Revert(podSpec *v1.PodTemplateSpec) {
+	removeDeviceFromPodSpec(dotNetDeviceName, podSpec)
 }

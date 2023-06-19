@@ -2,7 +2,6 @@ package instrumentation
 
 import (
 	"context"
-	"fmt"
 	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/devices"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
@@ -27,7 +26,6 @@ func NewPlugin(maxPods int64, lsf LangSpecificFunc) dpm.PluginInterface {
 }
 
 func (p *plugin) GetDevicePluginOptions(ctx context.Context, empty *v1beta1.Empty) (*v1beta1.DevicePluginOptions, error) {
-	fmt.Println("GetDevicePluginOptions")
 	return &v1beta1.DevicePluginOptions{
 		PreStartRequired:                false,
 		GetPreferredAllocationAvailable: false,

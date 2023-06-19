@@ -8,12 +8,13 @@ import (
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/instrumentor/patch"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"strings"
 )
 
 var (
@@ -21,145 +22,7 @@ var (
 	//   - cmd.DefaultIgnoredNamespaces
 	//   - Helm chart's instrumentor.ignoredNamespaces field
 	IgnoredNamespaces map[string]bool
-	SkipAnnotation    = "odigos.io/skip"
-
-	DeploymentPrefix  = "deployment-"
-	StatefulSetPrefix = "statefulset-"
 )
-
-func shouldSkip(annotations map[string]string, namespace string) bool {
-	if val, ok := annotations[SkipAnnotation]; ok && val == "true" {
-		return true
-	}
-
-	if _, ok := IgnoredNamespaces[namespace]; ok {
-		return true
-	}
-	return false
-}
-
-func syncInstrumentedApps(ctx context.Context, req *ctrl.Request, c client.Client, scheme *runtime.Scheme,
-	readyReplicas int32, object client.Object, podTemplateSpec *v1.PodTemplateSpec, ownerKey string, prefix string) error {
-
-	logger := log.FromContext(ctx)
-	instApps, err := getInstrumentedApps(ctx, req, c, ownerKey)
-	if err != nil {
-		logger.Error(err, "error finding InstrumentedApp objects")
-		return err
-	}
-
-	if len(instApps.Items) == 0 {
-		if readyReplicas == 0 {
-			logger.V(0).Info("not enough ready replicas, waiting for pods to be ready")
-			return nil
-		}
-
-		instrumentedApp := odigosv1.InstrumentedApplication{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      prefix + req.Name,
-				Namespace: req.Namespace,
-			},
-			Spec: odigosv1.InstrumentedApplicationSpec{
-				WaitingForDataCollection: !isDataCollectionReady(ctx, c),
-			},
-		}
-
-		err = ctrl.SetControllerReference(object, &instrumentedApp, scheme)
-		if err != nil {
-			logger.Error(err, "error creating InstrumentedApp object")
-			return err
-		}
-
-		err = c.Create(ctx, &instrumentedApp)
-		if err != nil {
-			logger.Error(err, "error creating InstrumentedApp object")
-			return err
-		}
-
-		instrumentedApp.Status = odigosv1.InstrumentedApplicationStatus{
-			LangDetection: odigosv1.LangDetectionStatus{
-				Phase: odigosv1.PendingLangDetectionPhase,
-			},
-		}
-		err = c.Status().Update(ctx, &instrumentedApp)
-		if err != nil {
-			logger.Error(err, "error creating InstrumentedApp object")
-		}
-
-		return nil
-	}
-
-	if len(instApps.Items) > 1 {
-		return errors.New("found more than one InstrumentedApp")
-	}
-
-	// If lang not detected yet - nothing to do
-	instApp := instApps.Items[0]
-	if len(instApp.Spec.Languages) == 0 || instApp.Status.LangDetection.Phase != odigosv1.CompletedLangDetectionPhase {
-		return nil
-	}
-
-	// if instrumentation conditions are met
-	if shouldInstrument(ctx, &instApp, c, logger) {
-		// Compute .status.instrumented field
-		instrumneted, err := patch.IsInstrumented(podTemplateSpec, &instApp)
-		if err != nil {
-			logger.Error(err, "error computing instrumented status")
-			return err
-		}
-		if instrumneted != instApp.Status.Instrumented {
-			logger.V(0).Info("updating .status.instrumented", "instrumented", instrumneted)
-			instApp.Status.Instrumented = instrumneted
-			err = c.Status().Update(ctx, &instApp)
-			if err != nil {
-				logger.Error(err, "error computing instrumented status")
-				return err
-			}
-		}
-
-		// If not instrumented - patch deployment
-		if !instrumneted {
-			err = patch.ModifyObject(podTemplateSpec, &instApp)
-			if err != nil {
-				logger.Error(err, "error patching deployment / statefulset")
-				return err
-			}
-
-			err = c.Update(ctx, object)
-			if err != nil {
-				logger.Error(err, "error instrumenting application")
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func shouldInstrument(ctx context.Context, instApp *odigosv1.InstrumentedApplication, c client.Client, logger logr.Logger) bool {
-	if instApp.Spec.WaitingForDataCollection {
-		logger.V(0).Info("skipping instrumentation, data collection is not ready yet")
-		return false
-	}
-
-	config, err := getOdigosConfiguration(ctx, c)
-	if err != nil {
-		logger.Error(err, "could not get odigos configuration, skipping instrumentation")
-		return false
-	}
-
-	if config.Spec.InstrumentationMode == odigosv1.OptOutInstrumentationMode && instApp.Spec.Enabled != nil && !*instApp.Spec.Enabled {
-		logger.V(0).Info("skipping instrumentation, disabled by user", "mode", odigosv1.OptOutInstrumentationMode)
-		return false
-	}
-
-	if config.Spec.InstrumentationMode == odigosv1.OptInInstrumentationMode && (instApp.Spec.Enabled == nil || !*instApp.Spec.Enabled) {
-		logger.V(0).Info("skipping instrumentation, disabled by user", "mode", odigosv1.OptInInstrumentationMode)
-		return false
-	}
-
-	return true
-}
 
 func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	logger := log.FromContext(ctx)
@@ -179,22 +42,149 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	return false
 }
 
-func getOdigosConfiguration(ctx context.Context, c client.Client) (*odigosv1.OdigosConfiguration, error) {
-	var odigosConfig odigosv1.OdigosConfiguration
-	err := c.Get(ctx, client.ObjectKey{Namespace: utils.GetCurrentNamespace(), Name: consts.DefaultOdigosConfigurationName}, &odigosConfig)
+func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) error {
+	obj, err := getTargetObject(ctx, kubeClient, runtimeDetails)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &odigosConfig, nil
+	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
+		podSpec, err := getPodSpecFromObject(obj)
+		if err != nil {
+			return err
+		}
+
+		return patch.ModifyObject(podSpec, runtimeDetails)
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if result != controllerutil.OperationResultNone {
+		logger.V(0).Info("instrumented application", "name", obj.GetName(), "namespace", obj.GetNamespace())
+	}
+
+	return nil
 }
 
-func getInstrumentedApps(ctx context.Context, req *ctrl.Request, c client.Client, ownerKey string) (*odigosv1.InstrumentedApplicationList, error) {
-	var instrumentedApps odigosv1.InstrumentedApplicationList
-	err := c.List(ctx, &instrumentedApps, client.InNamespace(req.Namespace), client.MatchingFields{ownerKey: req.Name})
+func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Client, namespace string, name string, kind string) error {
+	obj, err := getObjectFromKindString(kind)
+	if err != nil {
+		logger.Error(err, "error getting object from kind string")
+		return err
+	}
+
+	err = kubeClient.Get(ctx, client.ObjectKey{
+		Namespace: namespace,
+		Name:      name,
+	}, obj)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+
+		logger.Error(err, "error getting object")
+		return err
+	}
+
+	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
+		podSpec, err := getPodSpecFromObject(obj)
+		if err != nil {
+			return err
+		}
+
+		patch.Revert(podSpec)
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if result != controllerutil.OperationResultNone {
+		logger.V(0).Info("uninstrumented application", "name", obj.GetName(), "namespace", obj.GetNamespace())
+	}
+
+	return nil
+}
+
+func getTargetObject(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) (client.Object, error) {
+	name, kind, err := utils.GetTargetFromRuntimeName(runtimeDetails.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	return &instrumentedApps, nil
+	obj, err := getObjectFromKindString(kind)
+	if err != nil {
+		return nil, err
+	}
+
+	err = kubeClient.Get(ctx, client.ObjectKey{
+		Namespace: runtimeDetails.Namespace,
+		Name:      name,
+	}, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return obj, nil
+}
+
+func getPodSpecFromObject(obj client.Object) (*corev1.PodTemplateSpec, error) {
+	switch o := obj.(type) {
+	case *appsv1.Deployment:
+		return &o.Spec.Template, nil
+	case *appsv1.StatefulSet:
+		return &o.Spec.Template, nil
+	case *appsv1.DaemonSet:
+		return &o.Spec.Template, nil
+	default:
+		return nil, errors.New("unknown kind")
+	}
+}
+
+func getObjectFromKindString(kind string) (client.Object, error) {
+	switch strings.ToLower(kind) {
+	case "deployment":
+		return &appsv1.Deployment{}, nil
+	case "statefulset":
+		return &appsv1.StatefulSet{}, nil
+	case "daemonset":
+		return &appsv1.DaemonSet{}, nil
+	default:
+		return nil, errors.New("unknown kind")
+	}
+}
+
+func removeRuntimeDetails(ctx context.Context, kubeClient client.Client, ns string, name string, kind string, logger logr.Logger) error {
+	runtimeName := utils.GetRuntimeObjectName(name, kind)
+	var runtimeDetails odigosv1.InstrumentedApplication
+	err := kubeClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: runtimeName}, &runtimeDetails)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	err = kubeClient.Delete(ctx, &runtimeDetails)
+	if err != nil {
+		return err
+	}
+
+	logger.V(0).Info("removed runtime details due to label change")
+	return nil
+}
+
+func isObjectLabeled(obj client.Object) bool {
+	labels := obj.GetLabels()
+	if labels != nil {
+		val, exists := labels[consts.OdigosInstrumentationLabel]
+		if exists && val == consts.InstrumentationEnabled {
+			return true
+		}
+	}
+
+	return false
 }
