@@ -21,6 +21,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/keyval-dev/odigos/instrumentor/patch"
+
 	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 
 	"github.com/keyval-dev/odigos/instrumentor/report"
@@ -66,6 +68,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.Var(&ignoredNameSpaces, "ignore-namespace", "The ignored namespaces")
 	flag.BoolVar(&telemetryDisabled, "telemetry-disabled", false, "Disable telemetry")
+	flag.BoolVar(&patch.GolangSidecarInstrumentation, "golang-sidecar-instrumentation", false, "Instrument Go applications with sidecar")
 
 	opts := zap.Options{
 		Development: true,
