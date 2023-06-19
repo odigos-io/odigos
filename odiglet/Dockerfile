@@ -10,7 +10,7 @@ RUN npm install
 
 FROM busybox AS dotnet-builder
 WORKDIR /dotnet-instrumentation
-ARG DOTNET_OTEL_VERSION=v0.5.0
+ARG DOTNET_OTEL_VERSION=v0.7.0
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
 
@@ -30,7 +30,7 @@ RUN GOOS=linux go build -o odiglet cmd/main.go
 WORKDIR /instrumentations
 
 # Java
-ARG JAVA_OTEL_VERSION=v1.22.1
+ARG JAVA_OTEL_VERSION=v1.27.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 
 # Python
