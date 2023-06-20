@@ -10,14 +10,12 @@
     </a>
 </p>
 <p align="center">
-  <h1 align="center" style="border-bottom: none" font-weight="100">
-     Odigos - Observability Control Plane
-  </h1>
-  <h2 align="center" font-weight="100">
-     Generate distributed traces instantly for any application<br/>
-     Without code changes
-  </h2>
+<img src="assets/logo.png" />
+Generate distributed traces for any application without code changes
 </p>
+<h2 align="center">
+    <a href="https://docs.odigos.io/intro">Getting Started Guide</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
+</h2>
 
 <p align="center">
 <a href="https://www.youtube.com/watch?v=9d36AmVtuGU">
@@ -35,10 +33,6 @@
 - 📖 **Built with [eBPF](https://ebpf.io) & [OpenTelemetry](https://opentelemetry.io)** - Applications are instrumented using well-known, battle-tested open source observability technologies
 - ✨ **Auto-instrumentation for Go applications** - Odigos leverages eBPF uniquely to instrument compiled languages without code changes
 - 🔭 **Collector Management** - Auto-scale collectors based on application usage. No need to deploy or configure complex pipelines
-
-<h2 align="center">
-    <a href="https://docs.odigos.io/intro">Getting Started Guide</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
-</h2>
 
 ## Installation
 
