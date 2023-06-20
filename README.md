@@ -10,11 +10,11 @@
     </a>
 </p>
 <p align="center">
-<img src="assets/logo.png" />
+<img src="assets/logo.png" width="350" /></br>
 Generate distributed traces for any application without code changes
 </p>
 <h2 align="center">
-    <a href="https://docs.odigos.io/intro">Getting Started Guide</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
+    <a href="https://www.youtube.com/watch?v=9d36AmVtuGU">Watch Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
 
 <p align="center">
