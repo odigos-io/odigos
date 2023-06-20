@@ -17,21 +17,18 @@ Generate distributed traces for any application without code changes
     <a href="https://www.youtube.com/watch?v=9d36AmVtuGU">Watch Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
 
-<p align="center">
-<a href="https://www.youtube.com/watch?v=9d36AmVtuGU">
-  <img
-    src="assets/odigos.gif"
-    width="700"
-    alt="Odigos - Observability Control Plane"
-    border="0"
-/>
-</a>
-</p>
+## ✨ Language Agnostic Auto-instrumentation
+![Works on any application](assets/choose_apps.png)
+Odigos detects the programming language of any applications and automatically instruments it accordingly
 
-- 🚀 **No need to replace existing monitoring tools** - Odigos boosts current observability solutions by generating higher-quality data
-- 🧑‍💻 **Language Agnostic Auto-instrumentation** - Odigos detects the programming language of any applications and automatically instruments it accordingly
+
+## 🚀 No need to replace existing monitoring tools 
+![Works with any observability tool](assets/choose_dest.png)
+Odigos boosts current observability solutions by generating higher-quality data
+
+
 - 📖 **Built with [eBPF](https://ebpf.io) & [OpenTelemetry](https://opentelemetry.io)** - Applications are instrumented using well-known, battle-tested open source observability technologies
-- ✨ **Auto-instrumentation for Go applications** - Odigos leverages eBPF uniquely to instrument compiled languages without code changes
+-  **Auto-instrumentation for Go applications** - Odigos leverages eBPF uniquely to instrument compiled languages without code changes
 - 🔭 **Collector Management** - Auto-scale collectors based on application usage. No need to deploy or configure complex pipelines
 
 ## Installation
