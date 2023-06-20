@@ -17,14 +17,16 @@ Generate distributed traces for any application without code changes
     <a href="https://www.youtube.com/watch?v=9d36AmVtuGU">Watch Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
 
-## ✨ Language Agnostic Auto-instrumentation
-![Works on any application](assets/choose_apps.png)
+### ✨ Language Agnostic Auto-instrumentation
 Odigos detects the programming language of any applications and automatically instruments it accordingly
 
+![Works on any application](assets/choose_apps.png)
 
-## 🚀 No need to replace existing monitoring tools 
-![Works with any observability tool](assets/choose_dest.png)
+
+### 🚀 No need to replace existing monitoring tools
 Odigos boosts current observability solutions by generating higher-quality data
+
+![Works with any observability tool](assets/choose_dest.png)
 
 
 - 📖 **Built with [eBPF](https://ebpf.io) & [OpenTelemetry](https://opentelemetry.io)** - Applications are instrumented using well-known, battle-tested open source observability technologies
@@ -45,19 +47,49 @@ See the [quickstart guide](https://docs.odigos.io/intro) for more details and ex
 
 ## Supported Destinations
 
-![Supported Destinations](assets/dests.png)
+**For step by step instructions detailed for every destination see these [docs](https://docs.odigos.io/backends).**
 
-See [DESTINATIONS.md](DESTINATIONS.md) file for a complete list of supported destinations and the available signals for every destination.
+### Managed
+
+|                         | Traces | Metrics | Logs |
+|-------------------------| ------ | ------- | ---- |
+| New Relic               | ✅      | ✅      | ✅   |
+| Datadog                 | ✅      | ✅      | ✅   |
+| Grafana Cloud           | ✅      | ✅      | ✅   |
+| Honeycomb               | ✅      | ✅      | ✅   |
+| Logz.io                 | ✅      | ✅      | ✅   |
+| qryn.cloud              | ✅      | ✅      | ✅   |
+| OpsVerse                | ✅      | ✅      | ✅   |
+| Dynatrace               | ✅      | ✅      | ✅   |
+| Google Cloud Monitoring | ✅      |         | ✅   |
+| Google Cloud Storage    | ✅      |         | ✅   |
+| Azure Blob Storage      | ✅      |         | ✅   |
+| AWS S3                  | ✅      |         | ✅   |
+| Splunk                  | ✅      |         |      |
+| Lightstep               | ✅      |         |      |
+| Sentry                  | ✅      |         |      |
+
+### Open Source
+
+|               | Traces | Metrics | Logs |
+| ------------- | ------ | ------- | ---- |
+| Prometheus    |        | ✅      |      |
+| Tempo         | ✅     |         |      |
+| Loki          |        |         | ✅   |
+| Jaeger        | ✅     |         |      |
+| SigNoz        | ✅     | ✅      | ✅   |
+| qryn          | ✅     | ✅      | ✅   |
+| Elasticsearch | ✅     |         | ✅   |
 
 Can't find the destination you need? Help us by following our quick [adding new destination](https://docs.odigos.io/adding-new-dest) guide and submit a PR.
-
-## Project Status
-
-This project is actively maintained by [keyval](https://keyval.dev). We would love to receive your [ideas, feedback & contributions](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
 
 ## Contributing
 
 Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests. You are welcome to join our active [Slack Community](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
+
+## Project Status
+
+This project is actively maintained by [keyval](https://keyval.dev). We would love to receive your [ideas, feedback & contributions](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
 
 ## License
 
