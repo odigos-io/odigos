@@ -18,20 +18,23 @@ Generate distributed traces for any application without code changes
 </h2>
 
 ### ✨ Language Agnostic Auto-instrumentation
-Odigos detects the programming language of any applications and automatically instruments it accordingly
+Odigos supports any application written in Java, Python, .NET, Node.js and even **Go**.
+Historically, compiled languages like Go have been difficult to instrument without code changes. Odigos solves this problem by leveraging [eBPF](https://ebpf.io).
 
 ![Works on any application](assets/choose_apps.png)
 
 
-### 🚀 No need to replace existing monitoring tools
-Odigos boosts current observability solutions by generating higher-quality data
+### 🤝 Keep your existing observability tools
+Odigos currently support all the popular managed and open source destinations.
+By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigos can be used with any observability tool that supports OpenTelemetry.
+
+For a complete list of supported destinations see [here](#supported-destinations).
 
 ![Works with any observability tool](assets/choose_dest.png)
 
-
-- 📖 **Built with [eBPF](https://ebpf.io) & [OpenTelemetry](https://opentelemetry.io)** - Applications are instrumented using well-known, battle-tested open source observability technologies
--  **Auto-instrumentation for Go applications** - Odigos leverages eBPF uniquely to instrument compiled languages without code changes
-- 🔭 **Collector Management** - Auto-scale collectors based on application usage. No need to deploy or configure complex pipelines
+### 🎛️ Collectors Management 
+Operate a fleet of OpenTelemetry collectors with ease. Odigos provides a simple UI to manage and configure collectors.
+Odigos will automatically scale collectors based on observability data volume.
 
 ## Installation
 
