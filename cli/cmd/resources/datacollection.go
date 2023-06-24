@@ -44,6 +44,17 @@ func NewDataCollectionClusterRole() *rbacv1.ClusterRole {
 					"nodes/proxy",
 				},
 			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"replicasets",
+				},
+			},
 		},
 	}
 }
