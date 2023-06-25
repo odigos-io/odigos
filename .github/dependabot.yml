@@ -22,6 +22,11 @@ updates:
       day: sunday
       interval: weekly
   - package-ecosystem: gomod
+    directory: /cli
+    schedule:
+      day: sunday
+      interval: weekly
+  - package-ecosystem: gomod
     directory: /instrumentor
     schedule:
       day: sunday

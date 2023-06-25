@@ -10,35 +10,32 @@
     </a>
 </p>
 <p align="center">
-  <h1 align="center" style="border-bottom: none" font-weight="100">
-     Odigos - Observability Control Plane
-  </h1>
-  <h2 align="center" font-weight="100">
-     Generate distributed traces instantly for any application<br/>
-     Without code changes
-  </h2>
+<img src="assets/logo.png" width="350" /></br>
+Generate distributed traces for any application without code changes
 </p>
-
-<p align="center">
-<a href="https://www.youtube.com/watch?v=9d36AmVtuGU">
-  <img
-    src="assets/odigos.gif"
-    width="700"
-    alt="Odigos - Observability Control Plane"
-    border="0"
-/>
-</a>
-</p>
-
-- 🚀 **No need to replace existing monitoring tools** - Odigos boosts current observability solutions by generating higher-quality data
-- 🧑‍💻 **Language Agnostic Auto-instrumentation** - Odigos detects the programming language of any applications and automatically instruments it accordingly
-- 📖 **Built with [eBPF](https://ebpf.io) & [OpenTelemetry](https://opentelemetry.io)** - Applications are instrumented using well-known, battle-tested open source observability technologies
-- ✨ **Auto-instrumentation for Go applications** - Odigos leverages eBPF uniquely to instrument compiled languages without code changes
-- 🔭 **Collector Management** - Auto-scale collectors based on application usage. No need to deploy or configure complex pipelines
-
 <h2 align="center">
-    <a href="https://docs.odigos.io/intro">Getting Started Guide</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
+    <a href="https://www.youtube.com/watch?v=9d36AmVtuGU">Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
+
+### ✨ Language Agnostic Auto-instrumentation
+
+Odigos supports any application written in Java, Python, .NET, Node.js and **Go**.  
+Historically, compiled languages like Go have been difficult to instrument without code changes. Odigos solves this problem by uniquely leveraging [eBPF](https://ebpf.io).
+
+![Works on any application](assets/choose_apps.png)
+
+
+### 🤝 Keep your existing observability tools
+Odigos currently supports all the popular managed and open source destinations.  
+By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigos can be used with any observability tool that supports OTLP.
+
+For a complete list of supported destinations see [here](#supported-destinations).
+
+![Works with any observability tool](assets/choose_dest.png)
+
+### 🎛️ Collectors Management 
+Odigos automatically scales OpenTelemetry collectors based on observability data volume.  
+A simple UI is also provided to manage and configure collectors.
 
 ## Installation
 
@@ -54,19 +51,49 @@ See the [quickstart guide](https://docs.odigos.io/intro) for more details and ex
 
 ## Supported Destinations
 
-![Supported Destinations](assets/dests.png)
+**For step by step instructions detailed for every destination see these [docs](https://docs.odigos.io/backends).**
 
-See [DESTINATIONS.md](DESTINATIONS.md) file for a complete list of supported destinations and the available signals for every destination.
+### Managed
+
+|                         | Traces | Metrics | Logs |
+|-------------------------| ------ | ------- | ---- |
+| New Relic               | ✅      | ✅      | ✅   |
+| Datadog                 | ✅      | ✅      | ✅   |
+| Grafana Cloud           | ✅      | ✅      | ✅   |
+| Honeycomb               | ✅      | ✅      | ✅   |
+| Logz.io                 | ✅      | ✅      | ✅   |
+| qryn.cloud              | ✅      | ✅      | ✅   |
+| OpsVerse                | ✅      | ✅      | ✅   |
+| Dynatrace               | ✅      | ✅      | ✅   |
+| Google Cloud Monitoring | ✅      |         | ✅   |
+| Google Cloud Storage    | ✅      |         | ✅   |
+| Azure Blob Storage      | ✅      |         | ✅   |
+| AWS S3                  | ✅      |         | ✅   |
+| Splunk                  | ✅      |         |      |
+| Lightstep               | ✅      |         |      |
+| Sentry                  | ✅      |         |      |
+
+### Open Source
+
+|               | Traces | Metrics | Logs |
+| ------------- | ------ | ------- | ---- |
+| Prometheus    |        | ✅      |      |
+| Tempo         | ✅     |         |      |
+| Loki          |        |         | ✅   |
+| Jaeger        | ✅     |         |      |
+| SigNoz        | ✅     | ✅      | ✅   |
+| qryn          | ✅     | ✅      | ✅   |
+| Elasticsearch | ✅     |         | ✅   |
 
 Can't find the destination you need? Help us by following our quick [adding new destination](https://docs.odigos.io/adding-new-dest) guide and submit a PR.
-
-## Project Status
-
-This project is actively maintained by [keyval](https://keyval.dev). We would love to receive your [ideas, feedback & contributions](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
 
 ## Contributing
 
 Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests. You are welcome to join our active [Slack Community](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
+
+## Project Status
+
+This project is actively maintained by [keyval](https://keyval.dev). We would love to receive your [ideas, feedback & contributions](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
 
 ## License
 

@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,12 +40,8 @@ func NewOdigletClusterRole() *rbacv1.ClusterRole {
 		Rules: []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
-					"create",
-					"delete",
 					"get",
 					"list",
-					"patch",
-					"update",
 					"watch",
 				},
 				APIGroups: []string{""},
@@ -55,12 +52,111 @@ func NewOdigletClusterRole() *rbacv1.ClusterRole {
 			{
 				Verbs: []string{
 					"get",
-					"update",
-					"patch",
 				},
 				APIGroups: []string{""},
 				Resources: []string{
 					"pods/status",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{""},
+				Resources: []string{
+					"nodes",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments"},
+			},
+			{
+				Verbs: []string{
+					"get",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"deployments/status",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"statefulsets"},
+			},
+			{
+				Verbs: []string{
+					"get",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"statefulsets/status",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets"},
+			},
+			{
+				Verbs: []string{
+					"get",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"daemonsets/status",
+				},
+			},
+			{
+				Verbs: []string{
+					"create",
+					"get",
+					"list",
+					"patch",
+					"update",
+					"watch",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"instrumentedapplications",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{""},
+				Resources: []string{
+					"namespaces",
 				},
 			},
 		},
@@ -118,6 +214,9 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 					},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector: map[string]string{
+						"kubernetes.io/os": "linux",
+					},
 					Tolerations: []corev1.Toleration{
 						{
 							Key:      "node.kubernetes.io/os",
@@ -143,6 +242,22 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 								},
 							},
 						},
+						{
+							Name: "odigos",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/var/odigos",
+								},
+							},
+						},
+						{
+							Name: "kernel-debug",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/sys/kernel/debug",
+								},
+							},
+						},
 					},
 					Containers: []corev1.Container{
 						{
@@ -154,6 +269,14 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name: "NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
 										},
 									},
 								},
@@ -170,10 +293,24 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 									MountPath:        "/var",
 									MountPropagation: ptrMountPropagationMode("Bidirectional"),
 								},
+								{
+									Name:             "odigos",
+									MountPath:        "/var/odigos",
+									MountPropagation: ptrMountPropagationMode("Bidirectional"),
+								},
+								{
+									Name:      "kernel-debug",
+									MountPath: "/sys/kernel/debug",
+								},
 							},
 							ImagePullPolicy: "IfNotPresent",
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: ptrbool(true),
+								Capabilities: &corev1.Capabilities{
+									Add: []corev1.Capability{
+										"SYS_PTRACE",
+									},
+								},
 							},
 						},
 					},
