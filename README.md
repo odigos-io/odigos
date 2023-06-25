@@ -56,19 +56,20 @@ See the [quickstart guide](https://docs.odigos.io/intro) for more details and ex
 ### Managed
 
 |                         | Traces | Metrics | Logs |
-|-------------------------| ------ | ------- | ---- |
-| New Relic               | ✅      | ✅      | ✅   |
-| Datadog                 | ✅      | ✅      | ✅   |
-| Grafana Cloud           | ✅      | ✅      | ✅   |
-| Honeycomb               | ✅      | ✅      | ✅   |
-| Logz.io                 | ✅      | ✅      | ✅   |
-| qryn.cloud              | ✅      | ✅      | ✅   |
-| OpsVerse                | ✅      | ✅      | ✅   |
-| Dynatrace               | ✅      | ✅      | ✅   |
-| Google Cloud Monitoring | ✅      |         | ✅   |
-| Google Cloud Storage    | ✅      |         | ✅   |
-| Azure Blob Storage      | ✅      |         | ✅   |
-| AWS S3                  | ✅      |         | ✅   |
+|-------------------------| ------ | ------- |------|
+| New Relic               | ✅      | ✅      | ✅    |
+| Datadog                 | ✅      | ✅      | ✅    |
+| Grafana Cloud           | ✅      | ✅      | ✅    |
+| Honeycomb               | ✅      | ✅      | ✅    |
+| Chronosphere            | ✅      | ✅      |       |
+| Logz.io                 | ✅      | ✅      | ✅    |
+| qryn.cloud              | ✅      | ✅      | ✅    |
+| OpsVerse                | ✅      | ✅      | ✅    |
+| Dynatrace               | ✅      | ✅      | ✅    |
+| Google Cloud Monitoring | ✅      |         | ✅    |
+| Google Cloud Storage    | ✅      |         | ✅    |
+| Azure Blob Storage      | ✅      |         | ✅    |
+| AWS S3                  | ✅      |         | ✅    |
 | Splunk                  | ✅      |         |      |
 | Lightstep               | ✅      |         |      |
 | Sentry                  | ✅      |         |      |

@@ -22,6 +22,7 @@ import { GoogleCloudStorage } from "@/vendors/gcs";
 import { AzureBlobStorage } from "@/vendors/azureblobstorage";
 import { AWSS3 } from "@/vendors/s3";
 import { Dynatrace } from "@/vendors/dynatrace";
+import { Chronosphere } from "@/vendors/chronosphere";
 
 export enum VendorType {
   MANAGED = "MANAGED",
@@ -58,7 +59,7 @@ export interface ObservabilityVendor {
 }
 
 const Vendors = [
-  new Middleware(),
+  new Chronosphere(),
   new Honeycomb(),
   new Datadog(),
   new Grafana(),
@@ -80,6 +81,7 @@ const Vendors = [
   new AzureBlobStorage(),
   new AWSS3(),
   new Dynatrace(),
+  new Middleware(),
   new Sentry(),
 ];
 
