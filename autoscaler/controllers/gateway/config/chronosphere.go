@@ -45,6 +45,12 @@ func (c *Chronosphere) ModifyConfig(dest *odigosv1.Destination, currentConfig *c
 			currentConfig.Exporters["prometheusremotewrite/chronosphere"] = commonconf.GenericMap{
 				"endpoint": fmt.Sprintf("http://%s:3030/remote/write", url),
 			}
+
+			currentConfig.Service.Pipelines["metrics/chronosphere"] = commonconf.Pipeline{
+				Receivers:  []string{"otlp"},
+				Processors: []string{"batch"},
+				Exporters:  []string{"prometheusremotewrite/chronosphere"},
+			}
 		}
 	}
 }
