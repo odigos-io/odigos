@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/cmd/resources/crds"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
@@ -11,7 +13,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"time"
 )
 
 const (
@@ -23,6 +24,7 @@ var (
 	versionFlag              string
 	skipWait                 bool
 	telemetryEnabled         bool
+	sidecarInstrumentation   bool
 	ignoredNamespaces        []string
 	DefaultIgnoredNamespaces = []string{"odigos-system", "kube-system", "local-path-storage", "istio-system", "linkerd"}
 )
@@ -32,13 +34,8 @@ type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *
 // installCmd represents the install command
 var installCmd = &cobra.Command{
 	Use:   "install",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Install Odigos",
+	Long:  `Install Odigos in your cluster. This command will install the Odigos CRDs, the Odigos Instrumentor, Scheduler, Autoscaler and Odiglet.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := kube.CreateClient(cmd)
 		ctx := cmd.Context()
@@ -155,7 +152,7 @@ func createInstrumentor(ctx context.Context, cmd *cobra.Command, client *kube.Cl
 		return err
 	}
 
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewInstrumentorDeployment(versionFlag, telemetryEnabled, ignoredNamespaces), metav1.CreateOptions{})
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewInstrumentorDeployment(versionFlag, telemetryEnabled, sidecarInstrumentation, ignoredNamespaces), metav1.CreateOptions{})
 	return err
 }
 
@@ -290,4 +287,5 @@ func init() {
 	installCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "target version for Odigos installation")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "Skip waiting for pods to be ready")
 	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "Enable telemetry")
+	installCmd.Flags().BoolVar(&sidecarInstrumentation, "sidecar-instrumentation", false, "Used sidecars for eBPF instrumentations")
 }

@@ -47,13 +47,7 @@ func NewInstrumentedApp() apiextensionsv1.CustomResourceDefinition {
 								"spec": {
 									Description: "InstrumentedApplicationSpec defines the desired state of InstrumentedApplication",
 									Type:        "object",
-									Required: []string{
-										"waitingForDataCollection",
-									},
 									Properties: map[string]apiextensionsv1.JSONSchemaProps{
-										"enabled": {
-											Type: "boolean",
-										},
 										"languages": {
 											Type: "array",
 											Items: &apiextensionsv1.JSONSchemaPropsOrArray{
@@ -94,35 +88,10 @@ func NewInstrumentedApp() apiextensionsv1.CustomResourceDefinition {
 												},
 											},
 										},
-										"waitingForDataCollection": {
-											Type: "boolean",
-										},
 									},
 								},
 								"status": {
 									Type: "object",
-									Required: []string{
-										"instrumented",
-									},
-									Properties: map[string]apiextensionsv1.JSONSchemaProps{
-										"instrumented": {
-											Type: "boolean",
-										},
-										"langDetection": {
-											Type: "object",
-											Properties: map[string]apiextensionsv1.JSONSchemaProps{
-												"phase": {
-													Type: "string",
-													Enum: []apiextensionsv1.JSON{
-														{Raw: []byte(`"Pending"`)},
-														{Raw: []byte(`"Running"`)},
-														{Raw: []byte(`"Completed"`)},
-														{Raw: []byte(`"Error"`)},
-													},
-												},
-											},
-										},
-									},
 								},
 							},
 						},
