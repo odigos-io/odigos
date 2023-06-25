@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -241,6 +242,45 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 				},
 				Resources: []string{
 					"instrumentedapplications/status",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"patch",
+					"update",
+				},
+				APIGroups: []string{""},
+				Resources: []string{
+					"namespaces",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"patch",
+					"update",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"deployments",
+					"daemonsets",
+					"statefulsets",
+				},
+			},
+			{
+				Verbs: []string{"get"},
+				APIGroups: []string{
+					"apps",
+				},
+				Resources: []string{
+					"daemonsets/status",
+					"deployments/status",
+					"statefulsets/status",
 				},
 			},
 		},
