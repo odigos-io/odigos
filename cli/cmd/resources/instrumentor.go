@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -13,7 +14,6 @@ import (
 
 const (
 	instrumentorImage = "ghcr.io/keyval-dev/odigos/instrumentor"
-	langDetectorImage = "ghcr.io/keyval-dev/odigos/lang-detector"
 )
 
 func NewInstrumentorServiceAccount() *corev1.ServiceAccount {
@@ -66,21 +66,6 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 		Rules: []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{""},
-				Resources: []string{
-					"pods",
-				},
-			},
-			{
-				Verbs: []string{
 					"list",
 					"watch",
 					"get",
@@ -92,19 +77,56 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			},
 			{
 				Verbs: []string{
+					"list",
+					"watch",
 					"get",
-					"patch",
-					"update",
 				},
 				APIGroups: []string{""},
 				Resources: []string{
-					"pods/status",
+					"namespaces",
 				},
 			},
 			{
 				Verbs: []string{
 					"create",
-					"delete",
+					"get",
+					"list",
+					"patch",
+					"update",
+					"watch",
+				},
+				APIGroups: []string{
+					"apps",
+				},
+				Resources: []string{
+					"daemonsets",
+				},
+			},
+			{
+				Verbs: []string{
+					"update",
+				},
+				APIGroups: []string{
+					"apps",
+				},
+				Resources: []string{
+					"daemonsets/finalizers",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+				},
+				APIGroups: []string{
+					"apps",
+				},
+				Resources: []string{
+					"daemonsets/status",
+				},
+			},
+			{
+				Verbs: []string{
+					"create",
 					"get",
 					"list",
 					"patch",
@@ -132,8 +154,6 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			{
 				Verbs: []string{
 					"get",
-					"patch",
-					"update",
 				},
 				APIGroups: []string{
 					"apps",
@@ -145,7 +165,6 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			{
 				Verbs: []string{
 					"create",
-					"delete",
 					"get",
 					"list",
 					"patch",
@@ -173,8 +192,6 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			{
 				Verbs: []string{
 					"get",
-					"patch",
-					"update",
 				},
 				APIGroups: []string{
 					"apps",
@@ -352,13 +369,11 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewInstrumentorDeployment(version string, telemetryEnabled bool, ignoredNamespaces []string) *appsv1.Deployment {
+func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarInstrumentation bool, ignoredNamespaces []string) *appsv1.Deployment {
 	args := []string{
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=127.0.0.1:8080",
 		"--leader-elect",
-		fmt.Sprintf("--lang-detector-tag=%s", version),
-		fmt.Sprintf("--lang-detector-image=%s", langDetectorImage),
 	}
 	for _, v := range ignoredNamespaces {
 		args = append(args, fmt.Sprintf("--ignore-namespace=%s", v))
@@ -367,6 +382,11 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, ignoredNam
 	if !telemetryEnabled {
 		args = append(args, "--telemetry-disabled")
 	}
+
+	if sidecarInstrumentation {
+		args = append(args, "--golang-sidecar-instrumentation")
+	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
