@@ -15,6 +15,11 @@ const (
 )
 
 func main() {
+	//var addressFlag string
+	//var portFlag int
+	//flag.StringVar(&addressFlag, "address", "localhost", "Address to listen on")
+	//flag.IntVar(&portFlag, "port", port, "Port to listen on")
+
 	// Serve all files in `web/` directory
 	http.Handle("/", http.FileServer(http.Dir(assetsDir)))
 	http.Handle("/api/test", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
