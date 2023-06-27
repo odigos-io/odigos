@@ -1,19 +1,21 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
 )
 
-//go:generate yarn --cwd ../webapp build
-
 const (
-	assetsDir   = "webapp/out"
 	defaultPort = 3000
 )
+
+//go:embed all:webapp/out/*
+var uiFS embed.FS
 
 func main() {
 	var addressFlag string
@@ -23,7 +25,12 @@ func main() {
 	flag.Parse()
 
 	// Serve all files in `web/` directory
-	http.Handle("/", http.FileServer(http.Dir(assetsDir)))
+	dist, err := fs.Sub(uiFS, "webapp/out")
+	if err != nil {
+		log.Fatalf("Error reading webapp/out directory: %s", err)
+	}
+
+	http.Handle("/", http.FileServer(http.FS(dist)))
 	http.Handle("/api/test", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Write json response
 		w.Header().Set("Content-Type", "application/json")
@@ -33,7 +40,7 @@ func main() {
 	// Start server
 	log.Println("Starting Odigos UI...")
 	log.Printf("Odigos UI is available at: http://%s:%d", addressFlag, portFlag)
-	err := http.ListenAndServe(fmt.Sprintf("%s:%d", addressFlag, portFlag), nil)
+	err = http.ListenAndServe(fmt.Sprintf("%s:%d", addressFlag, portFlag), nil)
 	if err != nil {
 		log.Printf("Error starting server: %s", err)
 		os.Exit(-1)
