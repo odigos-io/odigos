@@ -66,6 +66,9 @@ jobs:
           push: true
           tags: ghcr.io/keyval-dev/odigos/ui:${{ steps.vars.outputs.tag }}
           platforms: linux/amd64,linux/arm64
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
       - uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser
