@@ -53,6 +53,9 @@ func NewDataCollectionClusterRole() *rbacv1.ClusterRole {
 				APIGroups: []string{"apps"},
 				Resources: []string{
 					"replicasets",
+					"deployments",
+					"daemonsets",
+					"statefulsets",
 				},
 			},
 		},

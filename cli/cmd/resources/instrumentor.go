@@ -421,25 +421,6 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "apis-rbac-proxy",
-							Image: "gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0",
-							Args: []string{
-								"--secure-listen-address=0.0.0.0:8443",
-								"--upstream=http://127.0.0.1:8080/",
-								"--logtostderr=true",
-								"--v=0",
-							},
-							Ports: []corev1.ContainerPort{
-								{
-									Name:          "https",
-									HostPort:      0,
-									ContainerPort: 8443,
-									Protocol:      "TCP",
-								},
-							},
-							Resources: corev1.ResourceRequirements{},
-						},
-						{
 							Name:  "manager",
 							Image: fmt.Sprintf("%s:%s", instrumentorImage, version),
 							Command: []string{
