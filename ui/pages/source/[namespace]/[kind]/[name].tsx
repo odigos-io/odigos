@@ -5,12 +5,14 @@ import { useState } from "react";
 
 interface EditAppProps {
   enabled: boolean;
+  reportedName: string;
 }
 
-const EditAppPage: NextPage<EditAppProps> = ({ enabled }: EditAppProps) => {
+const EditAppPage: NextPage<EditAppProps> = ({ enabled, reportedName }: EditAppProps) => {
   const router = useRouter();
   const { name, kind, namespace } = router.query;
   const [isEnabled, setIsEnabled] = useState(enabled);
+  const [updatedReportedName, setUpdatedReportedName] = useState(reportedName);
   const updateApp = async () => {
     const resp = await fetch(`/api/source/${namespace}/${kind}/${name}`, {
       method: "POST",
@@ -19,6 +21,7 @@ const EditAppPage: NextPage<EditAppProps> = ({ enabled }: EditAppProps) => {
       },
       body: JSON.stringify({
         enabled: isEnabled,
+        reportedName: updatedReportedName,
       }),
     });
     if (resp.ok) {
@@ -28,9 +31,33 @@ const EditAppPage: NextPage<EditAppProps> = ({ enabled }: EditAppProps) => {
   return (
     <div className="flex flex-col w-fit">
       <div className="text-4xl font-medium">{name}</div>
+      <div>
+        <label className="block mt-6">
+                    <span className="text-gray-700">Reported Name</span>
+                    <input
+                      name="reportedName"
+                      type="text"
+                      className="
+                    mt-1
+                    block
+                    w-full
+                    rounded-md
+                    border-gray-300
+                    shadow-sm
+                    focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50
+                  "
+                      placeholder=""
+                      required
+                      defaultValue={reportedName}
+                      onChange={(e) => {
+                        setUpdatedReportedName(e.target.value);
+                      }}
+                    />
+                  </label>
+        </div>
       <label
         htmlFor="default-toggle"
-        className="mt-12 inline-flex relative items-center cursor-pointer"
+        className="mt-6 inline-flex relative items-center cursor-pointer"
       >
         <input
           type="checkbox"
@@ -47,7 +74,7 @@ const EditAppPage: NextPage<EditAppProps> = ({ enabled }: EditAppProps) => {
       </label>
       <button
         type="submit"
-        disabled={isEnabled === enabled}
+        disabled={isEnabled === enabled && reportedName === updatedReportedName}
         onClick={updateApp}
         className="mt-4 disabled:cursor-not-allowed disabled:hover:bg-gray-500 disabled:bg-gray-500 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
       >
@@ -62,16 +89,19 @@ export const getServerSideProps = async ({ query }: any) => {
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
   const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
+  const reportedNameAnootation = "odigos.io/reported-name";
+  var obj = null;
   var instrumented = false;
+  var reportedName = name;
   switch (kind) {
     case "deployment":
-      instrumented = await isDeploymentInstrumented(name, namespace, kc);
+      obj = await getDeployment(name, namespace, kc);
       break;
     case "statefulset":
-      instrumented = await isStatefulSetInstrumented(name, namespace, kc);
+      obj = await getStatefulSet(name, namespace, kc);
       break;
     case "daemonset":
-      instrumented = await isDaemonSetInstrumented(name, namespace, kc);
+      obj = await getDaemonSet(name, namespace, kc);
       break;
     default: 
       return {
@@ -82,45 +112,63 @@ export const getServerSideProps = async ({ query }: any) => {
       };
   }
 
+  if (!obj) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    }
+  }
+
+  if (obj?.metadata?.annotations?.[reportedNameAnootation]) {
+    reportedName = obj?.metadata?.annotations?.[reportedNameAnootation];
+  }
+
+  instrumented = isLabeled(obj?.metadata?.labels);
+  if (!instrumented) {
+    instrumented = await isNamespaceLabeled(namespace, kc);
+  }
+
   return {
     props: {
       enabled: instrumented,
+      reportedName: reportedName,
     },
   };
 };
 
-async function isDeploymentInstrumented(name: string, namespace: string, kc: k8s.KubeConfig) {
+async function getDeployment(name: string, namespace: string, kc: k8s.KubeConfig) {
   const kubeClient = kc.makeApiClient(k8s.AppsV1Api);
   const resp = await kubeClient.readNamespacedDeployment(name, namespace);
-  if (!resp || !resp.body.metadata) {
-    return false;
+  if (!resp) {
+    return null;
   }
 
-  return isLabeled(resp.body.metadata.labels) || await isNamespaceLabeled(namespace, kc);
+  return resp.body;
 }
 
-async function isStatefulSetInstrumented(name: string, namespace: string, kc: k8s.KubeConfig) {
+async function getStatefulSet(name: string, namespace: string, kc: k8s.KubeConfig) {
   const kubeClient = kc.makeApiClient(k8s.AppsV1Api);
   const resp = await kubeClient.readNamespacedStatefulSet(name, namespace);
-  if (!resp || !resp.body.metadata) {
-    return false;
+  if (!resp) {
+    return null;
   }
 
-  return isLabeled(resp.body.metadata.labels) || await isNamespaceLabeled(namespace, kc);
+  return resp.body;
 }
 
-async function isDaemonSetInstrumented(name: string, namespace: string, kc: k8s.KubeConfig) {
+async function getDaemonSet(name: string, namespace: string, kc: k8s.KubeConfig) {
   const kubeClient = kc.makeApiClient(k8s.AppsV1Api);
   const resp = await kubeClient.readNamespacedDaemonSet(name, namespace);
-  if (!resp || !resp.body.metadata) {
-    return false;
+  if (!resp) {
+    return null;
   }
 
-  return isLabeled(resp.body.metadata.labels) || await isNamespaceLabeled(namespace, kc);
+  return resp.body;
 }
 
 function isLabeled(labels: any): boolean {
-  console.log(labels);
   return labels && labels["odigos-instrumentation"] === "enabled";
 }
 
