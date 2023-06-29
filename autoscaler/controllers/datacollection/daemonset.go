@@ -3,6 +3,7 @@ package datacollection
 import (
 	"context"
 	"fmt"
+
 	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection/custom"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -21,7 +22,7 @@ import (
 const (
 	collectorLabel       = "odigos.io/data-collection"
 	containerName        = "data-collection"
-	containerImage       = "keyval/otel-collector-contrib:v0.3"
+	containerImage       = "keyval/otel-collector-contrib:v0.4"
 	containerCommand     = "/otelcontribcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
