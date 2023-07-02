@@ -1,18 +1,19 @@
 # ODIGOS UI
 
-This is an open-source web application built using Next.js, React, and Styled Components. It provides a simple and customizable foundation for creating modern web applications.
+This is an open-source web application built using Next.js, React, and Styled Components.
+Provide a simple way to achieve full observability in minutes without any code changes.
 
 ## Features
 
-- [Next.js: A powerful React framework for server-side rendering, static site generation, and client-side rendering.](#contributing-guide)
-- [React: A popular JavaScript library for building user interfaces.](#contributing-guide)
-- [Styled Components: A CSS-in-JS library that allows you to write CSS in your JavaScript files.](#contributing-guide)
+- **Next.js**: A powerful React framework for server-side rendering, static site generation, and client-side rendering.
+- **React**: A popular JavaScript library for building user interfaces.
+- **Styled Components**: A CSS-in-JS library that allows you to write CSS in your JavaScript files.
 
 ## Prerequisites
 
 Before you begin, ensure that you have the following installed:
 
-- [Documentation: https://docs.odigos.io/intro.](#contributing-guide)
+- **Documentation**: https://docs.odigos.io/intro.
 
 ## Getting Started
 
@@ -38,17 +39,13 @@ yarn dev
 
 4.Open your browser and visit http://localhost:3000 to see the web application in action.
 
-- Problems found during setting up a new developer environment
-- Gaps in our Quickstart Guide or documentation
-- Bugs in our automation scripts
-
 ## Configuration
 
 You can customize the application by modifying the source code to fit your specific needs. The main files and directories you might want to explore are:
 
-pages: This directory contains the main pages of the application. You can add, modify, or remove pages as necessary.
-components: This directory houses reusable components used across the application. Feel free to modify or create new components as required.
-styles: Here, you'll find the global styles and theme configuration. Adjust the styles to match your desired design.
+- **pages**: This directory contains the main pages of the application. You can add, modify, or remove pages as necessary.
+- **components**: This directory houses reusable components used across the application. Feel free to modify or create new components as required.
+- **styles**: Here, you'll find the global styles and theme configuration. Adjust the styles to match your desired design.
 
 If anything doesn't make sense, or doesn't work when you run it, please open a
 bug report and let us know!
