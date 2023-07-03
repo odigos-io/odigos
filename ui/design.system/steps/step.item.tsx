@@ -14,7 +14,7 @@ const StepItemWraaper = styled.div`
 export default function StepItem({ title, index }: StepItemPros) {
   return (
     <StepItemWraaper>
-      <FloatBox label="tets" />
+      <FloatBox label="1" />
     </StepItemWraaper>
   );
 }

@@ -39,6 +39,9 @@ const FloatBoxWrapper = styled.div`
   width: 32px;
   height: 32px;
   border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background: radial-gradient(
       78.09% 72.18% at 100% -0%,
       rgba(150, 242, 255, 0.4) 0%,
@@ -47,10 +50,20 @@ const FloatBoxWrapper = styled.div`
     linear-gradient(180deg, #2e4c55 0%, #303355 100%);
 `;
 
+const FloatingBoxLabel = styled.span`
+  font-size: 19px;
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 700;
+  color: #fff;
+`;
+
 export default function FloatBox({ label, style = {} }: FloatBoxProps) {
   return (
     <FloatBoxBorder>
-      <FloatBoxWrapper style={{ ...style }}></FloatBoxWrapper>
+      <FloatBoxWrapper style={{ ...style }}>
+        <FloatingBoxLabel>{label}</FloatingBoxLabel>
+      </FloatBoxWrapper>
     </FloatBoxBorder>
   );
 }
