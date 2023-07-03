@@ -3,8 +3,8 @@ import type { AppProps } from "next/app";
 import Sidebar from "@/components/Sidebar";
 import Head from "next/head";
 
-function MyApp({ Component, pageProps }: AppProps) {
-  const title = "odigos UI"
+function App({ Component, pageProps }: AppProps) {
+  const title = "odigos UI";
   return (
     <>
       <Head>
@@ -22,4 +22,4 @@ function MyApp({ Component, pageProps }: AppProps) {
   );
 }
 
-export default MyApp;
+export default App;
