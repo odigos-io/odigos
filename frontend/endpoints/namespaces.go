@@ -1,8 +1,11 @@
 package endpoints
 
 import (
+	"context"
 	"log"
 	"net/http"
+
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/keyval-dev/odigos/common/consts"
 
@@ -22,12 +25,8 @@ type GetNamespaceItem struct {
 }
 
 func GetNamespaces(c *gin.Context) {
-	log.Println("GetNamespaces")
 	list, err := kube.DefaultClient.CoreV1().Namespaces().List(c.Request.Context(), metav1.ListOptions{})
-
 	if err != nil {
-		log.Println(err)
-
 		returnError(c, err)
 		return
 	}
@@ -48,4 +47,173 @@ func GetNamespaces(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+type PersistNamespaceItem struct {
+	Name           string                   `json:"name"`
+	SelectedAll    bool                     `json:"selected_all"`
+	FutureSelected bool                     `json:"future_selected"`
+	Objects        []PersistNamespaceObject `json:"objects"`
+}
+
+type PersistNamespaceObject struct {
+	Name     string          `json:"name"`
+	Kind     ApplicationKind `json:"kind"`
+	Selected bool            `json:"selected"`
+}
+
+func PersistNamespaces(c *gin.Context) {
+	request := make(map[string]PersistNamespaceItem)
+	if err := c.ShouldBindJSON(&request); err != nil {
+		returnError(c, err)
+		return
+	}
+
+	namespaces, err := kube.DefaultClient.CoreV1().Namespaces().List(c.Request.Context(), metav1.ListOptions{})
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	for _, ns := range namespaces.Items {
+		labeled := isLabeled(&ns)
+		userSelection, exists := request[ns.Name]
+		if !exists {
+			log.Printf("Namespace %s not found in request, skipping\n", ns.Name)
+		} else {
+			labeledByUser := userSelection.SelectedAll || userSelection.FutureSelected
+			changed := false
+			if labeledByUser && !labeled {
+				ns.Labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationEnabled
+				changed = true
+			} else if !labeledByUser && labeled {
+				delete(ns.Labels, consts.OdigosInstrumentationLabel)
+				changed = true
+			}
+
+			if changed {
+				_, err = kube.DefaultClient.CoreV1().Namespaces().Update(c.Request.Context(), &ns, metav1.UpdateOptions{})
+				if err != nil {
+					returnError(c, err)
+					return
+				}
+			}
+
+			err = syncObjectsInNamespace(c.Request.Context(), &ns, userSelection.Objects)
+		}
+	}
+}
+
+func isLabeled(obj metav1.Object) bool {
+	if val, exists := obj.GetLabels()[consts.OdigosInstrumentationLabel]; exists {
+		if val == consts.InstrumentationEnabled {
+			return true
+		}
+	}
+
+	return false
+}
+
+func syncObjectsInNamespace(ctx context.Context, ns *corev1.Namespace, objects []PersistNamespaceObject) error {
+	deps, err := kube.DefaultClient.AppsV1().Deployments(ns.Name).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, dep := range deps.Items {
+		labeled := isLabeled(&dep)
+		userSelection, exists := findObject(objects, dep.Name, ApplicationKindDeployment)
+		if !exists {
+			log.Printf("Deployment %s not found in request, skipping\n", dep.Name)
+		} else {
+			labeledByUser := userSelection.Selected
+			changed := false
+			if labeledByUser && !labeled {
+				dep.Labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationEnabled
+				changed = true
+			} else if !labeledByUser && labeled {
+				delete(dep.Labels, consts.OdigosInstrumentationLabel)
+				changed = true
+			}
+
+			if changed {
+				_, err = kube.DefaultClient.AppsV1().Deployments(ns.Name).Update(ctx, &dep, metav1.UpdateOptions{})
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	sts, err := kube.DefaultClient.AppsV1().StatefulSets(ns.Name).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, st := range sts.Items {
+		labeled := isLabeled(&st)
+		userSelection, exists := findObject(objects, st.Name, ApplicationKindStatefulSet)
+		if !exists {
+			log.Printf("StatefulSet %s not found in request, skipping\n", st.Name)
+		} else {
+			labeledByUser := userSelection.Selected
+			changed := false
+			if labeledByUser && !labeled {
+				st.Labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationEnabled
+				changed = true
+			} else if !labeledByUser && labeled {
+				delete(st.Labels, consts.OdigosInstrumentationLabel)
+				changed = true
+			}
+
+			if changed {
+				_, err = kube.DefaultClient.AppsV1().StatefulSets(ns.Name).Update(ctx, &st, metav1.UpdateOptions{})
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	dss, err := kube.DefaultClient.AppsV1().DaemonSets(ns.Name).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, ds := range dss.Items {
+		labeled := isLabeled(&ds)
+		userSelection, exists := findObject(objects, ds.Name, ApplicationKindDaemonSet)
+		if !exists {
+			log.Printf("DaemonSet %s not found in request, skipping\n", ds.Name)
+		} else {
+			labeledByUser := userSelection.Selected
+			changed := false
+			if labeledByUser && !labeled {
+				ds.Labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationEnabled
+				changed = true
+			} else if !labeledByUser && labeled {
+				delete(ds.Labels, consts.OdigosInstrumentationLabel)
+				changed = true
+			}
+
+			if changed {
+				_, err = kube.DefaultClient.AppsV1().DaemonSets(ns.Name).Update(ctx, &ds, metav1.UpdateOptions{})
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func findObject(objects []PersistNamespaceObject, name string, kind ApplicationKind) (*PersistNamespaceObject, bool) {
+	for _, obj := range objects {
+		if obj.Name == name && obj.Kind == kind {
+			return &obj, true
+		}
+	}
+
+	return nil, false
 }

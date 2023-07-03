@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/keyval-dev/odigos/frontend/kube"
@@ -57,9 +58,14 @@ func GetApplicationsInNamespace(c *gin.Context) {
 		return
 	}
 
-	var response GetApplicationsInNamespaceResponse
-	response.Applications = append(response.Applications, deps...)
+	items := make([]GetApplicationItem, len(deps)+len(ss)+len(dss))
+	copy(items, deps)
+	copy(items[len(deps):], ss)
+	copy(items[len(deps)+len(ss):], dss)
 
+	c.JSON(http.StatusOK, GetApplicationsInNamespaceResponse{
+		Applications: items,
+	})
 }
 
 func getDeployments(namespace string, ctx context.Context) ([]GetApplicationItem, error) {
