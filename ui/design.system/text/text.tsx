@@ -1,9 +1,13 @@
 import React from "react";
+import { TextWrapper } from "./text.styled";
 
 type TextProps = {
-  value: string;
+  type?: string | any;
+  value?: string;
+  style?: object;
+  children?: string | any;
 };
 
-export default function Text({ value }: TextProps) {
-  return <span>{value}</span>;
+export function KeyvalText({ children, type, style }: TextProps) {
+  return <TextWrapper>{children}</TextWrapper>;
 }

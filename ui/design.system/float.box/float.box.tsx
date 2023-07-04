@@ -33,6 +33,8 @@ const FloatBoxBorder = styled.div`
     linear-gradient(180deg, #2e4c55 0%, #303355 100%);
   border-radius: 8px;
   padding: 1px;
+  width: 32px;
+  height: 32px;
 `;
 
 const FloatBoxWrapper = styled.div`
@@ -58,7 +60,7 @@ const FloatingBoxLabel = styled.span`
   color: #fff;
 `;
 
-export default function FloatBox({ label, style = {} }: FloatBoxProps) {
+export function FloatBox({ label, style = {} }: FloatBoxProps) {
   return (
     <FloatBoxBorder>
       <FloatBoxWrapper style={{ ...style }}>

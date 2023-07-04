@@ -1,6 +1,10 @@
-export const metadata = {
-  title: "odigos UI",
-};
+"use client";
+import styled, { ThemeProvider } from "styled-components";
+import theme from "styles/palette";
+
+// export const metadata = {
+//   title: "odigos UI",
+// };
 
 export default function RootLayout({
   children,
@@ -9,7 +13,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0 }}>{children}</body>
+      <ThemeProvider theme={theme}>
+        <body style={{ margin: 0 }}>{children}</body>
+      </ThemeProvider>
     </html>
   );
 }
