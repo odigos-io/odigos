@@ -14,6 +14,7 @@ export default function Steps<T>({ data }: StepListProps<T>) {
         title={title}
         status={status}
         index={index + 1}
+        isLast={index + 1 === data.length}
       />
     ));
   }

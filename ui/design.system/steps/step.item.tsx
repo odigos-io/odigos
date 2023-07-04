@@ -8,10 +8,12 @@ import {
   FloatingBoxTextWrapper,
 } from "./steps.styled";
 import Done from "assets/icons/checked.svg";
+
 type StepItemProps = {
   title: string;
   index: number;
   status: string;
+  isLast: boolean;
 };
 
 enum Status {
@@ -20,8 +22,13 @@ enum Status {
   Disabled = "disabled",
 }
 
-export default function StepItem({ title, index, status }: StepItemProps) {
-  console.log({ status });
+export default function StepItem({
+  title,
+  index,
+  status,
+  isLast,
+}: StepItemProps) {
+  console.log({ status, isLast });
   return (
     <StepItemWrapper>
       <FloatBox>
@@ -36,7 +43,7 @@ export default function StepItem({ title, index, status }: StepItemProps) {
       <StepItemTextWrapper disabled={status !== Status.Active}>
         <KeyvalText>{title}</KeyvalText>
       </StepItemTextWrapper>
-      <StepItemBorder />
+      {!isLast && <StepItemBorder className="border" />}
     </StepItemWrapper>
   );
 }

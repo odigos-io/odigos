@@ -3,7 +3,6 @@ import styled from "styled-components";
 interface DisabledProp {
   disabled: boolean;
 }
-
 export const StepsContainer = styled.div`
   display: flex;
 `;
