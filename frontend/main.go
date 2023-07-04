@@ -80,6 +80,7 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.GET("/namespaces", endpoints.GetNamespaces)
 		apis.POST("/namespaces", endpoints.PersistNamespaces)
 		apis.GET("/applications/:namespace", endpoints.GetApplicationsInNamespace)
+		apis.GET("/config", endpoints.GetConfig)
 	}
 
 	return r, nil
