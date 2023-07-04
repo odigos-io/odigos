@@ -32,8 +32,7 @@ type Interface interface {
 	OdigosV1alpha1() odigosv1alpha1.OdigosV1alpha1Interface
 }
 
-// Clientset contains the clients for groups. Each group has exactly one
-// version included in a Clientset.
+// Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
 	odigosV1alpha1 *odigosv1alpha1.OdigosV1alpha1Client

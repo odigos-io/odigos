@@ -23,7 +23,6 @@ import (
 	v1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -35,9 +34,9 @@ type FakeOdigosConfigurations struct {
 	ns   string
 }
 
-var odigosconfigurationsResource = schema.GroupVersionResource{Group: "odigos.io", Version: "v1alpha1", Resource: "odigosconfigurations"}
+var odigosconfigurationsResource = v1alpha1.SchemeGroupVersion.WithResource("odigosconfigurations")
 
-var odigosconfigurationsKind = schema.GroupVersionKind{Group: "odigos.io", Version: "v1alpha1", Kind: "OdigosConfiguration"}
+var odigosconfigurationsKind = v1alpha1.SchemeGroupVersion.WithKind("OdigosConfiguration")
 
 // Get takes name of the odigosConfiguration, and returns the corresponding odigosConfiguration object, and an error if there is any.
 func (c *FakeOdigosConfigurations) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.OdigosConfiguration, err error) {

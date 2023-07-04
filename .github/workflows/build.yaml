@@ -44,3 +44,10 @@ jobs:
           context: ui/
           push: false
           tags: ui:pr-${{ github.event.number }}
+      - name: Build Frontend Image
+        uses: docker/build-push-action@v4
+        with:
+          file: frontend/Dockerfile
+          context: .
+          push: false
+          tags: frontend:pr-${{ github.event.number }}
