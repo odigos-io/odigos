@@ -7,11 +7,21 @@ type TextProps = {
   style?: object;
   children?: string | any;
   weight?: string | number;
+  color?: string;
+  size?: number;
 };
 
-export function KeyvalText({ children, type, style, weight }: TextProps) {
+export function KeyvalText({
+  children,
+  color,
+  style,
+  weight,
+  size,
+}: TextProps) {
   return (
-    <TextWrapper style={{ fontWeight: weight, ...style }}>
+    <TextWrapper
+      style={{ fontWeight: weight, color, fontSize: size, ...style }}
+    >
       {children}
     </TextWrapper>
   );

@@ -1,20 +1,23 @@
 import styled from "styled-components";
 
 export const SetupHeaderWrapper = styled.header`
-  display: flex;
-  justify-content: space-between;
+  display: inline-flex;
   padding: 24px 40px;
+  align-items: center;
+  gap: 540px;
   border-radius: 24px;
-  border: 1px solid #374a5b;
+  border: 1px solid var(--dark-mode-dark-4, #374a5b);
   background: var(--dark-mode-dark-2, #132330);
 `;
 
 export const HeaderTitleWrapper = styled.div`
   display: flex;
   align-items: center;
+  gap: 24px;
 `;
 
 export const HeaderButtonWrapper = styled.div`
   display: flex;
+  gap: 16px;
   align-items: center;
 `;
