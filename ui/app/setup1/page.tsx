@@ -1,8 +1,7 @@
 "use client";
 import Steps from "design.system/steps/steps";
 import { SetupPageContainer } from "./setup.styled";
-import Icon from "../../assets/icons/checked.svg";
-import { KeyvalSVG } from "design.system";
+
 const STEPS = [
   {
     title: "Choose Source",
@@ -23,9 +22,6 @@ export default function Setup() {
     <SetupPageContainer>
       <div style={{ backgroundColor: "#000" }}>
         <Steps data={STEPS} />
-        <KeyvalSVG path={Icon}>
-          <Icon />
-        </KeyvalSVG>
       </div>
     </SetupPageContainer>
   );

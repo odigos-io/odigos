@@ -2,8 +2,8 @@ import React from "react";
 import styled from "styled-components";
 
 type FloatBoxProps = {
-  label: string | number;
   style?: object;
+  children: any;
 };
 
 const FloatBoxBorder = styled.div`
@@ -52,19 +52,20 @@ const FloatBoxWrapper = styled.div`
     linear-gradient(180deg, #2e4c55 0%, #303355 100%);
 `;
 
-const FloatingBoxLabel = styled.span`
-  font-size: 19px;
-  font-family: Inter;
-  font-style: normal;
-  font-weight: 700;
-  color: #fff;
-`;
+// const FloatingBoxLabel = styled.span`
+//   font-size: 19px;
+//   font-family: Inter;
+//   font-style: normal;
+//   font-weight: 700;
+//   color: #fff;
+// `;
 
-export function FloatBox({ label, style = {} }: FloatBoxProps) {
+export function FloatBox({ children, style = {} }: FloatBoxProps) {
   return (
     <FloatBoxBorder>
       <FloatBoxWrapper style={{ ...style }}>
-        <FloatingBoxLabel>{label}</FloatingBoxLabel>
+        {children}
+        {/* <FloatingBoxLabel>{label}</FloatingBoxLabel> */}
       </FloatBoxWrapper>
     </FloatBoxBorder>
   );

@@ -5,8 +5,9 @@ import {
   StepItemTextWrapper,
   StepItemBorder,
   StepItemWrapper,
+  FloatingBoxTextWrapper,
 } from "./steps.styled";
-
+import Done from "assets/icons/checked.svg";
 type StepItemProps = {
   title: string;
   index: number;
@@ -23,8 +24,16 @@ export default function StepItem({ title, index, status }: StepItemProps) {
   console.log({ status });
   return (
     <StepItemWrapper>
-      <FloatBox label={index} />
-      <StepItemTextWrapper>
+      <FloatBox>
+        {status === Status.Done ? (
+          <Done />
+        ) : (
+          <FloatingBoxTextWrapper disabled={status !== Status.Active}>
+            <KeyvalText>{index}</KeyvalText>
+          </FloatingBoxTextWrapper>
+        )}
+      </FloatBox>
+      <StepItemTextWrapper disabled={status !== Status.Active}>
         <KeyvalText>{title}</KeyvalText>
       </StepItemTextWrapper>
       <StepItemBorder />
