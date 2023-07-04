@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 
 type FloatBoxProps = {
-  label: string;
+  label: string | number;
   style?: object;
 };
 
