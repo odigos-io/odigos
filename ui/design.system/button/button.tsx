@@ -9,6 +9,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const KeyvalButton: FC<ButtonProps> = ({
   variant = "primary",
   children,
+  style,
 }) => {
-  return <ButtonWrapper variant={variant}>{children}</ButtonWrapper>;
+  return (
+    <ButtonWrapper style={{ ...style }} variant={variant}>
+      {children}
+    </ButtonWrapper>
+  );
 };

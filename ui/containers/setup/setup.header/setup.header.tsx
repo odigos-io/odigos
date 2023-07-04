@@ -17,8 +17,8 @@ export function SetupHeader() {
       </HeaderTitleWrapper>
       <HeaderButtonWrapper>
         <KeyvalText weight={400}>{"0 selected"}</KeyvalText>
-        <KeyvalButton>
-          <KeyvalText size={20} color="#0A1824">
+        <KeyvalButton style={{ gap: 10 }}>
+          <KeyvalText size={20} weight={600} color="#0A1824">
             {"Next"}
           </KeyvalText>
           <RightArrow />

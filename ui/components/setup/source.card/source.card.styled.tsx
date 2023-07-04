@@ -11,4 +11,11 @@ export const SourceCardWrapper = styled.div`
   display: flex;
   align-items: center;
   flex-direction: column;
+  gap: 14px;
+`;
+
+export const ApplicationNameWrapper = styled.div`
+  display: inline-block;
+  text-overflow: ellipsis;
+  max-width: 224px;
 `;

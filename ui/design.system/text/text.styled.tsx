@@ -5,5 +5,5 @@ export const TextWrapper = styled.p`
   margin: 0;
   font-family: ${({ theme }) => theme.font_family.primary};
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 400;
 `;
