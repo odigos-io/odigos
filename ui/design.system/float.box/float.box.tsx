@@ -52,21 +52,10 @@ const FloatBoxWrapper = styled.div`
     linear-gradient(180deg, #2e4c55 0%, #303355 100%);
 `;
 
-// const FloatingBoxLabel = styled.span`
-//   font-size: 19px;
-//   font-family: Inter;
-//   font-style: normal;
-//   font-weight: 700;
-//   color: #fff;
-// `;
-
 export function FloatBox({ children, style = {} }: FloatBoxProps) {
   return (
     <FloatBoxBorder>
-      <FloatBoxWrapper style={{ ...style }}>
-        {children}
-        {/* <FloatingBoxLabel>{label}</FloatingBoxLabel> */}
-      </FloatBoxWrapper>
+      <FloatBoxWrapper style={{ ...style }}>{children}</FloatBoxWrapper>
     </FloatBoxBorder>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 import Steps from "design.system/steps/steps";
-import { SetupPageContainer } from "./setup.styled";
+import { LogoWrapper, SetupPageContainer } from "./setup.styled";
+import Logo from "assets/logos/odigos-gradient.svg";
+import { SetupHeader } from "containers/setup";
 
 const STEPS = [
   {
@@ -17,12 +19,14 @@ const STEPS = [
   },
 ];
 
-export default function Setup() {
+export default function SetupPage() {
   return (
     <SetupPageContainer>
-      <div style={{ backgroundColor: "#000" }}>
-        <Steps data={STEPS} />
-      </div>
+      <LogoWrapper>
+        <Logo />
+      </LogoWrapper>
+      <Steps data={STEPS} />
+      <SetupHeader />
     </SetupPageContainer>
   );
 }

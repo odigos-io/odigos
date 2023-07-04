@@ -28,7 +28,6 @@ export default function StepItem({
   status,
   isLast,
 }: StepItemProps) {
-  console.log({ status, isLast });
   return (
     <StepItemWrapper>
       <FloatBox>
