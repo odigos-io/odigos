@@ -21,18 +21,6 @@ const STEPS = [
 ];
 
 export default function SetupPage() {
-  // useEffect(() => {
-  //   test();
-  // }, []);
-
-  // async function test() {
-  //   const response = await fetch("/api/config");
-  //   console.log({ response });
-
-  //   const data = await response.json();
-  //   console.log({ data });
-  // }
-
   return (
     <SetupPageContainer>
       <LogoWrapper>
