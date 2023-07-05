@@ -7,3 +7,4 @@ export { KeyvalTag } from "./tag/tag";
 export { KeyvalDropDown } from "./drop.down/drop.down";
 export { KeyvalSearchInput } from "./search.input/search.input";
 export { KeyvalLottie } from "./lottie/lottie";
+export { KeyvalSwitch } from "./switch/switch";
