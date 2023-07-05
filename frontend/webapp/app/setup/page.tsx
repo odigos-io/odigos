@@ -3,6 +3,7 @@ import Steps from "@/design.system/steps/steps";
 import { LogoWrapper, SetupPageContainer } from "./setup.styled";
 import Logo from "@/assets/logos/odigos-gradient.svg";
 import { SetupSection } from "@/containers/setup";
+import { useEffect } from "react";
 
 const STEPS = [
   {
@@ -20,13 +21,21 @@ const STEPS = [
 ];
 
 export default function SetupPage() {
+  // useEffect(() => {
+  //   test();
+  // }, []);
+
+  // async function test() {
+  //   const response = await fetch("/api/namespaces");
+  //   const data = await response.json();
+  //   console.log({ data });
+  // }
+
   return (
     <SetupPageContainer>
       <LogoWrapper>
         <Logo />
       </LogoWrapper>
-      <br />
-      <br />
       <br />
       <br />
       <br />
