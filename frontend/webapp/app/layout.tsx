@@ -1,6 +1,6 @@
 "use client";
 import { ThemeProvider } from "styled-components";
-import theme from "styles/palette";
+import theme from "@/styles/palette";
 
 export default function RootLayout({
   children,

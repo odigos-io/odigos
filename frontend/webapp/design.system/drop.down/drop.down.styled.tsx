@@ -1,6 +1,8 @@
 import styled from "styled-components";
 
 export const DropdownWrapper = styled.div`
+  position: absolute;
+  z-index: 9999;
   display: flex;
   width: 260px;
   padding: 11px 13px;
@@ -9,7 +11,9 @@ export const DropdownWrapper = styled.div`
   border-radius: 8px;
   border: 1px solid var(--dark-mode-dark-4, #374a5b);
   background: var(--dark-mode-dark-1, #0a1824);
-
+  :hover {
+    border: #fff;
+  }
   .dropdown-body {
     width: 100%;
     border-top: 1px solid #e5e8ec;
@@ -22,6 +26,7 @@ export const DropdownWrapper = styled.div`
 
   .dropdown-item {
     padding: 10px 0;
+    display: flex;
   }
 
   .dropdown-item:hover {
