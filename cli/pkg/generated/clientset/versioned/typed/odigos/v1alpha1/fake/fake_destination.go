@@ -23,7 +23,6 @@ import (
 	v1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -35,9 +34,9 @@ type FakeDestinations struct {
 	ns   string
 }
 
-var destinationsResource = schema.GroupVersionResource{Group: "odigos.io", Version: "v1alpha1", Resource: "destinations"}
+var destinationsResource = v1alpha1.SchemeGroupVersion.WithResource("destinations")
 
-var destinationsKind = schema.GroupVersionKind{Group: "odigos.io", Version: "v1alpha1", Kind: "Destination"}
+var destinationsKind = v1alpha1.SchemeGroupVersion.WithKind("Destination")
 
 // Get takes name of the destination, and returns the corresponding destination object, and an error if there is any.
 func (c *FakeDestinations) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Destination, err error) {
