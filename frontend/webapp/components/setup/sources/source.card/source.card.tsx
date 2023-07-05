@@ -14,7 +14,7 @@ import Logo from "assets/logos/code-sandbox-logo.svg";
 
 export function SourceCard() {
   return (
-    <KeyvalCard>
+    <KeyvalCard focus={true}>
       <RadioButtonWrapper>
         <KeyvalRadioButton />
       </RadioButtonWrapper>

@@ -34,6 +34,7 @@ export function KeyvalDropDown({ data }: KeyvalDropDownProps) {
         <div className={`dropdown-body ${isOpen && "open"}`}>
           {data.map((item) => (
             <div
+              key={item.id}
               className="dropdown-item"
               onClick={(e: any) => handleItemClick(item)}
             >

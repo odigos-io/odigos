@@ -6,7 +6,7 @@ export function SourcesList() {
   function renderList() {
     return Array(10)
       .fill(0)
-      .map((item, index) => <SourceCard />);
+      .map((item, index) => <SourceCard key={index} />);
   }
 
   return <SourcesListContainer>{renderList()}</SourcesListContainer>;

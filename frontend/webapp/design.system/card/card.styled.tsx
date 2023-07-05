@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 interface CardContainerProps {
-  focus?: boolean;
+  focus?: any;
 }
 
 export const CardContainer = styled.div<CardContainerProps>`
