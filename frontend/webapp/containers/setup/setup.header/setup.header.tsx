@@ -4,7 +4,7 @@ import {
   HeaderTitleWrapper,
   SetupHeaderWrapper,
 } from "./setup.header.styled";
-import { KeyvalButton, KeyvalText } from "design.system";
+import { KeyvalButton, KeyvalText } from "@/design.system";
 import Charge from "assets/icons/charge-rect.svg";
 import RightArrow from "assets/icons/arrow-right.svg";
 

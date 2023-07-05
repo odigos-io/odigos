@@ -1,18 +1,19 @@
 import React from "react";
 import {
-  SetupListWrapper,
+  SetupContentWrapper,
   SetupSectionContainer,
 } from "./setup.section.styled";
 import { SetupHeader } from "../setup.header/setup.header";
-import { SourcesList } from "@/components/setup";
+import { SourcesList, SourcesOptionMenu } from "@/components/setup";
 
 export function SetupSection() {
   return (
     <SetupSectionContainer>
       <SetupHeader />
-      <SetupListWrapper>
+      <SetupContentWrapper>
+        <SourcesOptionMenu />
         <SourcesList />
-      </SetupListWrapper>
+      </SetupContentWrapper>
     </SetupSectionContainer>
   );
 }

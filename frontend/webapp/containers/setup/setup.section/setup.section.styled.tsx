@@ -11,6 +11,6 @@ export const SetupSectionContainer = styled.section`
     -4px 4px 16px 0px rgba(71, 231, 241, 0.05);
 `;
 
-export const SetupListWrapper = styled.div`
+export const SetupContentWrapper = styled.div`
   padding: 0 60px;
 `;
