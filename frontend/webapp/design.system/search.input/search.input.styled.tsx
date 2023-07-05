@@ -35,5 +35,5 @@ export const StyledSearchInput = styled.input<ActiveProps>`
 export const LoaderWrapper = styled.div`
   position: absolute;
   right: 30px;
-  top: 4%;
+  top: 4px;
 `;

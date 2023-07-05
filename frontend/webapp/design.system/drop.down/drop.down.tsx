@@ -23,7 +23,7 @@ export function KeyvalDropDown({ data }: KeyvalDropDownProps) {
   };
 
   return (
-    <div style={{ position: "relative", height: 37 }}>
+    <div style={{ height: 37 }}>
       <DropdownWrapper>
         <DropdownHeader onClick={toggleDropdown}>
           {selectedItem

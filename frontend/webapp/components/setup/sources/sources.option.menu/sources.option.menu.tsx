@@ -4,6 +4,7 @@ import {
   SourcesOptionMenuWrapper,
 } from "./sources.option.menu.styled";
 import {
+  KeyvalCheckbox,
   KeyvalDropDown,
   KeyvalSearchInput,
   KeyvalSwitch,
@@ -15,6 +16,7 @@ const DATA = [
 ];
 
 export function SourcesOptionMenu() {
+  const [checked, setChecked] = useState(false);
   const [toggle, setToggle] = useState(false);
   const handleToggleChange = () => {
     setToggle(!toggle);
@@ -23,11 +25,14 @@ export function SourcesOptionMenu() {
   return (
     <SourcesOptionMenuWrapper>
       <KeyvalSearchInput />
-      <KeyvalSwitch toggle={toggle} handleToggleChange={handleToggleChange} />
+
       <DropdownWrapper>
         <KeyvalText size={14}>{"Namespace"}</KeyvalText>
         <KeyvalDropDown data={DATA} />
       </DropdownWrapper>
+
+      <KeyvalSwitch toggle={toggle} handleToggleChange={handleToggleChange} />
+      <KeyvalCheckbox value={checked} onChange={() => setChecked(!checked)} />
     </SourcesOptionMenuWrapper>
   );
 }

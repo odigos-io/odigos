@@ -11,7 +11,7 @@ import loader from "@/assets/lotties/loader.json";
 interface KeyvalSearchInputProps {
   placeholder?: string;
   value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange?: (e: any) => void;
   loading?: boolean;
 }
 
@@ -40,7 +40,7 @@ export function KeyvalSearchInput({
           />
         </LoaderWrapper>
       )}
-      <X onClick={() => onChange(null)} style={{ cursor: "pointer" }} />
+      <X onClick={() => onChange("")} style={{ cursor: "pointer" }} />
     </SearchInputWrapper>
   );
 }

@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const DropdownWrapper = styled.div`
-  position: absolute;
+  position: relative;
   z-index: 9999;
   display: flex;
   width: 260px;
