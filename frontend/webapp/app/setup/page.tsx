@@ -26,7 +26,9 @@ export default function SetupPage() {
   // }, []);
 
   // async function test() {
-  //   const response = await fetch("/api/namespaces");
+  //   const response = await fetch("/api/config");
+  //   console.log({ response });
+
   //   const data = await response.json();
   //   console.log({ data });
   // }
