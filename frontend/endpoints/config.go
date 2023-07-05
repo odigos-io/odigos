@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/keyval-dev/odigos/common/consts"
@@ -24,9 +25,27 @@ type GetConfigResponse struct {
 }
 
 func GetConfig(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "config",
-	})
+	var response GetConfigResponse
+	if !isSomethingLabeled(c.Request.Context()) {
+		response.Installation = NewInstallation
+	}
+
+	if !isDestinationChosen(c.Request.Context()) {
+		response.Installation = AppsSelected
+	}
+
+	response.Installation = Finished
+	c.JSON(http.StatusOK, response)
+}
+
+func isDestinationChosen(ctx context.Context) bool {
+	dests, err := kube.DefaultClient.OdigosClient.Destinations("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		log.Printf("Error listing destinations: %v\n", err)
+		return false
+	}
+
+	return len(dests.Items) > 0
 }
 
 func isSomethingLabeled(ctx context.Context) bool {
