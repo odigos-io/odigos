@@ -6,3 +6,4 @@ export { KeyvalCard } from "./card/card";
 export { KeyvalTag } from "./tag/tag";
 export { KeyvalDropDown } from "./drop.down/drop.down";
 export { KeyvalSearchInput } from "./search.input/search.input";
+export { KeyvalLottie } from "./lottie/lottie";
