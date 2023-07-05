@@ -1,11 +1,18 @@
 import React from "react";
-import { SourcesOptionMenuWrapper } from "./sources.option.menu.styled";
-import { KeyvalSearchInput } from "@/design.system";
+import {
+  DropdownWrapper,
+  SourcesOptionMenuWrapper,
+} from "./sources.option.menu.styled";
+import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from "@/design.system";
 
 export function SourcesOptionMenu() {
   return (
     <SourcesOptionMenuWrapper>
       <KeyvalSearchInput />
+      <DropdownWrapper>
+        <KeyvalText size={14}>{"Namespace"}</KeyvalText>
+        <KeyvalDropDown />
+      </DropdownWrapper>
     </SourcesOptionMenuWrapper>
   );
 }

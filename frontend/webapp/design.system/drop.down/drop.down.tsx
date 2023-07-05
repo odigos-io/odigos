@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import "./drop.down.css";
+import Open from "@/assets/icons/expand-arrow.svg";
+import { DropdownHeader, DropdownWrapper } from "./drop.down.styled";
 
 interface KeyvalDropDownProps {}
 
@@ -21,13 +22,13 @@ export function KeyvalDropDown({}: KeyvalDropDownProps) {
   };
 
   return (
-    <div className="dropdown">
-      <div className="dropdown-header" onClick={toggleDropdown}>
+    <DropdownWrapper>
+      <DropdownHeader onClick={toggleDropdown}>
         {selectedItem
           ? items?.find((item) => item?.id == selectedItem)?.label
           : "Select your destination"}
-        <i className={`fa fa-chevron-right icon ${isOpen && "open"}`}></i>
-      </div>
+        <Open className={`dropdown-arrow ${isOpen && "open"}`} />
+      </DropdownHeader>
       <div className={`dropdown-body ${isOpen && "open"}`}>
         {items.map((item) => (
           <div
@@ -46,6 +47,6 @@ export function KeyvalDropDown({}: KeyvalDropDownProps) {
           </div>
         ))}
       </div>
-    </div>
+    </DropdownWrapper>
   );
 }

@@ -19,7 +19,7 @@ export function KeyvalSearchInput({
   placeholder = "Search - default",
   value = "test",
   onChange = () => {},
-  loading = false,
+  loading = true,
 }: KeyvalSearchInputProps) {
   return (
     <SearchInputWrapper active={!!value}>
