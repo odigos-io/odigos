@@ -129,6 +129,9 @@ func syncObjectsInNamespace(ctx context.Context, ns *corev1.Namespace, objects [
 			labeledByUser := userSelection.Selected
 			changed := false
 			if labeledByUser && !labeled {
+				if dep.Labels == nil {
+					dep.Labels = make(map[string]string)
+				}
 				dep.Labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationEnabled
 				changed = true
 			} else if !labeledByUser && labeled {
