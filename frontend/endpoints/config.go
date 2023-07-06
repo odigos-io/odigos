@@ -28,13 +28,12 @@ func GetConfig(c *gin.Context) {
 	var response GetConfigResponse
 	if !isSomethingLabeled(c.Request.Context()) {
 		response.Installation = NewInstallation
-	}
-
-	if !isDestinationChosen(c.Request.Context()) {
+	} else if !isDestinationChosen(c.Request.Context()) {
 		response.Installation = AppsSelected
+	} else {
+		response.Installation = Finished
 	}
 
-	response.Installation = Finished
 	c.JSON(http.StatusOK, response)
 }
 
