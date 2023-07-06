@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/gin-contrib/cors"
+
 	"github.com/keyval-dev/odigos/frontend/kube"
 
 	"k8s.io/client-go/util/homedir"
@@ -66,6 +68,9 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		r = gin.New()
 		r.Use(gin.Recovery())
 	}
+
+	// Enable CORS
+	r.Use(cors.Default())
 
 	// Serve React app
 	dist, err := fs.Sub(uiFS, "webapp/out")
