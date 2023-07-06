@@ -7,7 +7,7 @@ import {
 import { SetupHeader } from "../setup.header/setup.header";
 import { SourcesList, SourcesOptionMenu } from "@/components/setup";
 import { useQuery } from "react-query";
-import { getApplication } from "@/services/setup";
+import { getApplication, setNamespaces } from "@/services/setup";
 import { QUERIES } from "@/utils/constants";
 import Empty from "@/assets/images/empty-list.svg";
 
@@ -130,6 +130,7 @@ export function SetupSection({ namespaces }: any) {
 
   function onNextClick() {
     console.log({ selectedApplications });
+    setNamespaces(selectedApplications);
   }
 
   return (
