@@ -17,9 +17,9 @@ interface KeyvalSearchInputProps {
 
 export function KeyvalSearchInput({
   placeholder = "Search - default",
-  value = "test",
+  value = "",
   onChange = () => {},
-  loading = true,
+  loading = false,
 }: KeyvalSearchInputProps) {
   return (
     <SearchInputWrapper active={!!value}>
@@ -28,6 +28,7 @@ export function KeyvalSearchInput({
         value={value}
         active={!!value}
         placeholder={placeholder}
+        onChange={onChange}
       />
       {loading && (
         <LoaderWrapper>
@@ -40,7 +41,19 @@ export function KeyvalSearchInput({
           />
         </LoaderWrapper>
       )}
-      <X onClick={() => onChange("")} style={{ cursor: "pointer" }} />
+      <X
+        onClick={
+          value
+            ? () =>
+                onChange({
+                  target: {
+                    value: "",
+                  },
+                })
+            : null
+        }
+        style={{ cursor: "pointer" }}
+      />
     </SearchInputWrapper>
   );
 }

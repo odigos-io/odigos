@@ -13,7 +13,7 @@ export const StepItemWrapper = styled.div`
 `;
 
 export const FloatingBoxTextWrapper = styled.div<DisabledProp>`
-  opacity: ${({ disabled }) => (disabled ? "0.7" : "1")};
+  opacity: ${({ disabled }) => (disabled ? "0.4" : "1")};
 `;
 
 export const StepItemTextWrapper = styled(FloatingBoxTextWrapper)`

@@ -10,29 +10,45 @@ import {
   KeyvalSwitch,
   KeyvalText,
 } from "@/design.system";
-const DATA = [
-  { id: 1, label: "Istanbul, TR (AHL)" },
-  { id: 2, label: "Paris, FR (CDG)" },
-];
 
-export function SourcesOptionMenu() {
+export function SourcesOptionMenu({
+  setCurrentItem,
+  data,
+  searchFilter,
+  setSearchFilter,
+}: any) {
   const [checked, setChecked] = useState(false);
   const [toggle, setToggle] = useState(false);
   const handleToggleChange = () => {
     setToggle(!toggle);
   };
 
+  function handleDropDownChange(item: any) {
+    setCurrentItem({ id: item?.id, name: item.label });
+  }
+
   return (
     <SourcesOptionMenuWrapper>
-      <KeyvalSearchInput />
+      <KeyvalSearchInput
+        value={searchFilter}
+        onChange={(e) => setSearchFilter(e.target.value)}
+      />
 
       <DropdownWrapper>
         <KeyvalText size={14}>{"Namespace"}</KeyvalText>
-        <KeyvalDropDown data={DATA} />
+        <KeyvalDropDown data={data} onChange={handleDropDownChange} />
       </DropdownWrapper>
 
-      <KeyvalSwitch toggle={toggle} handleToggleChange={handleToggleChange} />
-      <KeyvalCheckbox value={checked} onChange={() => setChecked(!checked)} />
+      <KeyvalSwitch
+        label="Select All"
+        toggle={toggle}
+        handleToggleChange={handleToggleChange}
+      />
+      <KeyvalCheckbox
+        label="Apply for any future apps"
+        value={checked}
+        onChange={() => setChecked(!checked)}
+      />
     </SourcesOptionMenuWrapper>
   );
 }

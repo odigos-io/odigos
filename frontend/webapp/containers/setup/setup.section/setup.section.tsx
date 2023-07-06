@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   SetupContentWrapper,
   SetupSectionContainer,
@@ -11,9 +11,16 @@ import { QUERIES } from "@/utils/constants";
 
 export function SetupSection({ namespaces }: any) {
   const [currentNamespace, setCurrentNamespace] = useState<any>(null);
+  const [searchFilter, setSearchFilter] = useState<string>("");
+
+  const namespacesList = useMemo(() => {
+    return namespaces.map((item: any, index: number) => {
+      return { id: index, label: item.name };
+    });
+  }, [namespaces]);
 
   const { data } = useQuery(
-    [QUERIES.API_APPLICATIONS],
+    [QUERIES.API_APPLICATIONS, currentNamespace],
     () => getApplication(currentNamespace.name),
     {
       // The query will not execute until the currentNamespace exists
@@ -22,21 +29,28 @@ export function SetupSection({ namespaces }: any) {
   );
 
   useEffect(() => {
-    if (!currentNamespace) {
-      setCurrentNamespace(namespaces[0]);
-    }
+    !currentNamespace && setCurrentNamespace(namespaces[0]);
   }, [namespaces]);
 
-  // useEffect(() => {
-  //   console.log({ data });
-  // }, [data]);
+  function getSourceData() {
+    return searchFilter
+      ? data?.applications.filter((item: any) =>
+          item.name.toLowerCase().includes(searchFilter.toLowerCase())
+        )
+      : data?.applications;
+  }
 
   return (
     <SetupSectionContainer>
       <SetupHeader />
       <SetupContentWrapper>
-        <SourcesOptionMenu />
-        <SourcesList data={data?.applications} />
+        <SourcesOptionMenu
+          setCurrentItem={setCurrentNamespace}
+          data={namespacesList}
+          searchFilter={searchFilter}
+          setSearchFilter={setSearchFilter}
+        />
+        <SourcesList data={getSourceData()} />
       </SetupContentWrapper>
     </SetupSectionContainer>
   );

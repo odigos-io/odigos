@@ -35,14 +35,14 @@ export default function StepItem({
           <Done />
         ) : (
           <FloatingBoxTextWrapper disabled={status !== Status.Active}>
-            <KeyvalText>{index}</KeyvalText>
+            <KeyvalText weight={700}>{index}</KeyvalText>
           </FloatingBoxTextWrapper>
         )}
       </FloatBox>
       <StepItemTextWrapper disabled={status !== Status.Active}>
-        <KeyvalText>{title}</KeyvalText>
+        <KeyvalText weight={600}>{title}</KeyvalText>
       </StepItemTextWrapper>
-      {!isLast && <StepItemBorder className="border" />}
+      {!isLast && <StepItemBorder />}
     </StepItemWrapper>
   );
 }
