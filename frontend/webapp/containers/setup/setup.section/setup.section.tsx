@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  EmptyListWrapper,
   SetupContentWrapper,
   SetupSectionContainer,
 } from "./setup.section.styled";
@@ -8,7 +9,7 @@ import { SourcesList, SourcesOptionMenu } from "@/components/setup";
 import { useQuery } from "react-query";
 import { getApplication } from "@/services/setup";
 import { QUERIES } from "@/utils/constants";
-
+import Empty from "@/assets/images/empty-list.svg";
 export function SetupSection({ namespaces }: any) {
   const [currentNamespace, setCurrentNamespace] = useState<any>(null);
   const [searchFilter, setSearchFilter] = useState<string>("");
@@ -50,7 +51,13 @@ export function SetupSection({ namespaces }: any) {
           searchFilter={searchFilter}
           setSearchFilter={setSearchFilter}
         />
-        <SourcesList data={getSourceData()} />
+        {data?.applications?.length === 0 ? (
+          <EmptyListWrapper>
+            <Empty />
+          </EmptyListWrapper>
+        ) : (
+          <SourcesList data={getSourceData()} />
+        )}
       </SetupContentWrapper>
     </SetupSectionContainer>
   );

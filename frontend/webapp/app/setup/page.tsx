@@ -39,7 +39,7 @@ export default function SetupPage() {
   if (isLoading) {
     return <div>Loading...</div>;
   }
-
+  console.log({ data });
   return (
     <SetupPageContainer>
       <LogoWrapper>
