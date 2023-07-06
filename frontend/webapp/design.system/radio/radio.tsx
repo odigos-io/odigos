@@ -5,26 +5,22 @@ import Checked from "assets/icons/checked-radio.svg";
 interface RadioButtonProps {
   label?: string;
   value?: string;
-  checked?: boolean;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
 }
 
 export const KeyvalRadioButton: FC<RadioButtonProps> = ({
   label = "",
-  value,
-  //   checked = true,
   onChange,
+  value,
 }) => {
-  const [checked, setChecked] = useState(false);
-
   function handleChange() {
-    setChecked(!checked);
+    onChange && onChange({} as ChangeEvent<HTMLInputElement>);
   }
 
   return (
     <RadioButtonContainer>
       <div onClick={handleChange}>
-        {checked ? <Checked width={25} height={25} /> : <RadioButtonBorder />}
+        {value ? <Checked width={25} height={25} /> : <RadioButtonBorder />}
       </div>
       <KeyvalText>{label}</KeyvalText>
     </RadioButtonContainer>

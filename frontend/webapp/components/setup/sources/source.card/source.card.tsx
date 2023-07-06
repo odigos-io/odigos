@@ -16,11 +16,11 @@ const KIND_COLORS = {
   deployment: "#203548",
 };
 
-export function SourceCard({ item }: any) {
+export function SourceCard({ item, onClick, focus }: any) {
   return (
-    <KeyvalCard focus={item?.selected}>
+    <KeyvalCard focus={focus}>
       <RadioButtonWrapper>
-        <KeyvalRadioButton />
+        <KeyvalRadioButton onChange={onClick} value={focus} />
       </RadioButtonWrapper>
       <SourceCardWrapper>
         <Logo />
