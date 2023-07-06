@@ -51,7 +51,7 @@ export function SetupSection({ namespaces }: any) {
           searchFilter={searchFilter}
           setSearchFilter={setSearchFilter}
         />
-        {data?.applications?.length === 0 ? (
+        {!data?.applications?.length ? (
           <EmptyListWrapper>
             <Empty />
           </EmptyListWrapper>
