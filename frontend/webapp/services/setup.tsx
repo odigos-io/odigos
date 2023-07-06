@@ -7,3 +7,10 @@ export async function getNamespaces() {
     return data;
   }
 }
+
+export async function getApplication(id: string) {
+  const { data, status } = await axios.get(`${API.APPLICATIONS}/${id}`);
+  if (status === 200) {
+    return data;
+  }
+}

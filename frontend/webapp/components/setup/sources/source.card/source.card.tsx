@@ -12,9 +12,13 @@ import {
 } from "./source.card.styled";
 import Logo from "assets/logos/code-sandbox-logo.svg";
 
-export function SourceCard() {
+const KIND_COLORS = {
+  deployment: "#203548",
+};
+
+export function SourceCard({ item }: any) {
   return (
-    <KeyvalCard focus={true}>
+    <KeyvalCard focus={item?.selected}>
       <RadioButtonWrapper>
         <KeyvalRadioButton />
       </RadioButtonWrapper>
@@ -30,12 +34,12 @@ export function SourceCard() {
               overflow: "hidden",
             }}
           >
-            {"local - path - DaemonSet sdfsd sdfds"}
+            {item.name}
           </KeyvalText>
         </ApplicationNameWrapper>
-        <KeyvalTag title="DaemonSet" />
+        <KeyvalTag title={item.kind} color={KIND_COLORS[item.kind]} />
         <KeyvalText size={14} weight={400}>
-          {"1 Running instance"}
+          {`${item?.instances} Running instance`}
         </KeyvalText>
       </SourceCardWrapper>
     </KeyvalCard>

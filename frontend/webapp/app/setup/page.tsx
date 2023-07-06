@@ -1,6 +1,10 @@
 "use client";
 import Steps from "@/design.system/steps/steps";
-import { LogoWrapper, SetupPageContainer } from "./setup.styled";
+import {
+  LogoWrapper,
+  SetupPageContainer,
+  StepListWrapper,
+} from "./setup.styled";
 import Logo from "@/assets/logos/odigos-gradient.svg";
 import { SetupSection } from "@/containers/setup";
 import { useEffect } from "react";
@@ -44,14 +48,11 @@ export default function SetupPage() {
       <LogoWrapper>
         <Logo />
       </LogoWrapper>
-      <br />
-      <br />
-      <br />
-      <br />
-      <Steps data={STEPS} />
-      <br />
-      <br />
-      <SetupSection />
+      <StepListWrapper>
+        <Steps data={STEPS} />
+      </StepListWrapper>
+
+      <SetupSection namespaces={data?.namespaces} />
     </SetupPageContainer>
   );
 }
