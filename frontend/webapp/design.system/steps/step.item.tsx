@@ -1,5 +1,5 @@
-import { FloatBox } from "design.system/float.box/float.box";
-import { KeyvalText } from "design.system/text/text";
+import { FloatBox } from "@/design.system/float.box/float.box";
+import { KeyvalText } from "@/design.system/text/text";
 import React from "react";
 import {
   StepItemTextWrapper,

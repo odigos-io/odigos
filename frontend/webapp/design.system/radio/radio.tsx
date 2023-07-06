@@ -1,6 +1,6 @@
 import React, { useState, FC, ChangeEvent } from "react";
 import { RadioButtonContainer, RadioButtonBorder } from "./radio.styled";
-import { KeyvalText } from "design.system/text/text";
+import { KeyvalText } from "@/design.system/text/text";
 import Checked from "assets/icons/checked-radio.svg";
 interface RadioButtonProps {
   label?: string;

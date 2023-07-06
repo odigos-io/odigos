@@ -1,4 +1,4 @@
-import { KeyvalText } from "design.system/text/text";
+import { KeyvalText } from "@/design.system/text/text";
 import React from "react";
 import styled from "styled-components";
 
