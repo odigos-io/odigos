@@ -10,9 +10,10 @@ export const KeyvalButton: FC<ButtonProps> = ({
   variant = "primary",
   children,
   style,
+  onClick,
 }) => {
   return (
-    <ButtonWrapper style={{ ...style }} variant={variant}>
+    <ButtonWrapper onClick={onClick} style={{ ...style }} variant={variant}>
       {children}
     </ButtonWrapper>
   );

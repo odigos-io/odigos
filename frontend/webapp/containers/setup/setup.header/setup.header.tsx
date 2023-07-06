@@ -8,7 +8,7 @@ import { KeyvalButton, KeyvalText } from "@/design.system";
 import Charge from "assets/icons/charge-rect.svg";
 import RightArrow from "assets/icons/arrow-right.svg";
 
-export function SetupHeader() {
+export function SetupHeader({ onNextClick }: any) {
   return (
     <SetupHeaderWrapper>
       <HeaderTitleWrapper>
@@ -17,7 +17,7 @@ export function SetupHeader() {
       </HeaderTitleWrapper>
       <HeaderButtonWrapper>
         <KeyvalText weight={400}>{"0 selected"}</KeyvalText>
-        <KeyvalButton style={{ gap: 10 }}>
+        <KeyvalButton onClick={onNextClick} style={{ gap: 10 }}>
           <KeyvalText size={20} weight={600} color="#0A1824">
             {"Next"}
           </KeyvalText>

@@ -71,10 +71,40 @@ export function SetupSection({ namespaces }: any) {
     ].objects.findIndex((app) => app.name === item.name);
 
     let objects = [...selectedApplications[currentNamespace?.name].objects];
+
     objects[objIndex].selected = !objects[objIndex].selected;
+
+    let currentNamespaceConfig = {
+      ...selectedApplications[currentNamespace?.name],
+      objects,
+    };
+
+    if (
+      !objects[objIndex].selected &&
+      selectedApplications[currentNamespace?.name].selected_all
+    ) {
+      currentNamespaceConfig = {
+        ...currentNamespaceConfig,
+        selected_all: false,
+      };
+    }
+
+    const newSelectedNamespaceConfig = {
+      ...selectedApplications,
+      [currentNamespace?.name]: currentNamespaceConfig,
+    };
+    setSelectedApplications(newSelectedNamespaceConfig);
+  }
+
+  function onSelectAllChange(value: boolean) {
+    let objects = [...selectedApplications[currentNamespace?.name].objects];
+    objects.forEach((item) => {
+      item.selected = value;
+    });
 
     const currentNamespaceConfig = {
       ...selectedApplications[currentNamespace?.name],
+      selected_all: value,
       objects,
     };
 
@@ -85,15 +115,36 @@ export function SetupSection({ namespaces }: any) {
     setSelectedApplications(newSelectedNamespaceConfig);
   }
 
+  function onFutureApplyChange(value: boolean) {
+    const currentNamespaceConfig = {
+      ...selectedApplications[currentNamespace?.name],
+      future_selected: value,
+    };
+
+    const newSelectedNamespaceConfig = {
+      ...selectedApplications,
+      [currentNamespace?.name]: currentNamespaceConfig,
+    };
+    setSelectedApplications(newSelectedNamespaceConfig);
+  }
+
+  function onNextClick() {
+    console.log({ selectedApplications });
+  }
+
   return (
     <SetupSectionContainer>
-      <SetupHeader />
+      <SetupHeader onNextClick={onNextClick} />
       <SetupContentWrapper>
         <SourcesOptionMenu
+          currentNamespace={currentNamespace}
           setCurrentItem={setCurrentNamespace}
           data={namespacesList}
           searchFilter={searchFilter}
           setSearchFilter={setSearchFilter}
+          onSelectAllChange={onSelectAllChange}
+          selectedApplications={selectedApplications}
+          onFutureApplyChange={onFutureApplyChange}
         />
         {!data?.applications?.length ? (
           <EmptyListWrapper>
