@@ -2,7 +2,11 @@ import styled from "styled-components";
 
 export const SourcesListContainer = styled.div`
   width: 100%;
-  height: 100%;
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 `;
 
 export const SourcesTitleWrapper = styled.div`
@@ -15,10 +19,10 @@ export const SourcesTitleWrapper = styled.div`
 
 export const SourcesListWrapper = styled.div`
   width: 100%;
-  height: 100%;
+  height: 400px;
+  padding-bottom: 300px;
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
-  overflow: scroll;
   overflow-y: scroll;
 `;

@@ -1,7 +1,8 @@
 import styled from "styled-components";
 
 export const SetupSectionContainer = styled.section`
-  width: 1288px;
+  width: 85%;
+  max-width: 1288px;
   height: 1095px;
   border-radius: 24px;
   border: 1px solid var(--dark-mode-dark-4, #374a5b);

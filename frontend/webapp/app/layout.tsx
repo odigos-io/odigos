@@ -15,7 +15,10 @@ export default function RootLayout({
     <html lang="en">
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
-          <body suppressHydrationWarning={true} style={{ margin: 0 }}>
+          <body
+            suppressHydrationWarning={true}
+            style={{ margin: 0, position: "fixed" }}
+          >
             {children}
           </body>
         </ThemeProvider>
