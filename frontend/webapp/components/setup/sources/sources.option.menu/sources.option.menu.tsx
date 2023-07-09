@@ -10,6 +10,7 @@ import {
   KeyvalSwitch,
   KeyvalText,
 } from "@/design.system";
+import { SelectedCounter } from "@/design.system/selected.counter/selected.counter";
 
 export function SourcesOptionMenu({
   setCurrentItem,
@@ -47,7 +48,11 @@ export function SourcesOptionMenu({
 
       <DropdownWrapper>
         <KeyvalText size={14}>{"Namespace"}</KeyvalText>
-        <KeyvalDropDown data={data} onChange={handleDropDownChange} />
+        <KeyvalDropDown
+          data={data}
+          onChange={handleDropDownChange}
+          childComp={<SelectedCounter total={10} selected={5} />}
+        />
       </DropdownWrapper>
 
       <KeyvalSwitch
@@ -63,3 +68,5 @@ export function SourcesOptionMenu({
     </SourcesOptionMenuWrapper>
   );
 }
+
+const ChildComp: React.FC = () => <h2>This is a child component</h2>;

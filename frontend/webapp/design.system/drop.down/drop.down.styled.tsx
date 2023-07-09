@@ -62,8 +62,8 @@ export const DropdownListWrapper = styled.div`
 export const DropdownItem = styled.div`
   display: flex;
   padding: 7px 12px;
-  flex-direction: column;
-  align-items: flex-start;
+  justify-content: space-between;
+  align-items: center;
   border-radius: 8px;
   cursor: pointer;
 `;
