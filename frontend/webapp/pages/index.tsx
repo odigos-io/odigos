@@ -12,7 +12,6 @@ export default function Home() {
   );
 
   useEffect(() => {
-    router.push(ROUTES.SETUP);
     data && renderCurrentPage();
   }, [data]);
 
@@ -20,7 +19,8 @@ export default function Home() {
     const { installation } = data;
 
     switch (installation) {
-      case CONFIG.FINISHED:
+      case CONFIG.NEW:
+      case CONFIG.APPS_SELECTED:
         router.push(ROUTES.SETUP);
     }
   }

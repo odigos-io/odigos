@@ -69,20 +69,17 @@ export function SetupSection({ namespaces }: any) {
     const objIndex = selectedApplications[
       currentNamespace?.name
     ].objects.findIndex((app) => app.name === item.name);
-
-    let objects = [...selectedApplications[currentNamespace?.name].objects];
+    const namespace = selectedApplications[currentNamespace?.name];
+    let objects = [...namespace.objects];
 
     objects[objIndex].selected = !objects[objIndex].selected;
 
     let currentNamespaceConfig = {
-      ...selectedApplications[currentNamespace?.name],
+      ...namespace,
       objects,
     };
 
-    if (
-      !objects[objIndex].selected &&
-      selectedApplications[currentNamespace?.name].selected_all
-    ) {
+    if (!objects[objIndex].selected && namespace.selected_all) {
       currentNamespaceConfig = {
         ...currentNamespaceConfig,
         selected_all: false,
@@ -97,13 +94,14 @@ export function SetupSection({ namespaces }: any) {
   }
 
   function onSelectAllChange(value: boolean) {
-    let objects = [...selectedApplications[currentNamespace?.name].objects];
+    const namespace = selectedApplications[currentNamespace?.name];
+    let objects = [...namespace.objects];
     objects.forEach((item) => {
       item.selected = value;
     });
 
     const currentNamespaceConfig = {
-      ...selectedApplications[currentNamespace?.name],
+      ...namespace,
       selected_all: value,
       objects,
     };
@@ -129,8 +127,8 @@ export function SetupSection({ namespaces }: any) {
   }
 
   function onNextClick() {
-    console.log({ selectedApplications });
     setNamespaces(selectedApplications);
+    //[TODO]: Move To Next Step
   }
 
   return (
