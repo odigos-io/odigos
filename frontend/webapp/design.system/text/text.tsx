@@ -9,6 +9,7 @@ type TextProps = {
   weight?: string | number;
   color?: string;
   size?: number;
+  onClick?: () => void;
 };
 
 export function KeyvalText({
@@ -17,10 +18,18 @@ export function KeyvalText({
   style,
   weight,
   size,
+  onClick,
 }: TextProps) {
   return (
     <TextWrapper
-      style={{ fontWeight: weight, color, fontSize: size, ...style }}
+      onClick={onClick}
+      style={{
+        fontWeight: weight,
+        color,
+        fontSize: size,
+        cursor: onClick ? "pointer" : "auto",
+        ...style,
+      }}
     >
       {children}
     </TextWrapper>

@@ -145,6 +145,7 @@ export function SetupSection({ namespaces }: any) {
           selectedApplications={selectedApplications}
           onFutureApplyChange={onFutureApplyChange}
         />
+
         {!data?.applications?.length ? (
           <EmptyListWrapper>
             <Empty />
@@ -154,6 +155,7 @@ export function SetupSection({ namespaces }: any) {
             data={getSourceData()}
             selectedData={selectedApplications[currentNamespace?.name]}
             onItemClick={handleSourceClick}
+            onClearClick={() => onSelectAllChange(false)}
           />
         )}
       </SetupContentWrapper>

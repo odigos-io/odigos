@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   DropdownWrapper,
   SourcesOptionMenuWrapper,
+  CheckboxWrapper,
 } from "./sources.option.menu.styled";
 import {
   KeyvalCheckbox,
@@ -9,6 +10,7 @@ import {
   KeyvalSearchInput,
   KeyvalSwitch,
   KeyvalText,
+  KeyvalTooltip,
 } from "@/design.system";
 
 export function SourcesOptionMenu({
@@ -55,11 +57,17 @@ export function SourcesOptionMenu({
         toggle={toggle}
         handleToggleChange={handleToggleChange}
       />
-      <KeyvalCheckbox
-        label="Apply for any future apps"
-        value={checked}
-        onChange={() => onFutureApplyChange(!checked)}
-      />
+      <CheckboxWrapper>
+        <KeyvalCheckbox
+          label="Apply for any future apps"
+          value={checked}
+          onChange={() => onFutureApplyChange(!checked)}
+        />
+        <KeyvalTooltip
+          content="Automatically connect any future apps in this namespace"
+          direction="top"
+        ></KeyvalTooltip>
+      </CheckboxWrapper>
     </SourcesOptionMenuWrapper>
   );
 }

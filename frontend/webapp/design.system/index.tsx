@@ -9,3 +9,6 @@ export { KeyvalSearchInput } from "./search.input/search.input";
 export { KeyvalLottie } from "./lottie/lottie";
 export { KeyvalSwitch } from "./switch/switch";
 export { KeyvalCheckbox } from "./checkbox/checkbox";
+export { KeyvalSelectedCounter } from "./selected.counter/selected.counter";
+export { KeyvalLink } from "./link/link";
+export { KeyvalTooltip } from "./tooltip/tooltip";

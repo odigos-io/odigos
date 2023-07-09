@@ -17,6 +17,4 @@ export async function getApplication(id: string) {
 
 export async function setNamespaces(body: any) {
   const res = await axios.post(API.NAMESPACES, body);
-
-  console.log({ res });
 }

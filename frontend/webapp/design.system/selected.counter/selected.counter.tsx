@@ -8,7 +8,10 @@ interface SelectedCounterProps {
   selected: number;
 }
 
-export function SelectedCounter({ total, selected }: SelectedCounterProps) {
+export function KeyvalSelectedCounter({
+  total,
+  selected,
+}: SelectedCounterProps) {
   return (
     <SelectedCounterWrapper>
       {selected !== 0 && <Checked />}

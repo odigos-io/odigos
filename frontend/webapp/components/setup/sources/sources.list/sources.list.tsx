@@ -1,8 +1,18 @@
 import React from "react";
-import { SourcesListContainer } from "./sources.list.styled";
+import {
+  SourcesListContainer,
+  SourcesListWrapper,
+  SourcesTitleWrapper,
+} from "./sources.list.styled";
 import { SourceCard } from "../source.card/source.card";
+import { KeyvalLink, KeyvalText, KeyvalTooltip } from "@/design.system";
 
-export function SourcesList({ data, onItemClick, selectedData }: any) {
+export function SourcesList({
+  data,
+  onItemClick,
+  selectedData,
+  onClearClick,
+}: any) {
   function isFocus(currentCard: any) {
     const currentItem = selectedData?.objects?.filter(
       (item) => item.name === currentCard.name
@@ -21,5 +31,13 @@ export function SourcesList({ data, onItemClick, selectedData }: any) {
     ));
   }
 
-  return <SourcesListContainer>{renderList()}</SourcesListContainer>;
+  return (
+    <SourcesListContainer>
+      <SourcesTitleWrapper>
+        <KeyvalText>{`${data.length} Applications`}</KeyvalText>
+        <KeyvalLink onClick={onClearClick} value={"Clear selection"} />
+      </SourcesTitleWrapper>
+      <SourcesListWrapper>{renderList()}</SourcesListWrapper>
+    </SourcesListContainer>
+  );
 }

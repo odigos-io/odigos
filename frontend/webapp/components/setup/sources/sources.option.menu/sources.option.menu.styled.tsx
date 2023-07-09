@@ -13,3 +13,9 @@ export const DropdownWrapper = styled.div`
   align-items: center;
   gap: 12px;
 `;
+
+export const CheckboxWrapper = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+`;
