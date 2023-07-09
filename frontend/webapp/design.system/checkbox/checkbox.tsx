@@ -12,7 +12,7 @@ interface KeyvalCheckboxProps {
 export function KeyvalCheckbox({
   onChange,
   value,
-  label = "Select All",
+  label = "",
 }: KeyvalCheckboxProps) {
   return (
     <CheckboxWrapper onClick={onChange}>

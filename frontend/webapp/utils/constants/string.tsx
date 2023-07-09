@@ -20,4 +20,6 @@ export const SETUP = {
     SEARCH_PLACEHOLDER: "Search - default",
   },
   NEXT: "Next",
+  CLEAR_SELECTION: "Clear Selection",
+  APPLICATIONS: "Applications",
 };

@@ -47,7 +47,7 @@ export function KeyvalDropDown({
     };
   }, []);
 
-  const handleClickOutside = (event) => {
+  const handleClickOutside = (event: PointerEvent) => {
     if (containerRef.current && !containerRef.current.contains(event.target)) {
       setOpen(false);
     }
@@ -72,7 +72,7 @@ export function KeyvalDropDown({
   return (
     <div style={{ height: 37 }} ref={containerRef}>
       <DropdownWrapper
-        hover={isHover}
+        isHover={isHover}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >

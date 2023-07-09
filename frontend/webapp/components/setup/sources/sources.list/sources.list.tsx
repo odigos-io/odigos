@@ -6,6 +6,7 @@ import {
 } from "./sources.list.styled";
 import { SourceCard } from "../source.card/source.card";
 import { KeyvalLink, KeyvalText, KeyvalTooltip } from "@/design.system";
+import { SETUP } from "@/utils/constants";
 
 export function SourcesList({
   data,
@@ -34,8 +35,8 @@ export function SourcesList({
   return (
     <SourcesListContainer>
       <SourcesTitleWrapper>
-        <KeyvalText>{`${data.length} Applications`}</KeyvalText>
-        <KeyvalLink onClick={onClearClick} value={"Clear selection"} />
+        <KeyvalText>{`${data.length} ${SETUP.APPLICATIONS}`}</KeyvalText>
+        <KeyvalLink onClick={onClearClick} value={SETUP.CLEAR_SELECTION} />
       </SourcesTitleWrapper>
       <SourcesListWrapper>{renderList()}</SourcesListWrapper>
     </SourcesListContainer>

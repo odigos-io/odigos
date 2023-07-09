@@ -14,6 +14,13 @@ import Logo from "assets/logos/code-sandbox-logo.svg";
 
 const KIND_COLORS = {
   deployment: "#203548",
+  DaemonSet: "#033869",
+};
+
+const TEXT_STYLE = {
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
 };
 
 export function SourceCard({ item, onClick, focus }: any) {
@@ -25,15 +32,7 @@ export function SourceCard({ item, onClick, focus }: any) {
       <SourceCardWrapper>
         <Logo />
         <ApplicationNameWrapper>
-          <KeyvalText
-            size={20}
-            weight={700}
-            style={{
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-            }}
-          >
+          <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
             {item.name}
           </KeyvalText>
         </ApplicationNameWrapper>
