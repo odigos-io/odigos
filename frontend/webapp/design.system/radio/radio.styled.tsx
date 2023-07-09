@@ -18,7 +18,7 @@ export const RadioButtonBorder = styled.span`
   cursor: pointer;
   width: 23px;
   height: 23px;
-  border: 2px solid #ccd0d2;
+  border: ${({ theme }) => `solid 2px ${theme.colors.light_grey}`};
   border-radius: 50%;
   display: inline-block;
   position: relative;

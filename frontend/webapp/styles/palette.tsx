@@ -3,14 +3,20 @@ import { DefaultTheme } from "styled-components";
 // Define your color palette
 const colors = {
   primary: "#FF0000",
-  secondary: "#00FF00",
-  accent: "#0000FF",
+  secondary: "#0EE6F3",
+  dark: "#07111A",
+  light_dark: "#132330",
+  dark_blue: "#203548",
+  light_grey: "#CCD0D2",
+  white: "#fff",
 };
 
 const text = {
   primary: "#FF0000",
-  secondary: "#00FF00",
+  secondary: "#0EE6F3",
   white: "#fff",
+  light_grey: "#CCD0D2",
+  grey: "#8b92a5",
 };
 
 const font_family = {

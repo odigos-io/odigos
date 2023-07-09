@@ -10,5 +10,5 @@ export const ButtonWrapper = styled.button<ButtonProps>`
   align-items: center;
   border-radius: 8px;
   border: none;
-  background: #0ee6f3;
+  background: ${({ theme }) => theme.colors.secondary};
 `;

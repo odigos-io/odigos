@@ -11,6 +11,7 @@ export const CardContainer = styled.div<CardContainerProps>`
   height: 204px;
   flex-direction: column;
   border-radius: 24px;
-  border: ${({ focus }) => `1px solid ${focus ? "#96F2FF" : "#203548"}`};
-  background: var(--dark-mode-dark-1, #0a1824);
+  border: ${({ focus, theme }) =>
+    `1px solid ${focus ? theme.colors.secondary : theme.colors.dark_blue}`};
+  background: ${({ theme }) => theme.colors.dark};
 `;

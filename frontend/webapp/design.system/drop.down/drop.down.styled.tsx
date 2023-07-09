@@ -10,8 +10,9 @@ export const DropdownWrapper = styled.div<DropdownWrapperProps>`
   width: 260px;
   padding: 11px 13px;
   border-radius: 8px;
-  border: ${({ isHover }) => `1px solid  ${isHover ? "#fff" : "#374a5b"}`};
-  background: var(--dark-mode-dark-1, #0a1824);
+  border: ${({ isHover, theme }) =>
+    `1px solid  ${isHover ? theme.colors.white : "#374a5b"}`};
+  background: ${({ theme }) => theme.colors.dark};
 
   .dropdown-arrow {
     transform: rotate(0deg);
@@ -44,7 +45,7 @@ export const DropdownBody = styled.div`
   flex-direction: column;
   border-radius: 8px;
   border: 1px solid #374a5b;
-  background: var(--dark-mode-dark-1, #0a1824);
+  background: ${({ theme }) => theme.colors.dark};
   margin-top: 5px;
 `;
 
@@ -55,7 +56,7 @@ export const DropdownListWrapper = styled.div`
   max-height: 270px;
   overflow-y: scroll;
   :hover {
-    background: var(--dark-mode-dark-3, #203548);
+    background: ${({ theme }) => theme.colors.dark_blue};
   }
 `;
 

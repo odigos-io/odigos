@@ -10,6 +10,6 @@ export const CheckboxWrapper = styled.div`
 export const Checkbox = styled.span`
   width: 16px;
   height: 16px;
-  border: solid 1px #ccd0d2;
+  border: ${({ theme }) => `solid 1px ${theme.colors.light_grey}`};
   border-radius: 4px;
 `;

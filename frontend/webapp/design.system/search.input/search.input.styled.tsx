@@ -11,24 +11,28 @@ export const SearchInputWrapper = styled.div<ActiveProps>`
   padding: 9px 13px;
   gap: 10px;
   border-radius: 8px;
-  border: ${({ active }) => `1px solid ${active ? "#fff" : "#374a5b"}`};
-  background: ${({ active }) => `${active ? "#07111A" : "#132330"}`};
+  border: ${({ active, theme }) =>
+    `1px solid ${active ? theme.colors.white : "#374a5b"}`};
+  background: ${({ active, theme }) =>
+    `${active ? theme.colors.dark : theme.colors.light_dark}`};
   &:hover {
-    border: 1px solid var(--dark-mode-white, #fff);
+    border: ${({ theme }) => `solid 1px ${theme.colors.white}`};
   }
 `;
 
 export const StyledSearchInput = styled.input<ActiveProps>`
   width: 85%;
-  background: ${({ active }) => `${active ? "#07111A" : "transparent"}`};
+  background: ${({ active, theme }) =>
+    `${active ? theme.colors.dark : "transparent"}`};
   border: none;
   outline: none;
-  color: ${({ active }) => `${active ? "#fff" : "#8b92a5"}`};
+  color: ${({ active, theme }) =>
+    `${active ? theme.colors.white : theme.text.grey}`};
   font-size: 14px;
-  font-family: Inter;
+  font-family: ${({ theme }) => theme.font_family.primary};
   font-weight: 400;
   &:focus {
-    color: var(--dark-mode-grey-2, #fff);
+    color: ${({ theme }) => `solid 1px ${theme.colors.white}`};
   }
 `;
 

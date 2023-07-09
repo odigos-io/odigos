@@ -18,6 +18,6 @@ export const TooltipContentWrapper = styled.div`
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: var(--dark-mode-dark-1, #07111a);
+  background: ${({ theme }) => theme.colors.dark};
   box-shadow: 0px 6px 13px 0px rgba(0, 0, 0, 0.3);
 `;

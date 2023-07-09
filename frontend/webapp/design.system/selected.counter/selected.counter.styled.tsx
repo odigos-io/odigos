@@ -6,5 +6,5 @@ export const SelectedCounterWrapper = styled.div`
   align-items: center;
   gap: 4px;
   border-radius: 14px;
-  background: var(--dark-mode-dark-3, #203548);
+  background: ${({ theme }) => theme.colors.dark_blue};
 `;
