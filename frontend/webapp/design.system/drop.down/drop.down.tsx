@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Open from "@/assets/icons/expand-arrow.svg";
 import {
   DropdownHeader,
@@ -38,6 +38,21 @@ export function KeyvalDropDown({
   const [isHover, setHover] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
 
+  const containerRef = useRef<any>(null);
+
+  useEffect(() => {
+    document.addEventListener("click", handleClickOutside, true);
+    return () => {
+      document.removeEventListener("click", handleClickOutside, true);
+    };
+  }, []);
+
+  const handleClickOutside = (event) => {
+    if (containerRef.current && !containerRef.current.contains(event.target)) {
+      setOpen(false);
+    }
+  };
+
   const toggleDropdown = () => setOpen(!isOpen);
 
   const handleItemClick = (item: DropDownItem) => {
@@ -55,7 +70,7 @@ export function KeyvalDropDown({
   }
 
   return (
-    <div style={{ height: 37 }}>
+    <div style={{ height: 37 }} ref={containerRef}>
       <DropdownWrapper
         hover={isHover}
         onMouseEnter={() => setHover(true)}

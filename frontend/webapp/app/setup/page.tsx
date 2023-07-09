@@ -7,37 +7,33 @@ import {
 } from "./setup.styled";
 import Logo from "@/assets/logos/odigos-gradient.svg";
 import { SetupSection } from "@/containers/setup";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useQuery } from "react-query";
 import { getNamespaces } from "@/services/setup";
-import { QUERIES } from "@/utils/constants";
+import { QUERIES, SETUP } from "@/utils/constants";
 
 const STEPS = [
   {
-    title: "Choose Source",
-    status: "active",
+    title: SETUP.STEPS.CHOOSE_SOURCE,
+    status: SETUP.STEPS.STATUS.ACTIVE,
   },
   {
-    title: "Choose Destination",
-    status: "disabled",
+    title: SETUP.STEPS.CHOOSE_DESTINATION,
+    status: SETUP.STEPS.STATUS.DISABLED,
   },
   {
-    title: "Create Connection",
-    status: "disabled",
+    title: SETUP.STEPS.CREATE_CONNECTION,
+    status: SETUP.STEPS.STATUS.DISABLED,
   },
 ];
 
 export default function SetupPage() {
   const [steps, setSteps] = useState(STEPS);
 
-  const { isLoading, isError, isSuccess, data } = useQuery(
-    [QUERIES.API_NAMESPACES],
-    getNamespaces
-  );
+  const { isLoading, data } = useQuery([QUERIES.API_NAMESPACES], getNamespaces);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return null;
   }
 
   return (

@@ -8,6 +8,7 @@ import Glass from "@/assets/icons/glass.svg";
 import X from "@/assets/icons/X.svg";
 import { KeyvalLottie } from "../lottie/lottie";
 import loader from "@/assets/lotties/loader.json";
+import { SETUP } from "@/utils/constants";
 interface KeyvalSearchInputProps {
   placeholder?: string;
   value?: string;
@@ -19,7 +20,7 @@ interface KeyvalSearchInputProps {
 }
 
 export function KeyvalSearchInput({
-  placeholder = "Search - default",
+  placeholder = SETUP.MENU.SEARCH_PLACEHOLDER,
   value = "",
   onChange = () => {},
   loading = false,
@@ -27,6 +28,15 @@ export function KeyvalSearchInput({
   inputStyle = {},
   showClear = true,
 }: KeyvalSearchInputProps) {
+  const clear = value
+    ? () =>
+        onChange({
+          target: {
+            value: "",
+          },
+        })
+    : null;
+
   return (
     <SearchInputWrapper active={!!value} style={{ ...containerStyle }}>
       <Glass />
@@ -48,21 +58,7 @@ export function KeyvalSearchInput({
           />
         </LoaderWrapper>
       )}
-      {showClear && (
-        <X
-          onClick={
-            value
-              ? () =>
-                  onChange({
-                    target: {
-                      value: "",
-                    },
-                  })
-              : null
-          }
-          style={{ cursor: "pointer" }}
-        />
-      )}
+      {showClear && <X onClick={clear} style={{ cursor: "pointer" }} />}
     </SearchInputWrapper>
   );
 }

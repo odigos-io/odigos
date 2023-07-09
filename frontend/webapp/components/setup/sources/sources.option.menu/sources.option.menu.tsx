@@ -12,6 +12,7 @@ import {
   KeyvalText,
   KeyvalTooltip,
 } from "@/design.system";
+import { SETUP } from "@/utils/constants";
 
 export function SourcesOptionMenu({
   setCurrentItem,
@@ -48,25 +49,22 @@ export function SourcesOptionMenu({
       />
 
       <DropdownWrapper>
-        <KeyvalText size={14}>{"Namespace"}</KeyvalText>
+        <KeyvalText size={14}>{SETUP.MENU.NAMESPACES}</KeyvalText>
         <KeyvalDropDown data={data} onChange={handleDropDownChange} />
       </DropdownWrapper>
 
       <KeyvalSwitch
-        label="Select All"
+        label={SETUP.MENU.SELECT_ALL}
         toggle={toggle}
         handleToggleChange={handleToggleChange}
       />
       <CheckboxWrapper>
         <KeyvalCheckbox
-          label="Apply for any future apps"
+          label={SETUP.MENU.FUTURE_APPLY}
           value={checked}
           onChange={() => onFutureApplyChange(!checked)}
         />
-        <KeyvalTooltip
-          content="Automatically connect any future apps in this namespace"
-          direction="top"
-        ></KeyvalTooltip>
+        <KeyvalTooltip content={SETUP.MENU.TOOLTIP} />
       </CheckboxWrapper>
     </SourcesOptionMenuWrapper>
   );
