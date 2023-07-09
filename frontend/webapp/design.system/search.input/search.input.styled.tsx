@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 interface ActiveProps {
-  active?: boolean;
+  active?: any;
 }
 
 export const SearchInputWrapper = styled.div<ActiveProps>`
@@ -20,7 +20,7 @@ export const SearchInputWrapper = styled.div<ActiveProps>`
 
 export const StyledSearchInput = styled.input<ActiveProps>`
   width: 85%;
-  background: ${({ active }) => `${active ? "#07111A" : "#132330"}`};
+  background: ${({ active }) => `${active ? "#07111A" : "transparent"}`};
   border: none;
   outline: none;
   color: ${({ active }) => `${active ? "#fff" : "#8b92a5"}`};

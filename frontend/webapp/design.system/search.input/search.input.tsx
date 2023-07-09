@@ -13,6 +13,9 @@ interface KeyvalSearchInputProps {
   value?: string;
   onChange?: (e: any) => void;
   loading?: boolean;
+  containerStyle?: any;
+  inputStyle?: any;
+  showClear?: boolean;
 }
 
 export function KeyvalSearchInput({
@@ -20,11 +23,15 @@ export function KeyvalSearchInput({
   value = "",
   onChange = () => {},
   loading = false,
+  containerStyle = {},
+  inputStyle = {},
+  showClear = true,
 }: KeyvalSearchInputProps) {
   return (
-    <SearchInputWrapper active={!!value}>
+    <SearchInputWrapper active={!!value} style={{ ...containerStyle }}>
       <Glass />
       <StyledSearchInput
+        style={{ ...inputStyle }}
         value={value}
         active={!!value}
         placeholder={placeholder}
@@ -41,19 +48,21 @@ export function KeyvalSearchInput({
           />
         </LoaderWrapper>
       )}
-      <X
-        onClick={
-          value
-            ? () =>
-                onChange({
-                  target: {
-                    value: "",
-                  },
-                })
-            : null
-        }
-        style={{ cursor: "pointer" }}
-      />
+      {showClear && (
+        <X
+          onClick={
+            value
+              ? () =>
+                  onChange({
+                    target: {
+                      value: "",
+                    },
+                  })
+              : null
+          }
+          style={{ cursor: "pointer" }}
+        />
+      )}
     </SearchInputWrapper>
   );
 }
