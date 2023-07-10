@@ -1,17 +1,20 @@
 import { NextPage } from "next";
-import type { KubernetesNamespace, KubernetesObjectsInNamespaces } from "@/types/apps";
+import type {
+  KubernetesNamespace,
+  KubernetesObjectsInNamespaces,
+} from "@/types/apps";
 import useSWR, { Fetcher } from "swr";
 import { useState } from "react";
 import LoadingPage from "@/components/Loading";
 import NamespaceSelector from "@/components/namespaces/Selector";
 import AppsGrid from "@/components/namespaces/AppsGrid";
-import { Switch } from '@headlessui/react'
+import { Switch } from "@headlessui/react";
 
 const emptyNamespace: KubernetesNamespace = {
   name: "namespaces not found",
   labeled: false,
   objects: [],
-}
+};
 
 async function submitChanges(data: KubernetesObjectsInNamespaces | undefined) {
   if (!data) return;
@@ -22,7 +25,7 @@ async function submitChanges(data: KubernetesObjectsInNamespaces | undefined) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      data
+      data,
     }),
   });
 
@@ -34,11 +37,17 @@ async function submitChanges(data: KubernetesObjectsInNamespaces | undefined) {
 const SetupPage: NextPage = () => {
   const [instrumentationMode, setInstrumentationMode] = useState("OPT_OUT");
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
-  const [appSelection, setAppSelection] = useState<KubernetesObjectsInNamespaces>({ namespaces: [] });
+  const [appSelection, setAppSelection] =
+    useState<KubernetesObjectsInNamespaces>({ namespaces: [] });
+
   const fetcher: Fetcher<KubernetesObjectsInNamespaces, any> = (args: any) =>
     fetch(args).then((res) => res.json());
-  const { data, error } = useSWR<KubernetesObjectsInNamespaces>("/api/v2/applications", fetcher);
-  const [selectedNamespace, setSelectedNamespace] = useState(emptyNamespace)
+
+  const { data, error } = useSWR<KubernetesObjectsInNamespaces>(
+    "/api/v2/applications",
+    fetcher
+  );
+  const [selectedNamespace, setSelectedNamespace] = useState(emptyNamespace);
   if (error) return <div>failed to load</div>;
   if (!data) return <LoadingPage />;
   if (appSelection.namespaces.length === 0 && data) {
@@ -53,28 +62,37 @@ const SetupPage: NextPage = () => {
         <div className="text-xl font-light mb-2">Select namespace:</div>
         <div className="flex flex-row space-x-10 items-baseline">
           <div>
-            <NamespaceSelector data={appSelection} selectedNamespace={selectedNamespace} setSelectedNamespace={setSelectedNamespace} />
+            <NamespaceSelector
+              data={appSelection}
+              selectedNamespace={selectedNamespace}
+              setSelectedNamespace={setSelectedNamespace}
+            />
           </div>
           <div className="flex flex-row space-x-2 items-baseline">
-            <LabelNamespaceSwitch enabled={selectedNamespace.labeled} setEnabled={() => {
-              const newNamespace = { ...selectedNamespace };
-              newNamespace.labeled = !newNamespace.labeled;
-              if (newNamespace.labeled) {
-                newNamespace.objects = newNamespace.objects.map((o) => {
-                  return { ...o, labeled: false };
+            <LabelNamespaceSwitch
+              enabled={selectedNamespace.labeled}
+              setEnabled={() => {
+                const newNamespace = { ...selectedNamespace };
+                newNamespace.labeled = !newNamespace.labeled;
+                if (newNamespace.labeled) {
+                  newNamespace.objects = newNamespace.objects.map((o) => {
+                    return { ...o, labeled: false };
+                  });
+                }
+                setAppSelection({
+                  namespaces: appSelection.namespaces.map((ns) => {
+                    if (ns.name === newNamespace.name) {
+                      return newNamespace;
+                    }
+                    return ns;
+                  }),
                 });
-              }
-              setAppSelection({
-                namespaces: appSelection.namespaces.map((ns) => {
-                  if (ns.name === newNamespace.name) {
-                    return newNamespace;
-                  }
-                  return ns;
-                }),
-              });
-              setSelectedNamespace(newNamespace);
-            }} />
-            <div className="font-light">Select everything in this namespace</div>
+                setSelectedNamespace(newNamespace);
+              }}
+            />
+            <div className="font-light">
+              Select everything in this namespace
+            </div>
           </div>
         </div>
       </div>
@@ -112,21 +130,23 @@ const SetupPage: NextPage = () => {
   );
 };
 
-function LabelNamespaceSwitch({ enabled, setEnabled}: any) {
+function LabelNamespaceSwitch({ enabled, setEnabled }: any) {
   return (
     <Switch
       checked={enabled}
       onChange={setEnabled}
-      className={`${enabled ? 'bg-blue-600' : 'bg-gray-200'
-        } relative inline-flex h-6 w-11 items-center rounded-full`}
+      className={`${
+        enabled ? "bg-blue-600" : "bg-gray-200"
+      } relative inline-flex h-6 w-11 items-center rounded-full`}
     >
       <span className="sr-only">Select everything in this namespace</span>
       <span
-        className={`${enabled ? 'translate-x-6' : 'translate-x-1'
-          } inline-block h-4 w-4 transform rounded-full bg-white transition`}
+        className={`${
+          enabled ? "translate-x-6" : "translate-x-1"
+        } inline-block h-4 w-4 transform rounded-full bg-white transition`}
       />
     </Switch>
-  )
+  );
 }
 
 export default SetupPage;

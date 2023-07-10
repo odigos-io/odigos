@@ -7,11 +7,9 @@ export default function Sidebar() {
     <aside className="w-64" aria-label="Sidebar">
       <div className="min-h-screen h-full overflow-y-auto py-4 px-3 rounded bg-gray-800">
         <Link href="/" className="flex items-center justify-center mb-5">
-
           <span className="self-center text-2xl font-semibold whitespace-nowrap text-white">
             odigos
           </span>
-
         </Link>
 
         <ul className="space-y-2">
@@ -21,8 +19,8 @@ export default function Sidebar() {
                 href="/setup"
                 className={`flex items-center p-2 text-base font-normal rounded-lg text-white hover:bg-gray-700 ${
                   router.pathname === "/setup" ? "bg-gray-700" : ""
-                }`}>
-
+                }`}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-white"
@@ -36,7 +34,6 @@ export default function Sidebar() {
                   />
                 </svg>
                 <span className="ml-3">Setup</span>
-
               </Link>
             </li>
           ) : (
@@ -46,8 +43,8 @@ export default function Sidebar() {
                   href="/"
                   className={`flex items-center p-2 text-base font-normal rounded-lg text-white hover:bg-gray-700 ${
                     router.pathname === "/" ? "bg-gray-700" : ""
-                  }`}>
-
+                  }`}
+                >
                   <svg
                     className="flex-shrink-0 w-6 h-6 transition duration-75 text-gray-400 group-hover:text-white"
                     fill="currentColor"
@@ -59,7 +56,6 @@ export default function Sidebar() {
                   <span className="flex-1 ml-3 whitespace-nowrap">
                     Overview
                   </span>
-
                 </Link>
               </li>
               <li>
@@ -67,8 +63,8 @@ export default function Sidebar() {
                   href="/sources"
                   className={`flex items-center p-2 text-base font-normal rounded-lg text-white hover:bg-gray-700 ${
                     router.pathname === "/sources" ? "bg-gray-700" : ""
-                  }`}>
-
+                  }`}
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="flex-shrink-0 w-6 h-6 transition duration-75 text-gray-400 group-hover:text-white"
@@ -81,10 +77,7 @@ export default function Sidebar() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="flex-1 ml-3 whitespace-nowrap">
-                    Sources
-                  </span>
-
+                  <span className="flex-1 ml-3 whitespace-nowrap">Sources</span>
                 </Link>
               </li>
               <li>
@@ -92,8 +85,8 @@ export default function Sidebar() {
                   href="/destinations"
                   className={`flex items-center p-2 text-base font-normal rounded-lg text-white hover:bg-gray-700 ${
                     router.pathname === "/destinations" ? "bg-gray-700" : ""
-                  }`}>
-
+                  }`}
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="flex-shrink-0 w-6 h-6 transition duration-75 text-gray-400 group-hover:text-white"
@@ -107,7 +100,6 @@ export default function Sidebar() {
                   <span className="flex-1 ml-3 whitespace-nowrap">
                     Destinations
                   </span>
-
                 </Link>
               </li>
               <li>
@@ -115,8 +107,8 @@ export default function Sidebar() {
                   href="/collectors"
                   className={`flex items-center p-2 text-base font-normal rounded-lg text-white hover:bg-gray-700 ${
                     router.pathname === "/collectors" ? "bg-gray-700" : ""
-                  }`}>
-
+                  }`}
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="flex-shrink-0 w-6 h-6 transition duration-75 text-gray-400 group-hover:text-white"
@@ -132,7 +124,6 @@ export default function Sidebar() {
                   <span className="flex-1 ml-3 whitespace-nowrap">
                     Collectors
                   </span>
-
                 </Link>
               </li>
             </>
