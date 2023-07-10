@@ -1,3 +1,4 @@
+"use client";
 import { useQuery } from "react-query";
 import { useEffect } from "react";
 import { getConfig } from "@/services/config";
