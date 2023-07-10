@@ -3,10 +3,12 @@ import {
   SourcesListContainer,
   SourcesListWrapper,
   SourcesTitleWrapper,
+  EmptyListWrapper,
 } from "./sources.list.styled";
 import { SourceCard } from "../source.card/source.card";
-import { KeyvalLink, KeyvalText, KeyvalTooltip } from "@/design.system";
+import { KeyvalLink, KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
+import Empty from "@/assets/images/empty-list.svg";
 
 export function SourcesList({
   data,
@@ -32,13 +34,23 @@ export function SourcesList({
     ));
   }
 
-  return (
+  const isListEmpty = () => data?.length === 0;
+
+  return !data ? null : (
     <SourcesListContainer>
       <SourcesTitleWrapper>
-        <KeyvalText>{`${data.length} ${SETUP.APPLICATIONS}`}</KeyvalText>
+        <KeyvalText>{`${data?.length} ${SETUP.APPLICATIONS}`}</KeyvalText>
         <KeyvalLink onClick={onClearClick} value={SETUP.CLEAR_SELECTION} />
       </SourcesTitleWrapper>
-      <SourcesListWrapper>{renderList()}</SourcesListWrapper>
+      <SourcesListWrapper>
+        {isListEmpty() ? (
+          <EmptyListWrapper>
+            <Empty />
+          </EmptyListWrapper>
+        ) : (
+          renderList()
+        )}
+      </SourcesListWrapper>
     </SourcesListContainer>
   );
 }

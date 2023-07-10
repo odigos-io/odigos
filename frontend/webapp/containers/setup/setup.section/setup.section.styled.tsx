@@ -15,11 +15,3 @@ export const SetupSectionContainer = styled.section`
 export const SetupContentWrapper = styled.div`
   padding: 0 60px;
 `;
-
-export const EmptyListWrapper = styled.div`
-  width: 100%;
-  margin-top: 80px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;

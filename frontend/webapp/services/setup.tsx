@@ -1,20 +1,15 @@
 import axios from "axios";
 import { API } from "@/utils/constants";
+import { get, post } from "./api";
 
 export async function getNamespaces() {
-  const { data, status } = await axios.get(API.NAMESPACES);
-  if (status === 200) {
-    return data;
-  }
+  return await get(API.NAMESPACES);
 }
 
 export async function getApplication(id: string) {
-  const { data, status } = await axios.get(`${API.APPLICATIONS}/${id}`);
-  if (status === 200) {
-    return data;
-  }
+  return await get(`${API.APPLICATIONS}/${id}`);
 }
 
 export async function setNamespaces(body: any) {
-  const res = await axios.post(API.NAMESPACES, body);
+  post(API.NAMESPACES, body);
 }

@@ -6,10 +6,7 @@ import { ROUTES, CONFIG, QUERIES } from "@/utils/constants";
 
 export default function Home() {
   const router = useRouter();
-  const { isLoading, isError, isSuccess, data } = useQuery(
-    [QUERIES.API_CONFIG],
-    getConfig
-  );
+  const { data } = useQuery([QUERIES.API_CONFIG], getConfig);
 
   useEffect(() => {
     data && renderCurrentPage();

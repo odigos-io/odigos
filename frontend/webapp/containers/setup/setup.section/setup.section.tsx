@@ -1,15 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  EmptyListWrapper,
   SetupContentWrapper,
   SetupSectionContainer,
 } from "./setup.section.styled";
 import { SetupHeader } from "../setup.header/setup.header";
 import { SourcesList, SourcesOptionMenu } from "@/components/setup";
-import { useQuery } from "react-query";
 import { getApplication, setNamespaces } from "@/services/setup";
-import { QUERIES } from "@/utils/constants";
-import Empty from "@/assets/images/empty-list.svg";
 
 const DEFAULT_CONFIG = {
   selected_all: false,
@@ -27,17 +23,13 @@ export function SetupSection({ namespaces }: any) {
     });
   }, [namespaces]);
 
-  const { data } = useQuery(
-    [QUERIES.API_APPLICATIONS, currentNamespace],
-    () => getApplication(currentNamespace.name),
-    { enabled: !!currentNamespace }
-  );
-
-  useEffect(onNameSpaceChange, [data]);
-
   useEffect(() => {
     !currentNamespace && setCurrentNamespace(namespaces[0]);
   }, [namespaces]);
+
+  useEffect(() => {
+    onNameSpaceChange();
+  }, [currentNamespace]);
 
   const totalSelected = useMemo(() => {
     let total = 0;
@@ -49,9 +41,19 @@ export function SetupSection({ namespaces }: any) {
     return total;
   }, [JSON.stringify(selectedApplications)]);
 
-  function onNameSpaceChange() {
-    if (!data || selectedApplications[currentNamespace?.name]) return;
+  const sourceData = useMemo(() => {
+    const data = selectedApplications[currentNamespace?.name];
+    return searchFilter
+      ? data?.objects.filter((item: any) =>
+          item.name.toLowerCase().includes(searchFilter.toLowerCase())
+        )
+      : data?.objects;
+  }, [searchFilter, currentNamespace, selectedApplications]);
 
+  async function onNameSpaceChange() {
+    if (!currentNamespace || selectedApplications[currentNamespace?.name])
+      return;
+    const data = await getApplication(currentNamespace?.name);
     const newSelectedNamespace = {
       ...selectedApplications,
       [currentNamespace?.name]: {
@@ -61,14 +63,6 @@ export function SetupSection({ namespaces }: any) {
     };
 
     setSelectedApplications(newSelectedNamespace);
-  }
-
-  function getSourceData() {
-    return searchFilter
-      ? data?.applications.filter((item: any) =>
-          item.name.toLowerCase().includes(searchFilter.toLowerCase())
-        )
-      : data?.applications;
   }
 
   function handleSourceClick({ item }: any) {
@@ -146,18 +140,12 @@ export function SetupSection({ namespaces }: any) {
           onFutureApplyChange={onFutureApplyChange}
         />
 
-        {!data?.applications?.length ? (
-          <EmptyListWrapper>
-            <Empty />
-          </EmptyListWrapper>
-        ) : (
-          <SourcesList
-            data={getSourceData()}
-            selectedData={selectedApplications[currentNamespace?.name]}
-            onItemClick={handleSourceClick}
-            onClearClick={() => onSelectAllChange(false)}
-          />
-        )}
+        <SourcesList
+          data={sourceData}
+          selectedData={selectedApplications[currentNamespace?.name]}
+          onItemClick={handleSourceClick}
+          onClearClick={() => onSelectAllChange(false)}
+        />
       </SetupContentWrapper>
     </SetupSectionContainer>
   );

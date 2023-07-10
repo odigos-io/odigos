@@ -58,6 +58,7 @@ export function KeyvalDropDown({
   const handleItemClick = (item: DropDownItem) => {
     onChange(item);
     setSelectedItem(item);
+    setSearchFilter("");
     setOpen(false);
   };
 

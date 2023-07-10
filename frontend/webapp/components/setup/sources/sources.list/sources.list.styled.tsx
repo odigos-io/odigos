@@ -26,3 +26,10 @@ export const SourcesListWrapper = styled.div`
   gap: 24px;
   overflow-y: scroll;
 `;
+
+export const EmptyListWrapper = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
