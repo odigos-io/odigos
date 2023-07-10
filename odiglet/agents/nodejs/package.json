@@ -11,7 +11,7 @@
   "devDependencies": {
     "copyfiles": "^2.4.1",
     "rimraf": "^3.0.2",
-    "typescript": "^4.4.4"
+    "typescript": "^5.1.6"
   },
   "dependencies": {
     "@opentelemetry/api": "1.4.1",
