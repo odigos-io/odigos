@@ -15,12 +15,7 @@ export const KeyvalButton: FC<ButtonProps> = ({
 }) => {
   return (
     <ButtonContainer disabled={disabled}>
-      <StyledButton
-        disabled={disabled}
-        onClick={onClick}
-        style={{ ...style }}
-        variant={variant}
-      >
+      <StyledButton disabled={disabled} onClick={onClick} style={{ ...style }}>
         {children}
       </StyledButton>
     </ButtonContainer>

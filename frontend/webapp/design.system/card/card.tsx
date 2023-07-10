@@ -4,6 +4,6 @@ interface CardProps {
   children: React.ReactNode;
   focus?: any;
 }
-export function KeyvalCard({ children, focus }: CardProps) {
-  return <CardContainer focus={focus}>{children}</CardContainer>;
+export function KeyvalCard({ children, focus = false }: CardProps) {
+  return <CardContainer active={focus || undefined}>{children}</CardContainer>;
 }

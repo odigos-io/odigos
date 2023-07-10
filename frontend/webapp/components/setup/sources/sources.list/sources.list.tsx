@@ -20,6 +20,7 @@ export function SourcesList({
     const currentItem = selectedData?.objects?.filter(
       (item) => item.name === currentCard.name
     );
+
     return currentItem?.[0]?.selected || false;
   }
 

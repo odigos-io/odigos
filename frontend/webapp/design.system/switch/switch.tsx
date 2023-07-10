@@ -22,7 +22,10 @@ export function KeyvalSwitch({
 }: KeyvalSwitchProps) {
   return (
     <SwitchInputWrapper>
-      <SwitchToggleWrapper active={toggle} onClick={handleToggleChange}>
+      <SwitchToggleWrapper
+        active={toggle || undefined}
+        onClick={handleToggleChange}
+      >
         <SwitchButtonWrapper disabled={toggle} />
       </SwitchToggleWrapper>
       {label && <KeyvalText size={14}>{label}</KeyvalText>}

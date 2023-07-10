@@ -73,7 +73,7 @@ export function KeyvalDropDown({
   return (
     <div style={{ height: 37 }} ref={containerRef}>
       <DropdownWrapper
-        isHover={isHover}
+        isHover={isHover || undefined}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >

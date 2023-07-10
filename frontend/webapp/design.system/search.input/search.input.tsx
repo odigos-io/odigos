@@ -38,12 +38,15 @@ export function KeyvalSearchInput({
     : null;
 
   return (
-    <SearchInputWrapper active={!!value} style={{ ...containerStyle }}>
+    <SearchInputWrapper
+      active={!!value || undefined}
+      style={{ ...containerStyle }}
+    >
       <Glass />
       <StyledSearchInput
         style={{ ...inputStyle }}
         value={value}
-        active={!!value}
+        active={!!value || undefined}
         placeholder={placeholder}
         onChange={onChange}
       />

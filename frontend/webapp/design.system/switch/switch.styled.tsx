@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 interface SwitchToggleWrapperProps {
-  active: boolean;
+  active?: any;
 }
 
 interface SwitchToggleBtnProps {

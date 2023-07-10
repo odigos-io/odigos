@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 interface CardContainerProps {
-  focus?: any;
+  active?: any;
 }
 
 export const CardContainer = styled.div<CardContainerProps>`
@@ -11,7 +11,7 @@ export const CardContainer = styled.div<CardContainerProps>`
   height: 204px;
   flex-direction: column;
   border-radius: 24px;
-  border: ${({ focus, theme }) =>
-    `1px solid ${focus ? theme.colors.secondary : theme.colors.dark_blue}`};
+  border: ${({ active, theme }) =>
+    `1px solid ${active ? theme.colors.secondary : theme.colors.dark_blue}`};
   background: ${({ theme }) => theme.colors.dark};
 `;
