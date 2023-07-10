@@ -5,7 +5,7 @@ import { getConfig } from "@/services/config";
 import { useRouter } from "next/navigation";
 import { ROUTES, CONFIG, QUERIES } from "@/utils/constants";
 
-export default function Home() {
+export default function App() {
   const router = useRouter();
   const { data } = useQuery([QUERIES.API_CONFIG], getConfig);
 
