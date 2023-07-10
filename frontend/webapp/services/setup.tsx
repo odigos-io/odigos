@@ -1,4 +1,3 @@
-import axios from "axios";
 import { API } from "@/utils/constants";
 import { get, post } from "./api";
 
@@ -11,5 +10,5 @@ export async function getApplication(id: string) {
 }
 
 export async function setNamespaces(body: any) {
-  post(API.NAMESPACES, body);
+  return await post(API.NAMESPACES, body);
 }

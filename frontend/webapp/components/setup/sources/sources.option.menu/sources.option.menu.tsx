@@ -3,6 +3,7 @@ import {
   DropdownWrapper,
   SourcesOptionMenuWrapper,
   CheckboxWrapper,
+  SwitcherWrapper,
 } from "./sources.option.menu.styled";
 import {
   KeyvalCheckbox,
@@ -52,12 +53,13 @@ export function SourcesOptionMenu({
         <KeyvalText size={14}>{SETUP.MENU.NAMESPACES}</KeyvalText>
         <KeyvalDropDown data={data} onChange={handleDropDownChange} />
       </DropdownWrapper>
-
-      <KeyvalSwitch
-        label={SETUP.MENU.SELECT_ALL}
-        toggle={toggle}
-        handleToggleChange={handleToggleChange}
-      />
+      <SwitcherWrapper>
+        <KeyvalSwitch
+          label={SETUP.MENU.SELECT_ALL}
+          toggle={toggle}
+          handleToggleChange={handleToggleChange}
+        />
+      </SwitcherWrapper>
       <CheckboxWrapper>
         <KeyvalCheckbox
           label={SETUP.MENU.FUTURE_APPLY}

@@ -1,9 +1,6 @@
-import axios from "axios";
 import { API } from "@/utils/constants";
+import { get } from "./api";
 
 export async function getConfig() {
-  const { data, status } = await axios.get(API.CONFIG);
-  if (status === 200) {
-    return data;
-  }
+  return await get(API.CONFIG);
 }
