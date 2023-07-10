@@ -9,6 +9,7 @@ export const CheckboxWrapper = styled.div<CheckboxWrapperProps>`
   gap: 8px;
   align-items: center;
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
+  pointer-events: ${({ disabled }) => (disabled ? "none" : "auto")};
   opacity: ${({ disabled }) => (disabled ? "0.5" : "1")};
 `;
 
