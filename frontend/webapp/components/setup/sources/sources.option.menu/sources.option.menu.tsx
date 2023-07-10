@@ -65,6 +65,7 @@ export function SourcesOptionMenu({
           label={SETUP.MENU.FUTURE_APPLY}
           value={checked}
           onChange={() => onFutureApplyChange(!checked)}
+          disabled={!toggle}
         />
         <KeyvalTooltip content={SETUP.MENU.TOOLTIP} />
       </CheckboxWrapper>

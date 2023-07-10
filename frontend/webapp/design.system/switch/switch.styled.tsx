@@ -5,7 +5,7 @@ interface SwitchToggleWrapperProps {
 }
 
 interface SwitchToggleBtnProps {
-  disabled: boolean;
+  disabled: boolean | undefined;
 }
 
 export const SwitchInputWrapper = styled.div`

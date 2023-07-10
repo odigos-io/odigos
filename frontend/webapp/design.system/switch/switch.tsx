@@ -26,7 +26,7 @@ export function KeyvalSwitch({
         active={toggle || undefined}
         onClick={handleToggleChange}
       >
-        <SwitchButtonWrapper disabled={toggle} />
+        <SwitchButtonWrapper disabled={toggle || undefined} />
       </SwitchToggleWrapper>
       {label && <KeyvalText size={14}>{label}</KeyvalText>}
     </SwitchInputWrapper>

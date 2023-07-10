@@ -76,8 +76,9 @@ export function KeyvalDropDown({
         hover={isHover || undefined}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
+        onClick={toggleDropdown}
       >
-        <DropdownHeader onClick={toggleDropdown}>
+        <DropdownHeader>
           {selectedItem ? selectedItem.label : SELECTED_ITEM}
           <Open className={`dropdown-arrow ${isOpen && "open"}`} />
         </DropdownHeader>

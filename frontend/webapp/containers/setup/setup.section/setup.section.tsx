@@ -84,6 +84,7 @@ export function SetupSection({ namespaces }: any) {
       currentNamespaceConfig = {
         ...currentNamespaceConfig,
         selected_all: false,
+        future_selected: false,
       };
     }
     handleSetNewSelectedConfig(currentNamespaceConfig);
@@ -97,7 +98,7 @@ export function SetupSection({ namespaces }: any) {
     });
 
     const currentNamespaceConfig = {
-      ...namespace,
+      future_selected: value,
       selected_all: value,
       objects,
     };
