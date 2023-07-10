@@ -106,9 +106,7 @@ const Home: NextPage = () => {
             <div>
               <span className="font-medium">No destinations configured!</span>{" "}
               <Link href="/dest/new" className="font-medium underline">
-                
-                  Click here to add a destination
-                
+                Click here to add a destination
               </Link>
             </div>
           </div>
@@ -211,16 +209,18 @@ export const getServerSideProps = async ({ query }: any) => {
   return {
     props: {},
   };
-}
+};
 
 async function isSomethingLabeled(kc: k8s.KubeConfig): Promise<boolean> {
   // Check if there is any namespace labeled with odigos
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
   const namespaces = await k8sApi.listNamespace();
   const odigosNamespaces = namespaces.body.items.filter((ns) => {
-    return ns.metadata?.labels && ns.metadata?.labels["odigos-instrumentation"] === "enabled";
-  }
-  );
+    return (
+      ns.metadata?.labels &&
+      ns.metadata?.labels["odigos-instrumentation"] === "enabled"
+    );
+  });
 
   if (odigosNamespaces.length > 0) {
     return true;
@@ -230,9 +230,11 @@ async function isSomethingLabeled(kc: k8s.KubeConfig): Promise<boolean> {
   const k8sAppsApi = kc.makeApiClient(k8s.AppsV1Api);
   const deployments = await k8sAppsApi.listDeploymentForAllNamespaces();
   const odigosDeployments = deployments.body.items.filter((d) => {
-    return d.metadata?.labels && d.metadata?.labels["odigos-instrumentation"] === "enabled";
-  }
-  );
+    return (
+      d.metadata?.labels &&
+      d.metadata?.labels["odigos-instrumentation"] === "enabled"
+    );
+  });
 
   if (odigosDeployments.length > 0) {
     return true;
@@ -241,9 +243,11 @@ async function isSomethingLabeled(kc: k8s.KubeConfig): Promise<boolean> {
   // Check if there is any daemonset labeled with odigos
   const daemonsets = await k8sAppsApi.listDaemonSetForAllNamespaces();
   const odigosDaemonsets = daemonsets.body.items.filter((d) => {
-    return d.metadata?.labels && d.metadata?.labels["odigos-instrumentation"] === "enabled";
-  }
-  );
+    return (
+      d.metadata?.labels &&
+      d.metadata?.labels["odigos-instrumentation"] === "enabled"
+    );
+  });
 
   if (odigosDaemonsets.length > 0) {
     return true;
@@ -252,9 +256,11 @@ async function isSomethingLabeled(kc: k8s.KubeConfig): Promise<boolean> {
   // Check if there is any statefulset labeled with odigos
   const statefulsets = await k8sAppsApi.listStatefulSetForAllNamespaces();
   const odigosStatefulsets = statefulsets.body.items.filter((d) => {
-    return d.metadata?.labels && d.metadata?.labels["odigos-instrumentation"] === "enabled";
-  }
-  );
+    return (
+      d.metadata?.labels &&
+      d.metadata?.labels["odigos-instrumentation"] === "enabled"
+    );
+  });
 
   if (odigosStatefulsets.length > 0) {
     return true;

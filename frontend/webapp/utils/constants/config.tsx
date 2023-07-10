@@ -1,0 +1,5 @@
+export const CONFIG = {
+  NEW: "NEW",
+  APPS_SELECTED: "APPS_SELECTED",
+  FINISHED: "FINISHED",
+};
