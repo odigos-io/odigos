@@ -122,7 +122,6 @@ export function SetupSection({ namespaces }: any) {
 
   function onNextClick() {
     setNamespaces(selectedApplications);
-    //[TODO]: Move To Next Step
   }
 
   return (
