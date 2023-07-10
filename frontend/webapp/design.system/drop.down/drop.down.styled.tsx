@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 interface DropdownWrapperProps {
-  isHover?: boolean;
+  hover?: boolean;
 }
 
 export const DropdownWrapper = styled.div<DropdownWrapperProps>`
@@ -10,8 +10,8 @@ export const DropdownWrapper = styled.div<DropdownWrapperProps>`
   width: 260px;
   padding: 11px 13px;
   border-radius: 8px;
-  border: ${({ isHover, theme }) =>
-    `1px solid  ${isHover ? theme.colors.white : theme.colors.blue_grey}`};
+  border: ${({ hover, theme }) =>
+    `1px solid  ${hover ? theme.colors.white : theme.colors.blue_grey}`};
   background: ${({ theme }) => theme.colors.dark};
 
   .dropdown-arrow {

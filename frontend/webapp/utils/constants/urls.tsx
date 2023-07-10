@@ -1,7 +1,12 @@
+const env = process.env.NODE_ENV;
+
+const LOCALHOST = "http://localhost:8080/api";
+const BASE_URL = env === "production" ? "/api" : LOCALHOST;
+
 const API = {
-  CONFIG: "http://localhost:8080/api/config",
-  NAMESPACES: "http://localhost:8080/api/namespaces",
-  APPLICATIONS: "http://localhost:8080/api/applications",
+  CONFIG: `${BASE_URL}/config`,
+  NAMESPACES: `${BASE_URL}/namespaces`,
+  APPLICATIONS: `${BASE_URL}/applications`,
 };
 
 const QUERIES = {
