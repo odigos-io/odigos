@@ -22,4 +22,6 @@ export const SETUP = {
   NEXT: "Next",
   CLEAR_SELECTION: "Clear Selection",
   APPLICATIONS: "Applications",
+  RUNNING_INSTANCES: "Running Instances",
+  SELECTED: "Selected",
 };

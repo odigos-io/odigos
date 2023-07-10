@@ -11,6 +11,7 @@ import {
   SourceCardWrapper,
 } from "./source.card.styled";
 import Logo from "assets/logos/code-sandbox-logo.svg";
+import { SETUP } from "@/utils/constants";
 
 const KIND_COLORS = {
   deployment: "#203548",
@@ -38,7 +39,7 @@ export function SourceCard({ item, onClick, focus }: any) {
         </ApplicationNameWrapper>
         <KeyvalTag title={item.kind} color={KIND_COLORS[item.kind]} />
         <KeyvalText size={14} weight={400}>
-          {`${item?.instances} Running instance`}
+          {`${item?.instances} ${SETUP.RUNNING_INSTANCES}`}
         </KeyvalText>
       </SourceCardWrapper>
     </KeyvalCard>

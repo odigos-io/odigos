@@ -8,7 +8,7 @@ export const SetupHeaderWrapper = styled.header`
   max-width: 1288px;
   justify-content: space-between;
   border-radius: 24px;
-  border: 1px solid var(--dark-mode-dark-4, #374a5b);
+  border: ${({ theme }) => `1px solid ${theme.colors.blue_grey}`};
   background: ${({ theme }) => theme.colors.light_dark};
 `;
 

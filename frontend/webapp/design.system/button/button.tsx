@@ -1,5 +1,5 @@
 import React, { ButtonHTMLAttributes, FC } from "react";
-import { ButtonWrapper } from "./button.styled";
+import { StyledButton, ButtonContainer } from "./button.styled";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   // Additional custom props if needed
@@ -11,10 +11,18 @@ export const KeyvalButton: FC<ButtonProps> = ({
   children,
   style,
   onClick,
+  disabled,
 }) => {
   return (
-    <ButtonWrapper onClick={onClick} style={{ ...style }} variant={variant}>
-      {children}
-    </ButtonWrapper>
+    <ButtonContainer disabled={disabled}>
+      <StyledButton
+        disabled={disabled}
+        onClick={onClick}
+        style={{ ...style }}
+        variant={variant}
+      >
+        {children}
+      </StyledButton>
+    </ButtonContainer>
   );
 };

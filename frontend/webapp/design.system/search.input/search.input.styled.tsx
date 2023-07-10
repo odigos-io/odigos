@@ -12,7 +12,7 @@ export const SearchInputWrapper = styled.div<ActiveProps>`
   gap: 10px;
   border-radius: 8px;
   border: ${({ active, theme }) =>
-    `1px solid ${active ? theme.colors.white : "#374a5b"}`};
+    `1px solid ${active ? theme.colors.white : theme.colors.blue_grey}`};
   background: ${({ active, theme }) =>
     `${active ? theme.colors.dark : theme.colors.light_dark}`};
   &:hover {

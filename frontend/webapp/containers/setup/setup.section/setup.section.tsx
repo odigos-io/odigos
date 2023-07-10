@@ -21,27 +21,33 @@ export function SetupSection({ namespaces }: any) {
   const [selectedApplications, setSelectedApplications] = useState<any>({});
   const [searchFilter, setSearchFilter] = useState<string>("");
 
-  const namespacesList = useMemo(
-    () =>
-      namespaces.map((item: any, index: number) => {
-        return { id: index, label: item.name };
-      }),
-    [namespaces]
-  );
+  const namespacesList = useMemo(() => {
+    return namespaces.map((item: any, index: number) => {
+      return { id: index, label: item.name };
+    });
+  }, [namespaces]);
 
   const { data } = useQuery(
     [QUERIES.API_APPLICATIONS, currentNamespace],
     () => getApplication(currentNamespace.name),
-    {
-      // The query will not execute until the currentNamespace exists
-      enabled: !!currentNamespace,
-    }
+    { enabled: !!currentNamespace }
   );
 
   useEffect(onNameSpaceChange, [data]);
+
   useEffect(() => {
     !currentNamespace && setCurrentNamespace(namespaces[0]);
   }, [namespaces]);
+
+  const totalSelected = useMemo(() => {
+    let total = 0;
+    for (const key in selectedApplications) {
+      const apps = selectedApplications[key]?.objects;
+      const counter = apps?.filter((item: any) => item.selected)?.length;
+      total += counter;
+    }
+    return total;
+  }, [JSON.stringify(selectedApplications)]);
 
   function onNameSpaceChange() {
     if (!data || selectedApplications[currentNamespace?.name]) return;
@@ -69,6 +75,7 @@ export function SetupSection({ namespaces }: any) {
     const objIndex = selectedApplications[
       currentNamespace?.name
     ].objects.findIndex((app) => app.name === item.name);
+
     const namespace = selectedApplications[currentNamespace?.name];
     let objects = [...namespace.objects];
 
@@ -85,12 +92,7 @@ export function SetupSection({ namespaces }: any) {
         selected_all: false,
       };
     }
-
-    const newSelectedNamespaceConfig = {
-      ...selectedApplications,
-      [currentNamespace?.name]: currentNamespaceConfig,
-    };
-    setSelectedApplications(newSelectedNamespaceConfig);
+    handleSetNewSelectedConfig(currentNamespaceConfig);
   }
 
   function onSelectAllChange(value: boolean) {
@@ -105,12 +107,7 @@ export function SetupSection({ namespaces }: any) {
       selected_all: value,
       objects,
     };
-
-    const newSelectedNamespaceConfig = {
-      ...selectedApplications,
-      [currentNamespace?.name]: currentNamespaceConfig,
-    };
-    setSelectedApplications(newSelectedNamespaceConfig);
+    handleSetNewSelectedConfig(currentNamespaceConfig);
   }
 
   function onFutureApplyChange(value: boolean) {
@@ -118,10 +115,13 @@ export function SetupSection({ namespaces }: any) {
       ...selectedApplications[currentNamespace?.name],
       future_selected: value,
     };
+    handleSetNewSelectedConfig(currentNamespaceConfig);
+  }
 
+  function handleSetNewSelectedConfig(config: any) {
     const newSelectedNamespaceConfig = {
       ...selectedApplications,
-      [currentNamespace?.name]: currentNamespaceConfig,
+      [currentNamespace?.name]: config,
     };
     setSelectedApplications(newSelectedNamespaceConfig);
   }
@@ -133,7 +133,7 @@ export function SetupSection({ namespaces }: any) {
 
   return (
     <SetupSectionContainer>
-      <SetupHeader onNextClick={onNextClick} />
+      <SetupHeader onNextClick={onNextClick} totalSelected={totalSelected} />
       <SetupContentWrapper>
         <SourcesOptionMenu
           currentNamespace={currentNamespace}

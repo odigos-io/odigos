@@ -11,7 +11,7 @@ export const DropdownWrapper = styled.div<DropdownWrapperProps>`
   padding: 11px 13px;
   border-radius: 8px;
   border: ${({ isHover, theme }) =>
-    `1px solid  ${isHover ? theme.colors.white : "#374a5b"}`};
+    `1px solid  ${isHover ? theme.colors.white : theme.colors.blue_grey}`};
   background: ${({ theme }) => theme.colors.dark};
 
   .dropdown-arrow {
@@ -44,7 +44,7 @@ export const DropdownBody = styled.div`
   padding: 11px 4px;
   flex-direction: column;
   border-radius: 8px;
-  border: 1px solid #374a5b;
+  border: ${({ theme }) => `1px solid ${theme.colors.blue_grey}`};
   background: ${({ theme }) => theme.colors.dark};
   margin-top: 5px;
 `;
@@ -67,4 +67,7 @@ export const DropdownItem = styled.div`
   align-items: center;
   border-radius: 8px;
   cursor: pointer;
+  p {
+    cursor: pointer !important;
+  }
 `;

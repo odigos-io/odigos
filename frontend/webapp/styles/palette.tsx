@@ -4,10 +4,12 @@ import { DefaultTheme } from "styled-components";
 const colors = {
   primary: "#FF0000",
   secondary: "#0EE6F3",
+  torquiz_light: "#96F2FF",
   dark: "#07111A",
   light_dark: "#132330",
   dark_blue: "#203548",
   light_grey: "#CCD0D2",
+  blue_grey: "#374A5B",
   white: "#fff",
 };
 

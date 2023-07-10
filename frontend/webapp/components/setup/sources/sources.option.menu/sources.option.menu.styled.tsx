@@ -19,4 +19,5 @@ export const CheckboxWrapper = styled.div`
   display: flex;
   gap: 8px;
   align-items: center;
+  min-width: 195px;
 `;

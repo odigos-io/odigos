@@ -9,7 +9,7 @@ import Charge from "assets/icons/charge-rect.svg";
 import RightArrow from "assets/icons/arrow-right.svg";
 import { SETUP } from "@/utils/constants";
 
-export function SetupHeader({ onNextClick }: any) {
+export function SetupHeader({ onNextClick, totalSelected }: any) {
   return (
     <SetupHeaderWrapper>
       <HeaderTitleWrapper>
@@ -17,8 +17,14 @@ export function SetupHeader({ onNextClick }: any) {
         <KeyvalText>{SETUP.HEADER.CHOOSE_SOURCE_TITLE}</KeyvalText>
       </HeaderTitleWrapper>
       <HeaderButtonWrapper>
-        <KeyvalText weight={400}>{"0 selected"}</KeyvalText>
-        <KeyvalButton onClick={onNextClick} style={{ gap: 10 }}>
+        <KeyvalText
+          weight={400}
+        >{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
+        <KeyvalButton
+          disabled={totalSelected === 0}
+          onClick={onNextClick}
+          style={{ gap: 10 }}
+        >
           <KeyvalText size={20} weight={600} color="#0A1824">
             {SETUP.NEXT}
           </KeyvalText>
