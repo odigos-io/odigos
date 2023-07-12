@@ -8,6 +8,7 @@ interface TapProps {
   tapped?: boolean;
   onClick?: () => void;
   children?: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
 interface TapWrapperProps {
@@ -26,9 +27,9 @@ const TapWrapper = styled.div<TapWrapperProps>`
     tapped ? theme.colors.dark_blue : "transparent"};
 `;
 
-export function KeyvalTap({ title = "", tapped, children }: TapProps) {
+export function KeyvalTap({ title = "", tapped, children, style }: TapProps) {
   return (
-    <TapWrapper tapped={tapped}>
+    <TapWrapper tapped={tapped} style={{ ...style }}>
       {children}
       <KeyvalText weight={400} size={14} color={tapped ? "#CCD0D2" : "#8B92A5"}>
         {title}

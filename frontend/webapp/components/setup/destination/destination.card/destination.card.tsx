@@ -39,7 +39,7 @@ export function DestinationCard({ item, onClick, focus }: any) {
             {item.display_type}
           </KeyvalText>
         </ApplicationNameWrapper>
-        <TapList list={monitors} />
+        <TapList list={monitors} tapStyle={{ padding: "4px 8px" }} />
       </DestinationCardWrapper>
     </KeyvalCard>
   );
