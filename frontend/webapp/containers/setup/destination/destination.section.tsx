@@ -57,7 +57,7 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
       <DestinationList
         key={index}
         data={category}
-        onItemClick={(item) => console.log({ item })}
+        onItemClick={(item) => setSectionData(item)}
       />
     ));
   }

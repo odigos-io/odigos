@@ -18,6 +18,7 @@ export function DestinationCard({ item, onClick, focus }: any) {
     const data = MONITORING_OPTIONS.map((monitor: any) => {
       const isSupported =
         item?.supported_signals?.[monitor.title.toLowerCase()]?.supported;
+
       if (isSupported) {
         return {
           ...monitor,
