@@ -7,15 +7,17 @@ interface KeyvalCheckboxProps {
   value: boolean;
   onChange: () => void;
   label?: string;
+  disabled?: boolean;
 }
 
 export function KeyvalCheckbox({
   onChange,
   value,
   label = "",
+  disabled = false,
 }: KeyvalCheckboxProps) {
   return (
-    <CheckboxWrapper onClick={onChange}>
+    <CheckboxWrapper disabled={disabled || undefined} onClick={onChange}>
       {value ? <Checked /> : <Checkbox />}
       <KeyvalText size={14}>{label}</KeyvalText>
     </CheckboxWrapper>

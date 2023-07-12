@@ -1,10 +1,16 @@
 import { styled } from "styled-components";
 
-export const CheckboxWrapper = styled.div`
+interface CheckboxWrapperProps {
+  disabled?: boolean;
+}
+
+export const CheckboxWrapper = styled.div<CheckboxWrapperProps>`
   display: flex;
   gap: 8px;
   align-items: center;
-  cursor: pointer;
+  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
+  pointer-events: ${({ disabled }) => (disabled ? "none" : "auto")};
+  opacity: ${({ disabled }) => (disabled ? "0.5" : "1")};
 `;
 
 export const Checkbox = styled.span`

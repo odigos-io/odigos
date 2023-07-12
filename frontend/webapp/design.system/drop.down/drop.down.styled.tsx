@@ -10,6 +10,7 @@ export const DropdownWrapper = styled.div<DropdownWrapperProps>`
   width: 260px;
   padding: 11px 13px;
   border-radius: 8px;
+  cursor: pointer;
   border: ${({ hover, theme }) =>
     `1px solid  ${hover ? theme.colors.white : theme.colors.blue_grey}`};
   background: ${({ theme }) => theme.colors.dark};
@@ -25,7 +26,6 @@ export const DropdownWrapper = styled.div<DropdownWrapperProps>`
 `;
 
 export const DropdownHeader = styled.div`
-  cursor: pointer;
   width: 100%;
   display: flex;
   justify-content: space-between;
