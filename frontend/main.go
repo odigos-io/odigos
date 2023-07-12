@@ -77,7 +77,9 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error reading webapp/out directory: %s", err)
 	}
-	r.NoRoute(gin.WrapH(http.FileServer(http.FS(dist))))
+
+	// Serve React app if page not found serve index.html
+	r.NoRoute(gin.WrapH(httpFileServerWith404(http.FS(dist))))
 
 	// Serve API
 	apis := r.Group("/api")
@@ -89,6 +91,17 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 	}
 
 	return r, nil
+}
+
+func httpFileServerWith404(fs http.FileSystem) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, err := fs.Open(r.URL.Path)
+		if err != nil {
+			// Serve index.html
+			r.URL.Path = "/"
+		}
+		http.FileServer(fs).ServeHTTP(w, r)
+	})
 }
 
 func main() {
