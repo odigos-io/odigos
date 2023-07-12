@@ -1,15 +1,18 @@
+import { DestinationOptionMenu } from "@/components/setup";
 import React, { useEffect, useMemo, useState } from "react";
 
-export function DestinationSection({ sectionData, setSectionData }: any) {
-  //   const { isLoading, data } = useQuery([QUERIES.API_NAMESPACES], getNamespaces);
+export function DestinationSection() {
+  const [searchFilter, setSearchFilter] = useState<string>("");
 
-  //   if (isLoading) {
-  //     return null;
-  //   }
-
+  useEffect(() => {
+    console.log({ searchFilter });
+  }, [searchFilter]);
   return (
     <>
-      <div>DestinationSection</div>
+      <DestinationOptionMenu
+        searchFilter={searchFilter}
+        setSearchFilter={setSearchFilter}
+      />
     </>
   );
 }

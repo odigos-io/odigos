@@ -7,7 +7,7 @@ interface DropdownWrapperProps {
 export const DropdownWrapper = styled.div<DropdownWrapperProps>`
   position: relative;
   z-index: 9999;
-  width: 260px;
+  width: 100%;
   padding: 11px 13px;
   border-radius: 8px;
   cursor: pointer;
@@ -21,7 +21,7 @@ export const DropdownWrapper = styled.div<DropdownWrapperProps>`
   }
 
   .dropdown-arrow.open {
-    transform: rotate(-90deg);
+    transform: rotate(180deg);
   }
 `;
 
@@ -40,7 +40,7 @@ export const DropdownBody = styled.div`
   position: relative;
   z-index: 9999;
   display: flex;
-  width: 278px;
+  width: 110%;
   padding: 11px 4px;
   flex-direction: column;
   border-radius: 8px;
@@ -52,7 +52,7 @@ export const DropdownBody = styled.div`
 export const DropdownListWrapper = styled.div`
   position: relative;
   z-index: 9999;
-  width: 278px;
+  width: 100%;
   max-height: 270px;
   overflow-y: scroll;
   :hover {

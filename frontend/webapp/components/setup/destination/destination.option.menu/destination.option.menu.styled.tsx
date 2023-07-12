@@ -8,20 +8,9 @@ export const SourcesOptionMenuWrapper = styled.section`
 `;
 
 export const DropdownWrapper = styled.div`
+  width: 225px;
   display: flex;
   position: inherit;
   align-items: center;
   gap: 12px;
-`;
-
-export const CheckboxWrapper = styled.div`
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  min-width: 180px;
-`;
-
-export const SwitcherWrapper = styled.div`
-  min-width: 90px;
-  margin-left: 24px;
 `;

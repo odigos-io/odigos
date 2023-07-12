@@ -18,6 +18,7 @@ interface KeyvalDropDownProps {
   data: DropDownItem[];
   onChange: (item: DropDownItem) => void;
   childComp?: React.ReactNode;
+  width?: number;
 }
 
 const SELECTED_ITEM = "Select item";
@@ -28,10 +29,18 @@ const CONTAINER_STYLE = {
 };
 const SEARCH_INPUT_STYLE = { background: "transparent" };
 
+const FAKE = [
+  {
+    id: 1,
+    label: "test",
+  },
+];
+
 export function KeyvalDropDown({
-  data,
+  data = FAKE,
   onChange,
   childComp,
+  width = 260,
 }: KeyvalDropDownProps) {
   const [isOpen, setOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(data[0] || null);
@@ -71,7 +80,7 @@ export function KeyvalDropDown({
   }
 
   return (
-    <div style={{ height: 37 }} ref={containerRef}>
+    <div style={{ height: 37, width }} ref={containerRef}>
       <DropdownWrapper
         hover={isHover || undefined}
         onMouseEnter={() => setHover(true)}

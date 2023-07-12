@@ -19,6 +19,7 @@ export const SETUP = {
     FUTURE_APPLY: "Apply for any future apps",
     TOOLTIP: "Automatically connect any future apps in this namespace",
     SEARCH_PLACEHOLDER: "Search - default",
+    TYPE: "Type",
   },
   NEXT: "Next",
   CLEAR_SELECTION: "Clear Selection",
