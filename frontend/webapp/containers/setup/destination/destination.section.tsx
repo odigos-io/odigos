@@ -52,8 +52,28 @@ const FAKE = {
 export function DestinationSection({ sectionData, setSectionData }: any) {
   const [searchFilter, setSearchFilter] = useState<string>("");
 
+  function filterData() {
+    const filteredData = FAKE.categories.map((category: any) => {
+      const items = category.items.filter((item: any) => {
+        const displayType = item.display_type.toLowerCase();
+        const searchFilterLower = searchFilter.toLowerCase();
+
+        return displayType.includes(searchFilterLower);
+      });
+
+      return {
+        ...category,
+        items,
+      };
+    });
+
+    return filteredData;
+  }
+
   function renderDestinationLists() {
-    return FAKE.categories.map((category: any, index: number) => (
+    const list = searchFilter ? filterData() : FAKE.categories; //TODO change to real data (sectionData)
+
+    return list?.map((category: any, index: number) => (
       <DestinationList
         key={index}
         data={category}
