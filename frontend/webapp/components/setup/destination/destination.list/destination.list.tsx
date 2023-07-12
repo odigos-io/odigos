@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  DestinationListContainer,
   DestinationListWrapper,
   DestinationTypeTitleWrapper,
   EmptyListWrapper,

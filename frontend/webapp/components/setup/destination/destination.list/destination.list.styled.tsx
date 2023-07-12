@@ -1,7 +1,5 @@
 import styled from "styled-components";
 
-export const DestinationListContainer = styled.div``;
-
 export const DestinationTypeTitleWrapper = styled.div`
   width: 100%;
   display: flex;
