@@ -31,7 +31,7 @@ export function DestinationCard({ item, onClick, focus }: any) {
 
   return (
     <KeyvalCard focus={focus}>
-      <DestinationCardWrapper>
+      <DestinationCardWrapper onClick={onClick}>
         <KeyvalImage src={item?.image_url} width={56} height={56} />
         <ApplicationNameWrapper>
           <KeyvalText size={20} weight={700} style={TEXT_STYLE}>

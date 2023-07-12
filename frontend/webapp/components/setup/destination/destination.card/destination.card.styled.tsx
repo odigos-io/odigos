@@ -6,6 +6,7 @@ export const DestinationCardWrapper = styled.div`
   align-items: center;
   flex-direction: column;
   gap: 14px;
+  cursor: pointer;
 `;
 
 export const ApplicationNameWrapper = styled.div`

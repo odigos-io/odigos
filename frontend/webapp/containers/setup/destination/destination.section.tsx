@@ -54,7 +54,11 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
 
   function renderDestinationLists() {
     return FAKE.categories.map((category: any, index: number) => (
-      <DestinationList key={index} data={category} />
+      <DestinationList
+        key={index}
+        data={category}
+        onItemClick={(item) => console.log({ item })}
+      />
     ));
   }
 
