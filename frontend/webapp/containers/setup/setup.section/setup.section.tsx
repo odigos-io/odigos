@@ -34,7 +34,7 @@ const STEPS = [
 export function SetupSection() {
   const [sectionData, setSectionData] = useState<any>({});
   const [steps, setSteps] = useState(STEPS);
-  const [currentStep, setCurrentStep] = useState(STEPS[0]);
+  const [currentStep, setCurrentStep] = useState(STEPS[1]);
 
   const totalSelected = useMemo(() => {
     let total = 0;

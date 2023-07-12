@@ -20,6 +20,7 @@ export const SETUP = {
     TOOLTIP: "Automatically connect any future apps in this namespace",
     SEARCH_PLACEHOLDER: "Search - default",
     TYPE: "Type",
+    MONITORING: "I want to monitor",
   },
   NEXT: "Next",
   CLEAR_SELECTION: "Clear Selection",

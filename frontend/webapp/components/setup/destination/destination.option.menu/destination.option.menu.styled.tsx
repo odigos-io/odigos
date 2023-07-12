@@ -8,9 +8,12 @@ export const SourcesOptionMenuWrapper = styled.section`
 `;
 
 export const DropdownWrapper = styled.div`
-  width: 225px;
   display: flex;
   position: inherit;
   align-items: center;
   gap: 12px;
+`;
+
+export const TapsWrapper = styled(DropdownWrapper)`
+  margin-left: 8px;
 `;
