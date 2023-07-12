@@ -51,7 +51,7 @@ const FAKE = {
 
 export function DestinationSection({ sectionData, setSectionData }: any) {
   const [searchFilter, setSearchFilter] = useState<string>("");
-
+  const [dropdownData, setDropdownData] = useState<any>(null);
   function filterData() {
     const filteredData = FAKE.categories.map((category: any) => {
       const items = category.items.filter((item: any) => {
@@ -72,14 +72,18 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
 
   function renderDestinationLists() {
     const list = searchFilter ? filterData() : FAKE.categories; //TODO change to real data (sectionData)
-
-    return list?.map((category: any, index: number) => (
-      <DestinationList
-        key={index}
-        data={category}
-        onItemClick={(item) => setSectionData(item)}
-      />
-    ));
+    console.log({ dropdownData, list });
+    return list?.map(
+      (category: any, index: number) =>
+        (dropdownData?.label === category.name ||
+          dropdownData?.label === "All") && (
+          <DestinationList
+            key={index}
+            data={category}
+            onItemClick={(item) => setSectionData(item)}
+          />
+        )
+    );
   }
 
   return (
@@ -87,6 +91,8 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
       <DestinationOptionMenu
         searchFilter={searchFilter}
         setSearchFilter={setSearchFilter}
+        setDropdownData={setDropdownData}
+        data={FAKE.categories}
       />
       <DestinationListContainer>
         {renderDestinationLists()}

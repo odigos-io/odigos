@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   DropdownWrapper,
   SourcesOptionMenuWrapper,
@@ -50,7 +50,7 @@ const MONITORING_OPTIONS = [
 ];
 
 export function DestinationOptionMenu({
-  setCurrentItem,
+  setDropdownData,
   data,
   searchFilter,
   setSearchFilter,
@@ -58,8 +58,21 @@ export function DestinationOptionMenu({
   const [monitoringOption, setMonitoringOption] =
     useState<any>(MONITORING_OPTIONS);
 
+  const dropdownData = useMemo(() => {
+    let dropdownList = data?.map(({ name }: any) => {
+      return {
+        id: name,
+        label: name,
+      };
+    });
+
+    dropdownList.unshift({ id: "all", label: "All" });
+    setDropdownData(dropdownList[0]);
+    return dropdownList;
+  }, [data]);
+
   function handleDropDownChange(item: any) {
-    setCurrentItem({ id: item?.id, name: item.label });
+    setDropdownData({ id: item?.id, label: item.label });
   }
 
   return (
@@ -73,7 +86,7 @@ export function DestinationOptionMenu({
         <KeyvalText size={14}>{SETUP.MENU.TYPE}</KeyvalText>
         <KeyvalDropDown
           width={180}
-          data={data}
+          data={dropdownData}
           onChange={handleDropDownChange}
         />
       </DropdownWrapper>
