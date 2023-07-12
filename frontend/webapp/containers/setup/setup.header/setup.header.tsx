@@ -6,20 +6,41 @@ import {
 } from "./setup.header.styled";
 import { KeyvalButton, KeyvalText } from "@/design.system";
 import Charge from "assets/icons/charge-rect.svg";
+import Connect from "assets/icons/connect.svg";
 import RightArrow from "assets/icons/arrow-right.svg";
 import { SETUP } from "@/utils/constants";
 
-export function SetupHeader({ onNextClick, totalSelected }: any) {
+export function SetupHeader({ currentStep, onNextClick, totalSelected }: any) {
+  function renderCurrentIcon() {
+    switch (currentStep?.id) {
+      case "choose-source":
+        return (
+          <>
+            <Charge />
+            <KeyvalText>{SETUP.HEADER.CHOOSE_SOURCE_TITLE}</KeyvalText>
+          </>
+        );
+      case "choose-destination":
+        return (
+          <>
+            <Connect />
+            <KeyvalText>{SETUP.HEADER.CHOOSE_DESTINATION_TITLE}</KeyvalText>
+          </>
+        );
+      default:
+        return null;
+    }
+  }
+
   return (
     <SetupHeaderWrapper>
-      <HeaderTitleWrapper>
-        <Charge />
-        <KeyvalText>{SETUP.HEADER.CHOOSE_SOURCE_TITLE}</KeyvalText>
-      </HeaderTitleWrapper>
+      <HeaderTitleWrapper>{renderCurrentIcon()}</HeaderTitleWrapper>
       <HeaderButtonWrapper>
-        <KeyvalText
-          weight={400}
-        >{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
+        {currentStep?.id === "choose-source" && (
+          <KeyvalText
+            weight={400}
+          >{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
+        )}
         <KeyvalButton
           disabled={totalSelected === 0}
           onClick={onNextClick}

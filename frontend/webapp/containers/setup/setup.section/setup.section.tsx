@@ -5,7 +5,6 @@ import {
   StepListWrapper,
 } from "./setup.section.styled";
 import { SetupHeader } from "../setup.header/setup.header";
-import { setNamespaces } from "@/services/setup";
 import { SETUP } from "@/utils/constants";
 import Steps from "@/design.system/steps/steps";
 import { SourcesSection } from "../sources/sources.section";
@@ -66,6 +65,7 @@ export function SetupSection() {
   function handleNamespacesUpdate() {
     // setNamespaces(sectionData);
     setCurrentStep(STEPS[1]);
+    setSectionData({});
   }
 
   function onNextClick() {
@@ -83,7 +83,11 @@ export function SetupSection() {
         <Steps data={steps} />
       </StepListWrapper>
       <SetupSectionContainer>
-        <SetupHeader onNextClick={onNextClick} totalSelected={totalSelected} />
+        <SetupHeader
+          currentStep={currentStep}
+          onNextClick={onNextClick}
+          totalSelected={totalSelected}
+        />
         <SetupContentWrapper>{renderCurrentSection()}</SetupContentWrapper>
       </SetupSectionContainer>
     </>

@@ -11,6 +11,7 @@ export const SETUP = {
   },
   HEADER: {
     CHOOSE_SOURCE_TITLE: "Select applications to connect",
+    CHOOSE_DESTINATION_TITLE: "Add new backend destination from the list",
   },
   MENU: {
     NAMESPACES: "Namespaces",
