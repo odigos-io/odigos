@@ -15,3 +15,7 @@ export const SetupSectionContainer = styled.section`
 export const SetupContentWrapper = styled.div`
   padding: 0 60px;
 `;
+
+export const StepListWrapper = styled.div`
+  margin: 94px 0 30px 0;
+`;
