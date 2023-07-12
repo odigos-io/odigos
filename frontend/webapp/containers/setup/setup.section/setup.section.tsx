@@ -56,7 +56,12 @@ export function SetupSection() {
           />
         );
       case "choose-destination":
-        return <DestinationSection />;
+        return (
+          <DestinationSection
+            sectionData={sectionData}
+            setSectionData={setSectionData}
+          />
+        );
       default:
         return null;
     }

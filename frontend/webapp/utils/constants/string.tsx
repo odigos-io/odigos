@@ -27,4 +27,5 @@ export const SETUP = {
   APPLICATIONS: "Applications",
   RUNNING_INSTANCES: "Running Instances",
   SELECTED: "Selected",
+  MANAGED: "Managed",
 };

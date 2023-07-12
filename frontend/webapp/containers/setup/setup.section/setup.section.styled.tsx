@@ -14,6 +14,11 @@ export const SetupSectionContainer = styled.section`
 
 export const SetupContentWrapper = styled.div`
   padding: 0 60px;
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 `;
 
 export const StepListWrapper = styled.div`
