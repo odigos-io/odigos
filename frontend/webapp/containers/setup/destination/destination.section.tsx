@@ -72,18 +72,21 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
 
   function renderDestinationLists() {
     const list = searchFilter ? filterData() : FAKE.categories; //TODO change to real data (sectionData)
-    console.log({ dropdownData, list });
-    return list?.map(
-      (category: any, index: number) =>
-        (dropdownData?.label === category.name ||
-          dropdownData?.label === "All") && (
+
+    return list?.map((category: any, index: number) => {
+      const displayItem =
+        dropdownData?.label === category.name || dropdownData?.label === "All";
+
+      return (
+        displayItem && (
           <DestinationList
             key={index}
             data={category}
             onItemClick={(item) => setSectionData(item)}
           />
         )
-    );
+      );
+    });
   }
 
   return (

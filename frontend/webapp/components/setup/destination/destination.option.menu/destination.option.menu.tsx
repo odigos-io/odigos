@@ -27,7 +27,7 @@ const MONITORING_OPTIONS = [
       focus: () => LogsFocus(),
     },
     title: "Logs",
-    tapped: false,
+    tapped: true,
   },
   {
     id: "1",
@@ -45,7 +45,7 @@ const MONITORING_OPTIONS = [
       focus: () => TracesFocus(),
     },
     title: "Traces",
-    tapped: false,
+    tapped: true,
   },
 ];
 
