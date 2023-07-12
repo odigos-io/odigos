@@ -8,7 +8,7 @@ export const DropdownWrapper = styled.div<DropdownWrapperProps>`
   position: relative;
   z-index: 9999;
   width: 100%;
-  padding: 11px 13px;
+  padding: 11px 4px;
   border-radius: 8px;
   cursor: pointer;
   border: ${({ hover, theme }) =>
@@ -26,7 +26,7 @@ export const DropdownWrapper = styled.div<DropdownWrapperProps>`
 `;
 
 export const DropdownHeader = styled.div`
-  width: 100%;
+  padding: 0 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -40,7 +40,7 @@ export const DropdownBody = styled.div`
   position: relative;
   z-index: 9999;
   display: flex;
-  width: 110%;
+  width: 100%;
   padding: 11px 4px;
   flex-direction: column;
   border-radius: 8px;
