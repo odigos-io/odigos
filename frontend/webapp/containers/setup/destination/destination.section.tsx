@@ -4,8 +4,16 @@ import { QUERIES, SETUP } from "@/utils/constants";
 import { getDestinations } from "@/services/setup";
 import { MONITORING_OPTIONS } from "@/components/setup/destination/utils";
 import { DestinationList, DestinationOptionMenu } from "@/components/setup";
-import { DestinationListContainer } from "./destination.section.styled";
-import { filterDataByMonitorsOption, filterDataByTextQuery } from "./utils";
+import Empty from "@/assets/images/empty-list.svg";
+import {
+  DestinationListContainer,
+  EmptyListWrapper,
+} from "./destination.section.styled";
+import {
+  filterDataByMonitorsOption,
+  filterDataByTextQuery,
+  isDestinationListEmpty,
+} from "./utils";
 
 type DestinationSectionProps = {
   sectionData: any;
@@ -31,6 +39,14 @@ export function DestinationSection({
       filterDataByTextQuery(data, searchFilter),
       monitoringOption
     );
+
+    if (isDestinationListEmpty(list)) {
+      return (
+        <EmptyListWrapper>
+          <Empty />
+        </EmptyListWrapper>
+      );
+    }
 
     return list?.map((category: any) => {
       const displayItem =

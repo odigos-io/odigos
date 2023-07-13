@@ -7,3 +7,11 @@ export const DestinationListContainer = styled.div`
   margin-top: 24px;
   overflow: scroll;
 `;
+
+export const EmptyListWrapper = styled.div`
+  width: 100%;
+  margin-top: 130px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;

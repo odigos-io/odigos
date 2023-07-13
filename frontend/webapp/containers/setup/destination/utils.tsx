@@ -55,3 +55,7 @@ export function filterDataByMonitorsOption(data: any, monitoringOption: any) {
 
   return filteredData;
 }
+
+export function isDestinationListEmpty(list) {
+  return list?.every((category) => category.items.length === 0);
+}
