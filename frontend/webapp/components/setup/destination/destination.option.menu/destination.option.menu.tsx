@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { SETUP } from "@/utils/constants";
 import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from "@/design.system";
 import { TapList } from "../tap.list/tap.list";
@@ -40,9 +40,13 @@ export function DestinationOptionMenu({
       { id: "all", label: SETUP.ALL },
       ...data?.map(({ name }) => ({ id: name, label: name })),
     ];
-    setDropdownData(options[0]);
+
     return options;
   }, [data]);
+
+  useEffect(() => {
+    setDropdownData(dropdownData[0]);
+  }, [dropdownData]);
 
   function handleDropDownChange(item: DropdownItem) {
     setDropdownData({ id: item?.id, label: item.label });

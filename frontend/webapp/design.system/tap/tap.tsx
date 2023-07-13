@@ -5,14 +5,14 @@ import styled from "styled-components";
 interface TapProps {
   icons: object;
   title?: string;
-  tapped?: boolean;
+  tapped?: any;
   onClick?: () => void;
   children?: React.ReactNode;
   style?: React.CSSProperties;
 }
 
 interface TapWrapperProps {
-  tapped?: boolean | undefined;
+  selected?: any;
 }
 
 const TapWrapper = styled.div<TapWrapperProps>`
@@ -21,10 +21,10 @@ const TapWrapper = styled.div<TapWrapperProps>`
   align-items: flex-start;
   gap: 10px;
   border-radius: 16px;
-  border: ${({ theme, tapped }) =>
-    `1px solid ${tapped ? "transparent" : theme.colors.dark_blue}`};
-  background: ${({ theme, tapped }) =>
-    tapped ? theme.colors.dark_blue : "transparent"};
+  border: ${({ theme, selected }) =>
+    `1px solid ${selected ? "transparent" : theme.colors.dark_blue}`};
+  background: ${({ theme, selected }) =>
+    selected ? theme.colors.dark_blue : "transparent"};
 `;
 
 export function KeyvalTap({
@@ -37,7 +37,7 @@ export function KeyvalTap({
   return (
     <TapWrapper
       onClick={onClick}
-      tapped={tapped}
+      selected={tapped}
       style={{ ...style, cursor: onClick ? "pointer" : "auto" }}
     >
       {children}

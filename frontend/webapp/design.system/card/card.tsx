@@ -5,5 +5,7 @@ interface CardProps {
   focus?: any;
 }
 export function KeyvalCard({ children, focus = false }: CardProps) {
-  return <CardContainer active={focus || undefined}>{children}</CardContainer>;
+  return (
+    <CardContainer selected={focus || undefined}>{children}</CardContainer>
+  );
 }
