@@ -29,15 +29,8 @@ const CONTAINER_STYLE = {
 };
 const SEARCH_INPUT_STYLE = { background: "transparent" };
 
-const FAKE = [
-  {
-    id: 1,
-    label: "test",
-  },
-];
-
 export function KeyvalDropDown({
-  data = FAKE,
+  data = [],
   onChange,
   childComp,
   width = 260,
