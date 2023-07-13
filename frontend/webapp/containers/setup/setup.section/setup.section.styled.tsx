@@ -1,6 +1,7 @@
 import styled from "styled-components";
 
 export const SetupSectionContainer = styled.section`
+  position: relative;
   width: 85%;
   max-width: 1288px;
   height: 1095px;
@@ -22,5 +23,17 @@ export const SetupContentWrapper = styled.div`
 `;
 
 export const StepListWrapper = styled.div`
-  margin: 94px 0 30px 0;
+  margin: 94px 0 32px 0;
+`;
+
+export const BackButtonWrapper = styled.div`
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  top: -54px;
+  cursor: pointer;
+  p {
+    cursor: pointer !important;
+  }
 `;

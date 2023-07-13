@@ -3,12 +3,15 @@ import {
   SetupContentWrapper,
   SetupSectionContainer,
   StepListWrapper,
+  BackButtonWrapper,
 } from "./setup.section.styled";
 import { SetupHeader } from "../setup.header/setup.header";
 import { SETUP } from "@/utils/constants";
 import Steps from "@/design.system/steps/steps";
 import { SourcesSection } from "../sources/sources.section";
 import { DestinationSection } from "../destination/destination.section";
+import { KeyvalText } from "@/design.system";
+import RightArrow from "assets/icons/white-arrow-right.svg";
 
 const STEPS = [
   {
@@ -88,6 +91,12 @@ export function SetupSection() {
         <Steps data={steps} />
       </StepListWrapper>
       <SetupSectionContainer>
+        <BackButtonWrapper>
+          <RightArrow />
+          <KeyvalText size={14} weight={600}>
+            Back
+          </KeyvalText>
+        </BackButtonWrapper>
         <SetupHeader
           currentStep={currentStep}
           onNextClick={onNextClick}

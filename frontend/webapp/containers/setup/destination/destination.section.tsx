@@ -1,5 +1,5 @@
 import { DestinationList, DestinationOptionMenu } from "@/components/setup";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import { DestinationListContainer } from "./destination.section.styled";
 
 const FAKE = {
