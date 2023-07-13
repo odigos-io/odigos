@@ -37,7 +37,7 @@ const STEPS = [
 export function SetupSection() {
   const [sectionData, setSectionData] = useState<any>({});
   const [steps, setSteps] = useState(STEPS);
-  const [currentStep, setCurrentStep] = useState(STEPS[1]);
+  const [currentStep, setCurrentStep] = useState(STEPS[0]);
 
   const totalSelected = useMemo(() => {
     let total = 0;
@@ -66,19 +66,34 @@ export function SetupSection() {
     );
   }
 
-  function handleNamespacesUpdate() {
-    // setNamespaces(sectionData);
-    setCurrentStep(STEPS[1]);
+  function handleChangeStep(direction: number) {
+    const currentStepIndex = steps.findIndex(
+      (step) => step.id === currentStep?.id
+    );
+    const nextStep = steps[currentStepIndex + direction];
+
+    const prevStep = steps[currentStepIndex];
+
+    if (nextStep) {
+      nextStep.status = SETUP.STEPS.STATUS.ACTIVE;
+    }
+
+    if (prevStep && direction === 1) {
+      prevStep.status = SETUP.STEPS.STATUS.DONE;
+    } else {
+      prevStep.status = SETUP.STEPS.STATUS.DISABLED;
+    }
+    setCurrentStep(nextStep);
+    setSteps([...steps]);
     setSectionData({});
   }
 
   function onNextClick() {
-    switch (currentStep?.id) {
-      case "choose-source":
-        handleNamespacesUpdate();
-      default:
-        return null;
-    }
+    handleChangeStep(1);
+  }
+
+  function onBackClick() {
+    handleChangeStep(-1);
   }
 
   return (
@@ -87,12 +102,14 @@ export function SetupSection() {
         <Steps data={steps} />
       </StepListWrapper>
       <SetupSectionContainer>
-        <BackButtonWrapper>
-          <RightArrow />
-          <KeyvalText size={14} weight={600}>
-            Back
-          </KeyvalText>
-        </BackButtonWrapper>
+        {currentStep.index !== 1 && (
+          <BackButtonWrapper onClick={onBackClick}>
+            <RightArrow />
+            <KeyvalText size={14} weight={600}>
+              Back
+            </KeyvalText>
+          </BackButtonWrapper>
+        )}
         <SetupHeader
           currentStep={currentStep}
           onNextClick={onNextClick}
