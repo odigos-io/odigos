@@ -41,7 +41,6 @@ export function DestinationOptionMenu({
     const currentMonitorIndex = monitoringOption.findIndex(
       (monitor) => monitor.id === id
     );
-
     // if only one monitor is tapped and the tapped monitor is clicked, do nothing
     const isOnlyOneMonitorTapped = tappedMonitors.length === 1;
     const isTappedMonitor = monitoringOption[currentMonitorIndex].tapped;
