@@ -10,15 +10,15 @@
   },
   "devDependencies": {
     "copyfiles": "^2.4.1",
-    "rimraf": "^3.0.2",
-    "typescript": "^4.4.4"
+    "rimraf": "^5.0.1",
+    "typescript": "^5.1.6"
   },
   "dependencies": {
     "@opentelemetry/api": "1.4.1",
     "@opentelemetry/auto-instrumentations-node": "0.37.1",
-    "@opentelemetry/exporter-metrics-otlp-grpc": "0.40.0",
-    "@opentelemetry/exporter-prometheus": "0.40.0",
-    "@opentelemetry/exporter-trace-otlp-grpc": "0.40.0",
+    "@opentelemetry/exporter-metrics-otlp-grpc": "0.41.0",
+    "@opentelemetry/exporter-prometheus": "0.41.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "0.41.0",
     "@opentelemetry/resource-detector-alibaba-cloud": "0.27.7",
     "@opentelemetry/resource-detector-aws": "1.2.5",
     "@opentelemetry/resource-detector-container": "0.2.5",
