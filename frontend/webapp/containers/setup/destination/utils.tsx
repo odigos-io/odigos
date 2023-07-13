@@ -4,7 +4,7 @@ export function filterDataByTextQuery(data: any, searchFilter: string) {
 
   const filteredData = data?.categories.map((category: any) => {
     const items = category.items.filter((item: any) => {
-      const displayType = item.display_type?.toLowerCase();
+      const displayType = item.display_name?.toLowerCase();
       return displayType?.includes(searchFilter.toLowerCase());
     });
 
