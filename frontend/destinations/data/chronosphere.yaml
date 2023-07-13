@@ -1,0 +1,20 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: chronosphere
+  displayName: Chronosphere
+  category: managed
+spec:
+  image: chronosphere.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: collector_endpoint
+      displayName: Collector Endpoint
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input

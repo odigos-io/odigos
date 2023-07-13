@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/keyval-dev/odigos/frontend/destinations"
+
 	"github.com/gin-contrib/cors"
 
 	"github.com/keyval-dev/odigos/frontend/kube"
@@ -88,6 +90,7 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.POST("/namespaces", endpoints.PersistNamespaces)
 		apis.GET("/applications/:namespace", endpoints.GetApplicationsInNamespace)
 		apis.GET("/config", endpoints.GetConfig)
+		apis.GET("/destinations", endpoints.GetDestinations)
 	}
 
 	return r, nil
@@ -107,8 +110,14 @@ func httpFileServerWith404(fs http.FileSystem) http.Handler {
 func main() {
 	flags := parseFlags()
 
+	// Load destinations data
+	err := destinations.Load()
+	if err != nil {
+		log.Fatalf("Error loading destinations data: %s", err)
+	}
+
 	// Connect to Kubernetes
-	err := initKubernetesClient(&flags)
+	err = initKubernetesClient(&flags)
 	if err != nil {
 		log.Fatalf("Error creating Kubernetes client: %s", err)
 	}

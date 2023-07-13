@@ -1,0 +1,20 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: jaeger
+  displayName: Jaeger
+  category: self hosted
+spec:
+  image: jaeger.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  fields:
+    - name: endpoint
+      displayName: Endpoint
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
