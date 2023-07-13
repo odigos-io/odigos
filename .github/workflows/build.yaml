@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-autoscaler:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -18,18 +18,36 @@ jobs:
           push: false
           tags: autoscaler:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=autoscaler
+  build-scheduler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
       - name: Build Scheduler Image
         uses: docker/build-push-action@v4
         with:
           push: false
           tags: scheduler:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=scheduler
+  build-instrumentor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
       - name: Build Instrumentor Image
         uses: docker/build-push-action@v4
         with:
           push: false
           tags: instrumentor:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=instrumentor
+  build-odiglet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
       - name: Build Odiglet Image
         uses: docker/build-push-action@v4
         with:
@@ -37,6 +55,12 @@ jobs:
           context: .
           push: false
           tags: odiglet:pr-${{ github.event.number }}
+  build-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
       - name: Build UI Image
         uses: docker/build-push-action@v4
         with:
@@ -44,6 +68,12 @@ jobs:
           context: ui/
           push: false
           tags: ui:pr-${{ github.event.number }}
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
       - name: Build Frontend Image
         uses: docker/build-push-action@v4
         with:
