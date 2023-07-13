@@ -4,7 +4,6 @@ export const RadioButtonWrapper = styled.div`
   position: absolute;
   right: 16px;
   top: 16px;
-  z-index: 50;
 `;
 
 export const SourceCardWrapper = styled.div`

@@ -8,6 +8,11 @@ export const SETUP = {
       DISABLED: "disabled",
       DONE: "done",
     },
+    ID: {
+      CHOOSE_SOURCE: "choose-source",
+      CHOOSE_DESTINATION: "choose-destination",
+      CREATE_CONNECTION: "create-connection",
+    },
   },
   HEADER: {
     CHOOSE_SOURCE_TITLE: "Select applications to connect",
@@ -23,6 +28,8 @@ export const SETUP = {
     MONITORING: "I want to monitor",
   },
   NEXT: "Next",
+  BACK: "Back",
+  ALL: "All",
   CLEAR_SELECTION: "Clear Selection",
   APPLICATIONS: "Applications",
   RUNNING_INSTANCES: "Running Instances",

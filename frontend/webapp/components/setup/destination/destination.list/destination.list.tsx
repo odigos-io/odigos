@@ -7,17 +7,6 @@ import { KeyvalText } from "@/design.system";
 import { DestinationCard } from "../destination.card/destination.card";
 
 export function DestinationList({ data = [], onItemClick, sectionData }: any) {
-  // const memorizedList = useMemo(() => {
-  //   return data?.items?.map((item: any, index: number) => (
-  //     <DestinationCard
-  //       key={index}
-  //       item={item}
-  //       onClick={() => onItemClick(item)}
-  //       focus={sectionData?.type === item?.type}
-  //     />
-  //   ));
-  // }, [data, sectionData]);
-
   function renderList() {
     return data?.items?.map((item: any, index: number) => (
       <DestinationCard

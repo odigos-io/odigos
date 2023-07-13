@@ -12,66 +12,31 @@ import { SourcesSection } from "../sources/sources.section";
 import { DestinationSection } from "../destination/destination.section";
 import { KeyvalText } from "@/design.system";
 import RightArrow from "assets/icons/white-arrow-right.svg";
+import { STEPS, Step } from "./utils";
+import { useSectionData } from "@/hooks";
 
-const STEPS = [
-  {
-    index: 1,
-    id: "choose-source",
-    title: SETUP.STEPS.CHOOSE_SOURCE,
-    status: SETUP.STEPS.STATUS.ACTIVE,
-  },
-  {
-    index: 2,
-    id: "choose-destination",
-    title: SETUP.STEPS.CHOOSE_DESTINATION,
-    status: SETUP.STEPS.STATUS.DISABLED,
-  },
-  {
-    index: 3,
-    id: "create-connection",
-    title: SETUP.STEPS.CREATE_CONNECTION,
-    status: SETUP.STEPS.STATUS.DISABLED,
-  },
-];
+const sectionComponents = {
+  [SETUP.STEPS.ID.CHOOSE_SOURCE]: SourcesSection,
+  [SETUP.STEPS.ID.CHOOSE_DESTINATION]: DestinationSection,
+};
 
 export function SetupSection() {
-  const [sectionData, setSectionData] = useState<any>({});
-  const [steps, setSteps] = useState(STEPS);
-  const [currentStep, setCurrentStep] = useState(STEPS[0]);
-
-  const totalSelected = useMemo(() => {
-    let total = 0;
-    for (const key in sectionData) {
-      const apps = sectionData[key]?.objects;
-      const counter = apps?.filter((item: any) => item.selected)?.length;
-      total += counter;
-    }
-    return total;
-  }, [JSON.stringify(sectionData)]);
+  const [steps, setSteps] = useState<Step[]>(STEPS);
+  const [currentStep, setCurrentStep] = useState<Step>(STEPS[0]);
+  const { sectionData, setSectionData, totalSelected } = useSectionData({});
 
   function renderCurrentSection() {
-    let Component: any = null;
-
-    switch (currentStep?.id) {
-      case "choose-source":
-        Component = SourcesSection;
-        break;
-      case "choose-destination":
-        Component = DestinationSection;
-        break;
-    }
-
-    return (
+    const Component = sectionComponents[currentStep?.id];
+    return Component ? (
       <Component sectionData={sectionData} setSectionData={setSectionData} />
-    );
+    ) : null;
   }
 
   function handleChangeStep(direction: number) {
     const currentStepIndex = steps.findIndex(
-      (step) => step.id === currentStep?.id
+      ({ id }) => id === currentStep?.id
     );
     const nextStep = steps[currentStepIndex + direction];
-
     const prevStep = steps[currentStepIndex];
 
     if (nextStep) {
@@ -106,7 +71,7 @@ export function SetupSection() {
           <BackButtonWrapper onClick={onBackClick}>
             <RightArrow />
             <KeyvalText size={14} weight={600}>
-              Back
+              {SETUP.BACK}
             </KeyvalText>
           </BackButtonWrapper>
         )}

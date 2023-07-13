@@ -1,12 +1,21 @@
-import { DestinationList, DestinationOptionMenu } from "@/components/setup";
 import React, { useState } from "react";
-import { DestinationListContainer } from "./destination.section.styled";
-import { QUERIES } from "@/utils/constants";
 import { useQuery } from "react-query";
+import { QUERIES, SETUP } from "@/utils/constants";
 import { getDestinations } from "@/services/setup";
 import { MONITORING_OPTIONS } from "@/components/setup/destination/utils";
+import { DestinationList, DestinationOptionMenu } from "@/components/setup";
+import { DestinationListContainer } from "./destination.section.styled";
+import { filterDataByMonitorsOption, filterDataByTextQuery } from "./utils";
 
-export function DestinationSection({ sectionData, setSectionData }: any) {
+type DestinationSectionProps = {
+  sectionData: any;
+  setSectionData: (data: any) => void;
+};
+
+export function DestinationSection({
+  sectionData,
+  setSectionData,
+}: DestinationSectionProps) {
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [dropdownData, setDropdownData] = useState<any>(null);
   const [monitoringOption, setMonitoringOption] =
@@ -17,72 +26,21 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
     getDestinations
   );
 
-  function filterDataByTextQuery() {
-    //filter each category items by search query
-    const filteredData = data?.categories.map((category: any) => {
-      const items = category.items.filter((item: any) => {
-        const displayType = item.display_type.toLowerCase();
-        return displayType.includes(searchFilter.toLowerCase());
-      });
-
-      return {
-        ...category,
-        items,
-      };
-    });
-    return filteredData;
-  }
-
-  function filterDataByMonitorsOption(data: any) {
-    const selectedMonitors = monitoringOption
-      .filter((monitor: any) => monitor.tapped)
-      .map((monitor: any) => monitor.title.toLowerCase());
-
-    // if all monitors are selected, return all data
-    if (selectedMonitors.length === 3) return data;
-
-    const filteredData: any[] = [];
-
-    data?.forEach((category: any) => {
-      const supportedItems: any[] = [];
-
-      category.items.filter((item: any) => {
-        // get all supported signals for each item
-        const supportedSignals: any[] = [];
-
-        for (const monitor in item.supported_signals) {
-          if (item.supported_signals[monitor].supported) {
-            supportedSignals.push(monitor);
-          }
-        }
-
-        const isSelected = selectedMonitors.some((monitor) =>
-          supportedSignals.includes(monitor)
-        );
-        // if item is supported by any of the selected monitors, add it to the list
-        isSelected && supportedItems.push(item);
-      });
-
-      filteredData.push({
-        items: supportedItems,
-        name: category.name,
-      });
-    });
-
-    return filteredData;
-  }
-
   function renderDestinationLists() {
-    let list = searchFilter ? filterDataByTextQuery() : data?.categories;
-    list = filterDataByMonitorsOption(list);
-    return list?.map((category: any, index: number) => {
+    const list = filterDataByMonitorsOption(
+      filterDataByTextQuery(data, searchFilter),
+      monitoringOption
+    );
+
+    return list?.map((category: any) => {
       const displayItem =
-        dropdownData?.label === category.name || dropdownData?.label === "All";
+        dropdownData?.label === category.name ||
+        dropdownData?.label === SETUP.ALL;
 
       return (
         displayItem && (
           <DestinationList
-            key={index}
+            key={category.name}
             data={category}
             sectionData={sectionData}
             onItemClick={(item: any) => setSectionData(item)}

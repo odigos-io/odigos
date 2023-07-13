@@ -24,7 +24,7 @@ export function DestinationOptionMenu({
       };
     });
 
-    dropdownList.unshift({ id: "all", label: "All" });
+    dropdownList.unshift({ id: "all", label: SETUP.ALL });
     setDropdownData(dropdownList[0]);
     return dropdownList;
   }, [data]);
