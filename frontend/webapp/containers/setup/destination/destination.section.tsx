@@ -18,12 +18,11 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
   );
 
   function filterDataByTextQuery() {
+    //filter each category items by search query
     const filteredData = data?.categories.map((category: any) => {
       const items = category.items.filter((item: any) => {
         const displayType = item.display_type.toLowerCase();
-        const searchFilterLower = searchFilter.toLowerCase();
-
-        return displayType.includes(searchFilterLower);
+        return displayType.includes(searchFilter.toLowerCase());
       });
 
       return {
@@ -31,7 +30,6 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
         items,
       };
     });
-
     return filteredData;
   }
 
@@ -40,27 +38,29 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
       .filter((monitor: any) => monitor.tapped)
       .map((monitor: any) => monitor.title.toLowerCase());
 
+    // if all monitors are selected, return all data
     if (selectedMonitors.length === 3) return data;
 
     const filteredData: any[] = [];
 
     data?.forEach((category: any) => {
       const supportedItems: any[] = [];
+
       category.items.filter((item: any) => {
+        // get all supported signals for each item
         const supportedSignals: any[] = [];
+
         for (const monitor in item.supported_signals) {
           if (item.supported_signals[monitor].supported) {
             supportedSignals.push(monitor);
           }
         }
 
-        const found = selectedMonitors.some((r) =>
-          supportedSignals.includes(r)
+        const isSelected = selectedMonitors.some((monitor) =>
+          supportedSignals.includes(monitor)
         );
-
-        if (found) {
-          supportedItems.push(item);
-        }
+        // if item is supported by any of the selected monitors, add it to the list
+        isSelected && supportedItems.push(item);
       });
 
       filteredData.push({
@@ -73,7 +73,7 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
   }
 
   function renderDestinationLists() {
-    let list = searchFilter ? filterDataByTextQuery() : data?.categories; //TODO change to real data (sectionData)
+    let list = searchFilter ? filterDataByTextQuery() : data?.categories;
     list = filterDataByMonitorsOption(list);
     return list?.map((category: any, index: number) => {
       const displayItem =
