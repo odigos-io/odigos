@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import {
   DropdownWrapper,
   SourcesOptionMenuWrapper,
@@ -34,9 +34,18 @@ export function DestinationOptionMenu({
   }
 
   function handleTapClick(id: any) {
+    const tappedMonitors = monitoringOption.filter(
+      (monitor: any) => monitor.tapped
+    );
+
     const currentMonitorIndex = monitoringOption.findIndex(
       (monitor) => monitor.id === id
     );
+
+    // if only one monitor is tapped and the tapped monitor is clicked, do nothing
+    const isOnlyOneMonitorTapped = tappedMonitors.length === 1;
+    const isTappedMonitor = monitoringOption[currentMonitorIndex].tapped;
+    if (isOnlyOneMonitorTapped && isTappedMonitor) return;
 
     const newMonitor = {
       ...monitoringOption[currentMonitorIndex],

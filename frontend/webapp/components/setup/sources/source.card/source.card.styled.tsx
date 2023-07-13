@@ -4,6 +4,7 @@ export const RadioButtonWrapper = styled.div`
   position: absolute;
   right: 16px;
   top: 16px;
+  z-index: 50;
 `;
 
 export const SourceCardWrapper = styled.div`
@@ -12,6 +13,10 @@ export const SourceCardWrapper = styled.div`
   align-items: center;
   flex-direction: column;
   gap: 14px;
+  cursor: pointer;
+  .p {
+    cursor: pointer !important;
+  }
 `;
 
 export const ApplicationNameWrapper = styled.div`
