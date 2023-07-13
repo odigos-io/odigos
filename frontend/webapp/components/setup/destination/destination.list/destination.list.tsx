@@ -18,12 +18,12 @@ export function DestinationList({ data = [], onItemClick, selectedData }: any) {
     ));
   }
 
-  return (
+  return data?.items?.length ? (
     <>
       <DestinationTypeTitleWrapper>
         <KeyvalText>{`${data?.items?.length} ${data.name}`}</KeyvalText>
       </DestinationTypeTitleWrapper>
       <DestinationListWrapper>{renderList()}</DestinationListWrapper>
     </>
-  );
+  ) : null;
 }
