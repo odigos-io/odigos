@@ -7,16 +7,16 @@ import TracesFocus from "@/assets/icons/tree-structure-blue.svg";
 
 export const MONITORING_OPTIONS = [
   {
-    id: "1",
+    id: 1,
     icons: {
       notFocus: () => Logs(),
       focus: () => LogsFocus(),
     },
     title: "Logs",
-    tapped: false,
+    tapped: true,
   },
   {
-    id: "1",
+    id: 2,
     icons: {
       notFocus: () => Metrics(),
       focus: () => MetricsFocus(),
@@ -25,12 +25,12 @@ export const MONITORING_OPTIONS = [
     tapped: true,
   },
   {
-    id: "1",
+    id: 3,
     icons: {
       notFocus: () => Traces(),
       focus: () => TracesFocus(),
     },
     title: "Traces",
-    tapped: false,
+    tapped: true,
   },
 ];

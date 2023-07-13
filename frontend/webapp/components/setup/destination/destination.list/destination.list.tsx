@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import {
   DestinationListWrapper,
   DestinationTypeTitleWrapper,
@@ -19,7 +19,6 @@ export function DestinationList({ data = [], onItemClick, sectionData }: any) {
   // }, [data, sectionData]);
 
   function renderList() {
-    console.log("renderList");
     return data?.items?.map((item: any, index: number) => (
       <DestinationCard
         key={index}

@@ -4,60 +4,18 @@ import {
   SourcesOptionMenuWrapper,
   TapsWrapper,
 } from "./destination.option.menu.styled";
-import {
-  KeyvalDropDown,
-  KeyvalSearchInput,
-  KeyvalTap,
-  KeyvalText,
-} from "@/design.system";
+import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
-import Logs from "@/assets/icons/logs-grey.svg";
-import LogsFocus from "@/assets/icons/logs-blue.svg";
-import Metrics from "@/assets/icons/chart-line-grey.svg";
-import MetricsFocus from "@/assets/icons/chart-line-blue.svg";
-import Traces from "@/assets/icons/tree-structure-grey.svg";
-import TracesFocus from "@/assets/icons/tree-structure-blue.svg";
 import { TapList } from "../tap.list/tap.list";
-
-const MONITORING_OPTIONS = [
-  {
-    id: "1",
-    icons: {
-      notFocus: () => Logs(),
-      focus: () => LogsFocus(),
-    },
-    title: "Logs",
-    tapped: true,
-  },
-  {
-    id: "1",
-    icons: {
-      notFocus: () => Metrics(),
-      focus: () => MetricsFocus(),
-    },
-    title: "Metrics",
-    tapped: true,
-  },
-  {
-    id: "1",
-    icons: {
-      notFocus: () => Traces(),
-      focus: () => TracesFocus(),
-    },
-    title: "Traces",
-    tapped: true,
-  },
-];
 
 export function DestinationOptionMenu({
   setDropdownData,
   data,
   searchFilter,
   setSearchFilter,
+  monitoringOption,
+  setMonitoringOption,
 }: any) {
-  const [monitoringOption, setMonitoringOption] =
-    useState<any>(MONITORING_OPTIONS);
-
   const dropdownData = useMemo(() => {
     let dropdownList = data?.map(({ name }: any) => {
       return {
@@ -73,6 +31,22 @@ export function DestinationOptionMenu({
 
   function handleDropDownChange(item: any) {
     setDropdownData({ id: item?.id, label: item.label });
+  }
+
+  function handleTapClick(id: any) {
+    const currentMonitorIndex = monitoringOption.findIndex(
+      (monitor) => monitor.id === id
+    );
+
+    const newMonitor = {
+      ...monitoringOption[currentMonitorIndex],
+      tapped: !monitoringOption[currentMonitorIndex].tapped,
+    };
+
+    const newMonitoringOption = [...monitoringOption];
+    newMonitoringOption[currentMonitorIndex] = newMonitor;
+
+    setMonitoringOption(newMonitoringOption);
   }
 
   return (
@@ -92,7 +66,7 @@ export function DestinationOptionMenu({
       </DropdownWrapper>
       <TapsWrapper>
         <KeyvalText size={14}>{SETUP.MENU.MONITORING}</KeyvalText>
-        <TapList list={monitoringOption} />
+        <TapList list={monitoringOption} onClick={handleTapClick} />
       </TapsWrapper>
     </SourcesOptionMenuWrapper>
   );

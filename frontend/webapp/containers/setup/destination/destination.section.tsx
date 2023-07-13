@@ -4,10 +4,13 @@ import { DestinationListContainer } from "./destination.section.styled";
 import { QUERIES } from "@/utils/constants";
 import { useQuery } from "react-query";
 import { getDestinations } from "@/services/setup";
+import { MONITORING_OPTIONS } from "@/components/setup/destination/utils";
 
 export function DestinationSection({ sectionData, setSectionData }: any) {
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [dropdownData, setDropdownData] = useState<any>(null);
+  const [monitoringOption, setMonitoringOption] =
+    useState<any>(MONITORING_OPTIONS);
 
   const { isLoading, data } = useQuery(
     [QUERIES.API_DESTINATIONS],
@@ -62,6 +65,8 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
         searchFilter={searchFilter}
         setSearchFilter={setSearchFilter}
         setDropdownData={setDropdownData}
+        monitoringOption={monitoringOption}
+        setMonitoringOption={setMonitoringOption}
         data={data.categories}
       />
       <DestinationListContainer>

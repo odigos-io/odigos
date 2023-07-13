@@ -27,11 +27,26 @@ const TapWrapper = styled.div<TapWrapperProps>`
     tapped ? theme.colors.dark_blue : "transparent"};
 `;
 
-export function KeyvalTap({ title = "", tapped, children, style }: TapProps) {
+export function KeyvalTap({
+  title = "",
+  tapped,
+  children,
+  style,
+  onClick,
+}: TapProps) {
   return (
-    <TapWrapper tapped={tapped} style={{ ...style }}>
+    <TapWrapper
+      onClick={onClick}
+      tapped={tapped}
+      style={{ ...style, cursor: onClick ? "pointer" : "auto" }}
+    >
       {children}
-      <KeyvalText weight={400} size={14} color={tapped ? "#CCD0D2" : "#8B92A5"}>
+      <KeyvalText
+        weight={400}
+        size={14}
+        color={tapped ? "#CCD0D2" : "#8B92A5"}
+        style={{ cursor: onClick ? "pointer" : "auto" }}
+      >
         {title}
       </KeyvalText>
     </TapWrapper>
