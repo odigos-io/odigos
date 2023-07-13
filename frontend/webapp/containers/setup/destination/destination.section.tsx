@@ -17,7 +17,7 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
     getDestinations
   );
 
-  function filterData() {
+  function filterDataByTextQuery() {
     const filteredData = data?.categories.map((category: any) => {
       const items = category.items.filter((item: any) => {
         const displayType = item.display_type.toLowerCase();
@@ -35,9 +35,46 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
     return filteredData;
   }
 
-  function renderDestinationLists() {
-    const list = searchFilter ? filterData() : data?.categories; //TODO change to real data (sectionData)
+  function filterDataByMonitorsOption(data: any) {
+    const selectedMonitors = monitoringOption
+      .filter((monitor: any) => monitor.tapped)
+      .map((monitor: any) => monitor.title.toLowerCase());
 
+    if (selectedMonitors.length === 3) return data;
+
+    const filteredData: any[] = [];
+
+    data?.forEach((category: any) => {
+      const supportedItems: any[] = [];
+      category.items.filter((item: any) => {
+        const supportedSignals: any[] = [];
+        for (const monitor in item.supported_signals) {
+          if (item.supported_signals[monitor].supported) {
+            supportedSignals.push(monitor);
+          }
+        }
+
+        const found = selectedMonitors.some((r) =>
+          supportedSignals.includes(r)
+        );
+
+        if (found) {
+          supportedItems.push(item);
+        }
+      });
+
+      filteredData.push({
+        items: supportedItems,
+        name: category.name,
+      });
+    });
+
+    return filteredData;
+  }
+
+  function renderDestinationLists() {
+    let list = searchFilter ? filterDataByTextQuery() : data?.categories; //TODO change to real data (sectionData)
+    list = filterDataByMonitorsOption(list);
     return list?.map((category: any, index: number) => {
       const displayItem =
         dropdownData?.label === category.name || dropdownData?.label === "All";
