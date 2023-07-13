@@ -1,11 +1,11 @@
-import { KeyvalCard, KeyvalImage, KeyvalText } from "@/design.system";
 import React, { useMemo } from "react";
+import { KeyvalCard, KeyvalImage, KeyvalText } from "@/design.system";
+import { TapList } from "../tap.list/tap.list";
+import { MONITORING_OPTIONS, MonitoringOption } from "../utils";
 import {
   ApplicationNameWrapper,
   DestinationCardWrapper,
 } from "./destination.card.styled";
-import { TapList } from "../tap.list/tap.list";
-import { MONITORING_OPTIONS } from "../utils";
 
 const TEXT_STYLE = {
   textOverflow: "ellipsis",
@@ -13,30 +13,50 @@ const TEXT_STYLE = {
   overflow: "hidden",
 };
 
-export function DestinationCard({ item, onClick, focus }: any) {
+type Destination = {
+  supported_signals: {
+    [key: string]: {
+      supported: boolean;
+      // other properties
+    };
+  };
+  image_url: string;
+  display_name: string;
+  // other properties
+};
+
+type DestinationCardProps = {
+  item: Destination;
+  onClick: () => void;
+  focus: boolean;
+};
+
+export function DestinationCard({
+  item: { supported_signals, image_url, display_name },
+  onClick,
+  focus,
+}: DestinationCardProps) {
   const monitors = useMemo(() => {
-    const data = MONITORING_OPTIONS.map((monitor: any) => {
-      const isSupported =
-        item?.supported_signals?.[monitor.title.toLowerCase()]?.supported;
-
-      if (isSupported) {
-        return {
-          ...monitor,
-          tapped: true,
-        };
+    return Object.entries(supported_signals).reduce((acc, [key, value]) => {
+      if (value.supported) {
+        const monitor = MONITORING_OPTIONS.find(
+          (option) => option.title.toLowerCase() === key
+        );
+        if (monitor) {
+          return [...acc, { ...monitor, tapped: true }];
+        }
       }
-    });
-
-    return data.filter(Boolean);
-  }, [JSON.stringify(item)]);
+      return acc;
+    }, []);
+  }, [JSON.stringify(supported_signals)]);
 
   return (
     <KeyvalCard focus={focus}>
       <DestinationCardWrapper onClick={onClick}>
-        <KeyvalImage src={item.image_url} width={56} height={56} />
+        <KeyvalImage src={image_url} width={56} height={56} />
         <ApplicationNameWrapper>
           <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
-            {item.display_name}
+            {display_name}
           </KeyvalText>
         </ApplicationNameWrapper>
         <TapList gap={4} list={monitors} tapStyle={{ padding: "4px 8px" }} />

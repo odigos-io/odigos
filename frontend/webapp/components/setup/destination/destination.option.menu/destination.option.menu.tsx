@@ -1,12 +1,31 @@
 import React, { useMemo } from "react";
+import { SETUP } from "@/utils/constants";
+import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from "@/design.system";
+import { TapList } from "../tap.list/tap.list";
 import {
   DropdownWrapper,
   SourcesOptionMenuWrapper,
   TapsWrapper,
 } from "./destination.option.menu.styled";
-import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from "@/design.system";
-import { SETUP } from "@/utils/constants";
-import { TapList } from "../tap.list/tap.list";
+
+type DestinationOptionMenuProps = {
+  setDropdownData: (data: any) => void;
+  data: any;
+  searchFilter: string;
+  setSearchFilter: (filter: string) => void;
+  monitoringOption: any;
+  setMonitoringOption: (option: any) => void;
+};
+
+type DropdownItem = {
+  id: number;
+  label: string;
+};
+
+type MonitoringOption = {
+  id: string;
+  tapped: boolean;
+};
 
 export function DestinationOptionMenu({
   setDropdownData,
@@ -15,25 +34,21 @@ export function DestinationOptionMenu({
   setSearchFilter,
   monitoringOption,
   setMonitoringOption,
-}: any) {
+}: DestinationOptionMenuProps) {
   const dropdownData = useMemo(() => {
-    let dropdownList = data?.map(({ name }: any) => {
-      return {
-        id: name,
-        label: name,
-      };
-    });
-
-    dropdownList.unshift({ id: "all", label: SETUP.ALL });
-    setDropdownData(dropdownList[0]);
-    return dropdownList;
+    const options = [
+      { id: "all", label: SETUP.ALL },
+      ...data?.map(({ name }) => ({ id: name, label: name })),
+    ];
+    setDropdownData(options[0]);
+    return options;
   }, [data]);
 
-  function handleDropDownChange(item: any) {
+  function handleDropDownChange(item: DropdownItem) {
     setDropdownData({ id: item?.id, label: item.label });
   }
 
-  function handleTapClick(id: any) {
+  function handleTapClick(id: MonitoringOption) {
     const tappedMonitors = monitoringOption.filter(
       (monitor: any) => monitor.tapped
     );
@@ -46,13 +61,12 @@ export function DestinationOptionMenu({
     const isTappedMonitor = monitoringOption[currentMonitorIndex].tapped;
     if (isOnlyOneMonitorTapped && isTappedMonitor) return;
 
-    const newMonitor = {
-      ...monitoringOption[currentMonitorIndex],
-      tapped: !monitoringOption[currentMonitorIndex].tapped,
-    };
-
-    const newMonitoringOption = [...monitoringOption];
-    newMonitoringOption[currentMonitorIndex] = newMonitor;
+    const newMonitoringOption = monitoringOption.map((monitor) => {
+      if (monitor.id === id) {
+        return { ...monitor, tapped: !monitor.tapped };
+      }
+      return monitor;
+    });
 
     setMonitoringOption(newMonitoringOption);
   }

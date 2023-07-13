@@ -1,14 +1,18 @@
 import React from "react";
+import { KeyvalText } from "@/design.system";
+import { DestinationCard } from "../destination.card/destination.card";
 import {
   DestinationListWrapper,
   DestinationTypeTitleWrapper,
 } from "./destination.list.styled";
-import { KeyvalText } from "@/design.system";
-import { DestinationCard } from "../destination.card/destination.card";
 
-export function DestinationList({ data = [], onItemClick, sectionData }: any) {
+export function DestinationList({
+  data: { items, name },
+  onItemClick,
+  sectionData,
+}: any) {
   function renderList() {
-    return data?.items?.map((item: any, index: number) => (
+    return items?.map((item: any, index: number) => (
       <DestinationCard
         key={index}
         item={item}
@@ -18,10 +22,10 @@ export function DestinationList({ data = [], onItemClick, sectionData }: any) {
     ));
   }
 
-  return data?.items?.length ? (
+  return items?.length ? (
     <>
       <DestinationTypeTitleWrapper>
-        <KeyvalText>{`${data?.items?.length} ${data.name}`}</KeyvalText>
+        <KeyvalText>{`${items?.length} ${name}`}</KeyvalText>
       </DestinationTypeTitleWrapper>
       <DestinationListWrapper>{renderList()}</DestinationListWrapper>
     </>
