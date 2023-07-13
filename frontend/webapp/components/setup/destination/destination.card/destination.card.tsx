@@ -33,17 +33,13 @@ export function DestinationCard({ item, onClick, focus }: any) {
   return (
     <KeyvalCard focus={focus}>
       <DestinationCardWrapper onClick={onClick}>
-        <KeyvalImage
-          src={"https://d15jtxgb40qetw.cloudfront.net/blobstorage.svg"}
-          width={56}
-          height={56}
-        />
+        <KeyvalImage src={item.image_url} width={56} height={56} />
         <ApplicationNameWrapper>
           <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
-            {item.display_type}
+            {item.display_name}
           </KeyvalText>
         </ApplicationNameWrapper>
-        <TapList list={monitors} tapStyle={{ padding: "4px 8px" }} />
+        <TapList gap={4} list={monitors} tapStyle={{ padding: "4px 8px" }} />
       </DestinationCardWrapper>
     </KeyvalCard>
   );

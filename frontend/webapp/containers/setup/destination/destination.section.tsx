@@ -1,59 +1,21 @@
 import { DestinationList, DestinationOptionMenu } from "@/components/setup";
 import React, { useState } from "react";
 import { DestinationListContainer } from "./destination.section.styled";
-
-const FAKE = {
-  categories: [
-    {
-      name: "Managed",
-      items: [
-        {
-          type: "newrelic",
-          display_type: "New Relic",
-          image_url: "https://s3.amazonaws.com/keyval-dev/newrelic.jpg",
-          supported_signals: {
-            traces: {
-              supported: true,
-            },
-            metrics: {
-              supported: true,
-            },
-            logs: {
-              supported: false,
-            },
-          },
-        },
-      ],
-    },
-    {
-      name: "Self hosted",
-      items: [
-        {
-          type: "jaeger",
-          display_type: "Jaeger",
-          image_url: "https://s3.amazonaws.com/keyval-dev/jaeger.jpg",
-          supported_signals: {
-            traces: {
-              supported: true,
-            },
-            metrics: {
-              supported: false,
-            },
-            logs: {
-              supported: false,
-            },
-          },
-        },
-      ],
-    },
-  ],
-};
+import { QUERIES } from "@/utils/constants";
+import { useQuery } from "react-query";
+import { getDestinations } from "@/services/setup";
 
 export function DestinationSection({ sectionData, setSectionData }: any) {
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [dropdownData, setDropdownData] = useState<any>(null);
+
+  const { isLoading, data } = useQuery(
+    [QUERIES.API_DESTINATIONS],
+    getDestinations
+  );
+
   function filterData() {
-    const filteredData = FAKE.categories.map((category: any) => {
+    const filteredData = data?.categories.map((category: any) => {
       const items = category.items.filter((item: any) => {
         const displayType = item.display_type.toLowerCase();
         const searchFilterLower = searchFilter.toLowerCase();
@@ -71,7 +33,7 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
   }
 
   function renderDestinationLists() {
-    const list = searchFilter ? filterData() : FAKE.categories; //TODO change to real data (sectionData)
+    const list = searchFilter ? filterData() : data?.categories; //TODO change to real data (sectionData)
 
     return list?.map((category: any, index: number) => {
       const displayItem =
@@ -82,11 +44,16 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
           <DestinationList
             key={index}
             data={category}
-            onItemClick={(item) => setSectionData(item)}
+            sectionData={sectionData}
+            onItemClick={(item: any) => setSectionData(item)}
           />
         )
       );
     });
+  }
+
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
   return (
@@ -95,7 +62,7 @@ export function DestinationSection({ sectionData, setSectionData }: any) {
         searchFilter={searchFilter}
         setSearchFilter={setSearchFilter}
         setDropdownData={setDropdownData}
-        data={FAKE.categories}
+        data={data.categories}
       />
       <DestinationListContainer>
         {renderDestinationLists()}

@@ -50,24 +50,20 @@ export function SetupSection() {
   }, [JSON.stringify(sectionData)]);
 
   function renderCurrentSection() {
+    let Component: any = null;
+
     switch (currentStep?.id) {
       case "choose-source":
-        return (
-          <SourcesSection
-            sectionData={sectionData}
-            setSectionData={setSectionData}
-          />
-        );
+        Component = SourcesSection;
+        break;
       case "choose-destination":
-        return (
-          <DestinationSection
-            sectionData={sectionData}
-            setSectionData={setSectionData}
-          />
-        );
-      default:
-        return null;
+        Component = DestinationSection;
+        break;
     }
+
+    return (
+      <Component sectionData={sectionData} setSectionData={setSectionData} />
+    );
   }
 
   function handleNamespacesUpdate() {
