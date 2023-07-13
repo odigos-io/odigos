@@ -64,3 +64,40 @@ func GetDestinations(c *gin.Context) {
 
 	c.JSON(200, resp)
 }
+
+type GetDestinationDetailsResponse struct {
+	Fields []Field `json:"fields"`
+}
+
+type Field struct {
+	Name                string                 `json:"name"`
+	DisplayName         string                 `json:"display_name"`
+	ComponentType       string                 `json:"component_type"`
+	ComponentProperties map[string]interface{} `json:"component_properties"`
+	VideoUrl            string                 `json:"video_url"`
+}
+
+func GetDestinationDetails(c *gin.Context) {
+	destType := c.Param("type")
+	for _, dest := range destinations.Get() {
+		if dest.Metadata.Type == destType {
+			var resp GetDestinationDetailsResponse
+			for _, field := range dest.Spec.Fields {
+				resp.Fields = append(resp.Fields, Field{
+					Name:                field.Name,
+					DisplayName:         field.DisplayName,
+					ComponentType:       field.ComponentType,
+					ComponentProperties: field.ComponentProps,
+					VideoUrl:            field.VideoURL,
+				})
+			}
+
+			c.JSON(200, resp)
+			return
+		}
+	}
+
+	c.JSON(404, gin.H{
+		"error": "destination not found",
+	})
+}

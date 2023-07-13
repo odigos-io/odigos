@@ -18,3 +18,5 @@ spec:
       displayName: Collector Endpoint
       videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
+      componentProps:
+        type: text

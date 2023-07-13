@@ -19,7 +19,7 @@ spec:
       videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
       componentProps:
-        password: true
+        type: password
     - name: site
       displayName: Site
       videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
