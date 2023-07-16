@@ -4,6 +4,12 @@ import { ThemeProvider } from "styled-components";
 import theme from "@/styles/palette";
 import { QueryClient, QueryClientProvider } from "react-query";
 
+const LAYOUT_STYLE: React.CSSProperties = {
+  margin: 0,
+  position: "fixed",
+  scrollbarWidth: "none",
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -21,10 +27,7 @@ export default function RootLayout({
     <html lang="en">
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
-          <body
-            suppressHydrationWarning={true}
-            style={{ margin: 0, position: "fixed", scrollbarWidth: "none" }}
-          >
+          <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
             {children}
           </body>
         </ThemeProvider>

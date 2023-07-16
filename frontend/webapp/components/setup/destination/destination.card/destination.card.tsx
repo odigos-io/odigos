@@ -7,12 +7,13 @@ import {
   DestinationCardWrapper,
 } from "./destination.card.styled";
 
-const TEXT_STYLE = {
+const TEXT_STYLE: React.CSSProperties = {
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
   overflow: "hidden",
 };
-const LOGO_STYLE = { padding: 4, backgroundColor: "#fff" };
+const LOGO_STYLE: React.CSSProperties = { padding: 4, backgroundColor: "#fff" };
+const TAP_STYLE: React.CSSProperties = { padding: "4px 8px", gap: 4 };
 
 type Destination = {
   supported_signals: {
@@ -63,7 +64,7 @@ export function DestinationCard({
             {display_name}
           </KeyvalText>
         </ApplicationNameWrapper>
-        <TapList gap={4} list={monitors} tapStyle={{ padding: "4px 8px" }} />
+        <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
       </DestinationCardWrapper>
     </KeyvalCard>
   );
