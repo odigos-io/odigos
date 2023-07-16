@@ -1,5 +1,7 @@
 import { SETUP } from "@/utils/constants";
 
+const MANAGED_DESTINATION = "managed";
+
 export function filterDataByTextQuery(data: any, searchFilter: string) {
   //filter each category items by search query
   if (!searchFilter) return data?.categories;
@@ -54,7 +56,6 @@ export function filterDataByMonitorsOption(data: any, monitoringOption: any) {
       name: category.name,
     });
   });
-
   return filteredData;
 }
 
@@ -67,4 +68,18 @@ export function isDestinationListEmpty(list, currentItemName: string) {
   }
 
   return list?.every((category) => category.items.length === 0);
+}
+
+export function sortDestinationList(list: any) {
+  if (
+    Array.isArray(list.categories) &&
+    list?.categories[0]?.name !== MANAGED_DESTINATION
+  ) {
+    const sortedList = list?.categories?.sort((a: any, b: any) => {
+      return a.name === MANAGED_DESTINATION ? -1 : 1;
+    });
+    return sortedList;
+  }
+
+  return list;
 }

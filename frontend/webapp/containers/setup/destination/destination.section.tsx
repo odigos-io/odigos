@@ -13,6 +13,7 @@ import {
   filterDataByMonitorsOption,
   filterDataByTextQuery,
   isDestinationListEmpty,
+  sortDestinationList,
 } from "./utils";
 
 type DestinationSectionProps = {
@@ -29,11 +30,13 @@ export function DestinationSection({
   const [monitoringOption, setMonitoringOption] =
     useState<any>(MONITORING_OPTIONS);
 
-  const { isLoading, data } = useQuery([QUERIES.API_DESTINATIONS], () =>
-    getDestinations()
+  const { isLoading, data } = useQuery(
+    [QUERIES.API_DESTINATIONS],
+    getDestinations
   );
 
   function renderDestinationLists() {
+    sortDestinationList(data);
     const list = filterDataByMonitorsOption(
       filterDataByTextQuery(data, searchFilter),
       monitoringOption
@@ -79,9 +82,11 @@ export function DestinationSection({
         setMonitoringOption={setMonitoringOption}
         data={data?.categories}
       />
-      <DestinationListContainer>
-        {renderDestinationLists()}
-      </DestinationListContainer>
+      {data && (
+        <DestinationListContainer>
+          {renderDestinationLists()}
+        </DestinationListContainer>
+      )}
     </>
   );
 }
