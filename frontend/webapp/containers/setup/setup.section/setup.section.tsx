@@ -1,152 +1,87 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   SetupContentWrapper,
   SetupSectionContainer,
+  StepListWrapper,
+  BackButtonWrapper,
 } from "./setup.section.styled";
 import { SetupHeader } from "../setup.header/setup.header";
-import { SourcesList, SourcesOptionMenu } from "@/components/setup";
-import { getApplication, setNamespaces } from "@/services/setup";
+import { SETUP } from "@/utils/constants";
+import Steps from "@/design.system/steps/steps";
+import { SourcesSection } from "../sources/sources.section";
+import { DestinationSection } from "../destination/destination.section";
+import { KeyvalText } from "@/design.system";
+import RightArrow from "assets/icons/white-arrow-right.svg";
+import { STEPS, Step } from "./utils";
+import { useSectionData } from "@/hooks";
 
-const DEFAULT_CONFIG = {
-  selected_all: false,
-  future_selected: false,
+const sectionComponents = {
+  [SETUP.STEPS.ID.CHOOSE_SOURCE]: SourcesSection,
+  [SETUP.STEPS.ID.CHOOSE_DESTINATION]: DestinationSection,
 };
 
-export function SetupSection({ namespaces }: any) {
-  const [currentNamespace, setCurrentNamespace] = useState<any>(null);
-  const [selectedApplications, setSelectedApplications] = useState<any>({});
-  const [searchFilter, setSearchFilter] = useState<string>("");
+export function SetupSection() {
+  const [steps, setSteps] = useState<Step[]>(STEPS);
+  const [currentStep, setCurrentStep] = useState<Step>(STEPS[0]);
+  const { sectionData, setSectionData, totalSelected } = useSectionData({});
 
-  const namespacesList = useMemo(() => {
-    return namespaces.map((item: any, index: number) => {
-      return { id: index, label: item.name };
-    });
-  }, [namespaces]);
+  function renderCurrentSection() {
+    const Component = sectionComponents[currentStep?.id];
+    return Component ? (
+      <Component sectionData={sectionData} setSectionData={setSectionData} />
+    ) : null;
+  }
 
-  useEffect(() => {
-    !currentNamespace && setCurrentNamespace(namespaces[0]);
-  }, [namespaces]);
+  function handleChangeStep(direction: number) {
+    const currentStepIndex = steps.findIndex(
+      ({ id }) => id === currentStep?.id
+    );
+    const nextStep = steps[currentStepIndex + direction];
+    const prevStep = steps[currentStepIndex];
 
-  useEffect(() => {
-    onNameSpaceChange();
-  }, [currentNamespace]);
-
-  const totalSelected = useMemo(() => {
-    let total = 0;
-    for (const key in selectedApplications) {
-      const apps = selectedApplications[key]?.objects;
-      const counter = apps?.filter((item: any) => item.selected)?.length;
-      total += counter;
+    if (nextStep) {
+      nextStep.status = SETUP.STEPS.STATUS.ACTIVE;
     }
-    return total;
-  }, [JSON.stringify(selectedApplications)]);
 
-  const sourceData = useMemo(() => {
-    const data = selectedApplications[currentNamespace?.name];
-    return searchFilter
-      ? data?.objects.filter((item: any) =>
-          item.name.toLowerCase().includes(searchFilter.toLowerCase())
-        )
-      : data?.objects;
-  }, [searchFilter, currentNamespace, selectedApplications]);
-
-  async function onNameSpaceChange() {
-    if (!currentNamespace || selectedApplications[currentNamespace?.name])
-      return;
-    const data = await getApplication(currentNamespace?.name);
-    const newSelectedNamespace = {
-      ...selectedApplications,
-      [currentNamespace?.name]: {
-        ...DEFAULT_CONFIG,
-        objects: [...data?.applications],
-      },
-    };
-
-    setSelectedApplications(newSelectedNamespace);
-  }
-
-  function handleSourceClick({ item }: any) {
-    const objIndex = selectedApplications[
-      currentNamespace?.name
-    ].objects.findIndex((app) => app.name === item.name);
-
-    const namespace = selectedApplications[currentNamespace?.name];
-    let objects = [...namespace.objects];
-
-    objects[objIndex].selected = !objects[objIndex].selected;
-
-    let currentNamespaceConfig = {
-      ...namespace,
-      objects,
-    };
-
-    if (!objects[objIndex].selected && namespace.selected_all) {
-      currentNamespaceConfig = {
-        ...currentNamespaceConfig,
-        selected_all: false,
-        future_selected: false,
-      };
+    if (prevStep && direction === 1) {
+      prevStep.status = SETUP.STEPS.STATUS.DONE;
+    } else {
+      prevStep.status = SETUP.STEPS.STATUS.DISABLED;
     }
-    handleSetNewSelectedConfig(currentNamespaceConfig);
-  }
-
-  function onSelectAllChange(value: boolean) {
-    const namespace = selectedApplications[currentNamespace?.name];
-    let objects = [...namespace.objects];
-    objects.forEach((item) => {
-      item.selected = value;
-    });
-
-    const currentNamespaceConfig = {
-      future_selected: value,
-      selected_all: value,
-      objects,
-    };
-    handleSetNewSelectedConfig(currentNamespaceConfig);
-  }
-
-  function onFutureApplyChange(value: boolean) {
-    const currentNamespaceConfig = {
-      ...selectedApplications[currentNamespace?.name],
-      future_selected: value,
-    };
-    handleSetNewSelectedConfig(currentNamespaceConfig);
-  }
-
-  function handleSetNewSelectedConfig(config: any) {
-    const newSelectedNamespaceConfig = {
-      ...selectedApplications,
-      [currentNamespace?.name]: config,
-    };
-    setSelectedApplications(newSelectedNamespaceConfig);
+    setCurrentStep(nextStep);
+    setSteps([...steps]);
+    setSectionData({});
   }
 
   function onNextClick() {
-    setNamespaces(selectedApplications);
+    handleChangeStep(1);
+  }
+
+  function onBackClick() {
+    handleChangeStep(-1);
   }
 
   return (
-    <SetupSectionContainer>
-      <SetupHeader onNextClick={onNextClick} totalSelected={totalSelected} />
-      <SetupContentWrapper>
-        <SourcesOptionMenu
-          currentNamespace={currentNamespace}
-          setCurrentItem={setCurrentNamespace}
-          data={namespacesList}
-          searchFilter={searchFilter}
-          setSearchFilter={setSearchFilter}
-          onSelectAllChange={onSelectAllChange}
-          selectedApplications={selectedApplications}
-          onFutureApplyChange={onFutureApplyChange}
+    <>
+      <StepListWrapper>
+        <Steps data={steps} />
+      </StepListWrapper>
+      <SetupSectionContainer>
+        {currentStep.index !== 1 && (
+          <BackButtonWrapper onClick={onBackClick}>
+            <RightArrow />
+            <KeyvalText size={14} weight={600}>
+              {SETUP.BACK}
+            </KeyvalText>
+          </BackButtonWrapper>
+        )}
+        <SetupHeader
+          currentStep={currentStep}
+          onNextClick={onNextClick}
+          totalSelected={totalSelected}
         />
-
-        <SourcesList
-          data={sourceData}
-          selectedData={selectedApplications[currentNamespace?.name]}
-          onItemClick={handleSourceClick}
-          onClearClick={() => onSelectAllChange(false)}
-        />
-      </SetupContentWrapper>
-    </SetupSectionContainer>
+        <SetupContentWrapper>{renderCurrentSection()}</SetupContentWrapper>
+      </SetupSectionContainer>
+    </>
   );
 }

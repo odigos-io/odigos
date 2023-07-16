@@ -12,3 +12,7 @@ export async function getApplication(id: string) {
 export async function setNamespaces(body: any) {
   return await post(API.NAMESPACES, body);
 }
+
+export async function getDestinations() {
+  return await get(API.DESTINATION);
+}
