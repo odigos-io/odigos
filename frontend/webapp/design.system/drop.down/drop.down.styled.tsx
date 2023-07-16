@@ -1,18 +1,18 @@
 import styled from "styled-components";
 
 interface DropdownWrapperProps {
-  hover?: boolean;
+  selected?: any;
 }
 
 export const DropdownWrapper = styled.div<DropdownWrapperProps>`
   position: relative;
   z-index: 9999;
-  width: 260px;
-  padding: 11px 13px;
+  width: 100%;
+  padding: 11px 4px;
   border-radius: 8px;
   cursor: pointer;
-  border: ${({ hover, theme }) =>
-    `1px solid  ${hover ? theme.colors.white : theme.colors.blue_grey}`};
+  border: ${({ selected, theme }) =>
+    `1px solid  ${selected ? theme.colors.white : theme.colors.blue_grey}`};
   background: ${({ theme }) => theme.colors.dark};
 
   .dropdown-arrow {
@@ -21,12 +21,12 @@ export const DropdownWrapper = styled.div<DropdownWrapperProps>`
   }
 
   .dropdown-arrow.open {
-    transform: rotate(-90deg);
+    transform: rotate(180deg);
   }
 `;
 
 export const DropdownHeader = styled.div`
-  width: 100%;
+  padding: 0 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -40,7 +40,7 @@ export const DropdownBody = styled.div`
   position: relative;
   z-index: 9999;
   display: flex;
-  width: 278px;
+  width: 100%;
   padding: 11px 4px;
   flex-direction: column;
   border-radius: 8px;
@@ -52,9 +52,10 @@ export const DropdownBody = styled.div`
 export const DropdownListWrapper = styled.div`
   position: relative;
   z-index: 9999;
-  width: 278px;
+  width: 100%;
   max-height: 270px;
   overflow-y: scroll;
+  scrollbar-width: none;
   :hover {
     background: ${({ theme }) => theme.colors.dark_blue};
   }

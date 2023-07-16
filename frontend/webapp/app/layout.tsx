@@ -1,24 +1,33 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { ThemeProvider } from "styled-components";
 import theme from "@/styles/palette";
 import { QueryClient, QueryClientProvider } from "react-query";
+
+const LAYOUT_STYLE: React.CSSProperties = {
+  margin: 0,
+  position: "fixed",
+  scrollbarWidth: "none",
+};
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [queryClient] = useState(() => new QueryClient());
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+      },
+    },
+  });
 
   return (
     <html lang="en">
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
-          <body
-            suppressHydrationWarning={true}
-            style={{ margin: 0, position: "fixed" }}
-          >
+          <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
             {children}
           </body>
         </ThemeProvider>

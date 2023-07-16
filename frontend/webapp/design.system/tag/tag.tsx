@@ -15,10 +15,7 @@ const TagWrapper = styled.div`
   border-radius: 10px;
 `;
 
-export function KeyvalTag({
-  title = "DaemonSet",
-  color = "#033869",
-}: TagProps) {
+export function KeyvalTag({ title = "", color = "#033869" }: TagProps) {
   return (
     <TagWrapper style={{ backgroundColor: color }}>
       <KeyvalText weight={500} size={13} color={"#CCD0D2"}>

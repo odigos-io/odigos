@@ -7,12 +7,14 @@ const API = {
   CONFIG: `${BASE_URL}/config`,
   NAMESPACES: `${BASE_URL}/namespaces`,
   APPLICATIONS: `${BASE_URL}/applications`,
+  DESTINATION: `${BASE_URL}/destinations`,
 };
 
 const QUERIES = {
   API_CONFIG: "apiConfig",
   API_NAMESPACES: "apiNamespaces",
   API_APPLICATIONS: "apiApplications",
+  API_DESTINATIONS: "apiDestinations",
 };
 
 export { API, QUERIES };

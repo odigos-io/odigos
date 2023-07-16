@@ -1,25 +1,64 @@
-import React from "react";
+import React, { ReactNode } from "react";
+import Charge from "assets/icons/charge-rect.svg";
+import Connect from "assets/icons/connect.svg";
+import RightArrow from "assets/icons/arrow-right.svg";
 import {
   HeaderButtonWrapper,
   HeaderTitleWrapper,
   SetupHeaderWrapper,
 } from "./setup.header.styled";
 import { KeyvalButton, KeyvalText } from "@/design.system";
-import Charge from "assets/icons/charge-rect.svg";
-import RightArrow from "assets/icons/arrow-right.svg";
 import { SETUP } from "@/utils/constants";
 
-export function SetupHeader({ onNextClick, totalSelected }: any) {
+type StepId = "CHOOSE_SOURCE" | "CHOOSE_DESTINATION";
+
+type SetupStep = {
+  id?: StepId;
+};
+
+type SetupHeaderProps = {
+  currentStep: any;
+  onNextClick: () => void;
+  totalSelected: number;
+};
+
+const renderCurrentIcon = (currentStep: SetupStep | null): ReactNode => {
+  const { STEPS, HEADER } = SETUP;
+  const { id }: SetupStep = currentStep || {};
+  switch (id) {
+    case STEPS.ID.CHOOSE_SOURCE:
+      return (
+        <>
+          <Charge />
+          <KeyvalText>{HEADER.CHOOSE_SOURCE_TITLE}</KeyvalText>
+        </>
+      );
+    case STEPS.ID.CHOOSE_DESTINATION:
+      return (
+        <>
+          <Connect />
+          <KeyvalText>{HEADER.CHOOSE_DESTINATION_TITLE}</KeyvalText>
+        </>
+      );
+    default:
+      return null;
+  }
+};
+
+export function SetupHeader({
+  currentStep,
+  onNextClick,
+  totalSelected,
+}: SetupHeaderProps) {
   return (
     <SetupHeaderWrapper>
-      <HeaderTitleWrapper>
-        <Charge />
-        <KeyvalText>{SETUP.HEADER.CHOOSE_SOURCE_TITLE}</KeyvalText>
-      </HeaderTitleWrapper>
+      <HeaderTitleWrapper>{renderCurrentIcon(currentStep)}</HeaderTitleWrapper>
       <HeaderButtonWrapper>
-        <KeyvalText
-          weight={400}
-        >{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
+        {currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE && (
+          <KeyvalText
+            weight={400}
+          >{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
+        )}
         <KeyvalButton
           disabled={totalSelected === 0}
           onClick={onNextClick}
