@@ -18,12 +18,15 @@ type Spec struct {
 	Signals struct {
 		Traces struct {
 			Supported bool `yaml:"supported"`
+			Validatable bool `yaml:"validatable"`
 		}
 		Metrics struct {
 			Supported bool `yaml:"supported"`
+			Validatable bool `yaml:"validatable"`
 		}
 		Logs struct {
 			Supported bool `yaml:"supported"`
+			Validatable bool `yaml:"validatable"`
 		}
 	}
 	Fields []Field `yaml:"fields"`

@@ -29,6 +29,7 @@ type SupportedSignals struct {
 
 type ObservabilitySignal struct {
 	Supported bool `json:"supported"`
+	Validatable bool `json:"validatable"`
 }
 
 func GetDestinations(c *gin.Context) {
@@ -42,12 +43,15 @@ func GetDestinations(c *gin.Context) {
 			SupportedSignals: SupportedSignals{
 				Traces: ObservabilitySignal{
 					Supported: dest.Spec.Signals.Traces.Supported,
+					Validatable: dest.Spec.Signals.Traces.Validatable,
 				},
 				Metrics: ObservabilitySignal{
 					Supported: dest.Spec.Signals.Metrics.Supported,
+					Validatable: dest.Spec.Signals.Metrics.Validatable,
 				},
 				Logs: ObservabilitySignal{
 					Supported: dest.Spec.Signals.Logs.Supported,
+					Validatable: dest.Spec.Signals.Logs.Validatable,
 				},
 			},
 		}
