@@ -34,7 +34,7 @@ opentelemetry-instrumentation-jinja2==0.39b0
 opentelemetry-instrumentation-kafka-python==0.39b0
 opentelemetry-instrumentation-logging==0.39b0
 opentelemetry-instrumentation-mysql==0.39b0
-opentelemetry-instrumentation-pika==0.39b0
+opentelemetry-instrumentation-pika==0.40b0
 opentelemetry-instrumentation-psycopg2==0.39b0
 opentelemetry-instrumentation-pymemcache==0.39b0
 opentelemetry-instrumentation-pymongo==0.39b0

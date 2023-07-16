@@ -174,7 +174,7 @@ opentelemetry-instrumentation-logging==0.39b0
     # via -r requirements.in
 opentelemetry-instrumentation-mysql==0.39b0
     # via -r requirements.in
-opentelemetry-instrumentation-pika==0.39b0
+opentelemetry-instrumentation-pika==0.40b0
     # via -r requirements.in
 opentelemetry-instrumentation-psycopg2==0.39b0
     # via -r requirements.in
@@ -297,9 +297,7 @@ psutil==5.9.5
 requests==2.31.0
     # via opentelemetry-exporter-otlp-proto-http
 typing-extensions==4.7.1
-    # via
-    #   asgiref
-    #   opentelemetry-sdk
+    # via opentelemetry-sdk
 urllib3==2.0.3
     # via requests
 wrapt==1.15.0
