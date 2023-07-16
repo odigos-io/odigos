@@ -23,7 +23,7 @@ export default function RootLayout({
         <ThemeProvider theme={theme}>
           <body
             suppressHydrationWarning={true}
-            style={{ margin: 0, position: "fixed" }}
+            style={{ margin: 0, position: "fixed", scrollbarWidth: "none" }}
           >
             {children}
           </body>

@@ -25,6 +25,7 @@ export const SourcesListWrapper = styled.div`
   flex-wrap: wrap;
   gap: 24px;
   overflow-y: scroll;
+  scrollbar-width: none;
 `;
 
 export const EmptyListWrapper = styled.div`

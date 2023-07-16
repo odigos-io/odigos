@@ -55,6 +55,7 @@ export const DropdownListWrapper = styled.div`
   width: 100%;
   max-height: 270px;
   overflow-y: scroll;
+  scrollbar-width: none;
   :hover {
     background: ${({ theme }) => theme.colors.dark_blue};
   }
