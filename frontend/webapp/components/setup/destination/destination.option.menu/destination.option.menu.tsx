@@ -29,7 +29,7 @@ type MonitoringOption = {
 
 export function DestinationOptionMenu({
   setDropdownData,
-  data,
+  data = [],
   searchFilter,
   setSearchFilter,
   monitoringOption,

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { ThemeProvider } from "styled-components";
 import theme from "@/styles/palette";
 import { QueryClient, QueryClientProvider } from "react-query";
@@ -9,7 +9,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [queryClient] = useState(() => new QueryClient());
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+      },
+    },
+  });
 
   return (
     <html lang="en">

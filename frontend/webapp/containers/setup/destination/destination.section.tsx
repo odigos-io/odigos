@@ -29,9 +29,8 @@ export function DestinationSection({
   const [monitoringOption, setMonitoringOption] =
     useState<any>(MONITORING_OPTIONS);
 
-  const { isLoading, data } = useQuery(
-    [QUERIES.API_DESTINATIONS],
-    getDestinations
+  const { isLoading, data } = useQuery([QUERIES.API_DESTINATIONS], () =>
+    getDestinations()
   );
 
   function renderDestinationLists() {
@@ -78,7 +77,7 @@ export function DestinationSection({
         setDropdownData={setDropdownData}
         monitoringOption={monitoringOption}
         setMonitoringOption={setMonitoringOption}
-        data={data.categories}
+        data={data?.categories}
       />
       <DestinationListContainer>
         {renderDestinationLists()}
