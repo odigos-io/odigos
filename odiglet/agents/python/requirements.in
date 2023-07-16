@@ -47,7 +47,7 @@ opentelemetry-instrumentation-sklearn==0.39b0
 opentelemetry-instrumentation-sqlalchemy==0.39b0
 opentelemetry-instrumentation-sqlite3==0.39b0
 opentelemetry-instrumentation-starlette==0.39b0
-opentelemetry-instrumentation-system-metrics==0.39b0
+opentelemetry-instrumentation-system-metrics==0.40b0
 opentelemetry-instrumentation-tornado==0.39b0
 opentelemetry-instrumentation-tortoiseorm==0.39b0
 opentelemetry-instrumentation-urllib==0.39b0
