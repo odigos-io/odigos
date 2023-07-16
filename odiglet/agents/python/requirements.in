@@ -21,7 +21,7 @@ opentelemetry-instrumentation-boto==0.39b0
 opentelemetry-instrumentation-boto3sqs==0.39b0
 opentelemetry-instrumentation-botocore==0.39b0
 opentelemetry-instrumentation-celery==0.39b0
-opentelemetry-instrumentation-confluent-kafka==0.39b0
+opentelemetry-instrumentation-confluent-kafka==0.40b0
 opentelemetry-instrumentation-dbapi==0.39b0
 opentelemetry-instrumentation-django==0.39b0
 opentelemetry-instrumentation-elasticsearch==0.39b0
