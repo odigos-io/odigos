@@ -39,7 +39,7 @@ export function DestinationSection({
       monitoringOption
     );
 
-    if (isDestinationListEmpty(list)) {
+    if (isDestinationListEmpty(list, dropdownData?.id)) {
       return (
         <EmptyListWrapper>
           <Empty />

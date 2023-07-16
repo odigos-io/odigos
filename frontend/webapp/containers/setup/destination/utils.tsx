@@ -1,3 +1,5 @@
+import { SETUP } from "@/utils/constants";
+
 export function filterDataByTextQuery(data: any, searchFilter: string) {
   //filter each category items by search query
   if (!searchFilter) return data?.categories;
@@ -56,6 +58,13 @@ export function filterDataByMonitorsOption(data: any, monitoringOption: any) {
   return filteredData;
 }
 
-export function isDestinationListEmpty(list) {
+export function isDestinationListEmpty(list, currentItemName: string) {
+  if (currentItemName !== SETUP.ALL.toLowerCase()) {
+    const currentItemIndex = list.findIndex(
+      (category) => category.name === currentItemName
+    );
+    return list[currentItemIndex]?.items.length === 0;
+  }
+
   return list?.every((category) => category.items.length === 0);
 }
