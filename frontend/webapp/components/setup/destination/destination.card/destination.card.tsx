@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { KeyvalCard, KeyvalImage, KeyvalText } from "@/design.system";
 import { TapList } from "../tap.list/tap.list";
-import { MONITORING_OPTIONS, MonitoringOption } from "../utils";
+import { MONITORING_OPTIONS } from "../utils";
 import {
   ApplicationNameWrapper,
   DestinationCardWrapper,
@@ -12,17 +12,16 @@ const TEXT_STYLE = {
   whiteSpace: "nowrap",
   overflow: "hidden",
 };
+const LOGO_STYLE = { padding: 4, backgroundColor: "#fff" };
 
 type Destination = {
   supported_signals: {
     [key: string]: {
       supported: boolean;
-      // other properties
     };
   };
   image_url: string;
   display_name: string;
-  // other properties
 };
 
 type DestinationCardProps = {
@@ -53,7 +52,12 @@ export function DestinationCard({
   return (
     <KeyvalCard focus={focus}>
       <DestinationCardWrapper onClick={onClick}>
-        <KeyvalImage src={image_url} width={56} height={56} />
+        <KeyvalImage
+          src={image_url}
+          width={56}
+          height={56}
+          style={LOGO_STYLE}
+        />
         <ApplicationNameWrapper>
           <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
             {display_name}

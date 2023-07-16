@@ -6,6 +6,7 @@ interface KeyvalImageProps {
   alt?: string;
   width?: number;
   height?: number;
+  style?: React.CSSProperties;
 }
 
 const StyledImage = styled.img`
@@ -17,6 +18,15 @@ export function KeyvalImage({
   alt,
   width = 200,
   height = 200,
+  style = {},
 }: KeyvalImageProps) {
-  return <StyledImage src={src} alt={alt} width={width} height={height} />;
+  return (
+    <StyledImage
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      style={{ ...style }}
+    />
+  );
 }
