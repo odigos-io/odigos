@@ -37,10 +37,14 @@ archives:
     name_template: 'odigos_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     builds:
       - odigos
+    files:
+      - none*
   - id: odigos-ui
     name_template: 'odigos-ui_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     builds:
       - odigos-ui
+    files:
+      - none*
 
 checksum:
   name_template: 'checksums.txt'
