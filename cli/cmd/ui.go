@@ -1,16 +1,17 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/spf13/pflag"
 
@@ -18,7 +19,8 @@ import (
 )
 
 const (
-	defaultPort = 3000
+	defaultPort   = 3000
+	uiDownloadUrl = "https://github.com/keyval-dev/odigos/releases/download/v%s/odigos-ui_%s_%s_%s.tar.gz"
 )
 
 // uiCmd represents the ui command
@@ -35,10 +37,11 @@ var uiCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		binaryPath := filepath.Join(filepath.Dir(currentBinaryPath), "odigos-ui")
+		currentDir := filepath.Dir(currentBinaryPath)
+		binaryPath := filepath.Join(currentDir, "odigos-ui")
 		if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
 			fmt.Printf("Could not find UI binary, downloading latest release\n")
-			err = downloadLatestUIVersion(runtime.GOARCH, runtime.GOOS)
+			err = downloadLatestUIVersion(runtime.GOARCH, runtime.GOOS, currentDir)
 			if err != nil {
 				fmt.Printf("Error downloading latest UI version: %v\n", err)
 				os.Exit(1)
@@ -63,14 +66,73 @@ var uiCmd = &cobra.Command{
 	},
 }
 
-func downloadLatestUIVersion(arch string, os string) error {
+func downloadLatestUIVersion(arch string, os string, currentDir string) error {
 	latestRelease, err := GetLatestReleaseVersion()
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("Downloading version %s of Odigos UI ...\n", latestRelease)
-	return nil
+	url := getDownloadUrl(os, arch, latestRelease)
+	return downloadAndExtractTarGz(url, currentDir)
+}
+
+func downloadAndExtractTarGz(url string, dir string) error {
+	// Step 1: Download the tar.gz file
+	response, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to download file: %v", err)
+	}
+	defer response.Body.Close()
+
+	// Step 2: Create a new gzip reader
+	gzipReader, err := gzip.NewReader(response.Body)
+	if err != nil {
+		return fmt.Errorf("failed to create gzip reader: %v", err)
+	}
+	defer gzipReader.Close()
+
+	// Step 3: Create a new tar reader
+	tarReader := tar.NewReader(gzipReader)
+
+	// Step 4: Extract files one by one
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break // Reached the end of the tar archive
+		}
+		if err != nil {
+			return fmt.Errorf("failed to read tar header: %v", err)
+		}
+
+		// Step 5: Create the file or directory
+		targetPath := filepath.Join(dir, header.Name)
+		if header.FileInfo().IsDir() {
+			if err := os.MkdirAll(targetPath, 0755); err != nil {
+				return fmt.Errorf("failed to create directory: %v", err)
+			}
+			continue
+		}
+
+		file, err := os.Create(targetPath)
+		if err != nil {
+			return fmt.Errorf("failed to create file: %v", err)
+		}
+
+		// Step 6: Copy file contents from tar to the target file
+		if _, err := io.Copy(file, tarReader); err != nil {
+			file.Close()
+			return fmt.Errorf("failed to extract file: %v", err)
+		}
+
+		file.Close()
+	}
+
+	return os.Chmod(filepath.Join(dir, "odigos-ui"), 0755)
+}
+
+func getDownloadUrl(os string, arch string, version string) string {
+	return fmt.Sprintf(uiDownloadUrl, version, version, os, arch)
 }
 
 type Release struct {
@@ -96,7 +158,8 @@ func GetLatestReleaseVersion() (string, error) {
 		return "", err
 	}
 
-	return release.TagName, nil
+	ver, _ := strings.CutPrefix(release.TagName, "v")
+	return ver, nil
 }
 
 func init() {
