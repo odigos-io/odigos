@@ -23,7 +23,3 @@ export const LogoWrapper = styled.div`
   top: 20px;
   left: 20px;
 `;
-
-export const StepListWrapper = styled.div`
-  margin: 94px 0 30px 0;
-`;

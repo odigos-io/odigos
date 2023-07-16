@@ -14,14 +14,6 @@ export const DropdownWrapper = styled.div`
   gap: 12px;
 `;
 
-export const CheckboxWrapper = styled.div`
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  min-width: 180px;
-`;
-
-export const SwitcherWrapper = styled.div`
-  min-width: 90px;
-  margin-left: 24px;
+export const TapsWrapper = styled(DropdownWrapper)`
+  margin-left: 8px;
 `;
