@@ -90,8 +90,9 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.POST("/namespaces", endpoints.PersistNamespaces)
 		apis.GET("/applications/:namespace", endpoints.GetApplicationsInNamespace)
 		apis.GET("/config", endpoints.GetConfig)
+		apis.GET("/destination-types", endpoints.GetDestinationTypes)
+		apis.GET("/destination-types/:type", endpoints.GetDestinationTypeDetails)
 		apis.GET("/destinations", endpoints.GetDestinations)
-		apis.GET("/destinations/:type", endpoints.GetDestinationDetails)
 	}
 
 	return r, nil
