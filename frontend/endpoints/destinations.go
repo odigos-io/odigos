@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/frontend/destinations"
 	"github.com/keyval-dev/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -120,34 +119,78 @@ func GetDestinationTypeDetails(c *gin.Context) {
 	})
 }
 
-func GetDestinations(c *gin.Context) {
-	currentns := utils.GetCurrentNamespace()
-	dests, err := kube.DefaultClient.OdigosClient.Destinations(currentns).List(c, metav1.ListOptions{})
+func GetDestinations(c *gin.Context, odigosna string) {
+	dests, err := kube.DefaultClient.OdigosClient.Destinations(odigosna).List(c, metav1.ListOptions{})
 	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
+		returnError(c, err)
 		return
 	}
 
 	var resp []Destination
 	for _, dest := range dests.Items {
-		destType := dest.Spec.Type
-		destName := dest.Name
-
-		resp = append(resp, Destination{
-			Name: destName,
-			Type: destType,
-			ExportedSignals: ExportedSignals{
-				Traces: isSignalExported(dest, common.TracesObservabilitySignal),
-				Metrics: isSignalExported(dest, common.MetricsObservabilitySignal),
-				Logs: isSignalExported(dest, common.LogsObservabilitySignal),
-			},
-			Data: dest.Spec.Data,
-		})
+		endpointDest := k8sDestinationToEndpointFormat(dest)
+		resp = append(resp, endpointDest)
 	}
 
 	c.JSON(200, resp)
+}
+
+func GetDestinationByName(c *gin.Context, odigosns string) {
+	destName := c.Param("name")
+	destination, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Get(c, destName, metav1.GetOptions{})
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	resp := k8sDestinationToEndpointFormat(*destination)
+	c.JSON(200, resp)
+}
+
+func PersistDestination(c *gin.Context, odigosns string) {
+
+	request := Destination{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		returnError(c, err)
+		return
+	}
+
+	k8sDestination := v1alpha1.Destination{
+		TypeMeta:   metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: request.Name,
+		},
+		Spec:       v1alpha1.DestinationSpec{
+			Type:      request.Type,
+			Data:      request.Data,
+			Signals:   exportedSignalsObjectToSlice(request.ExportedSignals),
+		},
+		Status:     v1alpha1.DestinationStatus{},
+	}
+	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Create(c, &k8sDestination, metav1.CreateOptions{})
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	resp := k8sDestinationToEndpointFormat(*dest)
+	c.JSON(201, resp)
+}
+
+func k8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination) Destination {
+	destType := k8sDest.Spec.Type
+	destName := k8sDest.Name
+
+	return Destination{
+		Name: destName,
+		Type: destType,
+		ExportedSignals: ExportedSignals{
+			Traces: isSignalExported(k8sDest, common.TracesObservabilitySignal),
+			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),
+			Logs: isSignalExported(k8sDest, common.LogsObservabilitySignal),
+		},
+		Data: k8sDest.Spec.Data,
+	}
 }
 
 func isSignalExported(dest v1alpha1.Destination, signal common.ObservabilitySignal) bool {
@@ -158,4 +201,19 @@ func isSignalExported(dest v1alpha1.Destination, signal common.ObservabilitySign
 	}
 
 	return false
+}
+
+func exportedSignalsObjectToSlice(signals ExportedSignals) []common.ObservabilitySignal {
+	var resp []common.ObservabilitySignal
+	if signals.Traces {
+		resp = append(resp, common.TracesObservabilitySignal)
+	}
+	if signals.Metrics {
+		resp = append(resp, common.MetricsObservabilitySignal)
+	}
+	if signals.Logs {
+		resp = append(resp, common.LogsObservabilitySignal)
+	}
+
+	return resp
 }
