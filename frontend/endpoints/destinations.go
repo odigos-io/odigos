@@ -147,7 +147,7 @@ func GetDestinationByName(c *gin.Context, odigosns string) {
 	c.JSON(200, resp)
 }
 
-func PersistDestination(c *gin.Context, odigosns string) {
+func CreateNewDestination(c *gin.Context, odigosns string) {
 
 	request := Destination{}
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -175,6 +175,45 @@ func PersistDestination(c *gin.Context, odigosns string) {
 
 	resp := k8sDestinationToEndpointFormat(*dest)
 	c.JSON(201, resp)
+}
+
+func UpdateExistingDestination(c *gin.Context, odigosns string) {
+	request := Destination{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		returnError(c, err)
+		return
+	}
+
+	destName := request.Name
+	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Get(c, destName, metav1.GetOptions{})
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	dest.Spec.Type = request.Type
+	dest.Spec.Data = request.Data
+	dest.Spec.Signals = exportedSignalsObjectToSlice(request.ExportedSignals)
+
+	updatedDest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Update(c, dest, metav1.UpdateOptions{})
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	resp := k8sDestinationToEndpointFormat(*updatedDest)
+	c.JSON(201, resp)
+}
+
+func DeleteDestination(c *gin.Context, odigosns string) {
+	destName := c.Param("name")
+	err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Delete(c, destName, metav1.DeleteOptions{})
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	c.Status(204)
 }
 
 func k8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination) Destination {
