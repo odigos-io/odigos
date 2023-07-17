@@ -6,18 +6,20 @@ import {
   BackButtonWrapper,
 } from "./setup.section.styled";
 import { SetupHeader } from "../setup.header/setup.header";
-import { SETUP } from "@/utils/constants";
-import Steps from "@/design.system/steps/steps";
-import { SourcesSection } from "../sources/sources.section";
 import { DestinationSection } from "../destination/destination.section";
-import { KeyvalText } from "@/design.system";
+import { ConnectionSection } from "../connection/connection.section";
+import { SourcesSection } from "../sources/sources.section";
 import RightArrow from "assets/icons/white-arrow-right.svg";
-import { STEPS, Step } from "./utils";
+import Steps from "@/design.system/steps/steps";
+import { KeyvalText } from "@/design.system";
+import { SETUP } from "@/utils/constants";
 import { useSectionData } from "@/hooks";
+import { STEPS, Step } from "./utils";
 
 const sectionComponents = {
   [SETUP.STEPS.ID.CHOOSE_SOURCE]: SourcesSection,
   [SETUP.STEPS.ID.CHOOSE_DESTINATION]: DestinationSection,
+  [SETUP.STEPS.ID.CREATE_CONNECTION]: ConnectionSection,
 };
 
 export function SetupSection() {
@@ -50,7 +52,7 @@ export function SetupSection() {
     }
     setCurrentStep(nextStep);
     setSteps([...steps]);
-    setSectionData({});
+    // setSectionData({});
   }
 
   function onNextClick() {

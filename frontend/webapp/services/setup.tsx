@@ -16,3 +16,7 @@ export async function setNamespaces(body: any) {
 export async function getDestinations() {
   return await get(API.DESTINATION);
 }
+
+export async function getDestination(type: string) {
+  return await get(`${API.DESTINATION}/${type}`);
+}

@@ -15,6 +15,7 @@ const QUERIES = {
   API_NAMESPACES: "apiNamespaces",
   API_APPLICATIONS: "apiApplications",
   API_DESTINATIONS: "apiDestinations",
+  API_DESTINATION_TYPE: "apiDestinationType",
 };
 
 export { API, QUERIES };
