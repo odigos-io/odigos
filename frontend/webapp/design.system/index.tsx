@@ -15,3 +15,4 @@ export { KeyvalLink } from "./link/link";
 export { KeyvalTooltip } from "./tooltip/tooltip";
 export { KeyvalImage } from "./image/image";
 export { KeyvalInput } from "./input/input";
+export { KeyvalVideo } from "./video/video";

@@ -4,6 +4,7 @@ import { QUERIES } from "@/utils/constants";
 import React, { useEffect } from "react";
 import { useQuery } from "react-query";
 import { CreateConnectionContainer } from "./connection.section.styled";
+import { QuickHelp } from "@/components/setup/connection/quick.help/quick.help";
 
 export function ConnectionSection({ sectionData }) {
   const { isLoading, data } = useQuery([QUERIES.API_DESTINATION_TYPE], () =>
@@ -15,8 +16,7 @@ export function ConnectionSection({ sectionData }) {
   return (
     <CreateConnectionContainer>
       <CreateConnectionForm fields={data?.fields} />
-
-      <CreateConnectionForm fields={data?.fields} />
+      <QuickHelp />
     </CreateConnectionContainer>
   );
 }
