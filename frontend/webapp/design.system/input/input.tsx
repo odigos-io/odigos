@@ -13,6 +13,7 @@ interface InputProps {
   onChange: (value: string) => void;
   type?: string;
   error?: string;
+  style?: React.CSSProperties;
 }
 
 export function KeyvalInput({
@@ -21,6 +22,7 @@ export function KeyvalInput({
   onChange,
   type = "text",
   error,
+  style = {},
 }: InputProps): JSX.Element {
   function handleChange(event: ChangeEvent<HTMLInputElement>): void {
     onChange(event.target.value);
@@ -35,7 +37,7 @@ export function KeyvalInput({
           </KeyvalText>
         </LabelWrapper>
       )}
-      <StyledInputContainer hasError={!!error}>
+      <StyledInputContainer hasError={!!error} style={{ ...style }}>
         <StyledInput type={type} value={value} onChange={handleChange} />
       </StyledInputContainer>
       {error && (

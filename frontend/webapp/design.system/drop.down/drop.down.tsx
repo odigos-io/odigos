@@ -36,7 +36,7 @@ export function KeyvalDropDown({
   width = 260,
 }: KeyvalDropDownProps) {
   const [isOpen, setOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(data[0] || null);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isHover, setHover] = useState<any>(false);
   const [searchFilter, setSearchFilter] = useState("");
 

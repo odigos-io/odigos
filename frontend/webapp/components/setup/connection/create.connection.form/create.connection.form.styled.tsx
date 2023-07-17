@@ -12,6 +12,17 @@ export const ConnectionMonitorsWrapper = styled.div`
   flex-direction: column;
 `;
 
-export const DestinationNameWrapper = styled.div`
+export const FieldWrapper = styled.div`
   margin-top: 32px;
+  width: 348px;
+`;
+
+export const DynamicFieldsWrapper = styled.div`
+  margin-top: 32px;
+`;
+
+export const CreateDestinationButtonWrapper = styled.div`
+  margin-top: 48px;
+  height: 36px;
+  width: 362px;
 `;

@@ -66,18 +66,18 @@ export function SetupHeader({
   totalSelected,
   sectionData,
 }: SetupHeaderProps) {
-  console.log({ currentStep });
   return (
     <SetupHeaderWrapper>
       <HeaderTitleWrapper>
         {renderCurrentIcon(currentStep, sectionData)}
       </HeaderTitleWrapper>
       <HeaderButtonWrapper>
-        {currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE && (
-          <KeyvalText
-            weight={400}
-          >{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
-        )}
+        {currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE &&
+          !isNaN(totalSelected) && (
+            <KeyvalText
+              weight={400}
+            >{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
+          )}
         {currentStep?.id !== SETUP.STEPS.ID.CREATE_CONNECTION && (
           <KeyvalButton
             disabled={totalSelected === 0}

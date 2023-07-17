@@ -2,15 +2,17 @@ import { styled } from "styled-components";
 
 export const StyledInputContainer = styled.div<{ hasError: boolean }>`
   display: flex;
-  width: 360px;
-  padding: 11px 13px;
+  width: 100%;
+  padding-left: 13px;
+  height: 100%;
+  align-items: center;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
   gap: 10px;
   border-radius: 8px;
   border: ${({ theme, hasError }) =>
-    `1px solid ${hasError ? "#FD3F3F" : theme.text.grey}`};
+    `1px solid ${hasError ? "#FD3F3F" : theme.colors.blue_grey}`};
   background: ${({ theme }) => theme.colors.light_dark};
 `;
 
@@ -23,7 +25,7 @@ export const StyledInput = styled.input`
 `;
 
 export const LabelWrapper = styled.div`
-  margin-bottom: 11px;
+  margin-bottom: 8px;
 `;
 
 export const ErrorWrapper = styled.div`
