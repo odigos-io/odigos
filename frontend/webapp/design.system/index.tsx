@@ -14,3 +14,4 @@ export { KeyvalSelectedCounter } from "./selected.counter/selected.counter";
 export { KeyvalLink } from "./link/link";
 export { KeyvalTooltip } from "./tooltip/tooltip";
 export { KeyvalImage } from "./image/image";
+export { KeyvalInput } from "./input/input";

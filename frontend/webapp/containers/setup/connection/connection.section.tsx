@@ -1,3 +1,4 @@
+import { CreateConnectionForm } from "@/components/setup";
 import { getDestination } from "@/services/setup";
 import { QUERIES } from "@/utils/constants";
 import React, { useEffect } from "react";
@@ -13,5 +14,11 @@ export function ConnectionSection({ sectionData }) {
     console.log({ data });
   }, [data]);
 
-  return <>Connection</>;
+  if (isLoading) return <div>Loading...</div>;
+
+  return (
+    <>
+      <CreateConnectionForm />
+    </>
+  );
 }
