@@ -48,7 +48,7 @@ const renderCurrentIcon = (
     case STEPS.ID.CREATE_CONNECTION:
       return (
         <>
-          <ConnectionsIcons icon={data?.imageUrl} />
+          <ConnectionsIcons icon={data?.image_url} />
           <KeyvalText
             size={20}
             weight={600}
@@ -66,6 +66,7 @@ export function SetupHeader({
   totalSelected,
   sectionData,
 }: SetupHeaderProps) {
+  console.log({ currentStep });
   return (
     <SetupHeaderWrapper>
       <HeaderTitleWrapper>
@@ -77,16 +78,18 @@ export function SetupHeader({
             weight={400}
           >{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
         )}
-        <KeyvalButton
-          disabled={totalSelected === 0}
-          onClick={onNextClick}
-          style={{ gap: 10 }}
-        >
-          <KeyvalText size={20} weight={600} color="#0A1824">
-            {SETUP.NEXT}
-          </KeyvalText>
-          <RightArrow />
-        </KeyvalButton>
+        {currentStep?.id !== SETUP.STEPS.ID.CREATE_CONNECTION && (
+          <KeyvalButton
+            disabled={totalSelected === 0}
+            onClick={onNextClick}
+            style={{ gap: 10 }}
+          >
+            <KeyvalText size={20} weight={600} color="#0A1824">
+              {SETUP.NEXT}
+            </KeyvalText>
+            <RightArrow />
+          </KeyvalButton>
+        )}
       </HeaderButtonWrapper>
     </SetupHeaderWrapper>
   );
