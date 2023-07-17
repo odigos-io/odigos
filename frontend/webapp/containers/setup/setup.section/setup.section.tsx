@@ -81,6 +81,7 @@ export function SetupSection() {
           currentStep={currentStep}
           onNextClick={onNextClick}
           totalSelected={totalSelected}
+          sectionData={sectionData}
         />
         <SetupContentWrapper>{renderCurrentSection()}</SetupContentWrapper>
       </SetupSectionContainer>

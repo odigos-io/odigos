@@ -9,6 +9,7 @@ import {
 } from "./setup.header.styled";
 import { KeyvalButton, KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
+import { ConnectionsIcons } from "@/components/setup";
 
 type StepId = "CHOOSE_SOURCE" | "CHOOSE_DESTINATION";
 
@@ -20,9 +21,13 @@ type SetupHeaderProps = {
   currentStep: any;
   onNextClick: () => void;
   totalSelected: number;
+  sectionData: any;
 };
 
-const renderCurrentIcon = (currentStep: SetupStep | null): ReactNode => {
+const renderCurrentIcon = (
+  currentStep: SetupStep | null,
+  data: any | undefined
+): ReactNode => {
   const { STEPS, HEADER } = SETUP;
   const { id }: SetupStep = currentStep || {};
   switch (id) {
@@ -40,6 +45,16 @@ const renderCurrentIcon = (currentStep: SetupStep | null): ReactNode => {
           <KeyvalText>{HEADER.CHOOSE_DESTINATION_TITLE}</KeyvalText>
         </>
       );
+    case STEPS.ID.CREATE_CONNECTION:
+      return (
+        <>
+          <ConnectionsIcons icon={data?.imageUrl} />
+          <KeyvalText
+            size={20}
+            weight={600}
+          >{`Add ${data?.display_name} Destination`}</KeyvalText>
+        </>
+      );
     default:
       return null;
   }
@@ -49,10 +64,13 @@ export function SetupHeader({
   currentStep,
   onNextClick,
   totalSelected,
+  sectionData,
 }: SetupHeaderProps) {
   return (
     <SetupHeaderWrapper>
-      <HeaderTitleWrapper>{renderCurrentIcon(currentStep)}</HeaderTitleWrapper>
+      <HeaderTitleWrapper>
+        {renderCurrentIcon(currentStep, sectionData)}
+      </HeaderTitleWrapper>
       <HeaderButtonWrapper>
         {currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE && (
           <KeyvalText
