@@ -209,12 +209,10 @@ func CreateNewDestination(c *gin.Context, odigosns string) {
 	}
 
 	k8sDestination := v1alpha1.Destination{
-		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: destName,
 		},
-		Spec:   destSpec,
-		Status: v1alpha1.DestinationStatus{},
+		Spec: destSpec,
 	}
 	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Create(c, &k8sDestination, metav1.CreateOptions{})
 	if err != nil {
