@@ -69,15 +69,11 @@ export function CreateConnectionForm({ fields }: any) {
   }
 
   function isFormValid() {
-    console.log({ dynamicFields });
-    console.log({ destinationName });
-    console.log({ fields });
     const dynamicFieldsValues = Object.values(dynamicFields);
     const isValid =
       !!destinationName &&
       dynamicFieldsValues.every((field) => field) &&
       dynamicFieldsValues.length === fields?.length;
-    console.log({ isValid });
 
     setIsCreateButtonDisabled(!isValid);
   }

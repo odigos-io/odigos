@@ -4,3 +4,4 @@ export { SourcesOptionMenu } from "./sources/sources.option.menu/sources.option.
 export { DestinationOptionMenu } from "./destination/destination.option.menu/destination.option.menu";
 export { ConnectionsIcons } from "./connection/connections_icons/connections_icons";
 export { CreateConnectionForm } from "./connection/create.connection.form/create.connection.form";
+export { QuickHelp } from "./connection/quick.help/quick.help";
