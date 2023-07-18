@@ -8,6 +8,7 @@ import (
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/frontend/destinations"
 	"github.com/keyval-dev/odigos/frontend/kube"
+	k8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -121,8 +122,8 @@ func GetDestinationTypeDetails(c *gin.Context) {
 	return
 }
 
-func GetDestinations(c *gin.Context, odigosna string) {
-	dests, err := kube.DefaultClient.OdigosClient.Destinations(odigosna).List(c, metav1.ListOptions{})
+func GetDestinations(c *gin.Context, odigosns string) {
+	dests, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).List(c, metav1.ListOptions{})
 	if err != nil {
 		returnError(c, err)
 		return
@@ -130,7 +131,12 @@ func GetDestinations(c *gin.Context, odigosna string) {
 
 	var resp []Destination
 	for _, dest := range dests.Items {
-		endpointDest := k8sDestinationToEndpointFormat(dest)
+		secretFields, err := getDestinationSecretFields(c, odigosns, &dest)
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+		endpointDest := k8sDestinationToEndpointFormat(dest, secretFields)
 		resp = append(resp, endpointDest)
 	}
 
@@ -145,7 +151,12 @@ func GetDestinationByName(c *gin.Context, odigosns string) {
 		return
 	}
 
-	resp := k8sDestinationToEndpointFormat(*destination)
+	secretFields, err := getDestinationSecretFields(c, odigosns, destination)
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+	resp := k8sDestinationToEndpointFormat(*destination, secretFields)
 	c.JSON(200, resp)
 }
 
@@ -157,22 +168,52 @@ func CreateNewDestination(c *gin.Context, odigosns string) {
 		return
 	}
 
-	errors := verifyDestinationDataScheme(request.Type, request.Data)
+	destType := request.Type
+	destName := request.Name
+
+	destTypeConfig, err := getDestinationTypeConfig(destType)
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	errors := verifyDestinationDataScheme(destType, destTypeConfig, request.Data)
 	if len(errors) > 0 {
 		returnErrors(c, errors)
 		return
 	}
 
+	dataField, secretFields := transformFieldsToDataAndSecrets(destTypeConfig, request.Data)
+
+	destSpec := v1alpha1.DestinationSpec{
+		Type:    destType,
+		Data:    dataField,
+		Signals: exportedSignalsObjectToSlice(request.ExportedSignals),
+	}
+
+	if len(secretFields) > 0 {
+		destSpec.SecretRef = &k8s.LocalObjectReference{
+			Name: destName,
+		}
+		secret := k8s.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: destName,
+			},
+			StringData: secretFields,
+		}
+		_, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Create(c, &secret, metav1.CreateOptions{})
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+	}
+
 	k8sDestination := v1alpha1.Destination{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: request.Name,
+			Name: destName,
 		},
-		Spec: v1alpha1.DestinationSpec{
-			Type:    request.Type,
-			Data:    request.Data,
-			Signals: exportedSignalsObjectToSlice(request.ExportedSignals),
-		},
+		Spec:   destSpec,
 		Status: v1alpha1.DestinationStatus{},
 	}
 	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Create(c, &k8sDestination, metav1.CreateOptions{})
@@ -181,7 +222,7 @@ func CreateNewDestination(c *gin.Context, odigosns string) {
 		return
 	}
 
-	resp := k8sDestinationToEndpointFormat(*dest)
+	resp := k8sDestinationToEndpointFormat(*dest, secretFields)
 	c.JSON(201, resp)
 }
 
@@ -192,21 +233,47 @@ func UpdateExistingDestination(c *gin.Context, odigosns string) {
 		return
 	}
 
-	errors := verifyDestinationDataScheme(request.Type, request.Data)
+	destType := request.Type
+	destName := request.Name
+
+	destTypeConfig, err := getDestinationTypeConfig(destType)
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	errors := verifyDestinationDataScheme(destType, destTypeConfig, request.Data)
 	if len(errors) > 0 {
 		returnErrors(c, errors)
 		return
 	}
 
-	destName := request.Name
+	dataFields, secretFields := transformFieldsToDataAndSecrets(destTypeConfig, request.Data)
+
+	// update destination
 	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Get(c, destName, metav1.GetOptions{})
 	if err != nil {
 		returnError(c, err)
 		return
 	}
 
+	secretRef := dest.Spec.SecretRef
+	if secretRef != nil {
+		secret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Get(c, secretRef.Name, metav1.GetOptions{})
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+		secret.StringData = secretFields
+		_, err = kube.DefaultClient.CoreV1().Secrets(odigosns).Update(c, secret, metav1.UpdateOptions{})
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+	}
+
 	dest.Spec.Type = request.Type
-	dest.Spec.Data = request.Data
+	dest.Spec.Data = dataFields
 	dest.Spec.Signals = exportedSignalsObjectToSlice(request.ExportedSignals)
 
 	updatedDest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Update(c, dest, metav1.UpdateOptions{})
@@ -215,24 +282,32 @@ func UpdateExistingDestination(c *gin.Context, odigosns string) {
 		return
 	}
 
-	resp := k8sDestinationToEndpointFormat(*updatedDest)
+	resp := k8sDestinationToEndpointFormat(*updatedDest, secretFields)
 	c.JSON(201, resp)
 }
 
 func DeleteDestination(c *gin.Context, odigosns string) {
 	destName := c.Param("name")
-	err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Delete(c, destName, metav1.DeleteOptions{})
-	if err != nil {
-		returnError(c, err)
+	errDest := kube.DefaultClient.OdigosClient.Destinations(odigosns).Delete(c, destName, metav1.DeleteOptions{})
+	errSecret := kube.DefaultClient.CoreV1().Secrets(odigosns).Delete(c, destName, metav1.DeleteOptions{})
+
+	if errDest != nil {
+		returnError(c, errDest)
+		return
+	}
+
+	if errSecret != nil {
+		returnError(c, errDest)
 		return
 	}
 
 	c.Status(204)
 }
 
-func k8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination) Destination {
+func k8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields map[string]string) Destination {
 	destType := k8sDest.Spec.Type
 	destName := k8sDest.Name
+	mergedFields := mergeDataAndSecrets(k8sDest.Spec.Data, secretFields)
 
 	return Destination{
 		Name: destName,
@@ -242,8 +317,22 @@ func k8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination) Destination {
 			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),
 			Logs:    isSignalExported(k8sDest, common.LogsObservabilitySignal),
 		},
-		Data: k8sDest.Spec.Data,
+		Data: mergedFields,
 	}
+}
+
+func mergeDataAndSecrets(data map[string]string, secrets map[string]string) map[string]string {
+	merged := map[string]string{}
+
+	for k, v := range data {
+		merged[k] = v
+	}
+
+	for k, v := range secrets {
+		merged[k] = v
+	}
+
+	return merged
 }
 
 func isSignalExported(dest v1alpha1.Destination, signal common.ObservabilitySignal) bool {
@@ -271,11 +360,7 @@ func exportedSignalsObjectToSlice(signals ExportedSignals) []common.Observabilit
 	return resp
 }
 
-func verifyDestinationDataScheme(destType common.DestinationType, data map[string]string) []error {
-	destTypeConfig, err := getDestinationTypeConfig(destType)
-	if err != nil {
-		return []error{err}
-	}
+func verifyDestinationDataScheme(destType common.DestinationType, destTypeConfig *destinations.Destination, data map[string]string) []error {
 
 	errors := []error{}
 
@@ -313,4 +398,47 @@ func getDestinationTypeConfig(destType common.DestinationType) (*destinations.De
 	}
 
 	return nil, fmt.Errorf("destination type %s not found", destType)
+}
+
+func transformFieldsToDataAndSecrets(destTypeConfig *destinations.Destination, fields map[string]string) (map[string]string, map[string]string) {
+
+	dataFields := map[string]string{}
+	secretFields := map[string]string{}
+
+	for fieldName, fieldValue := range fields {
+		// for each field in the data, find it's config
+		// assuming the list is small so it's ok to iterate it
+		for _, fieldConfig := range destTypeConfig.Spec.Fields {
+			if fieldName == fieldConfig.Name {
+				if fieldConfig.Secret {
+					secretFields[fieldName] = fieldValue
+				} else {
+					dataFields[fieldName] = fieldValue
+				}
+			}
+		}
+	}
+
+	return dataFields, secretFields
+}
+
+func getDestinationSecretFields(c *gin.Context, odigosns string, dest *v1alpha1.Destination) (map[string]string, error) {
+
+	secretFields := map[string]string{}
+	secretRef := dest.Spec.SecretRef
+
+	if secretRef == nil {
+		return secretFields, nil
+	}
+
+	secret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Get(c, secretRef.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range secret.Data {
+		secretFields[k] = string(v)
+	}
+
+	return secretFields, nil
 }
