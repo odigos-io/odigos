@@ -67,6 +67,7 @@ export function SetupHeader({
   totalSelected,
   sectionData,
 }: SetupHeaderProps) {
+  console.log({ totalSelected });
   return (
     <SetupHeaderWrapper>
       <HeaderTitleWrapper>

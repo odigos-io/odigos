@@ -15,6 +15,7 @@ import { KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
 import { useSectionData } from "@/hooks";
 import { STEPS, Step } from "./utils";
+import { setNamespaces } from "@/services/setup";
 
 const sectionComponents = {
   [SETUP.STEPS.ID.CHOOSE_SOURCE]: SourcesSection,
@@ -34,7 +35,7 @@ export function SetupSection() {
     ) : null;
   }
 
-  function handleChangeStep(direction: number) {
+  async function handleChangeStep(direction: number) {
     const currentStepIndex = steps.findIndex(
       ({ id }) => id === currentStep?.id
     );
@@ -45,14 +46,18 @@ export function SetupSection() {
       nextStep.status = SETUP.STEPS.STATUS.ACTIVE;
     }
 
-    if (prevStep && direction === 1) {
-      prevStep.status = SETUP.STEPS.STATUS.DONE;
-    } else {
-      prevStep.status = SETUP.STEPS.STATUS.DISABLED;
+    if (prevStep) {
+      prevStep.status =
+        direction === 1 ? SETUP.STEPS.STATUS.DONE : SETUP.STEPS.STATUS.DISABLED;
     }
+
+    if (currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE) {
+      setNamespaces(sectionData);
+      setSectionData({});
+    }
+
     setCurrentStep(nextStep);
     setSteps([...steps]);
-    // setSectionData({});
   }
 
   function onNextClick() {
@@ -61,6 +66,7 @@ export function SetupSection() {
 
   function onBackClick() {
     handleChangeStep(-1);
+    setSectionData({});
   }
 
   return (

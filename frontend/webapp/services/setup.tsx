@@ -22,6 +22,5 @@ export async function getDestination(type: string) {
 }
 
 export async function setDestination(body: any) {
-  console.log("object", body);
   return await post(API.DESTINATION, body);
 }
