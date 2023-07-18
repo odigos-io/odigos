@@ -11,8 +11,8 @@ type Destination struct {
 
 type Metadata struct {
 	Type        common.DestinationType `yaml:"type"`
-	DisplayName string `yaml:"displayName"`
-	Category    string `yaml:"category"`
+	DisplayName string                 `yaml:"displayName"`
+	Category    string                 `yaml:"category"`
 }
 
 type Spec struct {
@@ -37,5 +37,5 @@ type Field struct {
 	VideoURL       string                 `yaml:"videoUrl"`
 	ComponentType  string                 `yaml:"componentType"`
 	ComponentProps map[string]interface{} `yaml:"componentProps"`
-	Secret 		   bool					  `yaml:"secret"`
+	Secret         bool                   `yaml:"secret"`
 }

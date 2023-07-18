@@ -16,15 +16,15 @@ type GetDestinationTypesResponse struct {
 }
 
 type DestinationsCategory struct {
-	Name  string                     `json:"name"`
+	Name  string                         `json:"name"`
 	Items []DestinationTypesCategoryItem `json:"items"`
 }
 
 type DestinationTypesCategoryItem struct {
-	Type             common.DestinationType           `json:"type"`
-	DisplayName      string           `json:"display_name"`
-	ImageUrl         string           `json:"image_url"`
-	SupportedSignals SupportedSignals `json:"supported_signals"`
+	Type             common.DestinationType `json:"type"`
+	DisplayName      string                 `json:"display_name"`
+	ImageUrl         string                 `json:"image_url"`
+	SupportedSignals SupportedSignals       `json:"supported_signals"`
 }
 
 type SupportedSignals struct {
@@ -38,16 +38,16 @@ type ObservabilitySignalSupport struct {
 }
 
 type ExportedSignals struct {
-	Traces bool `json:"traces"`
+	Traces  bool `json:"traces"`
 	Metrics bool `json:"metrics"`
-	Logs bool `json:"logs"`
+	Logs    bool `json:"logs"`
 }
 
 type Destination struct {
-	Name string `json:"name"`
-	Type common.DestinationType `json:"type"`
-	ExportedSignals ExportedSignals `json:"signals"`
-	Data map[string]string `json:"data"`
+	Name            string                 `json:"name"`
+	Type            common.DestinationType `json:"type"`
+	ExportedSignals ExportedSignals        `json:"signals"`
+	Data            map[string]string      `json:"data"`
 }
 
 func GetDestinationTypes(c *gin.Context) {
@@ -164,16 +164,16 @@ func CreateNewDestination(c *gin.Context, odigosns string) {
 	}
 
 	k8sDestination := v1alpha1.Destination{
-		TypeMeta:   metav1.TypeMeta{},
+		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: request.Name,
 		},
-		Spec:       v1alpha1.DestinationSpec{
-			Type:      request.Type,
-			Data:      request.Data,
-			Signals:   exportedSignalsObjectToSlice(request.ExportedSignals),
+		Spec: v1alpha1.DestinationSpec{
+			Type:    request.Type,
+			Data:    request.Data,
+			Signals: exportedSignalsObjectToSlice(request.ExportedSignals),
 		},
-		Status:     v1alpha1.DestinationStatus{},
+		Status: v1alpha1.DestinationStatus{},
 	}
 	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Create(c, &k8sDestination, metav1.CreateOptions{})
 	if err != nil {
@@ -238,9 +238,9 @@ func k8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination) Destination {
 		Name: destName,
 		Type: destType,
 		ExportedSignals: ExportedSignals{
-			Traces: isSignalExported(k8sDest, common.TracesObservabilitySignal),
+			Traces:  isSignalExported(k8sDest, common.TracesObservabilitySignal),
 			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),
-			Logs: isSignalExported(k8sDest, common.LogsObservabilitySignal),
+			Logs:    isSignalExported(k8sDest, common.LogsObservabilitySignal),
 		},
 		Data: k8sDest.Spec.Data,
 	}
