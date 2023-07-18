@@ -11,7 +11,7 @@ import { ConnectionSection } from "../connection/connection.section";
 import { SourcesSection } from "../sources/sources.section";
 import RightArrow from "assets/icons/white-arrow-right.svg";
 import Steps from "@/design.system/steps/steps";
-import { KeyvalText } from "@/design.system";
+import { KeyvalLoader, KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
 import { useSectionData } from "@/hooks";
 import { STEPS, Step } from "./utils";

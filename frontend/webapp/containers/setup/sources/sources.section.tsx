@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { SourcesList, SourcesOptionMenu } from "@/components/setup";
 import { getApplication, getNamespaces } from "@/services/setup";
+import { LoaderWrapper } from "./sources.section.styled";
 import { useQuery } from "react-query";
 import { QUERIES } from "@/utils/constants";
+import { KeyvalLoader } from "@/design.system";
 
 const DEFAULT_CONFIG = {
   selected_all: false,
@@ -109,7 +111,11 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
   }
 
   if (isLoading) {
-    return null;
+    return (
+      <LoaderWrapper>
+        <KeyvalLoader />
+      </LoaderWrapper>
+    );
   }
 
   return (

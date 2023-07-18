@@ -8,6 +8,7 @@ import Empty from "@/assets/images/empty-list.svg";
 import {
   DestinationListContainer,
   EmptyListWrapper,
+  LoaderWrapper,
 } from "./destination.section.styled";
 import {
   filterDataByMonitorsOption,
@@ -15,6 +16,7 @@ import {
   isDestinationListEmpty,
   sortDestinationList,
 } from "./utils";
+import { KeyvalLoader } from "@/design.system";
 
 type DestinationSectionProps = {
   sectionData: any;
@@ -69,7 +71,11 @@ export function DestinationSection({
   }
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <LoaderWrapper>
+        <KeyvalLoader />
+      </LoaderWrapper>
+    );
   }
 
   return (

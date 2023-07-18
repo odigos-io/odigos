@@ -8,3 +8,7 @@ export const CreateConnectionContainer = styled.div`
   overflow: scroll;
   scrollbar-width: none;
 `;
+
+export const LoaderWrapper = styled.div`
+  height: 500px;
+`;

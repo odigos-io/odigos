@@ -1,9 +1,13 @@
 import React, { useMemo } from "react";
 import { useMutation, useQuery } from "react-query";
 import { CreateConnectionForm, QuickHelp } from "@/components/setup";
-import { CreateConnectionContainer } from "./connection.section.styled";
+import {
+  CreateConnectionContainer,
+  LoaderWrapper,
+} from "./connection.section.styled";
 import { getDestination, setDestination } from "@/services/setup";
 import { QUERIES } from "@/utils/constants";
+import { KeyvalLoader } from "@/design.system";
 
 export interface DestinationBody {
   name: string;
@@ -49,7 +53,12 @@ export function ConnectionSection({ sectionData }) {
     });
   }
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading)
+    return (
+      <LoaderWrapper>
+        <KeyvalLoader />
+      </LoaderWrapper>
+    );
 
   return (
     <CreateConnectionContainer>
