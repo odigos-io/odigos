@@ -290,6 +290,7 @@ func verifyDestinationDataScheme(destType common.DestinationType, data map[strin
 	// verify data fields are found in config
 	for dataField := range data {
 		found := false
+		// iterating all fields in config every time, assuming it's a small list
 		for _, field := range destTypeConfig.Spec.Fields {
 			if dataField == field.Name {
 				found = true
