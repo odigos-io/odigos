@@ -20,6 +20,7 @@ spec:
       componentType: input
       componentProps:
         type: password
+      secret: true
     - name: site
       displayName: Site
       videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU

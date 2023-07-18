@@ -1,6 +1,8 @@
 package endpoints
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
@@ -19,7 +21,7 @@ type DestinationsCategory struct {
 }
 
 type DestinationTypesCategoryItem struct {
-	Type             string           `json:"type"`
+	Type             common.DestinationType           `json:"type"`
 	DisplayName      string           `json:"display_name"`
 	ImageUrl         string           `json:"image_url"`
 	SupportedSignals SupportedSignals `json:"supported_signals"`
@@ -95,28 +97,28 @@ type Field struct {
 }
 
 func GetDestinationTypeDetails(c *gin.Context) {
-	destType := c.Param("type")
-	for _, dest := range destinations.Get() {
-		if dest.Metadata.Type == destType {
-			var resp GetDestinationDetailsResponse
-			for _, field := range dest.Spec.Fields {
-				resp.Fields = append(resp.Fields, Field{
-					Name:                field.Name,
-					DisplayName:         field.DisplayName,
-					ComponentType:       field.ComponentType,
-					ComponentProperties: field.ComponentProps,
-					VideoUrl:            field.VideoURL,
-				})
-			}
-
-			c.JSON(200, resp)
-			return
-		}
+	destType := common.DestinationType(c.Param("type"))
+	destTypeConfig, err := getDestinationTypeConfig(destType)
+	if err != nil {
+		c.JSON(404, gin.H{
+			"error": fmt.Sprintf("destination type %s not found", destType),
+		})
+		return
 	}
 
-	c.JSON(404, gin.H{
-		"error": "destination not found",
-	})
+	var resp GetDestinationDetailsResponse
+	for _, field := range destTypeConfig.Spec.Fields {
+		resp.Fields = append(resp.Fields, Field{
+			Name:                field.Name,
+			DisplayName:         field.DisplayName,
+			ComponentType:       field.ComponentType,
+			ComponentProperties: field.ComponentProps,
+			VideoUrl:            field.VideoURL,
+		})
+	}
+
+	c.JSON(200, resp)
+	return
 }
 
 func GetDestinations(c *gin.Context, odigosna string) {
@@ -155,6 +157,12 @@ func CreateNewDestination(c *gin.Context, odigosns string) {
 		return
 	}
 
+	errors := verifyDestinationDataScheme(request.Type, request.Data)
+	if len(errors) > 0 {
+		returnErrors(c, errors)
+		return
+	}
+
 	k8sDestination := v1alpha1.Destination{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -181,6 +189,12 @@ func UpdateExistingDestination(c *gin.Context, odigosns string) {
 	request := Destination{}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		returnError(c, err)
+		return
+	}
+
+	errors := verifyDestinationDataScheme(request.Type, request.Data)
+	if len(errors) > 0 {
+		returnErrors(c, errors)
 		return
 	}
 
@@ -255,4 +269,47 @@ func exportedSignalsObjectToSlice(signals ExportedSignals) []common.Observabilit
 	}
 
 	return resp
+}
+
+func verifyDestinationDataScheme(destType common.DestinationType, data map[string]string) []error {
+	destTypeConfig, err := getDestinationTypeConfig(destType)
+	if err != nil {
+		return []error{err}
+	}
+
+	errors := []error{}
+
+	// verify all fields in config are present in data (assuming here all fields are required)
+	for _, field := range destTypeConfig.Spec.Fields {
+		fieldValue, found := data[field.Name]
+		if !found || fieldValue == "" {
+			errors = append(errors, fmt.Errorf("field %s is required", field.Name))
+		}
+	}
+
+	// verify data fields are found in config
+	for dataField := range data {
+		found := false
+		for _, field := range destTypeConfig.Spec.Fields {
+			if dataField == field.Name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			errors = append(errors, fmt.Errorf("field %s is not found in config for destination type '%s'", dataField, destType))
+		}
+	}
+
+	return errors
+}
+
+func getDestinationTypeConfig(destType common.DestinationType) (*destinations.Destination, error) {
+	for _, dest := range destinations.Get() {
+		if dest.Metadata.Type == destType {
+			return &dest, nil
+		}
+	}
+
+	return nil, fmt.Errorf("destination type %s not found", destType)
 }
