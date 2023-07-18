@@ -37,7 +37,7 @@ export function KeyvalVideo({ videoSrc, title }: VideoComponentProps) {
       <ImagePreviewWrapper
         onClick={handleClick}
         url={
-          "https://4260490853-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-M1bR_-Od0islbiOl4G0%2Fuploads%2Fgit-blob-80d65344037e059578979909f052cd2c5f09163d%2Fdatadog.png?alt=media"
+          "https://a.fsdn.com/con/app/proj/chronosphere.s/screenshots/Captura%20de%20Pantalla%202021-01-22%20a%20la%28s%29%2016.27.35.png/max/max/1"
         }
       >
         <PlayerIconWrapper>
@@ -60,7 +60,7 @@ export function KeyvalVideo({ videoSrc, title }: VideoComponentProps) {
       ) : (
         <ImagePreviewWrapper
           url={
-            "https://4260490853-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-M1bR_-Od0islbiOl4G0%2Fuploads%2Fgit-blob-80d65344037e059578979909f052cd2c5f09163d%2Fdatadog.png?alt=media"
+            "https://a.fsdn.com/con/app/proj/chronosphere.s/screenshots/Captura%20de%20Pantalla%202021-01-22%20a%20la%28s%29%2016.27.35.png/max/max/1"
           }
           style={{ width: 980, height: 560 }}
           onClick={() => setPause(false)}

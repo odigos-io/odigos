@@ -35,4 +35,18 @@ export const SETUP = {
   RUNNING_INSTANCES: "Running Instances",
   SELECTED: "Selected",
   MANAGED: "Managed",
+  CREATE_CONNECTION: "Create Connection",
+  CONNECTION_MONITORS: "This connection will monitor:",
+  MONITORS: {
+    LOGS: "Logs",
+    METRICS: "Metrics",
+    TRACES: "Traces",
+  },
+  DESTINATION_NAME: "Destination Name",
+  CREATE_DESTINATION: "Create Destination",
+};
+
+export const INPUT_TYPES = {
+  INPUT: "input",
+  DROPDOWN: "dropdown",
 };

@@ -1,11 +1,10 @@
+import React, { useState, useEffect } from "react";
 import {
   KeyvalButton,
   KeyvalCheckbox,
-  KeyvalDropDown,
   KeyvalInput,
   KeyvalText,
 } from "@/design.system";
-import React, { useState, useEffect } from "react";
 import {
   CheckboxWrapper,
   ConnectionMonitorsWrapper,
@@ -13,33 +12,41 @@ import {
   FieldWrapper,
   CreateDestinationButtonWrapper,
 } from "./create.connection.form.styled";
+import { renderFields } from "./dynamic.fields";
+import { SETUP } from "@/utils/constants";
+import { DestinationBody } from "@/containers/setup/connection/connection.section";
+
+export interface Field {
+  name: string;
+  component_type: string;
+  display_name: string;
+  component_properties: any;
+  video_url: string;
+}
+
+interface CreateConnectionFormProps {
+  fields: Field[];
+  onSubmit: (formData: DestinationBody) => void;
+}
 
 const MONITORS = [
-  { id: "logs", label: "Logs", checked: true },
-  { id: "metrics", label: "Metrics", checked: true },
-  { id: "traces", label: "Traces", checked: true },
+  { id: "logs", label: SETUP.MONITORS.LOGS, checked: true },
+  { id: "metrics", label: SETUP.MONITORS.METRICS, checked: true },
+  { id: "traces", label: SETUP.MONITORS.TRACES, checked: true },
 ];
 
-export function CreateConnectionForm({ fields }: any) {
+export function CreateConnectionForm({
+  fields,
+  onSubmit,
+}: CreateConnectionFormProps) {
   const [destinationName, setDestinationName] = useState<string>("");
   const [selectedMonitors, setSelectedMonitors] = useState(MONITORS);
   const [dynamicFields, setDynamicFields] = useState({});
   const [isCreateButtonDisabled, setIsCreateButtonDisabled] = useState(true);
 
   useEffect(() => {
-    fields && mapFieldsToDynamicFields();
-  }, [fields]);
-
-  useEffect(() => {
     isFormValid();
   }, [destinationName, dynamicFields]);
-
-  function mapFieldsToDynamicFields() {
-    return fields?.reduce((acc, field) => {
-      acc[field?.name] = null;
-      return acc;
-    }, {});
-  }
 
   const handleCheckboxChange = (id: string) => {
     setSelectedMonitors((prevSelectedMonitors) => {
@@ -72,61 +79,32 @@ export function CreateConnectionForm({ fields }: any) {
     const dynamicFieldsValues = Object.values(dynamicFields);
     const isValid =
       !!destinationName &&
-      dynamicFieldsValues.every((field) => field) &&
+      dynamicFieldsValues.every((field: Field) => field) &&
       dynamicFieldsValues.length === fields?.length;
 
     setIsCreateButtonDisabled(!isValid);
   }
 
-  function renderFields() {
-    return fields?.map((field) => {
-      switch (field?.component_type) {
-        case "input":
-          return (
-            <FieldWrapper key={field?.name}>
-              <KeyvalInput
-                style={{ height: 36 }}
-                label={field?.display_name}
-                value={dynamicFields[field?.name]}
-                onChange={(value) =>
-                  handleDynamicFieldChange(field?.name, value)
-                }
-                {...field?.component_properties}
-              />
-            </FieldWrapper>
-          );
-        case "dropdown":
-          return (
-            <>
-              <FieldWrapper key={field?.name}>
-                <KeyvalText size={14} weight={600} style={{ marginBottom: 8 }}>
-                  {field?.display_name}
-                </KeyvalText>
-                <KeyvalDropDown
-                  width={354}
-                  data={field?.component_properties?.values.map((value) => {
-                    return { label: value, id: value };
-                  })}
-                  onChange={({ label }) =>
-                    handleDynamicFieldChange(field?.name, label)
-                  }
-                />
-              </FieldWrapper>
-            </>
-          );
-        default:
-          return null;
-      }
-    });
+  function onCreateClick() {
+    const selected_signals = selectedMonitors.reduce(
+      (acc, { id, checked }) => ({ ...acc, [id]: checked }),
+      {}
+    );
+    const body = {
+      name: destinationName,
+      selected_signals,
+      fields: dynamicFields,
+    };
+    onSubmit(body);
   }
 
   return (
-    <div>
+    <form action="javascript:void(0);">
       <KeyvalText size={18} weight={600}>
-        {"Create connection"}
+        {SETUP.CREATE_CONNECTION}
       </KeyvalText>
       <ConnectionMonitorsWrapper>
-        <KeyvalText size={14}>{"This connection will monitor:"}</KeyvalText>
+        <KeyvalText size={14}>{SETUP.CONNECTION_MONITORS}</KeyvalText>
         <CheckboxWrapper>
           {selectedMonitors.map((checkbox) => (
             <KeyvalCheckbox
@@ -141,19 +119,21 @@ export function CreateConnectionForm({ fields }: any) {
       <FieldWrapper>
         <KeyvalInput
           style={{ height: 36 }}
-          label={"Destination Name"}
+          label={SETUP.DESTINATION_NAME}
           value={destinationName}
           onChange={setDestinationName}
         />
       </FieldWrapper>
-      <DynamicFieldsWrapper>{renderFields()}</DynamicFieldsWrapper>
+      <DynamicFieldsWrapper>
+        {renderFields(fields, dynamicFields, handleDynamicFieldChange)}
+      </DynamicFieldsWrapper>
       <CreateDestinationButtonWrapper>
-        <KeyvalButton disabled={isCreateButtonDisabled}>
+        <KeyvalButton disabled={isCreateButtonDisabled} onClick={onCreateClick}>
           <KeyvalText color={"#203548"} size={14} weight={600}>
-            {"Create Destination"}
+            {SETUP.CREATE_DESTINATION}
           </KeyvalText>
         </KeyvalButton>
       </CreateDestinationButtonWrapper>
-    </div>
+    </form>
   );
 }

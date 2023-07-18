@@ -38,7 +38,12 @@ export function KeyvalInput({
         </LabelWrapper>
       )}
       <StyledInputContainer hasError={!!error} style={{ ...style }}>
-        <StyledInput type={type} value={value} onChange={handleChange} />
+        <StyledInput
+          type={type}
+          value={value}
+          onChange={handleChange}
+          autoComplete="off"
+        />
       </StyledInputContainer>
       {error && (
         <ErrorWrapper>
