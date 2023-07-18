@@ -14,7 +14,7 @@ spec:
     logs:
       supported: false
   fields:
-    - name: endpoint
+    - name: JAEGER_URL
       displayName: Endpoint
       videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input

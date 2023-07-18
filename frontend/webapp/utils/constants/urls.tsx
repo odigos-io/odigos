@@ -7,7 +7,7 @@ const API = {
   CONFIG: `${BASE_URL}/config`,
   NAMESPACES: `${BASE_URL}/namespaces`,
   APPLICATIONS: `${BASE_URL}/applications`,
-  DESTINATION: `${BASE_URL}/destinations`,
+  DESTINATION: `${BASE_URL}/destination-types`,
 };
 
 const QUERIES = {
