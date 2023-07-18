@@ -14,13 +14,14 @@ spec:
     logs:
       supported: true
   fields:
-    - name: api_key
+    - name: DATADOG_API_KEY
       displayName: API Key
       videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
       componentProps:
         type: password
-    - name: site
+      secret: true
+    - name: DATADOG_SITE
       displayName: Site
       videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: dropdown
