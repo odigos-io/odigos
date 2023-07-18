@@ -6,6 +6,7 @@ import {
   HeaderButtonWrapper,
   HeaderTitleWrapper,
   SetupHeaderWrapper,
+  TotalSelectedWrapper,
 } from "./setup.header.styled";
 import { KeyvalButton, KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
@@ -74,15 +75,16 @@ export function SetupHeader({
       <HeaderButtonWrapper>
         {currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE &&
           !isNaN(totalSelected) && (
-            <KeyvalText
-              weight={400}
-            >{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
+            <TotalSelectedWrapper>
+              <KeyvalText>{totalSelected}</KeyvalText>
+              <KeyvalText>{SETUP.SELECTED}</KeyvalText>
+            </TotalSelectedWrapper>
           )}
         {currentStep?.id !== SETUP.STEPS.ID.CREATE_CONNECTION && (
           <KeyvalButton
             disabled={totalSelected === 0}
             onClick={onNextClick}
-            style={{ gap: 10 }}
+            style={{ gap: 10, width: 120 }}
           >
             <KeyvalText size={20} weight={600} color="#0A1824">
               {SETUP.NEXT}
