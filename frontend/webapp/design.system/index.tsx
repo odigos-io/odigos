@@ -17,3 +17,4 @@ export { KeyvalImage } from "./image/image";
 export { KeyvalInput } from "./input/input";
 export { KeyvalVideo } from "./video/video";
 export { KeyvalLoader } from "./loader/loader";
+export { KeyvalNotification } from "./notification/notification";

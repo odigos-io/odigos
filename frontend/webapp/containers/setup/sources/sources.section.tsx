@@ -130,7 +130,6 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
         selectedApplications={sectionData}
         onFutureApplyChange={onFutureApplyChange}
       />
-
       <SourcesList
         data={sourceData}
         selectedData={sectionData[currentNamespace?.name]}
