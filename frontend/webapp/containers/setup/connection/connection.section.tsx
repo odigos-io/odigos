@@ -12,7 +12,7 @@ import { KeyvalLoader } from "@/design.system";
 export interface DestinationBody {
   name: string;
   type?: string;
-  selected_signals: {
+  signals: {
     [key: string]: boolean;
   };
   fields: {
@@ -66,6 +66,7 @@ export function ConnectionSection({ sectionData }) {
         <CreateConnectionForm
           fields={data?.fields}
           onSubmit={createDestination}
+          supportedSignals={sectionData?.supported_signals}
         />
       )}
       {videoList?.length > 0 && <QuickHelp data={videoList} />}

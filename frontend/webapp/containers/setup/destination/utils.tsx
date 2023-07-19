@@ -61,10 +61,10 @@ export function filterDataByMonitorsOption(data: any, monitoringOption: any) {
 
 export function isDestinationListEmpty(list, currentItemName: string) {
   if (currentItemName !== SETUP.ALL.toLowerCase()) {
-    const currentItemIndex = list.findIndex(
+    const currentItemIndex = list?.findIndex(
       (category) => category.name === currentItemName
     );
-    return list[currentItemIndex]?.items.length === 0;
+    return currentItemIndex && list[currentItemIndex]?.items.length === 0;
   }
 
   return list?.every((category) => category.items.length === 0);

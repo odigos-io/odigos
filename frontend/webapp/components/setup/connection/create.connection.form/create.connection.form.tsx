@@ -27,6 +27,11 @@ export interface Field {
 interface CreateConnectionFormProps {
   fields: Field[];
   onSubmit: (formData: DestinationBody) => void;
+  supportedSignals: {
+    [key: string]: {
+      supported: boolean;
+    };
+  };
 }
 
 const MONITORS = [
@@ -38,6 +43,7 @@ const MONITORS = [
 export function CreateConnectionForm({
   fields,
   onSubmit,
+  supportedSignals,
 }: CreateConnectionFormProps) {
   const [destinationName, setDestinationName] = useState<string>("");
   const [selectedMonitors, setSelectedMonitors] = useState(MONITORS);
@@ -47,6 +53,16 @@ export function CreateConnectionForm({
   useEffect(() => {
     isFormValid();
   }, [destinationName, dynamicFields]);
+
+  useEffect(() => {
+    filterSupportedMonitors();
+  }, [supportedSignals]);
+
+  function filterSupportedMonitors() {
+    setSelectedMonitors(
+      MONITORS.filter(({ id }) => supportedSignals[id]?.supported)
+    );
+  }
 
   const handleCheckboxChange = (id: string) => {
     setSelectedMonitors((prevSelectedMonitors) => {
@@ -86,13 +102,13 @@ export function CreateConnectionForm({
   }
 
   function onCreateClick() {
-    const selected_signals = selectedMonitors.reduce(
+    const signals = selectedMonitors.reduce(
       (acc, { id, checked }) => ({ ...acc, [id]: checked }),
       {}
     );
     const body = {
       name: destinationName,
-      selected_signals,
+      signals,
       fields: dynamicFields,
     };
     onSubmit(body);

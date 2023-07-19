@@ -14,13 +14,13 @@ export async function setNamespaces(body: any) {
 }
 
 export async function getDestinations() {
-  return await get(API.DESTINATION);
+  return await get(API.DESTINATION_TYPE);
 }
 
 export async function getDestination(type: string) {
-  return await get(`${API.DESTINATION}/${type}`);
+  return await get(`${API.DESTINATION_TYPE}/${type}`);
 }
 
 export async function setDestination(body: any) {
-  return await post(API.DESTINATION, body);
+  return await post(API.DESTINATIONS, body);
 }
