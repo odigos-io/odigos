@@ -35,6 +35,7 @@ type Field struct {
 	Name           string                 `yaml:"name"`
 	DisplayName    string                 `yaml:"displayName"`
 	VideoURL       string                 `yaml:"videoUrl"`
+	ThumbnailURL   string                 `yaml:"thumbnailUrl"`
 	ComponentType  string                 `yaml:"componentType"`
 	ComponentProps map[string]interface{} `yaml:"componentProps"`
 	Secret         bool                   `yaml:"secret"`
