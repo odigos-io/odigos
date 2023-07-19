@@ -26,7 +26,7 @@ export function ConnectionSection({ sectionData }) {
   const { isLoading, data } = useQuery([QUERIES.API_DESTINATION_TYPE], () =>
     getDestination(sectionData.type)
   );
-
+  console.log({ data });
   const { mutate } = useMutation((body) => setDestination(body));
 
   const videoList = useMemo(
@@ -36,6 +36,7 @@ export function ConnectionSection({ sectionData }) {
         ?.map((field) => ({
           name: field.display_name,
           src: field.video_url,
+          thumbnail_url: field.thumbnail_url,
         })),
     [data]
   );

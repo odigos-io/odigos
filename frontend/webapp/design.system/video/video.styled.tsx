@@ -1,7 +1,7 @@
 import { styled } from "styled-components";
 
 interface ImagePreviewWrapperProps {
-  url: string;
+  url: string | undefined;
 }
 
 export const ImagePreviewWrapper = styled.div<ImagePreviewWrapperProps>`

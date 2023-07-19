@@ -14,9 +14,14 @@ import {
 type VideoComponentProps = {
   videoSrc: string;
   title?: string;
+  thumbnail?: string | undefined;
 };
 
-export function KeyvalVideo({ videoSrc, title }: VideoComponentProps) {
+export function KeyvalVideo({
+  videoSrc,
+  title,
+  thumbnail,
+}: VideoComponentProps) {
   const [isLarge, setIsLarge] = useState(false);
   const [pause, setPause] = useState(true);
 
@@ -34,12 +39,7 @@ export function KeyvalVideo({ videoSrc, title }: VideoComponentProps) {
       <KeyvalText size={16} weight={600}>
         {title}
       </KeyvalText>
-      <ImagePreviewWrapper
-        onClick={handleClick}
-        url={
-          "https://a.fsdn.com/con/app/proj/chronosphere.s/screenshots/Captura%20de%20Pantalla%202021-01-22%20a%20la%28s%29%2016.27.35.png/max/max/1"
-        }
-      >
+      <ImagePreviewWrapper onClick={handleClick} url={thumbnail}>
         <PlayerIconWrapper>
           <PlayerIcon width={30} />
         </PlayerIconWrapper>
@@ -59,9 +59,7 @@ export function KeyvalVideo({ videoSrc, title }: VideoComponentProps) {
         <StyledLargeVideo src={videoSrc} autoPlay controls />
       ) : (
         <ImagePreviewWrapper
-          url={
-            "https://a.fsdn.com/con/app/proj/chronosphere.s/screenshots/Captura%20de%20Pantalla%202021-01-22%20a%20la%28s%29%2016.27.35.png/max/max/1"
-          }
+          url={thumbnail}
           style={{ width: 980, height: 560 }}
           onClick={() => setPause(false)}
         >

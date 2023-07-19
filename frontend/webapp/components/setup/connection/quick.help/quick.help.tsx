@@ -4,9 +4,14 @@ import Note from "@/assets/icons/note.svg";
 import { QuickHelpHeader, QuickHelpVideoWrapper } from "./quick.help.styled";
 export function QuickHelp({ data }) {
   function renderVideoList() {
+    console.log({ data });
     return data?.map((video) => (
       <QuickHelpVideoWrapper key={video?.name}>
-        <KeyvalVideo videoSrc={video?.src} title={video?.name} />
+        <KeyvalVideo
+          videoSrc={video?.src}
+          title={video?.name}
+          thumbnail={video?.thumbnail_url}
+        />
       </QuickHelpVideoWrapper>
     ));
   }
