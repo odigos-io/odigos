@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   SetupContentWrapper,
   SetupSectionContainer,
@@ -11,12 +11,12 @@ import { ConnectionSection } from "../connection/connection.section";
 import { SourcesSection } from "../sources/sources.section";
 import RightArrow from "assets/icons/white-arrow-right.svg";
 import Steps from "@/design.system/steps/steps";
-import { KeyvalLoader, KeyvalText } from "@/design.system";
-import { SETUP } from "@/utils/constants";
+import { KeyvalText } from "@/design.system";
+import { CONFIG, SETUP } from "@/utils/constants";
 import { useSectionData } from "@/hooks";
 import { STEPS, Step } from "./utils";
 import { setNamespaces } from "@/services/setup";
-
+import { useSearchParams } from "next/navigation";
 const sectionComponents = {
   [SETUP.STEPS.ID.CHOOSE_SOURCE]: SourcesSection,
   [SETUP.STEPS.ID.CHOOSE_DESTINATION]: DestinationSection,
@@ -27,6 +27,19 @@ export function SetupSection() {
   const [steps, setSteps] = useState<Step[]>(STEPS);
   const [currentStep, setCurrentStep] = useState<Step>(STEPS[0]);
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    getStepFromSearch();
+  }, [searchParams]);
+
+  function getStepFromSearch() {
+    const search = searchParams.get("state");
+    if (search === CONFIG.APPS_SELECTED) {
+      handleChangeStep(1);
+    }
+  }
 
   function renderCurrentSection() {
     const Component = sectionComponents[currentStep?.id];
