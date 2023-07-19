@@ -13,10 +13,12 @@ import RightArrow from "assets/icons/white-arrow-right.svg";
 import Steps from "@/design.system/steps/steps";
 import { KeyvalText } from "@/design.system";
 import { CONFIG, SETUP } from "@/utils/constants";
-import { useSectionData } from "@/hooks";
+import { useSectionData, useNotification } from "@/hooks";
 import { STEPS, Step } from "./utils";
 import { setNamespaces } from "@/services/setup";
 import { useSearchParams } from "next/navigation";
+import { useMutation } from "react-query";
+
 const sectionComponents = {
   [SETUP.STEPS.ID.CHOOSE_SOURCE]: SourcesSection,
   [SETUP.STEPS.ID.CHOOSE_DESTINATION]: DestinationSection,
@@ -27,7 +29,8 @@ export function SetupSection() {
   const [steps, setSteps] = useState<Step[]>(STEPS);
   const [currentStep, setCurrentStep] = useState<Step>(STEPS[0]);
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
-
+  const { mutate } = useMutation((body) => setNamespaces(body));
+  const { show, Notification } = useNotification();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -65,8 +68,22 @@ export function SetupSection() {
     }
 
     if (currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE) {
-      setNamespaces(sectionData);
-      setSectionData({});
+      mutate(sectionData, {
+        onSuccess: () => {
+          setCurrentStep(nextStep);
+          setSteps([...steps]);
+          setSectionData({});
+        },
+        onError: ({ response }) => {
+          const message = response?.data?.message || "Something went wrong";
+          show({
+            type: "error",
+            message,
+          });
+        },
+      });
+
+      return;
     }
 
     setCurrentStep(nextStep);
@@ -104,6 +121,7 @@ export function SetupSection() {
         />
         <SetupContentWrapper>{renderCurrentSection()}</SetupContentWrapper>
       </SetupSectionContainer>
+      <Notification />
     </>
   );
 }

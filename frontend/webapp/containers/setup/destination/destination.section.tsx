@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import { QUERIES, SETUP } from "@/utils/constants";
 import { getDestinations } from "@/services/setup";
@@ -17,6 +17,7 @@ import {
   sortDestinationList,
 } from "./utils";
 import { KeyvalLoader } from "@/design.system";
+import { useNotification } from "@/hooks";
 
 type DestinationSectionProps = {
   sectionData: any;
@@ -29,13 +30,22 @@ export function DestinationSection({
 }: DestinationSectionProps) {
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [dropdownData, setDropdownData] = useState<any>(null);
+  const { show, Notification } = useNotification();
   const [monitoringOption, setMonitoringOption] =
     useState<any>(MONITORING_OPTIONS);
 
-  const { isLoading, data } = useQuery(
+  const { isLoading, data, isError, error } = useQuery(
     [QUERIES.API_DESTINATIONS],
     getDestinations
   );
+
+  useEffect(() => {
+    isError &&
+      show({
+        type: "error",
+        message: error,
+      });
+  }, [isError]);
 
   function renderDestinationLists() {
     sortDestinationList(data);
@@ -93,6 +103,7 @@ export function DestinationSection({
           {renderDestinationLists()}
         </DestinationListContainer>
       )}
+      <Notification />
     </>
   );
 }

@@ -5,6 +5,7 @@ import { LoaderWrapper } from "./sources.section.styled";
 import { useQuery } from "react-query";
 import { QUERIES } from "@/utils/constants";
 import { KeyvalLoader } from "@/design.system";
+import { useNotification } from "@/hooks";
 
 const DEFAULT_CONFIG = {
   selected_all: false,
@@ -14,14 +15,11 @@ const DEFAULT_CONFIG = {
 export function SourcesSection({ sectionData, setSectionData }: any) {
   const [currentNamespace, setCurrentNamespace] = useState<any>(null);
   const [searchFilter, setSearchFilter] = useState<string>("");
-
-  const { isLoading, data } = useQuery([QUERIES.API_NAMESPACES], getNamespaces);
-
-  const namespacesList = useMemo(() => {
-    return data?.namespaces?.map((item: any, index: number) => {
-      return { id: index, label: item.name };
-    });
-  }, [data]);
+  const { show, Notification } = useNotification();
+  const { isLoading, data, isError, error } = useQuery(
+    [QUERIES.API_NAMESPACES],
+    getNamespaces
+  );
 
   useEffect(() => {
     !currentNamespace && setCurrentNamespace(data?.namespaces[0]);
@@ -30,6 +28,20 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
   useEffect(() => {
     onNameSpaceChange();
   }, [currentNamespace]);
+
+  useEffect(() => {
+    isError &&
+      show({
+        type: "error",
+        message: error,
+      });
+  }, [isError]);
+
+  const namespacesList = useMemo(() => {
+    return data?.namespaces?.map((item: any, index: number) => {
+      return { id: index, label: item.name };
+    });
+  }, [data]);
 
   const sourceData = useMemo(() => {
     const namespace = sectionData[currentNamespace?.name];
@@ -136,6 +148,7 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
         onItemClick={handleSourceClick}
         onClearClick={() => onSelectAllChange(false)}
       />
+      <Notification />
     </>
   );
 }

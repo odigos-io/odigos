@@ -8,6 +8,7 @@ import {
 import { getDestination, setDestination } from "@/services/setup";
 import { QUERIES } from "@/utils/constants";
 import { KeyvalLoader } from "@/design.system";
+import { useNotification } from "@/hooks";
 
 export interface DestinationBody {
   name: string;
@@ -21,6 +22,7 @@ export interface DestinationBody {
 }
 
 export function ConnectionSection({ sectionData }) {
+  const { show, Notification } = useNotification();
   const { isLoading, data } = useQuery([QUERIES.API_DESTINATION_TYPE], () =>
     getDestination(sectionData.type)
   );
@@ -47,8 +49,12 @@ export function ConnectionSection({ sectionData }) {
 
     mutate(body, {
       onSuccess: (data) => console.log("onSuccess", { data }), //TODO: redirect to next step
-      onError: (error) => {
-        console.log("onError", { error });
+      onError: ({ response }) => {
+        const message = response?.data?.message || "Something went wrong";
+        show({
+          type: "error",
+          message,
+        });
       },
     });
   }
@@ -70,6 +76,7 @@ export function ConnectionSection({ sectionData }) {
         />
       )}
       {videoList?.length > 0 && <QuickHelp data={videoList} />}
+      <Notification />
     </CreateConnectionContainer>
   );
 }
