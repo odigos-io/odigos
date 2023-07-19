@@ -75,7 +75,7 @@ export function SetupSection() {
           setSectionData({});
         },
         onError: ({ response }) => {
-          const message = response?.data?.message || "Something went wrong";
+          const message = response?.data?.message || SETUP.ERROR;
           show({
             type: "error",
             message,

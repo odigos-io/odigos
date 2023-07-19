@@ -6,7 +6,7 @@ import {
   LoaderWrapper,
 } from "./connection.section.styled";
 import { getDestination, setDestination } from "@/services/setup";
-import { QUERIES } from "@/utils/constants";
+import { QUERIES, SETUP } from "@/utils/constants";
 import { KeyvalLoader } from "@/design.system";
 import { useNotification } from "@/hooks";
 
@@ -51,7 +51,7 @@ export function ConnectionSection({ sectionData }) {
     mutate(body, {
       onSuccess: (data) => console.log("onSuccess", { data }), //TODO: redirect to next step
       onError: ({ response }) => {
-        const message = response?.data?.message || "Something went wrong";
+        const message = response?.data?.message || SETUP.ERROR;
         show({
           type: "error",
           message,

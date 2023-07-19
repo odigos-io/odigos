@@ -44,6 +44,8 @@ export const SETUP = {
   },
   DESTINATION_NAME: "Destination Name",
   CREATE_DESTINATION: "Create Destination",
+  QUICK_HELP: "Quick Help",
+  ERROR: "Something went wrong",
 };
 
 export const INPUT_TYPES = {
