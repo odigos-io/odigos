@@ -21,7 +21,7 @@ export default function App() {
         ? `?state=${CONFIG.APPS_SELECTED}`
         : "";
     switch (installation) {
-      // case CONFIG.NEW:
+      case CONFIG.NEW:
       case CONFIG.APPS_SELECTED:
         router.push(`${ROUTES.SETUP}${state}`);
       case CONFIG.FINISHED:
