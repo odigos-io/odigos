@@ -1,6 +1,11 @@
 import { styled } from "styled-components";
 
-export const StyledInputContainer = styled.div<{ hasError: boolean }>`
+interface ActiveProps {
+  active?: any;
+  hasError: boolean;
+}
+
+export const StyledInputContainer = styled.div<ActiveProps>`
   display: flex;
   width: 100%;
   padding-left: 13px;
@@ -11,9 +16,19 @@ export const StyledInputContainer = styled.div<{ hasError: boolean }>`
   align-items: flex-start;
   gap: 10px;
   border-radius: 8px;
-  border: ${({ theme, hasError }) =>
-    `1px solid ${hasError ? "#FD3F3F" : theme.colors.blue_grey}`};
+  border: ${({ theme, hasError, active }) =>
+    `1px solid ${
+      hasError
+        ? theme.colors.error
+        : active
+        ? theme.text.grey
+        : theme.colors.blue_grey
+    }`};
   background: ${({ theme }) => theme.colors.light_dark};
+
+  &:hover {
+    border: ${({ theme }) => `solid 1px ${theme.text.grey}`};
+  }
 `;
 
 export const StyledInput = styled.input`

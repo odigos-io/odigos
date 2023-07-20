@@ -115,7 +115,7 @@ export function CreateConnectionForm({
   }
 
   return (
-    <form action="javascript:void(0);">
+    <div>
       <KeyvalText size={18} weight={600}>
         {SETUP.CREATE_CONNECTION}
       </KeyvalText>
@@ -150,6 +150,6 @@ export function CreateConnectionForm({
           </KeyvalText>
         </KeyvalButton>
       </CreateDestinationButtonWrapper>
-    </form>
+    </div>
   );
 }

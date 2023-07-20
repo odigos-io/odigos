@@ -22,7 +22,7 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
   );
 
   useEffect(() => {
-    !currentNamespace && setCurrentNamespace(data?.namespaces[0]);
+    !currentNamespace && data && setCurrentNamespace(data?.namespaces[0]);
   }, [data]);
 
   useEffect(() => {

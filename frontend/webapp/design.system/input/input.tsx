@@ -37,7 +37,11 @@ export function KeyvalInput({
           </KeyvalText>
         </LabelWrapper>
       )}
-      <StyledInputContainer hasError={!!error} style={{ ...style }}>
+      <StyledInputContainer
+        active={!!value || undefined}
+        hasError={!!error}
+        style={{ ...style }}
+      >
         <StyledInput
           type={type}
           value={value}
@@ -48,7 +52,7 @@ export function KeyvalInput({
       {error && (
         <ErrorWrapper>
           <KeyvalText size={14} color={"#FD3F3F"}>
-            {"error message text"}
+            {error}
           </KeyvalText>
         </ErrorWrapper>
       )}

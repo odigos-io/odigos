@@ -26,7 +26,7 @@ export function ConnectionSection({ sectionData }) {
   const { isLoading, data } = useQuery([QUERIES.API_DESTINATION_TYPE], () =>
     getDestination(sectionData.type)
   );
-  console.log({ data });
+
   const { mutate } = useMutation((body) => setDestination(body));
 
   const videoList = useMemo(
