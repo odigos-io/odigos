@@ -51,7 +51,7 @@ export function SetupSection() {
     ) : null;
   }
 
-  async function handleChangeStep(direction: number) {
+  function handleChangeStep(direction: number) {
     const currentStepIndex = steps.findIndex(
       ({ id }) => id === currentStep?.id
     );
