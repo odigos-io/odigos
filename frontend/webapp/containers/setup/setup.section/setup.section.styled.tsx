@@ -15,7 +15,6 @@ export const SetupSectionContainer = styled.section`
 
 export const SetupContentWrapper = styled.div`
   padding: 0 60px;
-  overflow-y: scroll;
   height: 100%;
   ::-webkit-scrollbar {
     display: none;

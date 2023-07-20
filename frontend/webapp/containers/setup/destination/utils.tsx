@@ -73,7 +73,7 @@ export function isDestinationListEmpty(list, currentItemName: string) {
 export function sortDestinationList(list: any) {
   if (
     Array.isArray(list.categories) &&
-    list?.categories[0]?.name !== MANAGED_DESTINATION
+    list?.categories[0]?.name?.toLo !== MANAGED_DESTINATION
   ) {
     const sortedList = list?.categories?.sort((a: any, b: any) => {
       return a.name === MANAGED_DESTINATION ? -1 : 1;

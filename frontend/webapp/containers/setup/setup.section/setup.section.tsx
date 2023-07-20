@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   SetupContentWrapper,
   SetupSectionContainer,
@@ -26,12 +26,12 @@ const sectionComponents = {
 };
 
 export function SetupSection() {
-  const [steps, setSteps] = useState<Step[]>(STEPS);
   const [currentStep, setCurrentStep] = useState<Step>(STEPS[0]);
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
   const { mutate } = useMutation((body) => setNamespaces(body));
   const { show, Notification } = useNotification();
   const searchParams = useSearchParams();
+  const previousSourceState = useRef<any>(null);
 
   useEffect(() => {
     getStepFromSearch();
@@ -52,11 +52,11 @@ export function SetupSection() {
   }
 
   function handleChangeStep(direction: number) {
-    const currentStepIndex = steps.findIndex(
+    const currentStepIndex = STEPS.findIndex(
       ({ id }) => id === currentStep?.id
     );
-    const nextStep = steps[currentStepIndex + direction];
-    const prevStep = steps[currentStepIndex];
+    const nextStep = STEPS[currentStepIndex + direction];
+    const prevStep = STEPS[currentStepIndex];
 
     if (nextStep) {
       nextStep.status = SETUP.STEPS.STATUS.ACTIVE;
@@ -68,10 +68,10 @@ export function SetupSection() {
     }
 
     if (currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE) {
+      previousSourceState.current = sectionData;
       mutate(sectionData, {
         onSuccess: () => {
           setCurrentStep(nextStep);
-          setSteps([...steps]);
           setSectionData({});
         },
         onError: ({ response }) => {
@@ -85,9 +85,7 @@ export function SetupSection() {
 
       return;
     }
-
     setCurrentStep(nextStep);
-    setSteps([...steps]);
   }
 
   function onNextClick() {
@@ -96,13 +94,13 @@ export function SetupSection() {
 
   function onBackClick() {
     handleChangeStep(-1);
-    setSectionData({});
+    setSectionData(previousSourceState.current || {});
   }
 
   return (
     <>
       <StepListWrapper>
-        <Steps data={steps} />
+        <Steps data={STEPS} />
       </StepListWrapper>
       <SetupSectionContainer>
         {currentStep.index !== 1 && (
