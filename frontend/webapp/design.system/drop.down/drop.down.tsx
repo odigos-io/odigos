@@ -19,6 +19,7 @@ interface KeyvalDropDownProps {
   onChange: (item: DropDownItem) => void;
   childComp?: React.ReactNode;
   width?: number;
+  value?: DropDownItem;
 }
 
 const SELECTED_ITEM = "Select item";
@@ -34,9 +35,10 @@ export function KeyvalDropDown({
   onChange,
   childComp,
   width = 260,
+  value,
 }: KeyvalDropDownProps) {
   const [isOpen, setOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<any>(value || null);
   const [isHover, setHover] = useState<any>(false);
   const [searchFilter, setSearchFilter] = useState("");
 

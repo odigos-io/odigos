@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { getConfig } from "@/services/config";
 import { useRouter } from "next/navigation";
 import { ROUTES, CONFIG, QUERIES } from "@/utils/constants";
+import { KeyvalLoader } from "@/design.system";
 
 export default function App() {
   const router = useRouter();
@@ -28,4 +29,6 @@ export default function App() {
         router.push(`${ROUTES.SETUP}`);
     }
   }
+
+  return <KeyvalLoader />;
 }
