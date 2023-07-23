@@ -4,38 +4,8 @@ import { MenuContainer, LogoWrapper, MenuItemsWrapper } from "./menu.styled";
 import { KeyvalText } from "@/design.system";
 import MenuItem from "../menu.item/menu.item";
 import { useRouter } from "next/navigation";
-import { OVERVIEW, ROUTES } from "@/utils/constants";
-import * as ICONS from "../../../assets/icons/side.menu";
-
-const MENU_ITEMS = [
-  {
-    id: 1,
-    name: OVERVIEW.MENU.OVERVIEW,
-    icons: {
-      focus: () => <ICONS.FocusOverview />,
-      notFocus: () => <ICONS.UnFocusOverview />,
-    },
-    navigate: ROUTES.OVERVIEW,
-  },
-  {
-    id: 2,
-    name: OVERVIEW.MENU.SOURCES,
-    icons: {
-      focus: () => <ICONS.FocusSources />,
-      notFocus: () => <ICONS.UnFocusSources />,
-    },
-    navigate: ROUTES.SOURCES,
-  },
-  {
-    id: 3,
-    name: OVERVIEW.MENU.DESTINATIONS,
-    icons: {
-      focus: () => <ICONS.FocusDestinations />,
-      notFocus: () => <ICONS.UnFocusDestinations />,
-    },
-    navigate: ROUTES.DESTINATIONS,
-  },
-];
+import { OVERVIEW } from "@/utils/constants";
+import { MENU_ITEMS } from "./items";
 
 interface MenuItem {
   id: number;
