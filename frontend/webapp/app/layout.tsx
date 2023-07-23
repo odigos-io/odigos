@@ -8,6 +8,8 @@ const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
   position: "fixed",
   scrollbarWidth: "none",
+  width: "100vw",
+  height: "100vh",
 };
 
 export default function RootLayout({
