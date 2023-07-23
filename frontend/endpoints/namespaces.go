@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -20,10 +21,19 @@ type GetNamespacesResponse struct {
 }
 
 type GetNamespaceItem struct {
-	Name                     string `json:"name"`
-	Selected                 bool   `json:"selected"`
-	InstrumentedApplications int    `json:"instrumented_applications"`
+	Name      string `json:"name"`
+	Selected  bool   `json:"selected"`
+	TotalApps int    `json:"totalApps"`
 }
+
+type InstrumentedAppsCount struct {
+	Deployments  int `json:"deployments"`
+	StatefulSets int `json:"statefulsets"`
+	DaemonSets   int `json:"daemonsets"`
+}
+
+var labelSelectorInstEnabled = fmt.Sprintf("%s=%s", consts.OdigosInstrumentationLabel, consts.InstrumentationEnabled)
+var labelSelectorInstDisabled = fmt.Sprintf("%s=%s", consts.OdigosInstrumentationLabel, consts.InstrumentationDisabled)
 
 func GetNamespaces(c *gin.Context) {
 	list, err := kube.DefaultClient.CoreV1().Namespaces().List(c.Request.Context(), metav1.ListOptions{})
@@ -32,20 +42,22 @@ func GetNamespaces(c *gin.Context) {
 		return
 	}
 
+	appsPerNamespace, err := CountAppsPerNamespace(c)
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
 	var response GetNamespacesResponse
 	for _, namespace := range list.Items {
-		selected := false
-		instrumentedApplications := 0
-		if val, exists := namespace.Labels[consts.OdigosInstrumentationLabel]; exists {
-			if val == consts.InstrumentationEnabled {
-				selected = true
-			}
-		}
+
+		// check if entire namespace is instrumented
+		selected := namespace.Labels[consts.OdigosInstrumentationLabel] == consts.InstrumentationEnabled
 
 		response.Namespaces = append(response.Namespaces, GetNamespaceItem{
-			Name:                     namespace.Name,
-			Selected:                 selected,
-			InstrumentedApplications: instrumentedApplications,
+			Name:      namespace.Name,
+			Selected:  selected,
+			TotalApps: appsPerNamespace[namespace.Name],
 		})
 	}
 
@@ -222,4 +234,37 @@ func findObject(objects []PersistNamespaceObject, name string, kind ApplicationK
 	}
 
 	return nil, false
+}
+
+// returns a map, where the key is a namespace name and the value is the
+// number of apps in this namespace (not necessarily instrumented)
+func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
+
+	deps, err := kube.DefaultClient.AppsV1().Deployments("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	ss, err := kube.DefaultClient.AppsV1().StatefulSets("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	ds, err := kube.DefaultClient.AppsV1().DaemonSets("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	namespaceToAppsCount := make(map[string]int)
+	for _, dep := range deps.Items {
+		namespaceToAppsCount[dep.Namespace]++
+	}
+	for _, st := range ss.Items {
+		namespaceToAppsCount[st.Namespace]++
+	}
+	for _, d := range ds.Items {
+		namespaceToAppsCount[d.Namespace]++
+	}
+
+	return namespaceToAppsCount, nil
 }
