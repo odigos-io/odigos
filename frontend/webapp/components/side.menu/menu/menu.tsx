@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { OVERVIEW } from "@/utils/constants";
 import { MENU_ITEMS } from "./items";
 
-interface MenuItem {
+export interface MenuItem {
   id: number;
   name: string;
   icons: {
