@@ -35,4 +35,29 @@ export const SETUP = {
   RUNNING_INSTANCES: "Running Instances",
   SELECTED: "Selected",
   MANAGED: "Managed",
+  CREATE_CONNECTION: "Create Connection",
+  CONNECTION_MONITORS: "This connection will monitor:",
+  MONITORS: {
+    LOGS: "Logs",
+    METRICS: "Metrics",
+    TRACES: "Traces",
+  },
+  DESTINATION_NAME: "Destination Name",
+  CREATE_DESTINATION: "Create Destination",
+  QUICK_HELP: "Quick Help",
+  ERROR: "Something went wrong",
+};
+
+export const INPUT_TYPES = {
+  INPUT: "input",
+  DROPDOWN: "dropdown",
+};
+
+export const OVERVIEW = {
+  ODIGOS: "Odigos",
+  MENU: {
+    OVERVIEW: "Overview",
+    SOURCES: "Sources",
+    DESTINATIONS: "Destinations",
+  },
 };

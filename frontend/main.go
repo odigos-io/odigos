@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/frontend/destinations"
 
 	"github.com/gin-contrib/cors"
@@ -31,6 +32,7 @@ type Flags struct {
 	Port       int
 	Debug      bool
 	KubeConfig string
+	Namespace		 string
 }
 
 //go:embed all:webapp/out/*
@@ -47,6 +49,7 @@ func parseFlags() Flags {
 	flag.IntVar(&flags.Port, "port", defaultPort, "Port to listen on")
 	flag.BoolVar(&flags.Debug, "debug", false, "Enable debug mode")
 	flag.StringVar(&flags.KubeConfig, "kubeconfig", defaultKubeConfig, "Path to kubeconfig file")
+	flag.StringVar(&flags.Namespace, "namespace", consts.DefaultNamespace, "Kubernetes namespace where odigos is installed")
 	flag.Parse()
 	return flags
 }
@@ -90,8 +93,13 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.POST("/namespaces", endpoints.PersistNamespaces)
 		apis.GET("/applications/:namespace", endpoints.GetApplicationsInNamespace)
 		apis.GET("/config", endpoints.GetConfig)
-		apis.GET("/destinations", endpoints.GetDestinations)
-		apis.GET("/destinations/:type", endpoints.GetDestinationDetails)
+		apis.GET("/destination-types", endpoints.GetDestinationTypes)
+		apis.GET("/destination-types/:type", endpoints.GetDestinationTypeDetails)
+		apis.GET("/destinations", func(c *gin.Context) { endpoints.GetDestinations(c, flags.Namespace) })
+		apis.GET("/destinations/:name", func (c *gin.Context) { endpoints.GetDestinationByName(c, flags.Namespace) })
+		apis.POST("/destinations", func(c *gin.Context) { endpoints.CreateNewDestination(c, flags.Namespace) })
+		apis.PUT("/destinations", func(c *gin.Context) { endpoints.UpdateExistingDestination(c, flags.Namespace) })
+		apis.DELETE("/destinations/:name", func(c *gin.Context) { endpoints.DeleteDestination(c, flags.Namespace) })
 	}
 
 	return r, nil

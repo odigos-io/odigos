@@ -51,7 +51,11 @@ export function SourcesOptionMenu({
 
       <DropdownWrapper>
         <KeyvalText size={14}>{SETUP.MENU.NAMESPACES}</KeyvalText>
-        <KeyvalDropDown data={data} onChange={handleDropDownChange} />
+        <KeyvalDropDown
+          value={data[0]}
+          data={data}
+          onChange={handleDropDownChange}
+        />
       </DropdownWrapper>
       <SwitcherWrapper>
         <KeyvalSwitch

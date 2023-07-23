@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 module.exports = {
-  reactStrictMode: true,
+  reactStrictMode: false,
   images: {
     unoptimized: true,
   },

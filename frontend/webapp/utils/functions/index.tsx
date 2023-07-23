@@ -1,0 +1,1 @@
+export { capitalizeFirstLetter } from "./strings";
