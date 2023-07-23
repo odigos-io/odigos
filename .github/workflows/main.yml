@@ -30,25 +30,36 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build Autoscaler Image
         uses: docker/build-push-action@v4
         with:
           push: true
-          tags: ghcr.io/keyval-dev/odigos/autoscaler:${{ steps.vars.outputs.tag }}
+          tags: |
+            ghcr.io/keyval-dev/odigos/autoscaler:${{ steps.vars.outputs.tag }}
+            keyval/odigos-autoscaler:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=autoscaler
           platforms: linux/amd64,linux/arm64
       - name: Build Scheduler Image
         uses: docker/build-push-action@v4
         with:
           push: true
-          tags: ghcr.io/keyval-dev/odigos/scheduler:${{ steps.vars.outputs.tag }}
+          tags: |
+            ghcr.io/keyval-dev/odigos/scheduler:${{ steps.vars.outputs.tag }}
+            keyval/odigos-scheduler:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=scheduler
           platforms: linux/amd64,linux/arm64
       - name: Build Instrumentor Image
         uses: docker/build-push-action@v4
         with:
           push: true
-          tags: ghcr.io/keyval-dev/odigos/instrumentor:${{ steps.vars.outputs.tag }}
+          tags: |
+            ghcr.io/keyval-dev/odigos/instrumentor:${{ steps.vars.outputs.tag }}
+            keyval/odigos-instrumentor:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=instrumentor
           platforms: linux/amd64,linux/arm64
       - name: Build Odiglet Image
@@ -56,7 +67,9 @@ jobs:
         with:
           file: odiglet/Dockerfile
           push: true
-          tags: ghcr.io/keyval-dev/odigos/odiglet:${{ steps.vars.outputs.tag }}
+          tags: |
+            ghcr.io/keyval-dev/odigos/odiglet:${{ steps.vars.outputs.tag }}
+            keyval/odigos-odiglet:${{ steps.vars.outputs.tag }}
           platforms: linux/amd64,linux/arm64
       - name: Build UI Image
         uses: docker/build-push-action@v4
@@ -64,7 +77,9 @@ jobs:
           file: ui/Dockerfile
           context: ui/
           push: true
-          tags: ghcr.io/keyval-dev/odigos/ui:${{ steps.vars.outputs.tag }}
+          tags: |
+            ghcr.io/keyval-dev/odigos/ui:${{ steps.vars.outputs.tag }}
+            keyval/odigos-ui:${{ steps.vars.outputs.tag }}
           platforms: linux/amd64,linux/arm64
       - uses: actions/setup-node@v3
         with:
