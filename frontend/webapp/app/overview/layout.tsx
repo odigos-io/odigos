@@ -10,7 +10,7 @@ const LAYOUT_STYLE = {
 
 const CHILDREN_STYLE = {
   width: "100%",
-  height: "100%",
+  height: "91%",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

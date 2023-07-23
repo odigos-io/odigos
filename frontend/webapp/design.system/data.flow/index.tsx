@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   useNodesState,
@@ -50,18 +50,18 @@ const initialNodes = [
     type: "custom",
     data: null,
 
-    position: { x: 400, y: 300 },
+    position: { x: 385, y: 300 },
   },
   {
     id: "3",
     type: "destination",
-    position: { x: 580, y: 100 },
+    position: { x: 750, y: -100 },
     data: null,
   },
   {
     id: "6",
     type: "destination",
-    position: { x: 580, y: 200 },
+    position: { x: 750, y: 200 },
     data: null,
   },
 ];
@@ -139,9 +139,11 @@ const nodeTypes = {
   destination: DestinationNode,
 };
 
-function KeyvalDataFlow() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<any>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+function KeyvalDataFlow({ sources, destinations }) {
+  const [namespaceNodes, setNamespaceNodes] = useState([]);
+  const [initialEdges, setInitialEdges] = useState([]);
+  const containerRef = useRef(null);
+
   const { zoomTo, fitView } = useReactFlow();
 
   useEffect(() => {
@@ -149,23 +151,69 @@ function KeyvalDataFlow() {
       fitView();
       zoomTo(1);
     }, 0);
-  }, [fitView]);
+  }, [fitView, namespaceNodes]);
 
-  const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  );
+  useEffect(() => {
+    destinations && centerDestinationListVertically();
+  }, [destinations]);
+
+  function centerDestinationListVertically() {
+    const canvasHeight = containerRef.current?.clientHeight;
+    const totalListItemsHeight = destinations?.reduce(
+      (sum, listItem) => sum + 120,
+      0
+    );
+
+    let topPosition = (canvasHeight - totalListItemsHeight) / 2;
+    let sourcesNode: any = [];
+    destinations.forEach((data, index) => {
+      const y = topPosition;
+      sourcesNode.push({
+        id: `source-${index}`,
+        type: "destination",
+        data,
+        position: { x: 800, y },
+      });
+      topPosition += 100;
+    });
+    sourcesNode.push({
+      id: "1",
+      type: "custom",
+      data: null,
+
+      position: { x: 385, y: 300 },
+    });
+
+    const edges = sourcesNode.map((node, index) => {
+      return {
+        id: `edges-${index}`,
+        source: "1",
+        target: `source-${index}`,
+        animated: true,
+        style: { stroke: "#96f3ff8e" },
+        data: null,
+      };
+    });
+
+    console.log({ edges });
+    setInitialEdges(edges);
+    setNamespaceNodes(sourcesNode);
+    setTimeout(() => {
+      fitView();
+      zoomTo(1);
+    }, 0);
+  }
+
+  // Call the function once on initial load
 
   return (
-    <div style={{ width: "100%", height: "100%" }}>
+    <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
+        nodes={namespaceNodes}
+        edges={initialEdges}
         nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
         nodesDraggable={false}
+        nodeOrigin={[0.4, 0.4]}
       >
         <Controls />
         <Background gap={12} size={1} style={{ backgroundColor: "#132330" }} />

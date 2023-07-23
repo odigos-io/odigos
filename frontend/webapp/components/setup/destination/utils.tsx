@@ -20,6 +20,7 @@ export const MONITORING_OPTIONS = [
       focus: () => LogsFocus(),
     },
     title: "Logs",
+    type: "logs",
     tapped: true,
   },
   {
@@ -29,6 +30,7 @@ export const MONITORING_OPTIONS = [
       focus: () => MetricsFocus(),
     },
     title: "Metrics",
+    type: "metrics",
     tapped: true,
   },
   {
@@ -38,6 +40,7 @@ export const MONITORING_OPTIONS = [
       focus: () => TracesFocus(),
     },
     title: "Traces",
+    type: "traces",
     tapped: true,
   },
 ];

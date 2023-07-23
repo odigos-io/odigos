@@ -54,7 +54,9 @@ export default memo(({ data, isConnectable }: any) => {
   function renderMonitors() {
     return MONITORING_OPTIONS.map((monitor) => (
       <IconWrapper>
-        {true ? monitor.icons.focus() : monitor.icons.notFocus()}
+        {data?.signals[monitor?.type]
+          ? monitor.icons.focus()
+          : monitor.icons.notFocus()}
       </IconWrapper>
     ));
   }
@@ -62,13 +64,17 @@ export default memo(({ data, isConnectable }: any) => {
   return (
     <DestinationNodeContainer>
       <NodeDataWrapper>
-        <Logo width={40} />
-        {/* <KeyvalImage src={icon} width={40} height={40} style={IMAGE_STYLE} /> */}
+        <KeyvalImage
+          src={data?.destination_type?.image_url}
+          width={40}
+          height={40}
+          style={IMAGE_STYLE}
+        />
         <TextWrapper>
           <KeyvalText size={14} weight={600}>
-            {"Application name"}
+            {data?.destination_type?.display_name}
           </KeyvalText>
-          <KeyvalText color={"#8b92a5"}>{"80 apps"}</KeyvalText>
+          <KeyvalText color={"#8b92a5"}>{data?.name}</KeyvalText>
         </TextWrapper>
       </NodeDataWrapper>
       <MonitorsListWrapper>{renderMonitors()}</MonitorsListWrapper>
