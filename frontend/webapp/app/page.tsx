@@ -15,11 +15,13 @@ export default function App() {
 
   function renderCurrentPage() {
     const { installation } = data;
-
+    console.log(installation);
     switch (installation) {
       case CONFIG.NEW:
       case CONFIG.APPS_SELECTED:
         router.push(ROUTES.SETUP);
+      case CONFIG.FINISHED:
+        router.push(ROUTES.OVERVIEW);
     }
   }
 }
