@@ -45,34 +45,19 @@ type ExportedSignals struct {
 }
 
 type Destination struct {
-	Name            string                 `json:"name"`
-	Type            common.DestinationType `json:"type"`
-	ExportedSignals ExportedSignals        `json:"signals"`
-	Fields          map[string]string      `json:"fields"`
+	Name            string                       `json:"name"`
+	Type            common.DestinationType       `json:"type"`
+	ExportedSignals ExportedSignals              `json:"signals"`
+	Fields          map[string]string            `json:"fields"`
+	DestinationType DestinationTypesCategoryItem `json:"destination_type"`
 }
 
 func GetDestinationTypes(c *gin.Context) {
 	var resp GetDestinationTypesResponse
 	itemsByCategory := make(map[string][]DestinationTypesCategoryItem)
-	for _, dest := range destinations.Get() {
-		item := DestinationTypesCategoryItem{
-			Type:        dest.Metadata.Type,
-			DisplayName: dest.Metadata.DisplayName,
-			ImageUrl:    GetImageURL(dest.Spec.Image),
-			SupportedSignals: SupportedSignals{
-				Traces: ObservabilitySignalSupport{
-					Supported: dest.Spec.Signals.Traces.Supported,
-				},
-				Metrics: ObservabilitySignalSupport{
-					Supported: dest.Spec.Signals.Metrics.Supported,
-				},
-				Logs: ObservabilitySignalSupport{
-					Supported: dest.Spec.Signals.Logs.Supported,
-				},
-			},
-		}
-
-		itemsByCategory[dest.Metadata.Category] = append(itemsByCategory[dest.Metadata.Category], item)
+	for _, destConfig := range destinations.Get() {
+		item := DestinationTypeConfigToCategoryItem(destConfig)
+		itemsByCategory[destConfig.Metadata.Category] = append(itemsByCategory[destConfig.Metadata.Category], item)
 	}
 
 	for category, items := range itemsByCategory {
@@ -322,6 +307,7 @@ func k8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 	destType := k8sDest.Spec.Type
 	destName := k8sDest.Name
 	mergedFields := mergeDataAndSecrets(k8sDest.Spec.Data, secretFields)
+	destTypeConfig := DestinationTypeConfigToCategoryItem(destinations.GetDestinationByType(string(destType)))
 
 	return Destination{
 		Name: destName,
@@ -331,7 +317,8 @@ func k8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),
 			Logs:    isSignalExported(k8sDest, common.LogsObservabilitySignal),
 		},
-		Fields: mergedFields,
+		Fields:          mergedFields,
+		DestinationType: destTypeConfig,
 	}
 }
 
@@ -455,4 +442,23 @@ func getDestinationSecretFields(c *gin.Context, odigosns string, dest *v1alpha1.
 	}
 
 	return secretFields, nil
+}
+
+func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) DestinationTypesCategoryItem {
+	return DestinationTypesCategoryItem{
+		Type:        destConfig.Metadata.Type,
+		DisplayName: destConfig.Metadata.DisplayName,
+		ImageUrl:    GetImageURL(destConfig.Spec.Image),
+		SupportedSignals: SupportedSignals{
+			Traces: ObservabilitySignalSupport{
+				Supported: destConfig.Spec.Signals.Traces.Supported,
+			},
+			Metrics: ObservabilitySignalSupport{
+				Supported: destConfig.Spec.Signals.Metrics.Supported,
+			},
+			Logs: ObservabilitySignalSupport{
+				Supported: destConfig.Spec.Signals.Logs.Supported,
+			},
+		},
+	}
 }
