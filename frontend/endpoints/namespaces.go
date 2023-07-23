@@ -25,12 +25,6 @@ type GetNamespaceItem struct {
 	TotalApps int    `json:"totalApps"`
 }
 
-type InstrumentedAppsCount struct {
-	Deployments  int `json:"deployments"`
-	StatefulSets int `json:"statefulsets"`
-	DaemonSets   int `json:"daemonsets"`
-}
-
 func GetNamespaces(c *gin.Context) {
 	list, err := kube.DefaultClient.CoreV1().Namespaces().List(c.Request.Context(), metav1.ListOptions{})
 	if err != nil {
