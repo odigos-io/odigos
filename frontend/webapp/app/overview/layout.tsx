@@ -15,11 +15,9 @@ const CHILDREN_STYLE = {
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <body>
-      <div style={LAYOUT_STYLE}>
-        <Menu />
-        <div style={CHILDREN_STYLE}>{children}</div>
-      </div>
-    </body>
+    <div style={LAYOUT_STYLE}>
+      <Menu />
+      <div style={CHILDREN_STYLE}>{children}</div>
+    </div>
   );
 }
