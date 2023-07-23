@@ -2,7 +2,6 @@ package endpoints
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -31,9 +30,6 @@ type InstrumentedAppsCount struct {
 	StatefulSets int `json:"statefulsets"`
 	DaemonSets   int `json:"daemonsets"`
 }
-
-var labelSelectorInstEnabled = fmt.Sprintf("%s=%s", consts.OdigosInstrumentationLabel, consts.InstrumentationEnabled)
-var labelSelectorInstDisabled = fmt.Sprintf("%s=%s", consts.OdigosInstrumentationLabel, consts.InstrumentationDisabled)
 
 func GetNamespaces(c *gin.Context) {
 	list, err := kube.DefaultClient.CoreV1().Namespaces().List(c.Request.Context(), metav1.ListOptions{})
