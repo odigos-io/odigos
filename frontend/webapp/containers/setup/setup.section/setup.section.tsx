@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   SetupContentWrapper,
   SetupSectionContainer,
@@ -6,24 +6,43 @@ import {
   BackButtonWrapper,
 } from "./setup.section.styled";
 import { SetupHeader } from "../setup.header/setup.header";
-import { SETUP } from "@/utils/constants";
-import Steps from "@/design.system/steps/steps";
-import { SourcesSection } from "../sources/sources.section";
 import { DestinationSection } from "../destination/destination.section";
-import { KeyvalText } from "@/design.system";
+import { ConnectionSection } from "../connection/connection.section";
+import { SourcesSection } from "../sources/sources.section";
 import RightArrow from "assets/icons/white-arrow-right.svg";
+import Steps from "@/design.system/steps/steps";
+import { KeyvalText } from "@/design.system";
+import { CONFIG, SETUP } from "@/utils/constants";
+import { useSectionData, useNotification } from "@/hooks";
 import { STEPS, Step } from "./utils";
-import { useSectionData } from "@/hooks";
+import { setNamespaces } from "@/services/setup";
+import { useSearchParams } from "next/navigation";
+import { useMutation } from "react-query";
 
 const sectionComponents = {
   [SETUP.STEPS.ID.CHOOSE_SOURCE]: SourcesSection,
   [SETUP.STEPS.ID.CHOOSE_DESTINATION]: DestinationSection,
+  [SETUP.STEPS.ID.CREATE_CONNECTION]: ConnectionSection,
 };
 
 export function SetupSection() {
-  const [steps, setSteps] = useState<Step[]>(STEPS);
   const [currentStep, setCurrentStep] = useState<Step>(STEPS[0]);
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
+  const { mutate } = useMutation((body) => setNamespaces(body));
+  const { show, Notification } = useNotification();
+  const searchParams = useSearchParams();
+  const previousSourceState = useRef<any>(null);
+
+  useEffect(() => {
+    getStepFromSearch();
+  }, [searchParams]);
+
+  function getStepFromSearch() {
+    const search = searchParams.get("state");
+    if (search === CONFIG.APPS_SELECTED) {
+      handleChangeStep(1);
+    }
+  }
 
   function renderCurrentSection() {
     const Component = sectionComponents[currentStep?.id];
@@ -33,24 +52,40 @@ export function SetupSection() {
   }
 
   function handleChangeStep(direction: number) {
-    const currentStepIndex = steps.findIndex(
+    const currentStepIndex = STEPS.findIndex(
       ({ id }) => id === currentStep?.id
     );
-    const nextStep = steps[currentStepIndex + direction];
-    const prevStep = steps[currentStepIndex];
+    const nextStep = STEPS[currentStepIndex + direction];
+    const prevStep = STEPS[currentStepIndex];
 
     if (nextStep) {
       nextStep.status = SETUP.STEPS.STATUS.ACTIVE;
     }
 
-    if (prevStep && direction === 1) {
-      prevStep.status = SETUP.STEPS.STATUS.DONE;
-    } else {
-      prevStep.status = SETUP.STEPS.STATUS.DISABLED;
+    if (prevStep) {
+      prevStep.status =
+        direction === 1 ? SETUP.STEPS.STATUS.DONE : SETUP.STEPS.STATUS.DISABLED;
+    }
+
+    if (currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE) {
+      previousSourceState.current = sectionData;
+      mutate(sectionData, {
+        onSuccess: () => {
+          setCurrentStep(nextStep);
+          setSectionData({});
+        },
+        onError: ({ response }) => {
+          const message = response?.data?.message || SETUP.ERROR;
+          show({
+            type: "error",
+            message,
+          });
+        },
+      });
+
+      return;
     }
     setCurrentStep(nextStep);
-    setSteps([...steps]);
-    setSectionData({});
   }
 
   function onNextClick() {
@@ -59,12 +94,13 @@ export function SetupSection() {
 
   function onBackClick() {
     handleChangeStep(-1);
+    setSectionData(previousSourceState.current || {});
   }
 
   return (
     <>
       <StepListWrapper>
-        <Steps data={steps} />
+        <Steps data={STEPS} />
       </StepListWrapper>
       <SetupSectionContainer>
         {currentStep.index !== 1 && (
@@ -79,9 +115,11 @@ export function SetupSection() {
           currentStep={currentStep}
           onNextClick={onNextClick}
           totalSelected={totalSelected}
+          sectionData={sectionData}
         />
         <SetupContentWrapper>{renderCurrentSection()}</SetupContentWrapper>
       </SetupSectionContainer>
+      <Notification />
     </>
   );
 }

@@ -6,6 +6,8 @@ interface ButtonProps {
 }
 
 export const ButtonContainer = styled.div<ButtonProps>`
+  width: 100%;
+  height: 100%;
   :hover {
     background: ${({ theme, disabled }) =>
       disabled ? theme.colors.blue_grey : theme.colors.torquiz_light};
@@ -22,8 +24,12 @@ export const StyledButton = styled.button<ButtonProps>`
   align-items: center;
   border-radius: 8px;
   border: none;
+  width: 100%;
+  height: 100%;
   cursor: ${({ disabled }) =>
     disabled ? "not-allowed !important" : "pointer !important"};
   background: ${({ theme, disabled }) =>
     disabled ? theme.colors.blue_grey : theme.colors.secondary};
+  justify-content: center;
+  align-items: center;
 `;

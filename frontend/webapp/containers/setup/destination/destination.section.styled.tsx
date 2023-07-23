@@ -16,3 +16,7 @@ export const EmptyListWrapper = styled.div`
   justify-content: center;
   align-items: center;
 `;
+
+export const LoaderWrapper = styled.div`
+  height: 500px;
+`;

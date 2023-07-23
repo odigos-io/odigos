@@ -87,6 +87,7 @@ export function DestinationOptionMenu({
         <KeyvalDropDown
           width={180}
           data={dropdownData}
+          value={dropdownData[0]}
           onChange={handleDropDownChange}
         />
       </DropdownWrapper>
