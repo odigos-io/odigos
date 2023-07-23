@@ -119,7 +119,7 @@ const initialEdges = [
     data: null,
   },
   {
-    id: "e2-1",
+    id: "e2-01",
     source: "2",
     target: "6",
     animated: true,
