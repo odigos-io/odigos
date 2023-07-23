@@ -11,3 +11,13 @@ func returnError(c *gin.Context, err error) {
 		"message": err.Error(),
 	})
 }
+
+func returnErrors(c *gin.Context, errors []error) {
+	errorsText := make([]string, len(errors))
+	for i, err := range errors {
+		errorsText[i] = err.Error()
+	}
+	c.JSON(http.StatusInternalServerError, gin.H{
+		"messages": errorsText,
+	})
+}

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { getConfig } from "@/services/config";
 import { useRouter } from "next/navigation";
 import { ROUTES, CONFIG, QUERIES } from "@/utils/constants";
+import { KeyvalLoader } from "@/design.system";
 
 export default function App() {
   const router = useRouter();
@@ -16,6 +17,10 @@ export default function App() {
   function renderCurrentPage() {
     const { installation } = data;
 
+    const state =
+      installation === CONFIG.APPS_SELECTED
+        ? `?state=${CONFIG.APPS_SELECTED}`
+        : "";
     switch (installation) {
       case CONFIG.NEW:
       case CONFIG.APPS_SELECTED:
@@ -24,4 +29,5 @@ export default function App() {
         router.push(ROUTES.OVERVIEW);
     }
   }
+
 }
