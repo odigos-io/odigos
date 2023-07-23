@@ -9,7 +9,11 @@ import (
 //go:embed data/*
 var destsFS embed.FS
 
+// array of all destinations configs
 var loadedDestinations []Destination
+
+// map from destination type to destination config object
+var destinationsByType map[string]Destination
 
 func Load() error {
 	return load(destsFS)
@@ -19,8 +23,13 @@ func Get() []Destination {
 	return loadedDestinations
 }
 
+func GetDestinationByType(destType string) Destination {
+	return destinationsByType[destType]
+}
+
 func load(fs embed.FS) error {
 	var dests []Destination
+	var destsByTypeMap = make(map[string]Destination)
 
 	// load all files in the data directory
 	files, err := fs.ReadDir("data")
@@ -41,9 +50,11 @@ func load(fs embed.FS) error {
 			return err
 		}
 
+		destsByTypeMap[string(dest.Metadata.Type)] = dest
 		dests = append(dests, dest)
 	}
 
+	destinationsByType = destsByTypeMap
 	loadedDestinations = dests
 	return nil
 }
