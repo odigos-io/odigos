@@ -1,0 +1,12 @@
+#####################################################
+#
+# List of approvers for this repository
+#
+#####################################################
+#
+#
+# Learn about CODEOWNERS file format:
+#  https://help.github.com/en/articles/about-code-owners
+#
+
+* @odigos/maintainers
