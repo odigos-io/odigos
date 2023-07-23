@@ -5,6 +5,7 @@ import {
   DestinationListWrapper,
   DestinationTypeTitleWrapper,
 } from "./destination.list.styled";
+import { capitalizeFirstLetter } from "@/utils/functions";
 
 export function DestinationList({
   data: { items, name },
@@ -25,7 +26,9 @@ export function DestinationList({
   return items?.length ? (
     <>
       <DestinationTypeTitleWrapper>
-        <KeyvalText>{`${items?.length} ${name}`}</KeyvalText>
+        <KeyvalText>{`${items?.length} ${capitalizeFirstLetter(
+          name
+        )}`}</KeyvalText>
       </DestinationTypeTitleWrapper>
       <DestinationListWrapper>{renderList()}</DestinationListWrapper>
     </>

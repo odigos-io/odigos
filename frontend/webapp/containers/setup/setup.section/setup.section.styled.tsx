@@ -15,6 +15,7 @@ export const SetupSectionContainer = styled.section`
 
 export const SetupContentWrapper = styled.div`
   padding: 0 60px;
+  height: 100%;
   ::-webkit-scrollbar {
     display: none;
   }

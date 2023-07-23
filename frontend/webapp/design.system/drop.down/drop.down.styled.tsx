@@ -51,7 +51,7 @@ export const DropdownBody = styled.div`
 
 export const DropdownListWrapper = styled.div`
   position: relative;
-  z-index: 9999;
+  z-index: 100;
   width: 100%;
   max-height: 270px;
   overflow-y: scroll;
