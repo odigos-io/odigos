@@ -36,3 +36,7 @@ export const SETUP = {
   SELECTED: "Selected",
   MANAGED: "Managed",
 };
+
+export const OVERVIEW = {
+  ODIGOS: "Odigos",
+};
