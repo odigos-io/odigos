@@ -30,7 +30,7 @@ export function SourceCard({ item, onClick, focus }: any) {
       <RadioButtonWrapper>
         <KeyvalRadioButton onChange={onClick} value={focus} />
       </RadioButtonWrapper>
-      <SourceCardWrapper>
+      <SourceCardWrapper onClick={onClick}>
         <Logo />
         <ApplicationNameWrapper>
           <KeyvalText size={20} weight={700} style={TEXT_STYLE}>

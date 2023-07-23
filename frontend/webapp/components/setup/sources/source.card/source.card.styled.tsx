@@ -12,6 +12,10 @@ export const SourceCardWrapper = styled.div`
   align-items: center;
   flex-direction: column;
   gap: 14px;
+  cursor: pointer;
+  .p {
+    cursor: pointer !important;
+  }
 `;
 
 export const ApplicationNameWrapper = styled.div`

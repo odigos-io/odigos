@@ -1,5 +1,7 @@
 package destinations
 
+import "github.com/keyval-dev/odigos/common"
+
 type Destination struct {
 	ApiVersion string   `yaml:"apiVersion"`
 	Kind       string   `yaml:"kind"`
@@ -8,9 +10,9 @@ type Destination struct {
 }
 
 type Metadata struct {
-	Type        string `yaml:"type"`
-	DisplayName string `yaml:"displayName"`
-	Category    string `yaml:"category"`
+	Type        common.DestinationType `yaml:"type"`
+	DisplayName string                 `yaml:"displayName"`
+	Category    string                 `yaml:"category"`
 }
 
 type Spec struct {
@@ -33,6 +35,8 @@ type Field struct {
 	Name           string                 `yaml:"name"`
 	DisplayName    string                 `yaml:"displayName"`
 	VideoURL       string                 `yaml:"videoUrl"`
+	ThumbnailURL   string                 `yaml:"thumbnailUrl"`
 	ComponentType  string                 `yaml:"componentType"`
 	ComponentProps map[string]interface{} `yaml:"componentProps"`
+	Secret         bool                   `yaml:"secret"`
 }

@@ -23,4 +23,5 @@ export const CheckboxWrapper = styled.div`
 
 export const SwitcherWrapper = styled.div`
   min-width: 90px;
+  margin-left: 24px;
 `;
