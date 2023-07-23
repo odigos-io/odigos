@@ -20,8 +20,9 @@ type GetNamespacesResponse struct {
 }
 
 type GetNamespaceItem struct {
-	Name     string `json:"name"`
-	Selected bool   `json:"selected"`
+	Name                     string `json:"name"`
+	Selected                 bool   `json:"selected"`
+	InstrumentedApplications int    `json:"instrumented_applications"`
 }
 
 func GetNamespaces(c *gin.Context) {
@@ -34,6 +35,7 @@ func GetNamespaces(c *gin.Context) {
 	var response GetNamespacesResponse
 	for _, namespace := range list.Items {
 		selected := false
+		instrumentedApplications := 0
 		if val, exists := namespace.Labels[consts.OdigosInstrumentationLabel]; exists {
 			if val == consts.InstrumentationEnabled {
 				selected = true
@@ -41,8 +43,9 @@ func GetNamespaces(c *gin.Context) {
 		}
 
 		response.Namespaces = append(response.Namespaces, GetNamespaceItem{
-			Name:     namespace.Name,
-			Selected: selected,
+			Name:                     namespace.Name,
+			Selected:                 selected,
+			InstrumentedApplications: instrumentedApplications,
 		})
 	}
 
