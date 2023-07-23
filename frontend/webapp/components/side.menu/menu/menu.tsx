@@ -4,46 +4,53 @@ import { MenuContainer, LogoWrapper, MenuItemsWrapper } from "./menu.styled";
 import { KeyvalText } from "@/design.system";
 import MenuItem from "../menu.item/menu.item";
 import { useRouter } from "next/navigation";
+import { OVERVIEW, ROUTES } from "@/utils/constants";
+import * as ICONS from "../../../assets/icons/side.menu";
 
-import FocusOverview from "../../../assets/icons/focus-overview.svg";
-import UnFocusOverview from "../../../assets/icons/unfocus-overview.svg";
-import FocusSources from "../../../assets/icons/sources-focus.svg";
-import UnFocusSources from "../../../assets/icons/sources-unfocus.svg";
-import FocusDestinations from "../../../assets/icons/destinations-focus.svg";
-import UnFocusDestinations from "../../../assets/icons/destinations-unfocus.svg";
-import { OVERVIEW } from "@/utils/constants";
 const MENU_ITEMS = [
   {
     id: 1,
-    name: "Overview",
+    name: OVERVIEW.MENU.OVERVIEW,
     icons: {
-      focus: () => <FocusOverview />,
-      notFocus: () => <UnFocusOverview />,
+      focus: () => <ICONS.FocusOverview />,
+      notFocus: () => <ICONS.UnFocusOverview />,
     },
-    navigate: "/overview",
+    navigate: ROUTES.OVERVIEW,
   },
   {
     id: 2,
-    name: "Sources",
+    name: OVERVIEW.MENU.SOURCES,
     icons: {
-      focus: () => <FocusSources />,
-      notFocus: () => <UnFocusSources />,
+      focus: () => <ICONS.FocusSources />,
+      notFocus: () => <ICONS.UnFocusSources />,
     },
-    navigate: "/overview/sources",
+    navigate: ROUTES.SOURCES,
   },
   {
     id: 3,
-    name: "Destinations",
+    name: OVERVIEW.MENU.DESTINATIONS,
     icons: {
-      focus: () => <FocusDestinations />,
-      notFocus: () => <UnFocusDestinations />,
+      focus: () => <ICONS.FocusDestinations />,
+      notFocus: () => <ICONS.UnFocusDestinations />,
     },
-    navigate: "/overview/destinations",
+    navigate: ROUTES.DESTINATIONS,
   },
 ];
 
+interface MenuItem {
+  id: number;
+  name: string;
+  icons: {
+    focus: () => JSX.Element;
+    notFocus: () => JSX.Element;
+  };
+  navigate: string;
+}
+
 export function Menu() {
-  const [currentMenuItem, setCurrentMenuItem] = useState(MENU_ITEMS[0]);
+  const [currentMenuItem, setCurrentMenuItem] = useState<MenuItem>(
+    MENU_ITEMS[0]
+  );
   const router = useRouter();
 
   function handleMenuItemClick(item) {

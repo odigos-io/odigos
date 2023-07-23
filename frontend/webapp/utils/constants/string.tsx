@@ -39,4 +39,9 @@ export const SETUP = {
 
 export const OVERVIEW = {
   ODIGOS: "Odigos",
+  MENU: {
+    OVERVIEW: "Overview",
+    SOURCES: "Sources",
+    DESTINATIONS: "Destinations",
+  },
 };
