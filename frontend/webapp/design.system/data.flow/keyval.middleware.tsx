@@ -1,6 +1,6 @@
 import React, { memo } from "react";
 import { Handle, Position } from "reactflow";
-import Connect from "assets/icons/connect.svg";
+import { KeyvalMiddleware } from "@/assets/icons/overview";
 export default memo(({ data, isConnectable }: any) => {
   return (
     <div>
@@ -10,7 +10,7 @@ export default memo(({ data, isConnectable }: any) => {
         onConnect={(params) => console.log("handle onConnect", params)}
         style={{ visibility: "hidden" }}
       />
-      <Connect />
+      <KeyvalMiddleware />
 
       <Handle
         type="source"

@@ -1,5 +1,5 @@
 "use client";
-import React, { use, useCallback, useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import ReactFlow, {
   Background,
   useNodesState,
@@ -9,7 +9,7 @@ import ReactFlow, {
   useReactFlow,
   ReactFlowProvider,
 } from "reactflow";
-import CustomNode from "./CustomNode";
+import CustomNode from "./keyval.middleware";
 import NamespaceNode from "./namespace.node";
 import DestinationNode from "./destination.node";
 import "reactflow/dist/style.css";
@@ -19,30 +19,30 @@ const initialNodes = [
     id: "1",
     type: "namespace",
     data: null,
-    position: { x: 100, y: 100 },
+    position: { x: 0, y: 100 },
   },
   {
     id: "4",
     type: "namespace",
-    position: { x: 100, y: 200 },
+    position: { x: 0, y: 200 },
     data: null,
   },
   {
     id: "5",
     type: "namespace",
-    position: { x: 100, y: 300 },
+    position: { x: 0, y: 300 },
     data: null,
   },
   {
     id: "7",
     type: "namespace",
-    position: { x: 100, y: 400 },
+    position: { x: 0, y: 400 },
     data: null,
   },
   {
     id: "8",
     type: "namespace",
-    position: { x: 100, y: 500 },
+    position: { x: 0, y: 500 },
     data: null,
   },
   {
@@ -55,13 +55,13 @@ const initialNodes = [
   {
     id: "3",
     type: "destination",
-    position: { x: 530, y: 100 },
+    position: { x: 580, y: 100 },
     data: null,
   },
   {
     id: "6",
     type: "destination",
-    position: { x: 530, y: 200 },
+    position: { x: 580, y: 200 },
     data: null,
   },
 ];
@@ -73,6 +73,7 @@ const initialEdges = [
     target: "2",
     style: { stroke: "#96f3ff8e" },
     data: null,
+    animated: true,
   },
   {
     id: "e1-4",
@@ -80,6 +81,7 @@ const initialEdges = [
     target: "2",
     style: { stroke: "#96f3ff8e" },
     data: null,
+    animated: true,
   },
   {
     id: "e1-5",
@@ -87,6 +89,7 @@ const initialEdges = [
     target: "2",
     style: { stroke: "#96f3ff8e" },
     data: null,
+    animated: true,
   },
   {
     id: "e1-7",
@@ -94,6 +97,7 @@ const initialEdges = [
     target: "2",
     style: { stroke: "#96f3ff8e" },
     data: null,
+    animated: true,
   },
   {
     id: "e1-8",
@@ -101,6 +105,7 @@ const initialEdges = [
     target: "2",
     style: { stroke: "#96f3ff8e" },
     data: null,
+    animated: true,
   },
   {
     id: "e2-3",
