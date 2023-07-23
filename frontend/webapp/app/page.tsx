@@ -26,9 +26,7 @@ export default function App() {
       case CONFIG.APPS_SELECTED:
         router.push(`${ROUTES.SETUP}${state}`);
       case CONFIG.FINISHED:
-        router.push(`${ROUTES.SETUP}`);
+        router.push(ROUTES.OVERVIEW);
     }
   }
-
-  return <KeyvalLoader />;
 }

@@ -52,3 +52,12 @@ export const INPUT_TYPES = {
   INPUT: "input",
   DROPDOWN: "dropdown",
 };
+
+export const OVERVIEW = {
+  ODIGOS: "Odigos",
+  MENU: {
+    OVERVIEW: "Overview",
+    SOURCES: "Sources",
+    DESTINATIONS: "Destinations",
+  },
+};
