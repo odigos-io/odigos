@@ -4,6 +4,10 @@ import { styled } from "styled-components";
 import { KeyvalImage, KeyvalText } from "@/design.system";
 import { MONITORING_OPTIONS } from "@/components/setup/destination/utils";
 
+interface IconWrapperProps {
+  tapped?: any;
+}
+
 const DestinationNodeContainer = styled.div`
   padding: 16px 24px;
   display: flex;
@@ -32,7 +36,7 @@ const IMAGE_STYLE: React.CSSProperties = {
   padding: 4,
 };
 
-const IconWrapper = styled.div<{ tapped?: boolean }>`
+const IconWrapper = styled.div<IconWrapperProps>`
   padding: 4px;
   width: 24px;
   height: 24px;
@@ -52,7 +56,10 @@ const MonitorsListWrapper = styled.div`
 export default memo(({ data, isConnectable }: any) => {
   function renderMonitors() {
     return MONITORING_OPTIONS.map((monitor) => (
-      <IconWrapper tapped={data?.signals[monitor?.type]}>
+      <IconWrapper
+        key={monitor?.id}
+        tapped={data?.signals[monitor?.type] || false}
+      >
         {data?.signals[monitor?.type]
           ? monitor.icons.focus()
           : monitor.icons.notFocus()}

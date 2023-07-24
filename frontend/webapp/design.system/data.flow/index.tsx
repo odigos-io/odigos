@@ -48,7 +48,7 @@ function DataFlow({ nodes, edges }: IDataFlow) {
   );
 }
 
-export function KeyvalFlow(props) {
+export function KeyvalDataFlow(props) {
   return (
     <ReactFlowProvider>
       <DataFlow {...props} />

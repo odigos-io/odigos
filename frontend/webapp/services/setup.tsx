@@ -21,6 +21,10 @@ export async function getDestinations() {
   return await get(API.DESTINATIONS);
 }
 
+export async function getSources() {
+  return await get(API.SOURCES);
+}
+
 export async function getDestination(type: string) {
   return await get(`${API.DESTINATION_TYPE}/${type}`);
 }

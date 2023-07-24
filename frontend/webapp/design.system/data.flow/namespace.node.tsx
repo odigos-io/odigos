@@ -20,15 +20,16 @@ const TextWrapper = styled.div`
 `;
 
 export default memo(({ data, isConnectable }: any) => {
-  console.log({ data });
   return (
     <NamespaceContainer>
       <Folder width={32} />
       <TextWrapper>
         <KeyvalText size={14} weight={600}>
-          {"kube-system"}
+          {data?.name}
         </KeyvalText>
-        <KeyvalText color={"#8b92a5"}>{"80 apps"}</KeyvalText>
+        <KeyvalText
+          color={"#8b92a5"}
+        >{`${data?.totalAppsInstrumented} Apps Instrumented`}</KeyvalText>
       </TextWrapper>
       <Handle
         type="source"

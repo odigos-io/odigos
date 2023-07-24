@@ -1,10 +1,10 @@
 "use client";
 import React, { useCallback, useMemo, useState } from "react";
-import { KeyvalFlow, KeyvalLoader } from "@/design.system";
+import { KeyvalDataFlow, KeyvalLoader } from "@/design.system";
 import { QUERIES } from "@/utils/constants";
 import { useQuery } from "react-query";
-import { getDestinations } from "@/services/setup";
-import { getEdges, getNodes } from "./utils";
+import { getDestinations, getSources } from "@/services/setup";
+import { getEdges, mapSourcesNamespace, getNodes } from "./utils";
 import { OverviewDataFlowWrapper } from "./overview.styled";
 
 export function OverviewContainer() {
@@ -21,15 +21,20 @@ export function OverviewContainer() {
     getDestinations
   );
 
-  const { data: sources } = useQuery(
-    [QUERIES.API_DESTINATIONS],
-    getDestinations
-  );
+  const { data: sources } = useQuery([QUERIES.API_SOURCES], getSources);
 
-  const sourcesNodes = useMemo(
-    () => getNodes(containerHeight, sources, "namespace", 84, 0, true),
-    [sources, containerHeight]
-  );
+  const sourcesNodes = useMemo(() => {
+    const nodes = getNodes(
+      containerHeight,
+      mapSourcesNamespace(sources),
+      "namespace",
+      84,
+      0,
+      true
+    );
+
+    return nodes;
+  }, [sources, containerHeight]);
 
   const destinationsNodes = useMemo(
     () => getNodes(containerHeight, destinations, "destination", 136, 800),
@@ -48,7 +53,7 @@ export function OverviewContainer() {
 
   return (
     <OverviewDataFlowWrapper ref={containerRef}>
-      <KeyvalFlow
+      <KeyvalDataFlow
         nodes={[...destinationsNodes, ...sourcesNodes]}
         edges={edges}
       />

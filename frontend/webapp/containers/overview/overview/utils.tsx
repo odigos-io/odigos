@@ -14,9 +14,37 @@ interface DataFlowEdge {
   data: any;
 }
 
+export function mapSourcesNamespace(sources) {
+  if (!sources) return null;
+  const test = sources.reduce((result, item) => {
+    const propertyValue = item?.namespace;
+    if (!result[propertyValue]) {
+      result[propertyValue] = {
+        items: [],
+        totalAppsInstrumented: 0,
+      };
+    }
+
+    result[propertyValue].items.push(item);
+    result[propertyValue].totalAppsInstrumented += 1;
+
+    return result;
+  }, {});
+
+  console.log({ test });
+  const dataArray = Object.entries(test).map(
+    ([name, { totalAppsInstrumented }]: any) => ({
+      name,
+      totalAppsInstrumented,
+    })
+  );
+
+  return dataArray;
+}
+
 export function getNodes(
   height: number,
-  nodeData: DataFlowNode[],
+  nodeData: any,
   type: string,
   listItemHeight: number,
   xPosition: number,
