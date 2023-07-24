@@ -31,6 +31,10 @@ func (c *FakeOdigosV1alpha1) Destinations(namespace string) v1alpha1.Destination
 	return &FakeDestinations{c, namespace}
 }
 
+func (c *FakeOdigosV1alpha1) InstrumentedApplications(namespace string) v1alpha1.InstrumentedApplicationInterface {
+	return &FakeInstrumentedApplications{c, namespace}
+}
+
 func (c *FakeOdigosV1alpha1) OdigosConfigurations(namespace string) v1alpha1.OdigosConfigurationInterface {
 	return &FakeOdigosConfigurations{c, namespace}
 }
