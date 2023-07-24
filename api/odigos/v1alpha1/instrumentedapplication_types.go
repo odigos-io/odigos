@@ -30,6 +30,7 @@ type InstrumentedApplicationSpec struct {
 type InstrumentedApplicationStatus struct {
 }
 
+//+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 

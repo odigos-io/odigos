@@ -25,6 +25,14 @@ type DestinationListerExpansion interface{}
 // DestinationNamespaceLister.
 type DestinationNamespaceListerExpansion interface{}
 
+// InstrumentedApplicationListerExpansion allows custom methods to be added to
+// InstrumentedApplicationLister.
+type InstrumentedApplicationListerExpansion interface{}
+
+// InstrumentedApplicationNamespaceListerExpansion allows custom methods to be added to
+// InstrumentedApplicationNamespaceLister.
+type InstrumentedApplicationNamespaceListerExpansion interface{}
+
 // OdigosConfigurationListerExpansion allows custom methods to be added to
 // OdigosConfigurationLister.
 type OdigosConfigurationListerExpansion interface{}

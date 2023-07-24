@@ -25,6 +25,8 @@ import (
 type Interface interface {
 	// Destinations returns a DestinationInformer.
 	Destinations() DestinationInformer
+	// InstrumentedApplications returns a InstrumentedApplicationInformer.
+	InstrumentedApplications() InstrumentedApplicationInformer
 	// OdigosConfigurations returns a OdigosConfigurationInformer.
 	OdigosConfigurations() OdigosConfigurationInformer
 }
@@ -43,6 +45,11 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // Destinations returns a DestinationInformer.
 func (v *version) Destinations() DestinationInformer {
 	return &destinationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// InstrumentedApplications returns a InstrumentedApplicationInformer.
+func (v *version) InstrumentedApplications() InstrumentedApplicationInformer {
+	return &instrumentedApplicationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // OdigosConfigurations returns a OdigosConfigurationInformer.
