@@ -34,7 +34,7 @@ const IMAGE_STYLE: React.CSSProperties = {
   padding: 4,
 };
 
-const IconWrapper = styled.div`
+const IconWrapper = styled.div<{ tapped?: boolean }>`
   padding: 4px;
   width: 24px;
   height: 24px;
@@ -42,7 +42,8 @@ const IconWrapper = styled.div`
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  background: ${({ theme }) => theme.colors.dark_blue};
+  background: ${({ theme, tapped }) =>
+    tapped ? theme.colors.dark_blue : "#0e1c28"};
 `;
 
 const MonitorsListWrapper = styled.div`
@@ -53,7 +54,7 @@ const MonitorsListWrapper = styled.div`
 export default memo(({ data, isConnectable }: any) => {
   function renderMonitors() {
     return MONITORING_OPTIONS.map((monitor) => (
-      <IconWrapper>
+      <IconWrapper tapped={data?.signals[monitor?.type]}>
         {data?.signals[monitor?.type]
           ? monitor.icons.focus()
           : monitor.icons.notFocus()}
