@@ -28,6 +28,7 @@ import (
 type OdigosV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	DestinationsGetter
+	InstrumentedApplicationsGetter
 	OdigosConfigurationsGetter
 }
 
@@ -38,6 +39,10 @@ type OdigosV1alpha1Client struct {
 
 func (c *OdigosV1alpha1Client) Destinations(namespace string) DestinationInterface {
 	return newDestinations(c, namespace)
+}
+
+func (c *OdigosV1alpha1Client) InstrumentedApplications(namespace string) InstrumentedApplicationInterface {
+	return newInstrumentedApplications(c, namespace)
 }
 
 func (c *OdigosV1alpha1Client) OdigosConfigurations(namespace string) OdigosConfigurationInterface {
