@@ -159,13 +159,21 @@ function KeyvalDataFlow({ sources, destinations }) {
 
   function centerDestinationListVertically() {
     const canvasHeight = containerRef.current?.clientHeight;
-    const totalListItemsHeight = destinations?.reduce(
-      (sum, listItem) => sum + 120,
-      0
-    );
+    const listItemHeight = 120; // Adjust this value to the desired height of each list item
+    const totalListItemsHeight = destinations.length * listItemHeight;
 
     let topPosition = (canvasHeight - totalListItemsHeight) / 2;
-    let sourcesNode: any = [];
+
+    let sourcesNode: any = [
+      {
+        id: "1",
+        type: "custom",
+        data: null,
+
+        position: { x: 385, y: 300 },
+      },
+    ];
+
     destinations.forEach((data, index) => {
       const y = topPosition;
       sourcesNode.push({
@@ -175,13 +183,6 @@ function KeyvalDataFlow({ sources, destinations }) {
         position: { x: 800, y },
       });
       topPosition += 100;
-    });
-    sourcesNode.push({
-      id: "1",
-      type: "custom",
-      data: null,
-
-      position: { x: 385, y: 300 },
     });
 
     const edges = sourcesNode.map((node, index) => {
@@ -195,7 +196,6 @@ function KeyvalDataFlow({ sources, destinations }) {
       };
     });
 
-    console.log({ edges });
     setInitialEdges(edges);
     setNamespaceNodes(sourcesNode);
     setTimeout(() => {
@@ -203,8 +203,6 @@ function KeyvalDataFlow({ sources, destinations }) {
       zoomTo(1);
     }, 0);
   }
-
-  // Call the function once on initial load
 
   return (
     <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
