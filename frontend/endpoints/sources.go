@@ -7,14 +7,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type SourceLanguage struct {
+	ContainerName string `json:"container_name"`
+	Language      string `json:"language"`
+}
+
 type Source struct {
-	Name      string `json:"name"`
-	Kind      string `json:"kind"`
-	Namespace string `json:"namespace"`
-	Languages []struct {
-		ContainerName string `json:"container_name"`
-		Language      string `json:"language"`
-	} `json:"languages"`
+	Name      string           `json:"name"`
+	Kind      string           `json:"kind"`
+	Namespace string           `json:"namespace"`
+	Languages []SourceLanguage `json:"languages"`
 }
 
 func GetSources(c *gin.Context) {
@@ -38,10 +40,7 @@ func k8sInstrumentedAppToSource(app *v1alpha1.InstrumentedApplication) Source {
 	source.Kind = app.OwnerReferences[0].Kind
 	source.Namespace = app.Namespace
 	for _, language := range app.Spec.Languages {
-		source.Languages = append(source.Languages, struct {
-			ContainerName string `json:"container_name"`
-			Language      string `json:"language"`
-		}{
+		source.Languages = append(source.Languages, SourceLanguage{
 			ContainerName: string(language.Language),
 			Language:      language.ContainerName,
 		})
