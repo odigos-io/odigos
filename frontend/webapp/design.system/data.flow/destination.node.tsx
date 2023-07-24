@@ -1,9 +1,7 @@
 import React, { memo } from "react";
 import { Handle, Position } from "reactflow";
-import Logo from "assets/logos/code-sandbox-logo.svg";
 import { styled } from "styled-components";
 import { KeyvalImage, KeyvalText } from "@/design.system";
-import { TapList } from "@/components/setup/destination/tap.list/tap.list";
 import { MONITORING_OPTIONS } from "@/components/setup/destination/utils";
 
 const DestinationNodeContainer = styled.div`

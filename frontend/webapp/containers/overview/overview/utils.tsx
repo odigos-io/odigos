@@ -10,7 +10,6 @@ export function getNodes(
   nodeData: DataFlowNode[],
   type: string,
   listItemHeight: number,
-  topBuffer: number,
   xPosition: number,
   addCenterNode: boolean = false
 ) {
@@ -36,7 +35,7 @@ export function getNodes(
         position: { x: 400, y },
       });
     }
-    topPosition += topBuffer;
+    topPosition += listItemHeight;
   });
   return nodes;
 }

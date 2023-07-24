@@ -27,12 +27,12 @@ export function OverviewContainer() {
   );
 
   const sourcesNodes = useMemo(
-    () => getNodes(containerHeight, sources, "namespace", 84, 84, 0, true),
+    () => getNodes(containerHeight, sources, "namespace", 84, 0, true),
     [sources, containerHeight]
   );
 
   const destinationsNodes = useMemo(
-    () => getNodes(containerHeight, destinations, "destination", 130, 130, 800),
+    () => getNodes(containerHeight, destinations, "destination", 136, 800),
     [destinations, containerHeight]
   );
 
