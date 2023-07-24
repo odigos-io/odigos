@@ -4,7 +4,7 @@ import { KeyvalDataFlow, KeyvalLoader } from "@/design.system";
 import { QUERIES } from "@/utils/constants";
 import { useQuery } from "react-query";
 import { getDestinations, getSources } from "@/services/setup";
-import { getEdges, mapSourcesNamespace, getNodes } from "./utils";
+import { getEdges, groupSourcesNamespace, getNodes } from "./utils";
 import { OverviewDataFlowWrapper } from "./overview.styled";
 
 export function OverviewContainer() {
@@ -26,7 +26,7 @@ export function OverviewContainer() {
   const sourcesNodes = useMemo(() => {
     const nodes = getNodes(
       containerHeight,
-      mapSourcesNamespace(sources),
+      groupSourcesNamespace(sources),
       "namespace",
       84,
       0,

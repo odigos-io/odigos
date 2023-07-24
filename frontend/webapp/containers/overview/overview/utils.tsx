@@ -1,45 +1,43 @@
-interface DataFlowNode {
-  id: string;
-  type: string;
-  data: any;
-  position: { x: number; y: number };
+interface SourceData {
+  namespace: string;
 }
 
 interface DataFlowEdge {
   id: string;
-  source: string;
-  target: string;
-  animated: boolean;
-  style: { stroke: string };
-  data: any;
 }
 
-export function mapSourcesNamespace(sources) {
-  if (!sources) return null;
-  const test = sources.reduce((result, item) => {
-    const propertyValue = item?.namespace;
-    if (!result[propertyValue]) {
-      result[propertyValue] = {
-        items: [],
-        totalAppsInstrumented: 0,
-      };
-    }
+interface DataFlowNode {
+  id: string;
+  type: string;
+  data: SourceData | null;
+  position: { x: number; y: number };
+}
 
-    result[propertyValue].items.push(item);
-    result[propertyValue].totalAppsInstrumented += 1;
+interface GroupedSource {
+  name: string;
+  totalAppsInstrumented: number;
+}
 
-    return result;
-  }, {});
-
-  console.log({ test });
-  const dataArray = Object.entries(test).map(
-    ([name, { totalAppsInstrumented }]: any) => ({
-      name,
-      totalAppsInstrumented,
-    })
+export function groupSourcesNamespace(
+  sources: SourceData[] | null
+): GroupedSource[] {
+  if (!sources) return [];
+  const groupedSources: { [key: string]: GroupedSource } = sources.reduce(
+    (result, item) => {
+      const propertyValue = item?.namespace;
+      if (!result[propertyValue]) {
+        result[propertyValue] = {
+          name: propertyValue,
+          totalAppsInstrumented: 0,
+        };
+      }
+      result[propertyValue].totalAppsInstrumented += 1;
+      return result;
+    },
+    {}
   );
 
-  return dataArray;
+  return Object.values(groupedSources);
 }
 
 export function getNodes(
@@ -49,9 +47,9 @@ export function getNodes(
   listItemHeight: number,
   xPosition: number,
   addCenterNode: boolean = false
-) {
+): DataFlowNode[] {
   if (!nodeData || isNaN(height)) return [];
-  let nodes: any = [];
+  let nodes: DataFlowNode[] = [];
   const totalListItemsHeight = nodeData?.length * listItemHeight;
 
   let topPosition = (height - totalListItemsHeight) / 2;

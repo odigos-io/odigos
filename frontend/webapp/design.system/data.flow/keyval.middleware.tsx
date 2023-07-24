@@ -8,7 +8,6 @@ export default memo(({ isConnectable }: any) => {
       <Handle
         type="target"
         position={Position.Left}
-        onConnect={(params) => console.log("handle onConnect", params)}
         style={{ visibility: "hidden" }}
       />
       <KeyvalMiddleware />
