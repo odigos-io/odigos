@@ -1,10 +1,11 @@
 "use client";
 import React, { useCallback, useMemo, useState } from "react";
 import { KeyvalFlow, KeyvalLoader } from "@/design.system";
-import { OVERVIEW, QUERIES } from "@/utils/constants";
+import { QUERIES } from "@/utils/constants";
 import { useQuery } from "react-query";
 import { getDestinations } from "@/services/setup";
-import { getDestinationNodes, getSourcesNodes } from "./utils";
+import { getEdges, getNodes } from "./utils";
+import { OverviewDataFlowWrapper } from "./overview.styled";
 
 export function OverviewContainer() {
   const [containerHeight, setContainerHeight] = useState(0);
@@ -25,27 +26,32 @@ export function OverviewContainer() {
     getDestinations
   );
 
-  const sourcesNodes = useMemo(() => {
-    const data = getSourcesNodes(containerHeight, sources);
-    return data;
-  }, [sources, containerHeight]);
+  const sourcesNodes = useMemo(
+    () => getNodes(containerHeight, sources, "namespace", 84, 84, 0, true),
+    [sources, containerHeight]
+  );
 
-  const destinationsNodes = useMemo(() => {
-    const data = getDestinationNodes(containerHeight, destinations);
-    return data;
-  }, [destinations, containerHeight]);
+  const destinationsNodes = useMemo(
+    () => getNodes(containerHeight, destinations, "destination", 130, 130, 800),
+    [destinations, containerHeight]
+  );
+
+  const edges = useMemo(() => {
+    if (!destinationsNodes || !sourcesNodes) return [];
+
+    return getEdges(destinationsNodes, sourcesNodes);
+  }, [destinationsNodes, sourcesNodes]);
 
   if (isLoading || !destinationsNodes || !sourcesNodes) {
     return <KeyvalLoader />;
   }
 
   return (
-    <div style={{ width: "100%", height: "100%" }} ref={containerRef}>
+    <OverviewDataFlowWrapper ref={containerRef}>
       <KeyvalFlow
         nodes={[...destinationsNodes, ...sourcesNodes]}
-        destinations={destinations}
-        sources={sources}
+        edges={edges}
       />
-    </div>
+    </OverviewDataFlowWrapper>
   );
 }

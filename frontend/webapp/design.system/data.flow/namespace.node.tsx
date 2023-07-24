@@ -20,6 +20,7 @@ const TextWrapper = styled.div`
 `;
 
 export default memo(({ data, isConnectable }: any) => {
+  console.log({ data });
   return (
     <NamespaceContainer>
       <Folder width={32} />

@@ -1,7 +1,8 @@
 import React, { memo } from "react";
 import { Handle, Position } from "reactflow";
 import { KeyvalMiddleware } from "@/assets/icons/overview";
-export default memo(({ data, isConnectable }: any) => {
+
+export default memo(({ isConnectable }: any) => {
   return (
     <div>
       <Handle
@@ -11,7 +12,6 @@ export default memo(({ data, isConnectable }: any) => {
         style={{ visibility: "hidden" }}
       />
       <KeyvalMiddleware />
-
       <Handle
         type="source"
         position={Position.Right}
