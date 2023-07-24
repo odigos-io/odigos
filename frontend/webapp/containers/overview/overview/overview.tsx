@@ -10,7 +10,7 @@ import { OverviewDataFlowWrapper } from "./overview.styled";
 export function OverviewContainer() {
   const [containerHeight, setContainerHeight] = useState(0);
 
-  const containerRef = useCallback((node) => {
+  const containerRef = useCallback((node: HTMLDivElement) => {
     if (node !== null) {
       setContainerHeight(node.getBoundingClientRect().height);
     }

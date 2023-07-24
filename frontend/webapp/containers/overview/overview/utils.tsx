@@ -5,6 +5,15 @@ interface DataFlowNode {
   position: { x: number; y: number };
 }
 
+interface DataFlowEdge {
+  id: string;
+  source: string;
+  target: string;
+  animated: boolean;
+  style: { stroke: string };
+  data: any;
+}
+
 export function getNodes(
   height: number,
   nodeData: DataFlowNode[],
@@ -40,7 +49,10 @@ export function getNodes(
   return nodes;
 }
 
-export function getEdges(destinations: any[], sources: any[]) {
+export function getEdges(
+  destinations: DataFlowEdge[],
+  sources: DataFlowEdge[]
+) {
   return [
     ...destinations.flatMap((node, index) => ({
       id: `edges-${node.id}`,
