@@ -150,7 +150,7 @@ function KeyvalDataFlow({ sources, destinations }) {
     setTimeout(() => {
       fitView();
       zoomTo(1);
-    }, 0);
+    }, 100);
   }, [fitView, namespaceNodes]);
 
   useEffect(() => {
@@ -164,7 +164,7 @@ function KeyvalDataFlow({ sources, destinations }) {
 
     let topPosition = (canvasHeight - totalListItemsHeight) / 2;
 
-    let sourcesNode: any = [
+    let nodes: any = [
       {
         id: "1",
         type: "custom",
@@ -172,36 +172,93 @@ function KeyvalDataFlow({ sources, destinations }) {
 
         position: { x: 385, y: 300 },
       },
+      ...getDestinationNodes(),
+      ...getSourcesNodes(),
     ];
 
-    destinations.forEach((data, index) => {
-      const y = topPosition;
-      sourcesNode.push({
-        id: `source-${index}`,
-        type: "destination",
-        data,
-        position: { x: 800, y },
-      });
-      topPosition += 100;
-    });
+    // destinations.forEach((data, index) => {
+    //   const y = topPosition;
+    //   nodes.push({
+    //     id: `source-${index}`,
+    //     type: "destination",
+    //     data,
+    //     position: { x: 800, y },
+    //   });
+    //   topPosition += 100;
+    // });
 
-    const edges = sourcesNode.map((node, index) => {
+    const destinations_edges = nodes.map((node, index) => {
+      console.log({ node });
       return {
-        id: `edges-${index}`,
+        id: `edges-${node.id}`,
         source: "1",
-        target: `source-${index}`,
+        target: `destination-${index}`,
         animated: true,
         style: { stroke: "#96f3ff8e" },
         data: null,
       };
     });
 
-    setInitialEdges(edges);
-    setNamespaceNodes(sourcesNode);
-    setTimeout(() => {
-      fitView();
-      zoomTo(1);
-    }, 0);
+    const sources_edges = nodes.map((node, index) => {
+      return {
+        id: `edges-${node.id}`,
+        source: `source-${index}`,
+        target: "1",
+        animated: true,
+        style: { stroke: "#96f3ff8e" },
+        data: null,
+      };
+    });
+
+    setInitialEdges([...sources_edges, ...destinations_edges]);
+    setNamespaceNodes(nodes);
+    // setTimeout(() => {
+    //   fitView();
+    //   zoomTo(1);
+    // }, 1000);
+  }
+
+  function getDestinationNodes() {
+    let nodes: any = [];
+    const canvasHeight = containerRef.current?.clientHeight;
+    const listItemHeight = 120; // Adjust this value to the desired height of each list item
+    const totalListItemsHeight = destinations.length * listItemHeight;
+
+    let topPosition = (canvasHeight - totalListItemsHeight) / 2;
+
+    destinations.forEach((data, index) => {
+      const y = topPosition;
+      nodes.push({
+        id: `destination-${index}`,
+        type: "destination",
+        data,
+        position: { x: 800, y },
+      });
+      topPosition += 100;
+    });
+    return nodes;
+  }
+
+  function getSourcesNodes() {
+    let nodes: any = [];
+    const canvasHeight = containerRef.current?.clientHeight;
+    const listItemHeight = 120; // Adjust this value to the desired height of each list item
+    const totalListItemsHeight = sources.length * listItemHeight;
+
+    let topPosition = (canvasHeight - totalListItemsHeight) / 2;
+
+    sources.forEach((data, index) => {
+      const y = topPosition;
+      nodes.push({
+        id: `source-${index}`,
+        type: "namespace",
+        data,
+        position: { x: 0, y },
+      });
+      topPosition += 100;
+    });
+    console.log({ nodes });
+    return nodes;
   }
 
   return (
