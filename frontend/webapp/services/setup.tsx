@@ -13,8 +13,16 @@ export async function setNamespaces(body: any) {
   return await post(API.NAMESPACES, body);
 }
 
-export async function getDestinations() {
+export async function getDestinationsTypes() {
   return await get(API.DESTINATION_TYPE);
+}
+
+export async function getDestinations() {
+  return await get(API.DESTINATIONS);
+}
+
+export async function getSources() {
+  return await get(API.SOURCES);
 }
 
 export async function getDestination(type: string) {

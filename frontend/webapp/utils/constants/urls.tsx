@@ -9,6 +9,7 @@ const API = {
   APPLICATIONS: `${BASE_URL}/applications`,
   DESTINATION_TYPE: `${BASE_URL}/destination-types`,
   DESTINATIONS: `${BASE_URL}/destinations`,
+  SOURCES: `${BASE_URL}/sources`,
 };
 
 const QUERIES = {
@@ -16,7 +17,9 @@ const QUERIES = {
   API_NAMESPACES: "apiNamespaces",
   API_APPLICATIONS: "apiApplications",
   API_DESTINATIONS: "apiDestinations",
+  API_SOURCES: "apiSources",
   API_DESTINATION_TYPE: "apiDestinationType",
+  API_DESTINATION_TYPES: "apiDestinationTypes",
 };
 
 export { API, QUERIES };

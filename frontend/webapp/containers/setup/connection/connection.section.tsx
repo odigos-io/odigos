@@ -6,9 +6,10 @@ import {
   LoaderWrapper,
 } from "./connection.section.styled";
 import { getDestination, setDestination } from "@/services/setup";
-import { QUERIES, SETUP } from "@/utils/constants";
+import { QUERIES, ROUTES, SETUP } from "@/utils/constants";
 import { KeyvalLoader } from "@/design.system";
 import { useNotification } from "@/hooks";
+import { useRouter } from "next/navigation";
 
 export interface DestinationBody {
   name: string;
@@ -23,6 +24,7 @@ export interface DestinationBody {
 
 export function ConnectionSection({ sectionData }) {
   const { show, Notification } = useNotification();
+  const router = useRouter();
   const { isLoading, data } = useQuery([QUERIES.API_DESTINATION_TYPE], () =>
     getDestination(sectionData.type)
   );
@@ -49,7 +51,7 @@ export function ConnectionSection({ sectionData }) {
     };
 
     mutate(body, {
-      onSuccess: (data) => console.log("onSuccess", { data }), //TODO: redirect to next step
+      onSuccess: () => router.push(ROUTES.OVERVIEW),
       onError: ({ response }) => {
         const message = response?.data?.message || SETUP.ERROR;
         show({
