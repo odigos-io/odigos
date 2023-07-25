@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { SourcesList, SourcesOptionMenu } from "@/components/setup";
-import { getApplication, getNamespaces } from "@/services/setup";
+import { getApplication, getNamespaces } from "@/services";
 import { LoaderWrapper } from "./sources.section.styled";
 import { useQuery } from "react-query";
 import { QUERIES } from "@/utils/constants";

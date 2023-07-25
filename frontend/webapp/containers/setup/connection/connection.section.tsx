@@ -5,7 +5,7 @@ import {
   CreateConnectionContainer,
   LoaderWrapper,
 } from "./connection.section.styled";
-import { getDestination, setDestination } from "@/services/setup";
+import { getDestination, setDestination } from "@/services";
 import { QUERIES, ROUTES, SETUP } from "@/utils/constants";
 import { KeyvalLoader } from "@/design.system";
 import { useNotification } from "@/hooks";

@@ -15,7 +15,7 @@ import { KeyvalText } from "@/design.system";
 import { CONFIG, SETUP } from "@/utils/constants";
 import { useSectionData, useNotification } from "@/hooks";
 import { STEPS, Step } from "./utils";
-import { setNamespaces } from "@/services/setup";
+import { setNamespaces } from "@/services";
 import { useSearchParams } from "next/navigation";
 import { useMutation } from "react-query";
 

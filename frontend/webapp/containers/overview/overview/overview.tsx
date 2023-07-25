@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { KeyvalDataFlow, KeyvalLoader } from "@/design.system";
 import { QUERIES } from "@/utils/constants";
 import { useQuery } from "react-query";
-import { getDestinations, getSources } from "@/services/setup";
+import { getDestinations, getSources } from "@/services";
 import { getEdges, groupSourcesNamespace, getNodes } from "./utils";
 import { OverviewDataFlowWrapper } from "./overview.styled";
 
