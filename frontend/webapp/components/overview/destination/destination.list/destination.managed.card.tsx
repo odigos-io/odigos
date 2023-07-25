@@ -61,6 +61,7 @@ export const ApplicationNameWrapper = styled.div`
 `;
 
 export default function DestinationManagedCard({
+  onClick,
   item: {
     destination_type: { image_url, display_name, supported_signals },
     name,
@@ -94,7 +95,7 @@ export default function DestinationManagedCard({
       </ApplicationNameWrapper>
       <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
       <Border />
-      <ManagedWrapper>
+      <ManagedWrapper onClick={onClick}>
         <KeyvalText>{"Managed"}</KeyvalText>
       </ManagedWrapper>
     </CardWrapper>

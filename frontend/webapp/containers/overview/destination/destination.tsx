@@ -1,26 +1,38 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { KeyvalButton, KeyvalLoader, KeyvalText } from "@/design.system";
-import { QUERIES, ROUTES } from "@/utils/constants";
+import { OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
 import { useQuery } from "react-query";
-import { getDestinations } from "@/services";
+import { getDestinations, getDestination } from "@/services";
 import DestinationsManagedList from "@/components/overview/destination/destination.list/destinations.managed.list";
 import { MenuWrapper } from "./destination.styled";
 import { Plus } from "@/assets/icons/overview";
 import { useRouter } from "next/navigation";
+import { ManageDestination } from "@/components/overview/destination/manage.destination/manage.destination";
+import { OverviewHeader } from "@/components/overview";
 export function DestinationContainer() {
+  const [selectedDestination, setSelectedDestination] = useState<any>(false);
+
   const router = useRouter();
+
   const { isLoading, data } = useQuery(
     [QUERIES.API_DESTINATIONS],
     getDestinations
   );
 
+  const { data: destination } = useQuery(
+    [QUERIES.API_DESTINATION_TYPE],
+    () => getDestination(selectedDestination?.type),
+    {
+      enabled: !!selectedDestination,
+    }
+  );
+
   useEffect(() => {
-    console.log({ data });
-  }, [data]);
+    console.log({ selectedDestination });
+  }, [selectedDestination]);
 
   function handleAddNewDestinationClick() {
-    console.log("Add new destination");
     router.push(`${ROUTES.SETUP}?${"state=destinations"}`);
   }
 
@@ -36,19 +48,24 @@ export function DestinationContainer() {
         overflowY: "scroll",
       }}
     >
-      <MenuWrapper>
-        <KeyvalText>{`${data.length} Applications`}</KeyvalText>
-        <KeyvalButton
-          onClick={handleAddNewDestinationClick}
-          style={{ gap: 10, width: 224, height: 40 }}
-        >
-          <Plus />
-          <KeyvalText size={16} weight={700} color="#0A1824">
-            {"Add New Destination"}
-          </KeyvalText>
-        </KeyvalButton>
-      </MenuWrapper>
-      <DestinationsManagedList data={data} />
+      {destination && selectedDestination ? (
+        <ManageDestination
+          onBackClick={() => setSelectedDestination(false)}
+          data={destination}
+          supportedSignals={
+            selectedDestination?.destination_type?.supported_signals
+          }
+        />
+      ) : (
+        <>
+          <OverviewHeader title={OVERVIEW.MENU.DESTINATIONS} />
+          <DestinationsManagedList
+            data={data}
+            onItemClick={setSelectedDestination}
+            onMenuButtonClick={handleAddNewDestinationClick}
+          />
+        </>
+      )}
     </div>
   );
 }
