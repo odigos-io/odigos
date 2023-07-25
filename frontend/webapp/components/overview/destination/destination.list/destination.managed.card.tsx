@@ -20,37 +20,32 @@ type DestinationCardContentProps = {
 const CardWrapper = styled.div`
   display: flex;
   width: 366px;
-  height: 302px;
-  padding: 10px 0px 0px 0px;
+  padding-top: 32px;
+  padding-bottom: 24px;
   flex-direction: column;
   align-items: center;
   border-radius: 24px;
   border: 1px solid var(--dark-mode-dark-3, #203548);
   background: var(--dark-mode-dark-1, #07111a);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
 `;
 
 const Border = styled.div`
   width: 368px;
   height: 1px;
+  margin: 24px 0;
   background: var(--dark-mode-dark-3, #203548);
 `;
 
 const ManagedWrapper = styled.div`
-  margin-top: 24px;
   display: flex;
   padding: 8px 12px;
   align-items: flex-start;
   border-radius: 10px;
   border: 1px solid var(--dark-mode-odigos-torquiz, #96f2ff);
   cursor: pointer;
-`;
-
-export const DestinationManagedCardWrapper = styled.div`
-  padding: 24px;
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  gap: 14px;
 `;
 
 export const ApplicationNameWrapper = styled.div`
@@ -60,7 +55,9 @@ export const ApplicationNameWrapper = styled.div`
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
+  margin-top: 12px;
+  margin-bottom: 20px;
 `;
 
 export default function DestinationManagedCard({
@@ -84,25 +81,18 @@ export default function DestinationManagedCard({
   }, [JSON.stringify(supported_signals)]);
   return (
     <CardWrapper>
-      <DestinationManagedCardWrapper>
-        <KeyvalImage
-          src={image_url}
-          width={56}
-          height={56}
-          style={LOGO_STYLE}
-        />
-        <ApplicationNameWrapper>
-          <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
-            {display_name}
+      <KeyvalImage src={image_url} width={56} height={56} style={LOGO_STYLE} />
+      <ApplicationNameWrapper>
+        <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
+          {display_name}
+        </KeyvalText>
+        {name && (
+          <KeyvalText size={20} style={TEXT_STYLE}>
+            {name}
           </KeyvalText>
-          {name && (
-            <KeyvalText size={20} style={TEXT_STYLE}>
-              {name}
-            </KeyvalText>
-          )}
-        </ApplicationNameWrapper>
-        <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
-      </DestinationManagedCardWrapper>
+        )}
+      </ApplicationNameWrapper>
+      <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
       <Border />
       <ManagedWrapper>
         <KeyvalText>{"Managed"}</KeyvalText>
