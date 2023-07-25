@@ -16,7 +16,7 @@ import { CONFIG, SETUP } from "@/utils/constants";
 import { useSectionData, useNotification } from "@/hooks";
 import { STEPS, Step } from "./utils";
 import { setNamespaces } from "@/services";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "react-query";
 
 const sectionComponents = {
@@ -30,7 +30,10 @@ export function SetupSection() {
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
   const { mutate } = useMutation((body) => setNamespaces(body));
   const { show, Notification } = useNotification();
+  const router = useRouter();
+
   const searchParams = useSearchParams();
+  const search = searchParams.get("state");
   const previousSourceState = useRef<any>(null);
 
   useEffect(() => {
@@ -38,8 +41,7 @@ export function SetupSection() {
   }, [searchParams]);
 
   function getStepFromSearch() {
-    const search = searchParams.get("state");
-    if (search === CONFIG.APPS_SELECTED) {
+    if (search === CONFIG.APPS_SELECTED || "destinations") {
       handleChangeStep(1);
     }
   }
@@ -93,6 +95,13 @@ export function SetupSection() {
   }
 
   function onBackClick() {
+    if (
+      search === "destinations" &&
+      currentStep.id === SETUP.STEPS.ID.CHOOSE_DESTINATION
+    ) {
+      router.push("/overview/destinations");
+      return;
+    }
     handleChangeStep(-1);
     setSectionData(previousSourceState.current || {});
   }
