@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import { QUERIES, SETUP } from "@/utils/constants";
-import { getDestinations } from "@/services/setup";
 import { MONITORING_OPTIONS } from "@/components/setup/destination/utils";
 import { DestinationList, DestinationOptionMenu } from "@/components/setup";
 import Empty from "@/assets/images/empty-list.svg";
@@ -18,6 +17,7 @@ import {
 } from "./utils";
 import { KeyvalLoader } from "@/design.system";
 import { useNotification } from "@/hooks";
+import { getDestinationsTypes } from "@/services";
 
 type DestinationSectionProps = {
   sectionData: any;
@@ -35,8 +35,8 @@ export function DestinationSection({
     useState<any>(MONITORING_OPTIONS);
 
   const { isLoading, data, isError, error } = useQuery(
-    [QUERIES.API_DESTINATIONS],
-    getDestinations
+    [QUERIES.API_DESTINATION_TYPES],
+    getDestinationsTypes
   );
 
   useEffect(() => {
