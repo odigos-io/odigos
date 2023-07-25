@@ -7,6 +7,11 @@ import { getDestinations, getSources } from "@/services/setup";
 import { getEdges, groupSourcesNamespace, getNodes } from "./utils";
 import { OverviewDataFlowWrapper } from "./overview.styled";
 
+const NAMESPACE_NODE_HEIGHT = 84;
+const NAMESPACE_NODE_POSITION = 0;
+const DESTINATION_NODE_HEIGHT = 136;
+const DESTINATION_NODE_POSITION = 800;
+
 export function OverviewContainer() {
   const [containerHeight, setContainerHeight] = useState(0);
 
@@ -16,7 +21,7 @@ export function OverviewContainer() {
     }
   }, []);
 
-  const { isLoading, data: destinations } = useQuery(
+  const { data: destinations } = useQuery(
     [QUERIES.API_DESTINATIONS],
     getDestinations
   );
@@ -28,8 +33,8 @@ export function OverviewContainer() {
       containerHeight,
       groupSourcesNamespace(sources),
       "namespace",
-      84,
-      0,
+      NAMESPACE_NODE_HEIGHT,
+      NAMESPACE_NODE_POSITION,
       true
     );
 
@@ -37,7 +42,14 @@ export function OverviewContainer() {
   }, [sources, containerHeight]);
 
   const destinationsNodes = useMemo(
-    () => getNodes(containerHeight, destinations, "destination", 136, 800),
+    () =>
+      getNodes(
+        containerHeight,
+        destinations,
+        "destination",
+        DESTINATION_NODE_HEIGHT,
+        DESTINATION_NODE_POSITION
+      ),
     [destinations, containerHeight]
   );
 
@@ -47,7 +59,7 @@ export function OverviewContainer() {
     return getEdges(destinationsNodes, sourcesNodes);
   }, [destinationsNodes, sourcesNodes]);
 
-  if (isLoading || !destinationsNodes || !sourcesNodes) {
+  if (!destinationsNodes || !sourcesNodes) {
     return <KeyvalLoader />;
   }
 

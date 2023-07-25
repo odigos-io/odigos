@@ -49,8 +49,8 @@ export function getNodes(
   addCenterNode: boolean = false
 ): DataFlowNode[] {
   if (!nodeData || isNaN(height)) return [];
-  let nodes: DataFlowNode[] = [];
-  const totalListItemsHeight = nodeData?.length * listItemHeight;
+  const nodes: DataFlowNode[] = [];
+  const totalListItemsHeight = nodeData.length * listItemHeight;
 
   let topPosition = (height - totalListItemsHeight) / 2;
   const centerIndex = Math.floor(nodeData.length / 2);
@@ -64,7 +64,7 @@ export function getNodes(
     });
     if (index === centerIndex && addCenterNode) {
       nodes.push({
-        id: "1",
+        id: "centerNode",
         type: "custom",
         data: null,
         position: { x: 400, y },
@@ -82,7 +82,7 @@ export function getEdges(
   return [
     ...destinations.flatMap((node, index) => ({
       id: `edges-${node.id}`,
-      source: "1",
+      source: "centerNode",
       target: `destination-${index}`,
       animated: true,
       style: { stroke: "#96f3ff8e" },
@@ -91,7 +91,7 @@ export function getEdges(
     ...sources.flatMap((node, index) => ({
       id: `edges-${node.id}`,
       source: `namespace-${index}`,
-      target: "1",
+      target: "centerNode",
       animated: true,
       style: { stroke: "#96f3ff8e" },
       data: null,

@@ -2,7 +2,7 @@ import { KeyvalText } from "@/design.system";
 import React from "react";
 import styled from "styled-components";
 
-interface OverviewHeaderProps {
+export interface OverviewHeaderProps {
   title?: string;
 }
 
