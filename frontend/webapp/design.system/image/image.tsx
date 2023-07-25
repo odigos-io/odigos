@@ -1,5 +1,5 @@
+import Image from "next/image";
 import React from "react";
-import { styled } from "styled-components";
 
 interface KeyvalImageProps {
   src: string;
@@ -9,9 +9,9 @@ interface KeyvalImageProps {
   style?: React.CSSProperties;
 }
 
-const StyledImage = styled.img`
-  border-radius: 10px;
-`;
+const IMAGE_STYLE: React.CSSProperties = {
+  borderRadius: 10,
+};
 
 export function KeyvalImage({
   src,
@@ -21,12 +21,12 @@ export function KeyvalImage({
   style = {},
 }: KeyvalImageProps) {
   return (
-    <StyledImage
+    <Image
       src={src}
-      alt={alt}
+      alt={alt || ""}
       width={width}
       height={height}
-      style={{ ...style }}
+      style={{ ...IMAGE_STYLE, ...style }}
     />
   );
 }

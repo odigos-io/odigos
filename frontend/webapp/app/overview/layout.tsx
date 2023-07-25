@@ -6,6 +6,7 @@ const LAYOUT_STYLE = {
   width: "100%",
   height: "100%",
   display: "flex",
+  backgroundColor: "#132330",
 };
 
 const CHILDREN_STYLE = {

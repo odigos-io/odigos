@@ -6,8 +6,6 @@ interface ButtonProps {
 }
 
 export const ButtonContainer = styled.div<ButtonProps>`
-  width: 100%;
-  height: 100%;
   :hover {
     background: ${({ theme, disabled }) =>
       disabled ? theme.colors.blue_grey : theme.colors.torquiz_light};
