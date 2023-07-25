@@ -32,6 +32,13 @@ interface CreateConnectionFormProps {
       supported: boolean;
     };
   };
+  dynamicFieldsValues?: {
+    [key: string]: any;
+  };
+  destinationNameValue?: string | null;
+  signalsValues?: {
+    [key: string]: boolean;
+  };
 }
 
 const MONITORS = [
@@ -44,10 +51,15 @@ export function CreateConnectionForm({
   fields,
   onSubmit,
   supportedSignals,
+  dynamicFieldsValues,
+  destinationNameValue,
+  signalsValues,
 }: CreateConnectionFormProps) {
-  const [destinationName, setDestinationName] = useState<string>("");
+  const [destinationName, setDestinationName] = useState<string>(
+    destinationNameValue || ""
+  );
   const [selectedMonitors, setSelectedMonitors] = useState(MONITORS);
-  const [dynamicFields, setDynamicFields] = useState({});
+  const [dynamicFields, setDynamicFields] = useState(dynamicFieldsValues || {});
   const [isCreateButtonDisabled, setIsCreateButtonDisabled] = useState(true);
 
   useEffect(() => {
@@ -59,8 +71,17 @@ export function CreateConnectionForm({
   }, [supportedSignals]);
 
   function filterSupportedMonitors() {
+    let data: any = MONITORS;
+    if (signalsValues) {
+      data = MONITORS.map((monitor) => {
+        return {
+          ...monitor,
+          checked: signalsValues[monitor.id],
+        };
+      });
+    }
     setSelectedMonitors(
-      MONITORS.filter(({ id }) => supportedSignals[id]?.supported)
+      data.filter(({ id }) => supportedSignals[id]?.supported)
     );
   }
 

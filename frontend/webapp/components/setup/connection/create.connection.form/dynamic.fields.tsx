@@ -32,6 +32,11 @@ export function renderFields(
             id: value,
           })
         );
+
+        const dropDownValue = dynamicFields[name]
+          ? { id: dynamicFields[name], label: dynamicFields[name] }
+          : null;
+
         return (
           <FieldWrapper key={name}>
             <KeyvalText size={14} weight={600} style={{ marginBottom: 8 }}>
@@ -41,6 +46,7 @@ export function renderFields(
               width={354}
               data={dropdownData}
               onChange={({ label }) => onChange(name, label)}
+              value={dropDownValue}
             />
           </FieldWrapper>
         );
