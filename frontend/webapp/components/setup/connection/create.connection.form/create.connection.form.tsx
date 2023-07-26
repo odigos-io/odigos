@@ -36,7 +36,7 @@ interface CreateConnectionFormProps {
     [key: string]: any;
   };
   destinationNameValue?: string | null;
-  signalsValues?: {
+  checkboxValues?: {
     [key: string]: boolean;
   };
 }
@@ -53,7 +53,7 @@ export function CreateConnectionForm({
   supportedSignals,
   dynamicFieldsValues,
   destinationNameValue,
-  signalsValues,
+  checkboxValues,
 }: CreateConnectionFormProps) {
   const [destinationName, setDestinationName] = useState<string>(
     destinationNameValue || ""
@@ -72,11 +72,11 @@ export function CreateConnectionForm({
 
   function filterSupportedMonitors() {
     let data: any = MONITORS;
-    if (signalsValues) {
+    if (checkboxValues) {
       data = MONITORS.map((monitor) => {
         return {
           ...monitor,
-          checked: signalsValues[monitor.id],
+          checked: checkboxValues[monitor.id],
         };
       });
     }

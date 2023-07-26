@@ -12,12 +12,15 @@ import { SourcesSection } from "../sources/sources.section";
 import RightArrow from "assets/icons/white-arrow-right.svg";
 import Steps from "@/design.system/steps/steps";
 import { KeyvalText } from "@/design.system";
-import { CONFIG, SETUP } from "@/utils/constants";
+import { CONFIG, NOTIFICATION, ROUTES, SETUP } from "@/utils/constants";
 import { useSectionData, useNotification } from "@/hooks";
 import { STEPS, Step } from "./utils";
 import { setNamespaces } from "@/services";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "react-query";
+
+const DESTINATION_STATE = "destinations";
+const STATE = "state";
 
 const sectionComponents = {
   [SETUP.STEPS.ID.CHOOSE_SOURCE]: SourcesSection,
@@ -33,7 +36,7 @@ export function SetupSection() {
   const router = useRouter();
 
   const searchParams = useSearchParams();
-  const search = searchParams.get("state");
+  const search = searchParams.get(STATE);
   const previousSourceState = useRef<any>(null);
 
   useEffect(() => {
@@ -41,7 +44,7 @@ export function SetupSection() {
   }, [searchParams]);
 
   function getStepFromSearch() {
-    if (search === CONFIG.APPS_SELECTED || "destinations") {
+    if (search === CONFIG.APPS_SELECTED || search === DESTINATION_STATE) {
       handleChangeStep(1);
     }
   }
@@ -79,7 +82,7 @@ export function SetupSection() {
         onError: ({ response }) => {
           const message = response?.data?.message || SETUP.ERROR;
           show({
-            type: "error",
+            type: NOTIFICATION.ERROR,
             message,
           });
         },
@@ -96,10 +99,10 @@ export function SetupSection() {
 
   function onBackClick() {
     if (
-      search === "destinations" &&
+      search === DESTINATION_STATE &&
       currentStep.id === SETUP.STEPS.ID.CHOOSE_DESTINATION
     ) {
-      router.push("/overview/destinations");
+      router.push(ROUTES.DESTINATIONS);
       return;
     }
     handleChangeStep(-1);

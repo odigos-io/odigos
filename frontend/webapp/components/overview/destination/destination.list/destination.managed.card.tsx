@@ -52,6 +52,7 @@ export const ApplicationNameWrapper = styled.div`
   display: inline-block;
   text-overflow: ellipsis;
   max-width: 224px;
+  height: 56px;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -87,11 +88,9 @@ export default function DestinationManagedCard({
         <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
           {display_name}
         </KeyvalText>
-        {name && (
-          <KeyvalText size={20} style={TEXT_STYLE}>
-            {name}
-          </KeyvalText>
-        )}
+        <KeyvalText size={20} style={TEXT_STYLE}>
+          {name}
+        </KeyvalText>
       </ApplicationNameWrapper>
       <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
       <Border />

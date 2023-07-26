@@ -59,7 +59,7 @@ export function DestinationContainer() {
     }
 
     function onError({ response }: any) {
-      const message = response?.data?.message || "";
+      const message = response?.data?.message;
       show({
         type: NOTIFICATION.ERROR,
         message,
