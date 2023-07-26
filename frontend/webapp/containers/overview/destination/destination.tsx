@@ -2,12 +2,13 @@
 import React, { useState } from "react";
 import { KeyvalLoader } from "@/design.system";
 import { OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
-import { useQuery } from "react-query";
+import { useMutation, useQuery } from "react-query";
 import { getDestinations, getDestination } from "@/services";
 import DestinationsManagedList from "@/components/overview/destination/destination.list/destinations.managed.list";
 import { useRouter } from "next/navigation";
 import { ManageDestination } from "@/components/overview/destination/manage.destination/manage.destination";
 import { OverviewHeader } from "@/components/overview";
+import { updateDestination } from "@/services/destinations";
 
 export function DestinationContainer() {
   const [selectedDestination, setSelectedDestination] = useState<any>(false);
@@ -26,12 +27,28 @@ export function DestinationContainer() {
     }
   );
 
+  const { mutate } = useMutation((body) => updateDestination(body));
+
   function handleAddNewDestinationClick() {
     router.push(`${ROUTES.SETUP}?${"state=destinations"}`);
   }
 
   function onBackClick() {
     setSelectedDestination(false);
+  }
+
+  function onSubmit(data) {
+    const newDestinations = {
+      ...data,
+      type: selectedDestination.type,
+    };
+
+    mutate(newDestinations, {
+      onSuccess: () => console.log("onSuccess"),
+      onError: () => console.log("onError"),
+    });
+
+    console.log("newDestinations", newDestinations);
   }
 
   if (isLoading || loading) {
@@ -51,6 +68,7 @@ export function DestinationContainer() {
           onBackClick={onBackClick}
           destinationType={destinationType}
           selectedDestination={selectedDestination}
+          onSubmit={onSubmit}
         />
       ) : (
         <>

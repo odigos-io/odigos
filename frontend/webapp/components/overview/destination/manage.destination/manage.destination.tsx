@@ -23,6 +23,7 @@ export function ManageDestination({
   destinationType: { fields },
   selectedDestination,
   onBackClick,
+  onSubmit,
 }) {
   return (
     <ManageDestinationWrapper>
@@ -39,7 +40,7 @@ export function ManageDestination({
         supportedSignals={
           selectedDestination?.destination_type?.supported_signals
         }
-        onSubmit={(data) => console.log({ data })}
+        onSubmit={(data) => onSubmit(data)}
       />
     </ManageDestinationWrapper>
   );

@@ -1,5 +1,5 @@
 import { API } from "@/utils/constants";
-import { get, post } from "./api";
+import { get, post, put } from "./api";
 
 export async function getDestinationsTypes() {
   return await get(API.DESTINATION_TYPE);
@@ -15,4 +15,8 @@ export async function getDestination(type: string) {
 
 export async function setDestination(body: any) {
   return await post(API.DESTINATIONS, body);
+}
+
+export async function updateDestination(body: any) {
+  return await put(API.DESTINATIONS, body);
 }
