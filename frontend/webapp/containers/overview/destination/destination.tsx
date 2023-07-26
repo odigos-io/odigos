@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { KeyvalLoader } from "@/design.system";
-import { NOTIFICATION, OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
+import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
 import { useMutation, useQuery } from "react-query";
 import { useRouter } from "next/navigation";
 import { getDestinations, getDestination, updateDestination } from "@/services";
@@ -12,10 +12,13 @@ import {
 } from "@/components/overview";
 import { DestinationContainerWrapper } from "./destination.styled";
 import { useNotification } from "@/hooks";
+import { NewDestinationFlow } from "./new.destination.flow";
 
 export function DestinationContainer() {
   const [selectedDestination, setSelectedDestination] = useState<any>(null);
-  const router = useRouter();
+  const [displayNewDestination, setDisplayNewDestination] =
+    useState<boolean>(false);
+
   const { show, Notification } = useNotification();
   const {
     isLoading: destinationLoading,
@@ -36,7 +39,7 @@ export function DestinationContainer() {
   );
 
   function handleAddNewDestinationClick() {
-    router.push(ROUTES.NEW_DESTINATION);
+    setDisplayNewDestination(true);
   }
 
   function onBackClick() {
@@ -72,8 +75,28 @@ export function DestinationContainer() {
     });
   }
 
+  function getSelectionData() {
+    const newDestinations = {
+      ...selectedDestination,
+      ...selectedDestination?.destination_type,
+    };
+
+    return newDestinations;
+  }
+
   if (destinationLoading || destinationTypeLoading) {
     return <KeyvalLoader />;
+  }
+
+  if (displayNewDestination) {
+    return (
+      <NewDestinationFlow
+        onBackClick={() => {
+          refetch();
+          setDisplayNewDestination(false);
+        }}
+      />
+    );
   }
 
   return (
@@ -82,7 +105,7 @@ export function DestinationContainer() {
         <ManageDestination
           onBackClick={onBackClick}
           destinationType={destinationType}
-          selectedDestination={selectedDestination}
+          selectedDestination={getSelectionData()}
           onSubmit={onSubmit}
         />
       ) : (

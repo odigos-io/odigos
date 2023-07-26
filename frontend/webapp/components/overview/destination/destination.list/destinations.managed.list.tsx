@@ -22,7 +22,7 @@ export function DestinationsManagedList({
     return data.map((destination: any) => (
       <DestinationManagedCard
         onClick={() => onItemClick(destination)}
-        key={destination?.name}
+        key={destination?.id}
         item={destination}
       />
     ));
@@ -31,7 +31,7 @@ export function DestinationsManagedList({
   return (
     <>
       <MenuWrapper>
-        <KeyvalText>{`${data.length} ${SETUP.APPLICATIONS}`}</KeyvalText>
+        <KeyvalText>{`${data.length} ${OVERVIEW.MENU.DESTINATIONS}`}</KeyvalText>
         <KeyvalButton
           onClick={onMenuButtonClick}
           style={{ gap: 10, width: 224, height: 40 }}

@@ -28,7 +28,7 @@ const BackButtonWrapper = styled.div`
 `;
 
 export function ManageDestination({
-  destinationType: { fields },
+  destinationType,
   selectedDestination,
   onBackClick,
   onSubmit,
@@ -41,13 +41,11 @@ export function ManageDestination({
       </BackButtonWrapper>
       <ManageDestinationHeader data={selectedDestination} />
       <CreateConnectionForm
-        fields={fields}
+        fields={destinationType?.fields}
         destinationNameValue={selectedDestination?.name}
         dynamicFieldsValues={selectedDestination?.fields}
         checkboxValues={selectedDestination?.signals}
-        supportedSignals={
-          selectedDestination?.destination_type?.supported_signals
-        }
+        supportedSignals={selectedDestination?.supported_signals}
         onSubmit={(data) => onSubmit(data)}
       />
     </ManageDestinationWrapper>
