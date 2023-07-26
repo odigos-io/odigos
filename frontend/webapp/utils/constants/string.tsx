@@ -61,4 +61,10 @@ export const OVERVIEW = {
     DESTINATIONS: "Destinations",
   },
   ADD_NEW_DESTINATION: "Add New Destination",
+  DESTINATION_UPDATE_SUCCESS: "Destination updated successfully",
+};
+
+export const NOTIFICATION = {
+  ERROR: "error",
+  SUCCESS: "success",
 };

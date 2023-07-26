@@ -17,6 +17,6 @@ export async function setDestination(body: any) {
   return await post(API.DESTINATIONS, body);
 }
 
-export async function updateDestination(body: any) {
-  return await put(API.DESTINATIONS, body);
+export async function updateDestination(body: any, id: string) {
+  return await put(`${API.DESTINATIONS}/${id}`, body);
 }

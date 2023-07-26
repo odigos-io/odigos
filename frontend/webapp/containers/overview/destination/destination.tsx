@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { KeyvalLoader } from "@/design.system";
-import { OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
+import { NOTIFICATION, OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
 import { useMutation, useQuery } from "react-query";
 import { useRouter } from "next/navigation";
 import { getDestinations, getDestination, updateDestination } from "@/services";
@@ -11,15 +11,17 @@ import {
   DestinationsManagedList,
 } from "@/components/overview";
 import { DestinationContainerWrapper } from "./destination.styled";
+import { useNotification } from "@/hooks";
 
 export function DestinationContainer() {
   const [selectedDestination, setSelectedDestination] = useState<any>(null);
   const router = useRouter();
-
-  const { isLoading: destinationLoading, data: destinationList } = useQuery(
-    [QUERIES.API_DESTINATIONS],
-    getDestinations
-  );
+  const { show, Notification } = useNotification();
+  const {
+    isLoading: destinationLoading,
+    data: destinationList,
+    refetch,
+  } = useQuery([QUERIES.API_DESTINATIONS], getDestinations);
 
   const { isLoading: destinationTypeLoading, data: destinationType } = useQuery(
     [QUERIES.API_DESTINATION_TYPE, selectedDestination?.type],
@@ -29,7 +31,9 @@ export function DestinationContainer() {
     }
   );
 
-  const { mutate } = useMutation((body) => updateDestination(body));
+  const { mutate } = useMutation((body) =>
+    updateDestination(body, selectedDestination?.id)
+  );
 
   function handleAddNewDestinationClick() {
     router.push(ROUTES.NEW_DESTINATION);
@@ -45,12 +49,27 @@ export function DestinationContainer() {
       type: selectedDestination.type,
     };
 
-    mutate(newDestinations, {
-      onSuccess: () => console.log("onSuccess"),
-      onError: () => console.log("onError"),
-    });
+    function onSuccess() {
+      refetch();
+      setSelectedDestination(null);
+      show({
+        type: NOTIFICATION.SUCCESS,
+        message: OVERVIEW.DESTINATION_UPDATE_SUCCESS,
+      });
+    }
 
-    console.log("newDestinations", newDestinations);
+    function onError({ response }: any) {
+      const message = response?.data?.message || "";
+      show({
+        type: NOTIFICATION.ERROR,
+        message,
+      });
+    }
+
+    mutate(newDestinations, {
+      onSuccess,
+      onError,
+    });
   }
 
   if (destinationLoading || destinationTypeLoading) {
@@ -76,6 +95,7 @@ export function DestinationContainer() {
           />
         </>
       )}
+      <Notification />
     </DestinationContainerWrapper>
   );
 }

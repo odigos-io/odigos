@@ -6,11 +6,22 @@ import { OVERVIEW, SETUP } from "@/utils/constants";
 import theme from "@/styles/palette";
 import { MenuWrapper, ManagedListWrapper } from "./destination.list.styled";
 
+interface Destination {
+  name: string;
+  // Add other properties of the destination here
+}
+
+interface DestinationsManagedListProps {
+  data: Destination[];
+  onItemClick: (destination: Destination) => void;
+  onMenuButtonClick: () => void;
+}
+
 export function DestinationsManagedList({
   data,
   onItemClick,
   onMenuButtonClick,
-}: any) {
+}: DestinationsManagedListProps) {
   function renderDestinations() {
     return data.map((destination: any) => (
       <DestinationManagedCard
