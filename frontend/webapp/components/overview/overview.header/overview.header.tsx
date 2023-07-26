@@ -10,8 +10,7 @@ const OverviewHeaderContainer = styled.div`
   position: fixed;
   display: flex;
   width: 100%;
-  max-height: 88px;
-  height: 12%;
+  height: 88px;
   align-items: center;
   padding: 0 24px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.08);

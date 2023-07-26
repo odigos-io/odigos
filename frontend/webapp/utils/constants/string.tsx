@@ -62,6 +62,7 @@ export const OVERVIEW = {
   },
   ADD_NEW_DESTINATION: "Add New Destination",
   DESTINATION_UPDATE_SUCCESS: "Destination updated successfully",
+  MANAGED: "Managed",
 };
 
 export const NOTIFICATION = {

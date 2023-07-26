@@ -43,7 +43,7 @@ export function DestinationContainer() {
     setSelectedDestination(null);
   }
 
-  function onSubmit(updatedDestination: any) {
+  function onSubmit(updatedDestination) {
     const newDestinations = {
       ...updatedDestination,
       type: selectedDestination.type,
@@ -58,7 +58,7 @@ export function DestinationContainer() {
       });
     }
 
-    function onError({ response }: any) {
+    function onError({ response }) {
       const message = response?.data?.message;
       show({
         type: NOTIFICATION.ERROR,

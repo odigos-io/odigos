@@ -3,63 +3,25 @@ import { KeyvalImage, KeyvalText } from "@/design.system";
 import { styled } from "styled-components";
 import { MONITORING_OPTIONS } from "@/components/setup/destination/utils";
 import { TapList } from "@/components/setup/destination/tap.list/tap.list";
+import {
+  CardWrapper,
+  Border,
+  ManagedWrapper,
+  ApplicationNameWrapper,
+} from "./destination.list.styled";
+import theme from "@/styles/palette";
+import { OVERVIEW } from "@/utils/constants";
 
 const TEXT_STYLE: React.CSSProperties = {
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
   overflow: "hidden",
 };
-const LOGO_STYLE: React.CSSProperties = { padding: 4, backgroundColor: "#fff" };
-const TAP_STYLE: React.CSSProperties = { padding: "4px 8px", gap: 4 };
-
-type DestinationCardContentProps = {
-  // item: Destination;
-  onClick: () => void;
+const LOGO_STYLE: React.CSSProperties = {
+  padding: 4,
+  backgroundColor: theme.colors.white,
 };
-
-const CardWrapper = styled.div`
-  display: flex;
-  width: 366px;
-  padding-top: 32px;
-  padding-bottom: 24px;
-  flex-direction: column;
-  align-items: center;
-  border-radius: 24px;
-  border: 1px solid var(--dark-mode-dark-3, #203548);
-  background: var(--dark-mode-dark-1, #07111a);
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-`;
-
-const Border = styled.div`
-  width: 368px;
-  height: 1px;
-  margin: 24px 0;
-  background: var(--dark-mode-dark-3, #203548);
-`;
-
-const ManagedWrapper = styled.div`
-  display: flex;
-  padding: 8px 12px;
-  align-items: flex-start;
-  border-radius: 10px;
-  border: 1px solid var(--dark-mode-odigos-torquiz, #96f2ff);
-  cursor: pointer;
-`;
-
-export const ApplicationNameWrapper = styled.div`
-  display: inline-block;
-  text-overflow: ellipsis;
-  max-width: 224px;
-  height: 56px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
-  margin-bottom: 20px;
-`;
+const TAP_STYLE: React.CSSProperties = { padding: "4px 8px", gap: 4 };
 
 export default function DestinationManagedCard({
   onClick,
@@ -70,7 +32,7 @@ export default function DestinationManagedCard({
   },
 }) {
   const monitors = useMemo(() => {
-    return Object?.entries(supported_signals).reduce((acc, [key, value]) => {
+    return Object?.entries(supported_signals).reduce((acc, [key, _]) => {
       const monitor = MONITORING_OPTIONS.find(
         (option) => option.title.toLowerCase() === key
       );
@@ -81,6 +43,7 @@ export default function DestinationManagedCard({
       return acc;
     }, []);
   }, [JSON.stringify(supported_signals)]);
+
   return (
     <CardWrapper>
       <KeyvalImage src={image_url} width={56} height={56} style={LOGO_STYLE} />
@@ -95,7 +58,7 @@ export default function DestinationManagedCard({
       <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
       <Border />
       <ManagedWrapper onClick={onClick}>
-        <KeyvalText>{"Managed"}</KeyvalText>
+        <KeyvalText>{OVERVIEW.MANAGED}</KeyvalText>
       </ManagedWrapper>
     </CardWrapper>
   );

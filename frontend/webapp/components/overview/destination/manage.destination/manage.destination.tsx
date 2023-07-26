@@ -5,13 +5,7 @@ import { CreateConnectionForm } from "@/components/setup";
 import { KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
 import { ManageDestinationHeader } from "../manage.destination.header/manage.destination.header";
-
-interface DestinationType {
-  fields: any;
-  display_name: string;
-  image_url: string;
-  id: string;
-}
+import { DestinationType } from "@/types/destinations";
 
 interface ManageDestinationProps {
   destinationType: DestinationType;

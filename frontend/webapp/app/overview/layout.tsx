@@ -1,12 +1,13 @@
 "use client";
 import { Menu } from "@/components/side.menu";
+import theme from "@/styles/palette";
 import React from "react";
 
 const LAYOUT_STYLE = {
   width: "100%",
   height: "100%",
   display: "flex",
-  backgroundColor: "#132330",
+  backgroundColor: theme.colors.light_dark,
 };
 
 const CHILDREN_STYLE = {

@@ -15,14 +15,7 @@ import {
 import { renderFields } from "./dynamic.fields";
 import { SETUP } from "@/utils/constants";
 import { DestinationBody } from "@/containers/setup/connection/connection.section";
-
-export interface Field {
-  name: string;
-  component_type: string;
-  display_name: string;
-  component_properties: any;
-  video_url: string;
-}
+import { Field } from "@/types/destinations";
 
 interface CreateConnectionFormProps {
   fields: Field[];
@@ -71,15 +64,13 @@ export function CreateConnectionForm({
   }, [supportedSignals]);
 
   function filterSupportedMonitors() {
-    let data: any = MONITORS;
-    if (checkboxValues) {
-      data = MONITORS.map((monitor) => {
-        return {
+    const data: any = !checkboxValues
+      ? MONITORS
+      : MONITORS.map((monitor) => ({
           ...monitor,
           checked: checkboxValues[monitor.id],
-        };
-      });
-    }
+        }));
+
     setSelectedMonitors(
       data.filter(({ id }) => supportedSignals[id]?.supported)
     );

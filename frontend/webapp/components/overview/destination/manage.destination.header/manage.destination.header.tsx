@@ -1,6 +1,6 @@
-import { FloatBox, KeyvalImage, KeyvalText } from "@/design.system";
 import React from "react";
 import styled from "styled-components";
+import { KeyvalImage, KeyvalText } from "@/design.system";
 
 const ManageDestinationHeaderWrapper = styled.div`
   display: flex;
