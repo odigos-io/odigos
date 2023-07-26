@@ -2,7 +2,7 @@ import React from "react";
 import { styled } from "styled-components";
 import { Back } from "@/assets/icons/overview";
 import { CreateConnectionForm } from "@/components/setup";
-import { KeyvalText } from "@/design.system";
+import { DangerZone, KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
 import { ManageDestinationHeader } from "../manage.destination.header/manage.destination.header";
 import { DestinationType } from "@/types/destinations";

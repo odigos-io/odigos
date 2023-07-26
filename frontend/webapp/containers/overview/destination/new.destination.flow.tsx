@@ -58,13 +58,9 @@ export function NewDestinationFlow({ onBackClick }) {
 
   return (
     <>
-      <OverviewHeader
-        title={OVERVIEW.MENU.DESTINATIONS}
-        onClick={managed ? null : () => setManaged(true)}
-        isDisabled={!sectionData}
-      />
+      <OverviewHeader title={OVERVIEW.MENU.DESTINATIONS} />
       <NewDestinationContainer>
-        {managed ? (
+        {managed && sectionData ? (
           <ManageDestination
             destinationType={destinationType}
             selectedDestination={sectionData}
@@ -82,7 +78,10 @@ export function NewDestinationFlow({ onBackClick }) {
             </BackButtonWrapper>
             <DestinationSection
               sectionData={sectionData}
-              setSectionData={setSectionData}
+              setSectionData={(data) => {
+                setSectionData(data);
+                setManaged(true);
+              }}
             />
           </>
         )}

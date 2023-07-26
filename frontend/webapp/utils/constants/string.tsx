@@ -44,6 +44,7 @@ export const SETUP = {
   },
   DESTINATION_NAME: "Destination Name",
   CREATE_DESTINATION: "Create Destination",
+  UPDATE_DESTINATION: "Update Destination",
   QUICK_HELP: "Quick Help",
   ERROR: "Something went wrong",
 };
@@ -62,7 +63,7 @@ export const OVERVIEW = {
   },
   ADD_NEW_DESTINATION: "Add New Destination",
   DESTINATION_UPDATE_SUCCESS: "Destination updated successfully",
-  MANAGED: "Managed",
+  MANAGE: "Manage",
 };
 
 export const NOTIFICATION = {

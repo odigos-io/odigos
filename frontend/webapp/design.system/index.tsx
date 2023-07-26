@@ -19,3 +19,4 @@ export { KeyvalVideo } from "./video/video";
 export { KeyvalLoader } from "./loader/loader";
 export { KeyvalNotification } from "./notification/notification";
 export { KeyvalDataFlow } from "./data.flow";
+export { DangerZone } from "./danger.zone/danger.zone";

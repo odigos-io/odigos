@@ -11,7 +11,7 @@ const colors = {
   light_grey: "#CCD0D2",
   blue_grey: "#374A5B",
   white: "#fff",
-  error: "FD3F3F",
+  error: "#FD3F3F",
 };
 
 const text = {

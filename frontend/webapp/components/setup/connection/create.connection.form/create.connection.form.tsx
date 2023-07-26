@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
+  DangerZone,
   KeyvalButton,
   KeyvalCheckbox,
   KeyvalInput,
@@ -158,10 +159,22 @@ export function CreateConnectionForm({
       <CreateDestinationButtonWrapper>
         <KeyvalButton disabled={isCreateButtonDisabled} onClick={onCreateClick}>
           <KeyvalText color={"#203548"} size={14} weight={600}>
-            {SETUP.CREATE_DESTINATION}
+            {dynamicFieldsValues
+              ? SETUP.UPDATE_DESTINATION
+              : SETUP.CREATE_DESTINATION}
           </KeyvalText>
         </KeyvalButton>
       </CreateDestinationButtonWrapper>
+      {dynamicFieldsValues && (
+        <FieldWrapper>
+          <DangerZone
+            title="Delete this destination"
+            subTitle="This action cannot be undone. This will permanently delete the destination and all associated data."
+            btnText="Delete"
+            onClick={() => console.log("Delete")}
+          />
+        </FieldWrapper>
+      )}
     </div>
   );
 }

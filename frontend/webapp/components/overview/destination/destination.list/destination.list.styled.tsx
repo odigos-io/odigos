@@ -1,3 +1,4 @@
+import theme from "@/styles/palette";
 import { styled } from "styled-components";
 
 export const ManagedListWrapper = styled.div`
@@ -8,6 +9,9 @@ export const ManagedListWrapper = styled.div`
   overflow-y: scroll;
   padding: 0px 36px;
   padding-bottom: 50px;
+  :hover {
+    background: ${({ theme }) => theme.colors.light_dark};
+  }
 `;
 
 export const MenuWrapper = styled.div`
@@ -31,6 +35,7 @@ export const CardWrapper = styled.div`
   display: flex;
   align-items: center;
   flex-direction: column;
+  cursor: pointer;
 `;
 
 export const Border = styled.div`

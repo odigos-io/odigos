@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
 import { KeyvalImage, KeyvalText } from "@/design.system";
-import { styled } from "styled-components";
 import { MONITORING_OPTIONS } from "@/components/setup/destination/utils";
 import { TapList } from "@/components/setup/destination/tap.list/tap.list";
 import {
@@ -45,7 +44,7 @@ export default function DestinationManagedCard({
   }, [JSON.stringify(supported_signals)]);
 
   return (
-    <CardWrapper>
+    <CardWrapper onClick={onClick}>
       <KeyvalImage src={image_url} width={56} height={56} style={LOGO_STYLE} />
       <ApplicationNameWrapper>
         <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
@@ -56,10 +55,10 @@ export default function DestinationManagedCard({
         </KeyvalText>
       </ApplicationNameWrapper>
       <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
-      <Border />
+      {/* <Border />
       <ManagedWrapper onClick={onClick}>
-        <KeyvalText>{OVERVIEW.MANAGED}</KeyvalText>
-      </ManagedWrapper>
+        <KeyvalText>{OVERVIEW.MANAGE}</KeyvalText>
+      </ManagedWrapper> */}
     </CardWrapper>
   );
 }
