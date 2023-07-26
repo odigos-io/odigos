@@ -1,28 +1,12 @@
 import React from "react";
 import DestinationManagedCard from "./destination.managed.card";
-import { styled } from "styled-components";
 import { KeyvalText, KeyvalButton } from "@/design.system";
 import { Plus } from "@/assets/icons/overview";
+import { OVERVIEW, SETUP } from "@/utils/constants";
+import theme from "@/styles/palette";
+import { MenuWrapper, ManagedListWrapper } from "./destination.list.styled";
 
-export const ManagedListWrapper = styled.div`
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  overflow-y: scroll;
-  padding: 0px 36px;
-  padding-bottom: 50px;
-`;
-
-export const MenuWrapper = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 32px 36px;
-  margin-top: 88px;
-`;
-
-export default function DestinationsManagedList({
+export function DestinationsManagedList({
   data,
   onItemClick,
   onMenuButtonClick,
@@ -40,18 +24,18 @@ export default function DestinationsManagedList({
   return (
     <>
       <MenuWrapper>
-        <KeyvalText>{`${data.length} Applications`}</KeyvalText>
+        <KeyvalText>{`${data.length} ${SETUP.APPLICATIONS}`}</KeyvalText>
         <KeyvalButton
           onClick={onMenuButtonClick}
           style={{ gap: 10, width: 224, height: 40 }}
         >
           <Plus />
-          <KeyvalText size={16} weight={700} color="#0A1824">
-            {"Add New Destination"}
+          <KeyvalText size={16} weight={700} color={theme.text.dark_button}>
+            {OVERVIEW.ADD_NEW_DESTINATION}
           </KeyvalText>
         </KeyvalButton>
       </MenuWrapper>
-      <ManagedListWrapper>{renderDestinations()}</ManagedListWrapper>{" "}
+      <ManagedListWrapper>{renderDestinations()}</ManagedListWrapper>
     </>
   );
 }

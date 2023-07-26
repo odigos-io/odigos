@@ -60,4 +60,5 @@ export const OVERVIEW = {
     SOURCES: "Sources",
     DESTINATIONS: "Destinations",
   },
+  ADD_NEW_DESTINATION: "Add New Destination",
 };

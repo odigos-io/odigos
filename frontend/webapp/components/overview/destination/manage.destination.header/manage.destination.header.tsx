@@ -19,18 +19,17 @@ const ManageDestinationHeaderWrapper = styled.div`
 
 const TextWrapper = styled.div``;
 
+const IMAGE_STYLE: React.CSSProperties = {
+  backgroundColor: "#fff",
+  padding: 4,
+  marginRight: 16,
+  marginLeft: 16,
+};
+
 export function ManageDestinationHeader({ data: { destination_type, name } }) {
   return (
     <ManageDestinationHeaderWrapper>
-      <KeyvalImage
-        src={destination_type?.image_url}
-        style={{
-          backgroundColor: "#fff",
-          padding: 4,
-          marginRight: 16,
-          marginLeft: 16,
-        }}
-      />
+      <KeyvalImage src={destination_type?.image_url} style={IMAGE_STYLE} />
       <TextWrapper>
         <KeyvalText size={24} weight={700}>
           {destination_type.display_name}

@@ -20,6 +20,7 @@ const text = {
   white: "#fff",
   light_grey: "#CCD0D2",
   grey: "#8b92a5",
+  dark_button: "#0A1824",
 };
 
 const font_family = {

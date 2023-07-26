@@ -3,19 +3,20 @@ import React, { useState } from "react";
 import { KeyvalLoader } from "@/design.system";
 import { OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
 import { useMutation, useQuery } from "react-query";
-import { getDestinations, getDestination } from "@/services";
-import DestinationsManagedList from "@/components/overview/destination/destination.list/destinations.managed.list";
 import { useRouter } from "next/navigation";
-import { ManageDestination } from "@/components/overview/destination/manage.destination/manage.destination";
-import { OverviewHeader } from "@/components/overview";
-import { updateDestination } from "@/services/destinations";
+import { getDestinations, getDestination, updateDestination } from "@/services";
+import {
+  OverviewHeader,
+  ManageDestination,
+  DestinationsManagedList,
+} from "@/components/overview";
 import { DestinationContainerWrapper } from "./destination.styled";
 
 export function DestinationContainer() {
-  const [selectedDestination, setSelectedDestination] = useState<any>(false);
+  const [selectedDestination, setSelectedDestination] = useState<any>(null);
   const router = useRouter();
 
-  const { isLoading: destinationLoading, data } = useQuery(
+  const { isLoading: destinationLoading, data: destinationList } = useQuery(
     [QUERIES.API_DESTINATIONS],
     getDestinations
   );
@@ -35,12 +36,12 @@ export function DestinationContainer() {
   }
 
   function onBackClick() {
-    setSelectedDestination(false);
+    setSelectedDestination(null);
   }
 
-  function onSubmit(data) {
+  function onSubmit(updatedDestination: any) {
     const newDestinations = {
-      ...data,
+      ...updatedDestination,
       type: selectedDestination.type,
     };
 
@@ -69,7 +70,7 @@ export function DestinationContainer() {
         <>
           <OverviewHeader title={OVERVIEW.MENU.DESTINATIONS} />
           <DestinationsManagedList
-            data={data}
+            data={destinationList}
             onItemClick={setSelectedDestination}
             onMenuButtonClick={handleAddNewDestinationClick}
           />
