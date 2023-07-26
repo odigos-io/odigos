@@ -31,7 +31,7 @@ export function ManageDestination({
         <Back width={14} />
         <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
       </BackButtonWrapper>
-      <ManageDestinationHeader />
+      <ManageDestinationHeader data={selectedDestination} />
       <CreateConnectionForm
         fields={fields}
         destinationNameValue={selectedDestination?.name}

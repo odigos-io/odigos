@@ -16,8 +16,8 @@ const IMAGE_STYLE: React.CSSProperties = {
 export function KeyvalImage({
   src,
   alt,
-  width = 200,
-  height = 200,
+  width = 56,
+  height = 56,
   style = {},
 }: KeyvalImageProps) {
   return (

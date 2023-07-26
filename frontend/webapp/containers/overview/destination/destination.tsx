@@ -9,17 +9,18 @@ import { useRouter } from "next/navigation";
 import { ManageDestination } from "@/components/overview/destination/manage.destination/manage.destination";
 import { OverviewHeader } from "@/components/overview";
 import { updateDestination } from "@/services/destinations";
+import { DestinationContainerWrapper } from "./destination.styled";
 
 export function DestinationContainer() {
   const [selectedDestination, setSelectedDestination] = useState<any>(false);
   const router = useRouter();
 
-  const { isLoading, data } = useQuery(
+  const { isLoading: destinationLoading, data } = useQuery(
     [QUERIES.API_DESTINATIONS],
     getDestinations
   );
 
-  const { isLoading: loading, data: destinationType } = useQuery(
+  const { isLoading: destinationTypeLoading, data: destinationType } = useQuery(
     [QUERIES.API_DESTINATION_TYPE, selectedDestination?.type],
     () => getDestination(selectedDestination?.type),
     {
@@ -30,7 +31,7 @@ export function DestinationContainer() {
   const { mutate } = useMutation((body) => updateDestination(body));
 
   function handleAddNewDestinationClick() {
-    router.push(`${ROUTES.SETUP}?${"state=destinations"}`);
+    router.push(ROUTES.NEW_DESTINATION);
   }
 
   function onBackClick() {
@@ -51,18 +52,12 @@ export function DestinationContainer() {
     console.log("newDestinations", newDestinations);
   }
 
-  if (isLoading || loading) {
+  if (destinationLoading || destinationTypeLoading) {
     return <KeyvalLoader />;
   }
 
   return (
-    <div
-      style={{
-        height: "100%",
-        width: "100%",
-        overflowY: "scroll",
-      }}
-    >
+    <DestinationContainerWrapper>
       {destinationType && selectedDestination ? (
         <ManageDestination
           onBackClick={onBackClick}
@@ -80,6 +75,6 @@ export function DestinationContainer() {
           />
         </>
       )}
-    </div>
+    </DestinationContainerWrapper>
   );
 }

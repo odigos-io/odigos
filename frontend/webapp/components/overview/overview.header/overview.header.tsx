@@ -7,6 +7,7 @@ export interface OverviewHeaderProps {
 }
 
 const OverviewHeaderContainer = styled.div`
+  position: fixed;
   display: flex;
   width: 100%;
   max-height: 88px;

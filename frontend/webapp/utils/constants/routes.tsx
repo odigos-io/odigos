@@ -3,4 +3,5 @@ export const ROUTES = {
   OVERVIEW: "/overview",
   SOURCES: "/overview/sources",
   DESTINATIONS: "/overview/destinations",
+  NEW_DESTINATION: "/setup?state=destinations",
 };
