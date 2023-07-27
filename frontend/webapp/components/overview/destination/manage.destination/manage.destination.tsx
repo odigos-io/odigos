@@ -46,6 +46,7 @@ export function ManageDestination({
         dynamicFieldsValues={selectedDestination?.fields}
         checkboxValues={selectedDestination?.signals}
         supportedSignals={selectedDestination?.supported_signals}
+        image={selectedDestination?.image_url}
         onSubmit={(data) => onSubmit(data)}
       />
     </ManageDestinationWrapper>

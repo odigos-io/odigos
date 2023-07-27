@@ -32,9 +32,9 @@ export function NewDestinationFlow({ onBackClick }) {
   );
   const { mutate } = useMutation((body) => setDestination(body));
 
-  function onSubmit(updatedDestination) {
-    const newDestinations = {
-      ...updatedDestination,
+  function onSubmit(newDestination) {
+    const destination = {
+      ...newDestination,
       type: sectionData.type,
     };
 
@@ -50,7 +50,7 @@ export function NewDestinationFlow({ onBackClick }) {
       });
     }
 
-    mutate(newDestinations, {
+    mutate(destination, {
       onSuccess,
       onError,
     });

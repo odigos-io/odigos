@@ -3,7 +3,9 @@ import {
   DangerZone,
   KeyvalButton,
   KeyvalCheckbox,
+  KeyvalImage,
   KeyvalInput,
+  KeyvalModal,
   KeyvalText,
 } from "@/design.system";
 import {
@@ -17,9 +19,13 @@ import { renderFields } from "./dynamic.fields";
 import { SETUP } from "@/utils/constants";
 import { DestinationBody } from "@/containers/setup/connection/connection.section";
 import { Field } from "@/types/destinations";
-
+import { ModalPositionX, ModalPositionY } from "@/design.system/modal/types";
+import { ConnectionsIcons } from "../connections_icons/connections_icons";
+import theme from "@/styles/palette";
+import Connect from "assets/icons/connect.svg";
 interface CreateConnectionFormProps {
   fields: Field[];
+  image?: any;
   onSubmit: (formData: DestinationBody) => void;
   supportedSignals: {
     [key: string]: {
@@ -48,6 +54,7 @@ export function CreateConnectionForm({
   dynamicFieldsValues,
   destinationNameValue,
   checkboxValues,
+  image,
 }: CreateConnectionFormProps) {
   const [destinationName, setDestinationName] = useState<string>(
     destinationNameValue || ""
@@ -55,6 +62,7 @@ export function CreateConnectionForm({
   const [selectedMonitors, setSelectedMonitors] = useState(MONITORS);
   const [dynamicFields, setDynamicFields] = useState(dynamicFieldsValues || {});
   const [isCreateButtonDisabled, setIsCreateButtonDisabled] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     isFormValid();
@@ -127,6 +135,19 @@ export function CreateConnectionForm({
     onSubmit(body);
   }
 
+  const modal = {
+    title: `Delete destination`,
+    showHeader: true,
+    showOverlay: true,
+    positionX: ModalPositionX.center,
+    positionY: ModalPositionY.center,
+    padding: "20px",
+    footer: {
+      primaryBtnText: "I want to delete this destination",
+      primaryBtnAction: () => setShowModal(false),
+    },
+  };
+
   return (
     <div>
       <KeyvalText size={18} weight={600}>
@@ -166,14 +187,31 @@ export function CreateConnectionForm({
         </KeyvalButton>
       </CreateDestinationButtonWrapper>
       {dynamicFieldsValues && (
-        <FieldWrapper>
-          <DangerZone
-            title="Delete this destination"
-            subTitle="This action cannot be undone. This will permanently delete the destination and all associated data."
-            btnText="Delete"
-            onClick={() => console.log("Delete")}
-          />
-        </FieldWrapper>
+        <>
+          <FieldWrapper>
+            <DangerZone
+              title="Delete this destination"
+              subTitle="This action cannot be undone. This will permanently delete the destination and all associated data."
+              btnText="Delete"
+              onClick={() => setShowModal(true)}
+            />
+          </FieldWrapper>
+          <KeyvalModal
+            show={showModal}
+            setShow={() => setShowModal(false)}
+            config={modal}
+          >
+            <br />
+            <ConnectionsIcons
+              icon={image}
+              imageStyle={{ border: "solid 1px #ededed" }}
+            />
+            <br />
+            <KeyvalText color={theme.text.primary} size={20} weight={600}>
+              {`Delete ${destinationName}`}
+            </KeyvalText>
+          </KeyvalModal>
+        </>
       )}
     </div>
   );

@@ -22,3 +22,11 @@ export async function put(url: string, body: any) {
     return data;
   }
 }
+
+export async function httpDelete(url: string) {
+  const { data, status } = await axios.delete(url);
+
+  if (status === 200) {
+    return data;
+  }
+}

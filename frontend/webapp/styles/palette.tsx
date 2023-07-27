@@ -15,7 +15,7 @@ const colors = {
 };
 
 const text = {
-  primary: "#FF0000",
+  primary: "#07111A",
   secondary: "#0EE6F3",
   white: "#fff",
   light_grey: "#CCD0D2",

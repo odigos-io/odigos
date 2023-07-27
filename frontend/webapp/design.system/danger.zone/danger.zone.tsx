@@ -36,18 +36,20 @@ const DangerButton = styled.button`
 
 export function DangerZone({ title, subTitle, btnText, onClick }) {
   return (
-    <DangerZoneWrapper>
-      <KeyvalText size={14} weight={600}>
-        {title}
-      </KeyvalText>
-      <KeyvalText size={12}>{subTitle}</KeyvalText>
-      <DangerButtonWrapper>
-        <DangerButton onClick={onClick}>
-          <KeyvalText weight={500} size={14} color={theme.colors.error}>
-            {btnText}
-          </KeyvalText>
-        </DangerButton>
-      </DangerButtonWrapper>
-    </DangerZoneWrapper>
+    <>
+      <DangerZoneWrapper>
+        <KeyvalText size={14} weight={600}>
+          {title}
+        </KeyvalText>
+        <KeyvalText size={12}>{subTitle}</KeyvalText>
+        <DangerButtonWrapper>
+          <DangerButton onClick={onClick}>
+            <KeyvalText weight={500} size={14} color={theme.colors.error}>
+              {btnText}
+            </KeyvalText>
+          </DangerButton>
+        </DangerButtonWrapper>
+      </DangerZoneWrapper>
+    </>
   );
 }
