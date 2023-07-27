@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MenuContainer, LogoWrapper, MenuItemsWrapper } from "./menu.styled";
 import { KeyvalText } from "@/design.system";
 import MenuItem from "../menu.item/menu.item";
@@ -22,6 +22,17 @@ export function Menu() {
     MENU_ITEMS[0]
   );
   const router = useRouter();
+
+  useEffect(onLoad, []);
+
+  function onLoad() {
+    const currentItem = MENU_ITEMS.find((item) => {
+      return item.navigate === window.location.pathname;
+    });
+    if (currentItem?.id !== currentMenuItem.id) {
+      handleMenuItemClick(currentItem);
+    }
+  }
 
   function handleMenuItemClick(item) {
     setCurrentMenuItem(item);
