@@ -6,7 +6,7 @@ import { useMutation, useQuery } from "react-query";
 import { getDestination, updateDestination } from "@/services";
 import { ManageDestination } from "@/components/overview";
 import { deleteDestination } from "@/services/destinations";
-import { useNotification } from "@/hooks";
+import { ManageDestinationWrapper } from "./destination.styled";
 
 export function UpdateDestinationFlow({
   selectedDestination,
@@ -36,10 +36,6 @@ export function UpdateDestinationFlow({
     deleteDestination(selectedDestination?.id)
   );
 
-  function onBackClick() {
-    setSelectedDestination(null);
-  }
-
   function onDelete() {
     handleDeleteDestination(selectedDestination.id, {
       onSuccess: () => onSuccess(OVERVIEW.DESTINATION_DELETED_SUCCESS),
@@ -50,7 +46,7 @@ export function UpdateDestinationFlow({
   function onSubmit(updatedDestination) {
     const newDestinations = {
       ...updatedDestination,
-      //   type: selectedDestination.type,
+      type: selectedDestination.type,
     };
 
     handleUpdateDestination(newDestinations, {
@@ -59,19 +55,17 @@ export function UpdateDestinationFlow({
     });
   }
 
-  if (destinationTypeLoading) {
-    return <KeyvalLoader />;
-  }
-
-  return (
-    <>
+  return destinationTypeLoading ? (
+    <KeyvalLoader />
+  ) : (
+    <ManageDestinationWrapper>
       <ManageDestination
-        onBackClick={onBackClick}
+        onBackClick={() => setSelectedDestination(null)}
         destinationType={destinationType}
         selectedDestination={manageData}
         onSubmit={onSubmit}
         onDelete={onDelete}
       />
-    </>
+    </ManageDestinationWrapper>
   );
 }

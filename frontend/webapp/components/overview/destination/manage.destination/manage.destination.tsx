@@ -18,10 +18,6 @@ interface ManageDestinationProps {
   onDelete?: () => void;
 }
 
-const ManageDestinationWrapper = styled.div`
-  padding: 32px;
-`;
-
 const BackButtonWrapper = styled.div`
   display: flex;
   align-items: center;
@@ -98,7 +94,7 @@ export function ManageDestination({
   onDelete,
 }: ManageDestinationProps) {
   return (
-    <ManageDestinationWrapper>
+    <>
       <BackButtonWrapper onClick={onBackClick}>
         <Back width={14} />
         <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
@@ -115,6 +111,6 @@ export function ManageDestination({
       {onDelete && (
         <FormDangerZone onDelete={onDelete} data={selectedDestination} />
       )}
-    </ManageDestinationWrapper>
+    </>
   );
 }

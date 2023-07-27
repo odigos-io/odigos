@@ -1,15 +1,16 @@
 "use client";
 import React, { useState } from "react";
-import { KeyvalLoader, KeyvalText } from "@/design.system";
-import { NOTIFICATION, OVERVIEW, QUERIES, SETUP } from "@/utils/constants";
+import { KeyvalText } from "@/design.system";
+import { OVERVIEW, QUERIES, SETUP } from "@/utils/constants";
 import { useMutation, useQuery } from "react-query";
-import { getDestination, setDestination, updateDestination } from "@/services";
+import { getDestination, setDestination } from "@/services";
 import { ManageDestination, OverviewHeader } from "@/components/overview";
-import { useNotification, useSectionData } from "@/hooks";
+import { useSectionData } from "@/hooks";
 import { DestinationSection } from "@/containers/setup/destination/destination.section";
 import { NewDestinationContainer } from "./destination.styled";
 import { Back } from "@/assets/icons/overview";
 import { styled } from "styled-components";
+
 const BackButtonWrapper = styled.div`
   display: flex;
   align-items: center;
@@ -21,7 +22,6 @@ const BackButtonWrapper = styled.div`
 export function NewDestinationFlow({ onBackClick, onSuccess, onError }) {
   const { sectionData, setSectionData } = useSectionData(null);
   const [managed, setManaged] = useState<any>(null);
-  const { show, Notification } = useNotification();
   const { data: destinationType } = useQuery(
     [QUERIES.API_DESTINATION_TYPE, sectionData?.type],
     () => getDestination(sectionData?.type),
@@ -34,7 +34,7 @@ export function NewDestinationFlow({ onBackClick, onSuccess, onError }) {
   function onSubmit(newDestination) {
     const destination = {
       ...newDestination,
-      // type: sectionData.type,
+      type: sectionData.type,
     };
 
     mutate(destination, {
@@ -73,7 +73,6 @@ export function NewDestinationFlow({ onBackClick, onSuccess, onError }) {
           </>
         )}
       </NewDestinationContainer>
-      <Notification />
     </>
   );
 }
