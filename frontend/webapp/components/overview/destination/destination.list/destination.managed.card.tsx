@@ -2,14 +2,8 @@ import React, { useMemo } from "react";
 import { KeyvalImage, KeyvalText } from "@/design.system";
 import { MONITORING_OPTIONS } from "@/components/setup/destination/utils";
 import { TapList } from "@/components/setup/destination/tap.list/tap.list";
-import {
-  CardWrapper,
-  Border,
-  ManagedWrapper,
-  ApplicationNameWrapper,
-} from "./destination.list.styled";
+import { CardWrapper, ApplicationNameWrapper } from "./destination.list.styled";
 import theme from "@/styles/palette";
-import { OVERVIEW } from "@/utils/constants";
 
 const TEXT_STYLE: React.CSSProperties = {
   textOverflow: "ellipsis",
@@ -55,10 +49,6 @@ export default function DestinationManagedCard({
         </KeyvalText>
       </ApplicationNameWrapper>
       <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
-      {/* <Border />
-      <ManagedWrapper onClick={onClick}>
-        <KeyvalText>{OVERVIEW.MANAGE}</KeyvalText>
-      </ManagedWrapper> */}
     </CardWrapper>
   );
 }

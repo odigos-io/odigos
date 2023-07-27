@@ -1,4 +1,3 @@
-import theme from "@/styles/palette";
 import { styled } from "styled-components";
 
 export const ManagedListWrapper = styled.div`
@@ -9,9 +8,6 @@ export const ManagedListWrapper = styled.div`
   overflow-y: scroll;
   padding: 0px 36px;
   padding-bottom: 50px;
-  :hover {
-    background: ${({ theme }) => theme.colors.light_dark};
-  }
 `;
 
 export const MenuWrapper = styled.div`
@@ -36,22 +32,9 @@ export const CardWrapper = styled.div`
   align-items: center;
   flex-direction: column;
   cursor: pointer;
-`;
-
-export const Border = styled.div`
-  width: 368px;
-  height: 1px;
-  margin: 24px 0;
-  background: var(--dark-mode-dark-3, #203548);
-`;
-
-export const ManagedWrapper = styled.div`
-  display: flex;
-  padding: 8px 12px;
-  align-items: flex-start;
-  border-radius: 10px;
-  border: 1px solid var(--dark-mode-odigos-torquiz, #96f2ff);
-  cursor: pointer;
+  &:hover {
+    background: ${({ theme }) => theme.colors.light_dark};
+  }
 `;
 
 export const ApplicationNameWrapper = styled.div`
