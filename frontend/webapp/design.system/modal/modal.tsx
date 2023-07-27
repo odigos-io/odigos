@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
 import PortalModal from "./portal.modal";
-
-// import useOnClickOutside from "../../hooks/useOnClickOutside";
-
 import * as S from "./modal.styled";
 import { Props } from "./types";
 import { KeyvalText } from "../text/text";

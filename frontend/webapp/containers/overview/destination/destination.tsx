@@ -39,37 +39,53 @@ export function DestinationContainer() {
     });
   }
 
+  function renderNewDestinationFlow() {
+    return (
+      <NewDestinationFlow
+        onSuccess={onSuccess}
+        onError={onError}
+        onBackClick={() => {
+          setDisplayNewDestination(false);
+        }}
+      />
+    );
+  }
+
+  function renderUpdateDestinationFlow() {
+    return (
+      <UpdateDestinationFlow
+        selectedDestination={selectedDestination}
+        setSelectedDestination={setSelectedDestination}
+        onSuccess={onSuccess}
+        onError={onError}
+      />
+    );
+  }
+
+  function renderDestinationList() {
+    return (
+      <>
+        <OverviewHeader title={OVERVIEW.MENU.DESTINATIONS} />
+        <DestinationsManagedList
+          data={destinationList}
+          onItemClick={setSelectedDestination}
+          onMenuButtonClick={() => setDisplayNewDestination(true)}
+        />
+      </>
+    );
+  }
+
   if (destinationLoading) {
     return <KeyvalLoader />;
   }
 
   return (
     <DestinationContainerWrapper>
-      {displayNewDestination ? (
-        <NewDestinationFlow
-          onSuccess={onSuccess}
-          onError={onError}
-          onBackClick={() => {
-            setDisplayNewDestination(false);
-          }}
-        />
-      ) : selectedDestination ? (
-        <UpdateDestinationFlow
-          selectedDestination={selectedDestination}
-          setSelectedDestination={setSelectedDestination}
-          onSuccess={onSuccess}
-          onError={onError}
-        />
-      ) : (
-        <>
-          <OverviewHeader title={OVERVIEW.MENU.DESTINATIONS} />
-          <DestinationsManagedList
-            data={destinationList}
-            onItemClick={setSelectedDestination}
-            onMenuButtonClick={() => setDisplayNewDestination(true)}
-          />
-        </>
-      )}
+      {displayNewDestination
+        ? renderNewDestinationFlow()
+        : selectedDestination
+        ? renderUpdateDestinationFlow()
+        : renderDestinationList()}
       <Notification />
     </DestinationContainerWrapper>
   );

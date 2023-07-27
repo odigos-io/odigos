@@ -43,35 +43,45 @@ export function NewDestinationFlow({ onBackClick, onSuccess, onError }) {
     });
   }
 
+  function renderNewDestinationForm() {
+    return (
+      <ManageDestination
+        destinationType={destinationType}
+        selectedDestination={sectionData}
+        onSubmit={onSubmit}
+        onBackClick={() => {
+          setManaged(false);
+          setSectionData(null);
+        }}
+      />
+    );
+  }
+
+  function renderSelectNewDestination() {
+    return (
+      <>
+        <BackButtonWrapper onClick={onBackClick}>
+          <Back width={14} />
+          <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
+        </BackButtonWrapper>
+        <DestinationSection
+          sectionData={sectionData}
+          setSectionData={(data) => {
+            setSectionData(data);
+            setManaged(true);
+          }}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <OverviewHeader title={OVERVIEW.MENU.DESTINATIONS} />
       <NewDestinationContainer>
-        {managed && sectionData ? (
-          <ManageDestination
-            destinationType={destinationType}
-            selectedDestination={sectionData}
-            onSubmit={onSubmit}
-            onBackClick={() => {
-              setManaged(false);
-              setSectionData(null);
-            }}
-          />
-        ) : (
-          <>
-            <BackButtonWrapper onClick={onBackClick}>
-              <Back width={14} />
-              <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
-            </BackButtonWrapper>
-            <DestinationSection
-              sectionData={sectionData}
-              setSectionData={(data) => {
-                setSectionData(data);
-                setManaged(true);
-              }}
-            />
-          </>
-        )}
+        {managed && sectionData
+          ? renderNewDestinationForm()
+          : renderSelectNewDestination()}
       </NewDestinationContainer>
     </>
   );

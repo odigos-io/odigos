@@ -65,6 +65,12 @@ export const OVERVIEW = {
   DESTINATION_UPDATE_SUCCESS: "Destination updated successfully",
   DESTINATION_DELETED_SUCCESS: "Destination deleted successfully",
   MANAGE: "Manage",
+  DELETE: "Delete",
+  DELETE_DESTINATION: "Delete Destination",
+  DELETE_MODAL_TITLE: "Delete this destination",
+  DELETE_MODAL_SUBTITLE:
+    "This action cannot be undone. This will permanently delete the destination and all associated data.",
+  DELETE_BUTTON: "I want to delete this destination",
 };
 
 export const NOTIFICATION = {
