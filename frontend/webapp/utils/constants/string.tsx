@@ -63,6 +63,7 @@ export const OVERVIEW = {
   },
   ADD_NEW_DESTINATION: "Add New Destination",
   DESTINATION_UPDATE_SUCCESS: "Destination updated successfully",
+  DESTINATION_DELETED_SUCCESS: "Destination deleted successfully",
   MANAGE: "Manage",
 };
 

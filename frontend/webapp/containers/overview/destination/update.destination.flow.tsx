@@ -1,17 +1,25 @@
 "use client";
-import React from "react";
+import React, { useMemo } from "react";
 import { KeyvalLoader } from "@/design.system";
 import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
 import { useMutation, useQuery } from "react-query";
 import { getDestination, updateDestination } from "@/services";
 import { ManageDestination } from "@/components/overview";
 import { useNotification } from "@/hooks";
+import { deleteDestination } from "@/services/destinations";
 
 export function UpdateDestinationFlow({
   selectedDestination,
   setSelectedDestination,
 }) {
   const { show, Notification } = useNotification();
+
+  const manageData = useMemo(() => {
+    return {
+      ...selectedDestination,
+      ...selectedDestination?.destination_type,
+    };
+  }, [selectedDestination]);
 
   const { isLoading: destinationTypeLoading, data: destinationType } = useQuery(
     [QUERIES.API_DESTINATION_TYPE, selectedDestination?.type],
@@ -21,12 +29,39 @@ export function UpdateDestinationFlow({
     }
   );
 
-  const { mutate } = useMutation((body) =>
+  const { mutate: handleUpdateDestination } = useMutation((body) =>
     updateDestination(body, selectedDestination?.id)
+  );
+
+  const { mutate: handleDeleteDestination } = useMutation((body) =>
+    deleteDestination(selectedDestination?.id)
   );
 
   function onBackClick() {
     setSelectedDestination(null);
+  }
+
+  function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
+    setSelectedDestination(null);
+    show({
+      type: NOTIFICATION.SUCCESS,
+      message,
+    });
+  }
+
+  function onError({ response }) {
+    const message = response?.data?.message;
+    show({
+      type: NOTIFICATION.ERROR,
+      message,
+    });
+  }
+
+  function onDelete() {
+    handleDeleteDestination(selectedDestination.id, {
+      onSuccess: () => onSuccess(OVERVIEW.DESTINATION_DELETED_SUCCESS),
+      onError,
+    });
   }
 
   function onSubmit(updatedDestination) {
@@ -35,35 +70,10 @@ export function UpdateDestinationFlow({
       type: selectedDestination.type,
     };
 
-    function onSuccess() {
-      setSelectedDestination(null);
-      show({
-        type: NOTIFICATION.SUCCESS,
-        message: OVERVIEW.DESTINATION_UPDATE_SUCCESS,
-      });
-    }
-
-    function onError({ response }) {
-      const message = response?.data?.message;
-      show({
-        type: NOTIFICATION.ERROR,
-        message,
-      });
-    }
-
-    mutate(newDestinations, {
+    handleUpdateDestination(newDestinations, {
       onSuccess,
       onError,
     });
-  }
-
-  function getSelectionData() {
-    const newDestinations = {
-      ...selectedDestination,
-      ...selectedDestination?.destination_type,
-    };
-
-    return newDestinations;
   }
 
   if (destinationTypeLoading) {
@@ -75,8 +85,9 @@ export function UpdateDestinationFlow({
       <ManageDestination
         onBackClick={onBackClick}
         destinationType={destinationType}
-        selectedDestination={getSelectionData()}
+        selectedDestination={manageData}
         onSubmit={onSubmit}
+        onDelete={onDelete}
       />
       <Notification />
     </>
