@@ -1,26 +1,25 @@
 "use client";
 import React, { useMemo } from "react";
 import { KeyvalLoader } from "@/design.system";
-import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
+import { OVERVIEW, QUERIES } from "@/utils/constants";
 import { useMutation, useQuery } from "react-query";
 import { getDestination, updateDestination } from "@/services";
 import { ManageDestination } from "@/components/overview";
-import { useNotification } from "@/hooks";
 import { deleteDestination } from "@/services/destinations";
+import { useNotification } from "@/hooks";
 
 export function UpdateDestinationFlow({
   selectedDestination,
   setSelectedDestination,
+  onSuccess,
+  onError,
 }) {
-  const { show, Notification } = useNotification();
-
   const manageData = useMemo(() => {
     return {
       ...selectedDestination,
       ...selectedDestination?.destination_type,
     };
   }, [selectedDestination]);
-
   const { isLoading: destinationTypeLoading, data: destinationType } = useQuery(
     [QUERIES.API_DESTINATION_TYPE, selectedDestination?.type],
     () => getDestination(selectedDestination?.type),
@@ -41,22 +40,6 @@ export function UpdateDestinationFlow({
     setSelectedDestination(null);
   }
 
-  function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
-    setSelectedDestination(null);
-    show({
-      type: NOTIFICATION.SUCCESS,
-      message,
-    });
-  }
-
-  function onError({ response }) {
-    const message = response?.data?.message;
-    show({
-      type: NOTIFICATION.ERROR,
-      message,
-    });
-  }
-
   function onDelete() {
     handleDeleteDestination(selectedDestination.id, {
       onSuccess: () => onSuccess(OVERVIEW.DESTINATION_DELETED_SUCCESS),
@@ -67,7 +50,7 @@ export function UpdateDestinationFlow({
   function onSubmit(updatedDestination) {
     const newDestinations = {
       ...updatedDestination,
-      type: selectedDestination.type,
+      //   type: selectedDestination.type,
     };
 
     handleUpdateDestination(newDestinations, {
@@ -89,7 +72,6 @@ export function UpdateDestinationFlow({
         onSubmit={onSubmit}
         onDelete={onDelete}
       />
-      <Notification />
     </>
   );
 }

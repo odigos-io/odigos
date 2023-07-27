@@ -18,11 +18,10 @@ const BackButtonWrapper = styled.div`
     cursor: pointer !important;
   }
 `;
-export function NewDestinationFlow({ onBackClick }) {
+export function NewDestinationFlow({ onBackClick, onSuccess, onError }) {
   const { sectionData, setSectionData } = useSectionData(null);
   const [managed, setManaged] = useState<any>(null);
   const { show, Notification } = useNotification();
-
   const { data: destinationType } = useQuery(
     [QUERIES.API_DESTINATION_TYPE, sectionData?.type],
     () => getDestination(sectionData?.type),
@@ -35,20 +34,8 @@ export function NewDestinationFlow({ onBackClick }) {
   function onSubmit(newDestination) {
     const destination = {
       ...newDestination,
-      type: sectionData.type,
+      // type: sectionData.type,
     };
-
-    function onSuccess() {
-      onBackClick();
-    }
-
-    function onError({ response }) {
-      const message = response?.data?.message;
-      show({
-        type: NOTIFICATION.ERROR,
-        message,
-      });
-    }
 
     mutate(destination, {
       onSuccess,
@@ -85,8 +72,8 @@ export function NewDestinationFlow({ onBackClick }) {
             />
           </>
         )}
-        <Notification />
       </NewDestinationContainer>
+      <Notification />
     </>
   );
 }

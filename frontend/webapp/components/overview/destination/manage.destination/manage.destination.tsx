@@ -8,6 +8,7 @@ import { ManageDestinationHeader } from "../manage.destination.header/manage.des
 import { DestinationType } from "@/types/destinations";
 import { ModalPositionX, ModalPositionY } from "@/design.system/modal/types";
 import theme from "@/styles/palette";
+import { useNotification } from "@/hooks";
 
 interface ManageDestinationProps {
   destinationType: DestinationType;
