@@ -33,7 +33,10 @@ export function SourceCard({ item, onClick, focus }: any) {
             {item.name}
           </KeyvalText>
         </ApplicationNameWrapper>
-        <KeyvalTag title={item.kind} color={KIND_COLORS[item.kind]} />
+        <KeyvalTag
+          title={item.kind}
+          color={KIND_COLORS[item.kind].toLowerCase()}
+        />
         <KeyvalText size={14} weight={400}>
           {`${item?.instances} ${SETUP.RUNNING_INSTANCES}`}
         </KeyvalText>
