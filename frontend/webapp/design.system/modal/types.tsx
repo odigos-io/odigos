@@ -28,6 +28,6 @@ export interface ModalConfig {
 export interface Props {
   show: boolean;
   config: ModalConfig;
-  setShow: (value: boolean) => void;
+  closeModal: () => void;
   children: JSX.Element | JSX.Element[];
 }

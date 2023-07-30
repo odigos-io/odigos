@@ -5,7 +5,6 @@ interface PropsOverlay {
   showOverlay: boolean;
   positionX: ModalPositionX;
   positionY: ModalPositionY;
-  show: boolean;
 }
 interface PropsModalContainer {
   padding: string;

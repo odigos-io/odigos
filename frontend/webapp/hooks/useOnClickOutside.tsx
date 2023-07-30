@@ -9,7 +9,7 @@ export function useOnClickOutside<T extends HTMLElement = HTMLElement>(
   useEffect(() => {
     const listener = (event: Event) => {
       const el = ref?.current;
-      if (!el || el.contains((event?.target as Node) || null)) return null;
+      if (el?.contains(event?.target as Node)) return null;
 
       // Call the handler only if the click is outside of the element passed.
       handler(event);

@@ -130,7 +130,9 @@ export function CreateConnectionForm({
   return (
     <div>
       <KeyvalText size={18} weight={600}>
-        {SETUP.CREATE_CONNECTION}
+        {dynamicFieldsValues
+          ? SETUP.UPDATE_CONNECTION
+          : SETUP.CREATE_CONNECTION}
       </KeyvalText>
       <ConnectionMonitorsWrapper>
         <KeyvalText size={14}>{SETUP.CONNECTION_MONITORS}</KeyvalText>

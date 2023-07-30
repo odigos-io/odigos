@@ -33,7 +33,7 @@ export const CardWrapper = styled.div`
   flex-direction: column;
   cursor: pointer;
   &:hover {
-    background: ${({ theme }) => theme.colors.light_dark};
+    background: var(--dark-mode-dark-1, #07111a81);
   }
 `;
 
@@ -48,4 +48,12 @@ export const ApplicationNameWrapper = styled.div`
   gap: 6px;
   margin-top: 12px;
   margin-bottom: 20px;
+`;
+
+export const EmptyListWrapper = styled.div`
+  width: 100%;
+  margin-top: 130px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 `;

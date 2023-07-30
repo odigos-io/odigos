@@ -38,7 +38,7 @@ export function NewDestinationFlow({ onBackClick, onSuccess, onError }) {
     };
 
     mutate(destination, {
-      onSuccess,
+      onSuccess: () => onSuccess(OVERVIEW.DESTINATION_CREATED_SUCCESS),
       onError,
     });
   }

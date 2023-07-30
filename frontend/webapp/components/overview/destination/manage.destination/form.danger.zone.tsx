@@ -47,18 +47,20 @@ export default function FormDangerZone({
           onClick={() => setShowModal(true)}
         />
       </FieldWrapper>
-      <KeyvalModal
-        show={showModal}
-        setShow={() => setShowModal(false)}
-        config={modalConfig}
-      >
-        <br />
-        <ConnectionsIcons icon={data?.image_url} imageStyle={IMAGE_STYLE} />
-        <br />
-        <KeyvalText color={theme.text.primary} size={20} weight={600}>
-          {`${OVERVIEW.DELETE} ${data?.name}`}
-        </KeyvalText>
-      </KeyvalModal>
+      {showModal && (
+        <KeyvalModal
+          show={showModal}
+          closeModal={() => setShowModal(false)}
+          config={modalConfig}
+        >
+          <br />
+          <ConnectionsIcons icon={data?.image_url} imageStyle={IMAGE_STYLE} />
+          <br />
+          <KeyvalText color={theme.text.primary} size={20} weight={600}>
+            {`${OVERVIEW.DELETE} ${data?.name}`}
+          </KeyvalText>
+        </KeyvalModal>
+      )}
     </>
   );
 }

@@ -1,12 +1,14 @@
-import React, { ChangeEvent } from "react";
+import React, { ChangeEvent, useState } from "react";
 import {
   StyledInputContainer,
   StyledInput,
   ErrorWrapper,
   LabelWrapper,
+  DisplayIconsWrapper,
 } from "./input.styled";
 import { KeyvalText } from "../text/text";
-
+import EyeOpenIcon from "@/assets/icons/design.system/eye-open.svg";
+import EyeCloseIcon from "@/assets/icons/design.system/eye-close.svg";
 interface InputProps {
   label?: string;
   value: string;
@@ -24,6 +26,8 @@ export function KeyvalInput({
   error,
   style = {},
 }: InputProps): JSX.Element {
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+
   function handleChange(event: ChangeEvent<HTMLInputElement>): void {
     onChange(event.target.value);
   }
@@ -43,11 +47,20 @@ export function KeyvalInput({
         style={{ ...style }}
       >
         <StyledInput
-          type={type}
+          type={showPassword ? "text" : type}
           value={value}
           onChange={handleChange}
           autoComplete="off"
         />
+        {type === "password" && (
+          <DisplayIconsWrapper onClick={() => setShowPassword(!showPassword)}>
+            {!showPassword ? (
+              <EyeOpenIcon width={16} height={16} />
+            ) : (
+              <EyeCloseIcon width={16} height={16} />
+            )}
+          </DisplayIconsWrapper>
+        )}
       </StyledInputContainer>
       {error && (
         <ErrorWrapper>

@@ -35,7 +35,7 @@ export default function DestinationManagedCard({
 
       return acc;
     }, []);
-  }, [JSON.stringify(supported_signals)]);
+  }, [JSON.stringify(signals)]);
 
   return (
     <CardWrapper onClick={onClick}>

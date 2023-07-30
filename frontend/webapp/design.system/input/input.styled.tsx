@@ -6,6 +6,7 @@ interface ActiveProps {
 }
 
 export const StyledInputContainer = styled.div<ActiveProps>`
+  position: relative;
   display: flex;
   width: 100%;
   padding-left: 13px;
@@ -45,4 +46,10 @@ export const LabelWrapper = styled.div`
 
 export const ErrorWrapper = styled.div`
   margin-top: 4px;
+`;
+
+export const DisplayIconsWrapper = styled.div`
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
 `;
