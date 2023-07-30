@@ -23,7 +23,7 @@
     "@opentelemetry/resource-detector-aws": "1.2.5",
     "@opentelemetry/resource-detector-container": "0.2.5",
     "@opentelemetry/resource-detector-gcp": "0.28.3",
-    "@opentelemetry/resources": "1.14.0",
+    "@opentelemetry/resources": "1.15.1",
     "@opentelemetry/sdk-metrics": "1.14.0",
     "@opentelemetry/sdk-node": "0.40.0"
   }
