@@ -19,11 +19,11 @@ const LOGO_STYLE: React.CSSProperties = {
 };
 
 interface SourceManagedCardProps {
-  item: ManagedSource | null;
+  item: ManagedSource;
 }
 const DEPLOYMENT = "deployment";
 export default function SourceManagedCard({
-  item = null,
+  item = {} as ManagedSource,
 }: SourceManagedCardProps) {
   return (
     <CardWrapper>
@@ -38,7 +38,7 @@ export default function SourceManagedCard({
         {item?.name}
       </KeyvalText>
       <KeyvalTag
-        title={"item.kind"}
+        title={item?.kind || ""}
         color={KIND_COLORS[item?.kind.toLowerCase() || DEPLOYMENT]}
       />
       <KeyvalText size={14} color={theme.text.light_grey} style={TEXT_STYLE}>

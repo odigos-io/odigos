@@ -17,7 +17,6 @@ export function SourcesContainer() {
   if (isLoading) {
     return <KeyvalLoader />;
   }
-  console.log({ sources });
 
   return (
     <SourcesContainerWrapper>
