@@ -28,7 +28,7 @@ export default function SourceManagedCard({
   return (
     <CardWrapper>
       <KeyvalImage
-        src={SOURCES_LOGOS[item?.languages[0].language || ""]}
+        src={SOURCES_LOGOS[item?.languages?.[0].language || ""]}
         width={56}
         height={56}
         style={LOGO_STYLE}
@@ -39,7 +39,7 @@ export default function SourceManagedCard({
       </KeyvalText>
       <KeyvalTag
         title={item?.kind || ""}
-        color={KIND_COLORS[item?.kind.toLowerCase() || DEPLOYMENT]}
+        color={KIND_COLORS[item?.kind?.toLowerCase() || DEPLOYMENT]}
       />
       <KeyvalText size={14} color={theme.text.light_grey} style={TEXT_STYLE}>
         {item?.namespace}

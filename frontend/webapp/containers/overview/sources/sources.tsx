@@ -21,7 +21,7 @@ export function SourcesContainer() {
   return (
     <SourcesContainerWrapper>
       <OverviewHeader title={OVERVIEW.MENU.SOURCES} />
-      <SourcesManagedList />
+      <SourcesManagedList data={sources} />
     </SourcesContainerWrapper>
   );
 }
