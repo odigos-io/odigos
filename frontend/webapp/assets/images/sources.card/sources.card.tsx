@@ -1,7 +1,9 @@
+const BASE_URL = "https://d1n7d4xz7fr8b4.cloudfront.net/";
+
 export const SOURCES_LOGOS = {
-  java: "https://odigos-sources.s3.amazonaws.com/java.svg",
-  go: "https://odigos-sources.s3.amazonaws.com/go.svg",
-  javascript: "https://odigos-sources.s3.amazonaws.com/nodejs.svg",
-  python: "https://odigos-sources.s3.amazonaws.com/python.svg",
-  dotnet: "https://odigos-sources.s3.amazonaws.com/dotnet.svg",
+  java: `${BASE_URL}java.svg`,
+  go: `${BASE_URL}go.svg`,
+  javascript: `${BASE_URL}nodejs.svg`,
+  python: `${BASE_URL}python.svg`,
+  dotnet: `${BASE_URL}dotnet.svg`,
 };
