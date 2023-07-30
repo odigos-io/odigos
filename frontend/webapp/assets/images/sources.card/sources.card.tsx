@@ -1,6 +1,6 @@
 const BASE_URL = "https://d1n7d4xz7fr8b4.cloudfront.net/";
 
-export const SOURCES_LOGOS = {
+export const LANGUAGES_LOGOS = {
   java: `${BASE_URL}java.svg`,
   go: `${BASE_URL}go.svg`,
   javascript: `${BASE_URL}nodejs.svg`,

@@ -21,7 +21,7 @@ export function SourcesManagedList({ data = [] }: SourcesManagedListProps) {
     ));
   }
 
-  return data?.length === 0 ? (
+  return data.length === 0 ? (
     <EmptyListWrapper>
       <Empty />
     </EmptyListWrapper>

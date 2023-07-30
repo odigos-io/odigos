@@ -3,7 +3,7 @@ import { KeyvalImage, KeyvalTag, KeyvalText } from "@/design.system";
 import { CardWrapper } from "./sources.manage.styled";
 import theme from "@/styles/palette";
 import { KIND_COLORS } from "@/styles/global";
-import { SOURCES_LOGOS } from "@/assets/images";
+import { LANGUAGES_LOGOS } from "@/assets/images";
 import { ManagedSource } from "@/types/sources";
 
 const TEXT_STYLE: React.CSSProperties = {
@@ -28,7 +28,7 @@ export default function SourceManagedCard({
   return (
     <CardWrapper>
       <KeyvalImage
-        src={SOURCES_LOGOS[item?.languages?.[0].language || ""]}
+        src={LANGUAGES_LOGOS[item?.languages?.[0].language || ""]}
         width={56}
         height={56}
         style={LOGO_STYLE}
