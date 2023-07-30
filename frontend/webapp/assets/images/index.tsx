@@ -1,1 +1,1 @@
-export { SOURCES_LOGOS } from "./sources.card/sources.card";
+export { LANGUAGES_LOGOS } from "./sources.card/sources.card";
