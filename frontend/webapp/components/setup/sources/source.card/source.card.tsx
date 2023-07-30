@@ -12,11 +12,7 @@ import {
 } from "./source.card.styled";
 import Logo from "assets/logos/code-sandbox-logo.svg";
 import { SETUP } from "@/utils/constants";
-
-const KIND_COLORS = {
-  deployment: "#203548",
-  DaemonSet: "#033869",
-};
+import { KIND_COLORS } from "@/styles/global";
 
 const TEXT_STYLE = {
   textOverflow: "ellipsis",

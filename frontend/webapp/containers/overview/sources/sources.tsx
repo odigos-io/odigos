@@ -4,7 +4,7 @@ import { KeyvalLoader } from "@/design.system";
 import { OVERVIEW, QUERIES } from "@/utils/constants";
 import { useQuery } from "react-query";
 import { getSources } from "@/services";
-import { OverviewHeader } from "@/components/overview";
+import { OverviewHeader, SourcesManagedList } from "@/components/overview";
 import { SourcesContainerWrapper } from "./sources.styled";
 
 export function SourcesContainer() {
@@ -17,10 +17,12 @@ export function SourcesContainer() {
   if (isLoading) {
     return <KeyvalLoader />;
   }
+  console.log({ sources });
 
   return (
     <SourcesContainerWrapper>
       <OverviewHeader title={OVERVIEW.MENU.SOURCES} />
+      <SourcesManagedList />
     </SourcesContainerWrapper>
   );
 }
