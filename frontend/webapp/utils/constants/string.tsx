@@ -62,6 +62,7 @@ export const OVERVIEW = {
     SOURCES: "Sources",
     DESTINATIONS: "Destinations",
   },
+  ADD_NEW_SOURCE: "Add New Source",
   ADD_NEW_DESTINATION: "Add New Destination",
   DESTINATION_UPDATE_SUCCESS: "Destination updated successfully",
   DESTINATION_CREATED_SUCCESS: "Destination created successfully",

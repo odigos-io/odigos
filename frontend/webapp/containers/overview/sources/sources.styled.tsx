@@ -5,3 +5,7 @@ export const SourcesContainerWrapper = styled.div`
   width: 100%;
   overflow: hidden;
 `;
+
+export const MenuWrapper = styled.div`
+  padding: 0 32px;
+`;
