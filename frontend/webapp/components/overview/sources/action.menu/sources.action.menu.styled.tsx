@@ -2,10 +2,9 @@ import styled from "styled-components";
 
 export const SourcesMenuWrapper = styled.div`
   width: 100%;
-  height: 68px;
+  margin-top: 32px;
   padding-top: 88px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
 `;
 

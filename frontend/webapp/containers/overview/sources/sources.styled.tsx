@@ -9,3 +9,17 @@ export const SourcesContainerWrapper = styled.div`
 export const MenuWrapper = styled.div`
   padding: 0 32px;
 `;
+
+export const SourcesSectionWrapper = styled(MenuWrapper)`
+  margin-top: 88px;
+  position: relative;
+`;
+
+export const ButtonWrapper = styled.div`
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  right: 32px;
+  top: 40px;
+`;
