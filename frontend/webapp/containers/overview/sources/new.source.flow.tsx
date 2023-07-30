@@ -8,6 +8,7 @@ import { SETUP } from "@/utils/constants";
 
 export function NewSourceFlow() {
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
+
   return (
     <SourcesSectionWrapper>
       <ButtonWrapper>

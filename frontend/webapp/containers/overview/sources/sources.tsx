@@ -13,7 +13,7 @@ import { SourcesContainerWrapper, MenuWrapper } from "./sources.styled";
 import { NewSourceFlow } from "./new.source.flow";
 
 export function SourcesContainer() {
-  const [newFlow, setNewFlow] = useState(false);
+  const [displayNewSourceFlow, setDisplayNewSourceFlow] = useState(false);
 
   const {
     data: sources,
@@ -25,6 +25,17 @@ export function SourcesContainer() {
     return <NewSourceFlow />;
   }
 
+  function renderSources() {
+    return (
+      <>
+        <MenuWrapper>
+          <SourcesActionMenu onAddClick={() => setDisplayNewSourceFlow(true)} />
+        </MenuWrapper>
+        <SourcesManagedList data={sources} />
+      </>
+    );
+  }
+
   if (isLoading) {
     return <KeyvalLoader />;
   }
@@ -32,16 +43,7 @@ export function SourcesContainer() {
   return (
     <SourcesContainerWrapper>
       <OverviewHeader title={OVERVIEW.MENU.SOURCES} />
-      {newFlow ? (
-        renderNewSourceFlow()
-      ) : (
-        <>
-          <MenuWrapper>
-            <SourcesActionMenu onAddClick={() => setNewFlow(true)} />
-          </MenuWrapper>
-          <SourcesManagedList data={sources} />
-        </>
-      )}
+      {displayNewSourceFlow ? renderNewSourceFlow() : renderSources()}
     </SourcesContainerWrapper>
   );
 }
