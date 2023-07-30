@@ -12,12 +12,14 @@ import { SourcesSection } from "../sources/sources.section";
 import RightArrow from "assets/icons/white-arrow-right.svg";
 import Steps from "@/design.system/steps/steps";
 import { KeyvalText } from "@/design.system";
-import { CONFIG, SETUP } from "@/utils/constants";
+import { CONFIG, NOTIFICATION, SETUP } from "@/utils/constants";
 import { useSectionData, useNotification } from "@/hooks";
 import { STEPS, Step } from "./utils";
 import { setNamespaces } from "@/services";
 import { useSearchParams } from "next/navigation";
 import { useMutation } from "react-query";
+
+const STATE = "state";
 
 const sectionComponents = {
   [SETUP.STEPS.ID.CHOOSE_SOURCE]: SourcesSection,
@@ -30,7 +32,9 @@ export function SetupSection() {
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
   const { mutate } = useMutation((body) => setNamespaces(body));
   const { show, Notification } = useNotification();
+
   const searchParams = useSearchParams();
+  const search = searchParams.get(STATE);
   const previousSourceState = useRef<any>(null);
 
   useEffect(() => {
@@ -38,7 +42,6 @@ export function SetupSection() {
   }, [searchParams]);
 
   function getStepFromSearch() {
-    const search = searchParams.get("state");
     if (search === CONFIG.APPS_SELECTED) {
       handleChangeStep(1);
     }
@@ -77,7 +80,7 @@ export function SetupSection() {
         onError: ({ response }) => {
           const message = response?.data?.message || SETUP.ERROR;
           show({
-            type: "error",
+            type: NOTIFICATION.ERROR,
             message,
           });
         },

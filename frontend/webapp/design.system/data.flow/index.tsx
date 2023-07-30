@@ -12,8 +12,9 @@ import DestinationNode from "./destination.node";
 import "reactflow/dist/style.css";
 import { ControllerWrapper, DataFlowContainer } from "./data.flow.styled";
 import { IDataFlow } from "./types";
+import theme from "@/styles/palette";
 
-const backgroundColor = "#132330";
+const backgroundColor = theme.colors.light_dark;
 
 const nodeTypes = {
   custom: CenterNode,

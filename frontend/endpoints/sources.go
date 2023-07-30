@@ -41,8 +41,8 @@ func k8sInstrumentedAppToSource(app *v1alpha1.InstrumentedApplication) Source {
 	source.Namespace = app.Namespace
 	for _, language := range app.Spec.Languages {
 		source.Languages = append(source.Languages, SourceLanguage{
-			ContainerName: string(language.Language),
-			Language:      language.ContainerName,
+			ContainerName: language.ContainerName,
+			Language:      string(language.Language),
 		})
 	}
 	return source

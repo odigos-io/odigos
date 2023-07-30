@@ -97,10 +97,10 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.GET("/destination-types", endpoints.GetDestinationTypes)
 		apis.GET("/destination-types/:type", endpoints.GetDestinationTypeDetails)
 		apis.GET("/destinations", func(c *gin.Context) { endpoints.GetDestinations(c, flags.Namespace) })
-		apis.GET("/destinations/:name", func(c *gin.Context) { endpoints.GetDestinationByName(c, flags.Namespace) })
+		apis.GET("/destinations/:id", func(c *gin.Context) { endpoints.GetDestinationById(c, flags.Namespace) })
 		apis.POST("/destinations", func(c *gin.Context) { endpoints.CreateNewDestination(c, flags.Namespace) })
-		apis.PUT("/destinations", func(c *gin.Context) { endpoints.UpdateExistingDestination(c, flags.Namespace) })
-		apis.DELETE("/destinations/:name", func(c *gin.Context) { endpoints.DeleteDestination(c, flags.Namespace) })
+		apis.PUT("/destinations/:id", func(c *gin.Context) { endpoints.UpdateExistingDestination(c, flags.Namespace) })
+		apis.DELETE("/destinations/:id", func(c *gin.Context) { endpoints.DeleteDestination(c, flags.Namespace) })
 	}
 
 	return r, nil

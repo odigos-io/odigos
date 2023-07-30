@@ -24,12 +24,23 @@ const IMAGE_STYLE: React.CSSProperties = {
   padding: 4,
 };
 
-export function ConnectionsIcons({ icon }) {
+export function ConnectionsIcons({
+  icon,
+  imageStyle,
+}: {
+  icon: string;
+  imageStyle?: React.CSSProperties;
+}) {
   return (
     <ConnectionsIconsWrapper>
       <Connect />
       <Divider />
-      <KeyvalImage src={icon} width={40} height={40} style={IMAGE_STYLE} />
+      <KeyvalImage
+        src={icon}
+        width={40}
+        height={40}
+        style={{ ...IMAGE_STYLE, ...imageStyle }}
+      />
     </ConnectionsIconsWrapper>
   );
 }

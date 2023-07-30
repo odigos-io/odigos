@@ -23,7 +23,7 @@ export const SETUP = {
     SELECT_ALL: "Select All",
     FUTURE_APPLY: "Apply for any future apps",
     TOOLTIP: "Automatically connect any future apps in this namespace",
-    SEARCH_PLACEHOLDER: "Search - default",
+    SEARCH_PLACEHOLDER: "Search",
     TYPE: "Type",
     MONITORING: "I want to monitor",
   },
@@ -36,6 +36,7 @@ export const SETUP = {
   SELECTED: "Selected",
   MANAGED: "Managed",
   CREATE_CONNECTION: "Create Connection",
+  UPDATE_CONNECTION: "Update Connection",
   CONNECTION_MONITORS: "This connection will monitor:",
   MONITORS: {
     LOGS: "Logs",
@@ -44,6 +45,7 @@ export const SETUP = {
   },
   DESTINATION_NAME: "Destination Name",
   CREATE_DESTINATION: "Create Destination",
+  UPDATE_DESTINATION: "Update Destination",
   QUICK_HELP: "Quick Help",
   ERROR: "Something went wrong",
 };
@@ -60,4 +62,20 @@ export const OVERVIEW = {
     SOURCES: "Sources",
     DESTINATIONS: "Destinations",
   },
+  ADD_NEW_DESTINATION: "Add New Destination",
+  DESTINATION_UPDATE_SUCCESS: "Destination updated successfully",
+  DESTINATION_CREATED_SUCCESS: "Destination created successfully",
+  DESTINATION_DELETED_SUCCESS: "Destination deleted successfully",
+  MANAGE: "Manage",
+  DELETE: "Delete",
+  DELETE_DESTINATION: "Delete Destination",
+  DELETE_MODAL_TITLE: "Delete this destination",
+  DELETE_MODAL_SUBTITLE:
+    "This action cannot be undone. This will permanently delete the destination and all associated data.",
+  DELETE_BUTTON: "I want to delete this destination",
+};
+
+export const NOTIFICATION = {
+  ERROR: "error",
+  SUCCESS: "success",
 };

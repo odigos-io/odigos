@@ -11,6 +11,7 @@ import {
 import { KeyvalButton, KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
 import { ConnectionsIcons } from "@/components/setup";
+import theme from "@/styles/palette";
 
 type StepId = "CHOOSE_SOURCE" | "CHOOSE_DESTINATION";
 
@@ -86,7 +87,7 @@ export function SetupHeader({
             onClick={onNextClick}
             style={{ gap: 10, width: 120 }}
           >
-            <KeyvalText size={20} weight={600} color="#0A1824">
+            <KeyvalText size={20} weight={600} color={theme.text.dark_button}>
               {SETUP.NEXT}
             </KeyvalText>
             <RightArrow />
