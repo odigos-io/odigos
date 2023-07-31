@@ -1,24 +1,13 @@
 "use client";
 import React, { useState } from "react";
-import { KeyvalText } from "@/design.system";
-import { OVERVIEW, QUERIES, SETUP } from "@/utils/constants";
+import { OVERVIEW, QUERIES } from "@/utils/constants";
 import { useMutation, useQuery } from "react-query";
 import { getDestination, setDestination } from "@/services";
 import { ManageDestination, OverviewHeader } from "@/components/overview";
 import { useSectionData } from "@/hooks";
 import { DestinationSection } from "@/containers/setup/destination/destination.section";
 import { NewDestinationContainer } from "./destination.styled";
-import { Back } from "@/assets/icons/overview";
-import { styled } from "styled-components";
 
-const BackButtonWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  p {
-    cursor: pointer !important;
-  }
-`;
 export function NewDestinationFlow({ onBackClick, onSuccess, onError }) {
   const { sectionData, setSectionData } = useSectionData(null);
   const [managed, setManaged] = useState<any>(null);
@@ -41,6 +30,15 @@ export function NewDestinationFlow({ onBackClick, onSuccess, onError }) {
       onSuccess: () => onSuccess(OVERVIEW.DESTINATION_CREATED_SUCCESS),
       onError,
     });
+  }
+
+  function handleBackPress() {
+    if (managed && sectionData) {
+      setManaged(false);
+      setSectionData(null);
+      return;
+    }
+    onBackClick();
   }
 
   function renderNewDestinationForm() {
@@ -71,14 +69,7 @@ export function NewDestinationFlow({ onBackClick, onSuccess, onError }) {
     <>
       <OverviewHeader
         title={OVERVIEW.MENU.DESTINATIONS}
-        onBackClick={
-          managed && sectionData
-            ? () => {
-                setManaged(false);
-                setSectionData(null);
-              }
-            : onBackClick
-        }
+        onBackClick={handleBackPress}
       />
       <NewDestinationContainer>
         {managed && sectionData
