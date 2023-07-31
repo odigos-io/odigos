@@ -70,7 +70,7 @@ require (
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/sys v0.9.0 // indirect
 	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
@@ -96,5 +96,5 @@ require (
 replace (
 	github.com/keyval-dev/odigos/api => ../api
 	github.com/keyval-dev/odigos/common => ../common
-	go.opentelemetry.io/auto => github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230617070817-c006ec6f0bc9
+	go.opentelemetry.io/auto => github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730104422-ed0d5aa81b08
 )
