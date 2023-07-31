@@ -8,16 +8,14 @@ import { NOTIFICATION, OVERVIEW, SETUP } from "@/utils/constants";
 import { useMutation } from "react-query";
 import { setNamespaces } from "@/services";
 
-export function NewSourceFlow() {
+export function NewSourceFlow({ onSuccess }) {
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
   const { mutate } = useMutation((body) => setNamespaces(body));
   const { show, Notification } = useNotification();
 
   function handleNewSource() {
     mutate(sectionData, {
-      onSuccess: () => {
-        setSectionData({});
-      },
+      onSuccess,
       onError: ({ response }) => {
         const message = response?.data?.message || SETUP.ERROR;
         show({
