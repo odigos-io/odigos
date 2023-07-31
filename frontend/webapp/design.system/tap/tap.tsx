@@ -6,7 +6,7 @@ interface TapProps {
   icons: object;
   title?: string;
   tapped?: any;
-  onClick?: () => void;
+  onClick?: any;
   children?: React.ReactNode;
   style?: React.CSSProperties;
 }

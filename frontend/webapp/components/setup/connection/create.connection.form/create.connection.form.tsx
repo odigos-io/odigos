@@ -15,14 +15,8 @@ import {
 import { renderFields } from "./dynamic.fields";
 import { SETUP } from "@/utils/constants";
 import { DestinationBody } from "@/containers/setup/connection/connection.section";
-
-export interface Field {
-  name: string;
-  component_type: string;
-  display_name: string;
-  component_properties: any;
-  video_url: string;
-}
+import { Field } from "@/types/destinations";
+import theme from "@/styles/palette";
 
 interface CreateConnectionFormProps {
   fields: Field[];
@@ -31,6 +25,13 @@ interface CreateConnectionFormProps {
     [key: string]: {
       supported: boolean;
     };
+  };
+  dynamicFieldsValues?: {
+    [key: string]: any;
+  };
+  destinationNameValue?: string | null;
+  checkboxValues?: {
+    [key: string]: boolean;
   };
 }
 
@@ -44,10 +45,15 @@ export function CreateConnectionForm({
   fields,
   onSubmit,
   supportedSignals,
+  dynamicFieldsValues,
+  destinationNameValue,
+  checkboxValues,
 }: CreateConnectionFormProps) {
-  const [destinationName, setDestinationName] = useState<string>("");
+  const [destinationName, setDestinationName] = useState<string>(
+    destinationNameValue || ""
+  );
   const [selectedMonitors, setSelectedMonitors] = useState(MONITORS);
-  const [dynamicFields, setDynamicFields] = useState({});
+  const [dynamicFields, setDynamicFields] = useState(dynamicFieldsValues || {});
   const [isCreateButtonDisabled, setIsCreateButtonDisabled] = useState(true);
 
   useEffect(() => {
@@ -59,8 +65,15 @@ export function CreateConnectionForm({
   }, [supportedSignals]);
 
   function filterSupportedMonitors() {
+    const data: any = !checkboxValues
+      ? MONITORS
+      : MONITORS.map((monitor) => ({
+          ...monitor,
+          checked: checkboxValues[monitor.id],
+        }));
+
     setSelectedMonitors(
-      MONITORS.filter(({ id }) => supportedSignals[id]?.supported)
+      data.filter(({ id }) => supportedSignals[id]?.supported)
     );
   }
 
@@ -117,7 +130,9 @@ export function CreateConnectionForm({
   return (
     <div>
       <KeyvalText size={18} weight={600}>
-        {SETUP.CREATE_CONNECTION}
+        {dynamicFieldsValues
+          ? SETUP.UPDATE_CONNECTION
+          : SETUP.CREATE_CONNECTION}
       </KeyvalText>
       <ConnectionMonitorsWrapper>
         <KeyvalText size={14}>{SETUP.CONNECTION_MONITORS}</KeyvalText>
@@ -145,8 +160,10 @@ export function CreateConnectionForm({
       </DynamicFieldsWrapper>
       <CreateDestinationButtonWrapper>
         <KeyvalButton disabled={isCreateButtonDisabled} onClick={onCreateClick}>
-          <KeyvalText color={"#203548"} size={14} weight={600}>
-            {SETUP.CREATE_DESTINATION}
+          <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
+            {dynamicFieldsValues
+              ? SETUP.UPDATE_DESTINATION
+              : SETUP.CREATE_DESTINATION}
           </KeyvalText>
         </KeyvalButton>
       </CreateDestinationButtonWrapper>

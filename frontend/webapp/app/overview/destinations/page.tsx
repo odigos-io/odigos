@@ -1,6 +1,11 @@
 "use client";
+import { DestinationContainer } from "@/containers/overview";
 import React from "react";
 
 export default function DestinationDashboardPage() {
-  return <div>DestinationDashboardPage</div>;
+  return (
+    <>
+      <DestinationContainer />
+    </>
+  );
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { KeyvalDropDown, KeyvalInput, KeyvalText } from "@/design.system";
 import { FieldWrapper } from "./create.connection.form.styled";
 import { INPUT_TYPES } from "@/utils/constants/string";
-import { Field } from "./create.connection.form";
+import { Field } from "@/types/destinations";
 
 export function renderFields(
   fields: Field[],
@@ -32,6 +32,11 @@ export function renderFields(
             id: value,
           })
         );
+
+        const dropDownValue = dynamicFields[name]
+          ? { id: dynamicFields[name], label: dynamicFields[name] }
+          : null;
+
         return (
           <FieldWrapper key={name}>
             <KeyvalText size={14} weight={600} style={{ marginBottom: 8 }}>
@@ -41,6 +46,7 @@ export function renderFields(
               width={354}
               data={dropdownData}
               onChange={({ label }) => onChange(name, label)}
+              value={dropDownValue}
             />
           </FieldWrapper>
         );

@@ -19,7 +19,7 @@ interface KeyvalDropDownProps {
   onChange: (item: DropDownItem) => void;
   childComp?: React.ReactNode;
   width?: number;
-  value?: DropDownItem;
+  value?: DropDownItem | null;
 }
 
 const SELECTED_ITEM = "Select item";

@@ -3,6 +3,7 @@ export {
   getDestinations,
   getDestination,
   setDestination,
+  updateDestination,
 } from "./destinations";
 
 export {

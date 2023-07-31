@@ -6,12 +6,12 @@ const TapListWrapper = styled.div`
   display: flex;
 `;
 
-export function TapList({ list, gap = 8, tapStyle, onClick = () => {} }: any) {
+export function TapList({ list, gap = 8, tapStyle, onClick = null }: any) {
   function renderMonitoringOptions() {
     return list.map(({ icons, title, tapped, id }: any) => (
       <KeyvalTap
         key={id}
-        onClick={() => onClick(id)}
+        onClick={onClick ? () => onClick(id) : null}
         tapped={tapped || false}
         icons={icons}
         title={title}

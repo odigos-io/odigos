@@ -24,10 +24,11 @@ import (
 
 // DestinationSpec defines the desired state of Destination
 type DestinationSpec struct {
-	Type      common.DestinationType       `json:"type"`
-	Data      map[string]string            `json:"data"`
-	SecretRef *v1.LocalObjectReference     `json:"secretRef,omitempty"`
-	Signals   []common.ObservabilitySignal `json:"signals"`
+	Type            common.DestinationType       `json:"type"`
+	DestinationName string                       `json:"destinationName"`
+	Data            map[string]string            `json:"data"`
+	SecretRef       *v1.LocalObjectReference     `json:"secretRef,omitempty"`
+	Signals         []common.ObservabilitySignal `json:"signals"`
 }
 
 // DestinationStatus defines the observed state of Destination
