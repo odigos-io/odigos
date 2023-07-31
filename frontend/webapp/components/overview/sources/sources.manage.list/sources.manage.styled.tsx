@@ -27,7 +27,7 @@ export const EmptyListWrapper = styled.div`
 `;
 
 export const ManagedListWrapper = styled.div`
-  height: 75%;
+  max-height: 72%;
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
