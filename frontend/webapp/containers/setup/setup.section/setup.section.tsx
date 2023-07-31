@@ -18,6 +18,7 @@ import { STEPS, Step } from "./utils";
 import { setNamespaces } from "@/services";
 import { useSearchParams } from "next/navigation";
 import { useMutation } from "react-query";
+import { SelectedSources } from "@/types/sources";
 
 const STATE = "state";
 
@@ -30,7 +31,9 @@ const sectionComponents = {
 export function SetupSection() {
   const [currentStep, setCurrentStep] = useState<Step>(STEPS[0]);
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
-  const { mutate } = useMutation((body) => setNamespaces(body));
+  const { mutate } = useMutation((body: SelectedSources) =>
+    setNamespaces(body)
+  );
   const { show, Notification } = useNotification();
 
   const searchParams = useSearchParams();

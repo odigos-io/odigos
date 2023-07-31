@@ -9,3 +9,19 @@ export interface ManagedSource {
     }
   ];
 }
+
+export interface SelectedSources {
+  [key: string]: {
+    objects: {
+      name: string;
+      selected: boolean;
+      kind: string;
+      app_instrumentation_labeled: boolean | null;
+      ns_instrumentation_labeled: boolean | null;
+      instrumentation_effective: boolean | null;
+      instances: number;
+    };
+    selected_all: boolean;
+    future_selected: boolean;
+  };
+}

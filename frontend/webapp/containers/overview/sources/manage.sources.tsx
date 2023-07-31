@@ -8,15 +8,22 @@ import { SourcesActionMenu, SourcesManagedList } from "@/components/overview";
 import { MenuWrapper } from "./sources.styled";
 import { ManagedSource } from "@/types/sources";
 
-export function ManageSources({ setDisplayNewSourceFlow }) {
+const DEFAULT_FILTER = { name: "default" };
+
+export function ManageSources({ setDisplayNewSourceFlow, sources }) {
   const [searchFilter, setSearchFilter] = useState<string>("");
-  const [currentNamespace, setCurrentNamespace] = useState<any>(null);
+  const [currentNamespace, setCurrentNamespace] = useState<any>(DEFAULT_FILTER);
 
   const { data: namespaces } = useQuery(
     [QUERIES.API_NAMESPACES],
     getNamespaces
   );
 
+  // const { data: sources, isLoading } = useQuery(
+  //   [QUERIES.API_SOURCES],
+  //   getSources
+  // );
+  // console.log({ sources });
   useEffect(() => {
     setSearchFilter("");
   }, [currentNamespace]);
@@ -29,12 +36,6 @@ export function ManageSources({ setDisplayNewSourceFlow }) {
       })),
     [namespaces]
   );
-
-  const {
-    data: sources,
-    refetch,
-    isLoading,
-  } = useQuery([QUERIES.API_SOURCES], getSources);
 
   function filterByNamespace() {
     return currentNamespace
@@ -57,9 +58,9 @@ export function ManageSources({ setDisplayNewSourceFlow }) {
     return filterBySearchQuery(data);
   }
 
-  if (isLoading) {
-    return <KeyvalLoader />;
-  }
+  // if (isLoading) {
+  //   return <KeyvalLoader />;
+  // }
 
   return (
     <>
