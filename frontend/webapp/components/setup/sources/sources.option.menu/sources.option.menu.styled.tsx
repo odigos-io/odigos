@@ -5,6 +5,10 @@ export const SourcesOptionMenuWrapper = styled.section`
   align-items: center;
   gap: 24px;
   padding: 40px 0 0 0;
+  @media screen and (max-width: 1400px) {
+    flex-wrap: wrap;
+    width: 90%;
+  }
 `;
 
 export const DropdownWrapper = styled.div`
