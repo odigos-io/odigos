@@ -7,6 +7,17 @@ export const SourcesOptionMenuWrapper = styled.section`
   padding: 40px 0 0 0;
 `;
 
+export const FilterMenuWrapper = styled.div`
+  display: flex;
+  gap: 16px;
+  align-items: center;
+
+  @media screen and (max-width: 1400px) {
+    flex-wrap: wrap;
+    width: 90%;
+  }
+`;
+
 export const DropdownWrapper = styled.div`
   display: flex;
   position: inherit;
