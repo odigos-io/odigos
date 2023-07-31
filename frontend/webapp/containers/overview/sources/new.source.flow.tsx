@@ -20,7 +20,6 @@ export function NewSourceFlow() {
       },
       onError: ({ response }) => {
         const message = response?.data?.message || SETUP.ERROR;
-        console.log({ response });
         show({
           type: NOTIFICATION.ERROR,
           message,
