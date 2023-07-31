@@ -17,7 +17,7 @@ export function FilterSourcesOptions({
   }
 
   return (
-    <FilterMenuWrapper>
+    <>
       <KeyvalSearchInput
         value={searchFilter}
         onChange={(e) => setSearchFilter(e.target.value)}
@@ -30,6 +30,6 @@ export function FilterSourcesOptions({
           onChange={handleDropDownChange}
         />
       </DropdownWrapper>
-    </FilterMenuWrapper>
+    </>
   );
 }
