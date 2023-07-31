@@ -10,6 +10,12 @@ export interface ManagedSource {
   ];
 }
 
+export interface Namespace {
+  name: string;
+  selected: boolean;
+  totalApps: number;
+}
+
 export interface SelectedSources {
   [key: string]: {
     objects: {
