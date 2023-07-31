@@ -1,5 +1,8 @@
 import React from "react";
-import { DropdownWrapper } from "./sources.option.menu.styled";
+import {
+  DropdownWrapper,
+  FilterMenuWrapper,
+} from "./sources.option.menu.styled";
 import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
 
@@ -14,7 +17,7 @@ export function FilterSourcesOptions({
   }
 
   return (
-    <>
+    <FilterMenuWrapper>
       <KeyvalSearchInput
         value={searchFilter}
         onChange={(e) => setSearchFilter(e.target.value)}
@@ -27,6 +30,6 @@ export function FilterSourcesOptions({
           onChange={handleDropDownChange}
         />
       </DropdownWrapper>
-    </>
+    </FilterMenuWrapper>
   );
 }

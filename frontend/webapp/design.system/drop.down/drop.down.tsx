@@ -45,6 +45,10 @@ export function KeyvalDropDown({
   const containerRef = useRef<any>(null);
 
   useEffect(() => {
+    value && setSelectedItem(value);
+  }, [value]);
+
+  useEffect(() => {
     document.addEventListener("click", handleClickOutside, true);
     return () => {
       document.removeEventListener("click", handleClickOutside, true);
