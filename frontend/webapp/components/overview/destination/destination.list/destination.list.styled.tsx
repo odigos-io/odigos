@@ -15,7 +15,6 @@ export const MenuWrapper = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 20px 36px;
-  margin-top: 88px;
 `;
 
 export const CardWrapper = styled.div`
