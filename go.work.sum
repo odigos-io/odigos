@@ -293,6 +293,7 @@ github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730053900-d53d
 github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730062110-e61bd9fd998e/go.mod h1:SYl3vHPGHMCOfF2bbeRBvtVafzEm5HHHsZc4mS02oyo=
 github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730063239-1359423cb703/go.mod h1:SYl3vHPGHMCOfF2bbeRBvtVafzEm5HHHsZc4mS02oyo=
 github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730071335-e3ae9a524206/go.mod h1:SYl3vHPGHMCOfF2bbeRBvtVafzEm5HHHsZc4mS02oyo=
+github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730104422-ed0d5aa81b08 h1:pbl9g6FIHZrGQzcRU/Yt6g3WIqAbqbsXK728ztyJRYk=
 github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730104422-ed0d5aa81b08/go.mod h1:SYl3vHPGHMCOfF2bbeRBvtVafzEm5HHHsZc4mS02oyo=
 github.com/emicklei/go-restful v0.0.0-20170410110728-ff4f55a20633 h1:H2pdYOb3KQ1/YsqVWoWNLQO+fusocsw354rqGTZtAgw=
 github.com/emicklei/go-restful/v3 v3.8.0/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
