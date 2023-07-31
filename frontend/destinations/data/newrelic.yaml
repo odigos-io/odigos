@@ -1,0 +1,23 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: newrelic
+  displayName: New Relic
+  category: managed
+spec:
+  image: newrelic.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: NEWRELIC_API_KEY
+      displayName: License Key
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
