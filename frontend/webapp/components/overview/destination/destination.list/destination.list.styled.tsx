@@ -1,7 +1,6 @@
 import { styled } from "styled-components";
 
 export const ManagedListWrapper = styled.div`
-  width: 100%;
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
