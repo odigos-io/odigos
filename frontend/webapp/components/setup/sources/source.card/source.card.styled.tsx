@@ -11,7 +11,7 @@ export const SourceCardWrapper = styled.div`
   display: flex;
   align-items: center;
   flex-direction: column;
-  /* gap: 14px; */
+  gap: 14px;
   cursor: pointer;
   .p {
     cursor: pointer !important;
@@ -19,10 +19,7 @@ export const SourceCardWrapper = styled.div`
 `;
 
 export const ApplicationNameWrapper = styled.div`
-  display: flex;
-  text-align: center;
-  justify-content: center;
-  align-items: center;
-  height: 60px;
+  display: inline-block;
+  text-overflow: ellipsis;
   max-width: 224px;
 `;
