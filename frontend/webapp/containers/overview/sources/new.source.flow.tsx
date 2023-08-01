@@ -16,22 +16,24 @@ export function NewSourceFlow({ onSuccess, sources }) {
   );
   const { show, Notification } = useNotification();
 
-  function handleNewSource() {
-    const newData: SelectedSources = {};
+  function updateSectionDataWithSources() {
+    const sourceNamesSet = new Set(sources.map((source) => source.name));
+    const updatedSectionData: SelectedSources = {};
 
     for (const key in sectionData) {
-      newData[key] = {
-        ...sectionData[key],
-        objects: sectionData[key].objects.map((item) => ({
-          ...item,
-          selected:
-            item?.selected ||
-            sources.some((source) => source.name === item.name),
-        })),
+      const { objects, ...rest } = sectionData[key];
+      const updatedObjects = objects.map((item) => ({
+        ...item,
+        selected: item?.selected || sourceNamesSet.has(item.name),
+      }));
+
+      updatedSectionData[key] = {
+        ...rest,
+        objects: updatedObjects,
       };
     }
 
-    mutate(newData, {
+    mutate(updatedSectionData, {
       onSuccess,
       onError: ({ response }) => {
         const message = response?.data?.message || SETUP.ERROR;
@@ -47,7 +49,10 @@ export function NewSourceFlow({ onSuccess, sources }) {
     <SourcesSectionWrapper>
       <ButtonWrapper>
         <KeyvalText>{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
-        <KeyvalButton onClick={handleNewSource} style={{ width: 110 }}>
+        <KeyvalButton
+          onClick={updateSectionDataWithSources}
+          style={{ width: 110 }}
+        >
           <KeyvalText weight={600} color={theme.text.dark_button}>
             {OVERVIEW.CONNECT}
           </KeyvalText>

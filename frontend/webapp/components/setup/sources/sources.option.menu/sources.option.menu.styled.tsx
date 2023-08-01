@@ -5,9 +5,9 @@ export const SourcesOptionMenuWrapper = styled.section`
   align-items: center;
   gap: 24px;
   padding: 40px 0 0 0;
-  @media screen and (max-width: 1500px) {
+  @media screen and (max-width: 1600px) {
     flex-wrap: wrap;
-    width: 70%;
+    width: 74%;
   }
 `;
 
@@ -27,5 +27,4 @@ export const CheckboxWrapper = styled.div`
 
 export const SwitcherWrapper = styled.div`
   min-width: 90px;
-  margin-left: 24px;
 `;
