@@ -1,0 +1,23 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: lightstep
+  displayName: Lightstep
+  category: managed
+spec:
+  image: lightstep.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  fields:
+    - name: LIGHTSTEP_ACCESS_TOKEN
+      displayName: Access Token
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: password
+      secret: true

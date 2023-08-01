@@ -1,0 +1,29 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: middleware
+  displayName: Middleware
+  category: managed
+spec:
+  image: middleware.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: MW_TARGET
+      displayName: Endpoint
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: text
+    - name: MW_API_KEY
+      displayName: API Key
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: password
+      secret: true

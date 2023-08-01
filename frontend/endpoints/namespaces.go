@@ -41,6 +41,11 @@ func GetNamespaces(c *gin.Context) {
 	var response GetNamespacesResponse
 	for _, namespace := range list.Items {
 
+		if IsSystemNamespace(namespace.Name) {
+			// skip system namespaces which should not be instrumented
+			continue
+		}
+
 		// check if entire namespace is instrumented
 		selected := namespace.Labels[consts.OdigosInstrumentationLabel] == consts.InstrumentationEnabled
 
@@ -81,6 +86,10 @@ func PersistNamespaces(c *gin.Context) {
 	}
 
 	for _, ns := range namespaces.Items {
+		if IsSystemNamespace(ns.Name) {
+			// skip system namespaces which should not be instrumented
+			continue
+		}
 		labeled := isLabeled(&ns)
 		userSelection, exists := request[ns.Name]
 		if !exists {

@@ -1,0 +1,43 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: logzio
+  displayName: Logz.io
+  category: managed
+spec:
+  image: logzio.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: LOGZIO_REGION
+      displayName: Region
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: text
+    - name: LOGZIO_TRACING_TOKEN
+      displayName: Tracing token
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
+    - name: LOGZIO_METRICS_TOKEN
+      displayName: Metrics token
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
+    - name: LOGZIO_LOGS_TOKEN
+      displayName: Logs token
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
