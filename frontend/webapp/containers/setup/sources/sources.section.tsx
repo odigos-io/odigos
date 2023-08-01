@@ -3,7 +3,7 @@ import { SourcesList, SourcesOptionMenu } from "@/components/setup";
 import { getApplication, getNamespaces } from "@/services";
 import { LoaderWrapper } from "./sources.section.styled";
 import { useQuery } from "react-query";
-import { QUERIES } from "@/utils/constants";
+import { NOTIFICATION, QUERIES } from "@/utils/constants";
 import { KeyvalLoader } from "@/design.system";
 import { useNotification } from "@/hooks";
 
@@ -32,7 +32,7 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
   useEffect(() => {
     isError &&
       show({
-        type: "error",
+        type: NOTIFICATION.ERROR,
         message: error,
       });
   }, [isError]);
