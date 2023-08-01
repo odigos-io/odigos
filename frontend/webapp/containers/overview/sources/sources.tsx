@@ -25,7 +25,7 @@ export function SourcesContainer() {
   }, [displayNewSourceFlow]);
 
   async function refetchSources() {
-    if (displayNewSourceFlow !== null && displayNewSourceFlow === false) {
+    if (displayNewSourceFlow === false) {
       setTimeout(async () => {
         refetch();
       }, 1000);
