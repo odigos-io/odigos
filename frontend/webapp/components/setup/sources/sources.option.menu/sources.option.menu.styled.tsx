@@ -5,9 +5,9 @@ export const SourcesOptionMenuWrapper = styled.section`
   align-items: center;
   gap: 24px;
   padding: 40px 0 0 0;
-  @media screen and (max-width: 1600px) {
-    flex-wrap: wrap;
-    width: 74%;
+  flex-wrap: wrap;
+  @media screen and (max-width: 1650px) {
+    width: 85%;
   }
 `;
 
