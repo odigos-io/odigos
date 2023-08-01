@@ -27,6 +27,8 @@ export function KeyvalImage({
       width={width}
       height={height}
       style={{ ...IMAGE_STYLE, ...style }}
+      placeholder={"empty"}
+      blurDataURL={src}
     />
   );
 }

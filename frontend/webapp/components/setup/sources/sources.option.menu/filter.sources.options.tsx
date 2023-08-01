@@ -1,8 +1,5 @@
 import React from "react";
-import {
-  DropdownWrapper,
-  FilterMenuWrapper,
-} from "./sources.option.menu.styled";
+import { DropdownWrapper } from "./sources.option.menu.styled";
 import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
 

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
 import { OverviewHeader } from "@/components/overview";
 import { SourcesContainerWrapper } from "./sources.styled";
@@ -10,13 +10,31 @@ import { useQuery } from "react-query";
 import { getSources } from "@/services";
 
 export function SourcesContainer() {
-  const [displayNewSourceFlow, setDisplayNewSourceFlow] = useState(false);
+  const [displayNewSourceFlow, setDisplayNewSourceFlow] = useState<
+    boolean | null
+  >(null);
   const { show, Notification } = useNotification();
 
-  const { data: sources, isLoading } = useQuery(
+  const { data: sources, refetch } = useQuery(
     [QUERIES.API_SOURCES],
     getSources
   );
+
+  useEffect(() => {
+    refetchSources();
+  }, [displayNewSourceFlow]);
+
+  useEffect(() => {
+    console.log({ sources });
+  }, [sources]);
+
+  async function refetchSources() {
+    if (displayNewSourceFlow !== null && displayNewSourceFlow === false) {
+      setTimeout(async () => {
+        refetch();
+      }, 1000);
+    }
+  }
 
   function onNewSourceSuccess() {
     setDisplayNewSourceFlow(false);

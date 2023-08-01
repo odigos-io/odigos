@@ -11,12 +11,6 @@ export const SourcesOptionMenuWrapper = styled.section`
   }
 `;
 
-export const FilterMenuWrapper = styled.div`
-  display: flex;
-  gap: 16px;
-  align-items: center;
-`;
-
 export const DropdownWrapper = styled.div`
   display: flex;
   position: inherit;

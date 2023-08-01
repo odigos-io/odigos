@@ -11,21 +11,20 @@ const LAYOUT_STYLE: React.CSSProperties = {
   width: "100vw",
   height: "100vh",
 };
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 10000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 10000,
-        refetchOnWindowFocus: false,
-      },
-    },
-  });
-
   return (
     <html lang="en">
       <QueryClientProvider client={queryClient}>
