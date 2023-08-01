@@ -134,19 +134,21 @@ export function CreateConnectionForm({
           ? SETUP.UPDATE_CONNECTION
           : SETUP.CREATE_CONNECTION}
       </KeyvalText>
-      <ConnectionMonitorsWrapper>
-        <KeyvalText size={14}>{SETUP.CONNECTION_MONITORS}</KeyvalText>
-        <CheckboxWrapper>
-          {selectedMonitors.map((checkbox) => (
-            <KeyvalCheckbox
-              key={checkbox?.id}
-              value={checkbox?.checked}
-              onChange={() => handleCheckboxChange(checkbox?.id)}
-              label={checkbox?.label}
-            />
-          ))}
-        </CheckboxWrapper>
-      </ConnectionMonitorsWrapper>
+      {selectedMonitors?.length > 1 && (
+        <ConnectionMonitorsWrapper>
+          <KeyvalText size={14}>{SETUP.CONNECTION_MONITORS}</KeyvalText>
+          <CheckboxWrapper>
+            {selectedMonitors.map((checkbox) => (
+              <KeyvalCheckbox
+                key={checkbox?.id}
+                value={checkbox?.checked}
+                onChange={() => handleCheckboxChange(checkbox?.id)}
+                label={checkbox?.label}
+              />
+            ))}
+          </CheckboxWrapper>
+        </ConnectionMonitorsWrapper>
+      )}
       <FieldWrapper>
         <KeyvalInput
           style={{ height: 36 }}
