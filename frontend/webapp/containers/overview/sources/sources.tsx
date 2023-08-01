@@ -24,10 +24,6 @@ export function SourcesContainer() {
     refetchSources();
   }, [displayNewSourceFlow]);
 
-  useEffect(() => {
-    console.log({ sources });
-  }, [sources]);
-
   async function refetchSources() {
     if (displayNewSourceFlow !== null && displayNewSourceFlow === false) {
       setTimeout(async () => {
