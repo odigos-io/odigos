@@ -26,9 +26,7 @@ const IMAGE_STYLE: React.CSSProperties = {
   marginLeft: 16,
 };
 
-export function ManageDestinationHeader({
-  data: { image_url, display_name, type },
-}) {
+export function ManageDestinationHeader({ data: { image_url, display_name } }) {
   return (
     <ManageDestinationHeaderWrapper>
       <KeyvalImage src={image_url} style={IMAGE_STYLE} />
@@ -36,8 +34,6 @@ export function ManageDestinationHeader({
         <KeyvalText size={24} weight={700}>
           {display_name}
         </KeyvalText>
-
-        <KeyvalText size={20}>{type}</KeyvalText>
       </TextWrapper>
     </ManageDestinationHeaderWrapper>
   );

@@ -15,9 +15,7 @@ import { SETUP } from "@/utils/constants";
 import { KIND_COLORS } from "@/styles/global";
 
 const TEXT_STYLE = {
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
+  overflowWrap: "break-word",
 };
 
 export function SourceCard({ item, onClick, focus }: any) {
@@ -29,8 +27,12 @@ export function SourceCard({ item, onClick, focus }: any) {
       <SourceCardWrapper onClick={onClick}>
         <Logo />
         <ApplicationNameWrapper>
-          <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
-            {item.name}
+          <KeyvalText
+            size={item?.name?.length > 20 ? 16 : 20}
+            weight={700}
+            style={TEXT_STYLE}
+          >
+            {item?.name}
           </KeyvalText>
         </ApplicationNameWrapper>
         <KeyvalTag
