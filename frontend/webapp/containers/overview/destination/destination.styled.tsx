@@ -8,7 +8,6 @@ export const DestinationContainerWrapper = styled.div`
 
 export const NewDestinationContainer = styled.div`
   padding: 20px 36px;
-  margin-top: 88px;
 `;
 
 export const ManageDestinationWrapper = styled.div`

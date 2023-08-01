@@ -19,7 +19,12 @@ export function SourcesContainer() {
 
   return (
     <SourcesContainerWrapper>
-      <OverviewHeader title={OVERVIEW.MENU.SOURCES} />
+      <OverviewHeader
+        title={OVERVIEW.MENU.SOURCES}
+        onBackClick={
+          displayNewSourceFlow ? () => setDisplayNewSourceFlow(false) : null
+        }
+      />
       {displayNewSourceFlow ? renderNewSourceFlow() : renderSources()}
     </SourcesContainerWrapper>
   );

@@ -74,6 +74,7 @@ export const OVERVIEW = {
   DELETE_MODAL_SUBTITLE:
     "This action cannot be undone. This will permanently delete the destination and all associated data.",
   DELETE_BUTTON: "I want to delete this destination",
+  CONNECT: "Connect",
 };
 
 export const NOTIFICATION = {

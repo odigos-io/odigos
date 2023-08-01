@@ -11,7 +11,6 @@ export const MenuWrapper = styled.div`
 `;
 
 export const SourcesSectionWrapper = styled(MenuWrapper)`
-  margin-top: 88px;
   position: relative;
 `;
 

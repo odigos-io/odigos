@@ -4,7 +4,7 @@ import { SourcesSectionWrapper, ButtonWrapper } from "./sources.styled";
 import { SourcesSection } from "@/containers/setup/sources/sources.section";
 import { KeyvalButton, KeyvalText } from "@/design.system";
 import theme from "@/styles/palette";
-import { NOTIFICATION, SETUP } from "@/utils/constants";
+import { NOTIFICATION, OVERVIEW, SETUP } from "@/utils/constants";
 import { useMutation } from "react-query";
 import { setNamespaces } from "@/services";
 
@@ -35,7 +35,7 @@ export function NewSourceFlow() {
         <KeyvalText>{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
         <KeyvalButton onClick={handleNewSource} style={{ width: 110 }}>
           <KeyvalText weight={600} color={theme.text.dark_button}>
-            Connect
+            {OVERVIEW.CONNECT}
           </KeyvalText>
         </KeyvalButton>
       </ButtonWrapper>

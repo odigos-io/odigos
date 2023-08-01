@@ -11,7 +11,7 @@ import FormDangerZone from "./form.danger.zone";
 interface ManageDestinationProps {
   destinationType: DestinationType;
   selectedDestination: any;
-  onBackClick: () => void;
+  onBackClick?: () => void;
   onSubmit: (data: any) => void;
   onDelete?: () => void;
 }
@@ -34,10 +34,12 @@ export function ManageDestination({
 }: ManageDestinationProps) {
   return (
     <>
-      <BackButtonWrapper onClick={onBackClick}>
-        <Back width={14} />
-        <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
-      </BackButtonWrapper>
+      {onBackClick && (
+        <BackButtonWrapper onClick={onBackClick}>
+          <Back width={14} />
+          <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
+        </BackButtonWrapper>
+      )}
       <ManageDestinationHeader data={selectedDestination} />
       <CreateConnectionForm
         fields={destinationType?.fields}
