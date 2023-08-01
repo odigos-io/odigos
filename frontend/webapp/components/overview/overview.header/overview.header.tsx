@@ -14,18 +14,24 @@ const OverviewHeaderContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 24px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.08);
   background: ${({ theme }) => theme.colors.light_dark};
 `;
 
 const BackButtonWrapper = styled.div`
   display: flex;
-  margin-bottom: 8px;
+  margin: 24px;
+  margin-bottom: 0;
   cursor: pointer;
   p {
     cursor: pointer !important;
   }
+`;
+
+const TextWrapper = styled.div`
+  margin-top: 24px;
+  margin-left: 24px;
+  margin-bottom: 24px;
 `;
 
 export function OverviewHeader({ title, onBackClick }: OverviewHeaderProps) {
@@ -37,9 +43,11 @@ export function OverviewHeader({ title, onBackClick }: OverviewHeaderProps) {
           <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
         </BackButtonWrapper>
       )}
-      <KeyvalText size={32} weight={700}>
-        {title}
-      </KeyvalText>
+      <TextWrapper>
+        <KeyvalText size={32} weight={700}>
+          {title}
+        </KeyvalText>
+      </TextWrapper>
     </OverviewHeaderContainer>
   );
 }

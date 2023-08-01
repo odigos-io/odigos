@@ -5,7 +5,6 @@ export const ManagedListWrapper = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
-  overflow-y: scroll;
   padding: 0px 36px;
   padding-bottom: 50px;
 `;
