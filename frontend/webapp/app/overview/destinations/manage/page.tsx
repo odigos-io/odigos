@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
 import { useNotification } from "@/hooks";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import UpdateDestinationFlow from "@/containers/overview/destination/update.destination.flow";
 import { getDestinations } from "@/services";
 import { useQuery } from "react-query";
@@ -16,7 +16,7 @@ export default function ManageDestinationPage() {
     data: destinationList,
     refetch,
   } = useQuery([QUERIES.API_DESTINATIONS], getDestinations);
-  const router = useRouter();
+
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -30,7 +30,6 @@ export default function ManageDestinationPage() {
   }, [searchParams, destinationList]);
 
   function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
-    router.back();
     refetch();
     show({
       type: NOTIFICATION.SUCCESS,

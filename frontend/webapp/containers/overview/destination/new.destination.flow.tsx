@@ -9,23 +9,9 @@ import { DestinationSection } from "@/containers/setup/destination/destination.s
 import { NewDestinationContainer } from "./destination.styled";
 import { useRouter } from "next/navigation";
 
-export function NewDestinationFlow({ onSuccess, onError }) {
+export function NewDestinationFlow() {
   const { sectionData, setSectionData } = useSectionData(null);
-
-  const { mutate } = useMutation((body) => setDestination(body));
   const router = useRouter();
-
-  // function onSubmit(newDestination) {
-  //   const destination = {
-  //     ...newDestination,
-  //     type: sectionData.type,
-  //   };
-
-  //   mutate(destination, {
-  //     onSuccess: () => onSuccess(OVERVIEW.DESTINATION_CREATED_SUCCESS),
-  //     onError,
-  //   });
-  // }
 
   function handleBackPress() {
     router.back();

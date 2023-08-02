@@ -1,6 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { OVERVIEW, QUERIES } from "@/utils/constants";
+import React, { useEffect } from "react";
+import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
 import { useMutation, useQuery } from "react-query";
 import {
   getDestination,
@@ -8,7 +8,7 @@ import {
   setDestination,
 } from "@/services";
 import { ManageDestination, OverviewHeader } from "@/components/overview";
-import { useSectionData } from "@/hooks";
+import { useNotification, useSectionData } from "@/hooks";
 import { useRouter, useSearchParams } from "next/navigation";
 import { styled } from "styled-components";
 
@@ -16,7 +16,7 @@ const NewDestinationContainer = styled.div`
   padding: 20px 36px;
 `;
 
-export default function NewDestinationFlow({ onSuccess, onError }) {
+export default function NewDestinationFlow() {
   const { sectionData, setSectionData } = useSectionData(null);
   const searchParams = useSearchParams();
   const { data: destinationType } = useQuery(
@@ -31,7 +31,7 @@ export default function NewDestinationFlow({ onSuccess, onError }) {
     [QUERIES.API_DESTINATION_TYPES],
     getDestinationsTypes
   );
-
+  const { show, Notification } = useNotification();
   const { mutate } = useMutation((body) => setDestination(body));
   const router = useRouter();
 
@@ -46,6 +46,21 @@ export default function NewDestinationFlow({ onSuccess, onError }) {
     });
     setSectionData(currentData);
   }, [data]);
+
+  function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
+    show({
+      type: NOTIFICATION.SUCCESS,
+      message,
+    });
+  }
+
+  function onError({ response }) {
+    const message = response?.data?.message;
+    show({
+      type: NOTIFICATION.ERROR,
+      message,
+    });
+  }
 
   function onSubmit(newDestination) {
     const destination = {
@@ -82,6 +97,7 @@ export default function NewDestinationFlow({ onSuccess, onError }) {
           />
         </NewDestinationContainer>
       )}
+      <Notification />
     </>
   );
 }
