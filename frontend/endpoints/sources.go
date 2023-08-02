@@ -3,6 +3,7 @@ package endpoints
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -34,6 +35,59 @@ func GetSources(c *gin.Context) {
 	c.JSON(200, sources)
 }
 
+func DeleteSource(c *gin.Context) {
+	// to delete a source, we need to remove it's instrumented label
+	// afterwards, odigos will detect the change and remove the instrumented application
+
+	// first search for this object in k8s
+	ns := c.Param("namespace")
+	kind := c.Param("kind")
+	name := c.Param("name")
+
+	switch kind {
+	case "Deployment":
+		deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(c, name, metav1.GetOptions{})
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+		markK8sObjectInstrumentationDisabled(deployment)
+		_, err = kube.DefaultClient.AppsV1().Deployments(ns).Update(c, deployment, metav1.UpdateOptions{})
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+	case "StatefulSet":
+		statefulSet, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(c, name, metav1.GetOptions{})
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+		markK8sObjectInstrumentationDisabled(statefulSet)
+		_, err = kube.DefaultClient.AppsV1().StatefulSets(ns).Update(c, statefulSet, metav1.UpdateOptions{})
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+	case "DaemonSet":
+		daemonSet, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(c, name, metav1.GetOptions{})
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+		markK8sObjectInstrumentationDisabled(daemonSet)
+		_, err = kube.DefaultClient.AppsV1().DaemonSets(ns).Update(c, daemonSet, metav1.UpdateOptions{})
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+	default:
+		c.JSON(400, gin.H{"error": "kind not supported"})
+		return
+	}
+	c.JSON(200, gin.H{"message": "ok"})
+}
+
 func k8sInstrumentedAppToSource(app *v1alpha1.InstrumentedApplication) Source {
 	var source Source
 	source.Name = app.OwnerReferences[0].Name
@@ -46,4 +100,13 @@ func k8sInstrumentedAppToSource(app *v1alpha1.InstrumentedApplication) Source {
 		})
 	}
 	return source
+}
+
+func markK8sObjectInstrumentationDisabled(obj metav1.Object) {
+	labels := obj.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationDisabled
+	obj.SetLabels(labels)
 }
