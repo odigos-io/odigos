@@ -7,4 +7,5 @@ export const ROUTES = {
   MANAGE_DESTINATION: "/overview/destinations/create/manage?dest=",
   UPDATE_DESTINATION: "destinations/manage?dest=",
   CREATE_DESTINATION: "destinations/create",
+  CREATE_SOURCE: "/overview/sources/create",
 };
