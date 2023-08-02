@@ -7,10 +7,12 @@ import UpdateDestinationFlow from "@/containers/overview/destination/update.dest
 import { getDestinations } from "@/services";
 import { useQuery } from "react-query";
 
+const DEST = "dest";
+
 export default function ManageDestinationPage() {
   const [selectedDestination, setSelectedDestination] = useState<any>(null);
-
   const { show, Notification } = useNotification();
+
   const {
     isLoading: destinationLoading,
     data: destinationList,
@@ -19,15 +21,17 @@ export default function ManageDestinationPage() {
 
   const searchParams = useSearchParams();
 
-  useEffect(() => {
-    const search = searchParams.get("dest");
+  useEffect(onPageLoad, [searchParams, destinationList]);
+
+  function onPageLoad() {
+    const search = searchParams.get(DEST);
     const currentDestination = destinationList?.filter(
-      (item) => item?.id === search
+      ({ id }) => id === search
     );
     if (currentDestination?.length) {
       setSelectedDestination(currentDestination[0]);
     }
-  }, [searchParams, destinationList]);
+  }
 
   function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
     refetch();
@@ -45,20 +49,18 @@ export default function ManageDestinationPage() {
     });
   }
 
-  if (destinationLoading) {
+  if (destinationLoading || !selectedDestination) {
     return;
   }
 
   return (
-    selectedDestination && (
-      <>
-        <UpdateDestinationFlow
-          selectedDestination={selectedDestination}
-          onSuccess={onSuccess}
-          onError={onError}
-        />
-        <Notification />
-      </>
-    )
+    <>
+      <UpdateDestinationFlow
+        selectedDestination={selectedDestination}
+        onSuccess={onSuccess}
+        onError={onError}
+      />
+      <Notification />
+    </>
   );
 }

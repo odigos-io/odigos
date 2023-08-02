@@ -4,4 +4,7 @@ export const ROUTES = {
   SOURCES: "/overview/sources",
   DESTINATIONS: "/overview/destinations",
   NEW_DESTINATION: "/setup?state=destinations",
+  MANAGE_DESTINATION: "/overview/destinations/create/manage?dest=",
+  UPDATE_DESTINATION: "destinations/manage?dest=",
+  CREATE_DESTINATION: "destinations/create",
 };

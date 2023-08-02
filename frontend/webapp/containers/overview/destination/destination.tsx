@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { KeyvalLoader } from "@/design.system";
-import { OVERVIEW, QUERIES } from "@/utils/constants";
+import { OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
 import { useQuery } from "react-query";
 import { getDestinations } from "@/services";
 import { OverviewHeader, DestinationsManagedList } from "@/components/overview";
@@ -24,8 +24,10 @@ export function DestinationContainer() {
       <OverviewHeader title={OVERVIEW.MENU.DESTINATIONS} />
       <DestinationsManagedList
         data={destinationList}
-        onItemClick={({ id }) => router.push(`destinations/manage?dest=${id}`)}
-        onMenuButtonClick={() => router.push("destinations/create")}
+        onItemClick={({ id }) =>
+          router.push(`${ROUTES.UPDATE_DESTINATION}${id}`)
+        }
+        onMenuButtonClick={() => router.push(ROUTES.CREATE_DESTINATION)}
       />
     </>
   );

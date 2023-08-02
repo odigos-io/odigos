@@ -12,6 +12,8 @@ import { useNotification, useSectionData } from "@/hooks";
 import { useRouter, useSearchParams } from "next/navigation";
 import { styled } from "styled-components";
 
+const DEST = "dest";
+
 const NewDestinationContainer = styled.div`
   padding: 20px 36px;
 `;
@@ -35,8 +37,10 @@ export default function NewDestinationFlow() {
   const { mutate } = useMutation((body) => setDestination(body));
   const router = useRouter();
 
-  useEffect(() => {
-    const search = searchParams.get("dest");
+  useEffect(onPageLoad, [data]);
+
+  function onPageLoad() {
+    const search = searchParams.get(DEST);
     let currentData = null;
     data?.categories.forEach((item) => {
       const filterItem = item.items.filter((dest) => dest?.type === search);
@@ -45,7 +49,7 @@ export default function NewDestinationFlow() {
       }
     });
     setSectionData(currentData);
-  }, [data]);
+  }
 
   function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
     show({
