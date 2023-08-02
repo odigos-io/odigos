@@ -15,17 +15,17 @@ export function NewDestinationFlow({ onSuccess, onError }) {
   const { mutate } = useMutation((body) => setDestination(body));
   const router = useRouter();
 
-  function onSubmit(newDestination) {
-    const destination = {
-      ...newDestination,
-      type: sectionData.type,
-    };
+  // function onSubmit(newDestination) {
+  //   const destination = {
+  //     ...newDestination,
+  //     type: sectionData.type,
+  //   };
 
-    mutate(destination, {
-      onSuccess: () => onSuccess(OVERVIEW.DESTINATION_CREATED_SUCCESS),
-      onError,
-    });
-  }
+  //   mutate(destination, {
+  //     onSuccess: () => onSuccess(OVERVIEW.DESTINATION_CREATED_SUCCESS),
+  //     onError,
+  //   });
+  // }
 
   function handleBackPress() {
     router.back();

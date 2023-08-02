@@ -1,20 +1,37 @@
 "use client";
-import React, { useState } from "react";
-import { NOTIFICATION, OVERVIEW } from "@/utils/constants";
+import React, { useEffect, useState } from "react";
+import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
 import { useNotification } from "@/hooks";
-import { useRouter } from "next/navigation";
-import { UpdateDestinationFlow } from "@/containers/overview/destination/update.destination.flow";
+import { useRouter, useSearchParams } from "next/navigation";
+import UpdateDestinationFlow from "@/containers/overview/destination/update.destination.flow";
+import { getDestinations } from "@/services";
+import { useQuery } from "react-query";
 
-export function ManageDestinationPage() {
+export default function ManageDestinationPage() {
   const [selectedDestination, setSelectedDestination] = useState<any>(null);
 
   const { show, Notification } = useNotification();
-
+  const {
+    isLoading: destinationLoading,
+    data: destinationList,
+    refetch,
+  } = useQuery([QUERIES.API_DESTINATIONS], getDestinations);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const search = searchParams.get("dest");
+    const currentDestination = destinationList?.filter(
+      (item) => item?.id === search
+    );
+    if (currentDestination?.length) {
+      setSelectedDestination(currentDestination[0]);
+    }
+  }, [searchParams, destinationList]);
 
   function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
-    setSelectedDestination(null);
-    router.push("destinations");
+    router.back();
+    refetch();
     show({
       type: NOTIFICATION.SUCCESS,
       message,
@@ -29,15 +46,20 @@ export function ManageDestinationPage() {
     });
   }
 
+  if (destinationLoading) {
+    return;
+  }
+
   return (
-    <>
-      <UpdateDestinationFlow
-        selectedDestination={selectedDestination}
-        setSelectedDestination={setSelectedDestination}
-        onSuccess={onSuccess}
-        onError={onError}
-      />
-      <Notification />
-    </>
+    selectedDestination && (
+      <>
+        <UpdateDestinationFlow
+          selectedDestination={selectedDestination}
+          onSuccess={onSuccess}
+          onError={onError}
+        />
+        <Notification />
+      </>
+    )
   );
 }
