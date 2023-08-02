@@ -8,9 +8,8 @@ import {
 } from "./destination.card.styled";
 
 const TEXT_STYLE: React.CSSProperties = {
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
+  overflowWrap: "break-word",
+  textAlign: "center",
 };
 const LOGO_STYLE: React.CSSProperties = { padding: 4, backgroundColor: "#fff" };
 const TAP_STYLE: React.CSSProperties = { padding: "4px 8px", gap: 4 };

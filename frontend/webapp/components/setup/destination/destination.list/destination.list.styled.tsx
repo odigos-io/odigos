@@ -13,7 +13,11 @@ export const DestinationListWrapper = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
-  overflow-y: scroll;
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 `;
 
 export const EmptyListWrapper = styled.div`

@@ -17,7 +17,7 @@ interface SourcesManagedListProps {
 export function SourcesManagedList({ data = [] }: SourcesManagedListProps) {
   function renderSources() {
     return data.map((source: ManagedSource) => (
-      <SourceManagedCard item={source} />
+      <SourceManagedCard key={source?.name} item={source} />
     ));
   }
 

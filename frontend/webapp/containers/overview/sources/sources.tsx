@@ -1,20 +1,56 @@
 "use client";
-import React, { useState } from "react";
-import { OVERVIEW } from "@/utils/constants";
+import React, { useEffect, useState } from "react";
+import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
 import { OverviewHeader } from "@/components/overview";
 import { SourcesContainerWrapper } from "./sources.styled";
 import { NewSourceFlow } from "./new.source.flow";
 import { ManageSources } from "./manage.sources";
+import { useNotification } from "@/hooks";
+import { useQuery } from "react-query";
+import { getSources } from "@/services";
 
 export function SourcesContainer() {
-  const [displayNewSourceFlow, setDisplayNewSourceFlow] = useState(false);
+  const [displayNewSourceFlow, setDisplayNewSourceFlow] = useState<
+    boolean | null
+  >(null);
+  const { show, Notification } = useNotification();
+
+  const { data: sources, refetch } = useQuery(
+    [QUERIES.API_SOURCES],
+    getSources
+  );
+
+  useEffect(() => {
+    refetchSources();
+  }, [displayNewSourceFlow]);
+
+  async function refetchSources() {
+    if (displayNewSourceFlow === false) {
+      setTimeout(async () => {
+        refetch();
+      }, 1000);
+    }
+  }
+
+  function onNewSourceSuccess() {
+    setDisplayNewSourceFlow(false);
+    show({
+      type: NOTIFICATION.SUCCESS,
+      message: OVERVIEW.SOURCE_CREATED_SUCCESS,
+    });
+  }
 
   function renderNewSourceFlow() {
-    return <NewSourceFlow />;
+    return <NewSourceFlow onSuccess={onNewSourceSuccess} sources={sources} />;
   }
 
   function renderSources() {
-    return <ManageSources setDisplayNewSourceFlow={setDisplayNewSourceFlow} />;
+    return (
+      <ManageSources
+        setDisplayNewSourceFlow={setDisplayNewSourceFlow}
+        sources={sources}
+      />
+    );
   }
 
   return (
@@ -26,6 +62,7 @@ export function SourcesContainer() {
         }
       />
       {displayNewSourceFlow ? renderNewSourceFlow() : renderSources()}
+      <Notification />
     </SourcesContainerWrapper>
   );
 }

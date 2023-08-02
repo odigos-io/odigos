@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { styled } from "styled-components";
 import { Back } from "@/assets/icons/overview";
-import { CreateConnectionForm } from "@/components/setup";
+import { CreateConnectionForm, QuickHelp } from "@/components/setup";
 import { KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
 import { ManageDestinationHeader } from "../manage.destination.header/manage.destination.header";
@@ -25,6 +25,13 @@ const BackButtonWrapper = styled.div`
   }
 `;
 
+const CreateConnectionWrapper = styled.div`
+  display: flex;
+  gap: 200px;
+  overflow: scroll;
+  scrollbar-width: none;
+`;
+
 export function ManageDestination({
   destinationType,
   selectedDestination,
@@ -32,6 +39,18 @@ export function ManageDestination({
   onSubmit,
   onDelete,
 }: ManageDestinationProps) {
+  const videoList = useMemo(
+    () =>
+      destinationType?.fields
+        ?.filter((field) => field?.video_url)
+        ?.map((field) => ({
+          name: field.display_name,
+          src: field.video_url,
+          thumbnail_url: field.thumbnail_url,
+        })),
+    [destinationType]
+  );
+
   return (
     <>
       {onBackClick && (
@@ -41,17 +60,22 @@ export function ManageDestination({
         </BackButtonWrapper>
       )}
       <ManageDestinationHeader data={selectedDestination} />
-      <CreateConnectionForm
-        fields={destinationType?.fields}
-        destinationNameValue={selectedDestination?.name}
-        dynamicFieldsValues={selectedDestination?.fields}
-        checkboxValues={selectedDestination?.signals}
-        supportedSignals={selectedDestination?.supported_signals}
-        onSubmit={(data) => onSubmit(data)}
-      />
-      {onDelete && (
-        <FormDangerZone onDelete={onDelete} data={selectedDestination} />
-      )}
+      <CreateConnectionWrapper>
+        <div>
+          <CreateConnectionForm
+            fields={destinationType?.fields}
+            destinationNameValue={selectedDestination?.name}
+            dynamicFieldsValues={selectedDestination?.fields}
+            checkboxValues={selectedDestination?.signals}
+            supportedSignals={selectedDestination?.supported_signals}
+            onSubmit={(data) => onSubmit(data)}
+          />
+          {onDelete && (
+            <FormDangerZone onDelete={onDelete} data={selectedDestination} />
+          )}
+        </div>
+        {videoList?.length > 0 && <QuickHelp data={videoList} />}
+      </CreateConnectionWrapper>
     </>
   );
 }

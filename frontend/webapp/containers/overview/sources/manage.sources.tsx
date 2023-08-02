@@ -1,16 +1,18 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { KeyvalLoader } from "@/design.system";
 import { QUERIES } from "@/utils/constants";
 import { useQuery } from "react-query";
-import { getNamespaces, getSources } from "@/services";
+import { getNamespaces } from "@/services";
 import { SourcesActionMenu, SourcesManagedList } from "@/components/overview";
 import { MenuWrapper } from "./sources.styled";
-import { ManagedSource } from "@/types/sources";
+import { ManagedSource, Namespace } from "@/types/sources";
 
-export function ManageSources({ setDisplayNewSourceFlow }) {
+const DEFAULT_FILTER = { name: "default", selected: false, totalApps: 0 };
+
+export function ManageSources({ setDisplayNewSourceFlow, sources }) {
   const [searchFilter, setSearchFilter] = useState<string>("");
-  const [currentNamespace, setCurrentNamespace] = useState<any>(null);
+  const [currentNamespace, setCurrentNamespace] =
+    useState<Namespace>(DEFAULT_FILTER);
 
   const { data: namespaces } = useQuery(
     [QUERIES.API_NAMESPACES],
@@ -23,18 +25,12 @@ export function ManageSources({ setDisplayNewSourceFlow }) {
 
   const namespacesList = useMemo(
     () =>
-      namespaces?.namespaces?.map((item: any, index: number) => ({
+      namespaces?.namespaces?.map((item: Namespace, index: number) => ({
         id: index,
         label: item.name,
       })),
     [namespaces]
   );
-
-  const {
-    data: sources,
-    refetch,
-    isLoading,
-  } = useQuery([QUERIES.API_SOURCES], getSources);
 
   function filterByNamespace() {
     return currentNamespace
@@ -44,7 +40,7 @@ export function ManageSources({ setDisplayNewSourceFlow }) {
       : sources;
   }
 
-  function filterBySearchQuery(data) {
+  function filterBySearchQuery(data: ManagedSource[]) {
     return searchFilter
       ? data?.filter((item: ManagedSource) =>
           item.name.toLowerCase().includes(searchFilter.toLowerCase())
@@ -55,10 +51,6 @@ export function ManageSources({ setDisplayNewSourceFlow }) {
   function filterSources() {
     let data = filterByNamespace();
     return filterBySearchQuery(data);
-  }
-
-  if (isLoading) {
-    return <KeyvalLoader />;
   }
 
   return (
