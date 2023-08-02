@@ -73,10 +73,15 @@ export const OVERVIEW = {
   MANAGE: "Manage",
   DELETE: "Delete",
   DELETE_DESTINATION: "Delete Destination",
+  DELETE_SOURCE: "Delete Source",
+  SOURCE_DANGER_ZONE_TITLE: "Delete this source",
+  SOURCE_DANGER_ZONE_SUBTITLE:
+    "This action cannot be undone. This will permanently delete the source and all associated data.",
   DELETE_MODAL_TITLE: "Delete this destination",
   DELETE_MODAL_SUBTITLE:
     "This action cannot be undone. This will permanently delete the destination and all associated data.",
   DELETE_BUTTON: "I want to delete this destination",
+  CONFIRM_SOURCE_DELETE: "I want to delete this source",
   CONNECT: "Connect",
 };
 
