@@ -62,6 +62,7 @@ export function ManageDestination({
       )}
       <ManageDestinationHeader data={selectedDestination} />
       <CreateConnectionWrapper expand={!!onDelete || false}>
+
         <div>
           <CreateConnectionForm
             fields={destinationType?.fields}
