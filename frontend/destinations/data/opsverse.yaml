@@ -1,0 +1,47 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: opsverse
+  displayName: OpsVerse
+  category: managed
+spec:
+  image: opsverse.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: OPSVERSE_USERNAME
+      displayName: User
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: text
+    - name: OPSVERSE_PASSWORD
+      displayName: Password
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
+    - name: OPSVERSE_LOGS_URL
+      displayName: Logs Endpoint
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: text
+    - name: OPSVERSE_METRICS_URL
+      displayName: Metrics Endpoint
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: text
+    - name: OPSVERSE_TRACES_URL
+      displayName: Traces Endpoint
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: text
