@@ -7,7 +7,7 @@ import { KeyvalText } from "../text/text";
 import CloseIcon from "@/assets/icons/X-blue.svg";
 import SuccessIcon from "@/assets/icons/success-notification.svg";
 import ErrorIcon from "@/assets/icons/error-notification.svg";
-import PortalNotification from "./portal.notification";
+
 interface KeyvalNotificationProps {
   type: "success" | "error" | "warning" | "info";
   message: string;
@@ -48,16 +48,14 @@ export function KeyvalNotification({
   }
 
   return (
-    <PortalNotification wrapperId="notification-portal">
-      <NotificationContainer>
-        <StyledNotification style={getNotificationStyle()}>
-          {getIcon()}
-          <KeyvalText weight={500} size={14}>
-            {message}
-          </KeyvalText>
-          <CloseIcon onClick={onClose} />
-        </StyledNotification>
-      </NotificationContainer>
-    </PortalNotification>
+    <NotificationContainer>
+      <StyledNotification style={getNotificationStyle()}>
+        {getIcon()}
+        <KeyvalText weight={500} size={14}>
+          {message}
+        </KeyvalText>
+        <CloseIcon onClick={onClose} />
+      </StyledNotification>
+    </NotificationContainer>
   );
 }

@@ -20,7 +20,11 @@ const NewDestinationContainer = styled.div`
 
 export default function NewDestinationFlow() {
   const { sectionData, setSectionData } = useSectionData(null);
+  const { show, Notification } = useNotification();
+  const { mutate } = useMutation((body) => setDestination(body));
   const searchParams = useSearchParams();
+  const router = useRouter();
+
   const { data: destinationType } = useQuery(
     [QUERIES.API_DESTINATION_TYPE, sectionData?.type],
     () => getDestination(sectionData?.type),
@@ -29,25 +33,29 @@ export default function NewDestinationFlow() {
     }
   );
 
-  const { isLoading, data } = useQuery(
+  const { data: destinationsList } = useQuery(
     [QUERIES.API_DESTINATION_TYPES],
     getDestinationsTypes
   );
-  const { show, Notification } = useNotification();
-  const { mutate } = useMutation((body) => setDestination(body));
-  const router = useRouter();
 
-  useEffect(onPageLoad, [data]);
+  useEffect(onPageLoad, [destinationsList]);
 
   function onPageLoad() {
     const search = searchParams.get(DEST);
+    if (!destinationsList || !search) return;
+
     let currentData = null;
-    data?.categories.forEach((item) => {
-      const filterItem = item.items.filter((dest) => dest?.type === search);
+
+    for (const category of destinationsList.categories) {
+      if (currentData) {
+        break;
+      }
+      const filterItem = category.items.filter(({ type }) => type === search);
       if (filterItem.length) {
         currentData = filterItem[0];
       }
-    });
+    }
+
     setSectionData(currentData);
   }
 
@@ -80,10 +88,6 @@ export default function NewDestinationFlow() {
 
   function handleBackPress() {
     router.back();
-  }
-
-  if (isLoading) {
-    return;
   }
 
   return (

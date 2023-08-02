@@ -36,9 +36,8 @@ export function Menu() {
   }
 
   function handleMenuItemClick(item) {
-    if (!item) return;
     setCurrentMenuItem(item);
-    router?.push(item?.navigate);
+    router.push(item?.navigate);
   }
 
   function renderMenuItemsList() {

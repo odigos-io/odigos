@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import UpdateDestinationFlow from "@/containers/overview/destination/update.destination.flow";
 import { getDestinations } from "@/services";
 import { useQuery } from "react-query";
+import { KeyvalLoader } from "@/design.system";
 
 const DEST = "dest";
 
@@ -50,7 +51,7 @@ export default function ManageDestinationPage() {
   }
 
   if (destinationLoading || !selectedDestination) {
-    return;
+    return <KeyvalLoader />;
   }
 
   return (
