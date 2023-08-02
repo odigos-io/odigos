@@ -1,18 +1,14 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { KeyvalLoader } from "@/design.system";
 import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
 import { useQuery } from "react-query";
 import { getDestinations } from "@/services";
 import { OverviewHeader, DestinationsManagedList } from "@/components/overview";
-import { DestinationContainerWrapper } from "./destination.styled";
-import { UpdateDestinationFlow } from "./update.destination.flow";
 import { useNotification } from "@/hooks";
 import { useRouter } from "next/navigation";
 
 export function DestinationContainer() {
-  const [selectedDestination, setSelectedDestination] = useState<any>(null);
-
   const { show, Notification } = useNotification();
   const {
     isLoading: destinationLoading,
@@ -24,7 +20,6 @@ export function DestinationContainer() {
 
   function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
     refetch();
-    setSelectedDestination(null);
     router.push("destinations");
     show({
       type: NOTIFICATION.SUCCESS,
@@ -40,24 +35,13 @@ export function DestinationContainer() {
     });
   }
 
-  function renderUpdateDestinationFlow() {
-    return (
-      <UpdateDestinationFlow
-        selectedDestination={selectedDestination}
-        setSelectedDestination={setSelectedDestination}
-        onSuccess={onSuccess}
-        onError={onError}
-      />
-    );
-  }
-
   function renderDestinationList() {
     return (
       <>
         <OverviewHeader title={OVERVIEW.MENU.DESTINATIONS} />
         <DestinationsManagedList
           data={destinationList}
-          onItemClick={setSelectedDestination}
+          onItemClick={() => {}}
           onMenuButtonClick={() => router.push("destinations/create")}
         />
       </>
@@ -69,11 +53,9 @@ export function DestinationContainer() {
   }
 
   return (
-    <DestinationContainerWrapper>
-      {selectedDestination
-        ? renderUpdateDestinationFlow()
-        : renderDestinationList()}
+    <>
+      {renderDestinationList()}
       <Notification />
-    </DestinationContainerWrapper>
+    </>
   );
 }

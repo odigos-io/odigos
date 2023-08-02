@@ -1,24 +1,19 @@
 "use client";
-import React, { useState } from "react";
-import { OVERVIEW, QUERIES } from "@/utils/constants";
-import { useMutation, useQuery } from "react-query";
-import { getDestination, setDestination } from "@/services";
-import { ManageDestination, OverviewHeader } from "@/components/overview";
+import React from "react";
+import { OVERVIEW } from "@/utils/constants";
+import { useMutation } from "react-query";
+import { setDestination } from "@/services";
+import { OverviewHeader } from "@/components/overview";
 import { useSectionData } from "@/hooks";
 import { DestinationSection } from "@/containers/setup/destination/destination.section";
 import { NewDestinationContainer } from "./destination.styled";
+import { useRouter } from "next/navigation";
 
-export function NewDestinationFlow({ onBackClick, onSuccess, onError }) {
+export function NewDestinationFlow({ onSuccess, onError }) {
   const { sectionData, setSectionData } = useSectionData(null);
-  const [managed, setManaged] = useState<any>(null);
-  const { data: destinationType } = useQuery(
-    [QUERIES.API_DESTINATION_TYPE, sectionData?.type],
-    () => getDestination(sectionData?.type),
-    {
-      enabled: !!sectionData,
-    }
-  );
+
   const { mutate } = useMutation((body) => setDestination(body));
+  const router = useRouter();
 
   function onSubmit(newDestination) {
     const destination = {
@@ -33,35 +28,17 @@ export function NewDestinationFlow({ onBackClick, onSuccess, onError }) {
   }
 
   function handleBackPress() {
-    if (managed && sectionData) {
-      setManaged(false);
-      setSectionData(null);
-      return;
-    }
-    onBackClick();
-  }
-
-  function renderNewDestinationForm() {
-    return (
-      <ManageDestination
-        destinationType={destinationType}
-        selectedDestination={sectionData}
-        onSubmit={onSubmit}
-      />
-    );
+    router.back();
   }
 
   function renderSelectNewDestination() {
     return (
-      <>
-        <DestinationSection
-          sectionData={sectionData}
-          setSectionData={(data) => {
-            setSectionData(data);
-            setManaged(true);
-          }}
-        />
-      </>
+      <DestinationSection
+        sectionData={sectionData}
+        setSectionData={(data) => {
+          router.push(`/overview/destinations/create/manage?dest=${data.type}`);
+        }}
+      />
     );
   }
 
@@ -72,9 +49,7 @@ export function NewDestinationFlow({ onBackClick, onSuccess, onError }) {
         onBackClick={handleBackPress}
       />
       <NewDestinationContainer>
-        {managed && sectionData
-          ? renderNewDestinationForm()
-          : renderSelectNewDestination()}
+        {renderSelectNewDestination()}
       </NewDestinationContainer>
     </>
   );
