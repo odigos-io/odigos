@@ -8,4 +8,5 @@ export const ROUTES = {
   UPDATE_DESTINATION: "destinations/manage?dest=",
   CREATE_DESTINATION: "destinations/create",
   CREATE_SOURCE: "/overview/sources/create",
+  MANAGE_SOURCE: "/overview/sources/manage",
 };
