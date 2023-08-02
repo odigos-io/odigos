@@ -36,10 +36,9 @@ func GetSources(c *gin.Context) {
 }
 
 func DeleteSource(c *gin.Context) {
-	// to delete a source, we need to remove it's instrumented label
-	// afterwards, odigos will detect the change and remove the instrumented application
+	// to delete a source, we need to set it's instrumentation label to disable
+	// afterwards, odigos will detect the change and remove the instrumented application object from k8s
 
-	// first search for this object in k8s
 	ns := c.Param("namespace")
 	kind := c.Param("kind")
 	name := c.Param("name")
