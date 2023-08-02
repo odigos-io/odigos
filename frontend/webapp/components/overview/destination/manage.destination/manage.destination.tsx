@@ -28,6 +28,7 @@ const BackButtonWrapper = styled.div`
 const CreateConnectionWrapper = styled.div`
   display: flex;
   gap: 200px;
+  height: 530px;
   overflow: scroll;
   scrollbar-width: none;
 `;

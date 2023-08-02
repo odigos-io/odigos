@@ -6,14 +6,13 @@ import { useQuery } from "react-query";
 import { getDestinations } from "@/services";
 import { OverviewHeader, DestinationsManagedList } from "@/components/overview";
 import { DestinationContainerWrapper } from "./destination.styled";
-import { NewDestinationFlow } from "./new.destination.flow";
 import { UpdateDestinationFlow } from "./update.destination.flow";
 import { useNotification } from "@/hooks";
+import { useRouter } from "next/navigation";
 
 export function DestinationContainer() {
   const [selectedDestination, setSelectedDestination] = useState<any>(null);
-  const [displayNewDestination, setDisplayNewDestination] =
-    useState<boolean>(false);
+
   const { show, Notification } = useNotification();
   const {
     isLoading: destinationLoading,
@@ -21,10 +20,12 @@ export function DestinationContainer() {
     refetch,
   } = useQuery([QUERIES.API_DESTINATIONS], getDestinations);
 
+  const router = useRouter();
+
   function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
     refetch();
     setSelectedDestination(null);
-    setDisplayNewDestination(false);
+    router.push("destinations");
     show({
       type: NOTIFICATION.SUCCESS,
       message,
@@ -37,18 +38,6 @@ export function DestinationContainer() {
       type: NOTIFICATION.ERROR,
       message,
     });
-  }
-
-  function renderNewDestinationFlow() {
-    return (
-      <NewDestinationFlow
-        onSuccess={onSuccess}
-        onError={onError}
-        onBackClick={() => {
-          setDisplayNewDestination(false);
-        }}
-      />
-    );
   }
 
   function renderUpdateDestinationFlow() {
@@ -69,7 +58,7 @@ export function DestinationContainer() {
         <DestinationsManagedList
           data={destinationList}
           onItemClick={setSelectedDestination}
-          onMenuButtonClick={() => setDisplayNewDestination(true)}
+          onMenuButtonClick={() => router.push("destinations/create")}
         />
       </>
     );
@@ -81,9 +70,7 @@ export function DestinationContainer() {
 
   return (
     <DestinationContainerWrapper>
-      {displayNewDestination
-        ? renderNewDestinationFlow()
-        : selectedDestination
+      {selectedDestination
         ? renderUpdateDestinationFlow()
         : renderDestinationList()}
       <Notification />
