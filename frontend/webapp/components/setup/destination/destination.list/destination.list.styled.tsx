@@ -16,8 +16,8 @@ export const DestinationListWrapper = styled.div`
   ::-webkit-scrollbar {
     display: none;
   }
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 `;
 
 export const EmptyListWrapper = styled.div`

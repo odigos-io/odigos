@@ -2,13 +2,12 @@ import styled from "styled-components";
 
 export const DestinationContainerWrapper = styled.div`
   height: 100vh;
-  /* width: 100%; */
   overflow-y: hidden;
   ::-webkit-scrollbar {
     display: none;
   }
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 `;
 
 export const NewDestinationContainer = styled.div`
