@@ -1,6 +1,7 @@
-"use client";
+// "use client";
 import { Menu } from "@/components/side.menu";
 import theme from "@/styles/palette";
+import { Metadata } from "next";
 import React from "react";
 
 const LAYOUT_STYLE = {
@@ -13,6 +14,9 @@ const LAYOUT_STYLE = {
 const CHILDREN_STYLE = {
   width: "100%",
   height: "93%",
+};
+export const metadata: Metadata = {
+  title: "Odigos",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
