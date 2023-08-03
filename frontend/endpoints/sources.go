@@ -1,12 +1,10 @@
 package endpoints
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
+	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -53,9 +51,9 @@ func GetSources(c *gin.Context) {
 
 func GetSource(c *gin.Context) {
 	ns := c.Param("namespace")
-	kind := strings.ToLower(c.Param("kind"))
+	kind := c.Param("kind")
 	name := c.Param("name")
-	k8sObjectName := fmt.Sprintf("%s-%s", kind, name)
+	k8sObjectName := utils.GetRuntimeObjectName(name, kind)
 
 	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(c, k8sObjectName, metav1.GetOptions{})
 	if err != nil {
@@ -78,7 +76,7 @@ func GetSource(c *gin.Context) {
 
 func PatchSource(c *gin.Context) {
 	ns := c.Param("namespace")
-	kind := strings.ToLower(c.Param("kind"))
+	kind := c.Param("kind")
 	name := c.Param("name")
 
 	request := PatchSourceRequest{}
@@ -90,7 +88,7 @@ func PatchSource(c *gin.Context) {
 	if request.ReportedName != "" {
 
 		switch kind {
-		case "deployment":
+		case "Deployment":
 			deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(c, name, metav1.GetOptions{})
 			if err != nil {
 				c.JSON(404, gin.H{"error": "could not find a deployment with the given name in the given namespace"})
@@ -102,7 +100,7 @@ func PatchSource(c *gin.Context) {
 				returnError(c, err)
 				return
 			}
-		case "statefulset":
+		case "StatefulSet":
 			statefulset, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(c, name, metav1.GetOptions{})
 			if err != nil {
 				c.JSON(404, gin.H{"error": "could not find a statefulset with the given name in the given namespace"})
@@ -114,7 +112,7 @@ func PatchSource(c *gin.Context) {
 				returnError(c, err)
 				return
 			}
-		case "daemonset":
+		case "DaemonSet":
 			daemonset, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(c, name, metav1.GetOptions{})
 			if err != nil {
 				c.JSON(404, gin.H{"error": "could not find a daemonset with the given name in the given namespace"})
@@ -223,19 +221,19 @@ func deleteReportedNameAnnotation(annotations map[string]string) map[string]stri
 
 func getK8sObject(c *gin.Context, ns string, kind string, name string) metav1.Object {
 	switch kind {
-	case "deployment":
+	case "Deployment":
 		deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(c, name, metav1.GetOptions{})
 		if err != nil {
 			return nil
 		}
 		return deployment
-	case "statefulset":
+	case "StatefulSet":
 		statefulSet, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(c, name, metav1.GetOptions{})
 		if err != nil {
 			return nil
 		}
 		return statefulSet
-	case "daemonset":
+	case "DaemonSet":
 		daemonSet, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(c, name, metav1.GetOptions{})
 		if err != nil {
 			return nil
