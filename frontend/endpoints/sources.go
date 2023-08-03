@@ -149,7 +149,6 @@ func DeleteSource(c *gin.Context) {
 			return
 		}
 		markK8sObjectInstrumentationDisabled(deployment)
-		deployment.SetAnnotations(deleteReportedNameAnnotation(deployment.GetAnnotations()))
 		_, err = kube.DefaultClient.AppsV1().Deployments(ns).Update(c, deployment, metav1.UpdateOptions{})
 		if err != nil {
 			returnError(c, err)
@@ -162,7 +161,6 @@ func DeleteSource(c *gin.Context) {
 			return
 		}
 		markK8sObjectInstrumentationDisabled(statefulSet)
-		statefulSet.SetAnnotations(deleteReportedNameAnnotation(statefulSet.GetAnnotations()))
 		_, err = kube.DefaultClient.AppsV1().StatefulSets(ns).Update(c, statefulSet, metav1.UpdateOptions{})
 		if err != nil {
 			returnError(c, err)
@@ -175,7 +173,6 @@ func DeleteSource(c *gin.Context) {
 			return
 		}
 		markK8sObjectInstrumentationDisabled(daemonSet)
-		daemonSet.SetAnnotations(deleteReportedNameAnnotation(daemonSet.GetAnnotations()))
 		_, err = kube.DefaultClient.AppsV1().DaemonSets(ns).Update(c, daemonSet, metav1.UpdateOptions{})
 		if err != nil {
 			returnError(c, err)
@@ -209,14 +206,6 @@ func markK8sObjectInstrumentationDisabled(obj metav1.Object) {
 	}
 	labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationDisabled
 	obj.SetLabels(labels)
-}
-
-func deleteReportedNameAnnotation(annotations map[string]string) map[string]string {
-	if annotations == nil {
-		return nil
-	}
-	delete(annotations, consts.OdigosReportedNameAnnotation)
-	return annotations
 }
 
 func getK8sObject(c *gin.Context, ns string, kind string, name string) metav1.Object {
