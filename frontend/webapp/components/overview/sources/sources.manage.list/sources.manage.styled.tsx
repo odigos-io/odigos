@@ -12,10 +12,10 @@ export const CardWrapper = styled.div`
   align-items: center;
   flex-direction: column;
   gap: 10px;
-  /* cursor: pointer;
+  cursor: pointer;
   &:hover {
     background: var(--dark-mode-dark-1, #07111a81);
-  } */
+  }
 `;
 
 export const EmptyListWrapper = styled.div`

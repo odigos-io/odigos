@@ -10,5 +10,6 @@ export const SourcesMenuWrapper = styled.div`
 
 export const InputsWrapper = styled.div`
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
 `;

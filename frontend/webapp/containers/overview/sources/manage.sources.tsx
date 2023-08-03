@@ -9,7 +9,7 @@ import { ManagedSource, Namespace } from "@/types/sources";
 
 const DEFAULT_FILTER = { name: "default", selected: false, totalApps: 0 };
 
-export function ManageSources({ setDisplayNewSourceFlow, sources }) {
+export function ManageSources({ onAddClick, sources }) {
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [currentNamespace, setCurrentNamespace] =
     useState<Namespace>(DEFAULT_FILTER);
@@ -60,7 +60,7 @@ export function ManageSources({ setDisplayNewSourceFlow, sources }) {
           searchFilter={searchFilter}
           setSearchFilter={setSearchFilter}
           data={namespacesList}
-          onAddClick={() => setDisplayNewSourceFlow(true)}
+          onAddClick={onAddClick}
           setCurrentItem={setCurrentNamespace}
         />
       </MenuWrapper>

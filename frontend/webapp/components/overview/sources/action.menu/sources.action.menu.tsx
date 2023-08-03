@@ -9,7 +9,7 @@ import { OVERVIEW } from "@/utils/constants";
 import theme from "@/styles/palette";
 import { FilterSourcesOptions } from "@/components/setup/sources/sources.option.menu/filter.sources.options";
 
-const BUTTON_STYLES = { gap: 10, height: 36 };
+const BUTTON_STYLES = { gap: 10, height: 36, width: 200 };
 
 export function SourcesActionMenu({
   onAddClick,

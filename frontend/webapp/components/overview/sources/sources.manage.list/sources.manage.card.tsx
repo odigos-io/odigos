@@ -20,13 +20,15 @@ const LOGO_STYLE: React.CSSProperties = {
 
 interface SourceManagedCardProps {
   item: ManagedSource;
+  onClick?: () => void;
 }
 const DEPLOYMENT = "deployment";
 export default function SourceManagedCard({
   item = {} as ManagedSource,
+  onClick,
 }: SourceManagedCardProps) {
   return (
-    <CardWrapper>
+    <CardWrapper onClick={onClick}>
       <KeyvalImage
         src={LANGUAGES_LOGOS[item?.languages?.[0].language || ""]}
         width={56}

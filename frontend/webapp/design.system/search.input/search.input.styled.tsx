@@ -29,7 +29,7 @@ export const StyledSearchInput = styled.input<ActiveProps>`
   color: ${({ active, theme }) =>
     `${active ? theme.colors.white : theme.text.grey}`};
   font-size: 14px;
-  font-family: ${({ theme }) => theme.font_family.primary};
+  font-family: ${({ theme }) => theme.font_family.primary}, sans-serif;
   font-weight: 400;
   &:focus {
     color: ${({ theme }) => `solid 1px ${theme.colors.white}`};

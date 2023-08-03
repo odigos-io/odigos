@@ -7,13 +7,15 @@ import { getDestination, updateDestination } from "@/services";
 import { ManageDestination } from "@/components/overview";
 import { deleteDestination } from "@/services/destinations";
 import { ManageDestinationWrapper } from "./destination.styled";
+import { useRouter } from "next/navigation";
 
-export function UpdateDestinationFlow({
+export default function UpdateDestinationFlow({
   selectedDestination,
-  setSelectedDestination,
   onSuccess,
   onError,
 }) {
+  const router = useRouter();
+
   const manageData = useMemo(() => {
     return {
       ...selectedDestination,
@@ -60,7 +62,7 @@ export function UpdateDestinationFlow({
   ) : (
     <ManageDestinationWrapper>
       <ManageDestination
-        onBackClick={() => setSelectedDestination(null)}
+        onBackClick={() => router.back()}
         destinationType={destinationType}
         selectedDestination={manageData}
         onSubmit={onSubmit}
