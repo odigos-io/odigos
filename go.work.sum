@@ -293,6 +293,7 @@ github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730053900-d53d
 github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730062110-e61bd9fd998e/go.mod h1:SYl3vHPGHMCOfF2bbeRBvtVafzEm5HHHsZc4mS02oyo=
 github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730063239-1359423cb703/go.mod h1:SYl3vHPGHMCOfF2bbeRBvtVafzEm5HHHsZc4mS02oyo=
 github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730071335-e3ae9a524206/go.mod h1:SYl3vHPGHMCOfF2bbeRBvtVafzEm5HHHsZc4mS02oyo=
+github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730104422-ed0d5aa81b08 h1:pbl9g6FIHZrGQzcRU/Yt6g3WIqAbqbsXK728ztyJRYk=
 github.com/edenfed/opentelemetry-go-instrumentation-1 v0.0.0-20230730104422-ed0d5aa81b08/go.mod h1:SYl3vHPGHMCOfF2bbeRBvtVafzEm5HHHsZc4mS02oyo=
 github.com/emicklei/go-restful v0.0.0-20170410110728-ff4f55a20633 h1:H2pdYOb3KQ1/YsqVWoWNLQO+fusocsw354rqGTZtAgw=
 github.com/emicklei/go-restful/v3 v3.8.0/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
@@ -493,6 +494,7 @@ google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4/go.mod h1:NWraEVix
 google.golang.org/genproto v0.0.0-20230323212658-478b75c54725/go.mod h1:UUQDJDOlWu4KYeJZffbWgBkS1YFobzKbLVfK69pe0Ak=
 google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1/go.mod h1:nKE/iIaLqn2bQwXBg8f1g2Ylh6r5MN5CmZvuzZCgsCU=
 google.golang.org/genproto v0.0.0-20230525234025-438c736192d0/go.mod h1:9ExIQyXL5hZrHzQceCwuSYwZZ5QZBazOcprJ5rgs3lY=
+google.golang.org/genproto v0.0.0-20230526161137-0005af68ea54/go.mod h1:zqTuNwFlFRsw5zIts5VnzLQxSRqh+CGOTVMlYbY0Eyk=
 google.golang.org/genproto v0.0.0-20230530153820-e85fd2cbaebc/go.mod h1:xZnkP7mREFX5MORlOPEzLMr+90PPZQ2QWzrVTWfAq64=
 google.golang.org/genproto v0.0.0-20230706204954-ccb25ca9f130/go.mod h1:O9kGHb51iE/nOGvQaDUuadVYqovW56s5emA88lQnj6Y=
 google.golang.org/genproto v0.0.0-20230717213848-3f92550aa753 h1:+VoAg+OKmWaommL56xmZSE2sUK8A7m6SUO7X89F2tbw=

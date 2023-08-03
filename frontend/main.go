@@ -92,6 +92,7 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.GET("/namespaces", endpoints.GetNamespaces)
 		apis.POST("/namespaces", endpoints.PersistNamespaces)
 		apis.GET("/sources", endpoints.GetSources)
+		apis.DELETE("/sources/namespace/:namespace/kind/:kind/name/:name", endpoints.DeleteSource)
 		apis.GET("/applications/:namespace", endpoints.GetApplicationsInNamespace)
 		apis.GET("/config", endpoints.GetConfig)
 		apis.GET("/destination-types", endpoints.GetDestinationTypes)

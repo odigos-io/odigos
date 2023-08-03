@@ -1,0 +1,35 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: grafanacloudprometheus
+  displayName: Grafana Cloud Prometheus
+  category: managed
+spec:
+  image: grafana.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: GRAFANA_API_KEY
+      displayName: API Key
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
+    - name: GRAFANA_REMOTEWRITE_URL
+      displayName: Remote Write URL
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: text
+    - name: GRAFANA_PROM_USERNAME
+      displayName: Username
+      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
+      componentType: input
+      componentProps:
+        type: text

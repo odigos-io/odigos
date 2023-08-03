@@ -1,0 +1,16 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: googlecloud
+  displayName: Google Cloud Monitoring
+  category: managed
+spec:
+  image: gcp.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: true
+  fields: []

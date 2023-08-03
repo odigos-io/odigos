@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,16 +27,24 @@ const (
 )
 
 type GetApplicationItem struct {
-	Name      string          `json:"name"`
-	Kind      ApplicationKind `json:"kind"`
-	Instances int             `json:"instances"`
-	Selected  bool            `json:"selected"`
+	Name                      string          `json:"name"`
+	Kind                      ApplicationKind `json:"kind"`
+	Instances                 int             `json:"instances"`
+	AppInstrumentationLabeled *bool           `json:"app_instrumentation_labeled"`
+	NsInstrumentationLabeled  *bool           `json:"ns_instrumentation_labeled"`
+	InstrumentationEffective  bool            `json:"instrumentation_effective"`
 }
 
 func GetApplicationsInNamespace(c *gin.Context) {
 	var request GetApplicationsInNamespaceRequest
 	if err := c.ShouldBindUri(&request); err != nil {
 		returnError(c, err)
+		return
+	}
+
+	if IsSystemNamespace(request.Namespace) {
+		// skip system namespaces which should not be instrumented
+		c.JSON(http.StatusOK, GetApplicationsInNamespaceResponse{})
 		return
 	}
 
@@ -63,6 +72,29 @@ func GetApplicationsInNamespace(c *gin.Context) {
 	copy(items[len(deps):], ss)
 	copy(items[len(deps)+len(ss):], dss)
 
+	// check if the entire namespace is instrumented
+	// as it affects the applications in the namespace
+	// which use this label to determine if they should be instrumented
+	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(c.Request.Context(), request.Namespace, metav1.GetOptions{})
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+	namespaceInstrumented, found := namespace.Labels[consts.OdigosInstrumentationLabel]
+	var nsInstrumentationLabeled *bool
+	if found {
+		instrumentationLabel := namespaceInstrumented == consts.InstrumentationEnabled
+		nsInstrumentationLabeled = &instrumentationLabel
+	}
+	for i := range items {
+		item := &items[i]
+		item.NsInstrumentationLabeled = nsInstrumentationLabeled
+		appInstrumented := (item.AppInstrumentationLabeled != nil && *item.AppInstrumentationLabeled)
+		appInstrumentationInherited := item.AppInstrumentationLabeled == nil
+		nsInstrumented := (nsInstrumentationLabeled != nil && *nsInstrumentationLabeled)
+		item.InstrumentationEffective = appInstrumented || (appInstrumentationInherited && nsInstrumented)
+	}
+
 	c.JSON(http.StatusOK, GetApplicationsInNamespaceResponse{
 		Applications: items,
 	})
@@ -76,10 +108,17 @@ func getDeployments(namespace string, ctx context.Context) ([]GetApplicationItem
 
 	response := make([]GetApplicationItem, len(deps.Items))
 	for i, dep := range deps.Items {
+		instrumentationLabel, found := dep.Labels[consts.OdigosInstrumentationLabel]
+		var appInstrumentationLabeled *bool
+		if found {
+			instrumentationLabel := instrumentationLabel == consts.InstrumentationEnabled
+			appInstrumentationLabeled = &instrumentationLabel
+		}
 		response[i] = GetApplicationItem{
-			Name:      dep.Name,
-			Kind:      ApplicationKindDeployment,
-			Instances: int(dep.Status.AvailableReplicas),
+			Name:                      dep.Name,
+			Kind:                      ApplicationKindDeployment,
+			Instances:                 int(dep.Status.AvailableReplicas),
+			AppInstrumentationLabeled: appInstrumentationLabeled,
 		}
 	}
 
