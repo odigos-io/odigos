@@ -11,7 +11,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useNotification } from "@/hooks";
 const DEST = "dest";
 
-export function UpdateDestinationFlow({}) {
+export function UpdateDestinationFlow() {
   const [selectedDestination, setSelectedDestination] = useState<any>(null);
 
   const router = useRouter();
