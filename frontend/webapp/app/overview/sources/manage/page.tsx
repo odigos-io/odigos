@@ -42,6 +42,10 @@ export default function ManageSourcePage() {
   );
   useEffect(onPageLoad, [sources]);
 
+  useEffect(() => {
+    console.log({ currentSource });
+  }, [currentSource]);
+
   function onPageLoad() {
     const search = searchParams.get(SOURCE);
     const source = sources?.find((item) => item.name === search);
@@ -80,7 +84,7 @@ export default function ManageSourcePage() {
       </BackButtonWrapper>
       {currentSource && (
         <ManageSourceHeader
-          display_name={currentSource?.name}
+          name={currentSource?.name}
           image_url={
             LANGUAGES_LOGOS[currentSource?.languages?.[0].language || ""]
           }

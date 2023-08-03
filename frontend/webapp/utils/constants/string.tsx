@@ -85,6 +85,10 @@ export const OVERVIEW = {
   CONNECT: "Connect",
 };
 
+export const ACTION = {
+  SAVE: "Save",
+};
+
 export const NOTIFICATION = {
   ERROR: "error",
   SUCCESS: "success",

@@ -6,6 +6,7 @@ export const ManageSourcePageContainer = styled.div`
 
 export const BackButtonWrapper = styled.div`
   display: flex;
+  width: fit-content;
   align-items: center;
   cursor: pointer;
   p {

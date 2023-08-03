@@ -20,10 +20,12 @@ import { useNotification } from "@/hooks";
 import { getDestinationsTypes } from "@/services";
 
 type DestinationSectionProps = {
+  sectionData?: any;
   setSectionData: (data: any) => void;
 };
 
 export function DestinationSection({
+  sectionData,
   setSectionData,
 }: DestinationSectionProps) {
   const [searchFilter, setSearchFilter] = useState<string>("");
@@ -68,6 +70,7 @@ export function DestinationSection({
       return (
         displayItem && (
           <DestinationList
+            sectionData={sectionData}
             key={category.name}
             data={category}
             onItemClick={(item: any) => setSectionData(item)}

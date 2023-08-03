@@ -1,11 +1,18 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import styled from "styled-components";
-import { KeyvalImage, KeyvalText, KeyvalTooltip } from "@/design.system";
+import {
+  KeyvalActionInput,
+  KeyvalImage,
+  KeyvalText,
+  KeyvalTooltip,
+} from "@/design.system";
 import { Pen } from "@/assets/icons/overview";
+import { useOnClickOutside } from "@/hooks";
 
 const ManageSourceHeaderWrapper = styled.div`
   display: flex;
   width: 100%;
+  min-width: 686px;
   height: 104px;
   align-items: center;
   border-radius: 25px;
@@ -34,6 +41,12 @@ const EditIconWrapper = styled.div`
     fill: ${({ theme }) => theme.colors.secondary};
   }
 `;
+
+const ActionInputWrapper = styled.div`
+  width: 80%;
+  height: 49px;
+`;
+
 const IMAGE_STYLE: React.CSSProperties = {
   backgroundColor: "#fff",
   padding: 4,
@@ -41,21 +54,49 @@ const IMAGE_STYLE: React.CSSProperties = {
   marginLeft: 16,
 };
 
-export function ManageSourceHeader({ image_url, display_name }) {
+export function ManageSourceHeader({ image_url, name }) {
   const [showEditInput, setShowEditInput] = useState(true);
+  const [inputValue, setInputValue] = useState(name);
+  const containerRef = useRef(null);
+  const handleClickOutside = () => {
+    !showEditInput && handleSave();
+  };
+
+  useOnClickOutside(containerRef, handleClickOutside);
+
+  function handleSave() {
+    setShowEditInput(true);
+  }
+
+  function handleInputChange(value) {
+    setInputValue(value);
+  }
+
   return (
-    <ManageSourceHeaderWrapper>
+    <ManageSourceHeaderWrapper ref={containerRef}>
       <KeyvalImage src={image_url} style={IMAGE_STYLE} />
-      <TextWrapper>
-        <KeyvalText size={24} weight={700}>
-          {display_name}
-        </KeyvalText>
-      </TextWrapper>
+
       {showEditInput ? (
-        <EditIconWrapper onClick={() => setShowEditInput(false)}>
-          <Pen width={16} height={16} />
-        </EditIconWrapper>
-      ) : null}
+        <>
+          <TextWrapper>
+            <KeyvalText size={24} weight={700}>
+              {name}
+            </KeyvalText>
+          </TextWrapper>
+
+          <EditIconWrapper onClick={() => setShowEditInput(false)}>
+            <Pen width={16} height={16} />
+          </EditIconWrapper>
+        </>
+      ) : (
+        <ActionInputWrapper>
+          <KeyvalActionInput
+            value={inputValue}
+            onChange={(e) => handleInputChange(e)}
+            onAction={handleSave}
+          />
+        </ActionInputWrapper>
+      )}
     </ManageSourceHeaderWrapper>
   );
 }
