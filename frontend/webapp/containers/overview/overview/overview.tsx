@@ -47,7 +47,9 @@ export function OverviewContainer() {
         containerHeight,
         destinations,
         "destination",
-        DESTINATION_NODE_HEIGHT,
+        destinations?.length > 1
+          ? DESTINATION_NODE_HEIGHT
+          : NAMESPACE_NODE_HEIGHT,
         DESTINATION_NODE_POSITION
       ),
     [destinations, containerHeight]
