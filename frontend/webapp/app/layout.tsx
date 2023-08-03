@@ -3,7 +3,7 @@ import React from "react";
 import { ThemeProvider } from "styled-components";
 import theme from "@/styles/palette";
 import { QueryClient, QueryClientProvider } from "react-query";
-import Head from "next/head";
+import { Metadata } from "next";
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
@@ -31,9 +31,6 @@ export default function RootLayout({
     <html lang="en">
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
-          <Head>
-            <title>Odigos</title>
-          </Head>
           <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
             {children}
           </body>
