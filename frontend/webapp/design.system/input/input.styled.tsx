@@ -55,7 +55,7 @@ export const StyledInput = styled.input`
 
 export const StyledActionInput = styled(StyledInput)`
   color: var(--dark-mode-white, #fff);
-  font-family: Inter;
+  font-family: Inter, sans-serif;
   font-size: 24px;
 `;
 
