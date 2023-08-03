@@ -11,9 +11,16 @@ import { useRouter } from "next/navigation";
 export default function CreateNewSourcesPage() {
   const { show, Notification } = useNotification();
   const router = useRouter();
-  const { data: sources } = useQuery([QUERIES.API_SOURCES], getSources);
+  const { data: sources, refetch } = useQuery(
+    [QUERIES.API_SOURCES],
+    getSources
+  );
 
   function onNewSourceSuccess() {
+    setTimeout(() => {
+      router.back();
+      refetch();
+    }, 1000);
     show({
       type: NOTIFICATION.SUCCESS,
       message: OVERVIEW.SOURCE_CREATED_SUCCESS,

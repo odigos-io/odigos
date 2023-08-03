@@ -17,7 +17,9 @@ export function NewSourceFlow({ onSuccess, sources }) {
   const { show, Notification } = useNotification();
 
   function updateSectionDataWithSources() {
-    const sourceNamesSet = new Set(sources.map((source) => source.name));
+    const sourceNamesSet = new Set(
+      sources.map((source: SelectedSources) => source.name)
+    );
     const updatedSectionData: SelectedSources = {};
 
     for (const key in sectionData) {
@@ -50,6 +52,7 @@ export function NewSourceFlow({ onSuccess, sources }) {
       <ButtonWrapper>
         <KeyvalText>{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
         <KeyvalButton
+          disabled={totalSelected === 0}
           onClick={updateSectionDataWithSources}
           style={{ width: 110 }}
         >
@@ -58,6 +61,7 @@ export function NewSourceFlow({ onSuccess, sources }) {
           </KeyvalText>
         </KeyvalButton>
       </ButtonWrapper>
+
       <SourcesSection
         sectionData={sectionData}
         setSectionData={setSectionData}

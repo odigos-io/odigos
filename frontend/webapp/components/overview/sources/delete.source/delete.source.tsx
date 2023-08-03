@@ -34,6 +34,7 @@ export function DeleteSource({
       primaryBtnText: OVERVIEW.CONFIRM_SOURCE_DELETE,
       primaryBtnAction: () => {
         setShowModal(false);
+        onDelete();
       },
     },
   };
