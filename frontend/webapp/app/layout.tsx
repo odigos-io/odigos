@@ -3,7 +3,6 @@ import React from "react";
 import { ThemeProvider } from "styled-components";
 import theme from "@/styles/palette";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { Metadata } from "next";
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
