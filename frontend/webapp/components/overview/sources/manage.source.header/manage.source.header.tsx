@@ -1,11 +1,6 @@
 import React, { useRef, useState } from "react";
 import styled from "styled-components";
-import {
-  KeyvalActionInput,
-  KeyvalImage,
-  KeyvalText,
-  KeyvalTooltip,
-} from "@/design.system";
+import { KeyvalActionInput, KeyvalImage, KeyvalText } from "@/design.system";
 import { Pen } from "@/assets/icons/overview";
 import { useOnClickOutside } from "@/hooks";
 
@@ -75,7 +70,6 @@ export function ManageSourceHeader({ image_url, name }) {
   return (
     <ManageSourceHeaderWrapper ref={containerRef}>
       <KeyvalImage src={image_url} style={IMAGE_STYLE} />
-
       {showEditInput ? (
         <>
           <TextWrapper>
