@@ -15,7 +15,9 @@ const CHILDREN_STYLE = {
   width: "100%",
   height: "93%",
 };
+
 export const metadata: Metadata = METADATA;
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div style={LAYOUT_STYLE}>
