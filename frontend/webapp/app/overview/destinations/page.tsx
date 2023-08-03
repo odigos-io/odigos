@@ -1,6 +1,5 @@
 "use client";
 import { DestinationContainer } from "@/containers/overview";
-import React from "react";
 import { styled } from "styled-components";
 
 const DestinationContainerWrapper = styled.div`
