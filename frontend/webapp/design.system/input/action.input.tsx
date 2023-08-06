@@ -17,6 +17,7 @@ export function KeyvalActionInput({
   value,
   onChange,
   style = {},
+  onAction,
 }: InputProps): JSX.Element {
   function handleChange(event: ChangeEvent<HTMLInputElement>): void {
     onChange(event.target.value);
@@ -31,7 +32,7 @@ export function KeyvalActionInput({
           autoComplete="off"
         />
 
-        <KeyvalButton>
+        <KeyvalButton onClick={onAction}>
           <KeyvalText size={14} weight={500} color={theme.text.dark_button}>
             {ACTION.SAVE}
           </KeyvalText>

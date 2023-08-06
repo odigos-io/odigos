@@ -1,56 +1,80 @@
 "use client";
 import { ManageSourceHeader } from "@/components/overview/sources/manage.source.header/manage.source.header";
-import { getSources } from "@/services";
-import {
-  NOTIFICATION,
-  OVERVIEW,
-  QUERIES,
-  ROUTES,
-  SETUP,
-} from "@/utils/constants";
+import { ACTION, NOTIFICATION, OVERVIEW, SETUP } from "@/utils/constants";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { useMutation, useQuery } from "react-query";
-import { ManageSourcePageContainer, BackButtonWrapper } from "./styled";
+import { useMutation } from "react-query";
+import {
+  ManageSourcePageContainer,
+  BackButtonWrapper,
+  FieldWrapper,
+  ButtonWrapper,
+} from "./styled";
 import { LANGUAGES_LOGOS } from "@/assets/images";
 import { Back } from "@/assets/icons/overview";
-import { KeyvalText } from "@/design.system";
-import { ManagedSource } from "@/types/sources";
+import {
+  KeyvalButton,
+  KeyvalInput,
+  KeyvalLoader,
+  KeyvalText,
+} from "@/design.system";
 import { DeleteSource } from "@/components/overview";
-import { deleteSource } from "@/services/sources";
+import { deleteSource, getSource, patchSources } from "@/services/sources";
 import { useNotification } from "@/hooks";
-
-const SOURCE = "source";
+import theme from "@/styles/palette";
+import { ManagedSource } from "@/types/sources";
 
 export default function ManageSourcePage() {
-  const [currentSource, setCurrentSource] = useState<ManagedSource | null>(
-    null
-  );
+  const [inputValue, setInputValue] = useState("");
+  const [currentSource, setCurrentSource] = useState<ManagedSource>();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data: sources, refetch } = useQuery(
-    [QUERIES.API_SOURCES],
-    getSources
-  );
+
   const { show, Notification } = useNotification();
-  const { mutate } = useMutation(() =>
+  const { mutate: handleDeleteSource } = useMutation(() =>
     deleteSource(
       currentSource?.namespace || "",
       currentSource?.kind || "",
       currentSource?.name || ""
     )
   );
-  useEffect(onPageLoad, [sources]);
+
+  const { mutate: editSource } = useMutation(() =>
+    patchSources(
+      currentSource?.namespace || "",
+      currentSource?.kind || "",
+      currentSource?.name || "",
+      { reported_name: inputValue }
+    )
+  );
+  useEffect(() => {
+    onPageLoad();
+  }, [searchParams]);
 
   useEffect(() => {
-    console.log({ currentSource });
+    setInputValue(currentSource?.reported_name || "");
   }, [currentSource]);
 
-  function onPageLoad() {
-    const search = searchParams.get(SOURCE);
-    const source = sources?.find((item) => item.name === search);
-    source && setCurrentSource(source);
+  async function onPageLoad() {
+    const name = searchParams.get("name") || "";
+    const kind = searchParams.get("kind") || "";
+    const namespace = searchParams.get("namespace") || "";
+
+    const currentSource = await getSource(namespace, kind, name);
+    setCurrentSource(currentSource);
   }
+
+  function onSaveClick(newName) {
+    editSource(newName, {
+      onError,
+      onSuccess: () =>
+        show({
+          type: NOTIFICATION.SUCCESS,
+          message: OVERVIEW.SOURCE_UPDATE_SUCCESS,
+        }),
+    });
+  }
+
   function onError({ response }) {
     const message = response?.data?.message;
     show({
@@ -62,7 +86,6 @@ export default function ManageSourcePage() {
   function onSuccess() {
     setTimeout(() => {
       router.back();
-      refetch();
     }, 1000);
     show({
       type: NOTIFICATION.SUCCESS,
@@ -70,10 +93,14 @@ export default function ManageSourcePage() {
     });
   }
   function onDelete() {
-    mutate(undefined, {
+    handleDeleteSource(undefined, {
       onSuccess,
       onError,
     });
+  }
+
+  if (!currentSource) {
+    return <KeyvalLoader />;
   }
 
   return (
@@ -84,12 +111,25 @@ export default function ManageSourcePage() {
       </BackButtonWrapper>
       {currentSource && (
         <ManageSourceHeader
-          name={currentSource?.name}
           image_url={
             LANGUAGES_LOGOS[currentSource?.languages?.[0].language || ""]
           }
         />
       )}
+      <FieldWrapper>
+        <KeyvalInput
+          label={OVERVIEW.REPORTED_NAME}
+          value={inputValue}
+          onChange={(e) => setInputValue(e)}
+        />
+      </FieldWrapper>
+      <ButtonWrapper>
+        <KeyvalButton disabled={!inputValue} onClick={onSaveClick}>
+          <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
+            {ACTION.SAVE}
+          </KeyvalText>
+        </KeyvalButton>
+      </ButtonWrapper>
       <DeleteSource
         onDelete={onDelete}
         name={currentSource?.name}
