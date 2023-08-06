@@ -9,7 +9,7 @@ import { useMutation } from "react-query";
 import { setNamespaces } from "@/services";
 import { SelectedSources } from "@/types/sources";
 
-export function NewSourceFlow({ onSuccess, sources }) {
+export function NewSourcesList({ onSuccess, sources }) {
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
   const { mutate } = useMutation((body: SelectedSources) =>
     setNamespaces(body)
