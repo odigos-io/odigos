@@ -27,11 +27,11 @@ type ThinSource struct {
 
 type Source struct {
 	ThinSource
-	ReportedName string `json:"reported_name"`
+	ReportedName string `json:"reported_name,omitempty"`
 }
 
 type PatchSourceRequest struct {
-	ReportedName string `json:"reported_name"`
+	ReportedName *string `json:"reported_name"`
 }
 
 func GetSources(c *gin.Context) {
@@ -91,7 +91,9 @@ func PatchSource(c *gin.Context) {
 		return
 	}
 
-	if request.ReportedName != "" {
+	if request.ReportedName != nil {
+
+		newReportedName := *request.ReportedName
 
 		switch kind {
 		case "Deployment":
@@ -100,7 +102,7 @@ func PatchSource(c *gin.Context) {
 				c.JSON(404, gin.H{"error": "could not find a deployment with the given name in the given namespace"})
 				return
 			}
-			deployment.SetAnnotations(updateReportedName(deployment.GetAnnotations(), request.ReportedName))
+			deployment.SetAnnotations(updateReportedName(deployment.GetAnnotations(), newReportedName))
 			_, err = kube.DefaultClient.AppsV1().Deployments(ns).Update(c, deployment, metav1.UpdateOptions{})
 			if err != nil {
 				returnError(c, err)
@@ -112,7 +114,7 @@ func PatchSource(c *gin.Context) {
 				c.JSON(404, gin.H{"error": "could not find a statefulset with the given name in the given namespace"})
 				return
 			}
-			statefulset.SetAnnotations(updateReportedName(statefulset.GetAnnotations(), request.ReportedName))
+			statefulset.SetAnnotations(updateReportedName(statefulset.GetAnnotations(), newReportedName))
 			_, err = kube.DefaultClient.AppsV1().StatefulSets(ns).Update(c, statefulset, metav1.UpdateOptions{})
 			if err != nil {
 				returnError(c, err)
@@ -124,7 +126,7 @@ func PatchSource(c *gin.Context) {
 				c.JSON(404, gin.H{"error": "could not find a daemonset with the given name in the given namespace"})
 				return
 			}
-			daemonset.SetAnnotations(updateReportedName(daemonset.GetAnnotations(), request.ReportedName))
+			daemonset.SetAnnotations(updateReportedName(daemonset.GetAnnotations(), newReportedName))
 			_, err = kube.DefaultClient.AppsV1().DaemonSets(ns).Update(c, daemonset, metav1.UpdateOptions{})
 			if err != nil {
 				returnError(c, err)
@@ -240,9 +242,19 @@ func getK8sObject(c *gin.Context, ns string, kind string, name string) metav1.Ob
 }
 
 func updateReportedName(annotations map[string]string, reportedName string) map[string]string {
-	if annotations == nil {
-		annotations = make(map[string]string)
+	if reportedName == "" {
+		// delete the reported name if it is empty, so we pick up the name from the k8s object
+		if annotations == nil {
+			return nil
+		} else {
+			delete(annotations, consts.OdigosReportedNameAnnotation)
+			return annotations
+		}
+	} else {
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+		annotations[consts.OdigosReportedNameAnnotation] = reportedName
+		return annotations
 	}
-	annotations[consts.OdigosReportedNameAnnotation] = reportedName
-	return annotations
 }
