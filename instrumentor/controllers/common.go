@@ -158,33 +158,6 @@ func getObjectFromKindString(kind string) (client.Object, error) {
 	}
 }
 
-func removeReportedNameLabel(ctx context.Context, kubeClient client.Client, ns string, name string, kind string, logger logr.Logger) error {
-	var k8sObj client.Object
-	err := kubeClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: name}, k8sObj)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-
-	if k8sObj.GetAnnotations() == nil {
-		// no annotations so no reported name label
-		return nil
-	}
-
-	annotations := k8sObj.GetAnnotations()
-	delete(annotations, consts.OdigosReportedNameAnnotation)
-	k8sObj.SetAnnotations(annotations)
-	err = kubeClient.Update(ctx, k8sObj)
-	if err != nil {
-		return err
-	}
-
-	logger.V(0).Info("removed reported name label")
-	return nil
-}
-
 func removeRuntimeDetails(ctx context.Context, kubeClient client.Client, ns string, name string, kind string, logger logr.Logger) error {
 	runtimeName := utils.GetRuntimeObjectName(name, kind)
 	var runtimeDetails odigosv1.InstrumentedApplication
