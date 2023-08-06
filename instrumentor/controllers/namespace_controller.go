@@ -63,7 +63,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// If namespace is labeled, skip
-	if isObjectInstrumentationEnabled(&ns) {
+	if isInstrumentationLabelEnabled(&ns) {
 		return ctrl.Result{}, nil
 	}
 
@@ -75,7 +75,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	for _, dep := range deps.Items {
-		if isObjectInstrumentationDisabled(&dep) {
+		if !isInstrumentationLabelEnabled(&dep) {
 			if err := removeRuntimeDetails(ctx, r.Client, dep.Namespace, dep.Name, dep.Kind, logger); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
@@ -100,7 +100,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	for _, s := range ss.Items {
-		if isObjectInstrumentationDisabled(&s) {
+		if !isInstrumentationLabelEnabled(&s) {
 			if err := removeRuntimeDetails(ctx, r.Client, s.Namespace, s.Name, s.Kind, logger); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
@@ -125,7 +125,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	for _, d := range ds.Items {
-		if isObjectInstrumentationDisabled(&d) {
+		if !isInstrumentationLabelEnabled(&d) {
 			if err := removeRuntimeDetails(ctx, r.Client, d.Namespace, d.Name, d.Kind, logger); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err

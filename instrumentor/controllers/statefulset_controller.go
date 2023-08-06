@@ -61,7 +61,12 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
-	if isObjectInstrumentationDisabled(&ss) {
+	instEffectiveEnabled, err := isObjectInstrumentationEffectiveEnabled(ctx, r.Client, &ss)
+	if err != nil {
+		logger.Error(err, "error checking if instrumentation is effective")
+		return ctrl.Result{}, err
+	}
+	if !instEffectiveEnabled {
 		// Remove runtime details is exists
 		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, ss.Kind, logger); err != nil {
 			logger.Error(err, "error removing runtime details")

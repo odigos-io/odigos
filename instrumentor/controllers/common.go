@@ -10,6 +10,7 @@ import (
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/instrumentor/patch"
+	"gorm.io/gorm/logger"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -178,22 +179,35 @@ func removeRuntimeDetails(ctx context.Context, kubeClient client.Client, ns stri
 	return nil
 }
 
-// check if the label exists and set to not enabled.
-// this is not the same as !isObjectInstrumentationEnabled,
-// as it will return false if the label is not set at all.
-func isObjectInstrumentationDisabled(obj client.Object) bool {
+func isObjectInstrumentationEffectiveEnabled(ctx context.Context, kubeClient client.Client, obj client.Object) (bool, error) {
+
+	// if the object itself is labeled, we will use that value
 	labels := obj.GetLabels()
 	if labels != nil {
 		val, exists := labels[consts.OdigosInstrumentationLabel]
-		if exists && val != consts.InstrumentationEnabled {
-			return true
+		if exists {
+			return val == consts.InstrumentationEnabled, nil
 		}
 	}
 
-	return false
+	// we will get here if the instrumentation label is not set.
+	// in which case, we would want to check the namespace value
+	var ns corev1.Namespace
+	err := kubeClient.Get(ctx, client.ObjectKey{Name: obj.GetNamespace()}, &ns)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		logger.Error(err, "error fetching namespace object")
+		return false, err
+	}
+
+	nsInstrumentationEnabled := isInstrumentationLabelEnabled(&ns)
+	return nsInstrumentationEnabled, nil
 }
 
-func isObjectInstrumentationEnabled(obj client.Object) bool {
+func isInstrumentationLabelEnabled(obj client.Object) bool {
 	labels := obj.GetLabels()
 	if labels != nil {
 		val, exists := labels[consts.OdigosInstrumentationLabel]
