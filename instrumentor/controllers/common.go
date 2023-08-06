@@ -178,8 +178,9 @@ func removeRuntimeDetails(ctx context.Context, kubeClient client.Client, ns stri
 	return nil
 }
 
-// isObjectInstrumentationDisabled checks if the object has the instrumentation label and if it's value is not "enabled"
-// If the label is not present, it returns false
+// check if the label exists and set to not enabled.
+// this is not the same as !isObjectInstrumentationEnabled,
+// as it will return false if the label is not set at all.
 func isObjectInstrumentationDisabled(obj client.Object) bool {
 	labels := obj.GetLabels()
 	if labels != nil {
