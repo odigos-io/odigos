@@ -61,7 +61,7 @@ func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	instEffectiveEnabled, err := isObjectInstrumentationEffectiveEnabled(ctx, r.Client, &ds)
+	instEffectiveEnabled, err := isObjectInstrumentationEffectiveEnabled(logger, ctx, r.Client, &ds)
 	if err != nil {
 		logger.Error(err, "error checking if instrumentation is effective")
 		return ctrl.Result{}, err

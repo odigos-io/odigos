@@ -10,7 +10,6 @@ import (
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/instrumentor/patch"
-	"gorm.io/gorm/logger"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -179,7 +178,7 @@ func removeRuntimeDetails(ctx context.Context, kubeClient client.Client, ns stri
 	return nil
 }
 
-func isObjectInstrumentationEffectiveEnabled(ctx context.Context, kubeClient client.Client, obj client.Object) (bool, error) {
+func isObjectInstrumentationEffectiveEnabled(logger logr.Logger, ctx context.Context, kubeClient client.Client, obj client.Object) (bool, error) {
 
 	// if the object itself is labeled, we will use that value
 	labels := obj.GetLabels()
