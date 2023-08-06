@@ -63,7 +63,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// If namespace is labeled, skip
-	if isObjectLabeled(&ns) {
+	if isObjectInstrumentationEnabled(&ns) {
 		return ctrl.Result{}, nil
 	}
 
@@ -75,7 +75,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	for _, dep := range deps.Items {
-		if !isObjectLabeled(&dep) {
+		if isObjectInstrumentationDisabled(&dep) {
 			if err := removeRuntimeDetails(ctx, r.Client, dep.Namespace, dep.Name, dep.Kind, logger); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
@@ -100,7 +100,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	for _, s := range ss.Items {
-		if !isObjectLabeled(&s) {
+		if isObjectInstrumentationDisabled(&s) {
 			if err := removeRuntimeDetails(ctx, r.Client, s.Namespace, s.Name, s.Kind, logger); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
@@ -113,6 +113,31 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					return ctrl.Result{}, err
 				}
 				logger.Info("removed reported name annotation from stateful set")
+			}
+		}
+	}
+
+	var ds appsv1.DaemonSetList
+	err = r.Client.List(ctx, &ds, client.InNamespace(req.Name))
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error(err, "error fetching daemonsets")
+		return ctrl.Result{}, err
+	}
+
+	for _, d := range ds.Items {
+		if isObjectInstrumentationDisabled(&d) {
+			if err := removeRuntimeDetails(ctx, r.Client, d.Namespace, d.Name, d.Kind, logger); err != nil {
+				logger.Error(err, "error removing runtime details")
+				return ctrl.Result{}, err
+			}
+			updated := d.DeepCopy()
+			if removed := removeReportedNameAnnotation(updated); removed {
+				patch := client.MergeFrom(&d)
+				if err := r.Patch(ctx, updated, patch); err != nil {
+					logger.Error(err, "error removing reported name annotation from daemonset")
+					return ctrl.Result{}, err
+				}
+				logger.Info("removed reported name annotation from daemonset set")
 			}
 		}
 	}

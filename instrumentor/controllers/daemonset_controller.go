@@ -61,7 +61,7 @@ func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	if !isObjectLabeled(&ds) {
+	if isObjectInstrumentationDisabled(&ds) {
 		// Remove runtime details is exists
 		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, ds.Kind, logger); err != nil {
 			logger.Error(err, "error removing runtime details")

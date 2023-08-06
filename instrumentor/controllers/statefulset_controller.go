@@ -61,7 +61,7 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
-	if !isObjectLabeled(&ss) {
+	if isObjectInstrumentationDisabled(&ss) {
 		// Remove runtime details is exists
 		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, ss.Kind, logger); err != nil {
 			logger.Error(err, "error removing runtime details")

@@ -58,7 +58,7 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	if !isObjectLabeled(&dep) {
+	if !isObjectInstrumentationDisabled(&dep) {
 		// Remove runtime details is exists
 		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, dep.Kind, logger); err != nil {
 			logger.Error(err, "error removing runtime details")
