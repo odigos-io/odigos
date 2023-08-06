@@ -62,6 +62,12 @@ func GetSource(c *gin.Context) {
 	}
 
 	owner := getK8sObject(c, ns, kind, name)
+	if owner == nil {
+		c.JSON(500, gin.H{
+			"message": "could not find owner of instrumented application",
+		})
+		return
+	}
 	ownerAnnotations := owner.GetAnnotations()
 	var reportedName string
 	if ownerAnnotations != nil {
@@ -125,7 +131,7 @@ func PatchSource(c *gin.Context) {
 				return
 			}
 		default:
-			c.JSON(400, gin.H{"error": "kind must be one of deployment, statefulset or daemonset"})
+			c.JSON(400, gin.H{"error": "kind must be one of Deployment, StatefulSet or DaemonSet"})
 			return
 		}
 	}
@@ -179,7 +185,7 @@ func DeleteSource(c *gin.Context) {
 			return
 		}
 	default:
-		c.JSON(400, gin.H{"error": "kind not supported"})
+		c.JSON(400, gin.H{"error": "kind must be one of Deployment, StatefulSet or DaemonSet"})
 		return
 	}
 	c.JSON(200, gin.H{"message": "ok"})
