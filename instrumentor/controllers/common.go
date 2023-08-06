@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 	"errors"
+	"strings"
+
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
@@ -14,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"strings"
 )
 
 var (
@@ -157,6 +158,33 @@ func getObjectFromKindString(kind string) (client.Object, error) {
 	}
 }
 
+func removeReportedNameLabel(ctx context.Context, kubeClient client.Client, ns string, name string, kind string, logger logr.Logger) error {
+	var k8sObj client.Object
+	err := kubeClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: name}, k8sObj)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	if k8sObj.GetAnnotations() == nil {
+		// no annotations so no reported name label
+		return nil
+	}
+
+	annotations := k8sObj.GetAnnotations()
+	delete(annotations, consts.OdigosReportedNameAnnotation)
+	k8sObj.SetAnnotations(annotations)
+	err = kubeClient.Update(ctx, k8sObj)
+	if err != nil {
+		return err
+	}
+
+	logger.V(0).Info("removed reported name label")
+	return nil
+}
+
 func removeRuntimeDetails(ctx context.Context, kubeClient client.Client, ns string, name string, kind string, logger logr.Logger) error {
 	runtimeName := utils.GetRuntimeObjectName(name, kind)
 	var runtimeDetails odigosv1.InstrumentedApplication
@@ -187,4 +215,19 @@ func isObjectLabeled(obj client.Object) bool {
 	}
 
 	return false
+}
+
+func removeReportedNameAnnotation(obj client.Object) bool {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		return false
+	}
+
+	if _, exists := annotations[consts.OdigosReportedNameAnnotation]; !exists {
+		return false
+	}
+
+	delete(annotations, consts.OdigosReportedNameAnnotation)
+	obj.SetAnnotations(annotations)
+	return true
 }

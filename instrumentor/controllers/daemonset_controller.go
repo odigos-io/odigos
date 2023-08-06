@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -65,6 +66,15 @@ func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, ds.Kind, logger); err != nil {
 			logger.Error(err, "error removing runtime details")
 			return ctrl.Result{}, err
+		}
+		updated := ds.DeepCopy()
+		if removed := removeReportedNameAnnotation(updated); removed {
+			patch := client.MergeFrom(&ds)
+			if err := r.Patch(ctx, updated, patch); err != nil {
+				logger.Error(err, "error removing reported name annotation from deamonset")
+				return ctrl.Result{}, err
+			}
+			logger.Info("removed reported name annotation")
 		}
 	}
 

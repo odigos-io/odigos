@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -63,6 +64,15 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			logger.Error(err, "error removing runtime details")
 			return ctrl.Result{}, err
 		}
+		updated := dep.DeepCopy()
+		if removed := removeReportedNameAnnotation(updated); removed {
+			patch := client.MergeFrom(&dep)
+			if err := r.Patch(ctx, updated, patch); err != nil {
+				logger.Error(err, "error removing reported name annotation from deployment")
+				return ctrl.Result{}, err
+			}
+			logger.Info("removed reported name annotation")
+		}
 	}
 
 	return ctrl.Result{}, nil
@@ -75,3 +85,20 @@ func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		WithEventFilter(predicate.LabelChangedPredicate{}).
 		Complete(r)
 }
+
+// func removeReportedNameAnnotation(ctx context.Context, kubeClient client.Client, ns string, kind string, name string) error {
+// 	var k8sObj client.Object
+// 	err := kubeClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: name, Kind: kind}, k8sObj)
+// 	if err != nil {
+// 		log.FromContext(ctx).Error(err, "error fetching deployment object")
+// 		return
+// 	}
+
+// 	if _, ok := dep.Annotations[common.RuntimeNameAnnotation]; ok {
+// 		delete(dep.Annotations, common.RuntimeNameAnnotation)
+// 		if err := kubeClient.Update(ctx, &dep); err != nil {
+// 			log.FromContext(ctx).Error(err, "error updating deployment object")
+// 			return
+// 		}
+// 	}
+// }
