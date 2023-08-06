@@ -81,6 +81,15 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				return ctrl.Result{}, err
 			}
 		}
+		updated := dep.DeepCopy()
+		if removed := removeReportedNameAnnotation(updated); removed {
+			patch := client.MergeFrom(&dep)
+			if err := r.Patch(ctx, updated, patch); err != nil {
+				logger.Error(err, "error removing reported name annotation from deployment")
+				return ctrl.Result{}, err
+			}
+			logger.Info("removed reported name annotation from deployment")
+		}
 	}
 
 	var ss appsv1.StatefulSetList
@@ -95,6 +104,15 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			if err := removeRuntimeDetails(ctx, r.Client, s.Namespace, s.Name, s.Kind, logger); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
+			}
+			updated := s.DeepCopy()
+			if removed := removeReportedNameAnnotation(updated); removed {
+				patch := client.MergeFrom(&s)
+				if err := r.Patch(ctx, updated, patch); err != nil {
+					logger.Error(err, "error removing reported name annotation from statefulset")
+					return ctrl.Result{}, err
+				}
+				logger.Info("removed reported name annotation from stateful set")
 			}
 		}
 	}

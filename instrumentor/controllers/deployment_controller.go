@@ -85,20 +85,3 @@ func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		WithEventFilter(predicate.LabelChangedPredicate{}).
 		Complete(r)
 }
-
-// func removeReportedNameAnnotation(ctx context.Context, kubeClient client.Client, ns string, kind string, name string) error {
-// 	var k8sObj client.Object
-// 	err := kubeClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: name, Kind: kind}, k8sObj)
-// 	if err != nil {
-// 		log.FromContext(ctx).Error(err, "error fetching deployment object")
-// 		return
-// 	}
-
-// 	if _, ok := dep.Annotations[common.RuntimeNameAnnotation]; ok {
-// 		delete(dep.Annotations, common.RuntimeNameAnnotation)
-// 		if err := kubeClient.Update(ctx, &dep); err != nil {
-// 			log.FromContext(ctx).Error(err, "error updating deployment object")
-// 			return
-// 		}
-// 	}
-// }
