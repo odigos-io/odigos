@@ -1,11 +1,12 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { KeyvalLoader } from "@/design.system";
-import { OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
+import { NOTIFICATION, OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
 import { useQuery } from "react-query";
 import { getDestinations } from "@/services";
 import { OverviewHeader, DestinationsManagedList } from "@/components/overview";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useNotification } from "@/hooks";
 
 export function DestinationContainer() {
   const { isLoading: destinationLoading, data: destinationList } = useQuery(
@@ -13,7 +14,23 @@ export function DestinationContainer() {
     getDestinations
   );
 
+  const searchParams = useSearchParams();
+  const { show, Notification } = useNotification();
+
   const router = useRouter();
+
+  useEffect(onPageLoad, [searchParams, destinationList]);
+
+  function onPageLoad() {
+    const status = searchParams.get("status");
+    if (status === "deleted") {
+      show({
+        type: NOTIFICATION.SUCCESS,
+        message: OVERVIEW.DESTINATION_DELETED_SUCCESS,
+      });
+      router.push(ROUTES.DESTINATIONS);
+    }
+  }
 
   if (destinationLoading) {
     return <KeyvalLoader />;
@@ -29,6 +46,7 @@ export function DestinationContainer() {
         }
         onMenuButtonClick={() => router.push(ROUTES.CREATE_DESTINATION)}
       />
+      <Notification />
     </>
   );
 }
