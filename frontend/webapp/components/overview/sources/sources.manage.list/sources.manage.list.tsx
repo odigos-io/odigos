@@ -8,16 +8,26 @@ import Empty from "@/assets/images/empty-list.svg";
 import SourceManagedCard from "./sources.manage.card";
 import { ManagedSource } from "@/types/sources";
 import { KeyvalText } from "@/design.system";
-import { OVERVIEW } from "@/utils/constants";
+import { OVERVIEW, ROUTES } from "@/utils/constants";
+import { useRouter } from "next/navigation";
 
 interface SourcesManagedListProps {
   data: ManagedSource[];
 }
 
 export function SourcesManagedList({ data = [] }: SourcesManagedListProps) {
+  const router = useRouter();
   function renderSources() {
     return data.map((source: ManagedSource) => (
-      <SourceManagedCard item={source} />
+      <SourceManagedCard
+        key={source?.name}
+        item={source}
+        onClick={() =>
+          router.push(
+            `${ROUTES.MANAGE_SOURCE}?name=${source?.name}&kind=${source?.kind}&namespace=${source?.namespace}`
+          )
+        }
+      />
     ));
   }
 

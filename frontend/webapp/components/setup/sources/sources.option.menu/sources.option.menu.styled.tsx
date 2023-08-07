@@ -5,16 +5,9 @@ export const SourcesOptionMenuWrapper = styled.section`
   align-items: center;
   gap: 24px;
   padding: 40px 0 0 0;
-`;
-
-export const FilterMenuWrapper = styled.div`
-  display: flex;
-  gap: 16px;
-  align-items: center;
-
-  @media screen and (max-width: 1400px) {
-    flex-wrap: wrap;
-    width: 90%;
+  flex-wrap: wrap;
+  @media screen and (max-width: 1650px) {
+    width: 85%;
   }
 `;
 
@@ -34,5 +27,4 @@ export const CheckboxWrapper = styled.div`
 
 export const SwitcherWrapper = styled.div`
   min-width: 90px;
-  margin-left: 24px;
 `;

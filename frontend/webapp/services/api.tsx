@@ -30,3 +30,7 @@ export async function httpDelete(url: string) {
     return data;
   }
 }
+
+export async function patch(url: string, body: any) {
+  await axios.patch(url, body);
+}

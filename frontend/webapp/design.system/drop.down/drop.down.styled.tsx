@@ -32,7 +32,7 @@ export const DropdownHeader = styled.div`
   align-items: center;
   color: ${({ theme }) => theme.text.white};
   font-size: 14px;
-  font-family: ${({ theme }) => theme.font_family.primary};
+  font-family: ${({ theme }) => theme.font_family.primary}, sans-serif;
   font-weight: 400;
 `;
 

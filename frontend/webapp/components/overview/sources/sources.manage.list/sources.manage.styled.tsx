@@ -12,10 +12,10 @@ export const CardWrapper = styled.div`
   align-items: center;
   flex-direction: column;
   gap: 10px;
-  /* cursor: pointer;
+  cursor: pointer;
   &:hover {
     background: var(--dark-mode-dark-1, #07111a81);
-  } */
+  }
 `;
 
 export const EmptyListWrapper = styled.div`
@@ -27,7 +27,7 @@ export const EmptyListWrapper = styled.div`
 `;
 
 export const ManagedListWrapper = styled.div`
-  height: 75%;
+  max-height: 72%;
   display: flex;
   flex-wrap: wrap;
   gap: 24px;

@@ -67,14 +67,27 @@ export const OVERVIEW = {
   DESTINATION_UPDATE_SUCCESS: "Destination updated successfully",
   DESTINATION_CREATED_SUCCESS: "Destination created successfully",
   DESTINATION_DELETED_SUCCESS: "Destination deleted successfully",
+  SOURCE_UPDATE_SUCCESS: "Source updated successfully",
+  SOURCE_CREATED_SUCCESS: "Source created successfully",
+  SOURCE_DELETED_SUCCESS: "Source deleted successfully",
   MANAGE: "Manage",
   DELETE: "Delete",
   DELETE_DESTINATION: "Delete Destination",
+  DELETE_SOURCE: "Delete Source",
+  SOURCE_DANGER_ZONE_TITLE: "Delete this source",
+  SOURCE_DANGER_ZONE_SUBTITLE:
+    "This action cannot be undone. This will permanently delete the source and all associated data.",
   DELETE_MODAL_TITLE: "Delete this destination",
   DELETE_MODAL_SUBTITLE:
     "This action cannot be undone. This will permanently delete the destination and all associated data.",
   DELETE_BUTTON: "I want to delete this destination",
+  CONFIRM_SOURCE_DELETE: "I want to delete this source",
   CONNECT: "Connect",
+  REPORTED_NAME: "Reported Name",
+};
+
+export const ACTION = {
+  SAVE: "Save",
 };
 
 export const NOTIFICATION = {
