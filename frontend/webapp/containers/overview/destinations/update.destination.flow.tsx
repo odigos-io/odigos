@@ -6,7 +6,7 @@ import { useMutation, useQuery } from "react-query";
 import { getDestination, updateDestination } from "@/services";
 import { ManageDestination } from "@/components/overview";
 import { deleteDestination, getDestinations } from "@/services/destinations";
-import { ManageDestinationWrapper } from "./destination.styled";
+import { ManageDestinationWrapper } from "./destinations.styled";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useNotification } from "@/hooks";
 const DEST = "dest";
