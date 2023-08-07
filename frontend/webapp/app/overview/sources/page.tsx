@@ -1,6 +1,7 @@
 "use client";
+import { InstrumentedSourcesContainer } from "@/containers/overview";
 import React from "react";
 
 export default function SourcesOverviewPage() {
-  return <div>SourcesOverviewPage</div>;
+  return <InstrumentedSourcesContainer />;
 }

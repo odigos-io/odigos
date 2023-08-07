@@ -1,92 +1,34 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { KeyvalLoader } from "@/design.system";
-import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
+import { OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
 import { useQuery } from "react-query";
 import { getDestinations } from "@/services";
 import { OverviewHeader, DestinationsManagedList } from "@/components/overview";
-import { DestinationContainerWrapper } from "./destination.styled";
-import { NewDestinationFlow } from "./new.destination.flow";
-import { UpdateDestinationFlow } from "./update.destination.flow";
-import { useNotification } from "@/hooks";
+import { useRouter } from "next/navigation";
 
 export function DestinationContainer() {
-  const [selectedDestination, setSelectedDestination] = useState<any>(null);
-  const [displayNewDestination, setDisplayNewDestination] =
-    useState<boolean>(false);
-  const { show, Notification } = useNotification();
-  const {
-    isLoading: destinationLoading,
-    data: destinationList,
-    refetch,
-  } = useQuery([QUERIES.API_DESTINATIONS], getDestinations);
+  const { isLoading: destinationLoading, data: destinationList } = useQuery(
+    [QUERIES.API_DESTINATIONS],
+    getDestinations
+  );
 
-  function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
-    refetch();
-    setSelectedDestination(null);
-    setDisplayNewDestination(false);
-    show({
-      type: NOTIFICATION.SUCCESS,
-      message,
-    });
-  }
-
-  function onError({ response }) {
-    const message = response?.data?.message;
-    show({
-      type: NOTIFICATION.ERROR,
-      message,
-    });
-  }
-
-  function renderNewDestinationFlow() {
-    return (
-      <NewDestinationFlow
-        onSuccess={onSuccess}
-        onError={onError}
-        onBackClick={() => {
-          setDisplayNewDestination(false);
-        }}
-      />
-    );
-  }
-
-  function renderUpdateDestinationFlow() {
-    return (
-      <UpdateDestinationFlow
-        selectedDestination={selectedDestination}
-        setSelectedDestination={setSelectedDestination}
-        onSuccess={onSuccess}
-        onError={onError}
-      />
-    );
-  }
-
-  function renderDestinationList() {
-    return (
-      <>
-        <OverviewHeader title={OVERVIEW.MENU.DESTINATIONS} />
-        <DestinationsManagedList
-          data={destinationList}
-          onItemClick={setSelectedDestination}
-          onMenuButtonClick={() => setDisplayNewDestination(true)}
-        />
-      </>
-    );
-  }
+  const router = useRouter();
 
   if (destinationLoading) {
     return <KeyvalLoader />;
   }
 
   return (
-    <DestinationContainerWrapper>
-      {displayNewDestination
-        ? renderNewDestinationFlow()
-        : selectedDestination
-        ? renderUpdateDestinationFlow()
-        : renderDestinationList()}
-      <Notification />
-    </DestinationContainerWrapper>
+    <>
+      <OverviewHeader title={OVERVIEW.MENU.DESTINATIONS} />
+      <DestinationsManagedList
+        data={destinationList}
+        onItemClick={({ id }) =>
+          router.push(`${ROUTES.UPDATE_DESTINATION}${id}`)
+        }
+        onMenuButtonClick={() => router.push(ROUTES.CREATE_DESTINATION)}
+      />
+    </>
   );
 }

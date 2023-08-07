@@ -4,7 +4,7 @@ import { MenuContainer, LogoWrapper, MenuItemsWrapper } from "./menu.styled";
 import { KeyvalText } from "@/design.system";
 import MenuItem from "../menu.item/menu.item";
 import { useRouter } from "next/navigation";
-import { OVERVIEW } from "@/utils/constants";
+import { OVERVIEW, ROUTES } from "@/utils/constants";
 import { MENU_ITEMS } from "./items";
 
 export interface MenuItem {
@@ -26,12 +26,13 @@ export function Menu() {
   useEffect(onLoad, []);
 
   function onLoad() {
-    const currentItem = MENU_ITEMS.find((item) => {
-      return item.navigate === window.location.pathname;
-    });
-    if (currentItem?.id !== currentMenuItem.id) {
-      handleMenuItemClick(currentItem);
-    }
+    const currentItem = MENU_ITEMS.find(
+      ({ navigate }) =>
+        navigate !== ROUTES.OVERVIEW &&
+        window.location.pathname.includes(navigate)
+    );
+
+    currentItem && setCurrentMenuItem(currentItem);
   }
 
   function handleMenuItemClick(item) {

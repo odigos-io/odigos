@@ -10,7 +10,9 @@ export const DestinationCardWrapper = styled.div`
 `;
 
 export const ApplicationNameWrapper = styled.div`
-  display: inline-block;
+  display: flex;
+  align-items: center;
   text-overflow: ellipsis;
   max-width: 224px;
+  height: 40px;
 `;
