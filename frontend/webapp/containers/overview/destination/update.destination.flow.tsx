@@ -63,7 +63,7 @@ export function UpdateDestinationFlow() {
     };
 
     handleUpdateDestination(newDestinations, {
-      onSuccess,
+      onSuccess: () => onSuccess(OVERVIEW.DESTINATION_UPDATE_SUCCESS),
       onError,
     });
   }
@@ -78,7 +78,7 @@ export function UpdateDestinationFlow() {
     }
   }
 
-  function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
+  function onSuccess(message: string) {
     refetch();
     show({
       type: NOTIFICATION.SUCCESS,
