@@ -22,3 +22,7 @@ export function httpDelete(url: string) {
 export function patch(url: string, body: any) {
   axios.patch(url, body);
 }
+
+export async function patch(url: string, body: any) {
+  await axios.patch(url, body);
+}
