@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
-import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
+import { NOTIFICATION, OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
 import { useMutation, useQuery } from "react-query";
 import {
   getDestination,
@@ -59,13 +59,6 @@ export function NewDestinationForm() {
     setSectionData(currentData);
   }
 
-  function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
-    show({
-      type: NOTIFICATION.SUCCESS,
-      message,
-    });
-  }
-
   function onError({ response }) {
     const message = response?.data?.message;
     show({
@@ -81,7 +74,7 @@ export function NewDestinationForm() {
     };
 
     mutate(destination, {
-      onSuccess: () => onSuccess(OVERVIEW.DESTINATION_CREATED_SUCCESS),
+      onSuccess: () => router.push(`${ROUTES.DESTINATIONS}?status=created`),
       onError,
     });
   }

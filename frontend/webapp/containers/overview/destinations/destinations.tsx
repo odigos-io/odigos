@@ -28,15 +28,28 @@ export function DestinationContainer() {
 
   useEffect(onPageLoad, [searchParams, destinationList]);
 
+  function getMessage(status: string) {
+    switch (status) {
+      case PARAMS.DELETED:
+        return OVERVIEW.DESTINATION_DELETED_SUCCESS;
+      case PARAMS.CREATED:
+        return OVERVIEW.DESTINATION_CREATED_SUCCESS;
+      case PARAMS.UPDATED:
+        return OVERVIEW.DESTINATION_UPDATE_SUCCESS;
+      default:
+        return "";
+    }
+  }
+
   function onPageLoad() {
     const status = searchParams.get(PARAMS.STATUS);
-    if (status === PARAMS.DELETED) {
+    if (status) {
       refetchDestinations();
       show({
         type: NOTIFICATION.SUCCESS,
-        message: OVERVIEW.DESTINATION_DELETED_SUCCESS,
+        message: getMessage(status),
       });
-      router.push(ROUTES.DESTINATIONS);
+      router.replace(ROUTES.DESTINATIONS);
     }
   }
 

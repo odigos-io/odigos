@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { KeyvalLoader } from "@/design.system";
-import { NOTIFICATION, OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
+import { NOTIFICATION, QUERIES, ROUTES } from "@/utils/constants";
 import { useMutation, useQuery } from "react-query";
 import { getDestination, updateDestination } from "@/services";
 import { ManageDestination } from "@/components/overview";
@@ -63,7 +63,7 @@ export function UpdateDestinationFlow() {
     };
 
     handleUpdateDestination(newDestinations, {
-      onSuccess: () => onSuccess(OVERVIEW.DESTINATION_UPDATE_SUCCESS),
+      onSuccess: () => router.push(`${ROUTES.DESTINATIONS}?status=updated`),
       onError,
     });
   }
@@ -76,14 +76,6 @@ export function UpdateDestinationFlow() {
     if (currentDestination?.length) {
       setSelectedDestination(currentDestination[0]);
     }
-  }
-
-  function onSuccess(message: string) {
-    refetch();
-    show({
-      type: NOTIFICATION.SUCCESS,
-      message,
-    });
   }
 
   function onError({ response }) {

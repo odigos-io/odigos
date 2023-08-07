@@ -49,6 +49,7 @@ export function InstrumentedSourcesContainer() {
       router.replace(ROUTES.SOURCES);
     }
   }
+
   return (
     <SourcesContainerWrapper>
       <OverviewHeader title={OVERVIEW.MENU.SOURCES} />
