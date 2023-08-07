@@ -8,7 +8,7 @@ import { useQuery } from "react-query";
 import { getSources } from "@/services";
 import { useRouter } from "next/navigation";
 
-export function SourcesContainer() {
+export function InstrumentedSourcesContainer() {
   const router = useRouter();
   const { data: sources } = useQuery([QUERIES.API_SOURCES], getSources);
 

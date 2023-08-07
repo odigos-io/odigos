@@ -1,6 +1,6 @@
 export { OverviewContainer } from "./overview/overview";
 export { DestinationContainer } from "./destination/destination";
-export { SourcesContainer } from "./sources/sources";
+export { InstrumentedSourcesContainer } from "./sources/instrumented.sources";
 export { NewDestinationList } from "./destination/new.destination.list";
 export { NewDestinationForm } from "./destination/new.destination.form";
 export { UpdateDestinationFlow } from "./destination/update.destination.flow";
