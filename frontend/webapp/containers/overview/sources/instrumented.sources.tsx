@@ -25,15 +25,28 @@ export function InstrumentedSourcesContainer() {
   );
   useEffect(onPageLoad, [searchParams]);
 
+  function getMessage(status: string) {
+    switch (status) {
+      case PARAMS.DELETED:
+        return OVERVIEW.SOURCE_DELETED_SUCCESS;
+      case PARAMS.CREATED:
+        return OVERVIEW.SOURCE_CREATED_SUCCESS;
+      case PARAMS.UPDATED:
+        return OVERVIEW.SOURCE_UPDATE_SUCCESS;
+      default:
+        return "";
+    }
+  }
+
   function onPageLoad() {
     const status = searchParams.get(PARAMS.STATUS);
-    if (status === PARAMS.DELETED) {
+    if (status) {
       refetchSources();
       show({
         type: NOTIFICATION.SUCCESS,
-        message: OVERVIEW.SOURCE_DELETED_SUCCESS,
+        message: getMessage(status),
       });
-      router.push(ROUTES.SOURCES);
+      router.replace(ROUTES.SOURCES);
     }
   }
   return (

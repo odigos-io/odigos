@@ -85,11 +85,7 @@ export function UpdateSourceForm() {
   function onSaveClick(newName) {
     editSource(newName, {
       onError,
-      onSuccess: () =>
-        show({
-          type: NOTIFICATION.SUCCESS,
-          message: OVERVIEW.SOURCE_UPDATE_SUCCESS,
-        }),
+      onSuccess: () => router.push(`${ROUTES.SOURCES}?status=updated`),
     });
   }
 

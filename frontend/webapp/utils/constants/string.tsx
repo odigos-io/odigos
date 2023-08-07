@@ -98,4 +98,6 @@ export const NOTIFICATION = {
 export const PARAMS = {
   STATUS: "status",
   DELETED: "deleted",
+  CREATED: "created",
+  UPDATED: "updated",
 };
