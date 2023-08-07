@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 	"errors"
+	"strings"
+
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
@@ -14,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"strings"
 )
 
 var (
@@ -177,7 +178,35 @@ func removeRuntimeDetails(ctx context.Context, kubeClient client.Client, ns stri
 	return nil
 }
 
-func isObjectLabeled(obj client.Object) bool {
+func isObjectInstrumentationEffectiveEnabled(logger logr.Logger, ctx context.Context, kubeClient client.Client, obj client.Object) (bool, error) {
+
+	// if the object itself is labeled, we will use that value
+	labels := obj.GetLabels()
+	if labels != nil {
+		val, exists := labels[consts.OdigosInstrumentationLabel]
+		if exists {
+			return val == consts.InstrumentationEnabled, nil
+		}
+	}
+
+	// we will get here if the instrumentation label is not set.
+	// in which case, we would want to check the namespace value
+	var ns corev1.Namespace
+	err := kubeClient.Get(ctx, client.ObjectKey{Name: obj.GetNamespace()}, &ns)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		logger.Error(err, "error fetching namespace object")
+		return false, err
+	}
+
+	nsInstrumentationEnabled := isInstrumentationLabelEnabled(&ns)
+	return nsInstrumentationEnabled, nil
+}
+
+func isInstrumentationLabelEnabled(obj client.Object) bool {
 	labels := obj.GetLabels()
 	if labels != nil {
 		val, exists := labels[consts.OdigosInstrumentationLabel]
@@ -187,4 +216,19 @@ func isObjectLabeled(obj client.Object) bool {
 	}
 
 	return false
+}
+
+func removeReportedNameAnnotation(obj client.Object) bool {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		return false
+	}
+
+	if _, exists := annotations[consts.OdigosReportedNameAnnotation]; !exists {
+		return false
+	}
+
+	delete(annotations, consts.OdigosReportedNameAnnotation)
+	obj.SetAnnotations(annotations)
+	return true
 }
