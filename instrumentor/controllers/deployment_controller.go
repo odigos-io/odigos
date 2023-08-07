@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -57,11 +58,25 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	if !isObjectLabeled(&dep) {
+	instEffectiveEnabled, err := isObjectInstrumentationEffectiveEnabled(logger, ctx, r.Client, &dep)
+	if err != nil {
+		logger.Error(err, "error checking if instrumentation is effective")
+		return ctrl.Result{}, err
+	}
+	if !instEffectiveEnabled {
 		// Remove runtime details is exists
 		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, dep.Kind, logger); err != nil {
 			logger.Error(err, "error removing runtime details")
 			return ctrl.Result{}, err
+		}
+		updated := dep.DeepCopy()
+		if removed := removeReportedNameAnnotation(updated); removed {
+			patch := client.MergeFrom(&dep)
+			if err := r.Patch(ctx, updated, patch); err != nil {
+				logger.Error(err, "error removing reported name annotation from deployment")
+				return ctrl.Result{}, err
+			}
+			logger.Info("removed reported name annotation")
 		}
 	}
 

@@ -13,3 +13,15 @@ export const BackButtonWrapper = styled.div`
     cursor: pointer !important;
   }
 `;
+
+export const FieldWrapper = styled.div`
+  height: 36px;
+  width: 348px;
+  margin-bottom: 64px;
+`;
+
+export const ButtonWrapper = styled.div`
+  margin-top: 48px;
+  height: 36px;
+  width: 362px;
+`;

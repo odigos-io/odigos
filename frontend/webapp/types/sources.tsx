@@ -2,6 +2,7 @@ export interface ManagedSource {
   kind: string;
   name: string;
   namespace: string;
+  reported_name?: string;
   languages: [
     {
       container_name: string;

@@ -23,7 +23,9 @@ export function SourcesManagedList({ data = [] }: SourcesManagedListProps) {
         key={source?.name}
         item={source}
         onClick={() =>
-          router.push(`${ROUTES.MANAGE_SOURCE}?source=${source?.name}`)
+          router.push(
+            `${ROUTES.MANAGE_SOURCE}?name=${source?.name}&kind=${source?.kind}&namespace=${source?.namespace}`
+          )
         }
       />
     ));

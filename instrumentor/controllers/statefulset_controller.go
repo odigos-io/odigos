@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -60,11 +61,25 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
-	if !isObjectLabeled(&ss) {
+	instEffectiveEnabled, err := isObjectInstrumentationEffectiveEnabled(logger, ctx, r.Client, &ss)
+	if err != nil {
+		logger.Error(err, "error checking if instrumentation is effective")
+		return ctrl.Result{}, err
+	}
+	if !instEffectiveEnabled {
 		// Remove runtime details is exists
 		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, ss.Kind, logger); err != nil {
 			logger.Error(err, "error removing runtime details")
 			return ctrl.Result{}, err
+		}
+		updated := ss.DeepCopy()
+		if removed := removeReportedNameAnnotation(updated); removed {
+			patch := client.MergeFrom(&ss)
+			if err := r.Patch(ctx, updated, patch); err != nil {
+				logger.Error(err, "error removing reported name annotation from statefulset")
+				return ctrl.Result{}, err
+			}
+			logger.Info("removed reported name annotation")
 		}
 	}
 

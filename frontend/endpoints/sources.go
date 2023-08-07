@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
+	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -13,11 +14,24 @@ type SourceLanguage struct {
 	Language      string `json:"language"`
 }
 
-type Source struct {
-	Name      string           `json:"name"`
-	Kind      string           `json:"kind"`
-	Namespace string           `json:"namespace"`
+// this object contains only part of the source fields. It is used to display the sources in the frontend
+type ThinSource struct {
+
+	// combination of namespace, kind and name is unique
+	Name      string `json:"name"`
+	Kind      string `json:"kind"`
+	Namespace string `json:"namespace"`
+
 	Languages []SourceLanguage `json:"languages"`
+}
+
+type Source struct {
+	ThinSource
+	ReportedName string `json:"reported_name"`
+}
+
+type PatchSourceRequest struct {
+	ReportedName string `json:"reported_name"`
 }
 
 func GetSources(c *gin.Context) {
@@ -27,12 +41,102 @@ func GetSources(c *gin.Context) {
 		return
 	}
 
-	sources := []Source{}
+	sources := []ThinSource{}
 	for _, app := range instrumentedApplications.Items {
-		sources = append(sources, k8sInstrumentedAppToSource(&app))
+		sources = append(sources, k8sInstrumentedAppToThinSource(&app))
 	}
 
 	c.JSON(200, sources)
+}
+
+func GetSource(c *gin.Context) {
+	ns := c.Param("namespace")
+	kind := c.Param("kind")
+	name := c.Param("name")
+	k8sObjectName := utils.GetRuntimeObjectName(name, kind)
+
+	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(c, k8sObjectName, metav1.GetOptions{})
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	owner := getK8sObject(c, ns, kind, name)
+	if owner == nil {
+		c.JSON(500, gin.H{
+			"message": "could not find owner of instrumented application",
+		})
+		return
+	}
+	ownerAnnotations := owner.GetAnnotations()
+	var reportedName string
+	if ownerAnnotations != nil {
+		reportedName = ownerAnnotations[consts.OdigosReportedNameAnnotation]
+	}
+
+	c.JSON(200, Source{
+		ThinSource:   k8sInstrumentedAppToThinSource(instrumentedApplication),
+		ReportedName: reportedName,
+	})
+}
+
+func PatchSource(c *gin.Context) {
+	ns := c.Param("namespace")
+	kind := c.Param("kind")
+	name := c.Param("name")
+
+	request := PatchSourceRequest{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		returnError(c, err)
+		return
+	}
+
+	if request.ReportedName != "" {
+
+		switch kind {
+		case "Deployment":
+			deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(c, name, metav1.GetOptions{})
+			if err != nil {
+				c.JSON(404, gin.H{"error": "could not find a deployment with the given name in the given namespace"})
+				return
+			}
+			deployment.SetAnnotations(updateReportedName(deployment.GetAnnotations(), request.ReportedName))
+			_, err = kube.DefaultClient.AppsV1().Deployments(ns).Update(c, deployment, metav1.UpdateOptions{})
+			if err != nil {
+				returnError(c, err)
+				return
+			}
+		case "StatefulSet":
+			statefulset, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(c, name, metav1.GetOptions{})
+			if err != nil {
+				c.JSON(404, gin.H{"error": "could not find a statefulset with the given name in the given namespace"})
+				return
+			}
+			statefulset.SetAnnotations(updateReportedName(statefulset.GetAnnotations(), request.ReportedName))
+			_, err = kube.DefaultClient.AppsV1().StatefulSets(ns).Update(c, statefulset, metav1.UpdateOptions{})
+			if err != nil {
+				returnError(c, err)
+				return
+			}
+		case "DaemonSet":
+			daemonset, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(c, name, metav1.GetOptions{})
+			if err != nil {
+				c.JSON(404, gin.H{"error": "could not find a daemonset with the given name in the given namespace"})
+				return
+			}
+			daemonset.SetAnnotations(updateReportedName(daemonset.GetAnnotations(), request.ReportedName))
+			_, err = kube.DefaultClient.AppsV1().DaemonSets(ns).Update(c, daemonset, metav1.UpdateOptions{})
+			if err != nil {
+				returnError(c, err)
+				return
+			}
+		default:
+			c.JSON(400, gin.H{"error": "kind must be one of Deployment, StatefulSet or DaemonSet"})
+			return
+		}
+	}
+
+	c.Status(200)
 }
 
 func DeleteSource(c *gin.Context) {
@@ -81,14 +185,14 @@ func DeleteSource(c *gin.Context) {
 			return
 		}
 	default:
-		c.JSON(400, gin.H{"error": "kind not supported"})
+		c.JSON(400, gin.H{"error": "kind must be one of Deployment, StatefulSet or DaemonSet"})
 		return
 	}
 	c.JSON(200, gin.H{"message": "ok"})
 }
 
-func k8sInstrumentedAppToSource(app *v1alpha1.InstrumentedApplication) Source {
-	var source Source
+func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinSource {
+	var source ThinSource
 	source.Name = app.OwnerReferences[0].Name
 	source.Kind = app.OwnerReferences[0].Kind
 	source.Namespace = app.Namespace
@@ -108,4 +212,37 @@ func markK8sObjectInstrumentationDisabled(obj metav1.Object) {
 	}
 	labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationDisabled
 	obj.SetLabels(labels)
+}
+
+func getK8sObject(c *gin.Context, ns string, kind string, name string) metav1.Object {
+	switch kind {
+	case "Deployment":
+		deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(c, name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return deployment
+	case "StatefulSet":
+		statefulSet, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(c, name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return statefulSet
+	case "DaemonSet":
+		daemonSet, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(c, name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return daemonSet
+	default:
+		return nil
+	}
+}
+
+func updateReportedName(annotations map[string]string, reportedName string) map[string]string {
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations[consts.OdigosReportedNameAnnotation] = reportedName
+	return annotations
 }

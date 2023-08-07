@@ -6,7 +6,7 @@ import { DestinationSection } from "@/containers/setup/destination/destination.s
 import { NewDestinationContainer } from "./destination.styled";
 import { useRouter } from "next/navigation";
 
-export function NewDestinationFlow() {
+export function NewDestinationList() {
   const router = useRouter();
 
   return (
