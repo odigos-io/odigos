@@ -1,6 +1,12 @@
 "use client";
 import { ManageSourceHeader } from "@/components/overview/sources/manage.source.header/manage.source.header";
-import { ACTION, NOTIFICATION, OVERVIEW, SETUP } from "@/utils/constants";
+import {
+  ACTION,
+  NOTIFICATION,
+  OVERVIEW,
+  ROUTES,
+  SETUP,
+} from "@/utils/constants";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useMutation } from "react-query";
@@ -68,6 +74,13 @@ export function UpdateSourceForm() {
     const currentSource = await getSource(namespace, kind, name);
     setCurrentSource(currentSource);
   }
+  function onError({ response }) {
+    const message = response?.data?.message;
+    show({
+      type: NOTIFICATION.ERROR,
+      message,
+    });
+  }
 
   function onSaveClick(newName) {
     editSource(newName, {
@@ -80,27 +93,9 @@ export function UpdateSourceForm() {
     });
   }
 
-  function onError({ response }) {
-    const message = response?.data?.message;
-    show({
-      type: NOTIFICATION.ERROR,
-      message,
-    });
-  }
-
-  function onSuccess() {
-    setTimeout(() => {
-      router.back();
-    }, 1000);
-    show({
-      type: NOTIFICATION.SUCCESS,
-      message: OVERVIEW.SOURCE_DELETED_SUCCESS,
-    });
-  }
-
-  function onDelete() {
+  function onSourceDelete() {
     handleDeleteSource(undefined, {
-      onSuccess,
+      onSuccess: () => router.push(`${ROUTES.SOURCES}?status=deleted`),
       onError,
     });
   }
@@ -137,7 +132,7 @@ export function UpdateSourceForm() {
         </KeyvalButton>
       </SaveSourceButtonWrapper>
       <DeleteSource
-        onDelete={onDelete}
+        onDelete={onSourceDelete}
         name={currentSource?.name}
         image_url={
           LANGUAGES_LOGOS[currentSource?.languages?.[0].language || ""]

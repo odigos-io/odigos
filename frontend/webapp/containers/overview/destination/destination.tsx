@@ -1,7 +1,13 @@
 "use client";
 import React, { useEffect } from "react";
 import { KeyvalLoader } from "@/design.system";
-import { NOTIFICATION, OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
+import {
+  NOTIFICATION,
+  OVERVIEW,
+  PARAMS,
+  QUERIES,
+  ROUTES,
+} from "@/utils/constants";
 import { useQuery } from "react-query";
 import { getDestinations } from "@/services";
 import { OverviewHeader, DestinationsManagedList } from "@/components/overview";
@@ -9,10 +15,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useNotification } from "@/hooks";
 
 export function DestinationContainer() {
-  const { isLoading: destinationLoading, data: destinationList } = useQuery(
-    [QUERIES.API_DESTINATIONS],
-    getDestinations
-  );
+  const {
+    isLoading: destinationLoading,
+    data: destinationList,
+    refetch: refetchDestinations,
+  } = useQuery([QUERIES.API_DESTINATIONS], getDestinations);
 
   const searchParams = useSearchParams();
   const { show, Notification } = useNotification();
@@ -22,8 +29,9 @@ export function DestinationContainer() {
   useEffect(onPageLoad, [searchParams, destinationList]);
 
   function onPageLoad() {
-    const status = searchParams.get("status");
-    if (status === "deleted") {
+    const status = searchParams.get(PARAMS.STATUS);
+    if (status === PARAMS.DELETED) {
+      refetchDestinations();
       show({
         type: NOTIFICATION.SUCCESS,
         message: OVERVIEW.DESTINATION_DELETED_SUCCESS,

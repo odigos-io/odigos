@@ -94,3 +94,8 @@ export const NOTIFICATION = {
   ERROR: "error",
   SUCCESS: "success",
 };
+
+export const PARAMS = {
+  STATUS: "status",
+  DELETED: "deleted",
+};
