@@ -3,7 +3,7 @@ import React from "react";
 import { OVERVIEW, ROUTES } from "@/utils/constants";
 import { OverviewHeader } from "@/components/overview";
 import { DestinationSection } from "@/containers/setup/destination/destination.section";
-import { NewDestinationContainer } from "./destination.styled";
+import { NewDestinationContainer } from "./destinations.styled";
 import { useRouter } from "next/navigation";
 
 export function NewDestinationList() {

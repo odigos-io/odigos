@@ -1,12 +1,12 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { KeyvalLoader } from "@/design.system";
-import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
+import { NOTIFICATION, QUERIES, ROUTES } from "@/utils/constants";
 import { useMutation, useQuery } from "react-query";
 import { getDestination, updateDestination } from "@/services";
 import { ManageDestination } from "@/components/overview";
 import { deleteDestination, getDestinations } from "@/services/destinations";
-import { ManageDestinationWrapper } from "./destination.styled";
+import { ManageDestinationWrapper } from "./destinations.styled";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useNotification } from "@/hooks";
 const DEST = "dest";
@@ -51,7 +51,7 @@ export function UpdateDestinationFlow() {
 
   function onDelete() {
     handleDeleteDestination(selectedDestination.id, {
-      onSuccess: () => onSuccess(OVERVIEW.DESTINATION_DELETED_SUCCESS),
+      onSuccess: () => router.push(`${ROUTES.DESTINATIONS}?status=deleted`),
       onError,
     });
   }
@@ -63,7 +63,7 @@ export function UpdateDestinationFlow() {
     };
 
     handleUpdateDestination(newDestinations, {
-      onSuccess,
+      onSuccess: () => router.push(`${ROUTES.DESTINATIONS}?status=updated`),
       onError,
     });
   }
@@ -76,14 +76,6 @@ export function UpdateDestinationFlow() {
     if (currentDestination?.length) {
       setSelectedDestination(currentDestination[0]);
     }
-  }
-
-  function onSuccess(message = OVERVIEW.DESTINATION_UPDATE_SUCCESS) {
-    refetch();
-    show({
-      type: NOTIFICATION.SUCCESS,
-      message,
-    });
   }
 
   function onError({ response }) {
