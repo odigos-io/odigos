@@ -22,4 +22,7 @@ const QUERIES = {
   API_DESTINATION_TYPES: "apiDestinationTypes",
 };
 
-export { API, QUERIES };
+const SLACK_INVITE_LINK =
+  "https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email";
+
+export { API, QUERIES, SLACK_INVITE_LINK };

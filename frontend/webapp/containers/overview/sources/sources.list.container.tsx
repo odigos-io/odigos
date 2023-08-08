@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { NOTIFICATION, OVERVIEW, QUERIES } from "@/utils/constants";
+import { NOTIFICATION, OVERVIEW, QUERIES, ROUTES } from "@/utils/constants";
 import { OverviewHeader } from "@/components/overview";
 import { useNotification } from "@/hooks";
 import { useQuery } from "react-query";
@@ -9,22 +9,14 @@ import { NewSourcesList } from "@/containers/overview/sources/new.source.flow";
 import { useRouter } from "next/navigation";
 
 export function SourcesListContainer() {
-  const { show, Notification } = useNotification();
+  const { Notification } = useNotification();
   const router = useRouter();
-  const { data: sources, refetch } = useQuery(
-    [QUERIES.API_SOURCES],
-    getSources
-  );
+  const { data: sources } = useQuery([QUERIES.API_SOURCES], getSources);
 
   function onNewSourceSuccess() {
     setTimeout(() => {
-      router.back();
-      refetch();
+      router.push(`${ROUTES.SOURCES}?status=created`);
     }, 1000);
-    show({
-      type: NOTIFICATION.SUCCESS,
-      message: OVERVIEW.SOURCE_CREATED_SUCCESS,
-    });
   }
 
   return (

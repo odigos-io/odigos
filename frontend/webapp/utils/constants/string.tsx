@@ -88,9 +88,17 @@ export const OVERVIEW = {
 
 export const ACTION = {
   SAVE: "Save",
+  CONTACT_US: "Contact Us",
 };
 
 export const NOTIFICATION = {
   ERROR: "error",
   SUCCESS: "success",
+};
+
+export const PARAMS = {
+  STATUS: "status",
+  DELETED: "deleted",
+  CREATED: "created",
+  UPDATED: "updated",
 };
