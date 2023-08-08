@@ -88,6 +88,7 @@ export const OVERVIEW = {
 
 export const ACTION = {
   SAVE: "Save",
+  CONTACT_US: "Contact Us",
 };
 
 export const NOTIFICATION = {
