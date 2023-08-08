@@ -1,6 +1,6 @@
-import { KeyvalText } from "@/design.system/text/text";
 import React from "react";
 import styled from "styled-components";
+import { KeyvalText } from "../text/text";
 
 interface TagProps {
   title: string;
