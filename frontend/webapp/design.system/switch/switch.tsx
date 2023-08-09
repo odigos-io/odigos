@@ -1,5 +1,4 @@
 import React from "react";
-import { SETUP } from "@/utils/constants";
 import { Switch } from "@keyval-org/design-system";
 
 interface KeyvalSwitchProps {
@@ -9,18 +8,6 @@ interface KeyvalSwitchProps {
   label?: string;
 }
 
-export function KeyvalSwitch({
-  toggle,
-  handleToggleChange,
-  style,
-  label = SETUP.MENU.SELECT_ALL,
-}: KeyvalSwitchProps) {
-  return (
-    <Switch
-      toggle={toggle}
-      handleToggleChange={handleToggleChange}
-      style={style}
-      label={label}
-    />
-  );
+export function KeyvalSwitch(props: KeyvalSwitchProps) {
+  return <Switch {...props} />;
 }
