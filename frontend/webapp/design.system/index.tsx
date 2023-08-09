@@ -22,3 +22,4 @@ export { KeyvalNotification } from "./notification/notification";
 export { KeyvalDataFlow } from "./data.flow";
 export { DangerZoneArea as DangerZone } from "./danger.zone/danger.zone";
 export { KeyvalModal } from "./modal/modal";
+export { KeyvalSteps as Steps } from "./steps/steps";

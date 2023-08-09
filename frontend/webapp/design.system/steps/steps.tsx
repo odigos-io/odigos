@@ -1,23 +1,17 @@
 import React from "react";
-import StepItem from "./step.item";
-import { StepsContainer } from "./steps.styled";
+import { Steps } from "@keyval-org/design-system";
 
-type StepListProps<T> = {
-  data?: Array<T> | null;
+type StepItemProps = {
+  title: string;
+  index: number;
+  status: string;
+  isLast?: boolean;
 };
 
-export default function Steps<T>({ data }: StepListProps<T>) {
-  function renderSteps() {
-    return data?.map(({ title, status }: any, index) => (
-      <StepItem
-        key={`${index}_${title}`}
-        title={title}
-        status={status}
-        index={index + 1}
-        isLast={index + 1 === data.length}
-      />
-    ));
-  }
+type StepListProps = {
+  data?: StepItemProps[] | null;
+};
 
-  return <StepsContainer>{renderSteps()}</StepsContainer>;
+export function KeyvalSteps(props: StepListProps) {
+  return <Steps {...props} />;
 }
