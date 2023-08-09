@@ -1312,29 +1312,10 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@keyval-dev/design-system@^0.0.1":
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/@keyval-dev/design-system/-/design-system-0.0.1.tgz#a83000b5148f551832e22049c1058d5335723ce3"
-  integrity sha512-B5wbAE2NJ+dbxxid5XBsMcFfd69ymDrUF8BZaDCq89sDA0D+0IP2JWdZkzBohJvxFbzlq1J6jNgaknNNanMdOw==
-  dependencies:
-    "@svgr/core" "^8.0.0"
-    "@svgr/webpack" "^8.0.1"
-    "@types/node" "20.4.8"
-    "@types/react" "18.2.19"
-    "@types/react-dom" "18.2.7"
-    next "13.4.13"
-    react "18.2.0"
-    react-dom "18.2.0"
-    react-lottie "^1.2.3"
-    reactflow "11.7.4"
-    rollup-plugin-svgr "^2.0.0"
-    styled-components "6.0.7"
-    typescript "5.1.6"
-
-"@keyval-org/design-system@0.4.2":
-  version "0.4.2"
-  resolved "https://registry.yarnpkg.com/@keyval-org/design-system/-/design-system-0.4.2.tgz#ea658b0d395187b0e1a2a09309ea02964c86335a"
-  integrity sha512-Zg9URQlcUuUPgBxyBE3piN00VgHO6r3XHBLpU06ulc2mTFUuGnM/+FIVQ1hZ7eqXnn+s1BYrvng5YhgOWAKQsg==
+"@keyval-dev/design-system@0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@keyval-dev/design-system/-/design-system-0.0.4.tgz#e210cc0d7bc4857eb088cd98f212497fa2645cca"
+  integrity sha512-Jc645lJY4+VZuH/oX6asoGvYCPJrgwQCdQtcplTcSC1tEdt0jjuGrjeN5tOkT70ZzlhOSmUANgm28u2xnGukAA==
   dependencies:
     "@svgr/core" "^8.0.0"
     "@svgr/webpack" "^8.0.1"
