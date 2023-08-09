@@ -1,4 +1,3 @@
-import { FloatBox } from "@/design.system/float.box/float.box";
 import { KeyvalText } from "@/design.system/text/text";
 import React from "react";
 import {
@@ -8,6 +7,7 @@ import {
   FloatingBoxTextWrapper,
 } from "./steps.styled";
 import Done from "assets/icons/checked.svg";
+import { FloatBoxComponent } from "../float.box/float.box";
 
 type StepItemProps = {
   title: string;
@@ -30,7 +30,7 @@ export default function StepItem({
 }: StepItemProps) {
   return (
     <StepItemWrapper>
-      <FloatBox>
+      <FloatBoxComponent>
         {status === Status.Done ? (
           <Done />
         ) : (
@@ -38,7 +38,7 @@ export default function StepItem({
             <KeyvalText weight={700}>{index}</KeyvalText>
           </FloatingBoxTextWrapper>
         )}
-      </FloatBox>
+      </FloatBoxComponent>
       <StepItemTextWrapper disabled={status !== Status.Active}>
         <KeyvalText weight={600}>{title}</KeyvalText>
       </StepItemTextWrapper>
