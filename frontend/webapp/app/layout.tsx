@@ -3,6 +3,7 @@ import React from "react";
 import { ThemeProvider } from "styled-components";
 import theme from "@/styles/palette";
 import { QueryClient, QueryClientProvider } from "react-query";
+import { ThemeProviderWrapper } from "@keyval-dev/design-system";
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
@@ -30,9 +31,11 @@ export default function RootLayout({
     <html lang="en">
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
-          <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
-            {children}
-          </body>
+          <ThemeProviderWrapper>
+            <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
+              {children}
+            </body>
+          </ThemeProviderWrapper>
         </ThemeProvider>
       </QueryClientProvider>
     </html>

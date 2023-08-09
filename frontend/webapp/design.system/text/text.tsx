@@ -1,5 +1,5 @@
 import React from "react";
-import { TextWrapper } from "./text.styled";
+import { Text } from "@keyval-dev/design-system";
 
 type TextProps = {
   type?: string | any;
@@ -11,23 +11,6 @@ type TextProps = {
   size?: number;
 };
 
-export function KeyvalText({
-  children,
-  color,
-  style,
-  weight,
-  size,
-}: TextProps) {
-  return (
-    <TextWrapper
-      style={{
-        fontWeight: weight,
-        color,
-        fontSize: size,
-        ...style,
-      }}
-    >
-      {children}
-    </TextWrapper>
-  );
+export function KeyvalText(props: TextProps) {
+  return <Text {...props} />;
 }
