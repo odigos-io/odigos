@@ -27,9 +27,13 @@ export const SourcesListWrapper = styled.div`
   -ms-overflow-style: none;
 
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   ::-webkit-scrollbar {
     display: none;
+  }
+
+  @media screen and (max-width: 1750px) {
+    grid-template-columns: repeat(4, 1fr);
   }
 
   @media screen and (max-width: 1500px) {
