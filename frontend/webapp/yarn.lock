@@ -1312,10 +1312,10 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@keyval-org/design-system@^0.4.0":
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/@keyval-org/design-system/-/design-system-0.4.0.tgz#386054400eb2d50efa95e7471492fba3f317603a"
-  integrity sha512-XriOVuMz585CsRe9vlEcUCRtBDhhREa08HIt3mSmEtbPSjKTnwC/qDJKB4z5uklvmomcz0wPkq0uGOFO1P9urg==
+"@keyval-org/design-system@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@keyval-org/design-system/-/design-system-0.4.1.tgz#9841bfcd8d31a7573ac197b7df8f829822b5fc6e"
+  integrity sha512-v3oM3FmsXvon+ii818yg7XfHgx9JNy9NDJQRrqZr+fk3/5UKFt4I1OZKF+bQj2z8IRFtGaI2qJ+2APQa1WGu7w==
   dependencies:
     "@svgr/core" "^8.0.0"
     "@svgr/webpack" "^8.0.1"
