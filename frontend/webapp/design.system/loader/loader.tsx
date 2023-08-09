@@ -1,10 +1,6 @@
 import React from "react";
-import { Loader, LoaderWrapper } from "./loader.styled";
+import { Loader } from "@keyval-org/design-system";
 
 export function KeyvalLoader() {
-  return (
-    <LoaderWrapper>
-      <Loader />
-    </LoaderWrapper>
-  );
+  return <Loader />;
 }
