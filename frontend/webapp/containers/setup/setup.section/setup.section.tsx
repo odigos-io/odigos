@@ -9,7 +9,6 @@ import { SetupHeader } from "../setup.header/setup.header";
 import { DestinationSection } from "../destination/destination.section";
 import { ConnectionSection } from "../connection/connection.section";
 import { SourcesSection } from "../sources/sources.section";
-import RightArrow from "assets/icons/white-arrow-right.svg";
 import { KeyvalText, Steps } from "@/design.system";
 import { CONFIG, NOTIFICATION, SETUP } from "@/utils/constants";
 import { useSectionData, useNotification } from "@/hooks";
@@ -18,6 +17,7 @@ import { setNamespaces } from "@/services";
 import { useSearchParams } from "next/navigation";
 import { useMutation } from "react-query";
 import { SelectedSources } from "@/types/sources";
+import { RightArrow } from "@/assets/icons/app";
 
 const STATE = "state";
 
