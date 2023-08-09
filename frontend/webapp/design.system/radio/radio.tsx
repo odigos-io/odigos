@@ -1,6 +1,6 @@
 import React, { FC, ChangeEvent } from "react";
 
-import { RadioButton } from "@keyval-org/design-system";
+import { RadioButton } from "@keyval-dev/design-system";
 interface RadioButtonProps {
   label?: string;
   value?: string;

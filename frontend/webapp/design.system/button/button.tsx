@@ -1,5 +1,5 @@
 import React, { FC, ReactNode } from "react";
-import { Button } from "@keyval-org/design-system";
+import { Button } from "@keyval-dev/design-system";
 interface ButtonProps {
   variant?: "primary" | "secondary";
   children: ReactNode;

@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch } from "@keyval-org/design-system";
+import { Switch } from "@keyval-dev/design-system";
 
 interface KeyvalSwitchProps {
   toggle: boolean;

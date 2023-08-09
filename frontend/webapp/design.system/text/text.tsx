@@ -1,5 +1,5 @@
 import React from "react";
-import { Text } from "@keyval-org/design-system";
+import { Text } from "@keyval-dev/design-system";
 
 type TextProps = {
   type?: string | any;

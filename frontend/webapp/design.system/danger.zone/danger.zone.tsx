@@ -1,5 +1,5 @@
 import React from "react";
-import { DangerZone } from "@keyval-org/design-system";
+import { DangerZone } from "@keyval-dev/design-system";
 
 export function DangerZoneArea(props) {
   return <DangerZone {...props} />;

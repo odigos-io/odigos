@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "@keyval-org/design-system";
+import { Link } from "@keyval-dev/design-system";
 
 interface KeyvalLinkProps {
   value: string;

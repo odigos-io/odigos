@@ -1,5 +1,5 @@
 import React from "react";
-import { ActionInput } from "@keyval-org/design-system";
+import { ActionInput } from "@keyval-dev/design-system";
 
 interface InputProps {
   value: string;

@@ -1,5 +1,5 @@
 import React from "react";
-import { Card } from "@keyval-org/design-system";
+import { Card } from "@keyval-dev/design-system";
 interface CardProps {
   children: any;
   focus?: any;

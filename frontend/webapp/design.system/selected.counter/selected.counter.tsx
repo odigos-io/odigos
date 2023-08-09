@@ -1,5 +1,5 @@
 import React from "react";
-import { SelectedCounter } from "@keyval-org/design-system";
+import { SelectedCounter } from "@keyval-dev/design-system";
 
 interface SelectedCounterProps {
   total: number;

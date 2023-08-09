@@ -1,5 +1,5 @@
 import React from "react";
-import { Input } from "@keyval-org/design-system";
+import { Input } from "@keyval-dev/design-system";
 interface InputProps {
   label?: string;
   value: string;
