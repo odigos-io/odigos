@@ -6,7 +6,6 @@ export const DestinationListContainer = styled.div`
   padding-bottom: 300px;
   margin-top: 24px;
   overflow: scroll;
-  scrollbar-width: none;
 `;
 
 export const EmptyListWrapper = styled.div`

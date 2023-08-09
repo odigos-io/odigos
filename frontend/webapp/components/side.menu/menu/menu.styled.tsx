@@ -14,3 +14,8 @@ export const LogoWrapper = styled.div`
 export const MenuItemsWrapper = styled.div`
   padding: 16px 9px;
 `;
+
+export const ContactUsWrapper = styled(MenuItemsWrapper)`
+  position: absolute;
+  bottom: 5%;
+`;

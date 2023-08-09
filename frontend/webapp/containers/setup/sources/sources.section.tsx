@@ -3,7 +3,7 @@ import { SourcesList, SourcesOptionMenu } from "@/components/setup";
 import { getApplication, getNamespaces } from "@/services";
 import { LoaderWrapper } from "./sources.section.styled";
 import { useQuery } from "react-query";
-import { QUERIES } from "@/utils/constants";
+import { NOTIFICATION, QUERIES } from "@/utils/constants";
 import { KeyvalLoader } from "@/design.system";
 import { useNotification } from "@/hooks";
 
@@ -32,24 +32,30 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
   useEffect(() => {
     isError &&
       show({
-        type: "error",
+        type: NOTIFICATION.ERROR,
         message: error,
       });
   }, [isError]);
 
-  const namespacesList = useMemo(() => {
-    return data?.namespaces?.map((item: any, index: number) => {
-      return { id: index, label: item.name };
-    });
-  }, [data]);
+  const namespacesList = useMemo(
+    () =>
+      data?.namespaces?.map((item: any, index: number) => ({
+        id: index,
+        label: item.name,
+      })),
+    [data]
+  );
 
   const sourceData = useMemo(() => {
-    const namespace = sectionData[currentNamespace?.name];
-    return searchFilter
+    let namespace = sectionData[currentNamespace?.name];
+    //filter by search query
+    namespace = searchFilter
       ? namespace?.objects.filter((item: any) =>
           item.name.toLowerCase().includes(searchFilter.toLowerCase())
         )
       : namespace?.objects;
+    //remove instrumented applications
+    return namespace?.filter((item: any) => !item.instrumentation_effective);
   }, [searchFilter, currentNamespace, sectionData]);
 
   async function onNameSpaceChange() {

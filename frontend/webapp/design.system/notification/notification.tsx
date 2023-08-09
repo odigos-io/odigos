@@ -7,6 +7,7 @@ import { KeyvalText } from "../text/text";
 import CloseIcon from "@/assets/icons/X-blue.svg";
 import SuccessIcon from "@/assets/icons/success-notification.svg";
 import ErrorIcon from "@/assets/icons/error-notification.svg";
+
 interface KeyvalNotificationProps {
   type: "success" | "error" | "warning" | "info";
   message: string;

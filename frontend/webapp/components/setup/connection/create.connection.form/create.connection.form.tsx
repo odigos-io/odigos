@@ -105,11 +105,16 @@ export function CreateConnectionForm({
   }
 
   function isFormValid() {
-    const dynamicFieldsValues = Object.values(dynamicFields);
+    const areDynamicFieldsFilled = Object.values(dynamicFields).every(
+      (field) => field
+    );
+
+    const isFieldLengthMatching =
+      (fields?.length ?? 0) ===
+      (dynamicFields ? Object.keys(dynamicFields).length : 0);
+
     const isValid =
-      !!destinationName &&
-      dynamicFieldsValues.every((field: Field) => field) &&
-      dynamicFieldsValues.length === fields?.length;
+      !!destinationName && areDynamicFieldsFilled && isFieldLengthMatching;
 
     setIsCreateButtonDisabled(!isValid);
   }
@@ -134,19 +139,21 @@ export function CreateConnectionForm({
           ? SETUP.UPDATE_CONNECTION
           : SETUP.CREATE_CONNECTION}
       </KeyvalText>
-      <ConnectionMonitorsWrapper>
-        <KeyvalText size={14}>{SETUP.CONNECTION_MONITORS}</KeyvalText>
-        <CheckboxWrapper>
-          {selectedMonitors.map((checkbox) => (
-            <KeyvalCheckbox
-              key={checkbox?.id}
-              value={checkbox?.checked}
-              onChange={() => handleCheckboxChange(checkbox?.id)}
-              label={checkbox?.label}
-            />
-          ))}
-        </CheckboxWrapper>
-      </ConnectionMonitorsWrapper>
+      {selectedMonitors?.length > 1 && (
+        <ConnectionMonitorsWrapper>
+          <KeyvalText size={14}>{SETUP.CONNECTION_MONITORS}</KeyvalText>
+          <CheckboxWrapper>
+            {selectedMonitors.map((checkbox) => (
+              <KeyvalCheckbox
+                key={checkbox?.id}
+                value={checkbox?.checked}
+                onChange={() => handleCheckboxChange(checkbox?.id)}
+                label={checkbox?.label}
+              />
+            ))}
+          </CheckboxWrapper>
+        </ConnectionMonitorsWrapper>
+      )}
       <FieldWrapper>
         <KeyvalInput
           style={{ height: 36 }}

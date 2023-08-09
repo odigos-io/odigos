@@ -7,26 +7,18 @@ export async function get(url: string) {
   }
 }
 
-export async function post(url: string, body: any) {
-  const { data, status } = await axios.post(url, body);
-
-  if (status === 200) {
-    return data;
-  }
+export function post(url: string, body: any) {
+  axios.post(url, body);
 }
 
-export async function put(url: string, body: any) {
-  const { data, status } = await axios.put(url, body);
-
-  if (status === 200) {
-    return data;
-  }
+export function put(url: string, body: any) {
+  axios.put(url, body);
 }
 
-export async function httpDelete(url: string) {
-  const { data, status } = await axios.delete(url);
+export function httpDelete(url: string) {
+  axios.delete(url);
+}
 
-  if (status === 200) {
-    return data;
-  }
+export function patch(url: string, body: any) {
+  axios.patch(url, body);
 }
