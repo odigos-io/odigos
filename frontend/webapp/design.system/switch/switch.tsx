@@ -1,11 +1,6 @@
 import React from "react";
-import { KeyvalText } from "../text/text";
-import {
-  SwitchButtonWrapper,
-  SwitchInputWrapper,
-  SwitchToggleWrapper,
-} from "./switch.styled";
 import { SETUP } from "@/utils/constants";
+import { Switch } from "@keyval-org/design-system";
 
 interface KeyvalSwitchProps {
   toggle: boolean;
@@ -21,14 +16,11 @@ export function KeyvalSwitch({
   label = SETUP.MENU.SELECT_ALL,
 }: KeyvalSwitchProps) {
   return (
-    <SwitchInputWrapper>
-      <SwitchToggleWrapper
-        active={toggle || undefined}
-        onClick={handleToggleChange}
-      >
-        <SwitchButtonWrapper disabled={toggle || undefined} />
-      </SwitchToggleWrapper>
-      {label && <KeyvalText size={14}>{label}</KeyvalText>}
-    </SwitchInputWrapper>
+    <Switch
+      toggle={toggle}
+      handleToggleChange={handleToggleChange}
+      style={style}
+      label={label}
+    />
   );
 }

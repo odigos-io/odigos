@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@keyval-org/design-system": "^0.2.0",
+    "@keyval-org/design-system": "0.3.1",
     "@next/font": "^13.4.7",
     "@svgr/webpack": "^6.2.1",
     "@types/node": "20.3.3",

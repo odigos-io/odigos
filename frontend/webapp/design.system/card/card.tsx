@@ -1,11 +1,9 @@
 import React from "react";
-import { CardContainer } from "./card.styled";
+import { Card } from "@keyval-org/design-system";
 interface CardProps {
-  children: React.ReactNode;
+  children: any;
   focus?: any;
 }
-export function KeyvalCard({ children, focus = false }: CardProps) {
-  return (
-    <CardContainer selected={focus || undefined}>{children}</CardContainer>
-  );
+export function KeyvalCard(props: CardProps) {
+  return <Card>{props.children}</Card>;
 }
