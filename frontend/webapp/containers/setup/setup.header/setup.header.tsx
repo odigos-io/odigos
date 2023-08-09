@@ -1,7 +1,5 @@
 import React, { ReactNode } from "react";
-import Charge from "assets/icons/charge-rect.svg";
-import Connect from "assets/icons/connect.svg";
-import RightArrow from "assets/icons/arrow-right.svg";
+
 import {
   HeaderButtonWrapper,
   HeaderTitleWrapper,
@@ -12,6 +10,7 @@ import { KeyvalButton, KeyvalText } from "@/design.system";
 import { SETUP } from "@/utils/constants";
 import { ConnectionsIcons } from "@/components/setup";
 import theme from "@/styles/palette";
+import { Charge, Connect, RightArrow } from "@/assets/icons/app";
 
 type StepId = "CHOOSE_SOURCE" | "CHOOSE_DESTINATION";
 
