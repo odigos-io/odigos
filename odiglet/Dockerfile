@@ -6,7 +6,7 @@ RUN mkdir workspace && pip install --target workspace -r requirements.txt
 FROM node:16 AS nodejs-builder
 WORKDIR /nodejs-instrumentation
 COPY odiglet/agents/nodejs .
-RUN npm install
+RUN npm install --production
 
 FROM busybox AS dotnet-builder
 WORKDIR /dotnet-instrumentation
