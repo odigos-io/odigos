@@ -1,11 +1,23 @@
 import { styled } from "styled-components";
 
 export const ManagedListWrapper = styled.div`
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 24px;
   padding: 0px 36px;
   padding-bottom: 50px;
+  grid-template-columns: repeat(4, 1fr);
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  @media screen and (max-width: 1850px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media screen and (max-width: 1450px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 `;
 
 export const MenuWrapper = styled.div`
