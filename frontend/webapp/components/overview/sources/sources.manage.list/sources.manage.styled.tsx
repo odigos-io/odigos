@@ -29,7 +29,6 @@ export const EmptyListWrapper = styled.div`
 
 export const ManagedListWrapper = styled.div`
   display: grid;
-  height: 680px;
   gap: 24px;
   overflow: scroll;
   grid-template-columns: repeat(5, 1fr);
@@ -44,6 +43,7 @@ export const ManagedListWrapper = styled.div`
   }
   @media screen and (max-width: 1500px) {
     grid-template-columns: repeat(3, 1fr);
+    height: 680px;
   }
   @media screen and (max-width: 1200px) {
     grid-template-columns: repeat(2, 1fr);
