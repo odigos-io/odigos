@@ -19,14 +19,27 @@ import { KeyvalLoader } from "@/design.system";
 import { useNotification } from "@/hooks";
 import { getDestinationsTypes } from "@/services";
 
+interface DestinationTypes {
+  image_url: string;
+  display_name: string;
+  supported_signals: {
+    [key: string]: {
+      supported: boolean;
+    };
+  };
+  type: string;
+}
+
 type DestinationSectionProps = {
   sectionData?: any;
   setSectionData: (data: any) => void;
+  onSelectItem?: () => void;
 };
 
 export function DestinationSection({
   sectionData,
   setSectionData,
+  onSelectItem,
 }: DestinationSectionProps) {
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [dropdownData, setDropdownData] = useState<any>(null);
@@ -46,6 +59,11 @@ export function DestinationSection({
         message: error,
       });
   }, [isError]);
+
+  function handleSelectItem(item: DestinationTypes) {
+    setSectionData(item);
+    onSelectItem && onSelectItem();
+  }
 
   function renderDestinationLists() {
     sortDestinationList(data);
@@ -73,7 +91,7 @@ export function DestinationSection({
             sectionData={sectionData}
             key={category.name}
             data={category}
-            onItemClick={(item: any) => setSectionData(item)}
+            onItemClick={(item: DestinationTypes) => handleSelectItem(item)}
           />
         )
       );

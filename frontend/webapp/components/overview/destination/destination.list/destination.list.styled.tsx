@@ -2,10 +2,11 @@ import { styled } from "styled-components";
 
 export const ManagedListWrapper = styled.div`
   display: grid;
-  gap: 24px;
+  grid-gap: 24px;
   padding: 0px 36px;
   padding-bottom: 50px;
   grid-template-columns: repeat(4, 1fr);
+  overflow-y: scroll;
   ::-webkit-scrollbar {
     display: none;
   }
@@ -17,6 +18,7 @@ export const ManagedListWrapper = styled.div`
   }
   @media screen and (max-width: 1450px) {
     grid-template-columns: repeat(2, 1fr);
+    height: 75%;
   }
 `;
 
@@ -30,6 +32,7 @@ export const MenuWrapper = styled.div`
 export const CardWrapper = styled.div`
   display: flex;
   width: 366px;
+  height: 190px;
   padding-top: 32px;
   padding-bottom: 24px;
   flex-direction: column;
@@ -42,7 +45,7 @@ export const CardWrapper = styled.div`
   flex-direction: column;
   cursor: pointer;
   &:hover {
-    background: var(--dark-mode-dark-1, #07111a81);
+    border: ${({ theme }) => `1px solid  ${theme.colors.secondary}`};
   }
 `;
 

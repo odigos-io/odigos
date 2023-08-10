@@ -17,7 +17,7 @@ import { setNamespaces } from "@/services";
 import { useSearchParams } from "next/navigation";
 import { useMutation } from "react-query";
 import { SelectedSources } from "@/types/sources";
-import { RightArrow } from "@/assets/icons/app";
+import { WhiteArrow } from "@/assets/icons/app";
 
 const STATE = "state";
 
@@ -52,7 +52,11 @@ export function SetupSection() {
   function renderCurrentSection() {
     const Component = sectionComponents[currentStep?.id];
     return Component ? (
-      <Component sectionData={sectionData} setSectionData={setSectionData} />
+      <Component
+        sectionData={sectionData}
+        setSectionData={setSectionData}
+        onSelectItem={onNextClick}
+      />
     ) : null;
   }
 
@@ -110,7 +114,7 @@ export function SetupSection() {
       <SetupSectionContainer>
         {currentStep.index !== 1 && (
           <BackButtonWrapper onClick={onBackClick}>
-            <RightArrow />
+            <WhiteArrow />
             <KeyvalText size={14} weight={600}>
               {SETUP.BACK}
             </KeyvalText>

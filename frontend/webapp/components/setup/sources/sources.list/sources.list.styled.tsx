@@ -25,7 +25,6 @@ export const SourcesListWrapper = styled.div<{ repeat: number }>`
   overflow-y: scroll;
   scrollbar-width: none;
   -ms-overflow-style: none;
-
   display: grid;
   grid-template-columns: ${({ repeat }) => `repeat(${repeat},1fr)`};
 
@@ -46,7 +45,7 @@ export const SourcesListWrapper = styled.div<{ repeat: number }>`
 `;
 
 export const EmptyListWrapper = styled.div`
-  width: 100%;
+  width: 1168px;
   display: flex;
   justify-content: center;
   align-items: center;

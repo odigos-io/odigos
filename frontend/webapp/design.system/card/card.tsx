@@ -5,5 +5,5 @@ interface CardProps {
   focus?: any;
 }
 export function KeyvalCard(props: CardProps) {
-  return <Card>{props.children}</Card>;
+  return <Card {...props}>{props.children}</Card>;
 }

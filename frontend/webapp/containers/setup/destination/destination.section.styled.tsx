@@ -6,6 +6,11 @@ export const DestinationListContainer = styled.div`
   padding-bottom: 300px;
   margin-top: 24px;
   overflow: scroll;
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 `;
 
 export const EmptyListWrapper = styled.div`
