@@ -23,8 +23,6 @@ export function DestinationList({
       />
     ));
   }
-  // const getNumberOfItemsRepeated = () =>
-  //   window.location.pathname.includes(ROUTES.CREATE_DESTINATION) ? 5 : 4;
 
   return items?.length ? (
     <>
