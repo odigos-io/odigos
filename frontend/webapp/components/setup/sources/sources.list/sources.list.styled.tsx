@@ -17,7 +17,7 @@ export const SourcesTitleWrapper = styled.div`
   margin: 24px 0;
 `;
 
-export const SourcesListWrapper = styled.div`
+export const SourcesListWrapper = styled.div<{ repeat: number }>`
   width: 100%;
   height: 400px;
   padding-bottom: 300px;
@@ -27,7 +27,8 @@ export const SourcesListWrapper = styled.div`
   -ms-overflow-style: none;
 
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: ${({ repeat }) => `repeat(${repeat},1fr)`};
+
   ::-webkit-scrollbar {
     display: none;
   }
