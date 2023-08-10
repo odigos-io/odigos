@@ -10,14 +10,21 @@ export const DestinationTypeTitleWrapper = styled.div`
 
 export const DestinationListWrapper = styled.div`
   width: 100%;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
   ::-webkit-scrollbar {
     display: none;
   }
   -ms-overflow-style: none;
   scrollbar-width: none;
+
+  @media screen and (max-width: 1500px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media screen and (max-width: 1150px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 `;
 
 export const EmptyListWrapper = styled.div`

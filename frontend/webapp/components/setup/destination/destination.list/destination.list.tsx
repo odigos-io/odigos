@@ -6,6 +6,7 @@ import {
   DestinationTypeTitleWrapper,
 } from "./destination.list.styled";
 import { capitalizeFirstLetter } from "@/utils/functions";
+import { ROUTES } from "@/utils/constants";
 
 export function DestinationList({
   data: { items, name },
