@@ -13,8 +13,9 @@ export const CardWrapper = styled.div`
   flex-direction: column;
   gap: 10px;
   cursor: pointer;
+
   &:hover {
-    background: var(--dark-mode-dark-1, #07111a81);
+    border: ${({ theme }) => `1px solid  ${theme.colors.secondary}`};
   }
 `;
 
