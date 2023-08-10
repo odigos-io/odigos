@@ -55,7 +55,7 @@ export function SetupSection() {
       <Component
         sectionData={sectionData}
         setSectionData={setSectionData}
-        onNext={onNextClick}
+        onSelectItem={onNextClick}
       />
     ) : null;
   }
