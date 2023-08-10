@@ -22,11 +22,13 @@ import { getDestinationsTypes } from "@/services";
 type DestinationSectionProps = {
   sectionData?: any;
   setSectionData: (data: any) => void;
+  onNext?: () => void;
 };
 
 export function DestinationSection({
   sectionData,
   setSectionData,
+  onNext,
 }: DestinationSectionProps) {
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [dropdownData, setDropdownData] = useState<any>(null);
@@ -46,6 +48,11 @@ export function DestinationSection({
         message: error,
       });
   }, [isError]);
+
+  function onItemSelect(item) {
+    setSectionData(item);
+    onNext && onNext();
+  }
 
   function renderDestinationLists() {
     sortDestinationList(data);
@@ -73,7 +80,7 @@ export function DestinationSection({
             sectionData={sectionData}
             key={category.name}
             data={category}
-            onItemClick={(item: any) => setSectionData(item)}
+            onItemClick={(item: any) => onItemSelect(item)}
           />
         )
       );

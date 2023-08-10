@@ -80,7 +80,7 @@ export function SetupHeader({
               <KeyvalText>{SETUP.SELECTED}</KeyvalText>
             </TotalSelectedWrapper>
           )}
-        {currentStep?.id !== SETUP.STEPS.ID.CREATE_CONNECTION && (
+        {currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE && (
           <KeyvalButton
             disabled={totalSelected === 0}
             onClick={onNextClick}

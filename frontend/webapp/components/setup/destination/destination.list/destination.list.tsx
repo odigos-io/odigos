@@ -18,7 +18,6 @@ export function DestinationList({
         key={index}
         item={item}
         onClick={() => onItemClick(item)}
-        focus={sectionData?.type === item?.type}
       />
     ));
   }
