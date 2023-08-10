@@ -3,7 +3,6 @@ import { styled } from "styled-components";
 export const ManagedListWrapper = styled.div`
   display: grid;
   grid-gap: 24px;
-
   padding: 0px 36px;
   padding-bottom: 50px;
   grid-template-columns: repeat(4, 1fr);
