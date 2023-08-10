@@ -10,5 +10,9 @@ const (
 )
 
 func CopyAgentsDirectoryToHost() error {
-	return cp.Copy(containerDir, hostDir)
+	return cp.Copy(containerDir, hostDir, cp.Options{
+		OnDirExists: func(_, _ string) cp.DirExistsAction {
+			return cp.Replace
+		},
+	})
 }
