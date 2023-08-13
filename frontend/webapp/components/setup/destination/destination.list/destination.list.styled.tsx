@@ -25,8 +25,9 @@ export const DestinationListWrapper = styled.div<{ repeat: number }>`
   @media screen and (max-width: 1500px) {
     grid-template-columns: repeat(3, 1fr);
   }
-  @media screen and (max-width: 1150px) {
+  @media screen and (max-width: 1250px) {
     grid-template-columns: repeat(2, 1fr);
+    padding-bottom: 15vh;
   }
 `;
 

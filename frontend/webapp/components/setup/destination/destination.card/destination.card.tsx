@@ -4,6 +4,7 @@ import { TapList } from '../tap.list/tap.list';
 import { MONITORING_OPTIONS } from '../utils';
 import {
   ApplicationNameWrapper,
+  DestinationCardContentWrapper,
   DestinationCardWrapper,
 } from './destination.card.styled';
 
@@ -61,12 +62,14 @@ export function DestinationCard({
           height={56}
           style={LOGO_STYLE}
         />
-        <ApplicationNameWrapper>
-          <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
-            {display_name}
-          </KeyvalText>
-        </ApplicationNameWrapper>
-        <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
+        <DestinationCardContentWrapper>
+          <ApplicationNameWrapper>
+            <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
+              {display_name}
+            </KeyvalText>
+          </ApplicationNameWrapper>
+          <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
+        </DestinationCardContentWrapper>
       </DestinationCardWrapper>
     </KeyvalCard>
   );
