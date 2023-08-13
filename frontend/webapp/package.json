@@ -26,7 +26,6 @@
     "react-dom": "18.2.0",
     "react-lottie": "^1.2.3",
     "react-query": "^3.39.3",
-    "reactflow": "^11.7.4",
     "styled-components": "^6.0.2",
     "swr": "^2.1.5",
     "typescript": "5.1.3"
