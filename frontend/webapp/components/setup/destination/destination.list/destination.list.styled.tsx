@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
 export const DestinationTypeTitleWrapper = styled.div`
   width: 100%;
@@ -12,7 +12,7 @@ export const DestinationListWrapper = styled.div<{ repeat: number }>`
   width: 100%;
   display: grid;
   grid-template-columns: ${({ repeat }) => `repeat(${repeat},1fr)`};
-  gap: 24px;
+  gap: 1vh;
   ::-webkit-scrollbar {
     display: none;
   }

@@ -1,11 +1,11 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
 export const DestinationCardWrapper = styled.div`
-  padding: 24px;
+  padding: 1vw 1vh;
   display: flex;
   align-items: center;
   flex-direction: column;
-  gap: 14px;
+  gap: 1vh;
   cursor: pointer;
   border: 1px solid transparent;
   &:hover {

@@ -1,18 +1,23 @@
-import React, { useMemo } from "react";
-import { KeyvalCard, KeyvalImage, KeyvalText } from "@/design.system";
-import { TapList } from "../tap.list/tap.list";
-import { MONITORING_OPTIONS } from "../utils";
+import React, { useMemo } from 'react';
+import { KeyvalCard, KeyvalImage, KeyvalText } from '@/design.system';
+import { TapList } from '../tap.list/tap.list';
+import { MONITORING_OPTIONS } from '../utils';
 import {
   ApplicationNameWrapper,
   DestinationCardWrapper,
-} from "./destination.card.styled";
+} from './destination.card.styled';
 
 const TEXT_STYLE: React.CSSProperties = {
-  overflowWrap: "break-word",
-  textAlign: "center",
+  overflowWrap: 'break-word',
+  textAlign: 'center',
 };
-const LOGO_STYLE: React.CSSProperties = { padding: 4, backgroundColor: "#fff" };
-const TAP_STYLE: React.CSSProperties = { padding: "4px 8px", gap: 4 };
+const LOGO_STYLE: React.CSSProperties = {
+  padding: 4,
+  backgroundColor: '#fff',
+  width: '6vh',
+  height: '6vh',
+};
+const TAP_STYLE: React.CSSProperties = { padding: '4px 8px', gap: 4 };
 
 type Destination = {
   supported_signals: {
