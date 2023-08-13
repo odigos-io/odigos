@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo } from "react";
-import { SETUP } from "@/utils/constants";
-import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from "@/design.system";
-import { TapList } from "../tap.list/tap.list";
+import React, { useEffect, useMemo } from 'react';
+import { SETUP } from '@/utils/constants';
+import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from '@/design.system';
+import { TapList } from '../tap.list/tap.list';
 import {
   DropdownWrapper,
   SourcesOptionMenuWrapper,
   TapsWrapper,
-} from "./destination.option.menu.styled";
+} from './destination.option.menu.styled';
 
 type DestinationOptionMenuProps = {
   setDropdownData: (data: any) => void;
@@ -37,7 +37,7 @@ export function DestinationOptionMenu({
 }: DestinationOptionMenuProps) {
   const dropdownData = useMemo(() => {
     const options = [
-      { id: "all", label: SETUP.ALL },
+      { id: 'all', label: SETUP.ALL },
       ...data?.map(({ name }) => ({ id: name, label: name })),
     ];
 
