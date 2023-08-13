@@ -1,15 +1,15 @@
-import React, { useMemo } from "react";
-import { useMutation, useQuery } from "react-query";
-import { CreateConnectionForm, QuickHelp } from "@/components/setup";
+import React, { useMemo } from 'react';
+import { useMutation, useQuery } from 'react-query';
+import { CreateConnectionForm, QuickHelp } from '@/components/setup';
 import {
   CreateConnectionContainer,
   LoaderWrapper,
-} from "./connection.section.styled";
-import { getDestination, setDestination } from "@/services";
-import { QUERIES, ROUTES, SETUP } from "@/utils/constants";
-import { KeyvalLoader } from "@/design.system";
-import { useNotification } from "@/hooks";
-import { useRouter } from "next/navigation";
+} from './connection.section.styled';
+import { getDestination, setDestination } from '@/services';
+import { QUERIES, ROUTES, SETUP } from '@/utils/constants';
+import { KeyvalLoader } from '@/design.system';
+import { useNotification } from '@/hooks';
+import { useRouter } from 'next/navigation';
 
 export interface DestinationBody {
   name: string;
@@ -55,7 +55,7 @@ export function ConnectionSection({ sectionData }) {
       onError: ({ response }) => {
         const message = response?.data?.message || SETUP.ERROR;
         show({
-          type: "error",
+          type: 'error',
           message,
         });
       },
