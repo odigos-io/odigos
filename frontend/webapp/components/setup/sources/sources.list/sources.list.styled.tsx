@@ -14,14 +14,14 @@ export const SourcesTitleWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 24px 0;
+  margin: 2% 0;
 `;
 
 export const SourcesListWrapper = styled.div<{ repeat: number }>`
   width: 100%;
   height: 400px;
   padding-bottom: 300px;
-  gap: 24px;
+  gap: 1vh;
   overflow-y: scroll;
   scrollbar-width: none;
   -ms-overflow-style: none;

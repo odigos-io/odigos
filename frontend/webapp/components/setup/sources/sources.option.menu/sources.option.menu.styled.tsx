@@ -4,7 +4,7 @@ export const SourcesOptionMenuWrapper = styled.section`
   display: flex;
   align-items: center;
   gap: 24px;
-  padding: 40px 0 0 0;
+  padding: 3% 0 0 0;
   flex-wrap: wrap;
   @media screen and (max-width: 1650px) {
     width: 85%;
