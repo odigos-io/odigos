@@ -15,7 +15,7 @@ const (
 func CopyAgentsDirectoryToHost() error {
 
 	// remove the current content of /var/odigos
-	// as we want a fresh copy of instrumentation agents with no previous content from previous versions.
+	// as we want a fresh copy of instrumentation agents with no files leftover from previous odigos versions.
 	// we cannot remove /var/odigos itself: "unlinkat /var/odigos: device or resource busy"
 	// so we will just remove it's content
 	entries, err := os.ReadDir(hostDir)
