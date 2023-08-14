@@ -7,7 +7,7 @@ import {
 } from "./sources.list.styled";
 import { SourceCard } from "../source.card/source.card";
 import { KeyvalLink, KeyvalText } from "@/design.system";
-import { SETUP } from "@/utils/constants";
+import { ROUTES, SETUP } from "@/utils/constants";
 import Empty from "@/assets/images/empty-list.svg";
 
 export function SourcesList({
@@ -37,13 +37,16 @@ export function SourcesList({
 
   const isListEmpty = () => data?.length === 0;
 
+  const getNumberOfItemsRepeated = () =>
+    window.location.pathname.includes(ROUTES.CREATE_SOURCE) ? 5 : 4;
+
   return !data ? null : (
     <SourcesListContainer>
       <SourcesTitleWrapper>
         <KeyvalText>{`${data?.length} ${SETUP.APPLICATIONS}`}</KeyvalText>
         <KeyvalLink onClick={onClearClick} value={SETUP.CLEAR_SELECTION} />
       </SourcesTitleWrapper>
-      <SourcesListWrapper>
+      <SourcesListWrapper repeat={getNumberOfItemsRepeated()}>
         {isListEmpty() ? (
           <EmptyListWrapper>
             <Empty />

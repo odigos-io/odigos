@@ -6,22 +6,20 @@ import {
   DestinationTypeTitleWrapper,
 } from "./destination.list.styled";
 import { capitalizeFirstLetter } from "@/utils/functions";
+import { ROUTES } from "@/utils/constants";
 
-export function DestinationList({
-  data: { items, name },
-  onItemClick,
-  sectionData,
-}: any) {
+export function DestinationList({ data: { items, name }, onItemClick }: any) {
   function renderList() {
     return items?.map((item: any, index: number) => (
       <DestinationCard
         key={index}
         item={item}
         onClick={() => onItemClick(item)}
-        focus={sectionData?.type === item?.type}
       />
     ));
   }
+  const getNumberOfItemsRepeated = () =>
+    window.location.pathname.includes(ROUTES.CREATE_DESTINATION) ? 5 : 4;
 
   return items?.length ? (
     <>
@@ -30,7 +28,9 @@ export function DestinationList({
           name
         )}`}</KeyvalText>
       </DestinationTypeTitleWrapper>
-      <DestinationListWrapper>{renderList()}</DestinationListWrapper>
+      <DestinationListWrapper repeat={getNumberOfItemsRepeated()}>
+        {renderList()}
+      </DestinationListWrapper>
     </>
   ) : null;
 }

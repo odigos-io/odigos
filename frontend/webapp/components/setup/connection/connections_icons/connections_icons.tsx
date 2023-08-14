@@ -1,7 +1,7 @@
 import React from "react";
-import Connect from "assets/icons/connect.svg";
 import styled from "styled-components";
 import { KeyvalImage } from "@/design.system";
+import { Connect } from "@/assets/icons/app";
 
 const ConnectionsIconsWrapper = styled.div`
   display: flex;
