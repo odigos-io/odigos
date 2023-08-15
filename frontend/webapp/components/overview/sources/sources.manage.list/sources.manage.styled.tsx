@@ -2,6 +2,8 @@ import { styled } from 'styled-components';
 
 export const CardWrapper = styled.div`
   display: flex;
+  width: auto;
+  height: fit-content;
   padding-top: 32px;
   padding-bottom: 24px;
   border-radius: 24px;
@@ -49,7 +51,6 @@ export const EmptyListWrapper = styled.div`
 
 export const ManagedListWrapper = styled.div`
   display: grid;
-  height: 70vh;
   overflow: scroll;
   gap: 24px;
   grid-template-columns: repeat(5, 1fr);
