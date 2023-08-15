@@ -16,11 +16,14 @@ const DEST = 'dest';
 
 const NewDestinationContainer = styled.div`
   padding: 20px 36px;
-  overflow: scroll;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  ::-webkit-scrollbar {
-    display: none;
+  @media screen and (max-height: 750px) {
+    height: 85vh;
+    overflow-y: scroll;
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
   @media screen and (max-width: 1300px) {
     height: 80vh;
