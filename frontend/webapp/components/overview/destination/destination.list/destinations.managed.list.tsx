@@ -1,16 +1,16 @@
-import React from "react";
-import DestinationManagedCard from "./destination.managed.card";
-import { KeyvalText, KeyvalButton } from "@/design.system";
-import { Plus } from "@/assets/icons/overview";
-import { OVERVIEW } from "@/utils/constants";
-import theme from "@/styles/palette";
+import React from 'react';
+import DestinationManagedCard from './destination.managed.card';
+import { KeyvalText, KeyvalButton } from '@/design.system';
+import { Plus } from '@/assets/icons/overview';
+import { OVERVIEW } from '@/utils/constants';
+import theme from '@/styles/palette';
 import {
   MenuWrapper,
   ManagedListWrapper,
   EmptyListWrapper,
-} from "./destination.list.styled";
-import { Destination } from "@/types/destinations";
-import Empty from "@/assets/images/empty-list.svg";
+} from './destination.list.styled';
+import { Destination } from '@/types/destinations';
+import Empty from '@/assets/images/empty-list.svg';
 const BUTTON_STYLES = { gap: 10, width: 224, height: 40 };
 interface DestinationsManagedListProps {
   data: Destination[];

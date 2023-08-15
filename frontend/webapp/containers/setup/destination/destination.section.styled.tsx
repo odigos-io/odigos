@@ -10,8 +10,11 @@ export const DestinationListContainer = styled.div`
   ::-webkit-scrollbar {
     display: none;
   }
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  @media screen and (max-height: 700px) {
+    height: 40vh;
+  }
 `;
 
 export const EmptyListWrapper = styled.div`

@@ -13,6 +13,7 @@ interface CardContainerProps {
 export const CardContainer = styled.div<CardContainerProps>`
   display: inline-flex;
   position: relative;
+  height: fit-content;
   flex-direction: column;
   border-radius: 24px;
   border: ${({ selected, theme }) =>
