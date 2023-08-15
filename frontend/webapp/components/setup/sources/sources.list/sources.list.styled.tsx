@@ -45,10 +45,3 @@ export const SourcesListWrapper = styled.div<{ repeat: number }>`
     height: 200px;
   }
 `;
-
-export const EmptyListWrapper = styled.div`
-  width: 1168px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;

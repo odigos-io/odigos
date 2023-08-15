@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { SourcesList, SourcesOptionMenu } from "@/components/setup";
-import { getApplication, getNamespaces } from "@/services";
-import { LoaderWrapper } from "./sources.section.styled";
-import { useQuery } from "react-query";
-import { NOTIFICATION, QUERIES } from "@/utils/constants";
-import { KeyvalLoader } from "@/design.system";
-import { useNotification } from "@/hooks";
+import React, { useEffect, useMemo, useState } from 'react';
+import { SourcesList, SourcesOptionMenu } from '@/components/setup';
+import { getApplication, getNamespaces } from '@/services';
+import { LoaderWrapper } from './sources.section.styled';
+import { useQuery } from 'react-query';
+import { NOTIFICATION, QUERIES } from '@/utils/constants';
+import { KeyvalLoader } from '@/design.system';
+import { useNotification } from '@/hooks';
 
 const DEFAULT_CONFIG = {
   selected_all: false,
@@ -14,7 +14,7 @@ const DEFAULT_CONFIG = {
 
 export function SourcesSection({ sectionData, setSectionData }: any) {
   const [currentNamespace, setCurrentNamespace] = useState<any>(null);
-  const [searchFilter, setSearchFilter] = useState<string>("");
+  const [searchFilter, setSearchFilter] = useState<string>('');
   const { show, Notification } = useNotification();
   const { isLoading, data, isError, error } = useQuery(
     [QUERIES.API_NAMESPACES],
@@ -138,16 +138,18 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
 
   return (
     <>
-      <SourcesOptionMenu
-        currentNamespace={currentNamespace}
-        setCurrentItem={setCurrentNamespace}
-        data={namespacesList}
-        searchFilter={searchFilter}
-        setSearchFilter={setSearchFilter}
-        onSelectAllChange={onSelectAllChange}
-        selectedApplications={sectionData}
-        onFutureApplyChange={onFutureApplyChange}
-      />
+      {sourceData?.length > 0 && (
+        <SourcesOptionMenu
+          currentNamespace={currentNamespace}
+          setCurrentItem={setCurrentNamespace}
+          data={namespacesList}
+          searchFilter={searchFilter}
+          setSearchFilter={setSearchFilter}
+          onSelectAllChange={onSelectAllChange}
+          selectedApplications={sectionData}
+          onFutureApplyChange={onFutureApplyChange}
+        />
+      )}
       <SourcesList
         data={sourceData}
         selectedData={sectionData[currentNamespace?.name]}
