@@ -37,17 +37,31 @@ export function DestinationsManagedList({
     <>
       <MenuWrapper>
         <KeyvalText>{`${data.length} ${OVERVIEW.MENU.DESTINATIONS}`}</KeyvalText>
-        <KeyvalButton onClick={onMenuButtonClick} style={BUTTON_STYLES}>
-          <Plus />
-          <KeyvalText size={16} weight={700} color={theme.text.dark_button}>
-            {OVERVIEW.ADD_NEW_DESTINATION}
-          </KeyvalText>
-        </KeyvalButton>
+        {data?.length > 0 && (
+          <KeyvalButton onClick={onMenuButtonClick} style={BUTTON_STYLES}>
+            <Plus />
+            <KeyvalText size={16} weight={700} color={theme.text.dark_button}>
+              {OVERVIEW.ADD_NEW_DESTINATION}
+            </KeyvalText>
+          </KeyvalButton>
+        )}
       </MenuWrapper>
       <ManagedListWrapper>
         {data?.length === 0 ? (
           <EmptyListWrapper>
-            <Empty />
+            <>
+              <Empty />
+              <KeyvalButton onClick={onMenuButtonClick} style={BUTTON_STYLES}>
+                <Plus />
+                <KeyvalText
+                  size={16}
+                  weight={700}
+                  color={theme.text.dark_button}
+                >
+                  {OVERVIEW.ADD_NEW_DESTINATION}
+                </KeyvalText>
+              </KeyvalButton>
+            </>
           </EmptyListWrapper>
         ) : (
           renderDestinations()

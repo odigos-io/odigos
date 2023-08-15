@@ -86,9 +86,10 @@ export const ApplicationNameWrapper = styled.div`
 `;
 
 export const EmptyListWrapper = styled.div`
-  width: 100%;
+  width: 84vw;
   margin-top: 130px;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
 `;
