@@ -82,8 +82,8 @@ export function UpdateSourceForm() {
     });
   }
 
-  function onSaveClick(newName) {
-    editSource(newName, {
+  function onSaveClick() {
+    editSource(undefined, {
       onError,
       onSuccess: () => router.push(`${ROUTES.SOURCES}?status=updated`),
     });

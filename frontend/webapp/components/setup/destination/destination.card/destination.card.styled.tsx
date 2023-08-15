@@ -7,6 +7,11 @@ export const DestinationCardWrapper = styled.div`
   flex-direction: column;
   gap: 14px;
   cursor: pointer;
+  border: 1px solid transparent;
+  &:hover {
+    border-radius: 24px;
+    border: ${({ theme }) => `1px solid  ${theme.colors.secondary}`};
+  }
 `;
 
 export const ApplicationNameWrapper = styled.div`

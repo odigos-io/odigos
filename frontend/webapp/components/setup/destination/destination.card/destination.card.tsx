@@ -27,13 +27,11 @@ type Destination = {
 type DestinationCardProps = {
   item: Destination;
   onClick: () => void;
-  focus: boolean;
 };
 
 export function DestinationCard({
   item: { supported_signals, image_url, display_name },
   onClick,
-  focus,
 }: DestinationCardProps) {
   const monitors = useMemo(() => {
     return Object.entries(supported_signals).reduce((acc, [key, value]) => {
@@ -50,7 +48,7 @@ export function DestinationCard({
   }, [JSON.stringify(supported_signals)]);
 
   return (
-    <KeyvalCard focus={focus}>
+    <KeyvalCard>
       <DestinationCardWrapper onClick={onClick}>
         <KeyvalImage
           src={image_url}

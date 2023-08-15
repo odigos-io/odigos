@@ -1,23 +1,13 @@
-import React, { ButtonHTMLAttributes, FC } from "react";
-import { StyledButton, ButtonContainer } from "./button.styled";
-
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  // Additional custom props if needed
+import React, { FC, ReactNode } from "react";
+import { Button } from "@keyval-dev/design-system";
+interface ButtonProps {
   variant?: "primary" | "secondary";
+  children: ReactNode;
+  onClick?: () => void;
+  style?: object;
+  disabled?: boolean;
 }
 
-export const KeyvalButton: FC<ButtonProps> = ({
-  variant = "primary",
-  children,
-  style,
-  onClick,
-  disabled,
-}) => {
-  return (
-    <ButtonContainer disabled={disabled}>
-      <StyledButton disabled={disabled} onClick={onClick} style={{ ...style }}>
-        {children}
-      </StyledButton>
-    </ButtonContainer>
-  );
+export const KeyvalButton: FC<ButtonProps> = (props) => {
+  return <Button {...props}>{props.children}</Button>;
 };

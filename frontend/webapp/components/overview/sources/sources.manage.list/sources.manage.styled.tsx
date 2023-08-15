@@ -13,8 +13,9 @@ export const CardWrapper = styled.div`
   flex-direction: column;
   gap: 10px;
   cursor: pointer;
+
   &:hover {
-    background: var(--dark-mode-dark-1, #07111a81);
+    border: ${({ theme }) => `1px solid  ${theme.colors.secondary}`};
   }
 `;
 
@@ -27,12 +28,27 @@ export const EmptyListWrapper = styled.div`
 `;
 
 export const ManagedListWrapper = styled.div`
-  max-height: 72%;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 24px;
-  padding: 0 36px 0 0;
-  overflow-y: scroll;
+  overflow: scroll;
+  grid-template-columns: repeat(5, 1fr);
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  @media screen and (max-width: 1800px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  @media screen and (max-width: 1500px) {
+    grid-template-columns: repeat(3, 1fr);
+    height: 680px;
+  }
+  @media screen and (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+    height: 650px;
+  }
 `;
 
 export const ManagedContainer = styled.div`
