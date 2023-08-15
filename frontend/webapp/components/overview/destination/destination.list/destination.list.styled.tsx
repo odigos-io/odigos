@@ -84,12 +84,3 @@ export const ApplicationNameWrapper = styled.div`
     gap: 0;
   }
 `;
-
-export const EmptyListWrapper = styled.div`
-  width: 84vw;
-  margin-top: 130px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-`;

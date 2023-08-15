@@ -45,6 +45,7 @@ export const EmptyListWrapper = styled.div`
   width: 100%;
   margin-top: 130px;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
 `;

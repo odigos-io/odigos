@@ -1,16 +1,16 @@
-"use client";
-import React, { useEffect, useMemo, useState } from "react";
-import { QUERIES } from "@/utils/constants";
-import { useQuery } from "react-query";
-import { getNamespaces } from "@/services";
-import { SourcesActionMenu, SourcesManagedList } from "@/components/overview";
-import { MenuWrapper } from "./sources.styled";
-import { ManagedSource, Namespace } from "@/types/sources";
+'use client';
+import React, { useEffect, useMemo, useState } from 'react';
+import { QUERIES } from '@/utils/constants';
+import { useQuery } from 'react-query';
+import { getNamespaces } from '@/services';
+import { SourcesActionMenu, SourcesManagedList } from '@/components/overview';
+import { MenuWrapper } from './sources.styled';
+import { ManagedSource, Namespace } from '@/types/sources';
 
-const DEFAULT_FILTER = { name: "default", selected: false, totalApps: 0 };
+const DEFAULT_FILTER = { name: 'default', selected: false, totalApps: 0 };
 
 export function ManageSources({ onAddClick, sources }) {
-  const [searchFilter, setSearchFilter] = useState<string>("");
+  const [searchFilter, setSearchFilter] = useState<string>('');
   const [currentNamespace, setCurrentNamespace] =
     useState<Namespace>(DEFAULT_FILTER);
 
@@ -20,7 +20,7 @@ export function ManageSources({ onAddClick, sources }) {
   );
 
   useEffect(() => {
-    setSearchFilter("");
+    setSearchFilter('');
   }, [currentNamespace]);
 
   const namespacesList = useMemo(
@@ -53,18 +53,22 @@ export function ManageSources({ onAddClick, sources }) {
     return filterBySearchQuery(data);
   }
 
+  const manageSourcesData = useMemo(() => filterSources(), undefined);
+
   return (
     <>
-      <MenuWrapper>
-        <SourcesActionMenu
-          searchFilter={searchFilter}
-          setSearchFilter={setSearchFilter}
-          data={namespacesList}
-          onAddClick={onAddClick}
-          setCurrentItem={setCurrentNamespace}
-        />
-      </MenuWrapper>
-      <SourcesManagedList data={filterSources()} />
+      {manageSourcesData?.length > 0 && (
+        <MenuWrapper>
+          <SourcesActionMenu
+            searchFilter={searchFilter}
+            setSearchFilter={setSearchFilter}
+            data={namespacesList}
+            onAddClick={onAddClick}
+            setCurrentItem={setCurrentNamespace}
+          />
+        </MenuWrapper>
+      )}
+      <SourcesManagedList data={manageSourcesData} />
     </>
   );
 }

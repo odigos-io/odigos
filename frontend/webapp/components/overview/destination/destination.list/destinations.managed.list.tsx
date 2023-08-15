@@ -4,13 +4,10 @@ import { KeyvalText, KeyvalButton } from '@/design.system';
 import { Plus } from '@/assets/icons/overview';
 import { OVERVIEW } from '@/utils/constants';
 import theme from '@/styles/palette';
-import {
-  MenuWrapper,
-  ManagedListWrapper,
-  EmptyListWrapper,
-} from './destination.list.styled';
+import { MenuWrapper, ManagedListWrapper } from './destination.list.styled';
 import { Destination } from '@/types/destinations';
-import Empty from '@/assets/images/empty-list.svg';
+import { EmptyList } from '@/components/lists';
+
 const BUTTON_STYLES = { gap: 10, width: 224, height: 40 };
 interface DestinationsManagedListProps {
   data: Destination[];
@@ -35,38 +32,26 @@ export function DestinationsManagedList({
 
   return (
     <>
-      <MenuWrapper>
-        <KeyvalText>{`${data.length} ${OVERVIEW.MENU.DESTINATIONS}`}</KeyvalText>
-        {data?.length > 0 && (
+      {data?.length > 0 && (
+        <MenuWrapper>
+          <KeyvalText>{`${data.length} ${OVERVIEW.MENU.DESTINATIONS}`}</KeyvalText>
           <KeyvalButton onClick={onMenuButtonClick} style={BUTTON_STYLES}>
             <Plus />
             <KeyvalText size={16} weight={700} color={theme.text.dark_button}>
               {OVERVIEW.ADD_NEW_DESTINATION}
             </KeyvalText>
           </KeyvalButton>
-        )}
-      </MenuWrapper>
-      <ManagedListWrapper>
-        {data?.length === 0 ? (
-          <EmptyListWrapper>
-            <>
-              <Empty />
-              <KeyvalButton onClick={onMenuButtonClick} style={BUTTON_STYLES}>
-                <Plus />
-                <KeyvalText
-                  size={16}
-                  weight={700}
-                  color={theme.text.dark_button}
-                >
-                  {OVERVIEW.ADD_NEW_DESTINATION}
-                </KeyvalText>
-              </KeyvalButton>
-            </>
-          </EmptyListWrapper>
-        ) : (
-          renderDestinations()
-        )}
-      </ManagedListWrapper>
+        </MenuWrapper>
+      )}
+      {data?.length === 0 ? (
+        <EmptyList
+          title={OVERVIEW.EMPTY_DESTINATION}
+          btnTitle={OVERVIEW.ADD_NEW_DESTINATION}
+          buttonAction={onMenuButtonClick}
+        />
+      ) : (
+        <ManagedListWrapper>{renderDestinations()}</ManagedListWrapper>
+      )}
     </>
   );
 }
