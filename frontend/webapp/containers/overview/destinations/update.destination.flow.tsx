@@ -1,15 +1,15 @@
-"use client";
-import React, { useEffect, useMemo, useState } from "react";
-import { KeyvalLoader } from "@/design.system";
-import { NOTIFICATION, QUERIES, ROUTES } from "@/utils/constants";
-import { useMutation, useQuery } from "react-query";
-import { getDestination, updateDestination } from "@/services";
-import { ManageDestination } from "@/components/overview";
-import { deleteDestination, getDestinations } from "@/services/destinations";
-import { ManageDestinationWrapper } from "./destinations.styled";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useNotification } from "@/hooks";
-const DEST = "dest";
+'use client';
+import React, { useEffect, useMemo, useState } from 'react';
+import { KeyvalLoader } from '@/design.system';
+import { NOTIFICATION, QUERIES, ROUTES } from '@/utils/constants';
+import { useMutation, useQuery } from 'react-query';
+import { getDestination, updateDestination } from '@/services';
+import { ManageDestination } from '@/components/overview';
+import { deleteDestination, getDestinations } from '@/services/destinations';
+import { ManageDestinationWrapper } from './destinations.styled';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useNotification } from '@/hooks';
+const DEST = 'dest';
 
 export function UpdateDestinationFlow() {
   const [selectedDestination, setSelectedDestination] = useState<any>(null);

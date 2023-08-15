@@ -11,4 +11,8 @@ export const NewDestinationContainer = styled.div`
 
 export const ManageDestinationWrapper = styled.div`
   padding: 32px;
+
+  @media screen and (max-width: 1300px) {
+    /* height: 80vh; */
+  }
 `;

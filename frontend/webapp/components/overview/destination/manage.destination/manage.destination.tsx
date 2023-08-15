@@ -27,7 +27,7 @@ const BackButtonWrapper = styled.div`
 
 const CreateConnectionWrapper = styled.div<{ expand: boolean | undefined }>`
   display: flex;
-  gap: 200px;
+  gap: 10vw;
   height: ${({ expand }) => (expand ? 630 : 530)}px;
   overflow: scroll;
   scrollbar-width: none;
