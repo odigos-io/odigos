@@ -65,11 +65,9 @@ export const ManagedListWrapper = styled.div`
   }
   @media screen and (max-width: 1500px) {
     grid-template-columns: repeat(3, 1fr);
-    height: 65vh;
   }
   @media screen and (max-width: 1200px) {
     grid-template-columns: repeat(2, 1fr);
-    height: 65vh;
   }
   @media screen and (max-height: 800px) {
     height: 60vh;
