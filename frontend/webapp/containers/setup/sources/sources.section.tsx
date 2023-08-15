@@ -138,18 +138,16 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
 
   return (
     <>
-      {sourceData?.length > 0 && (
-        <SourcesOptionMenu
-          currentNamespace={currentNamespace}
-          setCurrentItem={setCurrentNamespace}
-          data={namespacesList}
-          searchFilter={searchFilter}
-          setSearchFilter={setSearchFilter}
-          onSelectAllChange={onSelectAllChange}
-          selectedApplications={sectionData}
-          onFutureApplyChange={onFutureApplyChange}
-        />
-      )}
+      <SourcesOptionMenu
+        currentNamespace={currentNamespace}
+        setCurrentItem={setCurrentNamespace}
+        data={namespacesList}
+        searchFilter={searchFilter}
+        setSearchFilter={setSearchFilter}
+        onSelectAllChange={onSelectAllChange}
+        selectedApplications={sectionData}
+        onFutureApplyChange={onFutureApplyChange}
+      />
       <SourcesList
         data={sourceData}
         selectedData={sectionData[currentNamespace?.name]}
