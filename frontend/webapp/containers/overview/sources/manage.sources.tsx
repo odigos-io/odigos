@@ -68,7 +68,7 @@ export function ManageSources({ onAddClick, sources }) {
           />
         </MenuWrapper>
       )}
-      <SourcesManagedList data={manageSourcesData} />
+      <SourcesManagedList data={manageSourcesData} onAddClick={onAddClick} />
     </>
   );
 }
