@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
-import { NOTIFICATION, QUERIES, SETUP } from '@/utils/constants';
+import { NOTIFICATION, OVERVIEW, QUERIES, SETUP } from '@/utils/constants';
 import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
 import { DestinationList, DestinationOptionMenu } from '@/components/setup';
 import Empty from '@/assets/images/empty-list.svg';
@@ -18,6 +18,7 @@ import {
 import { KeyvalLoader } from '@/design.system';
 import { useNotification } from '@/hooks';
 import { getDestinationsTypes } from '@/services';
+import { EmptyList } from '@/components/lists';
 
 interface DestinationTypes {
   image_url: string;
@@ -73,11 +74,7 @@ export function DestinationSection({
     );
 
     if (isDestinationListEmpty(list, dropdownData?.id)) {
-      return (
-        <EmptyListWrapper>
-          <Empty />
-        </EmptyListWrapper>
-      );
+      return <EmptyList title={OVERVIEW.EMPTY_DESTINATION} />;
     }
 
     return list?.map((category: any) => {
