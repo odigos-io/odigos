@@ -1,8 +1,8 @@
-import React from "react";
-import styled from "styled-components";
-import { KeyvalText } from "@/design.system";
-import { Back } from "@/assets/icons/overview";
-import { SETUP } from "@/utils/constants";
+import React from 'react';
+import styled from 'styled-components';
+import { KeyvalText } from '@/design.system';
+import { Back } from '@/assets/icons/overview';
+import { SETUP } from '@/utils/constants';
 
 export interface OverviewHeaderProps {
   title?: string;
@@ -29,9 +29,9 @@ const BackButtonWrapper = styled.div`
 `;
 
 const TextWrapper = styled.div`
-  margin-top: 24px;
+  margin-top: 2vh;
   margin-left: 24px;
-  margin-bottom: 24px;
+  margin-bottom: 2vh;
 `;
 
 export function OverviewHeader({ title, onBackClick }: OverviewHeaderProps) {

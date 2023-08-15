@@ -1,23 +1,23 @@
-import React, { useEffect, useState } from "react";
-import { useQuery } from "react-query";
-import { NOTIFICATION, QUERIES, SETUP } from "@/utils/constants";
-import { MONITORING_OPTIONS } from "@/components/setup/destination/utils";
-import { DestinationList, DestinationOptionMenu } from "@/components/setup";
-import Empty from "@/assets/images/empty-list.svg";
+import React, { useEffect, useState } from 'react';
+import { useQuery } from 'react-query';
+import { NOTIFICATION, QUERIES, SETUP } from '@/utils/constants';
+import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
+import { DestinationList, DestinationOptionMenu } from '@/components/setup';
+import Empty from '@/assets/images/empty-list.svg';
 import {
   DestinationListContainer,
   EmptyListWrapper,
   LoaderWrapper,
-} from "./destination.section.styled";
+} from './destination.section.styled';
 import {
   filterDataByMonitorsOption,
   filterDataByTextQuery,
   isDestinationListEmpty,
   sortDestinationList,
-} from "./utils";
-import { KeyvalLoader } from "@/design.system";
-import { useNotification } from "@/hooks";
-import { getDestinationsTypes } from "@/services";
+} from './utils';
+import { KeyvalLoader } from '@/design.system';
+import { useNotification } from '@/hooks';
+import { getDestinationsTypes } from '@/services';
 
 interface DestinationTypes {
   image_url: string;
@@ -41,7 +41,7 @@ export function DestinationSection({
   setSectionData,
   onSelectItem,
 }: DestinationSectionProps) {
-  const [searchFilter, setSearchFilter] = useState<string>("");
+  const [searchFilter, setSearchFilter] = useState<string>('');
   const [dropdownData, setDropdownData] = useState<any>(null);
   const { show, Notification } = useNotification();
   const [monitoringOption, setMonitoringOption] =

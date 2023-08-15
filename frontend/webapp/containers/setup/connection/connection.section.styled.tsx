@@ -6,7 +6,11 @@ export const CreateConnectionContainer = styled.div`
   gap: 200px;
   height: 500px;
   overflow: scroll;
+  ::-webkit-scrollbar {
+    display: none;
+  }
   scrollbar-width: none;
+  -ms-overflow-style: none;
   @media screen and (max-width: 1400px) {
     height: 330px;
   }

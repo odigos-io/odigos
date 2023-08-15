@@ -1,8 +1,9 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
 export const DestinationListContainer = styled.div`
   width: 100%;
   max-height: 30%;
+  height: 400px;
   padding-bottom: 300px;
   margin-top: 2%;
   overflow: scroll;

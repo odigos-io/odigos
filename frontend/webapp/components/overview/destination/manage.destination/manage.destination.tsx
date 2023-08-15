@@ -1,12 +1,12 @@
-import React, { useMemo } from "react";
-import { styled } from "styled-components";
-import { Back } from "@/assets/icons/overview";
-import { CreateConnectionForm, QuickHelp } from "@/components/setup";
-import { KeyvalText } from "@/design.system";
-import { SETUP } from "@/utils/constants";
-import { ManageDestinationHeader } from "../manage.destination.header/manage.destination.header";
-import { DestinationType } from "@/types/destinations";
-import FormDangerZone from "./form.danger.zone";
+import React, { useMemo } from 'react';
+import { styled } from 'styled-components';
+import { Back } from '@/assets/icons/overview';
+import { CreateConnectionForm, QuickHelp } from '@/components/setup';
+import { KeyvalText } from '@/design.system';
+import { SETUP } from '@/utils/constants';
+import { ManageDestinationHeader } from '../manage.destination.header/manage.destination.header';
+import { DestinationType } from '@/types/destinations';
+import FormDangerZone from './form.danger.zone';
 
 interface ManageDestinationProps {
   destinationType: DestinationType;
@@ -31,6 +31,10 @@ const CreateConnectionWrapper = styled.div<{ expand: boolean | undefined }>`
   height: ${({ expand }) => (expand ? 630 : 530)}px;
   overflow: scroll;
   scrollbar-width: none;
+  -ms-overflow-style: none;
+  ::-webkit-scrollbar {
+    display: none;
+  }
 `;
 
 export function ManageDestination({
@@ -62,7 +66,6 @@ export function ManageDestination({
       )}
       <ManageDestinationHeader data={selectedDestination} />
       <CreateConnectionWrapper expand={!!onDelete || false}>
-
         <div>
           <CreateConnectionForm
             fields={destinationType?.fields}

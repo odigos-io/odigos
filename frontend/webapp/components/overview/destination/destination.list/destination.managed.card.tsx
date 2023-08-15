@@ -1,20 +1,24 @@
-import React, { useMemo } from "react";
-import { KeyvalImage, KeyvalText } from "@/design.system";
-import { MONITORING_OPTIONS } from "@/components/setup/destination/utils";
-import { TapList } from "@/components/setup/destination/tap.list/tap.list";
-import { CardWrapper, ApplicationNameWrapper } from "./destination.list.styled";
-import theme from "@/styles/palette";
+import React, { useMemo } from 'react';
+import { KeyvalImage, KeyvalText } from '@/design.system';
+import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
+import { TapList } from '@/components/setup/destination/tap.list/tap.list';
+import {
+  CardWrapper,
+  ApplicationNameWrapper,
+  DestinationManageContentWrapper,
+} from './destination.list.styled';
+import theme from '@/styles/palette';
 
 const TEXT_STYLE: React.CSSProperties = {
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
 };
 const LOGO_STYLE: React.CSSProperties = {
   padding: 4,
   backgroundColor: theme.colors.white,
 };
-const TAP_STYLE: React.CSSProperties = { padding: "4px 8px", gap: 4 };
+const TAP_STYLE: React.CSSProperties = { padding: '4px 8px', gap: 4 };
 
 export default function DestinationManagedCard({
   onClick,
@@ -40,15 +44,17 @@ export default function DestinationManagedCard({
   return (
     <CardWrapper onClick={onClick}>
       <KeyvalImage src={image_url} width={56} height={56} style={LOGO_STYLE} />
-      <ApplicationNameWrapper>
-        <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
-          {display_name}
-        </KeyvalText>
-        <KeyvalText size={20} style={TEXT_STYLE}>
-          {name}
-        </KeyvalText>
-      </ApplicationNameWrapper>
-      <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
+      <DestinationManageContentWrapper>
+        <ApplicationNameWrapper>
+          <KeyvalText size={20} weight={700} style={TEXT_STYLE}>
+            {display_name}
+          </KeyvalText>
+          <KeyvalText size={20} style={TEXT_STYLE}>
+            {name}
+          </KeyvalText>
+        </ApplicationNameWrapper>
+        <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
+      </DestinationManageContentWrapper>
     </CardWrapper>
   );
 }
