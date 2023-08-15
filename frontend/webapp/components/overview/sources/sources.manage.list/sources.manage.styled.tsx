@@ -1,9 +1,7 @@
-import { styled } from "styled-components";
+import { styled } from 'styled-components';
 
 export const CardWrapper = styled.div`
   display: flex;
-  width: 272px;
-  height: 152px;
   padding-top: 32px;
   padding-bottom: 24px;
   border-radius: 24px;
@@ -13,9 +11,31 @@ export const CardWrapper = styled.div`
   flex-direction: column;
   gap: 10px;
   cursor: pointer;
-
   &:hover {
     border: ${({ theme }) => `1px solid  ${theme.colors.secondary}`};
+  }
+  @media screen and (max-width: 1200px) {
+    flex-direction: row;
+    padding: 1vw;
+    border-radius: 10px;
+  }
+`;
+
+export const SourceManageContentWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  div {
+    width: fit-content;
+  }
+  @media screen and (max-width: 1200px) {
+    padding-left: 1vw;
+    gap: 6px;
+    align-items: flex-start;
+    p {
+      text-align: left !important;
+    }
   }
 `;
 
@@ -29,8 +49,9 @@ export const EmptyListWrapper = styled.div`
 
 export const ManagedListWrapper = styled.div`
   display: grid;
-  gap: 24px;
+  height: 70vh;
   overflow: scroll;
+  gap: 24px;
   grid-template-columns: repeat(5, 1fr);
   ::-webkit-scrollbar {
     display: none;
@@ -38,21 +59,31 @@ export const ManagedListWrapper = styled.div`
   -ms-overflow-style: none;
   scrollbar-width: none;
 
-  @media screen and (max-width: 1800px) {
+  @media screen and (max-width: 1600px) {
     grid-template-columns: repeat(4, 1fr);
   }
   @media screen and (max-width: 1500px) {
     grid-template-columns: repeat(3, 1fr);
-    height: 680px;
+    height: 65vh;
   }
   @media screen and (max-width: 1200px) {
     grid-template-columns: repeat(2, 1fr);
-    height: 650px;
+    height: 65vh;
+  }
+  @media screen and (max-height: 800px) {
+    height: 60vh;
+  }
+  @media screen and (max-height: 700px) {
+    height: 50vh;
   }
 `;
 
 export const ManagedContainer = styled.div`
-  width: 100%;
   height: 100%;
   padding: 0px 36px;
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 `;
