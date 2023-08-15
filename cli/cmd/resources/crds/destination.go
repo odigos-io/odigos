@@ -49,6 +49,7 @@ func NewDestination() apiextensionsv1.CustomResourceDefinition {
 									Type:        "object",
 									Required: []string{
 										"data",
+										"destinationName",
 										"signals",
 										"type",
 									},
@@ -61,6 +62,9 @@ func NewDestination() apiextensionsv1.CustomResourceDefinition {
 													Type: "string",
 												},
 											},
+										},
+										"destinationName": {
+											Type: "string",
 										},
 										"secretRef": {
 											Description: "LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.",
