@@ -1,17 +1,17 @@
-"use client";
-import React, { useEffect, useState } from "react";
+'use client';
+import React, { useEffect, useState } from 'react';
 import {
   MenuContainer,
   LogoWrapper,
   MenuItemsWrapper,
   ContactUsWrapper,
-} from "./menu.styled";
-import { KeyvalText } from "@/design.system";
-import MenuItem from "../menu.item/menu.item";
-import { useRouter } from "next/navigation";
-import { OVERVIEW, ROUTES } from "@/utils/constants";
-import { MENU_ITEMS } from "./items";
-import ContactUsButton from "../contact.us/contact.us";
+} from './menu.styled';
+import { KeyvalImage, KeyvalText } from '@/design.system';
+import MenuItem from '../menu.item/menu.item';
+import { useRouter } from 'next/navigation';
+import { OVERVIEW, ROUTES } from '@/utils/constants';
+import { MENU_ITEMS } from './items';
+import ContactUsButton from '../contact.us/contact.us';
 
 export interface MenuItem {
   id: number;
@@ -27,6 +27,7 @@ export function Menu() {
   const [currentMenuItem, setCurrentMenuItem] = useState<MenuItem>(
     MENU_ITEMS[0]
   );
+  const [isHovered, setIsHovered] = useState(false);
   const router = useRouter();
 
   useEffect(onLoad, []);
@@ -53,20 +54,32 @@ export function Menu() {
         onClick={() => handleMenuItemClick(item)}
         focused={currentMenuItem?.id === item.id}
         item={item}
+        expand={isHovered}
       />
     ));
   }
 
   return (
-    <MenuContainer>
+    <MenuContainer
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <LogoWrapper>
-        <KeyvalText size={32} weight={700}>
-          {OVERVIEW.ODIGOS}
-        </KeyvalText>
+        {isHovered ? (
+          <KeyvalText size={32} weight={700}>
+            {OVERVIEW.ODIGOS}
+          </KeyvalText>
+        ) : (
+          <KeyvalImage
+            src={'https://d2q89wckrml3k4.cloudfront.net/logo.png'}
+            width={40}
+            height={40}
+          />
+        )}
       </LogoWrapper>
       <MenuItemsWrapper>{renderMenuItemsList()}</MenuItemsWrapper>
       <ContactUsWrapper>
-        <ContactUsButton />
+        <ContactUsButton expand={isHovered} />
       </ContactUsWrapper>
     </MenuContainer>
   );
