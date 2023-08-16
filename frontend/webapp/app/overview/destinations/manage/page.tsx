@@ -1,4 +1,4 @@
-import { UpdateDestinationFlow } from "@/containers/overview";
+import { UpdateDestinationFlow } from '@/containers/overview';
 
 export default function ManageDestinationPage() {
   return <UpdateDestinationFlow />;

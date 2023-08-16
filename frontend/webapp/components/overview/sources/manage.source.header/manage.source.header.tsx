@@ -1,6 +1,6 @@
-import React from "react";
-import styled from "styled-components";
-import { KeyvalImage } from "@/design.system";
+import React from 'react';
+import styled from 'styled-components';
+import { KeyvalImage } from '@/design.system';
 
 const ManageSourceHeaderWrapper = styled.div`
   display: flex;
@@ -19,7 +19,7 @@ const ManageSourceHeaderWrapper = styled.div`
 `;
 
 const IMAGE_STYLE: React.CSSProperties = {
-  backgroundColor: "#fff",
+  backgroundColor: '#fff',
   padding: 4,
   marginRight: 16,
   marginLeft: 16,

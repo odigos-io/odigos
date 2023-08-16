@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	instrumentorImage = "ghcr.io/keyval-dev/odigos/instrumentor"
+	instrumentorImage = "keyval/odigos-instrumentor"
 )
 
 func NewInstrumentorServiceAccount() *corev1.ServiceAccount {

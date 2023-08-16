@@ -32,25 +32,25 @@ export function DestinationsManagedList({
 
   return (
     <>
-      {data?.length > 0 && (
-        <MenuWrapper>
-          <KeyvalText>{`${data.length} ${OVERVIEW.MENU.DESTINATIONS}`}</KeyvalText>
-          <KeyvalButton onClick={onMenuButtonClick} style={BUTTON_STYLES}>
-            <Plus />
-            <KeyvalText size={16} weight={700} color={theme.text.dark_button}>
-              {OVERVIEW.ADD_NEW_DESTINATION}
-            </KeyvalText>
-          </KeyvalButton>
-        </MenuWrapper>
-      )}
       {data?.length === 0 ? (
         <EmptyList
           title={OVERVIEW.EMPTY_DESTINATION}
           btnTitle={OVERVIEW.ADD_NEW_DESTINATION}
-          buttonAction={onMenuButtonClick}
+          btnAction={onMenuButtonClick}
         />
       ) : (
-        <ManagedListWrapper>{renderDestinations()}</ManagedListWrapper>
+        <>
+          <MenuWrapper>
+            <KeyvalText>{`${data.length} ${OVERVIEW.MENU.DESTINATIONS}`}</KeyvalText>
+            <KeyvalButton onClick={onMenuButtonClick} style={BUTTON_STYLES}>
+              <Plus />
+              <KeyvalText size={16} weight={700} color={theme.text.dark_button}>
+                {OVERVIEW.ADD_NEW_DESTINATION}
+              </KeyvalText>
+            </KeyvalButton>
+          </MenuWrapper>
+          <ManagedListWrapper>{renderDestinations()}</ManagedListWrapper>
+        </>
       )}
     </>
   );
