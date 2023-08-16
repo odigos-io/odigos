@@ -18,7 +18,7 @@ export function ManageSources({ onAddClick, sources }) {
     [QUERIES.API_NAMESPACES],
     getNamespaces
   );
-  console.log({ sources });
+
   useEffect(() => {
     setSearchFilter('');
   }, [currentNamespace]);
