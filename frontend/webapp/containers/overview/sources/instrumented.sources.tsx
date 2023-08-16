@@ -39,7 +39,6 @@ export function InstrumentedSourcesContainer() {
   }
 
   function onPageLoad() {
-    console.log({ sources });
     const status = searchParams.get(PARAMS.STATUS);
     if (status) {
       refetchSources();
