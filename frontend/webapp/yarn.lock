@@ -1411,10 +1411,10 @@
     classcat "^5.0.3"
     zustand "^4.3.1"
 
-"@rollup/pluginutils@^5.0.2":
-  version "5.0.3"
-  resolved "https://registry.yarnpkg.com/@rollup/pluginutils/-/pluginutils-5.0.3.tgz#183126d69aeb1cfa23401d5a71cb4b8c16c4a4e0"
-  integrity sha512-hfllNN4a80rwNQ9QCxhxuHCGHMAvabXqxNdaChUSSadMre7t4iEUI6fFAhBOn/eIYTgYVhBv7vCLsAJ4u3lf3g==
+"@rollup/pluginutils@^4.2.0":
+  version "4.2.1"
+  resolved "https://registry.yarnpkg.com/@rollup/pluginutils/-/pluginutils-4.2.1.tgz#e6c6c3aba0744edce3fb2074922d3776c0af2a6d"
+  integrity sha512-iKnFXr7NkdZAIHiIWE+BX5ULi/ucVFYWD6TbAV+rZctiRTY2PL6tsIKhoIOaoskiWAkgu+VsbXgUVDNLHf+InQ==
   dependencies:
     estree-walker "^2.0.1"
     picomatch "^2.2.2"
@@ -1560,7 +1560,7 @@
     "@babel/types" "^7.20.0"
     entities "^4.4.0"
 
-"@svgr/plugin-jsx@8.1.0", "@svgr/plugin-jsx@^8.0.1":
+"@svgr/plugin-jsx@8.1.0":
   version "8.1.0"
   resolved "https://registry.yarnpkg.com/@svgr/plugin-jsx/-/plugin-jsx-8.1.0.tgz#96969f04a24b58b174ee4cd974c60475acbd6928"
   integrity sha512-0xiIyBsLlr8quN+WyuxooNW9RJ0Dpr8uOnH/xrCVO8GLUcwHISwj1AG0k+LFzteTkAA0GbX0kj9q6Dk70PTiPA==
@@ -3501,7 +3501,7 @@ is-core-module@^2.11.0, is-core-module@^2.12.1, is-core-module@^2.13.0, is-core-
   dependencies:
     has "^1.0.3"
 
-is-date-object@^1.0.1:
+is-date-object@^1.0.1, is-date-object@^1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/is-date-object/-/is-date-object-1.0.5.tgz#0841d5536e724c25597bf6ea62e1bd38298df31f"
   integrity sha512-9YQaSxsAiSwcvS33MBk3wTCVnWK+HhF8VZR2jRxehM16QcVOdHqPn4VPHmRK4lSr38n9JriurInLcP90xsYNfQ==
@@ -4437,9 +4437,9 @@ rollup-plugin-svgr@1.0.0:
   resolved "https://registry.yarnpkg.com/rollup-plugin-svgr/-/rollup-plugin-svgr-1.0.0.tgz#a6ac7f54afc9308f07f4be87adaa95c4f4a2afd8"
   integrity sha512-JdpMj/IujUQkxJK0cnSaNruGJ6oWyDnmyFmF8rgqCNu/1zEzePNu9VJQ3COAgqD+nPTHaVaO459I3KwawaUEWg==
   dependencies:
-    "@rollup/pluginutils" "^5.0.2"
-    "@svgr/core" "^8.0.0"
-    "@svgr/plugin-jsx" "^8.0.1"
+    "@rollup/pluginutils" "^4.2.0"
+    "@svgr/core" "^6.2.1"
+    "@svgr/plugin-jsx" "^6.2.1"
 
 run-parallel@^1.1.9:
   version "1.2.0"
