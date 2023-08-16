@@ -59,11 +59,8 @@ export function Menu() {
     ));
   }
 
-  return (
-    <MenuContainer
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+  function renderMenuLogo() {
+    return (
       <LogoWrapper>
         {isHovered ? (
           <KeyvalText size={32} weight={700}>
@@ -73,10 +70,25 @@ export function Menu() {
           <KeyvalImage src={METADATA.icons} width={40} height={40} />
         )}
       </LogoWrapper>
-      <MenuItemsWrapper>{renderMenuItemsList()}</MenuItemsWrapper>
+    );
+  }
+
+  function renderContactUsButton() {
+    return (
       <ContactUsWrapper>
         <ContactUsButton expand={isHovered} />
       </ContactUsWrapper>
+    );
+  }
+
+  return (
+    <MenuContainer
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {renderMenuLogo()}
+      <MenuItemsWrapper>{renderMenuItemsList()}</MenuItemsWrapper>
+      {renderContactUsButton()}
     </MenuContainer>
   );
 }
