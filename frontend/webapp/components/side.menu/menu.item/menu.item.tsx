@@ -69,11 +69,11 @@ export default function MenuItem({
   const [showText, setShowText] = useState(false);
   let timeout: NodeJS.Timeout;
   useEffect(() => {
-    onLoad();
+    onExpandChange();
     return () => clearTimeout(timeout);
   }, [expand]);
 
-  function onLoad() {
+  function onExpandChange() {
     if (expand) {
       timeout = setTimeout(() => {
         setShowText(true);

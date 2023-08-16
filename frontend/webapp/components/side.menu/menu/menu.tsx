@@ -9,7 +9,7 @@ import {
 import { KeyvalImage, KeyvalText } from '@/design.system';
 import MenuItem from '../menu.item/menu.item';
 import { useRouter } from 'next/navigation';
-import { OVERVIEW, ROUTES } from '@/utils/constants';
+import { METADATA, OVERVIEW, ROUTES } from '@/utils/constants';
 import { MENU_ITEMS } from './items';
 import ContactUsButton from '../contact.us/contact.us';
 
@@ -70,11 +70,7 @@ export function Menu() {
             {OVERVIEW.ODIGOS}
           </KeyvalText>
         ) : (
-          <KeyvalImage
-            src={'https://d2q89wckrml3k4.cloudfront.net/logo.png'}
-            width={40}
-            height={40}
-          />
+          <KeyvalImage src={METADATA.icons} width={40} height={40} />
         )}
       </LogoWrapper>
       <MenuItemsWrapper>{renderMenuItemsList()}</MenuItemsWrapper>
