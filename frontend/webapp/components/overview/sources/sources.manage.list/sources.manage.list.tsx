@@ -1,15 +1,15 @@
-import React from "react";
+import React from 'react';
 import {
   ManagedListWrapper,
   EmptyListWrapper,
   ManagedContainer,
-} from "./sources.manage.styled";
-import Empty from "@/assets/images/empty-list.svg";
-import SourceManagedCard from "./sources.manage.card";
-import { ManagedSource } from "@/types/sources";
-import { KeyvalText } from "@/design.system";
-import { OVERVIEW, ROUTES } from "@/utils/constants";
-import { useRouter } from "next/navigation";
+} from './sources.manage.styled';
+import Empty from '@/assets/images/empty-list.svg';
+import SourceManagedCard from './sources.manage.card';
+import { ManagedSource } from '@/types/sources';
+import { KeyvalText } from '@/design.system';
+import { OVERVIEW, ROUTES } from '@/utils/constants';
+import { useRouter } from 'next/navigation';
 
 interface SourcesManagedListProps {
   data: ManagedSource[];

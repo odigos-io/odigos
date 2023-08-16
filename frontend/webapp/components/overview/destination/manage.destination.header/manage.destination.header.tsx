@@ -1,10 +1,9 @@
-import React from "react";
-import styled from "styled-components";
-import { KeyvalImage, KeyvalText } from "@/design.system";
+import React from 'react';
+import styled from 'styled-components';
+import { KeyvalImage, KeyvalText } from '@/design.system';
 
 const ManageDestinationHeaderWrapper = styled.div`
   display: flex;
-  width: 100%;
   height: 104px;
   align-items: center;
   border-radius: 25px;
@@ -20,7 +19,7 @@ const ManageDestinationHeaderWrapper = styled.div`
 const TextWrapper = styled.div``;
 
 const IMAGE_STYLE: React.CSSProperties = {
-  backgroundColor: "#fff",
+  backgroundColor: '#fff',
   padding: 4,
   marginRight: 16,
   marginLeft: 16,

@@ -1,18 +1,18 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode } from 'react';
 
 import {
   HeaderButtonWrapper,
   HeaderTitleWrapper,
   SetupHeaderWrapper,
   TotalSelectedWrapper,
-} from "./setup.header.styled";
-import { KeyvalButton, KeyvalText } from "@/design.system";
-import { SETUP } from "@/utils/constants";
-import { ConnectionsIcons } from "@/components/setup";
-import theme from "@/styles/palette";
-import { Charge, Connect, RightArrow } from "@/assets/icons/app";
+} from './setup.header.styled';
+import { KeyvalButton, KeyvalText } from '@/design.system';
+import { SETUP } from '@/utils/constants';
+import { ConnectionsIcons } from '@/components/setup';
+import theme from '@/styles/palette';
+import { Charge, Connect, RightArrow } from '@/assets/icons/app';
 
-type StepId = "CHOOSE_SOURCE" | "CHOOSE_DESTINATION";
+type StepId = 'CHOOSE_SOURCE' | 'CHOOSE_DESTINATION';
 
 type SetupStep = {
   id?: StepId;

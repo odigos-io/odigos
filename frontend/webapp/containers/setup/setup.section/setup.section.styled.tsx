@@ -24,7 +24,7 @@ export const SetupContentWrapper = styled.div`
 `;
 
 export const StepListWrapper = styled.div`
-  margin: 94px 0 32px 0;
+  margin: 1% 0 32px 0;
 `;
 
 export const BackButtonWrapper = styled.div`
@@ -32,7 +32,7 @@ export const BackButtonWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
-  top: -54px;
+  top: -34px;
   cursor: pointer;
   p {
     cursor: pointer !important;

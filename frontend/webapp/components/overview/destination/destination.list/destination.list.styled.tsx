@@ -1,24 +1,28 @@
-import { styled } from "styled-components";
+import { styled } from 'styled-components';
 
 export const ManagedListWrapper = styled.div`
   display: grid;
   grid-gap: 24px;
   padding: 0px 36px;
   padding-bottom: 50px;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   overflow-y: scroll;
   ::-webkit-scrollbar {
     display: none;
   }
   -ms-overflow-style: none;
   scrollbar-width: none;
-
-  @media screen and (max-width: 1850px) {
+  @media screen and (max-width: 1800px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  @media screen and (max-width: 1600px) {
     grid-template-columns: repeat(3, 1fr);
   }
-  @media screen and (max-width: 1450px) {
+  @media screen and (max-width: 1200px) {
     grid-template-columns: repeat(2, 1fr);
-    height: 75%;
+  }
+  @media screen and (max-height: 700px) {
+    height: 70%;
   }
 `;
 
@@ -31,8 +35,8 @@ export const MenuWrapper = styled.div`
 
 export const CardWrapper = styled.div`
   display: flex;
-  width: 366px;
-  height: 190px;
+  width: auto;
+  height: fit-content;
   padding-top: 32px;
   padding-bottom: 24px;
   flex-direction: column;
@@ -47,12 +51,26 @@ export const CardWrapper = styled.div`
   &:hover {
     border: ${({ theme }) => `1px solid  ${theme.colors.secondary}`};
   }
+  @media screen and (max-width: 1200px) {
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 2vw;
+  }
+`;
+
+export const DestinationManageContentWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  @media screen and (max-width: 1200px) {
+    align-items: flex-start;
+    padding-left: 1vw;
+  }
 `;
 
 export const ApplicationNameWrapper = styled.div`
   display: inline-block;
   text-overflow: ellipsis;
-  max-width: 224px;
   height: 56px;
   text-align: center;
   display: flex;
@@ -60,6 +78,11 @@ export const ApplicationNameWrapper = styled.div`
   gap: 6px;
   margin-top: 12px;
   margin-bottom: 20px;
+  @media screen and (max-width: 1200px) {
+    margin: 0;
+    text-align: left;
+    gap: 0;
+  }
 `;
 
 export const EmptyListWrapper = styled.div`

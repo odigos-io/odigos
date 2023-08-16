@@ -1,8 +1,8 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
 export const SetupHeaderWrapper = styled.header`
   display: inline-flex;
-  padding: 24px 0px;
+  padding: 2vh 0px;
   align-items: center;
   width: 100%;
   max-width: 1288px;
