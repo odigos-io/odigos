@@ -1,19 +1,19 @@
-"use client";
-import React, { useEffect } from "react";
+'use client';
+import React, { useEffect } from 'react';
 import {
   NOTIFICATION,
   OVERVIEW,
   PARAMS,
   QUERIES,
   ROUTES,
-} from "@/utils/constants";
-import { OverviewHeader } from "@/components/overview";
-import { SourcesContainerWrapper } from "./sources.styled";
-import { ManageSources } from "./manage.sources";
-import { useQuery } from "react-query";
-import { getSources } from "@/services";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useNotification } from "@/hooks";
+} from '@/utils/constants';
+import { OverviewHeader } from '@/components/overview';
+import { SourcesContainerWrapper } from './sources.styled';
+import { ManageSources } from './manage.sources';
+import { useQuery } from 'react-query';
+import { getSources } from '@/services';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useNotification } from '@/hooks';
 
 export function InstrumentedSourcesContainer() {
   const router = useRouter();
@@ -34,11 +34,12 @@ export function InstrumentedSourcesContainer() {
       case PARAMS.UPDATED:
         return OVERVIEW.SOURCE_UPDATE_SUCCESS;
       default:
-        return "";
+        return '';
     }
   }
 
   function onPageLoad() {
+    console.log({ sources });
     const status = searchParams.get(PARAMS.STATUS);
     if (status) {
       refetchSources();
