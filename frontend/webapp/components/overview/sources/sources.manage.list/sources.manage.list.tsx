@@ -34,7 +34,7 @@ export function SourcesManagedList({
     <EmptyList
       title={OVERVIEW.EMPTY_SOURCE}
       btnTitle={OVERVIEW.ADD_NEW_SOURCE}
-      buttonAction={onAddClick}
+      btnAction={onAddClick}
     />
   ) : (
     <ManagedContainer>

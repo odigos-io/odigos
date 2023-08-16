@@ -1,17 +1,17 @@
-"use client";
-import React, { useEffect, useState } from "react";
+'use client';
+import React, { useEffect, useState } from 'react';
 import {
   MenuContainer,
   LogoWrapper,
   MenuItemsWrapper,
   ContactUsWrapper,
-} from "./menu.styled";
-import { KeyvalText } from "@/design.system";
-import MenuItem from "../menu.item/menu.item";
-import { useRouter } from "next/navigation";
-import { OVERVIEW, ROUTES } from "@/utils/constants";
-import { MENU_ITEMS } from "./items";
-import ContactUsButton from "../contact.us/contact.us";
+} from './menu.styled';
+import { KeyvalText } from '@/design.system';
+import MenuItem from '../menu.item/menu.item';
+import { useRouter } from 'next/navigation';
+import { OVERVIEW, ROUTES } from '@/utils/constants';
+import { MENU_ITEMS } from './items';
+import ContactUsButton from '../contact.us/contact.us';
 
 export interface MenuItem {
   id: number;

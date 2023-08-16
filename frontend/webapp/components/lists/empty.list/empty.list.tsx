@@ -8,7 +8,7 @@ import styled from 'styled-components';
 interface EmptyListProps {
   title?: string;
   btnTitle?: string;
-  buttonAction?: () => void;
+  btnAction?: () => void;
 }
 
 const EmptyListWrapper = styled.div`
@@ -20,7 +20,7 @@ const EmptyListWrapper = styled.div`
   align-items: center;
 `;
 const BUTTON_STYLES = { gap: 10, width: 224, height: 40 };
-export function EmptyList({ title, btnTitle, buttonAction }: EmptyListProps) {
+export function EmptyList({ title, btnTitle, btnAction }: EmptyListProps) {
   return (
     <EmptyListWrapper>
       <Empty />
@@ -31,8 +31,8 @@ export function EmptyList({ title, btnTitle, buttonAction }: EmptyListProps) {
           <br />
         </>
       )}
-      {buttonAction && (
-        <KeyvalButton onClick={buttonAction} style={BUTTON_STYLES}>
+      {btnAction && (
+        <KeyvalButton onClick={btnAction} style={BUTTON_STYLES}>
           <Plus />
           <KeyvalText size={16} weight={700} color={theme.text.dark_button}>
             {btnTitle}

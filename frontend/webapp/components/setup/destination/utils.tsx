@@ -1,4 +1,4 @@
-import { SETUP } from "@/utils/constants";
+import { SETUP } from '@/utils/constants';
 import {
   Metrics,
   MetricsFocus,
@@ -6,7 +6,7 @@ import {
   TracesFocus,
   LogsFocus,
   Logs,
-} from "@/assets/icons/monitors";
+} from '@/assets/icons/monitors';
 
 export type MonitoringOption = {
   title: string;
@@ -23,7 +23,7 @@ export const MONITORING_OPTIONS = [
       focus: () => <LogsFocus />,
     },
     title: SETUP.MONITORS.LOGS,
-    type: "logs",
+    type: 'logs',
     tapped: true,
   },
   {
@@ -33,7 +33,7 @@ export const MONITORING_OPTIONS = [
       focus: () => <MetricsFocus />,
     },
     title: SETUP.MONITORS.METRICS,
-    type: "metrics",
+    type: 'metrics',
     tapped: true,
   },
   {
@@ -43,7 +43,7 @@ export const MONITORING_OPTIONS = [
       focus: () => <TracesFocus />,
     },
     title: SETUP.MONITORS.TRACES,
-    type: "traces",
+    type: 'traces',
     tapped: true,
   },
 ];

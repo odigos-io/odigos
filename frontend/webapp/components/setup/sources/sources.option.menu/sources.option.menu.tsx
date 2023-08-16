@@ -1,7 +1,7 @@
-import React from "react";
-import { SourcesOptionMenuWrapper } from "./sources.option.menu.styled";
-import { FilterSourcesOptions } from "./filter.sources.options";
-import { ActionSourcesOptions } from "./action.sources.options";
+import React from 'react';
+import { SourcesOptionMenuWrapper } from './sources.option.menu.styled';
+import { FilterSourcesOptions } from './filter.sources.options';
+import { ActionSourcesOptions } from './action.sources.options';
 
 export function SourcesOptionMenu({
   setCurrentItem,

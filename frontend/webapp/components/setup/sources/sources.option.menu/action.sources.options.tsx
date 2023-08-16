@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { CheckboxWrapper, SwitcherWrapper } from "./sources.option.menu.styled";
-import { KeyvalCheckbox, KeyvalSwitch, KeyvalTooltip } from "@/design.system";
-import { SETUP } from "@/utils/constants";
+import React, { useEffect, useState } from 'react';
+import { CheckboxWrapper, SwitcherWrapper } from './sources.option.menu.styled';
+import { KeyvalCheckbox, KeyvalSwitch, KeyvalTooltip } from '@/design.system';
+import { SETUP } from '@/utils/constants';
 
 export function ActionSourcesOptions({
   onSelectAllChange,

@@ -1,6 +1,6 @@
-import { OVERVIEW, ROUTES } from "@/utils/constants";
-import * as ICONS from "../../../assets/icons/side.menu";
-import { MenuItem } from "./menu";
+import { OVERVIEW, ROUTES } from '@/utils/constants';
+import * as ICONS from '../../../assets/icons/side.menu';
+import { MenuItem } from './menu';
 
 export const MENU_ITEMS: MenuItem[] = [
   {
