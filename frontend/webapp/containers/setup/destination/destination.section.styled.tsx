@@ -1,16 +1,18 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
 export const DestinationListContainer = styled.div`
   width: 100%;
-  max-height: 500px;
-  padding-bottom: 300px;
-  margin-top: 24px;
+  height: 66vh;
+  margin-top: 2%;
   overflow: scroll;
   ::-webkit-scrollbar {
     display: none;
   }
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  @media screen and (max-height: 700px) {
+    height: 60vh;
+  }
 `;
 
 export const EmptyListWrapper = styled.div`

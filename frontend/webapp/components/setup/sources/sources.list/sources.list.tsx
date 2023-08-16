@@ -1,14 +1,14 @@
-import React from "react";
+import React from 'react';
 import {
   SourcesListContainer,
   SourcesListWrapper,
   SourcesTitleWrapper,
   EmptyListWrapper,
-} from "./sources.list.styled";
-import { SourceCard } from "../source.card/source.card";
-import { KeyvalLink, KeyvalText } from "@/design.system";
-import { ROUTES, SETUP } from "@/utils/constants";
-import Empty from "@/assets/images/empty-list.svg";
+} from './sources.list.styled';
+import { SourceCard } from '../source.card/source.card';
+import { KeyvalLink, KeyvalText } from '@/design.system';
+import { ROUTES, SETUP } from '@/utils/constants';
+import Empty from '@/assets/images/empty-list.svg';
 
 export function SourcesList({
   data,

@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
 export const SourcesListContainer = styled.div`
   width: 100%;
@@ -14,14 +14,14 @@ export const SourcesTitleWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 24px 0;
+  margin: 2% 0;
 `;
 
 export const SourcesListWrapper = styled.div<{ repeat: number }>`
   width: 100%;
   height: 400px;
   padding-bottom: 300px;
-  gap: 24px;
+  gap: 1vh;
   overflow-y: scroll;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -38,9 +38,11 @@ export const SourcesListWrapper = styled.div<{ repeat: number }>`
 
   @media screen and (max-width: 1500px) {
     grid-template-columns: repeat(3, 1fr);
+    height: 300px;
   }
   @media screen and (max-width: 1150px) {
     grid-template-columns: repeat(2, 1fr);
+    height: 200px;
   }
 `;
 

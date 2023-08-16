@@ -1,12 +1,12 @@
-import React from "react";
-import { KeyvalText } from "@/design.system";
-import { DestinationCard } from "../destination.card/destination.card";
+import React from 'react';
+import { KeyvalText } from '@/design.system';
+import { DestinationCard } from '../destination.card/destination.card';
 import {
   DestinationListWrapper,
   DestinationTypeTitleWrapper,
-} from "./destination.list.styled";
-import { capitalizeFirstLetter } from "@/utils/functions";
-import { ROUTES } from "@/utils/constants";
+} from './destination.list.styled';
+import { capitalizeFirstLetter } from '@/utils/functions';
+import { ROUTES } from '@/utils/constants';
 
 export function DestinationList({ data: { items, name }, onItemClick }: any) {
   function renderList() {
