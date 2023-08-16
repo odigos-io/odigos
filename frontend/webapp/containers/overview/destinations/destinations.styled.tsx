@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 export const NewDestinationContainer = styled.div`
-  padding: 20px 36px;
+  padding: 0px 36px;
   ::-webkit-scrollbar {
     display: none;
   }
