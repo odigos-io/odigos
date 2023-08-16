@@ -3,12 +3,11 @@ import {
   SourcesListContainer,
   SourcesListWrapper,
   SourcesTitleWrapper,
-  EmptyListWrapper,
 } from './sources.list.styled';
 import { SourceCard } from '../source.card/source.card';
 import { KeyvalLink, KeyvalText } from '@/design.system';
-import { ROUTES, SETUP } from '@/utils/constants';
-import Empty from '@/assets/images/empty-list.svg';
+import { OVERVIEW, ROUTES, SETUP } from '@/utils/constants';
+import { EmptyList } from '@/components/lists';
 
 export function SourcesList({
   data,
@@ -42,19 +41,19 @@ export function SourcesList({
 
   return !data ? null : (
     <SourcesListContainer>
-      <SourcesTitleWrapper>
-        <KeyvalText>{`${data?.length} ${SETUP.APPLICATIONS}`}</KeyvalText>
-        <KeyvalLink onClick={onClearClick} value={SETUP.CLEAR_SELECTION} />
-      </SourcesTitleWrapper>
-      <SourcesListWrapper repeat={getNumberOfItemsRepeated()}>
-        {isListEmpty() ? (
-          <EmptyListWrapper>
-            <Empty />
-          </EmptyListWrapper>
-        ) : (
-          renderList()
-        )}
-      </SourcesListWrapper>
+      {isListEmpty() ? (
+        <EmptyList title={OVERVIEW.EMPTY_SOURCE} />
+      ) : (
+        <>
+          <SourcesTitleWrapper>
+            <KeyvalText>{`${data?.length} ${SETUP.APPLICATIONS}`}</KeyvalText>
+            <KeyvalLink onClick={onClearClick} value={SETUP.CLEAR_SELECTION} />
+          </SourcesTitleWrapper>
+          <SourcesListWrapper repeat={getNumberOfItemsRepeated()}>
+            {renderList()}
+          </SourcesListWrapper>
+        </>
+      )}
     </SourcesListContainer>
   );
 }

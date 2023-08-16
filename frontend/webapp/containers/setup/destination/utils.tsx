@@ -1,6 +1,6 @@
-import { SETUP } from "@/utils/constants";
+import { SETUP } from '@/utils/constants';
 
-const MANAGED_DESTINATION = "managed";
+const MANAGED_DESTINATION = 'managed';
 
 export function filterDataByTextQuery(data: any, searchFilter: string) {
   //filter each category items by search query
@@ -64,7 +64,7 @@ export function isDestinationListEmpty(list, currentItemName: string) {
     const currentItemIndex = list?.findIndex(
       (category) => category.name === currentItemName
     );
-    return currentItemIndex && list[currentItemIndex]?.items.length === 0;
+    return list[currentItemIndex]?.items.length === 0;
   }
 
   return list?.every((category) => category.items.length === 0);

@@ -1,7 +1,7 @@
-import React from "react";
-import { DropdownWrapper } from "./sources.option.menu.styled";
-import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from "@/design.system";
-import { SETUP } from "@/utils/constants";
+import React from 'react';
+import { DropdownWrapper } from './sources.option.menu.styled';
+import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from '@/design.system';
+import { SETUP } from '@/utils/constants';
 
 export function FilterSourcesOptions({
   setCurrentItem,

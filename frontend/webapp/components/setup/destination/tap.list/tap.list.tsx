@@ -1,6 +1,6 @@
-import { KeyvalTap } from "@/design.system";
-import React from "react";
-import styled from "styled-components";
+import { KeyvalTap } from '@/design.system';
+import React from 'react';
+import styled from 'styled-components';
 
 const TapListWrapper = styled.div`
   display: flex;

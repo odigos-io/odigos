@@ -1,8 +1,8 @@
-import React from "react";
-import { KeyvalText, KeyvalVideo } from "@/design.system";
-import { QuickHelpHeader, QuickHelpVideoWrapper } from "./quick.help.styled";
-import { SETUP } from "@/utils/constants";
-import { Note } from "@/assets/icons/app";
+import React from 'react';
+import { KeyvalText, KeyvalVideo } from '@/design.system';
+import { QuickHelpHeader, QuickHelpVideoWrapper } from './quick.help.styled';
+import { SETUP } from '@/utils/constants';
+import { Note } from '@/assets/icons/app';
 export function QuickHelp({ data }) {
   function renderVideoList() {
     return data?.map((video) => (

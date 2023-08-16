@@ -1,6 +1,6 @@
-import { KeyvalText } from "@/design.system";
-import React from "react";
-import { styled } from "styled-components";
+import { KeyvalText } from '@/design.system';
+import React from 'react';
+import { styled } from 'styled-components';
 interface MenuItemContainerProps {
   focused: boolean;
 }
@@ -28,7 +28,7 @@ const MenuItemContainer = styled.div<MenuItemContainerProps>`
   cursor: pointer;
   border-radius: 10px;
   background: ${({ focused, theme }) =>
-    focused ? theme.colors.blue_grey : "transparent"};
+    focused ? theme.colors.blue_grey : 'transparent'};
 `;
 
 export default function MenuItem({ item, focused, onClick }: MenuItemProps) {

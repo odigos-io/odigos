@@ -1,21 +1,20 @@
 import React from 'react';
-import {
-  ManagedListWrapper,
-  EmptyListWrapper,
-  ManagedContainer,
-} from './sources.manage.styled';
-import Empty from '@/assets/images/empty-list.svg';
+import { ManagedListWrapper, ManagedContainer } from './sources.manage.styled';
 import SourceManagedCard from './sources.manage.card';
 import { ManagedSource } from '@/types/sources';
 import { KeyvalText } from '@/design.system';
 import { OVERVIEW, ROUTES } from '@/utils/constants';
 import { useRouter } from 'next/navigation';
+import { EmptyList } from '@/components/lists';
 
 interface SourcesManagedListProps {
   data: ManagedSource[];
+  onAddClick: () => void;
 }
-
-export function SourcesManagedList({ data = [] }: SourcesManagedListProps) {
+export function SourcesManagedList({
+  data = [],
+  onAddClick,
+}: SourcesManagedListProps) {
   const router = useRouter();
   function renderSources() {
     return data.map((source: ManagedSource) => (
@@ -32,9 +31,11 @@ export function SourcesManagedList({ data = [] }: SourcesManagedListProps) {
   }
 
   return data.length === 0 ? (
-    <EmptyListWrapper>
-      <Empty />
-    </EmptyListWrapper>
+    <EmptyList
+      title={OVERVIEW.EMPTY_SOURCE}
+      btnTitle={OVERVIEW.ADD_NEW_SOURCE}
+      btnAction={onAddClick}
+    />
   ) : (
     <ManagedContainer>
       <KeyvalText>{`${data.length} ${OVERVIEW.MENU.SOURCES}`}</KeyvalText>

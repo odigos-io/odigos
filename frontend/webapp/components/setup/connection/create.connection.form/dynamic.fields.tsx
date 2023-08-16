@@ -1,8 +1,8 @@
-import React from "react";
-import { KeyvalDropDown, KeyvalInput, KeyvalText } from "@/design.system";
-import { FieldWrapper } from "./create.connection.form.styled";
-import { INPUT_TYPES } from "@/utils/constants/string";
-import { Field } from "@/types/destinations";
+import React from 'react';
+import { KeyvalDropDown, KeyvalInput, KeyvalText } from '@/design.system';
+import { FieldWrapper } from './create.connection.form.styled';
+import { INPUT_TYPES } from '@/utils/constants/string';
+import { Field } from '@/types/destinations';
 
 export function renderFields(
   fields: Field[],

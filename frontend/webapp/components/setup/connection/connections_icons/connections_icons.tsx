@@ -1,7 +1,7 @@
-import React from "react";
-import styled from "styled-components";
-import { KeyvalImage } from "@/design.system";
-import { Connect } from "@/assets/icons/app";
+import React from 'react';
+import styled from 'styled-components';
+import { KeyvalImage } from '@/design.system';
+import { Connect } from '@/assets/icons/app';
 
 const ConnectionsIconsWrapper = styled.div`
   display: flex;
@@ -20,7 +20,7 @@ const Divider = styled.div`
 `;
 
 const IMAGE_STYLE: React.CSSProperties = {
-  backgroundColor: "#fff",
+  backgroundColor: '#fff',
   padding: 4,
 };
 

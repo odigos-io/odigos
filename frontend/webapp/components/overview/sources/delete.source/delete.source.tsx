@@ -1,17 +1,17 @@
-import React, { useState } from "react";
-import { styled } from "styled-components";
-import { ConnectionsIcons } from "@/components/setup";
-import { DangerZone, KeyvalModal, KeyvalText } from "@/design.system";
-import { ModalPositionX, ModalPositionY } from "@/design.system/modal/types";
-import theme from "@/styles/palette";
-import { OVERVIEW } from "@/utils/constants";
+import React, { useState } from 'react';
+import { styled } from 'styled-components';
+import { ConnectionsIcons } from '@/components/setup';
+import { DangerZone, KeyvalModal, KeyvalText } from '@/design.system';
+import { ModalPositionX, ModalPositionY } from '@/design.system/modal/types';
+import theme from '@/styles/palette';
+import { OVERVIEW } from '@/utils/constants';
 
 const FieldWrapper = styled.div`
   margin-top: 32px;
   width: 348px;
 `;
 
-const IMAGE_STYLE = { border: "solid 1px #ededed" };
+const IMAGE_STYLE = { border: 'solid 1px #ededed' };
 export function DeleteSource({
   onDelete,
   name,
@@ -29,7 +29,7 @@ export function DeleteSource({
     showOverlay: true,
     positionX: ModalPositionX.center,
     positionY: ModalPositionY.center,
-    padding: "20px",
+    padding: '20px',
     footer: {
       primaryBtnText: OVERVIEW.CONFIRM_SOURCE_DELETE,
       primaryBtnAction: () => {
