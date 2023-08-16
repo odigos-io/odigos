@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	autoscalerImage = "ghcr.io/keyval-dev/odigos/autoscaler"
+	autoscalerImage = "keyval/odigos-autoscaler"
 )
 
 func NewAutoscalerServiceAccount() *corev1.ServiceAccount {

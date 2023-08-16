@@ -3,10 +3,8 @@ import { useQuery } from 'react-query';
 import { NOTIFICATION, OVERVIEW, QUERIES, SETUP } from '@/utils/constants';
 import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
 import { DestinationList, DestinationOptionMenu } from '@/components/setup';
-import Empty from '@/assets/images/empty-list.svg';
 import {
   DestinationListContainer,
-  EmptyListWrapper,
   LoaderWrapper,
 } from './destination.section.styled';
 import {

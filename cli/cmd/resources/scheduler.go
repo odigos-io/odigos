@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	schedulerImage = "ghcr.io/keyval-dev/odigos/scheduler"
+	schedulerImage = "keyval/odigos-scheduler"
 )
 
 func NewSchedulerServiceAccount() *corev1.ServiceAccount {
