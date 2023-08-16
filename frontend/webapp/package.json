@@ -6,10 +6,11 @@
     "dev": "next dev",
     "build": "next build && next export",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@keyval-dev/design-system": "0.0.7",
+    "@keyval-dev/design-system": "0.0.4",
     "@next/font": "^13.4.7",
     "@svgr/webpack": "^6.2.1",
     "@types/node": "20.3.3",

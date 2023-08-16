@@ -1,9 +1,9 @@
-import React from "react";
-import { Slack, SlackGrey } from "@/assets/icons/social";
-import { KeyvalText } from "@/design.system";
-import { SLACK_INVITE_LINK } from "@/utils/constants/urls";
-import { styled } from "styled-components";
-import { ACTION } from "@/utils/constants";
+import React from 'react';
+import { Slack, SlackGrey } from '@/assets/icons/social';
+import { KeyvalText } from '@/design.system';
+import { SLACK_INVITE_LINK } from '@/utils/constants/urls';
+import { styled } from 'styled-components';
+import { ACTION } from '@/utils/constants';
 
 const ContactUsContainer = styled.div`
   display: flex;
@@ -35,7 +35,7 @@ const ContactUsContainer = styled.div`
 
 export default function ContactUsButton() {
   function handleContactUsClick() {
-    window.open(SLACK_INVITE_LINK, "_blank");
+    window.open(SLACK_INVITE_LINK, '_blank');
   }
 
   return (

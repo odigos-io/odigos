@@ -1,13 +1,13 @@
-import React from "react";
+import React from 'react';
 import {
   InputsWrapper,
   SourcesMenuWrapper,
-} from "./sources.action.menu.styled";
-import { KeyvalButton, KeyvalText } from "@/design.system";
-import { Plus } from "@/assets/icons/overview";
-import { OVERVIEW } from "@/utils/constants";
-import theme from "@/styles/palette";
-import { FilterSourcesOptions } from "@/components/setup/sources/sources.option.menu/filter.sources.options";
+} from './sources.action.menu.styled';
+import { KeyvalButton, KeyvalText } from '@/design.system';
+import { Plus } from '@/assets/icons/overview';
+import { OVERVIEW } from '@/utils/constants';
+import theme from '@/styles/palette';
+import { FilterSourcesOptions } from '@/components/setup/sources/sources.option.menu/filter.sources.options';
 
 const BUTTON_STYLES = { gap: 10, height: 36, width: 200 };
 

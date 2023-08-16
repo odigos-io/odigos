@@ -1,19 +1,19 @@
-import { Menu } from "@/components/side.menu";
-import theme from "@/styles/palette";
-import { METADATA } from "@/utils/constants";
-import { Metadata } from "next";
-import React from "react";
+import { Menu } from '@/components/side.menu';
+import theme from '@/styles/palette';
+import { METADATA } from '@/utils/constants';
+import { Metadata } from 'next';
+import React from 'react';
 
 const LAYOUT_STYLE = {
-  width: "100%",
-  height: "100%",
-  display: "flex",
+  width: '100%',
+  height: '100%',
+  display: 'flex',
   backgroundColor: theme.colors.light_dark,
 };
 
 const CHILDREN_STYLE = {
-  width: "100%",
-  height: "93%",
+  width: '100%',
+  height: '93%',
 };
 
 export const metadata: Metadata = METADATA;

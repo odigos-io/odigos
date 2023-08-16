@@ -1,16 +1,16 @@
-"use client";
-import React from "react";
-import { ThemeProvider } from "styled-components";
-import theme from "@/styles/palette";
-import { QueryClient, QueryClientProvider } from "react-query";
-import { ThemeProviderWrapper } from "@keyval-dev/design-system";
+'use client';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
+import theme from '@/styles/palette';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { ThemeProviderWrapper } from '@keyval-dev/design-system';
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
-  position: "fixed",
-  scrollbarWidth: "none",
-  width: "100vw",
-  height: "100vh",
+  position: 'fixed',
+  scrollbarWidth: 'none',
+  width: '100vw',
+  height: '100vh',
 };
 
 export default function RootLayout({
