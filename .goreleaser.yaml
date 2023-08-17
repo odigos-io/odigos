@@ -34,18 +34,17 @@ builds:
     binary: odigos-ui
 archives:
   - id: odigos
-    name_template: 'odigos_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    name_template: 'cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     builds:
       - odigos
     files:
       - none*
   - id: odigos-ui
-    name_template: 'odigos-ui_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    name_template: 'ui_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     builds:
       - odigos-ui
     files:
       - none*
-
 checksum:
   name_template: 'checksums.txt'
 snapshot:
@@ -56,6 +55,18 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+brews:
+  - tap:
+        owner: keyval-dev
+        name: homebrew-odigos-cli
+        token: "{{ .Env.HOMEBREW_GITHUB_API_TOKEN }}"
+    commit_msg_template: 'release: {{ .Tag }}'
+    commit_author:
+      name: odigos-ci
+      email: info@keyval.dev
+    homepage: https://odigos.io
+    description: Odigos CLI Utility
+    caveats: "Thanks for installing Odigos CLI! Please run `odigos install` to install Odigos in your Kubernetes cluster."
 
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
