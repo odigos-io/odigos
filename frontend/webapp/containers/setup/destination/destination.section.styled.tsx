@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 export const DestinationListContainer = styled.div`
   width: 100%;
-  height: 66vh;
+  height: 72vh;
   margin-top: 2%;
   overflow: scroll;
   ::-webkit-scrollbar {
