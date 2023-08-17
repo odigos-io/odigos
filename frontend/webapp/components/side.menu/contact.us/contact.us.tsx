@@ -33,7 +33,7 @@ const ContactUsContainer = styled.div`
   }
 `;
 
-export default function ContactUsButton() {
+export default function ContactUsButton({ expand }) {
   function handleContactUsClick() {
     window.open(SLACK_INVITE_LINK, '_blank');
   }
@@ -42,7 +42,7 @@ export default function ContactUsButton() {
     <ContactUsContainer onClick={handleContactUsClick}>
       <Slack width={24} height={24} className="icon-lock" />
       <SlackGrey width={24} height={24} className="icon-unlock" />
-      <KeyvalText size={14}>{ACTION.CONTACT_US}</KeyvalText>
+      {expand && <KeyvalText size={14}>{ACTION.CONTACT_US}</KeyvalText>}
     </ContactUsContainer>
   );
 }
