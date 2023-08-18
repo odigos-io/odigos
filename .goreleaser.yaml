@@ -61,6 +61,8 @@ brews:
         name: homebrew-odigos-cli
         token: "{{ .Env.HOMEBREW_GITHUB_API_TOKEN }}"
     commit_msg_template: 'release: {{ .Tag }}'
+    ids:
+      - odigos
     commit_author:
       name: odigos-ci
       email: info@keyval.dev
