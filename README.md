@@ -35,19 +35,21 @@ For a complete list of supported destinations see [here](#supported-destinations
 
 ### 🎛️ Collectors Management 
 Odigos automatically scales OpenTelemetry collectors based on observability data volume.  
-A simple UI is also provided to manage and configure collectors.
+Manage and configure collectors via a convenient web UI.
+
+![Collectors Management](assets/overview_page.png)
 
 ## Installation
 
-The easiest way to install Odigos is to use our [Helm chart](https://github.com/keyval-dev/odigos-charts):
+Installing Odigos takes less than 5 minutes, and requires no code changes.
+Download our [CLI](https://docs.odigos.io/installation) and run the following command:
 
-```console
-helm repo add odigos https://keyval-dev.github.io/odigos-charts/
 
-helm install my-odigos odigos/odigos --namespace odigos-system --create-namespace
+```bash
+odigos install
 ```
 
-See the [quickstart guide](https://docs.odigos.io/intro) for more details and examples.
+For more details see our [quickstart guide](https://docs.odigos.io/intro).
 
 ## Supported Destinations
 
@@ -91,10 +93,6 @@ Can't find the destination you need? Help us by following our quick [adding new 
 ## Contributing
 
 Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests. You are welcome to join our active [Slack Community](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
-
-## Project Status
-
-This project is actively maintained by [keyval](https://keyval.dev). We would love to receive your [ideas, feedback & contributions](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
 
 ## License
 
