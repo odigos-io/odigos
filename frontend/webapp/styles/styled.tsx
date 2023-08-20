@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 export const HideScroll = styled.div`
-  overflow-y: scroll;
+  overflow-y: hidden;
   ::-webkit-scrollbar {
     display: none;
   }
