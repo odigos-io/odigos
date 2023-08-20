@@ -57,7 +57,7 @@ export function ManageSources({ onAddClick, sources }) {
 
   return (
     <>
-      {manageSourcesData?.length > 0 && (
+      {sources?.length > 0 && (
         <MenuWrapper>
           <SourcesActionMenu
             searchFilter={searchFilter}
