@@ -64,6 +64,19 @@ export function CreateConnectionForm({
     filterSupportedMonitors();
   }, [supportedSignals]);
 
+  useEffect(() => {
+    window.addEventListener('keypress', handleKeyPress);
+    return () => {
+      window.removeEventListener('keypress', handleKeyPress);
+    };
+  }, []);
+
+  function handleKeyPress(e: any) {
+    if (e.key === 'Enter' && !isCreateButtonDisabled) {
+      onCreateClick();
+    }
+  }
+
   function filterSupportedMonitors() {
     const data: any = !checkboxValues
       ? MONITORS
