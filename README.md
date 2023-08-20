@@ -37,6 +37,8 @@ For a complete list of supported destinations see [here](#supported-destinations
 Odigos automatically scales OpenTelemetry collectors based on observability data volume.  
 A simple UI is also provided to manage and configure collectors.
 
+![Collectors Management](assets/overview_page.png)
+
 ## Installation
 
 The easiest way to install Odigos is to use our [Helm chart](https://github.com/keyval-dev/odigos-charts):
