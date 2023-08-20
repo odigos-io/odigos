@@ -17,7 +17,9 @@ export const ManageDestinationWrapper = styled.div`
   }
   -ms-overflow-style: none;
   scrollbar-width: none;
-
+  @media screen and (max-width: 1400px) {
+    height: 85vh;
+  }
   @media screen and (max-height: 750px) {
     height: 85vh;
   }

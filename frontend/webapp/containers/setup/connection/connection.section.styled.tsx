@@ -13,6 +13,9 @@ export const CreateConnectionContainer = styled.div`
   @media screen and (max-width: 1400px) {
     height: 50vh;
   }
+  @media screen and (max-height: 750px) {
+    height: 50vh;
+  }
 `;
 
 export const LoaderWrapper = styled.div`
