@@ -25,16 +25,9 @@ const BackButtonWrapper = styled.div`
   }
 `;
 
-const CreateConnectionWrapper = styled.div<{ expand: boolean | undefined }>`
+const CreateConnectionWrapper = styled.div`
   display: flex;
   gap: 10vw;
-  height: ${({ expand }) => (expand ? 630 : 530)}px;
-  overflow: scroll;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  ::-webkit-scrollbar {
-    display: none;
-  }
 `;
 
 export function ManageDestination({
@@ -65,7 +58,7 @@ export function ManageDestination({
         </BackButtonWrapper>
       )}
       <ManageDestinationHeader data={selectedDestination} />
-      <CreateConnectionWrapper expand={!!onDelete || false}>
+      <CreateConnectionWrapper>
         <div>
           <CreateConnectionForm
             fields={destinationType?.fields}
