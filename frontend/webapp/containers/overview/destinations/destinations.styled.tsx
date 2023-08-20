@@ -11,14 +11,14 @@ export const NewDestinationContainer = styled.div`
 
 export const ManageDestinationWrapper = styled.div`
   padding: 32px;
+  overflow-y: scroll;
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 
   @media screen and (max-height: 750px) {
     height: 85vh;
-    overflow-y: scroll;
-    ::-webkit-scrollbar {
-      display: none;
-    }
-    -ms-overflow-style: none;
-    scrollbar-width: none;
   }
 `;
