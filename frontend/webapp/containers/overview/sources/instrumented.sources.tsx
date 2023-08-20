@@ -14,10 +14,7 @@ import { useQuery } from 'react-query';
 import { getSources } from '@/services';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useNotification } from '@/hooks';
-<<<<<<< HEAD
 import { Loader } from '@keyval-dev/design-system';
-=======
->>>>>>> b72b766
 
 export function InstrumentedSourcesContainer() {
   const router = useRouter();
