@@ -20,7 +20,7 @@ import (
 
 const (
 	defaultPort   = 3000
-	uiDownloadUrl = "https://github.com/keyval-dev/odigos/releases/download/v%s/odigos-ui_%s_%s_%s.tar.gz"
+	uiDownloadUrl = "https://github.com/keyval-dev/odigos/releases/download/v%s/ui_%s_%s_%s.tar.gz"
 )
 
 // uiCmd represents the ui command
