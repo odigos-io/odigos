@@ -16,8 +16,6 @@ spec:
   fields:
     - name: JAEGER_URL
       displayName: Endpoint
-      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
-      thumbnailUrl: https://www.jaegertracing.io/img/jaeger-logo.png
       componentType: input
       componentProps:
         type: text
