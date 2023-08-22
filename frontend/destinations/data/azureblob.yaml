@@ -16,13 +16,11 @@ spec:
   fields:
     - name: AZURE_BLOB_ACCOUNT_NAME
       displayName: Account Name
-      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
       componentProps:
         type: text
     - name: AZURE_BLOB_CONTAINER_NAME
       displayName: Container Name
-      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
       componentProps:
         type: text

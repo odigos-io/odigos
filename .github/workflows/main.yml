@@ -71,16 +71,6 @@ jobs:
             ghcr.io/keyval-dev/odigos/odiglet:${{ steps.vars.outputs.tag }}
             keyval/odigos-odiglet:${{ steps.vars.outputs.tag }}
           platforms: linux/amd64,linux/arm64
-      - name: Build UI Image
-        uses: docker/build-push-action@v4
-        with:
-          file: ui/Dockerfile
-          context: ui/
-          push: true
-          tags: |
-            ghcr.io/keyval-dev/odigos/ui:${{ steps.vars.outputs.tag }}
-            keyval/odigos-ui:${{ steps.vars.outputs.tag }}
-          platforms: linux/amd64,linux/arm64
       - uses: actions/setup-node@v3
         with:
           node-version: 18

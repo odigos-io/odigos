@@ -16,14 +16,12 @@ spec:
   fields:
     - name: DATADOG_API_KEY
       displayName: API Key
-      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
       componentProps:
         type: password
       secret: true
     - name: DATADOG_SITE
       displayName: Site
-      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: dropdown
       componentProps:
         values:
