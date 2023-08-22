@@ -16,7 +16,6 @@ spec:
   fields:
     - name: NEWRELIC_API_KEY
       displayName: License Key
-      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
       componentProps:
         type: password
