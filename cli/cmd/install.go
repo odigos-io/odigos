@@ -56,8 +56,6 @@ var installCmd = &cobra.Command{
 			client, cmd, ns, createScheduler)
 		createKubeResourceWithLogging(ctx, "Deploying Odiglet",
 			client, cmd, ns, createOdiglet)
-		createKubeResourceWithLogging(ctx, "Deploying UI",
-			client, cmd, ns, createUI)
 		createKubeResourceWithLogging(ctx, "Deploying Autoscaler",
 			client, cmd, ns, createAutoscaler)
 
@@ -178,41 +176,6 @@ func createScheduler(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	}
 
 	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewSchedulerDeployment(versionFlag), metav1.CreateOptions{})
-	return err
-}
-
-func createUI(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewUIServiceAccount(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().Roles(ns).Create(ctx, resources.NewUIRole(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewUIRoleBinding(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewUIClusterRole(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewUIClusterRoleBinding(ns), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewUIDeployment(versionFlag), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.CoreV1().Services(ns).Create(ctx, resources.NewUIService(), metav1.CreateOptions{})
 	return err
 }
 
