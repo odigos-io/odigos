@@ -16,13 +16,11 @@ spec:
   fields:
     - name: S3_BUCKET
       displayName: Bucket Name
-      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
       componentProps:
         type: text
     - name: S3_REGION
       displayName: Bucket Region
-      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
       componentProps:
         type: text

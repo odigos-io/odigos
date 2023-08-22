@@ -16,7 +16,6 @@ spec:
   fields:
     - name: LIGHTSTEP_ACCESS_TOKEN
       displayName: Access Token
-      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
       componentProps:
         type: password

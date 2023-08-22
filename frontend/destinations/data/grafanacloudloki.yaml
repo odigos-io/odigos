@@ -16,20 +16,17 @@ spec:
   fields:
     - name: GRAFANA_API_KEY
       displayName: API Key
-      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
       componentProps:
         type: password
       secret: true
     - name: GRAFANA_LOKI_URL
       displayName: Endpoint
-      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
       componentProps:
         type: text
     - name: GRAFANA_LOKI_USER
       displayName: Username
-      videoUrl: https://www.youtube.com/watch?v=9QZxw-mtZmU
       componentType: input
       componentProps:
         type: text
