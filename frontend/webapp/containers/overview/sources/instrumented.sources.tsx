@@ -1,28 +1,30 @@
-"use client";
-import React, { useEffect } from "react";
+'use client';
+import React, { useEffect } from 'react';
 import {
   NOTIFICATION,
   OVERVIEW,
   PARAMS,
   QUERIES,
   ROUTES,
-} from "@/utils/constants";
-import { OverviewHeader } from "@/components/overview";
-import { SourcesContainerWrapper } from "./sources.styled";
-import { ManageSources } from "./manage.sources";
-import { useQuery } from "react-query";
-import { getSources } from "@/services";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useNotification } from "@/hooks";
+} from '@/utils/constants';
+import { OverviewHeader } from '@/components/overview';
+import { SourcesContainerWrapper } from './sources.styled';
+import { ManageSources } from './manage.sources';
+import { useQuery } from 'react-query';
+import { getSources } from '@/services';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useNotification } from '@/hooks';
+import { Loader } from '@keyval-dev/design-system';
 
 export function InstrumentedSourcesContainer() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { show, Notification } = useNotification();
-  const { data: sources, refetch: refetchSources } = useQuery(
-    [QUERIES.API_SOURCES],
-    getSources
-  );
+  const {
+    data: sources,
+    isLoading,
+    refetch: refetchSources,
+  } = useQuery([QUERIES.API_SOURCES], getSources);
   useEffect(onPageLoad, [searchParams]);
 
   function getMessage(status: string) {
@@ -34,7 +36,7 @@ export function InstrumentedSourcesContainer() {
       case PARAMS.UPDATED:
         return OVERVIEW.SOURCE_UPDATE_SUCCESS;
       default:
-        return "";
+        return '';
     }
   }
 
@@ -53,10 +55,15 @@ export function InstrumentedSourcesContainer() {
   return (
     <SourcesContainerWrapper>
       <OverviewHeader title={OVERVIEW.MENU.SOURCES} />
-      <ManageSources
-        onAddClick={() => router.push(ROUTES.CREATE_SOURCE)}
-        sources={sources}
-      />
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <ManageSources
+          onAddClick={() => router.push(ROUTES.CREATE_SOURCE)}
+          sources={sources}
+        />
+      )}
+
       <Notification />
     </SourcesContainerWrapper>
   );
