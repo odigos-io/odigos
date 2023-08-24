@@ -1,0 +1,1 @@
+self.__RSC_CSS_MANIFEST={"cssImports":{"/Users/alon/Desktop/odigos/ui/app/setup1/page.tsx":["/Users/alon/Desktop/odigos/ui/design.system/drop.down/drop.down.css"]},"cssModules":{"/Users/alon/Desktop/odigos/ui/app/setup1/page":["/Users/alon/Desktop/odigos/ui/design.system/drop.down/drop.down.css"]}}

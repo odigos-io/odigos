@@ -1,0 +1,23 @@
+{
+  "/_app": "pages/_app.js",
+  "/_document": "pages/_document.js",
+  "/api/appselector": "pages/api/appselector.js",
+  "/api/apps": "pages/api/apps.js",
+  "/api/dest/[destname]": "pages/api/dest/[destname].js",
+  "/api/collectors": "pages/api/collectors.js",
+  "/api/overview": "pages/api/overview.js",
+  "/api/dests": "pages/api/dests.js",
+  "/api/v2/applications": "pages/api/v2/applications.js",
+  "/api/source/[namespace]/[kind]/[name]": "pages/api/source/[namespace]/[kind]/[name].js",
+  "/collectors": "pages/collectors.html",
+  "/_error": "pages/_error.js",
+  "/dest/new": "pages/dest/new.html",
+  "/destinations": "pages/destinations.html",
+  "/setup": "pages/setup.html",
+  "/sources": "pages/sources.html",
+  "/dest/[destname]": "pages/dest/[destname].js",
+  "/dest/new/[destname]": "pages/dest/new/[destname].js",
+  "/source/[namespace]/[kind]/[name]": "pages/source/[namespace]/[kind]/[name].js",
+  "/": "pages/index.js",
+  "/404": "pages/404.html"
+}
