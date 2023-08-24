@@ -3,6 +3,8 @@ import { DropdownWrapper } from './sources.option.menu.styled';
 import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from '@/design.system';
 import { SETUP } from '@/utils/constants';
 
+const DEFAULT_DROPDOWN_VALUE = { id: 0, label: 'default' };
+
 export function FilterSourcesOptions({
   setCurrentItem,
   data,
@@ -22,7 +24,7 @@ export function FilterSourcesOptions({
       <DropdownWrapper>
         <KeyvalText size={14}>{SETUP.MENU.NAMESPACES}</KeyvalText>
         <KeyvalDropDown
-          value={data[0]}
+          value={DEFAULT_DROPDOWN_VALUE}
           data={data}
           onChange={handleDropDownChange}
         />

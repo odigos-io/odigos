@@ -11,19 +11,21 @@ import { ManageDestination, OverviewHeader } from '@/components/overview';
 import { useNotification, useSectionData } from '@/hooks';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { styled } from 'styled-components';
+import { HideScroll } from '@/styles/styled';
 
 const DEST = 'dest';
 
 const NewDestinationContainer = styled.div`
   padding: 20px 36px;
+
+  overflow: scroll;
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
   @media screen and (max-height: 750px) {
     height: 85vh;
-    overflow-y: scroll;
-    ::-webkit-scrollbar {
-      display: none;
-    }
-    -ms-overflow-style: none;
-    scrollbar-width: none;
   }
   @media screen and (max-width: 1300px) {
     height: 80vh;
@@ -101,15 +103,17 @@ export function NewDestinationForm() {
         title={OVERVIEW.MENU.DESTINATIONS}
         onBackClick={handleBackPress}
       />
-      {destinationType && sectionData && (
-        <NewDestinationContainer>
-          <ManageDestination
-            destinationType={destinationType}
-            selectedDestination={sectionData}
-            onSubmit={onSubmit}
-          />
-        </NewDestinationContainer>
-      )}
+      <HideScroll>
+        {destinationType && sectionData && (
+          <NewDestinationContainer>
+            <ManageDestination
+              destinationType={destinationType}
+              selectedDestination={sectionData}
+              onSubmit={onSubmit}
+            />
+          </NewDestinationContainer>
+        )}
+      </HideScroll>
       <Notification />
     </>
   );

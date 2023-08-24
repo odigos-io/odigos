@@ -9,6 +9,7 @@ import { deleteDestination, getDestinations } from '@/services/destinations';
 import { ManageDestinationWrapper } from './destinations.styled';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useNotification } from '@/hooks';
+import { HideScroll } from '@/styles/styled';
 const DEST = 'dest';
 
 export function UpdateDestinationFlow() {
@@ -93,15 +94,17 @@ export function UpdateDestinationFlow() {
   return destinationTypeLoading ? (
     <KeyvalLoader />
   ) : (
-    <ManageDestinationWrapper>
-      <ManageDestination
-        onBackClick={() => router.back()}
-        destinationType={destinationType}
-        selectedDestination={manageData}
-        onSubmit={onSubmit}
-        onDelete={onDelete}
-      />
-      <Notification />
-    </ManageDestinationWrapper>
+    <HideScroll>
+      <ManageDestinationWrapper>
+        <ManageDestination
+          onBackClick={() => router.back()}
+          destinationType={destinationType}
+          selectedDestination={manageData}
+          onSubmit={onSubmit}
+          onDelete={onDelete}
+        />
+        <Notification />
+      </ManageDestinationWrapper>
+    </HideScroll>
   );
 }
