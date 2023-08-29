@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	defaultNamespace = "odigos-system"
+	defaultNamespace        = "odigos-system"
+	odigosCloudProxyVersion = "v0.2.1"
 )
 
 var (
@@ -248,7 +249,7 @@ func createKeyvalProxy(ctx context.Context, cmd *cobra.Command, client *kube.Cli
 		return err
 	}
 
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewKeyvalProxyDeployment("v0.2.1", ns), metav1.CreateOptions{})
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewKeyvalProxyDeployment(odigosCloudProxyVersion, ns), metav1.CreateOptions{})
 	return err
 }
 
