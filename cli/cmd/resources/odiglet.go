@@ -10,9 +10,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	odigletImage = "keyval/odigos-odiglet"
-)
+const ()
+
+var OdigletImage string
 
 func NewOdigletServiceAccount() *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
@@ -262,7 +262,7 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 					Containers: []corev1.Container{
 						{
 							Name:  "odiglet",
-							Image: fmt.Sprintf("%s:%s", odigletImage, version),
+							Image: fmt.Sprintf("%s:%s", OdigletImage, version),
 							Env: []corev1.EnvVar{
 								{
 									Name: "NODE_NAME",
