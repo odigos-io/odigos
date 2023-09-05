@@ -3,6 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/pkg/confirm"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
@@ -11,8 +14,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -26,13 +27,7 @@ const (
 // uninstallCmd represents the uninstall command
 var uninstallCmd = &cobra.Command{
 	Use:   "uninstall",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Unistall Odigos from your cluster",
 	Run: func(cmd *cobra.Command, args []string) {
 		client := kube.CreateClient(cmd)
 		ctx := cmd.Context()
@@ -59,6 +54,8 @@ to quickly create a Cobra application.`,
 			client, cmd, ns, uninstallCRDs)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos RBAC",
 			client, cmd, ns, uninstallRBAC)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
+			client, cmd, ns, uninstallSecrets)
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
 			client, cmd, ns, uninstallNamespace)
 
@@ -272,6 +269,26 @@ func uninstallRBAC(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 
 	for _, i := range list2.Items {
 		err = client.RbacV1().ClusterRoleBindings().Delete(ctx, i.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func uninstallSecrets(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	list, err := client.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: labels.OdigosSystem,
+		}),
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, i := range list.Items {
+		err = client.CoreV1().Secrets(ns).Delete(ctx, i.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
