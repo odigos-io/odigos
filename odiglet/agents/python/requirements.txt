@@ -226,7 +226,7 @@ opentelemetry-propagator-aws-xray==1.0.1
     # via
     #   -r requirements.in
     #   opentelemetry-instrumentation-botocore
-opentelemetry-propagator-b3==1.19.0
+opentelemetry-propagator-b3==1.20.0
     # via -r requirements.in
 opentelemetry-propagator-jaeger==1.19.0
     # via -r requirements.in
@@ -305,9 +305,7 @@ psutil==5.9.5
 requests==2.31.0
     # via opentelemetry-exporter-otlp-proto-http
 typing-extensions==4.7.1
-    # via
-    #   asgiref
-    #   opentelemetry-sdk
+    # via opentelemetry-sdk
 urllib3==2.0.3
     # via requests
 wrapt==1.15.0
