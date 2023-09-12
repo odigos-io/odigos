@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/frontend/destinations"
+	"github.com/keyval-dev/odigos/destinations"
 	"github.com/keyval-dev/odigos/frontend/kube"
 	k8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
