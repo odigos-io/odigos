@@ -64,8 +64,8 @@ export function getNodes(
     });
     if (index === centerIndex && addCenterNode) {
       nodes.push({
-        id: "centerNode",
-        type: "custom",
+        id: 'centerNode',
+        type: 'custom',
         data: null,
         position: { x: 400, y },
       });
@@ -82,18 +82,18 @@ export function getEdges(
   return [
     ...destinations.flatMap((node, index) => ({
       id: `edges-${node.id}`,
-      source: "centerNode",
+      source: 'centerNode',
       target: `destination-${index}`,
       animated: true,
-      style: { stroke: "#96f3ff8e" },
+      style: { stroke: '#96f3ff8e' },
       data: null,
     })),
     ...sources.flatMap((node, index) => ({
       id: `edges-${node.id}`,
       source: `namespace-${index}`,
-      target: "centerNode",
+      target: 'centerNode',
       animated: true,
-      style: { stroke: "#96f3ff8e" },
+      style: { stroke: '#96f3ff8e' },
       data: null,
     })),
   ];
