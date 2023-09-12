@@ -1,11 +1,11 @@
-"use client";
-import React, { useCallback, useMemo, useState } from "react";
-import { KeyvalDataFlow, KeyvalLoader } from "@/design.system";
-import { QUERIES } from "@/utils/constants";
-import { useQuery } from "react-query";
-import { getDestinations, getSources } from "@/services";
-import { getEdges, groupSourcesNamespace, getNodes } from "./utils";
-import { OverviewDataFlowWrapper } from "./overview.styled";
+'use client';
+import React, { useCallback, useMemo, useState } from 'react';
+import { KeyvalDataFlow, KeyvalLoader } from '@/design.system';
+import { QUERIES } from '@/utils/constants';
+import { useQuery } from 'react-query';
+import { getDestinations, getSources } from '@/services';
+import { getEdges, groupSourcesNamespace, getNodes } from './utils';
+import { OverviewDataFlowWrapper } from './overview.styled';
 
 const NAMESPACE_NODE_HEIGHT = 84;
 const NAMESPACE_NODE_POSITION = 0;
@@ -29,10 +29,11 @@ export function OverviewContainer() {
   const { data: sources } = useQuery([QUERIES.API_SOURCES], getSources);
 
   const sourcesNodes = useMemo(() => {
+    const groupedSources = groupSourcesNamespace(sources);
     const nodes = getNodes(
       containerHeight,
-      groupSourcesNamespace(sources),
-      "namespace",
+      groupedSources.length > 1 ? groupSourcesNamespace(sources) : sources,
+      'namespace',
       NAMESPACE_NODE_HEIGHT,
       NAMESPACE_NODE_POSITION,
       true
@@ -46,7 +47,7 @@ export function OverviewContainer() {
       getNodes(
         containerHeight,
         destinations,
-        "destination",
+        'destination',
         destinations?.length > 1
           ? DESTINATION_NODE_HEIGHT
           : NAMESPACE_NODE_HEIGHT,

@@ -46,6 +46,7 @@ export const ManagedListWrapper = styled.div`
   overflow: scroll;
   gap: 24px;
   grid-template-columns: repeat(5, 1fr);
+  height: 75vh;
   ::-webkit-scrollbar {
     display: none;
   }
@@ -62,10 +63,10 @@ export const ManagedListWrapper = styled.div`
     grid-template-columns: repeat(2, 1fr);
   }
   @media screen and (max-height: 800px) {
-    height: 60vh;
+    height: 70vh;
   }
   @media screen and (max-height: 700px) {
-    height: 50vh;
+    height: 60vh;
   }
 `;
 
