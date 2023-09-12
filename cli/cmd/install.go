@@ -16,10 +16,12 @@ import (
 )
 
 const (
-	defaultNamespace = "odigos-system"
+	defaultNamespace        = "odigos-system"
+	odigosCloudProxyVersion = "v0.2.1"
 )
 
 var (
+	odigosCloudApiKeyFlag    string
 	namespaceFlag            string
 	versionFlag              string
 	skipWait                 bool
@@ -37,6 +39,7 @@ var installCmd = &cobra.Command{
 	Short: "Install Odigos",
 	Long:  `Install Odigos in your cluster. This command will install the Odigos CRDs, the Odigos Instrumentor, Scheduler, Autoscaler and Odiglet.`,
 	Run: func(cmd *cobra.Command, args []string) {
+
 		client := kube.CreateClient(cmd)
 		ctx := cmd.Context()
 		ns := cmd.Flag("namespace").Value.String()
@@ -58,6 +61,11 @@ var installCmd = &cobra.Command{
 			client, cmd, ns, createOdiglet)
 		createKubeResourceWithLogging(ctx, "Deploying Autoscaler",
 			client, cmd, ns, createAutoscaler)
+
+		if odigosCloudApiKeyFlag != "" {
+			createKubeResourceWithLogging(ctx, "Deploying Odigos Cloud Proxy",
+				client, cmd, ns, createKeyvalProxy)
+		}
 
 		if !skipWait {
 			l := log.Print("Waiting for Odigos pods to be ready ...")
@@ -234,6 +242,17 @@ func createOdiglet(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 	return err
 }
 
+func createKeyvalProxy(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+
+	_, err := client.CoreV1().Secrets(ns).Create(ctx, resources.NewKeyvalSecret(odigosCloudApiKeyFlag), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewKeyvalProxyDeployment(odigosCloudProxyVersion, ns), metav1.CreateOptions{})
+	return err
+}
+
 func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, cmd *cobra.Command, ns string, create ResourceCreationFunc) {
 	l := log.Print(msg)
 	err := create(ctx, cmd, client, ns)
@@ -247,8 +266,11 @@ func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube
 func init() {
 	rootCmd.AddCommand(installCmd)
 	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", defaultNamespace, "target namespace for Odigos installation")
+	installCmd.Flags().StringVarP(&odigosCloudApiKeyFlag, "api-key", "k", "", "api key for managed odigos")
 	installCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "target version for Odigos installation")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "Skip waiting for pods to be ready")
 	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "Enable telemetry")
 	installCmd.Flags().BoolVar(&sidecarInstrumentation, "sidecar-instrumentation", false, "Used sidecars for eBPF instrumentations")
+	installCmd.Flags().StringVar(&resources.OdigletImage, "odiglet-image", "keyval/odigos-odiglet", "odiglet container image")
+	installCmd.Flags().StringVar(&resources.InstrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image")
 }

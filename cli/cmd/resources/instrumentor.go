@@ -12,9 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	instrumentorImage = "keyval/odigos-instrumentor"
-)
+var InstrumentorImage string
 
 func NewInstrumentorServiceAccount() *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
@@ -422,7 +420,7 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 					Containers: []corev1.Container{
 						{
 							Name:  "manager",
-							Image: fmt.Sprintf("%s:%s", instrumentorImage, version),
+							Image: fmt.Sprintf("%s:%s", InstrumentorImage, version),
 							Command: []string{
 								"/app",
 							},
