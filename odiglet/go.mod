@@ -6,7 +6,7 @@ require (
 	github.com/fntlnz/mountinfo v1.0.1
 	github.com/go-logr/logr v1.2.4
 	github.com/go-logr/zapr v1.2.4
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/keyval-dev/odigos/api v0.0.0-00010101000000-000000000000
 	github.com/keyval-dev/odigos/common v0.0.0
 	github.com/kubevirt/device-plugin-manager v1.19.4
@@ -14,9 +14,9 @@ require (
 	go.opentelemetry.io/auto v0.2.1-alpha
 	go.uber.org/zap v1.25.0
 	google.golang.org/grpc v1.57.0
-	k8s.io/api v0.28.0
-	k8s.io/apimachinery v0.28.0
-	k8s.io/client-go v0.28.0
+	k8s.io/api v0.28.1
+	k8s.io/apimachinery v0.28.1
+	k8s.io/client-go v0.28.1
 	k8s.io/kubelet v0.28.0
 	sigs.k8s.io/controller-runtime v0.15.1
 )
