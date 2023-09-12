@@ -1,0 +1,21 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: chronosphere
+  displayName: Chronosphere
+  category: managed
+spec:
+  image: chronosphere.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: CHRONOSPHERE_COLLECTOR
+      displayName: Collector Endpoint
+      componentType: input
+      componentProps:
+        type: text

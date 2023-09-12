@@ -1,0 +1,33 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: qryn
+  displayName: qryn
+  category: managed
+spec:
+  image: qryn.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: QRYN_API_SECRET
+      displayName: API Secret
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
+    - name: QRYN_API_KEY
+      displayName: API Key
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
+    - name: QRYN_URL
+      displayName: API Url
+      componentType: input
+      componentProps:
+        type: text

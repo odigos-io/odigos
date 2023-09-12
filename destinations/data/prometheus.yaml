@@ -1,0 +1,21 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: prometheus
+  displayName: Prometheus
+  category: self hosted
+spec:
+  image: prometheus.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: PROMETHEUS_REMOTEWRITE_URL
+      displayName: Remote Write URL
+      componentType: input
+      componentProps:
+        type: text

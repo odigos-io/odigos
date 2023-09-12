@@ -1,0 +1,21 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: loki
+  displayName: Loki
+  category: self hosted
+spec:
+  image: loki.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: false
+    logs:
+      supported: true
+  fields:
+    - name: LOKI_URL
+      displayName: Endpoint
+      componentType: input
+      componentProps:
+        type: text

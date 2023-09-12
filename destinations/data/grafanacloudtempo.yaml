@@ -1,0 +1,32 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: grafanacloudtempo
+  displayName: Grafana Cloud Tempo
+  category: managed
+spec:
+  image: grafana.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  fields:
+    - name: GRAFANA_API_KEY
+      displayName: API Key
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
+    - name: GRAFANA_TEMPO_URL
+      displayName: Endpoint
+      componentType: input
+      componentProps:
+        type: text
+    - name: GRAFANA_TEMPO_USERNAME
+      displayName: Username
+      componentType: input
+      componentProps:
+        type: text

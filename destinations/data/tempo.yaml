@@ -1,0 +1,21 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: tempo
+  displayName: Tempo
+  category: self hosted
+spec:
+  image: tempo.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  fields:
+    - name: TEMPO_URL
+      displayName: Endpoint
+      componentType: input
+      componentProps:
+        type: text

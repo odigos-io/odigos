@@ -1,0 +1,27 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: dynatrace
+  displayName: Dynatrace
+  category: managed
+spec:
+  image: dynatrace.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: DYNATRACE_URL
+      displayName: Tenant URL
+      componentType: input
+      componentProps:
+        type: text
+    - name: DYNATRACE_API_TOKEN
+      displayName: API Access Token
+      componentType: input
+      componentProps:
+        type: password
+      secret: true

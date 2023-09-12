@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/frontend/destinations"
+	"github.com/keyval-dev/odigos/destinations"
 
 	"github.com/gin-contrib/cors"
 

@@ -1,0 +1,27 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: splunk
+  displayName: Splunk
+  category: managed
+spec:
+  image: splunk.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  fields:
+    - name: SPLUNK_ACCESS_TOKEN
+      displayName: Access Token
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
+    - name: SPLUNK_REALM
+      displayName: Realm
+      componentType: input
+      componentProps:
+        type: text

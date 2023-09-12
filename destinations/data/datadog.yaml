@@ -1,0 +1,33 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: datadog
+  displayName: Datadog
+  category: managed
+spec:
+  image: datadog.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: DATADOG_API_KEY
+      displayName: API Key
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
+    - name: DATADOG_SITE
+      displayName: Site
+      componentType: dropdown
+      componentProps:
+        values:
+          - us3.datadoghq.com
+          - datadoghq.com
+          - us5.datadoghq.com
+          - datadoghq.eu
+          - ddog-gov.com
+          - ap1.datadoghq.com
