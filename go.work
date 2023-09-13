@@ -5,6 +5,7 @@ use (
 	./autoscaler
 	./cli
 	./common
+	./destinations
 	./frontend
 	./instrumentor
 	./odiglet
