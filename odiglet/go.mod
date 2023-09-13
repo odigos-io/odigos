@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/keyval-dev/odigos/api v0.0.0-00010101000000-000000000000
 	github.com/keyval-dev/odigos/common v0.0.0
-	github.com/kubevirt/device-plugin-manager v1.19.4
+	github.com/kubevirt/device-plugin-manager v1.19.5
 	github.com/otiai10/copy v1.12.0
 	go.opentelemetry.io/auto v0.2.1-alpha
 	go.uber.org/zap v1.25.0
