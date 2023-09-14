@@ -136,6 +136,13 @@ func syncObjectsInNamespace(ctx context.Context, ns *corev1.Namespace, objects [
 
 	for _, dep := range deps.Items {
 		labeled := isLabeled(&dep)
+		if !labeled {
+			if dep.Labels != nil && dep.Labels[consts.OdigosInstrumentationLabel] == consts.InstrumentationDisabled {
+				// skip deployments which are explicitly disabled
+				continue
+			}
+		}
+
 		userSelection, exists := findObject(objects, dep.Name, ApplicationKindDeployment)
 		if !exists {
 			log.Printf("Deployment %s not found in request, skipping\n", dep.Name)
