@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"strings"
 
 	"github.com/keyval-dev/odigos/instrumentor/patch"
@@ -82,9 +83,10 @@ func main() {
 	setupLog.Info("ignored namespaces from flags", "namespaces", ignoredNameSpaces)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "201bdfa0.odigos.io",
