@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/keyval-dev/odigos/cli/pkg/containers"
+
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/cmd/resources/crds"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
@@ -273,4 +275,5 @@ func init() {
 	installCmd.Flags().BoolVar(&sidecarInstrumentation, "sidecar-instrumentation", false, "Used sidecars for eBPF instrumentations")
 	installCmd.Flags().StringVar(&resources.OdigletImage, "odiglet-image", "keyval/odigos-odiglet", "odiglet container image")
 	installCmd.Flags().StringVar(&resources.InstrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image")
+	installCmd.Flags().StringVar(&containers.ImagePrefix, "image-prefix", "", "Prefix for all container images")
 }

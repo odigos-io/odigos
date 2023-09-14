@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"strings"
 
 	"github.com/keyval-dev/odigos/common/utils"
@@ -33,10 +34,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 
 	"github.com/keyval-dev/odigos/autoscaler/controllers"
+	nameutils "github.com/keyval-dev/odigos/autoscaler/utils"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -64,6 +67,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&imagePullSecretsString, "image-pull-secrets", "",
 		"The image pull secrets to use for the collectors created by autoscaler")
+	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler")
 
 	opts := zap.Options{
 		Development: true,
@@ -78,13 +82,18 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
 		HealthProbeBindAddress: probeAddr,
-		Namespace:              utils.GetCurrentNamespace(),
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "f681cfed.odigos.io",
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				utils.GetCurrentNamespace(): {},
+			},
+		},
+		LeaderElection:   enableLeaderElection,
+		LeaderElectionID: "f681cfed.odigos.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
