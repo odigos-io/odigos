@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"fmt"
+	"github.com/keyval-dev/odigos/cli/pkg/containers"
 
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
@@ -346,7 +346,7 @@ func NewAutoscalerLeaderElectionRoleBinding() *rbacv1.RoleBinding {
 }
 
 func NewAutoscalerDeployment(version string) *appsv1.Deployment {
-	return &appsv1.Deployment{
+	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
@@ -381,7 +381,7 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  "manager",
-							Image: fmt.Sprintf("%s:%s", autoscalerImage, version),
+							Image: containers.GetImageName(autoscalerImage, version),
 							Command: []string{
 								"/app",
 							},
@@ -440,4 +440,11 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 			MinReadySeconds: 0,
 		},
 	}
+
+	if containers.ImagePrefix != "" {
+		dep.Spec.Template.Spec.Containers[0].Args = append(dep.Spec.Template.Spec.Containers[0].Args,
+			"--image-prefix="+containers.ImagePrefix)
+	}
+
+	return dep
 }

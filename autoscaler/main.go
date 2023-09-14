@@ -37,6 +37,7 @@ import (
 	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 
 	"github.com/keyval-dev/odigos/autoscaler/controllers"
+	nameutils "github.com/keyval-dev/odigos/autoscaler/utils"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -64,6 +65,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&imagePullSecretsString, "image-pull-secrets", "",
 		"The image pull secrets to use for the collectors created by autoscaler")
+	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler")
 
 	opts := zap.Options{
 		Development: true,

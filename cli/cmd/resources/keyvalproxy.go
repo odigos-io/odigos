@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"fmt"
+	"github.com/keyval-dev/odigos/cli/pkg/containers"
 
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
@@ -70,7 +70,7 @@ func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  keyvalProxyAppName,
-							Image: fmt.Sprintf("%s:%s", keyvalProxyImage, version),
+							Image: containers.GetImageName(keyvalProxyImage, version),
 							Args: []string{
 								"--health-probe-bind-address=:8081",
 								"--metrics-bind-address=127.0.0.1:8080",
