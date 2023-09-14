@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"fmt"
+	"github.com/keyval-dev/odigos/cli/pkg/containers"
 
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
@@ -211,7 +211,7 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  "manager",
-							Image: fmt.Sprintf("%s:%s", schedulerImage, version),
+							Image: containers.GetImageName(schedulerImage, version),
 							Command: []string{
 								"/app",
 							},

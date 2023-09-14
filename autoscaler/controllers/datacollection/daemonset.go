@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/keyval-dev/odigos/autoscaler/utils"
+
 	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection/custom"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -140,7 +142,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 					Containers: []corev1.Container{
 						{
 							Name:    containerName,
-							Image:   containerImage,
+							Image:   utils.GetContainerImage(containerImage),
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, configKey)},
 							VolumeMounts: []corev1.VolumeMount{
 								{
