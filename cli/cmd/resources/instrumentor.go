@@ -3,6 +3,8 @@ package resources
 import (
 	"fmt"
 
+	"github.com/keyval-dev/odigos/cli/pkg/containers"
+
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -420,7 +422,7 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 					Containers: []corev1.Container{
 						{
 							Name:  "manager",
-							Image: fmt.Sprintf("%s:%s", InstrumentorImage, version),
+							Image: containers.GetImageName(InstrumentorImage, version),
 							Command: []string{
 								"/app",
 							},

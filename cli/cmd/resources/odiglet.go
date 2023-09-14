@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"fmt"
+	"github.com/keyval-dev/odigos/cli/pkg/containers"
 
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
@@ -262,7 +262,7 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 					Containers: []corev1.Container{
 						{
 							Name:  "odiglet",
-							Image: fmt.Sprintf("%s:%s", OdigletImage, version),
+							Image: containers.GetImageName(OdigletImage, version),
 							Env: []corev1.EnvVar{
 								{
 									Name: "NODE_NAME",
