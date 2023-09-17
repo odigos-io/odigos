@@ -123,7 +123,7 @@ opentelemetry-instrumentation==0.40b0
     #   opentelemetry-instrumentation-urllib
     #   opentelemetry-instrumentation-urllib3
     #   opentelemetry-instrumentation-wsgi
-opentelemetry-instrumentation-aio-pika==0.40b0
+opentelemetry-instrumentation-aio-pika==0.41b0
     # via -r requirements.in
 opentelemetry-instrumentation-aiohttp-client==0.40b0
     # via -r requirements.in
@@ -305,9 +305,7 @@ psutil==5.9.5
 requests==2.31.0
     # via opentelemetry-exporter-otlp-proto-http
 typing-extensions==4.7.1
-    # via
-    #   asgiref
-    #   opentelemetry-sdk
+    # via opentelemetry-sdk
 urllib3==2.0.3
     # via requests
 wrapt==1.15.0
