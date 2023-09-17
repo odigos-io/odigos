@@ -8,7 +8,7 @@ opentelemetry-propagator-jaeger==1.19.0
 opentelemetry-propagator-aws-xray==1.0.1
 
 opentelemetry-instrumentation==0.40b0
-opentelemetry-propagator-ot-trace==0.40b0
+opentelemetry-propagator-ot-trace==0.41b0
 
 # Copied in from https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/instrumentation
 # except for aws-lambda
