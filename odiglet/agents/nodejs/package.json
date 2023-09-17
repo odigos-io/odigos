@@ -25,6 +25,6 @@
     "@opentelemetry/resource-detector-gcp": "0.29.0",
     "@opentelemetry/resources": "1.15.1",
     "@opentelemetry/sdk-metrics": "1.15.1",
-    "@opentelemetry/sdk-node": "0.41.1"
+    "@opentelemetry/sdk-node": "0.43.0"
   }
 }
