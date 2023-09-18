@@ -11,33 +11,81 @@ updates:
     schedule:
       day: sunday
       interval: weekly
+    groups:
+      k8s-dependencies:
+        patterns:
+          - "k8s.io*"
+          - "sigs.k8s.io*"
+      otel-dependencies:
+        patterns:
+          - "go.opentelemetry.io*"
   - package-ecosystem: gomod
     directory: /odiglet
     schedule:
       day: sunday
       interval: weekly
+    groups:
+      k8s-dependencies:
+        patterns:
+          - "k8s.io*"
+          - "sigs.k8s.io*"
+      otel-dependencies:
+        patterns:
+          - "go.opentelemetry.io*"
   - package-ecosystem: gomod
     directory: /scheduler
     schedule:
       day: sunday
       interval: weekly
+    groups:
+      k8s-dependencies:
+        patterns:
+          - "k8s.io*"
+          - "sigs.k8s.io*"
+      otel-dependencies:
+        patterns:
+          - "go.opentelemetry.io*"
   - package-ecosystem: gomod
     directory: /cli
     schedule:
       day: sunday
       interval: weekly
+    groups:
+      k8s-dependencies:
+        patterns:
+          - "k8s.io*"
+          - "sigs.k8s.io*"
+      otel-dependencies:
+        patterns:
+          - "go.opentelemetry.io*"
   - package-ecosystem: gomod
     directory: /instrumentor
     schedule:
       day: sunday
       interval: weekly
+    groups:
+      k8s-dependencies:
+        patterns:
+          - "k8s.io*"
+          - "sigs.k8s.io*"
+      otel-dependencies:
+        patterns:
+          - "go.opentelemetry.io*"
   - package-ecosystem: npm
     directory: /odiglet/agents/nodejs
     schedule:
       day: sunday
       interval: weekly
+    groups:
+      otel-dependencies:
+        patterns:
+          - "@opentelemetry*"
   - package-ecosystem: pip
     directory: /odiglet/agents/python
     schedule:
       day: sunday
       interval: weekly
+    groups:
+      otel-dependencies:
+        patterns:
+          - "opentelemetry*"
