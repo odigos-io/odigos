@@ -36,7 +36,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build Autoscaler Image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           push: true
           tags: |
@@ -45,7 +45,7 @@ jobs:
           build-args: SERVICE_NAME=autoscaler
           platforms: linux/amd64,linux/arm64
       - name: Build Scheduler Image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           push: true
           tags: |
@@ -54,7 +54,7 @@ jobs:
           build-args: SERVICE_NAME=scheduler
           platforms: linux/amd64,linux/arm64
       - name: Build Instrumentor Image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           push: true
           tags: |
@@ -63,7 +63,7 @@ jobs:
           build-args: SERVICE_NAME=instrumentor
           platforms: linux/amd64,linux/arm64
       - name: Build Odiglet Image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           file: odiglet/Dockerfile
           push: true
