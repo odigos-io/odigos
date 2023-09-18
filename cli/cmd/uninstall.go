@@ -11,6 +11,7 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	"github.com/keyval-dev/odigos/cli/pkg/log"
+	"github.com/keyval-dev/odigos/common/consts"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -62,8 +63,14 @@ var uninstallCmd = &cobra.Command{
 		// Wait for namespace to be deleted
 		waitForNamespaceDeletion(ctx, client, ns)
 
-		l := log.Print("Rolling back odigos changes to pods")
+		l := log.Print("Rolling back odigos changes to pods\n")
 		err = rollbackPodChanges(ctx, client)
+		if err != nil {
+			l.Error(err)
+		}
+
+		l = log.Print("Rolling back odigos changes to namespaces\n")
+		err = rollbackNamespaceChanges(ctx, client)
 		if err != nil {
 			l.Error(err)
 		}
@@ -159,6 +166,29 @@ func rollbackPodTemplateSpec(ctx context.Context, client *kube.Client, pts *v1.P
 			pts.Spec.Volumes = append(pts.Spec.Volumes[:i], pts.Spec.Volumes[i+1:]...)
 		}
 	}
+}
+
+func rollbackNamespaceChanges(ctx context.Context, client *kube.Client) error {
+	var enabledOdigosInstrumentationLabel = map[string]string{
+		consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled,
+	}
+	ns, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: enabledOdigosInstrumentationLabel,
+		}),
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range ns.Items {
+		delete((&n).Labels, consts.OdigosInstrumentationLabel)
+		_, err := client.CoreV1().Namespaces().Update(ctx, &n, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func uninstallDeployments(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
