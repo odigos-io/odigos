@@ -16,6 +16,10 @@ func Ask(text string) (bool, error) {
 		return false, err
 	}
 
+	if strings.Replace(response, "\r", "", -1) == "\n" {
+		return true, nil
+	}
+
 	response = strings.ToLower(strings.TrimSpace(response))
 
 	if response == "y" || response == "yes" {
