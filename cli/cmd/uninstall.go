@@ -181,7 +181,7 @@ func rollbackNamespaceChanges(ctx context.Context, client *kube.Client) error {
 		return err
 	}
 	for _, n := range ns.Items {
-		delete((&n).Labels, consts.OdigosInstrumentationLabel)
+		delete(n.Labels, consts.OdigosInstrumentationLabel)
 		_, err := client.CoreV1().Namespaces().Update(ctx, &n, metav1.UpdateOptions{})
 		if err != nil {
 			return err
