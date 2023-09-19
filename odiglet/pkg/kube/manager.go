@@ -3,6 +3,8 @@ package kube
 import (
 	"context"
 
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
@@ -35,6 +37,9 @@ func StartReconciling(ebpfDirector ebpf.Director) (context.Context, error) {
 	ctrl.SetLogger(log.Logger)
 	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{
 		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
 	})
 	if err != nil {
 		return nil, err
