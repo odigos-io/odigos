@@ -246,7 +246,32 @@ func createOdiglet(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 
 func createKeyvalProxy(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 
-	_, err := client.CoreV1().Secrets(ns).Create(ctx, resources.NewKeyvalSecret(odigosCloudApiKeyFlag), metav1.CreateOptions{})
+	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewKeyvalProxyServiceAccount(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().Roles(ns).Create(ctx, resources.NewKeyvalProxyRole(ns), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewKeyvalProxyRoleBinding(ns), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewKeyvalProxyClusterRole(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewKeyvalProxyClusterRoleBinding(ns), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.CoreV1().Secrets(ns).Create(ctx, resources.NewKeyvalSecret(odigosCloudApiKeyFlag), metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
