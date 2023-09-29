@@ -13,7 +13,7 @@ require (
 	github.com/otiai10/copy v1.12.0
 	go.opentelemetry.io/auto v0.2.1-alpha
 	go.uber.org/zap v1.26.0
-	google.golang.org/grpc v1.58.1
+	google.golang.org/grpc v1.58.2
 	k8s.io/api v0.28.2
 	k8s.io/apimachinery v0.28.2
 	k8s.io/client-go v0.28.2
