@@ -16,9 +16,16 @@ spec:
   fields:
     - name: LOGZIO_REGION
       displayName: Region
-      componentType: input
+      componentType: dropdown
       componentProps:
-        type: text
+        values:
+          - listener.logz.io
+          - listener-au.logz.io
+          - listener-ca.logz.io
+          - listener-eu.logz.io
+          - listener-nl.logz.io
+          - listener-uk.logz.io
+          - listener-wa.logz.io
     - name: LOGZIO_TRACING_TOKEN
       displayName: Tracing token
       componentType: input
