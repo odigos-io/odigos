@@ -52,19 +52,21 @@ func (i *InstrumentationDirector) Instrument(pid int, podDetails types.Namespace
 		return ErrProcInstrumented
 	}
 
-	inst, err := auto.NewInstrumentation()
-	if err != nil {
-		return err
-	}
-
-	i.pidsToInstrumentation[pid] = inst
-	i.podDetailsToPids[podDetails] = append(i.podDetailsToPids[podDetails], pid)
-
 	go func() {
+		inst, err := auto.NewInstrumentation(auto.WithPID(pid), auto.WithServiceName(appName))
+		if err != nil {
+			log.Logger.Error(err, "instrumentation setup failed")
+			return
+		}
+	
+		i.pidsToInstrumentation[pid] = inst
+		i.podDetailsToPids[podDetails] = append(i.podDetailsToPids[podDetails], pid)
+	
 		if err := inst.Run(context.Background()); err != nil {
-			log.Logger.Error(err, "instrumentation crashed")
+			log.Logger.Error(err, "instrumentation crashed after running")
 		}
 	} ()
+
 	return nil
 }
 
