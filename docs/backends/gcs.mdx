@@ -1,0 +1,12 @@
+---
+title: "Google Cloud Storage"
+---
+
+Odigos exports data to Google Cloud Storage in [OTLP format](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md).
+Data can be exported either in JSON format or in binary format (protobuf).
+
+Authentication to Google Cloud Storage is done using [Google Application Default Credentials](https://cloud.google.com/docs/authentication/production).
+
+## Configuring Gogle Cloud Storage Backend
+
+The only required field is the **bucket name**. The bucket must exists and the odigos gateway pod must have write access to it.
