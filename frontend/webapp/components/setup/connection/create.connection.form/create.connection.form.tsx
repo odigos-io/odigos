@@ -146,7 +146,7 @@ export function CreateConnectionForm({
   }
 
   return (
-    <form onClick={onCreateClick}>
+    <form onSubmit={onCreateClick}>
       <KeyvalText size={18} weight={600}>
         {dynamicFieldsValues
           ? SETUP.UPDATE_CONNECTION
