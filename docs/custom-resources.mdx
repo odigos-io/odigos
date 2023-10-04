@@ -1,0 +1,41 @@
+---
+title: "Custom Resources"
+---
+
+The different components of the Odigos observability control plane work together
+to achieve observability for the cluster. The interaction between the components
+is performed via the Kubernetes API server.
+
+The autoscaler, instrumentor and scheduler are
+[Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
+They coordinate by writing and watching the odigos custom resources in the
+Kubernetes API server.
+
+Odigos adds the following custom resources to the Kubernetes API server:
+
+## Destination
+
+This custom resource is used to define the backend destinations for the
+observability data. Destinations can be either vendors (Datadog, Honeycomb, etc)
+or on premise.
+
+The destination object holds any data that is needed to connect to the backend
+system. Notice that sensitive fields such as API keys are stored in a Kubernetes
+secret and referenced by the destination object.
+
+## InstrumentedApplication
+
+This object is used to define the applications that should be instrumented.
+There is a single InstrumentedApplication object per selected Deployment /
+StatefulSet. The InstrumentedApplication object holds information about the
+application that should be instrumented, such as the detected programming
+language. InstrumentedApplication objects are created and managed by the
+instrumentor.
+
+## CollectorsGroup
+
+The CollectorsGroup object is used to define a group of collectors that have a
+shared role. For example, a collectors group might include collectors that are
+deployed as DaemonSet that are responsible for collecting telemetry data, or
+collectors that are deployed as Deployment and are responsible for shipping the
+data to the selected destinations.

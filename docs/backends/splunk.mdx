@@ -1,0 +1,20 @@
+---
+title: "Splunk"
+---
+
+## Obtaining Access Token
+
+Go to **Settings** then **Access Tokens**. and click **Create New Token**
+![](/backends/images/splunk1.png)
+
+Give the token a name and select **Ingest Token** for the authorization scope and click create.
+![](/backends/images/splunk2.png)
+
+## Configuring the Splunk Backend
+
+Enter the following account details in Odigos UI:
+
+- **Name**: Choose a name for this backend (e.g. Splunk)
+- **Realm** - The Splunk ream in use. This is the second part of the URL you use to access Splunk/SignalFX.
+  For example, if you access Splunk at `https://app.us1.signalfx.com`, then the realm is `us1`.
+- **Access Token**: The access token you created in the previous step.
