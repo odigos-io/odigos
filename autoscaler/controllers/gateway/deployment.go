@@ -140,6 +140,9 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 							Image:   utils.GetContainerImage(containerImage),
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, configKey)},
 							EnvFrom: getSecretsFromDests(dests),
+							SecurityContext: &corev1.SecurityContext{
+								RunAsUser: int64Ptr(10000),
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      configKey,
@@ -202,5 +205,9 @@ func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSou
 }
 
 func intPtr(n int32) *int32 {
+	return &n
+}
+
+func int64Ptr(n int64) *int64 {
 	return &n
 }
