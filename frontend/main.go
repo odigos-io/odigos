@@ -143,8 +143,8 @@ func main() {
 		log.Fatalf("Error starting server: %s", err)
 	}
 
-	log.Println("Starting Odigos UI...")
-	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
+	// log.Println("Starting Odigos UI...")
+	// log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
 	err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
 	if err != nil {
 		log.Fatalf("Error starting server: %s", err)
