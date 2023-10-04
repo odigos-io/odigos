@@ -93,28 +93,27 @@ func PersistNamespaces(c *gin.Context) {
 		labeled := isLabeled(&ns)
 		userSelection, exists := request[ns.Name]
 		if !exists {
-			log.Printf("Namespace %s not found in request, skipping\n", ns.Name)
-		} else {
-			labeledByUser := userSelection.SelectedAll || userSelection.FutureSelected
-			changed := false
-			if labeledByUser && !labeled {
-				ns.Labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationEnabled
-				changed = true
-			} else if !labeledByUser && labeled {
-				delete(ns.Labels, consts.OdigosInstrumentationLabel)
-				changed = true
-			}
-
-			if changed {
-				_, err = kube.DefaultClient.CoreV1().Namespaces().Update(c.Request.Context(), &ns, metav1.UpdateOptions{})
-				if err != nil {
-					returnError(c, err)
-					return
-				}
-			}
-
-			err = syncObjectsInNamespace(c.Request.Context(), &ns, userSelection.Objects)
+			continue;
+		} 
+		labeledByUser := userSelection.SelectedAll || userSelection.FutureSelected
+		changed := false
+		if labeledByUser && !labeled {
+			ns.Labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationEnabled
+			changed = true
+		} else if !labeledByUser && labeled {
+			delete(ns.Labels, consts.OdigosInstrumentationLabel)
+			changed = true
 		}
+
+		if changed {
+			_, err = kube.DefaultClient.CoreV1().Namespaces().Update(c.Request.Context(), &ns, metav1.UpdateOptions{})
+			if err != nil {
+				returnError(c, err)
+				return
+			}
+		}
+
+		err = syncObjectsInNamespace(c.Request.Context(), &ns, userSelection.Objects)
 	}
 }
 

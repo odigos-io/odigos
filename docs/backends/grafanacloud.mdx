@@ -1,0 +1,41 @@
+---
+title: "Grafana Cloud"
+---
+
+Currently, Odigos supports Grafana Cloud as a three data source types: Prometheus, Loki, and Tempo.
+
+All the connection details can be found at [grafana.com](grafana.com) under **My Account**
+![](/backends/images/grafanacloud1.png)
+
+## Configuring Grafana Cloud managed Loki
+
+Press **Details** under the Loki data source
+![](/backends/images/grafanacloud2.png)
+
+Enter the following settings into Odigos UI:
+
+- **API Key** You grafana.com API Key (shown as Password in the details page)
+- **Loki URL** - The URL field int the details page
+- **Loki User** - The User field in the details page
+
+## Configuring Grafana Cloud managed Prometheus
+
+Press **Details** under the Prometheus data source
+![](/backends/images/grafanacloud3.png)
+
+Insert into Odigos the following settings:
+
+- **API Key** You grafana.com API Key (shown as Password in the details page)
+- **Remote Write URL**
+- **Prometheus User**
+
+## Configuring Grafana Cloud managed Tempo
+
+Press **Details** under the Tempo data source
+![](/backends/images/grafanacloud4.png)
+
+Insert into Odigos the following settings:
+
+- **API Key** You grafana.com API Key (shown as Password in the details page)
+- **Tempo URL** - The URL field int the details page
+- **Tempo User** - The User field in the details page

@@ -1,0 +1,209 @@
+---
+title: "Adding New Observability Destination"
+---
+
+There are tens if not hundreds of different observability destinations. Odigos
+goal is to provide a seamless and easy way to ship observability data to any one
+of them.
+
+In this guide, you will learn how to contribute a new destination to Odigos. We
+will create a new dummy destination called `mydest`. Creating a new destination
+involves two steps:
+
+1. Extending the UI for the new destination
+2. Adding the collector configuration for the new destination
+
+## User Interface
+
+For our new destination to be visible in the UI, we need to make several changes
+to the UI code:
+
+1. Go to `ui/img/vendor` directory and add your logo file, for example
+   `mydest.svg`. Please use svg format for the logo.
+2. Go to `ui/vendors` directory and create a new file called `mydest.tsx`.
+3. Start by adding the required import statements (Notice that line 6 points to
+   the file you created in step 1).
+
+```js
+import {
+  ObservabilityVendor,
+  ObservabilitySignals,
+  VendorObjects,
+} from "@/vendors/index";
+import MyDestLogo from "@/img/vendor/mydest.svg";
+import { NextApiRequest } from "next";
+```
+
+4. Create a class called `MyDest` that implements the `ObservabilityVendor`
+   interface:
+
+```js
+export class MyDest implements ObservabilityVendor {
+  name = "mydest";
+  displayName = "My Destination";
+  supportedSignals = [ObservabilitySignals.Traces, ObservabilitySignals.Metrics];
+
+  getLogo = (props: any) => {
+    return <MyDestLogo {...props} />;
+  };
+```
+
+Everything should be self-explanatory. Specify the name (unique lowercase
+string) of the destination, the display name (human-readable string) and the
+observability signals your destination supports. The `getLogo` method should
+return a React component that will be used as the logo for the destination.
+
+5. Specify the required fields for communicating with the destination by
+   implementing the `getFields` method:
+
+```js
+getFields = () => {
+  return [
+    {
+      displayName: "URL",
+      id: "url",
+      name: "url",
+      type: "url",
+    },
+    {
+      displayName: "Region",
+      id: "region",
+      name: "region",
+      type: "text",
+    },
+    {
+      displayName: "API Key",
+      id: "apikey",
+      name: "apikey",
+      type: "password",
+    },
+  ];
+};
+```
+
+This method returns an array of `IDestField` objects. The `type` field
+corresponds to the type of input field that will be displayed in the UI.
+
+6. Add the method `toObjects`. This method converts the data received from the
+   UI to the data that will be persisted in the Kubernetes data store. Each
+   destination can have nonsecret data (like region) - defined in the `Data`
+   field of the returned object and secret data (like API key) - defined in the
+   `Secret` field of the returned object.
+
+```js
+toObjects = (req: NextApiRequest) => {
+  return {
+    Data: {
+      MYDEST_URL: req.body.url,
+      MYDEST_REGION: req.body.region,
+    },
+    Secret: {
+      MYDEST_API_KEY: Buffer.from(req.body.apikey).toString("base64"),
+    },
+  };
+};
+```
+
+<Note>
+  Notice that Kubernetes requires that the secret data be base64 encoded.
+</Note>
+
+7. Add the mthod `mapDataToFields` which converts the data received from the
+   Kubernetes data store to the data that will be displayed in the UI. This
+   method is invoked when user edits the destination in the UI.
+
+```js
+mapDataToFields = (data: any) => {
+  return {
+    url: data.MYDEST_URL,
+    region: data.MYDEST_REGION,
+  };
+};
+```
+
+8. Finally, register the destination you just created by modifying
+   `theui/vendors/index.ts` file:
+
+```js
+// Add an import for the new destination
+import { MyDest } from "@/vendors/mydest";
+
+// Add the new destination to the list of vendors
+const Vendors = [/* List of existing vendors... */ new MyDest()];
+```
+
+For a complete UI implementation example, see
+[one of our existing vendors](https://github.com/keyval-dev/odigos/tree/main/ui/vendors).
+
+## Collector Configuration
+
+Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
+need to implement the collector configuration.
+
+1. Go to `common/dests.go` and add your new destination to the `DestinationType`
+   enum. Make sure the value is the same as the `name` property of the
+   destination UI class.
+2. Go to `autoscaler/controllers/gateway/config` directory and create a new file
+   called `mydest.go` with the following content:
+
+```js
+package config
+
+import (
+	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
+	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
+	"github.com/keyval-dev/odigos/common"
+)
+
+type MyDest struct{}
+
+func (m *MyDest) DestType() common.DestinationType {
+	return common.MyDestDestinationType
+}
+
+func (m *MyDest) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+    // Modify the config here
+    	if isTracingEnabled(dest) {
+		currentConfig.Exporters["otlp/mydest"] = commonconf.GenericMap{
+			"endpoint": "https://mydest.com:4317",
+			"headers": commonconf.GenericMap{
+				"x-mydest-header-apikey": "${MYDEST_API_KEY}",
+			},
+		}
+
+		currentConfig.Service.Pipelines["traces/mydest"] = commonconf.Pipeline{
+			Receivers:  []string{"otlp"},
+			Processors: []string{"batch"},
+			Exporters:  []string{"otlp/mydest"},
+		}
+	}
+}
+```
+
+- The method `DestType` returns the enum value of the destination added earlier.
+- The method `ModifyConfig` is called with the `dest` object which holds the
+  data received from the UI and the `currentConfig` object. The `currentConfig`
+  object contains the current configuration of the gateway collector. Modify
+  this object to include the
+  [OpenTelemetry configuration](https://opentelemetry.io/docs/collector/configuration/)
+  needed by your destination. Make sure to give any exporter or pipeline a
+  unique name in order to avoid conflicts (use the convention
+  `traces/<dest-name>` for traces pipelines and `otlp/<dest-name>` for
+  OpenTelemetry exporters). You can assume a basic configuration is already
+  provided in the `currentConfig` object, for details see `getBasicConfig`
+  method in autoscaler/controllers/gateway/config/root.go file.
+- You can use the utility methods `isTracingEnabled`, `isMetricsEnabled` and
+  `isLoggingEnabled` to determine which signals are selected by the user for the
+  destination and configure the collector accordingly.
+- The last step is to register the new destination struct in the
+  `autoscaler/controllers/gateway/config/root.go` file:
+
+```js
+var availableConfigers = []Configer{/* List of existing destinations  */, &MyDest{}}
+```
+
+That’s it! Now you can use your new destination in the UI and send data to it.
+
+**Please submit a PR to the
+[odigos git repository](https://github.com/keyval-dev/odigos), we are happy to
+accept new destinations.**

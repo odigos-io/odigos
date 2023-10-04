@@ -1,0 +1,95 @@
+{
+  "name": "Odigos",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#30638E",
+    "light": "#C0E0DE",
+    "dark": "#123C60",
+    "anchors": {
+      "from": "#264F71",
+      "to": "#476987"
+    }
+  },
+  "topbarCtaButton": {
+    "type": "github",
+    "url": "https://github.com/keyval-dev/odigos"
+  },
+  "anchors": [
+    {
+      "name": "Demo",
+      "icon": "circle-play",
+      "url": "https://www.youtube.com/watch?v=9d36AmVtuGU"
+    },
+    {
+      "name": "Blog",
+      "icon": "newspaper",
+      "url": "https://keyval.dev/blog/"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "overview",
+        {
+          "group": "Quickstart",
+          "pages": [
+            "intro",
+            "installation",
+            "instrumenting",
+            "viewing",
+            "next-steps"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "Observability Backends",
+      "pages": [
+        "backends/datadog",
+        "backends/prometheus",
+        "backends/tempo",
+        "backends/grafanacloud",
+        "backends/honeycomb",
+        "backends/newrelic",
+        "backends/splunk",
+        "backends/lightstep",
+        "backends/jaeger",
+        "backends/qryn",
+        "backends/loki",
+        "backends/elasticsearch",
+        "backends/googlecloud",
+        "backends/gcs",
+        "backends/azureblob",
+        "backends/opsverse",
+        "backends/logzio",
+        "backends/sentry",
+        "backends/signoz",
+        "backends/opentelemetry"
+      ]
+    },
+    {
+      "group": "Concepts",
+      "pages": [
+        "architecture",
+        "telemetry-types",
+        "custom-resources",
+        "uninstall",
+        "usage-reports"
+      ]
+    },
+    {
+      "group": "Contibution Guidelines",
+      "pages": ["adding-new-dest"]
+    }
+  ],
+  "footerSocials": {
+    "twitter": "https://twitter.com/odigosio",
+    "github": "https://github.com/keyval-dev/odigos",
+    "slack": "https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email"
+  }
+}

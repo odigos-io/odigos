@@ -1,0 +1,35 @@
+---
+title: "Generating Traces"
+sidebarTitle: "Generating Traces"
+---
+
+
+## Choosing target applications
+
+You should now see the following page:
+
+![Select target applications](/images/choose_apps.png)
+
+Select all the applications in the `default` namespace and click `Next`.
+<Note>
+Selecting **Apply for future apps** will automatically generate distributed traces for any application that will be deployed on that namespace in the future.
+</Note>
+
+## Adding Jaeger as a destination
+
+In the next step, you will be asked to select a destination for your traces.
+Scroll down to to the self hosted destinations and click on **Jaeger**.
+
+![Select Jaeger](/images/choose_jaeger.png)
+
+#### Connection details
+
+You will now be asked to provide the connection details for your Jaeger instance:
+- **Destination name**: A name for your destination
+- **Host**: The hostname of your Jaeger instance.
+
+Enter any name you want for the destination, and enter `jaeger.tracing:4317` as the host.
+
+<Frame>
+    <img src="/images/jaeger_connection.png" alt="Jaeger connection details" />
+</Frame>
