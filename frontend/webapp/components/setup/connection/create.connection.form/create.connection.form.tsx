@@ -146,7 +146,7 @@ export function CreateConnectionForm({
   }
 
   return (
-    <div>
+    <form onSubmit={onCreateClick}>
       <KeyvalText size={18} weight={600}>
         {dynamicFieldsValues
           ? SETUP.UPDATE_CONNECTION
@@ -179,7 +179,7 @@ export function CreateConnectionForm({
         {renderFields(fields, dynamicFields, handleDynamicFieldChange)}
       </DynamicFieldsWrapper>
       <CreateDestinationButtonWrapper>
-        <KeyvalButton disabled={isCreateButtonDisabled} onClick={onCreateClick}>
+        <KeyvalButton disabled={isCreateButtonDisabled} type='submit'>
           <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
             {dynamicFieldsValues
               ? SETUP.UPDATE_DESTINATION
@@ -187,6 +187,6 @@ export function CreateConnectionForm({
           </KeyvalText>
         </KeyvalButton>
       </CreateDestinationButtonWrapper>
-    </div>
+    </form>
   );
 }
