@@ -82,3 +82,39 @@ jobs:
             ghcr.io/keyval-dev/odigos/odiglet:${{ steps.vars.outputs.tag }}
             keyval/odigos-odiglet:${{ steps.vars.outputs.tag }}
           platforms: linux/amd64,linux/arm64
+      - name: Get changelog and set to an env variable
+        run: |
+          echo "CHANGELOG=$(git log $(git describe --tags --abbrev=0 @^)..@ --format='- <https://github.com/keyval-dev/odigos/commit/%H|%h>: %s \n')" >> $GITHUB_ENV
+      - name: Send new release announcement to Slack
+        id: slack
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: 'CHANNEL_ID' # TODO: Set channel ID
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "New Odligos release: ${{  github.ref_name }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<https://github.com/keyval-dev/odigos/releases/tag/${{  github.ref_name }}|Release ${{  github.ref_name }}> is out"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Changelog: \n $CHANGELOG"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.ODIGOS_SLACK_WEBHOOK }}
