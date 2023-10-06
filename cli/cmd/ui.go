@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -14,13 +15,18 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
-
 	"github.com/spf13/cobra"
 )
 
 const (
 	defaultPort   = 3000
 	uiDownloadUrl = "https://github.com/keyval-dev/odigos/releases/download/v%s/ui_%s_%s_%s.tar.gz"
+)
+
+// Define address and port variables to hold user configuration.
+var (
+	address string
+	port    int
 )
 
 // uiCmd represents the ui command
@@ -47,6 +53,27 @@ var uiCmd = &cobra.Command{
 				os.Exit(1)
 			}
 		}
+
+		// Get the specified address and port.
+		address := address
+		port := port
+
+		for {
+			listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", address, port))
+			if err == nil {
+				listener.Close()
+				break // Port is available
+			}
+			if strings.Contains(err.Error(), "address already in use") {
+				fmt.Printf("Port %d is already in use. Trying the next port...\n", port)
+				port++
+			} else {
+				fmt.Printf("Error checking port availability: %v\n", err)
+				os.Exit(1)
+			}
+		}
+
+		fmt.Printf("Listening on %s:%d\n", address, port)
 
 		// get all flags as slice of strings
 		var flags []string
@@ -164,7 +191,9 @@ func GetLatestReleaseVersion() (string, error) {
 
 func init() {
 	rootCmd.AddCommand(uiCmd)
-	uiCmd.Flags().String("address", "localhost", "Address to listen on")
-	uiCmd.Flags().Int("port", defaultPort, "Port to listen on")
+
+	// Define command-line flags for address and port.
+	uiCmd.Flags().StringVar(&address, "address", "localhost", "Address to listen on")
+	uiCmd.Flags().IntVar(&port, "port", defaultPort, "Port to listen on")
 	uiCmd.Flags().Bool("debug", false, "Enable debug mode")
 }
