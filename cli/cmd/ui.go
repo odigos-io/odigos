@@ -1,208 +1,170 @@
 package cmd
 
 import (
-    "archive/tar"
-    "compress/gzip"
-    "encoding/json"
-    "fmt"
-    "io"
-    "net"
-    "net/http"
-    "os"
-    "os/exec"
-    "path/filepath"
-    "runtime"
-    "strings"
-    "syscall"
+	"archive/tar"
+	"compress/gzip"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 
-    "github.com/spf13/pflag"
-    "github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+
+	"github.com/spf13/cobra"
 )
 
 const (
-    defaultPort   = 3000
-    uiDownloadUrl = "https://github.com/keyval-dev/odigos/releases/download/v%s/ui_%s_%s_%s.tar.gz"
+	defaultPort   = 3000
+	uiDownloadUrl = "https://github.com/keyval-dev/odigos/releases/download/v%s/ui_%s_%s_%s.tar.gz"
 )
 
 // uiCmd represents the ui command
 var uiCmd = &cobra.Command{
-    Use:   "ui",
-    Short: "Start the Odigos UI",
-    Long:  `Start the Odigos UI. This will start a web server that will serve the UI`,
-    Run: func(cmd *cobra.Command, args []string) {
-        // Look for binary named odigos-ui in the same directory as the current binary
-        // and execute it.
-        currentBinaryPath, err := os.Executable()
-        if err != nil {
-            fmt.Printf("Error getting current binary path: %v\n", err)
-            os.Exit(1)
-        }
+	Use:   "ui",
+	Short: "Start the Odigos UI",
+	Long:  `Start the Odigos UI. This will start a web server that will serve the UI`,
+	Run: func(cmd *cobra.Command, args []string) {
+		// Look for binary named odigos-ui in the same directory as the current binary
+		// and execute it.
+		currentBinaryPath, err := os.Executable()
+		if err != nil {
+			fmt.Printf("Error getting current binary path: %v\n", err)
+			os.Exit(1)
+		}
 
-        currentDir := filepath.Dir(currentBinaryPath)
-        binaryPath := filepath.Join(currentDir, "odigos-ui")
-        if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
-            fmt.Printf("Could not find UI binary, downloading latest release\n")
-            err = downloadLatestUIVersion(runtime.GOARCH, runtime.GOOS, currentDir)
-            if err != nil {
-                fmt.Printf("Error downloading latest UI version: %v\n", err)
-                os.Exit(1)
-            }
-        }
+		currentDir := filepath.Dir(currentBinaryPath)
+		binaryPath := filepath.Join(currentDir, "odigos-ui")
+		if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
+			fmt.Printf("Could not find UI binary, downloading latest release\n")
+			err = downloadLatestUIVersion(runtime.GOARCH, runtime.GOOS, currentDir)
+			if err != nil {
+				fmt.Printf("Error downloading latest UI version: %v\n", err)
+				os.Exit(1)
+			}
+		}
 
-        // Attempt to listen on an available port
-        port := defaultPort
-        for {
-            listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-            if err == nil {
-                listener.Close()
-                break
-            }
-            if isPortTaken(err) {
-                port++
-            } else {
-                fmt.Printf("Error trying to listen on port %d: %v\n", port, err)
-                os.Exit(1)
-            }
-        }
+		// get all flags as slice of strings
+		var flags []string
+		cmd.Flags().Visit(func(f *pflag.Flag) {
+			flags = append(flags, fmt.Sprintf("--%s=%s", f.Name, f.Value))
+		})
 
-        // get all flags as a slice of strings
-        var flags []string
-        cmd.Flags().Visit(func(f *pflag.Flag) {
-            flags = append(flags, fmt.Sprintf("--%s=%s", f.Name, f.Value))
-        })
-
-        // update the UI download URL to use the selected port
-        url := getDownloadUrl(runtime.GOOS, runtime.GOARCH, latestRelease)
-        url = strings.Replace(url, fmt.Sprintf(":%d", defaultPort), fmt.Sprintf(":%d", port), 1)
-
-        // execute UI binary with all flags and stream output
-        process := exec.Command(binaryPath, flags...)
-        process.Stdout = os.Stdout
-        process.Stderr = os.Stderr
-        err = process.Run()
-        if err != nil {
-            fmt.Printf("Error starting UI: %v\n", err)
-            os.Exit(1)
-        }
-    },
+		// execute UI binary with all flags and stream output
+		process := exec.Command(binaryPath, flags...)
+		process.Stdout = os.Stdout
+		process.Stderr = os.Stderr
+		err = process.Run()
+		if err != nil {
+			fmt.Printf("Error starting UI: %v\n", err)
+			os.Exit(1)
+		}
+	},
 }
 
-// Helper function to check if a port is already taken
-func isPortTaken(err error) bool {
-    if opErr, ok := err.(*net.OpError); ok {
-        if sysErr, ok := opErr.Err.(*os.SyscallError); ok {
-            if sysErr.Err == syscall.EADDRINUSE {
-                return true
-            }
-        }
-    }
-    return false
-}
-
-// Function to download the latest UI version
 func downloadLatestUIVersion(arch string, os string, currentDir string) error {
-    latestRelease, err := GetLatestReleaseVersion()
-    if err != nil {
-        return err
-    }
+	latestRelease, err := GetLatestReleaseVersion()
+	if err != nil {
+		return err
+	}
 
-    fmt.Printf("Downloading version %s of Odigos UI ...\n", latestRelease)
-    url := getDownloadUrl(os, arch, latestRelease)
-    return downloadAndExtractTarGz(url, currentDir)
+	fmt.Printf("Downloading version %s of Odigos UI ...\n", latestRelease)
+	url := getDownloadUrl(os, arch, latestRelease)
+	return downloadAndExtractTarGz(url, currentDir)
 }
 
-// Function to download and extract a tar.gz archive
 func downloadAndExtractTarGz(url string, dir string) error {
-    // Step 1: Download the tar.gz file
-    response, err := http.Get(url)
-    if err != nil {
-        return fmt.Errorf("failed to download file: %v", err)
-    }
-    defer response.Body.Close()
+	// Step 1: Download the tar.gz file
+	response, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to download file: %v", err)
+	}
+	defer response.Body.Close()
 
-    // Step 2: Create a new gzip reader
-    gzipReader, err := gzip.NewReader(response.Body)
-    if err != nil {
-        return fmt.Errorf("failed to create gzip reader: %v", err)
-    }
-    defer gzipReader.Close()
+	// Step 2: Create a new gzip reader
+	gzipReader, err := gzip.NewReader(response.Body)
+	if err != nil {
+		return fmt.Errorf("failed to create gzip reader: %v", err)
+	}
+	defer gzipReader.Close()
 
-    // Step 3: Create a new tar reader
-    tarReader := tar.NewReader(gzipReader)
+	// Step 3: Create a new tar reader
+	tarReader := tar.NewReader(gzipReader)
 
-    // Step 4: Extract files one by one
-    for {
-        header, err := tarReader.Next()
-        if err == io.EOF {
-            break // Reached the end of the tar archive
-        }
-        if err != nil {
-            return fmt.Errorf("failed to read tar header: %v", err)
-        }
+	// Step 4: Extract files one by one
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break // Reached the end of the tar archive
+		}
+		if err != nil {
+			return fmt.Errorf("failed to read tar header: %v", err)
+		}
 
-        // Step 5: Create the file or directory
-        targetPath := filepath.Join(dir, header.Name)
-        if header.FileInfo().IsDir() {
-            if err := os.MkdirAll(targetPath, 0755); err != nil {
-                return fmt.Errorf("failed to create directory: %v", err)
-            }
-            continue
-        }
+		// Step 5: Create the file or directory
+		targetPath := filepath.Join(dir, header.Name)
+		if header.FileInfo().IsDir() {
+			if err := os.MkdirAll(targetPath, 0755); err != nil {
+				return fmt.Errorf("failed to create directory: %v", err)
+			}
+			continue
+		}
 
-        file, err := os.Create(targetPath)
-        if err != nil {
-            return fmt.Errorf("failed to create file: %v", err)
-        }
+		file, err := os.Create(targetPath)
+		if err != nil {
+			return fmt.Errorf("failed to create file: %v", err)
+		}
 
-        // Step 6: Copy file contents from tar to the target file
-        if _, err := io.Copy(file, tarReader); err != nil {
-            file.Close()
-            return fmt.Errorf("failed to extract file: %v", err)
-        }
+		// Step 6: Copy file contents from tar to the target file
+		if _, err := io.Copy(file, tarReader); err != nil {
+			file.Close()
+			return fmt.Errorf("failed to extract file: %v", err)
+		}
 
-        file.Close()
-    }
+		file.Close()
+	}
 
-    return os.Chmod(filepath.Join(dir, "odigos-ui"), 0755)
+	return os.Chmod(filepath.Join(dir, "odigos-ui"), 0755)
 }
 
-// Function to get the download URL
 func getDownloadUrl(os string, arch string, version string) string {
-    return fmt.Sprintf(uiDownloadUrl, version, version, os, arch)
+	return fmt.Sprintf(uiDownloadUrl, version, version, os, arch)
 }
 
 type Release struct {
-    TagName string `json:"tag_name"`
+	TagName string `json:"tag_name"`
 }
 
-// Function to get the latest release version
 func GetLatestReleaseVersion() (string, error) {
-    url := fmt.Sprintf("https://api.github.com/repos/keyval-dev/odigos/releases/latest")
+	url := fmt.Sprintf("https://api.github.com/repos/keyval-dev/odigos/releases/latest")
 
-    resp, err := http.Get(url)
-    if err != nil {
-        return "", err
-    }
-    defer resp.Body.Close()
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
 
-    if resp.StatusCode != http.StatusOK {
-        return "", fmt.Errorf("failed to fetch latest release: %s", resp.Status)
-    }
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to fetch latest release: %s", resp.Status)
+	}
 
-    var release Release
-    err = json.NewDecoder(resp.Body).Decode(&release)
-    if err != nil {
-        return "", err
-    }
+	var release Release
+	err = json.NewDecoder(resp.Body).Decode(&release)
+	if err != nil {
+		return "", err
+	}
 
-    ver := strings.TrimPrefix(release.TagName, "v")
-    return ver, nil
+	ver, _ := strings.CutPrefix(release.TagName, "v")
+	return ver, nil
 }
 
 func init() {
-    rootCmd.AddCommand(uiCmd)
-    uiCmd.Flags().String("address", "localhost", "Address to listen on")
-    uiCmd.Flags().Int("port", defaultPort, "Port to listen on")
-    uiCmd.Flags().Bool("debug", false, "Enable debug mode")
+	rootCmd.AddCommand(uiCmd)
+	uiCmd.Flags().String("address", "localhost", "Address to listen on")
+	uiCmd.Flags().Int("port", defaultPort, "Port to listen on")
+	uiCmd.Flags().Bool("debug", false, "Enable debug mode")
 }
-
