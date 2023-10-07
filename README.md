@@ -94,6 +94,12 @@ Can't find the destination you need? Help us by following our quick [adding new 
 
 Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests. You are welcome to join our active [Slack Community](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
 
+## All Thanks To Our Contributors
+
+<a href="https://github.com/keyval-dev/odigos/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=keyval-dev/odigos" />
+</a>
+
 ## License
 
 This project is licensed under the terms of the Apache 2.0 open source license. Please refer to [LICENSE](LICENSE) for the full terms.
