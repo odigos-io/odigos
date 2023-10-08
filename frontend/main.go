@@ -86,7 +86,7 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		return nil, fmt.Errorf("error reading webapp/out directory: %s", err)
 	}
 
-	// Serve React app if page not found serve index.html
+	// Serve React app if page not found, serve index.html
 	r.NoRoute(gin.WrapH(httpFileServerWith404(http.FS(dist))))
 
 	// Serve API
@@ -109,6 +109,7 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.POST("/destinations", func(c *gin.Context) { endpoints.CreateNewDestination(c, flags.Namespace) })
 		apis.PUT("/destinations/:id", func(c *gin.Context) { endpoints.UpdateExistingDestination(c, flags.Namespace) })
 		apis.DELETE("/destinations/:id", func(c *gin.Context) { endpoints.DeleteDestination(c, flags.Namespace) })
+
 	}
 
 	return r, nil
@@ -145,16 +146,24 @@ func main() {
 		log.Fatalf("Error creating Kubernetes client: %s", err)
 	}
 
-	// Start server
-	r, err := startHTTPServer(&flags)
-	if err != nil {
-		log.Fatalf("Error starting server: %s", err)
-	}
+	// Attempt to start the server on port 3000 and increment the port number if it's already in use
+	for {
+		r, err := startHTTPServer(&flags)
+		if err != nil {
+			log.Printf("Error starting server on port %d: %s", flags.Port, err)
+			flags.Port++ // Try the next port
+		} else {
+			log.Printf("Starting Odigos UI...")
+			log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
+			err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
+			if err != nil {
+				log.Printf("Error starting server on port %d: %s", flags.Port, err)
+				flags.Port++ // Try the next port
+			} else {
 
-	log.Println("Starting Odigos UI...")
-	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
-	err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
-	if err != nil {
-		log.Fatalf("Error starting server: %s", err)
+				break
+			}
+		}
 	}
 }
+
