@@ -160,7 +160,7 @@ func main() {
 				log.Printf("Error starting server on port %d: %s", flags.Port, err)
 				flags.Port++ // Try the next port
 			} else {
-
+				// Server started successfully				
 				break
 			}
 		}
