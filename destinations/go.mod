@@ -1,3 +1,3 @@
 module github.com/keyval-dev/odigos/destinations
 
-go 1.20
+go 1.21
