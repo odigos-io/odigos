@@ -13,6 +13,14 @@
 <img src="assets/logo.png" width="350" /></br>
 Generate distributed traces for any application without code changes
 </p>
+
+<h2 align="center">Odigos participate in Hacktoberfest 2023!</h2>
+<p align="center"><strong>Limited time offer</strong>: Make three PRs by October 20, 2023 and win this awesome Odigos tee!<br /><strong>Maximum twenty tees! So hurry up!</strong></p>
+
+<p align="center">
+<img src="assets/hacktoberfest_tee.png" align="center" width="300" />
+</p>
+
 <h2 align="center">
     <a href="https://www.youtube.com/watch?v=nynyV7FC4VI">Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
