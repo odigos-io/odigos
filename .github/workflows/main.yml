@@ -8,7 +8,8 @@ permissions:
   packages: write
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on:
+      labels: large-runner
     steps:
       - uses: actions/checkout@v4
         with:
@@ -19,7 +20,7 @@ jobs:
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - uses: actions/setup-go@v4
         with:
-          go-version: '>=1.19.2'
+          go-version: '1.21.0'
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Set up QEMU
@@ -65,14 +66,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - uses: goreleaser/goreleaser-action@v5
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --rm-dist
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
       - name: Build Odiglet Image
         uses: docker/build-push-action@v5
         with:
@@ -82,3 +75,11 @@ jobs:
             ghcr.io/keyval-dev/odigos/odiglet:${{ steps.vars.outputs.tag }}
             keyval/odigos-odiglet:${{ steps.vars.outputs.tag }}
           platforms: linux/amd64,linux/arm64
+      - uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
