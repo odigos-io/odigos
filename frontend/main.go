@@ -15,6 +15,7 @@ import (
 	"github.com/gin-contrib/cors"
 
 	"github.com/keyval-dev/odigos/frontend/kube"
+	"github.com/keyval-dev/odigos/frontend/version"
 
 	"k8s.io/client-go/util/homedir"
 
@@ -28,6 +29,7 @@ const (
 )
 
 type Flags struct {
+	Version    bool
 	Address    string
 	Port       int
 	Debug      bool
@@ -45,6 +47,7 @@ func parseFlags() Flags {
 	}
 
 	var flags Flags
+	flag.BoolVar(&flags.Version, "version", false, "Print odigos ui version.")
 	flag.StringVar(&flags.Address, "address", "localhost", "Address to listen on")
 	flag.IntVar(&flags.Port, "port", defaultPort, "Port to listen on")
 	flag.BoolVar(&flags.Debug, "debug", false, "Enable debug mode")
@@ -124,6 +127,11 @@ func httpFileServerWith404(fs http.FileSystem) http.Handler {
 
 func main() {
 	flags := parseFlags()
+
+	if flags.Version {
+		fmt.Printf("version.Info{Version:'%s', GitCommit:'%s', BuildDate:'%s'}\n", version.OdigosVersion, version.OdigosCommit, version.OdigosDate)
+		return
+	}
 
 	// Load destinations data
 	err := destinations.Load()

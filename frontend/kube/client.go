@@ -3,6 +3,8 @@ package kube
 import (
 	"github.com/keyval-dev/odigos/frontend/generated/clientset/versioned/typed/odigos/v1alpha1"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/tools/clientcmd"
 )
 

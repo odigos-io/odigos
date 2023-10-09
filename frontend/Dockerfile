@@ -10,7 +10,7 @@ COPY frontend//webapp .
 RUN yarn build
 
 
-FROM golang:1.20 AS backend
+FROM golang:1.21 AS backend
 WORKDIR /app
 COPY . .
 COPY --from=builder /webapp/out frontend/webapp/out

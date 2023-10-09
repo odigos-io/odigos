@@ -29,6 +29,7 @@ var (
 	skipWait                 bool
 	telemetryEnabled         bool
 	sidecarInstrumentation   bool
+	psp                      bool
 	ignoredNamespaces        []string
 	DefaultIgnoredNamespaces = []string{"odigos-system", "kube-system", "local-path-storage", "istio-system", "linkerd"}
 )
@@ -130,7 +131,7 @@ func createDataCollectionRBAC(ctx context.Context, cmd *cobra.Command, client *k
 		return err
 	}
 
-	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewDataCollectionClusterRole(), metav1.CreateOptions{})
+	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewDataCollectionClusterRole(psp), metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -230,7 +231,7 @@ func createOdiglet(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 		return err
 	}
 
-	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewOdigletClusterRole(), metav1.CreateOptions{})
+	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewOdigletClusterRole(psp), metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -300,5 +301,7 @@ func init() {
 	installCmd.Flags().BoolVar(&sidecarInstrumentation, "sidecar-instrumentation", false, "Used sidecars for eBPF instrumentations")
 	installCmd.Flags().StringVar(&resources.OdigletImage, "odiglet-image", "keyval/odigos-odiglet", "odiglet container image")
 	installCmd.Flags().StringVar(&resources.InstrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image")
+	installCmd.Flags().StringVar(&resources.AutoscalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image")
 	installCmd.Flags().StringVar(&containers.ImagePrefix, "image-prefix", "", "Prefix for all container images")
+	installCmd.Flags().BoolVar(&psp, "psp", false, "Enable pod security policy")
 }
