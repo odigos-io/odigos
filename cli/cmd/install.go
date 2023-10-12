@@ -61,8 +61,7 @@ var installCmd = &cobra.Command{
 			createKubeResourceWithLogging(ctx, "Deploying Odigos Cloud Proxy",
 				client, cmd, ns, createKeyvalProxy)
 		} else {
-			createKubeResourceWithLogging(ctx, "Own Telemetry Pipeline disabled",
-				client, cmd, ns, createOwnTelemetryDisabled)
+			createOwnTelemetryDisabled(ctx, cmd, client, ns)
 		}
 		createKubeResourceWithLogging(ctx, "Creating CRDs",
 			client, cmd, ns, createCRDs)
