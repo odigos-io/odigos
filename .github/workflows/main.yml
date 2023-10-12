@@ -6,6 +6,7 @@ on:
 permissions:
   contents: write
   packages: write
+  id-token: write
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -35,6 +36,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Install cosign
+        uses: sigstore/cosign-installer@main
+        with:
+          cosign-release: 'v1.3.1'
       - name: Build Autoscaler Image
         uses: docker/build-push-action@v5
         with:
@@ -44,6 +49,12 @@ jobs:
             keyval/odigos-autoscaler:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=autoscaler
           platforms: linux/amd64,linux/arm64
+      - name: Sign Autoscaler Image
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: |
+          cosign sign \
+           ghcr.io/keyval-dev/odigos/autoscaler@${{ steps.push-step.outputs.digest }}
       - name: Build Scheduler Image
         uses: docker/build-push-action@v5
         with:
@@ -53,6 +64,12 @@ jobs:
             keyval/odigos-scheduler:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=scheduler
           platforms: linux/amd64,linux/arm64
+      - name: Sign Scheduler Image
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: |
+          cosign sign \
+           ghcr.io/keyval-dev/odigos/scheduler@${{ steps.push-step.outputs.digest }}
       - name: Build Instrumentor Image
         uses: docker/build-push-action@v5
         with:
@@ -73,6 +90,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
+      - name: Sign Instrumentor Image
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: |
+          cosign sign \
+           ghcr.io/keyval-dev/odigos/instrumentor@${{ steps.push-step.outputs.digest }}
       - name: Build Odiglet Image
         uses: docker/build-push-action@v5
         with:
@@ -82,3 +105,9 @@ jobs:
             ghcr.io/keyval-dev/odigos/odiglet:${{ steps.vars.outputs.tag }}
             keyval/odigos-odiglet:${{ steps.vars.outputs.tag }}
           platforms: linux/amd64,linux/arm64
+      - name: Sign Odiglet Image
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: |
+          cosign sign \
+           ghcr.io/keyval-dev/odigos/odiglet@${{ steps.push-step.outputs.digest }}
