@@ -1,22 +1,32 @@
 <p align="center">
     <a href="https://github.com/keyval-dev/odigos/actions/workflows/main.yml" target="_blank">
-    <img src="https://github.com/keyval-dev/odigos/actions/workflows/main.yml/badge.svg" />
+        <img src="https://github.com/keyval-dev/odigos/actions/workflows/main.yml/badge.svg" alt="GitHub Actions Workflow Status" style="margin-right: 10px; border: 1px solid #007acc; border-radius: 4px; padding: 5px;">
     </a>
     <a href="https://goreportcard.com/report/github.com/keyval-dev/odigos/cli" target="_blank">
-    <img src="https://goreportcard.com/badge/github.com/keyval-dev/odigos/cli">
+        <img src="https://goreportcard.com/badge/github.com/keyval-dev/odigos/cli" alt="Go Report Card" style="margin-right: 10px; border: 1px solid #4CAF50; border-radius: 4px; padding: 5px;">
     </a>
     <a href="https://godoc.org/github.com/keyval-dev/odigos/cli" target="_blank">
-    <img src="https://godoc.org/istio.io/istio?status.svg">
+        <img src="https://godoc.org/istio.io/istio?status.svg" alt="GoDoc" style="border: 1px solid #f39c12; border-radius: 4px; padding: 5px;">
     </a>
 </p>
+
+
 <p align="center">
 <img src="assets/logo.png" width="350" /></br>
 Generate distributed traces for any application without code changes
 </p>
 
 <h2 align="center">Odigos participate in Hacktoberfest 2023!</h2>
-<p align="center"><strong>Limited time offer</strong>: Make three PRs by October 20, 2023 and win this awesome Odigos tee!<br /><strong>Maximum twenty tees! So hurry up!</strong></p>
+ <p align="center"> 🚀 Limited Time Offer! 🚀
 
+ <p align="center">👕 Make three Pull Requests (PRs) to Odigos repositories by October 20, 2023, and you could be one of the lucky winners of this exclusive Odigos tee! 😎
+
+ <p align="center">🌟 But hurry, we only have a maximum of twenty tees to give away, so don't miss your chance! 🌟
+
+ <p align="center">🔥 Start contributing today and grab your chance to win! 🔥 #OdigosPRChallenge 🚀👕
+
+ <p align="center">Happy coding! 💻💪👚
+</p>
 <p align="center">
 <img src="assets/hacktoberfest_tee.png" align="center" width="300" />
 </p>
