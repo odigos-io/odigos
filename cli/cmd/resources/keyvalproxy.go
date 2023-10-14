@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	keyvalProxyServiceName            = "odigos-cloud-k8s"
 	keyvalProxyImage                  = "keyval/odigos-proxy-k8s"
 	keyvalProxyAppName                = "odigos-cloud-proxy"
 	keyvalProxyDeploymentName         = "odigos-cloud-proxy"
@@ -21,9 +22,6 @@ const (
 	keyvalProxyRoleBindingName        = "odigos-cloud-proxy"
 	keyvalProxyClusterRoleName        = "odigos-cloud-proxy"
 	keyvalProxyClusterRoleBindingName = "odigos-cloud-proxy"
-	secretName                        = "odigos-cloud-proxy"
-	odigosCloudTokenEnvName           = "ODIGOS_CLOUD_TOKEN"
-	apiKeySecretKey                   = "api-key"
 )
 
 func NewKeyvalProxyServiceAccount() *corev1.ServiceAccount {
@@ -35,18 +33,6 @@ func NewKeyvalProxyServiceAccount() *corev1.ServiceAccount {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   keyvalProxyServiceAccountName,
 			Labels: labels.OdigosSystem,
-		},
-	}
-}
-
-func NewKeyvalSecret(apiKey string) *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   secretName,
-			Labels: labels.OdigosSystem,
-		},
-		StringData: map[string]string{
-			apiKeySecretKey: apiKey,
 		},
 	}
 }
@@ -292,13 +278,26 @@ func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
 									},
 								},
 								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: keyvalProxyServiceName,
+								},
+								{
 									Name: odigosCloudTokenEnvName,
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: secretName,
+												Name: odigosCloudSecretName,
 											},
-											Key: apiKeySecretKey,
+											Key: odigosCloudApiKeySecretKey,
+										},
+									},
+								},
+							},
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: ownTelemetryOtelConfig,
 										},
 									},
 								},
