@@ -51,6 +51,8 @@ var uninstallCmd = &cobra.Command{
 			client, cmd, ns, uninstallDaemonSets)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos ConfigMaps",
 			client, cmd, ns, uninstallConfigMaps)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Services",
+			client, cmd, ns, uninstallServices)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
 			client, cmd, ns, uninstallCRDs)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos RBAC",
@@ -206,6 +208,26 @@ func uninstallDeployments(ctx context.Context, cmd *cobra.Command, client *kube.
 
 	for _, i := range list.Items {
 		err = client.AppsV1().Deployments(ns).Delete(ctx, i.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func uninstallServices(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	list, err := client.CoreV1().Services(ns).List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: labels.OdigosSystem,
+		}),
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, i := range list.Items {
+		err = client.CoreV1().Services(ns).Delete(ctx, i.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
