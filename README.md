@@ -1,14 +1,16 @@
 <p align="center">
     <a href="https://github.com/keyval-dev/odigos/actions/workflows/main.yml" target="_blank">
-    <img src="https://github.com/keyval-dev/odigos/actions/workflows/main.yml/badge.svg" />
+        <img src="https://github.com/keyval-dev/odigos/actions/workflows/main.yml/badge.svg" alt="GitHub Actions Workflow Status" style="margin-right: 10px; border: 1px solid #007acc; border-radius: 4px; padding: 5px;">
     </a>
     <a href="https://goreportcard.com/report/github.com/keyval-dev/odigos/cli" target="_blank">
-    <img src="https://goreportcard.com/badge/github.com/keyval-dev/odigos/cli">
+        <img src="https://goreportcard.com/badge/github.com/keyval-dev/odigos/cli" alt="Go Report Card" style="margin-right: 10px; border: 1px solid #4CAF50; border-radius: 4px; padding: 5px;">
     </a>
     <a href="https://godoc.org/github.com/keyval-dev/odigos/cli" target="_blank">
-    <img src="https://godoc.org/istio.io/istio?status.svg">
+        <img src="https://godoc.org/istio.io/istio?status.svg" alt="GoDoc" style="border: 1px solid #f39c12; border-radius: 4px; padding: 5px;">
     </a>
 </p>
+
+
 <p align="center">
 <img src="assets/logo.png" width="350" /></br>
 Generate distributed traces for any application without code changes
