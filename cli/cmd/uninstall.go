@@ -65,20 +65,23 @@ var uninstallCmd = &cobra.Command{
 		// Wait for namespace to be deleted
 		waitForNamespaceDeletion(ctx, client, ns)
 
-		l := log.Print("Rolling back odigos changes to pods\n")
+		l := log.Print("Rolling back odigos changes to pods")
 		err = rollbackPodChanges(ctx, client)
 		if err != nil {
 			l.Error(err)
+		} else {
+			l.Success()
 		}
-
-		l = log.Print("Rolling back odigos changes to namespaces\n")
+		
+		l = log.Print("Rolling back odigos changes to namespaces")
 		err = rollbackNamespaceChanges(ctx, client)
 		if err != nil {
 			l.Error(err)
+		} else {
+			l.Success()
 		}
 
-		l.Success()
-
+		
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
 }
