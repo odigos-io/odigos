@@ -87,7 +87,7 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
     }
 
     // Serve React app if the page is not found, serve index.html
-    r.NoRoute(gin.WrapH(httpFileServerWith404(http.FS(dist)))
+    r.NoRoute(gin.WrapH(httpFileServerWith404(http.FS(dist))))
 
     // Serve API
     apis := r.Group("/api")
