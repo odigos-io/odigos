@@ -1,6 +1,6 @@
 module github.com/keyval-dev/odigos/scheduler
 
-go 1.20
+go 1.21
 
 require (
 	github.com/keyval-dev/odigos/api v0.0.0
