@@ -1,23 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   KeyvalButton,
   KeyvalCheckbox,
   KeyvalInput,
   KeyvalText,
-} from "@/design.system";
+} from '@/design.system';
 import {
   CheckboxWrapper,
   ConnectionMonitorsWrapper,
   DynamicFieldsWrapper,
   FieldWrapper,
   CreateDestinationButtonWrapper,
-} from "./create.connection.form.styled";
-import { renderFields } from "./dynamic.fields";
-import { SETUP } from "@/utils/constants";
-import { DestinationBody } from "@/containers/setup/connection/connection.section";
-import { Field } from "@/types/destinations";
-import theme from "@/styles/palette";
-import { useKeyDown } from "@/hooks";
+} from './create.connection.form.styled';
+import { renderFields } from './dynamic.fields';
+import { SETUP } from '@/utils/constants';
+import { DestinationBody } from '@/containers/setup/connection/connection.section';
+import { Field } from '@/types/destinations';
+import theme from '@/styles/palette';
+import { useKeyDown } from '@/hooks';
 
 interface CreateConnectionFormProps {
   fields: Field[];
@@ -37,9 +37,9 @@ interface CreateConnectionFormProps {
 }
 
 const MONITORS = [
-  { id: "logs", label: SETUP.MONITORS.LOGS, checked: true },
-  { id: "metrics", label: SETUP.MONITORS.METRICS, checked: true },
-  { id: "traces", label: SETUP.MONITORS.TRACES, checked: true },
+  { id: 'logs', label: SETUP.MONITORS.LOGS, checked: true },
+  { id: 'metrics', label: SETUP.MONITORS.METRICS, checked: true },
+  { id: 'traces', label: SETUP.MONITORS.TRACES, checked: true },
 ];
 
 export function CreateConnectionForm({
@@ -51,7 +51,7 @@ export function CreateConnectionForm({
   checkboxValues,
 }: CreateConnectionFormProps) {
   const [destinationName, setDestinationName] = useState<string>(
-    destinationNameValue || ""
+    destinationNameValue || ''
   );
   const [selectedMonitors, setSelectedMonitors] = useState(MONITORS);
   const [dynamicFields, setDynamicFields] = useState(dynamicFieldsValues || {});
@@ -65,7 +65,7 @@ export function CreateConnectionForm({
     filterSupportedMonitors();
   }, [supportedSignals]);
 
-  useKeyDown("Enter", handleKeyPress);
+  useKeyDown('Enter', handleKeyPress);
 
   function handleKeyPress(e: any) {
     if (!isCreateButtonDisabled) {

@@ -1,41 +1,41 @@
-"use client";
-import { ManageSourceHeader } from "@/components/overview/sources/manage.source.header/manage.source.header";
+'use client';
+import { ManageSourceHeader } from '@/components/overview/sources/manage.source.header/manage.source.header';
 import {
   ACTION,
   NOTIFICATION,
   OVERVIEW,
   ROUTES,
   SETUP,
-} from "@/utils/constants";
-import { useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
-import { useMutation } from "react-query";
+} from '@/utils/constants';
+import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { useMutation } from 'react-query';
 import {
   ManageSourcePageContainer,
   BackButtonWrapper,
   FieldWrapper,
   SaveSourceButtonWrapper,
-} from "./sources.styled";
-import { LANGUAGES_LOGOS } from "@/assets/images";
-import { Back } from "@/assets/icons/overview";
+} from './sources.styled';
+import { LANGUAGES_LOGOS } from '@/assets/images';
+import { Back } from '@/assets/icons/overview';
 import {
   KeyvalButton,
   KeyvalInput,
   KeyvalLoader,
   KeyvalText,
-} from "@/design.system";
-import { DeleteSource } from "@/components/overview";
-import { deleteSource, getSource, patchSources } from "@/services/sources";
-import { useKeyDown, useNotification } from "@/hooks";
-import theme from "@/styles/palette";
-import { ManagedSource } from "@/types/sources";
+} from '@/design.system';
+import { DeleteSource } from '@/components/overview';
+import { deleteSource, getSource, patchSources } from '@/services/sources';
+import { useKeyDown, useNotification } from '@/hooks';
+import theme from '@/styles/palette';
+import { ManagedSource } from '@/types/sources';
 
-const NAME = "name";
-const KIND = "kind";
-const NAMESPACE = "namespace";
+const NAME = 'name';
+const KIND = 'kind';
+const NAMESPACE = 'namespace';
 
 export function UpdateSourceForm() {
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState('');
   const [currentSource, setCurrentSource] = useState<ManagedSource>();
 
   const searchParams = useSearchParams();
@@ -44,17 +44,17 @@ export function UpdateSourceForm() {
 
   const { mutate: handleDeleteSource } = useMutation(() =>
     deleteSource(
-      currentSource?.namespace || "",
-      currentSource?.kind || "",
-      currentSource?.name || ""
+      currentSource?.namespace || '',
+      currentSource?.kind || '',
+      currentSource?.name || ''
     )
   );
 
   const { mutate: editSource } = useMutation(() =>
     patchSources(
-      currentSource?.namespace || "",
-      currentSource?.kind || "",
-      currentSource?.name || "",
+      currentSource?.namespace || '',
+      currentSource?.kind || '',
+      currentSource?.name || '',
       { reported_name: inputValue }
     )
   );
@@ -63,18 +63,19 @@ export function UpdateSourceForm() {
   }, [searchParams]);
 
   useEffect(() => {
-    setInputValue(currentSource?.reported_name || "");
+    setInputValue(currentSource?.reported_name || '');
   }, [currentSource]);
 
-  useKeyDown("Enter", handleKeyPress);
+  useKeyDown('Enter', handleKeyPress);
 
   function handleKeyPress(e: any) {
     onSaveClick();
   }
+
   async function onPageLoad() {
-    const name = searchParams.get(NAME) || "";
-    const kind = searchParams.get(KIND) || "";
-    const namespace = searchParams.get(NAMESPACE) || "";
+    const name = searchParams.get(NAME) || '';
+    const kind = searchParams.get(KIND) || '';
+    const namespace = searchParams.get(NAMESPACE) || '';
 
     const currentSource = await getSource(namespace, kind, name);
     setCurrentSource(currentSource);
@@ -114,7 +115,7 @@ export function UpdateSourceForm() {
       {currentSource && (
         <ManageSourceHeader
           image_url={
-            LANGUAGES_LOGOS[currentSource?.languages?.[0].language || ""]
+            LANGUAGES_LOGOS[currentSource?.languages?.[0].language || '']
           }
         />
       )}
@@ -136,7 +137,7 @@ export function UpdateSourceForm() {
         onDelete={onSourceDelete}
         name={currentSource?.name}
         image_url={
-          LANGUAGES_LOGOS[currentSource?.languages?.[0].language || ""]
+          LANGUAGES_LOGOS[currentSource?.languages?.[0].language || '']
         }
       />
       <Notification />
