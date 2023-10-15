@@ -13,7 +13,7 @@
 
 <p align="center">
 <img src="assets/logo.png" width="350" /></br>
-Generate distributed traces for any application without code changes
+Generate distributed traces for any application without code changes.
 </p>
 
 <h2 align="center">Odigos participate in Hacktoberfest 2023!</h2>
@@ -59,7 +59,7 @@ Manage and configure collectors via a convenient web UI.
 
 ## Installation
 
-Installing Odigos takes less than 5 minutes, and requires no code changes.
+Installing Odigos takes less than 5 minutes and requires no code changes.
 Download our [CLI](https://docs.odigos.io/installation) and run the following command:
 
 
@@ -67,11 +67,11 @@ Download our [CLI](https://docs.odigos.io/installation) and run the following co
 odigos install
 ```
 
-For more details see our [quickstart guide](https://docs.odigos.io/intro).
+For more details,see our [quickstart guide](https://docs.odigos.io/intro).
 
 ## Supported Destinations
 
-**For step by step instructions detailed for every destination see these [docs](https://docs.odigos.io/backends).**
+**For step by step instructions detailed for every destination, see these [docs](https://docs.odigos.io/backends).**
 
 ### Managed
 
