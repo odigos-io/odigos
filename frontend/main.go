@@ -1,6 +1,9 @@
 package main
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
 	"embed"
 	"flag"
 	"fmt"
@@ -141,33 +144,47 @@ func main() {
         log.Fatalf("Error loading destinations data: %s", err)
     }
 
-    // Attempt to start the server on the default port (3000) or user-specified port and increment the port number if it's already in use
-    maxPortAttempts := 10 // Maximum number of port attempts
-    for attempt := 1; attempt <= maxPortAttempts; attempt++ {
+    // Create a channel to capture Ctrl+C
+    interruptChan := make(chan os.Signal, 1)
+    signal.Notify(interruptChan, os.Interrupt, syscall.SIGINT)
+
+    go func() {
+        for range interruptChan {
+            log.Println("Received Ctrl+C. Shutting down gracefully...")
+            // Implement any cleanup or shutdown logic here
+
+            os.Exit(0)
+        }
+    }()
+
+    // Attempt to start the server on the specified or default port
+    maxPortAttempts := 10
+    for {
         r, err := startHTTPServer(&flags)
         if err != nil {
             log.Printf("Error starting server on port %d: %s", flags.Port, err)
-            if attempt < maxPortAttempts {
+
+            if flags.Port < defaultPort+maxPortAttempts {
                 log.Printf("Attempting to start the server on the next available port...")
                 flags.Port++ // Try the next port
             } else {
                 log.Fatalf("Exceeded maximum port attempts. Unable to start the server.")
+                return
             }
         } else {
-            log.Printf("Starting Odigos UI...")
-            log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
+            log.Printf("Starting Odigos UI on port %d...", flags.Port)
+
             err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
 
             if err != nil {
-                if attempt < maxPortAttempts {
-                    log.Printf("Error starting server on port %d: %s", flags.Port, err)
-                    log.Printf("Attempting to start the server on the next available port...")
-                    flags.Port++ // Try the next port
-                } else {
+                log.Printf("Error starting server on port %d: %s", flags.Port, err)
+                log.Printf("Attempting to start the server on the next available port...")
+                flags.Port++ // Try the next port
+
+                if flags.Port > defaultPort+maxPortAttempts {
                     log.Fatalf("Exceeded maximum port attempts. Unable to start the server.")
+                    return
                 }
-            } else {
-                break
             }
         }
     }
