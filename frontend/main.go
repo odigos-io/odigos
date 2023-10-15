@@ -1,7 +1,7 @@
 package main
 
 import (
-    "embed"
+      "embed"
     "flag"
     "fmt"
     "io/fs"
