@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -19,7 +20,7 @@ import (
 
 const (
 	defaultNamespace        = "odigos-system"
-	odigosCloudProxyVersion = "v0.3.0"
+	odigosCloudProxyVersion = "v0.4.0"
 )
 
 var (
@@ -29,6 +30,7 @@ var (
 	skipWait                 bool
 	telemetryEnabled         bool
 	sidecarInstrumentation   bool
+	psp                      bool
 	ignoredNamespaces        []string
 	DefaultIgnoredNamespaces = []string{"odigos-system", "kube-system", "local-path-storage", "istio-system", "linkerd"}
 )
@@ -47,8 +49,20 @@ var installCmd = &cobra.Command{
 		ns := cmd.Flag("namespace").Value.String()
 		cmd.Flags().StringSliceVar(&ignoredNamespaces, "ignore-namespace", DefaultIgnoredNamespaces, "--ignore-namespace foo logging")
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
+
+		isOdigosCloud := odigosCloudApiKeyFlag != ""
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
+		if isOdigosCloud {
+			createKubeResourceWithLogging(ctx, "Creating Odigos Cloud Secret",
+				client, cmd, ns, createOdigosCloudSecret)
+			createKubeResourceWithLogging(ctx, "Creating Own Telemetry Pipeline",
+				client, cmd, ns, createOwnTelemetryPipeline)
+			createKubeResourceWithLogging(ctx, "Deploying Odigos Cloud Proxy",
+				client, cmd, ns, createKeyvalProxy)
+		} else {
+			createOwnTelemetryDisabled(ctx, cmd, client, ns)
+		}
 		createKubeResourceWithLogging(ctx, "Creating CRDs",
 			client, cmd, ns, createCRDs)
 		createKubeResourceWithLogging(ctx, "Creating Leader Election Role",
@@ -63,11 +77,6 @@ var installCmd = &cobra.Command{
 			client, cmd, ns, createOdiglet)
 		createKubeResourceWithLogging(ctx, "Deploying Autoscaler",
 			client, cmd, ns, createAutoscaler)
-
-		if odigosCloudApiKeyFlag != "" {
-			createKubeResourceWithLogging(ctx, "Deploying Odigos Cloud Proxy",
-				client, cmd, ns, createKeyvalProxy)
-		}
 
 		if !skipWait {
 			l := log.Print("Waiting for Odigos pods to be ready ...")
@@ -130,7 +139,7 @@ func createDataCollectionRBAC(ctx context.Context, cmd *cobra.Command, client *k
 		return err
 	}
 
-	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewDataCollectionClusterRole(), metav1.CreateOptions{})
+	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewDataCollectionClusterRole(psp), metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -230,7 +239,7 @@ func createOdiglet(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 		return err
 	}
 
-	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewOdigletClusterRole(), metav1.CreateOptions{})
+	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewOdigletClusterRole(psp), metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -242,6 +251,15 @@ func createOdiglet(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 
 	_, err = client.AppsV1().DaemonSets(ns).Create(ctx, resources.NewOdigletDaemonSet(versionFlag), metav1.CreateOptions{})
 	return err
+}
+
+func createOdigosCloudSecret(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	_, err := client.CoreV1().Secrets(ns).Create(ctx, resources.NewKeyvalSecret(odigosCloudApiKeyFlag), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func createKeyvalProxy(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
@@ -271,13 +289,45 @@ func createKeyvalProxy(ctx context.Context, cmd *cobra.Command, client *kube.Cli
 		return err
 	}
 
-	_, err = client.CoreV1().Secrets(ns).Create(ctx, resources.NewKeyvalSecret(odigosCloudApiKeyFlag), metav1.CreateOptions{})
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewKeyvalProxyDeployment(odigosCloudProxyVersion, ns), metav1.CreateOptions{})
+	return err
+}
+
+func createOwnTelemetryDisabled(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	_, err := client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOwnTelemetryConfigMapDisabled(), metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewKeyvalProxyDeployment(odigosCloudProxyVersion, ns), metav1.CreateOptions{})
-	return err
+	return nil
+}
+
+func createOwnTelemetryPipeline(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	if odigosCloudApiKeyFlag == "" {
+		return errors.New("odigos cloud api key is required for odigos own telemetry")
+	}
+
+	_, err := client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOwnTelemetryConfigMapOtlpGrpc(ns), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOwnTelemetryCollectorConfigMap(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewOwnTelemetryCollectorDeployment(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.CoreV1().Services(ns).Create(ctx, resources.NewOwnTelemetryCollectorService(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, cmd *cobra.Command, ns string, create ResourceCreationFunc) {
@@ -300,5 +350,7 @@ func init() {
 	installCmd.Flags().BoolVar(&sidecarInstrumentation, "sidecar-instrumentation", false, "Used sidecars for eBPF instrumentations")
 	installCmd.Flags().StringVar(&resources.OdigletImage, "odiglet-image", "keyval/odigos-odiglet", "odiglet container image")
 	installCmd.Flags().StringVar(&resources.InstrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image")
+	installCmd.Flags().StringVar(&resources.AutoscalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image")
 	installCmd.Flags().StringVar(&containers.ImagePrefix, "image-prefix", "", "Prefix for all container images")
+	installCmd.Flags().BoolVar(&psp, "psp", false, "Enable pod security policy")
 }

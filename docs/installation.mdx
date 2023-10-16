@@ -1,0 +1,43 @@
+---
+title: "Installation"
+sidebarTitle: "Installation"
+---
+
+## Installing Odigos CLI
+
+Odigos CLI is the easiest way to install Odigos on your Kubernetes cluster. It
+is a single binary that can be installed on any Linux, MacOS or Windows machine.
+
+<Tabs>
+  <Tab title="Homebrew">
+    If you are on MacOS, you can install Odigos CLI using Homebrew:
+
+    ```bash
+    brew install keyval-dev/homebrew-odigos-cli/odigos
+    ```
+  </Tab>
+  <Tab title="GitHub Releases">
+    Download the latest release from the [GitHub Releases](https://github.com/keyval-dev/odigos/releases)
+    page and extract the binary to a directory in your `PATH`.
+
+  </Tab>
+</Tabs>
+
+## Installing Odigos on Kubernetes
+
+To install Odigos on your Kubernetes cluster, run the following command:
+
+```bash
+odigos install
+```
+
+## Accessing Odigos UI
+
+After Odigos is installed, open the Odigos UI by running the following
+command:
+
+```bash
+odigos ui
+```
+
+By default, Odigos UI is available at http://localhost:3000.

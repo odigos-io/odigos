@@ -192,7 +192,6 @@ func getOdigosNamespace(kubeClient *kube.Client, ctx context.Context) (string, e
 }
 
 func init() {
-	skillCmd.AddCommand(observabilityCmd)
 	observabilityCmd.Flags().StringVar(&backendFlag, "backend", "", "Backend for observability data")
 	observabilityCmd.Flags().StringSliceVarP(&signalsFlag, "signal", "s", nil, "Reported signals [traces,metrics,logs]")
 	observabilityCmd.Flags().BoolVarP(&skipConfirm, "no-prompt", "y", false, "Skip install confirmation")

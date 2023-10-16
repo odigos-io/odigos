@@ -12,9 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	autoscalerImage = "keyval/odigos-autoscaler"
-)
+var AutoscalerImage string
 
 func NewAutoscalerServiceAccount() *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
@@ -381,7 +379,7 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  "manager",
-							Image: containers.GetImageName(autoscalerImage, version),
+							Image: containers.GetImageName(AutoscalerImage, version),
 							Command: []string{
 								"/app",
 							},

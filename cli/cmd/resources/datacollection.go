@@ -20,8 +20,8 @@ func NewDataCollectionServiceAccount() *corev1.ServiceAccount {
 	}
 }
 
-func NewDataCollectionClusterRole() *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
+func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
+	clusterrole := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -60,6 +60,25 @@ func NewDataCollectionClusterRole() *rbacv1.ClusterRole {
 			},
 		},
 	}
+
+	if psp {
+		clusterrole.Rules = append(clusterrole.Rules, rbacv1.PolicyRule{
+			Verbs: []string{
+				"use",
+			},
+			APIGroups: []string{
+				"policy",
+			},
+			Resources: []string{
+				"podsecuritypolicies",
+			},
+			ResourceNames: []string{
+				"privileged",
+			},
+		})
+	}
+
+	return clusterrole
 }
 
 func NewDataCollectionClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
