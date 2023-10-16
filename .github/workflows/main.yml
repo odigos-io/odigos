@@ -56,6 +56,8 @@ jobs:
         run: |
           cosign sign \
            ghcr.io/keyval-dev/odigos/autoscaler@${{ steps.push-step.outputs.digest }}
+          cosign sign \
+           keyval-dev/odigos-autoscaler@${{ steps.push-step.outputs.digest }}
       - name: Build Scheduler Image
         uses: docker/build-push-action@v5
         with:
@@ -71,6 +73,8 @@ jobs:
         run: |
           cosign sign \
            ghcr.io/keyval-dev/odigos/scheduler@${{ steps.push-step.outputs.digest }}
+          cosign sign \
+           keyval/odigos-scheduler@${{ steps.push-step.outputs.digest }}
       - name: Build Instrumentor Image
         uses: docker/build-push-action@v5
         with:
@@ -89,6 +93,8 @@ jobs:
         run: |
           cosign sign \
            ghcr.io/keyval-dev/odigos/instrumentor@${{ steps.push-step.outputs.digest }}
+          cosign sign \
+           keyval/odigos-instrumentor@${{ steps.push-step.outputs.digest }}
       - name: Build Odiglet Image
         uses: docker/build-push-action@v5
         with:
@@ -112,3 +118,5 @@ jobs:
         run: |
           cosign sign \
            ghcr.io/keyval-dev/odigos/odiglet@${{ steps.push-step.outputs.digest }}
+          cosign sign \
+           keyval/odigos-odiglet@${{ steps.push-step.outputs.digest }}
