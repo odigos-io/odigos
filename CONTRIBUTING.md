@@ -4,10 +4,6 @@
   - [Ways to Contribute](#ways-to-contribute)
   - [Find an Issue](#find-an-issue)
   - [Ask for Help](#ask-for-help)
-  - [Pull Request Lifecycle](#pull-request-lifecycle)
-  - [Development Environment Setup](#development-environment-setup)
-  - [Sign Your Commits](#sign-your-commits)
-  - [Pull Request Checklist](#pull-request-checklist)
 
 Welcome! We are glad that you want to contribute to our project! 💖
 
