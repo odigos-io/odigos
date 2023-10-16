@@ -118,4 +118,5 @@ jobs:
               ]
             }
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.ODIGOS_SLACK_WEBHOOK }}
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_SLACK_WEBHOOK }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
