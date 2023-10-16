@@ -21,7 +21,7 @@ Generate distributed traces for any application without code changes.
 
  <p align="center">👕 Make three Pull Requests (PRs) to Odigos repositories by October 20, 2023, and you could be one of the lucky winners of this exclusive Odigos tee! 😎
 
- <p align="center">🌟 But hurry, we only have a maximum of twenty tees to give away, so don't miss your chance! 🌟
+ <p align="center">🌟 But hurry! we only have a maximum of twenty tees to give away, so don't miss your chance! 🌟
 
  <p align="center">🔥 Start contributing today and grab your chance to win! 🔥 #OdigosPRChallenge 🚀👕
 
@@ -37,7 +37,7 @@ Generate distributed traces for any application without code changes.
 
 ### ✨ Language Agnostic Auto-instrumentation
 
-Odigos supports any application written in Java, Python, .NET, Node.js and **Go**.  
+Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.  
 Historically, compiled languages like Go have been difficult to instrument without code changes. Odigos solves this problem by uniquely leveraging [eBPF](https://ebpf.io).
 
 ![Works on any application](assets/choose_apps.png)
@@ -47,7 +47,7 @@ Historically, compiled languages like Go have been difficult to instrument witho
 Odigos currently supports all the popular managed and open source destinations.  
 By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigos can be used with any observability tool that supports OTLP.
 
-For a complete list of supported destinations see [here](#supported-destinations).
+For a complete list of supported destinations, see [here](#supported-destinations).
 
 ![Works with any observability tool](assets/choose_dest.png)
 
@@ -106,7 +106,7 @@ For more details,see our [quickstart guide](https://docs.odigos.io/intro).
 | qryn          | ✅     | ✅      | ✅   |
 | Elasticsearch | ✅     |         | ✅   |
 
-Can't find the destination you need? Help us by following our quick [adding new destination](https://docs.odigos.io/adding-new-dest) guide and submit a PR.
+Can't find the destination you need? Help us by following our quick [add new destination](https://docs.odigos.io/adding-new-dest) guide and submitting a PR.
 
 ## Contributing
 
