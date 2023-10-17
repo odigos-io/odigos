@@ -19,7 +19,7 @@ const (
 type ElasticAPM struct{}
 
 func (e *ElasticAPM) DestType() common.DestinationType {
-	return common.ElasticAPM
+	return common.ElasticAPMDestinationType
 }
 
 func (e *ElasticAPM) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {

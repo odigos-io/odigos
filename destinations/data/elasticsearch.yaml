@@ -1,0 +1,31 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: elasticsearch
+  displayName: Elasticsearch
+  category: self-managed
+spec:
+  image: elasticsearch.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: true
+  fields:
+    - name: ELASTICSEARCH_URL
+      displayName: Elasticsearch URL
+      componentType: input
+      componentProps:
+        type: text
+    - name: ES_TRACES_INDEX
+      displayName: Traces Index
+      componentType: input
+      componentProps:
+          type: text
+    - name: ES_LOGS_INDEX
+      displayName: Logs Index
+      componentType: input
+      componentProps:
+          type: text
