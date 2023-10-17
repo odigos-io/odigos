@@ -44,7 +44,10 @@ var installCmd = &cobra.Command{
 	Long:  `Install Odigos in your cluster. This command will install the Odigos CRDs, the Odigos Instrumentor, Scheduler, Autoscaler and Odiglet.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		client := kube.CreateClient(cmd)
+		client, err := kube.CreateClient(cmd)
+		if err != nil {
+			kube.PrintClientErrorAndExit(err)
+		}
 		ctx := cmd.Context()
 		ns := cmd.Flag("namespace").Value.String()
 		cmd.Flags().StringSliceVar(&ignoredNamespaces, "ignore-namespace", DefaultIgnoredNamespaces, "--ignore-namespace foo logging")
