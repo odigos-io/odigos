@@ -1,6 +1,7 @@
 module github.com/keyval-dev/odigos/odiglet
 
 go 1.21
+toolchain go1.21.1
 
 require (
 	github.com/fntlnz/mountinfo v1.0.1
@@ -11,7 +12,7 @@ require (
 	github.com/keyval-dev/odigos/common v0.0.0
 	github.com/keyval-dev/opentelemetry-zap-bridge v0.0.3
 	github.com/kubevirt/device-plugin-manager v1.19.5
-	github.com/otiai10/copy v1.12.0
+	github.com/otiai10/copy v1.14.0
 	go.opentelemetry.io/auto v0.7.0-alpha
 	go.uber.org/zap v1.26.0
 	google.golang.org/grpc v1.58.3
@@ -71,6 +72,7 @@ require (
 	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2 // indirect
 	golang.org/x/net v0.13.0 // indirect
 	golang.org/x/oauth2 v0.10.0 // indirect
+	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/term v0.10.0 // indirect
 	golang.org/x/text v0.11.0 // indirect
