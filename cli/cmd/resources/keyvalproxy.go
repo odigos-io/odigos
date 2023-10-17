@@ -301,6 +301,13 @@ func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
 										},
 									},
 								},
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: OdigosDeploymentConfigMapName,
+										},
+									},
+								},
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
