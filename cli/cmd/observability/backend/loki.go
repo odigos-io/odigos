@@ -21,7 +21,7 @@ func (l *Loki) ParseFlags(cmd *cobra.Command, selectedSignals []common.Observabi
 
 	_, err := url.Parse(lokiUrl)
 	if err != nil {
-		return nil, fmt.Errorf("invalud loki URL specified: %s", err)
+		return nil, fmt.Errorf("invalid loki URL specified: %s", err)
 	}
 
 	return &ObservabilityArgs{
