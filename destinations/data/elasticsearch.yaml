@@ -3,7 +3,7 @@ kind: Destination
 metadata:
   type: elasticsearch
   displayName: Elasticsearch
-  category: self-managed
+  category: self hosted
 spec:
   image: elasticsearch.svg
   signals:
