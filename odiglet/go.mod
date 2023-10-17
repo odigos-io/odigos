@@ -1,6 +1,6 @@
 module github.com/keyval-dev/odigos/odiglet
 
-go 1.21.0
+go 1.21
 
 require (
 	github.com/fntlnz/mountinfo v1.0.1

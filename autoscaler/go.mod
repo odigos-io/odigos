@@ -1,6 +1,6 @@
 module github.com/keyval-dev/odigos/autoscaler
 
-go 1.21.0
+go 1.21
 
 require (
 	github.com/ghodss/yaml v1.0.0
