@@ -93,7 +93,7 @@ var (
 func isValidBackend(name string) error {
 	avail := backend.GetAvailableBackends()
 	if name == "" {
-		return fmt.Errorf("please specifiy an observability backend via --backend flag, choose one from %+v", avail)
+		return fmt.Errorf("please specify an observability backend via --backend flag, choose one from %+v", avail)
 	}
 
 	for _, s := range avail {
