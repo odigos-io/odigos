@@ -6,7 +6,11 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/keyval-dev/odigos/cli/cmd/resources"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -20,7 +24,26 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print odigos version.",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("version.Info{Version:'%s', GitCommit:'%s', BuildDate:'%s'}\n", OdigosVersion, OdigosCommit, OdigosDate)
+		fmt.Printf("Odigos Cli Version: version.Info{Version:'%s', GitCommit:'%s', BuildDate:'%s'}\n", OdigosVersion, OdigosCommit, OdigosDate)
+
+		client := kube.CreateClient(cmd)
+		ctx := cmd.Context()
+
+		ns, err := resources.GetOdigosNamespace(client, ctx)
+		if err != nil {
+			ns = consts.DefaultNamespace
+		}
+
+		odigosVersion := "unknown"
+		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+		if err == nil {
+			odigosVersion = cm.Data["ODIGOS_VERSION"]
+			if odigosVersion == "" {
+				odigosVersion = "not installed in cluster"
+			}
+		}
+
+		fmt.Printf("Odigos Version (in cluster): version.Info{Version:'%s'}\n", odigosVersion)
 	},
 }
 

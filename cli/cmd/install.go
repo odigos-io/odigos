@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
+	"github.com/keyval-dev/odigos/common/consts"
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/cmd/resources/crds"
@@ -19,7 +20,6 @@ import (
 )
 
 const (
-	defaultNamespace        = "odigos-system"
 	odigosCloudProxyVersion = "v0.4.0"
 )
 
@@ -53,6 +53,8 @@ var installCmd = &cobra.Command{
 		isOdigosCloud := odigosCloudApiKeyFlag != ""
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
+		createKubeResourceWithLogging(ctx, "Creating Odigos Deployment Info ConfigMap",
+			client, cmd, ns, createOdigosDeploymentInfo)
 		if isOdigosCloud {
 			createKubeResourceWithLogging(ctx, "Creating Odigos Cloud Secret",
 				client, cmd, ns, createOdigosCloudSecret)
@@ -115,6 +117,11 @@ func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (b
 
 func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 	_, err := client.CoreV1().Namespaces().Create(ctx, resources.NewNamespace(ns), metav1.CreateOptions{})
+	return err
+}
+
+func createOdigosDeploymentInfo(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	_, err := client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOdigosDeploymentConfigMap(versionFlag), metav1.CreateOptions{})
 	return err
 }
 
@@ -342,7 +349,7 @@ func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube
 
 func init() {
 	rootCmd.AddCommand(installCmd)
-	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", defaultNamespace, "target namespace for Odigos installation")
+	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", consts.DefaultNamespace, "target namespace for Odigos installation")
 	installCmd.Flags().StringVarP(&odigosCloudApiKeyFlag, "api-key", "k", "", "api key for managed odigos")
 	installCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "target version for Odigos installation")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "Skip waiting for pods to be ready")

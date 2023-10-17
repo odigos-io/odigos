@@ -35,7 +35,7 @@ var uninstallCmd = &cobra.Command{
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
-			ns = "odigos-system"
+			ns = consts.DefaultNamespace
 		}
 
 		fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
@@ -72,7 +72,7 @@ var uninstallCmd = &cobra.Command{
 		} else {
 			l.Success()
 		}
-		
+
 		l = log.Print("Rolling back odigos changes to namespaces")
 		err = rollbackNamespaceChanges(ctx, client)
 		if err != nil {
@@ -81,7 +81,6 @@ var uninstallCmd = &cobra.Command{
 			l.Success()
 		}
 
-		
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
 }
