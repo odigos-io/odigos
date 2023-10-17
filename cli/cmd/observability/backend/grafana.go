@@ -46,7 +46,7 @@ func (g *Grafana) ParseFlags(cmd *cobra.Command, selectedSignals []common.Observ
 
 			_, err := url.Parse(tempoUrl)
 			if err != nil {
-				return nil, fmt.Errorf("invalud tempo url specified: %s", err)
+				return nil, fmt.Errorf("invalid tempo url specified: %s", err)
 			}
 
 			tempoUser := cmd.Flag(GrafanaTempoUserFlag).Value.String()
@@ -64,7 +64,7 @@ func (g *Grafana) ParseFlags(cmd *cobra.Command, selectedSignals []common.Observ
 
 			_, err := url.Parse(rwUrl)
 			if err != nil {
-				return nil, fmt.Errorf("invalud remotewrite url specified: %s", err)
+				return nil, fmt.Errorf("invalid remotewrite url specified: %s", err)
 			}
 
 			promUser := cmd.Flag(GrafanaPromUserFlag).Value.String()
@@ -81,7 +81,7 @@ func (g *Grafana) ParseFlags(cmd *cobra.Command, selectedSignals []common.Observ
 
 			_, err := url.Parse(lokiUrl)
 			if err != nil {
-				return nil, fmt.Errorf("invalud loki url specified: %s", err)
+				return nil, fmt.Errorf("invalid loki url specified: %s", err)
 			}
 
 			lokiUser := cmd.Flag(GrafanaLokiUserFlag).Value.String()

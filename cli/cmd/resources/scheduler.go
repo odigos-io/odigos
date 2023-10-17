@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	schedulerImage = "keyval/odigos-scheduler"
+	schedulerImage       = "keyval/odigos-scheduler"
+	schedulerServiceName = "scheduler"
 )
 
 func NewSchedulerServiceAccount() *corev1.ServiceAccount {
@@ -222,10 +223,23 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 							},
 							Env: []corev1.EnvVar{
 								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: schedulerServiceName,
+								},
+								{
 									Name: "CURRENT_NS",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+							},
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: ownTelemetryOtelConfig,
 										},
 									},
 								},
