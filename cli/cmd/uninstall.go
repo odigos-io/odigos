@@ -30,12 +30,15 @@ var uninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "Unistall Odigos from your cluster",
 	Run: func(cmd *cobra.Command, args []string) {
-		client := kube.CreateClient(cmd)
+		client, err := kube.CreateClient(cmd)
+		if err != nil {
+			kube.PrintClientErrorAndExit(err)
+		}
 		ctx := cmd.Context()
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
-			ns = "odigos-system"
+			ns = consts.DefaultNamespace
 		}
 
 		fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
@@ -72,7 +75,7 @@ var uninstallCmd = &cobra.Command{
 		} else {
 			l.Success()
 		}
-		
+
 		l = log.Print("Rolling back odigos changes to namespaces")
 		err = rollbackNamespaceChanges(ctx, client)
 		if err != nil {
@@ -81,7 +84,6 @@ var uninstallCmd = &cobra.Command{
 			l.Success()
 		}
 
-		
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
 }
