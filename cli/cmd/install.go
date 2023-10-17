@@ -20,7 +20,7 @@ import (
 
 const (
 	defaultNamespace        = "odigos-system"
-	odigosCloudProxyVersion = "v0.4.0"
+	odigosCloudProxyVersion = "v0.5.0"
 )
 
 var (
