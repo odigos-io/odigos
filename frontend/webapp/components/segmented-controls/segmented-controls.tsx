@@ -1,6 +1,6 @@
-"use client";
-import React from "react";
-import styled from "styled-components";
+'use client';
+import React from 'react';
+import styled from 'styled-components';
 
 const SegmentedControlsWrapper = styled.div`
   display: inline-flex;
@@ -62,7 +62,7 @@ export function SegmentedControls({
       {options?.map((option) => (
         <SegmentedControlsOption
           key={option}
-          className={`${option === selected ? "active" : ""}`}
+          className={`${option === selected ? 'active' : ''}`}
         >
           <SegmentedControlsInput
             type="radio"
