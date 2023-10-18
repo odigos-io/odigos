@@ -10,7 +10,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const ()
+const (
+	odigletServiceName = "odiglet"
+)
 
 var OdigletImage string
 
@@ -284,6 +286,10 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 							Image: containers.GetImageName(OdigletImage, version),
 							Env: []corev1.EnvVar{
 								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: odigletServiceName,
+								},
+								{
 									Name: "NODE_NAME",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
@@ -296,6 +302,15 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "status.hostIP",
+										},
+									},
+								},
+							},
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: ownTelemetryOtelConfig,
 										},
 									},
 								},

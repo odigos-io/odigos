@@ -21,7 +21,7 @@ func (p *Prometheus) ParseFlags(cmd *cobra.Command, selectedSignals []common.Obs
 
 	_, err := url.Parse(rwUrl)
 	if err != nil {
-		return nil, fmt.Errorf("invalud prometheus remote write URL specified: %s", err)
+		return nil, fmt.Errorf("invalid prometheus remote write URL specified: %s", err)
 	}
 
 	return &ObservabilityArgs{
