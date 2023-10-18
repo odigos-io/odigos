@@ -8,8 +8,15 @@ permissions:
   packages: write
 jobs:
   release:
-    runs-on:
-      labels: large-runner
+    strategy:
+      matrix:
+        include:
+          - platforms: "linux/amd64"
+            runner:
+              labels: large-runner
+          - platforms: "linux/arm64"
+            runner: "macos-latest-xlarge"
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,7 +51,7 @@ jobs:
             ghcr.io/keyval-dev/odigos/autoscaler:${{ steps.vars.outputs.tag }}
             keyval/odigos-autoscaler:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=autoscaler
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platforms }}
       - name: Build Scheduler Image
         uses: docker/build-push-action@v5
         with:
@@ -53,7 +60,7 @@ jobs:
             ghcr.io/keyval-dev/odigos/scheduler:${{ steps.vars.outputs.tag }}
             keyval/odigos-scheduler:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=scheduler
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platforms }}
       - name: Build Instrumentor Image
         uses: docker/build-push-action@v5
         with:
@@ -62,7 +69,7 @@ jobs:
             ghcr.io/keyval-dev/odigos/instrumentor:${{ steps.vars.outputs.tag }}
             keyval/odigos-instrumentor:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=instrumentor
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platforms }}
       - uses: actions/setup-node@v3
         with:
           node-version: 18
@@ -74,7 +81,7 @@ jobs:
           tags: |
             ghcr.io/keyval-dev/odigos/odiglet:${{ steps.vars.outputs.tag }}
             keyval/odigos-odiglet:${{ steps.vars.outputs.tag }}
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platforms }}
       - uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
