@@ -109,6 +109,7 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 					"watch",
 					"get",
 					"update",
+					"patch",
 				},
 				APIGroups: []string{""},
 				Resources: []string{
@@ -121,6 +122,7 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 					"watch",
 					"get",
 					"update",
+					"patch",
 				},
 				APIGroups: []string{"apps"},
 				Resources: []string{
@@ -133,6 +135,7 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 					"watch",
 					"get",
 					"update",
+					"patch",
 				},
 				APIGroups: []string{"apps"},
 				Resources: []string{
@@ -145,18 +148,7 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 					"watch",
 					"get",
 					"update",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"statefulsets",
-				},
-			},
-			{
-				Verbs: []string{
-					"list",
-					"watch",
-					"get",
-					"update",
+					"patch",
 				},
 				APIGroups: []string{"apps"},
 				Resources: []string{
@@ -172,6 +164,7 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 					"patch",
 					"update",
 					"watch",
+					"patch",
 				},
 				APIGroups: []string{
 					"odigos.io",
@@ -189,6 +182,7 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 					"patch",
 					"update",
 					"watch",
+					"patch",
 				},
 				APIGroups: []string{
 					"odigos.io",
