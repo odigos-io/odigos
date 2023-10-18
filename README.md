@@ -93,6 +93,7 @@ For more details,see our [quickstart guide](https://docs.odigos.io/intro).
 | Splunk                  | ✅      |         |      |
 | Lightstep               | ✅      |         |      |
 | Sentry                  | ✅      |         |      |
+| Axiom                   | ✅      |         | ✅   |
 
 ### Open Source
 
