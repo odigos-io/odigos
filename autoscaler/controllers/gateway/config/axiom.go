@@ -24,37 +24,28 @@ func (a *Axiom) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 		ctrl.Log.V(0).Info("Axiom dataset not specified, using default")
 	}
 
-	if isTracingEnabled(dest) {
-		currentConfig.Exporters["otlphttp/axiomtraces"] = commonconf.GenericMap{
-			"compression": "gzip",
-			"endpoint":    "https://api.axiom.co/v1/traces",
-			"headers": commonconf.GenericMap{
-				"authorization":   "Bearer ${AXIOM_API_TOKEN}",
-				"x-axiom-dataset": dataset,
-			},
-		}
+	currentConfig.Exporters["otlphttp/axiom"] = commonconf.GenericMap{
+		"compression": "gzip",
+		"endpoint":    "https://api.axiom.co",
+		"headers": commonconf.GenericMap{
+			"authorization":   "Bearer ${AXIOM_API_TOKEN}",
+			"x-axiom-dataset": dataset,
+		},
+	}
 
+	if isTracingEnabled(dest) {
 		currentConfig.Service.Pipelines["traces/axiom"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlphttp/axiomtraces"},
+			Exporters:  []string{"otlphttp/axiom"},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		currentConfig.Exporters["otlphttp/axiomlogs"] = commonconf.GenericMap{
-			"compression": "gzip",
-			"endpoint":    "https://api.axiom.co/v1/logs",
-			"headers": commonconf.GenericMap{
-				"authorization":   "Bearer ${AXIOM_API_TOKEN}",
-				"x-axiom-dataset": dataset,
-			},
-		}
-
 		currentConfig.Service.Pipelines["logs/axiom"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlphttp/axiomlogs"},
+			Exporters:  []string{"otlphttp/axiom"},
 		}
 	}
 }
