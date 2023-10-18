@@ -27,7 +27,7 @@ func (d *Datadog) ParseFlags(cmd *cobra.Command, selectedSignals []common.Observ
 
 	_, err := url.Parse(targetUrl)
 	if err != nil {
-		return nil, fmt.Errorf("invalud url specified: %s", err)
+		return nil, fmt.Errorf("invalid url specified: %s", err)
 	}
 
 	if !strings.Contains(targetUrl, "datadoghq.com") {
