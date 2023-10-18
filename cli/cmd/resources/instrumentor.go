@@ -16,6 +16,10 @@ import (
 
 var InstrumentorImage string
 
+const (
+	instrumentorServiceName = "instrumentor"
+)
+
 func NewInstrumentorServiceAccount() *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -429,10 +433,23 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 							Args: args,
 							Env: []corev1.EnvVar{
 								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: instrumentorServiceName,
+								},
+								{
 									Name: "CURRENT_NS",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+							},
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: ownTelemetryOtelConfig,
 										},
 									},
 								},

@@ -13,7 +13,7 @@ import (
 var availableConfigers = []Configer{&Middleware{}, &Honeycomb{}, &Grafana{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{},
 	&Tempo{}, &Loki{}, &Jaeger{}, &GenericOTLP{}, &Elasticsearch{}, &Signoz{}, &Qryn{},
 	&OpsVerse{}, &Splunk{}, &Lightstep{}, &GoogleCloud{}, &GoogleCloudStorage{}, &Sentry{}, &AzureBlobStorage{},
-	&AWSS3{}, &Dynatrace{}, &Chronosphere{}, &ElasticAPM{}}
+	&AWSS3{}, &Dynatrace{}, &Chronosphere{}, &ElasticAPM{}, &Axiom{}}
 
 type Configer interface {
 	DestType() common.DestinationType
