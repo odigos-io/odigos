@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	_ "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/cmd/observability/backend"
@@ -13,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
 )
 
 // observabilityCmd represents the observability command
@@ -93,7 +94,7 @@ var (
 func isValidBackend(name string) error {
 	avail := backend.GetAvailableBackends()
 	if name == "" {
-		return fmt.Errorf("please specifiy an observability backend via --backend flag, choose one from %+v", avail)
+		return fmt.Errorf("please specify an observability backend via --backend flag, choose one from %+v", avail)
 	}
 
 	for _, s := range avail {
@@ -106,7 +107,10 @@ func isValidBackend(name string) error {
 }
 
 func persistArgs(args *backend.ObservabilityArgs, cmd *cobra.Command, signals []common.ObservabilitySignal, backendName common.DestinationType) error {
-	kc := kube.CreateClient(cmd)
+	kc, err := kube.CreateClient(cmd)
+	if err != nil {
+		kube.PrintClientErrorAndExit(err)
+	}
 	ns, err := getOdigosNamespace(kc, cmd.Context())
 	if err != nil {
 		return err

@@ -21,7 +21,7 @@ func (t *Tempo) ParseFlags(cmd *cobra.Command, selectedSignals []common.Observab
 
 	_, err := url.Parse(tempoUrl)
 	if err != nil {
-		return nil, fmt.Errorf("invalud tempo URL specified: %s", err)
+		return nil, fmt.Errorf("invalid tempo URL specified: %s", err)
 	}
 
 	return &ObservabilityArgs{

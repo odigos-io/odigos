@@ -1,26 +1,26 @@
 apiVersion: internal.odigos.io/v1beta1
 kind: Destination
 metadata:
-  type: elasticapm
-  displayName: Elastic APM
+  type: axiom
+  displayName: Axiom
   category: managed
 spec:
-  image: elasticapm.svg
+  image: axiom.svg
   signals:
     traces:
       supported: true
     metrics:
-      supported: true
+      supported: false
     logs:
       supported: true
   fields:
-    - name: ELASTIC_APM_SERVER_ENDPOINT
-      displayName: elastic APM server endpoint
+    - name: AXIOM_DATASET
+      displayName: Dataset
       componentType: input
       componentProps:
         type: text
-    - name: ELASTIC_APM_SECRET_TOKEN
-      displayName: elastic APM server token
+    - name: AXIOM_API_TOKEN
+      displayName: Axiom API token
       componentType: input
       componentProps:
         type: password
