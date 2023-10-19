@@ -46,7 +46,7 @@ func NewOwnTelemetryConfigMapDisabled() *corev1.ConfigMap {
 }
 
 // for odigos cloud which process own telemetry
-func NewOwnTelemetryConfigMapOtlpGrpc(ns string) *corev1.ConfigMap {
+func NewOwnTelemetryConfigMapOtlpGrpc(ns string, odigosVersion string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -60,6 +60,8 @@ func NewOwnTelemetryConfigMapOtlpGrpc(ns string) *corev1.ConfigMap {
 			"OTEL_EXPORTER_OTLP_INSECURE": "true",
 			// the http:// scheme is not actually used, it how the exporter is expecting the value with grpc
 			"OTEL_EXPORTER_OTLP_ENDPOINT": fmt.Sprintf("http://%s.%s:4317", ownTelemetryCollectorServiceName, ns),
+			// resource attributes
+			"OTEL_RESOURCE_ATTRIBUTES": fmt.Sprintf("odigos.version=%s", odigosVersion),
 		},
 	}
 }
