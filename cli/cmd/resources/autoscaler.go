@@ -14,6 +14,10 @@ import (
 
 var AutoscalerImage string
 
+const (
+	autoScalerServiceName = "auto-scaler"
+)
+
 func NewAutoscalerServiceAccount() *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -390,10 +394,23 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 							},
 							Env: []corev1.EnvVar{
 								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: autoScalerServiceName,
+								},
+								{
 									Name: "CURRENT_NS",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+							},
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: ownTelemetryOtelConfig,
 										},
 									},
 								},

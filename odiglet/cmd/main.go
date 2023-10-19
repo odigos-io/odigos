@@ -38,7 +38,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	ebpfDirector, err := initEBP()
+	ebpfDirector, err := initEbpf()
 	if err != nil {
 		log.Logger.Error(err, "Failed to init eBPF director")
 		os.Exit(-1)
@@ -71,6 +71,6 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 	manager.Run()
 }
 
-func initEBP() (ebpf.Director, error) {
+func initEbpf() (ebpf.Director, error) {
 	return ebpf.NewInstrumentationDirector()
 }
