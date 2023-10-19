@@ -41,7 +41,8 @@ type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *
 var installCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install Odigos",
-	Long:  `Install Odigos in your cluster. This command will install the Odigos CRDs, the Odigos Instrumentor, Scheduler, Autoscaler and Odiglet.`,
+	Long: `Install Odigos in your kubernetes cluster. 
+This command will install k8s components that will auto-instrument your applications with OpenTelemetry and send traces, metrics and logs to any telemetry backend`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		client, err := kube.CreateClient(cmd)
@@ -317,7 +318,7 @@ func createOwnTelemetryPipeline(ctx context.Context, cmd *cobra.Command, client 
 		return errors.New("odigos cloud api key is required for odigos own telemetry")
 	}
 
-	_, err := client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOwnTelemetryConfigMapOtlpGrpc(ns), metav1.CreateOptions{})
+	_, err := client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOwnTelemetryConfigMapOtlpGrpc(ns, versionFlag), metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
