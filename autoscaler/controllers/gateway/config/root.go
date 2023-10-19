@@ -51,6 +51,7 @@ func getBasicConfig() *commonconf.Config {
 			"otlp": commonconf.GenericMap{
 				"protocols": commonconf.GenericMap{
 					"grpc": empty,
+					"http": empty,
 				},
 			},
 		},
