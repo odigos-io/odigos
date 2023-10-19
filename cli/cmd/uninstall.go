@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/log"
 	"github.com/keyval-dev/odigos/common/consts"
 	v1 "k8s.io/api/core/v1"
+	// "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -36,18 +38,19 @@ var uninstallCmd = &cobra.Command{
 		}
 		ctx := cmd.Context()
 
-		errMessage := fmt.Errorf("Odigos is not installed in the cluster")
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
-			if errors.IsNotFound(err) {
+			errString := err.Error()
+
+			if errString[len(errString) - 1] == '0' {
+				errMessage := "\033[31mERROR\033[0m Odigos is not currently installed in the cluster, so there is nothing to uninstall"
 				fmt.Println(errMessage)
 			} else {
-				ns = consts.DefaultNamespace
-				fmt.Println(err)
+				fmt.Println("\033[31mERROR\033[0m", err)
 			}
 			os.Exit(1)
 		}
-
+		
 		fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
 		confirmed, err := confirm.Ask("Are you sure?")
 		if err != nil || !confirmed {
