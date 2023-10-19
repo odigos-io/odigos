@@ -6,7 +6,7 @@
         <img src="https://goreportcard.com/badge/github.com/keyval-dev/odigos/cli" alt="Go Report Card" style="margin-right: 10px; border: 1px solid #4CAF50; border-radius: 4px; padding: 5px;">
     </a>
     <a href="https://godoc.org/github.com/keyval-dev/odigos/cli" target="_blank">
-        <img src="https://godoc.org/istio.io/istio?status.svg" alt="GoDoc" style="border: 1px solid #f39c12; border-radius: 4px; padding: 5px;">
+        <img src="https://godoc.org/github.com/keyval-dev/odigos/cli?status.svg" alt="GoDoc" style="border: 1px solid #f39c12; border-radius: 4px; padding: 5px;">
     </a>
 </p>
 
