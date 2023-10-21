@@ -21,6 +21,7 @@ const (
 	schedulerImage          = "keyval/odigos-scheduler"
 	schedulerServiceName    = "scheduler"
 	schedulerDeploymentName = "odigos-scheduler"
+	schedulerContainerName  = "manager"
 )
 
 func NewSchedulerServiceAccount() *corev1.ServiceAccount {
@@ -211,13 +212,13 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 						"app": "odigos-scheduler",
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": "manager",
+						"kubectl.kubernetes.io/default-container": schedulerContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "manager",
+							Name:  schedulerContainerName,
 							Image: containers.GetImageName(schedulerImage, version),
 							Command: []string{
 								"/app",
@@ -315,7 +316,7 @@ func (a *schedulerResourceManager) RollbackMigrationStep(ctx context.Context, so
 
 func (a *schedulerResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos scheduler deployment")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(schedulerImage, newOdigosVersion)
+	jsonPatchDocumentBytes := patchTemplateSpecImageTag(schedulerImage, newOdigosVersion, schedulerContainerName)
 	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, schedulerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
 	return err
 }

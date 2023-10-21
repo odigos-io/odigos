@@ -22,6 +22,7 @@ var InstrumentorImage string
 const (
 	instrumentorServiceName    = "instrumentor"
 	instrumentorDeploymentName = "odigos-instrumentor"
+	instrumentorContainerName  = "manager"
 )
 
 func NewInstrumentorServiceAccount() *corev1.ServiceAccount {
@@ -423,13 +424,13 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 						"app": "odigos-instrumentor",
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": "manager",
+						"kubectl.kubernetes.io/default-container": instrumentorContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "manager",
+							Name:  instrumentorContainerName,
 							Image: containers.GetImageName(InstrumentorImage, version),
 							Command: []string{
 								"/app",
@@ -535,7 +536,7 @@ func (a *instrumentorResourceManager) RollbackMigrationStep(ctx context.Context,
 
 func (a *instrumentorResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos instrumentor deployment")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(InstrumentorImage, newOdigosVersion)
+	jsonPatchDocumentBytes := patchTemplateSpecImageTag(InstrumentorImage, newOdigosVersion, instrumentorContainerName)
 	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, instrumentorDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
 	return err
 }

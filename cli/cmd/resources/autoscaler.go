@@ -22,6 +22,7 @@ var AutoscalerImage string
 const (
 	autoScalerServiceName    = "auto-scaler"
 	autoScalerDeploymentName = "odigos-autoscaler"
+	autoScalerContainerName  = "manager"
 )
 
 func NewAutoscalerServiceAccount() *corev1.ServiceAccount {
@@ -382,13 +383,13 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 						"app": "odigos-autoscaler",
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": "manager",
+						"kubectl.kubernetes.io/default-container": autoScalerContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "manager",
+							Name:  autoScalerContainerName,
 							Image: containers.GetImageName(AutoscalerImage, version),
 							Command: []string{
 								"/app",
@@ -493,7 +494,7 @@ func (a *autoScalerResourceManager) RollbackMigrationStep(ctx context.Context, s
 
 func (a *autoScalerResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos autoscaler deployment")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(AutoscalerImage, newOdigosVersion)
+	jsonPatchDocumentBytes := patchTemplateSpecImageTag(AutoscalerImage, newOdigosVersion, autoScalerContainerName)
 	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, autoScalerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
 	return err
 }

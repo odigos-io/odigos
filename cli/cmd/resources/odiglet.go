@@ -18,6 +18,7 @@ import (
 const (
 	odigletServiceName   = "odiglet"
 	odigletDaemonSetName = "odiglet"
+	odigletContainerName = "odiglet"
 )
 
 var OdigletImage string
@@ -288,7 +289,7 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  "odiglet",
+							Name:  odigletContainerName,
 							Image: containers.GetImageName(OdigletImage, version),
 							Env: []corev1.EnvVar{
 								{
@@ -390,7 +391,7 @@ func (a *odigletResourceManager) RollbackMigrationStep(ctx context.Context, sour
 
 func (a *odigletResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos odiglet daemonset")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(AutoscalerImage, newOdigosVersion)
+	jsonPatchDocumentBytes := patchTemplateSpecImageTag(AutoscalerImage, newOdigosVersion, odigletContainerName)
 	_, err := a.client.AppsV1().DaemonSets(a.ns).Patch(ctx, odigletDaemonSetName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
 	return err
 }
