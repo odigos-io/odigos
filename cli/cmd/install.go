@@ -55,9 +55,9 @@ This command will install k8s components that will auto-instrument your applicat
 		cmd.Flags().StringSliceVar(&ignoredNamespaces, "ignore-namespace", DefaultIgnoredNamespaces, "--ignore-namespace foo logging")
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
-		nsflag, err := resources.GetOdigosNamespace(client, ctx)
+		existingOdigosNs, err := resources.GetOdigosNamespace(client, ctx)
 		if  err == nil {
-			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace \"%s\". If you wish to re-install, run \"odigos uninstall\" first.\n", nsflag)
+			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace \"%s\". If you wish to re-install, run \"odigos uninstall\" first.\n", existingOdigosNs)
 			os.Exit(1)
 		}
 		
