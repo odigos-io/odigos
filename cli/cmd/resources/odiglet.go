@@ -391,7 +391,7 @@ func (a *odigletResourceManager) RollbackMigrationStep(ctx context.Context, sour
 
 func (a *odigletResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos odiglet daemonset")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(AutoscalerImage, newOdigosVersion, odigletContainerName)
+	jsonPatchDocumentBytes := patchTemplateSpecImageTag(OdigletImage, newOdigosVersion, odigletContainerName)
 	_, err := a.client.AppsV1().DaemonSets(a.ns).Patch(ctx, odigletDaemonSetName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
 	return err
 }
