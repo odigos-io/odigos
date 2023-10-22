@@ -6,6 +6,7 @@
   - [Ask for Help](#ask-for-help)
   - [Local Development](#local-development)
     - [Run Odigos Cli from code](#run-odigos-cli-from-code)
+    - [How to Develop Odigos Locally](#how-to-develop-odigos-locally)
 
 Welcome! We are glad that you want to contribute to our project! 💖
 
@@ -88,3 +89,19 @@ Installing Odigos version v0.1.81 in namespace odigos-system ...
 ```
 
 - If you test changes to the `install` command, you will need to `go run . uninstall` first before you can `go run . install` again.
+
+### How to Develop Odigos Locally
+The main steps involved when debugging Odigos locally are:
+
+- Use a Kind kubernetes cluster
+- Build custom images of Odigos and load them into Kind via:
+```
+TAG=<CURRENT-ODIGOS-VERSION> make build-images load-to-kind
+```
+
+- Ensure the TAG matches the Odigos version output from: `odigos version`
+- Restart all pods in the `odigos-system` namespace:
+```
+kubectl delete pods --all -n odigos-system
+```
+See the [Odigos docs](https://docs.odigos.io/intro) for the full steps on debugging Odigos locally.
