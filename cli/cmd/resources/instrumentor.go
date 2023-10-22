@@ -526,13 +526,13 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	return nil
 }
 
-func (a *instrumentorResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
-	return nil
-}
+// func (a *instrumentorResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
 
-func (a *instrumentorResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
-	return nil
-}
+// func (a *instrumentorResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
 
 func (a *instrumentorResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos instrumentor deployment")

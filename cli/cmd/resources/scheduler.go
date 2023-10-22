@@ -306,13 +306,13 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 	return nil
 }
 
-func (a *schedulerResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
-	return nil
-}
+// func (a *schedulerResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
 
-func (a *schedulerResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
-	return nil
-}
+// func (a *schedulerResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
 
 func (a *schedulerResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos scheduler deployment")

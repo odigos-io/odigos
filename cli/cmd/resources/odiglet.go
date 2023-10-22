@@ -381,13 +381,13 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	return nil
 }
 
-func (a *odigletResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
-	return nil
-}
+// func (a *odigletResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
 
-func (a *odigletResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
-	return nil
-}
+// func (a *odigletResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
 
 func (a *odigletResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos odiglet daemonset")

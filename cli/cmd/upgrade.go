@@ -72,6 +72,7 @@ func upgradeImageTags(ctx context.Context, client *kube.Client, ns string, targe
 		resources.NewSchedulerResourceManager(client, ns),
 		resources.NewInstrumentorResourceManager(client, ns),
 		resources.NewOdigletResourceManager(client, ns),
+		resources.NewOdigosDeploymentResourceManager(client, ns),
 	}
 
 	for _, rm := range resourceManagers {

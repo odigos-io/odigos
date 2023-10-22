@@ -484,13 +484,13 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 	return nil
 }
 
-func (a *autoScalerResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
-	return nil
-}
+// func (a *autoScalerResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
 
-func (a *autoScalerResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
-	return nil
-}
+// func (a *autoScalerResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
 
 func (a *autoScalerResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos autoscaler deployment")
