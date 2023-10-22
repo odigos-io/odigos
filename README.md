@@ -67,7 +67,7 @@ Download our [CLI](https://docs.odigos.io/installation) and run the following co
 odigos install
 ```
 
-For more details,see our [quickstart guide](https://docs.odigos.io/intro).
+For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ## Supported Destinations
 
