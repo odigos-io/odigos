@@ -526,6 +526,10 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	return nil
 }
 
+func (a *instrumentorResourceManager) GetMigrationSteps() []MigrationStep {
+	return []MigrationStep{}
+}
+
 // func (a *instrumentorResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
 // 	return nil
 // }

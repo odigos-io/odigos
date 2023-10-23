@@ -43,6 +43,10 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 	return nil
 }
 
+func (a *odigosDeploymentResourceManager) GetMigrationSteps() []MigrationStep {
+	return []MigrationStep{}
+}
+
 // func (a *odigosDeploymentResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
 // 	return nil
 // }

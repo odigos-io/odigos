@@ -1,6 +1,18 @@
 package resources
 
-import "context"
+import (
+	"context"
+)
+
+type MigrationStep struct {
+	// The version of the ** source ** of the migration step.
+	// For example - if the migration step is from version v1.0.0 to v1.1.0, the source version is v1.0.0.
+	SourceVersion string
+
+	ApplyMigrationStep func(ctx context.Context) error
+
+	RollbackMigrationStep func(ctx context.Context) error
+}
 
 type ResourceManager interface {
 
@@ -31,6 +43,8 @@ type ResourceManager interface {
 	// This function must be idempotent, it cannot assume if the migration step was applied successfully or not,
 	// and should thus be able to set the resource to the desired state regardless of the current state.
 	// RollbackMigrationStep(ctx context.Context, sourceVersion string) error
+
+	GetMigrationSteps() []MigrationStep
 
 	// This function is being called to explicitly set the Odigos version in the cluster.
 	// It allows us to skip bumping the version for each migration step, and instead

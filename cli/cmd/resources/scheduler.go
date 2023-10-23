@@ -306,6 +306,10 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 	return nil
 }
 
+func (a *schedulerResourceManager) GetMigrationSteps() []MigrationStep {
+	return []MigrationStep{}
+}
+
 // func (a *schedulerResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
 // 	return nil
 // }

@@ -8,11 +8,19 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/blang/semver/v4"
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/pkg/confirm"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+type VersionChangeType int
+
+const (
+	Upgrade VersionChangeType = iota
+	Downgrade
 )
 
 // upgradeCmd represents the upgrade command
@@ -56,7 +64,27 @@ and apply any required migrations.`,
 			return
 		}
 
-		err = upgradeImageTags(ctx, client, ns, versionFlag)
+		resourceManagers := []resources.ResourceManager{
+			resources.NewAutoScalerResourceManager(client, ns),
+			resources.NewSchedulerResourceManager(client, ns),
+			resources.NewInstrumentorResourceManager(client, ns),
+			resources.NewOdigletResourceManager(client, ns),
+			resources.NewOdigosDeploymentResourceManager(client, ns),
+		}
+
+		semverRange, versionChangeType, err := parseSourceAndTarget(odigosVersion, versionFlag)
+		if err != nil {
+			fmt.Printf("Odigos upgrade failed - unable to parse Odigos version: %s\n", err)
+			os.Exit(1)
+		}
+
+		err = applyRelevantMigrationSteps(ctx, resourceManagers, semverRange, versionChangeType)
+		if err != nil {
+			fmt.Printf("Odigos upgrade failed - error during applying migration steps: %s\n", err)
+			os.Exit(1)
+		}
+
+		err = upgradeImageTags(ctx, resourceManagers, versionFlag)
 		if err != nil {
 			fmt.Printf("Odigos upgrade failed - unable to upgrade Odigos version: %s\n", err)
 			os.Exit(1)
@@ -65,15 +93,61 @@ and apply any required migrations.`,
 	},
 }
 
-func upgradeImageTags(ctx context.Context, client *kube.Client, ns string, targetTag string) error {
+func applyRelevantMigrationSteps(ctx context.Context, resourceManagers []resources.ResourceManager, versionRange semver.Range, versionChangeType VersionChangeType) error {
+	migrationsByVersion := make(map[string][]resources.MigrationStep)
 
-	resourceManagers := []resources.ResourceManager{
-		resources.NewAutoScalerResourceManager(client, ns),
-		resources.NewSchedulerResourceManager(client, ns),
-		resources.NewInstrumentorResourceManager(client, ns),
-		resources.NewOdigletResourceManager(client, ns),
-		resources.NewOdigosDeploymentResourceManager(client, ns),
+	for _, rm := range resourceManagers {
+		resourceMigrationSteps := rm.GetMigrationSteps()
+		for _, migrationStep := range resourceMigrationSteps {
+			sourceVersion := migrationStep.SourceVersion[1:]
+			sourceVersionSemver := semver.MustParse(sourceVersion)
+
+			// filter out just those versions which are relevant to us
+			if versionRange(sourceVersionSemver) {
+				migrationsByVersion[sourceVersion] = append(migrationsByVersion[sourceVersion], migrationStep)
+			}
+		}
 	}
+
+	// create a list of all the migration versions, and sort by version
+	var migrationVersions semver.Versions
+	for version := range migrationsByVersion {
+		migrationVersions = append(migrationVersions, semver.MustParse(version))
+	}
+	semver.Sort(migrationVersions)
+
+	if versionChangeType == Upgrade {
+		for _, version := range migrationVersions {
+			versionStr := version.String()
+			migrationSteps := migrationsByVersion[versionStr]
+			fmt.Printf("Applying %d migration steps for version %s:\n", len(migrationSteps), version)
+			for _, migrationStep := range migrationSteps {
+				err := migrationStep.ApplyMigrationStep(ctx)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	} else {
+		for i := len(migrationVersions) - 1; i >= 0; i-- {
+			version := migrationVersions[i]
+			versionStr := version.String()
+			migrationSteps := migrationsByVersion[versionStr]
+			fmt.Printf("Rolling back %d migration steps for version %s:\n", len(migrationSteps), version)
+			for j := len(migrationSteps) - 1; j >= 0; j-- {
+				migrationStep := migrationSteps[j]
+				err := migrationStep.RollbackMigrationStep(ctx)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func upgradeImageTags(ctx context.Context, resourceManagers []resources.ResourceManager, targetTag string) error {
 
 	for _, rm := range resourceManagers {
 		err := rm.PatchOdigosVersionToTarget(ctx, targetTag)
@@ -91,4 +165,18 @@ func upgradeImageTags(ctx context.Context, client *kube.Client, ns string, targe
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
 	upgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "target version for Odigos upgrade")
+}
+
+func parseSourceAndTarget(sourceVersion string, targetVersion string) (semver.Range, VersionChangeType, error) {
+	// remove the trailing "v" from the odigosVersion
+	sourceVersionBare := sourceVersion[1:]
+	targetVersionBare := targetVersion[1:]
+	isUpgrade := semver.MustParse(sourceVersionBare).LT(semver.MustParse(targetVersionBare))
+	if isUpgrade {
+		semverRange, err := semver.ParseRange(fmt.Sprintf(">=%s <%s", sourceVersionBare, targetVersionBare))
+		return semverRange, Upgrade, err
+	} else {
+		semverRange, err := semver.ParseRange(fmt.Sprintf(">=%s <=%s", targetVersionBare, sourceVersionBare))
+		return semverRange, Downgrade, err
+	}
 }

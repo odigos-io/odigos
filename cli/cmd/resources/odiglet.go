@@ -381,6 +381,10 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	return nil
 }
 
+func (a *odigletResourceManager) GetMigrationSteps() []MigrationStep {
+	return []MigrationStep{}
+}
+
 // func (a *odigletResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
 // 	return nil
 // }
