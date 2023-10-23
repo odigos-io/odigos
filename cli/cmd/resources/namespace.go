@@ -29,7 +29,9 @@ func GetOdigosNamespace(client *kube.Client, ctx context.Context) (string, error
 		return "", err
 	}
 
-	if len(namespaces.Items) != 1 {
+	if len(namespaces.Items) == 0 {
+		return "", fmt.Errorf("odigos is not currently installed in the cluster, so there is nothing to uninstall")
+	} else if len(namespaces.Items) != 1 {
 		return "", fmt.Errorf("expected to get 1 namespace got %d", len(namespaces.Items))
 	}
 
