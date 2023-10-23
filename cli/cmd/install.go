@@ -59,6 +59,9 @@ This command will install k8s components that will auto-instrument your applicat
 		if  err == nil {
 			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace \"%s\". If you wish to re-install, run \"odigos uninstall\" first.\n", nsflag)
 			os.Exit(1)
+		} else if !resources.IsErrNoOdigosNamespaceFound(err) {
+			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
+			os.Exit(1)
 		}
 		
 		isOdigosCloud := odigosCloudApiKeyFlag != ""
