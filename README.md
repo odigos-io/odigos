@@ -19,13 +19,13 @@ Generate distributed traces for any application without code changes.
 <h2 align="center">Odigos participate in Hacktoberfest 2023!</h2>
  <p align="center"> 🚀 Limited Time Offer! 🚀
 
- <p align="center">👕 Make three Pull Requests (PRs) to Odigos repositories by October 20, 2023, and you could be one of the lucky winners of this exclusive Odigos tee! 😎
+ <p align="center">Make three Pull Requests (PRs) to Odigos repositories by October 31, 2023, and you could be one of the lucky winners of this exclusive Odigos tee! 👕 
 
- <p align="center">🌟 But hurry! we only have a maximum of twenty tees to give away, so don't miss your chance! 🌟
+ <p align="center">But hurry! we only have a maximum of twenty tees to give away, so don't miss your chance! 
 
- <p align="center">🔥 Start contributing today and grab your chance to win! 🔥 #OdigosPRChallenge 🚀👕
+ <p align="center">Start contributing today and grab your chance to win!
 
- <p align="center">Happy coding! 💻💪👚
+ <p align="center">Happy coding! 
 </p>
 <p align="center">
 <img src="assets/hacktoberfest_tee.png" align="center" width="300" />
@@ -67,7 +67,7 @@ Download our [CLI](https://docs.odigos.io/installation) and run the following co
 odigos install
 ```
 
-For more details,see our [quickstart guide](https://docs.odigos.io/intro).
+For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ## Supported Destinations
 
