@@ -292,10 +292,10 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 							Name:  odigletContainerName,
 							Image: containers.GetImageName(OdigletImage, version),
 							Env: []corev1.EnvVar{
-								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: odigletServiceName,
-								},
+								// {
+								// 	Name:  "OTEL_SERVICE_NAME",
+								// 	Value: odigletServiceName,
+								// },
 								{
 									Name: "NODE_NAME",
 									ValueFrom: &corev1.EnvVarSource{
