@@ -1,16 +1,25 @@
 package resources
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/keyval-dev/odigos/cli/pkg/containers"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 )
 
-const ()
+const (
+	odigletServiceName   = "odiglet"
+	odigletDaemonSetName = "odiglet"
+	odigletContainerName = "odiglet"
+)
 
 var OdigletImage string
 
@@ -27,8 +36,8 @@ func NewOdigletServiceAccount() *corev1.ServiceAccount {
 	}
 }
 
-func NewOdigletClusterRole() *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
+func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
+	clusterrole := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -161,6 +170,25 @@ func NewOdigletClusterRole() *rbacv1.ClusterRole {
 			},
 		},
 	}
+
+	if psp {
+		clusterrole.Rules = append(clusterrole.Rules, rbacv1.PolicyRule{
+			Verbs: []string{
+				"use",
+			},
+			APIGroups: []string{
+				"policy",
+			},
+			Resources: []string{
+				"podsecuritypolicies",
+			},
+			ResourceNames: []string{
+				"privileged",
+			},
+		})
+	}
+
+	return clusterrole
 }
 
 func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
@@ -195,7 +223,7 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odiglet",
+			Name: odigletDaemonSetName,
 			Labels: map[string]string{
 				"app":                       "odiglet",
 				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
@@ -261,9 +289,13 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  "odiglet",
-							Image: fmt.Sprintf("%s:%s", OdigletImage, version),
+							Name:  odigletContainerName,
+							Image: containers.GetImageName(OdigletImage, version),
 							Env: []corev1.EnvVar{
+								// {
+								// 	Name:  "OTEL_SERVICE_NAME",
+								// 	Value: odigletServiceName,
+								// },
 								{
 									Name: "NODE_NAME",
 									ValueFrom: &corev1.EnvVarSource{
@@ -277,6 +309,15 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "status.hostIP",
+										},
+									},
+								},
+							},
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: ownTelemetryOtelConfig,
 										},
 									},
 								},
@@ -325,4 +366,32 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 }
 func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropagationMode {
 	return &p
+}
+
+type odigletResourceManager struct {
+	client *kube.Client
+	ns     string
+}
+
+func NewOdigletResourceManager(client *kube.Client, ns string) ResourceManager {
+	return &odigletResourceManager{client: client, ns: ns}
+}
+
+func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
+	return nil
+}
+
+// func (a *odigletResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
+
+// func (a *odigletResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
+
+func (a *odigletResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
+	fmt.Println("Patching Odigos odiglet daemonset")
+	jsonPatchDocumentBytes := patchTemplateSpecImageTag(OdigletImage, newOdigosVersion, odigletContainerName)
+	_, err := a.client.AppsV1().DaemonSets(a.ns).Patch(ctx, odigletDaemonSetName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
+	return err
 }

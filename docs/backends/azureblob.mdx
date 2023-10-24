@@ -1,0 +1,13 @@
+---
+title: "Azure Blob Storage"
+---
+
+Odigos exports data to Azure Blob Storage in [OTLP format](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md).
+Data can be exported either in JSON format or in binary format (protobuf).
+
+# Configuring Azure Blob Storage Backend
+
+There are two required fields to configure Azure Blob Storage backend:
+
+- **Account name**: Azure Storage account name
+- **Container name**: Azure Storage container name

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/keyval-dev/odigos/autoscaler/utils"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	appsv1 "k8s.io/api/apps/v1"
@@ -135,9 +137,12 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 					Containers: []corev1.Container{
 						{
 							Name:    containerName,
-							Image:   containerImage,
+							Image:   utils.GetContainerImage(containerImage),
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, configKey)},
 							EnvFrom: getSecretsFromDests(dests),
+							SecurityContext: &corev1.SecurityContext{
+								RunAsUser: int64Ptr(10000),
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      configKey,
@@ -200,5 +205,9 @@ func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSou
 }
 
 func intPtr(n int32) *int32 {
+	return &n
+}
+
+func int64Ptr(n int64) *int64 {
 	return &n
 }

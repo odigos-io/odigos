@@ -1,7 +1,11 @@
 package resources
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/keyval-dev/odigos/cli/pkg/containers"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
@@ -9,11 +13,16 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+var AutoscalerImage string
+
 const (
-	autoscalerImage = "keyval/odigos-autoscaler"
+	autoScalerServiceName    = "auto-scaler"
+	autoScalerDeploymentName = "odigos-autoscaler"
+	autoScalerContainerName  = "manager"
 )
 
 func NewAutoscalerServiceAccount() *corev1.ServiceAccount {
@@ -346,13 +355,13 @@ func NewAutoscalerLeaderElectionRoleBinding() *rbacv1.RoleBinding {
 }
 
 func NewAutoscalerDeployment(version string) *appsv1.Deployment {
-	return &appsv1.Deployment{
+	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-autoscaler",
+			Name: autoScalerDeploymentName,
 			Labels: map[string]string{
 				"app":                       "odigos-autoscaler",
 				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
@@ -374,14 +383,14 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 						"app": "odigos-autoscaler",
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": "manager",
+						"kubectl.kubernetes.io/default-container": autoScalerContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "manager",
-							Image: fmt.Sprintf("%s:%s", autoscalerImage, version),
+							Name:  autoScalerContainerName,
+							Image: containers.GetImageName(AutoscalerImage, version),
 							Command: []string{
 								"/app",
 							},
@@ -392,10 +401,23 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 							},
 							Env: []corev1.EnvVar{
 								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: autoScalerServiceName,
+								},
+								{
 									Name: "CURRENT_NS",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+							},
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: ownTelemetryOtelConfig,
 										},
 									},
 								},
@@ -440,4 +462,39 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 			MinReadySeconds: 0,
 		},
 	}
+
+	if containers.ImagePrefix != "" {
+		dep.Spec.Template.Spec.Containers[0].Args = append(dep.Spec.Template.Spec.Containers[0].Args,
+			"--image-prefix="+containers.ImagePrefix)
+	}
+
+	return dep
+}
+
+type autoScalerResourceManager struct {
+	client *kube.Client
+	ns     string
+}
+
+func NewAutoScalerResourceManager(client *kube.Client, ns string) ResourceManager {
+	return &autoScalerResourceManager{client: client, ns: ns}
+}
+
+func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) error {
+	return nil
+}
+
+// func (a *autoScalerResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
+
+// func (a *autoScalerResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
+
+func (a *autoScalerResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
+	fmt.Println("Patching Odigos autoscaler deployment")
+	jsonPatchDocumentBytes := patchTemplateSpecImageTag(AutoscalerImage, newOdigosVersion, autoScalerContainerName)
+	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, autoScalerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
+	return err
 }
