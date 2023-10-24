@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -37,8 +38,12 @@ var uninstallCmd = &cobra.Command{
 		ctx := cmd.Context()
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
-		if err != nil {
-			ns = consts.DefaultNamespace
+		if resources.IsErrNoOdigosNamespaceFound(err) {
+			fmt.Println("\033[31mERROR\033[0m odigos is not currently installed in the cluster, so there is nothing to uninstall")
+			os.Exit(1)
+		} else if !resources.IsErrNoOdigosNamespaceFound(err) && err != nil{
+			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already uninstalled: %s\n", err)
+			os.Exit(1)
 		}
 
 		fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
