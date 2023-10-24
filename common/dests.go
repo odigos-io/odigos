@@ -27,4 +27,6 @@ const (
 	AzureBlobDestinationType     DestinationType = "azureblob"
 	DynatraceDestinationType     DestinationType = "dynatrace"
 	ChronosphereDestinationType  DestinationType = "chronosphere"
+	ElasticAPMDestinationType    DestinationType = "elasticapm"
+	AxiomDestinationType         DestinationType = "axiom"
 )

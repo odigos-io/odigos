@@ -21,6 +21,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-logr/zapr"
+	bridge "github.com/keyval-dev/opentelemetry-zap-bridge"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+
 	"github.com/keyval-dev/odigos/common/utils"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -32,11 +36,13 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 
 	"github.com/keyval-dev/odigos/autoscaler/controllers"
+	nameutils "github.com/keyval-dev/odigos/autoscaler/utils"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -64,8 +70,9 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&imagePullSecretsString, "image-pull-secrets", "",
 		"The image pull secrets to use for the collectors created by autoscaler")
+	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler")
 
-	opts := zap.Options{
+	opts := ctrlzap.Options{
 		Development: true,
 	}
 	opts.BindFlags(flag.CommandLine)
@@ -75,16 +82,24 @@ func main() {
 		imagePullSecrets = strings.Split(imagePullSecretsString, ",")
 	}
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	zapLogger := ctrlzap.NewRaw(ctrlzap.UseFlagOptions(&opts))
+	zapLogger = bridge.AttachToZapLogger(zapLogger)
+	logger := zapr.NewLogger(zapLogger)
+	ctrl.SetLogger(logger)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
 		HealthProbeBindAddress: probeAddr,
-		Namespace:              utils.GetCurrentNamespace(),
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "f681cfed.odigos.io",
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				utils.GetCurrentNamespace(): {},
+			},
+		},
+		LeaderElection:   enableLeaderElection,
+		LeaderElectionID: "f681cfed.odigos.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

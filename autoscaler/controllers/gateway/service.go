@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -94,6 +95,12 @@ func getDesiredService(gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme
 					Protocol:   "TCP",
 					Port:       4317,
 					TargetPort: intstr.FromInt(4317),
+				},
+				{
+					Name:       "otlphttp",
+					Protocol:   "TCP",
+					Port:       4318,
+					TargetPort: intstr.FromInt(4318),
 				},
 				{
 					Name: "metrics",

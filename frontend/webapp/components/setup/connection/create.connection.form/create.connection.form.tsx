@@ -17,6 +17,7 @@ import { SETUP } from '@/utils/constants';
 import { DestinationBody } from '@/containers/setup/connection/connection.section';
 import { Field } from '@/types/destinations';
 import theme from '@/styles/palette';
+import { useKeyDown } from '@/hooks';
 
 interface CreateConnectionFormProps {
   fields: Field[];
@@ -64,15 +65,10 @@ export function CreateConnectionForm({
     filterSupportedMonitors();
   }, [supportedSignals]);
 
-  useEffect(() => {
-    window.addEventListener('keypress', handleKeyPress);
-    return () => {
-      window.removeEventListener('keypress', handleKeyPress);
-    };
-  }, []);
+  useKeyDown('Enter', handleKeyPress);
 
   function handleKeyPress(e: any) {
-    if (e.key === 'Enter' && !isCreateButtonDisabled) {
+    if (!isCreateButtonDisabled) {
       onCreateClick();
     }
   }

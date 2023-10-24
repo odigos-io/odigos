@@ -1,0 +1,27 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: elasticapm
+  displayName: Elastic APM
+  category: managed
+spec:
+  image: elasticapm.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: ELASTIC_APM_SERVER_ENDPOINT
+      displayName: elastic APM server endpoint
+      componentType: input
+      componentProps:
+        type: text
+    - name: ELASTIC_APM_SECRET_TOKEN
+      displayName: elastic APM server token
+      componentType: input
+      componentProps:
+        type: password
+      secret: true

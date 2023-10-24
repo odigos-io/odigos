@@ -1,0 +1,27 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: axiom
+  displayName: Axiom
+  category: managed
+spec:
+  image: axiom.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: true
+  fields:
+    - name: AXIOM_DATASET
+      displayName: Dataset
+      componentType: input
+      componentProps:
+        type: text
+    - name: AXIOM_API_TOKEN
+      displayName: Axiom API token
+      componentType: input
+      componentProps:
+        type: password
+      secret: true

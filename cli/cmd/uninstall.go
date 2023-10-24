@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	"github.com/keyval-dev/odigos/cli/pkg/log"
+	"github.com/keyval-dev/odigos/common/consts"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -29,12 +31,19 @@ var uninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "Unistall Odigos from your cluster",
 	Run: func(cmd *cobra.Command, args []string) {
-		client := kube.CreateClient(cmd)
+		client, err := kube.CreateClient(cmd)
+		if err != nil {
+			kube.PrintClientErrorAndExit(err)
+		}
 		ctx := cmd.Context()
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
-		if err != nil {
-			ns = "odigos-system"
+		if resources.IsErrNoOdigosNamespaceFound(err) {
+			fmt.Println("\033[31mERROR\033[0m odigos is not currently installed in the cluster, so there is nothing to uninstall")
+			os.Exit(1)
+		} else if !resources.IsErrNoOdigosNamespaceFound(err) && err != nil{
+			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already uninstalled: %s\n", err)
+			os.Exit(1)
 		}
 
 		fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
@@ -50,6 +59,8 @@ var uninstallCmd = &cobra.Command{
 			client, cmd, ns, uninstallDaemonSets)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos ConfigMaps",
 			client, cmd, ns, uninstallConfigMaps)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Services",
+			client, cmd, ns, uninstallServices)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
 			client, cmd, ns, uninstallCRDs)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos RBAC",
@@ -66,9 +77,17 @@ var uninstallCmd = &cobra.Command{
 		err = rollbackPodChanges(ctx, client)
 		if err != nil {
 			l.Error(err)
+		} else {
+			l.Success()
 		}
 
-		l.Success()
+		l = log.Print("Rolling back odigos changes to namespaces")
+		err = rollbackNamespaceChanges(ctx, client)
+		if err != nil {
+			l.Error(err)
+		} else {
+			l.Success()
+		}
 
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
@@ -161,6 +180,29 @@ func rollbackPodTemplateSpec(ctx context.Context, client *kube.Client, pts *v1.P
 	}
 }
 
+func rollbackNamespaceChanges(ctx context.Context, client *kube.Client) error {
+	var enabledOdigosInstrumentationLabel = map[string]string{
+		consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled,
+	}
+	ns, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: enabledOdigosInstrumentationLabel,
+		}),
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range ns.Items {
+		delete(n.Labels, consts.OdigosInstrumentationLabel)
+		_, err := client.CoreV1().Namespaces().Update(ctx, &n, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func uninstallDeployments(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 	list, err := client.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
@@ -173,6 +215,26 @@ func uninstallDeployments(ctx context.Context, cmd *cobra.Command, client *kube.
 
 	for _, i := range list.Items {
 		err = client.AppsV1().Deployments(ns).Delete(ctx, i.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func uninstallServices(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	list, err := client.CoreV1().Services(ns).List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: labels.OdigosSystem,
+		}),
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, i := range list.Items {
+		err = client.CoreV1().Services(ns).Delete(ctx, i.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
