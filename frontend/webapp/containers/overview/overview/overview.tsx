@@ -27,7 +27,6 @@ export function OverviewContainer() {
   );
 
   const { data: sources } = useQuery([QUERIES.API_SOURCES], getSources);
-  console.log({ sources });
   const sourcesNodes = useMemo(() => {
     const groupedSources = groupSourcesNamespace(sources);
 
@@ -42,7 +41,7 @@ export function OverviewContainer() {
 
     return nodes;
   }, [sources, containerHeight]);
-  console.log({ destinations });
+
   const destinationsNodes = useMemo(
     () =>
       getNodes(
@@ -66,9 +65,6 @@ export function OverviewContainer() {
   if (!destinationsNodes || !sourcesNodes) {
     return <KeyvalLoader />;
   }
-
-  console.log({ nodes: [...destinationsNodes, ...sourcesNodes] });
-  console.log({ edges: edges });
 
   return (
     <OverviewDataFlowWrapper ref={containerRef}>
