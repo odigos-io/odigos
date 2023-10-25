@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/keyval-dev/odigos/cli/cmd/migrations"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
@@ -487,9 +488,10 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 func (a *autoScalerResourceManager) GetMigrationSteps() []MigrationStep {
 	return []MigrationStep{
 		{
-			SourceVersion:         "v0.1.81",
-			ApplyMigrationStep:    a.applyRemoveAppLabel,
-			RollbackMigrationStep: a.rollbackRemoveAppLabel,
+			SourceVersion: "v0.1.81",
+			Patchers: []migrations.Patcher{
+				migrations.NewRemoveAppLabelPatcherDeployment(a.client, a.ns, autoScalerDeploymentName, autoScalerAppLabelValue),
+			},
 		},
 	}
 }
@@ -504,9 +506,11 @@ func (a *autoScalerResourceManager) GetMigrationSteps() []MigrationStep {
 
 func (a *autoScalerResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos autoscaler deployment")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(AutoscalerImage, newOdigosVersion, autoScalerContainerName)
-	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, autoScalerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
-	return err
+	patcher := migrations.NewSetImagePatcherDeployment(a.client, a.ns, autoScalerDeploymentName, AutoscalerImage, newOdigosVersion, "TODO", autoScalerContainerName)
+	return patcher.Patch(ctx)
+	// jsonPatchDocumentBytes := patchTemplateSpecImageTag(AutoscalerImage, newOdigosVersion, autoScalerContainerName)
+	// _, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, autoScalerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
+	// return err
 }
 
 func (a *autoScalerResourceManager) applyRemoveAppLabel(ctx context.Context) error {

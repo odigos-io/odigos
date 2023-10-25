@@ -2,6 +2,8 @@ package resources
 
 import (
 	"context"
+
+	"github.com/keyval-dev/odigos/cli/cmd/migrations"
 )
 
 type MigrationStep struct {
@@ -9,9 +11,7 @@ type MigrationStep struct {
 	// For example - if the migration step is from version v1.0.0 to v1.1.0, the source version is v1.0.0.
 	SourceVersion string
 
-	ApplyMigrationStep func(ctx context.Context) error
-
-	RollbackMigrationStep func(ctx context.Context) error
+	Patchers []migrations.Patcher
 }
 
 type ResourceManager interface {

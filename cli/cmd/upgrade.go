@@ -122,9 +122,11 @@ func applyRelevantMigrationSteps(ctx context.Context, resourceManagers []resourc
 			migrationSteps := migrationsByVersion[versionStr]
 			fmt.Printf("Applying %d migration steps for version %s:\n", len(migrationSteps), version)
 			for _, migrationStep := range migrationSteps {
-				err := migrationStep.ApplyMigrationStep(ctx)
-				if err != nil {
-					return err
+				for _, patcher := range migrationStep.Patchers {
+					err := patcher.Patch(ctx)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -136,9 +138,12 @@ func applyRelevantMigrationSteps(ctx context.Context, resourceManagers []resourc
 			fmt.Printf("Rolling back %d migration steps for version %s:\n", len(migrationSteps), version)
 			for j := len(migrationSteps) - 1; j >= 0; j-- {
 				migrationStep := migrationSteps[j]
-				err := migrationStep.RollbackMigrationStep(ctx)
-				if err != nil {
-					return err
+				for k := len(migrationStep.Patchers) - 1; k >= 0; k-- {
+					patcher := migrationStep.Patchers[k]
+					err := patcher.UnPatch(ctx)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
