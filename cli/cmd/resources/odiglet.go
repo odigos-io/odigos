@@ -2,7 +2,6 @@ package resources
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
@@ -12,13 +11,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 )
 
 const (
-	odigletServiceName   = "odiglet"
-	odigletDaemonSetName = "odiglet"
-	odigletContainerName = "odiglet"
+	OdigletServiceName   = "odiglet"
+	OdigletDaemonSetName = "odiglet"
+	OdigletAppLabelValue = "odiglet"
+	OdigletContainerName = "odiglet"
 )
 
 var OdigletImage string
@@ -223,22 +222,21 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: odigletDaemonSetName,
+			Name: OdigletDaemonSetName,
 			Labels: map[string]string{
-				"app":                       "odiglet",
 				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
 			},
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "odiglet",
+					"app": OdigletAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "odiglet",
+						"app": OdigletAppLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -289,12 +287,12 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  odigletContainerName,
+							Name:  OdigletContainerName,
 							Image: containers.GetImageName(OdigletImage, version),
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: odigletServiceName,
+									Value: OdigletServiceName,
 								},
 								{
 									Name: "NODE_NAME",
@@ -394,8 +392,9 @@ func (a *odigletResourceManager) GetMigrationSteps() []MigrationStep {
 // }
 
 func (a *odigletResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
-	fmt.Println("Patching Odigos odiglet daemonset")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(OdigletImage, newOdigosVersion, odigletContainerName)
-	_, err := a.client.AppsV1().DaemonSets(a.ns).Patch(ctx, odigletDaemonSetName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
-	return err
+	// fmt.Println("Patching Odigos odiglet daemonset")
+	// jsonPatchDocumentBytes := patchTemplateSpecImageTag(OdigletImage, newOdigosVersion, odigletContainerName)
+	// _, err := a.client.AppsV1().DaemonSets(a.ns).Patch(ctx, odigletDaemonSetName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
+	// return err
+	return nil
 }

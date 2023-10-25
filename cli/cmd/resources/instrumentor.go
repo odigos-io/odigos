@@ -20,9 +20,10 @@ import (
 var InstrumentorImage string
 
 const (
-	instrumentorServiceName    = "instrumentor"
-	instrumentorDeploymentName = "odigos-instrumentor"
-	instrumentorContainerName  = "manager"
+	InstrumentorServiceName    = "instrumentor"
+	InstrumentorDeploymentName = "odigos-instrumentor"
+	InstrumentorAppLabelValue  = "odigos-instrumentor"
+	InstrumentorContainerName  = "manager"
 )
 
 func NewInstrumentorServiceAccount() *corev1.ServiceAccount {
@@ -32,7 +33,7 @@ func NewInstrumentorServiceAccount() *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   instrumentorDeploymentName,
+			Name:   InstrumentorDeploymentName,
 			Labels: labels.OdigosSystem,
 		},
 	}
@@ -404,7 +405,6 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "odigos-instrumentor",
 			Labels: map[string]string{
-				"app":                       "odigos-instrumentor",
 				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
 			},
 			Annotations: map[string]string{
@@ -415,22 +415,22 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "odigos-instrumentor",
+					"app": InstrumentorAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "odigos-instrumentor",
+						"app": InstrumentorAppLabelValue,
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": instrumentorContainerName,
+						"kubectl.kubernetes.io/default-container": InstrumentorContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  instrumentorContainerName,
+							Name:  InstrumentorContainerName,
 							Image: containers.GetImageName(InstrumentorImage, version),
 							Command: []string{
 								"/app",
@@ -439,7 +439,7 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: instrumentorServiceName,
+									Value: InstrumentorServiceName,
 								},
 								{
 									Name: "CURRENT_NS",
@@ -540,7 +540,7 @@ func (a *instrumentorResourceManager) GetMigrationSteps() []MigrationStep {
 
 func (a *instrumentorResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos instrumentor deployment")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(InstrumentorImage, newOdigosVersion, instrumentorContainerName)
-	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, instrumentorDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
+	jsonPatchDocumentBytes := patchTemplateSpecImageTag(InstrumentorImage, newOdigosVersion, InstrumentorContainerName)
+	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, InstrumentorDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
 	return err
 }

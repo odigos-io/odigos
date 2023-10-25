@@ -18,10 +18,11 @@ import (
 )
 
 const (
-	schedulerImage          = "keyval/odigos-scheduler"
-	schedulerServiceName    = "scheduler"
-	schedulerDeploymentName = "odigos-scheduler"
-	schedulerContainerName  = "manager"
+	SchedulerImage          = "keyval/odigos-scheduler"
+	SchedulerServiceName    = "scheduler"
+	SchedulerDeploymentName = "odigos-scheduler"
+	SchedulerAppLabelValue  = "odigos-scheduler"
+	SchedulerContainerName  = "manager"
 )
 
 func NewSchedulerServiceAccount() *corev1.ServiceAccount {
@@ -190,9 +191,8 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: schedulerDeploymentName,
+			Name: SchedulerDeploymentName,
 			Labels: map[string]string{
-				"app":                       "odigos-scheduler",
 				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
 			},
 			Annotations: map[string]string{
@@ -203,23 +203,23 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "odigos-scheduler",
+					"app": SchedulerAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "odigos-scheduler",
+						"app": SchedulerAppLabelValue,
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": schedulerContainerName,
+						"kubectl.kubernetes.io/default-container": SchedulerContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  schedulerContainerName,
-							Image: containers.GetImageName(schedulerImage, version),
+							Name:  SchedulerContainerName,
+							Image: containers.GetImageName(SchedulerImage, version),
 							Command: []string{
 								"/app",
 							},
@@ -231,7 +231,7 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: schedulerServiceName,
+									Value: SchedulerServiceName,
 								},
 								{
 									Name: "CURRENT_NS",
@@ -320,7 +320,7 @@ func (a *schedulerResourceManager) GetMigrationSteps() []MigrationStep {
 
 func (a *schedulerResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos scheduler deployment")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(schedulerImage, newOdigosVersion, schedulerContainerName)
-	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, schedulerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
+	jsonPatchDocumentBytes := patchTemplateSpecImageTag(SchedulerImage, newOdigosVersion, SchedulerContainerName)
+	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, SchedulerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
 	return err
 }

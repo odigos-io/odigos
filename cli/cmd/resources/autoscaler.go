@@ -14,17 +14,16 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 var AutoscalerImage string
 
 const (
-	autoScalerServiceName    = "auto-scaler"
-	autoScalerDeploymentName = "odigos-autoscaler"
-	autoScalerAppLabelValue  = "odigos-autoscaler"
-	autoScalerContainerName  = "manager"
+	AutoScalerServiceName    = "auto-scaler"
+	AutoScalerDeploymentName = "odigos-autoscaler"
+	AutoScalerAppLabelValue  = "odigos-autoscaler"
+	AutoScalerContainerName  = "manager"
 )
 
 func NewAutoscalerServiceAccount() *corev1.ServiceAccount {
@@ -363,7 +362,7 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: autoScalerDeploymentName,
+			Name: AutoScalerDeploymentName,
 			Labels: map[string]string{
 				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
 			},
@@ -375,22 +374,22 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": autoScalerAppLabelValue,
+					"app": AutoScalerAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": autoScalerAppLabelValue,
+						"app": AutoScalerAppLabelValue,
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": autoScalerContainerName,
+						"kubectl.kubernetes.io/default-container": AutoScalerContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  autoScalerContainerName,
+							Name:  AutoScalerContainerName,
 							Image: containers.GetImageName(AutoscalerImage, version),
 							Command: []string{
 								"/app",
@@ -403,7 +402,7 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: autoScalerServiceName,
+									Value: AutoScalerServiceName,
 								},
 								{
 									Name: "CURRENT_NS",
@@ -487,12 +486,12 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 
 func (a *autoScalerResourceManager) GetMigrationSteps() []MigrationStep {
 	return []MigrationStep{
-		{
-			SourceVersion: "v0.1.81",
-			Patchers: []migrations.Patcher{
-				migrations.NewRemoveAppLabelPatcherDeployment(a.client, a.ns, autoScalerDeploymentName, autoScalerAppLabelValue),
-			},
-		},
+		// {
+		// 	SourceVersion: "v0.1.81",
+		// 	Patchers: []migrations.Patcher{
+		// 		migrations.NewRemoveAppLabelPatcherDeployment(a.client, a.ns, autoScalerDeploymentName, autoScalerAppLabelValue),
+		// 	},
+		// },
 	}
 }
 
@@ -506,21 +505,9 @@ func (a *autoScalerResourceManager) GetMigrationSteps() []MigrationStep {
 
 func (a *autoScalerResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
 	fmt.Println("Patching Odigos autoscaler deployment")
-	patcher := migrations.NewSetImagePatcherDeployment(a.client, a.ns, autoScalerDeploymentName, AutoscalerImage, newOdigosVersion, "TODO", autoScalerContainerName)
+	patcher := migrations.NewSetImagePatcherDeployment(a.client, a.ns, AutoScalerDeploymentName, AutoscalerImage, newOdigosVersion, "TODO", autoScalerContainerName)
 	return patcher.Patch(ctx)
 	// jsonPatchDocumentBytes := patchTemplateSpecImageTag(AutoscalerImage, newOdigosVersion, autoScalerContainerName)
 	// _, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, autoScalerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
 	// return err
-}
-
-func (a *autoScalerResourceManager) applyRemoveAppLabel(ctx context.Context) error {
-	jsonPatchDocumentBytes, _ := patchRemoveAppLabel(autoScalerAppLabelValue)
-	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, autoScalerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
-	return err
-}
-
-func (a *autoScalerResourceManager) rollbackRemoveAppLabel(ctx context.Context) error {
-	_, jsonUnpatchDocumentBytes := patchRemoveAppLabel(autoScalerAppLabelValue)
-	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, autoScalerDeploymentName, k8stypes.JSONPatchType, jsonUnpatchDocumentBytes, metav1.PatchOptions{})
-	return err
 }

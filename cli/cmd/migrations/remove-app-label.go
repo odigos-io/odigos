@@ -3,50 +3,84 @@ package migrations
 import (
 	"context"
 
+	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/dynamic"
 )
 
 type removeAppLabelPatcher struct {
-	Patcher
-
-	resourceInterface  dynamic.ResourceInterface
-	objectName         string
-	expectedLabelValue string
 }
 
-func NewRemoveAppLabelPatcherDeployment(client *kube.Client, ns string, objectName string, expectedLabelValue string) Patcher {
-	return &removeAppLabelPatcher{
-		resourceInterface:  getResourceInterfaceDeployment(client, ns),
-		objectName:         objectName,
-		expectedLabelValue: expectedLabelValue,
-	}
+func NewRemoveAppLabelMigrationStep() MigrationStep {
+	return &removeAppLabelPatcher{}
 }
 
-func NewRemoveAppLabelPatcherDaemonSet(client *kube.Client, ns string, objectName string, expectedLabelValue string) Patcher {
-	return &removeAppLabelPatcher{
-		resourceInterface:  getResourceInterfaceDaemonSet(client, ns),
-		objectName:         objectName,
-		expectedLabelValue: expectedLabelValue,
-	}
+func (p *removeAppLabelPatcher) SourceVersion() string {
+	return "v0.1.81"
 }
 
-func (p *removeAppLabelPatcher) PatcherName() string {
+func (p *removeAppLabelPatcher) MigrationName() string {
 	return "RemoveAppLabel"
 }
 
-func (p *removeAppLabelPatcher) Patch(ctx context.Context) error {
-	patchType, patchData := getPatchRemoveAppLabel(p.expectedLabelValue)
-	_, err := p.resourceInterface.Patch(ctx, p.objectName, patchType, patchData, metav1.PatchOptions{})
-	return err
+// Migrate implements MigrationStep.
+func (*removeAppLabelPatcher) Migrate(ctx context.Context, client *kube.Client, odigosNs string) error {
+
+	patchType, patchDataAutoScaler := getPatchRemoveAppLabel(resources.AutoScalerAppLabelValue)
+	_, err := client.AppsV1().Deployments(odigosNs).Patch(ctx, resources.AutoScalerDeploymentName, patchType, patchDataAutoScaler, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+
+	patchType, patchInstrumentor := getPatchRemoveAppLabel(resources.InstrumentorAppLabelValue)
+	_, err = client.AppsV1().Deployments(odigosNs).Patch(ctx, resources.InstrumentorDeploymentName, patchType, patchInstrumentor, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+
+	patchType, patchSchedular := getPatchRemoveAppLabel(resources.SchedulerAppLabelValue)
+	_, err = client.AppsV1().Deployments(odigosNs).Patch(ctx, resources.SchedulerDeploymentName, patchType, patchSchedular, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+
+	patchType, patchDataOdiglet := getPatchRemoveAppLabel(resources.OdigletAppLabelValue)
+	_, err = client.AppsV1().DaemonSets(odigosNs).Patch(ctx, resources.OdigletDaemonSetName, patchType, patchDataOdiglet, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (p *removeAppLabelPatcher) UnPatch(ctx context.Context) error {
-	patchType, patchData := getUnPatchRemoveAppLabel(p.expectedLabelValue)
-	_, err := p.resourceInterface.Patch(ctx, p.objectName, patchType, patchData, metav1.PatchOptions{})
-	return err
+// Rollback implements MigrationStep.
+func (*removeAppLabelPatcher) Rollback(ctx context.Context, client *kube.Client, odigosNs string) error {
+	patchType, patchDataAutoScaler := getUnPatchRemoveAppLabel(resources.AutoScalerAppLabelValue)
+	_, err := client.AppsV1().Deployments(odigosNs).Patch(ctx, resources.AutoScalerDeploymentName, patchType, patchDataAutoScaler, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+
+	patchType, patchInstrumentor := getUnPatchRemoveAppLabel(resources.InstrumentorAppLabelValue)
+	_, err = client.AppsV1().Deployments(odigosNs).Patch(ctx, resources.InstrumentorDeploymentName, patchType, patchInstrumentor, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+
+	patchType, patchSchedular := getUnPatchRemoveAppLabel(resources.SchedulerAppLabelValue)
+	_, err = client.AppsV1().Deployments(odigosNs).Patch(ctx, resources.SchedulerDeploymentName, patchType, patchSchedular, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+
+	patchType, patchDataOdiglet := getUnPatchRemoveAppLabel(resources.OdigletAppLabelValue)
+	_, err = client.AppsV1().DaemonSets(odigosNs).Patch(ctx, resources.OdigletDaemonSetName, patchType, patchDataOdiglet, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // the app label makes sense on pods to group them into a replicaset,
