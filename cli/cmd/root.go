@@ -11,13 +11,17 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "odigos",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short: "A CLI tool for managing your Kubernetes resources",
+	Long: `Odigos is a command-line tool for simplifying Kubernetes resource management.
+It allows you to interact with your Kubernetes cluster, manage resources, and perform various operations.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+You can use Odigos to:
+- Create and manage Kubernetes resources.
+- Deploy applications to your cluster.
+- Monitor the status of your workloads.
+- Configure and customize your Kubernetes environment.
+
+Odigos is designed to make Kubernetes operations easy and efficient. Get started with Odigos today!`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },

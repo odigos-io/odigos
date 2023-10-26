@@ -19,14 +19,22 @@ import (
 
 // observabilityCmd represents the observability command
 var observabilityCmd = &cobra.Command{
-	Use:   "observability",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+    Use:   "observability",
+    Short: "Configure and manage observability for your applications and services",
+    Long: `The observability command allows you to set up and manage observability and monitoring for your applications and services. It provides you with the tools to choose an observability backend, specify the signals you want to collect (e.g., traces, metrics, logs), and define the settings for your observability infrastructure.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Observability is crucial for understanding how your applications are performing, diagnosing issues, and ensuring the reliability of your services. It enables you to gain valuable insights into the behavior of your systems.
+
+You can select from a variety of observability backends, such as Grafana Cloud, Logz.io, and more. Each backend offers unique features and integrations. You can pick the one that aligns best with your specific needs.
+
+Usage Examples:
+  - Configure observability with Grafana Cloud:
+    odigos observability --backend grafana-cloud --signal traces,metrics,logs --api-key <YOUR_API_KEY>
+
+  - Configure observability with Logz.io:
+    odigos observability --backend logzio --signal traces,metrics,logs --tracing-token <YOUR_TRACING_TOKEN> --metrics-token <YOUR_METRICS_TOKEN> --logs-token <YOUR_LOGS_TOKEN>
+
+You have the flexibility to customize your observability setup according to your precise requirements. Utilize the provided flags to specify the backend, select the signals to capture, and set other options. Make informed decisions to effectively monitor, analyze, and enhance the performance of your applications and services.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := isValidBackend(backendFlag); err != nil {
 			return err
@@ -196,23 +204,23 @@ func getOdigosNamespace(kubeClient *kube.Client, ctx context.Context) (string, e
 }
 
 func init() {
-	observabilityCmd.Flags().StringVar(&backendFlag, "backend", "", "Backend for observability data")
-	observabilityCmd.Flags().StringSliceVarP(&signalsFlag, "signal", "s", nil, "Reported signals [traces,metrics,logs]")
-	observabilityCmd.Flags().BoolVarP(&skipConfirm, "no-prompt", "y", false, "Skip install confirmation")
-	observabilityCmd.Flags().StringVarP(&urlFlag, "url", "u", "", "URL of the backend for observability data")
-	observabilityCmd.Flags().StringVar(&apiKeyFlag, "api-key", "", "API key for the selected backend")
-	observabilityCmd.Flags().StringVar(&regionFlag, "region", "", "Region for the selected backend")
+    observabilityCmd.Flags().StringVar(&backendFlag, "backend", "", "Specify the observability backend (e.g., Grafana, Logz.io)")
+    observabilityCmd.Flags().StringSliceVarP(&signalsFlag, "signal", "s", nil, "Specify reported signals (e.g., traces, metrics, logs)")
+    observabilityCmd.Flags().BoolVarP(&skipConfirm, "no-prompt", "y", false, "Skip installation confirmation")
+    observabilityCmd.Flags().StringVarP(&urlFlag, "url", "u", "", "Set the URL of the observability backend")
+    observabilityCmd.Flags().StringVar(&apiKeyFlag, "api-key", "", "Provide the API key for the selected backend")
+    observabilityCmd.Flags().StringVar(&regionFlag, "region", "", "Specify the region for the selected backend")
 
-	// Grafana Cloud Flags
-	observabilityCmd.Flags().StringVar(&grafanaTempoUrl, backend.GrafanaTempoUrlFlag, "", "URL for Grafana Cloud Tempo instance")
-	observabilityCmd.Flags().StringVar(&grafanaTempoUser, backend.GrafanaTempoUserFlag, "", "User for Grafana Cloud Tempo instance")
-	observabilityCmd.Flags().StringVar(&grafanaRemoteWriteUrl, backend.GrafanaPromUrlFlag, "", "RemoteWrite URL for Grafana Cloud prometheus instance")
-	observabilityCmd.Flags().StringVar(&grafanaPromUser, backend.GrafanaPromUserFlag, "", "User for Grafana Cloud prometheus instance")
-	observabilityCmd.Flags().StringVar(&grafanaLokiUrl, backend.GrafanaLokiUrlFlag, "", "URL for Grafana Cloud Loki instance")
-	observabilityCmd.Flags().StringVar(&grafanaLokiUser, backend.GrafanaLokiUserFlag, "", "User for Grafana Cloud Loki instance")
+    // Grafana Cloud Flags
+    observabilityCmd.Flags().StringVar(&grafanaTempoUrl, backend.GrafanaTempoUrlFlag, "", "Set the URL for Grafana Cloud Tempo instance")
+    observabilityCmd.Flags().StringVar(&grafanaTempoUser, backend.GrafanaTempoUserFlag, "", "Specify the user for Grafana Cloud Tempo instance")
+    observabilityCmd.Flags().StringVar(&grafanaRemoteWriteUrl, backend.GrafanaPromUrlFlag, "", "Set the RemoteWrite URL for Grafana Cloud Prometheus instance")
+    observabilityCmd.Flags().StringVar(&grafanaPromUser, backend.GrafanaPromUserFlag, "", "Specify the user for Grafana Cloud Prometheus instance")
+    observabilityCmd.Flags().StringVar(&grafanaLokiUrl, backend.GrafanaLokiUrlFlag, "", "Set the URL for Grafana Cloud Loki instance")
+    observabilityCmd.Flags().StringVar(&grafanaLokiUser, backend.GrafanaLokiUserFlag, "", "Specify the user for Grafana Cloud Loki instance")
 
-	// Logz.io Flags
-	observabilityCmd.Flags().StringVar(&logzioTracingToken, backend.LogzioTracingToken, "", "Tracing token for Logz.io")
-	observabilityCmd.Flags().StringVar(&logzioMetricsToken, backend.LogzioMetricsToken, "", "Metrics token for Logz.io")
-	observabilityCmd.Flags().StringVar(&logzioLoggingToken, backend.LogzioLogsToken, "", "Logging token for Logz.io")
+    // Logz.io Flags
+    observabilityCmd.Flags().StringVar(&logzioTracingToken, backend.LogzioTracingToken, "", "Set the tracing token for Logz.io")
+    observabilityCmd.Flags().StringVar(&logzioMetricsToken, backend.LogzioMetricsToken, "", "Set the metrics token for Logz.io")
+    observabilityCmd.Flags().StringVar(&logzioLoggingToken, backend.LogzioLogsToken, "", "Set the logging token for Logz.io")
 }
