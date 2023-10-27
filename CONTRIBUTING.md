@@ -7,11 +7,12 @@
   - [Local Development](#local-development)
     - [Run Odigos Cli from code](#run-odigos-cli-from-code)
     - [How to Develop Odigos Locally](#how-to-develop-odigos-locally)
+    - [How to Build and run Odigos Frontend Locally](#how-to-build-and-run-odigos-frontend-locally)
 
 Welcome! We are glad that you want to contribute to our project! 💖
 
 As you get started, you are in the best position to give us feedback on areas of
-our project that we need help with including:
+our project that we need help with, including:
 
 - Problems found during setting up a new developer environment
 - Gaps in our Quickstart Guide or documentation
@@ -22,7 +23,7 @@ bug report and let us know!
 
 ## Ways to Contribute
 
-We welcome many different types of contributions including:
+We welcome many different types of contributions, including:
 
 - New features
 - Builds, CI/CD
@@ -58,12 +59,13 @@ The best way to reach us with a question when contributing is to ask on:
 
 ## Local Development
 
-This sections describe how to setup your local development environment
+This section describes how to setup your local development environment
 and test your code changes.
 
-First, follow the [Quickstart Guide](https://docs.odigos.io/intro) in odigos docs to create a local k8s development cluster with demo application and a functioning odigos installation.
+First, follow the [Quickstart Guide](https://docs.odigos.io/intro) in odigos docs to create a local k8s development cluster with a demo application and a functioning odigos installation.
 
 Make sure you are able to:
+
 - [x] run Odigos cli in your terminal.
 - [x] open the demo application ui in your browser to interact with it.
 - [x] install odigos in your development cluster with `odigos install`.
@@ -74,15 +76,16 @@ After you have a working odigos setup, you can start making changes to the code 
 
 ### Run Odigos Cli from code
 
-The code for the odigos cli tool is found at the `cli` directory [here](https://github.com/keyval-dev/odigos/tree/main/cli).
+The code for the odigos cli tool is found in the `cli` directory [here](https://github.com/keyval-dev/odigos/tree/main/cli).
 Test your cli code changes by running `go run .` from the `cli` directory:
 
 ```bash
 ➜  odigos git:(main) cd cli/
-➜  cli git:(main) go run .       
+➜  cli git:(main) go run .
 ```
 
-- To run `odigos install` cli command from local source, you will need to supply a version flag to tell odigos which image tags to install:
+- To run `odigos install` cli command from a local source, you will need to supply a version flag to tell odigos which image tags to install:
+
 ```bash
 ➜  cli git:(main) go run . install --version v0.1.81
 Installing Odigos version v0.1.81 in namespace odigos-system ...
@@ -91,17 +94,44 @@ Installing Odigos version v0.1.81 in namespace odigos-system ...
 - If you test changes to the `install` command, you will need to `go run . uninstall` first before you can `go run . install` again.
 
 ### How to Develop Odigos Locally
+
 The main steps involved when debugging Odigos locally are:
 
 - Use a Kind kubernetes cluster
 - Build custom images of Odigos and load them into Kind via:
+
 ```
 TAG=<CURRENT-ODIGOS-VERSION> make build-images load-to-kind
 ```
 
 - Ensure the TAG matches the Odigos version output from: `odigos version`
 - Restart all pods in the `odigos-system` namespace:
+
 ```
 kubectl delete pods --all -n odigos-system
 ```
+
 See the [Odigos docs](https://docs.odigos.io/intro) for the full steps on debugging Odigos locally.
+
+### How to Build and run Odigos Frontend Locally
+
+- go to `frontend/webapp`
+- run:
+
+```
+ npm run build
+```
+
+- go to `frontend` folder
+- run:
+
+```
+go build -o odigos-backend && ./odigos-backend --port 8085 --debug --address 0.0.0.0
+```
+
+- go to `frontend/webapp`
+- run:
+
+```
+ npm run dev
+```
