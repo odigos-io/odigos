@@ -26,7 +26,7 @@ import {
 } from '@/design.system';
 import { DeleteSource } from '@/components/overview';
 import { deleteSource, getSource, patchSources } from '@/services/sources';
-import { useNotification } from '@/hooks';
+import { useKeyDown, useNotification } from '@/hooks';
 import theme from '@/styles/palette';
 import { ManagedSource } from '@/types/sources';
 
@@ -65,18 +65,13 @@ export function UpdateSourceForm() {
   useEffect(() => {
     setInputValue(currentSource?.reported_name || '');
   }, [currentSource]);
-  useEffect(() => {
-    window.addEventListener('keypress', handleKeyPress);
-    return () => {
-      window.removeEventListener('keypress', handleKeyPress);
-    };
-  }, []);
+
+  useKeyDown('Enter', handleKeyPress);
 
   function handleKeyPress(e: any) {
-    if (e.key === 'Enter') {
-      onSaveClick();
-    }
+    onSaveClick();
   }
+
   async function onPageLoad() {
     const name = searchParams.get(NAME) || '';
     const kind = searchParams.get(KIND) || '';

@@ -2,10 +2,13 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
+	"github.com/keyval-dev/odigos/common/consts"
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/cmd/resources/crds"
@@ -18,8 +21,7 @@ import (
 )
 
 const (
-	defaultNamespace        = "odigos-system"
-	odigosCloudProxyVersion = "v0.3.0"
+	odigosCloudProxyVersion = "v0.6.0"
 )
 
 var (
@@ -40,16 +42,43 @@ type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *
 var installCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install Odigos",
-	Long:  `Install Odigos in your cluster. This command will install the Odigos CRDs, the Odigos Instrumentor, Scheduler, Autoscaler and Odiglet.`,
+	Long: `Install Odigos in your kubernetes cluster. 
+This command will install k8s components that will auto-instrument your applications with OpenTelemetry and send traces, metrics and logs to any telemetry backend`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		client := kube.CreateClient(cmd)
+		client, err := kube.CreateClient(cmd)
+		if err != nil {
+			kube.PrintClientErrorAndExit(err)
+		}
 		ctx := cmd.Context()
 		ns := cmd.Flag("namespace").Value.String()
 		cmd.Flags().StringSliceVar(&ignoredNamespaces, "ignore-namespace", DefaultIgnoredNamespaces, "--ignore-namespace foo logging")
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
+
+		existingOdigosNs, err := resources.GetOdigosNamespace(client, ctx)
+		if err == nil {
+			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace \"%s\". If you wish to re-install, run \"odigos uninstall\" first.\n", existingOdigosNs)
+			os.Exit(1)
+		} else if !resources.IsErrNoOdigosNamespaceFound(err) {
+			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
+			os.Exit(1)
+		}
+
+		isOdigosCloud := odigosCloudApiKeyFlag != ""
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
+		createKubeResourceWithLogging(ctx, "Creating Odigos Deployment Info ConfigMap",
+			client, cmd, ns, createOdigosDeploymentInfo)
+		if isOdigosCloud {
+			createKubeResourceWithLogging(ctx, "Creating Odigos Cloud Secret",
+				client, cmd, ns, createOdigosCloudSecret)
+			createKubeResourceWithLogging(ctx, "Creating Own Telemetry Pipeline",
+				client, cmd, ns, createOwnTelemetryPipeline)
+			createKubeResourceWithLogging(ctx, "Deploying Odigos Cloud Proxy",
+				client, cmd, ns, createKeyvalProxy)
+		} else {
+			createOwnTelemetryDisabled(ctx, cmd, client, ns)
+		}
 		createKubeResourceWithLogging(ctx, "Creating CRDs",
 			client, cmd, ns, createCRDs)
 		createKubeResourceWithLogging(ctx, "Creating Leader Election Role",
@@ -64,11 +93,6 @@ var installCmd = &cobra.Command{
 			client, cmd, ns, createOdiglet)
 		createKubeResourceWithLogging(ctx, "Deploying Autoscaler",
 			client, cmd, ns, createAutoscaler)
-
-		if odigosCloudApiKeyFlag != "" {
-			createKubeResourceWithLogging(ctx, "Deploying Odigos Cloud Proxy",
-				client, cmd, ns, createKeyvalProxy)
-		}
 
 		if !skipWait {
 			l := log.Print("Waiting for Odigos pods to be ready ...")
@@ -107,6 +131,11 @@ func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (b
 
 func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 	_, err := client.CoreV1().Namespaces().Create(ctx, resources.NewNamespace(ns), metav1.CreateOptions{})
+	return err
+}
+
+func createOdigosDeploymentInfo(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	_, err := client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOdigosDeploymentConfigMap(versionFlag), metav1.CreateOptions{})
 	return err
 }
 
@@ -245,6 +274,15 @@ func createOdiglet(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 	return err
 }
 
+func createOdigosCloudSecret(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	_, err := client.CoreV1().Secrets(ns).Create(ctx, resources.NewKeyvalSecret(odigosCloudApiKeyFlag), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func createKeyvalProxy(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 
 	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewKeyvalProxyServiceAccount(), metav1.CreateOptions{})
@@ -272,13 +310,45 @@ func createKeyvalProxy(ctx context.Context, cmd *cobra.Command, client *kube.Cli
 		return err
 	}
 
-	_, err = client.CoreV1().Secrets(ns).Create(ctx, resources.NewKeyvalSecret(odigosCloudApiKeyFlag), metav1.CreateOptions{})
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewKeyvalProxyDeployment(odigosCloudProxyVersion, ns), metav1.CreateOptions{})
+	return err
+}
+
+func createOwnTelemetryDisabled(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	_, err := client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOwnTelemetryConfigMapDisabled(), metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewKeyvalProxyDeployment(odigosCloudProxyVersion, ns), metav1.CreateOptions{})
-	return err
+	return nil
+}
+
+func createOwnTelemetryPipeline(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	if odigosCloudApiKeyFlag == "" {
+		return errors.New("odigos cloud api key is required for odigos own telemetry")
+	}
+
+	_, err := client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOwnTelemetryConfigMapOtlpGrpc(ns, versionFlag), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOwnTelemetryCollectorConfigMap(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewOwnTelemetryCollectorDeployment(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.CoreV1().Services(ns).Create(ctx, resources.NewOwnTelemetryCollectorService(), metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, cmd *cobra.Command, ns string, create ResourceCreationFunc) {
@@ -293,7 +363,7 @@ func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube
 
 func init() {
 	rootCmd.AddCommand(installCmd)
-	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", defaultNamespace, "target namespace for Odigos installation")
+	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", consts.DefaultNamespace, "target namespace for Odigos installation")
 	installCmd.Flags().StringVarP(&odigosCloudApiKeyFlag, "api-key", "k", "", "api key for managed odigos")
 	installCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "target version for Odigos installation")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "Skip waiting for pods to be ready")

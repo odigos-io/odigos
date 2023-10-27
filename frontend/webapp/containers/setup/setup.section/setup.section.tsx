@@ -1,25 +1,25 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from 'react';
 import {
   SetupContentWrapper,
   SetupSectionContainer,
   StepListWrapper,
   BackButtonWrapper,
-} from "./setup.section.styled";
-import { SetupHeader } from "../setup.header/setup.header";
-import { DestinationSection } from "../destination/destination.section";
-import { ConnectionSection } from "../connection/connection.section";
-import { SourcesSection } from "../sources/sources.section";
-import { KeyvalText, Steps } from "@/design.system";
-import { CONFIG, NOTIFICATION, SETUP } from "@/utils/constants";
-import { useSectionData, useNotification } from "@/hooks";
-import { STEPS, Step } from "./utils";
-import { setNamespaces } from "@/services";
-import { useSearchParams } from "next/navigation";
-import { useMutation } from "react-query";
-import { SelectedSources } from "@/types/sources";
-import { WhiteArrow } from "@/assets/icons/app";
+} from './setup.section.styled';
+import { SetupHeader } from '../setup.header/setup.header';
+import { DestinationSection } from '../destination/destination.section';
+import { ConnectionSection } from '../connection/connection.section';
+import { SourcesSection } from '../sources/sources.section';
+import { KeyvalText, Steps } from '@/design.system';
+import { CONFIG, NOTIFICATION, SETUP } from '@/utils/constants';
+import { useSectionData, useNotification } from '@/hooks';
+import { STEPS, Step } from './utils';
+import { setNamespaces } from '@/services';
+import { useSearchParams } from 'next/navigation';
+import { useMutation } from 'react-query';
+import { SelectedSources } from '@/types/sources';
+import { WhiteArrow } from '@/assets/icons/app';
 
-const STATE = "state";
+const STATE = 'state';
 
 const sectionComponents = {
   [SETUP.STEPS.ID.CHOOSE_SOURCE]: SourcesSection,

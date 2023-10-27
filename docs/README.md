@@ -1,6 +1,6 @@
 # Odigos Documentation
 
-The content and configuration powering the Odigos documentation at [docs.odigos.io](https://docs.odigos.io)
+The content and configuration powering the Odigos documentation is available at [docs.odigos.io](https://docs.odigos.io)
 
 ### 🚀 Setup
 

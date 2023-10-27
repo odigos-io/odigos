@@ -1,9 +1,11 @@
 package resources
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
@@ -11,10 +13,17 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 var InstrumentorImage string
+
+const (
+	instrumentorServiceName    = "instrumentor"
+	instrumentorDeploymentName = "odigos-instrumentor"
+	instrumentorContainerName  = "manager"
+)
 
 func NewInstrumentorServiceAccount() *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
@@ -23,7 +32,7 @@ func NewInstrumentorServiceAccount() *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-instrumentor",
+			Name:   instrumentorDeploymentName,
 			Labels: labels.OdigosSystem,
 		},
 	}
@@ -415,13 +424,13 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 						"app": "odigos-instrumentor",
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": "manager",
+						"kubectl.kubernetes.io/default-container": instrumentorContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "manager",
+							Name:  instrumentorContainerName,
 							Image: containers.GetImageName(InstrumentorImage, version),
 							Command: []string{
 								"/app",
@@ -429,10 +438,23 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 							Args: args,
 							Env: []corev1.EnvVar{
 								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: instrumentorServiceName,
+								},
+								{
 									Name: "CURRENT_NS",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+							},
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: ownTelemetryOtelConfig,
 										},
 									},
 								},
@@ -489,4 +511,32 @@ func ptrint64(i int64) *int64 {
 
 func ptrbool(b bool) *bool {
 	return &b
+}
+
+type instrumentorResourceManager struct {
+	client *kube.Client
+	ns     string
+}
+
+func NewInstrumentorResourceManager(client *kube.Client, ns string) ResourceManager {
+	return &instrumentorResourceManager{client: client, ns: ns}
+}
+
+func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
+	return nil
+}
+
+// func (a *instrumentorResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
+
+// func (a *instrumentorResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
+
+func (a *instrumentorResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
+	fmt.Println("Patching Odigos instrumentor deployment")
+	jsonPatchDocumentBytes := patchTemplateSpecImageTag(InstrumentorImage, newOdigosVersion, instrumentorContainerName)
+	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, instrumentorDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
+	return err
 }

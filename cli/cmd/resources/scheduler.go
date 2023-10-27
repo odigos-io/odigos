@@ -1,7 +1,11 @@
 package resources
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
@@ -9,11 +13,15 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
-	schedulerImage = "keyval/odigos-scheduler"
+	schedulerImage          = "keyval/odigos-scheduler"
+	schedulerServiceName    = "scheduler"
+	schedulerDeploymentName = "odigos-scheduler"
+	schedulerContainerName  = "manager"
 )
 
 func NewSchedulerServiceAccount() *corev1.ServiceAccount {
@@ -182,7 +190,7 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-scheduler",
+			Name: schedulerDeploymentName,
 			Labels: map[string]string{
 				"app":                       "odigos-scheduler",
 				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
@@ -204,13 +212,13 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 						"app": "odigos-scheduler",
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": "manager",
+						"kubectl.kubernetes.io/default-container": schedulerContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "manager",
+							Name:  schedulerContainerName,
 							Image: containers.GetImageName(schedulerImage, version),
 							Command: []string{
 								"/app",
@@ -222,10 +230,23 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 							},
 							Env: []corev1.EnvVar{
 								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: schedulerServiceName,
+								},
+								{
 									Name: "CURRENT_NS",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+							},
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: ownTelemetryOtelConfig,
 										},
 									},
 								},
@@ -270,4 +291,32 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 			MinReadySeconds: 0,
 		},
 	}
+}
+
+type schedulerResourceManager struct {
+	client *kube.Client
+	ns     string
+}
+
+func NewSchedulerResourceManager(client *kube.Client, ns string) ResourceManager {
+	return &schedulerResourceManager{client: client, ns: ns}
+}
+
+func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error {
+	return nil
+}
+
+// func (a *schedulerResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
+
+// func (a *schedulerResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
+// 	return nil
+// }
+
+func (a *schedulerResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
+	fmt.Println("Patching Odigos scheduler deployment")
+	jsonPatchDocumentBytes := patchTemplateSpecImageTag(schedulerImage, newOdigosVersion, schedulerContainerName)
+	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, schedulerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
+	return err
 }

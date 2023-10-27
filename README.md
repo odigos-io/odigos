@@ -1,22 +1,32 @@
 <p align="center">
     <a href="https://github.com/keyval-dev/odigos/actions/workflows/main.yml" target="_blank">
-    <img src="https://github.com/keyval-dev/odigos/actions/workflows/main.yml/badge.svg" />
+        <img src="https://github.com/keyval-dev/odigos/actions/workflows/main.yml/badge.svg" alt="GitHub Actions Workflow Status" style="margin-right: 10px; border: 1px solid #007acc; border-radius: 4px; padding: 5px;">
     </a>
     <a href="https://goreportcard.com/report/github.com/keyval-dev/odigos/cli" target="_blank">
-    <img src="https://goreportcard.com/badge/github.com/keyval-dev/odigos/cli">
+        <img src="https://goreportcard.com/badge/github.com/keyval-dev/odigos/cli" alt="Go Report Card" style="margin-right: 10px; border: 1px solid #4CAF50; border-radius: 4px; padding: 5px;">
     </a>
     <a href="https://godoc.org/github.com/keyval-dev/odigos/cli" target="_blank">
-    <img src="https://godoc.org/istio.io/istio?status.svg">
+        <img src="https://godoc.org/github.com/keyval-dev/odigos/cli?status.svg" alt="GoDoc" style="border: 1px solid #f39c12; border-radius: 4px; padding: 5px;">
     </a>
 </p>
+
+
 <p align="center">
 <img src="assets/logo.png" width="350" /></br>
-Generate distributed traces for any application without code changes
+Generate distributed traces for any application without code changes.
 </p>
 
 <h2 align="center">Odigos participate in Hacktoberfest 2023!</h2>
-<p align="center"><strong>Limited time offer</strong>: Make three PRs by October 20, 2023 and win this awesome Odigos tee!<br /><strong>Maximum twenty tees! So hurry up!</strong></p>
+ <p align="center"> 🚀 Limited Time Offer! 🚀
 
+ <p align="center">Make three Pull Requests (PRs) to Odigos repositories by October 31, 2023, and you could be one of the lucky winners of this exclusive Odigos tee! 👕 
+
+ <p align="center">But hurry! we only have a maximum of twenty tees to give away, so don't miss your chance! 
+
+ <p align="center">Start contributing today and grab your chance to win!
+
+ <p align="center">Happy coding! 
+</p>
 <p align="center">
 <img src="assets/hacktoberfest_tee.png" align="center" width="300" />
 </p>
@@ -27,7 +37,7 @@ Generate distributed traces for any application without code changes
 
 ### ✨ Language Agnostic Auto-instrumentation
 
-Odigos supports any application written in Java, Python, .NET, Node.js and **Go**.  
+Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.  
 Historically, compiled languages like Go have been difficult to instrument without code changes. Odigos solves this problem by uniquely leveraging [eBPF](https://ebpf.io).
 
 ![Works on any application](assets/choose_apps.png)
@@ -37,7 +47,7 @@ Historically, compiled languages like Go have been difficult to instrument witho
 Odigos currently supports all the popular managed and open source destinations.  
 By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigos can be used with any observability tool that supports OTLP.
 
-For a complete list of supported destinations see [here](#supported-destinations).
+For a complete list of supported destinations, see [here](#supported-destinations).
 
 ![Works with any observability tool](assets/choose_dest.png)
 
@@ -49,7 +59,7 @@ Manage and configure collectors via a convenient web UI.
 
 ## Installation
 
-Installing Odigos takes less than 5 minutes, and requires no code changes.
+Installing Odigos takes less than 5 minutes and requires no code changes.
 Download our [CLI](https://docs.odigos.io/installation) and run the following command:
 
 
@@ -57,11 +67,11 @@ Download our [CLI](https://docs.odigos.io/installation) and run the following co
 odigos install
 ```
 
-For more details see our [quickstart guide](https://docs.odigos.io/intro).
+For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ## Supported Destinations
 
-**For step by step instructions detailed for every destination see these [docs](https://docs.odigos.io/backends).**
+**For step by step instructions detailed for every destination, see these [docs](https://docs.odigos.io/backends).**
 
 ### Managed
 
@@ -83,6 +93,7 @@ For more details see our [quickstart guide](https://docs.odigos.io/intro).
 | Splunk                  | ✅      |         |      |
 | Lightstep               | ✅      |         |      |
 | Sentry                  | ✅      |         |      |
+| Axiom                   | ✅      |         | ✅   |
 
 ### Open Source
 
@@ -96,7 +107,7 @@ For more details see our [quickstart guide](https://docs.odigos.io/intro).
 | qryn          | ✅     | ✅      | ✅   |
 | Elasticsearch | ✅     |         | ✅   |
 
-Can't find the destination you need? Help us by following our quick [adding new destination](https://docs.odigos.io/adding-new-dest) guide and submit a PR.
+Can't find the destination you need? Help us by following our quick [add new destination](https://docs.odigos.io/adding-new-dest) guide and submitting a PR.
 
 ## Contributing
 
