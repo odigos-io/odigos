@@ -367,34 +367,43 @@ func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropaga
 }
 
 type odigletResourceManager struct {
-	client *kube.Client
-	ns     string
+	client  *kube.Client
+	ns      string
+	version string
+	psp     bool
 }
 
-func NewOdigletResourceManager(client *kube.Client, ns string) ResourceManager {
-	return &odigletResourceManager{client: client, ns: ns}
+func NewOdigletResourceManager(client *kube.Client, ns string, version string, psp bool) ResourceManager {
+	return &odigletResourceManager{client: client, ns: ns, version: version, psp: psp}
 }
+
+func (a *odigletResourceManager) Name() string { return "Odiglet" }
 
 func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
-	return nil
-}
 
-func (a *odigletResourceManager) GetMigrationSteps() []MigrationStep {
-	return []MigrationStep{}
-}
+	sa := NewOdigletServiceAccount()
+	err := a.client.ApplyResource(ctx, a.ns, sa, sa.TypeMeta, sa.ObjectMeta)
+	if err != nil {
+		return err
+	}
 
-// func (a *odigletResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
+	cr := NewOdigletClusterRole(a.psp)
+	err = a.client.ApplyResource(ctx, "", cr, cr.TypeMeta, cr.ObjectMeta)
+	if err != nil {
+		return err
+	}
 
-// func (a *odigletResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
+	crb := NewOdigletClusterRoleBinding(a.ns)
+	err = a.client.ApplyResource(ctx, "", crb, crb.TypeMeta, crb.ObjectMeta)
+	if err != nil {
+		return err
+	}
 
-func (a *odigletResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
-	// fmt.Println("Patching Odigos odiglet daemonset")
-	// jsonPatchDocumentBytes := patchTemplateSpecImageTag(OdigletImage, newOdigosVersion, odigletContainerName)
-	// _, err := a.client.AppsV1().DaemonSets(a.ns).Patch(ctx, odigletDaemonSetName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
-	// return err
+	ds := NewOdigletDaemonSet(a.version)
+	err = a.client.ApplyResource(ctx, a.ns, ds, ds.TypeMeta, ds.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

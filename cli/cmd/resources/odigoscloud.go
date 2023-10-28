@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	odigosCloudSecretName      = "odigos-cloud-proxy"
+	OdigosCloudSecretName      = "odigos-cloud-proxy"
 	odigosCloudTokenEnvName    = "ODIGOS_CLOUD_TOKEN"
 	odigosCloudApiKeySecretKey = "api-key"
 )
@@ -15,7 +15,7 @@ const (
 func NewKeyvalSecret(apiKey string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   odigosCloudSecretName,
+			Name:   OdigosCloudSecretName,
 			Labels: labels.OdigosSystem,
 		},
 		StringData: map[string]string{

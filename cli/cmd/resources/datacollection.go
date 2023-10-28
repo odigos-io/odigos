@@ -1,6 +1,9 @@
 package resources
 
 import (
+	"context"
+
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -104,4 +107,40 @@ func NewDataCollectionClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			Name:     "odigos-data-collection",
 		},
 	}
+}
+
+type dataCollectionResourceManager struct {
+	client  *kube.Client
+	ns      string
+	version string
+	psp     bool
+}
+
+func NewDataCollectionResourceManager(client *kube.Client, ns string, version string, psp bool) ResourceManager {
+	return &dataCollectionResourceManager{client: client, ns: ns, version: version, psp: psp}
+}
+
+func (a *dataCollectionResourceManager) Name() string { return "DataCollection" }
+
+func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context) error {
+
+	sa := NewDataCollectionServiceAccount()
+	err := a.client.ApplyResource(ctx, a.ns, sa, sa.TypeMeta, sa.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	clusterRole := NewDataCollectionClusterRole(a.psp)
+	err = a.client.ApplyResource(ctx, "", clusterRole, clusterRole.TypeMeta, clusterRole.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	clusterRoleBinding := NewDataCollectionClusterRoleBinding(a.ns)
+	err = a.client.ApplyResource(ctx, "", clusterRoleBinding, clusterRoleBinding.TypeMeta, clusterRoleBinding.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -1,8 +1,13 @@
 package kube
 
 import (
+	"context"
 	"fmt"
 	"os"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/yaml"
 
 	"github.com/keyval-dev/odigos/cli/pkg/generated/clientset/versioned/typed/odigos/v1alpha1"
 	"github.com/spf13/cobra"
@@ -58,4 +63,18 @@ func CreateClient(cmd *cobra.Command) (*Client, error) {
 func PrintClientErrorAndExit(err error) {
 	fmt.Printf("\033[31mERROR\033[0m Could not connect to Kubernetes cluster\n%s\n", err)
 	os.Exit(-1)
+}
+
+func (c *Client) ApplyResource(ctx context.Context, ns string, obj interface{}, typemeta metav1.TypeMeta, objectmeta metav1.ObjectMeta) error {
+	depBytes, _ := yaml.Marshal(obj)
+
+	force := true
+	patchOptions := metav1.PatchOptions{
+		FieldManager: "odigos",
+		Force:        &force,
+	}
+
+	resourceName := objectmeta.Name
+	_, err := c.Dynamic.Resource(TypeMetaToDynamicResource(typemeta)).Namespace(ns).Patch(ctx, resourceName, k8stypes.ApplyPatchType, depBytes, patchOptions)
+	return err
 }

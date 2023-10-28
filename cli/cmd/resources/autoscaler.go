@@ -2,9 +2,7 @@ package resources
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/keyval-dev/odigos/cli/cmd/migrations"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
@@ -20,10 +18,11 @@ import (
 var AutoscalerImage string
 
 const (
-	AutoScalerServiceName    = "auto-scaler"
-	AutoScalerDeploymentName = "odigos-autoscaler"
-	AutoScalerAppLabelValue  = "odigos-autoscaler"
-	AutoScalerContainerName  = "manager"
+	AutoScalerServiceAccountName = "odigos-autoscaler"
+	AutoScalerServiceName        = "auto-scaler"
+	AutoScalerDeploymentName     = "odigos-autoscaler"
+	AutoScalerAppLabelValue      = "odigos-autoscaler"
+	AutoScalerContainerName      = "manager"
 )
 
 func NewAutoscalerServiceAccount() *corev1.ServiceAccount {
@@ -33,7 +32,7 @@ func NewAutoscalerServiceAccount() *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-autoscaler",
+			Name:   AutoScalerServiceAccountName,
 			Labels: labels.OdigosSystem,
 		},
 	}
@@ -472,42 +471,60 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 }
 
 type autoScalerResourceManager struct {
-	client *kube.Client
-	ns     string
+	client  *kube.Client
+	ns      string
+	version string
 }
 
-func NewAutoScalerResourceManager(client *kube.Client, ns string) ResourceManager {
-	return &autoScalerResourceManager{client: client, ns: ns}
+func NewAutoScalerResourceManager(client *kube.Client, ns string, version string) ResourceManager {
+	return &autoScalerResourceManager{client: client, ns: ns, version: version}
 }
+
+func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
 
 func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) error {
-	return nil
-}
 
-func (a *autoScalerResourceManager) GetMigrationSteps() []MigrationStep {
-	return []MigrationStep{
-		// {
-		// 	SourceVersion: "v0.1.81",
-		// 	Patchers: []migrations.Patcher{
-		// 		migrations.NewRemoveAppLabelPatcherDeployment(a.client, a.ns, autoScalerDeploymentName, autoScalerAppLabelValue),
-		// 	},
-		// },
+	sa := NewAutoscalerServiceAccount()
+	err := a.client.ApplyResource(ctx, a.ns, sa, sa.TypeMeta, sa.ObjectMeta)
+	if err != nil {
+		return err
 	}
-}
 
-// func (a *autoScalerResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
+	role := NewAutoscalerRole()
+	err = a.client.ApplyResource(ctx, a.ns, role, role.TypeMeta, role.ObjectMeta)
+	if err != nil {
+		return err
+	}
 
-// func (a *autoScalerResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
+	roleBinding := NewAutoscalerRoleBinding()
+	err = a.client.ApplyResource(ctx, a.ns, roleBinding, roleBinding.TypeMeta, roleBinding.ObjectMeta)
+	if err != nil {
+		return err
+	}
 
-func (a *autoScalerResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
-	fmt.Println("Patching Odigos autoscaler deployment")
-	patcher := migrations.NewSetImagePatcherDeployment(a.client, a.ns, AutoScalerDeploymentName, AutoscalerImage, newOdigosVersion, "TODO", autoScalerContainerName)
-	return patcher.Patch(ctx)
-	// jsonPatchDocumentBytes := patchTemplateSpecImageTag(AutoscalerImage, newOdigosVersion, autoScalerContainerName)
-	// _, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, autoScalerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
-	// return err
+	clusterRole := NewAutoscalerClusterRole()
+	err = a.client.ApplyResource(ctx, "", clusterRole, clusterRole.TypeMeta, clusterRole.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	clusterRoleBinding := NewAutoscalerClusterRoleBinding(a.ns)
+	err = a.client.ApplyResource(ctx, "", clusterRoleBinding, clusterRoleBinding.TypeMeta, clusterRoleBinding.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	leaderElectionRoleBinding := NewAutoscalerLeaderElectionRoleBinding()
+	err = a.client.ApplyResource(ctx, a.ns, leaderElectionRoleBinding, leaderElectionRoleBinding.TypeMeta, leaderElectionRoleBinding.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	dep := NewAutoscalerDeployment(a.version)
+	err = a.client.ApplyResource(ctx, a.ns, dep, dep.TypeMeta, dep.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -1,7 +1,10 @@
 package resources
 
 import (
+	"context"
+
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
@@ -10,6 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+)
+
+const (
+	odigosCloudProxyVersion = "v0.6.0"
 )
 
 const (
@@ -280,7 +287,7 @@ func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: odigosCloudSecretName,
+												Name: OdigosCloudSecretName,
 											},
 											Key: odigosCloudApiKeySecretKey,
 										},
@@ -343,4 +350,62 @@ func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
 			MinReadySeconds: 0,
 		},
 	}
+}
+
+type keyvalProxyResourceManager struct {
+	client *kube.Client
+	ns     string
+}
+
+func NewKeyvalProxyResourceManager(client *kube.Client, ns string) ResourceManager {
+	return &keyvalProxyResourceManager{client: client, ns: ns}
+}
+
+func (a *keyvalProxyResourceManager) Name() string { return "CloudProxy" }
+
+func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) error {
+
+	sa := NewKeyvalProxyServiceAccount()
+	err := a.client.ApplyResource(ctx, a.ns, sa, sa.TypeMeta, sa.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	role := NewKeyvalProxyRole(a.ns)
+	err = a.client.ApplyResource(ctx, a.ns, role, role.TypeMeta, role.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	roleBinding := NewKeyvalProxyRoleBinding(a.ns)
+	err = a.client.ApplyResource(ctx, a.ns, roleBinding, roleBinding.TypeMeta, roleBinding.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	clusterRole := NewKeyvalProxyClusterRole()
+	err = a.client.ApplyResource(ctx, "", clusterRole, clusterRole.TypeMeta, clusterRole.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	clusterRoleBinding := NewKeyvalProxyClusterRoleBinding(a.ns)
+	err = a.client.ApplyResource(ctx, "", clusterRoleBinding, clusterRoleBinding.TypeMeta, clusterRoleBinding.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	leaderElectionRoleBinding := NewAutoscalerLeaderElectionRoleBinding()
+	err = a.client.ApplyResource(ctx, a.ns, leaderElectionRoleBinding, leaderElectionRoleBinding.TypeMeta, leaderElectionRoleBinding.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	dep := NewKeyvalProxyDeployment(odigosCloudProxyVersion, a.ns)
+	err = a.client.ApplyResource(ctx, a.ns, dep, dep.TypeMeta, dep.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

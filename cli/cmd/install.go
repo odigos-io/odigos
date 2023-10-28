@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
@@ -57,32 +58,23 @@ This command will install k8s components that will auto-instrument your applicat
 		isOdigosCloud := odigosCloudApiKeyFlag != ""
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
-		createKubeResourceWithLogging(ctx, "Creating Odigos Deployment Info ConfigMap",
-			client, cmd, ns, createOdigosDeploymentInfo)
 		if isOdigosCloud {
 			createKubeResourceWithLogging(ctx, "Creating Odigos Cloud Secret",
 				client, cmd, ns, createOdigosCloudSecret)
-			createKubeResourceWithLogging(ctx, "Creating Own Telemetry Pipeline",
-				client, cmd, ns, createOwnTelemetryPipeline)
-			createKubeResourceWithLogging(ctx, "Deploying Odigos Cloud Proxy",
-				client, cmd, ns, createKeyvalProxy)
-		} else {
-			createOwnTelemetryDisabled(ctx, cmd, client, ns)
 		}
 		createKubeResourceWithLogging(ctx, "Creating CRDs",
 			client, cmd, ns, createCRDs)
-		createKubeResourceWithLogging(ctx, "Creating Leader Election Role",
-			client, cmd, ns, createLeaderElectionRole)
-		createKubeResourceWithLogging(ctx, "Creating RBAC",
-			client, cmd, ns, createDataCollectionRBAC)
-		createKubeResourceWithLogging(ctx, "Deploying Instrumentor",
-			client, cmd, ns, createInstrumentor)
-		createKubeResourceWithLogging(ctx, "Deploying Scheduler",
-			client, cmd, ns, createScheduler)
-		createKubeResourceWithLogging(ctx, "Deploying Odiglet",
-			client, cmd, ns, createOdiglet)
-		createKubeResourceWithLogging(ctx, "Deploying Autoscaler",
-			client, cmd, ns, createAutoscaler)
+
+		resourceManagers := resources.CreateResourceManagers(client, ns, versionFlag, isOdigosCloud, telemetryEnabled, sidecarInstrumentation, ignoredNamespaces, psp)
+
+		for _, rm := range resourceManagers {
+			fmt.Printf("Installing %s ...\n", rm.Name())
+			err := rm.InstallFromScratch(ctx)
+			if err != nil {
+				fmt.Printf("Odigos upgrade failed - unable to install Odigos: %s\n", err)
+				os.Exit(1)
+			}
+		}
 
 		if !skipWait {
 			l := log.Print("Waiting for Odigos pods to be ready ...")

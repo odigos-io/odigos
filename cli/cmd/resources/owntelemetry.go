@@ -1,9 +1,11 @@
 package resources
 
 import (
+	"context"
 	"fmt"
 
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common" // TODO: move it to neutral place
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
@@ -196,7 +198,7 @@ func NewOwnTelemetryCollectorDeployment() *appsv1.Deployment {
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: odigosCloudSecretName,
+												Name: OdigosCloudSecretName,
 											},
 											Key: odigosCloudApiKeySecretKey,
 										},
@@ -249,4 +251,58 @@ func intPtr(n int32) *int32 {
 
 func int64Ptr(n int64) *int64 {
 	return &n
+}
+
+type ownTelemetryResourceManager struct {
+	client        *kube.Client
+	ns            string
+	version       string
+	isOdigosCloud bool
+}
+
+func NewOwnTelemetryResourceManager(client *kube.Client, ns string, version string, isOdigosCloud bool) ResourceManager {
+	return &ownTelemetryResourceManager{client: client, ns: ns, version: version, isOdigosCloud: isOdigosCloud}
+}
+
+func (a *ownTelemetryResourceManager) Name() string { return "OwnTelemetry Pipeline" }
+
+func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) error {
+
+	if a.isOdigosCloud {
+		cmOtelGrpc := NewOwnTelemetryConfigMapOtlpGrpc(a.ns, a.version)
+		err := a.client.ApplyResource(ctx, a.ns, cmOtelGrpc, cmOtelGrpc.TypeMeta, cmOtelGrpc.ObjectMeta)
+		if err != nil {
+			return err
+		}
+
+		cmCollector := NewOwnTelemetryCollectorConfigMap()
+		err = a.client.ApplyResource(ctx, a.ns, cmCollector, cmCollector.TypeMeta, cmCollector.ObjectMeta)
+		if err != nil {
+			return err
+		}
+
+		dep := NewOwnTelemetryCollectorDeployment()
+		err = a.client.ApplyResource(ctx, a.ns, dep, dep.TypeMeta, dep.ObjectMeta)
+		if err != nil {
+			return err
+		}
+
+		svc := NewOwnTelemetryCollectorService()
+		err = a.client.ApplyResource(ctx, a.ns, svc, svc.TypeMeta, svc.ObjectMeta)
+		if err != nil {
+			return err
+		}
+
+		return nil
+
+	} else {
+
+		cmDisabled := NewOwnTelemetryConfigMapDisabled()
+		err := a.client.ApplyResource(ctx, a.ns, cmDisabled, cmDisabled.TypeMeta, cmDisabled.ObjectMeta)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
 }

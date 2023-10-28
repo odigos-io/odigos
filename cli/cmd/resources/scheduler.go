@@ -2,7 +2,6 @@ package resources
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
@@ -13,7 +12,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -294,33 +292,48 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 }
 
 type schedulerResourceManager struct {
-	client *kube.Client
-	ns     string
+	client  *kube.Client
+	ns      string
+	version string
 }
 
-func NewSchedulerResourceManager(client *kube.Client, ns string) ResourceManager {
-	return &schedulerResourceManager{client: client, ns: ns}
+func NewSchedulerResourceManager(client *kube.Client, ns string, version string) ResourceManager {
+	return &schedulerResourceManager{client: client, ns: ns, version: version}
 }
+
+func (a *schedulerResourceManager) Name() string { return "Scheduler" }
 
 func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error {
+
+	sa := NewSchedulerServiceAccount()
+	err := a.client.ApplyResource(ctx, a.ns, sa, sa.TypeMeta, sa.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	rb := NewSchedulerRoleBinding()
+	err = a.client.ApplyResource(ctx, a.ns, rb, rb.TypeMeta, rb.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	cr := NewSchedulerClusterRole()
+	err = a.client.ApplyResource(ctx, "", cr, cr.TypeMeta, cr.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	crb := NewSchedulerClusterRoleBinding(a.ns)
+	err = a.client.ApplyResource(ctx, "", crb, crb.TypeMeta, crb.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	dep := NewSchedulerDeployment(a.version)
+	err = a.client.ApplyResource(ctx, a.ns, dep, dep.TypeMeta, dep.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
 	return nil
-}
-
-func (a *schedulerResourceManager) GetMigrationSteps() []MigrationStep {
-	return []MigrationStep{}
-}
-
-// func (a *schedulerResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
-
-// func (a *schedulerResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
-
-func (a *schedulerResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
-	fmt.Println("Patching Odigos scheduler deployment")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(SchedulerImage, newOdigosVersion, SchedulerContainerName)
-	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, SchedulerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
-	return err
 }

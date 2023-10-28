@@ -13,7 +13,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -514,33 +513,58 @@ func ptrbool(b bool) *bool {
 }
 
 type instrumentorResourceManager struct {
-	client *kube.Client
-	ns     string
+	client                 *kube.Client
+	ns                     string
+	version                string
+	telemetryEnabled       bool
+	sidecarInstrumentation bool
+	ignoredNamespaces      []string
 }
 
-func NewInstrumentorResourceManager(client *kube.Client, ns string) ResourceManager {
-	return &instrumentorResourceManager{client: client, ns: ns}
+func NewInstrumentorResourceManager(client *kube.Client, ns string, version string, telemetryEnabled bool, sidecarInstrumentation bool, ignoredNamespaces []string) ResourceManager {
+	return &instrumentorResourceManager{
+		client:                 client,
+		ns:                     ns,
+		version:                version,
+		telemetryEnabled:       telemetryEnabled,
+		sidecarInstrumentation: sidecarInstrumentation,
+		ignoredNamespaces:      ignoredNamespaces,
+	}
 }
+
+func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
-	return nil
-}
 
-func (a *instrumentorResourceManager) GetMigrationSteps() []MigrationStep {
-	return []MigrationStep{}
-}
+	sa := NewInstrumentorServiceAccount()
+	err := a.client.ApplyResource(ctx, a.ns, sa, sa.TypeMeta, sa.ObjectMeta)
+	if err != nil {
+		return err
+	}
 
-// func (a *instrumentorResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
+	rb := NewInstrumentorRoleBinding()
+	err = a.client.ApplyResource(ctx, a.ns, rb, rb.TypeMeta, rb.ObjectMeta)
+	if err != nil {
+		return err
+	}
 
-// func (a *instrumentorResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
+	cr := NewInstrumentorClusterRole()
+	err = a.client.ApplyResource(ctx, "", cr, cr.TypeMeta, cr.ObjectMeta)
+	if err != nil {
+		return err
+	}
 
-func (a *instrumentorResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
-	fmt.Println("Patching Odigos instrumentor deployment")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(InstrumentorImage, newOdigosVersion, InstrumentorContainerName)
-	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, InstrumentorDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
+	crb := NewInstrumentorClusterRoleBinding(a.ns)
+	err = a.client.ApplyResource(ctx, "", crb, crb.TypeMeta, crb.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	dep := NewInstrumentorDeployment(a.version, a.telemetryEnabled, a.sidecarInstrumentation, a.ignoredNamespaces)
+	err = a.client.ApplyResource(ctx, a.ns, dep, dep.TypeMeta, dep.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
 	return err
 }
