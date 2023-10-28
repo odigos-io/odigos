@@ -530,36 +530,12 @@ func NewInstrumentorResourceManager(client *kube.Client, ns string, version stri
 func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
-
-	sa := NewInstrumentorServiceAccount(a.ns)
-	err := a.client.ApplyResource(ctx, a.version, sa)
-	if err != nil {
-		return err
+	resources := []kube.K8sGenericObject{
+		NewInstrumentorServiceAccount(a.ns),
+		NewInstrumentorRoleBinding(a.ns),
+		NewInstrumentorClusterRole(),
+		NewInstrumentorClusterRoleBinding(a.ns),
+		NewInstrumentorDeployment(a.ns, a.version, a.telemetryEnabled, a.sidecarInstrumentation, a.ignoredNamespaces),
 	}
-
-	rb := NewInstrumentorRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, rb)
-	if err != nil {
-		return err
-	}
-
-	cr := NewInstrumentorClusterRole()
-	err = a.client.ApplyResource(ctx, a.version, cr)
-	if err != nil {
-		return err
-	}
-
-	crb := NewInstrumentorClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, crb)
-	if err != nil {
-		return err
-	}
-
-	dep := NewInstrumentorDeployment(a.ns, a.version, a.telemetryEnabled, a.sidecarInstrumentation, a.ignoredNamespaces)
-	err = a.client.ApplyResource(ctx, a.version, dep)
-	if err != nil {
-		return err
-	}
-
-	return err
+	return a.client.ApplyResources(ctx, a.version, resources)
 }

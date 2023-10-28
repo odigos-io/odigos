@@ -270,42 +270,18 @@ func NewOwnTelemetryResourceManager(client *kube.Client, ns string, version stri
 func (a *ownTelemetryResourceManager) Name() string { return "OwnTelemetry Pipeline" }
 
 func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) error {
-
+	var resources []kube.K8sGenericObject
 	if a.isOdigosCloud {
-		cmOtelGrpc := NewOwnTelemetryConfigMapOtlpGrpc(a.ns, a.version)
-		err := a.client.ApplyResource(ctx, a.version, cmOtelGrpc)
-		if err != nil {
-			return err
+		resources = []kube.K8sGenericObject{
+			NewOwnTelemetryConfigMapOtlpGrpc(a.ns, a.version),
+			NewOwnTelemetryCollectorConfigMap(a.ns),
+			NewOwnTelemetryCollectorDeployment(a.ns),
+			NewOwnTelemetryCollectorService(a.ns),
 		}
-
-		cmCollector := NewOwnTelemetryCollectorConfigMap(a.ns)
-		err = a.client.ApplyResource(ctx, a.version, cmCollector)
-		if err != nil {
-			return err
-		}
-
-		dep := NewOwnTelemetryCollectorDeployment(a.ns)
-		err = a.client.ApplyResource(ctx, a.version, dep)
-		if err != nil {
-			return err
-		}
-
-		svc := NewOwnTelemetryCollectorService(a.ns)
-		err = a.client.ApplyResource(ctx, a.version, svc)
-		if err != nil {
-			return err
-		}
-
-		return nil
-
 	} else {
-
-		cmDisabled := NewOwnTelemetryConfigMapDisabled(a.ns)
-		err := a.client.ApplyResource(ctx, a.version, cmDisabled)
-		if err != nil {
-			return err
+		resources = []kube.K8sGenericObject{
+			NewOwnTelemetryConfigMapDisabled(a.ns),
 		}
-
-		return nil
 	}
+	return a.client.ApplyResources(ctx, a.version, resources)
 }

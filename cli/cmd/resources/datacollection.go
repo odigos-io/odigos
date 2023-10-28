@@ -120,24 +120,10 @@ func NewDataCollectionResourceManager(client *kube.Client, ns string, version st
 func (a *dataCollectionResourceManager) Name() string { return "DataCollection" }
 
 func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context) error {
-
-	sa := NewDataCollectionServiceAccount(a.ns)
-	err := a.client.ApplyResource(ctx, a.version, sa)
-	if err != nil {
-		return err
+	resources := []kube.K8sGenericObject{
+		NewDataCollectionServiceAccount(a.ns),
+		NewDataCollectionClusterRole(a.psp),
+		NewDataCollectionClusterRoleBinding(a.ns),
 	}
-
-	clusterRole := NewDataCollectionClusterRole(a.psp)
-	err = a.client.ApplyResource(ctx, a.version, clusterRole)
-	if err != nil {
-		return err
-	}
-
-	clusterRoleBinding := NewDataCollectionClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, clusterRoleBinding)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return a.client.ApplyResources(ctx, a.version, resources)
 }

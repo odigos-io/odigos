@@ -100,17 +100,9 @@ func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, version 
 func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployment" }
 
 func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context) error {
-	cm := NewOdigosDeploymentConfigMap(a.ns, a.version)
-	err := a.client.ApplyResource(ctx, a.version, cm)
-	if err != nil {
-		return err
+	resources := []kube.K8sGenericObject{
+		NewOdigosDeploymentConfigMap(a.ns, a.version),
+		NewLeaderElectionRole(a.ns),
 	}
-
-	role := NewLeaderElectionRole(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, role)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return a.client.ApplyResources(ctx, a.version, resources)
 }

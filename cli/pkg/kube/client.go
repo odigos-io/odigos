@@ -74,6 +74,16 @@ type K8sGenericObject interface {
 	GetObjectKind() schema.ObjectKind
 }
 
+func (c *Client) ApplyResources(ctx context.Context, odigosVersion string, objs []K8sGenericObject) error {
+	for _, obj := range objs {
+		err := c.ApplyResource(ctx, odigosVersion, obj)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *Client) ApplyResource(ctx context.Context, odigosVersion string, obj K8sGenericObject) error {
 
 	// for each resource, add a label with odigos version.

@@ -375,30 +375,11 @@ func NewOdigletResourceManager(client *kube.Client, ns string, version string, p
 func (a *odigletResourceManager) Name() string { return "Odiglet" }
 
 func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
-
-	sa := NewOdigletServiceAccount(a.ns)
-	err := a.client.ApplyResource(ctx, a.version, sa)
-	if err != nil {
-		return err
+	resources := []kube.K8sGenericObject{
+		NewOdigletServiceAccount(a.ns),
+		NewOdigletClusterRole(a.psp),
+		NewOdigletClusterRoleBinding(a.ns),
+		NewOdigletDaemonSet(a.ns, a.version),
 	}
-
-	cr := NewOdigletClusterRole(a.psp)
-	err = a.client.ApplyResource(ctx, a.version, cr)
-	if err != nil {
-		return err
-	}
-
-	crb := NewOdigletClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, crb)
-	if err != nil {
-		return err
-	}
-
-	ds := NewOdigletDaemonSet(a.ns, a.version)
-	err = a.client.ApplyResource(ctx, a.version, ds)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return a.client.ApplyResources(ctx, a.version, resources)
 }

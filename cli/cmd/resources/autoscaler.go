@@ -478,48 +478,14 @@ func NewAutoScalerResourceManager(client *kube.Client, ns string, version string
 func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
 
 func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) error {
-
-	sa := NewAutoscalerServiceAccount(a.ns)
-	err := a.client.ApplyResource(ctx, a.version, sa)
-	if err != nil {
-		return err
+	resources := []kube.K8sGenericObject{
+		NewAutoscalerServiceAccount(a.ns),
+		NewAutoscalerRole(a.ns),
+		NewAutoscalerRoleBinding(a.ns),
+		NewAutoscalerClusterRole(),
+		NewAutoscalerClusterRoleBinding(a.ns),
+		NewAutoscalerLeaderElectionRoleBinding(a.ns),
+		NewAutoscalerDeployment(a.ns, a.version),
 	}
-
-	role := NewAutoscalerRole(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, role)
-	if err != nil {
-		return err
-	}
-
-	roleBinding := NewAutoscalerRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, roleBinding)
-	if err != nil {
-		return err
-	}
-
-	clusterRole := NewAutoscalerClusterRole()
-	err = a.client.ApplyResource(ctx, a.version, clusterRole)
-	if err != nil {
-		return err
-	}
-
-	clusterRoleBinding := NewAutoscalerClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, clusterRoleBinding)
-	if err != nil {
-		return err
-	}
-
-	leaderElectionRoleBinding := NewAutoscalerLeaderElectionRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, leaderElectionRoleBinding)
-	if err != nil {
-		return err
-	}
-
-	dep := NewAutoscalerDeployment(a.ns, a.version)
-	err = a.client.ApplyResource(ctx, a.version, dep)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return a.client.ApplyResources(ctx, a.version, resources)
 }

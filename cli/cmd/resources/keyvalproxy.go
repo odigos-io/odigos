@@ -362,48 +362,13 @@ func NewKeyvalProxyResourceManager(client *kube.Client, ns string, version strin
 func (a *keyvalProxyResourceManager) Name() string { return "CloudProxy" }
 
 func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) error {
-
-	sa := NewKeyvalProxyServiceAccount(a.ns)
-	err := a.client.ApplyResource(ctx, a.version, sa)
-	if err != nil {
-		return err
+	resources := []kube.K8sGenericObject{
+		NewKeyvalProxyServiceAccount(a.ns),
+		NewKeyvalProxyRole(a.ns),
+		NewKeyvalProxyRoleBinding(a.ns),
+		NewKeyvalProxyClusterRole(),
+		NewKeyvalProxyClusterRoleBinding(a.ns),
+		NewKeyvalProxyDeployment(odigosCloudProxyVersion, a.ns),
 	}
-
-	role := NewKeyvalProxyRole(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, role)
-	if err != nil {
-		return err
-	}
-
-	roleBinding := NewKeyvalProxyRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, roleBinding)
-	if err != nil {
-		return err
-	}
-
-	clusterRole := NewKeyvalProxyClusterRole()
-	err = a.client.ApplyResource(ctx, a.version, clusterRole)
-	if err != nil {
-		return err
-	}
-
-	clusterRoleBinding := NewKeyvalProxyClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, clusterRoleBinding)
-	if err != nil {
-		return err
-	}
-
-	leaderElectionRoleBinding := NewAutoscalerLeaderElectionRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, leaderElectionRoleBinding)
-	if err != nil {
-		return err
-	}
-
-	dep := NewKeyvalProxyDeployment(odigosCloudProxyVersion, a.ns)
-	err = a.client.ApplyResource(ctx, a.version, dep)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return a.client.ApplyResources(ctx, a.version, resources)
 }

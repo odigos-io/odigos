@@ -299,36 +299,12 @@ func NewSchedulerResourceManager(client *kube.Client, ns string, version string)
 func (a *schedulerResourceManager) Name() string { return "Scheduler" }
 
 func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error {
-
-	sa := NewSchedulerServiceAccount(a.ns)
-	err := a.client.ApplyResource(ctx, a.version, sa)
-	if err != nil {
-		return err
+	resources := []kube.K8sGenericObject{
+		NewSchedulerServiceAccount(a.ns),
+		NewSchedulerRoleBinding(a.ns),
+		NewSchedulerClusterRole(),
+		NewSchedulerClusterRoleBinding(a.ns),
+		NewSchedulerDeployment(a.ns, a.version),
 	}
-
-	rb := NewSchedulerRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, rb)
-	if err != nil {
-		return err
-	}
-
-	cr := NewSchedulerClusterRole()
-	err = a.client.ApplyResource(ctx, a.version, cr)
-	if err != nil {
-		return err
-	}
-
-	crb := NewSchedulerClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.version, crb)
-	if err != nil {
-		return err
-	}
-
-	dep := NewSchedulerDeployment(a.ns, a.version)
-	err = a.client.ApplyResource(ctx, a.version, dep)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return a.client.ApplyResources(ctx, a.version, resources)
 }
