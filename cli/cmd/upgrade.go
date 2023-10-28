@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type VersionChangeType int
@@ -84,6 +85,17 @@ and apply any required migrations.`,
 				fmt.Printf("Odigos upgrade failed - unable to install Odigos: %s\n", err)
 				os.Exit(1)
 			}
+		}
+
+		resource := schema.GroupVersionResource{
+			Group:    "apps",
+			Version:  "v1",
+			Resource: "deployments",
+		}
+		err = client.DeleteOldOdigosSystemObjects(ctx, resource, ns, versionFlag)
+		if err != nil {
+			fmt.Printf("Odigos upgrade failed - unable to delete old Odigos objects: %s\n", err)
+			os.Exit(1)
 		}
 
 		// resourceManagers := []resources.ResourceManager{

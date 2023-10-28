@@ -6,13 +6,16 @@ import (
 	"os"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/selection"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
 
 	"github.com/keyval-dev/odigos/cli/pkg/generated/clientset/versioned/typed/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
+	odigoslabels "github.com/keyval-dev/odigos/cli/pkg/labels"
 	"github.com/spf13/cobra"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -78,8 +81,8 @@ func (c *Client) ApplyResource(ctx context.Context, ns string, odigosVersion str
 		fmt.Printf("ERROR: resource %s/%s has no labels\n", typemeta.Kind, objectmeta.Name)
 		os.Exit(1)
 	}
-	currentLabels[labels.OdigosSystemVersionLabelKey] = odigosVersion
-	currentLabels[labels.OdigosSystemLabelKey] = labels.OdigosSystemLabelValue
+	currentLabels[odigoslabels.OdigosSystemVersionLabelKey] = odigosVersion
+	currentLabels[odigoslabels.OdigosSystemLabelKey] = odigoslabels.OdigosSystemLabelValue
 
 	depBytes, _ := yaml.Marshal(obj)
 
@@ -92,4 +95,13 @@ func (c *Client) ApplyResource(ctx context.Context, ns string, odigosVersion str
 	resourceName := objectmeta.Name
 	_, err := c.Dynamic.Resource(TypeMetaToDynamicResource(typemeta)).Namespace(ns).Patch(ctx, resourceName, k8stypes.ApplyPatchType, depBytes, patchOptions)
 	return err
+}
+
+func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resource schema.GroupVersionResource, ns string, odigosVersion string) error {
+	systemObject, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemLabelKey, selection.Equals, []string{odigoslabels.OdigosSystemLabelValue})
+	notLatestVersion, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemVersionLabelKey, selection.NotEquals, []string{odigosVersion})
+	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).String()
+	return c.Dynamic.Resource(resource).Namespace(ns).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
 }
