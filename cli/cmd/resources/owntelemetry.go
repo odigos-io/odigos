@@ -39,7 +39,8 @@ func NewOwnTelemetryConfigMapDisabled() *corev1.ConfigMap {
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: ownTelemetryOtelConfig,
+			Name:   ownTelemetryOtelConfig,
+			Labels: map[string]string{},
 		},
 		Data: map[string]string{
 			"OTEL_SDK_DISABLED": "true",
@@ -55,7 +56,8 @@ func NewOwnTelemetryConfigMapOtlpGrpc(ns string, odigosVersion string) *corev1.C
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: ownTelemetryOtelConfig,
+			Name:   ownTelemetryOtelConfig,
+			Labels: map[string]string{},
 		},
 		Data: map[string]string{
 			"OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
@@ -121,7 +123,8 @@ func NewOwnTelemetryCollectorConfigMap() *corev1.ConfigMap {
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: ownTelemetryCollectorConfig,
+			Name:   ownTelemetryCollectorConfig,
+			Labels: map[string]string{},
 		},
 		Data: map[string]string{
 			ownTelemetryCollectorConfigKeyName: getOtelcolConfigMapValue(),
@@ -270,25 +273,25 @@ func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) er
 
 	if a.isOdigosCloud {
 		cmOtelGrpc := NewOwnTelemetryConfigMapOtlpGrpc(a.ns, a.version)
-		err := a.client.ApplyResource(ctx, a.ns, cmOtelGrpc, cmOtelGrpc.TypeMeta, cmOtelGrpc.ObjectMeta)
+		err := a.client.ApplyResource(ctx, a.ns, a.version, cmOtelGrpc, cmOtelGrpc.TypeMeta, cmOtelGrpc.ObjectMeta)
 		if err != nil {
 			return err
 		}
 
 		cmCollector := NewOwnTelemetryCollectorConfigMap()
-		err = a.client.ApplyResource(ctx, a.ns, cmCollector, cmCollector.TypeMeta, cmCollector.ObjectMeta)
+		err = a.client.ApplyResource(ctx, a.ns, a.version, cmCollector, cmCollector.TypeMeta, cmCollector.ObjectMeta)
 		if err != nil {
 			return err
 		}
 
 		dep := NewOwnTelemetryCollectorDeployment()
-		err = a.client.ApplyResource(ctx, a.ns, dep, dep.TypeMeta, dep.ObjectMeta)
+		err = a.client.ApplyResource(ctx, a.ns, a.version, dep, dep.TypeMeta, dep.ObjectMeta)
 		if err != nil {
 			return err
 		}
 
 		svc := NewOwnTelemetryCollectorService()
-		err = a.client.ApplyResource(ctx, a.ns, svc, svc.TypeMeta, svc.ObjectMeta)
+		err = a.client.ApplyResource(ctx, a.ns, a.version, svc, svc.TypeMeta, svc.ObjectMeta)
 		if err != nil {
 			return err
 		}
@@ -298,7 +301,7 @@ func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) er
 	} else {
 
 		cmDisabled := NewOwnTelemetryConfigMapDisabled()
-		err := a.client.ApplyResource(ctx, a.ns, cmDisabled, cmDisabled.TypeMeta, cmDisabled.ObjectMeta)
+		err := a.client.ApplyResource(ctx, a.ns, a.version, cmDisabled, cmDisabled.TypeMeta, cmDisabled.ObjectMeta)
 		if err != nil {
 			return err
 		}

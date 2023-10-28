@@ -101,13 +101,13 @@ func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployme
 
 func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context) error {
 	cm := NewOdigosDeploymentConfigMap(a.version)
-	err := a.client.ApplyResource(ctx, a.ns, cm, cm.TypeMeta, cm.ObjectMeta)
+	err := a.client.ApplyResource(ctx, a.ns, a.version, cm, cm.TypeMeta, cm.ObjectMeta)
 	if err != nil {
 		return err
 	}
 
 	role := NewLeaderElectionRole()
-	err = a.client.ApplyResource(ctx, a.ns, role, role.TypeMeta, role.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, role, role.TypeMeta, role.ObjectMeta)
 	if err != nil {
 		return err
 	}

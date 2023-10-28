@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/keyval-dev/odigos/cli/pkg/generated/clientset/versioned/typed/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	"github.com/spf13/cobra"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/dynamic"
@@ -65,7 +66,19 @@ func PrintClientErrorAndExit(err error) {
 	os.Exit(-1)
 }
 
-func (c *Client) ApplyResource(ctx context.Context, ns string, obj interface{}, typemeta metav1.TypeMeta, objectmeta metav1.ObjectMeta) error {
+func (c *Client) ApplyResource(ctx context.Context, ns string, odigosVersion string, obj interface{}, typemeta metav1.TypeMeta, objectmeta metav1.ObjectMeta) error {
+
+	// for each resource, add a label with odigos version.
+	// we can use this label to later delete all resources
+	// which are not part of the up-to-date odigos version.
+	currentLabels := objectmeta.GetLabels()
+	if currentLabels == nil {
+		currentLabels = make(map[string]string)
+	}
+	currentLabels[labels.OdigosSystemVersionLabelKey] = odigosVersion
+	currentLabels[labels.OdigosSystemLabelKey] = labels.OdigosSystemLabelValue
+	objectmeta.SetLabels(currentLabels)
+
 	depBytes, _ := yaml.Marshal(obj)
 
 	force := true

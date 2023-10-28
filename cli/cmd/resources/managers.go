@@ -17,7 +17,7 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, version string
 	}
 
 	if isOdigosCloud {
-		resourceManager = append(resourceManager, NewKeyvalProxyResourceManager(client, odigosNs))
+		resourceManager = append(resourceManager, NewKeyvalProxyResourceManager(client, odigosNs, version))
 	}
 
 	return resourceManager

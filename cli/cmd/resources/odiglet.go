@@ -382,25 +382,25 @@ func (a *odigletResourceManager) Name() string { return "Odiglet" }
 func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	sa := NewOdigletServiceAccount()
-	err := a.client.ApplyResource(ctx, a.ns, sa, sa.TypeMeta, sa.ObjectMeta)
+	err := a.client.ApplyResource(ctx, a.ns, a.version, sa, sa.TypeMeta, sa.ObjectMeta)
 	if err != nil {
 		return err
 	}
 
 	cr := NewOdigletClusterRole(a.psp)
-	err = a.client.ApplyResource(ctx, "", cr, cr.TypeMeta, cr.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, cr, cr.TypeMeta, cr.ObjectMeta)
 	if err != nil {
 		return err
 	}
 
 	crb := NewOdigletClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, "", crb, crb.TypeMeta, crb.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, crb, crb.TypeMeta, crb.ObjectMeta)
 	if err != nil {
 		return err
 	}
 
 	ds := NewOdigletDaemonSet(a.version)
-	err = a.client.ApplyResource(ctx, a.ns, ds, ds.TypeMeta, ds.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, ds, ds.TypeMeta, ds.ObjectMeta)
 	if err != nil {
 		return err
 	}

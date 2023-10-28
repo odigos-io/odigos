@@ -537,31 +537,31 @@ func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	sa := NewInstrumentorServiceAccount()
-	err := a.client.ApplyResource(ctx, a.ns, sa, sa.TypeMeta, sa.ObjectMeta)
+	err := a.client.ApplyResource(ctx, a.ns, a.version, sa, sa.TypeMeta, sa.ObjectMeta)
 	if err != nil {
 		return err
 	}
 
 	rb := NewInstrumentorRoleBinding()
-	err = a.client.ApplyResource(ctx, a.ns, rb, rb.TypeMeta, rb.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, rb, rb.TypeMeta, rb.ObjectMeta)
 	if err != nil {
 		return err
 	}
 
 	cr := NewInstrumentorClusterRole()
-	err = a.client.ApplyResource(ctx, "", cr, cr.TypeMeta, cr.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, cr, cr.TypeMeta, cr.ObjectMeta)
 	if err != nil {
 		return err
 	}
 
 	crb := NewInstrumentorClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, "", crb, crb.TypeMeta, crb.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, crb, crb.TypeMeta, crb.ObjectMeta)
 	if err != nil {
 		return err
 	}
 
 	dep := NewInstrumentorDeployment(a.version, a.telemetryEnabled, a.sidecarInstrumentation, a.ignoredNamespaces)
-	err = a.client.ApplyResource(ctx, a.ns, dep, dep.TypeMeta, dep.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, dep, dep.TypeMeta, dep.ObjectMeta)
 	if err != nil {
 		return err
 	}

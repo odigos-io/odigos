@@ -125,19 +125,19 @@ func (a *dataCollectionResourceManager) Name() string { return "DataCollection" 
 func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	sa := NewDataCollectionServiceAccount()
-	err := a.client.ApplyResource(ctx, a.ns, sa, sa.TypeMeta, sa.ObjectMeta)
+	err := a.client.ApplyResource(ctx, a.ns, a.version, sa, sa.TypeMeta, sa.ObjectMeta)
 	if err != nil {
 		return err
 	}
 
 	clusterRole := NewDataCollectionClusterRole(a.psp)
-	err = a.client.ApplyResource(ctx, "", clusterRole, clusterRole.TypeMeta, clusterRole.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, clusterRole, clusterRole.TypeMeta, clusterRole.ObjectMeta)
 	if err != nil {
 		return err
 	}
 
 	clusterRoleBinding := NewDataCollectionClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, "", clusterRoleBinding, clusterRoleBinding.TypeMeta, clusterRoleBinding.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, clusterRoleBinding, clusterRoleBinding.TypeMeta, clusterRoleBinding.ObjectMeta)
 	if err != nil {
 		return err
 	}
