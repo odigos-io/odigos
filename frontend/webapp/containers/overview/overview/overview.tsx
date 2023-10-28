@@ -27,9 +27,9 @@ export function OverviewContainer() {
   );
 
   const { data: sources } = useQuery([QUERIES.API_SOURCES], getSources);
-
   const sourcesNodes = useMemo(() => {
     const groupedSources = groupSourcesNamespace(sources);
+
     const nodes = getNodes(
       containerHeight,
       groupedSources.length > 1 ? groupSourcesNamespace(sources) : sources,
