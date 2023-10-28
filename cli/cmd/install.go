@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -55,13 +54,20 @@ This command will install k8s components that will auto-instrument your applicat
 		cmd.Flags().StringSliceVar(&ignoredNamespaces, "ignore-namespace", DefaultIgnoredNamespaces, "--ignore-namespace foo logging")
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
-		isOdigosCloud := odigosCloudApiKeyFlag != ""
+		// namespace is created on "install" and is not managed by resource manager
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
+
+		// cloud secret is currently only created on "install".
+		// This will change in the future when we add support for maintaining the secret.
+		isOdigosCloud := odigosCloudApiKeyFlag != ""
 		if isOdigosCloud {
 			createKubeResourceWithLogging(ctx, "Creating Odigos Cloud Secret",
 				client, cmd, ns, createOdigosCloudSecret)
 		}
+
+		// TODO: come up with a plan for migrating CRDs and apply it here.
+		// Perhaps as resource manager or a separate command.
 		createKubeResourceWithLogging(ctx, "Creating CRDs",
 			client, cmd, ns, createCRDs)
 
@@ -117,11 +123,6 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	return err
 }
 
-func createOdigosDeploymentInfo(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	_, err := client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOdigosDeploymentConfigMap(versionFlag), metav1.CreateOptions{})
-	return err
-}
-
 func createCRDs(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 	for _, crd := range crds.NewCRDs() {
 		_, err := client.ApiExtensions.ApiextensionsV1().CustomResourceDefinitions().Create(ctx, &crd, metav1.CreateOptions{})
@@ -132,201 +133,8 @@ func createCRDs(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns
 	return nil
 }
 
-func createLeaderElectionRole(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	_, err := client.RbacV1().Roles(ns).Create(ctx, resources.NewLeaderElectionRole(), metav1.CreateOptions{})
-	return err
-}
-
-func createDataCollectionRBAC(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewDataCollectionServiceAccount(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewDataCollectionClusterRole(psp), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewDataCollectionClusterRoleBinding(ns), metav1.CreateOptions{})
-	return err
-}
-
-func createInstrumentor(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewInstrumentorServiceAccount(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewInstrumentorRoleBinding(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewInstrumentorClusterRole(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewInstrumentorClusterRoleBinding(ns), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewInstrumentorDeployment(versionFlag, telemetryEnabled, sidecarInstrumentation, ignoredNamespaces), metav1.CreateOptions{})
-	return err
-}
-
-func createScheduler(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewSchedulerServiceAccount(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewSchedulerRoleBinding(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewSchedulerClusterRole(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewSchedulerClusterRoleBinding(ns), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewSchedulerDeployment(versionFlag), metav1.CreateOptions{})
-	return err
-}
-
-func createAutoscaler(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewAutoscalerServiceAccount(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().Roles(ns).Create(ctx, resources.NewAutoscalerRole(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewAutoscalerRoleBinding(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewAutoscalerClusterRole(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewAutoscalerClusterRoleBinding(ns), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewAutoscalerLeaderElectionRoleBinding(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewAutoscalerDeployment(versionFlag), metav1.CreateOptions{})
-	return err
-}
-
-func createOdiglet(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewOdigletServiceAccount(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewOdigletClusterRole(psp), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewOdigletClusterRoleBinding(ns), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.AppsV1().DaemonSets(ns).Create(ctx, resources.NewOdigletDaemonSet(versionFlag), metav1.CreateOptions{})
-	return err
-}
-
 func createOdigosCloudSecret(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 	_, err := client.CoreV1().Secrets(ns).Create(ctx, resources.NewKeyvalSecret(odigosCloudApiKeyFlag), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func createKeyvalProxy(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-
-	_, err := client.CoreV1().ServiceAccounts(ns).Create(ctx, resources.NewKeyvalProxyServiceAccount(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().Roles(ns).Create(ctx, resources.NewKeyvalProxyRole(ns), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().RoleBindings(ns).Create(ctx, resources.NewKeyvalProxyRoleBinding(ns), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoles().Create(ctx, resources.NewKeyvalProxyClusterRole(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.RbacV1().ClusterRoleBindings().Create(ctx, resources.NewKeyvalProxyClusterRoleBinding(ns), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewKeyvalProxyDeployment(odigosCloudProxyVersion, ns), metav1.CreateOptions{})
-	return err
-}
-
-func createOwnTelemetryDisabled(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	_, err := client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOwnTelemetryConfigMapDisabled(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func createOwnTelemetryPipeline(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	if odigosCloudApiKeyFlag == "" {
-		return errors.New("odigos cloud api key is required for odigos own telemetry")
-	}
-
-	_, err := client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOwnTelemetryConfigMapOtlpGrpc(ns, versionFlag), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.CoreV1().ConfigMaps(ns).Create(ctx, resources.NewOwnTelemetryCollectorConfigMap(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.AppsV1().Deployments(ns).Create(ctx, resources.NewOwnTelemetryCollectorDeployment(), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = client.CoreV1().Services(ns).Create(ctx, resources.NewOwnTelemetryCollectorService(), metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
