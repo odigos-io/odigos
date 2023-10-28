@@ -9,14 +9,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewDataCollectionServiceAccount() *corev1.ServiceAccount {
+func NewDataCollectionServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-data-collection",
+			Name:      "odigos-data-collection",
+			Namespace: ns,
 		},
 	}
 }
@@ -120,20 +121,20 @@ func (a *dataCollectionResourceManager) Name() string { return "DataCollection" 
 
 func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context) error {
 
-	sa := NewDataCollectionServiceAccount()
-	err := a.client.ApplyResource(ctx, a.ns, a.version, sa)
+	sa := NewDataCollectionServiceAccount(a.ns)
+	err := a.client.ApplyResource(ctx, a.version, sa)
 	if err != nil {
 		return err
 	}
 
 	clusterRole := NewDataCollectionClusterRole(a.psp)
-	err = a.client.ApplyResource(ctx, "", a.version, clusterRole)
+	err = a.client.ApplyResource(ctx, a.version, clusterRole)
 	if err != nil {
 		return err
 	}
 
 	clusterRoleBinding := NewDataCollectionClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, "", a.version, clusterRoleBinding)
+	err = a.client.ApplyResource(ctx, a.version, clusterRoleBinding)
 	if err != nil {
 		return err
 	}

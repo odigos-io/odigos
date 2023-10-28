@@ -74,7 +74,7 @@ type K8sGenericObject interface {
 	GetObjectKind() schema.ObjectKind
 }
 
-func (c *Client) ApplyResource(ctx context.Context, ns string, odigosVersion string, obj K8sGenericObject) error {
+func (c *Client) ApplyResource(ctx context.Context, odigosVersion string, obj K8sGenericObject) error {
 
 	// for each resource, add a label with odigos version.
 	// we can use this label to later delete all resources
@@ -99,6 +99,7 @@ func (c *Client) ApplyResource(ctx context.Context, ns string, odigosVersion str
 
 	resourceName := obj.GetName()
 	gvk := obj.GetObjectKind().GroupVersionKind()
+	ns := obj.GetNamespace()
 	_, err := c.Dynamic.Resource(TypeMetaToDynamicResource(gvk)).Namespace(ns).Patch(ctx, resourceName, k8stypes.ApplyPatchType, depBytes, patchOptions)
 	return err
 }

@@ -14,14 +14,15 @@ const (
 	OdigosDeploymentConfigMapName = "odigos-deployment"
 )
 
-func NewOdigosDeploymentConfigMap(odigosVersion string) *corev1.ConfigMap {
+func NewOdigosDeploymentConfigMap(ns string, odigosVersion string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: OdigosDeploymentConfigMapName,
+			Name:      OdigosDeploymentConfigMapName,
+			Namespace: ns,
 		},
 		Data: map[string]string{
 			"ODIGOS_VERSION": odigosVersion,
@@ -29,14 +30,15 @@ func NewOdigosDeploymentConfigMap(odigosVersion string) *corev1.ConfigMap {
 	}
 }
 
-func NewLeaderElectionRole() *rbacv1.Role {
+func NewLeaderElectionRole(ns string) *rbacv1.Role {
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Role",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-leader-election-role",
+			Name:      "odigos-leader-election-role",
+			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -98,14 +100,14 @@ func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, version 
 func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployment" }
 
 func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context) error {
-	cm := NewOdigosDeploymentConfigMap(a.version)
-	err := a.client.ApplyResource(ctx, a.ns, a.version, cm)
+	cm := NewOdigosDeploymentConfigMap(a.ns, a.version)
+	err := a.client.ApplyResource(ctx, a.version, cm)
 	if err != nil {
 		return err
 	}
 
-	role := NewLeaderElectionRole()
-	err = a.client.ApplyResource(ctx, a.ns, a.version, role)
+	role := NewLeaderElectionRole(a.ns)
+	err = a.client.ApplyResource(ctx, a.version, role)
 	if err != nil {
 		return err
 	}

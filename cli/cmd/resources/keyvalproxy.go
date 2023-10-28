@@ -30,14 +30,15 @@ const (
 	keyvalProxyClusterRoleBindingName = "odigos-cloud-proxy"
 )
 
-func NewKeyvalProxyServiceAccount() *corev1.ServiceAccount {
+func NewKeyvalProxyServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: keyvalProxyServiceAccountName,
+			Name:      keyvalProxyServiceAccountName,
+			Namespace: ns,
 		},
 	}
 }
@@ -230,7 +231,8 @@ func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: keyvalProxyDeploymentName,
+			Name:      keyvalProxyDeploymentName,
+			Namespace: ns,
 			Labels: map[string]string{
 				"app": keyvalProxyAppName,
 			},
@@ -361,44 +363,44 @@ func (a *keyvalProxyResourceManager) Name() string { return "CloudProxy" }
 
 func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) error {
 
-	sa := NewKeyvalProxyServiceAccount()
-	err := a.client.ApplyResource(ctx, a.ns, a.version, sa)
+	sa := NewKeyvalProxyServiceAccount(a.ns)
+	err := a.client.ApplyResource(ctx, a.version, sa)
 	if err != nil {
 		return err
 	}
 
 	role := NewKeyvalProxyRole(a.ns)
-	err = a.client.ApplyResource(ctx, a.ns, a.version, role)
+	err = a.client.ApplyResource(ctx, a.version, role)
 	if err != nil {
 		return err
 	}
 
 	roleBinding := NewKeyvalProxyRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.ns, a.version, roleBinding)
+	err = a.client.ApplyResource(ctx, a.version, roleBinding)
 	if err != nil {
 		return err
 	}
 
 	clusterRole := NewKeyvalProxyClusterRole()
-	err = a.client.ApplyResource(ctx, "", a.version, clusterRole)
+	err = a.client.ApplyResource(ctx, a.version, clusterRole)
 	if err != nil {
 		return err
 	}
 
 	clusterRoleBinding := NewKeyvalProxyClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, "", a.version, clusterRoleBinding)
+	err = a.client.ApplyResource(ctx, a.version, clusterRoleBinding)
 	if err != nil {
 		return err
 	}
 
-	leaderElectionRoleBinding := NewAutoscalerLeaderElectionRoleBinding()
-	err = a.client.ApplyResource(ctx, a.ns, a.version, leaderElectionRoleBinding)
+	leaderElectionRoleBinding := NewAutoscalerLeaderElectionRoleBinding(a.ns)
+	err = a.client.ApplyResource(ctx, a.version, leaderElectionRoleBinding)
 	if err != nil {
 		return err
 	}
 
 	dep := NewKeyvalProxyDeployment(odigosCloudProxyVersion, a.ns)
-	err = a.client.ApplyResource(ctx, a.ns, a.version, dep)
+	err = a.client.ApplyResource(ctx, a.version, dep)
 	if err != nil {
 		return err
 	}

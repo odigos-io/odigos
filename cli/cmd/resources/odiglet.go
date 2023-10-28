@@ -21,14 +21,15 @@ const (
 
 var OdigletImage string
 
-func NewOdigletServiceAccount() *corev1.ServiceAccount {
+func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odiglet",
+			Name:      "odiglet",
+			Namespace: ns,
 		},
 	}
 }
@@ -211,14 +212,15 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
+func NewOdigletDaemonSet(ns string, version string) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: OdigletDaemonSetName,
+			Name:      OdigletDaemonSetName,
+			Namespace: ns,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -374,26 +376,26 @@ func (a *odigletResourceManager) Name() string { return "Odiglet" }
 
 func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
-	sa := NewOdigletServiceAccount()
-	err := a.client.ApplyResource(ctx, a.ns, a.version, sa)
+	sa := NewOdigletServiceAccount(a.ns)
+	err := a.client.ApplyResource(ctx, a.version, sa)
 	if err != nil {
 		return err
 	}
 
 	cr := NewOdigletClusterRole(a.psp)
-	err = a.client.ApplyResource(ctx, "", a.version, cr)
+	err = a.client.ApplyResource(ctx, a.version, cr)
 	if err != nil {
 		return err
 	}
 
 	crb := NewOdigletClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, "", a.version, crb)
+	err = a.client.ApplyResource(ctx, a.version, crb)
 	if err != nil {
 		return err
 	}
 
-	ds := NewOdigletDaemonSet(a.version)
-	err = a.client.ApplyResource(ctx, a.ns, a.version, ds)
+	ds := NewOdigletDaemonSet(a.ns, a.version)
+	err = a.client.ApplyResource(ctx, a.version, ds)
 	if err != nil {
 		return err
 	}

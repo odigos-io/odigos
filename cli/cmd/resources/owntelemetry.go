@@ -31,14 +31,15 @@ const (
 )
 
 // used for odigos opensource which does not collect own telemetry
-func NewOwnTelemetryConfigMapDisabled() *corev1.ConfigMap {
+func NewOwnTelemetryConfigMapDisabled(ns string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: ownTelemetryOtelConfig,
+			Name:      ownTelemetryOtelConfig,
+			Namespace: ns,
 		},
 		Data: map[string]string{
 			"OTEL_SDK_DISABLED": "true",
@@ -54,7 +55,8 @@ func NewOwnTelemetryConfigMapOtlpGrpc(ns string, odigosVersion string) *corev1.C
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: ownTelemetryOtelConfig,
+			Name:      ownTelemetryOtelConfig,
+			Namespace: ns,
 		},
 		Data: map[string]string{
 			"OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
@@ -113,14 +115,15 @@ func getOtelcolConfigMapValue() string {
 	return string(data)
 }
 
-func NewOwnTelemetryCollectorConfigMap() *corev1.ConfigMap {
+func NewOwnTelemetryCollectorConfigMap(ns string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: ownTelemetryCollectorConfig,
+			Name:      ownTelemetryCollectorConfig,
+			Namespace: ns,
 		},
 		Data: map[string]string{
 			ownTelemetryCollectorConfigKeyName: getOtelcolConfigMapValue(),
@@ -128,14 +131,15 @@ func NewOwnTelemetryCollectorConfigMap() *corev1.ConfigMap {
 	}
 }
 
-func NewOwnTelemetryCollectorDeployment() *appsv1.Deployment {
+func NewOwnTelemetryCollectorDeployment(ns string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: ownTelemetryCollectorDeploymentName,
+			Name:      ownTelemetryCollectorDeploymentName,
+			Namespace: ns,
 			Labels: map[string]string{
 				"app": ownTelemetryCollectorAppName,
 			},
@@ -211,14 +215,15 @@ func NewOwnTelemetryCollectorDeployment() *appsv1.Deployment {
 	}
 }
 
-func NewOwnTelemetryCollectorService() *corev1.Service {
+func NewOwnTelemetryCollectorService(ns string) *corev1.Service {
 	return &corev1.Service{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: ownTelemetryCollectorServiceName,
+			Name:      ownTelemetryCollectorServiceName,
+			Namespace: ns,
 		},
 		Spec: corev1.ServiceSpec{
 			Type: corev1.ServiceTypeClusterIP,
@@ -268,25 +273,25 @@ func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) er
 
 	if a.isOdigosCloud {
 		cmOtelGrpc := NewOwnTelemetryConfigMapOtlpGrpc(a.ns, a.version)
-		err := a.client.ApplyResource(ctx, a.ns, a.version, cmOtelGrpc)
+		err := a.client.ApplyResource(ctx, a.version, cmOtelGrpc)
 		if err != nil {
 			return err
 		}
 
-		cmCollector := NewOwnTelemetryCollectorConfigMap()
-		err = a.client.ApplyResource(ctx, a.ns, a.version, cmCollector)
+		cmCollector := NewOwnTelemetryCollectorConfigMap(a.ns)
+		err = a.client.ApplyResource(ctx, a.version, cmCollector)
 		if err != nil {
 			return err
 		}
 
-		dep := NewOwnTelemetryCollectorDeployment()
-		err = a.client.ApplyResource(ctx, a.ns, a.version, dep)
+		dep := NewOwnTelemetryCollectorDeployment(a.ns)
+		err = a.client.ApplyResource(ctx, a.version, dep)
 		if err != nil {
 			return err
 		}
 
-		svc := NewOwnTelemetryCollectorService()
-		err = a.client.ApplyResource(ctx, a.ns, a.version, svc)
+		svc := NewOwnTelemetryCollectorService(a.ns)
+		err = a.client.ApplyResource(ctx, a.version, svc)
 		if err != nil {
 			return err
 		}
@@ -295,8 +300,8 @@ func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) er
 
 	} else {
 
-		cmDisabled := NewOwnTelemetryConfigMapDisabled()
-		err := a.client.ApplyResource(ctx, a.ns, a.version, cmDisabled)
+		cmDisabled := NewOwnTelemetryConfigMapDisabled(a.ns)
+		err := a.client.ApplyResource(ctx, a.version, cmDisabled)
 		if err != nil {
 			return err
 		}

@@ -24,26 +24,28 @@ const (
 	InstrumentorContainerName  = "manager"
 )
 
-func NewInstrumentorServiceAccount() *corev1.ServiceAccount {
+func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: InstrumentorDeploymentName,
+			Name:      InstrumentorDeploymentName,
+			Namespace: ns,
 		},
 	}
 }
 
-func NewInstrumentorRoleBinding() *rbacv1.RoleBinding {
+func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "RoleBinding",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor-leader-election",
+			Name:      "odigos-instrumentor-leader-election",
+			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -373,7 +375,7 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarInstrumentation bool, ignoredNamespaces []string) *appsv1.Deployment {
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, sidecarInstrumentation bool, ignoredNamespaces []string) *appsv1.Deployment {
 	args := []string{
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=127.0.0.1:8080",
@@ -397,8 +399,8 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor",
-
+			Name:      "odigos-instrumentor",
+			Namespace: ns,
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",
 			},
@@ -529,32 +531,32 @@ func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
 
-	sa := NewInstrumentorServiceAccount()
-	err := a.client.ApplyResource(ctx, a.ns, a.version, sa)
+	sa := NewInstrumentorServiceAccount(a.ns)
+	err := a.client.ApplyResource(ctx, a.version, sa)
 	if err != nil {
 		return err
 	}
 
-	rb := NewInstrumentorRoleBinding()
-	err = a.client.ApplyResource(ctx, a.ns, a.version, rb)
+	rb := NewInstrumentorRoleBinding(a.ns)
+	err = a.client.ApplyResource(ctx, a.version, rb)
 	if err != nil {
 		return err
 	}
 
 	cr := NewInstrumentorClusterRole()
-	err = a.client.ApplyResource(ctx, "", a.version, cr)
+	err = a.client.ApplyResource(ctx, a.version, cr)
 	if err != nil {
 		return err
 	}
 
 	crb := NewInstrumentorClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, "", a.version, crb)
+	err = a.client.ApplyResource(ctx, a.version, crb)
 	if err != nil {
 		return err
 	}
 
-	dep := NewInstrumentorDeployment(a.version, a.telemetryEnabled, a.sidecarInstrumentation, a.ignoredNamespaces)
-	err = a.client.ApplyResource(ctx, a.ns, a.version, dep)
+	dep := NewInstrumentorDeployment(a.ns, a.version, a.telemetryEnabled, a.sidecarInstrumentation, a.ignoredNamespaces)
+	err = a.client.ApplyResource(ctx, a.version, dep)
 	if err != nil {
 		return err
 	}
