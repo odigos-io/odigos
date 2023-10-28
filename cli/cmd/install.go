@@ -68,12 +68,13 @@ This command will install k8s components that will auto-instrument your applicat
 		resourceManagers := resources.CreateResourceManagers(client, ns, versionFlag, isOdigosCloud, telemetryEnabled, sidecarInstrumentation, ignoredNamespaces, psp)
 
 		for _, rm := range resourceManagers {
-			fmt.Printf("Installing %s ...\n", rm.Name())
+			l := log.Print(fmt.Sprintf("Creating Odigos %s ...", rm.Name()))
 			err := rm.InstallFromScratch(ctx)
 			if err != nil {
-				fmt.Printf("Odigos upgrade failed - unable to install Odigos: %s\n", err)
+				l.Error(err)
 				os.Exit(1)
 			}
+			l.Success()
 		}
 
 		if !skipWait {

@@ -10,6 +10,7 @@ import (
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/pkg/confirm"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"github.com/keyval-dev/odigos/cli/pkg/log"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -80,11 +81,13 @@ and apply any required migrations.`,
 		resourceManagers := resources.CreateResourceManagers(client, ns, versionFlag, isOdigosCloud, telemetryEnabled, sidecarInstrumentation, ignoredNamespaces, psp)
 
 		for _, rm := range resourceManagers {
+			l := log.Print(fmt.Sprintf("Upgrading Odigos %s", rm.Name()))
 			err := rm.InstallFromScratch(ctx)
 			if err != nil {
-				fmt.Printf("Odigos upgrade failed - unable to install Odigos: %s\n", err)
+				l.Error(err)
 				os.Exit(1)
 			}
+			l.Success()
 		}
 
 		resource := schema.GroupVersionResource{
