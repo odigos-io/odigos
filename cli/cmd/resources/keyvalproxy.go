@@ -6,7 +6,6 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -39,7 +38,7 @@ func NewKeyvalProxyServiceAccount() *corev1.ServiceAccount {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   keyvalProxyServiceAccountName,
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 	}
 }
@@ -53,7 +52,7 @@ func NewKeyvalProxyRole(ns string) *rbacv1.Role {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      keyvalProxyRoleName,
 			Namespace: ns,
-			Labels:    labels.OdigosSystem,
+			Labels:    map[string]string{},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -82,7 +81,7 @@ func NewKeyvalProxyRoleBinding(ns string) *rbacv1.RoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      keyvalProxyRoleBindingName,
 			Namespace: ns,
-			Labels:    labels.OdigosSystem,
+			Labels:    map[string]string{},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -107,7 +106,7 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   keyvalProxyClusterRoleName,
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -210,7 +209,7 @@ func NewKeyvalProxyClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   keyvalProxyClusterRoleBindingName,
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -236,8 +235,7 @@ func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: keyvalProxyDeploymentName,
 			Labels: map[string]string{
-				"app":                       keyvalProxyAppName,
-				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
+				"app": keyvalProxyAppName,
 			},
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",

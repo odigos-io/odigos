@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,7 +17,7 @@ func NewDataCollectionServiceAccount() *corev1.ServiceAccount {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odigos-data-collection",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 	}
 }
@@ -31,7 +30,7 @@ func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odigos-data-collection",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -92,7 +91,7 @@ func NewDataCollectionClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odigos-data-collection",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Subjects: []rbacv1.Subject{
 			{

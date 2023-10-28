@@ -6,7 +6,6 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -30,7 +29,7 @@ func NewOdigletServiceAccount() *corev1.ServiceAccount {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odiglet",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 	}
 }
@@ -43,7 +42,7 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odiglet",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -198,7 +197,7 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odiglet",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -222,10 +221,8 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: OdigletDaemonSetName,
-			Labels: map[string]string{
-				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
-			},
+			Name:   OdigletDaemonSetName,
+			Labels: map[string]string{},
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{

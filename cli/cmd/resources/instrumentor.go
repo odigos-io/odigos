@@ -7,7 +7,6 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -33,7 +32,7 @@ func NewInstrumentorServiceAccount() *corev1.ServiceAccount {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   InstrumentorDeploymentName,
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 	}
 }
@@ -46,7 +45,7 @@ func NewInstrumentorRoleBinding() *rbacv1.RoleBinding {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odigos-instrumentor-leader-election",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -70,7 +69,7 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odigos-instrumentor",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -361,7 +360,7 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odigos-instrumentor",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -402,10 +401,8 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor",
-			Labels: map[string]string{
-				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
-			},
+			Name:   "odigos-instrumentor",
+			Labels: map[string]string{},
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",
 			},

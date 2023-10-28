@@ -6,7 +6,6 @@ import (
 
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common" // TODO: move it to neutral place
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -141,8 +140,7 @@ func NewOwnTelemetryCollectorDeployment() *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: ownTelemetryCollectorDeploymentName,
 			Labels: map[string]string{
-				"app":                       ownTelemetryCollectorAppName,
-				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
+				"app": ownTelemetryCollectorAppName,
 			},
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",

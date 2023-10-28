@@ -6,7 +6,6 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -31,7 +30,7 @@ func NewSchedulerServiceAccount() *corev1.ServiceAccount {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odigos-scheduler",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 	}
 }
@@ -44,7 +43,7 @@ func NewSchedulerRoleBinding() *rbacv1.RoleBinding {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odigos-scheduler-leader-election",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -68,7 +67,7 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odigos-scheduler",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -165,7 +164,7 @@ func NewSchedulerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odigos-scheduler",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -189,10 +188,8 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: SchedulerDeploymentName,
-			Labels: map[string]string{
-				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
-			},
+			Name:   SchedulerDeploymentName,
+			Labels: map[string]string{},
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",
 			},

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +38,7 @@ func NewLeaderElectionRole() *rbacv1.Role {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "odigos-leader-election-role",
-			Labels: labels.OdigosSystem,
+			Labels: map[string]string{},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
