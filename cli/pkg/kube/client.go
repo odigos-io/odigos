@@ -86,15 +86,7 @@ func (c *Client) ApplyResources(ctx context.Context, odigosVersion string, objs 
 
 func (c *Client) ApplyResource(ctx context.Context, odigosVersion string, obj K8sGenericObject) error {
 
-	// for each resource, add a label with odigos version.
-	// we can use this label to later delete all resources
-	// which are not part of the up-to-date odigos version.
-	// this works because we update an existing label object,
-	// so by modifying `objectmeta`, we also modify `obj` object itself.
 	labels := obj.GetLabels()
-	if labels == nil {
-		labels = map[string]string{}
-	}
 	labels[odigoslabels.OdigosSystemVersionLabelKey] = odigosVersion
 	labels[odigoslabels.OdigosSystemLabelKey] = odigoslabels.OdigosSystemLabelValue
 	obj.SetLabels(labels)
