@@ -223,7 +223,8 @@ func NewOwnTelemetryCollectorService() *corev1.Service {
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: ownTelemetryCollectorServiceName,
+			Name:   ownTelemetryCollectorServiceName,
+			Labels: map[string]string{},
 		},
 		Spec: corev1.ServiceSpec{
 			Type: corev1.ServiceTypeClusterIP,

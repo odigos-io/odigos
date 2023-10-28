@@ -71,13 +71,15 @@ func (c *Client) ApplyResource(ctx context.Context, ns string, odigosVersion str
 	// for each resource, add a label with odigos version.
 	// we can use this label to later delete all resources
 	// which are not part of the up-to-date odigos version.
+	// this works because we update an existing label object,
+	// so by modifying `objectmeta`, we also modify `obj` object itself.
 	currentLabels := objectmeta.GetLabels()
 	if currentLabels == nil {
-		currentLabels = make(map[string]string)
+		fmt.Printf("ERROR: resource %s/%s has no labels\n", typemeta.Kind, objectmeta.Name)
+		os.Exit(1)
 	}
 	currentLabels[labels.OdigosSystemVersionLabelKey] = odigosVersion
 	currentLabels[labels.OdigosSystemLabelKey] = labels.OdigosSystemLabelValue
-	objectmeta.SetLabels(currentLabels)
 
 	depBytes, _ := yaml.Marshal(obj)
 

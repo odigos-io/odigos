@@ -22,7 +22,8 @@ func NewOdigosDeploymentConfigMap(odigosVersion string) *corev1.ConfigMap {
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: OdigosDeploymentConfigMapName,
+			Name:   OdigosDeploymentConfigMapName,
+			Labels: map[string]string{},
 		},
 		Data: map[string]string{
 			"ODIGOS_VERSION": odigosVersion,
