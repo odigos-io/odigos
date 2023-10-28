@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type VersionChangeType int
@@ -90,15 +89,15 @@ and apply any required migrations.`,
 			l.Success()
 		}
 
-		resource := schema.GroupVersionResource{
-			Group:    "apps",
-			Version:  "v1",
-			Resource: "deployments",
-		}
-		err = client.DeleteOldOdigosSystemObjects(ctx, resource, ns, versionFlag)
-		if err != nil {
-			fmt.Printf("Odigos upgrade failed - unable to delete old Odigos objects: %s\n", err)
-			os.Exit(1)
+		resources := kube.GetManagedResources(ns)
+		for _, resource := range resources {
+			l := log.Print(fmt.Sprintf("Syncing %s", resource.Resource.Resource))
+			err = client.DeleteOldOdigosSystemObjects(ctx, resource, versionFlag)
+			if err != nil {
+				l.Error(err)
+				os.Exit(1)
+			}
+			l.Success()
 		}
 
 		// resourceManagers := []resources.ResourceManager{

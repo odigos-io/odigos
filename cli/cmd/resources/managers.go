@@ -1,6 +1,8 @@
 package resources
 
-import "github.com/keyval-dev/odigos/cli/pkg/kube"
+import (
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
+)
 
 func CreateResourceManagers(client *kube.Client, odigosNs string, version string, isOdigosCloud bool, telemetryEnabled bool, sidecarInstrumentation bool, ignoredNamespaces []string, psp bool) []ResourceManager {
 

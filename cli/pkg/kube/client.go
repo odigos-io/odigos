@@ -6,7 +6,6 @@ import (
 	"os"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
@@ -97,10 +96,12 @@ func (c *Client) ApplyResource(ctx context.Context, ns string, odigosVersion str
 	return err
 }
 
-func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resource schema.GroupVersionResource, ns string, odigosVersion string) error {
+func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNamespace ResourceAndNs, odigosVersion string) error {
 	systemObject, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemLabelKey, selection.Equals, []string{odigoslabels.OdigosSystemLabelValue})
 	notLatestVersion, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemVersionLabelKey, selection.NotEquals, []string{odigosVersion})
 	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).String()
+	resource := resourceAndNamespace.Resource
+	ns := resourceAndNamespace.Namespace
 	return c.Dynamic.Resource(resource).Namespace(ns).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
