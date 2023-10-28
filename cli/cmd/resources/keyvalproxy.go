@@ -37,8 +37,7 @@ func NewKeyvalProxyServiceAccount() *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   keyvalProxyServiceAccountName,
-			Labels: map[string]string{},
+			Name: keyvalProxyServiceAccountName,
 		},
 	}
 }
@@ -105,8 +104,7 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   keyvalProxyClusterRoleName,
-			Labels: map[string]string{},
+			Name: keyvalProxyClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -208,8 +206,7 @@ func NewKeyvalProxyClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   keyvalProxyClusterRoleBindingName,
-			Labels: map[string]string{},
+			Name: keyvalProxyClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -365,43 +362,43 @@ func (a *keyvalProxyResourceManager) Name() string { return "CloudProxy" }
 func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	sa := NewKeyvalProxyServiceAccount()
-	err := a.client.ApplyResource(ctx, a.ns, a.version, sa, sa.TypeMeta, sa.ObjectMeta)
+	err := a.client.ApplyResource(ctx, a.ns, a.version, sa)
 	if err != nil {
 		return err
 	}
 
 	role := NewKeyvalProxyRole(a.ns)
-	err = a.client.ApplyResource(ctx, a.ns, a.version, role, role.TypeMeta, role.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, role)
 	if err != nil {
 		return err
 	}
 
 	roleBinding := NewKeyvalProxyRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, a.ns, a.version, roleBinding, roleBinding.TypeMeta, roleBinding.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, roleBinding)
 	if err != nil {
 		return err
 	}
 
 	clusterRole := NewKeyvalProxyClusterRole()
-	err = a.client.ApplyResource(ctx, "", a.version, clusterRole, clusterRole.TypeMeta, clusterRole.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, clusterRole)
 	if err != nil {
 		return err
 	}
 
 	clusterRoleBinding := NewKeyvalProxyClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, "", a.version, clusterRoleBinding, clusterRoleBinding.TypeMeta, clusterRoleBinding.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, clusterRoleBinding)
 	if err != nil {
 		return err
 	}
 
 	leaderElectionRoleBinding := NewAutoscalerLeaderElectionRoleBinding()
-	err = a.client.ApplyResource(ctx, a.ns, a.version, leaderElectionRoleBinding, leaderElectionRoleBinding.TypeMeta, leaderElectionRoleBinding.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, leaderElectionRoleBinding)
 	if err != nil {
 		return err
 	}
 
 	dep := NewKeyvalProxyDeployment(odigosCloudProxyVersion, a.ns)
-	err = a.client.ApplyResource(ctx, a.ns, a.version, dep, dep.TypeMeta, dep.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, dep)
 	if err != nil {
 		return err
 	}

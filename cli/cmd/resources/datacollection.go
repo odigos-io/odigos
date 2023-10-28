@@ -16,8 +16,7 @@ func NewDataCollectionServiceAccount() *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-data-collection",
-			Labels: map[string]string{},
+			Name: "odigos-data-collection",
 		},
 	}
 }
@@ -29,8 +28,7 @@ func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-data-collection",
-			Labels: map[string]string{},
+			Name: "odigos-data-collection",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -90,8 +88,7 @@ func NewDataCollectionClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-data-collection",
-			Labels: map[string]string{},
+			Name: "odigos-data-collection",
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -124,19 +121,19 @@ func (a *dataCollectionResourceManager) Name() string { return "DataCollection" 
 func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	sa := NewDataCollectionServiceAccount()
-	err := a.client.ApplyResource(ctx, a.ns, a.version, sa, sa.TypeMeta, sa.ObjectMeta)
+	err := a.client.ApplyResource(ctx, a.ns, a.version, sa)
 	if err != nil {
 		return err
 	}
 
 	clusterRole := NewDataCollectionClusterRole(a.psp)
-	err = a.client.ApplyResource(ctx, "", a.version, clusterRole, clusterRole.TypeMeta, clusterRole.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, clusterRole)
 	if err != nil {
 		return err
 	}
 
 	clusterRoleBinding := NewDataCollectionClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, "", a.version, clusterRoleBinding, clusterRoleBinding.TypeMeta, clusterRoleBinding.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, clusterRoleBinding)
 	if err != nil {
 		return err
 	}

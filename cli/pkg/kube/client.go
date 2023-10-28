@@ -6,6 +6,7 @@ import (
 	"os"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
@@ -68,20 +69,25 @@ func PrintClientErrorAndExit(err error) {
 	os.Exit(-1)
 }
 
-func (c *Client) ApplyResource(ctx context.Context, ns string, odigosVersion string, obj interface{}, typemeta metav1.TypeMeta, objectmeta metav1.ObjectMeta) error {
+type K8sGenericObject interface {
+	metav1.Object
+	GetObjectKind() schema.ObjectKind
+}
+
+func (c *Client) ApplyResource(ctx context.Context, ns string, odigosVersion string, obj K8sGenericObject) error {
 
 	// for each resource, add a label with odigos version.
 	// we can use this label to later delete all resources
 	// which are not part of the up-to-date odigos version.
 	// this works because we update an existing label object,
 	// so by modifying `objectmeta`, we also modify `obj` object itself.
-	currentLabels := objectmeta.GetLabels()
-	if currentLabels == nil {
-		fmt.Printf("ERROR: resource %s/%s has no labels\n", typemeta.Kind, objectmeta.Name)
-		os.Exit(1)
+	labels := obj.GetLabels()
+	if labels == nil {
+		labels = map[string]string{}
 	}
-	currentLabels[odigoslabels.OdigosSystemVersionLabelKey] = odigosVersion
-	currentLabels[odigoslabels.OdigosSystemLabelKey] = odigoslabels.OdigosSystemLabelValue
+	labels[odigoslabels.OdigosSystemVersionLabelKey] = odigosVersion
+	labels[odigoslabels.OdigosSystemLabelKey] = odigoslabels.OdigosSystemLabelValue
+	obj.SetLabels(labels)
 
 	depBytes, _ := yaml.Marshal(obj)
 
@@ -91,8 +97,9 @@ func (c *Client) ApplyResource(ctx context.Context, ns string, odigosVersion str
 		Force:        &force,
 	}
 
-	resourceName := objectmeta.Name
-	_, err := c.Dynamic.Resource(TypeMetaToDynamicResource(typemeta)).Namespace(ns).Patch(ctx, resourceName, k8stypes.ApplyPatchType, depBytes, patchOptions)
+	resourceName := obj.GetName()
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	_, err := c.Dynamic.Resource(TypeMetaToDynamicResource(gvk)).Namespace(ns).Patch(ctx, resourceName, k8stypes.ApplyPatchType, depBytes, patchOptions)
 	return err
 }
 

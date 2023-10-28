@@ -29,8 +29,7 @@ func NewSchedulerServiceAccount() *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-scheduler",
-			Labels: map[string]string{},
+			Name: "odigos-scheduler",
 		},
 	}
 }
@@ -42,8 +41,7 @@ func NewSchedulerRoleBinding() *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-scheduler-leader-election",
-			Labels: map[string]string{},
+			Name: "odigos-scheduler-leader-election",
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -66,8 +64,7 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-scheduler",
-			Labels: map[string]string{},
+			Name: "odigos-scheduler",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -163,8 +160,7 @@ func NewSchedulerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-scheduler",
-			Labels: map[string]string{},
+			Name: "odigos-scheduler",
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -188,8 +184,8 @@ func NewSchedulerDeployment(version string) *appsv1.Deployment {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   SchedulerDeploymentName,
-			Labels: map[string]string{},
+			Name: SchedulerDeploymentName,
+
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",
 			},
@@ -303,31 +299,31 @@ func (a *schedulerResourceManager) Name() string { return "Scheduler" }
 func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	sa := NewSchedulerServiceAccount()
-	err := a.client.ApplyResource(ctx, a.ns, a.version, sa, sa.TypeMeta, sa.ObjectMeta)
+	err := a.client.ApplyResource(ctx, a.ns, a.version, sa)
 	if err != nil {
 		return err
 	}
 
 	rb := NewSchedulerRoleBinding()
-	err = a.client.ApplyResource(ctx, a.ns, a.version, rb, rb.TypeMeta, rb.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, rb)
 	if err != nil {
 		return err
 	}
 
 	cr := NewSchedulerClusterRole()
-	err = a.client.ApplyResource(ctx, "", a.version, cr, cr.TypeMeta, cr.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, cr)
 	if err != nil {
 		return err
 	}
 
 	crb := NewSchedulerClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, "", a.version, crb, crb.TypeMeta, crb.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, crb)
 	if err != nil {
 		return err
 	}
 
 	dep := NewSchedulerDeployment(a.version)
-	err = a.client.ApplyResource(ctx, a.ns, a.version, dep, dep.TypeMeta, dep.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, dep)
 	if err != nil {
 		return err
 	}

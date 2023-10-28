@@ -3,7 +3,6 @@ package kube
 import (
 	"strings"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -25,12 +24,11 @@ func parseAPIVersion(apiVersion string) (group, version string) {
 	return parts[0], parts[1]
 }
 
-func TypeMetaToDynamicResource(typemeta metav1.TypeMeta) schema.GroupVersionResource {
-	group, version := parseAPIVersion(typemeta.APIVersion)
-	resource := objectKindToResourceName(typemeta.Kind)
+func TypeMetaToDynamicResource(gvk schema.GroupVersionKind) schema.GroupVersionResource {
+	resource := objectKindToResourceName(gvk.Kind)
 	return schema.GroupVersionResource{
-		Group:    group,
-		Version:  version,
+		Group:    gvk.Group,
+		Version:  gvk.Version,
 		Resource: resource,
 	}
 }

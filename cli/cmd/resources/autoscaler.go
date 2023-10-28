@@ -31,8 +31,7 @@ func NewAutoscalerServiceAccount() *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   AutoScalerServiceAccountName,
-			Labels: map[string]string{},
+			Name: AutoScalerServiceAccountName,
 		},
 	}
 }
@@ -44,8 +43,7 @@ func NewAutoscalerRole() *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-autoscaler",
-			Labels: map[string]string{},
+			Name: "odigos-autoscaler",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -231,8 +229,7 @@ func NewAutoscalerRoleBinding() *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-autoscaler",
-			Labels: map[string]string{},
+			Name: "odigos-autoscaler",
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -255,8 +252,7 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-autoscaler",
-			Labels: map[string]string{},
+			Name: "odigos-autoscaler",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -311,8 +307,7 @@ func NewAutoscalerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-autoscaler",
-			Labels: map[string]string{},
+			Name: "odigos-autoscaler",
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -336,8 +331,7 @@ func NewAutoscalerLeaderElectionRoleBinding() *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-autoscaler-leader-election",
-			Labels: map[string]string{},
+			Name: "odigos-autoscaler-leader-election",
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -360,8 +354,8 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   AutoScalerDeploymentName,
-			Labels: map[string]string{},
+			Name: AutoScalerDeploymentName,
+
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",
 			},
@@ -482,43 +476,43 @@ func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
 func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	sa := NewAutoscalerServiceAccount()
-	err := a.client.ApplyResource(ctx, a.ns, a.version, sa, sa.TypeMeta, sa.ObjectMeta)
+	err := a.client.ApplyResource(ctx, a.ns, a.version, sa)
 	if err != nil {
 		return err
 	}
 
 	role := NewAutoscalerRole()
-	err = a.client.ApplyResource(ctx, a.ns, a.version, role, role.TypeMeta, role.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, role)
 	if err != nil {
 		return err
 	}
 
 	roleBinding := NewAutoscalerRoleBinding()
-	err = a.client.ApplyResource(ctx, a.ns, a.version, roleBinding, roleBinding.TypeMeta, roleBinding.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, roleBinding)
 	if err != nil {
 		return err
 	}
 
 	clusterRole := NewAutoscalerClusterRole()
-	err = a.client.ApplyResource(ctx, "", a.version, clusterRole, clusterRole.TypeMeta, clusterRole.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, clusterRole)
 	if err != nil {
 		return err
 	}
 
 	clusterRoleBinding := NewAutoscalerClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, "", a.version, clusterRoleBinding, clusterRoleBinding.TypeMeta, clusterRoleBinding.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, clusterRoleBinding)
 	if err != nil {
 		return err
 	}
 
 	leaderElectionRoleBinding := NewAutoscalerLeaderElectionRoleBinding()
-	err = a.client.ApplyResource(ctx, a.ns, a.version, leaderElectionRoleBinding, leaderElectionRoleBinding.TypeMeta, leaderElectionRoleBinding.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, leaderElectionRoleBinding)
 	if err != nil {
 		return err
 	}
 
 	dep := NewAutoscalerDeployment(a.version)
-	err = a.client.ApplyResource(ctx, a.ns, a.version, dep, dep.TypeMeta, dep.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, dep)
 	if err != nil {
 		return err
 	}

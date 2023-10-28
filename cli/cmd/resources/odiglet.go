@@ -28,8 +28,7 @@ func NewOdigletServiceAccount() *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odiglet",
-			Labels: map[string]string{},
+			Name: "odiglet",
 		},
 	}
 }
@@ -41,8 +40,7 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odiglet",
-			Labels: map[string]string{},
+			Name: "odiglet",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -196,8 +194,7 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odiglet",
-			Labels: map[string]string{},
+			Name: "odiglet",
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -221,8 +218,7 @@ func NewOdigletDaemonSet(version string) *appsv1.DaemonSet {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   OdigletDaemonSetName,
-			Labels: map[string]string{},
+			Name: OdigletDaemonSetName,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -379,25 +375,25 @@ func (a *odigletResourceManager) Name() string { return "Odiglet" }
 func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	sa := NewOdigletServiceAccount()
-	err := a.client.ApplyResource(ctx, a.ns, a.version, sa, sa.TypeMeta, sa.ObjectMeta)
+	err := a.client.ApplyResource(ctx, a.ns, a.version, sa)
 	if err != nil {
 		return err
 	}
 
 	cr := NewOdigletClusterRole(a.psp)
-	err = a.client.ApplyResource(ctx, "", a.version, cr, cr.TypeMeta, cr.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, cr)
 	if err != nil {
 		return err
 	}
 
 	crb := NewOdigletClusterRoleBinding(a.ns)
-	err = a.client.ApplyResource(ctx, "", a.version, crb, crb.TypeMeta, crb.ObjectMeta)
+	err = a.client.ApplyResource(ctx, "", a.version, crb)
 	if err != nil {
 		return err
 	}
 
 	ds := NewOdigletDaemonSet(a.version)
-	err = a.client.ApplyResource(ctx, a.ns, a.version, ds, ds.TypeMeta, ds.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, ds)
 	if err != nil {
 		return err
 	}

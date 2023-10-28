@@ -21,8 +21,7 @@ func NewOdigosDeploymentConfigMap(odigosVersion string) *corev1.ConfigMap {
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:   OdigosDeploymentConfigMapName,
-			Labels: map[string]string{},
+			Name: OdigosDeploymentConfigMapName,
 		},
 		Data: map[string]string{
 			"ODIGOS_VERSION": odigosVersion,
@@ -37,8 +36,7 @@ func NewLeaderElectionRole() *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-leader-election-role",
-			Labels: map[string]string{},
+			Name: "odigos-leader-election-role",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -101,13 +99,13 @@ func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployme
 
 func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context) error {
 	cm := NewOdigosDeploymentConfigMap(a.version)
-	err := a.client.ApplyResource(ctx, a.ns, a.version, cm, cm.TypeMeta, cm.ObjectMeta)
+	err := a.client.ApplyResource(ctx, a.ns, a.version, cm)
 	if err != nil {
 		return err
 	}
 
 	role := NewLeaderElectionRole()
-	err = a.client.ApplyResource(ctx, a.ns, a.version, role, role.TypeMeta, role.ObjectMeta)
+	err = a.client.ApplyResource(ctx, a.ns, a.version, role)
 	if err != nil {
 		return err
 	}
