@@ -11,17 +11,16 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "odigos",
-	Short: "A CLI tool for managing your Kubernetes resources",
-	Long: `Odigos is a command-line tool for simplifying Kubernetes resource management.
-It allows you to interact with your Kubernetes cluster, manage resources, and perform various operations.
+	Short: "Automate OpenTelemetry Observability in Kubernetes",
+	Long: `Odigos is primarily focused on automating OpenTelemetry observability pipelines for traces, metrics, and logs, without the need for extensive code changes. The core of Odigos functionality lies in the Kubernetes operators it deploys within your cluster, enabling seamless observability.
 
-You can use Odigos to:
-- Create and manage Kubernetes resources.
-- Deploy applications to your cluster.
-- Monitor the status of your workloads.
-- Configure and customize your Kubernetes environment.
+Key Features of Odigos:
+- Automatic creation of OpenTelemetry observability pipelines.
+- Simplified tracing, metrics, and log collection.
+- Enhanced visibility into your Kubernetes services.
+- Streamlined Kubernetes operations with observability at the forefront.
 
-Odigos is designed to make Kubernetes operations easy and efficient. Get started with Odigos today!`,
+Get started with Odigos today to effortlessly improve the observability of your Kubernetes services!`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
