@@ -41,6 +41,8 @@ spec:
                 items:
                   type: string
                 type: array
+              imagePrefix:
+                type: string
               instrumentorImage:
                 type: string
               odigletImage:

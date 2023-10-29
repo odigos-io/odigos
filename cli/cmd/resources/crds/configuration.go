@@ -52,9 +52,6 @@ func NewConfiguration() apiextensionsv1.CustomResourceDefinition {
 										"autoscalerImage": {
 											Type: "string",
 										},
-										"instrumentorImage": {
-											Type: "string",
-										},
 										"ignoredNamespaces": {
 											Type: "array",
 											Items: &apiextensionsv1.JSONSchemaPropsOrArray{
@@ -62,6 +59,12 @@ func NewConfiguration() apiextensionsv1.CustomResourceDefinition {
 													Type: "string",
 												},
 											},
+										},
+										"imagePrefix": {
+											Type: "string",
+										},
+										"instrumentorImage": {
+											Type: "string",
 										},
 										"odigletImage": {
 											Type: "string",
