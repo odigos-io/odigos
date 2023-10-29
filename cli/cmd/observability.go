@@ -124,18 +124,6 @@ func persistArgs(args *backend.ObservabilityArgs, cmd *cobra.Command, signals []
 		return err
 	}
 
-	_, err = kc.OdigosClient.OdigosConfigurations(ns).Create(cmd.Context(), &odigosv1.OdigosConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-config",
-		},
-		Spec: odigosv1.OdigosConfigurationSpec{
-			InstrumentationMode: odigosv1.OptOutInstrumentationMode,
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
 	skillName := "observability" // TODO
 	_, err = kc.CoreV1().Secrets(ns).Create(cmd.Context(), &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

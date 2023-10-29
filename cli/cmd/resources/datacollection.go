@@ -1,21 +1,25 @@
 package resources
 
 import (
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
+	"context"
+
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewDataCollectionServiceAccount() *corev1.ServiceAccount {
+func NewDataCollectionServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-data-collection",
-			Labels: labels.OdigosSystem,
+			Name:      "odigos-data-collection",
+			Namespace: ns,
 		},
 	}
 }
@@ -27,8 +31,7 @@ func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-data-collection",
-			Labels: labels.OdigosSystem,
+			Name: "odigos-data-collection",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -88,8 +91,7 @@ func NewDataCollectionClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-data-collection",
-			Labels: labels.OdigosSystem,
+			Name: "odigos-data-collection",
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -104,4 +106,26 @@ func NewDataCollectionClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			Name:     "odigos-data-collection",
 		},
 	}
+}
+
+type dataCollectionResourceManager struct {
+	client  *kube.Client
+	ns      string
+	version string
+	config  *odigosv1.OdigosConfigurationSpec
+}
+
+func NewDataCollectionResourceManager(client *kube.Client, ns string, version string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &dataCollectionResourceManager{client: client, ns: ns, version: version, config: config}
+}
+
+func (a *dataCollectionResourceManager) Name() string { return "DataCollection" }
+
+func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context) error {
+	resources := []client.Object{
+		NewDataCollectionServiceAccount(a.ns),
+		NewDataCollectionClusterRole(a.config.Psp),
+		NewDataCollectionClusterRoleBinding(a.ns),
+	}
+	return a.client.ApplyResources(ctx, a.version, resources)
 }
