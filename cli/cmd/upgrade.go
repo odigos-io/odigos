@@ -20,19 +20,14 @@ import (
 
 type VersionChangeType int
 
-const (
-	Upgrade VersionChangeType = iota
-	Downgrade
-)
-
 // upgradeCmd represents the upgrade command
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
 	Short: "Upgrade Odigos version",
-	Long: `Use a specific version of Odigos.
+	Long: `Upgrade odigos version in your cluster.
 
-This command will upgrade the Odigos version in the cluster to the specified version
-and apply any required migrations.`,
+This command will upgrade the Odigos version in the cluster to the version of Odigos CLI
+and apply any required migrations and adaptations.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		client, err := kube.CreateClient(cmd)
