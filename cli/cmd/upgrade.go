@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/hashicorp/go-version"
 	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/pkg/confirm"
@@ -48,13 +49,34 @@ and apply any required migrations and adaptations.`,
 			os.Exit(1)
 		}
 
-		odigosVersion := cm.Data["ODIGOS_VERSION"]
-		if odigosVersion == "" {
+		currOdigosVersion := cm.Data["ODIGOS_VERSION"]
+		if currOdigosVersion == "" {
 			fmt.Println("Odigos upgrade failed - unable to read the current Odigos version for migration")
 			os.Exit(1)
 		}
 
-		fmt.Printf("About to upgrade Odigos version from '%s' (current) to '%s' (target)\n", odigosVersion, versionFlag)
+		sourceVersion, err := version.NewVersion(currOdigosVersion)
+		if err != nil {
+			fmt.Println("Odigos upgrade failed - unable to parse the current Odigos version for migration")
+			os.Exit(1)
+		}
+		if sourceVersion.LessThan(version.Must(version.NewVersion("1.0.0"))) {
+			fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0' current version is %s.\n", currOdigosVersion)
+			fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.\n")
+			os.Exit(1)
+		}
+		targetVersion, err := version.NewVersion(versionFlag)
+		if err != nil {
+			fmt.Println("Odigos upgrade failed - unable to parse the target Odigos version for migration")
+			os.Exit(1)
+		}
+
+		if sourceVersion.GreaterThan(targetVersion) {
+			fmt.Printf("About to DOWNGRADE Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
+		} else {
+			fmt.Printf("About to upgrade Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
+		}
+
 		confirmed, err := confirm.Ask("Are you sure?")
 		if err != nil || !confirmed {
 			fmt.Println("Aborting upgrade")
@@ -108,6 +130,6 @@ func init() {
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
 	} else {
-		installCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "for development purposes only")
+		upgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "for development purposes only")
 	}
 }
