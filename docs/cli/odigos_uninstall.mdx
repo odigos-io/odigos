@@ -1,0 +1,50 @@
+---
+title: "odigos uninstall"
+sidebarTitle: "odigos uninstall"
+---
+
+Unistall Odigos from your cluster
+
+## Synopsis
+
+Revert all the changes made by the `odigos install` command.
+This command will uninstall Odigos from your cluster. It will delete all Odigos objects
+and rollback any metadata changes made to your objects.
+
+```
+odigos uninstall [flags]
+```
+
+Note: This command is not revertable and will delete any configuration you have made to your Odigos installation.
+
+## Examples
+
+```
+
+    # Uninstall Odigos open-source or cloud from the cluster in your kubeconfig active context.
+    odigos uninstall
+
+    # Uninstall Odigos cloud from a specific cluster
+    odigos uninstall --kubeconfig <path-to-kubeconfig>
+
+    # Install a fresh setup of Odigos
+    odigos uninstall
+    odigos install
+    
+```
+
+## Options
+
+This command has not specific options.
+
+## Options inherited from parent commands
+
+```
+        --kubeconfig string   (optional) absolute path to the kubeconfig file
+```
+
+## SEE ALSO
+
+* [odigos](cli/odigos.md)	 - odigos CLI
+* [odigos install](cli/odigos_install.md)	 - install Odigos on your cluster
+* [odigos upgrade](/cli/odigos_upgrade.md)	 - upgrade odigos version in your cluster.
