@@ -185,15 +185,15 @@ func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube
 
 func init() {
 	rootCmd.AddCommand(installCmd)
-	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", consts.DefaultNamespace, "target namespace for Odigos installation")
-	installCmd.Flags().StringVarP(&odigosCloudApiKeyFlag, "api-key", "k", "", "api key for managed odigos")
-	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "Skip waiting for pods to be ready")
-	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "Enable telemetry")
-	installCmd.Flags().BoolVar(&sidecarInstrumentation, "sidecar-instrumentation", false, "Used sidecars for eBPF instrumentations")
-	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "keyval/odigos-odiglet", "odiglet container image")
-	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image")
-	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image")
-	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "", "Prefix for all container images")
+	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", consts.DefaultNamespace, "target k8s namespace for Odigos installation")
+	installCmd.Flags().StringVarP(&odigosCloudApiKeyFlag, "api-key", "k", "", "api key for odigos cloud")
+	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "skip waiting for odigos pods to be ready")
+	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "send general telemetry regarding Odigos usage")
+	installCmd.Flags().BoolVar(&sidecarInstrumentation, "sidecar-instrumentation", false, "use sidecars for eBPF instrumentations")
+	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "keyval/odigos-odiglet", "odiglet container image name")
+	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image name")
+	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image name")
+	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "", "prefix for all container images. used when your cluster doesn't have access to docker hub")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "Enable pod security policy")
 
 	if OdigosVersion != "" {
