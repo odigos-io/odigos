@@ -10,8 +10,9 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, version string
 	// Note - the order is important.
 	// If resource A depends on resource B, then A must be installed after B.
 	resourceManager := []ResourceManager{
-		NewOwnTelemetryResourceManager(client, odigosNs, version, isOdigosCloud),
 		NewOdigosDeploymentResourceManager(client, odigosNs, version),
+		NewOdigosConfigResourceManager(client, odigosNs, version, config),
+		NewOwnTelemetryResourceManager(client, odigosNs, version, isOdigosCloud),
 		NewDataCollectionResourceManager(client, odigosNs, version, config),
 		NewInstrumentorResourceManager(client, odigosNs, version, config),
 		NewSchedulerResourceManager(client, odigosNs, version),

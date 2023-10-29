@@ -105,7 +105,8 @@ func (c *Client) ApplyResource(ctx context.Context, odigosVersion string, obj K8
 	resourceName := obj.GetName()
 	gvk := obj.GetObjectKind().GroupVersionKind()
 	ns := obj.GetNamespace()
-	_, err := c.Dynamic.Resource(TypeMetaToDynamicResource(gvk)).Namespace(ns).Patch(ctx, resourceName, k8stypes.ApplyPatchType, depBytes, patchOptions)
+	resource := TypeMetaToDynamicResource(gvk)
+	_, err := c.Dynamic.Resource(resource).Namespace(ns).Patch(ctx, resourceName, k8stypes.ApplyPatchType, depBytes, patchOptions)
 	return err
 }
 

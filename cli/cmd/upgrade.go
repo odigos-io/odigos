@@ -105,7 +105,7 @@ and apply any required migrations.`,
 }
 
 func getConfig(ctx context.Context, client *kube.Client, ns string) (*v1alpha1.OdigosConfiguration, error) {
-	return client.OdigosClient.OdigosConfigurations(ns).Get(ctx, "odigos-config", metav1.GetOptions{})
+	return client.OdigosClient.OdigosConfigurations(ns).Get(ctx, resources.OdigosConfigName, metav1.GetOptions{})
 }
 
 func init() {

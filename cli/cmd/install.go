@@ -88,7 +88,6 @@ This command will install k8s components that will auto-instrument your applicat
 		// Perhaps as resource manager or a separate command.
 		createKubeResourceWithLogging(ctx, "Creating CRDs",
 			client, cmd, ns, createCRDs)
-		persistConfiguration(ctx, client, ns, config)
 
 		resourceManagers := resources.CreateResourceManagers(client, ns, versionFlag, isOdigosCloud, &config)
 
@@ -154,25 +153,6 @@ func createCRDs(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns
 
 func createOdigosCloudSecret(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 	_, err := client.CoreV1().Secrets(ns).Create(ctx, resources.NewKeyvalSecret(odigosCloudApiKeyFlag), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func persistConfiguration(ctx context.Context, client *kube.Client, ns string, config odigosv1.OdigosConfigurationSpec) error {
-	_, err := client.OdigosClient.OdigosConfigurations(ns).Create(ctx, &odigosv1.OdigosConfiguration{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "OdigosConfiguration",
-			APIVersion: "odigos.io/v1alpha1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-config",
-			Namespace: ns,
-		},
-		Spec: config,
-	}, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
