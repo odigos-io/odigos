@@ -110,5 +110,9 @@ func getConfig(ctx context.Context, client *kube.Client, ns string) (*v1alpha1.O
 
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
-	upgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "target version for Odigos upgrade")
+	if OdigosVersion != "" {
+		versionFlag = OdigosVersion
+	} else {
+		installCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "for development purposes only")
+	}
 }

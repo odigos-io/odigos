@@ -79,7 +79,7 @@ func (c *Client) ApplyResources(ctx context.Context, odigosVersion string, objs 
 	return nil
 }
 
-func (c *Client) ApplyResource(ctx context.Context, odigosVersion string, obj K8sGenericObject) error {
+func (c *Client) ApplyResource(ctx context.Context, odigosVersion string, obj client.Object) error {
 
 	labels := obj.GetLabels()
 	if labels == nil {

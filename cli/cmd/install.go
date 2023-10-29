@@ -186,7 +186,6 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", consts.DefaultNamespace, "target namespace for Odigos installation")
 	installCmd.Flags().StringVarP(&odigosCloudApiKeyFlag, "api-key", "k", "", "api key for managed odigos")
-	installCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "target version for Odigos installation")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "Skip waiting for pods to be ready")
 	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "Enable telemetry")
 	installCmd.Flags().BoolVar(&sidecarInstrumentation, "sidecar-instrumentation", false, "Used sidecars for eBPF instrumentations")
@@ -195,4 +194,10 @@ func init() {
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image")
 	installCmd.Flags().StringVar(&containers.ImagePrefix, "image-prefix", "", "Prefix for all container images")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "Enable pod security policy")
+
+	if OdigosVersion != "" {
+		versionFlag = OdigosVersion
+	} else {
+		installCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "for development purposes only")
+	}
 }
