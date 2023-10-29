@@ -10,6 +10,7 @@ type OdigosConfigurationSpec struct {
 	SidecarInstrumentation bool     `json:"sidecarInstrumentation,omitempty"`
 	IgnoredNamespaces      []string `json:"ignoredNamespaces,omitempty"`
 	Psp                    bool     `json:"psp,omitempty"`
+	ImagePrefix            string   `json:"imagePrefix,omitempty"`
 	OdigletImage           string   `json:"odigletImage,omitempty"`
 	InstrumentorImage      string   `json:"instrumentorImage,omitempty"`
 	AutoscalerImage        string   `json:"autoscalerImage,omitempty"`

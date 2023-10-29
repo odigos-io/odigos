@@ -7,7 +7,6 @@ import (
 	"time"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/common/consts"
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
@@ -38,6 +37,7 @@ var (
 	instrumentorImage string
 	odigletImage      string
 	autoScalerImage   string
+	imagePrefix       string
 )
 
 type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error
@@ -166,6 +166,7 @@ func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
 		SidecarInstrumentation: sidecarInstrumentation,
 		IgnoredNamespaces:      ignoredNamespaces,
 		Psp:                    psp,
+		ImagePrefix:            imagePrefix,
 		OdigletImage:           odigletImage,
 		InstrumentorImage:      instrumentorImage,
 		AutoscalerImage:        autoScalerImage,
@@ -192,7 +193,7 @@ func init() {
 	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "keyval/odigos-odiglet", "odiglet container image")
 	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image")
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image")
-	installCmd.Flags().StringVar(&containers.ImagePrefix, "image-prefix", "", "Prefix for all container images")
+	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "", "Prefix for all container images")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "Enable pod security policy")
 
 	if OdigosVersion != "" {

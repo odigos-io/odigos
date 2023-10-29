@@ -212,7 +212,7 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewOdigletDaemonSet(ns string, version string, imageName string) *appsv1.DaemonSet {
+func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
@@ -283,7 +283,7 @@ func NewOdigletDaemonSet(ns string, version string, imageName string) *appsv1.Da
 					Containers: []corev1.Container{
 						{
 							Name:  OdigletContainerName,
-							Image: containers.GetImageName(imageName, version),
+							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Env: []corev1.EnvVar{
 								// {
 								// 	Name:  "OTEL_SERVICE_NAME",
@@ -379,7 +379,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewOdigletServiceAccount(a.ns),
 		NewOdigletClusterRole(a.config.Psp),
 		NewOdigletClusterRoleBinding(a.ns),
-		NewOdigletDaemonSet(a.ns, a.version, a.config.OdigletImage),
+		NewOdigletDaemonSet(a.ns, a.version, a.config.ImagePrefix, a.config.OdigletImage),
 	}
 	return a.client.ApplyResources(ctx, a.version, resources)
 }

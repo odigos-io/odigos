@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -225,7 +226,7 @@ func NewKeyvalProxyClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
+func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -261,7 +262,7 @@ func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  keyvalProxyAppName,
-							Image: containers.GetImageName(keyvalProxyImage, version),
+							Image: containers.GetImageName(imagePrefix, keyvalProxyImage, version),
 							Args: []string{
 								"--health-probe-bind-address=:8081",
 								"--metrics-bind-address=127.0.0.1:8080",
@@ -354,10 +355,11 @@ type keyvalProxyResourceManager struct {
 	client  *kube.Client
 	ns      string
 	version string
+	config  *odigosv1.OdigosConfigurationSpec
 }
 
-func NewKeyvalProxyResourceManager(client *kube.Client, ns string, version string) ResourceManager {
-	return &keyvalProxyResourceManager{client: client, ns: ns, version: version}
+func NewKeyvalProxyResourceManager(client *kube.Client, ns string, version string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &keyvalProxyResourceManager{client: client, ns: ns, version: version, config: config}
 }
 
 func (a *keyvalProxyResourceManager) Name() string { return "CloudProxy" }
@@ -369,7 +371,7 @@ func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) err
 		NewKeyvalProxyRoleBinding(a.ns),
 		NewKeyvalProxyClusterRole(),
 		NewKeyvalProxyClusterRoleBinding(a.ns),
-		NewKeyvalProxyDeployment(odigosCloudProxyVersion, a.ns),
+		NewKeyvalProxyDeployment(odigosCloudProxyVersion, a.ns, a.config.ImagePrefix),
 	}
 	return a.client.ApplyResources(ctx, a.version, resources)
 }

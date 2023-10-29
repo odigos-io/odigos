@@ -15,13 +15,13 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, version string
 		NewOwnTelemetryResourceManager(client, odigosNs, version, isOdigosCloud),
 		NewDataCollectionResourceManager(client, odigosNs, version, config),
 		NewInstrumentorResourceManager(client, odigosNs, version, config),
-		NewSchedulerResourceManager(client, odigosNs, version),
+		NewSchedulerResourceManager(client, odigosNs, version, config),
 		NewOdigletResourceManager(client, odigosNs, version, config),
 		NewAutoScalerResourceManager(client, odigosNs, version, config),
 	}
 
 	if isOdigosCloud {
-		resourceManager = append(resourceManager, NewKeyvalProxyResourceManager(client, odigosNs, version))
+		resourceManager = append(resourceManager, NewKeyvalProxyResourceManager(client, odigosNs, version, config))
 	}
 
 	return resourceManager

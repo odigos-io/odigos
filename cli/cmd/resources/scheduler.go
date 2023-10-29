@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -180,7 +181,7 @@ func NewSchedulerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewSchedulerDeployment(ns string, version string) *appsv1.Deployment {
+func NewSchedulerDeployment(ns string, version string, imagePrefix string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -213,7 +214,7 @@ func NewSchedulerDeployment(ns string, version string) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  SchedulerContainerName,
-							Image: containers.GetImageName(SchedulerImage, version),
+							Image: containers.GetImageName(imagePrefix, SchedulerImage, version),
 							Command: []string{
 								"/app",
 							},
@@ -291,10 +292,11 @@ type schedulerResourceManager struct {
 	client  *kube.Client
 	ns      string
 	version string
+	config  *odigosv1.OdigosConfigurationSpec
 }
 
-func NewSchedulerResourceManager(client *kube.Client, ns string, version string) ResourceManager {
-	return &schedulerResourceManager{client: client, ns: ns, version: version}
+func NewSchedulerResourceManager(client *kube.Client, ns string, version string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &schedulerResourceManager{client: client, ns: ns, version: version, config: config}
 }
 
 func (a *schedulerResourceManager) Name() string { return "Scheduler" }
@@ -305,7 +307,7 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 		NewSchedulerRoleBinding(a.ns),
 		NewSchedulerClusterRole(),
 		NewSchedulerClusterRoleBinding(a.ns),
-		NewSchedulerDeployment(a.ns, a.version),
+		NewSchedulerDeployment(a.ns, a.version, a.config.ImagePrefix),
 	}
 	return a.client.ApplyResources(ctx, a.version, resources)
 }

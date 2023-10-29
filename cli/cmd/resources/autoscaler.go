@@ -351,7 +351,7 @@ func NewAutoscalerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewAutoscalerDeployment(ns string, version string, imageName string) *appsv1.Deployment {
+func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string) *appsv1.Deployment {
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -384,7 +384,7 @@ func NewAutoscalerDeployment(ns string, version string, imageName string) *appsv
 					Containers: []corev1.Container{
 						{
 							Name:  AutoScalerContainerName,
-							Image: containers.GetImageName(imageName, version),
+							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Command: []string{
 								"/app",
 							},
@@ -457,9 +457,9 @@ func NewAutoscalerDeployment(ns string, version string, imageName string) *appsv
 		},
 	}
 
-	if containers.ImagePrefix != "" {
+	if imagePrefix != "" {
 		dep.Spec.Template.Spec.Containers[0].Args = append(dep.Spec.Template.Spec.Containers[0].Args,
-			"--image-prefix="+containers.ImagePrefix)
+			"--image-prefix="+imagePrefix)
 	}
 
 	return dep
@@ -486,7 +486,7 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerClusterRole(),
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
-		NewAutoscalerDeployment(a.ns, a.version, a.config.AutoscalerImage),
+		NewAutoscalerDeployment(a.ns, a.version, a.config.ImagePrefix, a.config.AutoscalerImage),
 	}
 	return a.client.ApplyResources(ctx, a.version, resources)
 }
