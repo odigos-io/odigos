@@ -16,14 +16,6 @@ func objectKindToResourceName(kind string) string {
 	return strings.ToLower(kind) + "s"
 }
 
-func parseAPIVersion(apiVersion string) (group, version string) {
-	parts := strings.Split(apiVersion, "/")
-	if len(parts) == 1 {
-		return "", parts[0]
-	}
-	return parts[0], parts[1]
-}
-
 func TypeMetaToDynamicResource(gvk schema.GroupVersionKind) schema.GroupVersionResource {
 	resource := objectKindToResourceName(gvk.Kind)
 	return schema.GroupVersionResource{
