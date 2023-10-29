@@ -47,16 +47,36 @@ func NewConfiguration() apiextensionsv1.CustomResourceDefinition {
 								"spec": {
 									Description: "OdigosConfigurationSpec defines the desired state of OdigosConfiguration",
 									Type:        "object",
-									Required: []string{
-										"instrumentationMode",
-									},
+									Required:    []string{},
 									Properties: map[string]apiextensionsv1.JSONSchemaProps{
-										"instrumentationMode": {
+										"autoscalerImage": {
 											Type: "string",
-											Enum: []apiextensionsv1.JSON{
-												{Raw: []byte(`"OPT_IN"`)},
-												{Raw: []byte(`"OPT_OUT"`)},
+										},
+										"ignoredNamespaces": {
+											Type: "array",
+											Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+												Schema: &apiextensionsv1.JSONSchemaProps{
+													Type: "string",
+												},
 											},
+										},
+										"imagePrefix": {
+											Type: "string",
+										},
+										"instrumentorImage": {
+											Type: "string",
+										},
+										"odigletImage": {
+											Type: "string",
+										},
+										"psp": {
+											Type: "boolean",
+										},
+										"sidecarInstrumentation": {
+											Type: "boolean",
+										},
+										"telemetryEnabled": {
+											Type: "boolean",
 										},
 									},
 								},
