@@ -63,7 +63,7 @@ jobs:
             keyval/odigos-instrumentor:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=instrumentor
           platforms: linux/amd64,linux/arm64
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
       - name: Build Odiglet Image
