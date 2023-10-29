@@ -4,17 +4,15 @@ package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-//+kubebuilder:validation:Enum=OPT_IN;OPT_OUT
-type InstrumentationMode string
-
-const (
-	OptInInstrumentationMode  InstrumentationMode = "OPT_IN"
-	OptOutInstrumentationMode InstrumentationMode = "OPT_OUT"
-)
-
 // OdigosConfigurationSpec defines the desired state of OdigosConfiguration
 type OdigosConfigurationSpec struct {
-	InstrumentationMode InstrumentationMode `json:"instrumentationMode"`
+	TelemetryEnabled       bool     `json:"telemetryEnabled,omitempty"`
+	SidecarInstrumentation bool     `json:"sidecarInstrumentation,omitempty"`
+	IgnoredNamespaces      []string `json:"ignoredNamespaces,omitempty"`
+	Psp                    bool     `json:"psp,omitempty"`
+	OdigletImage           string   `json:"odigletImage,omitempty"`
+	InstrumentorImage      string   `json:"instrumentorImage,omitempty"`
+	AutoscalerImage        string   `json:"autoscalerImage,omitempty"`
 }
 
 //+genclient

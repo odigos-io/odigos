@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
@@ -18,8 +19,6 @@ const (
 	OdigletAppLabelValue = "odiglet"
 	OdigletContainerName = "odiglet"
 )
-
-var OdigletImage string
 
 func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
@@ -212,7 +211,7 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewOdigletDaemonSet(ns string, version string) *appsv1.DaemonSet {
+func NewOdigletDaemonSet(ns string, version string, imageName string) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
@@ -283,7 +282,7 @@ func NewOdigletDaemonSet(ns string, version string) *appsv1.DaemonSet {
 					Containers: []corev1.Container{
 						{
 							Name:  OdigletContainerName,
-							Image: containers.GetImageName(OdigletImage, version),
+							Image: containers.GetImageName(imageName, version),
 							Env: []corev1.EnvVar{
 								// {
 								// 	Name:  "OTEL_SERVICE_NAME",
@@ -365,11 +364,11 @@ type odigletResourceManager struct {
 	client  *kube.Client
 	ns      string
 	version string
-	psp     bool
+	config  *odigosv1.OdigosConfigurationSpec
 }
 
-func NewOdigletResourceManager(client *kube.Client, ns string, version string, psp bool) ResourceManager {
-	return &odigletResourceManager{client: client, ns: ns, version: version, psp: psp}
+func NewOdigletResourceManager(client *kube.Client, ns string, version string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &odigletResourceManager{client: client, ns: ns, version: version, config: config}
 }
 
 func (a *odigletResourceManager) Name() string { return "Odiglet" }
@@ -377,9 +376,9 @@ func (a *odigletResourceManager) Name() string { return "Odiglet" }
 func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.K8sGenericObject{
 		NewOdigletServiceAccount(a.ns),
-		NewOdigletClusterRole(a.psp),
+		NewOdigletClusterRole(a.config.Psp),
 		NewOdigletClusterRoleBinding(a.ns),
-		NewOdigletDaemonSet(a.ns, a.version),
+		NewOdigletDaemonSet(a.ns, a.version, a.config.OdigletImage),
 	}
 	return a.client.ApplyResources(ctx, a.version, resources)
 }

@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
@@ -13,8 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
-
-var AutoscalerImage string
 
 const (
 	AutoScalerServiceAccountName = "odigos-autoscaler"
@@ -351,7 +350,7 @@ func NewAutoscalerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewAutoscalerDeployment(ns string, version string) *appsv1.Deployment {
+func NewAutoscalerDeployment(ns string, version string, imageName string) *appsv1.Deployment {
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -384,7 +383,7 @@ func NewAutoscalerDeployment(ns string, version string) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  AutoScalerContainerName,
-							Image: containers.GetImageName(AutoscalerImage, version),
+							Image: containers.GetImageName(imageName, version),
 							Command: []string{
 								"/app",
 							},
@@ -469,10 +468,11 @@ type autoScalerResourceManager struct {
 	client  *kube.Client
 	ns      string
 	version string
+	config  *odigosv1.OdigosConfigurationSpec
 }
 
-func NewAutoScalerResourceManager(client *kube.Client, ns string, version string) ResourceManager {
-	return &autoScalerResourceManager{client: client, ns: ns, version: version}
+func NewAutoScalerResourceManager(client *kube.Client, ns string, version string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &autoScalerResourceManager{client: client, ns: ns, version: version, config: config}
 }
 
 func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
@@ -485,7 +485,7 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerClusterRole(),
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
-		NewAutoscalerDeployment(a.ns, a.version),
+		NewAutoscalerDeployment(a.ns, a.version, a.config.AutoscalerImage),
 	}
 	return a.client.ApplyResources(ctx, a.version, resources)
 }

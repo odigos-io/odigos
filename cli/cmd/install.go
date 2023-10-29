@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/common/consts"
 
@@ -33,6 +34,10 @@ var (
 	psp                      bool
 	ignoredNamespaces        []string
 	DefaultIgnoredNamespaces = []string{"odigos-system", "kube-system", "local-path-storage", "istio-system", "linkerd"}
+
+	instrumentorImage string
+	odigletImage      string
+	autoScalerImage   string
 )
 
 type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error
@@ -63,6 +68,8 @@ This command will install k8s components that will auto-instrument your applicat
 			os.Exit(1)
 		}
 
+		config := createOdigosConfigSpec()
+
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
 		// namespace is created on "install" and is not managed by resource manager
@@ -81,8 +88,9 @@ This command will install k8s components that will auto-instrument your applicat
 		// Perhaps as resource manager or a separate command.
 		createKubeResourceWithLogging(ctx, "Creating CRDs",
 			client, cmd, ns, createCRDs)
+		persistConfiguration(ctx, client, ns, config)
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, versionFlag, isOdigosCloud, telemetryEnabled, sidecarInstrumentation, ignoredNamespaces, psp)
+		resourceManagers := resources.CreateResourceManagers(client, ns, versionFlag, isOdigosCloud, &config)
 
 		for _, rm := range resourceManagers {
 			l := log.Print(fmt.Sprintf("Creating Odigos %s ...", rm.Name()))
@@ -153,6 +161,37 @@ func createOdigosCloudSecret(ctx context.Context, cmd *cobra.Command, client *ku
 	return nil
 }
 
+func persistConfiguration(ctx context.Context, client *kube.Client, ns string, config odigosv1.OdigosConfigurationSpec) error {
+	_, err := client.OdigosClient.OdigosConfigurations(ns).Create(ctx, &odigosv1.OdigosConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "OdigosConfiguration",
+			APIVersion: "odigos.io/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-config",
+			Namespace: ns,
+		},
+		Spec: config,
+	}, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
+	return odigosv1.OdigosConfigurationSpec{
+		TelemetryEnabled:       telemetryEnabled,
+		SidecarInstrumentation: sidecarInstrumentation,
+		IgnoredNamespaces:      ignoredNamespaces,
+		Psp:                    psp,
+		OdigletImage:           odigletImage,
+		InstrumentorImage:      instrumentorImage,
+		AutoscalerImage:        autoScalerImage,
+	}
+}
+
 func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, cmd *cobra.Command, ns string, create ResourceCreationFunc) {
 	l := log.Print(msg)
 	err := create(ctx, cmd, client, ns)
@@ -171,9 +210,9 @@ func init() {
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "Skip waiting for pods to be ready")
 	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "Enable telemetry")
 	installCmd.Flags().BoolVar(&sidecarInstrumentation, "sidecar-instrumentation", false, "Used sidecars for eBPF instrumentations")
-	installCmd.Flags().StringVar(&resources.OdigletImage, "odiglet-image", "keyval/odigos-odiglet", "odiglet container image")
-	installCmd.Flags().StringVar(&resources.InstrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image")
-	installCmd.Flags().StringVar(&resources.AutoscalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image")
+	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "keyval/odigos-odiglet", "odiglet container image")
+	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image")
+	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image")
 	installCmd.Flags().StringVar(&containers.ImagePrefix, "image-prefix", "", "Prefix for all container images")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "Enable pod security policy")
 }

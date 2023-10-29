@@ -35,13 +35,22 @@ spec:
           spec:
             description: OdigosConfigurationSpec defines the desired state of OdigosConfiguration
             properties:
-              instrumentationMode:
-                enum:
-                - OPT_IN
-                - OPT_OUT
+              autoscalerImage:
                 type: string
-            required:
-            - instrumentationMode
+              ignoredNamespaces:
+                items:
+                  type: string
+                type: array
+              instrumentorImage:
+                type: string
+              odigletImage:
+                type: string
+              psp:
+                type: boolean
+              sidecarInstrumentation:
+                type: boolean
+              telemetryEnabled:
+                type: boolean
             type: object
         type: object
     served: true

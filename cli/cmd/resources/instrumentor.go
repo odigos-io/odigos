@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 
@@ -14,8 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
-
-var InstrumentorImage string
 
 const (
 	InstrumentorServiceName    = "instrumentor"
@@ -375,7 +374,7 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, sidecarInstrumentation bool, ignoredNamespaces []string) *appsv1.Deployment {
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, sidecarInstrumentation bool, ignoredNamespaces []string, imageName string) *appsv1.Deployment {
 	args := []string{
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=127.0.0.1:8080",
@@ -425,7 +424,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 					Containers: []corev1.Container{
 						{
 							Name:  InstrumentorContainerName,
-							Image: containers.GetImageName(InstrumentorImage, version),
+							Image: containers.GetImageName(imageName, version),
 							Command: []string{
 								"/app",
 							},
@@ -508,22 +507,18 @@ func ptrbool(b bool) *bool {
 }
 
 type instrumentorResourceManager struct {
-	client                 *kube.Client
-	ns                     string
-	version                string
-	telemetryEnabled       bool
-	sidecarInstrumentation bool
-	ignoredNamespaces      []string
+	client  *kube.Client
+	ns      string
+	version string
+	config  *odigosv1.OdigosConfigurationSpec
 }
 
-func NewInstrumentorResourceManager(client *kube.Client, ns string, version string, telemetryEnabled bool, sidecarInstrumentation bool, ignoredNamespaces []string) ResourceManager {
+func NewInstrumentorResourceManager(client *kube.Client, ns string, version string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
 	return &instrumentorResourceManager{
-		client:                 client,
-		ns:                     ns,
-		version:                version,
-		telemetryEnabled:       telemetryEnabled,
-		sidecarInstrumentation: sidecarInstrumentation,
-		ignoredNamespaces:      ignoredNamespaces,
+		client:  client,
+		ns:      ns,
+		version: version,
+		config:  config,
 	}
 }
 
@@ -535,7 +530,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.version, a.telemetryEnabled, a.sidecarInstrumentation, a.ignoredNamespaces),
+		NewInstrumentorDeployment(a.ns, a.version, a.config.TelemetryEnabled, a.config.SidecarInstrumentation, a.config.IgnoredNamespaces, a.config.InstrumentorImage),
 	}
 	return a.client.ApplyResources(ctx, a.version, resources)
 }

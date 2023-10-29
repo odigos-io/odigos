@@ -4,9 +4,11 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 
+	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/pkg/confirm"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
@@ -72,12 +74,12 @@ and apply any required migrations.`,
 		}
 		isOdigosCloud := !notFound
 
-		// TODO: either read this from the cluster or from cli arguments
-		telemetryEnabled := true
-		sidecarInstrumentation := false
-		ignoredNamespaces := []string{}
-
-		resourceManagers := resources.CreateResourceManagers(client, ns, versionFlag, isOdigosCloud, telemetryEnabled, sidecarInstrumentation, ignoredNamespaces, psp)
+		config, err := getConfig(ctx, client, ns)
+		if err != nil {
+			fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
+			os.Exit(1)
+		}
+		resourceManagers := resources.CreateResourceManagers(client, ns, versionFlag, isOdigosCloud, &config.Spec)
 
 		for _, rm := range resourceManagers {
 			l := log.Print(fmt.Sprintf("Upgrading Odigos %s", rm.Name()))
@@ -100,6 +102,10 @@ and apply any required migrations.`,
 			l.Success()
 		}
 	},
+}
+
+func getConfig(ctx context.Context, client *kube.Client, ns string) (*v1alpha1.OdigosConfiguration, error) {
+	return client.OdigosClient.OdigosConfigurations(ns).Get(ctx, "odigos-config", metav1.GetOptions{})
 }
 
 func init() {

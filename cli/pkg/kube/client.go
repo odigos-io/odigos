@@ -87,6 +87,9 @@ func (c *Client) ApplyResources(ctx context.Context, odigosVersion string, objs 
 func (c *Client) ApplyResource(ctx context.Context, odigosVersion string, obj K8sGenericObject) error {
 
 	labels := obj.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
 	labels[odigoslabels.OdigosSystemVersionLabelKey] = odigosVersion
 	labels[odigoslabels.OdigosSystemLabelKey] = odigoslabels.OdigosSystemLabelValue
 	obj.SetLabels(labels)
