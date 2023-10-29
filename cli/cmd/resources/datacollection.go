@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func NewDataCollectionServiceAccount(ns string) *corev1.ServiceAccount {
@@ -121,7 +122,7 @@ func NewDataCollectionResourceManager(client *kube.Client, ns string, version st
 func (a *dataCollectionResourceManager) Name() string { return "DataCollection" }
 
 func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context) error {
-	resources := []kube.K8sGenericObject{
+	resources := []client.Object{
 		NewDataCollectionServiceAccount(a.ns),
 		NewDataCollectionClusterRole(a.config.Psp),
 		NewDataCollectionClusterRoleBinding(a.ns),

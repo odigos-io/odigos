@@ -6,9 +6,9 @@ import (
 	"os"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	k8stypes "k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	"github.com/keyval-dev/odigos/cli/pkg/generated/clientset/versioned/typed/odigos/v1alpha1"
@@ -69,12 +69,7 @@ func PrintClientErrorAndExit(err error) {
 	os.Exit(-1)
 }
 
-type K8sGenericObject interface {
-	metav1.Object
-	GetObjectKind() schema.ObjectKind
-}
-
-func (c *Client) ApplyResources(ctx context.Context, odigosVersion string, objs []K8sGenericObject) error {
+func (c *Client) ApplyResources(ctx context.Context, odigosVersion string, objs []client.Object) error {
 	for _, obj := range objs {
 		err := c.ApplyResource(ctx, odigosVersion, obj)
 		if err != nil {

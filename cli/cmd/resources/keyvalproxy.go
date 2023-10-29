@@ -5,6 +5,7 @@ import (
 
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -362,7 +363,7 @@ func NewKeyvalProxyResourceManager(client *kube.Client, ns string, version strin
 func (a *keyvalProxyResourceManager) Name() string { return "CloudProxy" }
 
 func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) error {
-	resources := []kube.K8sGenericObject{
+	resources := []client.Object{
 		NewKeyvalProxyServiceAccount(a.ns),
 		NewKeyvalProxyRole(a.ns),
 		NewKeyvalProxyRoleBinding(a.ns),

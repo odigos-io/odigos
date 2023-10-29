@@ -5,6 +5,7 @@ import (
 
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -299,7 +300,7 @@ func NewSchedulerResourceManager(client *kube.Client, ns string, version string)
 func (a *schedulerResourceManager) Name() string { return "Scheduler" }
 
 func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error {
-	resources := []kube.K8sGenericObject{
+	resources := []client.Object{
 		NewSchedulerServiceAccount(a.ns),
 		NewSchedulerRoleBinding(a.ns),
 		NewSchedulerClusterRole(),

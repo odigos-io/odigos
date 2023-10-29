@@ -6,6 +6,7 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -40,7 +41,7 @@ func NewOdigosConfigResourceManager(client *kube.Client, ns string, version stri
 func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
 
 func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
-	resources := []kube.K8sGenericObject{
+	resources := []client.Object{
 		NewOdigosConfiguration(a.ns, a.config),
 	}
 	return a.client.ApplyResources(ctx, a.version, resources)
