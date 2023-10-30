@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 env:
-  DOCKERHUB_ORG: "docker.io/keyval"
+  DOCKERHUB_ORG: "keyval"
 
 jobs:
   release:
@@ -104,4 +104,4 @@ jobs:
           SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
           DATE: ${{ steps.vars.outputs.date }}
         run: |
-          ko build -B --tags latest --tags ${{ steps.vars.outputs.tag }} --platform=all .
+          ko build --bare --tags latest --tags ${{ steps.vars.outputs.tag }} --platform=all .
