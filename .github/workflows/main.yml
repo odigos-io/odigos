@@ -105,4 +105,3 @@ jobs:
           DATE: ${{ steps.vars.outputs.date }}
         run: |
           ko build -B --tags latest --tags ${{ steps.vars.outputs.tag }} --platform=all .
-        
