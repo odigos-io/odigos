@@ -19,10 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-const (
-	odigosCloudProxyVersion = "v0.6.0"
-)
-
 var (
 	odigosCloudApiKeyFlag    string
 	namespaceFlag            string
@@ -194,7 +190,7 @@ func init() {
 	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image name")
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image name")
 	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "", "prefix for all container images. used when your cluster doesn't have access to docker hub")
-	installCmd.Flags().BoolVar(&psp, "psp", false, "Enable pod security policy")
+	installCmd.Flags().BoolVar(&psp, "psp", false, "enable pod security policy")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
