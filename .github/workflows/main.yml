@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 env:
-  DOCKERHUB_ORG: "docker.io/keyval"
+  DOCKERHUB_ORG: "keyval"
 
 jobs:
   release:
