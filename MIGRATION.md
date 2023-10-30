@@ -31,14 +31,10 @@ Go to the [Releases Page](https://github.com/keyval-dev/odigos/releases), downlo
 
 ## Upgrade Odigos in the Cluster
 
-** New from Odigos v0.1.81 **
+** New from Odigos v1.0.0 **
 
 ```sh
-$ odigos migrate
+$ odigos upgrade
 ```
 
-to upgrade (or downgrade) to a specific version, use the `--version` flag:
-
-```sh
-$ odigos migrate --version v0.1.81
-```
+This command will upgrade the Odigos deployment in the cluster to the version of the CLI.
