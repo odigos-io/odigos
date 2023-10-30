@@ -24,9 +24,9 @@ jobs:
       - name: Set env
         id: vars
         run: |
-          echo name=${GITHUB_REF#refs/*/} >> $GITHUB_OUTPUT
-          echo name=$(echo $GITHUB_SHA | cut -c1-7) >> $GITHUB_OUTPUT
-          echo name=$(date -u +"%Y-%m-%dT%H:%M:%SZ") >> $GITHUB_OUTPUT
+          echo tag=${GITHUB_REF#refs/*/} >> $GITHUB_OUTPUT
+          echo short_commit=$(echo $GITHUB_SHA | cut -c1-7) >> $GITHUB_OUTPUT
+          echo date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") >> $GITHUB_OUTPUT
       - uses: actions/setup-go@v4
         with:
           go-version: '1.21.0'
