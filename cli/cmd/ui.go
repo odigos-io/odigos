@@ -84,9 +84,8 @@ func checkOdigosInstallation(cmd *cobra.Command) bool {
 	ctx := cmd.Context()
 
 	// check if odigos is installed
-	existingOdigosNs, err := resources.GetOdigosNamespace(client, ctx)
+	_, err = resources.GetOdigosNamespace(client, ctx)
 	if err == nil {
-		fmt.Printf("Odigos is installed in namespace \"%s\".", existingOdigosNs)
 		return true
 	} else if !resources.IsErrNoOdigosNamespaceFound(err) {
 		fmt.Printf("\033[31mERROR\033[0m Cannot install/start UI. Failed to check if Odigos is already installed: %s\n", err)
