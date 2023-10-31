@@ -62,8 +62,8 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ### Managed
 
-|                         | Traces | Metrics | Logs |
-|-------------------------| ------ | ------- |------|
+|                         | Traces  | Metrics | Logs |
+|-------------------------| ------- | ------- |------|
 | New Relic               | ✅      | ✅      | ✅    |
 | Datadog                 | ✅      | ✅      | ✅    |
 | Grafana Cloud           | ✅      | ✅      | ✅    |
@@ -98,7 +98,7 @@ Can't find the destination you need? Help us by following our quick [add new des
 
 ## Contributing
 
-Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests. You are welcome to join our active [Slack Community](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests. Feel free to join our active [Slack Community](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
 
 ## All Thanks To Our Contributors
 
