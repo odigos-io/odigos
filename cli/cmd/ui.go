@@ -15,6 +15,8 @@ import (
 
 	"github.com/spf13/pflag"
 
+	"github.com/keyval-dev/odigos/cli/cmd/resources"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/spf13/cobra"
 )
 
@@ -29,41 +31,68 @@ var uiCmd = &cobra.Command{
 	Short: "Start the Odigos UI",
 	Long:  `Start the Odigos UI. This will start a web server that will serve the UI`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Look for binary named odigos-ui in the same directory as the current binary
-		// and execute it.
-		currentBinaryPath, err := os.Executable()
-		if err != nil {
-			fmt.Printf("Error getting current binary path: %v\n", err)
-			os.Exit(1)
-		}
 
-		currentDir := filepath.Dir(currentBinaryPath)
-		binaryPath := filepath.Join(currentDir, "odigos-ui")
-		if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
-			fmt.Printf("Could not find UI binary, downloading latest release\n")
-			err = downloadLatestUIVersion(runtime.GOARCH, runtime.GOOS, currentDir)
+		if checkOdigosInstallation(cmd) {
+			// Look for binary named odigos-ui in the same directory as the current binary
+			// and execute it.
+			currentBinaryPath, err := os.Executable()
 			if err != nil {
-				fmt.Printf("Error downloading latest UI version: %v\n", err)
+				fmt.Printf("Error getting current binary path: %v\n", err)
 				os.Exit(1)
 			}
-		}
 
-		// get all flags as slice of strings
-		var flags []string
-		cmd.Flags().Visit(func(f *pflag.Flag) {
-			flags = append(flags, fmt.Sprintf("--%s=%s", f.Name, f.Value))
-		})
+			currentDir := filepath.Dir(currentBinaryPath)
+			binaryPath := filepath.Join(currentDir, "odigos-ui")
+			if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
+				fmt.Printf("Could not find UI binary, downloading latest release\n")
+				err = downloadLatestUIVersion(runtime.GOARCH, runtime.GOOS, currentDir)
+				if err != nil {
+					fmt.Printf("Error downloading latest UI version: %v\n", err)
+					os.Exit(1)
+				}
+			}
 
-		// execute UI binary with all flags and stream output
-		process := exec.Command(binaryPath, flags...)
-		process.Stdout = os.Stdout
-		process.Stderr = os.Stderr
-		err = process.Run()
-		if err != nil {
-			fmt.Printf("Error starting UI: %v\n", err)
+			// get all flags as slice of strings
+			var flags []string
+			cmd.Flags().Visit(func(f *pflag.Flag) {
+				flags = append(flags, fmt.Sprintf("--%s=%s", f.Name, f.Value))
+			})
+
+			// execute UI binary with all flags and stream output
+			process := exec.Command(binaryPath, flags...)
+			process.Stdout = os.Stdout
+			process.Stderr = os.Stderr
+			err = process.Run()
+			if err != nil {
+				fmt.Printf("Error starting UI: %v\n", err)
+				os.Exit(1)
+			}
+		} else {
+			fmt.Printf("\033[31mERROR\033[0m Unable to find Odigos in kubernetes cluster.\n")
 			os.Exit(1)
 		}
+
 	},
+}
+
+func checkOdigosInstallation(cmd *cobra.Command) bool {
+	client, err := kube.CreateClient(cmd)
+	if err != nil {
+		kube.PrintClientErrorAndExit(err)
+		return false
+	}
+	ctx := cmd.Context()
+
+	// check if odigos is installed
+	existingOdigosNs, err := resources.GetOdigosNamespace(client, ctx)
+	if err == nil {
+		fmt.Printf("Odigos is installed in namespace \"%s\".", existingOdigosNs)
+		return true
+	} else if !resources.IsErrNoOdigosNamespaceFound(err) {
+		fmt.Printf("\033[31mERROR\033[0m Cannot install/start UI. Failed to check if Odigos is already installed: %s\n", err)
+		return false
+	}
+	return true
 }
 
 func downloadLatestUIVersion(arch string, os string, currentDir string) error {
