@@ -49,6 +49,7 @@
           "group": "CLI Reference",
           "pages": [
             "cli/odigos",
+            "cli/odigos_cloud",
             "cli/odigos_install",
             "cli/odigos_ui",
             "cli/odigos_uninstall",

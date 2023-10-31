@@ -77,7 +77,6 @@ This command will install k8s components that will auto-instrument your applicat
 		createKubeResourceWithLogging(ctx, "Creating CRDs",
 			client, cmd, ns, createCRDs)
 
-		// create resource managers specific for install
 		isOdigosCloud := odigosCloudApiKeyFlag != ""
 		if isOdigosCloud {
 			err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
