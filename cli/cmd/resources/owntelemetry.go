@@ -1,16 +1,18 @@
 package resources
 
 import (
+	"context"
 	"fmt"
 
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common" // TODO: move it to neutral place
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -30,14 +32,15 @@ const (
 )
 
 // used for odigos opensource which does not collect own telemetry
-func NewOwnTelemetryConfigMapDisabled() *corev1.ConfigMap {
+func NewOwnTelemetryConfigMapDisabled(ns string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: ownTelemetryOtelConfig,
+			Name:      ownTelemetryOtelConfig,
+			Namespace: ns,
 		},
 		Data: map[string]string{
 			"OTEL_SDK_DISABLED": "true",
@@ -53,7 +56,8 @@ func NewOwnTelemetryConfigMapOtlpGrpc(ns string, odigosVersion string) *corev1.C
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: ownTelemetryOtelConfig,
+			Name:      ownTelemetryOtelConfig,
+			Namespace: ns,
 		},
 		Data: map[string]string{
 			"OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
@@ -112,14 +116,15 @@ func getOtelcolConfigMapValue() string {
 	return string(data)
 }
 
-func NewOwnTelemetryCollectorConfigMap() *corev1.ConfigMap {
+func NewOwnTelemetryCollectorConfigMap(ns string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: ownTelemetryCollectorConfig,
+			Name:      ownTelemetryCollectorConfig,
+			Namespace: ns,
 		},
 		Data: map[string]string{
 			ownTelemetryCollectorConfigKeyName: getOtelcolConfigMapValue(),
@@ -127,17 +132,17 @@ func NewOwnTelemetryCollectorConfigMap() *corev1.ConfigMap {
 	}
 }
 
-func NewOwnTelemetryCollectorDeployment() *appsv1.Deployment {
+func NewOwnTelemetryCollectorDeployment(ns string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: ownTelemetryCollectorDeploymentName,
+			Name:      ownTelemetryCollectorDeploymentName,
+			Namespace: ns,
 			Labels: map[string]string{
-				"app":                       ownTelemetryCollectorAppName,
-				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
+				"app": ownTelemetryCollectorAppName,
 			},
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",
@@ -196,7 +201,7 @@ func NewOwnTelemetryCollectorDeployment() *appsv1.Deployment {
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: odigosCloudSecretName,
+												Name: OdigosCloudSecretName,
 											},
 											Key: odigosCloudApiKeySecretKey,
 										},
@@ -211,14 +216,15 @@ func NewOwnTelemetryCollectorDeployment() *appsv1.Deployment {
 	}
 }
 
-func NewOwnTelemetryCollectorService() *corev1.Service {
+func NewOwnTelemetryCollectorService(ns string) *corev1.Service {
 	return &corev1.Service{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: ownTelemetryCollectorServiceName,
+			Name:      ownTelemetryCollectorServiceName,
+			Namespace: ns,
 		},
 		Spec: corev1.ServiceSpec{
 			Type: corev1.ServiceTypeClusterIP,
@@ -249,4 +255,34 @@ func intPtr(n int32) *int32 {
 
 func int64Ptr(n int64) *int64 {
 	return &n
+}
+
+type ownTelemetryResourceManager struct {
+	client        *kube.Client
+	ns            string
+	version       string
+	isOdigosCloud bool
+}
+
+func NewOwnTelemetryResourceManager(client *kube.Client, ns string, version string, isOdigosCloud bool) ResourceManager {
+	return &ownTelemetryResourceManager{client: client, ns: ns, version: version, isOdigosCloud: isOdigosCloud}
+}
+
+func (a *ownTelemetryResourceManager) Name() string { return "OwnTelemetry Pipeline" }
+
+func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) error {
+	var resources []client.Object
+	if a.isOdigosCloud {
+		resources = []client.Object{
+			NewOwnTelemetryConfigMapOtlpGrpc(a.ns, a.version),
+			NewOwnTelemetryCollectorConfigMap(a.ns),
+			NewOwnTelemetryCollectorDeployment(a.ns),
+			NewOwnTelemetryCollectorService(a.ns),
+		}
+	} else {
+		resources = []client.Object{
+			NewOwnTelemetryConfigMapDisabled(a.ns),
+		}
+	}
+	return a.client.ApplyResources(ctx, a.version, resources)
 }
