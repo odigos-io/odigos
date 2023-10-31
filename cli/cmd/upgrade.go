@@ -87,7 +87,10 @@ and apply any required migrations and adaptations.`,
 			fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
 			os.Exit(1)
 		}
+
+		// update the config on upgrade
 		config.Spec.OdigosVersion = versionFlag
+		config.Spec.ConfigVersion += 1
 
 		isOdigosCloud, err := resources.IsOdigosCloud(ctx, client, ns)
 		if err != nil {

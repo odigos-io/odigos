@@ -43,5 +43,5 @@ func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) er
 	resources := []client.Object{
 		NewOdigosConfiguration(a.ns, a.config),
 	}
-	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

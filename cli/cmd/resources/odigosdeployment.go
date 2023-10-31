@@ -106,5 +106,5 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 		NewOdigosDeploymentConfigMap(a.ns, a.config.OdigosVersion),
 		NewLeaderElectionRole(a.ns),
 	}
-	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

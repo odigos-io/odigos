@@ -126,5 +126,5 @@ func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context) 
 		NewDataCollectionClusterRole(a.config.Psp),
 		NewDataCollectionClusterRoleBinding(a.ns),
 	}
-	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

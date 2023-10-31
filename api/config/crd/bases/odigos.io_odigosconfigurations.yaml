@@ -37,6 +37,8 @@ spec:
             properties:
               autoscalerImage:
                 type: string
+              configVersion:
+                type: integer
               ignoredNamespaces:
                 items:
                   type: string
@@ -56,6 +58,7 @@ spec:
               telemetryEnabled:
                 type: boolean
             required:
+            - configVersion
             - odigosVersion
             type: object
         type: object
