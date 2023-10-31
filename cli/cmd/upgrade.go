@@ -56,21 +56,24 @@ and apply any required migrations and adaptations.`,
 			fmt.Println("Odigos upgrade failed - unable to parse the current Odigos version for migration")
 			os.Exit(1)
 		}
-		// if sourceVersion.LessThan(version.Must(version.NewVersion("1.0.0"))) {
-		// 	fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0' current version is %s.\n", currOdigosVersion)
-		// 	fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.\n")
-		// 	os.Exit(1)
-		// }
+		if sourceVersion.LessThan(version.Must(version.NewVersion("1.0.0"))) {
+			fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0' current version is %s.\n", currOdigosVersion)
+			fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.\n")
+			os.Exit(1)
+		}
 		targetVersion, err := version.NewVersion(versionFlag)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to parse the target Odigos version for migration")
 			os.Exit(1)
 		}
 
+		var operation string
 		if sourceVersion.GreaterThan(targetVersion) {
 			fmt.Printf("About to DOWNGRADE Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
+			operation = "Downgrading"
 		} else {
 			fmt.Printf("About to upgrade Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
+			operation = "Upgrading"
 		}
 
 		confirmed, err := confirm.Ask("Are you sure?")
@@ -92,7 +95,7 @@ and apply any required migrations and adaptations.`,
 			os.Exit(1)
 		}
 		resourceManagers := resources.CreateResourceManagers(client, ns, isOdigosCloud, nil, &config.Spec)
-		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Upgrading")
+		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")
 			os.Exit(1)
