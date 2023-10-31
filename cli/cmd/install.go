@@ -139,6 +139,7 @@ func createCRDs(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns
 func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
 	return odigosv1.OdigosConfigurationSpec{
 		OdigosVersion:          versionFlag,
+		ConfigVersion:          1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:       telemetryEnabled,
 		SidecarInstrumentation: sidecarInstrumentation,
 		IgnoredNamespaces:      ignoredNamespaces,

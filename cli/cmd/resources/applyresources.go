@@ -28,7 +28,7 @@ func DeleteOldOdigosSystemObjects(ctx context.Context, client *kube.Client, ns s
 	resources := kube.GetManagedResources(ns)
 	for _, resource := range resources {
 		l := log.Print(fmt.Sprintf("Syncing %s", resource.Resource.Resource))
-		err := client.DeleteOldOdigosSystemObjects(ctx, resource, config.Spec.OdigosVersion)
+		err := client.DeleteOldOdigosSystemObjects(ctx, resource, config.Spec.ConfigVersion)
 		if err != nil {
 			l.Error(err)
 			os.Exit(1)

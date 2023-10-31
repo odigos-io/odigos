@@ -380,5 +380,5 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewOdigletClusterRoleBinding(a.ns),
 		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, a.config.OdigletImage),
 	}
-	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

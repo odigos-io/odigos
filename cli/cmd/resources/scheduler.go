@@ -308,5 +308,5 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 		NewSchedulerClusterRoleBinding(a.ns),
 		NewSchedulerDeployment(a.ns, a.config.OdigosVersion, a.config.ImagePrefix),
 	}
-	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

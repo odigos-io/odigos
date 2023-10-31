@@ -487,5 +487,5 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
 		NewAutoscalerDeployment(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage),
 	}
-	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

@@ -89,11 +89,11 @@ func (a *odigosCloudResourceManager) InstallFromScratch(ctx context.Context) err
 		// ERROR metadata.managedFields must be nil
 		// But not sure if this is the right way to fix it.
 		sec.ManagedFields = nil
-		return a.client.ApplyResources(ctx, a.config.OdigosVersion, []client.Object{sec})
+		return a.client.ApplyResources(ctx, a.config.ConfigVersion, []client.Object{sec})
 	}
 
 	resources := []client.Object{
 		NewKeyvalSecret(a.ns, *a.apiKey),
 	}
-	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

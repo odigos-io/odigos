@@ -7,6 +7,7 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // OdigosConfigurationSpec defines the desired state of OdigosConfiguration
 type OdigosConfigurationSpec struct {
 	OdigosVersion          string   `json:"odigosVersion"`
+	ConfigVersion          int      `json:"configVersion"`
 	TelemetryEnabled       bool     `json:"telemetryEnabled,omitempty"`
 	SidecarInstrumentation bool     `json:"sidecarInstrumentation,omitempty"`
 	IgnoredNamespaces      []string `json:"ignoredNamespaces,omitempty"`

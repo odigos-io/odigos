@@ -531,5 +531,5 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorClusterRoleBinding(a.ns),
 		NewInstrumentorDeployment(a.ns, a.config.OdigosVersion, a.config.TelemetryEnabled, a.config.SidecarInstrumentation, a.config.IgnoredNamespaces, a.config.ImagePrefix, a.config.InstrumentorImage),
 	}
-	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

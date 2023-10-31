@@ -12,15 +12,16 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, isOdigosCloud 
 
 	// Note - the order of resource managers is important.
 	// If resource A depends on resource B, then A must be installed after B.
-	resourceManagers := []ResourceManager{}
+	resourceManagers := []ResourceManager{
+		NewOdigosDeploymentResourceManager(client, odigosNs, config),
+		NewOdigosConfigResourceManager(client, odigosNs, config),
+	}
 
 	if isOdigosCloud {
 		resourceManagers = append(resourceManagers, NewOdigosCloudResourceManager(client, odigosNs, config, apiKey))
 	}
 
 	resourceManagers = append(resourceManagers, []ResourceManager{
-		NewOdigosDeploymentResourceManager(client, odigosNs, config),
-		NewOdigosConfigResourceManager(client, odigosNs, config),
 		NewOwnTelemetryResourceManager(client, odigosNs, config, isOdigosCloud),
 		NewDataCollectionResourceManager(client, odigosNs, config),
 		NewInstrumentorResourceManager(client, odigosNs, config),

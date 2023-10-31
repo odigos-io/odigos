@@ -285,5 +285,5 @@ func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) er
 			NewOwnTelemetryConfigMapDisabled(a.ns),
 		}
 	}
-	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
