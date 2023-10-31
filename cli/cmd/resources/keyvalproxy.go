@@ -24,7 +24,7 @@ const (
 	keyvalProxyServiceName            = "odigos-cloud-k8s"
 	keyvalProxyImage                  = "keyval/odigos-proxy-k8s"
 	keyvalProxyAppName                = "odigos-cloud-proxy"
-	keyvalProxyDeploymentName         = "odigos-cloud-proxy"
+	KeyvalProxyDeploymentName         = "odigos-cloud-proxy"
 	keyvalProxyServiceAccountName     = "odigos-cloud-proxy"
 	keyvalProxyRoleName               = "odigos-cloud-proxy"
 	keyvalProxyRoleBindingName        = "odigos-cloud-proxy"
@@ -233,7 +233,7 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      keyvalProxyDeploymentName,
+			Name:      KeyvalProxyDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
 				"app": keyvalProxyAppName,

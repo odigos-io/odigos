@@ -24,7 +24,7 @@ const (
 	ownTelemetryCollectorImage                = "otel/opentelemetry-collector:0.86.0"
 	ownTelemetryCollectorAppName              = "own-telemetry-collector"
 	ownTelemetryCollectorServiceName          = "own-telemetry-collector"
-	ownTelemetryCollectorDeploymentName       = "own-telemetry-collector"
+	OwnTelemetryCollectorDeploymentName       = "own-telemetry-collector"
 	ownTelemetryCollectorContainerName        = "own-telemetry-collector"
 	ownTelemetryCollectorConfigDir            = "/etc/otelcol" // since we use otel/opentelemetry-collector which expect the image at this path
 	ownTelemetryCollectorConfigConfigFileName = "config.yaml"  // since we use otel/opentelemetry-collector which expect the config file to be called this way
@@ -140,7 +140,7 @@ func NewOwnTelemetryCollectorDeployment(ns string) *appsv1.Deployment {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ownTelemetryCollectorDeploymentName,
+			Name:      OwnTelemetryCollectorDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
 				"app": ownTelemetryCollectorAppName,
