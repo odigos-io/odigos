@@ -140,7 +140,7 @@ type Release struct {
 }
 
 func GetLatestReleaseVersion() (string, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/keyval-dev/odigos/releases/latest")
+	url := "https://api.github.com/repos/keyval-dev/odigos/releases/latest"
 
 	resp, err := http.Get(url)
 	if err != nil {

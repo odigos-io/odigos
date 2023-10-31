@@ -109,14 +109,13 @@ func NewDataCollectionClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 }
 
 type dataCollectionResourceManager struct {
-	client  *kube.Client
-	ns      string
-	version string
-	config  *odigosv1.OdigosConfigurationSpec
+	client *kube.Client
+	ns     string
+	config *odigosv1.OdigosConfigurationSpec
 }
 
-func NewDataCollectionResourceManager(client *kube.Client, ns string, version string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
-	return &dataCollectionResourceManager{client: client, ns: ns, version: version, config: config}
+func NewDataCollectionResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &dataCollectionResourceManager{client: client, ns: ns, config: config}
 }
 
 func (a *dataCollectionResourceManager) Name() string { return "DataCollection" }
@@ -127,5 +126,5 @@ func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context) 
 		NewDataCollectionClusterRole(a.config.Psp),
 		NewDataCollectionClusterRoleBinding(a.ns),
 	}
-	return a.client.ApplyResources(ctx, a.version, resources)
+	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
 }
