@@ -20,6 +20,8 @@ Generate distributed traces for any application without code changes.
     <a href="https://www.youtube.com/watch?v=nynyV7FC4VI">Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
 
+Odigos uses OpenTelemetry and eBPF to build agnostic observability pipelines for all application.
+
 ### ✨ Language Agnostic Auto-instrumentation
 
 Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.  
