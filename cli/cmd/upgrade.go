@@ -12,7 +12,6 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/confirm"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -57,11 +56,11 @@ and apply any required migrations and adaptations.`,
 			fmt.Println("Odigos upgrade failed - unable to parse the current Odigos version for migration")
 			os.Exit(1)
 		}
-		if sourceVersion.LessThan(version.Must(version.NewVersion("1.0.0"))) {
-			fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0' current version is %s.\n", currOdigosVersion)
-			fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.\n")
-			os.Exit(1)
-		}
+		// if sourceVersion.LessThan(version.Must(version.NewVersion("1.0.0"))) {
+		// 	fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0' current version is %s.\n", currOdigosVersion)
+		// 	fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.\n")
+		// 	os.Exit(1)
+		// }
 		targetVersion, err := version.NewVersion(versionFlag)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to parse the target Odigos version for migration")
@@ -80,14 +79,6 @@ and apply any required migrations and adaptations.`,
 			return
 		}
 
-		_, err = client.CoreV1().Secrets(ns).Get(ctx, resources.OdigosCloudSecretName, metav1.GetOptions{})
-		notFound := errors.IsNotFound(err)
-		if !notFound && err != nil {
-			fmt.Println("Odigos upgrade failed - unable to check if odigos cloud is enabled")
-			os.Exit(1)
-		}
-		isOdigosCloud := !notFound
-
 		config, err := resources.GetCurrentConfig(ctx, client, ns)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
@@ -95,7 +86,12 @@ and apply any required migrations and adaptations.`,
 		}
 		config.Spec.OdigosVersion = versionFlag
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, isOdigosCloud, &config.Spec)
+		isOdigosCloud, err := resources.IsOdigosCloud(ctx, client, ns)
+		if err != nil {
+			fmt.Println("Odigos upgrade failed - unable to read the current Odigos cloud configuration.")
+			os.Exit(1)
+		}
+		resourceManagers := resources.CreateResourceManagers(client, ns, isOdigosCloud, nil, &config.Spec)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Upgrading")
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")

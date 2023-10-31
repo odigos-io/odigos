@@ -5,11 +5,20 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 )
 
-func CreateResourceManagers(client *kube.Client, odigosNs string, isOdigosCloud bool, config *odigosv1.OdigosConfigurationSpec) []ResourceManager {
+// set apiKey to nil for no-op.
+// set to empty string for "no api key" (non odigos cloud mode).
+// set to a valid api key for odigos cloud mode.
+func CreateResourceManagers(client *kube.Client, odigosNs string, isOdigosCloud bool, apiKey *string, config *odigosv1.OdigosConfigurationSpec) []ResourceManager {
 
-	// Note - the order is important.
+	// Note - the order of resource managers is important.
 	// If resource A depends on resource B, then A must be installed after B.
-	resourceManager := []ResourceManager{
+	resourceManagers := []ResourceManager{}
+
+	if isOdigosCloud {
+		resourceManagers = append(resourceManagers, NewOdigosCloudResourceManager(client, odigosNs, config, apiKey))
+	}
+
+	resourceManagers = append(resourceManagers, []ResourceManager{
 		NewOdigosDeploymentResourceManager(client, odigosNs, config),
 		NewOdigosConfigResourceManager(client, odigosNs, config),
 		NewOwnTelemetryResourceManager(client, odigosNs, config, isOdigosCloud),
@@ -18,11 +27,11 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, isOdigosCloud 
 		NewSchedulerResourceManager(client, odigosNs, config),
 		NewOdigletResourceManager(client, odigosNs, config),
 		NewAutoScalerResourceManager(client, odigosNs, config),
-	}
+	}...)
 
 	if isOdigosCloud {
-		resourceManager = append(resourceManager, NewKeyvalProxyResourceManager(client, odigosNs, config))
+		resourceManagers = append(resourceManagers, NewKeyvalProxyResourceManager(client, odigosNs, config))
 	}
 
-	return resourceManager
+	return resourceManagers
 }
