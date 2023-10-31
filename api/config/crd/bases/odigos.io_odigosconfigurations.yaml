@@ -47,12 +47,16 @@ spec:
                 type: string
               odigletImage:
                 type: string
+              odigosVersion:
+                type: string
               psp:
                 type: boolean
               sidecarInstrumentation:
                 type: boolean
               telemetryEnabled:
                 type: boolean
+            required:
+            - odigosVersion
             type: object
         type: object
     served: true

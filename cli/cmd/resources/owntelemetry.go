@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common" // TODO: move it to neutral place
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"gopkg.in/yaml.v2"
@@ -260,12 +261,12 @@ func int64Ptr(n int64) *int64 {
 type ownTelemetryResourceManager struct {
 	client        *kube.Client
 	ns            string
-	version       string
+	config        *odigosv1.OdigosConfigurationSpec
 	isOdigosCloud bool
 }
 
-func NewOwnTelemetryResourceManager(client *kube.Client, ns string, version string, isOdigosCloud bool) ResourceManager {
-	return &ownTelemetryResourceManager{client: client, ns: ns, version: version, isOdigosCloud: isOdigosCloud}
+func NewOwnTelemetryResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, isOdigosCloud bool) ResourceManager {
+	return &ownTelemetryResourceManager{client: client, ns: ns, config: config, isOdigosCloud: isOdigosCloud}
 }
 
 func (a *ownTelemetryResourceManager) Name() string { return "OwnTelemetry Pipeline" }
@@ -274,7 +275,7 @@ func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) er
 	var resources []client.Object
 	if a.isOdigosCloud {
 		resources = []client.Object{
-			NewOwnTelemetryConfigMapOtlpGrpc(a.ns, a.version),
+			NewOwnTelemetryConfigMapOtlpGrpc(a.ns, a.config.OdigosVersion),
 			NewOwnTelemetryCollectorConfigMap(a.ns),
 			NewOwnTelemetryCollectorDeployment(a.ns),
 			NewOwnTelemetryCollectorService(a.ns),
@@ -284,5 +285,5 @@ func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) er
 			NewOwnTelemetryConfigMapDisabled(a.ns),
 		}
 	}
-	return a.client.ApplyResources(ctx, a.version, resources)
+	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
 }

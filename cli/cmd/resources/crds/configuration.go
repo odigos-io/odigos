@@ -47,7 +47,7 @@ func NewConfiguration() apiextensionsv1.CustomResourceDefinition {
 								"spec": {
 									Description: "OdigosConfigurationSpec defines the desired state of OdigosConfiguration",
 									Type:        "object",
-									Required:    []string{},
+									Required:    []string{"odigosVersion"},
 									Properties: map[string]apiextensionsv1.JSONSchemaProps{
 										"autoscalerImage": {
 											Type: "string",
@@ -67,6 +67,9 @@ func NewConfiguration() apiextensionsv1.CustomResourceDefinition {
 											Type: "string",
 										},
 										"odigletImage": {
+											Type: "string",
+										},
+										"odigosVersion": {
 											Type: "string",
 										},
 										"psp": {

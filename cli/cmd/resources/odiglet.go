@@ -362,14 +362,13 @@ func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropaga
 }
 
 type odigletResourceManager struct {
-	client  *kube.Client
-	ns      string
-	version string
-	config  *odigosv1.OdigosConfigurationSpec
+	client *kube.Client
+	ns     string
+	config *odigosv1.OdigosConfigurationSpec
 }
 
-func NewOdigletResourceManager(client *kube.Client, ns string, version string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
-	return &odigletResourceManager{client: client, ns: ns, version: version, config: config}
+func NewOdigletResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &odigletResourceManager{client: client, ns: ns, config: config}
 }
 
 func (a *odigletResourceManager) Name() string { return "Odiglet" }
@@ -379,7 +378,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewOdigletServiceAccount(a.ns),
 		NewOdigletClusterRole(a.config.Psp),
 		NewOdigletClusterRoleBinding(a.ns),
-		NewOdigletDaemonSet(a.ns, a.version, a.config.ImagePrefix, a.config.OdigletImage),
+		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, a.config.OdigletImage),
 	}
-	return a.client.ApplyResources(ctx, a.version, resources)
+	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
 }

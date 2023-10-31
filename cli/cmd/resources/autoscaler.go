@@ -466,14 +466,13 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 }
 
 type autoScalerResourceManager struct {
-	client  *kube.Client
-	ns      string
-	version string
-	config  *odigosv1.OdigosConfigurationSpec
+	client *kube.Client
+	ns     string
+	config *odigosv1.OdigosConfigurationSpec
 }
 
-func NewAutoScalerResourceManager(client *kube.Client, ns string, version string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
-	return &autoScalerResourceManager{client: client, ns: ns, version: version, config: config}
+func NewAutoScalerResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &autoScalerResourceManager{client: client, ns: ns, config: config}
 }
 
 func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
@@ -486,7 +485,7 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerClusterRole(),
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
-		NewAutoscalerDeployment(a.ns, a.version, a.config.ImagePrefix, a.config.AutoscalerImage),
+		NewAutoscalerDeployment(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage),
 	}
-	return a.client.ApplyResources(ctx, a.version, resources)
+	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
 }

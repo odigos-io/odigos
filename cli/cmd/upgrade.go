@@ -4,16 +4,13 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 
 	"github.com/hashicorp/go-version"
-	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/pkg/confirm"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
-	"github.com/keyval-dev/odigos/cli/pkg/log"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -91,38 +88,25 @@ and apply any required migrations and adaptations.`,
 		}
 		isOdigosCloud := !notFound
 
-		config, err := getConfig(ctx, client, ns)
+		config, err := resources.GetCurrentConfig(ctx, client, ns)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
 			os.Exit(1)
 		}
-		resourceManagers := resources.CreateResourceManagers(client, ns, versionFlag, isOdigosCloud, &config.Spec)
+		config.Spec.OdigosVersion = versionFlag
 
-		for _, rm := range resourceManagers {
-			l := log.Print(fmt.Sprintf("Upgrading Odigos %s", rm.Name()))
-			err := rm.InstallFromScratch(ctx)
-			if err != nil {
-				l.Error(err)
-				os.Exit(1)
-			}
-			l.Success()
+		resourceManagers := resources.CreateResourceManagers(client, ns, isOdigosCloud, &config.Spec)
+		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Upgrading")
+		if err != nil {
+			fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")
+			os.Exit(1)
 		}
-
-		resources := kube.GetManagedResources(ns)
-		for _, resource := range resources {
-			l := log.Print(fmt.Sprintf("Syncing %s", resource.Resource.Resource))
-			err = client.DeleteOldOdigosSystemObjects(ctx, resource, versionFlag)
-			if err != nil {
-				l.Error(err)
-				os.Exit(1)
-			}
-			l.Success()
+		err = resources.DeleteOldOdigosSystemObjects(ctx, client, ns, config)
+		if err != nil {
+			fmt.Println("Odigos upgrade failed - unable to cleanup old Odigos resources.")
+			os.Exit(1)
 		}
 	},
-}
-
-func getConfig(ctx context.Context, client *kube.Client, ns string) (*v1alpha1.OdigosConfiguration, error) {
-	return client.OdigosClient.OdigosConfigurations(ns).Get(ctx, resources.OdigosConfigName, metav1.GetOptions{})
 }
 
 func init() {
