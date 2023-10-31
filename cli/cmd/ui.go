@@ -29,6 +29,15 @@ var uiCmd = &cobra.Command{
 	Short: "Start the Odigos UI",
 	Long:  `Start the Odigos UI. This will start a web server that will serve the UI`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Check if Odigos is already installed.
+		existingOdigosNs, err := resources.GetOdigosNamespace(client, ctx)
+		if err == nil {
+			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace \"%s\". If you wish to re-install, run \"odigos uninstall\" first.\n", existingOdigosNs)
+			os.Exit(1)
+		} else if !resources.IsErrNoOdigosNamespaceFound(err) {
+			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
+			os.Exit(1)
+		}
 		// Look for binary named odigos-ui in the same directory as the current binary
 		// and execute it.
 		currentBinaryPath, err := os.Executable()
