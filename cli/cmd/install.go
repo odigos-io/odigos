@@ -79,6 +79,14 @@ This command will install k8s components that will auto-instrument your applicat
 
 		// create resource managers specific for install
 		isOdigosCloud := odigosCloudApiKeyFlag != ""
+		if isOdigosCloud {
+			err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
+			if err != nil {
+				fmt.Println("Odigos install failed - invalid api-key format.")
+				os.Exit(1)
+			}
+		}
+
 		resourceManagers := resources.CreateResourceManagers(client, ns, isOdigosCloud, &odigosCloudApiKeyFlag, &config)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
 		if err != nil {

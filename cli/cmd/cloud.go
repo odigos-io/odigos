@@ -4,10 +4,20 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/spf13/cobra"
 )
+
+func verifyOdigosCloudApiKey(apikey string) error {
+	_, err := uuid.Parse(apikey)
+	if err != nil {
+		return fmt.Errorf("invalid apikey format. expected uuid format")
+	}
+
+	return nil
+}
 
 // cloudCmd represents the cloud command
 var cloudCmd = &cobra.Command{
@@ -32,7 +42,7 @@ var cloudCmd = &cobra.Command{
 
 		isOdigosCloud, err := resources.IsOdigosCloud(ctx, client, ns)
 		if err != nil {
-			fmt.Println("Odigos upgrade failed - unable to read the current Odigos cloud configuration.")
+			fmt.Println("Odigos cloud failed - unable to read the current Odigos cloud configuration.")
 			os.Exit(1)
 		}
 
