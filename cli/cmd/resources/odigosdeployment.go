@@ -2,27 +2,28 @@ package resources
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	OdigosDeploymentConfigMapName = "odigos-deployment"
 )
 
-func NewOdigosDeploymentConfigMap(odigosVersion string) *corev1.ConfigMap {
+func NewOdigosDeploymentConfigMap(ns string, odigosVersion string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: OdigosDeploymentConfigMapName,
+			Name:      OdigosDeploymentConfigMapName,
+			Namespace: ns,
 		},
 		Data: map[string]string{
 			"ODIGOS_VERSION": odigosVersion,
@@ -30,36 +31,79 @@ func NewOdigosDeploymentConfigMap(odigosVersion string) *corev1.ConfigMap {
 	}
 }
 
-type odigosDeploymentResourceManager struct {
-	client *kube.Client
-	ns     string
+func NewLeaderElectionRole(ns string) *rbacv1.Role {
+	return &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Role",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-leader-election-role",
+			Namespace: ns,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"create",
+					"update",
+					"patch",
+					"delete",
+				},
+				APIGroups: []string{""},
+				Resources: []string{
+					"configmaps",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"create",
+					"update",
+					"patch",
+					"delete",
+				},
+				APIGroups: []string{
+					"coordination.k8s.io",
+				},
+				Resources: []string{
+					"leases",
+				},
+			},
+			{
+				Verbs: []string{
+					"create",
+					"patch",
+				},
+				APIGroups: []string{""},
+				Resources: []string{
+					"events",
+				},
+			},
+		},
+	}
 }
 
-func NewOdigosDeploymentResourceManager(client *kube.Client, ns string) ResourceManager {
-	return &odigosDeploymentResourceManager{client: client, ns: ns}
+type odigosDeploymentResourceManager struct {
+	client  *kube.Client
+	ns      string
+	version string
 }
+
+func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, version string) ResourceManager {
+	return &odigosDeploymentResourceManager{client: client, ns: ns, version: version}
+}
+
+func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployment" }
 
 func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context) error {
-	return nil
-}
-
-// func (a *odigosDeploymentResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
-
-// func (a *odigosDeploymentResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
-
-func (a *odigosDeploymentResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
-	odigosVersionPatch := jsonPatchDocument{{
-		Op:    "replace",
-		Path:  "/data/ODIGOS_VERSION",
-		Value: newOdigosVersion,
-	}}
-
-	jsonBytes, _ := json.Marshal(odigosVersionPatch)
-
-	_, err := a.client.CoreV1().ConfigMaps(a.ns).Patch(ctx, OdigosDeploymentConfigMapName, k8stypes.JSONPatchType, jsonBytes, metav1.PatchOptions{})
-	return err
+	resources := []client.Object{
+		NewOdigosDeploymentConfigMap(a.ns, a.version),
+		NewLeaderElectionRole(a.ns),
+	}
+	return a.client.ApplyResources(ctx, a.version, resources)
 }

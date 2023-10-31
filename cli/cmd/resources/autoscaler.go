@@ -2,51 +2,50 @@ package resources
 
 import (
 	"context"
-	"fmt"
 
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-var AutoscalerImage string
-
 const (
-	autoScalerServiceName    = "auto-scaler"
-	autoScalerDeploymentName = "odigos-autoscaler"
-	autoScalerContainerName  = "manager"
+	AutoScalerServiceAccountName = "odigos-autoscaler"
+	AutoScalerServiceName        = "auto-scaler"
+	AutoScalerDeploymentName     = "odigos-autoscaler"
+	AutoScalerAppLabelValue      = "odigos-autoscaler"
+	AutoScalerContainerName      = "manager"
 )
 
-func NewAutoscalerServiceAccount() *corev1.ServiceAccount {
+func NewAutoscalerServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-autoscaler",
-			Labels: labels.OdigosSystem,
+			Name:      AutoScalerServiceAccountName,
+			Namespace: ns,
 		},
 	}
 }
 
-func NewAutoscalerRole() *rbacv1.Role {
+func NewAutoscalerRole(ns string) *rbacv1.Role {
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Role",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-autoscaler",
-			Labels: labels.OdigosSystem,
+			Name:      "odigos-autoscaler",
+			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -225,15 +224,15 @@ func NewAutoscalerRole() *rbacv1.Role {
 	}
 }
 
-func NewAutoscalerRoleBinding() *rbacv1.RoleBinding {
+func NewAutoscalerRoleBinding(ns string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "RoleBinding",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-autoscaler",
-			Labels: labels.OdigosSystem,
+			Name:      "odigos-autoscaler",
+			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -256,8 +255,7 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-autoscaler",
-			Labels: labels.OdigosSystem,
+			Name: "odigos-autoscaler",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -312,8 +310,7 @@ func NewAutoscalerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-autoscaler",
-			Labels: labels.OdigosSystem,
+			Name: "odigos-autoscaler",
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -330,15 +327,15 @@ func NewAutoscalerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewAutoscalerLeaderElectionRoleBinding() *rbacv1.RoleBinding {
+func NewAutoscalerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "RoleBinding",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-autoscaler-leader-election",
-			Labels: labels.OdigosSystem,
+			Name:      "odigos-autoscaler-leader-election",
+			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -354,18 +351,15 @@ func NewAutoscalerLeaderElectionRoleBinding() *rbacv1.RoleBinding {
 	}
 }
 
-func NewAutoscalerDeployment(version string) *appsv1.Deployment {
+func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string) *appsv1.Deployment {
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: autoScalerDeploymentName,
-			Labels: map[string]string{
-				"app":                       "odigos-autoscaler",
-				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
-			},
+			Name:      AutoScalerDeploymentName,
+			Namespace: ns,
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",
 			},
@@ -374,23 +368,23 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "odigos-autoscaler",
+					"app": AutoScalerAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "odigos-autoscaler",
+						"app": AutoScalerAppLabelValue,
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": autoScalerContainerName,
+						"kubectl.kubernetes.io/default-container": AutoScalerContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  autoScalerContainerName,
-							Image: containers.GetImageName(AutoscalerImage, version),
+							Name:  AutoScalerContainerName,
+							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Command: []string{
 								"/app",
 							},
@@ -402,7 +396,7 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: autoScalerServiceName,
+									Value: AutoScalerServiceName,
 								},
 								{
 									Name: "CURRENT_NS",
@@ -463,38 +457,36 @@ func NewAutoscalerDeployment(version string) *appsv1.Deployment {
 		},
 	}
 
-	if containers.ImagePrefix != "" {
+	if imagePrefix != "" {
 		dep.Spec.Template.Spec.Containers[0].Args = append(dep.Spec.Template.Spec.Containers[0].Args,
-			"--image-prefix="+containers.ImagePrefix)
+			"--image-prefix="+imagePrefix)
 	}
 
 	return dep
 }
 
 type autoScalerResourceManager struct {
-	client *kube.Client
-	ns     string
+	client  *kube.Client
+	ns      string
+	version string
+	config  *odigosv1.OdigosConfigurationSpec
 }
 
-func NewAutoScalerResourceManager(client *kube.Client, ns string) ResourceManager {
-	return &autoScalerResourceManager{client: client, ns: ns}
+func NewAutoScalerResourceManager(client *kube.Client, ns string, version string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &autoScalerResourceManager{client: client, ns: ns, version: version, config: config}
 }
+
+func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
 
 func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) error {
-	return nil
-}
-
-// func (a *autoScalerResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
-
-// func (a *autoScalerResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
-
-func (a *autoScalerResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
-	fmt.Println("Patching Odigos autoscaler deployment")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(AutoscalerImage, newOdigosVersion, autoScalerContainerName)
-	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, autoScalerDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
-	return err
+	resources := []client.Object{
+		NewAutoscalerServiceAccount(a.ns),
+		NewAutoscalerRole(a.ns),
+		NewAutoscalerRoleBinding(a.ns),
+		NewAutoscalerClusterRole(),
+		NewAutoscalerClusterRoleBinding(a.ns),
+		NewAutoscalerLeaderElectionRoleBinding(a.ns),
+		NewAutoscalerDeployment(a.ns, a.version, a.config.ImagePrefix, a.config.AutoscalerImage),
+	}
+	return a.client.ApplyResources(ctx, a.version, resources)
 }
