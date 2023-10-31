@@ -508,18 +508,16 @@ func ptrbool(b bool) *bool {
 }
 
 type instrumentorResourceManager struct {
-	client  *kube.Client
-	ns      string
-	version string
-	config  *odigosv1.OdigosConfigurationSpec
+	client *kube.Client
+	ns     string
+	config *odigosv1.OdigosConfigurationSpec
 }
 
-func NewInstrumentorResourceManager(client *kube.Client, ns string, version string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+func NewInstrumentorResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
 	return &instrumentorResourceManager{
-		client:  client,
-		ns:      ns,
-		version: version,
-		config:  config,
+		client: client,
+		ns:     ns,
+		config: config,
 	}
 }
 
@@ -531,7 +529,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.version, a.config.TelemetryEnabled, a.config.SidecarInstrumentation, a.config.IgnoredNamespaces, a.config.ImagePrefix, a.config.InstrumentorImage),
+		NewInstrumentorDeployment(a.ns, a.config.OdigosVersion, a.config.TelemetryEnabled, a.config.SidecarInstrumentation, a.config.IgnoredNamespaces, a.config.ImagePrefix, a.config.InstrumentorImage),
 	}
-	return a.client.ApplyResources(ctx, a.version, resources)
+	return a.client.ApplyResources(ctx, a.config.OdigosVersion, resources)
 }

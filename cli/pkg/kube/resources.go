@@ -34,6 +34,14 @@ func newCoreV1Services() schema.GroupVersionResource {
 	}
 }
 
+func newCoreV1Secrets() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "", // core group is represented by an empty string
+		Version:  "v1",
+		Resource: "secrets",
+	}
+}
+
 func newRbacV1ClusterRoles() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "rbac.authorization.k8s.io",
@@ -77,6 +85,7 @@ func GetManagedResources(odigosNamespace string) []ResourceAndNs {
 		{Resource: newAppsV1DaemonSet(), Namespace: odigosNamespace},
 		{Resource: newCoreV1ConfigMaps(), Namespace: odigosNamespace},
 		{Resource: newCoreV1Services(), Namespace: odigosNamespace},
+		{Resource: newCoreV1Secrets(), Namespace: odigosNamespace},
 		{Resource: newRbacV1ClusterRoles(), Namespace: ""},
 		{Resource: newRbacV1ClusterRoleBindings(), Namespace: ""},
 		{Resource: newRbacV1Roles(), Namespace: odigosNamespace},
