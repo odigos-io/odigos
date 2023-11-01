@@ -32,43 +32,42 @@ var uiCmd = &cobra.Command{
 	Long:  `Start the Odigos UI. This will start a web server that will serve the UI`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		if checkOdigosInstallation(cmd) {
-			// Look for binary named odigos-ui in the same directory as the current binary
-			// and execute it.
-			currentBinaryPath, err := os.Executable()
+		if !checkOdigosInstallation(cmd) {
+			fmt.Printf("\033[31mERROR\033[0m Unable to find Odigos in kubernetes cluster. Aborting odigos ui.\n")
+			os.Exit(1)
+		}
+		// Look for binary named odigos-ui in the same directory as the current binary
+		// and execute it.
+		currentBinaryPath, err := os.Executable()
+		if err != nil {
+			fmt.Printf("Error getting current binary path: %v\n", err)
+			os.Exit(1)
+		}
+
+		currentDir := filepath.Dir(currentBinaryPath)
+		binaryPath := filepath.Join(currentDir, "odigos-ui")
+		if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
+			fmt.Printf("Could not find UI binary, downloading latest release\n")
+			err = downloadLatestUIVersion(runtime.GOARCH, runtime.GOOS, currentDir)
 			if err != nil {
-				fmt.Printf("Error getting current binary path: %v\n", err)
+				fmt.Printf("Error downloading latest UI version: %v\n", err)
 				os.Exit(1)
 			}
+		}
 
-			currentDir := filepath.Dir(currentBinaryPath)
-			binaryPath := filepath.Join(currentDir, "odigos-ui")
-			if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
-				fmt.Printf("Could not find UI binary, downloading latest release\n")
-				err = downloadLatestUIVersion(runtime.GOARCH, runtime.GOOS, currentDir)
-				if err != nil {
-					fmt.Printf("Error downloading latest UI version: %v\n", err)
-					os.Exit(1)
-				}
-			}
+		// get all flags as slice of strings
+		var flags []string
+		cmd.Flags().Visit(func(f *pflag.Flag) {
+			flags = append(flags, fmt.Sprintf("--%s=%s", f.Name, f.Value))
+		})
 
-			// get all flags as slice of strings
-			var flags []string
-			cmd.Flags().Visit(func(f *pflag.Flag) {
-				flags = append(flags, fmt.Sprintf("--%s=%s", f.Name, f.Value))
-			})
-
-			// execute UI binary with all flags and stream output
-			process := exec.Command(binaryPath, flags...)
-			process.Stdout = os.Stdout
-			process.Stderr = os.Stderr
-			err = process.Run()
-			if err != nil {
-				fmt.Printf("Error starting UI: %v\n", err)
-				os.Exit(1)
-			}
-		} else {
-			fmt.Printf("\033[31mERROR\033[0m Unable to find Odigos in kubernetes cluster.\n")
+		// execute UI binary with all flags and stream output
+		process := exec.Command(binaryPath, flags...)
+		process.Stdout = os.Stdout
+		process.Stderr = os.Stderr
+		err = process.Run()
+		if err != nil {
+			fmt.Printf("Error starting UI: %v\n", err)
 			os.Exit(1)
 		}
 
