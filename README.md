@@ -13,14 +13,13 @@
 
 <p align="center">
 <img src="assets/logo.png" width="350" /></br>
-Generate distributed traces for any application without code changes.
+<h2>Generate distributed traces for any application in k8s without code changes.</h2>
 </p>
 
 <h2 align="center">
     <a href="https://www.youtube.com/watch?v=nynyV7FC4VI">Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
 
-Odigos uses OpenTelemetry and eBPF to automatically build agnostic observability pipelines for all applications in a k8s cluster with no code changes.
 
 ### ✨ Language Agnostic Auto-instrumentation
 
@@ -62,8 +61,8 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ### Managed
 
-|                         | Traces | Metrics | Logs |
-|-------------------------| ------ | ------- |------|
+|                         | Traces  | Metrics | Logs |
+|-------------------------| ------- | ------- |------|
 | New Relic               | ✅      | ✅      | ✅    |
 | Datadog                 | ✅      | ✅      | ✅    |
 | Grafana Cloud           | ✅      | ✅      | ✅    |
@@ -98,7 +97,7 @@ Can't find the destination you need? Help us by following our quick [add new des
 
 ## Contributing
 
-Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests. You are welcome to join our active [Slack Community](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests. Feel free to join our active [Slack Community](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
 
 ## All Thanks To Our Contributors
 

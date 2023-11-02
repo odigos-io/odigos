@@ -1,20 +1,18 @@
 package crds
 
 import (
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewInstrumentedApp() apiextensionsv1.CustomResourceDefinition {
-	return apiextensionsv1.CustomResourceDefinition{
+func NewInstrumentedApp() *apiextensionsv1.CustomResourceDefinition {
+	return &apiextensionsv1.CustomResourceDefinition{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CustomResourceDefinition",
 			APIVersion: "apiextensions.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "instrumentedapplications.odigos.io",
-			Labels: labels.OdigosSystem,
+			Name: "instrumentedapplications.odigos.io",
 		},
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Group: "odigos.io",

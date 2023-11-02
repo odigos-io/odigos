@@ -2,6 +2,14 @@ package kube
 
 import "k8s.io/apimachinery/pkg/runtime/schema"
 
+func newApiExtensionsV1CustomResourceDefinition() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1",
+		Resource: "customresourcedefinitions",
+	}
+}
+
 func newAppsV1Deployments() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "apps",
@@ -81,6 +89,7 @@ type ResourceAndNs struct {
 
 func GetManagedResources(odigosNamespace string) []ResourceAndNs {
 	return []ResourceAndNs{
+		{Resource: newApiExtensionsV1CustomResourceDefinition(), Namespace: ""},
 		{Resource: newAppsV1Deployments(), Namespace: odigosNamespace},
 		{Resource: newAppsV1DaemonSet(), Namespace: odigosNamespace},
 		{Resource: newCoreV1ConfigMaps(), Namespace: odigosNamespace},
