@@ -36,20 +36,26 @@ func printOdigosClusterVersion(cmd *cobra.Command) {
 	ctx := cmd.Context()
 
 	ns, err := resources.GetOdigosNamespace(client, ctx)
-	if resources.IsErrNoOdigosNamespaceFound(err) {
-		fmt.Println("Odigos is NOT yet installed in the current cluster")
+	if err != nil {
+		if resources.IsErrNoOdigosNamespaceFound(err) {
+			fmt.Println("Odigos is NOT yet installed in the current cluster")
+		} else {
+			fmt.Println("Error detecting Odigos version in the current cluster")
+		}
 		return
 	}
 
-	odigosVersion := "unknown"
 	cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-	if err == nil {
-		odigosVersion = cm.Data["ODIGOS_VERSION"]
-		if odigosVersion == "" {
-			odigosVersion = "not installed in cluster"
-		}
+	if err != nil {
+		fmt.Println("Error detecting Odigos version in the current cluster")
+		return
 	}
 
+	odigosVersion, ok := cm.Data["ODIGOS_VERSION"]
+	if !ok || odigosVersion == "" {
+		fmt.Println("Error detecting Odigos version in the current cluster")
+		return
+	}
 	fmt.Printf("Odigos Version (in cluster): version.Info{Version:'%s'}\n", odigosVersion)
 }
 
