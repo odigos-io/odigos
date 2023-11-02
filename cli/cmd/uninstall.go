@@ -46,11 +46,13 @@ var uninstallCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
-		confirmed, err := confirm.Ask("Are you sure?")
-		if err != nil || !confirmed {
-			fmt.Println("Aborting uninstall")
-			return
+		if !cmd.Flag("yes").Changed {
+			fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting uninstall")
+				return
+			}
 		}
 
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Deployments",
@@ -366,4 +368,5 @@ func uninstallNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Cl
 
 func init() {
 	rootCmd.AddCommand(uninstallCmd)
+	uninstallCmd.Flags().Bool("yes", false, "Skip the confirmation prompt")
 }
