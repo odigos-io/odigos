@@ -13,14 +13,12 @@
 
 <p align="center">
 <img src="assets/logo.png" width="350" /></br>
-Generate distributed traces for any application without code changes.
+<h2>Generate distributed traces for any application in k8s without code changes.</h2>
 </p>
 
 <h2 align="center">
     <a href="https://www.youtube.com/watch?v=nynyV7FC4VI">Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
-
-Odigos uses OpenTelemetry and eBPF to automatically build agnostic observability pipelines for all application in a k8s cluster with no code changes.
 
 ### ✨ Language Agnostic Auto-instrumentation
 
