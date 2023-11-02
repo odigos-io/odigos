@@ -72,29 +72,25 @@ This command will install k8s components that will auto-instrument your applicat
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
 
-		// cloud secret is currently only created on "install".
-		// This will change in the future when we add support for maintaining the secret.
-		isOdigosCloud := odigosCloudApiKeyFlag != ""
-		if isOdigosCloud {
-			createKubeResourceWithLogging(ctx, "Creating Odigos Cloud Secret",
-				client, cmd, ns, createOdigosCloudSecret)
-		}
-
 		// TODO: come up with a plan for migrating CRDs and apply it here.
 		// Perhaps as resource manager or a separate command.
 		createKubeResourceWithLogging(ctx, "Creating CRDs",
 			client, cmd, ns, createCRDs)
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, versionFlag, isOdigosCloud, &config)
-
-		for _, rm := range resourceManagers {
-			l := log.Print(fmt.Sprintf("Creating Odigos %s ...", rm.Name()))
-			err := rm.InstallFromScratch(ctx)
+		isOdigosCloud := odigosCloudApiKeyFlag != ""
+		if isOdigosCloud {
+			err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
 			if err != nil {
-				l.Error(err)
+				fmt.Println("Odigos install failed - invalid api-key format.")
 				os.Exit(1)
 			}
-			l.Success()
+		}
+
+		resourceManagers := resources.CreateResourceManagers(client, ns, isOdigosCloud, &odigosCloudApiKeyFlag, &config)
+		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
+			os.Exit(1)
 		}
 
 		if !skipWait {
@@ -147,17 +143,10 @@ func createCRDs(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns
 	return nil
 }
 
-func createOdigosCloudSecret(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	_, err := client.CoreV1().Secrets(ns).Create(ctx, resources.NewKeyvalSecret(odigosCloudApiKeyFlag), metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
 	return odigosv1.OdigosConfigurationSpec{
+		OdigosVersion:          versionFlag,
+		ConfigVersion:          1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:       telemetryEnabled,
 		SidecarInstrumentation: sidecarInstrumentation,
 		IgnoredNamespaces:      ignoredNamespaces,

@@ -37,6 +37,8 @@ spec:
             properties:
               autoscalerImage:
                 type: string
+              configVersion:
+                type: integer
               ignoredNamespaces:
                 items:
                   type: string
@@ -47,12 +49,17 @@ spec:
                 type: string
               odigletImage:
                 type: string
+              odigosVersion:
+                type: string
               psp:
                 type: boolean
               sidecarInstrumentation:
                 type: boolean
               telemetryEnabled:
                 type: boolean
+            required:
+            - configVersion
+            - odigosVersion
             type: object
         type: object
     served: true

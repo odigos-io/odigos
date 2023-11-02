@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/selection"
@@ -69,9 +70,9 @@ func PrintClientErrorAndExit(err error) {
 	os.Exit(-1)
 }
 
-func (c *Client) ApplyResources(ctx context.Context, odigosVersion string, objs []client.Object) error {
+func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []client.Object) error {
 	for _, obj := range objs {
-		err := c.ApplyResource(ctx, odigosVersion, obj)
+		err := c.ApplyResource(ctx, configVersion, obj)
 		if err != nil {
 			return err
 		}
@@ -79,14 +80,14 @@ func (c *Client) ApplyResources(ctx context.Context, odigosVersion string, objs 
 	return nil
 }
 
-func (c *Client) ApplyResource(ctx context.Context, odigosVersion string, obj client.Object) error {
+func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj client.Object) error {
 
 	labels := obj.GetLabels()
 	if labels == nil {
 		labels = make(map[string]string)
 	}
-	labels[odigoslabels.OdigosSystemVersionLabelKey] = odigosVersion
 	labels[odigoslabels.OdigosSystemLabelKey] = odigoslabels.OdigosSystemLabelValue
+	labels[odigoslabels.OdigosSystemConfigLabelKey] = strconv.Itoa(configVersion)
 	obj.SetLabels(labels)
 
 	depBytes, _ := yaml.Marshal(obj)
@@ -105,9 +106,9 @@ func (c *Client) ApplyResource(ctx context.Context, odigosVersion string, obj cl
 	return err
 }
 
-func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNamespace ResourceAndNs, odigosVersion string) error {
+func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNamespace ResourceAndNs, configVersion int) error {
 	systemObject, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemLabelKey, selection.Equals, []string{odigoslabels.OdigosSystemLabelValue})
-	notLatestVersion, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemVersionLabelKey, selection.NotEquals, []string{odigosVersion})
+	notLatestVersion, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemConfigLabelKey, selection.NotEquals, []string{strconv.Itoa(configVersion)})
 	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).String()
 	resource := resourceAndNamespace.Resource
 	ns := resourceAndNamespace.Namespace

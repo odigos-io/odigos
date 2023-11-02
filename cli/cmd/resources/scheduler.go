@@ -289,14 +289,13 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 }
 
 type schedulerResourceManager struct {
-	client  *kube.Client
-	ns      string
-	version string
-	config  *odigosv1.OdigosConfigurationSpec
+	client *kube.Client
+	ns     string
+	config *odigosv1.OdigosConfigurationSpec
 }
 
-func NewSchedulerResourceManager(client *kube.Client, ns string, version string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
-	return &schedulerResourceManager{client: client, ns: ns, version: version, config: config}
+func NewSchedulerResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &schedulerResourceManager{client: client, ns: ns, config: config}
 }
 
 func (a *schedulerResourceManager) Name() string { return "Scheduler" }
@@ -307,7 +306,7 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 		NewSchedulerRoleBinding(a.ns),
 		NewSchedulerClusterRole(),
 		NewSchedulerClusterRoleBinding(a.ns),
-		NewSchedulerDeployment(a.ns, a.version, a.config.ImagePrefix),
+		NewSchedulerDeployment(a.ns, a.config.OdigosVersion, a.config.ImagePrefix),
 	}
-	return a.client.ApplyResources(ctx, a.version, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

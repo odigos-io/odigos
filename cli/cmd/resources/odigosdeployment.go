@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -89,21 +90,21 @@ func NewLeaderElectionRole(ns string) *rbacv1.Role {
 }
 
 type odigosDeploymentResourceManager struct {
-	client  *kube.Client
-	ns      string
-	version string
+	client *kube.Client
+	ns     string
+	config *odigosv1.OdigosConfigurationSpec
 }
 
-func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, version string) ResourceManager {
-	return &odigosDeploymentResourceManager{client: client, ns: ns, version: version}
+func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config}
 }
 
 func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployment" }
 
 func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []client.Object{
-		NewOdigosDeploymentConfigMap(a.ns, a.version),
+		NewOdigosDeploymentConfigMap(a.ns, a.config.OdigosVersion),
 		NewLeaderElectionRole(a.ns),
 	}
-	return a.client.ApplyResources(ctx, a.version, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

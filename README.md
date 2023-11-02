@@ -13,7 +13,7 @@
 
 <p align="center">
 <img src="assets/logo.png" width="350" /></br>
-Generate distributed traces for any application without code changes.
+<h2>Generate distributed traces for any application in k8s without code changes.</h2>
 </p>
 
 <h2 align="center">

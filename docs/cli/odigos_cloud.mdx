@@ -1,0 +1,70 @@
+---
+title: "odigos cloud"
+sidebarTitle: "odigos cloud"
+---
+
+Manage the connection of the cluster to Odigos cloud
+
+## Synopsis
+
+This command can be used to interact with the Odigos cloud service.
+
+- Check the current status of your Odigos cloud installation:
+
+```
+odigos cloud
+```
+
+- Login to Odigos cloud
+
+```
+odigos cloud login -k <API_KEY>
+```
+
+- Refersh the Odigos cloud api token
+
+```
+odigos cloud update -k <API_KEY>
+```
+
+- Logout from Odigos cloud
+
+```
+odigos cloud logout
+```
+
+## Examples
+
+```
+
+    # Install Odigos cloud
+    odigos install -k <API_KEY>
+
+    # Connect existing Odigos installation to Odigos cloud
+    odigos cloud login -k <API_KEY>
+
+    # Update the api key for an existing Odigos cloud installation
+    odigos cloud update -k <API_KEY>
+
+    # Logout from Odigos cloud
+    odigos cloud logout
+    
+```
+
+## Options
+
+```
+    -k, --api-key                   api key for odigos cloud
+```
+
+## Options inherited from parent commands
+
+```
+        --kubeconfig string   (optional) absolute path to the kubeconfig file
+```
+
+## SEE ALSO
+
+* [odigos](cli/odigos.md)	 - odigos CLI
+* [odigos install](cli/odigos_install.md)	 - install Odigos on your cluster
+* [odigos upgrade](/cli/odigos_upgrade.md)	 - upgrade odigos version in your cluster.
