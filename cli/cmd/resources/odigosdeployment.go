@@ -4,6 +4,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/crds"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -105,6 +106,10 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 	resources := []client.Object{
 		NewOdigosDeploymentConfigMap(a.ns, a.config.OdigosVersion),
 		NewLeaderElectionRole(a.ns),
+		crds.NewCollectorsGroup(),
+		crds.NewConfiguration(),
+		crds.NewDestination(),
+		crds.NewInstrumentedApp(),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
