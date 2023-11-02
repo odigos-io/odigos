@@ -10,7 +10,6 @@ import (
 	"github.com/keyval-dev/odigos/common/consts"
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
-	"github.com/keyval-dev/odigos/cli/cmd/resources/crds"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/cli/pkg/log"
 	"github.com/spf13/cobra"
@@ -66,17 +65,6 @@ This command will install k8s components that will auto-instrument your applicat
 
 		config := createOdigosConfigSpec()
 
-		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
-
-		// namespace is created on "install" and is not managed by resource manager
-		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
-			client, cmd, ns, createNamespace)
-
-		// TODO: come up with a plan for migrating CRDs and apply it here.
-		// Perhaps as resource manager or a separate command.
-		createKubeResourceWithLogging(ctx, "Creating CRDs",
-			client, cmd, ns, createCRDs)
-
 		isOdigosCloud := odigosCloudApiKeyFlag != ""
 		if isOdigosCloud {
 			err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
@@ -85,6 +73,12 @@ This command will install k8s components that will auto-instrument your applicat
 				os.Exit(1)
 			}
 		}
+
+		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
+
+		// namespace is created on "install" and is not managed by resource manager
+		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
+			client, cmd, ns, createNamespace)
 
 		resourceManagers := resources.CreateResourceManagers(client, ns, isOdigosCloud, &odigosCloudApiKeyFlag, &config)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
@@ -131,16 +125,6 @@ func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (b
 func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 	_, err := client.CoreV1().Namespaces().Create(ctx, resources.NewNamespace(ns), metav1.CreateOptions{})
 	return err
-}
-
-func createCRDs(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	for _, crd := range crds.NewCRDs() {
-		_, err := client.ApiExtensions.ApiextensionsV1().CustomResourceDefinitions().Create(ctx, &crd, metav1.CreateOptions{})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
