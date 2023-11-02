@@ -1,11 +1,17 @@
 name: Release
+
 on:
   push:
     tags:
       - 'v*'
+
 permissions:
   contents: write
   packages: write
+
+env:
+  DOCKERHUB_ORG: "keyval"
+
 jobs:
   release:
     runs-on:
@@ -17,7 +23,10 @@ jobs:
       - run: git fetch --force --tags
       - name: Set env
         id: vars
-        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+        run: |
+          echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+          echo "short_commit=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
+          echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
       - uses: actions/setup-go@v4
         with:
           go-version: '1.21.0'
@@ -63,7 +72,7 @@ jobs:
             keyval/odigos-instrumentor:${{ steps.vars.outputs.tag }}
           build-args: SERVICE_NAME=instrumentor
           platforms: linux/amd64,linux/arm64
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
       - name: Build Odiglet Image
@@ -83,3 +92,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
+
+      - uses: ko-build/setup-ko@v0.6
+          
+      - name: publish cli image to docker registries
+        working-directory: ./cli
+        env:
+          KO_DOCKER_REPO: ${{ env.DOCKERHUB_ORG }}/odigos-cli
+          KO_CONFIG_PATH: ./.ko.yaml
+          VERSION: ${{ steps.vars.outputs.tag }}
+          SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
+          DATE: ${{ steps.vars.outputs.date }}
+        run: |
+          ko build --bare --tags latest --tags ${{ steps.vars.outputs.tag }} --platform=all .

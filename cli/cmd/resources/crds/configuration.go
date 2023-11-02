@@ -1,20 +1,18 @@
 package crds
 
 import (
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewConfiguration() apiextensionsv1.CustomResourceDefinition {
-	return apiextensionsv1.CustomResourceDefinition{
+func NewConfiguration() *apiextensionsv1.CustomResourceDefinition {
+	return &apiextensionsv1.CustomResourceDefinition{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CustomResourceDefinition",
 			APIVersion: "apiextensions.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigosconfigurations.odigos.io",
-			Labels: labels.OdigosSystem,
+			Name: "odigosconfigurations.odigos.io",
 		},
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Group: "odigos.io",
@@ -47,10 +45,13 @@ func NewConfiguration() apiextensionsv1.CustomResourceDefinition {
 								"spec": {
 									Description: "OdigosConfigurationSpec defines the desired state of OdigosConfiguration",
 									Type:        "object",
-									Required:    []string{},
+									Required:    []string{"odigosVersion", "configVersion"},
 									Properties: map[string]apiextensionsv1.JSONSchemaProps{
 										"autoscalerImage": {
 											Type: "string",
+										},
+										"configVersion": {
+											Type: "integer",
 										},
 										"ignoredNamespaces": {
 											Type: "array",
@@ -67,6 +68,9 @@ func NewConfiguration() apiextensionsv1.CustomResourceDefinition {
 											Type: "string",
 										},
 										"odigletImage": {
+											Type: "string",
+										},
+										"odigosVersion": {
 											Type: "string",
 										},
 										"psp": {
