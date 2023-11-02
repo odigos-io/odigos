@@ -8,7 +8,6 @@ import (
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
-	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -37,8 +36,9 @@ func printOdigosClusterVersion(cmd *cobra.Command) {
 	ctx := cmd.Context()
 
 	ns, err := resources.GetOdigosNamespace(client, ctx)
-	if err != nil {
-		ns = consts.DefaultNamespace
+	if resources.IsErrNoOdigosNamespaceFound(err) {
+		fmt.Println("Odigos is NOT yet installed in the current cluster")
+		return
 	}
 
 	odigosVersion := "unknown"
