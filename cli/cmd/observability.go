@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	_ "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/cmd/observability/backend"
 	"github.com/keyval-dev/odigos/cli/cmd/resources"

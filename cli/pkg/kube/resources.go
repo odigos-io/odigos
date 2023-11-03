@@ -2,6 +2,14 @@ package kube
 
 import "k8s.io/apimachinery/pkg/runtime/schema"
 
+func newApiExtensionsV1CustomResourceDefinition() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1",
+		Resource: "customresourcedefinitions",
+	}
+}
+
 func newAppsV1Deployments() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "apps",
@@ -31,6 +39,14 @@ func newCoreV1Services() schema.GroupVersionResource {
 		Group:    "", // core group is represented by an empty string
 		Version:  "v1",
 		Resource: "services",
+	}
+}
+
+func newCoreV1Secrets() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "", // core group is represented by an empty string
+		Version:  "v1",
+		Resource: "secrets",
 	}
 }
 
@@ -73,10 +89,12 @@ type ResourceAndNs struct {
 
 func GetManagedResources(odigosNamespace string) []ResourceAndNs {
 	return []ResourceAndNs{
+		{Resource: newApiExtensionsV1CustomResourceDefinition(), Namespace: ""},
 		{Resource: newAppsV1Deployments(), Namespace: odigosNamespace},
 		{Resource: newAppsV1DaemonSet(), Namespace: odigosNamespace},
 		{Resource: newCoreV1ConfigMaps(), Namespace: odigosNamespace},
 		{Resource: newCoreV1Services(), Namespace: odigosNamespace},
+		{Resource: newCoreV1Secrets(), Namespace: odigosNamespace},
 		{Resource: newRbacV1ClusterRoles(), Namespace: ""},
 		{Resource: newRbacV1ClusterRoleBindings(), Namespace: ""},
 		{Resource: newRbacV1Roles(), Namespace: odigosNamespace},
