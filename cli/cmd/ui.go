@@ -90,7 +90,7 @@ func checkOdigosInstallation(cmd *cobra.Command) bool {
 		fmt.Printf("\033[31mERROR\033[0m Cannot install/start UI. Failed to check if Odigos is already installed: %s\n", err)
 		return false
 	}
-	return true
+	return false
 }
 
 func downloadLatestUIVersion(arch string, os string, currentDir string) error {
