@@ -12,6 +12,8 @@ const DEFAULT_CONFIG = {
   future_selected: false,
 };
 
+const DEFAULT = 'default';
+
 export function SourcesSection({ sectionData, setSectionData }: any) {
   const [currentNamespace, setCurrentNamespace] = useState<any>(null);
   const [searchFilter, setSearchFilter] = useState<string>('');
@@ -22,7 +24,12 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
   );
 
   useEffect(() => {
-    !currentNamespace && data && setCurrentNamespace(data?.namespaces[0]);
+    if (!currentNamespace && data) {
+      const currentNamespace = data?.namespaces.find(
+        (item: any) => item.name === DEFAULT
+      );
+      setCurrentNamespace(currentNamespace);
+    }
   }, [data]);
 
   useEffect(() => {
