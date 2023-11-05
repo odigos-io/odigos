@@ -2,6 +2,7 @@ package instrumentlang
 
 import (
 	"fmt"
+
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/consts"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
@@ -25,7 +26,7 @@ func NodeJS(deviceId string) *v1beta1.ContainerAllocateResponse {
 			nodeEnvTraceExporter:      "otlp",
 			nodeEnvEndpoint:           otlpEndpoint,
 			nodeEnvServiceName:        deviceId,
-			nodeEnvResourceAttributes: "odigos.device=nodejs",
+			nodeEnvResourceAttributes: fmt.Sprintf("odigos.device=nodejs,%s", getAdditionalResourceAttributes()),
 			nodeEnvNodeOptions:        fmt.Sprintf("--require %s/autoinstrumentation.js", nodeMountPath),
 		},
 		Mounts: []*v1beta1.Mount{

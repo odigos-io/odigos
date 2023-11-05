@@ -26,7 +26,7 @@ func Python(deviceId string) *v1beta1.ContainerAllocateResponse {
 			envLogCorrelation:                  "true",
 			envPythonPath:                      "/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation:/var/odigos/python",
 			"OTEL_EXPORTER_OTLP_ENDPOINT":      otlpEndpoint,
-			"OTEL_RESOURCE_ATTRIBUTES":         fmt.Sprintf("service.name=%s,odigos.device=python", deviceId),
+			"OTEL_RESOURCE_ATTRIBUTES":         fmt.Sprintf("service.name=%s,odigos.device=python,%s", deviceId, getAdditionalResourceAttributes()),
 			envOtelTracesExporter:              envValOtelHttpExporter,
 			envOtelMetricsExporter:             envValOtelHttpExporter,
 			envOtelExporterOTLPTracesProtocol:  httpProtobufProtocol,

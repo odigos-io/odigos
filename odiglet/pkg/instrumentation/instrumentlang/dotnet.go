@@ -38,7 +38,7 @@ func DotNet(deviceId string) *v1beta1.ContainerAllocateResponse {
 			collectorUrlEnv:       fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort),
 			serviceNameEnv:        deviceId,
 			exportTypeEnv:         "otlp",
-			resourceAttrEnv:       "odigos.device=dotnet",
+			resourceAttrEnv:       fmt.Sprintf("odigos.device=dotnet,%s", getAdditionalResourceAttributes()),
 			startupHookEnv:        startupHook,
 			additonalDepsEnv:      additonalDeps,
 			sharedStoreEnv:        sharedStore,
