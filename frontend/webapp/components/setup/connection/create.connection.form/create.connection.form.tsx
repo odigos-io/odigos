@@ -165,7 +165,6 @@ export function CreateConnectionForm({
       )}
       <FieldWrapper>
         <KeyvalInput
-          style={{ height: 36 }}
           label={SETUP.DESTINATION_NAME}
           value={destinationName}
           onChange={setDestinationName}

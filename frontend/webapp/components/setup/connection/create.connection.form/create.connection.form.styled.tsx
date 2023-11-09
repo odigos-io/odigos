@@ -13,13 +13,11 @@ export const ConnectionMonitorsWrapper = styled.div`
 `;
 
 export const FieldWrapper = styled.div`
-  margin-top: 32px;
+  margin-top: 22px;
   width: 348px;
 `;
 
-export const DynamicFieldsWrapper = styled.div`
-  margin-top: 32px;
-`;
+export const DynamicFieldsWrapper = styled.div``;
 
 export const CreateDestinationButtonWrapper = styled.div`
   margin-top: 48px;
