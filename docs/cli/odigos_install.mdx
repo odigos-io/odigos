@@ -1,0 +1,60 @@
+---
+title: "odigos install"
+sidebarTitle: "odigos install"
+---
+
+Install Odigos in your kubernetes cluster
+
+## Synopsis
+
+This sub command will Install Odigos in your kubernetes cluster. 
+It will install k8s components that will auto-instrument your applications with OpenTelemetry and send traces, metrics and logs to any telemetry backend
+
+```
+odigos install [flags]
+```
+
+## Examples
+
+```
+
+    # Install Odigos open-source in your cluster.
+    odigos install
+
+    # Install Odigos cloud in your cluster.
+    odigos install --api-key <your-api-key>
+
+    # Install Odigos cloud in a specific cluster
+    odigos install --kubeconfig <path-to-kubeconfig>
+
+```
+
+## Options
+
+```
+    -k, --api-key                   api key for odigos cloud
+    -n, --namespace                 target k8s namespace for Odigos installation
+        --nowait                    skip waiting for odigos pods to be ready
+        --telemetry                 send general telemetry regarding Odigos usage (default true)
+        --sidecar-instrumentation   use sidecars for eBPF instrumentations
+        --odiglet-image             odiglet container image name
+        --instrumentor-image        instrumentor container image name
+        --autoscaler-image          autoscaler container image name
+        --image-prefix              prefix for all container images. used when your cluster doesn't have access to docker hub
+        --psp                       enable pod security policy
+```
+
+The `--api-key` is required if you use Odigos Cloud.
+All the other options are targeting advanced users with custom and unique use cases.
+
+## Options inherited from parent commands
+
+```
+        --kubeconfig string   (optional) absolute path to the kubeconfig file
+```
+
+## SEE ALSO
+
+* [odigos](/cli/odigos.md)	 - odigos CLI
+* [odigos uninstall](/cli/odigos_uninstall.md)	 - unistall Odigos from your cluster
+* [odigos upgrade](/cli/odigos_upgrade.md)	 - upgrade odigos version in your cluster.
