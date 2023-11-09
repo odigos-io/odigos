@@ -17,7 +17,6 @@ export function renderFields(
         return (
           <FieldWrapper key={name}>
             <KeyvalInput
-              style={{ height: 36 }}
               label={display_name}
               value={dynamicFields[name]}
               onChange={(value) => onChange(name, value)}
