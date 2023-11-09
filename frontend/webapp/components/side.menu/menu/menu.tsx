@@ -85,7 +85,7 @@ export function Menu() {
 
   return (
     <MenuContainer
-      className={isExpanded ? 'expanded' : ''}
+      className={isExpanded ? 'isExpanded' : ''}
     >
       {renderMenuLogo()}
       <MenuItemsWrapper>{renderMenuItemsList()}</MenuItemsWrapper>
