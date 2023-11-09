@@ -17,8 +17,6 @@ export const FieldWrapper = styled.div`
   width: 348px;
 `;
 
-export const DynamicFieldsWrapper = styled.div``;
-
 export const CreateDestinationButtonWrapper = styled.div`
   margin-top: 48px;
   height: 36px;

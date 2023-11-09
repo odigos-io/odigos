@@ -8,7 +8,6 @@ import {
 import {
   CheckboxWrapper,
   ConnectionMonitorsWrapper,
-  DynamicFieldsWrapper,
   FieldWrapper,
   CreateDestinationButtonWrapper,
 } from './create.connection.form.styled';
@@ -170,9 +169,7 @@ export function CreateConnectionForm({
           onChange={setDestinationName}
         />
       </FieldWrapper>
-      <DynamicFieldsWrapper>
-        {renderFields(fields, dynamicFields, handleDynamicFieldChange)}
-      </DynamicFieldsWrapper>
+      {renderFields(fields, dynamicFields, handleDynamicFieldChange)}
       <CreateDestinationButtonWrapper>
         <KeyvalButton disabled={isCreateButtonDisabled} onClick={onCreateClick}>
           <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
