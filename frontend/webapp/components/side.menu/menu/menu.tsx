@@ -84,9 +84,7 @@ export function Menu() {
   }
 
   return (
-    <MenuContainer
-      className={isExpanded ? 'isExpanded' : ''}
-    >
+    <MenuContainer $isExpanded={isExpanded} >
       {renderMenuLogo()}
       <MenuItemsWrapper>{renderMenuItemsList()}</MenuItemsWrapper>
       {renderContactUsButton()}
