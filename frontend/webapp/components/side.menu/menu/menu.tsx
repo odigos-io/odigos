@@ -27,7 +27,7 @@ export function Menu() {
   const [currentMenuItem, setCurrentMenuItem] = useState<MenuItem>(
     MENU_ITEMS[0]
   );
-  const [isHovered, setIsHovered] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const router = useRouter();
 
   useEffect(onLoad, []);
@@ -54,15 +54,17 @@ export function Menu() {
         onClick={() => handleMenuItemClick(item)}
         focused={currentMenuItem?.id === item.id}
         item={item}
-        expand={isHovered}
+        expand={isExpanded}
       />
     ));
   }
 
   function renderMenuLogo() {
     return (
-      <LogoWrapper>
-        {isHovered ? (
+      <LogoWrapper 
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {isExpanded ? (
           <KeyvalText size={32} weight={700}>
             {OVERVIEW.ODIGOS}
           </KeyvalText>
@@ -76,15 +78,14 @@ export function Menu() {
   function renderContactUsButton() {
     return (
       <ContactUsWrapper>
-        <ContactUsButton expand={isHovered} />
+        <ContactUsButton expand={isExpanded} />
       </ContactUsWrapper>
     );
   }
 
   return (
     <MenuContainer
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={isExpanded ? 'expanded' : ''}
     >
       {renderMenuLogo()}
       <MenuItemsWrapper>{renderMenuItemsList()}</MenuItemsWrapper>

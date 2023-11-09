@@ -6,7 +6,7 @@ export const MenuContainer = styled.div`
   height: 100%;
   border-right: 1px solid rgba(255, 255, 255, 0.04);
   background: ${({ theme }) => theme.colors.dark_blue};
-  &:hover {
+  &.expanded {
     width: 234px;
   }
 `;
