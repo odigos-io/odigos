@@ -10,7 +10,7 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@keyval-dev/design-system": "1.2.8",
+    "@keyval-dev/design-system": "1.2.9",
     "@next/font": "^13.4.7",
     "@svgr/webpack": "^6.2.1",
     "@types/node": "20.3.3",
@@ -25,7 +25,6 @@
     "prop-types": "^15.8.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-lottie": "^1.2.3",
     "react-query": "^3.39.3",
     "styled-components": "^6.0.2",
     "swr": "^2.1.5",
