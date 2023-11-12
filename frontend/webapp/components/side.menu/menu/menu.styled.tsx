@@ -9,6 +9,7 @@ export const MenuContainer = styled.div<{ $isExpanded?: boolean; }>`
 `;
 
 export const LogoWrapper = styled.div`
+  cursor: pointer;
   padding: 24px 16px;
   height: 48px;
   position: relative;
