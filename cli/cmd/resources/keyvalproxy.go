@@ -1,9 +1,13 @@
 package resources
 
 import (
-	"github.com/keyval-dev/odigos/cli/pkg/containers"
+	"context"
 
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/pkg/containers"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -13,10 +17,14 @@ import (
 )
 
 const (
+	odigosCloudProxyVersion = "v0.7.0"
+)
+
+const (
 	keyvalProxyServiceName            = "odigos-cloud-k8s"
 	keyvalProxyImage                  = "keyval/odigos-proxy-k8s"
 	keyvalProxyAppName                = "odigos-cloud-proxy"
-	keyvalProxyDeploymentName         = "odigos-cloud-proxy"
+	KeyvalProxyDeploymentName         = "odigos-cloud-proxy"
 	keyvalProxyServiceAccountName     = "odigos-cloud-proxy"
 	keyvalProxyRoleName               = "odigos-cloud-proxy"
 	keyvalProxyRoleBindingName        = "odigos-cloud-proxy"
@@ -24,15 +32,15 @@ const (
 	keyvalProxyClusterRoleBindingName = "odigos-cloud-proxy"
 )
 
-func NewKeyvalProxyServiceAccount() *corev1.ServiceAccount {
+func NewKeyvalProxyServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   keyvalProxyServiceAccountName,
-			Labels: labels.OdigosSystem,
+			Name:      keyvalProxyServiceAccountName,
+			Namespace: ns,
 		},
 	}
 }
@@ -46,7 +54,7 @@ func NewKeyvalProxyRole(ns string) *rbacv1.Role {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      keyvalProxyRoleName,
 			Namespace: ns,
-			Labels:    labels.OdigosSystem,
+			Labels:    map[string]string{},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -75,7 +83,7 @@ func NewKeyvalProxyRoleBinding(ns string) *rbacv1.RoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      keyvalProxyRoleBindingName,
 			Namespace: ns,
-			Labels:    labels.OdigosSystem,
+			Labels:    map[string]string{},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -99,8 +107,7 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   keyvalProxyClusterRoleName,
-			Labels: labels.OdigosSystem,
+			Name: keyvalProxyClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -202,8 +209,7 @@ func NewKeyvalProxyClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   keyvalProxyClusterRoleBindingName,
-			Labels: labels.OdigosSystem,
+			Name: keyvalProxyClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -220,17 +226,17 @@ func NewKeyvalProxyClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
+func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: keyvalProxyDeploymentName,
+			Name:      KeyvalProxyDeploymentName,
+			Namespace: ns,
 			Labels: map[string]string{
-				"app":                       keyvalProxyAppName,
-				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
+				"app": keyvalProxyAppName,
 			},
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",
@@ -256,7 +262,7 @@ func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  keyvalProxyAppName,
-							Image: containers.GetImageName(keyvalProxyImage, version),
+							Image: containers.GetImageName(imagePrefix, keyvalProxyImage, version),
 							Args: []string{
 								"--health-probe-bind-address=:8081",
 								"--metrics-bind-address=127.0.0.1:8080",
@@ -280,7 +286,7 @@ func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: odigosCloudSecretName,
+												Name: OdigosCloudSecretName,
 											},
 											Key: odigosCloudApiKeySecretKey,
 										},
@@ -343,4 +349,28 @@ func NewKeyvalProxyDeployment(version string, ns string) *appsv1.Deployment {
 			MinReadySeconds: 0,
 		},
 	}
+}
+
+type keyvalProxyResourceManager struct {
+	client *kube.Client
+	ns     string
+	config *odigosv1.OdigosConfigurationSpec
+}
+
+func NewKeyvalProxyResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &keyvalProxyResourceManager{client: client, ns: ns, config: config}
+}
+
+func (a *keyvalProxyResourceManager) Name() string { return "CloudProxy" }
+
+func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) error {
+	resources := []client.Object{
+		NewKeyvalProxyServiceAccount(a.ns),
+		NewKeyvalProxyRole(a.ns),
+		NewKeyvalProxyRoleBinding(a.ns),
+		NewKeyvalProxyClusterRole(),
+		NewKeyvalProxyClusterRoleBinding(a.ns),
+		NewKeyvalProxyDeployment(odigosCloudProxyVersion, a.ns, a.config.ImagePrefix),
+	}
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

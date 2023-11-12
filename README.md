@@ -13,22 +13,7 @@
 
 <p align="center">
 <img src="assets/logo.png" width="350" /></br>
-Generate distributed traces for any application without code changes.
-</p>
-
-<h2 align="center">Odigos participate in Hacktoberfest 2023!</h2>
- <p align="center"> 🚀 Limited Time Offer! 🚀
-
- <p align="center">Make three Pull Requests (PRs) to Odigos repositories by October 31, 2023, and you could be one of the lucky winners of this exclusive Odigos tee! 👕 
-
- <p align="center">But hurry! we only have a maximum of twenty tees to give away, so don't miss your chance! 
-
- <p align="center">Start contributing today and grab your chance to win!
-
- <p align="center">Happy coding! 
-</p>
-<p align="center">
-<img src="assets/hacktoberfest_tee.png" align="center" width="300" />
+<h2>Generate distributed traces for any application in k8s without code changes.</h2>
 </p>
 
 <h2 align="center">
@@ -75,8 +60,8 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ### Managed
 
-|                         | Traces | Metrics | Logs |
-|-------------------------| ------ | ------- |------|
+|                         | Traces  | Metrics | Logs |
+|-------------------------| ------- | ------- |------|
 | New Relic               | ✅      | ✅      | ✅    |
 | Datadog                 | ✅      | ✅      | ✅    |
 | Grafana Cloud           | ✅      | ✅      | ✅    |
@@ -111,7 +96,7 @@ Can't find the destination you need? Help us by following our quick [add new des
 
 ## Contributing
 
-Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests. You are welcome to join our active [Slack Community](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests. Feel free to join our active [Slack Community](https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A).
 
 ## All Thanks To Our Contributors
 

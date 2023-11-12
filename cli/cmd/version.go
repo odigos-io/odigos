@@ -8,7 +8,6 @@ import (
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
-	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -38,18 +37,25 @@ func printOdigosClusterVersion(cmd *cobra.Command) {
 
 	ns, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {
-		ns = consts.DefaultNamespace
-	}
-
-	odigosVersion := "unknown"
-	cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-	if err == nil {
-		odigosVersion = cm.Data["ODIGOS_VERSION"]
-		if odigosVersion == "" {
-			odigosVersion = "not installed in cluster"
+		if resources.IsErrNoOdigosNamespaceFound(err) {
+			fmt.Println("Odigos is NOT yet installed in the current cluster")
+		} else {
+			fmt.Println("Error detecting Odigos version in the current cluster")
 		}
+		return
 	}
 
+	cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		fmt.Println("Error detecting Odigos version in the current cluster")
+		return
+	}
+
+	odigosVersion, ok := cm.Data["ODIGOS_VERSION"]
+	if !ok || odigosVersion == "" {
+		fmt.Println("Error detecting Odigos version in the current cluster")
+		return
+	}
 	fmt.Printf("Odigos Version (in cluster): version.Info{Version:'%s'}\n", odigosVersion)
 }
 

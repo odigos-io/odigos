@@ -4,49 +4,48 @@ import (
 	"context"
 	"fmt"
 
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-var InstrumentorImage string
-
 const (
-	instrumentorServiceName    = "instrumentor"
-	instrumentorDeploymentName = "odigos-instrumentor"
-	instrumentorContainerName  = "manager"
+	InstrumentorServiceName    = "instrumentor"
+	InstrumentorDeploymentName = "odigos-instrumentor"
+	InstrumentorAppLabelValue  = "odigos-instrumentor"
+	InstrumentorContainerName  = "manager"
 )
 
-func NewInstrumentorServiceAccount() *corev1.ServiceAccount {
+func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   instrumentorDeploymentName,
-			Labels: labels.OdigosSystem,
+			Name:      InstrumentorDeploymentName,
+			Namespace: ns,
 		},
 	}
 }
 
-func NewInstrumentorRoleBinding() *rbacv1.RoleBinding {
+func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "RoleBinding",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-instrumentor-leader-election",
-			Labels: labels.OdigosSystem,
+			Name:      "odigos-instrumentor-leader-election",
+			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -69,8 +68,7 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-instrumentor",
-			Labels: labels.OdigosSystem,
+			Name: "odigos-instrumentor",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -360,8 +358,7 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "odigos-instrumentor",
-			Labels: labels.OdigosSystem,
+			Name: "odigos-instrumentor",
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -378,7 +375,7 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarInstrumentation bool, ignoredNamespaces []string) *appsv1.Deployment {
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, sidecarInstrumentation bool, ignoredNamespaces []string, imagePrefix string, imageName string) *appsv1.Deployment {
 	args := []string{
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=127.0.0.1:8080",
@@ -402,11 +399,8 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor",
-			Labels: map[string]string{
-				"app":                       "odigos-instrumentor",
-				labels.OdigosSystemLabelKey: labels.OdigosSystemLabelValue,
-			},
+			Name:      "odigos-instrumentor",
+			Namespace: ns,
 			Annotations: map[string]string{
 				"odigos.io/skip": "true",
 			},
@@ -415,23 +409,23 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "odigos-instrumentor",
+					"app": InstrumentorAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "odigos-instrumentor",
+						"app": InstrumentorAppLabelValue,
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": instrumentorContainerName,
+						"kubectl.kubernetes.io/default-container": InstrumentorContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  instrumentorContainerName,
-							Image: containers.GetImageName(InstrumentorImage, version),
+							Name:  InstrumentorContainerName,
+							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Command: []string{
 								"/app",
 							},
@@ -439,7 +433,7 @@ func NewInstrumentorDeployment(version string, telemetryEnabled bool, sidecarIns
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: instrumentorServiceName,
+									Value: InstrumentorServiceName,
 								},
 								{
 									Name: "CURRENT_NS",
@@ -516,27 +510,26 @@ func ptrbool(b bool) *bool {
 type instrumentorResourceManager struct {
 	client *kube.Client
 	ns     string
+	config *odigosv1.OdigosConfigurationSpec
 }
 
-func NewInstrumentorResourceManager(client *kube.Client, ns string) ResourceManager {
-	return &instrumentorResourceManager{client: client, ns: ns}
+func NewInstrumentorResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+	return &instrumentorResourceManager{
+		client: client,
+		ns:     ns,
+		config: config,
+	}
 }
+
+func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
-	return nil
-}
-
-// func (a *instrumentorResourceManager) ApplyMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
-
-// func (a *instrumentorResourceManager) RollbackMigrationStep(ctx context.Context, sourceVersion string) error {
-// 	return nil
-// }
-
-func (a *instrumentorResourceManager) PatchOdigosVersionToTarget(ctx context.Context, newOdigosVersion string) error {
-	fmt.Println("Patching Odigos instrumentor deployment")
-	jsonPatchDocumentBytes := patchTemplateSpecImageTag(InstrumentorImage, newOdigosVersion, instrumentorContainerName)
-	_, err := a.client.AppsV1().Deployments(a.ns).Patch(ctx, instrumentorDeploymentName, k8stypes.JSONPatchType, jsonPatchDocumentBytes, metav1.PatchOptions{})
-	return err
+	resources := []client.Object{
+		NewInstrumentorServiceAccount(a.ns),
+		NewInstrumentorRoleBinding(a.ns),
+		NewInstrumentorClusterRole(),
+		NewInstrumentorClusterRoleBinding(a.ns),
+		NewInstrumentorDeployment(a.ns, a.config.OdigosVersion, a.config.TelemetryEnabled, a.config.SidecarInstrumentation, a.config.IgnoredNamespaces, a.config.ImagePrefix, a.config.InstrumentorImage),
+	}
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
