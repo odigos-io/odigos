@@ -56,7 +56,7 @@ export default function FormDangerZone({
           <br />
           <ConnectionsIcons icon={data?.image_url} imageStyle={IMAGE_STYLE} />
           <br />
-          <KeyvalText color={theme.text.primary} size={20} weight={600}>
+          <KeyvalText size={20} weight={600}>
             {`${OVERVIEW.DELETE} ${data?.name}`}
           </KeyvalText>
         </KeyvalModal>
