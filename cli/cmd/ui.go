@@ -15,6 +15,8 @@ import (
 
 	"github.com/spf13/pflag"
 
+	"github.com/keyval-dev/odigos/cli/cmd/resources"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +31,11 @@ var uiCmd = &cobra.Command{
 	Short: "Start the Odigos UI",
 	Long:  `Start the Odigos UI. This will start a web server that will serve the UI`,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		if !checkOdigosInstallation(cmd) {
+			fmt.Printf("\033[31mERROR\033[0m Unable to find Odigos in kubernetes cluster. Aborting odigos ui.\n")
+			os.Exit(1)
+		}
 		// Look for binary named odigos-ui in the same directory as the current binary
 		// and execute it.
 		currentBinaryPath, err := os.Executable()
@@ -63,7 +70,27 @@ var uiCmd = &cobra.Command{
 			fmt.Printf("Error starting UI: %v\n", err)
 			os.Exit(1)
 		}
+
 	},
+}
+
+func checkOdigosInstallation(cmd *cobra.Command) bool {
+	client, err := kube.CreateClient(cmd)
+	if err != nil {
+		kube.PrintClientErrorAndExit(err)
+		return false
+	}
+	ctx := cmd.Context()
+
+	// check if odigos is installed
+	_, err = resources.GetOdigosNamespace(client, ctx)
+	if err == nil {
+		return true
+	} else if !resources.IsErrNoOdigosNamespaceFound(err) {
+		fmt.Printf("\033[31mERROR\033[0m Cannot install/start UI. Failed to check if Odigos is already installed: %s\n", err)
+		return false
+	}
+	return false
 }
 
 func downloadLatestUIVersion(arch string, os string, currentDir string) error {
