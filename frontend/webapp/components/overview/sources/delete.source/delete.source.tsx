@@ -58,7 +58,7 @@ export function DeleteSource({
           <br />
           <ConnectionsIcons icon={image_url} imageStyle={IMAGE_STYLE} />
           <br />
-          <KeyvalText color={theme.text.primary} size={20} weight={600}>
+          <KeyvalText size={20} weight={600}>
             {`${OVERVIEW.DELETE} ${name}`}
           </KeyvalText>
         </KeyvalModal>

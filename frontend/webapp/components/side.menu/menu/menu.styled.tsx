@@ -1,16 +1,15 @@
 import styled from 'styled-components';
 
-export const MenuContainer = styled.div`
-  width: 70px;
+export const MenuContainer = styled.div<{ $isExpanded?: boolean; }>`
   transition: width 0.1s;
   height: 100%;
   border-right: 1px solid rgba(255, 255, 255, 0.04);
   background: ${({ theme }) => theme.colors.dark_blue};
-  &:hover {
-    width: 234px;
-  }
+  width: ${({$isExpanded}) => $isExpanded ? 234 : 70}px;
 `;
+
 export const LogoWrapper = styled.div`
+  cursor: pointer;
   padding: 24px 16px;
   height: 48px;
   position: relative;
