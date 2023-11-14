@@ -8,7 +8,7 @@ require (
 	github.com/keyval-dev/odigos/api v0.0.0
 	github.com/keyval-dev/opentelemetry-zap-bridge v0.0.3
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.29.0
+	github.com/onsi/gomega v1.30.0
 	k8s.io/apimachinery v0.28.3
 	k8s.io/client-go v0.28.3
 	sigs.k8s.io/controller-runtime v0.16.3
