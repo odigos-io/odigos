@@ -2,6 +2,7 @@ package kube
 
 import (
 	"context"
+
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
@@ -119,7 +120,7 @@ func getRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 
 	var filteredPods []corev1.Pod
 	for _, pod := range podList.Items {
-		if pod.Spec.NodeName == env.Current.NodeName && pod.Status.Phase == corev1.PodRunning {
+		if isPodInThisNode(&pod) && pod.Status.Phase == corev1.PodRunning {
 			filteredPods = append(filteredPods, pod)
 		}
 	}
@@ -129,4 +130,8 @@ func getRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 	}
 
 	return filteredPods, nil
+}
+
+func isPodInThisNode(pod *corev1.Pod) bool {
+	return pod.Spec.NodeName == env.Current.NodeName
 }

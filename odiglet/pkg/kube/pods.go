@@ -8,7 +8,6 @@ import (
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
-	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	"github.com/keyval-dev/odigos/odiglet/pkg/process"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -22,8 +21,8 @@ import (
 
 type PodsReconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	Director ebpf.Director
+	Scheme    *runtime.Scheme
+	Directors map[common.ProgrammingLanguage]ebpf.Director
 }
 
 func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
@@ -32,7 +31,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	err := p.Client.Get(ctx, request.NamespacedName, &pod)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			p.Director.Cleanup(request.NamespacedName)
+			p.cleanup(request.NamespacedName)
 			return ctrl.Result{}, nil
 		}
 
@@ -40,103 +39,75 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	if !p.shouldInstrument(&pod) {
+	if !isPodInThisNode(&pod) {
 		return ctrl.Result{}, nil
 	}
 
 	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
 		logger.Info("pod is not running, removing instrumentation")
-		p.Director.Cleanup(request.NamespacedName)
+		p.cleanup(request.NamespacedName)
 		return ctrl.Result{}, nil
 	}
 
 	if pod.Status.Phase == corev1.PodRunning {
-		err = p.instrument(ctx, &pod)
-		if err != nil {
-			logger.Error(err, "error instrumenting pod")
-			return ctrl.Result{}, err
-		}
+		p.attemptEbpfInstrument(ctx, &pod)
 	}
 
 	return ctrl.Result{}, nil
 }
 
-// shouldInstrument returns true if the pod should be instrumented.
-// A pod should be instrumented if:
-// - it is running
-// - it is scheduled on the same node as the odiglet
-// - it has instrumentation.odigos.io/go device attached
-func (p *PodsReconciler) shouldInstrument(pod *corev1.Pod) bool {
-	return pod.Spec.NodeName == env.Current.NodeName && hasInstrumentationDevice(pod)
+func (p *PodsReconciler) cleanup(name types.NamespacedName) {
+	// cleanup using all available directors
+	// the Cleanup method is idempotent, so no harm in calling it multiple times
+	for _, director := range p.Directors {
+		director.Cleanup(name)
+	}
 }
 
-func (p *PodsReconciler) instrument(ctx context.Context, pod *corev1.Pod) error {
+func (p *PodsReconciler) attemptEbpfInstrument(ctx context.Context, pod *corev1.Pod) error {
 	logger := log.FromContext(ctx)
-	containers, ownerName, err := p.findAllGoContainers(ctx, pod)
+	runtimeDetails, err := p.getRuntimeDetails(ctx, pod)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// Probably shutdown in progress, cleanup will be done as soon as the pod object is deleted
 			return nil
 		}
-
-		logger.Error(err, "error finding go containers")
 		return err
 	}
 
-	pids := make(map[int]string)
-	for _, c := range containers {
-		details, err := process.FindAllInContainer(string(pod.UID), c)
+	podUid := string(pod.UID)
+	for _, container := range runtimeDetails.Spec.Languages {
+		director := p.Directors[container.Language]
+		if director == nil {
+			// this language is not instrumented with eBPF
+			continue
+		}
+
+		appName := container.ContainerName
+		if len(runtimeDetails.Spec.Languages) == 1 && len(runtimeDetails.OwnerReferences) > 0 {
+			appName = runtimeDetails.OwnerReferences[0].Name
+		}
+
+		details, err := process.FindAllInContainer(podUid, container.ContainerName)
 		if err != nil {
 			logger.Error(err, "error finding processes")
 			return err
 		}
 
 		for _, d := range details {
-			appName := c
-			if ownerName != "" {
-				appName = ownerName
+			err = director.Instrument(d.ProcessID, types.NamespacedName{
+				Namespace: pod.Namespace,
+				Name:      pod.Name,
+			}, appName)
+
+			if err != nil {
+				logger.Error(err, "error instrumenting process", "pid", d.ProcessID)
+				return err
 			}
-			pids[d.ProcessID] = appName
 		}
 	}
 
-	if len(pids) == 0 {
-		// Probably shutdown in progress, cleanup will be done as soon as the pod object is deleted
-		return nil
-	}
-
-	for pid, appName := range pids {
-		err = p.Director.Instrument(pid, types.NamespacedName{
-			Namespace: pod.Namespace,
-			Name:      pod.Name,
-		}, appName)
-
-		if err != nil {
-			logger.Error(err, "error instrumenting process", "pid", pid)
-			return err
-		}
-	}
 	return nil
-}
-
-func (p *PodsReconciler) findAllGoContainers(ctx context.Context, pod *corev1.Pod) ([]string, string, error) {
-	runtimeDetails, err := p.getRuntimeDetails(ctx, pod)
-	if err != nil {
-		return nil, "", err
-	}
-
-	var containers []string
-	for _, container := range runtimeDetails.Spec.Languages {
-		if container.Language == common.GoProgrammingLanguage {
-			containers = append(containers, container.ContainerName)
-		}
-	}
-
-	ownerName := ""
-	if len(runtimeDetails.Spec.Languages) == 1 && len(runtimeDetails.OwnerReferences) > 0 {
-		ownerName = runtimeDetails.OwnerReferences[0].Name
-	}
-	return containers, ownerName, nil
 }
 
 func (p *PodsReconciler) getRuntimeDetails(ctx context.Context, pod *corev1.Pod) (*odigosv1.InstrumentedApplication, error) {
