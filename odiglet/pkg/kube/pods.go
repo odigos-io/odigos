@@ -83,6 +83,12 @@ func (p *PodsReconciler) attemptEbpfInstrument(ctx context.Context, pod *corev1.
 			continue
 		}
 
+		// this check currently only works for Go.
+		// it is temporary and will be replaced with annotation in a future PR
+		if !hasInstrumentationDevice(pod) {
+			continue
+		}
+
 		appName := container.ContainerName
 		if len(runtimeDetails.Spec.Languages) == 1 && len(runtimeDetails.OwnerReferences) > 0 {
 			appName = runtimeDetails.OwnerReferences[0].Name
