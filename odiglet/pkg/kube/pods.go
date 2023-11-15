@@ -6,6 +6,7 @@ import (
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
+	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
 	"github.com/keyval-dev/odigos/odiglet/pkg/process"
@@ -49,8 +50,32 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
+	podWorkload, err := p.getPodWorkloadObject(ctx, &pod)
+	if err != nil {
+		logger.Error(err, "error getting pod workload object")
+		return ctrl.Result{}, err
+	}
+	if podWorkload == nil {
+		// pod is not managed by a controller
+		return ctrl.Result{}, nil
+	}
+
+	ebpfInstrumented, err := p.isEbpfInstrumented(ctx, podWorkload)
+	if err != nil {
+		logger.Error(err, "error checking if pod is ebpf instrumented")
+		return ctrl.Result{}, err
+	}
+	if !ebpfInstrumented {
+		p.cleanup(request.NamespacedName)
+		return ctrl.Result{}, nil
+	}
+
 	if pod.Status.Phase == corev1.PodRunning {
-		p.attemptEbpfInstrument(ctx, &pod)
+		err := p.instrumentWithEbpf(ctx, &pod, podWorkload)
+		if err != nil {
+			logger.Error(err, "error instrumenting pod")
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
@@ -64,9 +89,9 @@ func (p *PodsReconciler) cleanup(name types.NamespacedName) {
 	}
 }
 
-func (p *PodsReconciler) attemptEbpfInstrument(ctx context.Context, pod *corev1.Pod) error {
+func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod, podWorkload *PodWorkload) error {
 	logger := log.FromContext(ctx)
-	runtimeDetails, err := p.getRuntimeDetails(ctx, pod)
+	runtimeDetails, err := p.getRuntimeDetails(ctx, podWorkload)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// Probably shutdown in progress, cleanup will be done as soon as the pod object is deleted
@@ -77,16 +102,10 @@ func (p *PodsReconciler) attemptEbpfInstrument(ctx context.Context, pod *corev1.
 
 	podUid := string(pod.UID)
 	for _, container := range runtimeDetails.Spec.Languages {
+
 		director := p.Directors[container.Language]
 		if director == nil {
-			// this language is not instrumented with eBPF
-			continue
-		}
-
-		// this check currently only works for Go.
-		// it is temporary and will be replaced with annotation in a future PR
-		if !hasInstrumentationDevice(pod) {
-			continue
+			return errors.New("no director found for language " + string(container.Language))
 		}
 
 		appName := container.ContainerName
@@ -116,16 +135,13 @@ func (p *PodsReconciler) attemptEbpfInstrument(ctx context.Context, pod *corev1.
 	return nil
 }
 
-func (p *PodsReconciler) getRuntimeDetails(ctx context.Context, pod *corev1.Pod) (*odigosv1.InstrumentedApplication, error) {
-	name, err := p.getRuntimeDetailsName(ctx, pod)
-	if err != nil {
-		return nil, err
-	}
+func (p *PodsReconciler) getRuntimeDetails(ctx context.Context, podWorkload *PodWorkload) (*odigosv1.InstrumentedApplication, error) {
+	instrumentedApplicationName := utils.GetRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
 
 	var runtimeDetails odigosv1.InstrumentedApplication
-	err = p.Client.Get(ctx, client.ObjectKey{
-		Namespace: pod.Namespace,
-		Name:      name,
+	err := p.Client.Get(ctx, client.ObjectKey{
+		Namespace: podWorkload.Namespace,
+		Name:      instrumentedApplicationName,
 	}, &runtimeDetails)
 	if err != nil {
 		return nil, err
@@ -134,7 +150,19 @@ func (p *PodsReconciler) getRuntimeDetails(ctx context.Context, pod *corev1.Pod)
 	return &runtimeDetails, nil
 }
 
-func (p *PodsReconciler) getRuntimeDetailsName(ctx context.Context, pod *corev1.Pod) (string, error) {
+// PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+// It contains essential details about the controller such as its Name, Namespace, and Kind.
+// 'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+// This struct is useful for identifying and interacting with the overarching entity
+// that governs the lifecycle and behavior of a Pod, especially in contexts where
+// understanding the relationship between a Pod and its controlling workload is crucial.
+type PodWorkload struct {
+	Name      string
+	Namespace string
+	Kind      string
+}
+
+func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
 		if owner.Kind == "ReplicaSet" {
 			var rs appsv1.ReplicaSet
@@ -143,24 +171,76 @@ func (p *PodsReconciler) getRuntimeDetailsName(ctx context.Context, pod *corev1.
 				Name:      owner.Name,
 			}, &rs)
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 
 			if rs.OwnerReferences == nil {
-				return "", errors.New("replicaset has no owner reference")
+				return nil, errors.New("replicaset has no owner reference")
 			}
 
 			for _, rsOwner := range rs.OwnerReferences {
 				if rsOwner.Kind == "Deployment" || rsOwner.Kind == "DaemonSet" || rsOwner.Kind == "StatefulSet" {
-					return utils.GetRuntimeObjectName(rsOwner.Name, rsOwner.Kind), nil
+					return &PodWorkload{
+						Name:      rsOwner.Name,
+						Namespace: pod.Namespace,
+						Kind:      rsOwner.Kind,
+					}, nil
 				}
 			}
 		} else if owner.Kind == "DaemonSet" || owner.Kind == "Deployment" || owner.Kind == "StatefulSet" {
-			return utils.GetRuntimeObjectName(owner.Name, owner.Kind), nil
+			return &PodWorkload{
+				Name:      owner.Name,
+				Namespace: pod.Namespace,
+				Kind:      owner.Kind,
+			}, nil
 		}
 	}
 
-	return "", errors.New("pod has no owner reference")
+	// Pod does not necessarily have to be managed by a controller
+	return nil, nil
+}
+
+func (p *PodsReconciler) isEbpfInstrumented(ctx context.Context, podWorkload *PodWorkload) (bool, error) {
+	// TODO: this is better done with a dynamic client
+	switch podWorkload.Kind {
+	case "Deployment":
+		var dep appsv1.Deployment
+		err := p.Client.Get(ctx, client.ObjectKey{
+			Namespace: podWorkload.Namespace,
+			Name:      podWorkload.Name,
+		}, &dep)
+		return hasEbpfInstrumentationAnnotation(&dep), err
+	case "DaemonSet":
+		var ds appsv1.DaemonSet
+		err := p.Client.Get(ctx, client.ObjectKey{
+			Namespace: podWorkload.Namespace,
+			Name:      podWorkload.Name,
+		}, &ds)
+		return hasEbpfInstrumentationAnnotation(&ds), err
+	case "StatefulSet":
+		var sts appsv1.StatefulSet
+		err := p.Client.Get(ctx, client.ObjectKey{
+			Namespace: podWorkload.Namespace,
+			Name:      podWorkload.Name,
+		}, &sts)
+		return hasEbpfInstrumentationAnnotation(&sts), err
+	default:
+		return false, errors.New("unknown pod workload kind")
+	}
+}
+
+func hasEbpfInstrumentationAnnotation(obj client.Object) bool {
+	if obj == nil {
+		return false
+	}
+
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		return false
+	}
+
+	_, exists := annotations[consts.EbpfInstrumentationAnnotation]
+	return exists
 }
 
 // / hasInstrumentationDevice returns true if the pod has go instrumentation device attached.

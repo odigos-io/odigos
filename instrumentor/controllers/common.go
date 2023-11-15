@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/instrumentor/instrumentation"
@@ -24,6 +25,27 @@ var (
 	//   - Helm chart's instrumentor.ignoredNamespaces field
 	IgnoredNamespaces map[string]bool
 )
+
+// shouldInstrumentWithEbpf returns true if the given runtime details should be delegated to odiglet for ebpf instrumentation
+// This is currently hardcoded. In the future we will read this from a config
+func shouldInstrumentWithEbpf(runtimeDetails *odigosv1.InstrumentedApplication) bool {
+	for _, l := range runtimeDetails.Spec.Languages {
+		if l.Language == common.GoProgrammingLanguage {
+			return true
+		}
+	}
+
+	return false
+}
+
+func setInstrumentationEbpf(obj client.Object) {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	annotations[consts.EbpfInstrumentationAnnotation] = "true"
+}
 
 func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	logger := log.FromContext(ctx)
@@ -50,6 +72,11 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 	}
 
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
+		if shouldInstrumentWithEbpf(runtimeDetails) {
+			setInstrumentationEbpf(obj)
+			return nil
+		}
+
 		podSpec, err := getPodSpecFromObject(obj)
 		if err != nil {
 			return err
