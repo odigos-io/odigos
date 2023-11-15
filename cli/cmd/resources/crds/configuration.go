@@ -76,9 +76,6 @@ func NewConfiguration() *apiextensionsv1.CustomResourceDefinition {
 										"psp": {
 											Type: "boolean",
 										},
-										"sidecarInstrumentation": {
-											Type: "boolean",
-										},
 										"telemetryEnabled": {
 											Type: "boolean",
 										},
