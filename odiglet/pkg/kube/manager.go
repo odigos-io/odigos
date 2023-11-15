@@ -6,6 +6,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
@@ -32,7 +33,7 @@ func init() {
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
 }
 
-func StartReconciling(ebpfDirector ebpf.Director) (context.Context, error) {
+func StartReconciling(ebpfDirectors map[common.ProgrammingLanguage]ebpf.Director) (context.Context, error) {
 	log.Logger.V(0).Info("Starting reconcileres")
 	ctrl.SetLogger(log.Logger)
 	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{
@@ -100,9 +101,9 @@ func StartReconciling(ebpfDirector ebpf.Director) (context.Context, error) {
 		ControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
 		Complete(&PodsReconciler{
-			Client:   mgr.GetClient(),
-			Scheme:   mgr.GetScheme(),
-			Director: ebpfDirector,
+			Client:    mgr.GetClient(),
+			Scheme:    mgr.GetScheme(),
+			Directors: ebpfDirectors,
 		})
 	if err != nil {
 		return nil, err
