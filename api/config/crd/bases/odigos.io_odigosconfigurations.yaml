@@ -53,8 +53,6 @@ spec:
                 type: string
               psp:
                 type: boolean
-              sidecarInstrumentation:
-                type: boolean
               telemetryEnabled:
                 type: boolean
             required:
