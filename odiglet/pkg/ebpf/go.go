@@ -42,7 +42,7 @@ func (i *InstrumentationDirectorGo) Instrument(pid int, podDetails types.Namespa
 	defer i.mux.Unlock()
 	if _, exists := i.pidsToInstrumentation[pid]; exists {
 		log.Logger.V(5).Info("Process already instrumented", "pid", pid)
-		return ErrProcInstrumented
+		return nil
 	}
 
 	go func() {

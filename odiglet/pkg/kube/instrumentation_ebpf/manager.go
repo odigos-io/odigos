@@ -3,6 +3,9 @@ package instrumentation_ebpf
 import (
 	"context"
 
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -19,6 +22,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+var (
+	scheme = runtime.NewScheme()
+)
+
+func init() {
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(odigosv1.AddToScheme(scheme))
+}
 
 type EbpfInstrumentationPredicate struct {
 	predicate.Funcs
@@ -49,10 +61,6 @@ func (i *EbpfInstrumentationPredicate) Delete(e event.DeleteEvent) bool {
 func (i *EbpfInstrumentationPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
-
-var (
-	scheme = runtime.NewScheme()
-)
 
 func StartReconciling(ctx context.Context, ebpfDirectors map[common.ProgrammingLanguage]ebpf.Director) error {
 	log.Logger.V(0).Info("Starting reconcileres for ebpf instrumentation")

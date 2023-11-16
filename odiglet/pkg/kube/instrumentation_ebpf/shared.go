@@ -38,6 +38,7 @@ func ApplyEbpfToPodWorkload(ctx context.Context, kubeClient client.Client, direc
 		return err
 	}
 	if !ebpfInstrumented {
+		logger.Info("removing ebpf instrumentation", "kind", podWorkload.Kind, "name", podWorkload.Name, "namespace", podWorkload.Namespace)
 		cleanupEbpf(directors, types.NamespacedName{
 			Namespace: podWorkload.Namespace,
 			Name:      podWorkload.Name,
@@ -64,6 +65,7 @@ func ApplyEbpfToPodWorkload(ctx context.Context, kubeClient client.Client, direc
 		return err
 	}
 
+	logger.Info("instrumenting with ebpf", "kind", podWorkload.Kind, "name", podWorkload.Name, "namespace", podWorkload.Namespace, "numPods", len(pods))
 	for _, pod := range pods {
 		err = instrumentPodWithEbpf(ctx, &pod, directors, runtimeDetails)
 		if err != nil {

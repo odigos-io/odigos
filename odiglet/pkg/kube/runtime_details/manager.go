@@ -3,6 +3,8 @@ package runtime_details
 import (
 	"context"
 
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
@@ -21,6 +23,11 @@ import (
 var (
 	scheme = runtime.NewScheme()
 )
+
+func init() {
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(odigosv1.AddToScheme(scheme))
+}
 
 func StartReconciling(ctx context.Context) error {
 	log.Logger.V(0).Info("Starting reconcileres for runtime details")
