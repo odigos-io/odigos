@@ -1,4 +1,4 @@
-package kube
+package runtime_details
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
-	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	"github.com/keyval-dev/odigos/odiglet/pkg/inspectors"
+	"github.com/keyval-dev/odigos/odiglet/pkg/kube"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	"github.com/keyval-dev/odigos/odiglet/pkg/process"
 	corev1 "k8s.io/api/core/v1"
@@ -22,7 +22,7 @@ import (
 
 func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labels map[string]string,
 	kubeClient client.Client, scheme *runtime.Scheme, object client.Object) (ctrl.Result, error) {
-	pods, err := getRunningPods(ctx, labels, object.GetNamespace(), kubeClient)
+	pods, err := kube.GetRunningPods(ctx, labels, object.GetNamespace(), kubeClient)
 	if err != nil {
 		logger.Error(err, "error fetching running pods")
 		return ctrl.Result{}, err
@@ -112,26 +112,4 @@ func persistRuntimeResults(ctx context.Context, results []common.LanguageByConta
 			owner.GetObjectKind().GroupVersionKind().Kind, "namespace", owner.GetNamespace())
 	}
 	return nil
-}
-
-func getRunningPods(ctx context.Context, labels map[string]string, ns string, kubeClient client.Client) ([]corev1.Pod, error) {
-	var podList corev1.PodList
-	err := kubeClient.List(ctx, &podList, client.MatchingLabels(labels), client.InNamespace(ns))
-
-	var filteredPods []corev1.Pod
-	for _, pod := range podList.Items {
-		if isPodInCurrentNode(&pod) && pod.Status.Phase == corev1.PodRunning {
-			filteredPods = append(filteredPods, pod)
-		}
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return filteredPods, nil
-}
-
-func isPodInCurrentNode(pod *corev1.Pod) bool {
-	return pod.Spec.NodeName == env.Current.NodeName
 }

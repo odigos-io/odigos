@@ -8,11 +8,13 @@ import (
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation"
-	"github.com/keyval-dev/odigos/odiglet/pkg/kube"
+	"github.com/keyval-dev/odigos/odiglet/pkg/kube/instrumentation_ebpf"
+	"github.com/keyval-dev/odigos/odiglet/pkg/kube/runtime_details"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
@@ -47,9 +49,16 @@ func main() {
 
 	go startDeviceManager(clientset)
 
-	ctx, err := kube.StartReconciling(ebpfDirectors)
+	ctx := signals.SetupSignalHandler()
+
+	err = runtime_details.StartReconciling(ctx)
 	if err != nil {
-		log.Logger.Error(err, "Failed to start reconciling")
+		log.Logger.Error(err, "Failed to start runtime details reconciling manager")
+		os.Exit(-1)
+	}
+	err = instrumentation_ebpf.StartReconciling(ctx, ebpfDirectors)
+	if err != nil {
+		log.Logger.Error(err, "Failed to start instrumentation ebpf reconciling manager")
 		os.Exit(-1)
 	}
 
