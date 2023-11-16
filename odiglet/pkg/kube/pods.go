@@ -40,7 +40,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	if !isPodInThisNode(&pod) {
+	if !isPodInCurrentNode(&pod) {
 		return ctrl.Result{}, nil
 	}
 

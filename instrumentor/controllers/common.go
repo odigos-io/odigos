@@ -47,6 +47,15 @@ func setInstrumentationEbpf(obj client.Object) {
 	annotations[consts.EbpfInstrumentationAnnotation] = "true"
 }
 
+func clearInstrumentationEbpf(obj client.Object) {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		return
+	}
+
+	delete(annotations, consts.EbpfInstrumentationAnnotation)
+}
+
 func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	logger := log.FromContext(ctx)
 	var collectorGroups odigosv1.CollectorsGroupList
@@ -117,6 +126,7 @@ func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Cli
 	}
 
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
+		clearInstrumentationEbpf(obj)
 		podSpec, err := getPodSpecFromObject(obj)
 		if err != nil {
 			return err

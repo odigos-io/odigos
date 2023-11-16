@@ -120,7 +120,7 @@ func getRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 
 	var filteredPods []corev1.Pod
 	for _, pod := range podList.Items {
-		if isPodInThisNode(&pod) && pod.Status.Phase == corev1.PodRunning {
+		if isPodInCurrentNode(&pod) && pod.Status.Phase == corev1.PodRunning {
 			filteredPods = append(filteredPods, pod)
 		}
 	}
@@ -132,6 +132,6 @@ func getRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 	return filteredPods, nil
 }
 
-func isPodInThisNode(pod *corev1.Pod) bool {
+func isPodInCurrentNode(pod *corev1.Pod) bool {
 	return pod.Spec.NodeName == env.Current.NodeName
 }
