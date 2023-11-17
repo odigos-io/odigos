@@ -9,7 +9,7 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
-	"github.com/keyval-dev/odigos/instrumentor/patch"
+	"github.com/keyval-dev/odigos/instrumentor/instrumentation"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,7 +55,7 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 			return err
 		}
 
-		return patch.ModifyObject(podSpec, runtimeDetails)
+		return instrumentation.ModifyObject(podSpec, runtimeDetails)
 	})
 
 	if err != nil {
@@ -95,7 +95,7 @@ func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Cli
 			return err
 		}
 
-		patch.Revert(podSpec)
+		instrumentation.Revert(podSpec)
 		return nil
 	})
 
