@@ -24,7 +24,6 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/go-logr/zapr"
-	"github.com/keyval-dev/odigos/instrumentor/patch"
 	bridge "github.com/keyval-dev/opentelemetry-zap-bridge"
 
 	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
@@ -72,7 +71,6 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.Var(&ignoredNameSpaces, "ignore-namespace", "The ignored namespaces")
 	flag.BoolVar(&telemetryDisabled, "telemetry-disabled", false, "Disable telemetry")
-	flag.BoolVar(&patch.GolangSidecarInstrumentation, "golang-sidecar-instrumentation", false, "Instrument Go applications with sidecar")
 
 	opts := ctrlzap.Options{
 		Development: true,
