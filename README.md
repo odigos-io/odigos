@@ -20,6 +20,7 @@
     <a href="https://www.youtube.com/watch?v=nynyV7FC4VI">Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
 
+
 ### ✨ Language Agnostic Auto-instrumentation
 
 Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.  
@@ -29,7 +30,7 @@ Historically, compiled languages like Go have been difficult to instrument witho
 
 
 ### 🤝 Keep your existing observability tools
-Odigos currently supports all the popular managed and open source destinations.  
+Odigos currently supports all the popular managed and open-source destinations.  
 By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigos can be used with any observability tool that supports OTLP.
 
 For a complete list of supported destinations, see [here](#supported-destinations).
@@ -56,7 +57,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ## Supported Destinations
 
-**For step by step instructions detailed for every destination, see these [docs](https://docs.odigos.io/backends).**
+**For step-by-step instructions detailed for every destination, see these [docs](https://docs.odigos.io/backends).**
 
 ### Managed
 
@@ -106,4 +107,4 @@ Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information abou
 
 ## License
 
-This project is licensed under the terms of the Apache 2.0 open source license. Please refer to [LICENSE](LICENSE) for the full terms.
+This project is licensed under the terms of the Apache 2.0 open-source license. Please refer to [LICENSE](LICENSE) for the full terms.
