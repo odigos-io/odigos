@@ -24,7 +24,6 @@ var (
 	versionFlag              string
 	skipWait                 bool
 	telemetryEnabled         bool
-	sidecarInstrumentation   bool
 	psp                      bool
 	ignoredNamespaces        []string
 	DefaultIgnoredNamespaces = []string{"odigos-system", "kube-system", "local-path-storage", "istio-system", "linkerd"}
@@ -129,16 +128,15 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 
 func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
 	return odigosv1.OdigosConfigurationSpec{
-		OdigosVersion:          versionFlag,
-		ConfigVersion:          1, // config version starts at 1 and incremented on every config change
-		TelemetryEnabled:       telemetryEnabled,
-		SidecarInstrumentation: sidecarInstrumentation,
-		IgnoredNamespaces:      ignoredNamespaces,
-		Psp:                    psp,
-		ImagePrefix:            imagePrefix,
-		OdigletImage:           odigletImage,
-		InstrumentorImage:      instrumentorImage,
-		AutoscalerImage:        autoScalerImage,
+		OdigosVersion:     versionFlag,
+		ConfigVersion:     1, // config version starts at 1 and incremented on every config change
+		TelemetryEnabled:  telemetryEnabled,
+		IgnoredNamespaces: ignoredNamespaces,
+		Psp:               psp,
+		ImagePrefix:       imagePrefix,
+		OdigletImage:      odigletImage,
+		InstrumentorImage: instrumentorImage,
+		AutoscalerImage:   autoScalerImage,
 	}
 }
 
@@ -158,7 +156,6 @@ func init() {
 	installCmd.Flags().StringVarP(&odigosCloudApiKeyFlag, "api-key", "k", "", "api key for odigos cloud")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "skip waiting for odigos pods to be ready")
 	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "send general telemetry regarding Odigos usage")
-	installCmd.Flags().BoolVar(&sidecarInstrumentation, "sidecar-instrumentation", false, "use sidecars for eBPF instrumentations")
 	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "keyval/odigos-odiglet", "odiglet container image name")
 	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image name")
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image name")
