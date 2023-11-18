@@ -106,7 +106,7 @@ func (p *PodsReconciler) instrument(ctx context.Context, pod *corev1.Pod) error 
 	}
 
 	for pid, appName := range pids {
-		err = p.Director.Instrument(pid, types.NamespacedName{
+		err = p.Director.Instrument(ctx, pid, types.NamespacedName{
 			Namespace: pod.Namespace,
 			Name:      pod.Name,
 		}, appName)

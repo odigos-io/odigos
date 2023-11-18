@@ -13,6 +13,8 @@ import (
 
 	"go.opentelemetry.io/auto"
 
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -20,7 +22,7 @@ import (
 var ErrProcInstrumented  = errors.New("process already instrumented")
 
 type Director interface {
-	Instrument(pid int, podDetails types.NamespacedName, appName string) error
+	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, appName string) error
 	Cleanup(podDetails types.NamespacedName)
 	Shutdown()
 }
@@ -43,7 +45,7 @@ func NewInstrumentationDirector() (*InstrumentationDirector, error) {
 	}, nil
 }
 
-func (i *InstrumentationDirector) Instrument(pid int, podDetails types.NamespacedName, appName string) error {
+func (i *InstrumentationDirector) Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, appName string) error {
 	log.Logger.V(0).Info("Instrumenting process", "pid", pid)
 	i.mux.Lock()
 	defer i.mux.Unlock()
@@ -52,8 +54,19 @@ func (i *InstrumentationDirector) Instrument(pid int, podDetails types.Namespace
 		return ErrProcInstrumented
 	}
 
+	defaultExporter, err := otlptracegrpc.New(ctx)
+	if err != nil {
+		log.Logger.Error(err, "failed to create exporter")
+		return err
+	}
+
 	go func() {
-		inst, err := auto.NewInstrumentation(auto.WithPID(pid), auto.WithServiceName(appName))
+		inst, err := auto.NewInstrumentation(
+			ctx,
+			auto.WithPID(pid),
+			auto.WithServiceName(appName),
+			auto.WithTraceExporter(defaultExporter),
+		)
 		if err != nil {
 			log.Logger.Error(err, "instrumentation setup failed")
 			return
