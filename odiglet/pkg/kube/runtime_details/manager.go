@@ -12,19 +12,19 @@ import (
 
 func SetupWithManager(mgr ctrl.Manager) error {
 
-	// err := builder.
-	// 	ControllerManagedBy(mgr).
-	// 	For(&appsv1.Deployment{}).
-	// 	Owns(&odigosv1.InstrumentedApplication{}).
-	// 	Complete(&DeploymentsReconciler{
-	// 		Client: mgr.GetClient(),
-	// 		Scheme: mgr.GetScheme(),
-	// 	})
-	// if err != nil {
-	// 	return err
-	// }
-
 	err := builder.
+		ControllerManagedBy(mgr).
+		For(&appsv1.Deployment{}).
+		Owns(&odigosv1.InstrumentedApplication{}).
+		Complete(&DeploymentsReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.StatefulSet{}).
 		Owns(&odigosv1.InstrumentedApplication{}).
