@@ -108,7 +108,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 		}
 
 		for _, d := range details {
-			err = director.Instrument(d.ProcessID, types.NamespacedName{
+			err = director.Instrument(ctx, d.ProcessID, types.NamespacedName{
 				Namespace: pod.Namespace,
 				Name:      pod.Name,
 			}, appName)
