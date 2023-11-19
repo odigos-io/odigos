@@ -3,7 +3,6 @@ package ebpf
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/keyval-dev/odigos/common"
@@ -11,6 +10,7 @@ import (
 	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/consts"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	"go.opentelemetry.io/auto"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -21,11 +21,6 @@ type InstrumentationDirectorGo struct {
 }
 
 func NewInstrumentationDirectorGo() (Director, error) {
-	err := os.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPPort))
-	if err != nil {
-		return nil, err
-	}
-
 	return &InstrumentationDirectorGo{
 		pidsToInstrumentation: make(map[int]*auto.Instrumentation),
 		podDetailsToPids:      make(map[types.NamespacedName][]int),
@@ -36,7 +31,7 @@ func (i *InstrumentationDirectorGo) Language() common.ProgrammingLanguage {
 	return common.GoProgrammingLanguage
 }
 
-func (i *InstrumentationDirectorGo) Instrument(pid int, podDetails types.NamespacedName, appName string) error {
+func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, appName string) error {
 	log.Logger.V(0).Info("Instrumenting process", "pid", pid)
 	i.mux.Lock()
 	defer i.mux.Unlock()
@@ -45,8 +40,23 @@ func (i *InstrumentationDirectorGo) Instrument(pid int, podDetails types.Namespa
 		return ErrProcInstrumented
 	}
 
+	defaultExporter, err := otlptracegrpc.New(
+		ctx,
+		otlptracegrpc.WithInsecure(),
+		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:%d", env.Current.NodeIP, consts.OTLPPort)),
+	)
+	if err != nil {
+		log.Logger.Error(err, "failed to create exporter")
+		return err
+	}
+
 	go func() {
-		inst, err := auto.NewInstrumentation(auto.WithPID(pid), auto.WithServiceName(appName))
+		inst, err := auto.NewInstrumentation(
+			ctx,
+			auto.WithPID(pid),
+			auto.WithServiceName(appName),
+			auto.WithTraceExporter(defaultExporter),
+		)
 		if err != nil {
 			log.Logger.Error(err, "instrumentation setup failed")
 			return

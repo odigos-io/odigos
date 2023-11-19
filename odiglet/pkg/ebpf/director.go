@@ -1,6 +1,7 @@
 package ebpf
 
 import (
+	"context"
 	"errors"
 
 	"github.com/keyval-dev/odigos/common"
@@ -11,7 +12,7 @@ var ErrProcInstrumented = errors.New("process already instrumented")
 
 type Director interface {
 	Language() common.ProgrammingLanguage
-	Instrument(pid int, podDetails types.NamespacedName, appName string) error
+	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, appName string) error
 	Cleanup(podDetails types.NamespacedName)
 	Shutdown()
 }
