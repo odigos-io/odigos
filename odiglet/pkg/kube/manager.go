@@ -6,6 +6,7 @@ import (
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
 	"github.com/keyval-dev/odigos/odiglet/pkg/kube/instrumentation_ebpf"
+	"github.com/keyval-dev/odigos/odiglet/pkg/kube/runtime_details"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -40,10 +41,10 @@ func StartReconciling(ctx context.Context, ebpfDirectors map[common.ProgrammingL
 		return err
 	}
 
-	// err = runtime_details.SetupWithManager(mgr)
-	// if err != nil {
-	// 	return err
-	// }
+	err = runtime_details.SetupWithManager(mgr)
+	if err != nil {
+		return err
+	}
 
 	err = instrumentation_ebpf.SetupWithManager(mgr, ebpfDirectors)
 	if err != nil {

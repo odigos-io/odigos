@@ -8,6 +8,7 @@ import (
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
@@ -36,21 +37,22 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLang
 
 	log.Logger.V(0).Info("Starting reconcileres for ebpf instrumentation")
 
-	// err := builder.
-	// 	ControllerManagedBy(mgr).
-	// 	For(&corev1.Pod{}).
-	// 	Complete(&PodsReconciler{
-	// 		Client:    mgr.GetClient(),
-	// 		Scheme:    mgr.GetScheme(),
-	// 		Directors: ebpfDirectors,
-	// 	})
-	// if err != nil {
-	// 	return err
-	// }
-
 	err := builder.
 		ControllerManagedBy(mgr).
+		For(&corev1.Pod{}).
+		Complete(&PodsReconciler{
+			Client:    mgr.GetClient(),
+			Scheme:    mgr.GetScheme(),
+			Directors: ebpfDirectors,
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		ControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
+		// WithEventFilter(&EbpfInstrumentationPredicate{}).
 		Complete(&DeploymentsReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
@@ -60,31 +62,31 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLang
 		return err
 	}
 
-	// err = builder.
-	// 	ControllerManagedBy(mgr).
-	// 	For(&appsv1.DaemonSet{}).
-	// 	// WithEventFilter(&EbpfInstrumentationPredicate{}).
-	// 	Complete(&DaemonSetsReconciler{
-	// 		Client:    mgr.GetClient(),
-	// 		Scheme:    mgr.GetScheme(),
-	// 		Directors: ebpfDirectors,
-	// 	})
-	// if err != nil {
-	// 	return err
-	// }
+	err = builder.
+		ControllerManagedBy(mgr).
+		For(&appsv1.DaemonSet{}).
+		// WithEventFilter(&EbpfInstrumentationPredicate{}).
+		Complete(&DaemonSetsReconciler{
+			Client:    mgr.GetClient(),
+			Scheme:    mgr.GetScheme(),
+			Directors: ebpfDirectors,
+		})
+	if err != nil {
+		return err
+	}
 
-	// err = builder.
-	// 	ControllerManagedBy(mgr).
-	// 	For(&appsv1.StatefulSet{}).
-	// 	// WithEventFilter(&EbpfInstrumentationPredicate{}).
-	// 	Complete(&StatefulSetsReconciler{
-	// 		Client:    mgr.GetClient(),
-	// 		Scheme:    mgr.GetScheme(),
-	// 		Directors: ebpfDirectors,
-	// 	})
-	// if err != nil {
-	// 	return err
-	// }
+	err = builder.
+		ControllerManagedBy(mgr).
+		For(&appsv1.StatefulSet{}).
+		// WithEventFilter(&EbpfInstrumentationPredicate{}).
+		Complete(&StatefulSetsReconciler{
+			Client:    mgr.GetClient(),
+			Scheme:    mgr.GetScheme(),
+			Directors: ebpfDirectors,
+		})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
