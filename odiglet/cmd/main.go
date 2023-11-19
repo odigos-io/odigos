@@ -13,6 +13,7 @@ import (
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
@@ -47,9 +48,11 @@ func main() {
 
 	go startDeviceManager(clientset)
 
-	ctx, err := kube.StartReconciling(ebpfDirectors)
+	ctx := signals.SetupSignalHandler()
+
+	err = kube.StartReconciling(ctx, ebpfDirectors)
 	if err != nil {
-		log.Logger.Error(err, "Failed to start reconciling")
+		log.Logger.Error(err, "Failed to start controller-runtime manager")
 		os.Exit(-1)
 	}
 
