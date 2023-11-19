@@ -7,7 +7,7 @@ import (
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
-	"github.com/keyval-dev/odigos/odiglet/pkg/kube"
+	kubeutils "github.com/keyval-dev/odigos/odiglet/pkg/kube/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -37,7 +37,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	if !kube.IsPodInCurrentNode(&pod) {
+	if !kubeutils.IsPodInCurrentNode(&pod) {
 		return ctrl.Result{}, nil
 	}
 

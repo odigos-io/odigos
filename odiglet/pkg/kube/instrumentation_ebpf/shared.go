@@ -8,7 +8,7 @@ import (
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
-	"github.com/keyval-dev/odigos/odiglet/pkg/kube"
+	kubeutils "github.com/keyval-dev/odigos/odiglet/pkg/kube/utils"
 	"github.com/keyval-dev/odigos/odiglet/pkg/process"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -46,7 +46,7 @@ func ApplyEbpfToPodWorkload(ctx context.Context, kubeClient client.Client, direc
 		return nil
 	}
 
-	pods, err := kube.GetRunningPods(ctx, matchLabels, podWorkload.Namespace, kubeClient)
+	pods, err := kubeutils.GetRunningPods(ctx, matchLabels, podWorkload.Namespace, kubeClient)
 	if err != nil {
 		logger.Error(err, "error fetching running pods")
 		return err

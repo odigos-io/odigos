@@ -45,20 +45,20 @@ func (i *InstrumentationDirectorGo) Instrument(pid int, podDetails types.Namespa
 		return nil
 	}
 
-	go func() {
-		inst, err := auto.NewInstrumentation(auto.WithPID(pid), auto.WithServiceName(appName))
-		if err != nil {
-			log.Logger.Error(err, "instrumentation setup failed")
-			return
-		}
+	// go func() {
+	inst, err := auto.NewInstrumentation(auto.WithPID(pid), auto.WithServiceName(appName))
+	if err != nil {
+		log.Logger.Error(err, "instrumentation setup failed")
+		return nil
+	}
 
-		i.pidsToInstrumentation[pid] = inst
-		i.podDetailsToPids[podDetails] = append(i.podDetailsToPids[podDetails], pid)
+	i.pidsToInstrumentation[pid] = inst
+	i.podDetailsToPids[podDetails] = append(i.podDetailsToPids[podDetails], pid)
 
-		if err := inst.Run(context.Background()); err != nil {
-			log.Logger.Error(err, "instrumentation crashed after running")
-		}
-	}()
+	if err := inst.Run(context.Background()); err != nil {
+		log.Logger.Error(err, "instrumentation crashed after running")
+	}
+	// }()
 
 	return nil
 }

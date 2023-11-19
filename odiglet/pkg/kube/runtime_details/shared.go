@@ -9,7 +9,7 @@ import (
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/odiglet/pkg/inspectors"
-	"github.com/keyval-dev/odigos/odiglet/pkg/kube"
+	kubeutils "github.com/keyval-dev/odigos/odiglet/pkg/kube/utils"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	"github.com/keyval-dev/odigos/odiglet/pkg/process"
 	corev1 "k8s.io/api/core/v1"
@@ -22,7 +22,7 @@ import (
 
 func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labels map[string]string,
 	kubeClient client.Client, scheme *runtime.Scheme, object client.Object) (ctrl.Result, error) {
-	pods, err := kube.GetRunningPods(ctx, labels, object.GetNamespace(), kubeClient)
+	pods, err := kubeutils.GetRunningPods(ctx, labels, object.GetNamespace(), kubeClient)
 	if err != nil {
 		logger.Error(err, "error fetching running pods")
 		return ctrl.Result{}, err

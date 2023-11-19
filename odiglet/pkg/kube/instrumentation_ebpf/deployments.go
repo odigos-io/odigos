@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type DeploymentsReconciler struct {
@@ -17,6 +18,8 @@ type DeploymentsReconciler struct {
 }
 
 func (d *DeploymentsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+	logger.Info("reconciling deployment", "name", request.Name, "namespace", request.Namespace)
 	err := ApplyEbpfToPodWorkload(ctx, d.Client, d.Directors, &PodWorkload{
 		Name:      request.Name,
 		Namespace: request.Namespace,
