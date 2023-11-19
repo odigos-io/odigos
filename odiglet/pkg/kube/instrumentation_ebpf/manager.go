@@ -13,23 +13,58 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
-type EbpfInstrumentationPredicate struct {
+type podPredicate struct {
 	predicate.Funcs
 }
 
-func (i *EbpfInstrumentationPredicate) Create(e event.CreateEvent) bool {
+func (i *podPredicate) Create(e event.CreateEvent) bool {
+	// when it is created, it is not running yet
+	return false
+}
+
+func (i *podPredicate) Update(e event.UpdateEvent) bool {
+	// Cast old and new objects to *corev1.Pod
+	oldPod, oldOk := e.ObjectOld.(*corev1.Pod)
+	newPod, newOk := e.ObjectNew.(*corev1.Pod)
+
+	// Check if both old and new objects are Pods
+	if !oldOk || !newOk {
+		return false
+	}
+
+	// Check if the Pod status has changed from not running to running
+	if oldPod.Status.Phase != corev1.PodRunning && newPod.Status.Phase == corev1.PodRunning {
+		return true
+	}
+
+	return false
+}
+
+func (i *podPredicate) Delete(e event.DeleteEvent) bool {
 	return true
 }
 
-func (i *EbpfInstrumentationPredicate) Update(e event.UpdateEvent) bool {
+func (i *podPredicate) Generic(e event.GenericEvent) bool {
+	return false
+}
+
+type workloadPredicate struct {
+	predicate.Funcs
+}
+
+func (i *workloadPredicate) Create(e event.CreateEvent) bool {
+	return true
+}
+
+func (i *workloadPredicate) Update(e event.UpdateEvent) bool {
 	return hasEbpfInstrumentationAnnotation(e.ObjectNew) != hasEbpfInstrumentationAnnotation(e.ObjectOld)
 }
 
-func (i *EbpfInstrumentationPredicate) Delete(e event.DeleteEvent) bool {
+func (i *workloadPredicate) Delete(e event.DeleteEvent) bool {
 	return true
 }
 
-func (i *EbpfInstrumentationPredicate) Generic(e event.GenericEvent) bool {
+func (i *workloadPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
@@ -40,6 +75,7 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLang
 	err := builder.
 		ControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
+		WithEventFilter(&podPredicate{}).
 		Complete(&PodsReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
@@ -52,7 +88,7 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLang
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
-		WithEventFilter(&EbpfInstrumentationPredicate{}).
+		WithEventFilter(&workloadPredicate{}).
 		Complete(&DeploymentsReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
@@ -65,7 +101,7 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLang
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.DaemonSet{}).
-		WithEventFilter(&EbpfInstrumentationPredicate{}).
+		WithEventFilter(&workloadPredicate{}).
 		Complete(&DaemonSetsReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
@@ -78,7 +114,7 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLang
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.StatefulSet{}).
-		WithEventFilter(&EbpfInstrumentationPredicate{}).
+		WithEventFilter(&workloadPredicate{}).
 		Complete(&StatefulSetsReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),

@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
 	kubeutils "github.com/keyval-dev/odigos/odiglet/pkg/kube/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -57,12 +56,12 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	ebpfInstrumented, _, err := isEbpfInstrumented(ctx, p.Client, podWorkload)
+	shouldBeEbpfInstrumented, _, err := isEbpfInstrumented(ctx, p.Client, podWorkload)
 	if err != nil {
-		logger.Error(err, "error checking if pod is ebpf instrumented")
+		logger.Error(err, "error checking if pod should be ebpf instrumented")
 		return ctrl.Result{}, err
 	}
-	if !ebpfInstrumented {
+	if !shouldBeEbpfInstrumented {
 		cleanupEbpf(p.Directors, request.NamespacedName)
 		return ctrl.Result{}, nil
 	}
@@ -127,18 +126,4 @@ func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.P
 
 	// Pod does not necessarily have to be managed by a controller
 	return nil, nil
-}
-
-func hasEbpfInstrumentationAnnotation(obj client.Object) bool {
-	if obj == nil {
-		return false
-	}
-
-	annotations := obj.GetAnnotations()
-	if annotations == nil {
-		return false
-	}
-
-	_, exists := annotations[consts.EbpfInstrumentationAnnotation]
-	return exists
 }
