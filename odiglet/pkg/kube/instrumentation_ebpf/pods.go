@@ -142,15 +142,3 @@ func hasEbpfInstrumentationAnnotation(obj client.Object) bool {
 	_, exists := annotations[consts.EbpfInstrumentationAnnotation]
 	return exists
 }
-
-// / hasInstrumentationDevice returns true if the pod has go instrumentation device attached.
-func hasInstrumentationDevice(pod *corev1.Pod) bool {
-	for _, c := range pod.Spec.Containers {
-		if c.Resources.Limits != nil {
-			_, exists := c.Resources.Limits[corev1.ResourceName("instrumentation.odigos.io/go")]
-			return exists
-		}
-	}
-
-	return false
-}

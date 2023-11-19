@@ -18,9 +18,6 @@ type DeploymentsReconciler struct {
 
 func (d *DeploymentsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-
-	logger.Info("AMIR DEBUG TEMP -------------- reconciling runtime_details deployment")
-
 	var dep appsv1.Deployment
 	err := d.Client.Get(ctx, request.NamespacedName, &dep)
 	if err != nil {

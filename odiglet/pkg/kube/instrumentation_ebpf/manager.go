@@ -52,7 +52,7 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLang
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
-		// WithEventFilter(&EbpfInstrumentationPredicate{}).
+		WithEventFilter(&EbpfInstrumentationPredicate{}).
 		Complete(&DeploymentsReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
@@ -65,7 +65,7 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLang
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.DaemonSet{}).
-		// WithEventFilter(&EbpfInstrumentationPredicate{}).
+		WithEventFilter(&EbpfInstrumentationPredicate{}).
 		Complete(&DaemonSetsReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
@@ -78,7 +78,7 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLang
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.StatefulSet{}).
-		// WithEventFilter(&EbpfInstrumentationPredicate{}).
+		WithEventFilter(&EbpfInstrumentationPredicate{}).
 		Complete(&StatefulSetsReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
