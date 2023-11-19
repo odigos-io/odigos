@@ -3,7 +3,6 @@ package ebpf
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/keyval-dev/odigos/common"
@@ -22,11 +21,6 @@ type InstrumentationDirectorGo struct {
 }
 
 func NewInstrumentationDirectorGo() (Director, error) {
-	err := os.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPPort))
-	if err != nil {
-		return nil, err
-	}
-
 	return &InstrumentationDirectorGo{
 		pidsToInstrumentation: make(map[int]*auto.Instrumentation),
 		podDetailsToPids:      make(map[types.NamespacedName][]int),
@@ -46,7 +40,11 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 		return ErrProcInstrumented
 	}
 
-	defaultExporter, err := otlptracegrpc.New(ctx)
+	defaultExporter, err := otlptracegrpc.New(
+		ctx,
+		otlptracegrpc.WithInsecure(),
+		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:%d", env.Current.NodeIP, consts.OTLPPort)),
+	)
 	if err != nil {
 		log.Logger.Error(err, "failed to create exporter")
 		return err
