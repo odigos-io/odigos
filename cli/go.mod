@@ -3,7 +3,7 @@ module github.com/keyval-dev/odigos/cli
 go 1.21
 
 require (
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.4.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/keyval-dev/odigos/api v0.0.0
 	github.com/keyval-dev/odigos/autoscaler v0.0.0-20231024064022-f17866aff102
