@@ -8,6 +8,9 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+      - name: install controller-gen
+        working-directory: ./api
+        run: "make controller-gen"
       - name: Check API CRDs
         working-directory: ./api
         run: "make generate"
