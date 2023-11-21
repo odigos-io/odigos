@@ -3,18 +3,18 @@ on:
   pull_request:
 
 jobs:
-    generate-proto:
-        runs-on: ubuntu-latest
-        steps:
-        - name: Checkout Repo
-          uses: actions/checkout@v4
-        - name: Check Protos Generate
-          working-directory: ./api
-          run: 'make generate && make manifests'
-        - name: Verify Generate
-          working-directory: ./api
-          run: |
-            if [[ $(git diff --exit-code) ]]; then
-              echo "api CRDs are not up to date. Please run 'make generate && make manifests' and commit the changes."
-              exit 1
-            fi
+  generate-proto:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Check Protos Generate
+        working-directory: ./api
+        run: "make generate && make manifests"
+      - name: Verify Generate
+        working-directory: ./api
+        run: |
+          if [[ $(git diff --exit-code) ]]; then
+            echo "api CRDs are not up to date. Please run 'make generate && make manifests' and commit the changes."
+            exit 1
+          fi
