@@ -28,8 +28,6 @@ type InstrumentationDirectorGo struct {
 	pidsAttemptedInstrumentation map[int]struct{}
 
 	podDetailsToPids map[types.NamespacedName][]int
-
-	workloadToPodDetails map[common.PodWorkload]types.NamespacedName
 }
 
 func NewInstrumentationDirectorGo() (Director, error) {
@@ -37,7 +35,6 @@ func NewInstrumentationDirectorGo() (Director, error) {
 		pidsToInstrumentation:        make(map[int]*auto.Instrumentation),
 		pidsAttemptedInstrumentation: make(map[int]struct{}),
 		podDetailsToPids:             make(map[types.NamespacedName][]int),
-		workloadToPodDetails:         make(map[common.PodWorkload]types.NamespacedName),
 	}, nil
 }
 
@@ -54,7 +51,6 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 		return nil
 	}
 	i.podDetailsToPids[podDetails] = append(i.podDetailsToPids[podDetails], pid)
-	i.workloadToPodDetails[podWorkload] = podDetails
 	i.pidsAttemptedInstrumentation[pid] = struct{}{}
 
 	defaultExporter, err := otlptracegrpc.New(
@@ -103,11 +99,6 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 	return nil
 }
 
-func (i *InstrumentationDirectorGo) GetPodFromWorkload(podWorkload common.PodWorkload) (types.NamespacedName, bool) {
-	podDetails, ok := i.workloadToPodDetails[podWorkload]
-	return podDetails, ok
-}
-
 func (i *InstrumentationDirectorGo) Cleanup(podDetails types.NamespacedName) {
 	i.mux.Lock()
 	defer i.mux.Unlock()
@@ -119,12 +110,6 @@ func (i *InstrumentationDirectorGo) Cleanup(podDetails types.NamespacedName) {
 
 	log.Logger.V(0).Info("Cleaning up ebpf go instrumentation for pod", "pod", podDetails)
 	delete(i.podDetailsToPids, podDetails)
-	for workload, podDetails := range i.workloadToPodDetails {
-		if podDetails == podDetails {
-			delete(i.workloadToPodDetails, workload)
-			break
-		}
-	}
 
 	for _, pid := range pids {
 		delete(i.pidsAttemptedInstrumentation, pid)
