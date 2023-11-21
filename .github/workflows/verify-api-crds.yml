@@ -8,7 +8,7 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-      - name: Check Protos Generate
+      - name: Check API CRDs
         working-directory: ./api
         run: "make generate && make manifests"
       - name: Verify Generate
