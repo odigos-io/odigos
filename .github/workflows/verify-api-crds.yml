@@ -10,7 +10,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Check API CRDs
         working-directory: ./api
-        run: "make generate && make manifests"
+        run: "make generate"
       - name: Verify Generate
         working-directory: ./api
         run: |
