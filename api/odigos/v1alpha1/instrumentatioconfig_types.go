@@ -7,21 +7,24 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// InstrumentationOption is the Schema for the instrumentationoptions API
-type InstrumentationOption struct {
+// InstrumentationConfig is the Schema for the instrumentationconfig API
+type InstrumentationConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   InstrumentationOptionSpec   `json:"spec,omitempty"`
-	Status InstrumentationOptionStatus `json:"status,omitempty"`
+	Spec InstrumentationConfigSpec `json:"spec,omitempty"`
 }
 
-// InstrumentationOptionSpec defines the desired state of InstrumentationOption
+// InstrumentationConfigSpec defines the desired state of InstrumentationConfig
 // Each field in the struct will be converted to an OpenAPI v3 schema
 // with the comments used as the description.
-type InstrumentationOptionSpec struct {
-	// OptionName is the name of the option
-	OptionName string `json:"optionName"`
+type InstrumentationConfigSpec struct {
+
+	// free text description of the instrumentation config for humans
+	Name string `json:"name,omitempty"`
+
+	// OptionKey is the name of the option
+	OptionKey string `json:"optionKey"`
 
 	// OptionValueBoolean is the boolean value of the option
 	OptionValueBoolean bool `json:"optionValueBoolean,omitempty"`
@@ -35,7 +38,7 @@ type InstrumentationOptionSpec struct {
 	InstrumentationLibraries []InstrumentationLibrary `json:"instrumentationLibraries"`
 
 	// Filters define how to apply the instrumentation options
-	Filters []InstrumentationOptionFilter `json:"filters,omitempty"`
+	Filters []InstrumentationConfigFilter `json:"filters,omitempty"`
 }
 
 type Workload struct {
@@ -59,8 +62,8 @@ type InstrumentationLibrary struct {
 	InstrumentationLibraryName string `json:"instrumentationLibraryName"`
 }
 
-// InstrumentationOptionFilter defines a filter for applying instrumentation options
-type InstrumentationOptionFilter struct {
+// InstrumentationConfigFilter defines a filter for applying instrumentation options
+type InstrumentationConfigFilter struct {
 	// Key is the attribute key to filter (e.g., 'http.route', 'url.path')
 	Key string `json:"key"`
 
@@ -71,20 +74,15 @@ type InstrumentationOptionFilter struct {
 	MatchValue string `json:"matchValue"`
 }
 
-// InstrumentationOptionStatus defines the observed state of InstrumentationOption
-type InstrumentationOptionStatus struct {
-	// Status fields should be added here
-}
-
 // +kubebuilder:object:root=true
 
-// InstrumentationOptionList contains a list of InstrumentationOption
-type InstrumentationOptionList struct {
+// InstrumentationConfigList contains a list of InstrumentationOption
+type InstrumentationConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []InstrumentationOption `json:"items"`
+	Items           []InstrumentationConfig `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&InstrumentationOption{}, &InstrumentationOptionList{})
+	SchemeBuilder.Register(&InstrumentationConfig{}, &InstrumentationConfigList{})
 }
