@@ -110,7 +110,7 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 		crds.NewConfiguration(),
 		crds.NewDestination(),
 		crds.NewInstrumentedApp(),
-		crds.NewInstrumentationOption(),
+		crds.NewInstrumentationConfig(),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
