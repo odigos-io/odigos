@@ -3,7 +3,7 @@ on:
   pull_request:
 
 jobs:
-  generate-proto:
+  verify-api-crds:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
