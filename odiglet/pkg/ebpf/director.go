@@ -9,7 +9,8 @@ import (
 
 type Director interface {
 	Language() common.ProgrammingLanguage
-	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, appName string) error
+	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload common.PodWorkload, appName string) error
+	GetPodFromWorkload(podWorkload common.PodWorkload) (types.NamespacedName, bool)
 	Cleanup(podDetails types.NamespacedName)
 	Shutdown()
 }
