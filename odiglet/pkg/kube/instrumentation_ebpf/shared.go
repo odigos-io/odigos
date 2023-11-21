@@ -18,19 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
-// It contains essential details about the controller such as its Name, Namespace, and Kind.
-// 'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
-// This struct is useful for identifying and interacting with the overarching entity
-// that governs the lifecycle and behavior of a Pod, especially in contexts where
-// understanding the relationship between a Pod and its controlling workload is crucial.
-type PodWorkload struct {
-	Name      string
-	Namespace string
-	Kind      string
-}
-
-func ApplyEbpfToPodWorkload(ctx context.Context, kubeClient client.Client, directors map[common.ProgrammingLanguage]ebpf.Director, podWorkload *PodWorkload) error {
+func ApplyEbpfToPodWorkload(ctx context.Context, kubeClient client.Client, directors map[common.ProgrammingLanguage]ebpf.Director, podWorkload *common.PodWorkload) error {
 	logger := log.FromContext(ctx)
 	ebpfInstrumented, matchLabels, err := isEbpfInstrumented(ctx, kubeClient, podWorkload)
 	if err != nil {
@@ -89,6 +77,12 @@ func cleanupEbpf(directors map[common.ProgrammingLanguage]ebpf.Director, name ty
 func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[common.ProgrammingLanguage]ebpf.Director, runtimeDetails *odigosv1.InstrumentedApplication) error {
 	logger := log.FromContext(ctx)
 	podUid := string(pod.UID)
+	podWorkload := common.PodWorkload{
+		Name:      runtimeDetails.Name,
+		Namespace: runtimeDetails.Namespace,
+		Kind:      runtimeDetails.Kind,
+	}
+
 	for _, container := range runtimeDetails.Spec.Languages {
 
 		director := directors[container.Language]
@@ -108,10 +102,11 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 		}
 
 		for _, d := range details {
-			err = director.Instrument(ctx, d.ProcessID, types.NamespacedName{
+			podDetails := types.NamespacedName{
 				Namespace: pod.Namespace,
 				Name:      pod.Name,
-			}, appName)
+			}
+			err = director.Instrument(ctx, d.ProcessID, podDetails, podWorkload, appName)
 
 			if err != nil {
 				logger.Error(err, "error instrumenting process", "pid", d.ProcessID)
@@ -122,7 +117,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 	return nil
 }
 
-func isEbpfInstrumented(ctx context.Context, kubeClient client.Client, podWorkload *PodWorkload) (bool, map[string]string, error) {
+func isEbpfInstrumented(ctx context.Context, kubeClient client.Client, podWorkload *common.PodWorkload) (bool, map[string]string, error) {
 	// TODO: this is better done with a dynamic client
 	switch podWorkload.Kind {
 	case "Deployment":
@@ -151,7 +146,7 @@ func isEbpfInstrumented(ctx context.Context, kubeClient client.Client, podWorklo
 	}
 }
 
-func getRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *PodWorkload) (*odigosv1.InstrumentedApplication, error) {
+func getRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *common.PodWorkload) (*odigosv1.InstrumentedApplication, error) {
 	instrumentedApplicationName := utils.GetRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
 
 	var runtimeDetails odigosv1.InstrumentedApplication

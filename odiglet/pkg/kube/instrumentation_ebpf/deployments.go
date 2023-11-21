@@ -17,7 +17,7 @@ type DeploymentsReconciler struct {
 }
 
 func (d *DeploymentsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
-	err := ApplyEbpfToPodWorkload(ctx, d.Client, d.Directors, &PodWorkload{
+	err := ApplyEbpfToPodWorkload(ctx, d.Client, d.Directors, &common.PodWorkload{
 		Name:      request.Name,
 		Namespace: request.Namespace,
 		Kind:      "Deployment",

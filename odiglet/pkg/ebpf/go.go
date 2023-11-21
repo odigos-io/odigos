@@ -42,7 +42,7 @@ func (i *InstrumentationDirectorGo) Language() common.ProgrammingLanguage {
 	return common.GoProgrammingLanguage
 }
 
-func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, appName string) error {
+func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload common.PodWorkload, appName string) error {
 	log.Logger.V(0).Info("Instrumenting process", "pid", pid)
 	i.mux.Lock()
 	defer i.mux.Unlock()
@@ -110,6 +110,7 @@ func (i *InstrumentationDirectorGo) Cleanup(podDetails types.NamespacedName) {
 
 	log.Logger.V(0).Info("Cleaning up ebpf go instrumentation for pod", "pod", podDetails)
 	delete(i.podDetailsToPids, podDetails)
+
 	for _, pid := range pids {
 		delete(i.pidsAttemptedInstrumentation, pid)
 
@@ -134,4 +135,11 @@ func (i *InstrumentationDirectorGo) Shutdown() {
 	for details := range i.podDetailsToPids {
 		i.Cleanup(details)
 	}
+}
+
+func (i *InstrumentationDirectorGo) GetInstrumentation(pid int) (*auto.Instrumentation, bool) {
+	i.mux.Lock()
+	defer i.mux.Unlock()
+	inst, ok := i.pidsToInstrumentation[pid]
+	return inst, ok
 }
