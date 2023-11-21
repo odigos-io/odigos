@@ -28,7 +28,11 @@ func init() {
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
 }
 
-func StartReconciling(ctx context.Context, ebpfDirectors map[common.ProgrammingLanguage]ebpf.Director) error {
+type Reconciler interface {
+	SetupWithManager(mgr ctrl.Manager) error
+}
+
+func StartReconciling(ctx context.Context, ebpfDirectors map[common.ProgrammingLanguage]ebpf.Director, extraReconcilers []Reconciler) error {
 	log.Logger.V(0).Info("Starting reconcileres for runtime details")
 	ctrl.SetLogger(log.Logger)
 	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{
@@ -49,6 +53,13 @@ func StartReconciling(ctx context.Context, ebpfDirectors map[common.ProgrammingL
 	err = instrumentation_ebpf.SetupWithManager(mgr, ebpfDirectors)
 	if err != nil {
 		return err
+	}
+
+	for _, reconciler := range extraReconcilers {
+		err = reconciler.SetupWithManager(mgr)
+		if err != nil {
+			return err
+		}
 	}
 
 	go func() {

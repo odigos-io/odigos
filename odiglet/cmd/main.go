@@ -50,7 +50,7 @@ func main() {
 
 	ctx := signals.SetupSignalHandler()
 
-	err = kube.StartReconciling(ctx, ebpfDirectors)
+	err = kube.StartReconciling(ctx, ebpfDirectors, []kube.Reconciler{})
 	if err != nil {
 		log.Logger.Error(err, "Failed to start controller-runtime manager")
 		os.Exit(-1)
