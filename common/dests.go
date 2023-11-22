@@ -29,4 +29,5 @@ const (
 	ChronosphereDestinationType  DestinationType = "chronosphere"
 	ElasticAPMDestinationType    DestinationType = "elasticapm"
 	AxiomDestinationType         DestinationType = "axiom"
+	SumoLogicDestinationType     DestinationType = "sumologic"
 )
