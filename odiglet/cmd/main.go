@@ -48,9 +48,20 @@ func main() {
 
 	go startDeviceManager(clientset)
 
-	ctx := signals.SetupSignalHandler()
+	mgr, err := kube.CreateManager()
+	if err != nil {
+		log.Logger.Error(err, "Failed to create controller-runtime manager")
+		os.Exit(-1)
+	}
 
-	err = kube.StartReconciling(ctx, ebpfDirectors)
+	err = kube.SetupWithManager(mgr, ebpfDirectors)
+	if err != nil {
+		log.Logger.Error(err, "Failed to setup controller-runtime manager")
+		os.Exit(-1)
+	}
+
+	ctx := signals.SetupSignalHandler()
+	err = kube.StartManager(ctx, mgr)
 	if err != nil {
 		log.Logger.Error(err, "Failed to start controller-runtime manager")
 		os.Exit(-1)
