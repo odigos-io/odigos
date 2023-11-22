@@ -28,20 +28,30 @@ func init() {
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
 }
 
-func StartReconciling(ctx context.Context, ebpfDirectors map[common.ProgrammingLanguage]ebpf.Director) error {
+func CreateManager() (ctrl.Manager, error) {
 	log.Logger.V(0).Info("Starting reconcileres for runtime details")
 	ctrl.SetLogger(log.Logger)
-	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{
+	return manager.New(config.GetConfigOrDie(), manager.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: "0",
 		},
 	})
-	if err != nil {
-		return err
-	}
+}
 
-	err = runtime_details.SetupWithManager(mgr)
+func StartManager(ctx context.Context, mgr ctrl.Manager) error {
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			log.Logger.Error(err, "error starting kube manager")
+		}
+	}()
+
+	return nil
+}
+
+func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLanguage]ebpf.Director) error {
+	err := runtime_details.SetupWithManager(mgr)
 	if err != nil {
 		return err
 	}
@@ -50,13 +60,6 @@ func StartReconciling(ctx context.Context, ebpfDirectors map[common.ProgrammingL
 	if err != nil {
 		return err
 	}
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			log.Logger.Error(err, "error starting kube manager")
-		}
-	}()
 
 	return nil
 }

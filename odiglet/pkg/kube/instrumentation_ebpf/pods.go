@@ -77,7 +77,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	return ctrl.Result{}, nil
 }
 
-func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod, podWorkload *PodWorkload) error {
+func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod, podWorkload *common.PodWorkload) error {
 	runtimeDetails, err := getRuntimeDetails(ctx, p.Client, podWorkload)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -90,7 +90,7 @@ func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod
 	return instrumentPodWithEbpf(ctx, pod, p.Directors, runtimeDetails)
 }
 
-func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*PodWorkload, error) {
+func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*common.PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
 		if owner.Kind == "ReplicaSet" {
 			var rs appsv1.ReplicaSet
@@ -108,7 +108,7 @@ func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.P
 
 			for _, rsOwner := range rs.OwnerReferences {
 				if rsOwner.Kind == "Deployment" || rsOwner.Kind == "DaemonSet" || rsOwner.Kind == "StatefulSet" {
-					return &PodWorkload{
+					return &common.PodWorkload{
 						Name:      rsOwner.Name,
 						Namespace: pod.Namespace,
 						Kind:      rsOwner.Kind,
@@ -116,7 +116,7 @@ func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.P
 				}
 			}
 		} else if owner.Kind == "DaemonSet" || owner.Kind == "Deployment" || owner.Kind == "StatefulSet" {
-			return &PodWorkload{
+			return &common.PodWorkload{
 				Name:      owner.Name,
 				Namespace: pod.Namespace,
 				Kind:      owner.Kind,
