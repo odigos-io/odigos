@@ -61,6 +61,12 @@ spec:
                           language:
                             description: Language is the programming language of the
                               library
+                            enum:
+                            - java
+                            - python
+                            - go
+                            - dotnet
+                            - javascript
                             type: string
                         required:
                         - instrumentationLibraryName

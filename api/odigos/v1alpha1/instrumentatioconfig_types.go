@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/keyval-dev/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,7 +45,7 @@ type WorkloadInstrumentationConfig struct {
 // InstrumentationLibrary represents a library for instrumentation
 type InstrumentationLibrary struct {
 	// Language is the programming language of the library
-	Language string `json:"language"`
+	Language common.ProgrammingLanguage `json:"language"`
 
 	// InstrumentationLibraryName is the name of the instrumentation library
 	InstrumentationLibraryName string `json:"instrumentationLibraryName"`
