@@ -71,6 +71,9 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 	}
 	details.Pids = append(details.Pids, pid)
 	i.pidsAttemptedInstrumentation[pid] = struct{}{}
+	if _, exists := i.workloadToPods[podWorkload]; !exists {
+		i.workloadToPods[podWorkload] = make(map[types.NamespacedName]struct{})
+	}
 	i.workloadToPods[podWorkload][pod] = struct{}{}
 
 	defaultExporter, err := otlptracegrpc.New(
