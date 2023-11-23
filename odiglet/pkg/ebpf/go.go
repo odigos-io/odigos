@@ -45,6 +45,7 @@ func NewInstrumentationDirectorGo() (Director, error) {
 		pidsToInstrumentation:        make(map[int]*auto.Instrumentation),
 		pidsAttemptedInstrumentation: make(map[int]struct{}),
 		podsToDetails:                make(map[types.NamespacedName]podDetails),
+		workloadToPods:               make(map[common.PodWorkload]map[types.NamespacedName]struct{}),
 	}, nil
 }
 
