@@ -34,9 +34,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: InstrumentationConfigSpec defines the desired state of InstrumentationConfig
-              Each field in the struct will be converted to an OpenAPI v3 schema with
-              the comments used as the description.
+            description: Config for the OpenTelemeetry SDKs that should be applied
+              to a workload. The workload is identified by the owner reference
             properties:
               config:
                 description: config for this workload. the config is a list to allow
@@ -81,30 +80,8 @@ spec:
                   - optionKey
                   type: object
                 type: array
-              workload:
-                description: Each object describes a single workload configuration
-                properties:
-                  kind:
-                    description: Kind is the k8s kind of the workload, e.g., 'Deployment'
-                    enum:
-                    - Deployment
-                    - DaemonSet
-                    - StatefulSet
-                    type: string
-                  name:
-                    description: Name is the name of the k8s object of the workload
-                    type: string
-                  namespace:
-                    description: Namespace is the k8s namespace of the workload
-                    type: string
-                required:
-                - kind
-                - name
-                - namespace
-                type: object
             required:
             - config
-            - workload
             type: object
         type: object
     served: true

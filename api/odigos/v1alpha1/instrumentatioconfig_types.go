@@ -15,14 +15,9 @@ type InstrumentationConfig struct {
 	Spec InstrumentationConfigSpec `json:"spec,omitempty"`
 }
 
-// InstrumentationConfigSpec defines the desired state of InstrumentationConfig
-// Each field in the struct will be converted to an OpenAPI v3 schema
-// with the comments used as the description.
+// Config for the OpenTelemeetry SDKs that should be applied to a workload.
+// The workload is identified by the owner reference
 type InstrumentationConfigSpec struct {
-
-	// Each object describes a single workload configuration
-	Workload Workload `json:"workload"`
-
 	// config for this workload.
 	// the config is a list to allow for multiple config options and values to be applied.
 	// the list is processed in order, and the first matching config is applied.
@@ -44,18 +39,6 @@ type WorkloadInstrumentationConfig struct {
 	// if a library is not in this list, the setting should not apply to it
 	// and should be cleared.
 	InstrumentationLibraries []InstrumentationLibrary `json:"instrumentationLibraries"`
-}
-
-type Workload struct {
-	// Namespace is the k8s namespace of the workload
-	Namespace string `json:"namespace"`
-
-	// Kind is the k8s kind of the workload, e.g., 'Deployment'
-	// +kubebuilder:validation:Enum=Deployment;DaemonSet;StatefulSet
-	Kind string `json:"kind"`
-
-	// Name is the name of the k8s object of the workload
-	Name string `json:"name"`
 }
 
 // InstrumentationLibrary represents a library for instrumentation
