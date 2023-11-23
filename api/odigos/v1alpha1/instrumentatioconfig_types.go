@@ -20,25 +20,30 @@ type InstrumentationConfig struct {
 // with the comments used as the description.
 type InstrumentationConfigSpec struct {
 
-	// free text description of the instrumentation config for humans
-	Name string `json:"name,omitempty"`
+	// Each object describes a single workload configuration
+	Workload Workload `json:"workload"`
+
+	// config for this workload.
+	// the config is a list to allow for multiple config options and values to be applied.
+	// the list is processed in order, and the first matching config is applied.
+	Config []WorkloadInstrumentationConfig `json:"config"`
+}
+
+// WorkloadInstrumentationConfig defined a single config option to apply
+// on a workload, along with it's value, filters and instrumentation libraries
+type WorkloadInstrumentationConfig struct {
 
 	// OptionKey is the name of the option
+	// This value is transparent to the CRD and is passed as-is to the SDK.
 	OptionKey string `json:"optionKey"`
 
-	// OptionValueBoolean is the boolean value of the option
+	// OptionValueBoolean is the boolean value of the option if it is a boolean
 	OptionValueBoolean bool `json:"optionValueBoolean,omitempty"`
 
-	// Workloads is an optional list of k8s ns+kind+name to which this option applies.
-	// If not specified, the option applies to all workloads.
-	Workloads []Workload `json:"workloads,omitempty"`
-
-	// InstrumentationLibraries is a list of instrumentation libraries
-	// to which this option applies.
+	// a list of instrumentation libraries to apply this setting to
+	// if a library is not in this list, the setting should not apply to it
+	// and should be cleared.
 	InstrumentationLibraries []InstrumentationLibrary `json:"instrumentationLibraries"`
-
-	// Filters define how to apply the instrumentation options
-	Filters []InstrumentationConfigFilter `json:"filters,omitempty"`
 }
 
 type Workload struct {
@@ -60,18 +65,6 @@ type InstrumentationLibrary struct {
 
 	// InstrumentationLibraryName is the name of the instrumentation library
 	InstrumentationLibraryName string `json:"instrumentationLibraryName"`
-}
-
-// InstrumentationConfigFilter defines a filter for applying instrumentation options
-type InstrumentationConfigFilter struct {
-	// Key is the attribute key to filter (e.g., 'http.route', 'url.path')
-	Key string `json:"key"`
-
-	// MatchType is the type of match (e.g., 'equals', 'startsWith')
-	MatchType string `json:"matchType"`
-
-	// MatchValue is the value to match against
-	MatchValue string `json:"matchValue"`
 }
 
 // +kubebuilder:object:root=true
