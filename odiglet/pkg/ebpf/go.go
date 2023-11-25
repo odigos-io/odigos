@@ -88,6 +88,7 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 	}
 
 	go func() {
+		log.Logger.V(0).Info("Creating new eBPF instrumentation", "workload", podWorkload, "pod", pod)
 		inst, err := auto.NewInstrumentation(
 			ctx,
 			auto.WithPID(pid),
