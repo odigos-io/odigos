@@ -95,7 +95,7 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 			auto.WithTraceExporter(defaultExporter),
 		)
 		if err != nil {
-			log.Logger.Error(err, "instrumentation setup failed")
+			log.Logger.Error(err, "instrumentation setup failed", "workload", podWorkload, "pod", pod)
 			return
 		}
 
