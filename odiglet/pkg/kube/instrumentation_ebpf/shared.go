@@ -76,12 +76,18 @@ func cleanupEbpf(directors map[common.ProgrammingLanguage]ebpf.Director, name ty
 
 func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[common.ProgrammingLanguage]ebpf.Director, runtimeDetails *odigosv1.InstrumentedApplication) error {
 	logger := log.FromContext(ctx)
-	podUid := string(pod.UID)
-	podWorkload := common.PodWorkload{
-		Name:      runtimeDetails.Name,
-		Namespace: runtimeDetails.Namespace,
-		Kind:      runtimeDetails.Kind,
+
+	// TODO - verify with eden
+	if len(runtimeDetails.OwnerReferences) != 1 {
+		return errors.New("expected exactly one owner reference for runtime object")
 	}
+
+	podWorkload := common.PodWorkload{
+		Name:      runtimeDetails.OwnerReferences[0].Name,
+		Namespace: runtimeDetails.Namespace,
+		Kind:      runtimeDetails.OwnerReferences[0].Kind,
+	}
+	podUid := string(pod.UID)
 
 	for _, container := range runtimeDetails.Spec.Languages {
 
@@ -91,7 +97,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 		}
 
 		appName := container.ContainerName
-		if len(runtimeDetails.Spec.Languages) == 1 && len(runtimeDetails.OwnerReferences) > 0 {
+		if len(runtimeDetails.Spec.Languages) == 1 {
 			appName = runtimeDetails.OwnerReferences[0].Name
 		}
 
@@ -109,7 +115,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 			err = director.Instrument(ctx, d.ProcessID, podDetails, podWorkload, appName)
 
 			if err != nil {
-				logger.Error(err, "error instrumenting process", "pid", d.ProcessID)
+				logger.Error(err, "error initiating process instrumentation", "pid", d.ProcessID)
 				return err
 			}
 		}
