@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/keyval-dev/odigos/odiglet/pkg/kube/utils"
+
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/consts"
@@ -42,7 +44,7 @@ func (i *InstrumentationDirectorGo) Language() common.ProgrammingLanguage {
 	return common.GoProgrammingLanguage
 }
 
-func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload common.PodWorkload, appName string) error {
+func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload *common.PodWorkload, appName string) error {
 	log.Logger.V(0).Info("Instrumenting process", "pid", pid)
 	i.mux.Lock()
 	defer i.mux.Unlock()
@@ -67,6 +69,7 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 		inst, err := auto.NewInstrumentation(
 			ctx,
 			auto.WithPID(pid),
+			auto.WithResourceAttributes(utils.GetResourceAttributes(podWorkload)...),
 			auto.WithServiceName(appName),
 			auto.WithTraceExporter(defaultExporter),
 		)

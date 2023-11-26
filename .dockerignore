@@ -1,1 +1,6 @@
 ui/node_modules
+.git/
+Dockerfile
+odiglet/Dockerfile
+odiglet/base.Dockerfile
+odiglet/debug.Dockerfile

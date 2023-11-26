@@ -18,3 +18,12 @@ load-to-kind:
 	kind load docker-image keyval/odigos-scheduler:$(TAG)
 	kind load docker-image keyval/odigos-odiglet:$(TAG)
 	kind load docker-image keyval/odigos-instrumentor:$(TAG)
+
+.PHONY: debug-odiglet
+debug-odiglet:
+	docker build -t keyval/odigos-odiglet:$(TAG) . -f odiglet/debug.Dockerfile --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+	kind load docker-image keyval/odigos-odiglet:$(TAG)
+	kubectl rollout restart daemonset odiglet -n odigos-system
+	kubectl wait --for=condition=ready pod -l app=odiglet -n odigos-system
+	$(eval POD_NAME := $(shell kubectl get pods -n odigos-system -l app=odiglet -o jsonpath='{.items[0].metadata.name}'))
+	kubectl port-forward -n odigos-system $(POD_NAME) 2345:2345
