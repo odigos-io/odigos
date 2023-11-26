@@ -1,0 +1,36 @@
+name: Publish Modules
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  tag-modules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all tags and branches
+
+      - name: Extract Tag
+        id: extract_tag
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+  
+      - name: tag api
+        run: |
+          git tag api/${{ steps.extract_tag.outputs.tag }}
+
+      - name: tag common
+        run: |
+          git tag common/${{ steps.extract_tag.outputs.tag }}
+    
+      - name: tag odiglet
+        run: |
+          git tag odiglet/${{ steps.extract_tag.outputs.tag }}
+
+      - name: Push Module Tags
+        run: |
+          git push origin --tags
+
