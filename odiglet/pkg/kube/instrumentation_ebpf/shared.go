@@ -56,7 +56,7 @@ func ApplyEbpfToPodWorkload(ctx context.Context, kubeClient client.Client, direc
 
 	logger.Info("instrumenting with ebpf", "kind", podWorkload.Kind, "name", podWorkload.Name, "namespace", podWorkload.Namespace, "numPods", len(pods))
 	for _, pod := range pods {
-		err = instrumentPodWithEbpf(ctx, &pod, directors, runtimeDetails)
+		err = instrumentPodWithEbpf(ctx, &pod, directors, runtimeDetails, podWorkload)
 		if err != nil {
 			logger.Error(err, "error instrumenting pod")
 			return err
@@ -74,21 +74,9 @@ func cleanupEbpf(directors map[common.ProgrammingLanguage]ebpf.Director, name ty
 	}
 }
 
-func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[common.ProgrammingLanguage]ebpf.Director, runtimeDetails *odigosv1.InstrumentedApplication) error {
+func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[common.ProgrammingLanguage]ebpf.Director, runtimeDetails *odigosv1.InstrumentedApplication, podWorkload *common.PodWorkload) error {
 	logger := log.FromContext(ctx)
-
-	// TODO - verify with eden
-	if len(runtimeDetails.OwnerReferences) != 1 {
-		return errors.New("expected exactly one owner reference for runtime object")
-	}
-
-	podWorkload := common.PodWorkload{
-		Name:      runtimeDetails.OwnerReferences[0].Name,
-		Namespace: runtimeDetails.Namespace,
-		Kind:      runtimeDetails.OwnerReferences[0].Kind,
-	}
 	podUid := string(pod.UID)
-
 	for _, container := range runtimeDetails.Spec.Languages {
 
 		director := directors[container.Language]

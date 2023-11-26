@@ -22,7 +22,7 @@
     {
       "name": "Demo",
       "icon": "circle-play",
-      "url": "https://www.youtube.com/watch?v=9d36AmVtuGU"
+      "url": "https://www.youtube.com/watch?v=nynyV7FC4VI"
     },
     {
       "name": "Blog",
@@ -71,6 +71,7 @@
         "backends/splunk",
         "backends/lightstep",
         "backends/jaeger",
+        "backends/sumologic",
         "backends/qryn",
         "backends/loki",
         "backends/elasticsearch",
@@ -96,7 +97,10 @@
     },
     {
       "group": "Contibution Guidelines",
-      "pages": ["adding-new-dest"]
+      "pages": [
+        "adding-new-dest",
+        "debugging"
+      ]
     }
   ],
   "footerSocials": {

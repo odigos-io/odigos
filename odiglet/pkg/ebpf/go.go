@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/keyval-dev/odigos/odiglet/pkg/kube/utils"
+
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/consts"
@@ -15,7 +17,7 @@ import (
 )
 
 type podDetails struct {
-	Workload common.PodWorkload
+	Workload *common.PodWorkload
 	Pids     []int
 }
 
@@ -53,7 +55,7 @@ func (i *InstrumentationDirectorGo) Language() common.ProgrammingLanguage {
 	return common.GoProgrammingLanguage
 }
 
-func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload common.PodWorkload, appName string) error {
+func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *common.PodWorkload, appName string) error {
 	log.Logger.V(0).Info("Instrumenting process", "pid", pid)
 	i.mux.Lock()
 	defer i.mux.Unlock()
@@ -72,10 +74,10 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 	}
 	details.Pids = append(details.Pids, pid)
 	i.pidsAttemptedInstrumentation[pid] = struct{}{}
-	if _, exists := i.workloadToPods[podWorkload]; !exists {
-		i.workloadToPods[podWorkload] = make(map[types.NamespacedName]struct{})
+	if _, exists := i.workloadToPods[*podWorkload]; !exists {
+		i.workloadToPods[*podWorkload] = make(map[types.NamespacedName]struct{})
 	}
-	i.workloadToPods[podWorkload][pod] = struct{}{}
+	i.workloadToPods[*podWorkload][pod] = struct{}{}
 
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
@@ -92,6 +94,7 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 		inst, err := auto.NewInstrumentation(
 			ctx,
 			auto.WithPID(pid),
+			auto.WithResourceAttributes(utils.GetResourceAttributes(podWorkload)...),
 			auto.WithServiceName(appName),
 			auto.WithTraceExporter(defaultExporter),
 		)
@@ -140,9 +143,9 @@ func (i *InstrumentationDirectorGo) Cleanup(pod types.NamespacedName) {
 
 	// clear the pod from the workloadToPods map
 	workload := details.Workload
-	delete(i.workloadToPods[workload], pod)
-	if len(i.workloadToPods[workload]) == 0 {
-		delete(i.workloadToPods, workload)
+	delete(i.workloadToPods[*workload], pod)
+	if len(i.workloadToPods[*workload]) == 0 {
+		delete(i.workloadToPods, *workload)
 	}
 
 	for _, pid := range details.Pids {
