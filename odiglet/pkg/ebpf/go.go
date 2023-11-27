@@ -56,7 +56,7 @@ func (i *InstrumentationDirectorGo) Language() common.ProgrammingLanguage {
 }
 
 func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *common.PodWorkload, appName string) error {
-	log.Logger.V(0).Info("Instrumenting process", "pid", pid)
+	log.Logger.V(0).Info("Instrumenting process", "pid", pid, "workload", podWorkload)
 	i.mux.Lock()
 	defer i.mux.Unlock()
 	if _, exists := i.pidsAttemptedInstrumentation[pid]; exists {
@@ -81,14 +81,6 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 		i.workloadToPods[*podWorkload] = make(map[types.NamespacedName]struct{})
 	}
 	i.workloadToPods[*podWorkload][pod] = struct{}{}
-
-	log.Logger.V(0).Info("added pod to workload map", "workload", podWorkload, "pod", pod, "numkeys", len(i.workloadToPods))
-	val := i.workloadToPods[common.PodWorkload{
-		Namespace: "default",
-		Kind:      "Deployment",
-		Name:      "go-1",
-	}]
-	log.Logger.V(0).Info("the value we just inserted", "pods", len(val))
 
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
@@ -191,6 +183,7 @@ func (i *InstrumentationDirectorGo) GetWorkloadInstrumentations(workload common.
 
 	pods, ok := i.workloadToPods[workload]
 	if !ok {
+		log.Logger.V(0).Info("No pods for workload", "workload", workload)
 		return nil
 	}
 
@@ -198,12 +191,14 @@ func (i *InstrumentationDirectorGo) GetWorkloadInstrumentations(workload common.
 	for pod := range pods {
 		details, ok := i.podsToDetails[pod]
 		if !ok {
+			log.Logger.V(0).Info("No pods details for workload", "workload", workload)
 			continue
 		}
 
 		for _, pid := range details.Pids {
 			inst, ok := i.pidsToInstrumentation[pid]
 			if !ok {
+				log.Logger.V(0).Info("No instrumentation for pid", "workload", workload)
 				continue
 			}
 
