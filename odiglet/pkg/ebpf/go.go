@@ -73,11 +73,15 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 		i.podsToDetails[pod] = details
 	}
 	details.Pids = append(details.Pids, pid)
+	i.podsToDetails[pod] = details
+
 	i.pidsAttemptedInstrumentation[pid] = struct{}{}
+
 	if _, exists := i.workloadToPods[*podWorkload]; !exists {
 		i.workloadToPods[*podWorkload] = make(map[types.NamespacedName]struct{})
 	}
 	i.workloadToPods[*podWorkload][pod] = struct{}{}
+
 	log.Logger.V(0).Info("added pod to workload map", "workload", podWorkload, "pod", pod, "numkeys", len(i.workloadToPods))
 	val := i.workloadToPods[common.PodWorkload{
 		Namespace: "default",
