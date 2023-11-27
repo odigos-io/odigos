@@ -93,7 +93,6 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 	}
 
 	go func() {
-		log.Logger.V(0).Info("Creating new eBPF instrumentation", "workload", podWorkload, "pod", pod)
 		inst, err := auto.NewInstrumentation(
 			ctx,
 			auto.WithPID(pid),
@@ -183,7 +182,6 @@ func (i *InstrumentationDirectorGo) GetWorkloadInstrumentations(workload common.
 
 	pods, ok := i.workloadToPods[workload]
 	if !ok {
-		log.Logger.V(0).Info("No pods for workload", "workload", workload)
 		return nil
 	}
 
@@ -191,14 +189,12 @@ func (i *InstrumentationDirectorGo) GetWorkloadInstrumentations(workload common.
 	for pod := range pods {
 		details, ok := i.podsToDetails[pod]
 		if !ok {
-			log.Logger.V(0).Info("No pods details for workload", "workload", workload)
 			continue
 		}
 
 		for _, pid := range details.Pids {
 			inst, ok := i.pidsToInstrumentation[pid]
 			if !ok {
-				log.Logger.V(0).Info("No instrumentation for pid", "workload", workload)
 				continue
 			}
 
