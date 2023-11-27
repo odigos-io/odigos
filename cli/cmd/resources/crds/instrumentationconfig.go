@@ -58,7 +58,17 @@ func NewInstrumentationConfig() *apiextensionsv1.CustomResourceDefinition {
 																},
 															},
 														},
-														"optionKey":          {Type: "string"},
+														"optionKey": {Type: "string"},
+														"spanKind": {
+															Type: "string",
+															Enum: []apiextensionsv1.JSON{
+																{Raw: []byte(`"client"`)},
+																{Raw: []byte(`"server"`)},
+																{Raw: []byte(`"producer"`)},
+																{Raw: []byte(`"consumer"`)},
+																{Raw: []byte(`"internal"`)},
+															},
+														},
 														"optionValueBoolean": {Type: "boolean"},
 													},
 												},
