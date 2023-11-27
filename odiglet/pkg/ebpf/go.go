@@ -190,7 +190,6 @@ func (i *InstrumentationDirectorGo) GetWorkloadInstrumentations(workload common.
 		Kind:      "Deployment",
 		Name:      "go-1",
 	}]
-	log.Logger.V(0).Info("GetWorkloadInstrumentations", "pods", len(val))
 
 	pods, ok := i.workloadToPods[workload]
 	if !ok {
@@ -199,6 +198,7 @@ func (i *InstrumentationDirectorGo) GetWorkloadInstrumentations(workload common.
 	}
 
 	var insts []*auto.Instrumentation
+	log.Logger.V(0).Info("Temp - found pods", "workload", workload, "pods", len(pods))
 	for pod := range pods {
 		details, ok := i.podsToDetails[pod]
 		if !ok {
@@ -206,12 +206,15 @@ func (i *InstrumentationDirectorGo) GetWorkloadInstrumentations(workload common.
 			continue
 		}
 
+		log.Logger.V(0).Info("Temp - found pids", "workload", workload, "pods", len(details.Pids))
+
 		for _, pid := range details.Pids {
 			inst, ok := i.pidsToInstrumentation[pid]
 			if !ok {
 				log.Logger.V(0).Info("Temp - no instrumentation for pid", "workload", workload, "pod", pod, "pid", pid)
 				continue
 			}
+			log.Logger.V(0).Info("Temp - found instrumentation")
 
 			insts = append(insts, inst)
 		}
