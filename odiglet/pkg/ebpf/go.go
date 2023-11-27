@@ -78,6 +78,12 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 		i.workloadToPods[*podWorkload] = make(map[types.NamespacedName]struct{})
 	}
 	i.workloadToPods[*podWorkload][pod] = struct{}{}
+	log.Logger.V(0).Info("added pod to workload map", "workload", podWorkload, "pod", pod, "numkeys", len(i.workloadToPods))
+	log.Logger.V(0).Info("the value we just inserted", "pods", i.workloadToPods[common.PodWorkload{
+		Namespace: "default",
+		Kind:      "Deployment",
+		Name:      "go-1",
+	}])
 
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
