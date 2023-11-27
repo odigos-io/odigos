@@ -179,6 +179,7 @@ func (i *InstrumentationDirectorGo) GetWorkloadInstrumentations(workload common.
 	defer i.mux.Unlock()
 	pods, ok := i.workloadToPods[workload]
 	if !ok {
+		log.Logger.V(0).Info("Temp - no pods for workload", "workload", workload)
 		return nil
 	}
 
@@ -186,12 +187,14 @@ func (i *InstrumentationDirectorGo) GetWorkloadInstrumentations(workload common.
 	for pod := range pods {
 		details, ok := i.podsToDetails[pod]
 		if !ok {
+			log.Logger.V(0).Info("Temp - no details for pod", "workload", workload, "pod", pod)
 			continue
 		}
 
 		for _, pid := range details.Pids {
 			inst, ok := i.pidsToInstrumentation[pid]
 			if !ok {
+				log.Logger.V(0).Info("Temp - no instrumentation for pid", "workload", workload, "pod", pod, "pid", pid)
 				continue
 			}
 
