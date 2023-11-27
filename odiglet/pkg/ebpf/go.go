@@ -185,12 +185,6 @@ func (i *InstrumentationDirectorGo) GetWorkloadInstrumentations(workload common.
 	i.mux.Lock()
 	defer i.mux.Unlock()
 
-	val := i.workloadToPods[common.PodWorkload{
-		Namespace: "default",
-		Kind:      "Deployment",
-		Name:      "go-1",
-	}]
-
 	pods, ok := i.workloadToPods[workload]
 	if !ok {
 		log.Logger.V(0).Info("Temp - no pods for workload", "workload", workload)
