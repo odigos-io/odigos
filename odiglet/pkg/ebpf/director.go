@@ -58,7 +58,7 @@ type EbpfDirector[T OtelEbpfSdk] struct {
 	workloadToPods map[common.PodWorkload]map[types.NamespacedName]struct{}
 }
 
-func NewEbpfDirector[T OtelEbpfSdk](language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) Director {
+func NewEbpfDirector[T OtelEbpfSdk](language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
 	return &EbpfDirector[T]{
 		language:                     language,
 		pidsToInstrumentation:        make(map[int]T),
