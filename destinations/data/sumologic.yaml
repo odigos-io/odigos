@@ -1,0 +1,22 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: sumologic
+  displayName: Sumo Logic
+  category: managed
+spec:
+  image: sumologic.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: SUMOLOGIC_COLLECTION_URL
+      displayName: Source URL
+      componentType: input
+      componentProps:
+        type: password
+      secret: true

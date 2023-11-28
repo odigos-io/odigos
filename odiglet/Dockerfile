@@ -14,11 +14,7 @@ ARG DOTNET_OTEL_VERSION=v0.7.0
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
 
-FROM fedora:38 as builder
-ARG TARGETARCH
-RUN dnf install clang llvm make libbpf-devel -y
-RUN curl -LO https://go.dev/dl/go1.21.0.linux-${TARGETARCH}.tar.gz && tar -C /usr/local -xzf go*.linux-${TARGETARCH}.tar.gz
-ENV PATH="/usr/local/go/bin:${PATH}"
+FROM keyval/odiglet-base:v1.0 as builder
 WORKDIR /go/src/github.com/keyval-dev/odigos
 COPY . .
 WORKDIR ./odiglet/

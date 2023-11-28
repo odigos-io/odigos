@@ -1,4 +1,4 @@
-package kube
+package runtime_details
 
 import (
 	"context"
