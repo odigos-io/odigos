@@ -178,11 +178,11 @@ func (d *EbpfDirector[T]) Shutdown() {
 	}
 }
 
-func (d *EbpfDirector[T]) GetWorkloadInstrumentations(workload common.PodWorkload) []T {
+func (d *EbpfDirector[T]) GetWorkloadInstrumentations(workload *common.PodWorkload) []T {
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
-	pods, ok := d.workloadToPods[workload]
+	pods, ok := d.workloadToPods[*workload]
 	if !ok {
 		return nil
 	}
