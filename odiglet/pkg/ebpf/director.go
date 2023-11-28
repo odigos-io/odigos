@@ -61,6 +61,7 @@ type EbpfDirector[T OtelEbpfSdk] struct {
 func NewEbpfDirector[T OtelEbpfSdk](language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
 	return &EbpfDirector[T]{
 		language:                     language,
+		instrumentationFactory:       instrumentationFactory,
 		pidsToInstrumentation:        make(map[int]T),
 		pidsAttemptedInstrumentation: make(map[int]struct{}),
 		podsToDetails:                make(map[types.NamespacedName]podDetails),
