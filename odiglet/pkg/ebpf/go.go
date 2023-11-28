@@ -16,6 +16,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+type podDetails struct {
+	Workload *common.PodWorkload
+	Pids     []int
+}
+
 type InstrumentationDirectorGo struct {
 	mux sync.Mutex
 
@@ -29,14 +34,20 @@ type InstrumentationDirectorGo struct {
 	// so we can avoid attempting to instrument them again.
 	pidsAttemptedInstrumentation map[int]struct{}
 
-	podDetailsToPids map[types.NamespacedName][]int
+	// via this map, we can find the workload and pids for a specific pod.
+	// sometimes we only have the pod name and namespace, so this map is useful.
+	podsToDetails map[types.NamespacedName]podDetails
+
+	// this map can be used when we only have the workload, and need to find the pods to derive pids.
+	workloadToPods map[common.PodWorkload]map[types.NamespacedName]struct{}
 }
 
 func NewInstrumentationDirectorGo() (Director, error) {
 	return &InstrumentationDirectorGo{
 		pidsToInstrumentation:        make(map[int]*auto.Instrumentation),
 		pidsAttemptedInstrumentation: make(map[int]struct{}),
-		podDetailsToPids:             make(map[types.NamespacedName][]int),
+		podsToDetails:                make(map[types.NamespacedName]podDetails),
+		workloadToPods:               make(map[common.PodWorkload]map[types.NamespacedName]struct{}),
 	}, nil
 }
 
@@ -44,16 +55,32 @@ func (i *InstrumentationDirectorGo) Language() common.ProgrammingLanguage {
 	return common.GoProgrammingLanguage
 }
 
-func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload *common.PodWorkload, appName string) error {
-	log.Logger.V(0).Info("Instrumenting process", "pid", pid)
+func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *common.PodWorkload, appName string) error {
+	log.Logger.V(0).Info("Instrumenting process", "pid", pid, "workload", podWorkload)
 	i.mux.Lock()
 	defer i.mux.Unlock()
 	if _, exists := i.pidsAttemptedInstrumentation[pid]; exists {
 		log.Logger.V(5).Info("Process already instrumented", "pid", pid)
 		return nil
 	}
-	i.podDetailsToPids[podDetails] = append(i.podDetailsToPids[podDetails], pid)
+
+	details, exists := i.podsToDetails[pod]
+	if !exists {
+		details = podDetails{
+			Workload: podWorkload,
+			Pids:     []int{},
+		}
+		i.podsToDetails[pod] = details
+	}
+	details.Pids = append(details.Pids, pid)
+	i.podsToDetails[pod] = details
+
 	i.pidsAttemptedInstrumentation[pid] = struct{}{}
+
+	if _, exists := i.workloadToPods[*podWorkload]; !exists {
+		i.workloadToPods[*podWorkload] = make(map[types.NamespacedName]struct{})
+	}
+	i.workloadToPods[*podWorkload][pod] = struct{}{}
 
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
@@ -74,7 +101,7 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 			auto.WithTraceExporter(defaultExporter),
 		)
 		if err != nil {
-			log.Logger.Error(err, "instrumentation setup failed")
+			log.Logger.Error(err, "instrumentation setup failed", "workload", podWorkload, "pod", pod)
 			return
 		}
 
@@ -94,6 +121,8 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 			return
 		}
 
+		log.Logger.V(0).Info("Running ebpf go instrumentation", "workload", podWorkload, "pod", pod)
+
 		if err := inst.Run(context.Background()); err != nil {
 			log.Logger.Error(err, "instrumentation crashed after running")
 		}
@@ -102,19 +131,26 @@ func (i *InstrumentationDirectorGo) Instrument(ctx context.Context, pid int, pod
 	return nil
 }
 
-func (i *InstrumentationDirectorGo) Cleanup(podDetails types.NamespacedName) {
+func (i *InstrumentationDirectorGo) Cleanup(pod types.NamespacedName) {
 	i.mux.Lock()
 	defer i.mux.Unlock()
-	pids, exists := i.podDetailsToPids[podDetails]
+	details, exists := i.podsToDetails[pod]
 	if !exists {
-		log.Logger.V(5).Info("No processes to cleanup for pod", "pod", podDetails)
+		log.Logger.V(5).Info("No processes to cleanup for pod", "pod", pod)
 		return
 	}
 
-	log.Logger.V(0).Info("Cleaning up ebpf go instrumentation for pod", "pod", podDetails)
-	delete(i.podDetailsToPids, podDetails)
+	log.Logger.V(0).Info("Cleaning up ebpf go instrumentation for pod", "pod", pod)
+	delete(i.podsToDetails, pod)
 
-	for _, pid := range pids {
+	// clear the pod from the workloadToPods map
+	workload := details.Workload
+	delete(i.workloadToPods[*workload], pod)
+	if len(i.workloadToPods[*workload]) == 0 {
+		delete(i.workloadToPods, *workload)
+	}
+
+	for _, pid := range details.Pids {
 		delete(i.pidsAttemptedInstrumentation, pid)
 
 		inst, exists := i.pidsToInstrumentation[pid]
@@ -135,14 +171,36 @@ func (i *InstrumentationDirectorGo) Cleanup(podDetails types.NamespacedName) {
 
 func (i *InstrumentationDirectorGo) Shutdown() {
 	log.Logger.V(0).Info("Shutting down instrumentation director")
-	for details := range i.podDetailsToPids {
+	for details := range i.podsToDetails {
 		i.Cleanup(details)
 	}
 }
 
-func (i *InstrumentationDirectorGo) GetInstrumentation(pid int) (*auto.Instrumentation, bool) {
+func (i *InstrumentationDirectorGo) GetWorkloadInstrumentations(workload common.PodWorkload) []*auto.Instrumentation {
 	i.mux.Lock()
 	defer i.mux.Unlock()
-	inst, ok := i.pidsToInstrumentation[pid]
-	return inst, ok
+
+	pods, ok := i.workloadToPods[workload]
+	if !ok {
+		return nil
+	}
+
+	var insts []*auto.Instrumentation
+	for pod := range pods {
+		details, ok := i.podsToDetails[pod]
+		if !ok {
+			continue
+		}
+
+		for _, pid := range details.Pids {
+			inst, ok := i.pidsToInstrumentation[pid]
+			if !ok {
+				continue
+			}
+
+			insts = append(insts, inst)
+		}
+	}
+
+	return insts
 }

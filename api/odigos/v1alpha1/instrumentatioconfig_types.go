@@ -33,6 +33,11 @@ type WorkloadInstrumentationConfig struct {
 	// This value is transparent to the CRD and is passed as-is to the SDK.
 	OptionKey string `json:"optionKey"`
 
+	// This option allow to specify the config option for a specific span kind
+	// for example, only to client spans or only to server spans.
+	// it the span kind is not specified, the option will apply to all spans.
+	SpanKind common.SpanKind `json:"spanKind,omitempty"`
+
 	// OptionValueBoolean is the boolean value of the option if it is a boolean
 	OptionValueBoolean bool `json:"optionValueBoolean,omitempty"`
 

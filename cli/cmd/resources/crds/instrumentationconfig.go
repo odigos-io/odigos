@@ -31,63 +31,51 @@ func NewInstrumentationConfig() *apiextensionsv1.CustomResourceDefinition {
 					Schema: &apiextensionsv1.CustomResourceValidation{
 						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 							Type:        "object",
-							Description: "InstrumentationConfig is the Schema for the instrumentation config API",
+							Description: "InstrumentationConfig is the Schema for the instrumentationconfig API",
 							Properties: map[string]apiextensionsv1.JSONSchemaProps{
 								"apiVersion": {Type: "string"},
 								"kind":       {Type: "string"},
 								"metadata":   {Type: "object"},
 								"spec": {
 									Type:        "object",
-									Description: "InstrumentationConfigSpec defines the desired state of InstrumentationConfig",
+									Description: "Config for the OpenTelemetry SDKs that should be applied to a workload. The workload is identified by the owner reference",
 									Properties: map[string]apiextensionsv1.JSONSchemaProps{
-										"name": {
-											Type: "string",
-										},
-										"optionKey": {
-											Type: "string",
-										},
-										"optionValueBoolean": {
-											Type: "boolean",
-										},
-										"workloads": {
+										"config": {
 											Type: "array",
 											Items: &apiextensionsv1.JSONSchemaPropsOrArray{
 												Schema: &apiextensionsv1.JSONSchemaProps{
 													Type: "object",
 													Properties: map[string]apiextensionsv1.JSONSchemaProps{
-														"namespace": {Type: "string"},
-														"kind":      {Type: "string"},
-														"name":      {Type: "string"},
-													},
-												},
-											},
-										},
-										"instrumentationLibraries": {
-											Type: "array",
-											Items: &apiextensionsv1.JSONSchemaPropsOrArray{
-												Schema: &apiextensionsv1.JSONSchemaProps{
-													Type: "object",
-													Properties: map[string]apiextensionsv1.JSONSchemaProps{
-														"language":                   {Type: "string"},
-														"instrumentationLibraryName": {Type: "string"},
-													},
-												},
-											},
-										},
-										"filters": {
-											Type: "array",
-											Items: &apiextensionsv1.JSONSchemaPropsOrArray{
-												Schema: &apiextensionsv1.JSONSchemaProps{
-													Type: "object",
-													Properties: map[string]apiextensionsv1.JSONSchemaProps{
-														"key":        {Type: "string"},
-														"matchType":  {Type: "string"},
-														"matchValue": {Type: "string"},
+														"instrumentationLibraries": {
+															Type: "array",
+															Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+																Schema: &apiextensionsv1.JSONSchemaProps{
+																	Type: "object",
+																	Properties: map[string]apiextensionsv1.JSONSchemaProps{
+																		"instrumentationLibraryName": {Type: "string"},
+																		"language":                   {Type: "string"},
+																	},
+																},
+															},
+														},
+														"optionKey": {Type: "string"},
+														"spanKind": {
+															Type: "string",
+															Enum: []apiextensionsv1.JSON{
+																{Raw: []byte(`"client"`)},
+																{Raw: []byte(`"server"`)},
+																{Raw: []byte(`"producer"`)},
+																{Raw: []byte(`"consumer"`)},
+																{Raw: []byte(`"internal"`)},
+															},
+														},
+														"optionValueBoolean": {Type: "boolean"},
 													},
 												},
 											},
 										},
 									},
+									Required: []string{"config"},
 								},
 								"status": {Type: "object"},
 							},
