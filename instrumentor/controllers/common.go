@@ -184,11 +184,11 @@ func getPodSpecFromObject(obj client.Object) (*corev1.PodTemplateSpec, error) {
 
 func getObjectFromKindString(kind string) (client.Object, error) {
 	switch strings.ToLower(kind) {
-	case "deployment":
+	case "Deployment":
 		return &appsv1.Deployment{}, nil
-	case "statefulset":
+	case "StatefulSet":
 		return &appsv1.StatefulSet{}, nil
-	case "daemonset":
+	case "DaemonSet":
 		return &appsv1.DaemonSet{}, nil
 	default:
 		return nil, errors.New("unknown kind")
