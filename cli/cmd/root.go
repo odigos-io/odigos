@@ -11,13 +11,16 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "odigos",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short: "Automate OpenTelemetry Observability in Kubernetes",
+	Long: `Odigos is primarily focused on automating OpenTelemetry observability pipelines for traces, metrics, and logs, without the need for extensive code changes. The core of Odigos functionality lies in the Kubernetes operators it deploys within your cluster, enabling seamless observability.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Key Features of Odigos:
+- Automatic creation of OpenTelemetry observability pipelines.
+- Simplified tracing, metrics, and log collection.
+- Enhanced visibility into your Kubernetes services.
+- Streamlined Kubernetes operations with observability at the forefront.
+
+Get started with Odigos today to effortlessly improve the observability of your Kubernetes services!`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },

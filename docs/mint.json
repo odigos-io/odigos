@@ -22,7 +22,7 @@
     {
       "name": "Demo",
       "icon": "circle-play",
-      "url": "https://www.youtube.com/watch?v=9d36AmVtuGU"
+      "url": "https://www.youtube.com/watch?v=nynyV7FC4VI"
     },
     {
       "name": "Blog",
@@ -44,6 +44,18 @@
             "viewing",
             "next-steps"
           ]
+        },
+        {
+          "group": "CLI Reference",
+          "pages": [
+            "cli/odigos",
+            "cli/odigos_cloud",
+            "cli/odigos_install",
+            "cli/odigos_ui",
+            "cli/odigos_uninstall",
+            "cli/odigos_upgrade",
+            "cli/odigos_version"
+          ]
         }
       ]
     },
@@ -59,6 +71,7 @@
         "backends/splunk",
         "backends/lightstep",
         "backends/jaeger",
+        "backends/sumologic",
         "backends/qryn",
         "backends/loki",
         "backends/elasticsearch",
@@ -84,11 +97,14 @@
     },
     {
       "group": "Contibution Guidelines",
-      "pages": ["adding-new-dest"]
+      "pages": [
+        "adding-new-dest",
+        "debugging"
+      ]
     }
   ],
   "footerSocials": {
-    "twitter": "https://twitter.com/odigosio",
+    "X": "https://twitter.com/odigosio",
     "github": "https://github.com/keyval-dev/odigos",
     "slack": "https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email"
   }

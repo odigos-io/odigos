@@ -13,6 +13,7 @@ const (
 	InstrumentationDisabled        = "disabled"
 	GolangInstrumentationImage     = "keyval/otel-go-agent:v0.6.5"
 	OdigosReportedNameAnnotation   = "odigos.io/reported-name"
+	EbpfInstrumentationAnnotation  = "instrumentation.odigos.io/ebpf"
 )
 
 var (

@@ -140,7 +140,7 @@ type Release struct {
 }
 
 func GetLatestReleaseVersion() (string, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/keyval-dev/odigos/releases/latest")
+	url := "https://api.github.com/repos/keyval-dev/odigos/releases/latest"
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -164,7 +164,7 @@ func GetLatestReleaseVersion() (string, error) {
 
 func init() {
 	rootCmd.AddCommand(uiCmd)
-	uiCmd.Flags().String("address", "localhost", "Address to listen on")
-	uiCmd.Flags().Int("port", defaultPort, "Port to listen on")
-	uiCmd.Flags().Bool("debug", false, "Enable debug mode")
+	uiCmd.Flags().String("address", "localhost", "address to listen on")
+	uiCmd.Flags().Int("port", defaultPort, "port to listen on")
+	uiCmd.Flags().Bool("debug", false, "enable debug mode")
 }
