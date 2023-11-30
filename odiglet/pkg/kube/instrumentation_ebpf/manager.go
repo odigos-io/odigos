@@ -65,7 +65,7 @@ func (i *workloadPredicate) Delete(e event.DeleteEvent) bool {
 }
 
 func (i *workloadPredicate) Generic(e event.GenericEvent) bool {
-	return false
+	return true
 }
 
 func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLanguage]ebpf.Director) error {

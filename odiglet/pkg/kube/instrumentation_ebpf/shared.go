@@ -85,7 +85,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 		}
 
 		appName := container.ContainerName
-		if len(runtimeDetails.Spec.Languages) == 1 && len(runtimeDetails.OwnerReferences) > 0 {
+		if len(runtimeDetails.Spec.Languages) == 1 {
 			appName = runtimeDetails.OwnerReferences[0].Name
 		}
 
@@ -103,7 +103,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 			err = director.Instrument(ctx, d.ProcessID, podDetails, podWorkload, appName)
 
 			if err != nil {
-				logger.Error(err, "error instrumenting process", "pid", d.ProcessID)
+				logger.Error(err, "error initiating process instrumentation", "pid", d.ProcessID)
 				return err
 			}
 		}

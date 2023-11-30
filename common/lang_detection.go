@@ -6,7 +6,7 @@ type LanguageByContainer struct {
 	ProcessName   string              `json:"processName,omitempty"`
 }
 
-//+kubebuilder:validation:Enum=java;python;go;dotnet;javascript
+// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript
 type ProgrammingLanguage string
 
 const (
