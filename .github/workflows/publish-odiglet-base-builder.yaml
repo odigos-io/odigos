@@ -24,26 +24,33 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Validate New Version
         run: |
-          # Fetch tags from Docker Hub (modify this according to your specific needs)
-          TAGS=$(curl -s "https://hub.docker.com/v2/repositories/${{ env.DOCKERHUB_ORG }}/odiglet-base/tags/" | jq -r '.results[].name')
+          # Fetch tags from Docker Hub
+          TAGS=$(curl -s "https://hub.docker.com/v2/repositories/${{ env.DOCKERHUB_ORG }}/odiglet-base/tags/" | jq -r '.results[].name' | sort -Vr)
   
-          # The new version from workflow input
+          # Extract the latest version
+          LATEST_VERSION=$(echo "$TAGS" | head -n 1)
+  
+          # New version from workflow input
           NEW_VERSION=${{ github.event.inputs.image_tag }}
   
-          # Function to compare versions
-          function version_gt() { 
-            test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; 
-          }
+          # Parse major and minor from latest and new versions
+          LATEST_MAJOR=$(echo $LATEST_VERSION | cut -d. -f1)
+          LATEST_MINOR=$(echo $LATEST_VERSION | cut -d. -f2)
+          NEW_MAJOR=$(echo $NEW_VERSION | cut -d. -f1)
+          NEW_MINOR=$(echo $NEW_VERSION | cut -d. -f2)
   
-          # Loop through the tags and compare
-          for TAG in $TAGS; do
-            if version_gt "$TAG" "$NEW_VERSION"; then
-              echo "Error: New version $NEW_VERSION is older than existing version $TAG"
-              exit 1
-            fi
-          done    - name: Validate New Version
+          # Compare versions
+          if [[ $NEW_MAJOR -eq $((LATEST_MAJOR + 1)) && $NEW_MINOR -eq 0 ]]; then
+            echo "New version is a valid major version increment."
+          elif [[ $NEW_MAJOR -eq $LATEST_MAJOR && $NEW_MINOR -eq $((LATEST_MINOR + 1)) ]]; then
+            echo "New version is a valid minor version increment."
+          else
+            echo "Error: New version $NEW_VERSION does not follow the versioning rules."
+            exit 1
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
