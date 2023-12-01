@@ -6,6 +6,11 @@ on:
       - main
     paths:
       - "odiglet/base.Dockerfile"
+  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
+
+# The `workflow_fispatch` event is useful if you want to update the dependencies used
+# in the Dockerfile, so they are consumed by future odiglet builds.
+# those dependencies are tools like `clang` `llvm` `make` `libbpf-devel` `git`
 
 permissions:
   contents: write
