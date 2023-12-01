@@ -1,16 +1,11 @@
 name: Publish Odiglet Base Builder
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "odiglet/base.Dockerfile"
-  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
-
-# The `workflow_fispatch` event is useful if you want to update the dependencies used
-# in the Dockerfile, so they are consumed by future odiglet builds.
-# those dependencies are tools like `clang` `llvm` `make` `libbpf-devel` `git`
+  workflow_dispatch: 
+    inputs:
+      image_tag:
+        description: 'The new image tag for the base builder docker image (e.g. v1.0)'
+        required: true
 
 permissions:
   contents: write
@@ -29,6 +24,27 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Validate New Version
+        run: |
+          # Fetch tags from Docker Hub (modify this according to your specific needs)
+          TAGS=$(curl -s "https://hub.docker.com/v2/repositories/${{ env.DOCKERHUB_ORG }}/odiglet-base/tags/" | jq -r '.results[].name')
+  
+          # The new version from workflow input
+          NEW_VERSION=${{ github.event.inputs.image_tag }}
+  
+          # Function to compare versions
+          function version_gt() { 
+            test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; 
+          }
+  
+          # Loop through the tags and compare
+          for TAG in $TAGS; do
+            if version_gt "$TAG" "$NEW_VERSION"; then
+              echo "Error: New version $NEW_VERSION is older than existing version $TAG"
+              exit 1
+            fi
+          done    - name: Validate New Version
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Set up QEMU
@@ -40,4 +56,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: ./odiglet/base.Dockerfile
           push: true
-          tags: ${{ env.DOCKERHUB_ORG }}/odiglet-base:latest
+          tags: ${{ env.DOCKERHUB_ORG }}/odiglet-base:${{ github.event.inputs.image_tag }}
