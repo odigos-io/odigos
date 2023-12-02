@@ -1,0 +1,34 @@
+name: Tag Odigos Enterprise
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: # for debugging
+    inputs:
+      tag:
+        description: "git tag"
+        required: true
+
+jobs:
+  tag-odigos-enterprise:
+    name: Tag Odigos Enterprise
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set env
+        id: vars
+        run: |
+          if [[ ${{ github.event_name }} == 'push' ]]; then
+              echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+          elif [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
+              echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          fi
+      - name: Push Tag to Odigos Enterprise Repo
+        run: |
+          # Cloning the target repository
+          git clone https://${{ secrets.RELEASE_BOT_TOKEN }}@github.com/keyval-dev/odigos-enterprise.git
+          cd odigos-enterprise
+
+          # Creating and pushing the tag
+          git tag ${{ steps.vars.outputs.tag }}
+          git push https://${{ secrets.RELEASE_BOT_TOKEN }}@github.com/keyval-dev/odigos-enterprise.git --tags
