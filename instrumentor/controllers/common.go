@@ -7,9 +7,10 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
-	"github.com/keyval-dev/odigos/instrumentor/patch"
+	"github.com/keyval-dev/odigos/instrumentor/instrumentation"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -24,6 +25,36 @@ var (
 	//   - Helm chart's instrumentor.ignoredNamespaces field
 	IgnoredNamespaces map[string]bool
 )
+
+// shouldInstrumentWithEbpf returns true if the given runtime details should be delegated to odiglet for ebpf instrumentation
+// This is currently hardcoded. In the future we will read this from a config
+func shouldInstrumentWithEbpf(runtimeDetails *odigosv1.InstrumentedApplication) bool {
+	for _, l := range runtimeDetails.Spec.Languages {
+		if l.Language == common.GoProgrammingLanguage {
+			return true
+		}
+	}
+
+	return false
+}
+
+func setInstrumentationEbpf(obj client.Object) {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	annotations[consts.EbpfInstrumentationAnnotation] = "true"
+}
+
+func clearInstrumentationEbpf(obj client.Object) {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		return
+	}
+
+	delete(annotations, consts.EbpfInstrumentationAnnotation)
+}
 
 func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	logger := log.FromContext(ctx)
@@ -50,12 +81,17 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 	}
 
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
+		if shouldInstrumentWithEbpf(runtimeDetails) {
+			setInstrumentationEbpf(obj)
+			return nil
+		}
+
 		podSpec, err := getPodSpecFromObject(obj)
 		if err != nil {
 			return err
 		}
 
-		return patch.ModifyObject(podSpec, runtimeDetails)
+		return instrumentation.ModifyObject(podSpec, runtimeDetails)
 	})
 
 	if err != nil {
@@ -90,12 +126,13 @@ func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Cli
 	}
 
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
+		clearInstrumentationEbpf(obj)
 		podSpec, err := getPodSpecFromObject(obj)
 		if err != nil {
 			return err
 		}
 
-		patch.Revert(podSpec)
+		instrumentation.Revert(podSpec)
 		return nil
 	})
 
@@ -147,11 +184,11 @@ func getPodSpecFromObject(obj client.Object) (*corev1.PodTemplateSpec, error) {
 
 func getObjectFromKindString(kind string) (client.Object, error) {
 	switch strings.ToLower(kind) {
-	case "deployment":
+	case "Deployment":
 		return &appsv1.Deployment{}, nil
-	case "statefulset":
+	case "StatefulSet":
 		return &appsv1.StatefulSet{}, nil
-	case "daemonset":
+	case "DaemonSet":
 		return &appsv1.DaemonSet{}, nil
 	default:
 		return nil, errors.New("unknown kind")

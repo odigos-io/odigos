@@ -1,4 +1,4 @@
-package kube
+package runtime_details
 
 import (
 	"context"
@@ -18,7 +18,6 @@ type DeploymentsReconciler struct {
 
 func (d *DeploymentsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-
 	var dep appsv1.Deployment
 	err := d.Client.Get(ctx, request.NamespacedName, &dep)
 	if err != nil {
