@@ -7,7 +7,7 @@ on:
 
 jobs:
   tag-modules:
-    runs-on: large-runner
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,7 +35,7 @@ jobs:
           git push origin --tags
   
   publish-docker-images:
-    runs-on: ubuntu-latest
+    runs-on: large-runner
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
