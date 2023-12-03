@@ -392,7 +392,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	odigletImage := a.config.OdigletImage
 	// if the user specified an image, use it. otherwise, use the default image.
 	// prev v1.0.4 - the cli would automatically store "keyval/odigos-odiglet" instead of empty value,
-	// thus we need to override it.
+	// thus we need to treat the default image name as empty value.
 	if odigletImage == "" || odigletImage == OdigletImageName {
 		if a.isOdigosCloud {
 			odigletImage = OdigletEnterpriseImageName
