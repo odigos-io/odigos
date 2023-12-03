@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
@@ -183,7 +182,7 @@ func getPodSpecFromObject(obj client.Object) (*corev1.PodTemplateSpec, error) {
 }
 
 func getObjectFromKindString(kind string) (client.Object, error) {
-	switch strings.ToLower(kind) {
+	switch kind {
 	case "Deployment":
 		return &appsv1.Deployment{}, nil
 	case "StatefulSet":
