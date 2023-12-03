@@ -7,7 +7,7 @@ on:
 
 jobs:
   tag-modules:
-    runs-on: large-runner
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,7 +35,7 @@ jobs:
           git push origin --tags
   
   publish-docker-images:
-    runs-on: ubuntu-latest
+    runs-on: large-runner
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -57,7 +57,7 @@ jobs:
         with:
           push: true
           tags: |
-            keyval/odigos-autoscaler:${{ steps.vars.outputs.tag }}
+            keyval/odigos-autoscaler:${{ steps.extract_tag.outputs.tag }}
           build-args: SERVICE_NAME=autoscaler
           platforms: linux/amd64,linux/arm64
 
@@ -66,7 +66,7 @@ jobs:
         with:
           push: true
           tags: |
-            keyval/odigos-scheduler:${{ steps.vars.outputs.tag }}
+            keyval/odigos-scheduler:${{ steps.extract_tag.outputs.tag }}
           build-args: SERVICE_NAME=scheduler
           platforms: linux/amd64,linux/arm64
 
@@ -75,7 +75,7 @@ jobs:
         with:
           push: true
           tags: |
-            keyval/odigos-instrumentor:${{ steps.vars.outputs.tag }}
+            keyval/odigos-instrumentor:${{ steps.extract_tag.outputs.tag }}
           build-args: SERVICE_NAME=instrumentor
           platforms: linux/amd64,linux/arm64
 
@@ -85,5 +85,5 @@ jobs:
           file: odiglet/Dockerfile
           push: true
           tags: |
-            keyval/odigos-odiglet:${{ steps.vars.outputs.tag }}
+            keyval/odigos-odiglet:${{ steps.extract_tag.outputs.tag }}
           platforms: linux/amd64,linux/arm64
