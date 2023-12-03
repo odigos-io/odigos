@@ -43,14 +43,18 @@ jobs:
             -d '{"event_type": "create_release_pr", "client_payload": {"tag": "${{ steps.extract_tag.outputs.tag }}"}}'
 
   publish-docker-images:
-    runs-on: large-runner
     strategy:
       matrix:
-        service:
-          - autoscaler
-          - scheduler
-          - instrumentor
-          - odiglet
+        include:
+          - service: autoscaler
+            runner: ubuntu-latest
+          - service: scheduler
+            runner: ubuntu-latest
+          - service: instrumentor
+            runner: ubuntu-latest
+          - service: odiglet
+            runner: large-runner
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
