@@ -22,12 +22,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.inputs.tag }}
       
       - name: Set env
         id: vars
         run: |
-          echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-          echo "short_commit=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
+          # echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+          echo "tag=${{github.event.inputs.tag}}" >> $GITHUB_OUTPUT
+          SHORT_COMMIT=$(git rev-parse --short HEAD)
+          echo "short_commit=${SHORT_COMMIT}" >> $GITHUB_ENV
           echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
 
       - name: Verify Components Image Ready
@@ -37,7 +40,7 @@ jobs:
 
           for REPO in "${REPOS[@]}"; do
             echo "Checking tag $TAG_TO_CHECK in $REPO..."
-            TAGS_JSON=$(curl -s "https://hub.docker.com/v2/repositories/keyval/$REPO/tags/")
+            TAGS_JSON=$(curl -s "https://hub.docker.com/v2/repositories/${{ env.DOCKERHUB_ORG }}/$REPO/tags/")
             if echo "$TAGS_JSON" | grep -q "\"name\":\"$TAG_TO_CHECK\""; then
                 echo "Tag $TAG_TO_CHECK exists in Docker Hub repository $REPO."
             else
