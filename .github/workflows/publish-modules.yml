@@ -34,7 +34,7 @@ jobs:
         run: |
           git push origin --tags
 
-      - name: Trigger a workflow in another repo
+      - name: Trigger Release PR in Odigos Enterprise
         run: |
           curl -X POST \
             -H "Accept: application/vnd.github.v3+json" \
