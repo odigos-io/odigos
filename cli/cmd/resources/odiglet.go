@@ -15,10 +15,12 @@ import (
 )
 
 const (
-	OdigletServiceName   = "odiglet"
-	OdigletDaemonSetName = "odiglet"
-	OdigletAppLabelValue = "odiglet"
-	OdigletContainerName = "odiglet"
+	OdigletServiceName         = "odiglet"
+	OdigletDaemonSetName       = "odiglet"
+	OdigletAppLabelValue       = "odiglet"
+	OdigletContainerName       = "odiglet"
+	OdigletImageName           = "keyval/odigos-odiglet"
+	OdigletEnterpriseImageName = "keyval/odigos-enterprise-odiglet"
 )
 
 func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
@@ -373,23 +375,37 @@ func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropaga
 }
 
 type odigletResourceManager struct {
-	client *kube.Client
-	ns     string
-	config *odigosv1.OdigosConfigurationSpec
+	client        *kube.Client
+	ns            string
+	config        *odigosv1.OdigosConfigurationSpec
+	isOdigosCloud bool
 }
 
-func NewOdigletResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
-	return &odigletResourceManager{client: client, ns: ns, config: config}
+func NewOdigletResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, isOdigosCloud bool) ResourceManager {
+	return &odigletResourceManager{client: client, ns: ns, config: config, isOdigosCloud: isOdigosCloud}
 }
 
 func (a *odigletResourceManager) Name() string { return "Odiglet" }
 
 func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
+
+	odigletImage := a.config.OdigletImage
+	// if the user specified an image, use it. otherwise, use the default image.
+	// prev v1.0.4 - the cli would automatically store "keyval/odigos-odiglet" instead of empty value,
+	// thus we need to treat the default image name as empty value.
+	if odigletImage == "" || odigletImage == OdigletImageName {
+		if a.isOdigosCloud {
+			odigletImage = OdigletEnterpriseImageName
+		} else {
+			odigletImage = OdigletImageName
+		}
+	}
+
 	resources := []client.Object{
 		NewOdigletServiceAccount(a.ns),
 		NewOdigletClusterRole(a.config.Psp),
 		NewOdigletClusterRoleBinding(a.ns),
-		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, a.config.OdigletImage),
+		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, odigletImage),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

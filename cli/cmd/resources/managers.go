@@ -26,7 +26,7 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, isOdigosCloud 
 		NewDataCollectionResourceManager(client, odigosNs, config),
 		NewInstrumentorResourceManager(client, odigosNs, config),
 		NewSchedulerResourceManager(client, odigosNs, config),
-		NewOdigletResourceManager(client, odigosNs, config),
+		NewOdigletResourceManager(client, odigosNs, config, isOdigosCloud),
 		NewAutoScalerResourceManager(client, odigosNs, config),
 	}...)
 
