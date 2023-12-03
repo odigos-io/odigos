@@ -17,7 +17,7 @@ env:
 jobs:
   release:
     runs-on:
-      labels: large-runner
+      labels: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,6 +52,10 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: '1.21.0'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18          
 
       - uses: goreleaser/goreleaser-action@v5
         with:
