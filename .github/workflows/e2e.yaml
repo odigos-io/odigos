@@ -1,4 +1,4 @@
-name: e2e-tests
+name: E2E Tests
 
 on:
   pull_request:
@@ -20,6 +20,8 @@ jobs:
           check-latest: true
       - name: Create Kind Cluster
         uses: helm/kind-action@v1.5.0
+        with:
+          name: kind
       - name: Build CLI
         run: |
           cd cli
