@@ -198,6 +198,24 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 					"instrumentedapplications",
 				},
 			},
+			{
+				Verbs: []string{
+					"create",
+					"delete",
+					"get",
+					"list",
+					"patch",
+					"update",
+					"watch",
+					"patch",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"instrumentationconfigs",
+				},
+			},
 		},
 	}
 }
