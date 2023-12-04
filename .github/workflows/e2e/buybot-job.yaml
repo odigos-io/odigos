@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: buybot-job
+spec:
+  template:
+    metadata:
+      annotations:
+        workload: job
+      labels:
+        app: buybot
+    spec:
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: buybot
+          image: keyval/kv-shop-buybot:v0.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SINGLE_ITERATION
+              value: "True"
+          resources: {}

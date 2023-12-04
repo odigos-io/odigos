@@ -72,5 +72,16 @@ jobs:
           do
           echo "Waiting for odigos-data-collection deployment to be created" && sleep 3;
           done
+          kubectl wait --for=condition=Available --timeout=100s deployments --all
           kubectl get pods -A
           kubectl get svc -A
+      - name: Start bot job
+        run: |
+          kubectl create -f .github/workflows/e2e/buybot-job.yaml -n kvshop
+      - name: Wait for bot job to complete
+        run: |
+          kubectl wait --for=condition=Complete --timeout=60s job/buybot-job -n kvshop
+      - name: Copy trace output
+        run: |
+          kubectl cp -c filecp traces/test-opentelemetry-collector-0:tmp/trace.json /tmp/trace.json
+          cat /tmp/trace.json
