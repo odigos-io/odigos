@@ -21,7 +21,7 @@ jobs:
       - name: Create Kind Cluster
         uses: helm/kind-action@v1.5.0
         with:
-          name: kind
+          cluster_name: kind
       - name: Build CLI
         run: |
           cd cli
