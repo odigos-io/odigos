@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag'
+        description: "Tag"
         required: true
 
 permissions:
@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.inputs.tag }}
-      
+
       - name: Set env
         id: vars
         run: |
@@ -54,14 +54,14 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-  
+
       - uses: actions/setup-go@v4
         with:
-          go-version: '1.21.0'
+          go-version: "1.21.0"
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 18          
+          node-version: 18
 
       - uses: goreleaser/goreleaser-action@v5
         with:
@@ -73,7 +73,7 @@ jobs:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
 
       - uses: ko-build/setup-ko@v0.6
-          
+
       - name: publish cli image to docker registries
         working-directory: ./cli
         env:
@@ -84,3 +84,18 @@ jobs:
           DATE: ${{ steps.vars.outputs.date }}
         run: |
           ko build --bare --tags latest --tags ${{ steps.vars.outputs.tag }} --platform=all .
+
+      - name: Notify Slack End
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos CLI released successfully. This is the last step", "tag":"${{ steps.vars.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on Failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos CLI", "tag":"${{ steps.vars.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
