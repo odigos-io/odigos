@@ -51,6 +51,7 @@ jobs:
           kubectl wait --for=condition=Ready --timeout=60s -n traces pod/test-opentelemetry-collector-0
       - name: Install KV Shop
         run: |
+          kubectl create ns kvshop
           kubectl apply -f .github/workflows/e2e/kv-shop.yaml -n kvshop
       - name: Wait for KV Shop to be ready
         run: |
