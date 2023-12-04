@@ -72,7 +72,7 @@ jobs:
           do
           echo "Waiting for odigos-data-collection deployment to be created" && sleep 3;
           done
-          kubectl wait --for=condition=Available --timeout=100s deployments --all
+          kubectl wait --for=condition=Available --timeout=100s deployments --all -n kvshop
           kubectl get pods -A
           kubectl get svc -A
       - name: Start bot job
