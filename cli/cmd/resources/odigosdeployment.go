@@ -91,13 +91,14 @@ func NewLeaderElectionRole(ns string) *rbacv1.Role {
 }
 
 type odigosDeploymentResourceManager struct {
-	client *kube.Client
-	ns     string
-	config *odigosv1.OdigosConfigurationSpec
+	client        *kube.Client
+	ns            string
+	config        *odigosv1.OdigosConfigurationSpec
+	isOdigosCloud bool
 }
 
-func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
-	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config}
+func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, isOdigosCloud bool) ResourceManager {
+	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config, isOdigosCloud: isOdigosCloud}
 }
 
 func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployment" }
@@ -110,7 +111,9 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 		crds.NewConfiguration(),
 		crds.NewDestination(),
 		crds.NewInstrumentedApp(),
-		crds.NewInstrumentationConfig(),
+	}
+	if a.isOdigosCloud {
+		resources = append(resources, crds.NewInstrumentationConfig())
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
