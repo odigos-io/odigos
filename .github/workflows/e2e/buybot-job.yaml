@@ -19,4 +19,4 @@ spec:
           image: curlimages/curl:8.4.0
           imagePullPolicy: IfNotPresent
           command: ["curl"]
-          args: ["-s", "http://frontend:8080/products"]
+          args: ["-s","-X","POST","http://frontend:8080/buy?id=123"]
