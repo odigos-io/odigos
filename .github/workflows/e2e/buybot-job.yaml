@@ -15,10 +15,8 @@ spec:
       securityContext: {}
       terminationGracePeriodSeconds: 30
       containers:
-        - name: buybot
-          image: keyval/kv-shop-buybot:v0.2
+        - name: curl
+          image: curlimages/curl:8.4.0
           imagePullPolicy: IfNotPresent
-          env:
-            - name: SINGLE_ITERATION
-              value: "True"
-          resources: {}
+          command: ["curl"]
+          args: ["-s", "http://frontend:8080/products"]
