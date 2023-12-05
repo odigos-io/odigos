@@ -167,6 +167,8 @@ spec:
               value: inventory:8080
             - name: PRICING_SERVICE_HOST
               value: pricing:8080
+            - name: COUPON_SERVICE_HOST
+              value: coupon:8080
           ports:
             - containerPort: 8080
 ---
