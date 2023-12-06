@@ -72,14 +72,9 @@ jobs:
           do
           echo "Waiting for odigos-data-collection deployment to be created" && sleep 3;
           done
-          while [[ $(kubectl get pods -n kvshop -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' | grep False) ]];
+          while [[ $(kubectl get pods --output=jsonpath='{range .items[*]}{.status.phase}{"\n"}{end}' -n kvshop | grep -v Running | wc -l) != 0 ]];
           do
-          echo "Waiting for all pods in kvshop to be in Ready state" && sleep 3;
-          done
-          # Wait for all the terminating pods to be deleted
-          while [[ $(kubectl get pods -n kvshop -o 'jsonpath={..metadata.deletionTimestamp}' | grep -v "<none>") ]];
-          do
-          echo "Waiting for all terminating pods in kvshop to be deleted" && sleep 3;
+          echo "Waiting for kvshop pods to be running" && sleep 3;
           done
           kubectl get pods -A
           kubectl get svc -A
