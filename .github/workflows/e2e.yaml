@@ -76,6 +76,7 @@ jobs:
           do
           echo "Waiting for kvshop pods to be running" && sleep 3;
           done
+          sleep 10
           kubectl get pods -A
           kubectl get svc -A
       - name: Start bot job
