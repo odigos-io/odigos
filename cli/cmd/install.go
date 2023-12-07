@@ -62,8 +62,6 @@ This command will install k8s components that will auto-instrument your applicat
 			os.Exit(1)
 		}
 
-		config := createOdigosConfigSpec()
-
 		isOdigosCloud := odigosCloudApiKeyFlag != ""
 		if isOdigosCloud {
 			err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
@@ -72,6 +70,8 @@ This command will install k8s components that will auto-instrument your applicat
 				os.Exit(1)
 			}
 		}
+
+		config := createOdigosConfigSpec(isOdigosCloud)
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
@@ -126,7 +126,8 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	return err
 }
 
-func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
+func createOdigosConfigSpec(isOdigosCloud bool) odigosv1.OdigosConfigurationSpec {
+
 	return odigosv1.OdigosConfigurationSpec{
 		OdigosVersion:     versionFlag,
 		ConfigVersion:     1, // config version starts at 1 and incremented on every config change
