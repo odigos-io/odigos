@@ -7,7 +7,7 @@ JAVA_SCOPE="io.opentelemetry.tomcat-7.0"
 JS_SCOPE="@opentelemetry/instrumentation-http"
 
 @test "all :: includes service.name in resource attributes" {
-  result=$(resource_attributes_received | jq "select(.key == \"service.name\").value.stringValue")
+  result=$(resource_attributes_received | jq "select(.key == \"service.name\").value.stringValue") | sort
   result_separated=$(echo $result | sed 's/\n/,/g')
   assert_equal "$result_separated" '"frontend" "pricing" "membership" "inventory" "coupon"'
 }
@@ -18,7 +18,7 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
 }
 
 @test "java :: emits a span name '{http.method} {http.route}''" {
-  result=$(server_span_names_for ${JAVA_SCOPE})
+  result=$(server_span_names_for ${JAVA_SCOPE}) | sort
   result_separated=$(echo $result | sed 's/\n/,/g')
   assert_equal "$result_separated" '"GET /price" "POST /buy"'
 }
@@ -34,7 +34,7 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
 }
 
 @test "java :: includes http.method attribute" {
-  result=$(server_span_attributes_for ${JAVA_SCOPE} | jq "select(.key == \"http.method\").value.stringValue")
+  result=$(server_span_attributes_for ${JAVA_SCOPE} | jq "select(.key == \"http.method\").value.stringValue") | sort
   result_separated=$(echo $result | sed 's/\n/,/g')
   assert_equal "$result_separated" '"GET" "POST"'
 }
@@ -50,7 +50,7 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
 }
 
 @test "java :: includes http.target attribute" {
-  result=$(server_span_attributes_for ${JAVA_SCOPE} | jq "select(.key == \"http.target\").value.stringValue")
+  result=$(server_span_attributes_for ${JAVA_SCOPE} | jq "select(.key == \"http.target\").value.stringValue") | sort
   result_separated=$(echo $result | sed 's/\n/,/g')
   assert_equal "$result_separated" '"/price?id=123" "/buy?id=123"'
 }
