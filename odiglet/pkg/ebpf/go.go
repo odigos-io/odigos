@@ -37,6 +37,7 @@ func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context
 		auto.WithResourceAttributes(utils.GetResourceAttributes(podWorkload)...),
 		auto.WithServiceName(serviceName),
 		auto.WithTraceExporter(defaultExporter),
+		auto.WithGlobal(),
 	)
 	if err != nil {
 		log.Logger.Error(err, "instrumentation setup failed")
