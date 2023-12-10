@@ -87,5 +87,7 @@ jobs:
           kubectl wait --for=condition=Complete --timeout=60s job/buybot-job -n kvshop
       - name: Copy trace output
         run: |
+          echo "Sleeping for 10 seconds to allow traces to be collected"
+          sleep 10
           kubectl cp -c filecp traces/test-opentelemetry-collector-0:tmp/trace.json /tmp/trace.json
           cat /tmp/trace.json
