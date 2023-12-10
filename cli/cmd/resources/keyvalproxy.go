@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	odigosCloudProxyVersion = "v0.7.0"
+	odigosCloudProxyVersion = "v0.8.0"
 )
 
 const (
