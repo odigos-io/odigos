@@ -7,28 +7,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type SupportedOtelSdk struct {
-	SdkType common.OtelSdkType `json:"sdkType"`
-	SdkTier common.OtelSdkTier `json:"sdkTier"`
-}
-
-// type SupportedOtelSdksPerLanguage map[common.ProgrammingLanguage][]SupportedOtelSdk
-
-// type DefaultOtelSdkPerLanguage map[common.ProgrammingLanguage]SupportedOtelSdk
-
 // OdigosConfigurationSpec defines the desired state of OdigosConfiguration
 type OdigosConfigurationSpec struct {
-	OdigosVersion     string                                            `json:"odigosVersion"`
-	ConfigVersion     int                                               `json:"configVersion"`
-	TelemetryEnabled  bool                                              `json:"telemetryEnabled,omitempty"`
-	IgnoredNamespaces []string                                          `json:"ignoredNamespaces,omitempty"`
-	Psp               bool                                              `json:"psp,omitempty"`
-	ImagePrefix       string                                            `json:"imagePrefix,omitempty"`
-	OdigletImage      string                                            `json:"odigletImage,omitempty"`
-	InstrumentorImage string                                            `json:"instrumentorImage,omitempty"`
-	AutoscalerImage   string                                            `json:"autoscalerImage,omitempty"`
-	SupportedSDKs     map[common.ProgrammingLanguage][]SupportedOtelSdk `json:"supportedSDKs,omitempty"`
-	DefaultSDKs       map[common.ProgrammingLanguage]SupportedOtelSdk   `json:"defaultSDKs,omitempty"`
+	OdigosVersion     string                                          `json:"odigosVersion"`
+	ConfigVersion     int                                             `json:"configVersion"`
+	TelemetryEnabled  bool                                            `json:"telemetryEnabled,omitempty"`
+	IgnoredNamespaces []string                                        `json:"ignoredNamespaces,omitempty"`
+	Psp               bool                                            `json:"psp,omitempty"`
+	ImagePrefix       string                                          `json:"imagePrefix,omitempty"`
+	OdigletImage      string                                          `json:"odigletImage,omitempty"`
+	InstrumentorImage string                                          `json:"instrumentorImage,omitempty"`
+	AutoscalerImage   string                                          `json:"autoscalerImage,omitempty"`
+	SupportedSDKs     map[common.ProgrammingLanguage][]common.OtelSdk `json:"supportedSDKs,omitempty"`
+	DefaultSDKs       map[common.ProgrammingLanguage]common.OtelSdk   `json:"defaultSDKs,omitempty"`
 }
 
 //+genclient

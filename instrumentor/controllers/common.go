@@ -28,7 +28,7 @@ var (
 
 // shouldInstrumentWithEbpf returns true if the given runtime details should be delegated to odiglet for ebpf instrumentation
 // This is currently hardcoded. In the future we will read this from a config
-func shouldInstrumentWithEbpf(runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]v1alpha1.SupportedOtelSdk) bool {
+func shouldInstrumentWithEbpf(runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk) bool {
 	for _, l := range runtimeDetails.Spec.Languages {
 		defaultSdk, found := defaultSdks[l.Language]
 		if found && defaultSdk.SdkType == common.EbpfOtelSdkType {

@@ -19,3 +19,8 @@ const (
 	CommunityOtelSdkTier  OtelSdkTier = "community"
 	EnterpriseOtelSdkTier OtelSdkTier = "enterprise"
 )
+
+type OtelSdk struct {
+	SdkType OtelSdkType `json:"sdkType"`
+	SdkTier OtelSdkTier `json:"sdkTier"`
+}
