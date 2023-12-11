@@ -119,7 +119,7 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 			return
 		}
 
-		log.Logger.V(0).Info("Running ebpf go instrumentation", "workload", podWorkload, "pod", pod)
+		log.Logger.V(0).Info("Running ebpf instrumentation", "workload", podWorkload, "pod", pod, "language", d.language)
 
 		if err := inst.Run(context.Background()); err != nil {
 			log.Logger.Error(err, "instrumentation crashed after running")

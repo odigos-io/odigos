@@ -14,7 +14,7 @@ const (
 	OdigosConfigName = "odigos-config"
 )
 
-func otelSdkConfigCommunity() (odigosv1.DefaultOtelSdkPerLanguage, odigosv1.SupportedOtelSdksPerLanguage) {
+func otelSdkConfigCommunity() (map[common.ProgrammingLanguage]odigosv1.SupportedOtelSdk, map[common.ProgrammingLanguage][]odigosv1.SupportedOtelSdk) {
 
 	nativeCommunity := odigosv1.SupportedOtelSdk{
 		SdkType: common.NativeOtelSdkType,
@@ -26,23 +26,23 @@ func otelSdkConfigCommunity() (odigosv1.DefaultOtelSdkPerLanguage, odigosv1.Supp
 		SdkTier: common.CommunityOtelSdkTier,
 	}
 
-	return odigosv1.DefaultOtelSdkPerLanguage{
+	return map[common.ProgrammingLanguage]odigosv1.SupportedOtelSdk{
 			common.JavaProgrammingLanguage:       nativeCommunity,
 			common.PythonProgrammingLanguage:     nativeCommunity,
 			common.GoProgrammingLanguage:         eBPFCommunity,
 			common.DotNetProgrammingLanguage:     nativeCommunity,
 			common.JavascriptProgrammingLanguage: nativeCommunity,
 		},
-		odigosv1.SupportedOtelSdksPerLanguage{
-			common.JavaProgrammingLanguage:       []odigosv1.SupportedOtelSdk{nativeCommunity},
-			common.PythonProgrammingLanguage:     []odigosv1.SupportedOtelSdk{nativeCommunity},
-			common.GoProgrammingLanguage:         []odigosv1.SupportedOtelSdk{eBPFCommunity},
-			common.DotNetProgrammingLanguage:     []odigosv1.SupportedOtelSdk{nativeCommunity},
-			common.JavascriptProgrammingLanguage: []odigosv1.SupportedOtelSdk{nativeCommunity},
+		map[common.ProgrammingLanguage][]odigosv1.SupportedOtelSdk{
+			common.JavaProgrammingLanguage:       {nativeCommunity},
+			common.PythonProgrammingLanguage:     {nativeCommunity},
+			common.GoProgrammingLanguage:         {eBPFCommunity},
+			common.DotNetProgrammingLanguage:     {nativeCommunity},
+			common.JavascriptProgrammingLanguage: {nativeCommunity},
 		}
 }
 
-func otelSdkConfigEnterprise() (odigosv1.DefaultOtelSdkPerLanguage, odigosv1.SupportedOtelSdksPerLanguage) {
+func otelSdkConfigEnterprise() (map[common.ProgrammingLanguage]odigosv1.SupportedOtelSdk, map[common.ProgrammingLanguage][]odigosv1.SupportedOtelSdk) {
 
 	nativeCommunity := odigosv1.SupportedOtelSdk{
 		SdkType: common.NativeOtelSdkType,
@@ -54,19 +54,19 @@ func otelSdkConfigEnterprise() (odigosv1.DefaultOtelSdkPerLanguage, odigosv1.Sup
 		SdkTier: common.EnterpriseOtelSdkTier,
 	}
 
-	return odigosv1.DefaultOtelSdkPerLanguage{
-			common.JavaProgrammingLanguage:       nativeCommunity,
+	return map[common.ProgrammingLanguage]odigosv1.SupportedOtelSdk{
+			common.JavaProgrammingLanguage:       eBPFEnterprise, // TODO: consider what should be the default
 			common.PythonProgrammingLanguage:     nativeCommunity,
 			common.GoProgrammingLanguage:         eBPFEnterprise,
 			common.DotNetProgrammingLanguage:     nativeCommunity,
 			common.JavascriptProgrammingLanguage: nativeCommunity,
 		},
-		odigosv1.SupportedOtelSdksPerLanguage{
-			common.JavaProgrammingLanguage:       []odigosv1.SupportedOtelSdk{nativeCommunity},
-			common.PythonProgrammingLanguage:     []odigosv1.SupportedOtelSdk{nativeCommunity},
-			common.GoProgrammingLanguage:         []odigosv1.SupportedOtelSdk{eBPFEnterprise},
-			common.DotNetProgrammingLanguage:     []odigosv1.SupportedOtelSdk{nativeCommunity},
-			common.JavascriptProgrammingLanguage: []odigosv1.SupportedOtelSdk{nativeCommunity},
+		map[common.ProgrammingLanguage][]odigosv1.SupportedOtelSdk{
+			common.JavaProgrammingLanguage:       {nativeCommunity, eBPFEnterprise},
+			common.PythonProgrammingLanguage:     {nativeCommunity},
+			common.GoProgrammingLanguage:         {eBPFEnterprise},
+			common.DotNetProgrammingLanguage:     {nativeCommunity},
+			common.JavascriptProgrammingLanguage: {nativeCommunity},
 		}
 }
 
@@ -99,8 +99,8 @@ func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
 
 func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
 
-	var defaultOtelSdkPerLanguage odigosv1.DefaultOtelSdkPerLanguage
-	var supportedOtelSdksPerLanguage odigosv1.SupportedOtelSdksPerLanguage
+	var defaultOtelSdkPerLanguage map[common.ProgrammingLanguage]odigosv1.SupportedOtelSdk
+	var supportedOtelSdksPerLanguage map[common.ProgrammingLanguage][]odigosv1.SupportedOtelSdk
 	if a.isOdigosCloud {
 		defaultOtelSdkPerLanguage, supportedOtelSdksPerLanguage = otelSdkConfigEnterprise()
 	} else {
