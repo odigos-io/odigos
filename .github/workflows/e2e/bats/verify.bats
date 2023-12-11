@@ -8,7 +8,7 @@ JAVA_CLIENT_SCOPE="io.opentelemetry.http-url-connection"
 JS_SCOPE="@opentelemetry/instrumentation-http"
 
 @test "all :: includes service.name in resource attributes" {
-  result=$(resource_attributes_received | jq "select(.key == \"service.name\").value.stringValue" | sort)
+  result=$(resource_attributes_received | jq "select(.key == \"service.name\").value.stringValue" | sort | uniq)
   result_separated=$(echo $result | sed 's/\n/,/g')
   assert_equal "$result_separated" '"coupon" "frontend" "inventory" "membership" "pricing"'
 }
