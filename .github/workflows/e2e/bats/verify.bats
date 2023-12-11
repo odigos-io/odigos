@@ -138,6 +138,11 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
             exit 1
         fi
     done <<< "$server_parent_span_ids"
+
+  # Verify Go server span has JS client span as parent
+  go_parent_span_id=$(server_spans_from_scope_named ${GO_SCOPE} | jq ".parentSpanId")
+  js_client_span_id=$(client_spans_from_scope_named ${JS_SCOPE} | jq ".spanId")
+  assert_equal "$go_parent_span_id" "$js_client_span_id"
 }
 
 @test "server :: expected (redacted) trace output" {
