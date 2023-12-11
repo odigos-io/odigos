@@ -55,7 +55,7 @@ func otelSdkConfigEnterprise() (map[common.ProgrammingLanguage]odigosv1.Supporte
 	}
 
 	return map[common.ProgrammingLanguage]odigosv1.SupportedOtelSdk{
-			common.JavaProgrammingLanguage:       eBPFEnterprise, // TODO: consider what should be the default
+			common.JavaProgrammingLanguage:       nativeCommunity,
 			common.PythonProgrammingLanguage:     nativeCommunity,
 			common.GoProgrammingLanguage:         eBPFEnterprise,
 			common.DotNetProgrammingLanguage:     nativeCommunity,
