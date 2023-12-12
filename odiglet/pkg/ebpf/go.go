@@ -56,6 +56,6 @@ func (g *GoOtelEbpfSdk) Run(ctx context.Context) error {
 	return g.inst.Run(ctx)
 }
 
-func (g *GoOtelEbpfSdk) Close(pod types.NamespacedName) error {
+func (g *GoOtelEbpfSdk) Close(ctx context.Context, pod types.NamespacedName) error {
 	return g.inst.Close()
 }
