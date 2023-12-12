@@ -55,7 +55,7 @@ func otelSdkConfigEnterprise() (map[common.ProgrammingLanguage]common.OtelSdk, m
 	}
 
 	return map[common.ProgrammingLanguage]common.OtelSdk{
-			common.JavaProgrammingLanguage:       eBPFEnterprise,
+			common.JavaProgrammingLanguage:       nativeCommunity,
 			common.PythonProgrammingLanguage:     nativeCommunity,
 			common.GoProgrammingLanguage:         eBPFEnterprise,
 			common.DotNetProgrammingLanguage:     nativeCommunity,

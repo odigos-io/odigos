@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/keyval-dev/odigos/odiglet/pkg/kube/utils"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
@@ -56,6 +55,6 @@ func (g *GoOtelEbpfSdk) Run(ctx context.Context) error {
 	return g.inst.Run(ctx)
 }
 
-func (g *GoOtelEbpfSdk) Close(ctx context.Context, pod types.NamespacedName) error {
+func (g *GoOtelEbpfSdk) Close(ctx context.Context) error {
 	return g.inst.Close()
 }
