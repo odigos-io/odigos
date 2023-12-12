@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/utils"
@@ -77,19 +78,17 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	}
 
 	if !isDataCollectionReady(ctx, r.Client) {
-		err = r.removeInstrumentation(logger, ctx, req.Name, req.Namespace)
+		err := r.removeInstrumentation(logger, ctx, req.Name, req.Namespace)
 		if err != nil {
 			logger.Error(err, "error removing instrumentation")
 			return ctrl.Result{}, err
 		}
-
-		return ctrl.Result{}, nil
-	}
-
-	err = instrument(logger, ctx, r.Client, &runtimeDetails)
-	if err != nil {
-		logger.Error(err, "error instrumenting")
-		return ctrl.Result{}, err
+	} else {
+		err := instrument(logger, ctx, r.Client, &runtimeDetails)
+		if err != nil {
+			logger.Error(err, "error instrumenting")
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
@@ -108,10 +107,6 @@ func (r *InstrumentedApplicationReconciler) removeInstrumentation(logger logr.Lo
 	}
 
 	return nil
-}
-
-func (r *InstrumentedApplicationReconciler) skipContainer(name string) bool {
-	return name == "istio-proxy" || name == "linkerd-proxy"
 }
 
 // SetupWithManager sets up the controller with the Manager.

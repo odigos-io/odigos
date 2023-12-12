@@ -13,7 +13,7 @@ import (
 // for example, the go auto instrumentation sdk implements it
 type OtelEbpfSdk interface {
 	Run(ctx context.Context) error
-	Close() error
+	Close(pod types.NamespacedName) error
 }
 
 // users can use different eBPF otel SDKs by returning them from this function
@@ -112,7 +112,7 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 			d.mux.Unlock()
 			// we attempted to instrument this process, but it was already cleaned up
 			// so we need to clean up the instrumentation we just created
-			err = inst.Close()
+			err = inst.Close(pod)
 			if err != nil {
 				log.Logger.Error(err, "error cleaning up instrumentation for process", "pid", pid)
 			}
@@ -163,7 +163,7 @@ func (d *EbpfDirector[T]) Cleanup(pod types.NamespacedName) {
 
 		delete(d.pidsToInstrumentation, pid)
 		go func() {
-			err := inst.Close()
+			err := inst.Close(pod)
 			if err != nil {
 				log.Logger.Error(err, "error cleaning up objects for process", "pid", pid)
 			}
