@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/go-logr/logr"
+	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
@@ -27,9 +28,10 @@ var (
 
 // shouldInstrumentWithEbpf returns true if the given runtime details should be delegated to odiglet for ebpf instrumentation
 // This is currently hardcoded. In the future we will read this from a config
-func shouldInstrumentWithEbpf(runtimeDetails *odigosv1.InstrumentedApplication) bool {
+func shouldInstrumentWithEbpf(runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk) bool {
 	for _, l := range runtimeDetails.Spec.Languages {
-		if l.Language == common.GoProgrammingLanguage {
+		defaultSdk, found := defaultSdks[l.Language]
+		if found && defaultSdk.SdkType == common.EbpfOtelSdkType {
 			return true
 		}
 	}
@@ -79,8 +81,14 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 		return err
 	}
 
+	var odigosConfig v1alpha1.OdigosConfiguration
+	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: utils.GetCurrentNamespace(), Name: "odigos-config"}, &odigosConfig)
+	if err != nil {
+		return err
+	}
+
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
-		if shouldInstrumentWithEbpf(runtimeDetails) {
+		if shouldInstrumentWithEbpf(runtimeDetails, odigosConfig.Spec.DefaultSDKs) {
 			setInstrumentationEbpf(obj)
 			return nil
 		}

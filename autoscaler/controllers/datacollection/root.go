@@ -2,6 +2,7 @@ package datacollection
 
 import (
 	"context"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -74,5 +75,5 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 
 // Data collection is ready if at least 50% of the pods are ready
 func calcDataCollectionReadyStatus(ds *appsv1.DaemonSet) bool {
-	return float64(ds.Status.NumberReady) >= float64(ds.Status.DesiredNumberScheduled)/float64(2)
+	return ds.Status.DesiredNumberScheduled > 0 && float64(ds.Status.NumberReady) >= float64(ds.Status.DesiredNumberScheduled)/float64(2)
 }

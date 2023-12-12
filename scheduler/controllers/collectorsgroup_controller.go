@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/scheduler/controllers/collectorgroups"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,18 +33,9 @@ type CollectorsGroupReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/finalizers,verbs=update
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// the CollectorsGroup object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
+// +kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/finalizers,verbs=update
 func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	var collectorGroups odigosv1.CollectorsGroupList
