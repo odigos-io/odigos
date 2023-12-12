@@ -23,7 +23,6 @@ load-to-kind:
 debug-odiglet:
 	docker build -t keyval/odigos-odiglet:$(TAG) . -f odiglet/debug.Dockerfile
 	kind load docker-image keyval/odigos-odiglet:$(TAG)
-	kubectl rollout restart daemonset odiglet -n odigos-system
-	kubectl wait --for=condition=ready pod -l app=odiglet -n odigos-system
-	$(eval POD_NAME := $(shell kubectl get pods -n odigos-system --field-selector=status.phase=Running -l app=odiglet -o jsonpath='{.items[0].metadata.name}'))
-	kubectl port-forward -n odigos-system $(POD_NAME) 2345:2345
+	kubectl delete pod -n odigos-system -l app=odiglet
+	kubectl wait --for=condition=ready pod -n odigos-system -l app=odiglet
+	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
