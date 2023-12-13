@@ -29,26 +29,40 @@ type Director interface {
 	Shutdown()
 }
 
+type pidDetails[T OtelEbpfSdk] struct {
+
+	// The instrumentation manager object
+	// if IsRunning is false, this value is not valid and should not be used
+	Instrumentation T
+
+	// this indicates if we called "Run" on the instrumentation.
+	// since T is OtelEbpfSdk which is an interface, we could have used nil
+	// to denote that, but go compiler gets confused and can't always tell if T is an interface
+	//
+	// if IsRunning is false, the instrumentation is in the process of being created.
+	IsRunning bool
+
+	ShouldBeInstrumented bool
+}
+
 type podDetails struct {
 	Workload *common.PodWorkload
-	Pids     []int
+
+	// pids we instrumented for this pod, or we are in the process of instrumenting async.
+	// every pid for which we store pidDetails, should be in this list.
+	Pids []int
 }
 
 type EbpfDirector[T OtelEbpfSdk] struct {
 	mux sync.Mutex
 
-	language               common.ProgrammingLanguage
+	language common.ProgrammingLanguage
+
+	// this is used to create the instrumentation manager for each pid managed by this director
 	instrumentationFactory InstrumentationFactory[T]
 
-	// this map holds the instrumentation object which is used to close the instrumentation
-	// the map is filled only after the instrumentation is actually created
-	// which is an asyn process that might take some time
-	pidsToInstrumentation map[int]T
-
-	// this map is used to make sure we do not attempt to instrument the same process twice.
-	// it keeps track of which processes we already attempted to instrument,
-	// so we can avoid attempting to instrument them again.
-	pidsAttemptedInstrumentation map[int]struct{}
+	// we store details on each pid we instrumented, or are in the process of instrumenting
+	pidsDetails map[int]pidDetails[T]
 
 	// via this map, we can find the workload and pids for a specific pod.
 	// sometimes we only have the pod name and namespace, so this map is useful.
@@ -60,24 +74,35 @@ type EbpfDirector[T OtelEbpfSdk] struct {
 
 func NewEbpfDirector[T OtelEbpfSdk](language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
 	return &EbpfDirector[T]{
-		language:                     language,
-		instrumentationFactory:       instrumentationFactory,
-		pidsToInstrumentation:        make(map[int]T),
-		pidsAttemptedInstrumentation: make(map[int]struct{}),
-		podsToDetails:                make(map[types.NamespacedName]podDetails),
-		workloadToPods:               make(map[common.PodWorkload]map[types.NamespacedName]struct{}),
+		language:               language,
+		instrumentationFactory: instrumentationFactory,
+		pidsDetails:            make(map[int]pidDetails[T]),
+		podsToDetails:          make(map[types.NamespacedName]podDetails),
+		workloadToPods:         make(map[common.PodWorkload]map[types.NamespacedName]struct{}),
 	}
 }
 
-func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *common.PodWorkload, appName string) error {
+func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *common.PodWorkload, serviceName string) error {
 	log.Logger.V(0).Info("Instrumenting process", "pid", pid, "workload", podWorkload)
 	d.mux.Lock()
 	defer d.mux.Unlock()
-	if _, exists := d.pidsAttemptedInstrumentation[pid]; exists {
-		log.Logger.V(5).Info("Process already instrumented", "pid", pid)
+
+	// check if we already instrumented this process
+	if pidDetails, exists := d.pidsDetails[pid]; exists {
+		// for some reason, the compiler is not able to infer that T is an interface
+		if pidDetails.IsRunning {
+			// we already instrumented this process
+			log.Logger.V(5).Info("Process already instrumented", "pid", pid)
+		} else {
+			log.Logger.V(5).Info("pid is in the process of setting up instrumentation", "pid", pid)
+		}
 		return nil
 	}
 
+	// mark that this pid is in the process of being instrumented
+	d.pidsDetails[pid] = pidDetails[T]{IsRunning: false, ShouldBeInstrumented: true}
+
+	// upsert the pod details, and add the pid to the list of pids for this pod
 	details, exists := d.podsToDetails[pod]
 	if !exists {
 		details = podDetails{
@@ -89,42 +114,13 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 	details.Pids = append(details.Pids, pid)
 	d.podsToDetails[pod] = details
 
-	d.pidsAttemptedInstrumentation[pid] = struct{}{}
-
+	// update workload info
 	if _, exists := d.workloadToPods[*podWorkload]; !exists {
 		d.workloadToPods[*podWorkload] = make(map[types.NamespacedName]struct{})
 	}
 	d.workloadToPods[*podWorkload][pod] = struct{}{}
 
-	go func() {
-		inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload)
-		if err != nil {
-			log.Logger.Error(err, "instrumentation setup failed", "workload", podWorkload, "pod", pod)
-			return
-		}
-
-		d.mux.Lock()
-		_, stillExists := d.pidsAttemptedInstrumentation[pid]
-		if stillExists {
-			d.pidsToInstrumentation[pid] = inst
-			d.mux.Unlock()
-		} else {
-			d.mux.Unlock()
-			// we attempted to instrument this process, but it was already cleaned up
-			// so we need to clean up the instrumentation we just created
-			err = inst.Close(ctx)
-			if err != nil {
-				log.Logger.Error(err, "error cleaning up instrumentation for process", "pid", pid)
-			}
-			return
-		}
-
-		log.Logger.V(0).Info("Running ebpf instrumentation", "workload", podWorkload, "pod", pod, "language", d.language)
-
-		if err := inst.Run(context.Background()); err != nil {
-			log.Logger.Error(err, "instrumentation crashed after running")
-		}
-	}()
+	go d.createPidInstrumentationAsync(ctx, pid, pod, podWorkload, serviceName)
 
 	return nil
 }
@@ -136,38 +132,41 @@ func (d *EbpfDirector[T]) Language() common.ProgrammingLanguage {
 func (d *EbpfDirector[T]) Cleanup(pod types.NamespacedName) {
 	d.mux.Lock()
 	defer d.mux.Unlock()
+
+	// cleanup pod details
 	details, exists := d.podsToDetails[pod]
 	if !exists {
 		log.Logger.V(5).Info("No processes to cleanup for pod", "pod", pod)
 		return
 	}
 
-	log.Logger.V(0).Info("Cleaning up ebpf go instrumentation for pod", "pod", pod)
-	delete(d.podsToDetails, pod)
-
-	// clear the pod from the workloadToPods map
-	workload := details.Workload
-	delete(d.workloadToPods[*workload], pod)
-	if len(d.workloadToPods[*workload]) == 0 {
-		delete(d.workloadToPods, *workload)
-	}
-
+	// cleanup pids details and Close the instrumentation manager
+	uncleanedPids := []int{}
 	for _, pid := range details.Pids {
-		delete(d.pidsAttemptedInstrumentation, pid)
 
-		inst, exists := d.pidsToInstrumentation[pid]
+		pidDetails, exists := d.pidsDetails[pid]
 		if !exists {
 			log.Logger.V(5).Info("No objects to cleanup for process", "pid", pid)
 			continue
 		}
 
-		delete(d.pidsToInstrumentation, pid)
-		go func() {
-			err := inst.Close(context.Background())
-			if err != nil {
-				log.Logger.Error(err, "error cleaning up objects for process", "pid", pid)
-			}
-		}()
+		if !pidDetails.IsRunning {
+			log.Logger.V(0).Info("Attempting to cleanup instrumentation which is not yet running. Flagging to be done later", "pid", pid)
+			uncleanedPids = append(uncleanedPids, pid)
+			continue
+		}
+
+		err := pidDetails.Instrumentation.Close(context.Background())
+		if err != nil {
+			log.Logger.Error(err, "error cleaning up objects for process", "pid", pid)
+		}
+	}
+
+	if len(uncleanedPids) == 0 {
+		d.removePodFromDirector(pod)
+	} else {
+		details.Pids = uncleanedPids
+		d.podsToDetails[pod] = details
 	}
 }
 
@@ -195,14 +194,87 @@ func (d *EbpfDirector[T]) GetWorkloadInstrumentations(workload *common.PodWorklo
 		}
 
 		for _, pid := range details.Pids {
-			inst, ok := d.pidsToInstrumentation[pid]
-			if !ok {
+			pidDetails, ok := d.pidsDetails[pid]
+			if !ok || !pidDetails.IsRunning {
 				continue
 			}
 
-			insts = append(insts, inst)
+			insts = append(insts, pidDetails.Instrumentation)
 		}
 	}
 
 	return insts
+}
+
+func (d *EbpfDirector[T]) createPidInstrumentationAsync(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *common.PodWorkload, serviceName string) {
+
+	// this operation might take some time, so we should do it async and do not lock
+	inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, serviceName, podWorkload)
+	if err != nil {
+		// TODO: should we remove it from the map?
+		log.Logger.Error(err, "instrumentation setup failed", "workload", podWorkload, "pod", pod)
+		return
+	}
+
+	d.mux.Lock()
+	pidDetails := d.pidsDetails[pid]
+
+	// it is possible that while we were setting up the instrumentation, the pod was deleted or uninstrumented
+	// in which case, we should undo the instrumentation we just created and cleanup
+	if !pidDetails.ShouldBeInstrumented {
+		inst.Close(ctx)
+
+		// update pid details
+		delete(d.pidsDetails, pid)
+
+		// update pod details
+		podDetails := d.podsToDetails[pod]
+		for i, p := range podDetails.Pids {
+			if p == pid {
+				podDetails.Pids = append(podDetails.Pids[:i], podDetails.Pids[i+1:]...)
+				break
+			}
+		}
+		if len(podDetails.Pids) == 0 {
+			d.removePodFromDirector(pod)
+		} else {
+			d.podsToDetails[pod] = podDetails
+		}
+		d.mux.Unlock()
+
+		return
+	}
+
+	// update the pid details before running the instrumentation manager
+	pidDetails.Instrumentation = inst
+	pidDetails.IsRunning = true
+	d.pidsDetails[pid] = pidDetails
+
+	d.mux.Unlock()
+
+	log.Logger.V(0).Info("Running ebpf instrumentation", "workload", podWorkload, "pod", pod, "language", d.language)
+
+	// Run is blocking
+	if err := inst.Run(ctx); err != nil {
+		log.Logger.Error(err, "instrumentation crashed after running")
+	}
+}
+
+// cleanup pod details from the director.
+// this function should be called when the mutex is locked
+func (d *EbpfDirector[T]) removePodFromDirector(pod types.NamespacedName) {
+	podDetails, exists := d.podsToDetails[pod]
+	if !exists {
+		return
+	}
+	podWorkload := *podDetails.Workload
+
+	// cleanup pod details
+	delete(d.podsToDetails, pod)
+
+	// cleanup workload details
+	delete(d.workloadToPods[podWorkload], pod)
+	if len(d.workloadToPods[podWorkload]) == 0 {
+		delete(d.workloadToPods, podWorkload)
+	}
 }
