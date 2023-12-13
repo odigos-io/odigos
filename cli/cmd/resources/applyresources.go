@@ -6,12 +6,13 @@ import (
 	"os"
 
 	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/cli/pkg/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func ApplyResourceManagers(ctx context.Context, client *kube.Client, resourceManagers []ResourceManager, prefixForLogging string) error {
+func ApplyResourceManagers(ctx context.Context, client *kube.Client, resourceManagers []resourcemanager.ResourceManager, prefixForLogging string) error {
 	for _, rm := range resourceManagers {
 		l := log.Print(fmt.Sprintf("%s Odigos %s", prefixForLogging, rm.Name()))
 		err := rm.InstallFromScratch(ctx)

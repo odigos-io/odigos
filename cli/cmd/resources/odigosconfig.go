@@ -4,6 +4,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,14 +86,14 @@ func NewOdigosConfiguration(ns string, config *odigosv1.OdigosConfigurationSpec)
 }
 
 type odigosConfigResourceManager struct {
-	client        *kube.Client
-	ns            string
-	config        *odigosv1.OdigosConfigurationSpec
-	isOdigosCloud bool
+	client     *kube.Client
+	ns         string
+	config     *odigosv1.OdigosConfigurationSpec
+	odigosTier common.OdigosTier
 }
 
-func NewOdigosConfigResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, isOdigosCloud bool) ResourceManager {
-	return &odigosConfigResourceManager{client: client, ns: ns, config: config, isOdigosCloud: isOdigosCloud}
+func NewOdigosConfigResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
+	return &odigosConfigResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
 }
 
 func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
@@ -101,10 +102,10 @@ func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) er
 
 	var defaultOtelSdkPerLanguage map[common.ProgrammingLanguage]common.OtelSdk
 	var supportedOtelSdksPerLanguage map[common.ProgrammingLanguage][]common.OtelSdk
-	if a.isOdigosCloud {
-		defaultOtelSdkPerLanguage, supportedOtelSdksPerLanguage = otelSdkConfigEnterprise()
-	} else {
+	if a.odigosTier == common.CommunityOdigosTier {
 		defaultOtelSdkPerLanguage, supportedOtelSdksPerLanguage = otelSdkConfigCommunity()
+	} else {
+		defaultOtelSdkPerLanguage, supportedOtelSdksPerLanguage = otelSdkConfigEnterprise()
 	}
 
 	// the default SDK should be retained in the future.

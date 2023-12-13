@@ -6,7 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/odigospro"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/spf13/cobra"
 )
 
@@ -40,17 +42,20 @@ var cloudCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		isOdigosCloud, err := resources.IsOdigosCloud(ctx, client, ns)
+		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
-			fmt.Println("Odigos cloud failed - unable to read the current Odigos cloud configuration.")
+			fmt.Println("Error reading current odigos tier")
 			os.Exit(1)
 		}
 
-		if isOdigosCloud {
+		if currentTier == common.CloudOdigosTier {
 			fmt.Println("Odigos cloud is currently enabled")
-		} else {
-			fmt.Println(`Odigos cloud is currently disabled.
+		} else if currentTier == common.CommunityOdigosTier {
+			fmt.Println(`You are using the community version of Odigos.
 To enable odigos cloud run 'odigos cloud login'`)
+		} else {
+			fmt.Println(`You are using the on-prem enterprise version of Odigos.
+Contact your Odigos representative to enable odigos cloud`)
 		}
 	},
 }
