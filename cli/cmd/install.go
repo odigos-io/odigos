@@ -7,6 +7,7 @@ import (
 	"time"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
@@ -62,8 +63,9 @@ This command will install k8s components that will auto-instrument your applicat
 			os.Exit(1)
 		}
 
-		isOdigosCloud := odigosCloudApiKeyFlag != ""
-		if isOdigosCloud {
+		odigosTier := common.CommunityOdigosTier
+		if odigosCloudApiKeyFlag != "" {
+			odigosTier = common.CloudOdigosTier
 			err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
 			if err != nil {
 				fmt.Println("Odigos install failed - invalid api-key format.")
@@ -71,7 +73,7 @@ This command will install k8s components that will auto-instrument your applicat
 			}
 		}
 
-		config := createOdigosConfigSpec(isOdigosCloud)
+		config := createOdigosConfigSpec()
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
@@ -79,7 +81,7 @@ This command will install k8s components that will auto-instrument your applicat
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, isOdigosCloud, &odigosCloudApiKeyFlag, &config)
+		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosCloudApiKeyFlag, &config)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
@@ -126,7 +128,7 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	return err
 }
 
-func createOdigosConfigSpec(isOdigosCloud bool) odigosv1.OdigosConfigurationSpec {
+func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
 
 	return odigosv1.OdigosConfigurationSpec{
 		OdigosVersion:     versionFlag,

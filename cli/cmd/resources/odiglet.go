@@ -4,8 +4,10 @@ import (
 	"context"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"github.com/keyval-dev/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -375,14 +377,14 @@ func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropaga
 }
 
 type odigletResourceManager struct {
-	client        *kube.Client
-	ns            string
-	config        *odigosv1.OdigosConfigurationSpec
-	isOdigosCloud bool
+	client     *kube.Client
+	ns         string
+	config     *odigosv1.OdigosConfigurationSpec
+	odigosTier common.OdigosTier
 }
 
-func NewOdigletResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, isOdigosCloud bool) ResourceManager {
-	return &odigletResourceManager{client: client, ns: ns, config: config, isOdigosCloud: isOdigosCloud}
+func NewOdigletResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
+	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
 }
 
 func (a *odigletResourceManager) Name() string { return "Odiglet" }
@@ -394,10 +396,10 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	// prev v1.0.4 - the cli would automatically store "keyval/odigos-odiglet" instead of empty value,
 	// thus we need to treat the default image name as empty value.
 	if odigletImage == "" || odigletImage == OdigletImageName {
-		if a.isOdigosCloud {
-			odigletImage = OdigletEnterpriseImageName
-		} else {
+		if a.odigosTier == common.CommunityOdigosTier {
 			odigletImage = OdigletImageName
+		} else {
+			odigletImage = OdigletEnterpriseImageName
 		}
 	}
 
