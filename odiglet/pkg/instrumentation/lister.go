@@ -21,12 +21,12 @@ type lister struct {
 }
 
 func (l *lister) GetResourceNamespace() string {
-	return "instrumentation.odigos.io"
+	return common.OdigosResourceNamespace
 }
 
 func (l *lister) Discover(pluginNameLists chan dpm.PluginNameList) {
 	var pluginNames []string
-	for name, _ := range l.plugins {
+	for name := range l.plugins {
 		pluginNames = append(pluginNames, name)
 	}
 
