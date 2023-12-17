@@ -2,31 +2,28 @@ package common
 
 type OdigosInstrumentationDevice string
 
-const (
-	JavaDeviceName       OdigosInstrumentationDevice = "instrumentation.odigos.io/java"
-	PythonDeviceName     OdigosInstrumentationDevice = "instrumentation.odigos.io/python"
-	DotNetDeviceName     OdigosInstrumentationDevice = "instrumentation.odigos.io/dotnet"
-	JavascriptDeviceName OdigosInstrumentationDevice = "instrumentation.odigos.io/javascript"
-)
+// This is the resource namespace of the lister in k8s device plugin manager.
+// from the "github.com/kubevirt/device-plugin-manager" package source:
+// GetResourceNamespace must return namespace (vendor ID) of implemented Lister. e.g. for
+// resources in format "color.example.com/<color>" that would be "color.example.com".
+const OdigosResourceNamespace = "instrumentation.odigos.io"
 
-var InstrumentationDevices = []OdigosInstrumentationDevice{
-	JavaDeviceName,
-	PythonDeviceName,
-	DotNetDeviceName,
-	JavascriptDeviceName,
+// The plugin name is also part of the device-plugin-manager.
+// It is used to control which environment variables and fs mounts are available to the pod.
+// Each OtelSdkType has its own plugin name, which is used to control instrumentation for that SDK.
+//
+// Odigos convention for plugin name is as follows:
+// <runtime-name>-<sdk-type>-<sdk-tier>
+//
+// for example:
+// the native Java SDK will be named "java-native-community".
+// the ebpf Java enterprise sdk will be named "java-ebpf-enterprise".
+
+func InstrumentationPluginName(language ProgrammingLanguage, otelSdk OtelSdk) string {
+	return string(language) + "-" + string(otelSdk.SdkType) + "-" + string(otelSdk.SdkTier)
 }
 
-func ProgrammingLanguageToInstrumentationDevice(language ProgrammingLanguage) OdigosInstrumentationDevice {
-	switch language {
-	case JavaProgrammingLanguage:
-		return JavaDeviceName
-	case PythonProgrammingLanguage:
-		return PythonDeviceName
-	case DotNetProgrammingLanguage:
-		return DotNetDeviceName
-	case JavascriptProgrammingLanguage:
-		return JavascriptDeviceName
-	default:
-		return ""
-	}
+func InstrumentationDeviceName(language ProgrammingLanguage, otelSdk OtelSdk) OdigosInstrumentationDevice {
+	pluginName := InstrumentationPluginName(language, otelSdk)
+	return OdigosInstrumentationDevice(OdigosResourceNamespace + "/" + pluginName)
 }
