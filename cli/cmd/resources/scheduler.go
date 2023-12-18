@@ -4,6 +4,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -294,7 +295,7 @@ type schedulerResourceManager struct {
 	config *odigosv1.OdigosConfigurationSpec
 }
 
-func NewSchedulerResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+func NewSchedulerResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) resourcemanager.ResourceManager {
 	return &schedulerResourceManager{client: client, ns: ns, config: config}
 }
 

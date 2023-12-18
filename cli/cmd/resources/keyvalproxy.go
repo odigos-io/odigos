@@ -4,6 +4,8 @@ import (
 	"context"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/odigospro"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -299,17 +301,7 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 									Name:  "OTEL_SERVICE_NAME",
 									Value: keyvalProxyServiceName,
 								},
-								{
-									Name: odigosCloudTokenEnvName,
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: OdigosCloudSecretName,
-											},
-											Key: odigosCloudApiKeySecretKey,
-										},
-									},
-								},
+								odigospro.CloudTokenAsEnvVar(),
 							},
 							EnvFrom: []corev1.EnvFromSource{
 								{
@@ -375,7 +367,7 @@ type keyvalProxyResourceManager struct {
 	config *odigosv1.OdigosConfigurationSpec
 }
 
-func NewKeyvalProxyResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+func NewKeyvalProxyResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) resourcemanager.ResourceManager {
 	return &keyvalProxyResourceManager{client: client, ns: ns, config: config}
 }
 
