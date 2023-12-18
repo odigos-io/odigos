@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	coralogixPrivateKey = "CORALOGIX_PRIVATE_KEY"
+	coralogixDomain = "CORALOGIX_DOMAIN"
+	coralogixApplicationName = "CORALOGIX_APPLICATION_NAME"
+	coralogixSubsystemName = "CORALOGIX_SUBSYSTEM_NAME"
 )
 
 type Coralogix struct{}
@@ -19,17 +21,35 @@ func (c *Coralogix) DestType() common.DestinationType {
 
 func (c *Coralogix) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if isTracingEnabled(dest) || isLoggingEnabled(dest) || isMetricsEnabled(dest) {
-		privateKey, exists := dest.Spec.Data[coralogixPrivateKey]
+		domain, exists := dest.Spec.Data[coralogixDomain]
 		if !exists {
-			log.Log.V(0).Info("Coralogix private key not specified, gateway will not be configured for Coralogix")
+			log.Log.V(0).Info("Coralogix domain not specified, gateway will not be configured for Coralogix")
+			return
+		}
+		appName, exists := dest.Spec.Data[coralogixApplicationName]
+		if !exists {
+			log.Log.V(0).Info("Coralogix application name not specified, gateway will not be configured for Coralogix")
+			return
+		}
+		subName, exists := dest.Spec.Data[coralogixSubsystemName]
+		if !exists {
+			log.Log.V(0).Info("Coralogix subsystem name not specified, gateway will not be configured for Coralogix")
 			return
 		}
 
 		currentConfig.Exporters["coralogix"] = commonconf.GenericMap{
-			"private_key": 		privateKey,
-			"domain":      		"${CORALOGIX_DOMAIN}",
-			"application_name":	"${CORALOGIX_APPLICATION_NAME}",
-			"subsystem_name":   "${CORALOGIX_SUBSYSTEM_NAME}",
+			"private_key":	"${CORALOGIX_PRIVATE_KEY}",
+			"traces": commonconf.GenericMap{
+				"endpoint": "ingress." + domain + ":443",
+			},
+			"logs": commonconf.GenericMap{
+				"endpoint": "ingress." + domain + ":443",
+			},
+			"metrics": commonconf.GenericMap{
+				"endpoint": "ingress." + domain + ":443",
+			},
+			"application_name":	appName,
+			"subsystem_name":   subName,
 		}
 	}
 
