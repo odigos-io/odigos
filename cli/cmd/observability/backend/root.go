@@ -19,7 +19,7 @@ type ObservabilityBackend interface {
 
 var (
 	availableBackends = []ObservabilityBackend{&Datadog{}, &Honeycomb{}, &Grafana{},
-		&NewRelic{}, &LogzIO{}, &Prometheus{}, &Tempo{}, &Loki{}}
+		&NewRelic{}, &LogzIO{}, &Prometheus{}, &Tempo{}, &Loki{}, &Coralogix{}}
 	backendsMap = calcBackendsMap()
 )
 

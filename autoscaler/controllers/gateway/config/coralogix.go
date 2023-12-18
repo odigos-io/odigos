@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	coralogixDomainKey = "CORALOGIX_DOMAIN"
+	coralogixPrivateKey = "CORALOGIX_PRIVATE_KEY"
 )
 
 type Coralogix struct{}
@@ -19,15 +19,15 @@ func (c *Coralogix) DestType() common.DestinationType {
 
 func (c *Coralogix) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if isTracingEnabled(dest) || isLoggingEnabled(dest) || isMetricsEnabled(dest) {
-		domain, exists := dest.Spec.Data[coralogixDomainKey]
+		privateKey, exists := dest.Spec.Data[coralogixPrivateKey]
 		if !exists {
-			log.Log.V(0).Info("Coralogix domain not specified, gateway will not be configured for Coralogix")
+			log.Log.V(0).Info("Coralogix private key not specified, gateway will not be configured for Coralogix")
 			return
 		}
 
 		currentConfig.Exporters["coralogix"] = commonconf.GenericMap{
-			"private_key": 		"${CORALOGIX_PRIVATE_KEY}",
-			"domain":      		domain,
+			"private_key": 		privateKey,
+			"domain":      		"${CORALOGIX_DOMAIN}",
 			"application_name":	"${CORALOGIX_APPLICATION_NAME}",
 			"subsystem_name":   "${CORALOGIX_SUBSYSTEM_NAME}",
 		}
