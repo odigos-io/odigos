@@ -2,9 +2,10 @@ package instrumentation
 
 import (
 	"context"
+
+	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/fs"
-	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/instrumentlang"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,12 +21,12 @@ type lister struct {
 }
 
 func (l *lister) GetResourceNamespace() string {
-	return "instrumentation.odigos.io"
+	return common.OdigosResourceNamespace
 }
 
 func (l *lister) Discover(pluginNameLists chan dpm.PluginNameList) {
 	var pluginNames []string
-	for name, _ := range l.plugins {
+	for name := range l.plugins {
 		pluginNames = append(pluginNames, name)
 	}
 
@@ -36,20 +37,28 @@ func (l *lister) NewPlugin(s string) dpm.PluginInterface {
 	return l.plugins[s]
 }
 
-func NewLister(ctx context.Context, clientset *kubernetes.Clientset) (dpm.ListerInterface, error) {
+// with this type, odiglet can determine which language specific function to use
+// for each otel sdk in a each programming language.
+// Otel SDKs frequently requires to set some environment variables and mount some fs dirs for it to work.
+type OtelSdksLsf map[common.ProgrammingLanguage]map[common.OtelSdk]LangSpecificFunc
+
+func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf OtelSdksLsf) (dpm.ListerInterface, error) {
 	maxPods, err := getInitialDeviceAmount(clientset)
 	if err != nil {
 		return nil, err
 	}
-	var availablePlugins = map[string]dpm.PluginInterface{
-		"java":   NewPlugin(maxPods, instrumentlang.Java),
-		"python": NewPlugin(maxPods, instrumentlang.Python),
-		"nodejs": NewPlugin(maxPods, instrumentlang.NodeJS),
-		"dotnet": NewPlugin(maxPods, instrumentlang.DotNet),
-	}
 
-	if env.Current.IsEBPFSupported() {
-		availablePlugins["go"] = NewPlugin(maxPods, instrumentlang.Go)
+	isEbpfSupported := env.Current.IsEBPFSupported()
+
+	availablePlugins := map[string]dpm.PluginInterface{}
+	for lang, otelSdkLsfMap := range otelSdksLsf {
+		for otelSdk, lsf := range otelSdkLsfMap {
+			if otelSdk.SdkType == common.EbpfOtelSdkType && !isEbpfSupported {
+				continue
+			}
+			pluginName := common.InstrumentationPluginName(lang, otelSdk)
+			availablePlugins[pluginName] = NewPlugin(maxPods, lsf)
+		}
 	}
 
 	err = fs.CopyAgentsDirectoryToHost()
