@@ -43,6 +43,21 @@ func CloudTokenAsEnvVar() corev1.EnvVar {
 	}
 }
 
+// used to inject the onprem token as env var into odigos components
+func OnPremTokenAsEnvVar() corev1.EnvVar {
+	return corev1.EnvVar{
+		Name: odigosOnpremTokenEnvName,
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: odigosProSecretName,
+				},
+				Key: odigosOnpremTokenSecretKey,
+			},
+		},
+	}
+}
+
 func getCurrentOdigosProSecret(ctx context.Context, client *kube.Client, ns string) (*corev1.Secret, error) {
 	secret, err := client.CoreV1().Secrets(ns).Get(ctx, odigosProSecretName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
