@@ -396,3 +396,44 @@ func TestRevert_ExistingResources(t *testing.T) {
 		t.Errorf("Revert() expected existing resource limit to be preserved")
 	}
 }
+
+func TestRevert_MultipleContainers(t *testing.T) {
+
+	podTemplate := &v1.PodTemplateSpec{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{Name: "test1"},
+				{Name: "test2"},
+			},
+		},
+	}
+
+	runtimeDetails := &odigosv1.InstrumentedApplication{
+		Spec: odigosv1.InstrumentedApplicationSpec{
+			Languages: []common.LanguageByContainer{
+				{
+					Language:      common.GoProgrammingLanguage,
+					ContainerName: "test1",
+				},
+				{
+					Language:      common.GoProgrammingLanguage,
+					ContainerName: "test2",
+				},
+			},
+		},
+	}
+
+	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
+		common.GoProgrammingLanguage: {SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+	}
+
+	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks)
+	if err != nil {
+		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() error = %v", err)
+	}
+
+	Revert(podTemplate)
+
+	assertContainerWithInstrumentationDevice(t, podTemplate, 0, "")
+	assertContainerWithInstrumentationDevice(t, podTemplate, 1, "")
+}
