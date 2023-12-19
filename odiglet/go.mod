@@ -14,7 +14,7 @@ require (
 	github.com/keyval-dev/opentelemetry-zap-bridge v0.0.3
 	github.com/kubevirt/device-plugin-manager v1.19.5
 	github.com/otiai10/copy v1.14.0
-	go.opentelemetry.io/auto v0.8.0-alpha.0.20231208024151-d01c5fb4cd35
+	go.opentelemetry.io/auto v0.9.0-alpha
 	go.opentelemetry.io/otel v1.21.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.21.0
 	go.uber.org/zap v1.26.0
