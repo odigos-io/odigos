@@ -10,6 +10,14 @@
             "port": 2345,
             "host": "127.0.0.1",
             "remotePath": ""
+        },
+        {
+            "name": "instrumentor local",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/instrumentor",
+            "cwd": "${workspaceFolder}/instrumentor"
         }
     ]
 }
