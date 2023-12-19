@@ -14,13 +14,17 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 )
 
+type GoOtelEbpfSdk struct {
+	inst *auto.Instrumentation
+}
+
 type GoInstrumentationFactory struct{}
 
-func NewGoInstrumentationFactory() InstrumentationFactory[*auto.Instrumentation] {
+func NewGoInstrumentationFactory() InstrumentationFactory[*GoOtelEbpfSdk] {
 	return &GoInstrumentationFactory{}
 }
 
-func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload) (*auto.Instrumentation, error) {
+func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload) (*GoOtelEbpfSdk, error) {
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
 		otlptracegrpc.WithInsecure(),
@@ -37,11 +41,20 @@ func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context
 		auto.WithResourceAttributes(utils.GetResourceAttributes(podWorkload)...),
 		auto.WithServiceName(serviceName),
 		auto.WithTraceExporter(defaultExporter),
+		auto.WithGlobal(),
 	)
 	if err != nil {
 		log.Logger.Error(err, "instrumentation setup failed")
 		return nil, err
 	}
 
-	return inst, nil
+	return &GoOtelEbpfSdk{inst: inst}, nil
+}
+
+func (g *GoOtelEbpfSdk) Run(ctx context.Context) error {
+	return g.inst.Run(ctx)
+}
+
+func (g *GoOtelEbpfSdk) Close(ctx context.Context) error {
+	return g.inst.Close()
 }

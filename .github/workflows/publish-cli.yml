@@ -1,0 +1,107 @@
+name: Release Odigos CLI
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag"
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  DOCKERHUB_ORG: "keyval"
+
+jobs:
+  release:
+    runs-on:
+      labels: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.tag }}
+
+      - name: Set env
+        id: vars
+        run: |
+          # echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+          echo "tag=${{github.event.inputs.tag}}" >> $GITHUB_OUTPUT
+          SHORT_COMMIT=$(git rev-parse --short HEAD)
+          echo "short_commit=${SHORT_COMMIT}" >> $GITHUB_ENV
+          echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
+
+      - name: Notify Slack End
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Starting Odigos CLI release", "tag":"${{ steps.vars.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+      - name: Verify Components Image Ready
+        run: |
+          declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-enterprise-odiglet")
+          TAG_TO_CHECK=${{ steps.vars.outputs.tag }}
+
+          for REPO in "${REPOS[@]}"; do
+            echo "Checking tag $TAG_TO_CHECK in $REPO..."
+            TAGS_JSON=$(curl -s "https://hub.docker.com/v2/repositories/${{ env.DOCKERHUB_ORG }}/$REPO/tags/")
+            if echo "$TAGS_JSON" | grep -q "\"name\":\"$TAG_TO_CHECK\""; then
+                echo "Tag $TAG_TO_CHECK exists in Docker Hub repository $REPO."
+            else
+                echo "Tag $TAG_TO_CHECK does not exist in Docker Hub repository $REPO."
+                exit 1
+            fi
+          done
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.0"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
+
+      - uses: ko-build/setup-ko@v0.6
+
+      - name: publish cli image to docker registries
+        working-directory: ./cli
+        env:
+          KO_DOCKER_REPO: ${{ env.DOCKERHUB_ORG }}/odigos-cli
+          KO_CONFIG_PATH: ./.ko.yaml
+          VERSION: ${{ steps.vars.outputs.tag }}
+          SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
+          DATE: ${{ steps.vars.outputs.date }}
+        run: |
+          ko build --bare --tags latest --tags ${{ steps.vars.outputs.tag }} --platform=all .
+
+      - name: Notify Slack End
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos CLI released successfully. new version is ready", "tag":"${{ steps.vars.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on Failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos CLI", "tag":"${{ steps.vars.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}

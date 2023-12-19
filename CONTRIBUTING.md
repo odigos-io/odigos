@@ -1,6 +1,6 @@
 # Contributing Guide
 
-- [New Contributor Guide](#contributing-guide)
+- [Contributing Guide](#contributing-guide)
   - [Ways to Contribute](#ways-to-contribute)
   - [Find an Issue](#find-an-issue)
   - [Ask for Help](#ask-for-help)
@@ -8,6 +8,9 @@
     - [Run Odigos Cli from code](#run-odigos-cli-from-code)
     - [How to Develop Odigos Locally](#how-to-develop-odigos-locally)
     - [How to Build and run Odigos Frontend Locally](#how-to-build-and-run-odigos-frontend-locally)
+  - [Odiglet](#odiglet)
+    - [builder base image](#builder-base-image)
+    - [Remote debugging](#remote-debugging)
 
 Welcome! We are glad that you want to contribute to our project! 💖
 
@@ -135,3 +138,24 @@ go build -o odigos-backend && ./odigos-backend --port 8085 --debug --address 0.0
 ```
  npm run dev
 ```
+
+## Odiglet
+
+### builder base image
+
+Odiglet Dockerfile uses a base image for the builder, which saves up lots of time during builds. The Dockerfile for the base image can be found in `./odiglet/base.Dockerfile` and is consumed like so: `FROM keyval/odiglet-base:v1.0 as builder`
+If you need to add additional packages to the build, update this file. Then publish the new base image to dockerhub with the github action named `Publish Odiglet Base Builder` in the `Actions` tab.
+You will need to specify the new image tag as a version in the format `v1.0`.
+After the image is published, update the dependency in `./odiglet/Dockerfile` to use the new image tag.
+
+### Remote debugging
+
+First, you will have to find which version of Odigos you are running. You can do this by running `odigos version` in your terminal.
+Then, run the following command to build Odiglet in debug mode and restart the Odiglet pod:
+
+```
+TAG=<CURRENT-ODIGOS-VERSION> make debug-odiglet
+```
+
+Then, you can attach a debugger to the Odiglet pod. For example, if you are using Goland, you can follow the instructions [here](https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#step-3-create-the-remote-run-debug-configuration-on-the-client-computer) to attach to a remote process.
+For Visual Studio Code, you can use the `.vscode/launch.json` file in this repo to attach to the Odiglet pod.
