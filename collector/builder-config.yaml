@@ -28,7 +28,11 @@ exporters:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.91.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.91.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awskinesisexporter v0.91.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.91.0
+  # TODO: Use this exporter instead of the one implemented by us.
+  # - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.91.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/awss3exporter v0.91.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter v0.91.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter v0.91.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.91.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.91.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter v0.91.0
@@ -116,3 +120,6 @@ connectors:
 
 replaces:
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor => ../processors/odigosresourcenameprocessor
+  - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/awss3exporter => ../exporters/awss3exporter
+  - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter => ../exporters/azureblobstorageexporter
+  - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter => ../exporters/googlecloudstorageexporter

@@ -15,7 +15,6 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.91.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.91.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awskinesisexporter v0.91.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.91.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.91.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.91.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter v0.91.0
@@ -65,6 +64,9 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver v0.91.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampextension v0.91.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.91.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/awss3exporter v0.91.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter v0.91.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter v0.91.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor v0.91.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.91.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor v0.91.0
@@ -119,6 +121,7 @@ require (
 	cloud.google.com/go/longrunning v0.5.4 // indirect
 	cloud.google.com/go/monitoring v1.16.3 // indirect
 	cloud.google.com/go/pubsub v1.33.0 // indirect
+	cloud.google.com/go/storage v1.30.1 // indirect
 	cloud.google.com/go/trace v1.10.4 // indirect
 	code.cloudfoundry.org/clock v0.0.0-20180518195852-02e53af36e6c // indirect
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2 // indirect
@@ -187,9 +190,13 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.2.8 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.5.8 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.7.1 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.0.22 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.10.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.1.25 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.10.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.13.24 // indirect
 	github.com/aws/aws-sdk-go-v2/service/kinesis v1.24.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.18.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.21.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.26.3 // indirect
@@ -496,5 +503,11 @@ require (
 )
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor => ../processors/odigosresourcenameprocessor
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/awss3exporter => ../exporters/awss3exporter
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter => ../exporters/azureblobstorageexporter
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter => ../exporters/googlecloudstorageexporter
 
 exclude github.com/knadh/koanf v1.5.0
