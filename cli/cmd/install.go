@@ -21,6 +21,7 @@ import (
 
 var (
 	odigosCloudApiKeyFlag    string
+	odigosOnPremToken        string
 	namespaceFlag            string
 	versionFlag              string
 	skipWait                 bool
@@ -63,14 +64,19 @@ This command will install k8s components that will auto-instrument your applicat
 			os.Exit(1)
 		}
 
+		var odigosProToken string
 		odigosTier := common.CommunityOdigosTier
 		if odigosCloudApiKeyFlag != "" {
 			odigosTier = common.CloudOdigosTier
+			odigosProToken = odigosCloudApiKeyFlag
 			err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
 			if err != nil {
 				fmt.Println("Odigos install failed - invalid api-key format.")
 				os.Exit(1)
 			}
+		} else if odigosOnPremToken != "" {
+			odigosTier = common.OnPremOdigosTier
+			odigosProToken = odigosOnPremToken
 		}
 
 		config := createOdigosConfigSpec()
@@ -81,7 +87,7 @@ This command will install k8s components that will auto-instrument your applicat
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosCloudApiKeyFlag, &config)
+		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
@@ -157,6 +163,7 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", consts.DefaultNamespace, "target k8s namespace for Odigos installation")
 	installCmd.Flags().StringVarP(&odigosCloudApiKeyFlag, "api-key", "k", "", "api key for odigos cloud")
+	installCmd.Flags().StringVarP(&odigosOnPremToken, "onprem-token", "", "", "authentication token for odigos enterprise on-premises")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "skip waiting for odigos pods to be ready")
 	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "send general telemetry regarding Odigos usage")
 	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "", "odiglet container image name")
