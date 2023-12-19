@@ -6,56 +6,32 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func TestSpanKindOdigosToOtelClient(t *testing.T) {
-	spanKind := ClientSpanKind
-	got := SpanKindOdigosToOtel(spanKind)
-	want := trace.SpanKindClient
-	if got != want {
-		t.Errorf("SpanKindOdigosToOtel() = %v, want %v", got, want)
-	}
+// Test case structure
+type spanKindTestCase struct {
+	name     string
+	input    SpanKind
+	expected trace.SpanKind
 }
 
-func TestSpanKindOdigosToOtelServer(t *testing.T) {
-	spanKind := ServerSpanKind
-	got := SpanKindOdigosToOtel(spanKind)
-	want := trace.SpanKindServer
-	if got != want {
-		t.Errorf("SpanKindOdigosToOtel() = %v, want %v", got, want)
+// TestSpanKindOdigosToOtel refactors the individual tests into a single table-driven test
+func TestSpanKindOdigosToOtel(t *testing.T) {
+	// Define your test cases
+	testCases := []spanKindTestCase{
+		{"Client", ClientSpanKind, trace.SpanKindClient},
+		{"Server", ServerSpanKind, trace.SpanKindServer},
+		{"Producer", ProducerSpanKind, trace.SpanKindProducer},
+		{"Consumer", ConsumerSpanKind, trace.SpanKindConsumer},
+		{"Internal", InternalSpanKind, trace.SpanKindInternal},
+		{"Unspecified", SpanKind(""), trace.SpanKindUnspecified},
 	}
-}
 
-func TestSpanKindOdigosToOtelProducer(t *testing.T) {
-	spanKind := ProducerSpanKind
-	got := SpanKindOdigosToOtel(spanKind)
-	want := trace.SpanKindProducer
-	if got != want {
-		t.Errorf("SpanKindOdigosToOtel() = %v, want %v", got, want)
-	}
-}
-
-func TestSpanKindOdigosToOtelConsumer(t *testing.T) {
-	spanKind := ConsumerSpanKind
-	got := SpanKindOdigosToOtel(spanKind)
-	want := trace.SpanKindConsumer
-	if got != want {
-		t.Errorf("SpanKindOdigosToOtel() = %v, want %v", got, want)
-	}
-}
-
-func TestSpanKindOdigosToOtelInternal(t *testing.T) {
-	spanKind := InternalSpanKind
-	got := SpanKindOdigosToOtel(spanKind)
-	want := trace.SpanKindInternal
-	if got != want {
-		t.Errorf("SpanKindOdigosToOtel() = %v, want %v", got, want)
-	}
-}
-
-func TestSpanKindOdigosToOtelUnspecified(t *testing.T) {
-	var spanKind SpanKind
-	got := SpanKindOdigosToOtel(spanKind)
-	want := trace.SpanKindUnspecified
-	if got != want {
-		t.Errorf("SpanKindOdigosToOtel() = %v, want %v", got, want)
+	// Iterate over the test cases
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := SpanKindOdigosToOtel(tc.input)
+			if got != tc.expected {
+				t.Errorf("SpanKindOdigosToOtel(%v) = %v, want %v", tc.input, got, tc.expected)
+			}
+		})
 	}
 }
