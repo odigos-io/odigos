@@ -7,7 +7,6 @@ import (
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -48,26 +47,6 @@ func (i *podPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
-type workloadPredicate struct {
-	predicate.Funcs
-}
-
-func (i *workloadPredicate) Create(e event.CreateEvent) bool {
-	return true
-}
-
-func (i *workloadPredicate) Update(e event.UpdateEvent) bool {
-	return hasEbpfInstrumentationAnnotation(e.ObjectNew) != hasEbpfInstrumentationAnnotation(e.ObjectOld)
-}
-
-func (i *workloadPredicate) Delete(e event.DeleteEvent) bool {
-	return true
-}
-
-func (i *workloadPredicate) Generic(e event.GenericEvent) bool {
-	return true
-}
-
 func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLanguage]ebpf.Director) error {
 
 	log.Logger.V(0).Info("Starting reconcileres for ebpf instrumentation")
@@ -77,45 +56,6 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLang
 		For(&corev1.Pod{}).
 		WithEventFilter(&podPredicate{}).
 		Complete(&PodsReconciler{
-			Client:    mgr.GetClient(),
-			Scheme:    mgr.GetScheme(),
-			Directors: ebpfDirectors,
-		})
-	if err != nil {
-		return err
-	}
-
-	err = builder.
-		ControllerManagedBy(mgr).
-		For(&appsv1.Deployment{}).
-		WithEventFilter(&workloadPredicate{}).
-		Complete(&DeploymentsReconciler{
-			Client:    mgr.GetClient(),
-			Scheme:    mgr.GetScheme(),
-			Directors: ebpfDirectors,
-		})
-	if err != nil {
-		return err
-	}
-
-	err = builder.
-		ControllerManagedBy(mgr).
-		For(&appsv1.DaemonSet{}).
-		WithEventFilter(&workloadPredicate{}).
-		Complete(&DaemonSetsReconciler{
-			Client:    mgr.GetClient(),
-			Scheme:    mgr.GetScheme(),
-			Directors: ebpfDirectors,
-		})
-	if err != nil {
-		return err
-	}
-
-	err = builder.
-		ControllerManagedBy(mgr).
-		For(&appsv1.StatefulSet{}).
-		WithEventFilter(&workloadPredicate{}).
-		Complete(&StatefulSetsReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
 			Directors: ebpfDirectors,
