@@ -4,6 +4,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/odigospro"
 	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
@@ -227,7 +228,15 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string) *appsv1.DaemonSet {
+func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier) *appsv1.DaemonSet {
+
+	odigosProToken := []corev1.EnvVar{}
+	if odigosTier == common.CloudOdigosTier {
+		odigosProToken = append(odigosProToken, odigospro.CloudTokenAsEnvVar())
+	} else if odigosTier == common.OnPremOdigosTier {
+		odigosProToken = append(odigosProToken, odigospro.OnPremTokenAsEnvVar())
+	}
+
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
@@ -299,7 +308,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 						{
 							Name:  OdigletContainerName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
-							Env: []corev1.EnvVar{
+							Env: append([]corev1.EnvVar{
 								// {
 								// 	Name:  "OTEL_SERVICE_NAME",
 								// 	Value: odigletServiceName,
@@ -320,7 +329,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 										},
 									},
 								},
-							},
+							}, odigosProToken...),
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -407,7 +416,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewOdigletServiceAccount(a.ns),
 		NewOdigletClusterRole(a.config.Psp),
 		NewOdigletClusterRoleBinding(a.ns),
-		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, odigletImage),
+		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

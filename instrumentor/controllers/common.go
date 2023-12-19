@@ -7,7 +7,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/instrumentor/instrumentation"
@@ -25,28 +24,6 @@ var (
 	//   - Helm chart's instrumentor.ignoredNamespaces field
 	IgnoredNamespaces map[string]bool
 )
-
-// shouldInstrumentWithEbpf returns true if the given runtime details should be delegated to odiglet for ebpf instrumentation
-// This is currently hardcoded. In the future we will read this from a config
-func shouldInstrumentWithEbpf(runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk) bool {
-	for _, l := range runtimeDetails.Spec.Languages {
-		defaultSdk, found := defaultSdks[l.Language]
-		if found && defaultSdk.SdkType == common.EbpfOtelSdkType {
-			return true
-		}
-	}
-
-	return false
-}
-
-func setInstrumentationEbpf(obj client.Object) {
-	annotations := obj.GetAnnotations()
-	if annotations == nil {
-		annotations = make(map[string]string)
-	}
-
-	annotations[consts.EbpfInstrumentationAnnotation] = "true"
-}
 
 func clearInstrumentationEbpf(obj client.Object) {
 	annotations := obj.GetAnnotations()
@@ -88,17 +65,12 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 	}
 
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
-		if shouldInstrumentWithEbpf(runtimeDetails, odigosConfig.Spec.DefaultSDKs) {
-			setInstrumentationEbpf(obj)
-			return nil
-		}
-
 		podSpec, err := getPodSpecFromObject(obj)
 		if err != nil {
 			return err
 		}
 
-		return instrumentation.ModifyObject(podSpec, runtimeDetails)
+		return instrumentation.ModifyObject(podSpec, runtimeDetails, odigosConfig.Spec.DefaultSDKs)
 	})
 
 	if err != nil {
@@ -133,6 +105,8 @@ func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Cli
 	}
 
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
+
+		// clear old ebpf instrumentaiton annotation, just in case it still exists
 		clearInstrumentationEbpf(obj)
 		podSpec, err := getPodSpecFromObject(obj)
 		if err != nil {
