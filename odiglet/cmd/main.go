@@ -8,6 +8,7 @@ import (
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation"
+	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/instrumentlang"
 	"github.com/keyval-dev/odigos/odiglet/pkg/kube"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
@@ -78,7 +79,28 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	lister, err := instrumentation.NewLister(ctx, clientset)
+	otelSdkEbpfCommunity := common.OtelSdk{SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier}
+	otelSdkNativeCommunity := common.OtelSdk{SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier}
+
+	otelSdkLsf := map[common.ProgrammingLanguage]map[common.OtelSdk]instrumentation.LangSpecificFunc{
+		common.GoProgrammingLanguage: {
+			otelSdkEbpfCommunity: instrumentlang.Go,
+		},
+		common.JavaProgrammingLanguage: {
+			otelSdkNativeCommunity: instrumentlang.Java,
+		},
+		common.PythonProgrammingLanguage: {
+			otelSdkNativeCommunity: instrumentlang.Python,
+		},
+		common.JavascriptProgrammingLanguage: {
+			otelSdkNativeCommunity: instrumentlang.NodeJS,
+		},
+		common.DotNetProgrammingLanguage: {
+			otelSdkNativeCommunity: instrumentlang.DotNet,
+		},
+	}
+
+	lister, err := instrumentation.NewLister(ctx, clientset, otelSdkLsf)
 	if err != nil {
 		log.Logger.Error(err, "Failed to create new lister")
 		os.Exit(-1)
