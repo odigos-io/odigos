@@ -7,6 +7,9 @@ on:
         description: "Tag"
         required: true
 
+  repository_dispatch:
+    types: [release_cli]
+
 permissions:
   contents: write
   packages: write
@@ -19,30 +22,41 @@ jobs:
     runs-on:
       labels: ubuntu-latest
     steps:
+
+      - name: Determine Tag Value
+        id: set_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "Unknown event type"
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.inputs.tag }}
+          ref: ${{ steps.set_tag.outputs.tag }}
 
       - name: Set env
         id: vars
         run: |
-          # echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-          echo "tag=${{github.event.inputs.tag}}" >> $GITHUB_OUTPUT
           SHORT_COMMIT=$(git rev-parse --short HEAD)
           echo "short_commit=${SHORT_COMMIT}" >> $GITHUB_ENV
           echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
 
-      - name: Notify Slack End
+      - name: Notify Slack Start
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Starting Odigos CLI release", "tag":"${{ steps.vars.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Starting Odigos CLI release", "tag":"${{ steps.set_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Verify Components Image Ready
         run: |
           declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-enterprise-odiglet")
-          TAG_TO_CHECK=${{ steps.vars.outputs.tag }}
+          TAG_TO_CHECK=${{ steps.set_tag.outputs.tag }}
 
           for REPO in "${REPOS[@]}"; do
             echo "Checking tag $TAG_TO_CHECK in $REPO..."
@@ -85,17 +99,17 @@ jobs:
         env:
           KO_DOCKER_REPO: ${{ env.DOCKERHUB_ORG }}/odigos-cli
           KO_CONFIG_PATH: ./.ko.yaml
-          VERSION: ${{ steps.vars.outputs.tag }}
+          VERSION: ${{ steps.set_tag.outputs.tag }}
           SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
           DATE: ${{ steps.vars.outputs.date }}
         run: |
-          ko build --bare --tags latest --tags ${{ steps.vars.outputs.tag }} --platform=all .
+          ko build --bare --tags latest --tags ${{ steps.set_tag.outputs.tag }} --platform=all .
 
       - name: Notify Slack End
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos CLI released successfully. new version is ready", "tag":"${{ steps.vars.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos CLI released successfully. new version is ready", "tag":"${{ steps.set_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack on Failure
         if: failure()
@@ -104,4 +118,4 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos CLI", "tag":"${{ steps.vars.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos CLI", "tag":"${{ steps.set_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
