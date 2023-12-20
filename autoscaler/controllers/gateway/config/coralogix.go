@@ -39,15 +39,7 @@ func (c *Coralogix) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 
 		currentConfig.Exporters["coralogix"] = commonconf.GenericMap{
 			"private_key":	"${CORALOGIX_PRIVATE_KEY}",
-			"traces": commonconf.GenericMap{
-				"endpoint": "ingress." + domain + ":443",
-			},
-			"logs": commonconf.GenericMap{
-				"endpoint": "ingress." + domain + ":443",
-			},
-			"metrics": commonconf.GenericMap{
-				"endpoint": "ingress." + domain + ":443",
-			},
+			"domain": domain,
 			"application_name":	appName,
 			"subsystem_name":   subName,
 		}
