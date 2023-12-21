@@ -43,7 +43,7 @@ func otelSdkConfigCommunity() (map[common.ProgrammingLanguage]common.OtelSdk, ma
 		}
 }
 
-func otelSdkConfigEnterprise() (map[common.ProgrammingLanguage]common.OtelSdk, map[common.ProgrammingLanguage][]common.OtelSdk) {
+func otelSdkConfigCloud() (map[common.ProgrammingLanguage]common.OtelSdk, map[common.ProgrammingLanguage][]common.OtelSdk) {
 
 	nativeCommunity := common.OtelSdk{
 		SdkType: common.NativeOtelSdkType,
@@ -57,6 +57,34 @@ func otelSdkConfigEnterprise() (map[common.ProgrammingLanguage]common.OtelSdk, m
 
 	return map[common.ProgrammingLanguage]common.OtelSdk{
 			common.JavaProgrammingLanguage:       nativeCommunity,
+			common.PythonProgrammingLanguage:     nativeCommunity,
+			common.GoProgrammingLanguage:         eBPFEnterprise,
+			common.DotNetProgrammingLanguage:     nativeCommunity,
+			common.JavascriptProgrammingLanguage: nativeCommunity,
+		},
+		map[common.ProgrammingLanguage][]common.OtelSdk{
+			common.JavaProgrammingLanguage:       {nativeCommunity, eBPFEnterprise},
+			common.PythonProgrammingLanguage:     {nativeCommunity},
+			common.GoProgrammingLanguage:         {eBPFEnterprise},
+			common.DotNetProgrammingLanguage:     {nativeCommunity},
+			common.JavascriptProgrammingLanguage: {nativeCommunity},
+		}
+}
+
+func otelSdkConfigOnPrem() (map[common.ProgrammingLanguage]common.OtelSdk, map[common.ProgrammingLanguage][]common.OtelSdk) {
+
+	nativeCommunity := common.OtelSdk{
+		SdkType: common.NativeOtelSdkType,
+		SdkTier: common.CommunityOtelSdkTier,
+	}
+
+	eBPFEnterprise := common.OtelSdk{
+		SdkType: common.EbpfOtelSdkType,
+		SdkTier: common.EnterpriseOtelSdkTier,
+	}
+
+	return map[common.ProgrammingLanguage]common.OtelSdk{
+			common.JavaProgrammingLanguage:       eBPFEnterprise, // Notice - for onprem, the default for java is eBPF
 			common.PythonProgrammingLanguage:     nativeCommunity,
 			common.GoProgrammingLanguage:         eBPFEnterprise,
 			common.DotNetProgrammingLanguage:     nativeCommunity,
@@ -102,10 +130,13 @@ func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) er
 
 	var defaultOtelSdkPerLanguage map[common.ProgrammingLanguage]common.OtelSdk
 	var supportedOtelSdksPerLanguage map[common.ProgrammingLanguage][]common.OtelSdk
-	if a.odigosTier == common.CommunityOdigosTier {
+	switch a.odigosTier {
+	case common.CommunityOdigosTier:
 		defaultOtelSdkPerLanguage, supportedOtelSdksPerLanguage = otelSdkConfigCommunity()
-	} else {
-		defaultOtelSdkPerLanguage, supportedOtelSdksPerLanguage = otelSdkConfigEnterprise()
+	case common.CloudOdigosTier:
+		defaultOtelSdkPerLanguage, supportedOtelSdksPerLanguage = otelSdkConfigCloud()
+	case common.OnPremOdigosTier:
+		defaultOtelSdkPerLanguage, supportedOtelSdksPerLanguage = otelSdkConfigOnPrem()
 	}
 
 	// the default SDK should be retained in the future.
