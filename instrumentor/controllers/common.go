@@ -70,7 +70,7 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 			return err
 		}
 
-		return instrumentation.ModifyObject(podSpec, runtimeDetails, odigosConfig.Spec.DefaultSDKs)
+		return instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, odigosConfig.Spec.DefaultSDKs)
 	})
 
 	if err != nil {

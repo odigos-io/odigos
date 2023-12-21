@@ -10,16 +10,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-type CollectorInfo struct {
-	Hostname string
-	Port     int
-}
-
-func ModifyObject(original *v1.PodTemplateSpec, instrumentation *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk) error {
+func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk) error {
 	var modifiedContainers []v1.Container
 	for _, container := range original.Spec.Containers {
-		containerLanguage := getLanguageOfContainer(instrumentation, container.Name)
+		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
 		if containerLanguage == nil {
+			modifiedContainers = append(modifiedContainers, container)
 			continue
 		}
 
