@@ -82,7 +82,8 @@
         "backends/logzio",
         "backends/sentry",
         "backends/signoz",
-        "backends/opentelemetry"
+        "backends/opentelemetry",
+        "backends/coralogix"
       ]
     },
     {

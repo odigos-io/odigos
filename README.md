@@ -81,6 +81,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Sentry                  | ✅      |         |      |
 | Axiom                   | ✅      |         | ✅   |
 | Sumo Logic              | ✅      | ✅      | ✅   |
+| Coralogix               | ✅      | ✅      | ✅   |
 
 ### Open Source
 
