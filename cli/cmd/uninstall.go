@@ -31,10 +31,14 @@ var uninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "Unistall Odigos from your cluster",
 	Run: func(cmd *cobra.Command, args []string) {
+		println("Unistall Odigos from your cluster...")
+
 		client, err := kube.CreateClient(cmd)
+
 		if err != nil {
 			kube.PrintClientErrorAndExit(err)
 		}
+
 		ctx := cmd.Context()
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
@@ -45,7 +49,7 @@ var uninstallCmd = &cobra.Command{
 			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already uninstalled: %s\n", err)
 			os.Exit(1)
 		}
-
+		println("Odigos namespace: " + ns)
 		if !cmd.Flag("yes").Changed {
 			fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
 			confirmed, err := confirm.Ask("Are you sure?")
@@ -112,10 +116,16 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 	if err != nil {
 		return err
 	}
-
+	
 	for _, dep := range deps.Items {
 		if dep.Namespace == "odigos-system" {
 			continue
+		}
+
+		// Remove the "odigos-instrumentation" label
+		if labels := dep.GetLabels(); labels != nil {
+			delete(labels, "odigos-instrumentation")
+			dep.SetLabels(labels)
 		}
 
 		rollbackPodTemplateSpec(ctx, client, &dep.Spec.Template)
@@ -134,8 +144,36 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 			continue
 		}
 
+		// Remove the "odigos-instrumentation" label
+		if labels := s.GetLabels(); labels != nil {
+			delete(labels, "odigos-instrumentation")
+			s.SetLabels(labels)
+		}
+
 		rollbackPodTemplateSpec(ctx, client, &s.Spec.Template)
 		if _, err := client.AppsV1().StatefulSets(s.Namespace).Update(ctx, &s, metav1.UpdateOptions{}); err != nil {
+			return err
+		}
+	}
+
+	dd, err := client.AppsV1().DaemonSets("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, d := range dd.Items {
+		if d.Namespace == "odigos-system" {
+			continue
+		}
+
+		// Remove the "odigos-instrumentation" label
+		if labels := d.GetLabels(); labels != nil {
+			delete(labels, "odigos-instrumentation")
+			d.SetLabels(labels)
+		}
+
+		rollbackPodTemplateSpec(ctx, client, &d.Spec.Template)
+		if _, err := client.AppsV1().DaemonSets(d.Namespace).Update(ctx, &d, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}
@@ -224,6 +262,8 @@ func uninstallDeployments(ctx context.Context, cmd *cobra.Command, client *kube.
 
 	return nil
 }
+
+
 
 func uninstallServices(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 	list, err := client.CoreV1().Services(ns).List(ctx, metav1.ListOptions{
