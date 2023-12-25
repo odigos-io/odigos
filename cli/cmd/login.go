@@ -63,7 +63,7 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 	config.Spec.ConfigVersion += 1
 
 	if odigosCloudApiKeyFlag == "" {
-		fmt.Println("Enter your odigos cloud api-key. You can find it here: https://app.keyval.io/settings/api-keys")
+		fmt.Println("Enter your odigos cloud api-key. You can find it here: https://app.odigos.io/settings")
 		fmt.Print("api-key: ")
 		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()
