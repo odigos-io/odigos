@@ -31,8 +31,6 @@ var uninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "Unistall Odigos from your cluster",
 	Run: func(cmd *cobra.Command, args []string) {
-		println("Unistall Odigos from your cluster...")
-
 		client, err := kube.CreateClient(cmd)
 
 		if err != nil {
@@ -49,7 +47,7 @@ var uninstallCmd = &cobra.Command{
 			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already uninstalled: %s\n", err)
 			os.Exit(1)
 		}
-		println("Odigos namespace: " + ns)
+		
 		if !cmd.Flag("yes").Changed {
 			fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
 			confirmed, err := confirm.Ask("Are you sure?")
@@ -118,13 +116,18 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 	}
 	
 	for _, dep := range deps.Items {
-		if dep.Namespace == "odigos-system" {
+		if dep.Namespace == consts.DefaultNamespace {
 			continue
+		}
+		// Remove the "odigos.io/reported-name"
+		if annotations := dep.GetAnnotations(); annotations != nil {
+			delete(annotations, consts.OdigosReportedNameAnnotation)
+			dep.SetAnnotations(annotations)
 		}
 
 		// Remove the "odigos-instrumentation" label
 		if labels := dep.GetLabels(); labels != nil {
-			delete(labels, "odigos-instrumentation")
+			delete(labels, consts.OdigosInstrumentationLabel)
 			dep.SetLabels(labels)
 		}
 
@@ -140,13 +143,18 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 	}
 
 	for _, s := range ss.Items {
-		if s.Namespace == "odigos-system" {
+		if s.Namespace == consts.DefaultNamespace {
 			continue
+		}
+
+		if annotations := s.GetAnnotations(); annotations != nil {
+			delete(annotations, consts.OdigosReportedNameAnnotation)
+			s.SetAnnotations(annotations)
 		}
 
 		// Remove the "odigos-instrumentation" label
 		if labels := s.GetLabels(); labels != nil {
-			delete(labels, "odigos-instrumentation")
+			delete(labels, consts.OdigosInstrumentationLabel)
 			s.SetLabels(labels)
 		}
 
@@ -162,13 +170,18 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 	}
 
 	for _, d := range dd.Items {
-		if d.Namespace == "odigos-system" {
+		if d.Namespace == consts.DefaultNamespace{
 			continue
+		}
+
+		if annotations := d.GetAnnotations(); annotations != nil {
+			delete(annotations, consts.OdigosReportedNameAnnotation)
+			d.SetAnnotations(annotations)
 		}
 
 		// Remove the "odigos-instrumentation" label
 		if labels := d.GetLabels(); labels != nil {
-			delete(labels, "odigos-instrumentation")
+			delete(labels, consts.OdigosInstrumentationLabel)
 			d.SetLabels(labels)
 		}
 
