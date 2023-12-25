@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
+	"strings"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	"strings"
 )
 
 const (
@@ -22,11 +23,15 @@ func (j *Jaeger) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 	if url, exists := dest.Spec.Data[jaegerUrlKey]; exists && isTracingEnabled(dest) {
 		url = strings.TrimPrefix(url, "http://")
 		url = strings.TrimPrefix(url, "https://")
-		url = strings.TrimSuffix(url, ":4317")
+
+		// Check if url does not contains port
+		if !strings.Contains(url, ":") {
+			url = fmt.Sprintf("%s:4317", url)
+		}
 
 		jaegerExporterName := "otlp/jaeger"
 		currentConfig.Exporters[jaegerExporterName] = commonconf.GenericMap{
-			"endpoint": fmt.Sprintf("%s:4317", url),
+			"endpoint": url,
 			"tls": commonconf.GenericMap{
 				"insecure": true,
 			},

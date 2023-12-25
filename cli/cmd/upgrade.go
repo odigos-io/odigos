@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/go-version"
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/odigospro"
 	"github.com/keyval-dev/odigos/cli/pkg/confirm"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/spf13/cobra"
@@ -92,12 +93,12 @@ and apply any required migrations and adaptations.`,
 		config.Spec.OdigosVersion = versionFlag
 		config.Spec.ConfigVersion += 1
 
-		isOdigosCloud, err := resources.IsOdigosCloud(ctx, client, ns)
+		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
-			fmt.Println("Odigos upgrade failed - unable to read the current Odigos cloud configuration.")
+			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
 			os.Exit(1)
 		}
-		resourceManagers := resources.CreateResourceManagers(client, ns, isOdigosCloud, nil, &config.Spec)
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, &config.Spec)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")

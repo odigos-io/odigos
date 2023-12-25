@@ -5,7 +5,9 @@ import (
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/cmd/resources/crds"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"github.com/keyval-dev/odigos/common"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -91,13 +93,14 @@ func NewLeaderElectionRole(ns string) *rbacv1.Role {
 }
 
 type odigosDeploymentResourceManager struct {
-	client *kube.Client
-	ns     string
-	config *odigosv1.OdigosConfigurationSpec
+	client     *kube.Client
+	ns         string
+	config     *odigosv1.OdigosConfigurationSpec
+	odigosTier common.OdigosTier
 }
 
-func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
-	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config}
+func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
+	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
 }
 
 func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployment" }
@@ -110,7 +113,9 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 		crds.NewConfiguration(),
 		crds.NewDestination(),
 		crds.NewInstrumentedApp(),
-		crds.NewInstrumentationConfig(),
+	}
+	if a.odigosTier != common.CommunityOdigosTier {
+		resources = append(resources, crds.NewInstrumentationConfig())
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

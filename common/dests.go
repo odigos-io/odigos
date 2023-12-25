@@ -30,4 +30,5 @@ const (
 	ElasticAPMDestinationType    DestinationType = "elasticapm"
 	AxiomDestinationType         DestinationType = "axiom"
 	SumoLogicDestinationType     DestinationType = "sumologic"
+	CoralogixDestinationType     DestinationType = "coralogix"
 )

@@ -3,9 +3,22 @@ name: Publish Modules
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
+  print-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract Tag
+        id: extract_tag
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+
+      - name: Notify Slack Start
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Detected new git tag. initializing a release", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
   tag-modules:
     runs-on: ubuntu-latest
     steps:
@@ -17,7 +30,13 @@ jobs:
       - name: Extract Tag
         id: extract_tag
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-  
+
+      - name: Notify Modules Tagging
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Tagging odigos modules so they can be consumed as libraries", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
       - name: tag api
         run: |
           git tag api/${{ steps.extract_tag.outputs.tag }}
@@ -25,7 +44,7 @@ jobs:
       - name: tag common
         run: |
           git tag common/${{ steps.extract_tag.outputs.tag }}
-    
+
       - name: tag odiglet
         run: |
           git tag odiglet/${{ steps.extract_tag.outputs.tag }}
@@ -34,3 +53,88 @@ jobs:
         run: |
           git push origin --tags
 
+      - name: Trigger Release PR in Odigos Enterprise
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            https://api.github.com/repos/keyval-dev/odigos-enterprise/dispatches \
+            -d '{"event_type": "create_release_pr", "client_payload": {"tag": "${{ steps.extract_tag.outputs.tag }}"}}'
+
+      - name: Notify Slack End
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos go modules tagged successfully", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on Failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: Odigos go modules release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+  publish-docker-images:
+    strategy:
+      matrix:
+        include:
+          - service: autoscaler
+            runner: ubuntu-latest
+          - service: scheduler
+            runner: ubuntu-latest
+          - service: instrumentor
+            runner: ubuntu-latest
+          - service: odiglet
+            runner: large-runner
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Tag
+        id: extract_tag
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+
+      - name: Notify Modules Tagging
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Start building docker image for component ${{ matrix.service }}", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push Docker Image for ${{ matrix.service }}
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: keyval/odigos-${{ matrix.service }}:${{ steps.extract_tag.outputs.tag }}
+          build-args: SERVICE_NAME=${{ matrix.service }}
+          platforms: linux/amd64,linux/arm64
+          file: ${{ matrix.service == 'odiglet' && 'odiglet/Dockerfile' || 'Dockerfile' }}
+
+      - name: Notify Slack End
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos component ${{ matrix.service }} released successfully", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on Failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: odigos component ${{ matrix.service }} release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}

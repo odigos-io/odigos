@@ -53,6 +53,25 @@ func NewConfiguration() *apiextensionsv1.CustomResourceDefinition {
 										"configVersion": {
 											Type: "integer",
 										},
+										"defaultSDKs": {
+											Type: "object",
+											AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
+												Allows: true,
+												Schema: &apiextensionsv1.JSONSchemaProps{
+													Type: "object",
+													Properties: map[string]apiextensionsv1.JSONSchemaProps{
+														"sdkTier": {
+															Type: "string",
+														},
+														"sdkType": {
+															Type:        "string",
+															Description: "Odigos supports two types of OpenTelemetry SDKs: native and ebpf.",
+														},
+													},
+													Required: []string{"sdkTier", "sdkType"},
+												},
+											},
+										},
 										"ignoredNamespaces": {
 											Type: "array",
 											Items: &apiextensionsv1.JSONSchemaPropsOrArray{
@@ -78,6 +97,29 @@ func NewConfiguration() *apiextensionsv1.CustomResourceDefinition {
 										},
 										"telemetryEnabled": {
 											Type: "boolean",
+										},
+										"supportedSDKs": {
+											Type: "object",
+											AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
+												Allows: true,
+												Schema: &apiextensionsv1.JSONSchemaProps{
+													Type: "array",
+													Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+														Schema: &apiextensionsv1.JSONSchemaProps{
+															Type: "object",
+															Properties: map[string]apiextensionsv1.JSONSchemaProps{
+																"sdkTier": {
+																	Type: "string",
+																},
+																"sdkType": {
+																	Type: "string",
+																},
+															},
+															Required: []string{"sdkTier", "sdkType"},
+														},
+													},
+												},
+											},
 										},
 									},
 								},

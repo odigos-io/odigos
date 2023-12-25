@@ -1,6 +1,6 @@
 <p align="center">
-    <a href="https://github.com/keyval-dev/odigos/actions/workflows/main.yml" target="_blank">
-        <img src="https://github.com/keyval-dev/odigos/actions/workflows/main.yml/badge.svg" alt="GitHub Actions Workflow Status" style="margin-right: 10px; border: 1px solid #007acc; border-radius: 4px; padding: 5px;">
+    <a href="https://github.com/keyval-dev/odigos/actions/workflows/publish-cli.yml" target="_blank">
+        <img src="https://github.com/keyval-dev/odigos/actions/workflows/publish-cli.yml/badge.svg" alt="Release Odigos CLI" style="margin-right: 10px; border: 1px solid #007acc; border-radius: 4px; padding: 5px;">
     </a>
     <a href="https://goreportcard.com/report/github.com/keyval-dev/odigos/cli" target="_blank">
         <img src="https://goreportcard.com/badge/github.com/keyval-dev/odigos/cli" alt="Go Report Card" style="margin-right: 10px; border: 1px solid #4CAF50; border-radius: 4px; padding: 5px;">
@@ -81,6 +81,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Sentry                  | ✅      |         |      |
 | Axiom                   | ✅      |         | ✅   |
 | Sumo Logic              | ✅      | ✅      | ✅   |
+| Coralogix               | ✅      | ✅      | ✅   |
 
 ### Open Source
 
