@@ -1,4 +1,4 @@
-name: Initiate new Odigos Patch version release
+name: Tag Odigos Patch Release
 
 on:
   workflow_dispatch:
@@ -37,8 +37,10 @@ jobs:
       - name: Create and push tag
         run: |
             new_tag=${{ steps.newtag.outputs.tag }}
+            git config --global user.email "bot@keyval.dev"
+            git config --global user.name "Odigos Release Bot"
             git tag $new_tag
-            git push origin $new_tag
+            git push https://${{ secrets.RELEASE_BOT_TOKEN }}@github.com/${{ github.repository }}.git $new_tag
 
       - name: Notify Slack on New Tag
         env:
