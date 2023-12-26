@@ -40,7 +40,7 @@ jobs:
             git config --global user.email "bot@keyval.dev"
             git config --global user.name "Odigos Release Bot"
             git tag $new_tag
-            git push https://${{ secrets.RELEASE_BOT_TOKEN }}@${{ github.server_url }}/${{ github.repository }}.git $new_tag
+            git push https://${{ secrets.RELEASE_BOT_TOKEN }}@github.com/${{ github.repository }}.git $new_tag
 
       - name: Notify Slack on New Tag
         env:
