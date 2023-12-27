@@ -45,12 +45,13 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 
 		// if we instrument multiple containers in the same pod,
 		// we want to give each one a unique service.name attribute to differentiate them
-		serviceName := container.Name
+		containerName := container.Name
+		serviceName := containerName
 		if len(runtimeDetails.Spec.Languages) == 1 {
 			serviceName = podWorkload.Name
 		}
 
-		details, err := process.FindAllInContainer(podUid, container.Name)
+		details, err := process.FindAllInContainer(podUid, containerName)
 		if err != nil {
 			logger.Error(err, "error finding processes")
 			return err
@@ -61,7 +62,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 				Namespace: pod.Namespace,
 				Name:      pod.Name,
 			}
-			err = director.Instrument(ctx, d.ProcessID, podDetails, podWorkload, serviceName)
+			err = director.Instrument(ctx, d.ProcessID, podDetails, podWorkload, serviceName, containerName)
 
 			if err != nil {
 				logger.Error(err, "error initiating process instrumentation", "pid", d.ProcessID)
