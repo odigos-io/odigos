@@ -62,7 +62,7 @@ spec:
                   properties:
                     containerName:
                       type: string
-                    instrumentationLibraryName:
+                    instrumentationsLibraries:
                       items:
                         properties:
                           libraryName:
@@ -95,7 +95,7 @@ spec:
                       type: array
                   required:
                   - containerName
-                  - instrumentationLibraryName
+                  - instrumentationsLibraries
                   type: object
                 type: array
             type: object
