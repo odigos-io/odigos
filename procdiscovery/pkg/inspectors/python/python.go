@@ -1,19 +1,17 @@
-package inspectors
+package python
 
 import (
 	"strings"
 
 	"github.com/keyval-dev/odigos/common"
-	procdiscovery "github.com/keyval-dev/odigos/procdiscovery/pkg/process"
+	"github.com/keyval-dev/odigos/procdiscovery/pkg/process"
 )
 
-type pythonInspector struct{}
-
-var python = &pythonInspector{}
+type PythonInspector struct{}
 
 const pythonProcessName = "python"
 
-func (p *pythonInspector) Inspect(process *procdiscovery.Details) (common.ProgrammingLanguage, bool) {
+func (p *PythonInspector) Inspect(process *process.Details) (common.ProgrammingLanguage, bool) {
 	if strings.Contains(process.ExeName, pythonProcessName) || strings.Contains(process.CmdLine, pythonProcessName) {
 		return common.PythonProgrammingLanguage, true
 	}

@@ -1,4 +1,4 @@
-package inspectors
+package java
 
 import (
 	"fmt"
@@ -6,17 +6,15 @@ import (
 	"strings"
 
 	"github.com/keyval-dev/odigos/common"
-	procdiscovery "github.com/keyval-dev/odigos/procdiscovery/pkg/process"
+	"github.com/keyval-dev/odigos/procdiscovery/pkg/process"
 )
 
-type javaInspector struct{}
-
-var java = &javaInspector{}
+type JavaInspector struct{}
 
 const processName = "java"
 const hsperfdataDir = "hsperfdata"
 
-func (j *javaInspector) Inspect(p *procdiscovery.Details) (common.ProgrammingLanguage, bool) {
+func (j *JavaInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
 	if strings.Contains(p.ExeName, processName) || strings.Contains(p.CmdLine, processName) {
 		return common.JavaProgrammingLanguage, true
 	}
@@ -28,7 +26,7 @@ func (j *javaInspector) Inspect(p *procdiscovery.Details) (common.ProgrammingLan
 	return "", false
 }
 
-func (j *javaInspector) searchForHsperfdata(pid int) bool {
+func (j *JavaInspector) searchForHsperfdata(pid int) bool {
 	tmpDir := fmt.Sprintf("/proc/%d/root/tmp/", pid)
 	files, err := os.ReadDir(tmpDir)
 	if err != nil {
