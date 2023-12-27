@@ -15,11 +15,11 @@ type inspector interface {
 }
 
 var inspectorsList = []inspector{
+	&golang.GolangInspector{},
 	&java.JavaInspector{},
 	&python.PythonInspector{},
 	&dotnet.DotnetInspector{},
 	&nodejs.NodejsInspector{},
-	&golang.GolangInspector{},
 }
 
 type LanguageDetectionResult struct {
