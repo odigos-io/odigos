@@ -2,7 +2,7 @@ package common
 
 type ConfigOption struct {
 	OptionKey string `json:"optionKey"`
-	SpanKind  string `json:"spanKind,omitempty"`
+	SpanKind  SpanKind `json:"spanKind"`
 }
 
 type InstrumentationLibrary struct {
