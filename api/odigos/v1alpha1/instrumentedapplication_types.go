@@ -24,6 +24,7 @@ import (
 // InstrumentedApplicationSpec defines the desired state of InstrumentedApplication
 type InstrumentedApplicationSpec struct {
 	Languages []common.LanguageByContainer `json:"languages,omitempty"`
+	Options  []common.OptionByContainer   `json:"options,omitempty"`
 }
 
 // InstrumentedApplicationStatus defines the observed state of InstrumentedApplication
