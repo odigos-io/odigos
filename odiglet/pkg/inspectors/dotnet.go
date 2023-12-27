@@ -2,10 +2,11 @@ package inspectors
 
 import (
 	"fmt"
-	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/odiglet/pkg/process"
 	"io/ioutil"
 	"strings"
+
+	"github.com/keyval-dev/odigos/common"
+	procdiscovery "github.com/keyval-dev/odigos/procdiscovery/pkg/process"
 )
 
 type dotnetInspector struct{}
@@ -17,7 +18,7 @@ const (
 
 var dotNet = &dotnetInspector{}
 
-func (d *dotnetInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
+func (d *dotnetInspector) Inspect(p *procdiscovery.Details) (common.ProgrammingLanguage, bool) {
 	data, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/environ", p.ProcessID))
 	if err == nil {
 		environ := string(data)

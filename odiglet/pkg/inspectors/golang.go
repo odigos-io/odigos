@@ -2,17 +2,18 @@ package inspectors
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/odiglet/pkg/inspectors/goversion"
-	"github.com/keyval-dev/odigos/odiglet/pkg/process"
-	"os"
+	procdiscovery "github.com/keyval-dev/odigos/procdiscovery/pkg/process"
 )
 
 type golangInspector struct{}
 
 var golang = &golangInspector{}
 
-func (g *golangInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
+func (g *golangInspector) Inspect(p *procdiscovery.Details) (common.ProgrammingLanguage, bool) {
 	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
 	_, err := os.Stat(file)
 	if err != nil {

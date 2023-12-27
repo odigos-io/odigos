@@ -2,10 +2,11 @@ package inspectors
 
 import (
 	"fmt"
-	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/odiglet/pkg/process"
 	"os"
 	"strings"
+
+	"github.com/keyval-dev/odigos/common"
+	procdiscovery "github.com/keyval-dev/odigos/procdiscovery/pkg/process"
 )
 
 type javaInspector struct{}
@@ -15,7 +16,7 @@ var java = &javaInspector{}
 const processName = "java"
 const hsperfdataDir = "hsperfdata"
 
-func (j *javaInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
+func (j *javaInspector) Inspect(p *procdiscovery.Details) (common.ProgrammingLanguage, bool) {
 	if strings.Contains(p.ExeName, processName) || strings.Contains(p.CmdLine, processName) {
 		return common.JavaProgrammingLanguage, true
 	}

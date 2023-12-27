@@ -88,3 +88,15 @@ jobs:
         working-directory: ./common
         run: |
           go test -v ./...
+
+  test-procdiscovery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.0"
+      - name: Test procdiscovery module
+        working-directory: ./procdiscovery
+        run: |
+          go test -v ./...
