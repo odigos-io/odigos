@@ -86,6 +86,77 @@ func NewInstrumentedApp() *apiextensionsv1.CustomResourceDefinition {
 												},
 											},
 										},
+										"options": {
+											Type: "array",
+											Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+												Schema: &apiextensionsv1.JSONSchemaProps{
+													Type: "object",
+													Required: []string{
+														"containerName",
+														"instrumentationLibraryName",
+													},
+													Properties: map[string]apiextensionsv1.JSONSchemaProps{
+														"containerName": {
+															Type: "string",
+														},
+														"instrumentationLibraryName": {
+															Type: "array",
+															Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+																Schema: &apiextensionsv1.JSONSchemaProps{
+																	Type: "object",
+																	Required: []string{
+																		"libraryName",
+																		"options",
+																	},
+																	Properties: map[string]apiextensionsv1.JSONSchemaProps{
+																		"libraryName": {
+																			Type: "string",
+																		},
+																		"options": {
+																			Type: "array",
+																			Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+																				Schema: &apiextensionsv1.JSONSchemaProps{
+																					Type: "object",
+																					Required: []string{
+																						"optionKey",
+																						"spanKind",
+																					},
+																					Properties: map[string]apiextensionsv1.JSONSchemaProps{
+																						"optionKey": {
+																							Type: "string",
+																						},
+																						"spanKind": {
+																							Type: "string",
+																							Enum: []apiextensionsv1.JSON{
+																								{
+																									Raw: []byte(`"client"`),
+																								},
+																								{
+																									Raw: []byte(`"server"`),
+																								},
+																								{
+																									Raw: []byte(`"producer"`),
+																								},
+																								{
+																									Raw: []byte(`"consumer"`),
+																								},
+																								{
+																									Raw: []byte(`"internal"`),
+																								},
+																							},
+																						},
+																					},
+																				},
+																			},
+																		},
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
 									},
 								},
 								"status": {
