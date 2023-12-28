@@ -23,6 +23,7 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/utils"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -31,10 +32,7 @@ import (
 // InstrumentedApplicationReconciler reconciles a InstrumentedApplication object
 type InstrumentedApplicationReconciler struct {
 	client.Client
-	Scheme                 *runtime.Scheme
-	LangDetectorTag        string
-	LangDetectorImage      string
-	DeleteLangDetectorPods bool
+	Scheme *runtime.Scheme
 }
 
 //+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications,verbs=get;list;watch;create;update;patch;delete
@@ -49,58 +47,64 @@ type InstrumentedApplicationReconciler struct {
 // 2. Data collection pods must be running (DataCollection CollectorsGroup .status.ready == true)
 func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+	err := reconcileSingleInstrumentedApplication(ctx, r.Client, logger, req.NamespacedName)
+	return ctrl.Result{}, err
+}
+
+// this function is extracted so we can call it from other reconcilers like when odigos config changes
+func reconcileSingleInstrumentedApplication(ctx context.Context, kubeClient client.Client, logger logr.Logger, instrumentedApplicationName types.NamespacedName) error {
 	var runtimeDetails odigosv1.InstrumentedApplication
-	err := r.Get(ctx, req.NamespacedName, &runtimeDetails)
+	err := kubeClient.Get(ctx, instrumentedApplicationName, &runtimeDetails)
 	if err != nil {
 		if client.IgnoreNotFound(err) != nil {
-			logger.Error(err, "error fetching object")
-			return ctrl.Result{}, err
+			logger.Error(err, "error fetching instrumented application")
+			return err
 		}
 
 		// runtime details deleted: remove instrumentation from resource requests
-		err = r.removeInstrumentation(logger, ctx, req.Name, req.Namespace)
+		err = removeInstrumentation(logger, ctx, kubeClient, instrumentedApplicationName)
 		if err != nil {
 			logger.Error(err, "error removing instrumentation")
-			return ctrl.Result{}, err
+			return err
 		}
 
-		return ctrl.Result{}, nil
+		return nil
 	}
 
 	if len(runtimeDetails.Spec.Languages) == 0 {
-		err = r.removeInstrumentation(logger, ctx, req.Name, req.Namespace)
+		err = removeInstrumentation(logger, ctx, kubeClient, instrumentedApplicationName)
 		if err != nil {
 			logger.Error(err, "error removing instrumentation")
-			return ctrl.Result{}, err
+			return err
 		}
 
-		return ctrl.Result{}, nil
+		return nil
 	}
 
-	if !isDataCollectionReady(ctx, r.Client) {
-		err := r.removeInstrumentation(logger, ctx, req.Name, req.Namespace)
+	if !isDataCollectionReady(ctx, kubeClient) {
+		err := removeInstrumentation(logger, ctx, kubeClient, instrumentedApplicationName)
 		if err != nil {
 			logger.Error(err, "error removing instrumentation")
-			return ctrl.Result{}, err
+			return err
 		}
 	} else {
-		err := instrument(logger, ctx, r.Client, &runtimeDetails)
+		err := instrument(logger, ctx, kubeClient, &runtimeDetails)
 		if err != nil {
 			logger.Error(err, "error instrumenting")
-			return ctrl.Result{}, err
+			return err
 		}
 	}
 
-	return ctrl.Result{}, nil
+	return nil
 }
 
-func (r *InstrumentedApplicationReconciler) removeInstrumentation(logger logr.Logger, ctx context.Context, runtimeObjName string, namespace string) error {
-	name, kind, err := utils.GetTargetFromRuntimeName(runtimeObjName)
+func removeInstrumentation(logger logr.Logger, ctx context.Context, kubeClient client.Client, instrumentedApplicationName types.NamespacedName) error {
+	name, kind, err := utils.GetTargetFromRuntimeName(instrumentedApplicationName.Name)
 	if err != nil {
 		return err
 	}
 
-	err = uninstrument(logger, ctx, r.Client, namespace, name, kind)
+	err = uninstrument(logger, ctx, kubeClient, instrumentedApplicationName.Namespace, name, kind)
 	if err != nil {
 		logger.Error(err, "error removing instrumentation")
 		return err
