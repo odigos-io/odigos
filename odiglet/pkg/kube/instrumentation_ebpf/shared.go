@@ -29,8 +29,6 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 	logger := log.FromContext(ctx)
 	podUid := string(pod.UID)
 
-	logger.Info("######## - instrumenting pod with ebpf", "pod", pod.Name, "podUid", podUid)
-
 	for _, container := range pod.Spec.Containers {
 
 		ebpfDeviceName := podContainerEbpfDeviceName(container)
