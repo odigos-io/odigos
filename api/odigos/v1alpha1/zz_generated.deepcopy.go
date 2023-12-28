@@ -421,7 +421,7 @@ func (in *InstrumentedApplicationSpec) DeepCopyInto(out *InstrumentedApplication
 	}
 	if in.Options != nil {
 		in, out := &in.Options, &out.Options
-		*out = make([]common.OptionByContainer, len(*in))
+		*out = make([]OptionByContainer, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
