@@ -10,6 +10,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.5.0
 	github.com/keyval-dev/odigos/api v0.0.0-00010101000000-000000000000
+	github.com/keyval-dev/odigos/procdiscovery v0.0.0
 	github.com/keyval-dev/odigos/common v0.0.0
 	github.com/keyval-dev/opentelemetry-zap-bridge v0.0.3
 	github.com/kubevirt/device-plugin-manager v1.19.5
@@ -107,4 +108,5 @@ require (
 replace (
 	github.com/keyval-dev/odigos/api => ../api
 	github.com/keyval-dev/odigos/common => ../common
+	github.com/keyval-dev/odigos/procdiscovery => ../procdiscovery
 )

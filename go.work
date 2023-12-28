@@ -13,4 +13,5 @@ use (
 	./odiglet
 	./scheduler
 	./collector/odigosotelcol
+	./procdiscovery
 )

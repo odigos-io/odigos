@@ -44,6 +44,10 @@ jobs:
       - name: tag common
         run: |
           git tag common/${{ steps.extract_tag.outputs.tag }}
+      
+      - name: tag procdiscovery
+        run: |
+          git tag procdiscovery/${{ steps.extract_tag.outputs.tag }}
 
       - name: tag odiglet
         run: |
