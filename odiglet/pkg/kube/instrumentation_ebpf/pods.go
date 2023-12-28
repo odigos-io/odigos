@@ -26,6 +26,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	logger := log.FromContext(ctx)
 	var pod corev1.Pod
 	err := p.Client.Get(ctx, request.NamespacedName, &pod)
+	logger.Info("######## - reconciling pod", "pod", pod.Name, "podUid", pod.UID)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			cleanupEbpf(p.Directors, request.NamespacedName)
@@ -47,6 +48,8 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	}
 
 	shouldBeEbpfInstrumented := isPodEbpfInstrumented(&pod)
+
+	logger.Info("###### - pod should be ebpf instrumented", "pod", pod.Name, "shouldBeEbpfInstrumented", shouldBeEbpfInstrumented)
 	if err != nil {
 		logger.Error(err, "error checking if pod should be ebpf instrumented")
 		return ctrl.Result{}, err

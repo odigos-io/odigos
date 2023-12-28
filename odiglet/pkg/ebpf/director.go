@@ -70,7 +70,7 @@ func NewEbpfDirector[T OtelEbpfSdk](language common.ProgrammingLanguage, instrum
 }
 
 func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *common.PodWorkload, appName string, containerName string) error {
-	log.Logger.V(0).Info("Instrumenting process", "pid", pid, "workload", podWorkload)
+	log.Logger.V(0).Info("########### - Instrumenting process", "pid", pid, "workload", podWorkload)
 	d.mux.Lock()
 	defer d.mux.Unlock()
 	if _, exists := d.pidsAttemptedInstrumentation[pid]; exists {

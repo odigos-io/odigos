@@ -28,6 +28,9 @@ func cleanupEbpf(directors map[common.ProgrammingLanguage]ebpf.Director, name ty
 func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[common.ProgrammingLanguage]ebpf.Director, runtimeDetails *odigosv1.InstrumentedApplication, podWorkload *common.PodWorkload) error {
 	logger := log.FromContext(ctx)
 	podUid := string(pod.UID)
+
+	logger.Info("######## - instrumenting pod with ebpf", "pod", pod.Name, "podUid", podUid)
+
 	for _, container := range pod.Spec.Containers {
 
 		ebpfDeviceName := podContainerEbpfDeviceName(container)
