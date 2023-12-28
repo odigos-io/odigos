@@ -93,13 +93,13 @@ func NewInstrumentedApp() *apiextensionsv1.CustomResourceDefinition {
 													Type: "object",
 													Required: []string{
 														"containerName",
-														"instrumentationLibraryName",
+														"instrumentationsLibraries",
 													},
 													Properties: map[string]apiextensionsv1.JSONSchemaProps{
 														"containerName": {
 															Type: "string",
 														},
-														"instrumentationLibraryName": {
+														"instrumentationsLibraries": {
 															Type: "array",
 															Items: &apiextensionsv1.JSONSchemaPropsOrArray{
 																Schema: &apiextensionsv1.JSONSchemaProps{
