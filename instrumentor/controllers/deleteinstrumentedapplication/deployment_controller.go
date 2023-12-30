@@ -14,69 +14,66 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package deleteinstrumentedapplication
 
 import (
 	"context"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
 	appsv1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// DaemonSetReconciler reconciles a DaemonSet object
-type DaemonSetReconciler struct {
+// DeploymentReconciler reconciles a Deployment object
+type DeploymentReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=daemonsets/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=apps,resources=daemonsets/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// the DaemonSet object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
+// Reconcile is responsible for creating InstrumentedApplication objects for every Deployment.
+// In addition, Reconcile patch the deployment according to the discovered language and keeps the `instrumented` field
+// of InstrumentedApplication up to date with the deployment spec.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
+func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var ds appsv1.DaemonSet
-	err := r.Get(ctx, req.NamespacedName, &ds)
+	var dep appsv1.Deployment
+	err := r.Get(ctx, req.NamespacedName, &dep)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
 
-		logger.Error(err, "error fetching daemonset object")
+		logger.Error(err, "error fetching deployment object")
 		return ctrl.Result{}, err
 	}
 
-	instEffectiveEnabled, err := isObjectInstrumentationEffectiveEnabled(logger, ctx, r.Client, &ds)
+	instEffectiveEnabled, err := isObjectInstrumentationEffectiveEnabled(logger, ctx, r.Client, &dep)
 	if err != nil {
 		logger.Error(err, "error checking if instrumentation is effective")
 		return ctrl.Result{}, err
 	}
 	if !instEffectiveEnabled {
 		// Remove runtime details is exists
-		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, ds.Kind, logger); err != nil {
+		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, dep.Kind, logger); err != nil {
 			logger.Error(err, "error removing runtime details")
 			return ctrl.Result{}, err
 		}
-		updated := ds.DeepCopy()
+		updated := dep.DeepCopy()
 		if removed := removeReportedNameAnnotation(updated); removed {
-			patch := client.MergeFrom(&ds)
+			patch := client.MergeFrom(&dep)
 			if err := r.Patch(ctx, updated, patch); err != nil {
-				logger.Error(err, "error removing reported name annotation from deamonset")
+				logger.Error(err, "error removing reported name annotation from deployment")
 				return ctrl.Result{}, err
 			}
 			logger.Info("removed reported name annotation")
@@ -87,9 +84,9 @@ func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *DaemonSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&appsv1.DaemonSet{}).
+		For(&appsv1.Deployment{}).
 		WithEventFilter(predicate.LabelChangedPredicate{}).
 		Complete(r)
 }

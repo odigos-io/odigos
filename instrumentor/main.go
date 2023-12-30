@@ -28,9 +28,9 @@ import (
 
 	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 
+	"github.com/keyval-dev/odigos/instrumentor/controllers/deleteinstrumentedapplication"
+	"github.com/keyval-dev/odigos/instrumentor/controllers/instrumentationdevice"
 	"github.com/keyval-dev/odigos/instrumentor/report"
-
-	"github.com/keyval-dev/odigos/instrumentor/controllers"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -83,7 +83,7 @@ func main() {
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
 
-	controllers.IgnoredNamespaces = generateIgnoredNamesSpacesMap(ignoredNameSpaces)
+	instrumentationdevice.IgnoredNamespaces = generateIgnoredNamesSpacesMap(ignoredNameSpaces)
 	setupLog.Info("ignored namespaces from flags", "namespaces", ignoredNameSpaces)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -100,49 +100,49 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.InstrumentedApplicationReconciler{
+	if err = (&instrumentationdevice.InstrumentedApplicationReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
 		os.Exit(1)
 	}
-	if err = (&controllers.DeploymentReconciler{
+	if err = (&deleteinstrumentedapplication.DeploymentReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
 		os.Exit(1)
 	}
-	if err = (&controllers.StatefulSetReconciler{
+	if err = (&deleteinstrumentedapplication.StatefulSetReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "StatefulSet")
 		os.Exit(1)
 	}
-	if err = (&controllers.CollectorsGroupReconciler{
+	if err = (&instrumentationdevice.CollectorsGroupReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
 		os.Exit(1)
 	}
-	if err = (&controllers.NamespaceReconciler{
+	if err = (&deleteinstrumentedapplication.NamespaceReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
 		os.Exit(1)
 	}
-	if err = (&controllers.DaemonSetReconciler{
+	if err = (&deleteinstrumentedapplication.DaemonSetReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DaemonSet")
 		os.Exit(1)
 	}
-	if err = (&controllers.OdigosConfigReconciler{
+	if err = (&instrumentationdevice.OdigosConfigReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
