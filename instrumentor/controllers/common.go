@@ -106,7 +106,7 @@ func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Cli
 
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
 
-		// clear old ebpf instrumentaiton annotation, just in case it still exists
+		// clear old ebpf instrumentation annotation, just in case it still exists
 		clearInstrumentationEbpf(obj)
 		podSpec, err := getPodSpecFromObject(obj)
 		if err != nil {
