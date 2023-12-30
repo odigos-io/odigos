@@ -47,32 +47,37 @@ type InstrumentedApplicationReconciler struct {
 // 2. Data collection pods must be running (DataCollection CollectorsGroup .status.ready == true)
 func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	err := reconcileSingleInstrumentedApplication(ctx, r.Client, logger, req.NamespacedName)
+
+	var runtimeDetails odigosv1.InstrumentedApplication
+	err := r.Client.Get(ctx, req.NamespacedName, &runtimeDetails)
+	if err != nil {
+		if client.IgnoreNotFound(err) != nil {
+			logger.Error(err, "error fetching instrumented application")
+			return ctrl.Result{}, err
+		}
+
+		// runtime details deleted: remove instrumentation from resource requests
+		err = removeInstrumentation(logger, ctx, r.Client, req.NamespacedName)
+		if err != nil {
+			logger.Error(err, "error removing instrumentation")
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
+	}
+
+	err = reconcileSingleInstrumentedApplication(ctx, r.Client, &runtimeDetails)
 	return ctrl.Result{}, err
 }
 
 // this function is extracted so we can call it from other reconcilers like when odigos config changes
-func reconcileSingleInstrumentedApplication(ctx context.Context, kubeClient client.Client, logger logr.Logger, instrumentedApplicationName types.NamespacedName) error {
-	var runtimeDetails odigosv1.InstrumentedApplication
-	err := kubeClient.Get(ctx, instrumentedApplicationName, &runtimeDetails)
-	if err != nil {
-		if client.IgnoreNotFound(err) != nil {
-			logger.Error(err, "error fetching instrumented application")
-			return err
-		}
+func reconcileSingleInstrumentedApplication(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) error {
+	logger := log.FromContext(ctx)
 
-		// runtime details deleted: remove instrumentation from resource requests
-		err = removeInstrumentation(logger, ctx, kubeClient, instrumentedApplicationName)
-		if err != nil {
-			logger.Error(err, "error removing instrumentation")
-			return err
-		}
-
-		return nil
-	}
+	runtimeDetailsNamespacedName := client.ObjectKeyFromObject(runtimeDetails)
 
 	if len(runtimeDetails.Spec.Languages) == 0 {
-		err = removeInstrumentation(logger, ctx, kubeClient, instrumentedApplicationName)
+		err := removeInstrumentation(logger, ctx, kubeClient, runtimeDetailsNamespacedName)
 		if err != nil {
 			logger.Error(err, "error removing instrumentation")
 			return err
@@ -82,13 +87,13 @@ func reconcileSingleInstrumentedApplication(ctx context.Context, kubeClient clie
 	}
 
 	if !isDataCollectionReady(ctx, kubeClient) {
-		err := removeInstrumentation(logger, ctx, kubeClient, instrumentedApplicationName)
+		err := removeInstrumentation(logger, ctx, kubeClient, runtimeDetailsNamespacedName)
 		if err != nil {
 			logger.Error(err, "error removing instrumentation")
 			return err
 		}
 	} else {
-		err := instrument(logger, ctx, kubeClient, &runtimeDetails)
+		err := instrument(logger, ctx, kubeClient, runtimeDetails)
 		if err != nil {
 			logger.Error(err, "error instrumenting")
 			return err
