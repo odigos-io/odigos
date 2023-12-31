@@ -63,19 +63,15 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	for _, dep := range deps.Items {
 		if !isInstrumentationLabelEnabled(&dep) {
-			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, dep.Namespace, dep.Name, dep.Kind); err != nil {
+			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, &dep); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
 			}
-		}
-		updated := dep.DeepCopy()
-		if removed := removeReportedNameAnnotation(updated); removed {
-			patch := client.MergeFrom(&dep)
-			if err := r.Patch(ctx, updated, patch); err != nil {
+			err = removeReportedNameAnnotation(ctx, r.Client, &dep)
+			if err != nil {
 				logger.Error(err, "error removing reported name annotation from deployment")
 				return ctrl.Result{}, err
 			}
-			logger.Info("removed reported name annotation from deployment")
 		}
 	}
 
@@ -88,18 +84,14 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	for _, s := range ss.Items {
 		if !isInstrumentationLabelEnabled(&s) {
-			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, s.Namespace, s.Name, s.Kind); err != nil {
+			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, &s); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
 			}
-			updated := s.DeepCopy()
-			if removed := removeReportedNameAnnotation(updated); removed {
-				patch := client.MergeFrom(&s)
-				if err := r.Patch(ctx, updated, patch); err != nil {
-					logger.Error(err, "error removing reported name annotation from statefulset")
-					return ctrl.Result{}, err
-				}
-				logger.Info("removed reported name annotation from stateful set")
+			err = removeReportedNameAnnotation(ctx, r.Client, &s)
+			if err != nil {
+				logger.Error(err, "error removing reported name annotation from statefulset")
+				return ctrl.Result{}, err
 			}
 		}
 	}
@@ -113,18 +105,14 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	for _, d := range ds.Items {
 		if !isInstrumentationLabelEnabled(&d) {
-			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, d.Namespace, d.Name, d.Kind); err != nil {
+			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, &d); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
 			}
-			updated := d.DeepCopy()
-			if removed := removeReportedNameAnnotation(updated); removed {
-				patch := client.MergeFrom(&d)
-				if err := r.Patch(ctx, updated, patch); err != nil {
-					logger.Error(err, "error removing reported name annotation from daemonset")
-					return ctrl.Result{}, err
-				}
-				logger.Info("removed reported name annotation from daemonset set")
+			err = removeReportedNameAnnotation(ctx, r.Client, &d)
+			if err != nil {
+				logger.Error(err, "error removing reported name annotation from daemonset")
+				return ctrl.Result{}, err
 			}
 		}
 	}

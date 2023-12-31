@@ -3,87 +3,93 @@ package deleteinstrumentedapplication
 import (
 	"context"
 
-	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient client.Client, ns string, workloadName string, workloadKind string) error {
-
-	runtimeDetails := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      utils.GetRuntimeObjectName(workloadName, workloadKind),
-		},
+func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
+	logger := log.FromContext(ctx)
+	instEffectiveEnabled, err := isWorkloadInstrumentationEffectiveEnabled(ctx, kubeClient, workloadObject)
+	if err != nil {
+		logger.Error(err, "error checking if instrumentation is effective")
+		return err
 	}
 
-	err := kubeClient.Delete(ctx, &runtimeDetails)
+	if instEffectiveEnabled {
+		return nil
+	}
+
+	if err := deleteWorkloadInstrumentedApplication(ctx, kubeClient, workloadObject); err != nil {
+		logger.Error(err, "error removing runtime details")
+		return err
+	}
+	err = removeReportedNameAnnotation(ctx, kubeClient, workloadObject)
+	if err != nil {
+		logger.Error(err, "error removing reported name annotation ")
+		return err
+	}
+
+	return nil
+}
+
+func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
+
+	ns := workloadObject.GetNamespace()
+	name := workloadObject.GetName()
+	kind := workloadObject.GetObjectKind().GroupVersionKind().Kind
+	instrumentedApplicationName := utils.GetRuntimeObjectName(name, kind)
+
+	err := kubeClient.Delete(ctx, &odigosv1.InstrumentedApplication{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      instrumentedApplicationName,
+		},
+	})
 	if err != nil {
 		return client.IgnoreNotFound(err)
 	}
 
 	logger := log.FromContext(ctx)
-	logger.V(1).Info("deleted instrumented application", "namespace", ns, "kind", workloadKind, "name", workloadName)
+	logger.V(1).Info("instrumented application deleted", "namespace", ns, "name", name, "kind", kind)
 	return nil
 }
 
-func isObjectInstrumentationEffectiveEnabled(logger logr.Logger, ctx context.Context, kubeClient client.Client, obj client.Object) (bool, error) {
+func isWorkloadInstrumentationEffectiveEnabled(ctx context.Context, kubeClient client.Client, obj client.Object) (bool, error) {
 
 	// if the object itself is labeled, we will use that value
-	labels := obj.GetLabels()
-	if labels != nil {
-		val, exists := labels[consts.OdigosInstrumentationLabel]
-		if exists {
-			return val == consts.InstrumentationEnabled, nil
-		}
+	workloadLabels := obj.GetLabels()
+	if val, exists := workloadLabels[consts.OdigosInstrumentationLabel]; exists {
+		return val == consts.InstrumentationEnabled, nil
 	}
 
-	// we will get here if the instrumentation label is not set.
-	// in which case, we would want to check the namespace value
+	// we will get here if the workload instrumentation label is not set.
+	// no label means inherit the instrumentation value from namespace.
 	var ns corev1.Namespace
 	err := kubeClient.Get(ctx, client.ObjectKey{Name: obj.GetNamespace()}, &ns)
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-
+		logger := log.FromContext(ctx)
 		logger.Error(err, "error fetching namespace object")
 		return false, err
 	}
 
-	nsInstrumentationEnabled := isInstrumentationLabelEnabled(&ns)
-	return nsInstrumentationEnabled, nil
+	return isInstrumentationLabelEnabled(&ns), nil
 }
 
-func isInstrumentationLabelEnabled(obj client.Object) bool {
-	labels := obj.GetLabels()
-	if labels != nil {
-		val, exists := labels[consts.OdigosInstrumentationLabel]
-		if exists && val == consts.InstrumentationEnabled {
-			return true
-		}
-	}
-
-	return false
+func isInstrumentationLabelEnabled(workloadObject client.Object) bool {
+	labels := workloadObject.GetLabels()
+	return labels[consts.OdigosInstrumentationLabel] == consts.InstrumentationEnabled
 }
 
-func removeReportedNameAnnotation(obj client.Object) bool {
-	annotations := obj.GetAnnotations()
-	if annotations == nil {
-		return false
+func removeReportedNameAnnotation(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
+	if _, exists := workloadObject.GetAnnotations()[consts.OdigosReportedNameAnnotation]; !exists {
+		return nil
 	}
 
-	if _, exists := annotations[consts.OdigosReportedNameAnnotation]; !exists {
-		return false
-	}
-
-	delete(annotations, consts.OdigosReportedNameAnnotation)
-	obj.SetAnnotations(annotations)
-	return true
+	return kubeClient.Patch(ctx, workloadObject, client.RawPatch(types.MergePatchType, []byte(`{"metadata":{"annotations":{"`+consts.OdigosReportedNameAnnotation+`":null}}}`)))
 }
