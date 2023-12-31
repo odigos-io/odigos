@@ -1,4 +1,4 @@
-package controllers
+package instrumentationdevice
 
 import (
 	"context"
@@ -40,10 +40,4 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *OdigosConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&odigosv1.OdigosConfiguration{}).
-		Complete(r)
 }
