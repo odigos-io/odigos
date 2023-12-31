@@ -94,53 +94,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&instrumentationdevice.InstrumentedApplicationReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
+	err = instrumentationdevice.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller")
 		os.Exit(1)
 	}
-	if err = (&deleteinstrumentedapplication.DeploymentReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
-		os.Exit(1)
-	}
-	if err = (&deleteinstrumentedapplication.StatefulSetReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "StatefulSet")
-		os.Exit(1)
-	}
-	if err = (&instrumentationdevice.CollectorsGroupReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
-		os.Exit(1)
-	}
-	if err = (&deleteinstrumentedapplication.NamespaceReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
-		os.Exit(1)
-	}
-	if err = (&deleteinstrumentedapplication.DaemonSetReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DaemonSet")
-		os.Exit(1)
-	}
-	if err = (&instrumentationdevice.OdigosConfigReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OdigosConfig")
+
+	err = deleteinstrumentedapplication.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller")
 		os.Exit(1)
 	}
 

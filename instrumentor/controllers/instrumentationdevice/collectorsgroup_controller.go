@@ -96,10 +96,3 @@ func (r *CollectorsGroupReconciler) removeAllInstrumentations(ctx context.Contex
 
 	return nil
 }
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *CollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&odigosv1.CollectorsGroup{}).
-		Complete(r)
-}
