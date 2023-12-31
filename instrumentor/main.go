@@ -80,9 +80,6 @@ func main() {
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
 
-	instrumentationdevice.IgnoredNamespaces = generateIgnoredNamesSpacesMap(ignoredNameSpaces)
-	setupLog.Info("ignored namespaces from flags", "namespaces", ignoredNameSpaces)
-
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{

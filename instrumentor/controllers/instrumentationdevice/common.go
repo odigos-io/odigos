@@ -17,13 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var (
-	// IgnoredNamespaces is filled from either:
-	//   - cmd.DefaultIgnoredNamespaces
-	//   - Helm chart's instrumentor.ignoredNamespaces field
-	IgnoredNamespaces map[string]bool
-)
-
 func clearInstrumentationEbpf(obj client.Object) {
 	annotations := obj.GetAnnotations()
 	if annotations == nil {
