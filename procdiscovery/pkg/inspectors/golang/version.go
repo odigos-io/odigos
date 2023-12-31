@@ -1,4 +1,4 @@
-package goversion
+package golang
 
 import (
 	"bytes"
@@ -11,9 +11,9 @@ import (
 // and whether the binary is big endian (1 byte).
 var buildInfoMagic = []byte("\xff Go buildinf:")
 
-// FindVersion finds and returns the Go version and module version information
+// findVersion finds and returns the Go version and module version information
 // in the executable x.
-func FindVersion(x exe) (string, string) {
+func findVersion(x exe) (string, string) {
 	// Read the first 64kB of text to find the build info blob.
 	text := x.DataStart()
 	data, err := x.ReadData(text, 64*1024)

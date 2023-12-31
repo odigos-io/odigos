@@ -6,12 +6,11 @@ import (
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
-	"github.com/keyval-dev/odigos/odiglet/pkg/inspectors"
 	kubeutils "github.com/keyval-dev/odigos/odiglet/pkg/kube/utils"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	"github.com/keyval-dev/odigos/odiglet/pkg/process"
+	"github.com/keyval-dev/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -54,28 +53,32 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 func runtimeInspection(pods []corev1.Pod) ([]common.LanguageByContainer, error) {
 	resultsMap := make(map[string]common.LanguageByContainer)
 	for _, pod := range pods {
-		for _, c := range pod.Spec.Containers {
-			// Skip Go instrumentation container
-			if c.Image == consts.GolangInstrumentationImage {
+		for _, container := range pod.Spec.Containers {
+
+			processes, err := process.FindAllInContainer(string(pod.UID), container.Name)
+			if err != nil {
+				log.Logger.Error(err, "failed to find processes in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+				return nil, err
+			}
+			if len(processes) == 0 {
+				log.Logger.V(0).Info("no processes found in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				continue
 			}
 
-			processes, err := process.FindAllInContainer(string(pod.UID), c.Name)
-			if err != nil {
-				log.Logger.Error(err, "Failed to find processes")
-				return nil, err
+			detectionResults := inspectors.DetectLanguage(processes)
+			if len(detectionResults) == 0 {
+				log.Logger.V(0).Info("no supported language detected for container in pod", "processes", processes, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+				continue
 			}
-			if processes != nil && len(processes) > 0 {
-				processResults, processName := inspectors.DetectLanguage(processes)
-				if len(processResults) > 0 {
-					resultsMap[c.Name] = common.LanguageByContainer{
-						ContainerName: c.Name,
-						Language:      processResults[0],
-						ProcessName:   processName,
-					}
-				} else {
-					log.Logger.V(0).Info("unrecognized processes", "processes", processes, "pod", pod.Name, "container", c.Name, "namespace", pod.Namespace)
-				}
+
+			if len(detectionResults) > 1 {
+				log.Logger.V(0).Info("multiple languages detected for pod container processes, selecting first one", "processes", processes, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+			}
+
+			resultsMap[container.Name] = common.LanguageByContainer{
+				ContainerName: container.Name,
+				Language:      detectionResults[0].Language,
+				ProcessName:   detectionResults[0].ExeName,
 			}
 		}
 	}
