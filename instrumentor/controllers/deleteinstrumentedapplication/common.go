@@ -9,26 +9,27 @@ import (
 	"github.com/keyval-dev/odigos/common/utils"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func removeRuntimeDetails(ctx context.Context, kubeClient client.Client, ns string, name string, kind string, logger logr.Logger) error {
-	runtimeName := utils.GetRuntimeObjectName(name, kind)
-	var runtimeDetails odigosv1.InstrumentedApplication
-	err := kubeClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: runtimeName}, &runtimeDetails)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		return err
+func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient client.Client, ns string, workloadName string, workloadKind string) error {
+
+	runtimeDetails := odigosv1.InstrumentedApplication{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      utils.GetRuntimeObjectName(workloadName, workloadKind),
+		},
 	}
 
-	err = kubeClient.Delete(ctx, &runtimeDetails)
+	err := kubeClient.Delete(ctx, &runtimeDetails)
 	if err != nil {
-		return err
+		return client.IgnoreNotFound(err)
 	}
 
-	logger.V(0).Info("removed runtime details due to label change")
+	logger := log.FromContext(ctx)
+	logger.V(1).Info("deleted instrumented application", "namespace", ns, "kind", workloadKind, "name", workloadName)
 	return nil
 }
 

@@ -56,9 +56,13 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		logger.Error(err, "error checking if instrumentation is effective")
 		return ctrl.Result{}, err
 	}
+
+	if instEffectiveEnabled {
+		return ctrl.Result{}, nil
+	}
+
 	if !instEffectiveEnabled {
-		// Remove runtime details is exists
-		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, dep.Kind, logger); err != nil {
+		if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, req.Namespace, req.Name, dep.Kind); err != nil {
 			logger.Error(err, "error removing runtime details")
 			return ctrl.Result{}, err
 		}

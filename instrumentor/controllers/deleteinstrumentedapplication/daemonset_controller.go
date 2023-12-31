@@ -67,7 +67,7 @@ func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 	if !instEffectiveEnabled {
 		// Remove runtime details is exists
-		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, ds.Kind, logger); err != nil {
+		if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, req.Namespace, req.Name, ds.Kind); err != nil {
 			logger.Error(err, "error removing runtime details")
 			return ctrl.Result{}, err
 		}

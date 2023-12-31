@@ -63,7 +63,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	for _, dep := range deps.Items {
 		if !isInstrumentationLabelEnabled(&dep) {
-			if err := removeRuntimeDetails(ctx, r.Client, dep.Namespace, dep.Name, dep.Kind, logger); err != nil {
+			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, dep.Namespace, dep.Name, dep.Kind); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
 			}
@@ -88,7 +88,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	for _, s := range ss.Items {
 		if !isInstrumentationLabelEnabled(&s) {
-			if err := removeRuntimeDetails(ctx, r.Client, s.Namespace, s.Name, s.Kind, logger); err != nil {
+			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, s.Namespace, s.Name, s.Kind); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
 			}
@@ -113,7 +113,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	for _, d := range ds.Items {
 		if !isInstrumentationLabelEnabled(&d) {
-			if err := removeRuntimeDetails(ctx, r.Client, d.Namespace, d.Name, d.Kind, logger); err != nil {
+			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, d.Namespace, d.Name, d.Kind); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
 			}
