@@ -55,7 +55,7 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLang
 	err := builder.
 		ControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
-		// WithEventFilter(&podPredicate{}).
+		WithEventFilter(&podPredicate{}).
 		Complete(&PodsReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
