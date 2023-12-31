@@ -19,7 +19,6 @@ package main
 import (
 	"flag"
 	"os"
-	"strings"
 
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
@@ -61,7 +60,6 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
-	var ignoredNameSpaces stringslice
 	var telemetryDisabled bool
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -69,7 +67,6 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.Var(&ignoredNameSpaces, "ignore-namespace", "The ignored namespaces")
 	flag.BoolVar(&telemetryDisabled, "telemetry-disabled", false, "Disable telemetry")
 
 	opts := ctrlzap.Options{
@@ -170,24 +167,4 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-}
-
-type stringslice []string
-
-func (s *stringslice) Set(val string) error {
-	*s = append(*s, val)
-	return nil
-}
-
-func (s *stringslice) String() string {
-	return strings.Join(*s, " ")
-}
-
-func generateIgnoredNamesSpacesMap(nss []string) map[string]bool {
-	m := make(map[string]bool)
-	for _, v := range nss {
-		m[v] = true
-	}
-
-	return m
 }
