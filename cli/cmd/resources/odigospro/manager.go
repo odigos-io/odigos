@@ -36,16 +36,17 @@ func (a *odigosCloudResourceManager) InstallFromScratch(ctx context.Context) err
 	if a.proTierToken == nil {
 
 		// no-op - just apply the resources again to make sure the labels are up to date.
-		secret, err := getCurrentOdigosProSecret(ctx, a.client, a.ns)
-		if err != nil || secret == nil {
+		existingSecret, err := getCurrentOdigosProSecret(ctx, a.client, a.ns)
+		if err != nil || existingSecret == nil {
 			return err
 		}
 
 		// Without the following line, I get an error:
 		// ERROR metadata.managedFields must be nil
 		// But not sure if this is the right way to fix it.
-		secret.ManagedFields = nil
+		existingSecret.ManagedFields = nil
 
+		secret = existingSecret
 	} else {
 
 		var cloudApiKey = ""
