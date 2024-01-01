@@ -10,13 +10,14 @@ import (
 )
 
 func isPodContainerPredicate(podUID string, containerName string) func(string) bool {
+	expectedMountRoot := fmt.Sprintf("%s/containers/%s", podUID, containerName)
+
 	return func(procDirName string) bool {
 		mi, err := mountinfo.GetMountInfo(path.Join("/proc", procDirName, "mountinfo"))
 		if err != nil {
 			return false
 		}
 
-		expectedMountRoot := fmt.Sprintf("%s/containers/%s", podUID, containerName)
 		for _, m := range mi {
 			root := m.Root
 			if strings.Contains(root, expectedMountRoot) {
