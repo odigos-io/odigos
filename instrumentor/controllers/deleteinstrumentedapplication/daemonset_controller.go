@@ -38,14 +38,6 @@ type DaemonSetReconciler struct {
 //+kubebuilder:rbac:groups=apps,resources=daemonsets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=apps,resources=daemonsets/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// the DaemonSet object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
@@ -60,27 +52,6 @@ func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	instEffectiveEnabled, err := isObjectInstrumentationEffectiveEnabled(logger, ctx, r.Client, &ds)
-	if err != nil {
-		logger.Error(err, "error checking if instrumentation is effective")
-		return ctrl.Result{}, err
-	}
-	if !instEffectiveEnabled {
-		// Remove runtime details is exists
-		if err := removeRuntimeDetails(ctx, r.Client, req.Namespace, req.Name, ds.Kind, logger); err != nil {
-			logger.Error(err, "error removing runtime details")
-			return ctrl.Result{}, err
-		}
-		updated := ds.DeepCopy()
-		if removed := removeReportedNameAnnotation(updated); removed {
-			patch := client.MergeFrom(&ds)
-			if err := r.Patch(ctx, updated, patch); err != nil {
-				logger.Error(err, "error removing reported name annotation from deamonset")
-				return ctrl.Result{}, err
-			}
-			logger.Info("removed reported name annotation")
-		}
-	}
-
-	return ctrl.Result{}, nil
+	err = reconcileWorkloadObject(ctx, r.Client, &ds)
+	return ctrl.Result{}, err
 }
