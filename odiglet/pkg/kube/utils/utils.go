@@ -22,7 +22,7 @@ func GetRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 
 	var filteredPods []corev1.Pod
 	for _, pod := range podList.Items {
-		if IsPodInCurrentNode(&pod) && pod.Status.Phase == corev1.PodRunning {
+		if IsPodInCurrentNode(&pod) && pod.Status.Phase == corev1.PodRunning && pod.DeletionTimestamp == nil {
 			filteredPods = append(filteredPods, pod)
 		}
 	}
