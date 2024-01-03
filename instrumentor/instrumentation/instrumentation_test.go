@@ -306,6 +306,57 @@ func TestApplyInstrumentationDevicesToPodTemplate_AppendExistingLimits(t *testin
 	}
 }
 
+func TestApplyInstrumentationDevicesToPodTemplate_RemoveExistingLimits(t *testing.T) {
+	podTemplate := &v1.PodTemplateSpec{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Name: "test",
+					Resources: v1.ResourceRequirements{
+						Limits: map[v1.ResourceName]resource.Quantity{
+							"instrumentation.odigos.io/go-ebpf-community": resource.MustParse("1"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	runtimeDetails := &odigosv1.InstrumentedApplication{
+		Spec: odigosv1.InstrumentedApplicationSpec{
+			Languages: []common.LanguageByContainer{
+				{
+					Language:      common.GoProgrammingLanguage,
+					ContainerName: "test",
+				},
+			},
+		},
+	}
+
+	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
+		common.GoProgrammingLanguage: {SdkType: common.EbpfOtelSdkType, SdkTier: common.EnterpriseOtelSdkTier},
+	}
+
+	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks)
+	if err != nil {
+		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() error = %v", err)
+	}
+
+	container := podTemplate.Spec.Containers[0]
+
+	if len(container.Resources.Limits) != 1 {
+		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() expected 1 resource limits")
+	}
+
+	if _, ok := container.Resources.Limits["instrumentation.odigos.io/go-ebpf-community"]; ok {
+		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() expected to remove old existing resource limit for community ")
+	}
+
+	if container.Resources.Limits["instrumentation.odigos.io/go-ebpf-enterprise"] != resource.MustParse("1") {
+		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() expected instrumentation device to be added")
+	}
+}
+
 func TestRevert(t *testing.T) {
 	podTemplate := &v1.PodTemplateSpec{
 		Spec: v1.PodSpec{

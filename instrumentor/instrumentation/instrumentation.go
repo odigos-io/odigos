@@ -11,6 +11,12 @@ import (
 )
 
 func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk) error {
+
+	// delete any existing instrumentation devices.
+	// this is necessary for example when migrating from community to enterprise,
+	// and we need to cleanup the community device before adding the enterprise one.
+	Revert(original)
+
 	var modifiedContainers []v1.Container
 	for _, container := range original.Spec.Containers {
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)

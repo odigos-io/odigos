@@ -136,6 +136,7 @@ go build -o odigos-backend && ./odigos-backend --port 8085 --debug --address 0.0
 - run:
 
 ```
+ npm install
  npm run dev
 ```
 

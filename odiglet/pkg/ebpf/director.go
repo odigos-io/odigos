@@ -18,13 +18,13 @@ type OtelEbpfSdk interface {
 
 // users can use different eBPF otel SDKs by returning them from this function
 type InstrumentationFactory[T OtelEbpfSdk] interface {
-	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload) (T, error)
+	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload, containerName string) (T, error)
 }
 
 // Director manages the instrumentation for a specific SDK in a specific language
 type Director interface {
 	Language() common.ProgrammingLanguage
-	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload *common.PodWorkload, appName string) error
+	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload *common.PodWorkload, appName string, containerName string) error
 	Cleanup(podDetails types.NamespacedName)
 	Shutdown()
 }
@@ -69,7 +69,7 @@ func NewEbpfDirector[T OtelEbpfSdk](language common.ProgrammingLanguage, instrum
 	}
 }
 
-func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *common.PodWorkload, appName string) error {
+func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *common.PodWorkload, appName string, containerName string) error {
 	log.Logger.V(0).Info("Instrumenting process", "pid", pid, "workload", podWorkload)
 	d.mux.Lock()
 	defer d.mux.Unlock()
@@ -97,7 +97,7 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 	d.workloadToPods[*podWorkload][pod] = struct{}{}
 
 	go func() {
-		inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload)
+		inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName)
 		if err != nil {
 			log.Logger.Error(err, "instrumentation setup failed", "workload", podWorkload, "pod", pod)
 			return

@@ -31,3 +31,20 @@ func SpanKindOdigosToOtel(kind SpanKind) trace.SpanKind {
 		return trace.SpanKindUnspecified
 	}
 }
+
+func ConvertSpanKindToString(spanKind trace.SpanKind) SpanKind {
+	switch spanKind {
+	case trace.SpanKindClient:
+		return ClientSpanKind
+	case trace.SpanKindServer:
+		return ServerSpanKind
+	case trace.SpanKindProducer:
+		return ProducerSpanKind
+	case trace.SpanKindConsumer:
+		return ConsumerSpanKind
+	case trace.SpanKindInternal:
+		return InternalSpanKind
+	default:
+		return ""
+	}
+}

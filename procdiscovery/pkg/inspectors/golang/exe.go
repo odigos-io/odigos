@@ -1,4 +1,4 @@
-package goversion
+package golang
 
 import (
 	"bytes"
@@ -21,7 +21,7 @@ type exe interface {
 }
 
 // openExe opens file and returns it as an exe.
-func OpenExe(file string) (*elfExe, error) {
+func openExe(file string) (*elfExe, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err

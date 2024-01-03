@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package instrumentationdevice
 
 import (
 	"context"
@@ -23,6 +23,7 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/utils"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -31,10 +32,7 @@ import (
 // InstrumentedApplicationReconciler reconciles a InstrumentedApplication object
 type InstrumentedApplicationReconciler struct {
 	client.Client
-	Scheme                 *runtime.Scheme
-	LangDetectorTag        string
-	LangDetectorImage      string
-	DeleteLangDetectorPods bool
+	Scheme *runtime.Scheme
 }
 
 //+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications,verbs=get;list;watch;create;update;patch;delete
@@ -49,16 +47,17 @@ type InstrumentedApplicationReconciler struct {
 // 2. Data collection pods must be running (DataCollection CollectorsGroup .status.ready == true)
 func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+
 	var runtimeDetails odigosv1.InstrumentedApplication
-	err := r.Get(ctx, req.NamespacedName, &runtimeDetails)
+	err := r.Client.Get(ctx, req.NamespacedName, &runtimeDetails)
 	if err != nil {
 		if client.IgnoreNotFound(err) != nil {
-			logger.Error(err, "error fetching object")
+			logger.Error(err, "error fetching instrumented application")
 			return ctrl.Result{}, err
 		}
 
 		// runtime details deleted: remove instrumentation from resource requests
-		err = r.removeInstrumentation(logger, ctx, req.Name, req.Namespace)
+		err = removeInstrumentation(logger, ctx, r.Client, req.NamespacedName)
 		if err != nil {
 			logger.Error(err, "error removing instrumentation")
 			return ctrl.Result{}, err
@@ -67,51 +66,54 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 		return ctrl.Result{}, nil
 	}
 
-	if len(runtimeDetails.Spec.Languages) == 0 {
-		err = r.removeInstrumentation(logger, ctx, req.Name, req.Namespace)
-		if err != nil {
-			logger.Error(err, "error removing instrumentation")
-			return ctrl.Result{}, err
-		}
-
-		return ctrl.Result{}, nil
-	}
-
-	if !isDataCollectionReady(ctx, r.Client) {
-		err := r.removeInstrumentation(logger, ctx, req.Name, req.Namespace)
-		if err != nil {
-			logger.Error(err, "error removing instrumentation")
-			return ctrl.Result{}, err
-		}
-	} else {
-		err := instrument(logger, ctx, r.Client, &runtimeDetails)
-		if err != nil {
-			logger.Error(err, "error instrumenting")
-			return ctrl.Result{}, err
-		}
-	}
-
-	return ctrl.Result{}, nil
+	err = reconcileSingleInstrumentedApplication(ctx, r.Client, &runtimeDetails)
+	return ctrl.Result{}, err
 }
 
-func (r *InstrumentedApplicationReconciler) removeInstrumentation(logger logr.Logger, ctx context.Context, runtimeObjName string, namespace string) error {
-	name, kind, err := utils.GetTargetFromRuntimeName(runtimeObjName)
+// this function is extracted so we can call it from other reconcilers like when odigos config changes
+func reconcileSingleInstrumentedApplication(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) error {
+	logger := log.FromContext(ctx)
+
+	runtimeDetailsNamespacedName := client.ObjectKeyFromObject(runtimeDetails)
+
+	if len(runtimeDetails.Spec.Languages) == 0 {
+		err := removeInstrumentation(logger, ctx, kubeClient, runtimeDetailsNamespacedName)
+		if err != nil {
+			logger.Error(err, "error removing instrumentation")
+			return err
+		}
+
+		return nil
+	}
+
+	if !isDataCollectionReady(ctx, kubeClient) {
+		err := removeInstrumentation(logger, ctx, kubeClient, runtimeDetailsNamespacedName)
+		if err != nil {
+			logger.Error(err, "error removing instrumentation")
+			return err
+		}
+	} else {
+		err := instrument(logger, ctx, kubeClient, runtimeDetails)
+		if err != nil {
+			logger.Error(err, "error instrumenting")
+			return err
+		}
+	}
+
+	return nil
+}
+
+func removeInstrumentation(logger logr.Logger, ctx context.Context, kubeClient client.Client, instrumentedApplicationName types.NamespacedName) error {
+	name, kind, err := utils.GetTargetFromRuntimeName(instrumentedApplicationName.Name)
 	if err != nil {
 		return err
 	}
 
-	err = uninstrument(logger, ctx, r.Client, namespace, name, kind)
+	err = uninstrument(logger, ctx, kubeClient, instrumentedApplicationName.Namespace, name, kind)
 	if err != nil {
 		logger.Error(err, "error removing instrumentation")
 		return err
 	}
 
 	return nil
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *InstrumentedApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&odigosv1.InstrumentedApplication{}).
-		Complete(r)
 }
