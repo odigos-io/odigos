@@ -3,6 +3,7 @@ package datacollection
 import (
 	"context"
 	"fmt"
+
 	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection/custom"
 
 	"github.com/ghodss/yaml"
@@ -193,7 +194,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 					"timestamp": commonconf.GenericMap{
 						"parse_from":  "attributes.time",
 						"layout_type": "gotime",
-						"layout":      "2006-01-02T15:04:05.000000000-07:00",
+						"layout":      "2006-01-02T15:04:05.999999999Z07:00",
 					},
 				},
 				{
