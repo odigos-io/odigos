@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package instrumentationdevice
 
 import (
 	"context"
+
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/utils"
@@ -94,11 +95,4 @@ func (r *CollectorsGroupReconciler) removeAllInstrumentations(ctx context.Contex
 	}
 
 	return nil
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *CollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&odigosv1.CollectorsGroup{}).
-		Complete(r)
 }

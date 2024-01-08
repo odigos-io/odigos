@@ -1,11 +1,10 @@
-package controllers
+package instrumentationdevice
 
 import (
 	"context"
 	"errors"
 
 	"github.com/go-logr/logr"
-	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common/consts"
 	"github.com/keyval-dev/odigos/common/utils"
@@ -16,13 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-)
-
-var (
-	// IgnoredNamespaces is filled from either:
-	//   - cmd.DefaultIgnoredNamespaces
-	//   - Helm chart's instrumentor.ignoredNamespaces field
-	IgnoredNamespaces map[string]bool
 )
 
 func clearInstrumentationEbpf(obj client.Object) {
@@ -58,7 +50,7 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 		return err
 	}
 
-	var odigosConfig v1alpha1.OdigosConfiguration
+	var odigosConfig odigosv1.OdigosConfiguration
 	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: utils.GetCurrentNamespace(), Name: "odigos-config"}, &odigosConfig)
 	if err != nil {
 		return err
@@ -174,79 +166,4 @@ func getObjectFromKindString(kind string) (client.Object, error) {
 	default:
 		return nil, errors.New("unknown kind")
 	}
-}
-
-func removeRuntimeDetails(ctx context.Context, kubeClient client.Client, ns string, name string, kind string, logger logr.Logger) error {
-	runtimeName := utils.GetRuntimeObjectName(name, kind)
-	var runtimeDetails odigosv1.InstrumentedApplication
-	err := kubeClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: runtimeName}, &runtimeDetails)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-
-	err = kubeClient.Delete(ctx, &runtimeDetails)
-	if err != nil {
-		return err
-	}
-
-	logger.V(0).Info("removed runtime details due to label change")
-	return nil
-}
-
-func isObjectInstrumentationEffectiveEnabled(logger logr.Logger, ctx context.Context, kubeClient client.Client, obj client.Object) (bool, error) {
-
-	// if the object itself is labeled, we will use that value
-	labels := obj.GetLabels()
-	if labels != nil {
-		val, exists := labels[consts.OdigosInstrumentationLabel]
-		if exists {
-			return val == consts.InstrumentationEnabled, nil
-		}
-	}
-
-	// we will get here if the instrumentation label is not set.
-	// in which case, we would want to check the namespace value
-	var ns corev1.Namespace
-	err := kubeClient.Get(ctx, client.ObjectKey{Name: obj.GetNamespace()}, &ns)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-
-		logger.Error(err, "error fetching namespace object")
-		return false, err
-	}
-
-	nsInstrumentationEnabled := isInstrumentationLabelEnabled(&ns)
-	return nsInstrumentationEnabled, nil
-}
-
-func isInstrumentationLabelEnabled(obj client.Object) bool {
-	labels := obj.GetLabels()
-	if labels != nil {
-		val, exists := labels[consts.OdigosInstrumentationLabel]
-		if exists && val == consts.InstrumentationEnabled {
-			return true
-		}
-	}
-
-	return false
-}
-
-func removeReportedNameAnnotation(obj client.Object) bool {
-	annotations := obj.GetAnnotations()
-	if annotations == nil {
-		return false
-	}
-
-	if _, exists := annotations[consts.OdigosReportedNameAnnotation]; !exists {
-		return false
-	}
-
-	delete(annotations, consts.OdigosReportedNameAnnotation)
-	obj.SetAnnotations(annotations)
-	return true
 }

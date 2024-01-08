@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package instrumentationdevice
 
 import (
 	"context"
@@ -116,11 +116,4 @@ func removeInstrumentation(logger logr.Logger, ctx context.Context, kubeClient c
 	}
 
 	return nil
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *InstrumentedApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&odigosv1.InstrumentedApplication{}).
-		Complete(r)
 }
