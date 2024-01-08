@@ -14,14 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package deleteinstrumentedapplication
 
 import (
 	"context"
 
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -64,19 +63,15 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	for _, dep := range deps.Items {
 		if !isInstrumentationLabelEnabled(&dep) {
-			if err := removeRuntimeDetails(ctx, r.Client, dep.Namespace, dep.Name, dep.Kind, logger); err != nil {
+			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, &dep); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
 			}
-		}
-		updated := dep.DeepCopy()
-		if removed := removeReportedNameAnnotation(updated); removed {
-			patch := client.MergeFrom(&dep)
-			if err := r.Patch(ctx, updated, patch); err != nil {
+			err = removeReportedNameAnnotation(ctx, r.Client, &dep)
+			if err != nil {
 				logger.Error(err, "error removing reported name annotation from deployment")
 				return ctrl.Result{}, err
 			}
-			logger.Info("removed reported name annotation from deployment")
 		}
 	}
 
@@ -89,18 +84,14 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	for _, s := range ss.Items {
 		if !isInstrumentationLabelEnabled(&s) {
-			if err := removeRuntimeDetails(ctx, r.Client, s.Namespace, s.Name, s.Kind, logger); err != nil {
+			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, &s); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
 			}
-			updated := s.DeepCopy()
-			if removed := removeReportedNameAnnotation(updated); removed {
-				patch := client.MergeFrom(&s)
-				if err := r.Patch(ctx, updated, patch); err != nil {
-					logger.Error(err, "error removing reported name annotation from statefulset")
-					return ctrl.Result{}, err
-				}
-				logger.Info("removed reported name annotation from stateful set")
+			err = removeReportedNameAnnotation(ctx, r.Client, &s)
+			if err != nil {
+				logger.Error(err, "error removing reported name annotation from statefulset")
+				return ctrl.Result{}, err
 			}
 		}
 	}
@@ -114,29 +105,17 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	for _, d := range ds.Items {
 		if !isInstrumentationLabelEnabled(&d) {
-			if err := removeRuntimeDetails(ctx, r.Client, d.Namespace, d.Name, d.Kind, logger); err != nil {
+			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, &d); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
 			}
-			updated := d.DeepCopy()
-			if removed := removeReportedNameAnnotation(updated); removed {
-				patch := client.MergeFrom(&d)
-				if err := r.Patch(ctx, updated, patch); err != nil {
-					logger.Error(err, "error removing reported name annotation from daemonset")
-					return ctrl.Result{}, err
-				}
-				logger.Info("removed reported name annotation from daemonset set")
+			err = removeReportedNameAnnotation(ctx, r.Client, &d)
+			if err != nil {
+				logger.Error(err, "error removing reported name annotation from daemonset")
+				return ctrl.Result{}, err
 			}
 		}
 	}
 
 	return ctrl.Result{}, nil
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Namespace{}).
-		WithEventFilter(predicate.LabelChangedPredicate{}).
-		Complete(r)
 }

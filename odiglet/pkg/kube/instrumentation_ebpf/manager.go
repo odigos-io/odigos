@@ -17,8 +17,9 @@ type podPredicate struct {
 }
 
 func (i *podPredicate) Create(e event.CreateEvent) bool {
-	// when it is created, it is not running yet
-	return false
+	// when odiglet restart, it will receive create event for all running pods
+	// which we need to process to instrument them
+	return true
 }
 
 func (i *podPredicate) Update(e event.UpdateEvent) bool {

@@ -6,7 +6,7 @@ toolchain go1.21.3
 
 require (
 	github.com/fntlnz/mountinfo v1.0.1
-	github.com/go-logr/logr v1.3.0
+	github.com/go-logr/logr v1.4.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.5.0
 	github.com/keyval-dev/odigos/api v0.0.0-00010101000000-000000000000
@@ -15,7 +15,7 @@ require (
 	github.com/keyval-dev/opentelemetry-zap-bridge v0.0.3
 	github.com/kubevirt/device-plugin-manager v1.19.5
 	github.com/otiai10/copy v1.14.0
-	go.opentelemetry.io/auto v0.9.0-alpha
+	go.opentelemetry.io/auto v0.9.0-alpha.0.20231231131925-da00d2e95e56
 	go.opentelemetry.io/otel v1.21.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.21.0
 	go.uber.org/zap v1.26.0

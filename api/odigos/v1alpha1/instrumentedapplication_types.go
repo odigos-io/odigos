@@ -21,9 +21,29 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+//+kubebuilder:object:generate=true
+type ConfigOption struct {
+	OptionKey string `json:"optionKey"`
+	SpanKind  common.SpanKind `json:"spanKind"`
+}
+
+//+kubebuilder:object:generate=true
+type InstrumentationLibraryOptions struct {
+	LibraryName string `json:"libraryName"`
+	Options []ConfigOption `json:"options"`
+}
+
+
+// +kubebuilder:object:generate=true
+type OptionByContainer struct {
+	ContainerName string `json:"containerName"`
+	InstrumentationLibraries []InstrumentationLibraryOptions `json:"instrumentationsLibraries"`
+}
+
 // InstrumentedApplicationSpec defines the desired state of InstrumentedApplication
 type InstrumentedApplicationSpec struct {
 	Languages []common.LanguageByContainer `json:"languages,omitempty"`
+	Options  []OptionByContainer   `json:"options,omitempty"`
 }
 
 // InstrumentedApplicationStatus defines the observed state of InstrumentedApplication

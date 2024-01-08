@@ -24,7 +24,7 @@ func NewGoInstrumentationFactory() InstrumentationFactory[*GoOtelEbpfSdk] {
 	return &GoInstrumentationFactory{}
 }
 
-func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload) (*GoOtelEbpfSdk, error) {
+func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload, containerName string) (*GoOtelEbpfSdk, error) {
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
 		otlptracegrpc.WithInsecure(),
