@@ -21,7 +21,7 @@ import (
 
 const (
 	containerName        = "gateway"
-	containerImage       = "keyval/otel-collector-contrib:v0.6"
+	containerImage       = "keyval/otel-collector-contrib:v0.7"
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
