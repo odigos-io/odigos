@@ -16,6 +16,7 @@ package odigosresourcenameprocessor // import "github.com/open-telemetry/opentel
 
 import (
 	"context"
+
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -56,6 +57,10 @@ func (rp *resourceProcessor) processAttributes(ctx context.Context, logger *zap.
 }
 
 func (rp *resourceProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
+	if rp.nameResolver == nil {
+		return td, nil
+	}
+
 	rss := td.ResourceSpans()
 	for i := 0; i < rss.Len(); i++ {
 		rp.processAttributes(ctx, rp.logger, rss.At(i).Resource().Attributes())
@@ -64,6 +69,10 @@ func (rp *resourceProcessor) processTraces(ctx context.Context, td ptrace.Traces
 }
 
 func (rp *resourceProcessor) processMetrics(ctx context.Context, md pmetric.Metrics) (pmetric.Metrics, error) {
+	if rp.nameResolver == nil {
+		return md, nil
+	}
+
 	rms := md.ResourceMetrics()
 	for i := 0; i < rms.Len(); i++ {
 		rp.processAttributes(ctx, rp.logger, rms.At(i).Resource().Attributes())
@@ -72,6 +81,10 @@ func (rp *resourceProcessor) processMetrics(ctx context.Context, md pmetric.Metr
 }
 
 func (rp *resourceProcessor) processLogs(ctx context.Context, ld plog.Logs) (plog.Logs, error) {
+	if rp.nameResolver == nil {
+		return ld, nil
+	}
+
 	rls := ld.ResourceLogs()
 	for i := 0; i < rls.Len(); i++ {
 		rp.processAttributes(ctx, rp.logger, rls.At(i).Resource().Attributes())
