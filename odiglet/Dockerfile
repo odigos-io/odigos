@@ -77,7 +77,11 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 WORKDIR /instrumentations
 
 # Java
+<<<<<<< HEAD
 ARG JAVA_OTEL_VERSION=v2.6.0
+=======
+ARG JAVA_OTEL_VERSION=v2.0.0
+>>>>>>> 32a5499d (Update Java instrumentation to  v2.0.0 and .NET instrumentation to v1.2.0)
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
