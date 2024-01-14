@@ -13,6 +13,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/keyval-dev/odigos/cli/cmd/resources"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/spf13/pflag"
 
 	"github.com/spf13/cobra"
@@ -53,6 +55,22 @@ var uiCmd = &cobra.Command{
 		cmd.Flags().Visit(func(f *pflag.Flag) {
 			flags = append(flags, fmt.Sprintf("--%s=%s", f.Name, f.Value))
 		})
+
+		ctx := cmd.Context()
+		client, err := kube.CreateClient(cmd)
+		if err != nil {
+			kube.PrintClientErrorAndExit(err)
+		}
+
+		ns, err := resources.GetOdigosNamespace(client, ctx)
+        if err != nil {
+            if !resources.IsErrNoOdigosNamespaceFound(err) {
+               fmt.Printf("\033[31mERROR\033[0m Unable to find Odigos in kubernetes cluster. Aborting odigos ui.\n") 
+            } else {
+                fmt.Printf("\033[31mERROR\033[0m Cannot install/start UI. Failed to check if Odigos is already installed: %s\n", err)
+            }
+        }
+        flags = append(flags, fmt.Sprintf("--namespace=%s", ns))
 
 		// execute UI binary with all flags and stream output
 		process := exec.Command(binaryPath, flags...)
