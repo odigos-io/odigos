@@ -31,25 +31,6 @@ var uiCmd = &cobra.Command{
 	Short: "Start the Odigos UI",
 	Long:  `Start the Odigos UI. This will start a web server that will serve the UI`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Look for binary named odigos-ui in the same directory as the current binary
-		// and execute it.
-		currentBinaryPath, err := os.Executable()
-		if err != nil {
-			fmt.Printf("Error getting current binary path: %v\n", err)
-			os.Exit(1)
-		}
-
-		currentDir := filepath.Dir(currentBinaryPath)
-		binaryPath := filepath.Join(currentDir, "odigos-ui")
-		if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
-			fmt.Printf("Could not find UI binary, downloading latest release\n")
-			err = downloadLatestUIVersion(runtime.GOARCH, runtime.GOOS, currentDir)
-			if err != nil {
-				fmt.Printf("Error downloading latest UI version: %v\n", err)
-				os.Exit(1)
-			}
-		}
-
 		// get all flags as slice of strings
 		var flags []string
 		cmd.Flags().Visit(func(f *pflag.Flag) {
@@ -63,14 +44,34 @@ var uiCmd = &cobra.Command{
 		}
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
-        if err != nil {
-            if !resources.IsErrNoOdigosNamespaceFound(err) {
-               fmt.Printf("\033[31mERROR\033[0m Unable to find Odigos in kubernetes cluster. Aborting odigos ui.\n") 
-            } else {
-                fmt.Printf("\033[31mERROR\033[0m Cannot install/start UI. Failed to check if Odigos is already installed: %s\n", err)
-            }
-        }
-        flags = append(flags, fmt.Sprintf("--namespace=%s", ns))
+		if err != nil {
+			if !resources.IsErrNoOdigosNamespaceFound(err) {
+				fmt.Printf("\033[31mERROR\033[0m Cannot install/start UI. Failed to check if Odigos is already installed: %s\n", err)
+			} else {
+				fmt.Printf("\033[31mERROR\033[0m Unable to find Odigos in kubernetes cluster. Aborting odigos ui.\n")
+			}
+			os.Exit(1)
+		}
+		flags = append(flags, fmt.Sprintf("--namespace=%s", ns))
+
+		// Look for binary named odigos-ui in the same directory as the current binary
+		// and execute it.
+		currentBinaryPath, err := os.Executable()
+		if err != nil {
+			fmt.Printf("Error getting current binary path: %v\n", err)
+			os.Exit(1)
+		}
+
+		currentDir := filepath.Dir(currentBinaryPath)
+		binaryPath := filepath.Join(currentDir, "odigos-ui")
+		if _, err = os.Stat(binaryPath); os.IsNotExist(err) {
+			fmt.Printf("Could not find UI binary, downloading latest release\n")
+			err = downloadLatestUIVersion(runtime.GOARCH, runtime.GOOS, currentDir)
+			if err != nil {
+				fmt.Printf("Error downloading latest UI version: %v\n", err)
+				os.Exit(1)
+			}
+		}
 
 		// execute UI binary with all flags and stream output
 		process := exec.Command(binaryPath, flags...)
