@@ -2,6 +2,7 @@ package odigosresourcenameprocessor
 
 import (
 	"context"
+
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -14,8 +15,17 @@ type ContainerDetails struct {
 	ContainerName   string
 }
 
+type K8sResourceAttributes struct {
+	OtelServiceName string
+	Namespace       string
+	WorkloadKind    string
+	WorkloadName    string
+	PodName         string
+	ContainerName   string
+}
+
 type NameStrategy interface {
-	GetName(containerDetails *ContainerDetails) string
+	GetK8sResourceAttributes(containerDetails *ContainerDetails) *K8sResourceAttributes
 }
 
 type NameFromOwner struct {
@@ -23,26 +33,39 @@ type NameFromOwner struct {
 	logger *zap.Logger
 }
 
-func (n *NameFromOwner) GetName(containerDetails *ContainerDetails) string {
-	if containerDetails.ContainersInPod > 1 {
-		return containerDetails.ContainerName
+func (n *NameFromOwner) GetK8sResourceAttributes(containerDetails *ContainerDetails) *K8sResourceAttributes {
+
+	attrs := K8sResourceAttributes{
+		Namespace:     containerDetails.PodNamespace,
+		ContainerName: containerDetails.ContainerName,
 	}
 
-	name, kind, err := n.getNameByOwner(containerDetails)
+	if containerDetails.ContainersInPod > 1 {
+		attrs.OtelServiceName = containerDetails.ContainerName
+		return &attrs
+	}
+
+	workloadName, workloadKind, err := n.getWorkloadNameByOwner(containerDetails)
 	if err != nil {
 		n.logger.Error("Failed to get name by owner, using pod name", zap.Error(err))
-		return containerDetails.PodName
+		attrs.OtelServiceName = containerDetails.PodName
+		return &attrs
 	}
 
-	overwrittenName, exists := n.getNameFromAnnotation(name, kind, containerDetails.PodNamespace)
-	if exists {
-		return overwrittenName
+	attrs.WorkloadKind = workloadKind
+	attrs.WorkloadName = workloadName
+
+	overwrittenName, exists := n.getServiceNameFromAnnotation(workloadName, workloadKind, containerDetails.PodNamespace)
+	if !exists {
+		attrs.OtelServiceName = workloadName
+		return &attrs
 	}
 
-	return name
+	attrs.OtelServiceName = overwrittenName
+	return &attrs
 }
 
-func (n *NameFromOwner) getNameFromAnnotation(name string, kind string, namespace string) (string, bool) {
+func (n *NameFromOwner) getServiceNameFromAnnotation(name string, kind string, namespace string) (string, bool) {
 	obj := n.getKubeObject(name, kind, namespace)
 	if obj == nil {
 		return "", false
@@ -100,7 +123,7 @@ func (n *NameFromOwner) getKubeObject(name string, kind string, namespace string
 	return nil
 }
 
-func (n *NameFromOwner) getNameByOwner(containerDetails *ContainerDetails) (string, string, error) {
+func (n *NameFromOwner) getWorkloadNameByOwner(containerDetails *ContainerDetails) (workloadName string, workloadKind string, err error) {
 	pod, err := n.kc.CoreV1().Pods(containerDetails.PodNamespace).
 		Get(context.Background(), containerDetails.PodName, metav1.GetOptions{})
 	if err != nil {

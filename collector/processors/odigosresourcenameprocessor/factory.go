@@ -137,11 +137,11 @@ func initNameResolver(cfg component.Config, logger *zap.Logger) error {
 	}
 
 	nameResolver = &NameResolver{
-		logger:        logger,
-		devicesToPods: map[string]string{},
-		mu:            sync.RWMutex{},
-		kubelet:       kubelet,
-		shutdown:      make(chan struct{}),
+		logger:                      logger,
+		devicesToResourceAttributes: map[string]*K8sResourceAttributes{},
+		mu:                          sync.RWMutex{},
+		kubelet:                     kubelet,
+		shutdown:                    make(chan struct{}),
 	}
 
 	return nameResolver.Start()
