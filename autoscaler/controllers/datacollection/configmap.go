@@ -132,6 +132,13 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 		Processors: commonconf.GenericMap{
 			"batch":              empty,
 			"odigosresourcename": empty,
+			"resource": commonconf.GenericMap{
+				"attributes": []commonconf.GenericMap{{
+					"key":    "k8s.node.name",
+					"value":  "${NODE_NAME}",
+					"action": "upsert",
+				}},
+			},
 		},
 		Extensions: commonconf.GenericMap{
 			"health_check": empty,
@@ -262,7 +269,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 
 		cfg.Service.Pipelines["logs"] = commonconf.Pipeline{
 			Receivers:  []string{"filelog"},
-			Processors: []string{"batch", "odigosresourcename"},
+			Processors: []string{"batch", "odigosresourcename", "resource"},
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -270,7 +277,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp", "zipkin"},
-			Processors: []string{"batch", "odigosresourcename"},
+			Processors: []string{"batch", "odigosresourcename", "resource"},
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -283,7 +290,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 
 		cfg.Service.Pipelines["metrics"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp", "kubeletstats"},
-			Processors: []string{"batch", "odigosresourcename"},
+			Processors: []string{"batch", "odigosresourcename", "resource"},
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}

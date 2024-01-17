@@ -44,14 +44,35 @@ func (rp *resourceProcessor) processAttributes(ctx context.Context, logger *zap.
 			return
 		}
 
-		name, err := rp.nameResolver.Resolve(resourceName.AsString())
+		resourceAttributes, err := rp.nameResolver.Resolve(resourceName.AsString())
 		if err != nil {
 			logger.Error("Could not resolve pod name", zap.Error(err))
 			return
 		}
 
-		// Replace resource name
-		resourceName.SetStr(string(name))
+		// Replace service name
+		resourceName.SetStr(resourceAttributes.OtelServiceName)
+
+		// add k8s resource attributes
+		if resourceAttributes.Namespace != "" {
+			attrs.PutStr(string(semconv.K8SNamespaceNameKey), resourceAttributes.Namespace)
+		}
+		if resourceAttributes.WorkloadName != "" {
+			switch resourceAttributes.WorkloadKind {
+			case "Deployment":
+				attrs.PutStr(string(semconv.K8SDeploymentNameKey), resourceAttributes.WorkloadName)
+			case "StatefulSet":
+				attrs.PutStr(string(semconv.K8SStatefulsetNameKey), resourceAttributes.WorkloadName)
+			case "DaemonSet":
+				attrs.PutStr(string(semconv.K8SDaemonsetNameKey), resourceAttributes.WorkloadName)
+			}
+		}
+		if resourceAttributes.PodName != "" {
+			attrs.PutStr(string(semconv.K8SPodNameKey), resourceAttributes.PodName)
+		}
+		if resourceAttributes.ContainerName != "" {
+			attrs.PutStr(string(semconv.ContainerNameKey), resourceAttributes.ContainerName)
+		}
 		return
 	}
 }
