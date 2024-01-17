@@ -37,6 +37,7 @@ func (n *NameFromOwner) GetK8sResourceAttributes(containerDetails *ContainerDeta
 
 	attrs := K8sResourceAttributes{
 		Namespace:     containerDetails.PodNamespace,
+		PodName:       containerDetails.PodName,
 		ContainerName: containerDetails.ContainerName,
 	}
 
