@@ -13,6 +13,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/keyval-dev/odigos/cli/cmd/resources"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/spf13/pflag"
 
 	"github.com/spf13/cobra"
@@ -29,6 +31,29 @@ var uiCmd = &cobra.Command{
 	Short: "Start the Odigos UI",
 	Long:  `Start the Odigos UI. This will start a web server that will serve the UI`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// get all flags as slice of strings
+		var flags []string
+		cmd.Flags().Visit(func(f *pflag.Flag) {
+			flags = append(flags, fmt.Sprintf("--%s=%s", f.Name, f.Value))
+		})
+
+		ctx := cmd.Context()
+		client, err := kube.CreateClient(cmd)
+		if err != nil {
+			kube.PrintClientErrorAndExit(err)
+		}
+
+		ns, err := resources.GetOdigosNamespace(client, ctx)
+		if err != nil {
+			if !resources.IsErrNoOdigosNamespaceFound(err) {
+				fmt.Printf("\033[31mERROR\033[0m Cannot install/start UI. Failed to check if Odigos is already installed: %s\n", err)
+			} else {
+				fmt.Printf("\033[31mERROR\033[0m Unable to find Odigos in kubernetes cluster. Aborting odigos ui.\n")
+			}
+			os.Exit(1)
+		}
+		flags = append(flags, fmt.Sprintf("--namespace=%s", ns))
+
 		// Look for binary named odigos-ui in the same directory as the current binary
 		// and execute it.
 		currentBinaryPath, err := os.Executable()
@@ -39,7 +64,7 @@ var uiCmd = &cobra.Command{
 
 		currentDir := filepath.Dir(currentBinaryPath)
 		binaryPath := filepath.Join(currentDir, "odigos-ui")
-		if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
+		if _, err = os.Stat(binaryPath); os.IsNotExist(err) {
 			fmt.Printf("Could not find UI binary, downloading latest release\n")
 			err = downloadLatestUIVersion(runtime.GOARCH, runtime.GOOS, currentDir)
 			if err != nil {
@@ -47,12 +72,6 @@ var uiCmd = &cobra.Command{
 				os.Exit(1)
 			}
 		}
-
-		// get all flags as slice of strings
-		var flags []string
-		cmd.Flags().Visit(func(f *pflag.Flag) {
-			flags = append(flags, fmt.Sprintf("--%s=%s", f.Name, f.Value))
-		})
 
 		// execute UI binary with all flags and stream output
 		process := exec.Command(binaryPath, flags...)
