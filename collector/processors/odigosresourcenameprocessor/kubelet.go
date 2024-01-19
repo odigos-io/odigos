@@ -3,11 +3,12 @@ package odigosresourcenameprocessor
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	podresourcesapi "k8s.io/kubelet/pkg/apis/podresources/v1alpha1"
-	"strings"
-	"time"
 )
 
 var (
@@ -40,19 +41,19 @@ func (c *kubeletClient) Close() {
 	}
 }
 
-func (c *kubeletClient) GetAllocations() (map[string]string, error) {
+func (c *kubeletClient) GetAllocations() (map[string]*K8sResourceAttributes, error) {
 	pods, err := c.listPods()
 	if err != nil {
 		return nil, err
 	}
 
-	allocations := make(map[string]string)
+	allocations := make(map[string]*K8sResourceAttributes)
 	for _, pod := range pods.GetPodResources() {
 		for _, container := range pod.Containers {
 			for _, device := range container.Devices {
 				for _, id := range device.DeviceIds {
 					if strings.Contains(device.GetResourceName(), "odigos.io") {
-						allocations[id] = c.nameStrategy.GetName(&ContainerDetails{
+						allocations[id] = c.nameStrategy.GetK8sResourceAttributes(&ContainerDetails{
 							PodName:         pod.Name,
 							PodNamespace:    pod.Namespace,
 							ContainerName:   container.Name,
