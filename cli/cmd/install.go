@@ -119,7 +119,7 @@ func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (b
 		for _, ds := range daemonSets.Items {
 			desiredPods := ds.Status.DesiredNumberScheduled
 			readyPods := ds.Status.NumberReady
-			if readyPods != desiredPods {
+			if readyPods == 0 || readyPods != desiredPods {
 				return false, nil
 			}
 		}
