@@ -35,6 +35,11 @@ func restartPodsAfterCloudLogin(ctx context.Context, client *kube.Client, ns str
 		return err
 	}
 
+	_, err = client.AppsV1().DaemonSets(ns).Patch(ctx, resources.OdigletDaemonSetName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
