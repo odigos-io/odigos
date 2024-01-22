@@ -2,14 +2,10 @@ package odigosresourcenameprocessor
 
 import (
 	"errors"
-	"go.uber.org/zap"
-	"k8s.io/client-go/kubernetes"
 	"sync"
 	"time"
-)
 
-const (
-	nodeNameEnvVar = "NODE_NAME"
+	"go.uber.org/zap"
 )
 
 var (
@@ -17,36 +13,35 @@ var (
 )
 
 type NameResolver struct {
-	kc            kubernetes.Interface
-	logger        *zap.Logger
-	kubelet       *kubeletClient
-	mu            sync.RWMutex
-	devicesToPods map[string]string
-	shutdown      chan struct{}
+	logger                      *zap.Logger
+	kubelet                     *kubeletClient
+	mu                          sync.RWMutex
+	devicesToResourceAttributes map[string]*K8sResourceAttributes
+	shutdown                    chan struct{}
 }
 
-func (n *NameResolver) Resolve(deviceID string) (string, error) {
+func (n *NameResolver) Resolve(deviceID string) (*K8sResourceAttributes, error) {
 	n.mu.RLock()
-	name, ok := n.devicesToPods[deviceID]
+	resourceAttributes, ok := n.devicesToResourceAttributes[deviceID]
 	n.mu.RUnlock()
 
 	if !ok {
 		err := n.updateDevicesToPods()
 		if err != nil {
 			n.logger.Error("Error updating devices to pods", zap.Error(err))
-			return "", err
+			return &K8sResourceAttributes{}, err
 		}
 
 		n.mu.RLock()
-		name, ok = n.devicesToPods[deviceID]
+		resourceAttributes, ok = n.devicesToResourceAttributes[deviceID]
 		n.mu.RUnlock()
 
 		if !ok {
-			return "", ErrNoDeviceFound
+			return &K8sResourceAttributes{}, ErrNoDeviceFound
 		}
 	}
 
-	return name, nil
+	return resourceAttributes, nil
 }
 
 func (n *NameResolver) updateDevicesToPods() error {
@@ -58,7 +53,7 @@ func (n *NameResolver) updateDevicesToPods() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.devicesToPods = allocations
+	n.devicesToResourceAttributes = allocations
 	return nil
 }
 
