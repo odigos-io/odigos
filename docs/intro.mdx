@@ -35,16 +35,16 @@ Create a new local Kubernetes cluster, by running the following command:
 
 ### Deploying the target application
 
-We are going to install a fork of
-[microservices-demo](https://github.com/keyval-dev/microservices-demo), an
-example of e-commerce application created by Google. We use a modified version
-**without any instrumentation code** to demonstrate how Odigos automatically
-collects observability data from the application.
+We are going to install a [demo application](https://github.com/keyval-dev/simple-demo) that consists of 5 microservices written in Go, Java, Python, .NET and Node.js.
+
+<Frame>
+    <img src="/images/demo_architecture.png" alt="Architecture of demo application" />
+</Frame>
 
 Deploy the application using the following command:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/keyval-dev/microservices-demo/master/release/kubernetes-manifests.yaml
+kubectl apply -f https://raw.githubusercontent.com/keyval-dev/simple-demo/main/kubernetes/deployment.yaml
 ```
 
 ### Deploying Jaeger
@@ -54,8 +54,7 @@ Jaeger is a popular open source distributed tracing backend. We are going to use
 Install Jaeger using the following command:
 
 ```bash
-kubectl create ns tracing
-kubectl apply -f https://raw.githubusercontent.com/keyval-dev/opentelemetry-go-instrumentation/master/docs/getting-started/jaeger.yaml -n tracing
+kubectl apply -f https://raw.githubusercontent.com/keyval-dev/simple-demo/main/kubernetes/jaeger.yaml
 ```
 
 ### Waiting for the applications to start
