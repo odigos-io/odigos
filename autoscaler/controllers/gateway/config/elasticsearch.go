@@ -2,9 +2,11 @@ package config
 
 import (
 	"fmt"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -20,43 +22,49 @@ func (e *Elasticsearch) DestType() common.DestinationType {
 }
 
 func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
-	if url, exists := dest.Spec.Data[elasticsearchUrlKey]; exists {
-		if isTracingEnabled(dest) {
-			esTraceExporterName := "elasticsearch/trace"
-			traceIndexVal, exists := dest.Spec.Data[esTracesIndexKey]
-			if !exists {
-				traceIndexVal = "trace_index"
-			}
+	url, exists := dest.Spec.Data[elasticsearchUrlKey]
+	if !exists {
+		log.Log.V(0).Info("ElasticSearch url not specified, gateway will not be configured for ElasticSearch")
+		return
+	}
 
-			currentConfig.Exporters[esTraceExporterName] = commonconf.GenericMap{
-				"endpoints":    []string{fmt.Sprintf("%s:9200", url)},
-				"traces_index": traceIndexVal,
-			}
-
-			currentConfig.Service.Pipelines["traces/elasticsearch"] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{esTraceExporterName},
-			}
+	if isTracingEnabled(dest) {
+		esTraceExporterName := "elasticsearch/trace-" + dest.Name
+		traceIndexVal, exists := dest.Spec.Data[esTracesIndexKey]
+		if !exists {
+			traceIndexVal = "trace_index"
 		}
 
-		if isLoggingEnabled(dest) {
-			esLogExporterName := "elasticsearch/log"
-			logIndexVal, exists := dest.Spec.Data[esLogsIndexKey]
-			if !exists {
-				logIndexVal = "log_index"
-			}
+		currentConfig.Exporters[esTraceExporterName] = commonconf.GenericMap{
+			"endpoints":    []string{fmt.Sprintf("%s:9200", url)},
+			"traces_index": traceIndexVal,
+		}
 
-			currentConfig.Exporters[esLogExporterName] = commonconf.GenericMap{
-				"endpoints":  []string{fmt.Sprintf("%s:9200", url)},
-				"logs_index": logIndexVal,
-			}
+		tracesPipelineName := "traces/elasticsearch-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
+			Receivers:  []string{"otlp"},
+			Processors: []string{"batch"},
+			Exporters:  []string{esTraceExporterName},
+		}
+	}
 
-			currentConfig.Service.Pipelines["logs/elasticsearch"] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{esLogExporterName},
-			}
+	if isLoggingEnabled(dest) {
+		esLogExporterName := "elasticsearch/log-" + dest.Name
+		logIndexVal, exists := dest.Spec.Data[esLogsIndexKey]
+		if !exists {
+			logIndexVal = "log_index"
+		}
+
+		currentConfig.Exporters[esLogExporterName] = commonconf.GenericMap{
+			"endpoints":  []string{fmt.Sprintf("%s:9200", url)},
+			"logs_index": logIndexVal,
+		}
+
+		logsPipelineName := "logs/elasticsearch-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
+			Receivers:  []string{"otlp"},
+			Processors: []string{"batch"},
+			Exporters:  []string{esLogExporterName},
 		}
 	}
 }

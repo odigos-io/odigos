@@ -26,7 +26,8 @@ func (n *NewRelic) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 		return
 	}
 
-	currentConfig.Exporters["otlp/newrelic"] = commonconf.GenericMap{
+	exporterName := "otlp/newrelic-" + dest.Name
+	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 		"endpoint": fmt.Sprintf("%s:4317", endpoint),
 		"headers": commonconf.GenericMap{
 			"api-key": "${NEWRELIC_API_KEY}",
@@ -34,26 +35,29 @@ func (n *NewRelic) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 	}
 
 	if isTracingEnabled(dest) {
-		currentConfig.Service.Pipelines["traces/newrelic"] = commonconf.Pipeline{
+		tracesPipelineName := "traces/newrelic-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/newrelic"},
+			Exporters:  []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		currentConfig.Service.Pipelines["metrics/newrelic"] = commonconf.Pipeline{
+		metricsPipelineName := "metrics/newrelic-" + dest.Name
+		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/newrelic"},
+			Exporters:  []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		currentConfig.Service.Pipelines["logs/newrelic"] = commonconf.Pipeline{
+		logsPipelineName := "logs/newrelic-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/newrelic"},
+			Exporters:  []string{exporterName},
 		}
 	}
 }

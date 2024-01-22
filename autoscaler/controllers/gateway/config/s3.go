@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
@@ -38,32 +39,36 @@ func (s *AWSS3) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 	}
 
 	if isLoggingEnabled(dest) {
-		currentConfig.Exporters["s3"] = commonconf.GenericMap{
+		exporterName := "s3/" + dest.Name
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"settings": commonconf.GenericMap{
 				"bucket": bucket,
 				"region": region,
 			},
 		}
 
-		currentConfig.Service.Pipelines["logs/s3"] = commonconf.Pipeline{
+		logsPipelineName := "logs/s3-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"s3"},
+			Exporters:  []string{exporterName},
 		}
 	}
 
 	if isTracingEnabled(dest) {
-		currentConfig.Exporters["s3"] = commonconf.GenericMap{
+		exporterName := "s3/" + dest.Name
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"settings": commonconf.GenericMap{
 				"bucket": bucket,
 				"region": region,
 			},
 		}
 
-		currentConfig.Service.Pipelines["traces/s3"] = commonconf.Pipeline{
+		tracesPipelineName := "traces/s3-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"s3"},
+			Exporters:  []string{exporterName},
 		}
 	}
 }

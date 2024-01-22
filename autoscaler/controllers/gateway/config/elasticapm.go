@@ -26,6 +26,7 @@ func (e *ElasticAPM) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 	var isTlsDisabled = false
 	if !e.requiredVarsExists(dest) {
 		log.Log.V(0).Info("ElasticAPM config is missing required variables")
+		return
 	}
 
 	isTlsDisabled = strings.Contains(dest.Spec.Data[elasticApmServerEndpoint], "http://")
@@ -33,9 +34,11 @@ func (e *ElasticAPM) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 	elasticApmEndpoint, err := e.parseEndpoint(dest.Spec.Data[elasticApmServerEndpoint])
 	if err != nil {
 		log.Log.V(0).Info("ElasticAPM endpoint is not a valid")
+		return
 	}
 
-	currentConfig.Exporters["otlp/elastic"] = commonconf.GenericMap{
+	exporterName := "otlp/elastic-" + dest.Name
+	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 		"endpoint": elasticApmEndpoint,
 		"tls": commonconf.GenericMap{
 			"insecure": isTlsDisabled,
@@ -46,26 +49,29 @@ func (e *ElasticAPM) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 	}
 
 	if isTracingEnabled(dest) {
-		currentConfig.Service.Pipelines["traces/elastic"] = commonconf.Pipeline{
+		tracesPipelineName := "traces/elastic-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/elastic"},
+			Exporters:  []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		currentConfig.Service.Pipelines["metrics/elastic"] = commonconf.Pipeline{
+		metricsPipelineName := "metrics/elastic-" + dest.Name
+		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/elastic"},
+			Exporters:  []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		currentConfig.Service.Pipelines["logs/elastic"] = commonconf.Pipeline{
+		logsPipelineName := "logs/elastic-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/elastic"},
+			Exporters:  []string{exporterName},
 		}
 	}
 

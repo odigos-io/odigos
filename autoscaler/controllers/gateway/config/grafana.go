@@ -28,12 +28,13 @@ func (g *Grafana) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 	if isMetricsEnabled(dest) && g.isMetricsVarsExists(dest) {
 		url := strings.TrimPrefix(dest.Spec.Data[grafanaRWurlKey], "https://")
 		user := dest.Spec.Data[grafanaMetricsUserKey]
-		rwExporterName := "prometheusremotewrite/grafana"
+		rwExporterName := "prometheusremotewrite/grafana-" + dest.Name
 		currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("https://%s:%s@%s", user, "${GRAFANA_API_KEY}", url),
 		}
 
-		currentConfig.Service.Pipelines["metrics/grafana"] = commonconf.Pipeline{
+		metricsPipelineName := "metrics/grafana-" + dest.Name
+		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
 			Exporters:  []string{rwExporterName},
@@ -42,17 +43,19 @@ func (g *Grafana) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 
 	if isTracingEnabled(dest) && g.isTempoVarsExists(dest) {
 		url := strings.TrimSuffix(dest.Spec.Data[grafanaUrlKey], "/tempo")
-		currentConfig.Exporters["otlp/grafana"] = commonconf.GenericMap{
+		exporterName := "otlp/grafana-" + dest.Name
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("%s:%d", url, 443),
 			"headers": commonconf.GenericMap{
 				"authorization": "Basic ${GRAFANA_TEMPO_AUTH_TOKEN}",
 			},
 		}
 
-		currentConfig.Service.Pipelines["traces/grafana"] = commonconf.Pipeline{
+		tracesPipelineName := "traces/grafana-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/grafana"},
+			Exporters:  []string{exporterName},
 		}
 	}
 
@@ -63,7 +66,7 @@ func (g *Grafana) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 			url = fmt.Sprintf("%s/loki/api/v1/push", url)
 		}
 
-		lokiExporterName := "loki/grafana"
+		lokiExporterName := "loki/grafana-" + dest.Name
 		currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("https://%s:%s@%s", user, "${GRAFANA_API_KEY}", url),
 			"labels": commonconf.GenericMap{
@@ -75,7 +78,8 @@ func (g *Grafana) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 			},
 		}
 
-		currentConfig.Service.Pipelines["logs/grafana"] = commonconf.Pipeline{
+		logsPipelineName := "logs/grafana-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
 			Exporters:  []string{lokiExporterName},
