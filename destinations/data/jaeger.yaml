@@ -15,7 +15,7 @@ spec:
       supported: false
   fields:
     - name: JAEGER_URL
-      displayName: Endpoint
+      displayName: Jaeger OTLP gRPC Endpoint
       componentType: input
       componentProps:
         type: text

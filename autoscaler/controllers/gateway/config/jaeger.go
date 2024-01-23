@@ -2,13 +2,11 @@ package config
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -30,32 +28,25 @@ func (j *Jaeger) DestType() common.DestinationType {
 func (j *Jaeger) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 
 	if !isTracingEnabled(dest) {
-		ctrl.Log.Error(ErrorJaegerTracingDisabled, "skipping Jaeger destination config")
+		log.Log.V(0).Error(ErrorJaegerTracingDisabled, "skipping Jaeger destination config")
 		return
 	}
 
 	url, urlExist := dest.Spec.Data[jaegerUrlKey]
 	if !urlExist {
-		ctrl.Log.Error(ErrorJaegerMissingURL, "skipping Jaeger destination config")
+		log.Log.V(0).Error(ErrorJaegerMissingURL, "skipping Jaeger destination config")
 		return
 	}
 
-	if strings.HasPrefix(url, "https://") {
-		ctrl.Log.Error(ErrorJaegerMissingURL, "skipping Jaeger destination config")
+	grpcEndpoint, err := parseUnencryptedOtlpGrpcUrl(url)
+	if err != nil {
+		log.Log.V(0).Error(err, "skipping Jaeger destination config")
 		return
 	}
 
-	// no need for the http:// prefix with grpc protocol in golang
-	url = strings.TrimPrefix(url, "http://")
-
-	// Check if url does not contains port
-	if !strings.Contains(url, ":") {
-		url = fmt.Sprintf("%s:4317", url)
-	}
-
-	jaegerExporterName := "otlp/jaeger-" + dest.Name
-	currentConfig.Exporters[jaegerExporterName] = commonconf.GenericMap{
-		"endpoint": url,
+	exporterName := "otlp/jaeger-" + dest.Name
+	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
+		"endpoint": grpcEndpoint,
 		"tls": commonconf.GenericMap{
 			"insecure": true,
 		},
@@ -65,6 +56,6 @@ func (j *Jaeger) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 	currentConfig.Service.Pipelines[pipelineName] = commonconf.Pipeline{
 		Receivers:  []string{"otlp"},
 		Processors: []string{"batch"},
-		Exporters:  []string{jaegerExporterName},
+		Exporters:  []string{exporterName},
 	}
 }
