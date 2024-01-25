@@ -13,29 +13,32 @@ func (g *GoogleCloud) DestType() common.DestinationType {
 }
 
 func (g *GoogleCloud) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+
+	if isTracingEnabled(dest) {
+		exporterName := "googlecloud/" + dest.Name
+		currentConfig.Exporters[exporterName] = struct{}{}
+
+		tracesPipelineName := "traces/googlecloud-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
+			Receivers:  []string{"otlp"},
+			Processors: []string{"batch"},
+			Exporters:  []string{exporterName},
+		}
+	}
+
 	if isLoggingEnabled(dest) {
-		currentConfig.Exporters["googlecloud"] = commonconf.GenericMap{
+		exporterName := "googlecloud/" + dest.Name
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"log": commonconf.GenericMap{
 				"default_log_name": "opentelemetry.io/collector-exported-log",
 			},
 		}
-	} else if isTracingEnabled(dest) {
-		currentConfig.Exporters["googlecloud"] = struct{}{}
-	}
 
-	if isTracingEnabled(dest) {
-		currentConfig.Service.Pipelines["traces/googlecloud"] = commonconf.Pipeline{
+		logsPipelineName := "logs/googlecloud-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"googlecloud"},
-		}
-	}
-
-	if isLoggingEnabled(dest) {
-		currentConfig.Service.Pipelines["logs/googlecloud"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"googlecloud"},
+			Exporters:  []string{exporterName},
 		}
 	}
 }

@@ -2,9 +2,13 @@
 build-odiglet:
 	docker build -t keyval/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile
 
+.PHONY: build-autoscaler
+build-autoscaler:
+	docker build -t keyval/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
+
 .PHONY: build-images
 build-images:
-	docker build -t keyval/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
+	make build-autoscaler TAG=$(TAG)
 	docker build -t keyval/odigos-scheduler:$(TAG) . --build-arg SERVICE_NAME=scheduler
 	make build-odiglet TAG=$(TAG)
 	docker build -t keyval/odigos-instrumentor:$(TAG) . --build-arg SERVICE_NAME=instrumentor
@@ -20,9 +24,13 @@ push-images:
 load-to-kind-odiglet:
 	kind load docker-image keyval/odigos-odiglet:$(TAG)
 
+.PHONY: load-to-kind-autoscaler
+load-to-kind-autoscaler:
+	kind load docker-image keyval/odigos-autoscaler:$(TAG)
+
 .PHONY: load-to-kind
 load-to-kind:
-	kind load docker-image keyval/odigos-autoscaler:$(TAG)
+	make load-to-kind-autoscaler TAG=$(TAG)
 	kind load docker-image keyval/odigos-scheduler:$(TAG)
 	make load-to-kind-odiglet TAG=$(TAG)
 	kind load docker-image keyval/odigos-instrumentor:$(TAG)
@@ -31,9 +39,17 @@ load-to-kind:
 restart-odiglet:
 	kubectl rollout restart daemonset odiglet -n odigos-system
 
+.PHONY: restart-autoscaler
+restart-autoscaler:
+	kubectl rollout restart deployment odigos-autoscaler -n odigos-system
+
 .PHONY: deploy-odiglet
 deploy-odiglet:
 	make build-odiglet TAG=$(TAG) && make load-to-kind-odiglet TAG=$(TAG) && make restart-odiglet
+
+.PHONY: deploy-autoscaler
+deploy-autoscaler:
+	make build-autoscaler TAG=$(TAG) && make load-to-kind-autoscaler TAG=$(TAG) && make restart-autoscaler
 
 .PHONY: debug-odiglet
 debug-odiglet:

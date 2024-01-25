@@ -23,7 +23,7 @@ func (l *Loki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 	if url, exists := dest.Spec.Data[lokiUrlKey]; exists && isLoggingEnabled(dest) {
 		url := addProtocol(url)
 		url = strings.TrimSuffix(url, ":3100")
-		lokiExporterName := "loki/loki"
+		lokiExporterName := "loki/loki-" + dest.Name
 		currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("%s:3100/loki/api/v1/push", url),
 		}
@@ -38,7 +38,8 @@ func (l *Loki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 			},
 		}
 
-		currentConfig.Service.Pipelines["logs/loki"] = commonconf.Pipeline{
+		logsPipelineName := "logs/loki-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"resource", "batch"},
 			Exporters:  []string{lokiExporterName},

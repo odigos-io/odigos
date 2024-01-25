@@ -18,6 +18,7 @@ type NameResolver struct {
 	mu                          sync.RWMutex
 	devicesToResourceAttributes map[string]*K8sResourceAttributes
 	shutdown                    chan struct{}
+	shutdownOnce                sync.Once
 }
 
 func (n *NameResolver) Resolve(deviceID string) (*K8sResourceAttributes, error) {
@@ -81,5 +82,7 @@ func (n *NameResolver) Start() error {
 
 func (n *NameResolver) Shutdown() {
 	n.logger.Info("Shutting down NameResolver ...")
-	close(n.shutdown)
+	n.shutdownOnce.Do(func() {
+		close(n.shutdown)
+	})
 }
