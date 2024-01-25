@@ -110,6 +110,21 @@ This command will install k8s components that will auto-instrument your applicat
 
 func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (bool, error) {
 	return func() (bool, error) {
+		// ensure all DaemonSets in the odigos namespace have all their pods ready
+		daemonSets, err := client.AppsV1().DaemonSets(ns).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		for _, ds := range daemonSets.Items {
+			desiredPods := ds.Status.DesiredNumberScheduled
+			readyPods := ds.Status.NumberReady
+			if readyPods == 0 || readyPods != desiredPods {
+				return false, nil
+			}
+		}
+
+		// ensure all pods in the odigos namespace are running
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return false, err
