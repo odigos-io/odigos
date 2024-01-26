@@ -361,21 +361,18 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      AutoScalerDeploymentName,
 			Namespace: ns,
-			Annotations: map[string]string{
-				"odigos.io/skip": "true",
-			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": AutoScalerAppLabelValue,
+					"app.kubernetes.io/name": AutoScalerAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": AutoScalerAppLabelValue,
+						"app.kubernetes.io/name": AutoScalerAppLabelValue,
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": AutoScalerContainerName,
