@@ -284,8 +284,10 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 
 	if collectMetrics {
 		cfg.Receivers["kubeletstats"] = commonconf.GenericMap{
-			"auth_type":           "serviceAccount",
-			"collection_interval": "10s",
+			"auth_type":            "serviceAccount",
+			"endpoint":             "https://${env:NODE_NAME}:10250",
+			"insecure_skip_verify": true,
+			"collection_interval":  "10s",
 		}
 
 		cfg.Service.Pipelines["metrics"] = commonconf.Pipeline{
