@@ -127,8 +127,6 @@ export function CreateConnectionForm({
       (field) => field
     );
 
-    console.log('fields', fields);
-    console.log('dynamicFields', dynamicFields);
     const isFieldLengthMatching =
       (fields?.length ?? 0) ===
       (dynamicFields ? Object.keys(dynamicFields).length : 0);
