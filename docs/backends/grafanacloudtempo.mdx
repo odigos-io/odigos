@@ -1,0 +1,31 @@
+---
+title: "Grafana Cloud Tempo"
+---
+
+You can use Grafana Cloud managed service as a backend for Odigos to store your logs, metrics, and traces. 
+This page describes how to configure Odigos to use Grafana Cloud Tempo as a **trace** backend.
+
+Notice: these instructions are for the Grafan cloud **managed** Tempo service. 
+If you run a self hosted Tempo, please follow the instructions in the [Tempo](/backends/tempo) page.
+
+All the connection details can be found at [grafana.com](grafana.com) under **My Account**
+
+<Frame>
+    <img src="/backends/images/grafanacloud1.png" alt="Grafana labs website" />
+</Frame>
+
+Then, under the "GRAFANA CLOUD" title, select your Grafana Stuck, browser to the "Tempo" card and click "Send Traces"
+
+<Frame>
+    <img src="/backends/images/grafanacloud4.png" alt="Tempo managed service configuration" />
+</Frame>
+
+To send traces to Grafana Cloud Tempo, you need to configure the following settings:
+
+- **Endpoint** - This is the URL of the Tempo service, in the form of `host:port`. For example: `tempo-us-central1.grafana.net:443`.
+You can find the endpoint under the "Sending data to Tempo" section.
+- **Username** - You can find the username in the "Sending data to Tempo" section under the "basic_auth" yaml field. 
+The username is a number.
+- **Password** - This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. 
+You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page.
+Make sure your token scope includes "traces:write" scope.

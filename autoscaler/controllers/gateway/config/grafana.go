@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	grafanaUrlKey         = "GRAFANA_TEMPO_URL"
 	grafanaRWurlKey       = "GRAFANA_REMOTEWRITE_URL"
 	grafanaMetricsUserKey = "GRAFANA_METRICS_USER"
 	grafanaLokiUserKey    = "GRAFANA_LOKI_USER"
@@ -41,24 +40,6 @@ func (g *Grafana) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 		}
 	}
 
-	if isTracingEnabled(dest) && g.isTempoVarsExists(dest) {
-		url := strings.TrimSuffix(dest.Spec.Data[grafanaUrlKey], "/tempo")
-		exporterName := "otlp/grafana-" + dest.Name
-		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
-			"endpoint": fmt.Sprintf("%s:%d", url, 443),
-			"headers": commonconf.GenericMap{
-				"authorization": "Basic ${GRAFANA_TEMPO_AUTH_TOKEN}",
-			},
-		}
-
-		tracesPipelineName := "traces/grafana-" + dest.Name
-		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
-		}
-	}
-
 	if isLoggingEnabled(dest) && g.isLokiVarsExists(dest) {
 		user := dest.Spec.Data[grafanaLokiUserKey]
 		url := strings.TrimPrefix(dest.Spec.Data[grafanaLokiUrl], "https://")
@@ -85,16 +66,6 @@ func (g *Grafana) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 			Exporters:  []string{lokiExporterName},
 		}
 	}
-}
-
-func (g *Grafana) isTempoVarsExists(dest *odigosv1.Destination) bool {
-	_, exists := dest.Spec.Data[grafanaUrlKey]
-	if !exists {
-		log.Log.V(0).Info("Grafana URL not specified, gateway will not be configured for Tempo")
-		return false
-	}
-
-	return true
 }
 
 func (g *Grafana) isLokiVarsExists(dest *odigosv1.Destination) bool {
