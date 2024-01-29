@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -46,29 +47,22 @@ var uiCmd = &cobra.Command{
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
 			if !resources.IsErrNoOdigosNamespaceFound(err) {
-				fmt.Printf("\033[31mERROR\033[0m Cannot install/start UI. Failed to check if Odigos is already installed: %s\n", err)
+				fmt.Printf("\033[31mERROR\033[0m Cannot start Odigos UI. Failed to check if Odigos is already installed: %s\n", err)
 			} else {
-				fmt.Printf("\033[31mERROR\033[0m Unable to find Odigos in kubernetes cluster. Aborting odigos ui.\n")
+				fmt.Printf("\033[31mERROR\033[0m Odigos is not installed in your kubernetes cluster. Run 'odigos install' or switch your k8s context to use a different cluster \n")
 			}
 			os.Exit(1)
 		}
 		flags = append(flags, fmt.Sprintf("--namespace=%s", ns))
 
-		// Look for binary named odigos-ui in the same directory as the current binary
-		// and execute it.
-		currentBinaryPath, err := os.Executable()
-		if err != nil {
-			fmt.Printf("Error getting current binary path: %v\n", err)
-			os.Exit(1)
-		}
+		clusterVersion, _ := GetOdigosVersionInCluster(ctx, client, ns)
+		binaryPath, binaryDir := getOdigosUiBinaryPath()
+		shouldReplaceBinary := shouldDownloadNewUiBinary(binaryPath, clusterVersion)
 
-		currentDir := filepath.Dir(currentBinaryPath)
-		binaryPath := filepath.Join(currentDir, "odigos-ui")
-		if _, err = os.Stat(binaryPath); os.IsNotExist(err) {
-			fmt.Printf("Could not find UI binary, downloading latest release\n")
-			err = downloadLatestUIVersion(runtime.GOARCH, runtime.GOOS, currentDir)
+		if shouldReplaceBinary {
+			err := downloadOdigosUIVersion(runtime.GOARCH, runtime.GOOS, binaryDir, clusterVersion)
 			if err != nil {
-				fmt.Printf("Error downloading latest UI version: %v\n", err)
+				fmt.Printf("Error downloading UI binary: %v\n", err)
 				os.Exit(1)
 			}
 		}
@@ -85,14 +79,66 @@ var uiCmd = &cobra.Command{
 	},
 }
 
-func downloadLatestUIVersion(arch string, os string, currentDir string) error {
-	latestRelease, err := GetLatestReleaseVersion()
+func shouldDownloadNewUiBinary(binaryPath string, odigosClusterVersion string) bool {
+
+	_, err := os.Stat(binaryPath)
 	if err != nil {
-		return err
+		if os.IsNotExist(err) {
+			fmt.Printf("Could not find UI binary, downloading it\n")
+			return true
+		} else {
+			fmt.Printf("Error checking for UI binary: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
-	fmt.Printf("Downloading version %s of Odigos UI ...\n", latestRelease)
-	url := getDownloadUrl(os, arch, latestRelease)
+	// check if the binary matches the version of odigos in the cluster
+	// run the binary with --version flag and check if the version matches
+	cmd := exec.Command(binaryPath, "--version")
+	outputBytes, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("Unable to extract current odigos ui version: %v, installing new version\n", err)
+		return true
+	}
+	output := string(outputBytes)
+	re := regexp.MustCompile(`v\d+\.\d+\.\d+`)
+	version := re.FindString(output)
+	if version != odigosClusterVersion {
+		fmt.Printf("UI binary version (%s) does not match Odigos version (%s), downloading new UI binary\n", version, odigosClusterVersion)
+		return true
+	}
+
+	return false
+}
+
+func getOdigosUiBinaryPath() (binaryPath, binaryDir string) {
+	// Look for binary named odigos-ui in the same directory as the current binary
+	// and execute it.
+	currentBinaryPath, err := os.Executable()
+	if err != nil {
+		fmt.Printf("Error getting current binary path: %v\n", err)
+		os.Exit(1)
+	}
+
+	binaryDir = filepath.Dir(currentBinaryPath)
+	binaryPath = filepath.Join(binaryDir, "odigos-ui")
+	return
+}
+
+func downloadOdigosUIVersion(arch string, os string, currentDir string, odigosVersion string) error {
+
+	if odigosVersion == "" {
+		latestVersion, err := GetLatestReleaseVersion()
+		if err != nil {
+			return err
+		}
+		odigosVersion = latestVersion
+	}
+
+	fmt.Printf("Downloading version %s of Odigos UI ...\n", odigosVersion)
+	// if the version starts with "v", remove it
+	odigosVersion = strings.TrimPrefix(odigosVersion, "v")
+	url := getDownloadUrl(os, arch, odigosVersion)
 	return downloadAndExtractTarGz(url, currentDir)
 }
 
