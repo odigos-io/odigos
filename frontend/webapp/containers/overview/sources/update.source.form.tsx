@@ -114,9 +114,7 @@ export function UpdateSourceForm() {
       </BackButtonWrapper>
       {currentSource && (
         <ManageSourceHeader
-          image_url={
-            LANGUAGES_LOGOS[currentSource?.languages?.[0].language || '']
-          }
+          source={currentSource}
         />
       )}
       <FieldWrapper>
