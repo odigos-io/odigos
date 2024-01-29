@@ -24,7 +24,7 @@ import (
 const (
 	collectorLabel       = "odigos.io/data-collection"
 	containerName        = "data-collection"
-	containerImage       = "keyval/otel-collector-contrib:v0.9"
+	containerImage       = "keyval/otel-collector-contrib:v0.10"
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
