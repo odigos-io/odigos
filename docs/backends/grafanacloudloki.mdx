@@ -1,0 +1,31 @@
+---
+title: "Grafana Cloud Loki"
+---
+
+You can use Grafana Cloud managed service as a backend for Odigos to store your logs, metrics, and traces. 
+This page describes how to configure Odigos to use Grafana Cloud Loki as a **logs** backend.
+
+Notice: these instructions are for the Grafan cloud **managed** Loki service. 
+If you run a self hosted Loki instance, please follow the instructions in the [Loki](/backends/loki) page.
+
+All the connection details can be found at [grafana.com](grafana.com) under **My Account**
+
+<Frame>
+    <img src="/backends/images/grafanacloud1.png" alt="Grafana labs website" />
+</Frame>
+
+Then, under the "GRAFANA CLOUD" title, select your Grafana Stuck, browser to the "Loki" card and click "Send Logs"
+
+<Frame>
+    <img src="/backends/images/grafanacloud2.png" alt="Loki managed service configuration" />
+</Frame>
+
+To send logs to Grafana Cloud Loki, you need to configure the following settings:
+
+- **Endpoint** - This is the URL of the Loki service. 
+You can find it in grafana ui loki page as "https://logs-prod-{REGION/SHARD}.grafana.net/loki/api/v1/push" or similar.
+- **Username** - You can find the loki username in the "Grafana Data Source settings" section as "User" value. 
+The username is a number.
+- **Password** - This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. 
+You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page.
+Make sure your token scope includes "logs:write" scope.

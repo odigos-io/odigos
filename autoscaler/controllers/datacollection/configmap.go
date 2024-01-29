@@ -168,9 +168,10 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	}
 
 	if collectLogs {
+		odigosSystemNamespaceName := utils.GetCurrentNamespace()
 		cfg.Receivers["filelog"] = commonconf.GenericMap{
 			"include":           []string{"/var/log/pods/*/*/*.log"},
-			"exclude":           []string{"/var/log/pods/kube-system_*/*/*.log"},
+			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},
 			"start_at":          "beginning",
 			"include_file_path": true,
 			"include_file_name": false,
@@ -284,8 +285,10 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 
 	if collectMetrics {
 		cfg.Receivers["kubeletstats"] = commonconf.GenericMap{
-			"auth_type":           "serviceAccount",
-			"collection_interval": "10s",
+			"auth_type":            "serviceAccount",
+			"endpoint":             "https://${env:NODE_NAME}:10250",
+			"insecure_skip_verify": true,
+			"collection_interval":  "10s",
 		}
 
 		cfg.Service.Pipelines["metrics"] = commonconf.Pipeline{

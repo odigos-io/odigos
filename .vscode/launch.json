@@ -18,6 +18,14 @@
             "mode": "debug",
             "program": "${workspaceFolder}/instrumentor",
             "cwd": "${workspaceFolder}/instrumentor"
+        },
+        {
+            "name": "autoscaler local",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/autoscaler",
+            "cwd": "${workspaceFolder}/autoscaler"
         }
     ]
 }
