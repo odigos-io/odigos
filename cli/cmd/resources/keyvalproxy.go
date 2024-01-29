@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	odigosCloudProxyVersion = "v0.9.0"
+	odigosCloudProxyVersion = "v0.10.0"
 )
 
 const (
@@ -256,23 +256,20 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 			Name:      KeyvalProxyDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app": keyvalProxyAppName,
-			},
-			Annotations: map[string]string{
-				"odigos.io/skip": "true",
+				"app.kubernetes.io/name": keyvalProxyAppName,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": keyvalProxyAppName,
+					"app.kubernetes.io/name": keyvalProxyAppName,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": keyvalProxyAppName,
+						"app.kubernetes.io/name": keyvalProxyAppName,
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": keyvalProxyAppName,

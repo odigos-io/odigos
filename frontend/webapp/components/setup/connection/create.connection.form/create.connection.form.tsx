@@ -41,6 +41,16 @@ const MONITORS = [
   { id: 'traces', label: SETUP.MONITORS.TRACES, checked: true },
 ];
 
+// fields are the current destination supported fields which we want to have.
+// fieldValues read the actual values that are received from the cluster.
+// if there are field values which are not part of the current schema, we want to remove them.
+const sanitizeDynamicFields = (fields: Field[], fieldValues: Record<string, any> | undefined): Record<string, any> => {
+  if (!fieldValues) {
+    return {}
+  }
+  return Object.fromEntries(Object.entries(fieldValues).filter(([key, value]) => fields.find(field => field.name === key)))
+}
+
 export function CreateConnectionForm({
   fields,
   onSubmit,
@@ -53,7 +63,7 @@ export function CreateConnectionForm({
     destinationNameValue || ''
   );
   const [selectedMonitors, setSelectedMonitors] = useState(MONITORS);
-  const [dynamicFields, setDynamicFields] = useState(dynamicFieldsValues || {});
+  const [dynamicFields, setDynamicFields] = useState(sanitizeDynamicFields(fields, dynamicFieldsValues));
   const [isCreateButtonDisabled, setIsCreateButtonDisabled] = useState(true);
 
   useEffect(() => {

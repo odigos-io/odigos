@@ -14,17 +14,19 @@ func (h *Honeycomb) DestType() common.DestinationType {
 
 func (h *Honeycomb) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if isTracingEnabled(dest) {
-		currentConfig.Exporters["otlp/honeycomb"] = commonconf.GenericMap{
+		exporterName := "otlp/honeycomb-" + dest.Name
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"endpoint": "api.honeycomb.io:443",
 			"headers": commonconf.GenericMap{
 				"x-honeycomb-team": "${HONEYCOMB_API_KEY}",
 			},
 		}
 
-		currentConfig.Service.Pipelines["traces/honeycomb"] = commonconf.Pipeline{
+		tracePipelineName := "traces/honeycomb-" + dest.Name
+		currentConfig.Service.Pipelines[tracePipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/honeycomb"},
+			Exporters:  []string{exporterName},
 		}
 	}
 }

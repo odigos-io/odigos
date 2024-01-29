@@ -14,19 +14,19 @@ spec:
     logs:
       supported: false
   fields:
-    - name: GRAFANA_API_KEY
-      displayName: API Key
-      componentType: input
-      componentProps:
-        type: password
-      secret: true
-    - name: GRAFANA_TEMPO_URL
-      displayName: Endpoint
+    - name: GRAFANA_CLOUD_TEMPO_ENDPOINT
+      displayName: Endpoint (host:port)
       componentType: input
       componentProps:
         type: text
-    - name: GRAFANA_TEMPO_USERNAME
+    - name: GRAFANA_CLOUD_TEMPO_USERNAME
       displayName: Username
       componentType: input
       componentProps:
         type: text
+    - name: GRAFANA_CLOUD_TEMPO_PASSWORD
+      displayName: Password (Api Token)
+      componentType: input
+      componentProps:
+        type: password
+      secret: true

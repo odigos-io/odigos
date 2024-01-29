@@ -1,12 +1,19 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
+	ctrl "sigs.k8s.io/controller-runtime"
+)
+
+var (
+	ErrorChronosphereMissingURL = errors.New("missing CHRONOSPHERE_COLLECTOR config")
+	ErrorChronosphereNoTls      = errors.New("chronosphere collector url does not support tls")
 )
 
 const (
@@ -20,37 +27,51 @@ func (c *Chronosphere) DestType() common.DestinationType {
 }
 
 func (c *Chronosphere) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
-	if url, exists := dest.Spec.Data[chronosphereCollector]; exists {
-		url = strings.TrimPrefix(url, "http://")
-		url = strings.TrimPrefix(url, "https://")
-		url = strings.TrimSuffix(url, ":4317")
-		url = strings.TrimSuffix(url, "/remote/write")
 
-		if isTracingEnabled(dest) {
-			currentConfig.Exporters["otlp/chronosphere"] = commonconf.GenericMap{
-				"endpoint": fmt.Sprintf("%s:4317", url),
-				"tls": commonconf.GenericMap{
-					"insecure": true,
-				},
-			}
+	url, exists := dest.Spec.Data[chronosphereCollector]
+	if !exists {
+		ctrl.Log.Error(ErrorChronosphereMissingURL, "skipping Chronosphere destination config")
+		return
+	}
 
-			currentConfig.Service.Pipelines["traces/chronosphere"] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{"otlp/chronosphere"},
-			}
+	if strings.HasPrefix(url, "https://") {
+		ctrl.Log.Error(ErrorChronosphereNoTls, "skipping Chronosphere destination config")
+		return
+	}
+
+	url = strings.TrimPrefix(url, "http://")
+	url = strings.TrimSuffix(url, ":4317")
+	url = strings.TrimSuffix(url, "/remote/write")
+
+	if isTracingEnabled(dest) {
+		chronosphereTraceExporterName := "otlp/chronosphere-" + dest.Name
+		currentConfig.Exporters[chronosphereTraceExporterName] = commonconf.GenericMap{
+			"endpoint": fmt.Sprintf("%s:4317", url),
+			"tls": commonconf.GenericMap{
+				// According to Chronosphere documentation their collector is deployed locally on the cluster
+				"insecure": true,
+			},
 		}
 
-		if isMetricsEnabled(dest) {
-			currentConfig.Exporters["prometheusremotewrite/chronosphere"] = commonconf.GenericMap{
-				"endpoint": fmt.Sprintf("http://%s:3030/remote/write", url),
-			}
+		tracePipelineName := "traces/chronosphere-" + dest.Name
+		currentConfig.Service.Pipelines[tracePipelineName] = commonconf.Pipeline{
+			Receivers:  []string{"otlp"},
+			Processors: []string{"batch"},
+			Exporters:  []string{chronosphereTraceExporterName},
+		}
+	}
 
-			currentConfig.Service.Pipelines["metrics/chronosphere"] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{"prometheusremotewrite/chronosphere"},
-			}
+	if isMetricsEnabled(dest) {
+		chronosphereMetricsExporterName := "prometheusremotewrite/chronosphere-" + dest.Name
+		currentConfig.Exporters[chronosphereMetricsExporterName] = commonconf.GenericMap{
+			"endpoint": fmt.Sprintf("http://%s:3030/remote/write", url),
+		}
+
+		metricsPipelineName := "metrics/chronosphere-" + dest.Name
+		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
+			Receivers:  []string{"otlp"},
+			Processors: []string{"batch"},
+			Exporters:  []string{chronosphereMetricsExporterName},
 		}
 	}
 }

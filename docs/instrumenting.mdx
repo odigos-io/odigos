@@ -1,8 +1,7 @@
 ---
-title: "Generating Traces"
-sidebarTitle: "Generating Traces"
+title: "Building a pipeline"
+sidebarTitle: "Building a pipeline"
 ---
-
 
 ## Choosing target applications
 
@@ -36,4 +35,13 @@ Enter any name you want for the destination, and enter `jaeger.tracing:4317` as 
 
 <Frame>
     <img src="/images/jaeger_connection.png" alt="Jaeger connection details" />
+</Frame>
+
+**That's it!** You can now click `Next` and finish the wizard.
+
+Odigos will now instrument your selected applications and deploy the nessesary OpenTelemetry collectors.
+The following page will show an overview of your observability pipeline:
+
+<Frame>
+    <img src="/images/observability_pipeline.png" alt="Observability pipeline" />
 </Frame>

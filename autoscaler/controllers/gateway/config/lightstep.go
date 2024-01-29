@@ -14,17 +14,19 @@ func (l *Lightstep) DestType() common.DestinationType {
 
 func (l *Lightstep) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if isTracingEnabled(dest) {
-		currentConfig.Exporters["otlp/lightstep"] = commonconf.GenericMap{
+		exporterName := "otlp/lightstep-" + dest.Name
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"endpoint": "ingest.lightstep.com:443",
 			"headers": commonconf.GenericMap{
 				"lightstep-access-token": "${LIGHTSTEP_ACCESS_TOKEN}",
 			},
 		}
 
-		currentConfig.Service.Pipelines["traces/lightstep"] = commonconf.Pipeline{
+		tracesPipelineName := "traces/lightstep-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/lightstep"},
+			Exporters:  []string{exporterName},
 		}
 	}
 }

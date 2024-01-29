@@ -20,3 +20,10 @@ spec:
       componentProps:
         type: password
       secret: true
+    - name: NEWRELIC_ENDPOINT
+      displayName: Endpoint
+      componentType: dropdown
+      componentProps:
+        values:
+          - https://otlp.nr-data.net
+          - https://otlp.eu01.nr-data.net

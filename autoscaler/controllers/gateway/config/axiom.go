@@ -24,7 +24,8 @@ func (a *Axiom) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 		ctrl.Log.V(0).Info("Axiom dataset not specified, using default")
 	}
 
-	currentConfig.Exporters["otlphttp/axiom"] = commonconf.GenericMap{
+	axiomExporterName := "otlphttp/axiom-" + dest.Name
+	currentConfig.Exporters[axiomExporterName] = commonconf.GenericMap{
 		"compression": "gzip",
 		"endpoint":    "https://api.axiom.co",
 		"headers": commonconf.GenericMap{
@@ -34,18 +35,20 @@ func (a *Axiom) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 	}
 
 	if isTracingEnabled(dest) {
-		currentConfig.Service.Pipelines["traces/axiom"] = commonconf.Pipeline{
+		tracesPipelineName := "traces/axiom-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlphttp/axiom"},
+			Exporters:  []string{axiomExporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		currentConfig.Service.Pipelines["logs/axiom"] = commonconf.Pipeline{
+		logsPipelineName := "logs/axiom-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlphttp/axiom"},
+			Exporters:  []string{axiomExporterName},
 		}
 	}
 }
