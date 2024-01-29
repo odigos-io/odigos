@@ -3,9 +3,10 @@ package backend
 import (
 	"encoding/base64"
 	"fmt"
+	"net/url"
+
 	"github.com/keyval-dev/odigos/common"
 	"github.com/spf13/cobra"
-	"net/url"
 )
 
 const (
@@ -20,7 +21,7 @@ const (
 type Grafana struct{}
 
 func (g *Grafana) Name() common.DestinationType {
-	return common.GrafanaDestinationType
+	return common.GrafanaCloudPrometheusDestinationType
 }
 
 func (g *Grafana) ParseFlags(cmd *cobra.Command, selectedSignals []common.ObservabilitySignal) (*ObservabilityArgs, error) {
