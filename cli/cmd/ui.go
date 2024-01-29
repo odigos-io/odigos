@@ -26,52 +26,6 @@ const (
 	uiDownloadUrl = "https://github.com/keyval-dev/odigos/releases/download/v%s/ui_%s_%s_%s.tar.gz"
 )
 
-func shouldDownloadNewUiBinary(binaryPath string, odigosClusterVersion string) bool {
-
-	_, err := os.Stat(binaryPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			fmt.Printf("Could not find UI binary, downloading it\n")
-			return true
-		} else {
-			fmt.Printf("Error checking for UI binary: %v\n", err)
-			os.Exit(1)
-		}
-	}
-
-	// check if the binary matches the version of odigos in the cluster
-	// run the binary with --version flag and check if the version matches
-	cmd := exec.Command(binaryPath, "--version")
-	outputBytes, err := cmd.Output()
-	if err != nil {
-		fmt.Printf("Error running UI binary: %v\n", err)
-		os.Exit(1)
-	}
-	output := string(outputBytes)
-	re := regexp.MustCompile(`v\d+\.\d+\.\d+`)
-	version := re.FindString(output)
-	if version != odigosClusterVersion {
-		fmt.Printf("UI binary version (%s) does not match Odigos version (%s), downloading new UI binary\n", version, odigosClusterVersion)
-		return true
-	}
-
-	return false
-}
-
-func getOdigosUiBinaryPath() (binaryPath, binaryDir string) {
-	// Look for binary named odigos-ui in the same directory as the current binary
-	// and execute it.
-	currentBinaryPath, err := os.Executable()
-	if err != nil {
-		fmt.Printf("Error getting current binary path: %v\n", err)
-		os.Exit(1)
-	}
-
-	binaryDir = filepath.Dir(currentBinaryPath)
-	binaryPath = filepath.Join(binaryDir, "odigos-ui")
-	return
-}
-
 // uiCmd represents the ui command
 var uiCmd = &cobra.Command{
 	Use:   "ui",
@@ -123,6 +77,52 @@ var uiCmd = &cobra.Command{
 			os.Exit(1)
 		}
 	},
+}
+
+func shouldDownloadNewUiBinary(binaryPath string, odigosClusterVersion string) bool {
+
+	_, err := os.Stat(binaryPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Printf("Could not find UI binary, downloading it\n")
+			return true
+		} else {
+			fmt.Printf("Error checking for UI binary: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// check if the binary matches the version of odigos in the cluster
+	// run the binary with --version flag and check if the version matches
+	cmd := exec.Command(binaryPath, "--version")
+	outputBytes, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("Error running UI binary: %v\n", err)
+		os.Exit(1)
+	}
+	output := string(outputBytes)
+	re := regexp.MustCompile(`v\d+\.\d+\.\d+`)
+	version := re.FindString(output)
+	if version != odigosClusterVersion {
+		fmt.Printf("UI binary version (%s) does not match Odigos version (%s), downloading new UI binary\n", version, odigosClusterVersion)
+		return true
+	}
+
+	return false
+}
+
+func getOdigosUiBinaryPath() (binaryPath, binaryDir string) {
+	// Look for binary named odigos-ui in the same directory as the current binary
+	// and execute it.
+	currentBinaryPath, err := os.Executable()
+	if err != nil {
+		fmt.Printf("Error getting current binary path: %v\n", err)
+		os.Exit(1)
+	}
+
+	binaryDir = filepath.Dir(currentBinaryPath)
+	binaryPath = filepath.Join(binaryDir, "odigos-ui")
+	return
 }
 
 func downloadOdigosUIVersion(arch string, os string, currentDir string, odigosVersion string) error {
