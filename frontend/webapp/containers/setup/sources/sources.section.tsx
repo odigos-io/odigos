@@ -68,15 +68,23 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
   async function onNameSpaceChange() {
     if (!currentNamespace || sectionData[currentNamespace?.name]) return;
     const namespace = await getApplication(currentNamespace?.name);
+
+    const { selected } = data.namespaces.find(
+      (item) => item.name === currentNamespace?.name
+    );
+
     const newSelectedNamespace = {
       ...sectionData,
       [currentNamespace?.name]: {
-        ...DEFAULT_CONFIG,
+        selected_all: selected,
+        future_selected: selected,
         objects: [...namespace?.applications],
       },
     };
-
     setSectionData(newSelectedNamespace);
+    if (selected) {
+      onSelectAllChange(true, newSelectedNamespace);
+    }
   }
 
   function handleSourceClick({ item }: any) {
@@ -104,8 +112,9 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
     handleSetNewSelectedConfig(currentNamespaceConfig);
   }
 
-  function onSelectAllChange(value: boolean) {
-    const namespace = sectionData[currentNamespace?.name];
+  function onSelectAllChange(value: boolean, data?: any) {
+    const currentData = data || { ...sectionData };
+    const namespace = currentData[currentNamespace?.name];
     let objects = [...namespace.objects];
     objects.forEach((item) => {
       item.selected = value;
