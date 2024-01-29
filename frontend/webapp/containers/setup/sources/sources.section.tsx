@@ -113,7 +113,7 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
   }
 
   function onSelectAllChange(value: boolean, data?: any) {
-    const currentData = data || { ...sectionData };
+    const currentData = data || sectionData;
     const namespace = currentData[currentNamespace?.name];
     let objects = [...namespace.objects];
     objects.forEach((item) => {
