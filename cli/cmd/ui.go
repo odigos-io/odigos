@@ -97,7 +97,7 @@ func shouldDownloadNewUiBinary(binaryPath string, odigosClusterVersion string) b
 	cmd := exec.Command(binaryPath, "--version")
 	outputBytes, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("Unable to extract current odigos ui version, installing new version: %v\n", err)
+		fmt.Printf("Unable to extract current odigos ui version: %v, installing new version\n", err)
 		return true
 	}
 	output := string(outputBytes)
