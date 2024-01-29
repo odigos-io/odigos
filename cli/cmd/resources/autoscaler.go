@@ -361,6 +361,9 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      AutoScalerDeploymentName,
 			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": AutoScalerAppLabelValue,
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),

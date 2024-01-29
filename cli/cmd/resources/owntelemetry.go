@@ -145,6 +145,9 @@ func NewOwnTelemetryCollectorDeployment(ns string) *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      OwnTelemetryCollectorDeploymentName,
 			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": ownTelemetryCollectorAppName,
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: intPtr(1),

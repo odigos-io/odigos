@@ -191,6 +191,9 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      SchedulerDeploymentName,
 			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": SchedulerAppLabelValue,
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),

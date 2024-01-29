@@ -255,6 +255,9 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      KeyvalProxyDeploymentName,
 			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": keyvalProxyAppName,
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),

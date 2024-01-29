@@ -394,6 +394,9 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "odigos-instrumentor",
 			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": InstrumentorAppLabelValue,
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
