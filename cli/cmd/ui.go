@@ -47,9 +47,9 @@ var uiCmd = &cobra.Command{
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
 			if !resources.IsErrNoOdigosNamespaceFound(err) {
-				fmt.Printf("\033[31mERROR\033[0m Cannot install/start UI. Failed to check if Odigos is already installed: %s\n", err)
+				fmt.Printf("\033[31mERROR\033[0m Cannot start Odigos UI. Failed to check if Odigos is already installed: %s\n", err)
 			} else {
-				fmt.Printf("\033[31mERROR\033[0m Unable to find Odigos in kubernetes cluster. Aborting odigos ui.\n")
+				fmt.Printf("\033[31mERROR\033[0m Odigos is not installed in your kubernetes cluster. Run 'odigos install' or switch your k8s context to use a different cluster \n")
 			}
 			os.Exit(1)
 		}
