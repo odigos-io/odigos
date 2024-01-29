@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/selection"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -92,7 +93,10 @@ func (c *Client) deleteResourceBeforeAppending(ctx context.Context, obj client.O
 
 	case "DaemonSet":
 		dm, err := c.AppsV1().DaemonSets(obj.GetNamespace()).Get(ctx, obj.GetName(), metav1.GetOptions{})
-		if err == nil {
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
 			return err
 		}
 		currentSelectorLabels := dm.Spec.Selector.MatchLabels
@@ -113,7 +117,10 @@ func (c *Client) deleteResourceBeforeAppending(ctx context.Context, obj client.O
 
 	case "Deployment":
 		dep, err := c.AppsV1().Deployments(obj.GetNamespace()).Get(ctx, obj.GetName(), metav1.GetOptions{})
-		if err == nil {
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
 			return err
 		}
 
