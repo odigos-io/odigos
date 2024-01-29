@@ -146,23 +146,20 @@ func NewOwnTelemetryCollectorDeployment(ns string) *appsv1.Deployment {
 			Name:      OwnTelemetryCollectorDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app": ownTelemetryCollectorAppName,
-			},
-			Annotations: map[string]string{
-				"odigos.io/skip": "true",
+				"app.kubernetes.io/name": ownTelemetryCollectorAppName,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: intPtr(1),
 			Selector: &v1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": ownTelemetryCollectorAppName,
+					"app.kubernetes.io/name": ownTelemetryCollectorAppName,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: v1.ObjectMeta{
 					Labels: map[string]string{
-						"app": ownTelemetryCollectorAppName,
+						"app.kubernetes.io/name": ownTelemetryCollectorAppName,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -223,7 +220,7 @@ func NewOwnTelemetryCollectorService(ns string) *corev1.Service {
 		Spec: corev1.ServiceSpec{
 			Type: corev1.ServiceTypeClusterIP,
 			Selector: map[string]string{
-				"app": ownTelemetryCollectorAppName,
+				"app.kubernetes.io/name": ownTelemetryCollectorAppName,
 			},
 			Ports: []corev1.ServicePort{
 				{
