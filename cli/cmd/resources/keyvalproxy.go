@@ -256,20 +256,20 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 			Name:      KeyvalProxyDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": keyvalProxyAppName,
+				"app": keyvalProxyAppName,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": keyvalProxyAppName,
+					"app": keyvalProxyAppName,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": keyvalProxyAppName,
+						"app": keyvalProxyAppName,
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": keyvalProxyAppName,

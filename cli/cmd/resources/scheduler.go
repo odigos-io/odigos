@@ -192,20 +192,20 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 			Name:      SchedulerDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": SchedulerAppLabelValue,
+				"app": SchedulerAppLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": SchedulerAppLabelValue,
+					"app": SchedulerAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": SchedulerAppLabelValue,
+						"app": SchedulerAppLabelValue,
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": SchedulerContainerName,

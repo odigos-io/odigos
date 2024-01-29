@@ -362,20 +362,20 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 			Name:      AutoScalerDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": AutoScalerAppLabelValue,
+				"app": AutoScalerAppLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": AutoScalerAppLabelValue,
+					"app": AutoScalerAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": AutoScalerAppLabelValue,
+						"app": AutoScalerAppLabelValue,
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": AutoScalerContainerName,
