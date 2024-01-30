@@ -141,9 +141,9 @@ func downloadOdigosUIVersion(arch string, goos string, currentDir string, curren
 		// otherwise, we cannot proceed
 		if currentBinaryVersion != "" {
 			if clusterVersion != "" {
-				fmt.Printf("No connection to github, will use current ui binary version %s to control your odigos installation of version %s.\n", currentBinaryVersion, clusterVersion)
+				fmt.Printf("\033[33mWARNING\033[0m No connection to github, will use current ui binary version %s to control your odigos installation of version %s.\n", currentBinaryVersion, clusterVersion)
 			} else {
-				fmt.Printf("Mo connection to github, will use current ui binary version %s\n", currentBinaryVersion)
+				fmt.Printf("\033[33mWARNING\033[0m No connection to github, will use current ui binary version %s\n", currentBinaryVersion)
 			}
 			return nil
 		} else {
