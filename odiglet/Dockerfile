@@ -14,8 +14,7 @@ ARG DOTNET_OTEL_VERSION=v0.7.0
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
 
-# TODO: use image from dockerhub before merging
-FROM --platform=$BUILDPLATFORM odiglet-base-ron-test as builder
+FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.3 as builder
 WORKDIR /go/src/github.com/keyval-dev/odigos
 # Copyy local modules required by the build
 COPY api/ api/
