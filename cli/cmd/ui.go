@@ -115,10 +115,19 @@ func getCurrentBinaryVersion(binaryPath string) (string, error) {
 func GetOdigosUiBinaryPath() (binaryPath, binaryDir string) {
 	// Look for binary named odigos-ui in the same directory as the current binary
 	// and execute it.
+	// currentBinaryPath, err := os.Executable()
 	currentBinaryPath, err := os.Executable()
 	if err != nil {
 		fmt.Printf("Error getting current binary path: %v\n", err)
 		os.Exit(1)
+	}
+
+	if strings.HasPrefix(currentBinaryPath, "/ko-app") {
+		// we are running in a docker container, no permission to write in the current directory
+		// use /tmp as the binary directory
+		binaryDir = "/tmp"
+		binaryPath = filepath.Join(binaryDir, "odigos-ui")
+		return
 	}
 
 	binaryDir = filepath.Dir(currentBinaryPath)
