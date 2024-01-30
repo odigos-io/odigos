@@ -52,10 +52,12 @@ var logoutCmd = &cobra.Command{
 		}
 
 		fmt.Println("About to logout from Odigos cloud. You can still manager your Odigos installation locally with 'odigos ui'.")
-		confirmed, err := confirm.Ask("Are you sure?")
-		if err != nil || !confirmed {
-			fmt.Println("Aborting odigos cloud logout")
-			return
+		if !cmd.Flag("yes").Changed {
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting odigos cloud logout")
+				return
+			}
 		}
 
 		config, err := resources.GetCurrentConfig(ctx, client, ns)
@@ -82,4 +84,5 @@ var logoutCmd = &cobra.Command{
 
 func init() {
 	cloudCmd.AddCommand(logoutCmd)
+	logoutCmd.Flags().Bool("yes", false, "Skip the confirmation prompt")
 }

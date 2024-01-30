@@ -77,10 +77,12 @@ and apply any required migrations and adaptations.`,
 			operation = "Upgrading"
 		}
 
-		confirmed, err := confirm.Ask("Are you sure?")
-		if err != nil || !confirmed {
-			fmt.Println("Aborting upgrade")
-			return
+		if !cmd.Flag("yes").Changed {
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting upgrade")
+				return
+			}
 		}
 
 		config, err := resources.GetCurrentConfig(ctx, client, ns)
@@ -114,6 +116,7 @@ and apply any required migrations and adaptations.`,
 
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
+	upgradeCmd.Flags().Bool("yes", false, "Skip the confirmation prompt")
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
 	} else {
