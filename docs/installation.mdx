@@ -21,6 +21,16 @@ is a single binary that can be installed on any Linux, MacOS or Windows machine.
     page and extract the binary to a directory in your `PATH`.
 
   </Tab>
+  <Tab title="Docker Run">
+    If you have Docker installed, you can run Odigos CLI using Docker:
+
+    ```bash
+    docker run --rm -v ~/.kube:/home/nonroot/.kube --network host keyval/odigos-cli:latest
+    ```
+    The --rm flag will remove the container after the command is executed to avoid cluttering your system.
+    The -v flag will mount your local kube config file to the container so that Odigos can access your cluster.
+    The --network host flag will allow the container to access your local network so that you can access kubernetes api server.
+  </Tab>
 </Tabs>
 
 ## Installing Odigos on Kubernetes
@@ -29,6 +39,29 @@ To install Odigos on your Kubernetes cluster, run the following command:
 
 ```bash
 odigos install
+```
+
+Or with Docker:
+```bash
+docker run --rm -v ~/.kube:/home/nonroot/.kube --network host keyval/odigos-cli:latest install
+```
+
+## Upgrading Odigos
+
+To upgrade existing Odigos installation to the latest version, run the following command:
+
+Brew:
+
+```bash
+brew update && brew upgrade odigos
+# optional: verify the version is up to date with `odigos version`
+odigos upgrade
+```
+
+Docker:
+  
+```bash
+docker run --rm -v ~/.kube:/home/nonroot/.kube --network host keyval/odigos-cli:latest upgrade --yes
 ```
 
 ## Accessing Odigos UI
