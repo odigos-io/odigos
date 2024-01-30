@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
@@ -47,24 +48,34 @@ var uiCmd = &cobra.Command{
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
 			if !resources.IsErrNoOdigosNamespaceFound(err) {
-				fmt.Printf("\033[31mERROR\033[0m Cannot start Odigos UI. Failed to check if Odigos is already installed: %s\n", err)
+				fmt.Printf("\033[31mERROR\033[0m Cannot check if odigos is currently installed in your cluster: %s\n", err)
+				ns = ""
 			} else {
 				fmt.Printf("\033[31mERROR\033[0m Odigos is not installed in your kubernetes cluster. Run 'odigos install' or switch your k8s context to use a different cluster \n")
+				os.Exit(1)
 			}
-			os.Exit(1)
 		}
 		flags = append(flags, fmt.Sprintf("--namespace=%s", ns))
 
-		clusterVersion, _ := GetOdigosVersionInCluster(ctx, client, ns)
-		binaryPath, binaryDir := getOdigosUiBinaryPath()
-		shouldReplaceBinary := shouldDownloadNewUiBinary(binaryPath, clusterVersion)
-
-		if shouldReplaceBinary {
-			err := downloadOdigosUIVersion(runtime.GOARCH, runtime.GOOS, binaryDir, clusterVersion)
+		var clusterVersion string
+		if ns != "" {
+			clusterVersion, err = GetOdigosVersionInCluster(ctx, client, ns)
 			if err != nil {
-				fmt.Printf("Error downloading UI binary: %v\n", err)
-				os.Exit(1)
+				fmt.Println("not able to get odigos version from cluster")
+				clusterVersion = ""
 			}
+		}
+		fmt.Printf("Odigos version in cluster: %s\n", clusterVersion)
+		binaryPath, binaryDir := GetOdigosUiBinaryPath()
+		currentBinaryVersion, err := getCurrentBinaryVersion(binaryPath)
+		if err != nil {
+			fmt.Printf("Error getting current UI binary version: %v\n", err)
+		}
+
+		err = downloadOdigosUIVersionIfNeeded(runtime.GOARCH, runtime.GOOS, binaryDir, currentBinaryVersion, clusterVersion)
+		if err != nil {
+			fmt.Printf("Error downloading UI binary: %v\n", err)
+			os.Exit(1)
 		}
 
 		// execute UI binary with all flags and stream output
@@ -79,39 +90,29 @@ var uiCmd = &cobra.Command{
 	},
 }
 
-func shouldDownloadNewUiBinary(binaryPath string, odigosClusterVersion string) bool {
-
+func getCurrentBinaryVersion(binaryPath string) (string, error) {
 	_, err := os.Stat(binaryPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Printf("Could not find UI binary, downloading it\n")
-			return true
+			fmt.Printf("Could not find current UI binary at %s\n", binaryPath)
+			return "", nil
 		} else {
 			fmt.Printf("Error checking for UI binary: %v\n", err)
-			os.Exit(1)
+			return "", fmt.Errorf("error checking for UI binary: %v", err)
 		}
 	}
 
-	// check if the binary matches the version of odigos in the cluster
-	// run the binary with --version flag and check if the version matches
 	cmd := exec.Command(binaryPath, "--version")
 	outputBytes, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("Unable to extract current odigos ui version: %v, installing new version\n", err)
-		return true
+		return "", fmt.Errorf("unable to extract current odigos ui version: %v", err)
 	}
 	output := string(outputBytes)
 	re := regexp.MustCompile(`v\d+\.\d+\.\d+`)
-	version := re.FindString(output)
-	if version != odigosClusterVersion {
-		fmt.Printf("UI binary version (%s) does not match Odigos version (%s), downloading new UI binary\n", version, odigosClusterVersion)
-		return true
-	}
-
-	return false
+	return re.FindString(output), nil
 }
 
-func getOdigosUiBinaryPath() (binaryPath, binaryDir string) {
+func GetOdigosUiBinaryPath() (binaryPath, binaryDir string) {
 	// Look for binary named odigos-ui in the same directory as the current binary
 	// and execute it.
 	// currentBinaryPath, err := os.Executable()
@@ -134,21 +135,48 @@ func getOdigosUiBinaryPath() (binaryPath, binaryDir string) {
 	return
 }
 
-func downloadOdigosUIVersion(arch string, os string, currentDir string, odigosVersion string) error {
+func downloadOdigosUIVersionIfNeeded(goarch string, goos string, currentDir string, currentBinaryVersion string, clusterVersion string) error {
 
-	if odigosVersion == "" {
-		latestVersion, err := GetLatestReleaseVersion()
-		if err != nil {
-			return err
-		}
-		odigosVersion = latestVersion
+	if clusterVersion != "" && clusterVersion == currentBinaryVersion {
+		// common mainstream case
+		// we already have the desired version of the ui. Nothing else to do
+		return nil
 	}
 
-	fmt.Printf("Downloading version %s of Odigos UI ...\n", odigosVersion)
+	// check if we can download latest version from github
+	latestReleaseVersion, err := GetLatestReleaseVersion()
+	if err != nil || latestReleaseVersion == "" {
+		// no access to internet, if we have a binary, use it,
+		// otherwise, we cannot proceed
+		if currentBinaryVersion != "" {
+			if clusterVersion != "" {
+				fmt.Printf("\033[33mWARNING\033[0m No connection to github, will use current ui binary version %s to control your odigos installation of version %s.\n", currentBinaryVersion, clusterVersion)
+			} else {
+				fmt.Printf("\033[33mWARNING\033[0m No connection to github, will use current ui binary version %s\n", currentBinaryVersion)
+			}
+			return nil
+		} else {
+			fmt.Printf("Odigos ui binary not found and cannot download from github: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// the version does not match, attempt to download a new version
+	// prefer the cluster version if known, or fallback to latest
+	newUiVersion := clusterVersion
+	if newUiVersion == "" {
+		newUiVersion = latestReleaseVersion
+	}
+
+	return DoDownloadNewUiBinary(newUiVersion, currentDir, goarch, goos)
+}
+
+func DoDownloadNewUiBinary(version string, binaryDir string, goarch string, goos string) error {
+	fmt.Printf("Downloading version %s of Odigos UI ...\n", version)
 	// if the version starts with "v", remove it
-	odigosVersion = strings.TrimPrefix(odigosVersion, "v")
-	url := getDownloadUrl(os, arch, odigosVersion)
-	return downloadAndExtractTarGz(url, currentDir)
+	version = strings.TrimPrefix(version, "v")
+	url := getDownloadUrl(goos, goarch, version)
+	return downloadAndExtractTarGz(url, binaryDir)
 }
 
 func downloadAndExtractTarGz(url string, dir string) error {
@@ -216,7 +244,11 @@ type Release struct {
 func GetLatestReleaseVersion() (string, error) {
 	url := "https://api.github.com/repos/keyval-dev/odigos/releases/latest"
 
-	resp, err := http.Get(url)
+	timeout := time.Duration(3 * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
+	resp, err := client.Get(url)
 	if err != nil {
 		return "", err
 	}
