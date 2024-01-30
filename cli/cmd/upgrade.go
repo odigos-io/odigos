@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/hashicorp/go-version"
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
@@ -108,6 +109,13 @@ and apply any required migrations and adaptations.`,
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to cleanup old Odigos resources.")
 			os.Exit(1)
+		}
+
+		// download a ui binary for the new version
+		_, binaryDir := GetOdigosUiBinaryPath()
+		err = DoDownloadNewUiBinary(targetVersion.String(), binaryDir, runtime.GOARCH, runtime.GOOS)
+		if err != nil {
+			fmt.Printf("Error downloading new odigos UI binary: %v\n", err)
 		}
 	},
 }

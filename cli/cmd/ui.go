@@ -66,13 +66,13 @@ var uiCmd = &cobra.Command{
 			}
 		}
 		fmt.Printf("Odigos version in cluster: %s\n", clusterVersion)
-		binaryPath, binaryDir := getOdigosUiBinaryPath()
+		binaryPath, binaryDir := GetOdigosUiBinaryPath()
 		currentBinaryVersion, err := getCurrentBinaryVersion(binaryPath)
 		if err != nil {
 			fmt.Printf("Error getting current UI binary version: %v\n", err)
 		}
 
-		err = downloadOdigosUIVersion(runtime.GOARCH, runtime.GOOS, binaryDir, currentBinaryVersion, clusterVersion)
+		err = downloadOdigosUIVersionIfNeeded(runtime.GOARCH, runtime.GOOS, binaryDir, currentBinaryVersion, clusterVersion)
 		if err != nil {
 			fmt.Printf("Error downloading UI binary: %v\n", err)
 			os.Exit(1)
@@ -112,7 +112,7 @@ func getCurrentBinaryVersion(binaryPath string) (string, error) {
 	return re.FindString(output), nil
 }
 
-func getOdigosUiBinaryPath() (binaryPath, binaryDir string) {
+func GetOdigosUiBinaryPath() (binaryPath, binaryDir string) {
 	// Look for binary named odigos-ui in the same directory as the current binary
 	// and execute it.
 	currentBinaryPath, err := os.Executable()
@@ -126,7 +126,7 @@ func getOdigosUiBinaryPath() (binaryPath, binaryDir string) {
 	return
 }
 
-func downloadOdigosUIVersion(arch string, goos string, currentDir string, currentBinaryVersion string, clusterVersion string) error {
+func downloadOdigosUIVersionIfNeeded(goarch string, goos string, currentDir string, currentBinaryVersion string, clusterVersion string) error {
 
 	if clusterVersion != "" && clusterVersion == currentBinaryVersion {
 		// common mainstream case
@@ -159,11 +159,15 @@ func downloadOdigosUIVersion(arch string, goos string, currentDir string, curren
 		newUiVersion = latestReleaseVersion
 	}
 
-	fmt.Printf("Downloading version %s of Odigos UI ...\n", newUiVersion)
+	return DoDownloadNewUiBinary(newUiVersion, currentDir, goarch, goos)
+}
+
+func DoDownloadNewUiBinary(version string, binaryDir string, goarch string, goos string) error {
+	fmt.Printf("Downloading version %s of Odigos UI ...\n", version)
 	// if the version starts with "v", remove it
-	newUiVersion = strings.TrimPrefix(newUiVersion, "v")
-	url := getDownloadUrl(goos, arch, newUiVersion)
-	return downloadAndExtractTarGz(url, currentDir)
+	version = strings.TrimPrefix(version, "v")
+	url := getDownloadUrl(goos, goarch, version)
+	return downloadAndExtractTarGz(url, binaryDir)
 }
 
 func downloadAndExtractTarGz(url string, dir string) error {
