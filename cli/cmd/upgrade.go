@@ -69,7 +69,10 @@ and apply any required migrations and adaptations.`,
 		}
 
 		var operation string
-		if sourceVersion.GreaterThan(targetVersion) {
+		if sourceVersion.Equal(targetVersion) {
+			fmt.Printf("Odigos version is already '%s'. Aborting Upgrade\n", versionFlag)
+			return
+		} else if sourceVersion.GreaterThan(targetVersion) {
 			fmt.Printf("About to DOWNGRADE Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
 			operation = "Downgrading"
 		} else {
@@ -77,10 +80,12 @@ and apply any required migrations and adaptations.`,
 			operation = "Upgrading"
 		}
 
-		confirmed, err := confirm.Ask("Are you sure?")
-		if err != nil || !confirmed {
-			fmt.Println("Aborting upgrade")
-			return
+		if !cmd.Flag("yes").Changed {
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting upgrade")
+				return
+			}
 		}
 
 		config, err := resources.GetCurrentConfig(ctx, client, ns)
@@ -114,6 +119,7 @@ and apply any required migrations and adaptations.`,
 
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
+	upgradeCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
 	} else {
