@@ -119,7 +119,7 @@ and apply any required migrations and adaptations.`,
 
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
-	upgradeCmd.Flags().Bool("yes", false, "Skip the confirmation prompt")
+	upgradeCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
 	} else {

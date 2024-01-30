@@ -84,5 +84,5 @@ var logoutCmd = &cobra.Command{
 
 func init() {
 	cloudCmd.AddCommand(logoutCmd)
-	logoutCmd.Flags().Bool("yes", false, "Skip the confirmation prompt")
+	logoutCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 }
