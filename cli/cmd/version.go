@@ -23,6 +23,13 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print odigos version.",
 	Run: func(cmd *cobra.Command, args []string) {
+		short_flag, _ := cmd.Flags().GetBool("short")
+
+		if short_flag {
+			fmt.Printf("%s\n", OdigosVersion)
+			return
+		}
+
 		fmt.Printf("Odigos Cli Version: version.Info{Version:'%s', GitCommit:'%s', BuildDate:'%s'}\n", OdigosVersion, OdigosCommit, OdigosDate)
 		printOdigosClusterVersion(cmd)
 	},
@@ -61,4 +68,6 @@ func printOdigosClusterVersion(cmd *cobra.Command) {
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
+
+	versionCmd.PersistentFlags().Bool("short", false, "prints only the CLI version")
 }
