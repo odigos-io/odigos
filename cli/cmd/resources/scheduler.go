@@ -4,6 +4,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -190,21 +191,21 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      SchedulerDeploymentName,
 			Namespace: ns,
-			Annotations: map[string]string{
-				"odigos.io/skip": "true",
+			Labels: map[string]string{
+				"app.kubernetes.io/name": SchedulerAppLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": SchedulerAppLabelValue,
+					"app.kubernetes.io/name": SchedulerAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": SchedulerAppLabelValue,
+						"app.kubernetes.io/name": SchedulerAppLabelValue,
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": SchedulerContainerName,
@@ -294,7 +295,7 @@ type schedulerResourceManager struct {
 	config *odigosv1.OdigosConfigurationSpec
 }
 
-func NewSchedulerResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+func NewSchedulerResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) resourcemanager.ResourceManager {
 	return &schedulerResourceManager{client: client, ns: ns, config: config}
 }
 

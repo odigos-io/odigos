@@ -34,89 +34,72 @@ spec:
           metadata:
             type: object
           spec:
-            description: InstrumentationConfigSpec defines the desired state of InstrumentationConfig
-              Each field in the struct will be converted to an OpenAPI v3 schema with
-              the comments used as the description.
+            description: Config for the OpenTelemeetry SDKs that should be applied
+              to a workload. The workload is identified by the owner reference
             properties:
-              filters:
-                description: Filters define how to apply the instrumentation options
+              config:
+                description: config for this workload. the config is a list to allow
+                  for multiple config options and values to be applied. the list is
+                  processed in order, and the first matching config is applied.
                 items:
-                  description: InstrumentationConfigFilter defines a filter for applying
-                    instrumentation options
+                  description: WorkloadInstrumentationConfig defined a single config
+                    option to apply on a workload, along with it's value, filters
+                    and instrumentation libraries
                   properties:
-                    key:
-                      description: Key is the attribute key to filter (e.g., 'http.route',
-                        'url.path')
+                    instrumentationLibraries:
+                      description: a list of instrumentation libraries to apply this
+                        setting to if a library is not in this list, the setting should
+                        not apply to it and should be cleared.
+                      items:
+                        description: InstrumentationLibrary represents a library for
+                          instrumentation
+                        properties:
+                          instrumentationLibraryName:
+                            description: InstrumentationLibraryName is the name of
+                              the instrumentation library
+                            type: string
+                          language:
+                            description: Language is the programming language of the
+                              library
+                            enum:
+                            - java
+                            - python
+                            - go
+                            - dotnet
+                            - javascript
+                            type: string
+                        required:
+                        - instrumentationLibraryName
+                        - language
+                        type: object
+                      type: array
+                    optionKey:
+                      description: OptionKey is the name of the option This value
+                        is transparent to the CRD and is passed as-is to the SDK.
                       type: string
-                    matchType:
-                      description: MatchType is the type of match (e.g., 'equals',
-                        'startsWith')
-                      type: string
-                    matchValue:
-                      description: MatchValue is the value to match against
-                      type: string
-                  required:
-                  - key
-                  - matchType
-                  - matchValue
-                  type: object
-                type: array
-              instrumentationLibraries:
-                description: InstrumentationLibraries is a list of instrumentation
-                  libraries to which this option applies.
-                items:
-                  description: InstrumentationLibrary represents a library for instrumentation
-                  properties:
-                    instrumentationLibraryName:
-                      description: InstrumentationLibraryName is the name of the instrumentation
-                        library
-                      type: string
-                    language:
-                      description: Language is the programming language of the library
-                      type: string
-                  required:
-                  - instrumentationLibraryName
-                  - language
-                  type: object
-                type: array
-              name:
-                description: free text description of the instrumentation config for
-                  humans
-                type: string
-              optionKey:
-                description: OptionKey is the name of the option
-                type: string
-              optionValueBoolean:
-                description: OptionValueBoolean is the boolean value of the option
-                type: boolean
-              workloads:
-                description: Workloads is an optional list of k8s ns+kind+name to
-                  which this option applies. If not specified, the option applies
-                  to all workloads.
-                items:
-                  properties:
-                    kind:
-                      description: Kind is the k8s kind of the workload, e.g., 'Deployment'
+                    optionValueBoolean:
+                      description: OptionValueBoolean is the boolean value of the
+                        option if it is a boolean
+                      type: boolean
+                    spanKind:
+                      description: This option allow to specify the config option
+                        for a specific span kind for example, only to client spans
+                        or only to server spans. it the span kind is not specified,
+                        the option will apply to all spans.
                       enum:
-                      - Deployment
-                      - DaemonSet
-                      - StatefulSet
-                      type: string
-                    name:
-                      description: Name is the name of the k8s object of the workload
-                      type: string
-                    namespace:
-                      description: Namespace is the k8s namespace of the workload
+                      - client
+                      - server
+                      - producer
+                      - consumer
+                      - internal
                       type: string
                   required:
-                  - kind
-                  - name
-                  - namespace
+                  - instrumentationLibraries
+                  - optionKey
                   type: object
                 type: array
             required:
-            - instrumentationLibraries
-            - optionKey
+            - config
             type: object
         type: object
     served: true

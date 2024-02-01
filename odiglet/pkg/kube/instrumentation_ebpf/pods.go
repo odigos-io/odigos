@@ -46,6 +46,16 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
+	shouldBeEbpfInstrumented := isPodEbpfInstrumented(&pod)
+	if err != nil {
+		logger.Error(err, "error checking if pod should be ebpf instrumented")
+		return ctrl.Result{}, err
+	}
+	if !shouldBeEbpfInstrumented {
+		cleanupEbpf(p.Directors, request.NamespacedName)
+		return ctrl.Result{}, nil
+	}
+
 	podWorkload, err := p.getPodWorkloadObject(ctx, &pod)
 	if err != nil {
 		logger.Error(err, "error getting pod workload object")
@@ -53,16 +63,6 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	}
 	if podWorkload == nil {
 		// pod is not managed by a controller
-		return ctrl.Result{}, nil
-	}
-
-	shouldBeEbpfInstrumented, _, err := isEbpfInstrumented(ctx, p.Client, podWorkload)
-	if err != nil {
-		logger.Error(err, "error checking if pod should be ebpf instrumented")
-		return ctrl.Result{}, err
-	}
-	if !shouldBeEbpfInstrumented {
-		cleanupEbpf(p.Directors, request.NamespacedName)
 		return ctrl.Result{}, nil
 	}
 
@@ -87,7 +87,7 @@ func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod
 		return err
 	}
 
-	return instrumentPodWithEbpf(ctx, pod, p.Directors, runtimeDetails)
+	return instrumentPodWithEbpf(ctx, pod, p.Directors, runtimeDetails, podWorkload)
 }
 
 func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*common.PodWorkload, error) {

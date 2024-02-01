@@ -14,14 +14,23 @@ ARG DOTNET_OTEL_VERSION=v0.7.0
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
 
-FROM keyval/odiglet-base:v1.0 as builder
+FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.3 as builder
 WORKDIR /go/src/github.com/keyval-dev/odigos
-COPY . .
-WORKDIR ./odiglet/
+# Copyy local modules required by the build
+COPY api/ api/
+COPY common/ common/
+COPY procdiscovery/ procdiscovery/
+WORKDIR /go/src/github.com/keyval-dev/odigos/odiglet
+# Pre-copy/cache go.mod for pre-downloading dependencies and only redownloading
+COPY odiglet/go.mod odiglet/go.sum ./
 RUN go mod download
+# Copy rest of source code
+COPY odiglet/ .
+
+ARG TARGETARCH
 # Go does not call go generate on dependencies, so we need to do it manually
 RUN cd $(go list -m -f '{{.Dir}}' "go.opentelemetry.io/auto") && make generate
-RUN GOOS=linux go build -o odiglet cmd/main.go
+RUN GOOS=linux GOARCH=$TARGETARCH go build -o odiglet cmd/main.go
 
 WORKDIR /instrumentations
 

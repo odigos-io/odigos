@@ -6,9 +6,11 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/hashicorp/go-version"
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/odigospro"
 	"github.com/keyval-dev/odigos/cli/pkg/confirm"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/spf13/cobra"
@@ -68,7 +70,10 @@ and apply any required migrations and adaptations.`,
 		}
 
 		var operation string
-		if sourceVersion.GreaterThan(targetVersion) {
+		if sourceVersion.Equal(targetVersion) {
+			fmt.Printf("Odigos version is already '%s'. Aborting Upgrade\n", versionFlag)
+			return
+		} else if sourceVersion.GreaterThan(targetVersion) {
 			fmt.Printf("About to DOWNGRADE Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
 			operation = "Downgrading"
 		} else {
@@ -76,10 +81,12 @@ and apply any required migrations and adaptations.`,
 			operation = "Upgrading"
 		}
 
-		confirmed, err := confirm.Ask("Are you sure?")
-		if err != nil || !confirmed {
-			fmt.Println("Aborting upgrade")
-			return
+		if !cmd.Flag("yes").Changed {
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting upgrade")
+				return
+			}
 		}
 
 		config, err := resources.GetCurrentConfig(ctx, client, ns)
@@ -92,12 +99,12 @@ and apply any required migrations and adaptations.`,
 		config.Spec.OdigosVersion = versionFlag
 		config.Spec.ConfigVersion += 1
 
-		isOdigosCloud, err := resources.IsOdigosCloud(ctx, client, ns)
+		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
-			fmt.Println("Odigos upgrade failed - unable to read the current Odigos cloud configuration.")
+			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
 			os.Exit(1)
 		}
-		resourceManagers := resources.CreateResourceManagers(client, ns, isOdigosCloud, nil, &config.Spec)
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, &config.Spec)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")
@@ -108,11 +115,19 @@ and apply any required migrations and adaptations.`,
 			fmt.Println("Odigos upgrade failed - unable to cleanup old Odigos resources.")
 			os.Exit(1)
 		}
+
+		// download a ui binary for the new version
+		_, binaryDir := GetOdigosUiBinaryPath()
+		err = DoDownloadNewUiBinary(targetVersion.String(), binaryDir, runtime.GOARCH, runtime.GOOS)
+		if err != nil {
+			fmt.Printf("Error downloading new odigos UI binary: %v\n", err)
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
+	upgradeCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
 	} else {

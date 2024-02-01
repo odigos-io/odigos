@@ -1,0 +1,43 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: coralogix
+  displayName: Coralogix
+  category: managed
+spec:
+  image: coralogix.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: CORALOGIX_PRIVATE_KEY
+      displayName: Send-Your-Data API Key
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
+    - name: CORALOGIX_DOMAIN
+      displayName: Domain
+      componentType: dropdown
+      componentProps:
+        values:
+          - coralogix.com
+          - eu2.coralogix.com
+          - coralogix.us
+          - cx498.coralogix.com
+          - coralogix.in
+          - coralogixsg.com
+    - name: CORALOGIX_APPLICATION_NAME
+      displayName: Application Name
+      componentType: input
+      componentProps:
+        type: text
+    - name: CORALOGIX_SUBSYSTEM_NAME
+      displayName: Subsystem Name
+      componentType: input
+      componentProps:
+        type: text

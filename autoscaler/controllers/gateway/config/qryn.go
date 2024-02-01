@@ -41,11 +41,12 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 	}
 
 	if isMetricsEnabled(dest) {
-		rwExporterName := "prometheusremotewrite/qryn"
+		rwExporterName := "prometheusremotewrite/qryn-" + dest.Name
 		currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("%s/api/v1/prom/remote/write", baseURL),
 		}
-		currentConfig.Service.Pipelines["metrics/qryn"] = commonconf.Pipeline{
+		metricsPipelineName := "metrics/qryn-" + dest.Name
+		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
 			Exporters:  []string{rwExporterName},
@@ -53,18 +54,20 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 	}
 
 	if isTracingEnabled(dest) {
-		currentConfig.Exporters["otlp/qryn"] = commonconf.GenericMap{
+		exporterName := "otlp/qryn-" + dest.Name
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("%s/tempo/spans", baseURL),
 		}
-		currentConfig.Service.Pipelines["traces/qryn"] = commonconf.Pipeline{
+		tracesPipelineName := "traces/qryn-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/qryn"},
+			Exporters:  []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		lokiExporterName := "loki/qryn"
+		lokiExporterName := "loki/qryn-" + dest.Name
 		currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("%s/loki/api/v1/push", baseURL),
 			"labels": commonconf.GenericMap{
@@ -75,7 +78,8 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 				},
 			},
 		}
-		currentConfig.Service.Pipelines["logs/qryn"] = commonconf.Pipeline{
+		logsPipelineName := "logs/qryn-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: []string{"batch"},
 			Exporters:  []string{lokiExporterName},

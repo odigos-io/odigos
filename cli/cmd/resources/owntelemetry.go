@@ -6,7 +6,10 @@ import (
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common" // TODO: move it to neutral place
+	"github.com/keyval-dev/odigos/cli/cmd/resources/odigospro"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"github.com/keyval-dev/odigos/common"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -143,23 +146,20 @@ func NewOwnTelemetryCollectorDeployment(ns string) *appsv1.Deployment {
 			Name:      OwnTelemetryCollectorDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app": ownTelemetryCollectorAppName,
-			},
-			Annotations: map[string]string{
-				"odigos.io/skip": "true",
+				"app.kubernetes.io/name": ownTelemetryCollectorAppName,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: intPtr(1),
 			Selector: &v1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": ownTelemetryCollectorAppName,
+					"app.kubernetes.io/name": ownTelemetryCollectorAppName,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: v1.ObjectMeta{
 					Labels: map[string]string{
-						"app": ownTelemetryCollectorAppName,
+						"app.kubernetes.io/name": ownTelemetryCollectorAppName,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -197,17 +197,7 @@ func NewOwnTelemetryCollectorDeployment(ns string) *appsv1.Deployment {
 									Name:  odigosCloudCollectorEnvName,
 									Value: ownTelemetryOdigosCloudCollectorHost,
 								},
-								{
-									Name: odigosCloudTokenEnvName,
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: OdigosCloudSecretName,
-											},
-											Key: odigosCloudApiKeySecretKey,
-										},
-									},
-								},
+								odigospro.CloudTokenAsEnvVar(),
 							},
 						},
 					},
@@ -230,7 +220,7 @@ func NewOwnTelemetryCollectorService(ns string) *corev1.Service {
 		Spec: corev1.ServiceSpec{
 			Type: corev1.ServiceTypeClusterIP,
 			Selector: map[string]string{
-				"app": ownTelemetryCollectorAppName,
+				"app.kubernetes.io/name": ownTelemetryCollectorAppName,
 			},
 			Ports: []corev1.ServicePort{
 				{
@@ -259,21 +249,21 @@ func int64Ptr(n int64) *int64 {
 }
 
 type ownTelemetryResourceManager struct {
-	client        *kube.Client
-	ns            string
-	config        *odigosv1.OdigosConfigurationSpec
-	isOdigosCloud bool
+	client     *kube.Client
+	ns         string
+	config     *odigosv1.OdigosConfigurationSpec
+	odigosTier common.OdigosTier
 }
 
-func NewOwnTelemetryResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, isOdigosCloud bool) ResourceManager {
-	return &ownTelemetryResourceManager{client: client, ns: ns, config: config, isOdigosCloud: isOdigosCloud}
+func NewOwnTelemetryResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
+	return &ownTelemetryResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
 }
 
 func (a *ownTelemetryResourceManager) Name() string { return "OwnTelemetry Pipeline" }
 
 func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) error {
 	var resources []client.Object
-	if a.isOdigosCloud {
+	if a.odigosTier == common.CloudOdigosTier {
 		resources = []client.Object{
 			NewOwnTelemetryConfigMapOtlpGrpc(a.ns, a.config.OdigosVersion),
 			NewOwnTelemetryCollectorConfigMap(a.ns),

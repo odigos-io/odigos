@@ -5,8 +5,10 @@ import (
 	"os"
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/odigospro"
 	"github.com/keyval-dev/odigos/cli/pkg/confirm"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/spf13/cobra"
 )
 
@@ -35,21 +37,27 @@ var logoutCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		isOdigosCloud, err := resources.IsOdigosCloud(ctx, client, ns)
+		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
-			fmt.Println("Odigos cloud logout failed - unable to read the current Odigos cloud configuration.")
+			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
 			os.Exit(1)
 		}
-		if !isOdigosCloud {
-			fmt.Println("The current odigos installation is not connected to Odigos cloud.")
+		if currentTier == common.CommunityOdigosTier {
+			fmt.Println("Odigos is already in community tier.")
+			os.Exit(1)
+		}
+		if currentTier == common.OnPremOdigosTier {
+			fmt.Println("Odigos tier is on-premises. Contact your Odigos representative to switch to community tier.")
 			os.Exit(1)
 		}
 
 		fmt.Println("About to logout from Odigos cloud. You can still manager your Odigos installation locally with 'odigos ui'.")
-		confirmed, err := confirm.Ask("Are you sure?")
-		if err != nil || !confirmed {
-			fmt.Println("Aborting odigos cloud logout")
-			return
+		if !cmd.Flag("yes").Changed {
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting odigos cloud logout")
+				return
+			}
 		}
 
 		config, err := resources.GetCurrentConfig(ctx, client, ns)
@@ -60,7 +68,7 @@ var logoutCmd = &cobra.Command{
 		config.Spec.ConfigVersion += 1
 
 		emptyApiKey := ""
-		resourceManagers := resources.CreateResourceManagers(client, ns, false, &emptyApiKey, &config.Spec)
+		resourceManagers := resources.CreateResourceManagers(client, ns, common.CommunityOdigosTier, &emptyApiKey, &config.Spec)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 		if err != nil {
 			fmt.Println("Odigos cloud logout failed - unable to apply Odigos resources.")
@@ -76,4 +84,5 @@ var logoutCmd = &cobra.Command{
 
 func init() {
 	cloudCmd.AddCommand(logoutCmd)
+	logoutCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 }

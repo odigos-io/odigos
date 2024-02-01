@@ -1,16 +1,30 @@
-FROM golang:1.21 as builder
+FROM --platform=$BUILDPLATFORM golang:1.21 as builder
 ARG SERVICE_NAME
+
+# Copyy local modules required by the build
 WORKDIR /workspace
-# Copy the go source
-COPY . .
-# Build
+COPY api/ api/
+COPY common/ common/
+
 WORKDIR /workspace/$SERVICE_NAME
-RUN CGO_ENABLED=0 go build -a -o ../app main.go
+RUN mkdir -p /workspace/build
+# Pre-copy/cache go.mod for pre-downloading dependencies and only redownloading
+COPY $SERVICE_NAME/go.mod $SERVICE_NAME/go.sum ./
+RUN go mod download && go mod verify
+# Copy rest of source code
+COPY $SERVICE_NAME/ .
+# Build for target architecture
+ARG TARGETARCH
+RUN go mod tidy
+RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -a -o /workspace/build/$SERVICE_NAME main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
+ARG SERVICE_NAME
 WORKDIR /
-COPY --from=builder /workspace/app .
+COPY --from=builder /workspace/build/$SERVICE_NAME ./app
 USER 65532:65532
+# TODO: calling the binary by SERVICE_NAME should be better for us in debugging
+# but it does not work in distroless image
 ENTRYPOINT ["/app"]

@@ -22,7 +22,7 @@
     {
       "name": "Demo",
       "icon": "circle-play",
-      "url": "https://www.youtube.com/watch?v=9d36AmVtuGU"
+      "url": "https://www.youtube.com/watch?v=nynyV7FC4VI"
     },
     {
       "name": "Blog",
@@ -41,6 +41,7 @@
             "intro",
             "installation",
             "instrumenting",
+            "generation",
             "viewing",
             "next-steps"
           ]
@@ -65,12 +66,15 @@
         "backends/datadog",
         "backends/prometheus",
         "backends/tempo",
-        "backends/grafanacloud",
+        "backends/grafanacloudtempo",
+        "backends/grafanacloudloki",
+        "backends/grafanacloudprometheus",
         "backends/honeycomb",
         "backends/newrelic",
         "backends/splunk",
         "backends/lightstep",
         "backends/jaeger",
+        "backends/sumologic",
         "backends/qryn",
         "backends/loki",
         "backends/elasticsearch",
@@ -81,7 +85,8 @@
         "backends/logzio",
         "backends/sentry",
         "backends/signoz",
-        "backends/opentelemetry"
+        "backends/opentelemetry",
+        "backends/coralogix"
       ]
     },
     {
@@ -96,7 +101,10 @@
     },
     {
       "group": "Contibution Guidelines",
-      "pages": ["adding-new-dest"]
+      "pages": [
+        "adding-new-dest",
+        "debugging"
+      ]
     }
   ],
   "footerSocials": {

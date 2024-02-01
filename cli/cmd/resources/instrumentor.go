@@ -2,9 +2,9 @@ package resources
 
 import (
 	"context"
-	"fmt"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -375,14 +375,11 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, ignoredNamespaces []string, imagePrefix string, imageName string) *appsv1.Deployment {
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string) *appsv1.Deployment {
 	args := []string{
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=127.0.0.1:8080",
 		"--leader-elect",
-	}
-	for _, v := range ignoredNamespaces {
-		args = append(args, fmt.Sprintf("--ignore-namespace=%s", v))
 	}
 
 	if !telemetryEnabled {
@@ -397,21 +394,21 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "odigos-instrumentor",
 			Namespace: ns,
-			Annotations: map[string]string{
-				"odigos.io/skip": "true",
+			Labels: map[string]string{
+				"app.kubernetes.io/name": InstrumentorAppLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": InstrumentorAppLabelValue,
+					"app.kubernetes.io/name": InstrumentorAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": InstrumentorAppLabelValue,
+						"app.kubernetes.io/name": InstrumentorAppLabelValue,
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": InstrumentorContainerName,
@@ -509,7 +506,7 @@ type instrumentorResourceManager struct {
 	config *odigosv1.OdigosConfigurationSpec
 }
 
-func NewInstrumentorResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+func NewInstrumentorResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) resourcemanager.ResourceManager {
 	return &instrumentorResourceManager{
 		client: client,
 		ns:     ns,
@@ -525,7 +522,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.config.OdigosVersion, a.config.TelemetryEnabled, a.config.IgnoredNamespaces, a.config.ImagePrefix, a.config.InstrumentorImage),
+		NewInstrumentorDeployment(a.ns, a.config.OdigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.InstrumentorImage),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

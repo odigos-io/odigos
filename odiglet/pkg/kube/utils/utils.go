@@ -3,6 +3,10 @@ package utils
 import (
 	"context"
 
+	"github.com/keyval-dev/odigos/common"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+
 	"github.com/keyval-dev/odigos/odiglet/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,7 +22,7 @@ func GetRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 
 	var filteredPods []corev1.Pod
 	for _, pod := range podList.Items {
-		if IsPodInCurrentNode(&pod) && pod.Status.Phase == corev1.PodRunning {
+		if IsPodInCurrentNode(&pod) && pod.Status.Phase == corev1.PodRunning && pod.DeletionTimestamp == nil {
 			filteredPods = append(filteredPods, pod)
 		}
 	}
@@ -28,4 +32,21 @@ func GetRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 	}
 
 	return filteredPods, nil
+}
+
+func GetResourceAttributes(workload *common.PodWorkload) []attribute.KeyValue {
+	attrs := []attribute.KeyValue{
+		semconv.K8SNamespaceName(workload.Namespace),
+	}
+
+	switch workload.Kind {
+	case "Deployment":
+		attrs = append(attrs, semconv.K8SDeploymentName(workload.Name))
+	case "StatefulSet":
+		attrs = append(attrs, semconv.K8SStatefulSetName(workload.Name))
+	case "DaemonSet":
+		attrs = append(attrs, semconv.K8SDaemonSetName(workload.Name))
+	}
+
+	return attrs
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
@@ -20,13 +21,14 @@ import (
 
 var (
 	odigosCloudApiKeyFlag    string
+	odigosOnPremToken        string
 	namespaceFlag            string
 	versionFlag              string
 	skipWait                 bool
 	telemetryEnabled         bool
 	psp                      bool
 	ignoredNamespaces        []string
-	DefaultIgnoredNamespaces = []string{"odigos-system", "kube-system", "local-path-storage", "istio-system", "linkerd"}
+	DefaultIgnoredNamespaces = []string{"odigos-system", "kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
 
 	instrumentorImage string
 	odigletImage      string
@@ -62,16 +64,22 @@ This command will install k8s components that will auto-instrument your applicat
 			os.Exit(1)
 		}
 
-		config := createOdigosConfigSpec()
-
-		isOdigosCloud := odigosCloudApiKeyFlag != ""
-		if isOdigosCloud {
+		var odigosProToken string
+		odigosTier := common.CommunityOdigosTier
+		if odigosCloudApiKeyFlag != "" {
+			odigosTier = common.CloudOdigosTier
+			odigosProToken = odigosCloudApiKeyFlag
 			err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
 			if err != nil {
 				fmt.Println("Odigos install failed - invalid api-key format.")
 				os.Exit(1)
 			}
+		} else if odigosOnPremToken != "" {
+			odigosTier = common.OnPremOdigosTier
+			odigosProToken = odigosOnPremToken
 		}
+
+		config := createOdigosConfigSpec()
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
@@ -79,7 +87,7 @@ This command will install k8s components that will auto-instrument your applicat
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, isOdigosCloud, &odigosCloudApiKeyFlag, &config)
+		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
@@ -102,6 +110,21 @@ This command will install k8s components that will auto-instrument your applicat
 
 func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (bool, error) {
 	return func() (bool, error) {
+		// ensure all DaemonSets in the odigos namespace have all their pods ready
+		daemonSets, err := client.AppsV1().DaemonSets(ns).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		for _, ds := range daemonSets.Items {
+			desiredPods := ds.Status.DesiredNumberScheduled
+			readyPods := ds.Status.NumberReady
+			if readyPods == 0 || readyPods != desiredPods {
+				return false, nil
+			}
+		}
+
+		// ensure all pods in the odigos namespace are running
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return false, err
@@ -127,6 +150,7 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 }
 
 func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
+
 	return odigosv1.OdigosConfigurationSpec{
 		OdigosVersion:     versionFlag,
 		ConfigVersion:     1, // config version starts at 1 and incremented on every config change
@@ -154,9 +178,10 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	installCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", consts.DefaultNamespace, "target k8s namespace for Odigos installation")
 	installCmd.Flags().StringVarP(&odigosCloudApiKeyFlag, "api-key", "k", "", "api key for odigos cloud")
+	installCmd.Flags().StringVarP(&odigosOnPremToken, "onprem-token", "", "", "authentication token for odigos enterprise on-premises")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "skip waiting for odigos pods to be ready")
 	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "send general telemetry regarding Odigos usage")
-	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "keyval/odigos-odiglet", "odiglet container image name")
+	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "", "odiglet container image name")
 	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image name")
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image name")
 	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "", "prefix for all container images. used when your cluster doesn't have access to docker hub")

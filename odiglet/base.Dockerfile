@@ -1,5 +1,6 @@
-FROM fedora:38 as builder
-ARG TARGETARCH
-RUN dnf install clang llvm make libbpf-devel -y
-RUN curl -LO https://go.dev/dl/go1.21.0.linux-${TARGETARCH}.tar.gz && tar -C /usr/local -xzf go*.linux-${TARGETARCH}.tar.gz
-ENV PATH="/usr/local/go/bin:${PATH}"
+FROM golang:1.21.6-bullseye as builder
+
+RUN apt-get update && apt-get install -y curl clang gcc llvm make libbpf-dev
+
+# goreleaser is used by vmagent to build linux packages (deb, apk, rpm, etc)
+RUN go install github.com/goreleaser/goreleaser@v1.23.0

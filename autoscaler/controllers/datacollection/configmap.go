@@ -3,6 +3,7 @@ package datacollection
 import (
 	"context"
 	"fmt"
+
 	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection/custom"
 
 	"github.com/ghodss/yaml"
@@ -131,6 +132,13 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 		Processors: commonconf.GenericMap{
 			"batch":              empty,
 			"odigosresourcename": empty,
+			"resource": commonconf.GenericMap{
+				"attributes": []commonconf.GenericMap{{
+					"key":    "k8s.node.name",
+					"value":  "${NODE_NAME}",
+					"action": "upsert",
+				}},
+			},
 		},
 		Extensions: commonconf.GenericMap{
 			"health_check": empty,
@@ -160,9 +168,10 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	}
 
 	if collectLogs {
+		odigosSystemNamespaceName := utils.GetCurrentNamespace()
 		cfg.Receivers["filelog"] = commonconf.GenericMap{
 			"include":           []string{"/var/log/pods/*/*/*.log"},
-			"exclude":           []string{"/var/log/pods/kube-system_*/*/*.log"},
+			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},
 			"start_at":          "beginning",
 			"include_file_path": true,
 			"include_file_name": false,
@@ -193,7 +202,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 					"timestamp": commonconf.GenericMap{
 						"parse_from":  "attributes.time",
 						"layout_type": "gotime",
-						"layout":      "2006-01-02T15:04:05.000000000-07:00",
+						"layout":      "2006-01-02T15:04:05.999999999Z07:00",
 					},
 				},
 				{
@@ -261,7 +270,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 
 		cfg.Service.Pipelines["logs"] = commonconf.Pipeline{
 			Receivers:  []string{"filelog"},
-			Processors: []string{"batch", "odigosresourcename"},
+			Processors: []string{"batch", "odigosresourcename", "resource"},
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -269,20 +278,22 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp", "zipkin"},
-			Processors: []string{"batch", "odigosresourcename"},
+			Processors: []string{"batch", "odigosresourcename", "resource"},
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
 
 	if collectMetrics {
 		cfg.Receivers["kubeletstats"] = commonconf.GenericMap{
-			"auth_type":           "serviceAccount",
-			"collection_interval": "10s",
+			"auth_type":            "serviceAccount",
+			"endpoint":             "https://${env:NODE_NAME}:10250",
+			"insecure_skip_verify": true,
+			"collection_interval":  "10s",
 		}
 
 		cfg.Service.Pipelines["metrics"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp", "kubeletstats"},
-			Processors: []string{"batch", "odigosresourcename"},
+			Processors: []string{"batch", "odigosresourcename", "resource"},
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}

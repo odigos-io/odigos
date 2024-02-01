@@ -4,6 +4,8 @@ import (
 	"context"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/odigospro"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,7 +19,7 @@ import (
 )
 
 const (
-	odigosCloudProxyVersion = "v0.7.0"
+	odigosCloudProxyVersion = "v0.10.0"
 )
 
 const (
@@ -198,6 +200,24 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 					"instrumentedapplications",
 				},
 			},
+			{
+				Verbs: []string{
+					"create",
+					"delete",
+					"get",
+					"list",
+					"patch",
+					"update",
+					"watch",
+					"patch",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"instrumentationconfigs",
+				},
+			},
 		},
 	}
 }
@@ -236,23 +256,20 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 			Name:      KeyvalProxyDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app": keyvalProxyAppName,
-			},
-			Annotations: map[string]string{
-				"odigos.io/skip": "true",
+				"app.kubernetes.io/name": keyvalProxyAppName,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": keyvalProxyAppName,
+					"app.kubernetes.io/name": keyvalProxyAppName,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": keyvalProxyAppName,
+						"app.kubernetes.io/name": keyvalProxyAppName,
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": keyvalProxyAppName,
@@ -281,17 +298,7 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 									Name:  "OTEL_SERVICE_NAME",
 									Value: keyvalProxyServiceName,
 								},
-								{
-									Name: odigosCloudTokenEnvName,
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: OdigosCloudSecretName,
-											},
-											Key: odigosCloudApiKeySecretKey,
-										},
-									},
-								},
+								odigospro.CloudTokenAsEnvVar(),
 							},
 							EnvFrom: []corev1.EnvFromSource{
 								{
@@ -357,7 +364,7 @@ type keyvalProxyResourceManager struct {
 	config *odigosv1.OdigosConfigurationSpec
 }
 
-func NewKeyvalProxyResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
+func NewKeyvalProxyResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) resourcemanager.ResourceManager {
 	return &keyvalProxyResourceManager{client: client, ns: ns, config: config}
 }
 

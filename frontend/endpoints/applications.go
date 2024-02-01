@@ -18,21 +18,21 @@ type GetApplicationsInNamespaceResponse struct {
 	Applications []GetApplicationItem `json:"applications"`
 }
 
-type ApplicationKind string
+type WorkloadKind string
 
 const (
-	ApplicationKindDeployment  ApplicationKind = "deployment"
-	ApplicationKindStatefulSet ApplicationKind = "statefulset"
-	ApplicationKindDaemonSet   ApplicationKind = "daemonset"
+	WorkloadKindDeployment  WorkloadKind = "deployment"
+	WorkloadKindStatefulSet WorkloadKind = "statefulset"
+	WorkloadKindDaemonSet   WorkloadKind = "daemonset"
 )
 
 type GetApplicationItem struct {
-	Name                      string          `json:"name"`
-	Kind                      ApplicationKind `json:"kind"`
-	Instances                 int             `json:"instances"`
-	AppInstrumentationLabeled *bool           `json:"app_instrumentation_labeled"`
-	NsInstrumentationLabeled  *bool           `json:"ns_instrumentation_labeled"`
-	InstrumentationEffective  bool            `json:"instrumentation_effective"`
+	Name                      string       `json:"name"`
+	Kind                      WorkloadKind `json:"kind"`
+	Instances                 int          `json:"instances"`
+	AppInstrumentationLabeled *bool        `json:"app_instrumentation_labeled"`
+	NsInstrumentationLabeled  *bool        `json:"ns_instrumentation_labeled"`
+	InstrumentationEffective  bool         `json:"instrumentation_effective"`
 }
 
 func GetApplicationsInNamespace(c *gin.Context) {
@@ -116,7 +116,7 @@ func getDeployments(namespace string, ctx context.Context) ([]GetApplicationItem
 		}
 		response[i] = GetApplicationItem{
 			Name:                      dep.Name,
-			Kind:                      ApplicationKindDeployment,
+			Kind:                      WorkloadKindDeployment,
 			Instances:                 int(dep.Status.AvailableReplicas),
 			AppInstrumentationLabeled: appInstrumentationLabeled,
 		}
@@ -135,7 +135,7 @@ func getStatefulSets(namespace string, ctx context.Context) ([]GetApplicationIte
 	for i, s := range ss.Items {
 		response[i] = GetApplicationItem{
 			Name:      s.Name,
-			Kind:      ApplicationKindStatefulSet,
+			Kind:      WorkloadKindStatefulSet,
 			Instances: int(s.Status.ReadyReplicas),
 		}
 	}
@@ -153,7 +153,7 @@ func getDaemonSets(namespace string, ctx context.Context) ([]GetApplicationItem,
 	for i, ds := range dss.Items {
 		response[i] = GetApplicationItem{
 			Name:      ds.Name,
-			Kind:      ApplicationKindDaemonSet,
+			Kind:      WorkloadKindDaemonSet,
 			Instances: int(ds.Status.NumberReady),
 		}
 	}

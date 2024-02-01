@@ -12,4 +12,6 @@ use (
 	./instrumentor
 	./odiglet
 	./scheduler
+	./collector/odigosotelcol
+	./procdiscovery
 )

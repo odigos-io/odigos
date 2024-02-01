@@ -8,9 +8,11 @@ import (
 	"strconv"
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/odigospro"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	"github.com/keyval-dev/odigos/cli/pkg/log"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,6 +31,11 @@ func restartPodsAfterCloudLogin(ctx context.Context, client *kube.Client, ns str
 	}
 
 	_, err = client.AppsV1().Deployments(ns).Patch(ctx, resources.OwnTelemetryCollectorDeploymentName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AppsV1().DaemonSets(ns).Patch(ctx, resources.OdigletDaemonSetName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}
@@ -61,7 +68,7 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 	config.Spec.ConfigVersion += 1
 
 	if odigosCloudApiKeyFlag == "" {
-		fmt.Println("Enter your odigos cloud api-key. You can find it here: https://app.keyval.io/settings/api-keys")
+		fmt.Println("Enter your odigos cloud api-key. You can find it here: https://app.odigos.io/settings")
 		fmt.Print("api-key: ")
 		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()
@@ -74,13 +81,18 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	isPrevOdigosCloud, err := resources.IsOdigosCloud(ctx, client, ns)
+	currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 	if err != nil {
-		fmt.Println("Odigos cloud login failed - unable to read the current Odigos cloud configuration.")
+		fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
 		os.Exit(1)
 	}
+	if currentTier == common.OnPremOdigosTier {
+		fmt.Println("You are using on premises version of Odigos. Contact your Odigos representative to enable odigos cloud.")
+		return
+	}
+	isPrevOdigosCloud := currentTier == common.CloudOdigosTier
 
-	resourceManagers := resources.CreateResourceManagers(client, ns, true, &odigosCloudApiKeyFlag, &config.Spec)
+	resourceManagers := resources.CreateResourceManagers(client, ns, common.CloudOdigosTier, &odigosCloudApiKeyFlag, &config.Spec)
 	err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 	if err != nil {
 		fmt.Println("Odigos cloud login failed - unable to apply Odigos resources.")

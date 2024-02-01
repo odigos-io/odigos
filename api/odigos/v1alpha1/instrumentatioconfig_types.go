@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/keyval-dev/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -15,63 +16,44 @@ type InstrumentationConfig struct {
 	Spec InstrumentationConfigSpec `json:"spec,omitempty"`
 }
 
-// InstrumentationConfigSpec defines the desired state of InstrumentationConfig
-// Each field in the struct will be converted to an OpenAPI v3 schema
-// with the comments used as the description.
+// Config for the OpenTelemeetry SDKs that should be applied to a workload.
+// The workload is identified by the owner reference
 type InstrumentationConfigSpec struct {
-
-	// free text description of the instrumentation config for humans
-	Name string `json:"name,omitempty"`
-
-	// OptionKey is the name of the option
-	OptionKey string `json:"optionKey"`
-
-	// OptionValueBoolean is the boolean value of the option
-	OptionValueBoolean bool `json:"optionValueBoolean,omitempty"`
-
-	// Workloads is an optional list of k8s ns+kind+name to which this option applies.
-	// If not specified, the option applies to all workloads.
-	Workloads []Workload `json:"workloads,omitempty"`
-
-	// InstrumentationLibraries is a list of instrumentation libraries
-	// to which this option applies.
-	InstrumentationLibraries []InstrumentationLibrary `json:"instrumentationLibraries"`
-
-	// Filters define how to apply the instrumentation options
-	Filters []InstrumentationConfigFilter `json:"filters,omitempty"`
+	// config for this workload.
+	// the config is a list to allow for multiple config options and values to be applied.
+	// the list is processed in order, and the first matching config is applied.
+	Config []WorkloadInstrumentationConfig `json:"config"`
 }
 
-type Workload struct {
-	// Namespace is the k8s namespace of the workload
-	Namespace string `json:"namespace"`
+// WorkloadInstrumentationConfig defined a single config option to apply
+// on a workload, along with it's value, filters and instrumentation libraries
+type WorkloadInstrumentationConfig struct {
 
-	// Kind is the k8s kind of the workload, e.g., 'Deployment'
-	// +kubebuilder:validation:Enum=Deployment;DaemonSet;StatefulSet
-	Kind string `json:"kind"`
+	// OptionKey is the name of the option
+	// This value is transparent to the CRD and is passed as-is to the SDK.
+	OptionKey string `json:"optionKey"`
 
-	// Name is the name of the k8s object of the workload
-	Name string `json:"name"`
+	// This option allow to specify the config option for a specific span kind
+	// for example, only to client spans or only to server spans.
+	// it the span kind is not specified, the option will apply to all spans.
+	SpanKind common.SpanKind `json:"spanKind,omitempty"`
+
+	// OptionValueBoolean is the boolean value of the option if it is a boolean
+	OptionValueBoolean bool `json:"optionValueBoolean,omitempty"`
+
+	// a list of instrumentation libraries to apply this setting to
+	// if a library is not in this list, the setting should not apply to it
+	// and should be cleared.
+	InstrumentationLibraries []InstrumentationLibrary `json:"instrumentationLibraries"`
 }
 
 // InstrumentationLibrary represents a library for instrumentation
 type InstrumentationLibrary struct {
 	// Language is the programming language of the library
-	Language string `json:"language"`
+	Language common.ProgrammingLanguage `json:"language"`
 
 	// InstrumentationLibraryName is the name of the instrumentation library
 	InstrumentationLibraryName string `json:"instrumentationLibraryName"`
-}
-
-// InstrumentationConfigFilter defines a filter for applying instrumentation options
-type InstrumentationConfigFilter struct {
-	// Key is the attribute key to filter (e.g., 'http.route', 'url.path')
-	Key string `json:"key"`
-
-	// MatchType is the type of match (e.g., 'equals', 'startsWith')
-	MatchType string `json:"matchType"`
-
-	// MatchValue is the value to match against
-	MatchValue string `json:"matchValue"`
 }
 
 // +kubebuilder:object:root=true

@@ -12,6 +12,7 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/cli/pkg/labels"
 	"github.com/keyval-dev/odigos/cli/pkg/log"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +22,6 @@ import (
 )
 
 const (
-	odigosDeviceName            = "instrumentation.odigos.io"
 	goAgentImage                = "keyval/otel-go-agent"
 	golangKernelDebugVolumeName = "kernel-debug"
 )
@@ -32,16 +32,18 @@ var uninstallCmd = &cobra.Command{
 	Short: "Unistall Odigos from your cluster",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := kube.CreateClient(cmd)
+
 		if err != nil {
 			kube.PrintClientErrorAndExit(err)
 		}
+
 		ctx := cmd.Context()
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {
 			fmt.Println("\033[31mERROR\033[0m odigos is not currently installed in the cluster, so there is nothing to uninstall")
 			os.Exit(1)
-		} else if !resources.IsErrNoOdigosNamespaceFound(err) && err != nil{
+		} else if !resources.IsErrNoOdigosNamespaceFound(err) && err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already uninstalled: %s\n", err)
 			os.Exit(1)
 		}
@@ -63,8 +65,6 @@ var uninstallCmd = &cobra.Command{
 			client, cmd, ns, uninstallConfigMaps)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Services",
 			client, cmd, ns, uninstallServices)
-		createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
-			client, cmd, ns, uninstallCRDs)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos RBAC",
 			client, cmd, ns, uninstallRBAC)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
@@ -91,6 +91,8 @@ var uninstallCmd = &cobra.Command{
 			l.Success()
 		}
 
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
+			client, cmd, ns, uninstallCRDs)
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
 }
@@ -114,8 +116,19 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 	}
 
 	for _, dep := range deps.Items {
-		if dep.Namespace == "odigos-system" {
+		if dep.Namespace == consts.DefaultNamespace {
 			continue
+		}
+		// Remove the "odigos.io/reported-name"
+		if annotations := dep.GetAnnotations(); annotations != nil {
+			delete(annotations, consts.OdigosReportedNameAnnotation)
+			dep.SetAnnotations(annotations)
+		}
+
+		// Remove the "odigos-instrumentation" label
+		if labels := dep.GetLabels(); labels != nil {
+			delete(labels, consts.OdigosInstrumentationLabel)
+			dep.SetLabels(labels)
 		}
 
 		rollbackPodTemplateSpec(ctx, client, &dep.Spec.Template)
@@ -130,12 +143,50 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 	}
 
 	for _, s := range ss.Items {
-		if s.Namespace == "odigos-system" {
+		if s.Namespace == consts.DefaultNamespace {
 			continue
+		}
+
+		if annotations := s.GetAnnotations(); annotations != nil {
+			delete(annotations, consts.OdigosReportedNameAnnotation)
+			s.SetAnnotations(annotations)
+		}
+
+		// Remove the "odigos-instrumentation" label
+		if labels := s.GetLabels(); labels != nil {
+			delete(labels, consts.OdigosInstrumentationLabel)
+			s.SetLabels(labels)
 		}
 
 		rollbackPodTemplateSpec(ctx, client, &s.Spec.Template)
 		if _, err := client.AppsV1().StatefulSets(s.Namespace).Update(ctx, &s, metav1.UpdateOptions{}); err != nil {
+			return err
+		}
+	}
+
+	dd, err := client.AppsV1().DaemonSets("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, d := range dd.Items {
+		if d.Namespace == consts.DefaultNamespace {
+			continue
+		}
+
+		if annotations := d.GetAnnotations(); annotations != nil {
+			delete(annotations, consts.OdigosReportedNameAnnotation)
+			d.SetAnnotations(annotations)
+		}
+
+		// Remove the "odigos-instrumentation" label
+		if labels := d.GetLabels(); labels != nil {
+			delete(labels, consts.OdigosInstrumentationLabel)
+			d.SetLabels(labels)
+		}
+
+		rollbackPodTemplateSpec(ctx, client, &d.Spec.Template)
+		if _, err := client.AppsV1().DaemonSets(d.Namespace).Update(ctx, &d, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}
@@ -149,8 +200,8 @@ func rollbackPodTemplateSpec(ctx context.Context, client *kube.Client, pts *v1.P
 	instrumentedViaResourceLimit := false
 	for i, c := range pts.Spec.Containers {
 		if c.Resources.Limits != nil {
-			for val, _ := range c.Resources.Limits {
-				if strings.Contains(val.String(), odigosDeviceName) {
+			for val := range c.Resources.Limits {
+				if strings.Contains(val.String(), common.OdigosResourceNamespace) {
 					instrumentedViaResourceLimit = true
 					delete(pts.Spec.Containers[i].Resources.Limits, val)
 				}
@@ -368,5 +419,5 @@ func uninstallNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Cl
 
 func init() {
 	rootCmd.AddCommand(uninstallCmd)
-	uninstallCmd.Flags().Bool("yes", false, "Skip the confirmation prompt")
+	uninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 }

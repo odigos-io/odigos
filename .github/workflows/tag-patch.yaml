@@ -1,0 +1,50 @@
+name: Tag Odigos Patch Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DOCKERHUB_ORG: "keyval"
+
+jobs:
+  create-new-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches all history for all tags and branches
+
+      - name: Fetch tags
+        run: git fetch --tags
+
+      - name: Calculate new tag
+        id: newtag
+        run: |
+            latest_tag=$(git tag -l 'v*' | sort -V | tail -n1)
+            echo "Latest tag: $latest_tag"
+            major=$(echo $latest_tag | cut -d. -f1 | sed 's/v//')
+            minor=$(echo $latest_tag | cut -d. -f2)
+            patch=$(echo $latest_tag | cut -d. -f3)
+            new_patch=$((patch + 1))
+            new_tag="v$major.$minor.$new_patch"
+            echo "New tag: $new_tag"
+            echo "tag=$new_tag" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag
+        run: |
+            new_tag=${{ steps.newtag.outputs.tag }}
+            git config --global user.email "bot@keyval.dev"
+            git config --global user.name "Odigos Release Bot"
+            git tag $new_tag
+            git push https://${{ secrets.RELEASE_BOT_TOKEN }}@github.com/${{ github.repository }}.git $new_tag
+
+      - name: Notify Slack on New Tag
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Created new tag to trigger odigos release automation", "tag":"${{ steps.newtag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+    

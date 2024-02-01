@@ -11,9 +11,8 @@ const (
 	OdigosInstrumentationLabel     = "odigos-instrumentation"
 	InstrumentationEnabled         = "enabled"
 	InstrumentationDisabled        = "disabled"
-	GolangInstrumentationImage     = "keyval/otel-go-agent:v0.6.5"
 	OdigosReportedNameAnnotation   = "odigos.io/reported-name"
-	EbpfInstrumentationAnnotation  = "instrumentation.odigos.io/ebpf"
+	EbpfInstrumentationAnnotation  = "instrumentation.odigos.io/ebpf" // deprecated.
 )
 
 var (

@@ -4,8 +4,11 @@ import (
 	"context"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/odigospro"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/containers"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"github.com/keyval-dev/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -15,10 +18,12 @@ import (
 )
 
 const (
-	OdigletServiceName   = "odiglet"
-	OdigletDaemonSetName = "odiglet"
-	OdigletAppLabelValue = "odiglet"
-	OdigletContainerName = "odiglet"
+	OdigletServiceName         = "odiglet"
+	OdigletDaemonSetName       = "odiglet"
+	OdigletAppLabelValue       = "odiglet"
+	OdigletContainerName       = "odiglet"
+	OdigletImageName           = "keyval/odigos-odiglet"
+	OdigletEnterpriseImageName = "keyval/odigos-enterprise-odiglet"
 )
 
 func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
@@ -165,6 +170,17 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 					"namespaces",
 				},
 			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{
+					"instrumentationconfigs",
+				},
+			},
 		},
 	}
 
@@ -212,7 +228,15 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string) *appsv1.DaemonSet {
+func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier) *appsv1.DaemonSet {
+
+	odigosProToken := []corev1.EnvVar{}
+	if odigosTier == common.CloudOdigosTier {
+		odigosProToken = append(odigosProToken, odigospro.CloudTokenAsEnvVar())
+	} else if odigosTier == common.OnPremOdigosTier {
+		odigosProToken = append(odigosProToken, odigospro.OnPremTokenAsEnvVar())
+	}
+
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
@@ -221,17 +245,20 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      OdigletDaemonSetName,
 			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": OdigletAppLabelValue,
+			},
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": OdigletAppLabelValue,
+					"app.kubernetes.io/name": OdigletAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": OdigletAppLabelValue,
+						"app.kubernetes.io/name": OdigletAppLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -284,7 +311,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 						{
 							Name:  OdigletContainerName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
-							Env: []corev1.EnvVar{
+							Env: append([]corev1.EnvVar{
 								// {
 								// 	Name:  "OTEL_SERVICE_NAME",
 								// 	Value: odigletServiceName,
@@ -305,7 +332,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 										},
 									},
 								},
-							},
+							}, odigosProToken...),
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -362,23 +389,37 @@ func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropaga
 }
 
 type odigletResourceManager struct {
-	client *kube.Client
-	ns     string
-	config *odigosv1.OdigosConfigurationSpec
+	client     *kube.Client
+	ns         string
+	config     *odigosv1.OdigosConfigurationSpec
+	odigosTier common.OdigosTier
 }
 
-func NewOdigletResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) ResourceManager {
-	return &odigletResourceManager{client: client, ns: ns, config: config}
+func NewOdigletResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
+	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
 }
 
 func (a *odigletResourceManager) Name() string { return "Odiglet" }
 
 func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
+
+	odigletImage := a.config.OdigletImage
+	// if the user specified an image, use it. otherwise, use the default image.
+	// prev v1.0.4 - the cli would automatically store "keyval/odigos-odiglet" instead of empty value,
+	// thus we need to treat the default image name as empty value.
+	if odigletImage == "" || odigletImage == OdigletImageName {
+		if a.odigosTier == common.CommunityOdigosTier {
+			odigletImage = OdigletImageName
+		} else {
+			odigletImage = OdigletEnterpriseImageName
+		}
+	}
+
 	resources := []client.Object{
 		NewOdigletServiceAccount(a.ns),
 		NewOdigletClusterRole(a.config.Psp),
 		NewOdigletClusterRoleBinding(a.ns),
-		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, a.config.OdigletImage),
+		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
