@@ -4,6 +4,7 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
@@ -28,6 +29,20 @@ var versionCmd = &cobra.Command{
 	},
 }
 
+func GetOdigosVersionInCluster(ctx context.Context, client *kube.Client, ns string) (string, error) {
+	cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		return "", fmt.Errorf("error detecting Odigos version in the current cluster")
+	}
+
+	odigosVersion, ok := cm.Data["ODIGOS_VERSION"]
+	if !ok || odigosVersion == "" {
+		return "", fmt.Errorf("error detecting Odigos version in the current cluster")
+	}
+
+	return odigosVersion, nil
+}
+
 func printOdigosClusterVersion(cmd *cobra.Command) {
 	client, err := kube.CreateClient(cmd)
 	if err != nil {
@@ -45,18 +60,13 @@ func printOdigosClusterVersion(cmd *cobra.Command) {
 		return
 	}
 
-	cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+	clusterVersion, err := GetOdigosVersionInCluster(ctx, client, ns)
 	if err != nil {
 		fmt.Println("Error detecting Odigos version in the current cluster")
 		return
 	}
 
-	odigosVersion, ok := cm.Data["ODIGOS_VERSION"]
-	if !ok || odigosVersion == "" {
-		fmt.Println("Error detecting Odigos version in the current cluster")
-		return
-	}
-	fmt.Printf("Odigos Version (in cluster): version.Info{Version:'%s'}\n", odigosVersion)
+	fmt.Printf("Odigos Version (in cluster): version.Info{Version:'%s'}\n", clusterVersion)
 }
 
 func init() {

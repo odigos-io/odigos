@@ -245,17 +245,20 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      OdigletDaemonSetName,
 			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": OdigletAppLabelValue,
+			},
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": OdigletAppLabelValue,
+					"app.kubernetes.io/name": OdigletAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": OdigletAppLabelValue,
+						"app.kubernetes.io/name": OdigletAppLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{

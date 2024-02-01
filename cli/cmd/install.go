@@ -28,7 +28,7 @@ var (
 	telemetryEnabled         bool
 	psp                      bool
 	ignoredNamespaces        []string
-	DefaultIgnoredNamespaces = []string{"odigos-system", "kube-system", "local-path-storage", "istio-system", "linkerd"}
+	DefaultIgnoredNamespaces = []string{"odigos-system", "kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
 
 	instrumentorImage string
 	odigletImage      string

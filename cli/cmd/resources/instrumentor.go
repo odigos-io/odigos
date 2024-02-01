@@ -394,21 +394,21 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "odigos-instrumentor",
 			Namespace: ns,
-			Annotations: map[string]string{
-				"odigos.io/skip": "true",
+			Labels: map[string]string{
+				"app.kubernetes.io/name": InstrumentorAppLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": InstrumentorAppLabelValue,
+					"app.kubernetes.io/name": InstrumentorAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": InstrumentorAppLabelValue,
+						"app.kubernetes.io/name": InstrumentorAppLabelValue,
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": InstrumentorContainerName,
