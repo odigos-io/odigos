@@ -16,7 +16,7 @@ jobs:
         run: "make controller-gen"
       - name: Check API CRDs
         working-directory: ./api
-        run: "make generate"
+        run: "make generate && make manifests"
       - name: Verify Generate
         working-directory: ./api
         run: |
