@@ -149,47 +149,26 @@ func DeleteSource(c *gin.Context) {
 	kind := c.Param("kind")
 	name := c.Param("name")
 
+	var kindAsEnum WorkloadKind
 	switch kind {
 	case "Deployment":
-		deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(c, name, metav1.GetOptions{})
-		if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-		markK8sObjectInstrumentationDisabled(deployment)
-		_, err = kube.DefaultClient.AppsV1().Deployments(ns).Update(c, deployment, metav1.UpdateOptions{})
-		if err != nil {
-			returnError(c, err)
-			return
-		}
+		kindAsEnum = WorkloadKindDeployment
 	case "StatefulSet":
-		statefulSet, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(c, name, metav1.GetOptions{})
-		if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-		markK8sObjectInstrumentationDisabled(statefulSet)
-		_, err = kube.DefaultClient.AppsV1().StatefulSets(ns).Update(c, statefulSet, metav1.UpdateOptions{})
-		if err != nil {
-			returnError(c, err)
-			return
-		}
+		kindAsEnum = WorkloadKindStatefulSet
 	case "DaemonSet":
-		daemonSet, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(c, name, metav1.GetOptions{})
-		if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-		markK8sObjectInstrumentationDisabled(daemonSet)
-		_, err = kube.DefaultClient.AppsV1().DaemonSets(ns).Update(c, daemonSet, metav1.UpdateOptions{})
-		if err != nil {
-			returnError(c, err)
-			return
-		}
+		kindAsEnum = WorkloadKindDaemonSet
 	default:
 		c.JSON(400, gin.H{"error": "kind must be one of Deployment, StatefulSet or DaemonSet"})
 		return
 	}
+
+	instrumented := false
+	err := setWorkloadInstrumentationLabel(c, ns, name, kindAsEnum, &instrumented)
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
 	c.JSON(200, gin.H{"message": "ok"})
 }
 
@@ -205,15 +184,6 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 		})
 	}
 	return source
-}
-
-func markK8sObjectInstrumentationDisabled(obj metav1.Object) {
-	labels := obj.GetLabels()
-	if labels == nil {
-		labels = make(map[string]string)
-	}
-	labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationDisabled
-	obj.SetLabels(labels)
 }
 
 func getK8sObject(c *gin.Context, ns string, kind string, name string) metav1.Object {

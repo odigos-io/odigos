@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
-import { KeyvalImage } from '@/design.system';
+import { KeyvalImage, KeyvalText } from '@/design.system';
+import { ManagedSource } from '@/types/sources';
+import { LANGUAGES_LOGOS } from '@/assets/images';
 
 const ManageSourceHeaderWrapper = styled.div`
   display: flex;
@@ -25,10 +27,20 @@ const IMAGE_STYLE: React.CSSProperties = {
   marginLeft: 16,
 };
 
-export function ManageSourceHeader({ image_url }) {
+export function ManageSourceHeader({ source }: { source: ManagedSource }) {
+  const mainLanguage = source?.languages?.[0].language;
+  const imageUrl = LANGUAGES_LOGOS[mainLanguage];
   return (
     <ManageSourceHeaderWrapper>
-      <KeyvalImage src={image_url} style={IMAGE_STYLE} />
+      <KeyvalImage src={imageUrl} style={IMAGE_STYLE} />
+      <div style={{ flex: 1 }}>
+        <KeyvalText size={24} weight={600} color="#fff">
+          {source.name}
+        </KeyvalText>
+        <KeyvalText size={16} weight={400} color="#fff">
+          {source.kind} in namespace &quot;{source.namespace}&quot;
+        </KeyvalText>
+      </div>
     </ManageSourceHeaderWrapper>
   );
 }

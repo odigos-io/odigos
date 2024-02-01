@@ -20,6 +20,15 @@
             "cwd": "${workspaceFolder}/instrumentor"
         },
         {
+            "name": "frontend",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/frontend",
+            "cwd": "${workspaceFolder}/frontend",
+            "args": ["--port", "8085", "--address", "0.0.0.0"]
+        },
+        {
             "name": "autoscaler local",
             "type": "go",
             "request": "launch",
