@@ -45,13 +45,3 @@ This command will upgrade the Odigos deployment in the cluster to the version of
 ### Odigos Manifests
 
 Any change that is made in code to a manifest of odigos k8s object is automatically applied to the cluster when `odigos upgrade` is run. Any k8s object which was removed from the code will be removed from the cluster.
-
-### Odigos CRD
-
-Odigos CRDs are versioned. For example the `odigosconfigurations.odigos.io` resource version is `v1alpha1`.
-
-When a change is made to a CRD, use the following guidelines:
-- Removing a field from a CRD is not a breaking change and is ok without version change or migration.
-- Adding a new optional field to a CRD (with a default value) is not a breaking change and is ok without version change or migration.
-- Adding a new required field to a CRD is a breaking change and requires a version change and migration.
-- Any change to the CRD semantics (e.g. changing the type of a field, changing the way values are used) is a breaking change and requires a new CRD version change and migration of the objects from old version to the new one.

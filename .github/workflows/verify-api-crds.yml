@@ -1,0 +1,26 @@
+name: verify api CRDs
+on:
+  pull_request:
+
+jobs:
+  verify-api-crds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.0"
+      - name: install controller-gen
+        working-directory: ./api
+        run: "make controller-gen"
+      - name: Check API CRDs
+        working-directory: ./api
+        run: "make generate && make manifests"
+      - name: Verify Generate
+        working-directory: ./api
+        run: |
+          if [[ $(git diff --exit-code) ]]; then
+            echo "api CRDs are not up to date. Please run 'make generate && make manifests' and commit the changes."
+            exit 1
+          fi
