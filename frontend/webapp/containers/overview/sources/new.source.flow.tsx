@@ -1,13 +1,13 @@
-import React from "react";
-import { useNotification, useSectionData } from "@/hooks";
-import { SourcesSectionWrapper, ButtonWrapper } from "./sources.styled";
-import { SourcesSection } from "@/containers/setup/sources/sources.section";
-import { KeyvalButton, KeyvalText } from "@/design.system";
-import theme from "@/styles/palette";
-import { NOTIFICATION, OVERVIEW, SETUP } from "@/utils/constants";
-import { useMutation } from "react-query";
-import { setNamespaces } from "@/services";
-import { SelectedSources } from "@/types/sources";
+import React from 'react';
+import theme from '@/styles/palette';
+import { setNamespaces } from '@/services';
+import { SelectedSources } from '@/types/sources';
+import { useNotification, useSectionData } from '@/hooks';
+import { KeyvalButton, KeyvalText } from '@/design.system';
+import { NOTIFICATION, OVERVIEW, SETUP } from '@/utils/constants';
+import { SourcesSectionWrapper, ButtonWrapper } from './sources.styled';
+import { SourcesSection } from '@/containers/setup/sources/sources.section';
+import { useMutation } from 'react-query';
 
 export function NewSourcesList({ onSuccess, sources }) {
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
