@@ -78,7 +78,7 @@ export const OVERVIEW = {
   DELETE_SOURCE: 'Delete Source',
   SOURCE_DANGER_ZONE_TITLE: 'Delete this source',
   SOURCE_DANGER_ZONE_SUBTITLE:
-    'This action cannot be undone. This will permanently delete the source and all associated data.',
+    'Uninstrument this source, and delete all odigos associated data. You can always re-instrument this source later with odigos.',
   DELETE_MODAL_TITLE: 'Delete this destination',
   DELETE_MODAL_SUBTITLE:
     'This action cannot be undone. This will permanently delete the destination and all associated data.',

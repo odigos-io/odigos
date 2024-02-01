@@ -39,11 +39,11 @@ func NewMockTestDeployment(ns *corev1.Namespace) *appsv1.Deployment {
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": "test-dep"},
+				MatchLabels: map[string]string{"app.kubernetes.io/name": "test-dep"},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "test-dep"},
+					Labels: map[string]string{"app.kubernetes.io/name": "test-dep"},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -66,11 +66,11 @@ func NewMockTestDaemonSet(ns *corev1.Namespace) *appsv1.DaemonSet {
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": "test-ds"},
+				MatchLabels: map[string]string{"app.kubernetes.io/name": "test-ds"},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "test-ds"},
+					Labels: map[string]string{"app.kubernetes.io/name": "test-ds"},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -93,11 +93,11 @@ func NewMockTestStatefulSet(ns *corev1.Namespace) *appsv1.StatefulSet {
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": "test-ss"},
+				MatchLabels: map[string]string{"app.kubernetes.io/name": "test-ss"},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "test-ss"},
+					Labels: map[string]string{"app.kubernetes.io/name": "test-ss"},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
