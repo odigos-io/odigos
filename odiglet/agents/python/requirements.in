@@ -3,16 +3,16 @@ opentelemetry-distro==0.40b0
 # injected auto-instrumentation, where it has a strict dependency on the OS / Python version the artifact is built for.
 opentelemetry-exporter-otlp-proto-http==1.19.0
 
-opentelemetry-propagator-b3==1.20.0
-opentelemetry-propagator-jaeger==1.20.0
+opentelemetry-propagator-b3==1.22.0
+opentelemetry-propagator-jaeger==1.22.0
 opentelemetry-propagator-aws-xray==1.0.1
 
 opentelemetry-instrumentation==0.40b0
-opentelemetry-propagator-ot-trace==0.41b0
+opentelemetry-propagator-ot-trace==0.43b0
 
 # Copied in from https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/instrumentation
 # except for aws-lambda
-opentelemetry-instrumentation-aio-pika==0.41b0
+opentelemetry-instrumentation-aio-pika==0.43b0
 opentelemetry-instrumentation-aiohttp-client==0.40b0
 opentelemetry-instrumentation-aiopg==0.40b0
 opentelemetry-instrumentation-asgi==0.40b0
@@ -21,7 +21,7 @@ opentelemetry-instrumentation-boto==0.40b0
 opentelemetry-instrumentation-boto3sqs==0.40b0
 opentelemetry-instrumentation-botocore==0.40b0
 opentelemetry-instrumentation-celery==0.40b0
-opentelemetry-instrumentation-confluent-kafka==0.41b0
+opentelemetry-instrumentation-confluent-kafka==0.43b0
 opentelemetry-instrumentation-dbapi==0.40b0
 opentelemetry-instrumentation-django==0.40b0
 opentelemetry-instrumentation-elasticsearch==0.40b0
@@ -35,7 +35,7 @@ opentelemetry-instrumentation-kafka-python==0.40b0
 opentelemetry-instrumentation-logging==0.40b0
 opentelemetry-instrumentation-mysql==0.40b0
 opentelemetry-instrumentation-mysqlclient==0.40b0
-opentelemetry-instrumentation-pika==0.41b0
+opentelemetry-instrumentation-pika==0.43b0
 opentelemetry-instrumentation-psycopg2==0.40b0
 opentelemetry-instrumentation-pymemcache==0.40b0
 opentelemetry-instrumentation-pymongo==0.40b0
@@ -48,7 +48,7 @@ opentelemetry-instrumentation-sklearn==0.40b0
 opentelemetry-instrumentation-sqlalchemy==0.40b0
 opentelemetry-instrumentation-sqlite3==0.40b0
 opentelemetry-instrumentation-starlette==0.40b0
-opentelemetry-instrumentation-system-metrics==0.41b0
+opentelemetry-instrumentation-system-metrics==0.43b0
 opentelemetry-instrumentation-tornado==0.40b0
 opentelemetry-instrumentation-tortoiseorm==0.40b0
 opentelemetry-instrumentation-urllib==0.40b0

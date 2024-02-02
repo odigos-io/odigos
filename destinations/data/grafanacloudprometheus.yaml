@@ -14,19 +14,19 @@ spec:
     logs:
       supported: false
   fields:
-    - name: GRAFANA_API_KEY
-      displayName: API Key
+    - name: GRAFANA_CLOUD_PROMETHEUS_RW_ENDPOINT
+      displayName: Prometheus Remote Write Endpoint
+      componentType: input
+      componentProps:
+        type: text
+    - name: GRAFANA_CLOUD_PROMETHEUS_USERNAME
+      displayName: Username / Instance ID
+      componentType: input
+      componentProps:
+        type: text
+    - name: GRAFANA_CLOUD_PROMETHEUS_PASSWORD
+      displayName: Password / Api Token
       componentType: input
       componentProps:
         type: password
       secret: true
-    - name: GRAFANA_REMOTEWRITE_URL
-      displayName: Remote Write URL
-      componentType: input
-      componentProps:
-        type: text
-    - name: GRAFANA_PROM_USERNAME
-      displayName: Username
-      componentType: input
-      componentProps:
-        type: text

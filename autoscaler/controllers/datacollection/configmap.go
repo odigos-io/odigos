@@ -168,9 +168,10 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	}
 
 	if collectLogs {
+		odigosSystemNamespaceName := utils.GetCurrentNamespace()
 		cfg.Receivers["filelog"] = commonconf.GenericMap{
 			"include":           []string{"/var/log/pods/*/*/*.log"},
-			"exclude":           []string{"/var/log/pods/kube-system_*/*/*.log"},
+			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},
 			"start_at":          "beginning",
 			"include_file_path": true,
 			"include_file_name": false,
