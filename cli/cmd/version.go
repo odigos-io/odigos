@@ -69,5 +69,5 @@ func printOdigosClusterVersion(cmd *cobra.Command) {
 func init() {
 	rootCmd.AddCommand(versionCmd)
 
-	versionCmd.PersistentFlags().Bool("short", false, "prints only the CLI version")
+	versionCmd.Flags().Bool("short", false, "prints only the CLI version")
 }
