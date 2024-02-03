@@ -4,336 +4,9 @@
       "resource": {
         "attributes": [
           {
-            "key": "container.id",
-            "value": {
-              "stringValue": "225abb4236534a75b26fae80a6e8dc490533546b102dbbbf46cfe47509f648bb"
-            }
-          },
-          {
-            "key": "host.arch",
-            "value": {
-              "stringValue": "aarch64"
-            }
-          },
-          {
-            "key": "host.name",
-            "value": {
-              "stringValue": "inventory-575c4d8bbd-xd6xc"
-            }
-          },
-          {
             "key": "odigos.device",
             "value": {
               "stringValue": "java"
-            }
-          },
-          {
-            "key": "os.description",
-            "value": {
-              "stringValue": "Linux 6.5.11-linuxkit"
-            }
-          },
-          {
-            "key": "os.type",
-            "value": {
-              "stringValue": "linux"
-            }
-          },
-          {
-            "key": "process.command_args",
-            "value": {
-              "arrayValue": {
-                "values": [
-                  {
-                    "stringValue": "/opt/java/openjdk/bin/java"
-                  },
-                  {
-                    "stringValue": "-jar"
-                  },
-                  {
-                    "stringValue": "/app/inventory.jar"
-                  }
-                ]
-              }
-            }
-          },
-          {
-            "key": "process.executable.path",
-            "value": {
-              "stringValue": "/opt/java/openjdk/bin/java"
-            }
-          },
-          {
-            "key": "process.pid",
-            "value": {
-              "intValue": "1"
-            }
-          },
-          {
-            "key": "process.runtime.description",
-            "value": {
-              "stringValue": "Eclipse Adoptium OpenJDK 64-Bit Server VM 11.0.21+9"
-            }
-          },
-          {
-            "key": "process.runtime.name",
-            "value": {
-              "stringValue": "OpenJDK Runtime Environment"
-            }
-          },
-          {
-            "key": "process.runtime.version",
-            "value": {
-              "stringValue": "11.0.21+9"
-            }
-          },
-          {
-            "key": "service.name",
-            "value": {
-              "stringValue": "inventory"
-            }
-          },
-          {
-            "key": "telemetry.auto.version",
-            "value": {
-              "stringValue": "1.29.0"
-            }
-          },
-          {
-            "key": "telemetry.sdk.language",
-            "value": {
-              "stringValue": "java"
-            }
-          },
-          {
-            "key": "telemetry.sdk.name",
-            "value": {
-              "stringValue": "opentelemetry"
-            }
-          },
-          {
-            "key": "telemetry.sdk.version",
-            "value": {
-              "stringValue": "1.29.0"
-            }
-          },
-          {
-            "key": "k8s.namespace.name",
-            "value": {
-              "stringValue": "kvshop"
-            }
-          },
-          {
-            "key": "k8s.deployment.name",
-            "value": {
-              "stringValue": "inventory"
-            }
-          },
-          {
-            "key": "k8s.pod.name",
-            "value": {
-              "stringValue": "inventory-575c4d8bbd-xd6xc"
-            }
-          },
-          {
-            "key": "container.name",
-            "value": {
-              "stringValue": "inventory"
-            }
-          },
-          {
-            "key": "k8s.node.name",
-            "value": {
-              "stringValue": "kind-control-plane"
-            }
-          }
-        ]
-      },
-      "schemaUrl": "https://opentelemetry.io/schemas/1.20.0",
-      "scopeSpans": [
-        {
-          "scope": {
-            "name": "io.opentelemetry.spring-webmvc-3.1",
-            "version": "1.29.0-alpha"
-          },
-          "spans": [
-            {
-              "attributes": [
-                {
-                  "key": "thread.name",
-                  "value": {
-                    "stringValue": "http-nio-8080-exec-1"
-                  }
-                },
-                {
-                  "key": "thread.id",
-                  "value": {
-                    "intValue": "24"
-                  }
-                }
-              ],
-              "kind": 1,
-              "name": "InventoryController.buyProduct",
-              "parentSpanId": "xxxxx",
-              "spanId": "xxxxx",
-              "status": {},
-              "traceId": "xxxxx"
-            }
-          ]
-        },
-        {
-          "scope": {
-            "name": "io.opentelemetry.tomcat-7.0",
-            "version": "1.29.0-alpha"
-          },
-          "spans": [
-            {
-              "attributes": [
-                {
-                  "key": "http.target",
-                  "value": {
-                    "stringValue": "/buy?id=123"
-                  }
-                },
-                {
-                  "key": "net.sock.peer.addr",
-                  "value": {
-                    "stringValue": "10.244.0.18"
-                  }
-                },
-                {
-                  "key": "http.status_code",
-                  "value": {
-                    "intValue": "200"
-                  }
-                },
-                {
-                  "key": "net.host.port",
-                  "value": {
-                    "intValue": "8080"
-                  }
-                },
-                {
-                  "key": "http.response_content_length",
-                  "value": {
-                    "intValue": "0"
-                  }
-                },
-                {
-                  "key": "user_agent.original",
-                  "value": {
-                    "stringValue": "Java/17.0.9"
-                  }
-                },
-                {
-                  "key": "net.host.name",
-                  "value": {
-                    "stringValue": "inventory"
-                  }
-                },
-                {
-                  "key": "thread.name",
-                  "value": {
-                    "stringValue": "http-nio-8080-exec-1"
-                  }
-                },
-                {
-                  "key": "thread.id",
-                  "value": {
-                    "intValue": "24"
-                  }
-                },
-                {
-                  "key": "net.sock.peer.port",
-                  "value": {
-                    "intValue": "59996"
-                  }
-                },
-                {
-                  "key": "http.route",
-                  "value": {
-                    "stringValue": "/buy"
-                  }
-                },
-                {
-                  "key": "net.sock.host.addr",
-                  "value": {
-                    "stringValue": "10.244.0.16"
-                  }
-                },
-                {
-                  "key": "net.protocol.version",
-                  "value": {
-                    "stringValue": "1.1"
-                  }
-                },
-                {
-                  "key": "http.scheme",
-                  "value": {
-                    "stringValue": "http"
-                  }
-                },
-                {
-                  "key": "http.method",
-                  "value": {
-                    "stringValue": "POST"
-                  }
-                },
-                {
-                  "key": "http.request_content_length",
-                  "value": {
-                    "intValue": "0"
-                  }
-                },
-                {
-                  "key": "net.protocol.name",
-                  "value": {
-                    "stringValue": "http"
-                  }
-                }
-              ],
-              "kind": 2,
-              "name": "POST /buy",
-              "parentSpanId": "xxxxx",
-              "spanId": "xxxxx",
-              "status": {},
-              "traceId": "xxxxx"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "resource": {
-        "attributes": [
-          {
-            "key": "container.id",
-            "value": {
-              "stringValue": "225abb4236534a75b26fae80a6e8dc490533546b102dbbbf46cfe47509f648bb"
-            }
-          },
-          {
-            "key": "host.arch",
-            "value": {
-              "stringValue": "aarch64"
-            }
-          },
-          {
-            "key": "host.name",
-            "value": {
-              "stringValue": "frontend-6b47756467-hfxrb"
-            }
-          },
-          {
-            "key": "odigos.device",
-            "value": {
-              "stringValue": "java"
-            }
-          },
-          {
-            "key": "os.description",
-            "value": {
-              "stringValue": "Linux 6.5.11-linuxkit"
             }
           },
           {
@@ -433,12 +106,6 @@
             }
           },
           {
-            "key": "k8s.pod.name",
-            "value": {
-              "stringValue": "frontend-6b47756467-hfxrb"
-            }
-          },
-          {
             "key": "container.name",
             "value": {
               "stringValue": "frontend"
@@ -469,12 +136,6 @@
                   }
                 },
                 {
-                  "key": "thread.id",
-                  "value": {
-                    "intValue": "26"
-                  }
-                },
-                {
                   "key": "net.protocol.name",
                   "value": {
                     "stringValue": "http"
@@ -484,12 +145,6 @@
                   "key": "http.method",
                   "value": {
                     "stringValue": "GET"
-                  }
-                },
-                {
-                  "key": "thread.name",
-                  "value": {
-                    "stringValue": "http-nio-8080-exec-1"
                   }
                 },
                 {
@@ -505,12 +160,6 @@
                   }
                 },
                 {
-                  "key": "net.peer.port",
-                  "value": {
-                    "intValue": "8080"
-                  }
-                },
-                {
                   "key": "http.status_code",
                   "value": {
                     "intValue": "200"
@@ -523,344 +172,18 @@
               "spanId": "xxxxx",
               "status": {},
               "traceId": "xxxxx"
-            },
-            {
-              "attributes": [
-                {
-                  "key": "http.url",
-                  "value": {
-                    "stringValue": "http://inventory:8080/buy?id=123"
-                  }
-                },
-                {
-                  "key": "thread.id",
-                  "value": {
-                    "intValue": "26"
-                  }
-                },
-                {
-                  "key": "http.request_content_length",
-                  "value": {
-                    "intValue": "0"
-                  }
-                },
-                {
-                  "key": "net.protocol.name",
-                  "value": {
-                    "stringValue": "http"
-                  }
-                },
-                {
-                  "key": "http.method",
-                  "value": {
-                    "stringValue": "POST"
-                  }
-                },
-                {
-                  "key": "thread.name",
-                  "value": {
-                    "stringValue": "http-nio-8080-exec-1"
-                  }
-                },
-                {
-                  "key": "net.protocol.version",
-                  "value": {
-                    "stringValue": "1.1"
-                  }
-                },
-                {
-                  "key": "net.peer.name",
-                  "value": {
-                    "stringValue": "inventory"
-                  }
-                },
-                {
-                  "key": "net.peer.port",
-                  "value": {
-                    "intValue": "8080"
-                  }
-                },
-                {
-                  "key": "http.response_content_length",
-                  "value": {
-                    "intValue": "0"
-                  }
-                },
-                {
-                  "key": "http.status_code",
-                  "value": {
-                    "intValue": "200"
-                  }
-                }
-              ],
-              "droppedAttributesCount": 1,
-              "kind": 3,
-              "name": "POST",
-              "parentSpanId": "xxxxx",
-              "spanId": "xxxxx",
-              "status": {},
-              "traceId": "xxxxx"
-            },
-            {
-              "attributes": [
-                {
-                  "key": "http.url",
-                  "value": {
-                    "stringValue": "http://coupon:8080/apply-coupon"
-                  }
-                },
-                {
-                  "key": "thread.id",
-                  "value": {
-                    "intValue": "26"
-                  }
-                },
-                {
-                  "key": "http.request_content_length",
-                  "value": {
-                    "intValue": "0"
-                  }
-                },
-                {
-                  "key": "net.protocol.name",
-                  "value": {
-                    "stringValue": "http"
-                  }
-                },
-                {
-                  "key": "http.method",
-                  "value": {
-                    "stringValue": "POST"
-                  }
-                },
-                {
-                  "key": "thread.name",
-                  "value": {
-                    "stringValue": "http-nio-8080-exec-1"
-                  }
-                },
-                {
-                  "key": "net.protocol.version",
-                  "value": {
-                    "stringValue": "1.1"
-                  }
-                },
-                {
-                  "key": "net.peer.name",
-                  "value": {
-                    "stringValue": "coupon"
-                  }
-                },
-                {
-                  "key": "net.peer.port",
-                  "value": {
-                    "intValue": "8080"
-                  }
-                },
-                {
-                  "key": "http.response_content_length",
-                  "value": {
-                    "intValue": "29"
-                  }
-                },
-                {
-                  "key": "http.status_code",
-                  "value": {
-                    "intValue": "200"
-                  }
-                }
-              ],
-              "droppedAttributesCount": 1,
-              "kind": 3,
-              "name": "POST",
-              "parentSpanId": "xxxxx",
-              "spanId": "xxxxx",
-              "status": {},
-              "traceId": "xxxxx"
-            }
-          ]
-        },
-        {
-          "scope": {
-            "name": "io.opentelemetry.spring-webmvc-6.0",
-            "version": "1.29.0-alpha"
-          },
-          "spans": [
-            {
-              "attributes": [
-                {
-                  "key": "thread.id",
-                  "value": {
-                    "intValue": "26"
-                  }
-                },
-                {
-                  "key": "thread.name",
-                  "value": {
-                    "stringValue": "http-nio-8080-exec-1"
-                  }
-                }
-              ],
-              "kind": 1,
-              "name": "ProductController.buyProduct",
-              "parentSpanId": "xxxxx",
-              "spanId": "xxxxx",
-              "status": {},
-              "traceId": "xxxxx"
-            }
-          ]
-        },
-        {
-          "scope": {
-            "name": "io.opentelemetry.tomcat-10.0",
-            "version": "1.29.0-alpha"
-          },
-          "spans": [
-            {
-              "attributes": [
-                {
-                  "key": "thread.id",
-                  "value": {
-                    "intValue": "26"
-                  }
-                },
-                {
-                  "key": "net.sock.peer.port",
-                  "value": {
-                    "intValue": "35464"
-                  }
-                },
-                {
-                  "key": "net.protocol.name",
-                  "value": {
-                    "stringValue": "http"
-                  }
-                },
-                {
-                  "key": "http.method",
-                  "value": {
-                    "stringValue": "POST"
-                  }
-                },
-                {
-                  "key": "net.protocol.version",
-                  "value": {
-                    "stringValue": "1.1"
-                  }
-                },
-                {
-                  "key": "http.scheme",
-                  "value": {
-                    "stringValue": "http"
-                  }
-                },
-                {
-                  "key": "net.host.port",
-                  "value": {
-                    "intValue": "8080"
-                  }
-                },
-                {
-                  "key": "http.response_content_length",
-                  "value": {
-                    "intValue": "0"
-                  }
-                },
-                {
-                  "key": "net.sock.host.addr",
-                  "value": {
-                    "stringValue": "10.244.0.18"
-                  }
-                },
-                {
-                  "key": "http.route",
-                  "value": {
-                    "stringValue": "/buy"
-                  }
-                },
-                {
-                  "key": "http.status_code",
-                  "value": {
-                    "intValue": "200"
-                  }
-                },
-                {
-                  "key": "thread.name",
-                  "value": {
-                    "stringValue": "http-nio-8080-exec-1"
-                  }
-                },
-                {
-                  "key": "user_agent.original",
-                  "value": {
-                    "stringValue": "curl/8.4.0"
-                  }
-                },
-                {
-                  "key": "net.host.name",
-                  "value": {
-                    "stringValue": "frontend"
-                  }
-                },
-                {
-                  "key": "http.target",
-                  "value": {
-                    "stringValue": "/buy?id=123"
-                  }
-                },
-                {
-                  "key": "net.sock.peer.addr",
-                  "value": {
-                    "stringValue": "10.244.0.19"
-                  }
-                }
-              ],
-              "kind": 2,
-              "name": "POST /buy",
-              "parentSpanId": "",
-              "spanId": "xxxxx",
-              "status": {},
-              "traceId": "xxxxx"
             }
           ]
         }
       ]
-    }
-  ]
-}
-{
-  "resourceSpans": [
+    },
     {
       "resource": {
         "attributes": [
           {
-            "key": "container.id",
-            "value": {
-              "stringValue": "225abb4236534a75b26fae80a6e8dc490533546b102dbbbf46cfe47509f648bb"
-            }
-          },
-          {
-            "key": "host.arch",
-            "value": {
-              "stringValue": "aarch64"
-            }
-          },
-          {
-            "key": "host.name",
-            "value": {
-              "stringValue": "pricing-668b8f9486-hvjz5"
-            }
-          },
-          {
             "key": "odigos.device",
             "value": {
               "stringValue": "java"
-            }
-          },
-          {
-            "key": "os.description",
-            "value": {
-              "stringValue": "Linux 6.5.11-linuxkit"
             }
           },
           {
@@ -948,12 +271,6 @@
             }
           },
           {
-            "key": "k8s.pod.name",
-            "value": {
-              "stringValue": "pricing-668b8f9486-hvjz5"
-            }
-          },
-          {
             "key": "container.name",
             "value": {
               "stringValue": "pricing"
@@ -976,20 +293,7 @@
           },
           "spans": [
             {
-              "attributes": [
-                {
-                  "key": "thread.name",
-                  "value": {
-                    "stringValue": "http-nio-8080-exec-1"
-                  }
-                },
-                {
-                  "key": "thread.id",
-                  "value": {
-                    "intValue": "18"
-                  }
-                }
-              ],
+              "attributes": [],
               "kind": 1,
               "name": "PricingController.getPrice",
               "parentSpanId": "xxxxx",
@@ -1007,12 +311,6 @@
           "spans": [
             {
               "attributes": [
-                {
-                  "key": "net.sock.host.addr",
-                  "value": {
-                    "stringValue": "10.244.0.17"
-                  }
-                },
                 {
                   "key": "http.route",
                   "value": {
@@ -1056,12 +354,6 @@
                   }
                 },
                 {
-                  "key": "net.sock.peer.addr",
-                  "value": {
-                    "stringValue": "10.244.0.18"
-                  }
-                },
-                {
                   "key": "user_agent.original",
                   "value": {
                     "stringValue": "Java/17.0.9"
@@ -1078,24 +370,6 @@
                   "value": {
                     "intValue": "8080"
                   }
-                },
-                {
-                  "key": "thread.name",
-                  "value": {
-                    "stringValue": "http-nio-8080-exec-1"
-                  }
-                },
-                {
-                  "key": "net.sock.peer.port",
-                  "value": {
-                    "intValue": "44368"
-                  }
-                },
-                {
-                  "key": "thread.id",
-                  "value": {
-                    "intValue": "18"
-                  }
                 }
               ],
               "kind": 2,
@@ -1108,7 +382,11 @@
           ]
         }
       ]
-    },
+    }
+  ]
+}
+{
+  "resourceSpans": [
     {
       "resource": {
         "attributes": [
@@ -1213,16 +491,594 @@
                   "value": {
                     "stringValue": "10.244.0.10"
                   }
-                },
-                {
-                  "key": "net.peer.port",
-                  "value": {
-                    "intValue": "35916"
-                  }
                 }
               ],
               "kind": 2,
               "name": "GET",
+              "parentSpanId": "xxxxx",
+              "spanId": "xxxxx",
+              "status": {},
+              "traceId": "xxxxx"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "odigos.device",
+            "value": {
+              "stringValue": "java"
+            }
+          },
+          {
+            "key": "os.type",
+            "value": {
+              "stringValue": "linux"
+            }
+          },
+          {
+            "key": "process.command_args",
+            "value": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "/opt/java/openjdk/bin/java"
+                  },
+                  {
+                    "stringValue": "-jar"
+                  },
+                  {
+                    "stringValue": "/app/frontend.jar"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "key": "process.executable.path",
+            "value": {
+              "stringValue": "/opt/java/openjdk/bin/java"
+            }
+          },
+          {
+            "key": "process.pid",
+            "value": {
+              "intValue": "1"
+            }
+          },
+          {
+            "key": "process.runtime.description",
+            "value": {
+              "stringValue": "Eclipse Adoptium OpenJDK 64-Bit Server VM 17.0.9+9"
+            }
+          },
+          {
+            "key": "process.runtime.name",
+            "value": {
+              "stringValue": "OpenJDK Runtime Environment"
+            }
+          },
+          {
+            "key": "process.runtime.version",
+            "value": {
+              "stringValue": "17.0.9+9"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "frontend"
+            }
+          },
+          {
+            "key": "telemetry.auto.version",
+            "value": {
+              "stringValue": "1.29.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "java"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.29.0"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "kvshop"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "frontend"
+            }
+          },
+          {
+            "key": "container.name",
+            "value": {
+              "stringValue": "frontend"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "kind-control-plane"
+            }
+          }
+        ]
+      },
+      "schemaUrl": "https://opentelemetry.io/schemas/1.20.0",
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "io.opentelemetry.http-url-connection",
+            "version": "1.29.0-alpha"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "http.url",
+                  "value": {
+                    "stringValue": "http://inventory:8080/buy?id=123"
+                  }
+                },
+                {
+                  "key": "http.request_content_length",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "net.protocol.name",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "net.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
+                  "key": "net.peer.name",
+                  "value": {
+                    "stringValue": "inventory"
+                  }
+                },
+                {
+                  "key": "http.response_content_length",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 1,
+              "kind": 3,
+              "name": "POST",
+              "parentSpanId": "xxxxx",
+              "spanId": "xxxxx",
+              "status": {},
+              "traceId": "xxxxx"
+            },
+            {
+              "attributes": [
+                {
+                  "key": "http.url",
+                  "value": {
+                    "stringValue": "http://coupon:8080/apply-coupon"
+                  }
+                },
+                {
+                  "key": "http.request_content_length",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "net.protocol.name",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "net.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
+                  "key": "net.peer.name",
+                  "value": {
+                    "stringValue": "coupon"
+                  }
+                },
+                {
+                  "key": "http.response_content_length",
+                  "value": {
+                    "intValue": "28"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 1,
+              "kind": 3,
+              "name": "POST",
+              "parentSpanId": "xxxxx",
+              "spanId": "xxxxx",
+              "status": {},
+              "traceId": "xxxxx"
+            }
+          ]
+        },
+        {
+          "scope": {
+            "name": "io.opentelemetry.spring-webmvc-6.0",
+            "version": "1.29.0-alpha"
+          },
+          "spans": [
+            {
+              "attributes": [],
+              "kind": 1,
+              "name": "ProductController.buyProduct",
+              "parentSpanId": "xxxxx",
+              "spanId": "xxxxx",
+              "status": {},
+              "traceId": "xxxxx"
+            }
+          ]
+        },
+        {
+          "scope": {
+            "name": "io.opentelemetry.tomcat-10.0",
+            "version": "1.29.0-alpha"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "net.protocol.name",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "net.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
+                  "key": "http.scheme",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
+                {
+                  "key": "net.host.port",
+                  "value": {
+                    "intValue": "8080"
+                  }
+                },
+                {
+                  "key": "http.response_content_length",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "http.route",
+                  "value": {
+                    "stringValue": "/buy"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                },
+                {
+                  "key": "user_agent.original",
+                  "value": {
+                    "stringValue": "curl/8.4.0"
+                  }
+                },
+                {
+                  "key": "net.host.name",
+                  "value": {
+                    "stringValue": "frontend"
+                  }
+                },
+                {
+                  "key": "http.target",
+                  "value": {
+                    "stringValue": "/buy?id=123"
+                  }
+                }
+              ],
+              "kind": 2,
+              "name": "POST /buy",
+              "parentSpanId": "",
+              "spanId": "xxxxx",
+              "status": {},
+              "traceId": "xxxxx"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "odigos.device",
+            "value": {
+              "stringValue": "java"
+            }
+          },
+          {
+            "key": "os.type",
+            "value": {
+              "stringValue": "linux"
+            }
+          },
+          {
+            "key": "process.command_args",
+            "value": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "/opt/java/openjdk/bin/java"
+                  },
+                  {
+                    "stringValue": "-jar"
+                  },
+                  {
+                    "stringValue": "/app/inventory.jar"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "key": "process.executable.path",
+            "value": {
+              "stringValue": "/opt/java/openjdk/bin/java"
+            }
+          },
+          {
+            "key": "process.pid",
+            "value": {
+              "intValue": "1"
+            }
+          },
+          {
+            "key": "process.runtime.description",
+            "value": {
+              "stringValue": "Eclipse Adoptium OpenJDK 64-Bit Server VM 11.0.21+9"
+            }
+          },
+          {
+            "key": "process.runtime.name",
+            "value": {
+              "stringValue": "OpenJDK Runtime Environment"
+            }
+          },
+          {
+            "key": "process.runtime.version",
+            "value": {
+              "stringValue": "11.0.21+9"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "inventory"
+            }
+          },
+          {
+            "key": "telemetry.auto.version",
+            "value": {
+              "stringValue": "1.29.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "java"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.29.0"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "kvshop"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "inventory"
+            }
+          },
+          {
+            "key": "container.name",
+            "value": {
+              "stringValue": "inventory"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "kind-control-plane"
+            }
+          }
+        ]
+      },
+      "schemaUrl": "https://opentelemetry.io/schemas/1.20.0",
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "io.opentelemetry.spring-webmvc-3.1",
+            "version": "1.29.0-alpha"
+          },
+          "spans": [
+            {
+              "attributes": [],
+              "kind": 1,
+              "name": "InventoryController.buyProduct",
+              "parentSpanId": "xxxxx",
+              "spanId": "xxxxx",
+              "status": {},
+              "traceId": "xxxxx"
+            }
+          ]
+        },
+        {
+          "scope": {
+            "name": "io.opentelemetry.tomcat-7.0",
+            "version": "1.29.0-alpha"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "http.target",
+                  "value": {
+                    "stringValue": "/buy?id=123"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                },
+                {
+                  "key": "net.host.port",
+                  "value": {
+                    "intValue": "8080"
+                  }
+                },
+                {
+                  "key": "http.response_content_length",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "user_agent.original",
+                  "value": {
+                    "stringValue": "Java/17.0.9"
+                  }
+                },
+                {
+                  "key": "net.host.name",
+                  "value": {
+                    "stringValue": "inventory"
+                  }
+                },
+                {
+                  "key": "http.route",
+                  "value": {
+                    "stringValue": "/buy"
+                  }
+                },
+                {
+                  "key": "net.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
+                  "key": "http.scheme",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "http.request_content_length",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "net.protocol.name",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                }
+              ],
+              "kind": 2,
+              "name": "POST /buy",
               "parentSpanId": "xxxxx",
               "spanId": "xxxxx",
               "status": {},
@@ -1422,18 +1278,6 @@
                   }
                 },
                 {
-                  "key": "net.peer.ip",
-                  "value": {
-                    "stringValue": "::ffff:10.244.0.18"
-                  }
-                },
-                {
-                  "key": "net.peer.port",
-                  "value": {
-                    "intValue": "58760"
-                  }
-                },
-                {
                   "key": "http.status_code",
                   "value": {
                     "intValue": "200"
@@ -1483,18 +1327,6 @@
                   "key": "http.host",
                   "value": {
                     "stringValue": "membership:8080"
-                  }
-                },
-                {
-                  "key": "net.peer.ip",
-                  "value": {
-                    "stringValue": "10.96.252.113"
-                  }
-                },
-                {
-                  "key": "net.peer.port",
-                  "value": {
-                    "intValue": "8080"
                   }
                 },
                 {
