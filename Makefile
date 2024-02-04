@@ -58,3 +58,7 @@ debug-odiglet:
 	kubectl delete pod -n odigos-system -l app=odiglet
 	kubectl wait --for=condition=ready pod -n odigos-system -l app=odiglet
 	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
+
+,PHONY: e2e-test
+e2e-test:
+	./e2e-test.sh

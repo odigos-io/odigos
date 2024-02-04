@@ -419,5 +419,5 @@ func uninstallNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Cl
 
 func init() {
 	rootCmd.AddCommand(uninstallCmd)
-	uninstallCmd.Flags().Bool("yes", false, "Skip the confirmation prompt")
+	uninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 }
