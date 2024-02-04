@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"go.uber.org/multierr"
@@ -101,19 +102,18 @@ func PersistNamespaces(c *gin.Context) {
 }
 
 func getJsonMergePatchForInstrumentationLabel(enabled *bool) []byte {
-
 	labelJsonMergePatchValue := "null"
 	if enabled != nil {
 		if *enabled {
-			labelJsonMergePatchValue = consts.InstrumentationEnabled
+			labelJsonMergePatchValue = fmt.Sprintf("\"%s\"", consts.InstrumentationEnabled)
 		} else {
-			labelJsonMergePatchValue = consts.InstrumentationDisabled
+			labelJsonMergePatchValue = fmt.Sprintf("\"%s\"", consts.InstrumentationDisabled)
 		}
 	}
 
-	return []byte(`{"metadata":{"labels":{"` + consts.OdigosInstrumentationLabel + `":"` + labelJsonMergePatchValue + `"}}}`)
+	jsonMergePatchContent := fmt.Sprintf(`{"metadata":{"labels":{"%s":%s}}}`, consts.OdigosInstrumentationLabel, labelJsonMergePatchValue)
+	return []byte(jsonMergePatchContent)
 }
-
 func syncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []PersistNamespaceObject) error {
 	var errs error
 	for _, workload := range workloads {
