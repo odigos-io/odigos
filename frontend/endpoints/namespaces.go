@@ -105,13 +105,13 @@ func getJsonMergePatchForInstrumentationLabel(enabled *bool) []byte {
 	labelJsonMergePatchValue := "null"
 	if enabled != nil {
 		if *enabled {
-			labelJsonMergePatchValue = consts.InstrumentationEnabled
+			labelJsonMergePatchValue = `"` + consts.InstrumentationEnabled + `"`
 		} else {
-			labelJsonMergePatchValue = consts.InstrumentationDisabled
+			labelJsonMergePatchValue = `"` + consts.InstrumentationDisabled + `"`
 		}
 	}
 
-	return []byte(`{"metadata":{"labels":{"` + consts.OdigosInstrumentationLabel + `":"` + labelJsonMergePatchValue + `"}}}`)
+	return []byte(`{"metadata":{"labels":{"` + consts.OdigosInstrumentationLabel + `":` + labelJsonMergePatchValue + `}}}`)
 }
 
 func syncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []PersistNamespaceObject) error {
