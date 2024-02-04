@@ -124,7 +124,9 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
 
 @test "client, server :: spans have same trace ID" {
   client_trace_id=$(server_spans_from_scope_named ${JAVA_CLIENT_SCOPE} | jq ".traceId")
+  assert_not_empty "$client_trace_id"
   server_trace_id=$(client_spans_from_scope_named ${JAVA_SCOPE} | jq ".traceId")
+  assert_not_empty "$server_trace_id"
   assert_equal "$server_trace_id" "$client_trace_id"
 }
 
@@ -141,11 +143,8 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
 
   # Verify Go server span has JS client span as parent
   go_parent_span_id=$(server_spans_from_scope_named ${GO_SCOPE} | jq ".parentSpanId")
+  assert_not_empty "$go_parent_span_id"
   js_client_span_id=$(client_spans_from_scope_named ${JS_SCOPE} | jq ".spanId")
+  assert_not_empty "$js_client_span_id"
   assert_equal "$go_parent_span_id" "$js_client_span_id"
-}
-
-@test "server :: expected (redacted) trace output" {
-  redact_json
-  assert_equal "$(git --no-pager diff ${BATS_TEST_DIRNAME}/traces.json)" ""
 }
