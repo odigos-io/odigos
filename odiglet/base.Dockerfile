@@ -1,6 +1,7 @@
 FROM golang:1.21.6-bullseye as builder
 
-RUN apt-get update && apt-get install -y curl clang gcc llvm make libbpf-dev
-
-# goreleaser is used by vmagent to build linux packages (deb, apk, rpm, etc)
-RUN go install github.com/goreleaser/goreleaser@v1.23.0
+# fury is our registry for linux packages
+RUN echo "deb [trusted=yes] https://apt.fury.io/cli/ * *" > /etc/apt/sources.list.d/fury-cli.list
+# goreleaser is used to build vmagent
+RUN echo "deb [trusted=yes] https://repo.goreleaser.com/apt/ /" > /etc/apt/sources.list.d/goreleaser.list
+RUN apt-get update && apt-get install -y curl clang gcc llvm make libbpf-dev fury-cli goreleaser
