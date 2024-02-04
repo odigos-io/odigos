@@ -146,22 +146,21 @@ func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (b
 }
 
 func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	_, err := client.CoreV1().Namespaces().Create(ctx, resources.NewNamespace(ns), metav1.CreateOptions{})
-	if err != nil && apierrors.IsAlreadyExists(err) {
-		nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
-		if err != nil {
+	nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			_, err := client.CoreV1().Namespaces().Create(ctx, resources.NewNamespace(ns), metav1.CreateOptions{})
 			return err
 		}
-
-		val, exists := nsObj.Labels[labels.OdigosSystemLabelKey]
-		if !exists || val != labels.OdigosSystemLabelValue {
-			return fmt.Errorf("namespace %s does not contain %s label", ns, labels.OdigosSystemLabelKey)
-		}
-
-		return nil
+		return err
 	}
 
-	return err
+	val, exists := nsObj.Labels[labels.OdigosSystemLabelKey]
+	if !exists || val != labels.OdigosSystemLabelValue {
+		return fmt.Errorf("namespace %s does not contain %s label", ns, labels.OdigosSystemLabelKey)
+	}
+
+	return nil
 }
 
 func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
