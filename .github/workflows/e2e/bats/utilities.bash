@@ -83,6 +83,7 @@ redact_json() {
 			del(
 				.resourceSpans[].scopeSpans[].spans[].startTimeUnixNano,
 				.resourceSpans[].scopeSpans[].spans[].endTimeUnixNano
+			)
 			| .resourceSpans[].scopeSpans[].spans[].traceId|= (if
 					. // "" | test("^[A-Fa-f0-9]{32}$") then "xxxxx" else (. + "<-INVALID")
 				end)
