@@ -11,6 +11,7 @@ const LAYOUT_STYLE: React.CSSProperties = {
   scrollbarWidth: 'none',
   width: '100vw',
   height: '100vh',
+  backgroundColor: theme.colors.dark,
 };
 
 export default function RootLayout({
