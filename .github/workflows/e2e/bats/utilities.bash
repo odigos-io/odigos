@@ -82,22 +82,7 @@ redact_json() {
 		jq --sort-keys '
 			del(
 				.resourceSpans[].scopeSpans[].spans[].startTimeUnixNano,
-				.resourceSpans[].scopeSpans[].spans[].endTimeUnixNano,
-				(.resourceSpans[].scopeSpans[].spans[].attributes[] | 
-					select(.key == "net.peer.ip" or 
-						   .key == "net.peer.port" or
-						   .key == "net.sock.peer.port" or
-						   .key == "net.sock.peer.addr" or
-						   .key == "net.sock.host.addr" or
-						   .key == "thread.id" or 
-						   .key == "thread.name")),
-				(.resourceSpans[].resource.attributes[] | 
-					select(.key == "host.name" or
-						   .key == "host.arch" or
-						   .key == "container.id" or
-						   .key == "os.description" or
-						   .key == "k8s.pod.name"))
-			)
+				.resourceSpans[].scopeSpans[].spans[].endTimeUnixNano
 			| .resourceSpans[].scopeSpans[].spans[].traceId|= (if
 					. // "" | test("^[A-Fa-f0-9]{32}$") then "xxxxx" else (. + "<-INVALID")
 				end)

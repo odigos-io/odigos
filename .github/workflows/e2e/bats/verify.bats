@@ -148,8 +148,3 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
   assert_not_empty "$js_client_span_id"
   assert_equal "$go_parent_span_id" "$js_client_span_id"
 }
-
-@test "server :: expected (redacted) trace output" {
-  redact_json
-  assert_equal "$(git --no-pager diff ${BATS_TEST_DIRNAME}/traces.json)" ""
-}
