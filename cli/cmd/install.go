@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/keyval-dev/odigos/cli/pkg/labels"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
@@ -55,6 +57,13 @@ This command will install k8s components that will auto-instrument your applicat
 		ctx := cmd.Context()
 		ns := cmd.Flag("namespace").Value.String()
 		cmd.Flags().StringSliceVar(&ignoredNamespaces, "ignore-namespace", DefaultIgnoredNamespaces, "--ignore-namespace foo logging")
+
+		// Check if Odigos already installed
+		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+		if err == nil && cm != nil {
+			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace")
+			os.Exit(1)
+		}
 
 		var odigosProToken string
 		odigosTier := common.CommunityOdigosTier
@@ -138,7 +147,17 @@ func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (b
 
 func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 	_, err := client.CoreV1().Namespaces().Create(ctx, resources.NewNamespace(ns), metav1.CreateOptions{})
-	if apierrors.IsAlreadyExists(err) {
+	if err != nil && apierrors.IsAlreadyExists(err) {
+		nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		val, exists := nsObj.Labels[labels.OdigosSystemLabelKey]
+		if !exists || val != labels.OdigosSystemLabelValue {
+			return fmt.Errorf("namespace %s does not contain %s label", ns, labels.OdigosSystemLabelKey)
+		}
+
 		return nil
 	}
 
