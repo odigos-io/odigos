@@ -1,7 +1,7 @@
 package config
 
 import (
-	"context"
+	"errors"
 	"net/url"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
@@ -31,7 +31,7 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 		return
 	}
 
-	parsedURL, err := e.SanitizeURL(context.TODO(), rawURL)
+	parsedURL, err := e.SanitizeURL(rawURL)
 	if err != nil {
 		log.Log.V(0).Error(err, "failed to sanitize URL", "elasticsearch-url", rawURL)
 		return
@@ -78,10 +78,20 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 	}
 }
 
-func (e *Elasticsearch) SanitizeURL(_ context.Context, URL string) (string, error) {
-	parsedURL, err := url.Parse(URL)
+// SanitizeURL will check whether URL is correct by utilizing url.ParseRequestURI
+// if the said URL has not defined any port, 9200 will be used in order to keep the backward compatibility with current configuration
+func (e *Elasticsearch) SanitizeURL(URL string) (string, error) {
+	parsedURL, err := url.ParseRequestURI(URL)
 	if err != nil {
 		return "", err
+	}
+
+	if parsedURL.Scheme == "" || parsedURL.Host == "" {
+		return "", errors.New("invalid URL")
+	}
+
+	if !urlHostContainsPort(parsedURL.Host) {
+		parsedURL.Host += ":9200"
 	}
 
 	return parsedURL.String(), nil
