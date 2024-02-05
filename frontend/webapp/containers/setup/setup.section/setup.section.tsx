@@ -1,24 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { STEPS, Step } from './utils';
+import { WhiteArrow } from '@/assets/icons/app';
+import { useSearchParams } from 'next/navigation';
+import { KeyvalText, Steps } from '@/design.system';
+import { SetupHeader } from '../setup.header/setup.header';
+import { SourcesSection } from '../sources/sources.section';
+import { CONFIG, NOTIFICATION, SETUP } from '@/utils/constants';
+import { ConnectionSection } from '../connection/connection.section';
+import { useSectionData, useNotification, useSources } from '@/hooks';
+import { DestinationSection } from '../destination/destination.section';
+
 import {
   SetupContentWrapper,
   SetupSectionContainer,
   StepListWrapper,
   BackButtonWrapper,
 } from './setup.section.styled';
-import { SetupHeader } from '../setup.header/setup.header';
-import { DestinationSection } from '../destination/destination.section';
-import { ConnectionSection } from '../connection/connection.section';
-import { SourcesSection } from '../sources/sources.section';
-import { KeyvalText, Steps } from '@/design.system';
-import { CONFIG, NOTIFICATION, SETUP } from '@/utils/constants';
-import { useSectionData, useNotification } from '@/hooks';
-import { STEPS, Step } from './utils';
-import { setNamespaces } from '@/services';
-import { useSearchParams } from 'next/navigation';
-import { useMutation } from 'react-query';
-import { SelectedSources } from '@/types/sources';
-import { WhiteArrow } from '@/assets/icons/app';
-
 const STATE = 'state';
 
 const sectionComponents = {
@@ -29,11 +26,10 @@ const sectionComponents = {
 
 export function SetupSection() {
   const [currentStep, setCurrentStep] = useState<Step>(STEPS[0]);
-  const { sectionData, setSectionData, totalSelected } = useSectionData({});
-  const { mutate } = useMutation((body: SelectedSources) =>
-    setNamespaces(body)
-  );
+
+  const { upsertSources } = useSources();
   const { show, Notification } = useNotification();
+  const { sectionData, setSectionData, totalSelected } = useSectionData({});
 
   const searchParams = useSearchParams();
   const search = searchParams.get(STATE);
@@ -78,7 +74,9 @@ export function SetupSection() {
 
     if (currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE) {
       previousSourceState.current = sectionData;
-      mutate(sectionData, {
+
+      upsertSources({
+        sectionData,
         onSuccess: () => {
           setCurrentStep(nextStep);
           setSectionData({});
