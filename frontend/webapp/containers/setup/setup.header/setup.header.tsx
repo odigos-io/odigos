@@ -82,7 +82,7 @@ export function SetupHeader({
           )}
         {currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE && (
           <KeyvalButton
-            disabled={totalSelected === 0}
+            // disabled={totalSelected === 0}
             onClick={onNextClick}
             style={{ gap: 10, width: 120 }}
           >

@@ -7,11 +7,6 @@ import { NOTIFICATION, QUERIES } from '@/utils/constants';
 import { KeyvalLoader } from '@/design.system';
 import { useNotification } from '@/hooks';
 
-const DEFAULT_CONFIG = {
-  selected_all: false,
-  future_selected: false,
-};
-
 const DEFAULT = 'default';
 
 export function SourcesSection({ sectionData, setSectionData }: any) {
@@ -55,6 +50,7 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
 
   const sourceData = useMemo(() => {
     let namespace = sectionData[currentNamespace?.name];
+
     //filter by search query
     namespace = searchFilter
       ? namespace?.objects.filter((item: any) =>
