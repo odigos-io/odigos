@@ -25,7 +25,7 @@ export function SourcesListContainer() {
         title={OVERVIEW.MENU.SOURCES}
         onBackClick={() => router.back()}
       />
-      <NewSourcesList onSuccess={onNewSourceSuccess} sources={sources} />
+      <NewSourcesList onSuccess={onNewSourceSuccess} />
       <Notification />
     </>
   );
