@@ -7,7 +7,9 @@
 asgiref==3.7.2
     # via opentelemetry-instrumentation-asgi
 backoff==2.2.1
-    # via opentelemetry-exporter-otlp-proto-http
+    # via
+    #   opentelemetry-exporter-otlp-proto-common
+    #   opentelemetry-exporter-otlp-proto-http
 certifi==2023.5.7
     # via requests
 charset-normalizer==3.2.0
@@ -23,7 +25,7 @@ idna==3.4
     # via requests
 importlib-metadata==6.0.1
     # via opentelemetry-api
-opentelemetry-api==1.19.0
+opentelemetry-api==1.22.0
     # via
     #   opentelemetry-distro
     #   opentelemetry-exporter-otlp-proto-http
@@ -75,13 +77,13 @@ opentelemetry-api==1.19.0
     #   opentelemetry-propagator-jaeger
     #   opentelemetry-propagator-ot-trace
     #   opentelemetry-sdk
-opentelemetry-distro==0.40b0
+opentelemetry-distro==0.43b0
     # via -r requirements.in
-opentelemetry-exporter-otlp-proto-common==1.19.0
+opentelemetry-exporter-otlp-proto-common==1.22.0
     # via opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-http==1.19.0
+opentelemetry-exporter-otlp-proto-http==1.22.0
     # via -r requirements.in
-opentelemetry-instrumentation==0.40b0
+opentelemetry-instrumentation==0.43b0
     # via
     #   -r requirements.in
     #   opentelemetry-distro
@@ -125,28 +127,28 @@ opentelemetry-instrumentation==0.40b0
     #   opentelemetry-instrumentation-wsgi
 opentelemetry-instrumentation-aio-pika==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-aiohttp-client==0.40b0
+opentelemetry-instrumentation-aiohttp-client==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-aiopg==0.40b0
+opentelemetry-instrumentation-aiopg==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-asgi==0.40b0
+opentelemetry-instrumentation-asgi==0.43b0
     # via
     #   -r requirements.in
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-starlette
-opentelemetry-instrumentation-asyncpg==0.40b0
+opentelemetry-instrumentation-asyncpg==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-boto==0.40b0
+opentelemetry-instrumentation-boto==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-boto3sqs==0.40b0
+opentelemetry-instrumentation-boto3sqs==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-botocore==0.40b0
+opentelemetry-instrumentation-botocore==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-celery==0.40b0
+opentelemetry-instrumentation-celery==0.43b0
     # via -r requirements.in
 opentelemetry-instrumentation-confluent-kafka==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-dbapi==0.40b0
+opentelemetry-instrumentation-dbapi==0.43b0
     # via
     #   -r requirements.in
     #   opentelemetry-instrumentation-aiopg
@@ -155,67 +157,67 @@ opentelemetry-instrumentation-dbapi==0.40b0
     #   opentelemetry-instrumentation-psycopg2
     #   opentelemetry-instrumentation-pymysql
     #   opentelemetry-instrumentation-sqlite3
-opentelemetry-instrumentation-django==0.40b0
+opentelemetry-instrumentation-django==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-elasticsearch==0.40b0
+opentelemetry-instrumentation-elasticsearch==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-falcon==0.40b0
+opentelemetry-instrumentation-falcon==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-fastapi==0.40b0
+opentelemetry-instrumentation-fastapi==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-flask==0.40b0
+opentelemetry-instrumentation-flask==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-grpc==0.40b0
+opentelemetry-instrumentation-grpc==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-httpx==0.40b0
+opentelemetry-instrumentation-httpx==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-jinja2==0.40b0
+opentelemetry-instrumentation-jinja2==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-kafka-python==0.40b0
+opentelemetry-instrumentation-kafka-python==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-logging==0.40b0
+opentelemetry-instrumentation-logging==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-mysql==0.40b0
+opentelemetry-instrumentation-mysql==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-mysqlclient==0.40b0
+opentelemetry-instrumentation-mysqlclient==0.43b0
     # via -r requirements.in
 opentelemetry-instrumentation-pika==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-psycopg2==0.40b0
+opentelemetry-instrumentation-psycopg2==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-pymemcache==0.40b0
+opentelemetry-instrumentation-pymemcache==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-pymongo==0.40b0
+opentelemetry-instrumentation-pymongo==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-pymysql==0.40b0
+opentelemetry-instrumentation-pymysql==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-pyramid==0.40b0
+opentelemetry-instrumentation-pyramid==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-redis==0.40b0
+opentelemetry-instrumentation-redis==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-remoulade==0.40b0
+opentelemetry-instrumentation-remoulade==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-requests==0.40b0
+opentelemetry-instrumentation-requests==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-sklearn==0.40b0
+opentelemetry-instrumentation-sklearn==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-sqlalchemy==0.40b0
+opentelemetry-instrumentation-sqlalchemy==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-sqlite3==0.40b0
+opentelemetry-instrumentation-sqlite3==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-starlette==0.40b0
+opentelemetry-instrumentation-starlette==0.43b0
     # via -r requirements.in
 opentelemetry-instrumentation-system-metrics==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-tornado==0.40b0
+opentelemetry-instrumentation-tornado==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-tortoiseorm==0.40b0
+opentelemetry-instrumentation-tortoiseorm==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-urllib==0.40b0
+opentelemetry-instrumentation-urllib==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-urllib3==0.40b0
+opentelemetry-instrumentation-urllib3==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-wsgi==0.40b0
+opentelemetry-instrumentation-wsgi==0.43b0
     # via
     #   -r requirements.in
     #   opentelemetry-instrumentation-django
@@ -232,18 +234,18 @@ opentelemetry-propagator-jaeger==1.22.0
     # via -r requirements.in
 opentelemetry-propagator-ot-trace==0.43b0
     # via -r requirements.in
-opentelemetry-proto==1.19.0
+opentelemetry-proto==1.22.0
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.19.0
+opentelemetry-sdk==1.22.0
     # via
     #   opentelemetry-distro
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation-grpc
     #   opentelemetry-instrumentation-system-metrics
     #   opentelemetry-propagator-ot-trace
-opentelemetry-semantic-conventions==0.40b0
+opentelemetry-semantic-conventions==0.43b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-asgi
@@ -275,7 +277,7 @@ opentelemetry-semantic-conventions==0.40b0
     #   opentelemetry-instrumentation-urllib3
     #   opentelemetry-instrumentation-wsgi
     #   opentelemetry-sdk
-opentelemetry-util-http==0.40b0
+opentelemetry-util-http==0.43b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-asgi
