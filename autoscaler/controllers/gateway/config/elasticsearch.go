@@ -1,7 +1,8 @@
 package config
 
 import (
-	"fmt"
+	"errors"
+	"net/url"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
@@ -15,6 +16,8 @@ const (
 	esLogsIndexKey      = "ES_LOGS_INDEX"
 )
 
+var _ Configer = (*Elasticsearch)(nil)
+
 type Elasticsearch struct{}
 
 func (e *Elasticsearch) DestType() common.DestinationType {
@@ -22,9 +25,15 @@ func (e *Elasticsearch) DestType() common.DestinationType {
 }
 
 func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
-	url, exists := dest.Spec.Data[elasticsearchUrlKey]
+	rawURL, exists := dest.Spec.Data[elasticsearchUrlKey]
 	if !exists {
 		log.Log.V(0).Info("ElasticSearch url not specified, gateway will not be configured for ElasticSearch")
+		return
+	}
+
+	parsedURL, err := e.SanitizeURL(rawURL)
+	if err != nil {
+		log.Log.V(0).Error(err, "failed to sanitize URL", "elasticsearch-url", rawURL)
 		return
 	}
 
@@ -36,7 +45,7 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 		}
 
 		currentConfig.Exporters[esTraceExporterName] = commonconf.GenericMap{
-			"endpoints":    []string{fmt.Sprintf("%s:9200", url)},
+			"endpoints":    []string{parsedURL},
 			"traces_index": traceIndexVal,
 		}
 
@@ -56,7 +65,7 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 		}
 
 		currentConfig.Exporters[esLogExporterName] = commonconf.GenericMap{
-			"endpoints":  []string{fmt.Sprintf("%s:9200", url)},
+			"endpoints":  []string{parsedURL},
 			"logs_index": logIndexVal,
 		}
 
@@ -67,4 +76,23 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 			Exporters:  []string{esLogExporterName},
 		}
 	}
+}
+
+// SanitizeURL will check whether URL is correct by utilizing url.ParseRequestURI
+// if the said URL has not defined any port, 9200 will be used in order to keep the backward compatibility with current configuration
+func (e *Elasticsearch) SanitizeURL(URL string) (string, error) {
+	parsedURL, err := url.ParseRequestURI(URL)
+	if err != nil {
+		return "", err
+	}
+
+	if parsedURL.Scheme == "" || parsedURL.Host == "" {
+		return "", errors.New("invalid URL")
+	}
+
+	if !urlHostContainsPort(parsedURL.Host) {
+		parsedURL.Host += ":9200"
+	}
+
+	return parsedURL.String(), nil
 }

@@ -81,11 +81,7 @@ export function SetupHeader({
             </TotalSelectedWrapper>
           )}
         {currentStep?.id === SETUP.STEPS.ID.CHOOSE_SOURCE && (
-          <KeyvalButton
-            disabled={totalSelected === 0}
-            onClick={onNextClick}
-            style={{ gap: 10, width: 120 }}
-          >
+          <KeyvalButton onClick={onNextClick} style={{ gap: 10, width: 120 }}>
             <KeyvalText size={20} weight={600} color={theme.text.dark_button}>
               {SETUP.NEXT}
             </KeyvalText>
