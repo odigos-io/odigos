@@ -55,12 +55,12 @@ export function renderFields(
           </FieldWrapper>
         );
       case INPUT_TYPES.MULTI_INPUT:
-        const selectedData = dynamicFields[name]
+        const userInputData = dynamicFields[name]
           ? JSON.parse(dynamicFields[name])
           : null;
 
         const initialList =
-          selectedData || JSON.parse(field?.initial_value || '');
+          userInputData || JSON.parse(field?.initial_value || '');
 
         return (
           <FieldWrapper key={name}>
