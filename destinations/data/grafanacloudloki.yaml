@@ -30,3 +30,8 @@ spec:
       componentProps:
         type: password
       secret: true
+    - name: GRAFANA_CLOUD_LOKI_LABELS
+      displayName: Labels
+      componentType: multiInput
+      componentProps:
+        type: text

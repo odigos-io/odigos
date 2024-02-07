@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -14,6 +15,7 @@ import (
 const (
 	grafanaCloudLokiEndpointKey = "GRAFANA_CLOUD_LOKI_ENDPOINT"
 	grafanaCloudLokiUsernameKey = "GRAFANA_CLOUD_LOKI_USERNAME"
+	grafanaCloudLokiLabelsKey   = "GRAFANA_CLOUD_LOKI_LABELS"
 )
 
 type GrafanaCloudLoki struct{}
@@ -33,6 +35,19 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest *odigosv1.Destination, currentConfi
 	if !exists {
 		log.Log.V(0).Info("Grafana Cloud Loki endpoint not specified, gateway will not be configured for Loki")
 		return
+	}
+
+	lokiAttributesLabels := "k8s.container.name, k8s.pod.name, k8s.namespace.name"
+	rawLokiLabels, exists := dest.Spec.Data[grafanaCloudLokiLabelsKey]
+	if exists {
+		var attributeNames []string
+		err := json.Unmarshal([]byte(rawLokiLabels), &attributeNames)
+		if err != nil {
+			log.Log.Error(err, "failed to parse grafana cloud loki labels, gateway will not be configured for Loki")
+			return
+		}
+
+		lokiAttributesLabels = strings.Join(attributeNames, ", ")
 	}
 
 	lokiExporterEndpoint, err := grafanaLokiUrlFromInput(lokiUrl)
@@ -70,7 +85,7 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest *odigosv1.Destination, currentConfi
 			{
 				"key":    "loki.attribute.labels",
 				"action": "insert",
-				"value":  "k8s.container.name, k8s.pod.name, k8s.namespace.name",
+				"value":  lokiAttributesLabels,
 			},
 		},
 	}
