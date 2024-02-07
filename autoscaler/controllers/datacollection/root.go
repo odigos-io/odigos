@@ -27,7 +27,7 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 	}
 
 	if dataCollectionCollectorGroup == nil {
-		logger.V(3).Info("data collection collector group not exists, nothing to sync")
+		logger.V(3).Info("data collection collector group doesn't exist, nothing to sync")
 		return nil
 	}
 
