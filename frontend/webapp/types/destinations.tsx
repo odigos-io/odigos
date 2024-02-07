@@ -31,4 +31,5 @@ export interface Field {
   display_name: string;
   component_properties: any;
   video_url: string;
+  initial_value?: string;
 }

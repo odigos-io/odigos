@@ -1,17 +1,17 @@
 'use client';
 import React, { useEffect } from 'react';
-import { NOTIFICATION, OVERVIEW, QUERIES, ROUTES } from '@/utils/constants';
+import { styled } from 'styled-components';
+import { HideScroll } from '@/styles/styled';
 import { useMutation, useQuery } from 'react-query';
+import { useNotification, useSectionData } from '@/hooks';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ManageDestination, OverviewHeader } from '@/components/overview';
+import { NOTIFICATION, OVERVIEW, QUERIES, ROUTES } from '@/utils/constants';
 import {
   getDestination,
   getDestinationsTypes,
   setDestination,
 } from '@/services';
-import { ManageDestination, OverviewHeader } from '@/components/overview';
-import { useNotification, useSectionData } from '@/hooks';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { styled } from 'styled-components';
-import { HideScroll } from '@/styles/styled';
 
 const DEST = 'dest';
 
@@ -24,11 +24,9 @@ const NewDestinationContainer = styled.div`
   }
   -ms-overflow-style: none;
   scrollbar-width: none;
+  height: 80vh;
   @media screen and (max-height: 750px) {
     height: 85vh;
-  }
-  @media screen and (max-width: 1300px) {
-    height: 80vh;
   }
 `;
 
