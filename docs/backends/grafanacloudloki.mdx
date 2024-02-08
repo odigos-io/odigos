@@ -43,8 +43,3 @@ You can configure your grafana cloud loki labels in the `Labels` multi-input con
 - [Use only low cardinality values](https://grafana.com/docs/loki/latest/get-started/labels/#cardinality). e.g. use only opentelemetry attributes for which you expect a small number of unique values.
 - If the label is not present in a log record, it will be ignored.
 - The default labels if not set are: `k8s.container.name, k8s.pod.name, k8s.namespace.name`
-
-### Resource Attributes as Metrics Labels
-
-To use [resource attributes as labels in your data points](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/prometheusremotewriteexporter#setting-resource-attributes-as-metric-labels),
-you can set the resource attribute names in the `Resource Attributes as Labels` multi-input config option in the destination page in the Odigos UI. 
