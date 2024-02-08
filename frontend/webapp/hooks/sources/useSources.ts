@@ -12,7 +12,7 @@ export function useSources() {
 
   function upsertSources({ sectionData, onSuccess, onError }) {
     const sourceNamesSet = new Set(
-      sources.map((source: SelectedSources) => source.name)
+      sources?.map((source: SelectedSources) => source.name)
     );
     const updatedSectionData: SelectedSources = {};
 

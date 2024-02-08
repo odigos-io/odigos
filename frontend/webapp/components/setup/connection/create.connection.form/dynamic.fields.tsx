@@ -8,6 +8,7 @@ import {
   KeyvalText,
   MultiInput,
 } from '@/design.system';
+import { safeJsonParse } from '@/utils/functions/strings';
 
 export function renderFields(
   fields: Field[],
@@ -55,12 +56,16 @@ export function renderFields(
           </FieldWrapper>
         );
       case INPUT_TYPES.MULTI_INPUT:
-        const userInputData = dynamicFields[name]
-          ? JSON.parse(dynamicFields[name])
-          : null;
+        const userInputData = safeJsonParse<string[] | null>(
+          dynamicFields[name],
+          null
+        );
 
+        // Use safeJsonParse to parse field?.initial_value, defaulting to an empty string if not available.
+        // This assumes that the initial value is supposed to be a string when parsed successfully.
+        // Adjust the fallback value as necessary to match the expected type
         const initialList =
-          userInputData || JSON.parse(field?.initial_value || '');
+          userInputData || safeJsonParse<string[]>(field?.initial_value, []);
 
         return (
           <FieldWrapper key={name}>
