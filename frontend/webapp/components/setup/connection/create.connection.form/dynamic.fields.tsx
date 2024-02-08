@@ -1,8 +1,13 @@
 import React from 'react';
-import { KeyvalDropDown, KeyvalInput, KeyvalText } from '@/design.system';
-import { FieldWrapper } from './create.connection.form.styled';
-import { INPUT_TYPES } from '@/utils/constants/string';
 import { Field } from '@/types/destinations';
+import { INPUT_TYPES } from '@/utils/constants/string';
+import { FieldWrapper } from './create.connection.form.styled';
+import {
+  KeyvalDropDown,
+  KeyvalInput,
+  KeyvalText,
+  MultiInput,
+} from '@/design.system';
 
 export function renderFields(
   fields: Field[],
@@ -46,6 +51,29 @@ export function renderFields(
               data={dropdownData}
               onChange={({ label }) => onChange(name, label)}
               value={dropDownValue}
+            />
+          </FieldWrapper>
+        );
+      case INPUT_TYPES.MULTI_INPUT:
+        const userInputData = dynamicFields[name]
+          ? JSON.parse(dynamicFields[name])
+          : null;
+
+        const initialList =
+          userInputData || JSON.parse(field?.initial_value || '');
+
+        return (
+          <FieldWrapper key={name}>
+            <KeyvalText size={14} weight={600} style={{ marginBottom: 8 }}>
+              {display_name}
+            </KeyvalText>
+            <MultiInput
+              initialList={initialList}
+              label={display_name}
+              onListChange={(value: string[]) =>
+                onChange(name, value.length === 0 ? '' : JSON.stringify(value))
+              }
+              {...component_properties}
             />
           </FieldWrapper>
         );
