@@ -33,3 +33,8 @@ The username is a number.
 - **Password** - This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. 
 You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page.
 Make sure your token scope includes "metrics:write" scope.
+
+### Resource Attributes as Metrics Labels
+
+To use [resource attributes as labels in your data points](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/prometheusremotewriteexporter#setting-resource-attributes-as-metric-labels),
+you can set the resource attribute names in the `Resource Attributes as Labels` multi-input config option in the destination page in the Odigos UI. 
