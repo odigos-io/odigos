@@ -85,14 +85,14 @@ func otelSdkConfigOnPrem() (map[common.ProgrammingLanguage]common.OtelSdk, map[c
 
 	return map[common.ProgrammingLanguage]common.OtelSdk{
 			common.JavaProgrammingLanguage:       eBPFEnterprise, // Notice - for onprem, the default for java is eBPF
-			common.PythonProgrammingLanguage:     nativeCommunity,
+			common.PythonProgrammingLanguage:     eBPFEnterprise, // Also Python
 			common.GoProgrammingLanguage:         eBPFEnterprise,
 			common.DotNetProgrammingLanguage:     nativeCommunity,
 			common.JavascriptProgrammingLanguage: nativeCommunity,
 		},
 		map[common.ProgrammingLanguage][]common.OtelSdk{
 			common.JavaProgrammingLanguage:       {nativeCommunity, eBPFEnterprise},
-			common.PythonProgrammingLanguage:     {nativeCommunity},
+			common.PythonProgrammingLanguage:     {nativeCommunity, eBPFEnterprise},
 			common.GoProgrammingLanguage:         {eBPFEnterprise},
 			common.DotNetProgrammingLanguage:     {nativeCommunity},
 			common.JavascriptProgrammingLanguage: {nativeCommunity},
