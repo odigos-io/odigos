@@ -53,6 +53,7 @@ export const SETUP = {
 export const INPUT_TYPES = {
   INPUT: 'input',
   DROPDOWN: 'dropdown',
+  MULTI_INPUT: 'multiInput',
 };
 
 export const OVERVIEW = {

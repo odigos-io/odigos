@@ -36,7 +36,7 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 	}
 
 	if gatewayCollectorGroup == nil {
-		logger.V(3).Info("gateway collector group not exists, nothing to sync")
+		logger.V(3).Info("gateway collector group doesn't exist, nothing to sync")
 		return nil
 	}
 

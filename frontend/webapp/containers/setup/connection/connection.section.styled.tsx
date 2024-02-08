@@ -10,9 +10,9 @@ export const CreateConnectionContainer = styled.div`
   }
   scrollbar-width: none;
   -ms-overflow-style: none;
-  @media screen and (max-width: 1400px) {
-    height: 50vh;
-  }
+  height: 80%;
+  max-height: 600px;
+
   @media screen and (max-height: 750px) {
     height: 50vh;
   }
