@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -14,6 +15,7 @@ import (
 const (
 	grafanaCloudLokiEndpointKey = "GRAFANA_CLOUD_LOKI_ENDPOINT"
 	grafanaCloudLokiUsernameKey = "GRAFANA_CLOUD_LOKI_USERNAME"
+	grafanaCloudLokiLabelsKey   = "GRAFANA_CLOUD_LOKI_LABELS"
 )
 
 type GrafanaCloudLoki struct{}
@@ -47,6 +49,13 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest *odigosv1.Destination, currentConfi
 		return
 	}
 
+	rawLokiLabels, exists := dest.Spec.Data[grafanaCloudLokiLabelsKey]
+	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.Name)
+	if err != nil {
+		log.Log.Error(err, "failed to parse grafana cloud loki labels, gateway will not be configured for Loki")
+		return
+	}
+
 	authExtensionName := "basicauth/grafana" + dest.Name
 	currentConfig.Extensions[authExtensionName] = commonconf.GenericMap{
 		"client_auth": commonconf.GenericMap{
@@ -63,23 +72,17 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest *odigosv1.Destination, currentConfi
 		},
 	}
 
-	// add loki labels which are indexed
-	processorName := "attributes/grafana-" + dest.Name
-	currentConfig.Processors[processorName] = commonconf.GenericMap{
-		"actions": []commonconf.GenericMap{
-			{
-				"key":    "loki.attribute.labels",
-				"action": "insert",
-				"value":  "k8s.container.name, k8s.pod.name, k8s.namespace.name",
-			},
-		},
+	processorNames := []string{}
+	for k, v := range lokiProcessors {
+		currentConfig.Processors[k] = v
+		processorNames = append(processorNames, k)
 	}
 
 	logsPipelineName := "logs/grafana-" + dest.Name
 	currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 		Receivers:  []string{"otlp"},
-		Processors: []string{"batch", processorName},
+		Processors: append([]string{"batch"}, processorNames...),
 		Exporters:  []string{exporterName},
 	}
 
@@ -130,4 +133,62 @@ func grafanaLokiUrlFromInput(rawUrl string) (string, error) {
 	}
 
 	return parsedUrl.String(), nil
+}
+
+func lokiLabelsProcessors(rawLabels string, exists bool, destName string) (commonconf.GenericMap, error) {
+
+	// backwards compatibility, if the user labels are not provided, we use the default
+	if !exists {
+		processorName := "attributes/grafana-" + destName
+		return commonconf.GenericMap{
+			processorName: commonconf.GenericMap{
+				"actions": []commonconf.GenericMap{
+					{
+						"key":    "loki.attribute.labels",
+						"action": "insert",
+						"value":  "k8s.container.name, k8s.pod.name, k8s.namespace.name",
+					},
+				},
+			},
+		}, nil
+	}
+
+	// no labels. not recommended, but ok
+	if rawLabels == "" || rawLabels == "[]" {
+		return commonconf.GenericMap{}, nil
+	}
+
+	var attributeNames []string
+	err := json.Unmarshal([]byte(rawLabels), &attributeNames)
+	if err != nil {
+		return nil, err
+	}
+	attributeHint := strings.Join(attributeNames, ", ")
+
+	processors := commonconf.GenericMap{}
+
+	// since we don't know if the attributes are logs attributes or resource attributes, we will add them to both processors
+	attributesProcessorName := "attributes/grafana-" + destName
+	processors[attributesProcessorName] = commonconf.GenericMap{
+		"actions": []commonconf.GenericMap{
+			{
+				"key":    "loki.attribute.labels",
+				"action": "insert",
+				"value":  attributeHint,
+			},
+		},
+	}
+
+	resourceProcessorName := "resource/grafana-" + destName
+	processors[resourceProcessorName] = commonconf.GenericMap{
+		"attributes": []commonconf.GenericMap{
+			{
+				"key":    "loki.resource.labels",
+				"action": "insert",
+				"value":  attributeHint,
+			},
+		},
+	}
+
+	return processors, nil
 }

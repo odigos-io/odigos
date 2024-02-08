@@ -30,3 +30,9 @@ spec:
       componentProps:
         type: password
       secret: true
+    - name: PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS
+      displayName: Resource Attributes Labels
+      componentType: multiInput
+      componentProps:
+        type: text
+      initialValue: '["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]'
