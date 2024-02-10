@@ -63,6 +63,7 @@
     {
       "group": "Observability Backends",
       "pages": [    
+        "backends/awss3",
         "backends/azureblob",
         "backends/coralogix",
         "backends/datadog",
