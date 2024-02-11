@@ -1,3 +1,4 @@
+'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { STEPS, Step } from './utils';
 import { WhiteArrow } from '@/assets/icons/app';
@@ -50,7 +51,7 @@ export function SetupSection() {
     return Component ? (
       <Component
         sectionData={sectionData}
-        setSectionData={setSectionData}
+        // setSectionData={setSectionData}
         onSelectItem={onNextClick}
       />
     ) : null;

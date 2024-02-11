@@ -14,7 +14,7 @@ import {
   sortDestinationList,
 } from './utils';
 import { KeyvalLoader } from '@/design.system';
-import { useNotification } from '@/hooks';
+import { useNotification, useSectionData } from '@/hooks';
 import { getDestinationsTypes } from '@/services';
 import { EmptyList } from '@/components/lists';
 
@@ -30,18 +30,16 @@ interface DestinationTypes {
 }
 
 type DestinationSectionProps = {
-  sectionData?: any;
-  setSectionData: (data: any) => void;
+  // sectionData?: any;
+  // setSectionData: (data: any) => void;
   onSelectItem?: () => void;
 };
 
-export function DestinationSection({
-  sectionData,
-  setSectionData,
-  onSelectItem,
-}: DestinationSectionProps) {
+export function DestinationSection({ onSelectItem }: DestinationSectionProps) {
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [dropdownData, setDropdownData] = useState<any>(null);
+
+  const { sectionData, setSectionData } = useSectionData({});
   const { show, Notification } = useNotification();
   const [monitoringOption, setMonitoringOption] =
     useState<any>(MONITORING_OPTIONS);

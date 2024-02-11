@@ -9,9 +9,10 @@ import { useNotification } from '@/hooks';
 
 const DEFAULT = 'default';
 
-export function SourcesSection({ sectionData, setSectionData }: any) {
+export function SourcesSection({ sectionData, setSectionData }) {
   const [currentNamespace, setCurrentNamespace] = useState<any>(null);
   const [searchFilter, setSearchFilter] = useState<string>('');
+
   const { show, Notification } = useNotification();
   const { isLoading, data, isError, error } = useQuery(
     [QUERIES.API_NAMESPACES],
