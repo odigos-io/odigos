@@ -1,6 +1,9 @@
 package custom
 
 import (
+	"fmt"
+
+	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -9,10 +12,11 @@ const (
 	honeycombDataCollectionImage = "honeycombio/honeycomb-kubernetes-agent:2.6.0"
 	honeycombConfigMountPath     = "/etc/honeycomb"
 	honeycombConfigKey           = "honeycomb-conf"
+	honeycombEndpoint            = "HONEYCOMB_ENDPOINT"
 )
 
-func addHoneycombConfig(cm *corev1.ConfigMap) {
-	cm.Data[honeycombConfigKey] = `    apiHost: https://api.honeycomb.io/
+func addHoneycombConfig(cm *corev1.ConfigMap, dst odigosv1.Destination) {
+	template := `    apiHost: %s
     watchers:
       - dataset: kubernetes-logs
         labelSelector: "component=kube-apiserver,tier=control-plane"
@@ -43,6 +47,7 @@ func addHoneycombConfig(cm *corev1.ConfigMap) {
       metricGroups:
       - node
       - pod`
+	cm.Data[honeycombConfigKey] = fmt.Sprintf(template, dst.Spec.Data[honeycombEndpoint])
 }
 
 func addHoneycombToDaemonSet(ds *v1.DaemonSet, secretName string) {
@@ -99,7 +104,7 @@ func addHoneycombToDaemonSet(ds *v1.DaemonSet, secretName string) {
 
 	for i, vol := range ds.Spec.Template.Spec.Volumes {
 		if vol.Name == "conf" {
-			ds.Spec.Template.Spec.Volumes[i].VolumeSource.ConfigMap.Items = append(ds.Spec.Template.Spec.Volumes[i].VolumeSource.ConfigMap.Items, corev1.KeyToPath{
+			ds.Spec.Template.Spec.Volumes[i].ConfigMap.Items = append(ds.Spec.Template.Spec.Volumes[i].ConfigMap.Items, corev1.KeyToPath{
 				Key:  honeycombConfigKey,
 				Path: "config.yaml",
 			})
