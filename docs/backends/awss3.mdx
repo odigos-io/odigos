@@ -30,9 +30,8 @@ aws s3api create-bucket --bucket otel-data --region us-east-1
 
 ## Setting up AWS credentials with AWS EKS (Elastic Kubernetes Service)
 
-The following command enables the association of an IAM OpenID Connect (OIDC) identity provider with your Amazon EKS cluster. 
-By running this command, you allow your EKS cluster to interact with other AWS services securely, using IAM roles for service accounts (IRSA). 
-IRSA is a feature that allows Kubernetes service accounts to assume IAM roles, providing a fine-grained permission model and reducing the need for managing Kubernetes secrets for AWS credential management.
+The follwoing command will create a link between your EKS cluster and your IAM account, 
+effectively allowing the EKS cluster to assume IAM roles and access AWS services.
 
 Replace `$EKS_CLUSTER_REGION` with the region of your EKS cluster and `$EKS_CLUSTER_NAME` with the name of your EKS cluster (or set them as environment variables).
 
@@ -40,4 +39,50 @@ Replace `$EKS_CLUSTER_REGION` with the region of your EKS cluster and `$EKS_CLUS
 eksctl utils associate-iam-oidc-provider --region=$EKS_CLUSTER_REGION --cluster=$EKS_CLUSTER_NAME --approve
 ```
 
+Then, create an IAM policy that allows Odigos to send data to your S3 bucket:
 
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:PutObjectAcl",
+        "s3:GetObject",
+        "s3:GetObjectAcl",
+        "s3:DeleteObject"
+      ],
+      "Resource": ["arn:aws:s3:::<BucketName>", "arn:aws:s3:::<BucketName>/*"]
+    }
+  ]
+}
+```
+
+You can do it with the aws cli. 
+- Replace `otel-data` with the name of your bucket if you used a different name.
+- The policy name is `odigos-s3` in this example, you can use it or choose a different name. Take note of the policy ARN, you will need it in the next step.
+
+```bash
+aws iam create-policy 
+--policy-name odigos-s3 
+--policy-document '{ "Version": "2012-10-17", "Statement": [ { "Effect": "Allow", "Action": [ "s3:PutObject", "s3:PutObjectAcl", "s3:GetObject", "s3:GetObjectAcl", "s3:DeleteObject" ], "Resource": ["arn:aws:s3:::otel-data", "arn:aws:s3:::otel-data/*"] } ] }'
+```
+
+Or use the aws management console to create the policy.
+
+The last step is to configure this IAM policy to be assumed by the EKS cluster. Use the following cli command as template and adjust it according to your setup:
+- make sure to replace the `--attach-policy-arn` value with the ARN of the policy you created in the previous step.
+- use your EKS cluster name and region.
+
+```bash
+eksctl create iamserviceaccount \
+--name default \
+--namespace odigos-system \
+--cluster otel-cluster \
+--region=us-east-1 \
+--attach-policy-arn arn:aws:iam::123456789012:policy/odigos-s3 \
+--override-existing-serviceaccounts \
+--approve
+```
