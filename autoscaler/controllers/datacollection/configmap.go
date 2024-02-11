@@ -140,7 +140,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 				}},
 			},
 			"resourcedetection": commonconf.GenericMap{
-				"detectors": []string{"ec2"},
+				"detectors": []string{"ec2", "gcp"},
 			},
 		},
 		Extensions: commonconf.GenericMap{
