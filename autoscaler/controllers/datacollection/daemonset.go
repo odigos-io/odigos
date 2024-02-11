@@ -40,6 +40,7 @@ var (
 func syncDaemonSet(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup, configData string, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
+	// ToDo(clavinjune): fetch odiglet daemonset manifest, then sync it with data-collection daemonset
 	desiredDs, err := getDesiredDaemonSet(datacollection, configData, scheme, imagePullSecrets)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
