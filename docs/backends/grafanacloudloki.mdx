@@ -34,12 +34,4 @@ Make sure your token scope includes "logs:write" scope.
 
 ### Loki Labels
 
-Loki labels are used to index logs and make them searchable in the Grafana UI. You can read more about them [here](https://grafana.com/docs/loki/latest/get-started/labels/).
-
-You can configure your grafana cloud loki labels in the `Labels` multi-input config option in the destination page in the Odigos UI.
-
-- Labels should be names of attribute keys that you want to index, for example: `"k8s.namespace.name"`.
-- To avoid performance issues, it is recommended to limit the number of labels to a reasonable amount.
-- [Use only low cardinality values](https://grafana.com/docs/loki/latest/get-started/labels/#cardinality). e.g. use only opentelemetry attributes for which you expect a small number of unique values.
-- If the label is not present in a log record, it will be ignored.
-- The default labels if not set are: `k8s.container.name, k8s.pod.name, k8s.namespace.name`
+Read about setting grafana loki labels in the [Loki](/backends/loki#loki-labels) page.
