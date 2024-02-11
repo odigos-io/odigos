@@ -49,6 +49,9 @@ export function ManageDestination({
     [destinationType]
   );
 
+  console.log({ field: destinationType?.fields });
+  console.log({ dynamicFieldsValues: selectedDestination?.fields });
+
   return (
     <>
       {onBackClick && (

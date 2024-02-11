@@ -80,7 +80,7 @@ export function CreateConnectionForm({
 
   useEffect(() => {
     setInitialDynamicFields();
-  }, [fields, dynamicFieldsValues]);
+  }, [fields]);
 
   useEffect(() => {
     isFormValid();
@@ -99,18 +99,16 @@ export function CreateConnectionForm({
   }
 
   function setInitialDynamicFields() {
-    if (dynamicFieldsValues && dynamicFieldsValues[LOKI_LABELS]) {
-      //add the selected user data values to section data
-      handleDynamicFieldChange(LOKI_LABELS, dynamicFieldsValues[LOKI_LABELS]);
-      return;
+    if (fields) {
+      const defaultValues = fields.reduce(
+        (acc: { [key: string]: string }, field: any) => {
+          acc[field.name] = field.initial_value || '';
+          return acc;
+        },
+        {} as { [key: string]: string }
+      );
+      setDynamicFields(defaultValues);
     }
-    //add the default values to section data
-    fields?.forEach((field) => {
-      if (field.component_type === INPUT_TYPES.MULTI_INPUT) {
-        field?.initial_value &&
-          handleDynamicFieldChange(field.name, field.initial_value);
-      }
-    });
   }
 
   function filterSupportedMonitors() {
