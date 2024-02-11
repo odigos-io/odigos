@@ -38,7 +38,12 @@ func DestRequiresCustom(destType common.DestinationType) bool {
 }
 
 func AddCustomConfigMap(dests *odigosv1.DestinationList, cm *corev1.ConfigMap) {
-	addHoneycombConfig(cm)
+	for _, dst := range dests.Items {
+		if dst.Spec.Type == common.HoneycombDestinationType {
+			addHoneycombConfig(cm, dst)
+			return
+		}
+	}
 }
 
 func ApplyCustomChangesToDaemonSet(ds *v1.DaemonSet, dests *odigosv1.DestinationList) {

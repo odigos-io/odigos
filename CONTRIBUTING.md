@@ -122,7 +122,7 @@ See the [Odigos docs](https://docs.odigos.io/intro) for the full steps on debugg
 - run:
 
 ```
- npm run build
+ npm install && run build
 ```
 
 - go to `frontend` folder
@@ -136,7 +136,6 @@ go build -o odigos-backend && ./odigos-backend --port 8085 --debug --address 0.0
 - run:
 
 ```
- npm install
  npm run dev
 ```
 
