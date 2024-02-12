@@ -1,7 +1,7 @@
 module github.com/keyval-dev/odigos/scheduler
 
 go 1.21
-toolchain go1.21.6
+toolchain go1.22.0
 
 require (
 	github.com/go-logr/zapr v1.3.0
@@ -11,7 +11,7 @@ require (
 	github.com/onsi/gomega v1.31.1
 	k8s.io/apimachinery v0.29.1
 	k8s.io/client-go v0.29.1
-	sigs.k8s.io/controller-runtime v0.17.0
+	sigs.k8s.io/controller-runtime v0.17.1
 )
 
 require (
