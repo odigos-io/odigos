@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,15 +47,22 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 		return err
 	}
 
-	return syncGateway(&dests, gatewayCollectorGroup, ctx, client, scheme, imagePullSecrets)
+	var processors odigosv1.ProcessorList
+	if err := client.List(ctx, &processors); err != nil {
+		logger.Error(err, "failed to list processors")
+		return err
+	}
+
+	return syncGateway(&dests, &processors, gatewayCollectorGroup, ctx, client, scheme, imagePullSecrets)
 }
 
-func syncGateway(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, ctx context.Context,
+func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
+	gateway *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("syncing gateway")
 
-	configData, err := syncConfigMap(dests, gateway, ctx, c, scheme)
+	configData, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "failed to sync config map")
 		return err

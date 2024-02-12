@@ -6,6 +6,7 @@ import (
 )
 
 func NewProcessor() *apiextensionsv1.CustomResourceDefinition {
+	xPreserveUnknownFields := true
 	return &apiextensionsv1.CustomResourceDefinition{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CustomResourceDefinition",
@@ -65,10 +66,8 @@ func NewProcessor() *apiextensionsv1.CustomResourceDefinition {
 											},
 										},
 										"data": {
-											Type: "object",
-											AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
-												Allows: true,
-											},
+											XPreserveUnknownFields: &xPreserveUnknownFields,
+											Type:                   "object",
 										},
 										"disabled": {
 											Type: "boolean",

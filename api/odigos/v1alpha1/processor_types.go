@@ -54,6 +54,8 @@ type ProcessorSpec struct {
 	// if the value is missing (or 0) the processor can be placed anywhere in the pipeline
 	OrderHint int `json:"orderHint"`
 
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Type=object
 	// this it the configuration of the processor component.
 	Data runtime.RawExtension `json:"data"`
 }

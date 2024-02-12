@@ -49,6 +49,7 @@ spec:
               data:
                 description: this it the configuration of the processor component.
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               disabled:
                 description: disable is a flag to enable or disable the processor.
                   if the processor is disabled, it will not be included in the collector
@@ -63,8 +64,8 @@ spec:
                 description: control the order of processors. a processor with lower
                   order hint value will be placed before other processors with higher
                   value. if 2 processors have the same value, the order is arbitrary.
-                  if the value is missing (or 0) the processor does can be placed
-                  anywhere in the pipeline
+                  if the value is missing (or 0) the processor can be placed anywhere
+                  in the pipeline
                 type: integer
               processorName:
                 description: this name is solely for the user convenience, to attach

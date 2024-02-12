@@ -8,6 +8,7 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var availableConfigers = []Configer{&Middleware{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{}, &GrafanaCloudLoki{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{},
@@ -20,8 +21,20 @@ type Configer interface {
 	ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config)
 }
 
-func Calculate(dests *odigosv1.DestinationList) (string, error) {
+func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList) (string, error) {
 	currentConfig := getBasicConfig()
+
+	for _, processor := range processors.Items {
+		processorsConfig, processorKey, err := commonconf.ProcessorCrToCollectorConfig(&processor, odigosv1.CollectorsGroupRoleGateway)
+		if err != nil {
+			// TODO: write the error to the status of the processor
+			// consider how to handle this error
+			log.Log.V(0).Info("failed to convert processor to collector config", "processor", processor.Name, "error", err)
+			continue
+		}
+		currentConfig.Processors[processorKey] = processorsConfig
+	}
+
 	configers, err := loadConfigers()
 	if err != nil {
 		return "", err
