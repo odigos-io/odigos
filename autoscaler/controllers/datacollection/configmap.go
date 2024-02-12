@@ -139,6 +139,9 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 					"action": "upsert",
 				}},
 			},
+			"resourcedetection": commonconf.GenericMap{
+				"detectors": []string{"ec2", "gcp", "azure"},
+			},
 		},
 		Extensions: commonconf.GenericMap{
 			"health_check": empty,
@@ -270,7 +273,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 
 		cfg.Service.Pipelines["logs"] = commonconf.Pipeline{
 			Receivers:  []string{"filelog"},
-			Processors: []string{"batch", "odigosresourcename", "resource"},
+			Processors: []string{"batch", "odigosresourcename", "resource", "resourcedetection"},
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -278,7 +281,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp", "zipkin"},
-			Processors: []string{"batch", "odigosresourcename", "resource"},
+			Processors: []string{"batch", "odigosresourcename", "resource", "resourcedetection"},
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -293,7 +296,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 
 		cfg.Service.Pipelines["metrics"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp", "kubeletstats"},
-			Processors: []string{"batch", "odigosresourcename", "resource"},
+			Processors: []string{"batch", "odigosresourcename", "resource", "resourcedetection"},
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}

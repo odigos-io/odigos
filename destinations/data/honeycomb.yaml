@@ -20,3 +20,10 @@ spec:
       componentProps:
         type: password
       secret: true
+    - name: HONEYCOMB_ENDPOINT
+      displayName: Endpoint
+      componentType: dropdown
+      componentProps:
+        values:
+          - api.honeycomb.io 
+          - api.eu1.honeycomb.io 
