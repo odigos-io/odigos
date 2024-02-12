@@ -3,7 +3,6 @@ import theme from '@/styles/palette';
 import { SETUP } from '@/utils/constants';
 import { Field } from '@/types/destinations';
 import { renderFields } from './dynamic.fields';
-import { INPUT_TYPES } from '@/utils/constants/string';
 import { DestinationBody } from '@/containers/setup/connection/connection.section';
 import {
   KeyvalButton,
@@ -35,8 +34,6 @@ interface CreateConnectionFormProps {
     [key: string]: boolean;
   };
 }
-
-const LOKI_LABELS = 'GRAFANA_CLOUD_LOKI_LABELS';
 
 const MONITORS = [
   { id: 'logs', label: SETUP.MONITORS.LOGS, checked: true },
@@ -101,8 +98,9 @@ export function CreateConnectionForm({
   function setInitialDynamicFields() {
     if (fields) {
       const defaultValues = fields.reduce(
-        (acc: { [key: string]: string }, field: any) => {
-          acc[field.name] = field.initial_value || '';
+        (acc: { [key: string]: string }, field: Field) => {
+          const value = dynamicFields[field.name] || field.initial_value || '';
+          acc[field.name] = value;
           return acc;
         },
         {} as { [key: string]: string }
