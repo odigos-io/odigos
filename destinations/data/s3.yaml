@@ -10,7 +10,7 @@ spec:
     traces:
       supported: true
     metrics:
-      supported: false
+      supported: true
     logs:
       supported: true
   fields:
@@ -24,3 +24,19 @@ spec:
       componentType: input
       componentProps:
         type: text
+    - name: S3_PARTITION
+      displayName: Time granularity of S3 Bucket
+      componentType: dropdown
+      componentProps:
+        values:
+          - minute
+          - hour
+      initialValue: minute
+    - name: S3_MARSHALER
+      displayName: Marshaller (Data Format)
+      componentType: dropdown
+      componentProps:
+        values:
+          - otlp_json
+          - otlp_proto
+      initialValue: otlp_json
