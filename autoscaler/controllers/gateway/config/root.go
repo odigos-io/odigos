@@ -8,7 +8,6 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var availableConfigers = []Configer{&Middleware{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{}, &GrafanaCloudLoki{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{},
@@ -38,31 +37,21 @@ func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorLi
 		configer.ModifyConfig(&dest, currentConfig)
 	}
 
-	gatewayProcessors := commonconf.FilterAndSortProcessorsByOrderHint(processors, odigosv1.CollectorsGroupRoleGateway)
-	for _, processor := range gatewayProcessors {
-		processorsConfig, processorKey, err := commonconf.ProcessorCrToCollectorConfig(processor, odigosv1.CollectorsGroupRoleGateway)
-		if err != nil {
-			// TODO: write the error to the status of the processor
-			// consider how to handle this error
-			log.Log.V(0).Info("failed to convert processor to collector config", "processor", processor.Name, "error", err)
-			continue
-		}
-		if processorKey == "" || processorsConfig == nil {
-			continue
-		}
-		currentConfig.Processors[processorKey] = processorsConfig
+	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := commonconf.GetCrdProcessorsConfigMap(processors, odigosv1.CollectorsGroupRoleGateway)
+	for processorKey, processorCfg := range processorsCfg {
+		currentConfig.Processors[processorKey] = processorCfg
+	}
 
-		for pipelineName, pipeline := range currentConfig.Service.Pipelines {
-			if strings.HasPrefix(pipelineName, "traces/") && commonconf.IsProcessorTracingEnabled(processor) {
-				pipeline.Processors = append(pipeline.Processors, processorKey)
-				currentConfig.Service.Pipelines[pipelineName] = pipeline
-			} else if strings.HasPrefix(pipelineName, "metrics/") && commonconf.IsProcessorMetricsEnabled(processor) {
-				pipeline.Processors = append(pipeline.Processors, processorKey)
-				currentConfig.Service.Pipelines[pipelineName] = pipeline
-			} else if strings.HasPrefix(pipelineName, "logs/") && commonconf.IsProcessorLogsEnabled(processor) {
-				pipeline.Processors = append(pipeline.Processors, processorKey)
-				currentConfig.Service.Pipelines[pipelineName] = pipeline
-			}
+	for pipelineName, pipeline := range currentConfig.Service.Pipelines {
+		if strings.HasPrefix(pipelineName, "traces/") {
+			pipeline.Processors = append(pipeline.Processors, tracesProcessors...)
+			currentConfig.Service.Pipelines[pipelineName] = pipeline
+		} else if strings.HasPrefix(pipelineName, "metrics/") {
+			pipeline.Processors = append(pipeline.Processors, metricsProcessors...)
+			currentConfig.Service.Pipelines[pipelineName] = pipeline
+		} else if strings.HasPrefix(pipelineName, "logs/") {
+			pipeline.Processors = append(pipeline.Processors, logsProcessors...)
+			currentConfig.Service.Pipelines[pipelineName] = pipeline
 		}
 	}
 

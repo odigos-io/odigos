@@ -4,6 +4,7 @@ import (
 	"context"
 
 	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/gateway"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -23,6 +24,11 @@ func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	logger.V(0).Info("Reconciling Processor")
 
 	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

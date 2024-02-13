@@ -8,6 +8,7 @@ import (
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func IsProcessorTracingEnabled(processor *odigosv1.Processor) bool {
@@ -40,7 +41,7 @@ func IsProcessorLogsEnabled(processor *odigosv1.Processor) bool {
 func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, collectorRole odigosv1.CollectorsGroupRole) []*odigosv1.Processor {
 
 	filteredProcessors := []*odigosv1.Processor{}
-	for _, processor := range processors.Items {
+	for i, processor := range processors.Items {
 
 		// do not include disabled processors
 		if processor.Spec.Disabled {
@@ -50,7 +51,7 @@ func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, coll
 		// take only processors that participate in this collector role
 		for _, role := range processor.Spec.CollectorRoles {
 			if role == collectorRole {
-				filteredProcessors = append(filteredProcessors, &processor)
+				filteredProcessors = append(filteredProcessors, &processors.Items[i])
 			}
 		}
 	}
@@ -63,7 +64,7 @@ func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, coll
 	return filteredProcessors
 }
 
-func ProcessorCrToCollectorConfig(processor *odigosv1.Processor, collectorRole odigosv1.CollectorsGroupRole) (GenericMap, string, error) {
+func ProcessorCrToCollectorConfig(processor *odigosv1.Processor) (GenericMap, string, error) {
 	processorKey := fmt.Sprintf("%s/%s", processor.Spec.Type, processor.Name)
 	var processorConfig map[string]interface{}
 	err := json.Unmarshal(processor.Spec.Data.Raw, &processorConfig)
@@ -72,4 +73,33 @@ func ProcessorCrToCollectorConfig(processor *odigosv1.Processor, collectorRole o
 	}
 
 	return processorConfig, processorKey, nil
+}
+
+func GetCrdProcessorsConfigMap(processors *odigosv1.ProcessorList, collectorRole odigosv1.CollectorsGroupRole) (cfg GenericMap, tracesProcessors []string, metricsProcessors []string, logsProcessors []string) {
+	cfg = GenericMap{}
+	datacollectionProcessors := FilterAndSortProcessorsByOrderHint(processors, collectorRole)
+	for _, processor := range datacollectionProcessors {
+		processorsConfig, processorKey, err := ProcessorCrToCollectorConfig(processor)
+		if err != nil {
+			// TODO: write the error to the status of the processor
+			// consider how to handle this error
+			log.Log.V(0).Info("failed to convert data-collection processor to collector config", "processor", processor.Name, "error", err)
+			continue
+		}
+		if processorKey == "" || processorsConfig == nil {
+			continue
+		}
+		cfg[processorKey] = processorsConfig
+
+		if IsProcessorTracingEnabled(processor) {
+			tracesProcessors = append(tracesProcessors, processorKey)
+		}
+		if IsProcessorMetricsEnabled(processor) {
+			metricsProcessors = append(metricsProcessors, processorKey)
+		}
+		if IsProcessorLogsEnabled(processor) {
+			logsProcessors = append(logsProcessors, processorKey)
+		}
+	}
+	return
 }
