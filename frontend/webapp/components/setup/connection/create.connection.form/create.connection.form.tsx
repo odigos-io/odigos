@@ -3,7 +3,6 @@ import theme from '@/styles/palette';
 import { SETUP } from '@/utils/constants';
 import { Field } from '@/types/destinations';
 import { renderFields } from './dynamic.fields';
-import { INPUT_TYPES } from '@/utils/constants/string';
 import { DestinationBody } from '@/containers/setup/connection/connection.section';
 import {
   KeyvalButton,
@@ -35,8 +34,6 @@ interface CreateConnectionFormProps {
     [key: string]: boolean;
   };
 }
-
-const LOKI_LABELS = 'GRAFANA_CLOUD_LOKI_LABELS';
 
 const MONITORS = [
   { id: 'logs', label: SETUP.MONITORS.LOGS, checked: true },
@@ -80,7 +77,7 @@ export function CreateConnectionForm({
 
   useEffect(() => {
     setInitialDynamicFields();
-  }, [fields, dynamicFieldsValues]);
+  }, [fields]);
 
   useEffect(() => {
     isFormValid();
@@ -99,18 +96,17 @@ export function CreateConnectionForm({
   }
 
   function setInitialDynamicFields() {
-    if (dynamicFieldsValues && dynamicFieldsValues[LOKI_LABELS]) {
-      //add the selected user data values to section data
-      handleDynamicFieldChange(LOKI_LABELS, dynamicFieldsValues[LOKI_LABELS]);
-      return;
+    if (fields) {
+      const defaultValues = fields.reduce(
+        (acc: { [key: string]: string }, field: Field) => {
+          const value = dynamicFields[field.name] || field.initial_value || '';
+          acc[field.name] = value;
+          return acc;
+        },
+        {} as { [key: string]: string }
+      );
+      setDynamicFields(defaultValues);
     }
-    //add the default values to section data
-    fields?.forEach((field) => {
-      if (field.component_type === INPUT_TYPES.MULTI_INPUT) {
-        field?.initial_value &&
-          handleDynamicFieldChange(field.name, field.initial_value);
-      }
-    });
   }
 
   function filterSupportedMonitors() {
