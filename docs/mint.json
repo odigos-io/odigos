@@ -61,6 +61,19 @@
       ]
     },
     {
+      "group": "Odigos Pipeline",
+      "pages": [
+        "pipeline/overview",
+        {
+          "group": "Processors",
+          "pages": [
+            "pipeline/processors",
+            "pipeline/crd"
+          ]
+        }
+      ]
+    },
+    {
       "group": "Observability Backends",
       "pages": [    
         "backends/azureblob",

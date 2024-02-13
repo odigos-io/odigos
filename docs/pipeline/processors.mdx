@@ -1,0 +1,27 @@
+---
+title: "Processors Introduction"
+sidebarTitle: "Introduction"
+---
+
+Processors are a [class of OpenTelemetry Collector component](https://opentelemetry.io/docs/collector/configuration/#processors).
+They are used to transform, filter, or enrich your OpenTelemetry data before it is sent to your destinations.
+
+Few examples of processors are:
+- Add a resource attribute to all spans, metrics and logs, describing the environment in which the data was collected.
+- Sample a percentage of spans to reduce the volume of data sent to your backend and your costs.
+- Filter out PII data from your signals which you don't want to send to your backend.
+
+and many more...
+
+## Benefits
+
+- Processors are language agnostic. They run in the OpenTelemetry collectors and can act on any data type (traces, metrics, logs) no matter the source or the programming language of your service.
+- OpenTelemetry maintains a large collection of processors, which are ready to use and can be configured to your needs.
+- Processing the data on the k8s node or the cluster level reduces the load on your services and allows you to apply the same processing rules to all your services and signals.
+- Applying processing in your cluster can reduce the volume of data sent to your backend, which can reduce your costs.
+
+Processors are a powerful tool to help you manage your observability data and ensure that you are sending the right data to your backend.
+
+## Adding Processors
+
+Odigos currently supports adding processors with [kuberenetes CRDs](crd) which you can apply manually or through a GitOps workflow.
