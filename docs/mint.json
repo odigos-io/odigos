@@ -67,8 +67,9 @@
         {
           "group": "Processors",
           "pages": [
-            "pipeline/processors",
-            "pipeline/crd"
+            "pipeline/processors/introduction",
+            "pipeline/processors/crd",
+            "pipeline/processors/troubleshooting"
           ]
         }
       ]
