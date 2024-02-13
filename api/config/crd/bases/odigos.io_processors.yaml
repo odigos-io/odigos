@@ -46,10 +46,6 @@ spec:
                   - DATA_COLLECTION
                   type: string
                 type: array
-              data:
-                description: this it the configuration of the processor component.
-                type: object
-                x-kubernetes-preserve-unknown-fields: true
               disabled:
                 description: disable is a flag to enable or disable the processor.
                   if the processor is disabled, it will not be included in the collector
@@ -67,6 +63,10 @@ spec:
                   if the value is missing (or 0) the processor can be placed anywhere
                   in the pipeline
                 type: integer
+              processorConfig:
+                description: this it the configuration of the processor component.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
               processorName:
                 description: this name is solely for the user convenience, to attach
                   a meaningful name to the processor. odigos must not assume any semantics
@@ -90,8 +90,8 @@ spec:
                 type: string
             required:
             - collectorRoles
-            - data
             - orderHint
+            - processorConfig
             - signals
             - type
             type: object

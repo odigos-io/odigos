@@ -48,7 +48,7 @@ func NewProcessor() *apiextensionsv1.CustomResourceDefinition {
 									Type:        "object",
 									Required: []string{
 										"collectorRoles",
-										"data",
+										"processorConfig",
 										"signals",
 										"type",
 									},
@@ -65,7 +65,7 @@ func NewProcessor() *apiextensionsv1.CustomResourceDefinition {
 												},
 											},
 										},
-										"data": {
+										"processorConfig": {
 											XPreserveUnknownFields: &xPreserveUnknownFields,
 											Type:                   "object",
 										},

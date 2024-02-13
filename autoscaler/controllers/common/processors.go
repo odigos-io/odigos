@@ -67,7 +67,7 @@ func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, coll
 func ProcessorCrToCollectorConfig(processor *odigosv1.Processor) (GenericMap, string, error) {
 	processorKey := fmt.Sprintf("%s/%s", processor.Spec.Type, processor.Name)
 	var processorConfig map[string]interface{}
-	err := json.Unmarshal(processor.Spec.Data.Raw, &processorConfig)
+	err := json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &processorConfig)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to unmarshal processor %s data: %v", processor.Name, err)
 	}

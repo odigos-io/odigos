@@ -5,12 +5,12 @@ sidebarTitle: "Processor CRD"
 
 This option is for advanced users who are familiar with the OpenTelemetry Collector and it's configuration, and with kubernetes CRDs.
 
-You can define OpenTelemetry Collector Processors in Odigos using the kubernetes `Processor` CRD. 
+You can define OpenTelemetry Collector Processors in Odigos using the `Processor` kubernetes CRD. 
 
 You can browse the full list of processors that Odigos includes [here](https://github.com/keyval-dev/odigos/blob/main/collector/builder-config.yaml#L64).
 To view the configuration for each processor, it is recommended to visit the README of this component in [OpenTelemetry Collector Contrib codebase](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor).
 
-Adding a processor to your Odigos pipeline can be done by creating a `processor` resource in your k8s cluster, for example:
+Adding a processor to your Odigos pipeline can be done by creating a `processor` custom resource in your k8s cluster under odigos namespace, for example:
 
 #### processor.yaml
 
@@ -22,7 +22,7 @@ metadata:
   namespace: odigos-system
 spec:
   type: resource
-  data:
+  processorConfig:
     actions:
       - key: environment
         value: production
@@ -38,7 +38,7 @@ and apply with kubectl:
 kubectl apply -f processor.yaml
 ```
 
-### Processor CRD Options
+### Processor Options
 
 The CRD above is a simple example on how to add a processor to your Odigos pipeline.
 
@@ -46,7 +46,7 @@ The full list of properties for the `Processor` CRD are:
 
 - `type` (required): The type of the processor. This is the name of the processor you want to use, as defined in the OpenTelemetry Collector (batch, attributes, etc).
 
-- `data` (optional): A field to pass configuration to the processor. The structure of this field is specific to each processor, and you can find the configuration options for each processor in the [OpenTelemetry Collector Contrib codebase](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor).
+- `processorConfig` (optional): A field to pass configuration to the processor. The structure of this field is specific to each processor, and you can find the configuration options for each processor in the [OpenTelemetry Collector Contrib codebase](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor).
 
 - `signals` (required): An array with the signals that the processor will act on (`TRACES`, `METRICS`, `LOGS`).
 
@@ -59,5 +59,3 @@ The full list of properties for the `Processor` CRD are:
 - `processorName` (optional): Allows you to attach a meaningful name to a processor for convenience. Odigos does not use or assume any meaning from this field.
 
 - `notes` (optional): A field for you to add notes about the processor, such as its purpose or any other relevant information.
-
-

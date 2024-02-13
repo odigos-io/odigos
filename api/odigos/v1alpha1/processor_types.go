@@ -56,8 +56,8 @@ type ProcessorSpec struct {
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Type=object
-	// this it the configuration of the processor component.
-	Data runtime.RawExtension `json:"data"`
+	// this it the configuration of the opentelemetry collector processor component with the type specified in 'type'.
+	ProcessorConfig runtime.RawExtension `json:"processorConfig"`
 }
 
 // ProcessorStatus defines the observed state of the processor
