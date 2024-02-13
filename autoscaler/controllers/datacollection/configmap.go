@@ -113,7 +113,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 
 	empty := struct{}{}
 
-	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := commonconf.GetCrdProcessorsConfigMap(processors, odigosv1.CollectorsGroupRoleDataCollection)
+	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := commonconf.GetCrdProcessorsConfigMap(processors, odigosv1.CollectorsGroupRoleNodeCollector)
 	processorsCfg["batch"] = empty
 	processorsCfg["odigosresourcename"] = empty
 	processorsCfg["resource"] = commonconf.GenericMap{

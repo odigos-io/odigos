@@ -64,7 +64,8 @@ spec:
                   in the pipeline
                 type: integer
               processorConfig:
-                description: this it the configuration of the processor component.
+                description: this it the configuration of the opentelemetry collector
+                  processor component with the type specified in 'type'.
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               processorName:

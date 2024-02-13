@@ -59,8 +59,8 @@ func NewProcessor() *apiextensionsv1.CustomResourceDefinition {
 												Schema: &apiextensionsv1.JSONSchemaProps{
 													Type: "string",
 													Enum: []apiextensionsv1.JSON{
-														{Raw: []byte(`"GATEWAY"`)},
-														{Raw: []byte(`"DATA_COLLECTION"`)},
+														{Raw: []byte(`"CLUSTER_GATEWAY"`)},
+														{Raw: []byte(`"NODE_COLLECTOR"`)},
 													},
 												},
 											},

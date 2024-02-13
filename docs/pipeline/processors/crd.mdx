@@ -50,7 +50,7 @@ The full list of properties for the `Processor` CRD are:
 
 - `signals` (required): An array with the signals that the processor will act on (`TRACES`, `METRICS`, `LOGS`).
 
-- `collectorRoles` (required): An array with the collector roles that the processor will act on (`GATEWAY`, `DATA_COLLECTION`). It is generally enough to apply the processor in just one collector, depending on the use case.
+- `collectorRoles` (required): An array with the collector roles that the processor will act on (`CLUSTER_GATEWAY`, `NODE_COLLECTOR`). It is generally enough to apply the processor in just one collector, depending on the use case.
 
 - `orderHint` (optional): If your processors need to run in a specific order relatively to other processors, you can hint the order by setting an integer value here. The lower the value, the earlier the processor will run in the collector pipeline. If the value is missing or 0, the processor will run in an arbitrary order in the collector pipeline.
 

@@ -48,11 +48,11 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	gatewayReady := false
 	dataCollectionExists := false
 	for _, collectorGroup := range collectorGroups.Items {
-		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleGateway && collectorGroup.Status.Ready {
+		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleClusterGateway && collectorGroup.Status.Ready {
 			gatewayReady = true
 		}
 
-		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleDataCollection {
+		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleNodeCollector {
 			dataCollectionExists = true
 		}
 	}

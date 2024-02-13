@@ -36,7 +36,7 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	}
 
 	for _, cg := range collectorGroups.Items {
-		if cg.Spec.Role == odigosv1.CollectorsGroupRoleDataCollection && cg.Status.Ready {
+		if cg.Spec.Role == odigosv1.CollectorsGroupRoleNodeCollector && cg.Status.Ready {
 			return true
 		}
 	}

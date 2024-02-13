@@ -30,7 +30,7 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 
 	var gatewayCollectorGroup *odigosv1.CollectorsGroup
 	for _, collectorGroup := range collectorGroups.Items {
-		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleGateway {
+		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleClusterGateway {
 			gatewayCollectorGroup = &collectorGroup
 			break
 		}

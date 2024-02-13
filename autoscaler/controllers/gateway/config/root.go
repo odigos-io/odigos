@@ -37,7 +37,7 @@ func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorLi
 		configer.ModifyConfig(&dest, currentConfig)
 	}
 
-	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := commonconf.GetCrdProcessorsConfigMap(processors, odigosv1.CollectorsGroupRoleGateway)
+	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := commonconf.GetCrdProcessorsConfigMap(processors, odigosv1.CollectorsGroupRoleClusterGateway)
 	for processorKey, processorCfg := range processorsCfg {
 		currentConfig.Processors[processorKey] = processorCfg
 	}

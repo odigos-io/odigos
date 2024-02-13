@@ -20,7 +20,7 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 
 	var dataCollectionCollectorGroup *odigosv1.CollectorsGroup
 	for _, collectorGroup := range collectorGroups.Items {
-		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleDataCollection {
+		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleNodeCollector {
 			dataCollectionCollectorGroup = &collectorGroup
 			break
 		}
