@@ -55,7 +55,7 @@ jobs:
 
       - name: Verify Components Image Ready
         run: |
-          declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-enterprise-odiglet")
+          declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet")
           TAG_TO_CHECK=${{ steps.set_tag.outputs.tag }}
 
           for REPO in "${REPOS[@]}"; do
