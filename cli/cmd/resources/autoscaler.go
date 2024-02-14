@@ -207,7 +207,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"odigos.io",
 				},
 				Resources: []string{
-					"processors.odigos.io",
+					"processors",
 				},
 			},
 			{
