@@ -36,7 +36,13 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	}
 
 	for _, cg := range collectorGroups.Items {
-		if cg.Spec.Role == odigosv1.CollectorsGroupRoleNodeCollector && cg.Status.Ready {
+		// up until v1.0.31, the collectors group role names were "GATEWAY" and "DATA_COLLECTION".
+		// in v1.0.32, the role names were changed to "CLUSTER_GATEWAY" and "NODE_COLLECTOR",
+		// due to adding the Processor CRD which uses these role names.
+		// the new names are more descriptive and are preparations for future roles.
+		// the check for "DATA_COLLECTION" is a temporary support for users that upgrade from <=v1.0.31 to >=v1.0.32.
+		// once we drop support for <=v1.0.31, we can remove this comparison.
+		if (cg.Spec.Role == odigosv1.CollectorsGroupRoleNodeCollector || cg.Spec.Role == "DATA_COLLECTION") && cg.Status.Ready {
 			return true
 		}
 	}
