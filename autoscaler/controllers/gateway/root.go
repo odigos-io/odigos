@@ -30,7 +30,7 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 
 	var gatewayCollectorGroup *odigosv1.CollectorsGroup
 	for _, collectorGroup := range collectorGroups.Items {
-		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleGateway {
+		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleClusterGateway {
 			gatewayCollectorGroup = &collectorGroup
 			break
 		}
@@ -47,15 +47,22 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 		return err
 	}
 
-	return syncGateway(&dests, gatewayCollectorGroup, ctx, client, scheme, imagePullSecrets, odigosVersion)
+	var processors odigosv1.ProcessorList
+	if err := client.List(ctx, &processors); err != nil {
+		logger.Error(err, "failed to list processors")
+		return err
+	}
+
+	return syncGateway(&dests, &processors, gatewayCollectorGroup, ctx, client, scheme, imagePullSecrets, odigosVersion)
 }
 
-func syncGateway(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, ctx context.Context,
+func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
+	gateway *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("syncing gateway")
 
-	configData, err := syncConfigMap(dests, gateway, ctx, c, scheme)
+	configData, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "failed to sync config map")
 		return err

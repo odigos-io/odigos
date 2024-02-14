@@ -199,6 +199,19 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 			},
 			{
 				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"processors",
+				},
+			},
+			{
+				Verbs: []string{
 					"update",
 				},
 				APIGroups: []string{

@@ -24,11 +24,11 @@ const (
 	configKey = "conf"
 )
 
-func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList,
+func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme) (string, error) {
 	logger := log.FromContext(ctx)
-	desired, err := getDesiredConfigMap(apps, dests, datacollection, scheme)
+	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme)
 	desiredData := desired.Data[configKey]
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
@@ -81,9 +81,9 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 	return desired, nil
 }
 
-func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList,
+func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme) (*v1.ConfigMap, error) {
-	cmData, err := getConfigMapData(apps, dests)
+	cmData, err := getConfigMapData(apps, dests, processors)
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +109,22 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 	return &desired, nil
 }
 
-func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList) (string, error) {
+func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList) (string, error) {
+
 	empty := struct{}{}
+
+	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := commonconf.GetCrdProcessorsConfigMap(processors, odigosv1.CollectorsGroupRoleNodeCollector)
+	processorsCfg["batch"] = empty
+	processorsCfg["odigosresourcename"] = empty
+	processorsCfg["resource"] = commonconf.GenericMap{
+		"attributes": []commonconf.GenericMap{{
+			"key":    "k8s.node.name",
+			"value":  "${NODE_NAME}",
+			"action": "upsert",
+		}},
+	}
+	processorsCfg["resourcedetection"] = commonconf.GenericMap{"detectors": []string{"ec2", "gcp", "azure"}}
+
 	cfg := commonconf.Config{
 		Receivers: commonconf.GenericMap{
 			"zipkin": empty,
@@ -129,20 +143,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 				},
 			},
 		},
-		Processors: commonconf.GenericMap{
-			"batch":              empty,
-			"odigosresourcename": empty,
-			"resource": commonconf.GenericMap{
-				"attributes": []commonconf.GenericMap{{
-					"key":    "k8s.node.name",
-					"value":  "${NODE_NAME}",
-					"action": "upsert",
-				}},
-			},
-			"resourcedetection": commonconf.GenericMap{
-				"detectors": []string{"ec2", "gcp", "azure"},
-			},
-		},
+		Processors: processorsCfg,
 		Extensions: commonconf.GenericMap{
 			"health_check": empty,
 			"zpages":       empty,
@@ -273,7 +274,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 
 		cfg.Service.Pipelines["logs"] = commonconf.Pipeline{
 			Receivers:  []string{"filelog"},
-			Processors: []string{"batch", "odigosresourcename", "resource", "resourcedetection"},
+			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, logsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -281,7 +282,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp", "zipkin"},
-			Processors: []string{"batch", "odigosresourcename", "resource", "resourcedetection"},
+			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, tracesProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -296,7 +297,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 
 		cfg.Service.Pipelines["metrics"] = commonconf.Pipeline{
 			Receivers:  []string{"otlp", "kubeletstats"},
-			Processors: []string{"batch", "odigosresourcename", "resource", "resourcedetection"},
+			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, metricsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
