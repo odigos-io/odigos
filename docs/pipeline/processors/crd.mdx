@@ -23,14 +23,14 @@ metadata:
 spec:
   type: resource
   processorConfig:
-    actions:
+    attributes:
       - key: environment
         value: production
         action: insert
   signals:
     - TRACES
   collectorRoles:
-    - GATEWAY
+    - CLUSTER_GATEWAY
 ```
 
 and apply with kubectl:
