@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string) error {
+func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
 	var collectorGroups odigosv1.CollectorsGroupList
 	if err := c.List(ctx, &collectorGroups); err != nil {
@@ -43,12 +43,12 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 		return err
 	}
 
-	return syncDataCollection(&instApps, &dests, dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets)
+	return syncDataCollection(&instApps, &dests, dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion)
 }
 
 func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList,
 	dataCollection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client,
-	scheme *runtime.Scheme, imagePullSecrets []string) error {
+	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("syncing data collection")
 
@@ -58,7 +58,7 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 		return err
 	}
 
-	ds, err := syncDaemonSet(instApps, dests, dataCollection, configData, ctx, c, scheme, imagePullSecrets)
+	ds, err := syncDaemonSet(instApps, dests, dataCollection, configData, ctx, c, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
 		logger.Error(err, "failed to sync daemon set")
 		return err

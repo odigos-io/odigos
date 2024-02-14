@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,6 +32,7 @@ type InstrumentedApplicationReconciler struct {
 	client.Client
 	Scheme           *runtime.Scheme
 	ImagePullSecrets []string
+	OdigosVersion    string
 }
 
 //+kubebuilder:rbac:groups=odigos.io,resources=instrumentedapplications,verbs=get;list;watch;create;update;patch;delete
@@ -48,7 +50,7 @@ type InstrumentedApplicationReconciler struct {
 func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling InstrumentedApps")
-	err := datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets)
+	err := datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
