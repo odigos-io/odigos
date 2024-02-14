@@ -32,7 +32,7 @@ interface DestinationTypes {
 type DestinationSectionProps = {
   // sectionData?: any;
   // setSectionData: (data: any) => void;
-  onSelectItem?: () => void;
+  onSelectItem?: (type: string) => void;
 };
 
 export function DestinationSection({ onSelectItem }: DestinationSectionProps) {
@@ -59,7 +59,7 @@ export function DestinationSection({ onSelectItem }: DestinationSectionProps) {
 
   function handleSelectItem(item: DestinationTypes) {
     setSectionData(item);
-    onSelectItem && onSelectItem();
+    onSelectItem && onSelectItem(item.type);
   }
 
   function renderDestinationLists() {
