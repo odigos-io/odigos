@@ -114,6 +114,14 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Destination")
 		os.Exit(1)
 	}
+	if err = (&controllers.ProcessorReconciler{
+		Client:           mgr.GetClient(),
+		Scheme:           mgr.GetScheme(),
+		ImagePullSecrets: imagePullSecrets,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Processor")
+		os.Exit(1)
+	}
 	if err = (&controllers.CollectorsGroupReconciler{
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),

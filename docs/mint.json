@@ -61,6 +61,20 @@
       ]
     },
     {
+      "group": "Odigos Pipeline",
+      "pages": [
+        "pipeline/overview",
+        {
+          "group": "Processors",
+          "pages": [
+            "pipeline/processors/introduction",
+            "pipeline/processors/crd",
+            "pipeline/processors/troubleshooting"
+          ]
+        }
+      ]
+    },
+    {
       "group": "Observability Backends",
       "pages": [    
         "backends/awss3",

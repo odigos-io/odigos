@@ -16,7 +16,7 @@ func NewDataCollection(namespace string) *odigosv1.CollectorsGroup {
 			Namespace: namespace,
 		},
 		Spec: odigosv1.CollectorsGroupSpec{
-			Role: odigosv1.CollectorsGroupRoleDataCollection,
+			Role: odigosv1.CollectorsGroupRoleNodeCollector,
 		},
 	}
 }
