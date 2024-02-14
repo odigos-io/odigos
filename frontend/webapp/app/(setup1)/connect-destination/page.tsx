@@ -4,15 +4,19 @@ import { StepListWrapper } from '../styled';
 import { KeyvalCard, KeyvalLoader } from '@/design.system';
 import { StepsList } from '@/components/lists';
 import { ConnectionSection } from '@/containers/setup';
-import { ConnectDestinationHeader } from '@/components/setup/headers';
+import {
+  ConnectDestinationHeader,
+  SetupBackButton,
+} from '@/components/setup/headers';
 import { useDestinations } from '@/hooks/destinations/useDestinations';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function ConnectDestinationPage() {
   const [selectedDestination, setSelectedDestination] = useState<any>(null);
   const { getCurrentDestinationByType, destinationsTypes, isLoading } =
     useDestinations();
 
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -22,6 +26,10 @@ export default function ConnectDestinationPage() {
       setSelectedDestination(data);
     }
   }, [destinationsTypes]);
+
+  function onBackClick() {
+    router.back();
+  }
 
   if (isLoading) {
     return <KeyvalLoader />;
@@ -40,6 +48,7 @@ export default function ConnectDestinationPage() {
         <StepsList currentStepIndex={2} />
       </StepListWrapper>
       <KeyvalCard type={'secondary'} header={{ body: cardHeaderBody }}>
+        <SetupBackButton onBackClick={onBackClick} />
         <div style={{ padding: '0 40px', minWidth: '70vw', maxHeight: '80vh' }}>
           <ConnectionSection sectionData={undefined} />
         </div>
