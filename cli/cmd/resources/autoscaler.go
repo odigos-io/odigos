@@ -429,6 +429,13 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 										},
 									},
 								},
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: OdigosDeploymentConfigMapName,
+										},
+									},
+								},
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{

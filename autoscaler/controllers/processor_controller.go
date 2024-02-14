@@ -16,6 +16,7 @@ type ProcessorReconciler struct {
 	client.Client
 	Scheme           *runtime.Scheme
 	ImagePullSecrets []string
+	OdigosVersion    string
 }
 
 func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -23,12 +24,12 @@ func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Processor")
 
-	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets)
+	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets)
+	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

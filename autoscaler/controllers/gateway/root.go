@@ -20,7 +20,7 @@ var (
 	}
 )
 
-func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, imagePullSecrets []string) error {
+func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
 	var collectorGroups odigosv1.CollectorsGroupList
 	if err := client.List(ctx, &collectorGroups); err != nil {
@@ -53,12 +53,12 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 		return err
 	}
 
-	return syncGateway(&dests, &processors, gatewayCollectorGroup, ctx, client, scheme, imagePullSecrets)
+	return syncGateway(&dests, &processors, gatewayCollectorGroup, ctx, client, scheme, imagePullSecrets, odigosVersion)
 }
 
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string) error {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("syncing gateway")
 
@@ -74,7 +74,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	dep, err := syncDeployment(dests, gateway, configData, ctx, c, scheme, imagePullSecrets)
+	dep, err := syncDeployment(dests, gateway, configData, ctx, c, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
 		logger.Error(err, "failed to sync deployment")
 		return err

@@ -63,6 +63,8 @@ func main() {
 	var probeAddr string
 	var imagePullSecretsString string
 	var imagePullSecrets []string
+	odigosVersion := os.Getenv("ODIGOS_VERSION")
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -71,6 +73,10 @@ func main() {
 	flag.StringVar(&imagePullSecretsString, "image-pull-secrets", "",
 		"The image pull secrets to use for the collectors created by autoscaler")
 	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler")
+
+	if odigosVersion == "" {
+		flag.StringVar(&odigosVersion, "version", "", "for development purposes only")
+	}
 
 	opts := ctrlzap.Options{
 		Development: true,
@@ -86,6 +92,12 @@ func main() {
 	zapLogger = bridge.AttachToZapLogger(zapLogger)
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
+
+	if odigosVersion == "" {
+		setupLog.Error(nil, "ODIGOS_VERSION environment variable is not set and version flag is not provided")
+		os.Exit(1)
+	}
+	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
@@ -110,6 +122,7 @@ func main() {
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Destination")
 		os.Exit(1)
@@ -118,6 +131,7 @@ func main() {
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Processor")
 		os.Exit(1)
@@ -126,6 +140,7 @@ func main() {
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
 		os.Exit(1)
@@ -134,6 +149,7 @@ func main() {
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
 		os.Exit(1)
