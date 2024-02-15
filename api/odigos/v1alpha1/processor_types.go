@@ -52,7 +52,7 @@ type ProcessorSpec struct {
 	// a processor with lower order hint value will be placed before other processors with higher value.
 	// if 2 processors have the same value, the order is arbitrary.
 	// if the value is missing (or 0) the processor can be placed anywhere in the pipeline
-	OrderHint int `json:"orderHint"`
+	OrderHint int `json:"orderHint,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Type=object
