@@ -1,6 +1,7 @@
 module github.com/keyval-dev/odigos/autoscaler
 
 go 1.21
+
 toolchain go1.22.0
 
 require (
