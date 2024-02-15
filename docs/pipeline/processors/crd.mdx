@@ -12,7 +12,11 @@ To view the configuration for each processor, it is recommended to visit the REA
 
 Adding a processor to your Odigos pipeline can be done by creating a `processor` custom resource in your k8s cluster under odigos namespace, for example:
 
-#### processor.yaml
+### Basic Example
+
+This basic example demonstrate how to add a resource attribute `deployment.environment` with value `production` to all spans in the cluster.
+
+Create a file named `example-processor.yaml` with the following content:
 
 ```yaml
 apiVersion: odigos.io/v1alpha1
@@ -24,7 +28,7 @@ spec:
   type: resource
   processorConfig:
     attributes:
-      - key: environment
+      - key: deployment.environment
         value: production
         action: insert
   signals:
@@ -35,10 +39,10 @@ spec:
 
 and apply with kubectl:
 ```bash
-kubectl apply -f processor.yaml
+kubectl apply -f example-processor.yaml
 ```
 
-### Processor Options
+### Full Processor Options
 
 The CRD above is a simple example on how to add a processor to your Odigos pipeline.
 
