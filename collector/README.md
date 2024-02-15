@@ -10,11 +10,3 @@ The following command downloads the `ocb` tool and builds the collector:
 ```bash
 make genodigoscol
 ```
-
-## Building Docker image
-
-The following command builds the Docker image (make sure to replace `X.X` with the version number):
-
-```bash
-docker buildx build -t keyval/otel-collector-contrib:vX.X . --platform linux/amd64,linux/arm64 --push
-```

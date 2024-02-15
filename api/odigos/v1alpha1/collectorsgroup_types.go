@@ -20,12 +20,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//+kubebuilder:validation:Enum=GATEWAY;DATA_COLLECTION
+// +kubebuilder:validation:Enum=GATEWAY;DATA_COLLECTION
 type CollectorsGroupRole string
 
 const (
-	CollectorsGroupRoleGateway        CollectorsGroupRole = "GATEWAY"
-	CollectorsGroupRoleDataCollection CollectorsGroupRole = "DATA_COLLECTION"
+	CollectorsGroupRoleClusterGateway CollectorsGroupRole = "CLUSTER_GATEWAY"
+	CollectorsGroupRoleNodeCollector  CollectorsGroupRole = "NODE_COLLECTOR"
 )
 
 // CollectorsGroupSpec defines the desired state of Collector
