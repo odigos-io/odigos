@@ -433,5 +433,6 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 }
 
 func (a *odigletResourceManager) Verify(ctx context.Context) error {
+	// TODO(clavinjune): add PSP verification
 	return nil
 }
