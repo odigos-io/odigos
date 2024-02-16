@@ -102,7 +102,7 @@ func getOtelcolConfigMapValue() string {
 		},
 		Service: commonconf.Service{
 			Pipelines: map[string]commonconf.Pipeline{
-				"logs": commonconf.Pipeline{
+				"logs": {
 					Receivers:  []string{"otlp"},
 					Processors: []string{"batch"},
 					Exporters:  []string{"otlp"},

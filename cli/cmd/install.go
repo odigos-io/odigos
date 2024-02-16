@@ -15,6 +15,7 @@ import (
 	"github.com/keyval-dev/odigos/common/consts"
 
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
+	"github.com/keyval-dev/odigos/cli/cmd/verification"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/cli/pkg/log"
 	"github.com/spf13/cobra"
@@ -81,6 +82,12 @@ This command will install k8s components that will auto-instrument your applicat
 		}
 
 		config := createOdigosConfigSpec()
+		for _, verifier := range verification.PreInstallVerifierFn(config) {
+			if err := verifier.Verify(ctx); err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
+				os.Exit(1)
+			}
+		}
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
