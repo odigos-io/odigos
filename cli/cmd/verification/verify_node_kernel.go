@@ -32,7 +32,7 @@ func VerifyNodeKernel(client *kube.Client) VerifierFunc {
 			}
 
 			// nodeKernelVersion is greater than minimumKernelVersion
-			if kernel.CompareKernelVersion(*minimumKernelVersion, *nodeKernelVersion) == 1 {
+			if kernel.CompareKernelVersion(*nodeKernelVersion, *minimumKernelVersion) == 1 {
 				return nil
 			}
 		}
