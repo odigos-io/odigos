@@ -36,3 +36,11 @@ spec:
       componentProps:
         type: text
       initialValue: '["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]'
+    - name: PROMETHEUS_RESOURCE_EXTERNAL_LABELS
+      displayName: External Labels
+      componentType: keyValuePairs
+      componentProps:
+        titleKey: "label name"
+        titleValue: "value"
+        tooltip: "map of labels names and values to be attached to each metric data point"
+      
