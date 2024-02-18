@@ -17,6 +17,7 @@ import {
   CreateDestinationButtonWrapper,
 } from './create.connection.form.styled';
 import { useKeyDown } from '@/hooks';
+import KeyValueTable from '@/design.system/key-value-input';
 
 interface CreateConnectionFormProps {
   fields: Field[];
@@ -177,6 +178,14 @@ export function CreateConnectionForm({
     onSubmit(body);
   }
 
+  interface KeyValue {
+    id: number;
+    key: string;
+    value: string;
+  }
+
+  const [keyValues, setKeyValues] = useState<KeyValue[]>([]);
+
   return (
     <div>
       <KeyvalText size={18} weight={600}>
@@ -199,6 +208,9 @@ export function CreateConnectionForm({
           </CheckboxWrapper>
         </ConnectionMonitorsWrapper>
       )}
+      <div>
+        <KeyValueTable setKeyValues={setKeyValues} keyValues={keyValues} />
+      </div>
       <FieldWrapper>
         <KeyvalInput
           label={SETUP.DESTINATION_NAME}
