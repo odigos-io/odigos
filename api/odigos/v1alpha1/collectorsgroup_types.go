@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=GATEWAY;DATA_COLLECTION
+// +kubebuilder:validation:Enum=CLUSTER_GATEWAY;NODE_COLLECTOR
 type CollectorsGroupRole string
 
 const (
