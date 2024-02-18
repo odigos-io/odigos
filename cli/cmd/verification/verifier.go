@@ -4,6 +4,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/cli/pkg/kube"
 )
 
 type Verifier interface {
@@ -18,8 +19,9 @@ func (v VerifierFunc) Verify(ctx context.Context) error {
 	return v(ctx)
 }
 
-func PreInstallVerifierFn(spec odigosv1.OdigosConfigurationSpec) []Verifier {
+func PreInstallVerifierFns(spec odigosv1.OdigosConfigurationSpec, client *kube.Client) []Verifier {
 	return []Verifier{
 		VerifyOPAGatekeeper(spec),
+		VerifyNodeKernel(client),
 	}
 }

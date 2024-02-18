@@ -82,7 +82,7 @@ This command will install k8s components that will auto-instrument your applicat
 		}
 
 		config := createOdigosConfigSpec()
-		for _, verifier := range verification.PreInstallVerifierFn(config) {
+		for _, verifier := range verification.PreInstallVerifierFns(config, client) {
 			if err := verifier.Verify(ctx); err != nil {
 				fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
 				os.Exit(1)
