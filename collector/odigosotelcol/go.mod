@@ -76,6 +76,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanprocessor v0.94.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/sumologicprocessor v0.94.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.94.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.94.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.94.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.94.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.94.0
