@@ -42,8 +42,8 @@ spec:
                   processor is attached to.
                 items:
                   enum:
-                  - GATEWAY
-                  - DATA_COLLECTION
+                  - CLUSTER_GATEWAY
+                  - NODE_COLLECTOR
                   type: string
                 type: array
               disabled:
@@ -91,7 +91,6 @@ spec:
                 type: string
             required:
             - collectorRoles
-            - orderHint
             - processorConfig
             - signals
             - type
