@@ -81,8 +81,9 @@ type Field struct {
 	DisplayName         string                 `json:"display_name"`
 	ComponentType       string                 `json:"component_type"`
 	ComponentProperties map[string]interface{} `json:"component_properties"`
-	VideoUrl            string                 `json:"video_url"`
-	ThumbnailURL        string                 `json:"thumbnail_url"`
+	VideoUrl            string                 `json:"video_url,omitempty"`
+	ThumbnailURL        string                 `json:"thumbnail_url,omitempty"`
+	InitialValue        string                 `json:"initial_value,omitempty"`
 }
 
 func GetDestinationTypeDetails(c *gin.Context) {
@@ -104,11 +105,11 @@ func GetDestinationTypeDetails(c *gin.Context) {
 			ComponentProperties: field.ComponentProps,
 			VideoUrl:            field.VideoURL,
 			ThumbnailURL:        field.ThumbnailURL,
+			InitialValue:        field.InitialValue,
 		})
 	}
 
 	c.JSON(200, resp)
-	return
 }
 
 func GetDestinations(c *gin.Context, odigosns string) {

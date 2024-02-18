@@ -199,6 +199,19 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 			},
 			{
 				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"processors",
+				},
+			},
+			{
+				Verbs: []string{
 					"update",
 				},
 				APIGroups: []string{
@@ -413,6 +426,13 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
 										LocalObjectReference: corev1.LocalObjectReference{
 											Name: ownTelemetryOtelConfig,
+										},
+									},
+								},
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: OdigosDeploymentConfigMapName,
 										},
 									},
 								},

@@ -35,6 +35,14 @@
             "mode": "debug",
             "program": "${workspaceFolder}/autoscaler",
             "cwd": "${workspaceFolder}/autoscaler"
+        },
+        {
+            "name": "scheduler local",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/scheduler",
+            "cwd": "${workspaceFolder}/scheduler"
         }
     ]
 }

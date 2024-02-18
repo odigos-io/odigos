@@ -1,8 +1,14 @@
 import React from 'react';
-import { KeyvalDropDown, KeyvalInput, KeyvalText } from '@/design.system';
-import { FieldWrapper } from './create.connection.form.styled';
-import { INPUT_TYPES } from '@/utils/constants/string';
 import { Field } from '@/types/destinations';
+import { INPUT_TYPES } from '@/utils/constants/string';
+import { FieldWrapper } from './create.connection.form.styled';
+import {
+  KeyvalDropDown,
+  KeyvalInput,
+  KeyvalText,
+  MultiInput,
+} from '@/design.system';
+import { safeJsonParse } from '@/utils/functions/strings';
 
 export function renderFields(
   fields: Field[],
@@ -46,6 +52,33 @@ export function renderFields(
               data={dropdownData}
               onChange={({ label }) => onChange(name, label)}
               value={dropDownValue}
+            />
+          </FieldWrapper>
+        );
+      case INPUT_TYPES.MULTI_INPUT:
+        const userInputData = safeJsonParse<string[] | null>(
+          dynamicFields[name],
+          null
+        );
+
+        // Use safeJsonParse to parse field?.initial_value, defaulting to an empty string if not available.
+        // This assumes that the initial value is supposed to be a string when parsed successfully.
+        // Adjust the fallback value as necessary to match the expected type
+        const initialList =
+          userInputData || safeJsonParse<string[]>(field?.initial_value, []);
+
+        return (
+          <FieldWrapper key={name}>
+            <KeyvalText size={14} weight={600} style={{ marginBottom: 8 }}>
+              {display_name}
+            </KeyvalText>
+            <MultiInput
+              initialList={initialList}
+              label={display_name}
+              onListChange={(value: string[]) =>
+                onChange(name, value.length === 0 ? '' : JSON.stringify(value))
+              }
+              {...component_properties}
             />
           </FieldWrapper>
         );

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 
@@ -11,8 +12,9 @@ import (
 )
 
 const (
-	grafanaCloudPrometheusRWurlKey = "GRAFANA_CLOUD_PROMETHEUS_RW_ENDPOINT"
-	grafanaCloudPrometheusUserKey  = "GRAFANA_CLOUD_PROMETHEUS_USERNAME"
+	grafanaCloudPrometheusRWurlKey         = "GRAFANA_CLOUD_PROMETHEUS_RW_ENDPOINT"
+	grafanaCloudPrometheusUserKey          = "GRAFANA_CLOUD_PROMETHEUS_USERNAME"
+	prometheusResourceAttributesLabelsKeys = "PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS"
 )
 
 type GrafanaCloudPrometheus struct{}
@@ -45,6 +47,13 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest *odigosv1.Destination, curren
 		return
 	}
 
+	resourceAttributesLabels, exists := dest.Spec.Data[prometheusResourceAttributesLabelsKeys]
+	processors, err := promResourceAttributesProcessors(resourceAttributesLabels, exists, dest.Name)
+	if err != nil {
+		log.Log.Error(err, "failed to parse grafana cloud prometheus resource attributes labels, gateway will not be configured for Prometheus")
+		return
+	}
+
 	authExtensionName := "basicauth/grafana" + dest.Name
 	currentConfig.Extensions[authExtensionName] = commonconf.GenericMap{
 		"client_auth": commonconf.GenericMap{
@@ -62,24 +71,17 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest *odigosv1.Destination, curren
 		},
 	}
 
-	// the following processor is found in grafana official "OpenTelemetry Collector Configuration" tool.
-	// https://odigos.grafana.net/connections/add-new-connection/collector-open-telemetry
-	// we should consider if these are needed for our use case and what attributes we want to add.
-	//
-	// transform/add_resource_attributes_as_metric_attributes:
-	// # https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/transformprocessor
-	// error_mode: ignore
-	// metric_statements:
-	//   - context: datapoint
-	//     statements:
-	//       - set(attributes["deployment.environment"], resource.attributes["deployment.environment"])
-	//       - set(attributes["service.version"], resource.attributes["service.version"])
+	processorNames := []string{}
+	for k, v := range processors {
+		currentConfig.Processors[k] = v
+		processorNames = append(processorNames, k)
+	}
 
 	metricsPipelineName := "metrics/grafana-" + dest.Name
 	currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 		Receivers:  []string{"otlp"},
-		Processors: []string{"batch"},
+		Processors: append([]string{"batch"}, processorNames...),
 		Exporters:  []string{rwExporterName},
 	}
 }
@@ -99,4 +101,39 @@ func validateGrafanaPrometheusUrl(input string) error {
 	}
 
 	return nil
+}
+
+func promResourceAttributesProcessors(rawLabels string, exists bool, destName string) (commonconf.GenericMap, error) {
+	if !exists {
+		return nil, nil
+	}
+
+	// no labels. not recommended, but ok
+	if rawLabels == "" || rawLabels == "[]" {
+		return nil, nil
+	}
+
+	var attributeNames []string
+	err := json.Unmarshal([]byte(rawLabels), &attributeNames)
+	if err != nil {
+		return nil, err
+	}
+
+	transformStatements := []string{}
+	for _, attr := range attributeNames {
+		statement := fmt.Sprintf("set(attributes[\"%s\"], resource.attributes[\"%s\"])", attr, attr)
+		transformStatements = append(transformStatements, statement)
+	}
+
+	processorName := "transform/grafana-" + destName
+	return commonconf.GenericMap{
+		processorName: commonconf.GenericMap{
+			"metric_statements": []commonconf.GenericMap{
+				{
+					"context":    "datapoint",
+					"statements": transformStatements,
+				},
+			},
+		},
+	}, nil
 }

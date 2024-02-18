@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import theme from '@/styles/palette';
+import { SETUP } from '@/utils/constants';
+import { Field } from '@/types/destinations';
+import { renderFields } from './dynamic.fields';
+import { DestinationBody } from '@/containers/setup/connection/connection.section';
 import {
   KeyvalButton,
   KeyvalCheckbox,
@@ -11,11 +16,6 @@ import {
   FieldWrapper,
   CreateDestinationButtonWrapper,
 } from './create.connection.form.styled';
-import { renderFields } from './dynamic.fields';
-import { SETUP } from '@/utils/constants';
-import { DestinationBody } from '@/containers/setup/connection/connection.section';
-import { Field } from '@/types/destinations';
-import theme from '@/styles/palette';
 import { useKeyDown } from '@/hooks';
 
 interface CreateConnectionFormProps {
@@ -44,12 +44,19 @@ const MONITORS = [
 // fields are the current destination supported fields which we want to have.
 // fieldValues read the actual values that are received from the cluster.
 // if there are field values which are not part of the current schema, we want to remove them.
-const sanitizeDynamicFields = (fields: Field[], fieldValues: Record<string, any> | undefined): Record<string, any> => {
+const sanitizeDynamicFields = (
+  fields: Field[],
+  fieldValues: Record<string, any> | undefined
+): Record<string, any> => {
   if (!fieldValues) {
-    return {}
+    return {};
   }
-  return Object.fromEntries(Object.entries(fieldValues).filter(([key, value]) => fields.find(field => field.name === key)))
-}
+  return Object.fromEntries(
+    Object.entries(fieldValues).filter(([key, value]) =>
+      fields.find((field) => field.name === key)
+    )
+  );
+};
 
 export function CreateConnectionForm({
   fields,
@@ -59,12 +66,18 @@ export function CreateConnectionForm({
   destinationNameValue,
   checkboxValues,
 }: CreateConnectionFormProps) {
+  const [selectedMonitors, setSelectedMonitors] = useState(MONITORS);
+  const [isCreateButtonDisabled, setIsCreateButtonDisabled] = useState(true);
+  const [dynamicFields, setDynamicFields] = useState(
+    sanitizeDynamicFields(fields, dynamicFieldsValues)
+  );
   const [destinationName, setDestinationName] = useState<string>(
     destinationNameValue || ''
   );
-  const [selectedMonitors, setSelectedMonitors] = useState(MONITORS);
-  const [dynamicFields, setDynamicFields] = useState(sanitizeDynamicFields(fields, dynamicFieldsValues));
-  const [isCreateButtonDisabled, setIsCreateButtonDisabled] = useState(true);
+
+  useEffect(() => {
+    setInitialDynamicFields();
+  }, [fields]);
 
   useEffect(() => {
     isFormValid();
@@ -79,6 +92,20 @@ export function CreateConnectionForm({
   function handleKeyPress(e: any) {
     if (!isCreateButtonDisabled) {
       onCreateClick();
+    }
+  }
+
+  function setInitialDynamicFields() {
+    if (fields) {
+      const defaultValues = fields.reduce(
+        (acc: { [key: string]: string }, field: Field) => {
+          const value = dynamicFields[field.name] || field.initial_value || '';
+          acc[field.name] = value;
+          return acc;
+        },
+        {} as { [key: string]: string }
+      );
+      setDynamicFields(defaultValues);
     }
   }
 
@@ -126,7 +153,6 @@ export function CreateConnectionForm({
     const areDynamicFieldsFilled = Object.values(dynamicFields).every(
       (field) => field
     );
-
     const isFieldLengthMatching =
       (fields?.length ?? 0) ===
       (dynamicFields ? Object.keys(dynamicFields).length : 0);
@@ -147,6 +173,7 @@ export function CreateConnectionForm({
       signals,
       fields: dynamicFields,
     };
+
     onSubmit(body);
   }
 

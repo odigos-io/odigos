@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string) error {
+func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
 	var collectorGroups odigosv1.CollectorsGroupList
 	if err := c.List(ctx, &collectorGroups); err != nil {
@@ -20,14 +20,14 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 
 	var dataCollectionCollectorGroup *odigosv1.CollectorsGroup
 	for _, collectorGroup := range collectorGroups.Items {
-		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleDataCollection {
+		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleNodeCollector {
 			dataCollectionCollectorGroup = &collectorGroup
 			break
 		}
 	}
 
 	if dataCollectionCollectorGroup == nil {
-		logger.V(3).Info("data collection collector group not exists, nothing to sync")
+		logger.V(3).Info("data collection collector group doesn't exist, nothing to sync")
 		return nil
 	}
 
@@ -43,22 +43,28 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 		return err
 	}
 
-	return syncDataCollection(&instApps, &dests, dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets)
+	var processors odigosv1.ProcessorList
+	if err := c.List(ctx, &processors); err != nil {
+		logger.Error(err, "failed to list processors")
+		return err
+	}
+
+	return syncDataCollection(&instApps, &dests, &processors, dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion)
 }
 
-func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList,
+func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	dataCollection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client,
-	scheme *runtime.Scheme, imagePullSecrets []string) error {
+	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("syncing data collection")
 
-	configData, err := syncConfigMap(instApps, dests, dataCollection, ctx, c, scheme)
+	configData, err := syncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "failed to sync config map")
 		return err
 	}
 
-	ds, err := syncDaemonSet(instApps, dests, dataCollection, configData, ctx, c, scheme, imagePullSecrets)
+	ds, err := syncDaemonSet(instApps, dests, dataCollection, configData, ctx, c, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
 		logger.Error(err, "failed to sync daemon set")
 		return err

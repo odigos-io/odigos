@@ -4,9 +4,10 @@ import "fmt"
 
 var ImagePrefix string
 
-func GetContainerImage(origName string) string {
+func GetCollectorContainerImage(origName string, version string) string {
+	imageWithTag := fmt.Sprintf("%s:%s", origName, version)
 	if ImagePrefix == "" {
-		return origName
+		return imageWithTag
 	}
 
 	// if ImagePrefix has a trailing slash, remove it
@@ -14,5 +15,5 @@ func GetContainerImage(origName string) string {
 		ImagePrefix = ImagePrefix[:len(ImagePrefix)-1]
 	}
 
-	return fmt.Sprintf("%s/%s", ImagePrefix, origName)
+	return fmt.Sprintf("%s/%s", ImagePrefix, imageWithTag)
 }
