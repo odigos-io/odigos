@@ -51,7 +51,7 @@ func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorLi
 			pipeline.Processors = append(logsProcessors, pipeline.Processors...)
 		}
 
-		// basic config for each pipeline
+		// basic config common to all pipelines
 		pipeline.Receivers = []string{"otlp"}
 		pipeline.Processors = append([]string{"batch"}, pipeline.Processors...)
 		currentConfig.Service.Pipelines[pipelineName] = pipeline
