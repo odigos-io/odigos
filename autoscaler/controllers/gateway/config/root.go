@@ -20,8 +20,9 @@ type Configer interface {
 	ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config)
 }
 
-func Calculate(dests *odigosv1.DestinationList) (string, error) {
+func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList) (string, error) {
 	currentConfig := getBasicConfig()
+
 	configers, err := loadConfigers()
 	if err != nil {
 		return "", err
@@ -34,6 +35,24 @@ func Calculate(dests *odigosv1.DestinationList) (string, error) {
 		}
 
 		configer.ModifyConfig(&dest, currentConfig)
+	}
+
+	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := commonconf.GetCrdProcessorsConfigMap(processors, odigosv1.CollectorsGroupRoleClusterGateway)
+	for processorKey, processorCfg := range processorsCfg {
+		currentConfig.Processors[processorKey] = processorCfg
+	}
+
+	for pipelineName, pipeline := range currentConfig.Service.Pipelines {
+		if strings.HasPrefix(pipelineName, "traces/") {
+			pipeline.Processors = append(pipeline.Processors, tracesProcessors...)
+			currentConfig.Service.Pipelines[pipelineName] = pipeline
+		} else if strings.HasPrefix(pipelineName, "metrics/") {
+			pipeline.Processors = append(pipeline.Processors, metricsProcessors...)
+			currentConfig.Service.Pipelines[pipelineName] = pipeline
+		} else if strings.HasPrefix(pipelineName, "logs/") {
+			pipeline.Processors = append(pipeline.Processors, logsProcessors...)
+			currentConfig.Service.Pipelines[pipelineName] = pipeline
+		}
 	}
 
 	data, err := yaml.Marshal(currentConfig)

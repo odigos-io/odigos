@@ -14,8 +14,14 @@ spec:
     logs:
       supported: false
   fields:
-    - name: CHRONOSPHERE_COLLECTOR
-      displayName: Collector Endpoint
+    - name: CHRONOSPHERE_DOMAIN
+      displayName: Chronosphere Company Domain
       componentType: input
       componentProps:
         type: text
+    - name: CHRONOSPHERE_API_TOKEN
+      displayName: API Token
+      componentType: input
+      componentProps:
+        type: password
+      secret: true
