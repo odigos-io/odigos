@@ -44,15 +44,17 @@ func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorLi
 
 	for pipelineName, pipeline := range currentConfig.Service.Pipelines {
 		if strings.HasPrefix(pipelineName, "traces/") {
-			pipeline.Processors = append(pipeline.Processors, tracesProcessors...)
-			currentConfig.Service.Pipelines[pipelineName] = pipeline
+			pipeline.Processors = append(tracesProcessors, pipeline.Processors...)
 		} else if strings.HasPrefix(pipelineName, "metrics/") {
-			pipeline.Processors = append(pipeline.Processors, metricsProcessors...)
-			currentConfig.Service.Pipelines[pipelineName] = pipeline
+			pipeline.Processors = append(metricsProcessors, pipeline.Processors...)
 		} else if strings.HasPrefix(pipelineName, "logs/") {
-			pipeline.Processors = append(pipeline.Processors, logsProcessors...)
-			currentConfig.Service.Pipelines[pipelineName] = pipeline
+			pipeline.Processors = append(logsProcessors, pipeline.Processors...)
 		}
+
+		// basic config for each pipeline
+		pipeline.Receivers = []string{"otlp"}
+		pipeline.Processors = append([]string{"batch"}, pipeline.Processors...)
+		currentConfig.Service.Pipelines[pipelineName] = pipeline
 	}
 
 	data, err := yaml.Marshal(currentConfig)
