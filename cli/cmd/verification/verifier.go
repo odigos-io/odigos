@@ -19,5 +19,7 @@ func (v VerifierFunc) Verify(ctx context.Context) error {
 }
 
 func PreInstallVerifierFn(spec odigosv1.OdigosConfigurationSpec) []Verifier {
-	return []Verifier{}
+	return []Verifier{
+		VerifyOPAGatekeeper(spec),
+	}
 }
