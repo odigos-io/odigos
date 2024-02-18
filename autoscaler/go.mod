@@ -1,7 +1,6 @@
 module github.com/keyval-dev/odigos/autoscaler
 
 go 1.21
-
 toolchain go1.22.0
 
 require (
@@ -11,10 +10,10 @@ require (
 	github.com/keyval-dev/odigos/common v0.0.0
 	github.com/keyval-dev/opentelemetry-zap-bridge v0.0.3
 	github.com/stretchr/testify v1.8.4
-	k8s.io/api v0.29.1
-	k8s.io/apimachinery v0.29.1
-	k8s.io/client-go v0.29.1
-	sigs.k8s.io/controller-runtime v0.17.1
+	k8s.io/api v0.29.2
+	k8s.io/apimachinery v0.29.2
+	k8s.io/client-go v0.29.2
+	sigs.k8s.io/controller-runtime v0.17.2
 )
 
 require (
