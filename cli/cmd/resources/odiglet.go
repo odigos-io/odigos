@@ -389,7 +389,10 @@ func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropaga
 	return &p
 }
 
-var _ verification.Verifier = (*odigletResourceManager)(nil)
+var (
+	_ resourcemanager.ResourceManager = (*odigletResourceManager)(nil)
+	_ verification.Verifier           = (*odigletResourceManager)(nil)
+)
 
 type odigletResourceManager struct {
 	client     *kube.Client
@@ -423,10 +426,6 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewOdigletClusterRole(a.config.Psp),
 		NewOdigletClusterRoleBinding(a.ns),
 		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier),
-	}
-
-	if err := a.Verify(ctx); err != nil {
-		return err
 	}
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
