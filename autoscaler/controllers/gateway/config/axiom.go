@@ -37,18 +37,14 @@ func (a *Axiom) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/axiom-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{axiomExporterName},
+			Exporters: []string{axiomExporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/axiom-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{axiomExporterName},
+			Exporters: []string{axiomExporterName},
 		}
 	}
 }

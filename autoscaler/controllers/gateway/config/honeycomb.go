@@ -45,8 +45,6 @@ func (h *Honeycomb) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 
 	tracePipelineName := "traces/honeycomb-" + dest.Name
 	currentConfig.Service.Pipelines[tracePipelineName] = commonconf.Pipeline{
-		Receivers:  []string{"otlp"},
-		Processors: []string{"batch"},
-		Exporters:  []string{exporterName},
+		Exporters: []string{exporterName},
 	}
 }
