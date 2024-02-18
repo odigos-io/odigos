@@ -42,15 +42,12 @@ func (p *Prometheus) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 
 	metricsPipelineName := "metrics/prometheus-" + dest.Name
 	currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
-		Receivers:  []string{"otlp"},
-		Processors: []string{"batch"},
-		Exporters:  []string{rwExporterName},
+		Exporters: []string{rwExporterName},
 	}
 
 	// Send SpanMetrics to prometheus
 	tracesPipelineName := "traces/spanmetrics-" + dest.Name
 	currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-		Receivers:  []string{"otlp"},
 		Processors: []string{spanMetricsProcessorName},
 		Exporters:  []string{"logging"},
 	}

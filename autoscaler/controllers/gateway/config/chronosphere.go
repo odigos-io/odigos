@@ -50,18 +50,14 @@ func (c *Chronosphere) ModifyConfig(dest *odigosv1.Destination, currentConfig *c
 	if isTracingEnabled(dest) {
 		tracePipelineName := "traces/chronosphere-" + dest.Name
 		currentConfig.Service.Pipelines[tracePipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{chronosphereExporterName},
+			Exporters: []string{chronosphereExporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/chronosphere-" + dest.Name
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{chronosphereExporterName},
+			Exporters: []string{chronosphereExporterName},
 		}
 	}
 }
