@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { StepsList } from '@/components/lists';
+import { StepsList } from '@/components';
 import { ChooseSourcesContainer } from '@/containers';
 import { CardWrapper, PageContainer, StepListWrapper } from '../styled';
 

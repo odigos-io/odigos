@@ -2,10 +2,10 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { KeyvalCard } from '@/design.system';
-import { NOTIFICATION, SETUP } from '@/utils/constants';
+import { NOTIFICATION, ROUTES, SETUP } from '@/utils';
+import { SourcesSection } from './sources.section';
 import { ChooseSourcesHeader } from '@/components/setup/headers';
 import { useNotification, useSectionData, useSources } from '@/hooks';
-import { SourcesSection } from '@/containers/setup/sources/sources.section';
 
 export function ChooseSourcesContainer() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export function ChooseSourcesContainer() {
   async function onNextClick() {
     upsertSources({
       sectionData,
-      onSuccess: () => router.push('/choose-destination'),
+      onSuccess: () => router.push(ROUTES.CHOOSE_DESTINATION),
       onError: ({ response }) => {
         const message = response?.data?.message || SETUP.ERROR;
         show({

@@ -8,14 +8,14 @@ import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
 import { NOTIFICATION, OVERVIEW, QUERIES, SETUP } from '@/utils/constants';
 import { DestinationList, DestinationOptionMenu } from '@/components/setup';
 import {
-  DestinationContainerWrapper,
   LoaderWrapper,
+  DestinationContainerWrapper,
 } from './destination.section.styled';
 import {
-  filterDataByMonitorsOption,
+  sortDestinationList,
   filterDataByTextQuery,
   isDestinationListEmpty,
-  sortDestinationList,
+  filterDataByMonitorsOption,
 } from './utils';
 
 interface DestinationTypes {
