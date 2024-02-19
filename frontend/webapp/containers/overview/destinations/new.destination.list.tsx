@@ -17,9 +17,9 @@ export function NewDestinationList() {
       />
       <NewDestinationContainer>
         <DestinationSection
-          setSectionData={(data) => {
-            router.push(`${ROUTES.MANAGE_DESTINATION}${data.type}`);
-          }}
+        // setSectionData={(data) => {
+        //   router.push(`${ROUTES.MANAGE_DESTINATION}${data.type}`);
+        // }}
         />
       </NewDestinationContainer>
     </>

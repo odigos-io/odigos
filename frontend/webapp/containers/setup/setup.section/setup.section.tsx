@@ -51,8 +51,8 @@ export function SetupSection() {
     return Component ? (
       <Component
         sectionData={sectionData}
-        // setSectionData={setSectionData}
         onSelectItem={onNextClick}
+        setSectionData={undefined}
       />
     ) : null;
   }
