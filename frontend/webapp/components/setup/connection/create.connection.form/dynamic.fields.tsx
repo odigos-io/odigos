@@ -37,6 +37,7 @@ export function renderFields(
               value={dynamicFields[name]}
               onChange={(value) => onChange(name, value)}
               {...component_properties}
+              required
             />
           </FieldWrapper>
         );

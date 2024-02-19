@@ -10,7 +10,7 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@keyval-dev/design-system": "^1.4.7",
+    "@keyval-dev/design-system": "^1.4.8",
     "@next/font": "^13.4.7",
     "@svgr/webpack": "^6.2.1",
     "@types/node": "20.3.3",
