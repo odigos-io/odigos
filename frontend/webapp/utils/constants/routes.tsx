@@ -10,4 +10,5 @@ export const ROUTES = {
   CREATE_SOURCE: '/sources/create',
   MANAGE_SOURCE: '/sources/manage',
   CHOOSE_DESTINATION: '/choose-destination',
+  CHOOSE_SOURCES: '/choose-sources',
 };
