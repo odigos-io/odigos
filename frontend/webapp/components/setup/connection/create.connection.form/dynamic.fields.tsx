@@ -1,14 +1,16 @@
 import React from 'react';
 import { Field } from '@/types/destinations';
+import { KeyValue } from '@keyval-dev/design-system';
 import { INPUT_TYPES } from '@/utils/constants/string';
+import { safeJsonParse } from '@/utils/functions/strings';
 import { FieldWrapper } from './create.connection.form.styled';
 import {
   KeyvalDropDown,
   KeyvalInput,
   KeyvalText,
   MultiInput,
+  KeyValuePair,
 } from '@/design.system';
-import { safeJsonParse } from '@/utils/functions/strings';
 
 export function renderFields(
   fields: Field[],
@@ -81,6 +83,47 @@ export function renderFields(
               {...component_properties}
             />
           </FieldWrapper>
+        );
+
+      case INPUT_TYPES.KEY_VALUE_PAIR:
+        let keyValues: KeyValue[] = safeJsonParse<KeyValue[]>(
+          dynamicFields[name],
+          [
+            {
+              id: 0,
+              key: '',
+              value: '',
+            },
+          ]
+        );
+
+        if (!Array.isArray(keyValues)) {
+          const array: KeyValue[] = [];
+          let id = 0;
+          for (const [key, value] of Object.entries(keyValues)) {
+            array.push({ id: id++, key: key, value: value as string });
+          }
+          keyValues = array;
+        }
+
+        return (
+          <div key={name} style={{ marginTop: 22 }}>
+            <div>
+              <KeyValuePair
+                title={display_name}
+                setKeyValues={(value) => {
+                  const resultMap = {};
+                  value.forEach((item) => {
+                    const { key, value } = item;
+                    resultMap[key] = value;
+                  });
+                  onChange(name, JSON.stringify(resultMap));
+                }}
+                keyValues={keyValues}
+                {...component_properties}
+              />
+            </div>
+          </div>
         );
       default:
         return null;

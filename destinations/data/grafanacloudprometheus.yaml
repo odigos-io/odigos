@@ -19,6 +19,7 @@ spec:
       componentType: input
       componentProps:
         type: text
+        placeholder: 'e.g https://prometheus-us-central1.grafana.net/api/prom/push'
     - name: GRAFANA_CLOUD_PROMETHEUS_USERNAME
       displayName: Username / Instance ID
       componentType: input
@@ -40,7 +41,7 @@ spec:
       displayName: External Labels
       componentType: keyValuePairs
       componentProps:
-        titleKey: "label name"
-        titleValue: "value"
-        tooltip: "map of labels names and values to be attached to each metric data point"
-      
+        titleKey: 'Label Name'
+        titleButton: 'Add Label'
+        titleValue: 'Value'
+        tooltip: 'map of labels names and values to be attached to each metric data point'

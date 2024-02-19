@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import theme from '@/styles/palette';
+import { useKeyDown } from '@/hooks';
 import { SETUP } from '@/utils/constants';
 import { Field } from '@/types/destinations';
 import { renderFields } from './dynamic.fields';
@@ -16,8 +17,6 @@ import {
   FieldWrapper,
   CreateDestinationButtonWrapper,
 } from './create.connection.form.styled';
-import { useKeyDown } from '@/hooks';
-import KeyValueTable from '@/design.system/key-value-input';
 
 interface CreateConnectionFormProps {
   fields: Field[];
@@ -174,17 +173,8 @@ export function CreateConnectionForm({
       signals,
       fields: dynamicFields,
     };
-
     onSubmit(body);
   }
-
-  interface KeyValue {
-    id: number;
-    key: string;
-    value: string;
-  }
-
-  const [keyValues, setKeyValues] = useState<KeyValue[]>([]);
 
   return (
     <div>
@@ -208,9 +198,6 @@ export function CreateConnectionForm({
           </CheckboxWrapper>
         </ConnectionMonitorsWrapper>
       )}
-      <div>
-        <KeyValueTable setKeyValues={setKeyValues} keyValues={keyValues} />
-      </div>
       <FieldWrapper>
         <KeyvalInput
           label={SETUP.DESTINATION_NAME}
