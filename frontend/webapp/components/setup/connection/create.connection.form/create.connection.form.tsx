@@ -203,6 +203,7 @@ export function CreateConnectionForm({
           label={SETUP.DESTINATION_NAME}
           value={destinationName}
           onChange={setDestinationName}
+          required
         />
       </FieldWrapper>
       {renderFields(fields, dynamicFields, handleDynamicFieldChange)}
