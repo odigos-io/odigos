@@ -54,14 +54,13 @@ export function renderFields(
 
         return (
           <FieldWrapper key={name}>
-            <KeyvalText size={14} weight={600} style={{ marginBottom: 8 }}>
-              {display_name}
-            </KeyvalText>
             <KeyvalDropDown
+              label={display_name}
               width={354}
               data={dropdownData}
               onChange={({ label }) => onChange(name, label)}
               value={dropDownValue}
+              {...component_properties}
             />
           </FieldWrapper>
         );
