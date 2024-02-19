@@ -5,6 +5,7 @@ import (
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/cli/cmd/resources/crds"
+	"github.com/keyval-dev/odigos/cli/cmd/resources/crds/actions"
 	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
 	"github.com/keyval-dev/odigos/common"
@@ -114,6 +115,7 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 		crds.NewDestination(),
 		crds.NewInstrumentedApp(),
 		crds.NewProcessor(),
+		actions.NewInsertClusterAttributesCRD(),
 	}
 	if a.odigosTier != common.CommunityOdigosTier {
 		resources = append(resources, crds.NewInstrumentationConfig())
