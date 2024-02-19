@@ -12,6 +12,14 @@ import {
   KeyValuePair,
 } from '@/design.system';
 
+const DEFAULT_KEY_VALUE_PAIR = [
+  {
+    id: 0,
+    key: '',
+    value: '',
+  },
+];
+
 export function renderFields(
   fields: Field[],
   dynamicFields: object,
@@ -88,16 +96,15 @@ export function renderFields(
       case INPUT_TYPES.KEY_VALUE_PAIR:
         let keyValues: KeyValue[] = safeJsonParse<KeyValue[]>(
           dynamicFields[name],
-          [
-            {
-              id: 0,
-              key: '',
-              value: '',
-            },
-          ]
+          DEFAULT_KEY_VALUE_PAIR
         );
 
+        if (dynamicFields[name] === '') {
+          onChange(name, stringifyKeyValues(keyValues));
+        }
+
         if (!Array.isArray(keyValues)) {
+          //data return as json from server
           const array: KeyValue[] = [];
           let id = 0;
           for (const [key, value] of Object.entries(keyValues)) {
@@ -112,12 +119,7 @@ export function renderFields(
               <KeyValuePair
                 title={display_name}
                 setKeyValues={(value) => {
-                  const resultMap = {};
-                  value.forEach((item) => {
-                    const { key, value } = item;
-                    resultMap[key] = value;
-                  });
-                  onChange(name, JSON.stringify(resultMap));
+                  onChange(name, stringifyKeyValues(value));
                 }}
                 keyValues={keyValues}
                 {...component_properties}
@@ -129,4 +131,13 @@ export function renderFields(
         return null;
     }
   });
+}
+
+function stringifyKeyValues(keyValues: KeyValue[]) {
+  const resultMap = {};
+  keyValues.forEach((item) => {
+    const { key, value } = item;
+    resultMap[key] = value;
+  });
+  return JSON.stringify(resultMap);
 }
