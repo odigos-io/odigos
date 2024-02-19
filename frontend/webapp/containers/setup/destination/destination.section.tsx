@@ -4,6 +4,7 @@ import { NOTIFICATION, OVERVIEW, QUERIES, SETUP } from '@/utils/constants';
 import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
 import { DestinationList, DestinationOptionMenu } from '@/components/setup';
 import {
+  DestinationContainerWrapper,
   DestinationListContainer,
   LoaderWrapper,
 } from './destination.section.styled';
@@ -30,8 +31,6 @@ interface DestinationTypes {
 }
 
 type DestinationSectionProps = {
-  // sectionData?: any;
-  // setSectionData: (data: any) => void;
   onSelectItem?: (type: string) => void;
 };
 
@@ -100,7 +99,7 @@ export function DestinationSection({ onSelectItem }: DestinationSectionProps) {
   }
 
   return (
-    <>
+    <DestinationContainerWrapper>
       <DestinationOptionMenu
         searchFilter={searchFilter}
         setSearchFilter={setSearchFilter}
@@ -109,12 +108,8 @@ export function DestinationSection({ onSelectItem }: DestinationSectionProps) {
         setMonitoringOption={setMonitoringOption}
         data={data?.categories}
       />
-      {data && (
-        <DestinationListContainer>
-          {renderDestinationLists()}
-        </DestinationListContainer>
-      )}
+      {data && renderDestinationLists()}
       <Notification />
-    </>
+    </DestinationContainerWrapper>
   );
 }

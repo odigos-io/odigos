@@ -24,16 +24,16 @@ export default function ChooseDestinationPage() {
   const cardHeaderBody = () => <ChooseDestinationHeader />;
 
   return (
-    <>
+    <div style={{ height: '100vh' }}>
       <StepListWrapper>
         <StepsList currentStepIndex={1} />
       </StepListWrapper>
-      <KeyvalCard type={'secondary'} header={{ body: cardHeaderBody }}>
-        <SetupBackButton onBackClick={onBackClick} />
-        <div style={{ padding: '12px 40px' }}>
+      <div style={{ height: '85%' }}>
+        <KeyvalCard type={'secondary'} header={{ body: cardHeaderBody }}>
+          <SetupBackButton onBackClick={onBackClick} />
           <DestinationSection onSelectItem={onDestinationSelect} />
-        </div>
-      </KeyvalCard>
-    </>
+        </KeyvalCard>
+      </div>
+    </div>
   );
 }
