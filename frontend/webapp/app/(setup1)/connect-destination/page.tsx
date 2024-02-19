@@ -1,15 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { StepListWrapper } from '../styled';
-import { KeyvalCard, KeyvalLoader } from '@/design.system';
 import { StepsList } from '@/components/lists';
 import { ConnectionSection } from '@/containers/setup';
-import {
-  ConnectDestinationHeader,
-  SetupBackButton,
-} from '@/components/setup/headers';
-import { useDestinations } from '@/hooks/destinations/useDestinations';
+import { KeyvalCard, KeyvalLoader } from '@/design.system';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useDestinations } from '@/hooks/destinations/useDestinations';
+import { CardWrapper, PageContainer, StepListWrapper } from '../styled';
+import {
+  SetupBackButton,
+  ConnectDestinationHeader,
+} from '@/components/setup/headers';
 
 export default function ConnectDestinationPage() {
   const [selectedDestination, setSelectedDestination] = useState<any>(null);
@@ -43,16 +43,16 @@ export default function ConnectDestinationPage() {
   );
 
   return (
-    <>
+    <PageContainer>
       <StepListWrapper>
         <StepsList currentStepIndex={2} />
       </StepListWrapper>
-      <KeyvalCard type={'secondary'} header={{ body: cardHeaderBody }}>
-        <SetupBackButton onBackClick={onBackClick} />
-        <div style={{ padding: '0 40px', minWidth: '70vw', maxHeight: '80vh' }}>
+      <CardWrapper>
+        <KeyvalCard type={'secondary'} header={{ body: cardHeaderBody }}>
+          <SetupBackButton onBackClick={onBackClick} />
           <ConnectionSection sectionData={undefined} />
-        </div>
-      </KeyvalCard>
-    </>
+        </KeyvalCard>
+      </CardWrapper>
+    </PageContainer>
   );
 }

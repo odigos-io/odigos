@@ -1,12 +1,12 @@
 'use client';
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { StepListWrapper } from '../styled';
 import { KeyvalCard } from '@/design.system';
 import { StepsList } from '@/components/lists';
 import { NOTIFICATION, SETUP } from '@/utils/constants';
 import { ChooseSourcesHeader } from '@/components/setup/headers';
 import { useNotification, useSectionData, useSources } from '@/hooks';
+import { CardWrapper, PageContainer, StepListWrapper } from '../styled';
 import { SourcesSection } from '@/containers/setup/sources/sources.section';
 
 export default function ChooseSourcesPage() {
@@ -36,19 +36,19 @@ export default function ChooseSourcesPage() {
   );
 
   return (
-    <div style={{ height: '100vh' }}>
+    <PageContainer>
       <StepListWrapper>
         <StepsList currentStepIndex={0} />
       </StepListWrapper>
-      <div style={{ height: '85%' }}>
+      <CardWrapper>
         <KeyvalCard type={'secondary'} header={{ body: cardHeaderBody }}>
           <SourcesSection
             sectionData={sectionData}
             setSectionData={setSectionData}
           />
         </KeyvalCard>
-      </div>
+      </CardWrapper>
       <Notification />
-    </div>
+    </PageContainer>
   );
 }

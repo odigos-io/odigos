@@ -44,3 +44,11 @@ export const StepListWrapper = styled.div`
   display: inline-flex;
   justify-content: center;
 `;
+
+export const PageContainer = styled.div`
+  height: 100vh;
+`;
+
+export const CardWrapper = styled.div`
+  height: 85%;
+`;

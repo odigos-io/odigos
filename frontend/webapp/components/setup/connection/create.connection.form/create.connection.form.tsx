@@ -182,7 +182,7 @@ export function CreateConnectionForm({
   }
 
   return (
-    <div>
+    <>
       <KeyvalText size={18} weight={600}>
         {dynamicFieldsValues
           ? SETUP.UPDATE_CONNECTION
@@ -220,6 +220,6 @@ export function CreateConnectionForm({
           </KeyvalText>
         </KeyvalButton>
       </CreateDestinationButtonWrapper>
-    </div>
+    </>
   );
 }

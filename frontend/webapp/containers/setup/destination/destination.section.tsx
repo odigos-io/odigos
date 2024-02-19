@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
-import { NOTIFICATION, OVERVIEW, QUERIES, SETUP } from '@/utils/constants';
+import { KeyvalLoader } from '@/design.system';
+import { EmptyList } from '@/components/lists';
+import { getDestinationsTypes } from '@/services';
+import { useNotification, useSectionData } from '@/hooks';
 import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
+import { NOTIFICATION, OVERVIEW, QUERIES, SETUP } from '@/utils/constants';
 import { DestinationList, DestinationOptionMenu } from '@/components/setup';
 import {
   DestinationContainerWrapper,
-  DestinationListContainer,
   LoaderWrapper,
 } from './destination.section.styled';
 import {
@@ -14,10 +17,6 @@ import {
   isDestinationListEmpty,
   sortDestinationList,
 } from './utils';
-import { KeyvalLoader } from '@/design.system';
-import { useNotification, useSectionData } from '@/hooks';
-import { getDestinationsTypes } from '@/services';
-import { EmptyList } from '@/components/lists';
 
 interface DestinationTypes {
   image_url: string;
