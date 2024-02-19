@@ -10,7 +10,7 @@ interface KeyvalDropDownProps {
   onChange: (item: DropDownItem) => void;
   width?: number;
   value?: DropDownItem | null;
-  label: string;
+  label?: string;
   tooltip?: string;
   required?: boolean;
 }
