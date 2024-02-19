@@ -36,19 +36,19 @@ export default function ChooseSourcesPage() {
   );
 
   return (
-    <>
+    <div style={{ height: '100vh' }}>
       <StepListWrapper>
         <StepsList currentStepIndex={0} />
       </StepListWrapper>
-      <KeyvalCard type={'secondary'} header={{ body: cardHeaderBody }}>
-        <div style={{ padding: '0 40px' }}>
+      <div style={{ height: '85%' }}>
+        <KeyvalCard type={'secondary'} header={{ body: cardHeaderBody }}>
           <SourcesSection
             sectionData={sectionData}
             setSectionData={setSectionData}
           />
-        </div>
-      </KeyvalCard>
+        </KeyvalCard>
+      </div>
       <Notification />
-    </>
+    </div>
   );
 }

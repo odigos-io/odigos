@@ -1,11 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { SourcesList, SourcesOptionMenu } from '@/components/setup';
-import { getApplication, getNamespaces } from '@/services';
-import { LoaderWrapper } from './sources.section.styled';
 import { useQuery } from 'react-query';
-import { NOTIFICATION, QUERIES } from '@/utils/constants';
-import { KeyvalLoader } from '@/design.system';
 import { useNotification } from '@/hooks';
+import { KeyvalLoader } from '@/design.system';
+import { NOTIFICATION, QUERIES } from '@/utils/constants';
+import { getApplication, getNamespaces } from '@/services';
+import { SourcesList, SourcesOptionMenu } from '@/components/setup';
+import {
+  LoaderWrapper,
+  SectionContainerWrapper,
+} from './sources.section.styled';
 
 const DEFAULT = 'default';
 
@@ -150,7 +153,7 @@ export function SourcesSection({ sectionData, setSectionData }) {
   }
 
   return (
-    <>
+    <SectionContainerWrapper>
       <SourcesOptionMenu
         currentNamespace={currentNamespace}
         setCurrentItem={setCurrentNamespace}
@@ -168,6 +171,6 @@ export function SourcesSection({ sectionData, setSectionData }) {
         onClearClick={() => onSelectAllChange(false)}
       />
       <Notification />
-    </>
+    </SectionContainerWrapper>
   );
 }

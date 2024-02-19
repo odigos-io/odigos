@@ -2,6 +2,7 @@ import styled from 'styled-components';
 
 export const SourcesListContainer = styled.div`
   width: 100%;
+  max-height: 100%;
   ::-webkit-scrollbar {
     display: none;
   }
@@ -21,9 +22,8 @@ export const SourcesListWrapper = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(242px, 1fr));
   gap: 24px;
+  padding-bottom: 10%;
 
-  height: 56vh; /* Example fixed height */
-  overflow-y: auto; /* Enables vertical scrolling if content overflows */
   @media screen and (max-width: 1200px) {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }

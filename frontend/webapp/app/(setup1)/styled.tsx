@@ -38,5 +38,9 @@ export const SetupSectionContainer = styled.section`
 `;
 
 export const StepListWrapper = styled.div`
-  margin: 4% 0 32px 0;
+  height: 5%;
+  padding: 32px;
+  width: 100%;
+  display: inline-flex;
+  justify-content: center;
 `;
