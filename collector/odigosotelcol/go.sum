@@ -1013,6 +1013,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/processor/sumologicpro
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/sumologicprocessor v0.94.0/go.mod h1:DqcZIOu+6PXq3wta3yY1uhgBhJSTCx0L5ciiqijNfBI=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.94.0 h1:wLbX5dXnWCSx3jcZ+3bPB2oEqeFPwukpc9QrZpkliTs=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.94.0/go.mod h1:cgbcdKrTll9jF7lShN/ldKaLtmek7CTDI8eoOVtQEY8=
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.94.0 h1:IUv26cpU18aKtyTEig8d2RoJx/Y5CdRc0y/CabsUoTY=
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.94.0/go.mod h1:CeB6bBXsi6w7enF2mw+k068K03jxO0onax24FIkVwEs=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver v0.94.0 h1:Gt3/8EOX5yCywF6ETr7eb3ttBLNHtZfAZFilWTFA9xY=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.94.0 h1:qS4a+GV38a9btqm/e8pdCmQU2Hm7iKcqWgWX12CjyJw=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.94.0/go.mod h1:4cbCcZso+H5DaZ1yMGHz3fglHbMsHeoW2wgRwYFDwxc=
