@@ -43,7 +43,7 @@ spec:
       displayName: Resource Attributes Labels
       componentType: multiInput
       componentProps:
-        tooltip: 'use OpenTelemetry resource attributes as labels for each metric data point'
+        tooltip: 'use these OpenTelemetry resource attributes as prometheus labels for each metric data point'
       initialValue: '["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]'
     - name: PROMETHEUS_RESOURCE_EXTERNAL_LABELS
       displayName: External Labels
