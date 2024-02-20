@@ -1,14 +1,9 @@
-import styled from 'styled-components';
 import { NewDestinationList } from '@/containers/overview';
-
-export const PageContainer = styled.div`
-  height: 100vh;
-`;
 
 export default function CreateDestinationPage() {
   return (
-    <PageContainer>
+    <div style={{ height: '100vh' }}>
       <NewDestinationList />
-    </PageContainer>
+    </div>
   );
 }
