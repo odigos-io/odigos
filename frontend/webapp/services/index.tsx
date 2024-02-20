@@ -4,11 +4,13 @@ export {
   getDestination,
   setDestination,
   updateDestination,
-} from "./destinations";
+} from './destinations';
 
 export {
   getNamespaces,
   getApplication,
   setNamespaces,
   getSources,
-} from "./sources";
+} from './sources';
+
+export * from './config';

@@ -6,11 +6,11 @@ import { getSources, setNamespaces } from '@/services';
 export function useSources() {
   const { data: sources } = useQuery([QUERIES.API_SOURCES], getSources);
 
-  const { mutate } = useMutation((body: SelectedSources) =>
+  const { mutateAsync } = useMutation((body: SelectedSources) =>
     setNamespaces(body)
   );
 
-  function upsertSources({ sectionData, onSuccess, onError }) {
+  async function upsertSources({ sectionData, onSuccess, onError }) {
     const sourceNamesSet = new Set(
       sources?.map((source: SelectedSources) => source.name)
     );
@@ -29,10 +29,16 @@ export function useSources() {
       };
     }
 
-    mutate(updatedSectionData, {
-      onSuccess,
-      onError,
-    });
+    try {
+      await mutateAsync(updatedSectionData);
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      if (onError) {
+        onError(error);
+      }
+    }
   }
 
   return { upsertSources };

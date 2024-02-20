@@ -1,15 +1,19 @@
 'use client';
-import { LogoWrapper, SetupPageContainer } from './setup.styled';
+import React from 'react';
 import Logo from '@/assets/logos/odigos-gradient.svg';
-import { SetupSection } from '@/containers/setup';
+import { LogoWrapper, SetupPageContainer } from './styled';
 
-export default function SetupPage() {
+export default function SetupLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <SetupPageContainer>
       <LogoWrapper>
         <Logo />
       </LogoWrapper>
-      <SetupSection />
+      {children}
     </SetupPageContainer>
   );
 }
