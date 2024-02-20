@@ -9,11 +9,17 @@ import {
   LoaderWrapper,
   SectionContainerWrapper,
 } from './sources.section.styled';
+import {
+  Namespace,
+  SourceConfig,
+  NamespaceConfiguration,
+  SelectedSourcesConfiguration,
+} from '@/types';
 
 const DEFAULT = 'default';
 
 export function SourcesSection({ sectionData, setSectionData }) {
-  const [currentNamespace, setCurrentNamespace] = useState<any>(null);
+  const [currentNamespace, setCurrentNamespace] = useState<Namespace>();
   const [searchFilter, setSearchFilter] = useState<string>('');
 
   const { show, Notification } = useNotification();
@@ -25,7 +31,7 @@ export function SourcesSection({ sectionData, setSectionData }) {
   useEffect(() => {
     if (!currentNamespace && data) {
       const currentNamespace = data?.namespaces.find(
-        (item: any) => item.name === DEFAULT
+        (item: Namespace) => item.name === DEFAULT
       );
       setCurrentNamespace(currentNamespace);
     }
@@ -45,7 +51,7 @@ export function SourcesSection({ sectionData, setSectionData }) {
 
   const namespacesList = useMemo(
     () =>
-      data?.namespaces?.map((item: any, index: number) => ({
+      data?.namespaces?.map((item: Namespace, index: number) => ({
         id: index,
         label: item.name,
       })),
@@ -53,16 +59,20 @@ export function SourcesSection({ sectionData, setSectionData }) {
   );
 
   const sourceData = useMemo(() => {
+    if (!currentNamespace) return;
+
     let namespace = sectionData[currentNamespace?.name];
 
     //filter by search query
     namespace = searchFilter
-      ? namespace?.objects.filter((item: any) =>
+      ? namespace?.objects.filter((item: SourceConfig) =>
           item.name.toLowerCase().includes(searchFilter.toLowerCase())
         )
       : namespace?.objects;
     //remove instrumented applications
-    return namespace?.filter((item: any) => !item.instrumentation_effective);
+    return namespace?.filter(
+      (item: SourceConfig) => !item.instrumentation_effective
+    );
   }, [searchFilter, currentNamespace, sectionData]);
 
   async function onNameSpaceChange() {
@@ -70,7 +80,7 @@ export function SourcesSection({ sectionData, setSectionData }) {
     const namespace = await getApplication(currentNamespace?.name);
 
     const { selected } = data.namespaces.find(
-      (item) => item.name === currentNamespace?.name
+      (item: Namespace) => item.name === currentNamespace?.name
     );
 
     const newSelectedNamespace = {
@@ -87,22 +97,28 @@ export function SourcesSection({ sectionData, setSectionData }) {
     }
   }
 
-  function handleSourceClick({ item }: any) {
+  function handleSourceClick({ item }: { item: SourceConfig }) {
+    if (!currentNamespace) return;
+
     const objIndex = sectionData[currentNamespace?.name].objects.findIndex(
-      (app) => app.name === item.name
+      (app: SourceConfig) => app.name === item.name
     );
 
     const namespace = sectionData[currentNamespace?.name];
     let objects = [...namespace.objects];
 
-    objects[objIndex].selected = !objects[objIndex].selected;
+    // Make a shallow copy of the object to ensure it's extensible
+    let objectToUpdate = { ...objects[objIndex] };
+
+    objectToUpdate.selected = !objectToUpdate.selected;
+    objects[objIndex] = objectToUpdate;
 
     let currentNamespaceConfig = {
       ...namespace,
       objects,
     };
 
-    if (!objects[objIndex].selected && namespace.selected_all) {
+    if (!objectToUpdate.selected && namespace.selected_all) {
       currentNamespaceConfig = {
         ...currentNamespaceConfig,
         selected_all: false,
@@ -112,15 +128,21 @@ export function SourcesSection({ sectionData, setSectionData }) {
     handleSetNewSelectedConfig(currentNamespaceConfig);
   }
 
-  function onSelectAllChange(value: boolean, data?: any) {
+  function onSelectAllChange(
+    value: boolean,
+    data?: SelectedSourcesConfiguration
+  ) {
+    if (!currentNamespace) return;
+
     const currentData = data || sectionData;
     const namespace = currentData[currentNamespace?.name];
-    let objects = [...namespace.objects];
-    objects.forEach((item) => {
-      item.selected = value;
-    });
+    let objects = namespace.objects.map((item: SourceConfig) => ({
+      ...item,
+      selected: value,
+    }));
 
     const currentNamespaceConfig = {
+      ...namespace,
       future_selected: value,
       selected_all: value,
       objects,
@@ -129,6 +151,8 @@ export function SourcesSection({ sectionData, setSectionData }) {
   }
 
   function onFutureApplyChange(value: boolean) {
+    if (!currentNamespace) return;
+
     const currentNamespaceConfig = {
       ...sectionData[currentNamespace?.name],
       future_selected: value,
@@ -136,15 +160,18 @@ export function SourcesSection({ sectionData, setSectionData }) {
     handleSetNewSelectedConfig(currentNamespaceConfig);
   }
 
-  function handleSetNewSelectedConfig(config: any) {
-    const newSelectedNamespaceConfig = {
+  function handleSetNewSelectedConfig(config: NamespaceConfiguration) {
+    if (!currentNamespace) return;
+
+    const newSelectedNamespaceConfig: SelectedSourcesConfiguration = {
       ...sectionData,
       [currentNamespace?.name]: config,
     };
+
     setSectionData(newSelectedNamespaceConfig);
   }
 
-  if (isLoading) {
+  if (isLoading || currentNamespace === undefined) {
     return (
       <LoaderWrapper>
         <KeyvalLoader />

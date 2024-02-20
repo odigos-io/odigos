@@ -17,6 +17,27 @@ export interface Namespace {
   totalApps: number;
 }
 
+export interface SourceConfig {
+  app_instrumentation_labeled: boolean;
+  instances: number;
+  instrumentation_effective: boolean;
+  kind: string;
+  name: string;
+  ns_instrumentation_labeled: boolean;
+  selected?: boolean;
+}
+
+export type NamespaceConfiguration = {
+  selected_all: boolean;
+  future_selected: boolean;
+  objects: SourceConfig[];
+};
+
+// Type for the overall structure which has "default" as a key
+export type SelectedSourcesConfiguration = {
+  [key: string]: NamespaceConfiguration;
+};
+
 export interface SelectedSources {
   [key: string]: {
     objects: {
