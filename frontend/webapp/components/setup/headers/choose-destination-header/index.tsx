@@ -1,5 +1,6 @@
 import React from 'react';
-import { SETUP } from '@/utils/constants';
+import { SETUP } from '@/utils';
+import theme from '@/styles/palette';
 import { Connect } from '@/assets/icons/app';
 import { KeyvalText } from '@/design.system';
 import {
@@ -7,7 +8,6 @@ import {
   SetupHeaderWrapper,
   TotalSelectedWrapper,
 } from './styled';
-import theme from '@/styles/palette';
 
 interface ChooseDestinationHeaderProps {
   totalSelectedApps: number;

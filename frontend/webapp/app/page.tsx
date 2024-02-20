@@ -2,10 +2,9 @@
 import { useEffect } from 'react';
 import { useQuery } from 'react-query';
 import { useRouter } from 'next/navigation';
-import { getDestinations } from '@/services';
-import { getConfig } from '@/services/config';
+import { ROUTES, CONFIG, QUERIES } from '@/utils';
 import { Loader } from '@keyval-dev/design-system';
-import { ROUTES, CONFIG, QUERIES } from '@/utils/constants';
+import { getDestinations, getConfig } from '@/services';
 
 export default function App() {
   const router = useRouter();

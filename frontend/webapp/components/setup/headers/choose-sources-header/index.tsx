@@ -1,6 +1,6 @@
 import React from 'react';
+import { SETUP } from '@/utils';
 import theme from '@/styles/palette';
-import { SETUP } from '@/utils/constants';
 import { Charge, RightArrow } from '@/assets/icons/app';
 import { KeyvalButton, KeyvalText } from '@/design.system';
 import {
