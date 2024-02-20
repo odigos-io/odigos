@@ -19,17 +19,20 @@ spec:
       componentType: input
       componentProps:
         type: text
+        required: true
         placeholder: 'e.g https://prometheus-us-central1.grafana.net/api/prom/push'
     - name: GRAFANA_CLOUD_PROMETHEUS_USERNAME
       displayName: Username / Instance ID
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: GRAFANA_CLOUD_PROMETHEUS_PASSWORD
       displayName: Password / Api Token
       componentType: input
       componentProps:
         type: password
+        required: true
       secret: true
     - name: PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS
       displayName: Resource Attributes Labels

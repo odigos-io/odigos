@@ -19,3 +19,4 @@ spec:
       componentType: input
       componentProps:
         type: text
+        required: true
