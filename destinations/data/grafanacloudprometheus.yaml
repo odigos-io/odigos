@@ -21,24 +21,29 @@ spec:
         type: text
         required: true
         placeholder: 'e.g https://prometheus-us-central1.grafana.net/api/prom/push'
+        tooltip: 'Grafana Cloud Prometheus remote write endpoint'
     - name: GRAFANA_CLOUD_PROMETHEUS_USERNAME
       displayName: Username / Instance ID
       componentType: input
       componentProps:
         type: text
         required: true
+        placeholder: '12345678'
+        tooltip: 'Grafana Cloud Prometheus instance ID'
     - name: GRAFANA_CLOUD_PROMETHEUS_PASSWORD
       displayName: Password / Api Token
       componentType: input
       componentProps:
         type: password
         required: true
+        placeholder: 'glc_eyJvIj...'
+        tooltip: "Grafana Cloud API Token with 'metrics:write' permission"
       secret: true
     - name: PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS
       displayName: Resource Attributes Labels
       componentType: multiInput
       componentProps:
-        type: text
+        tooltip: 'use OpenTelemetry resource attributes as labels for each metric data point'
       initialValue: '["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]'
     - name: PROMETHEUS_RESOURCE_EXTERNAL_LABELS
       displayName: External Labels
