@@ -3,7 +3,7 @@ title: "Troubleshooting"
 sidebarTitle: "Troubleshooting"
 ---
 
-How to troubleshoot common issues with the processors:
+How to troubleshoot common issues with actions and processors:
 
 ## View Collector Configuration
 
@@ -25,7 +25,7 @@ You should be able to see your processors configured under `data/conf/processors
 
 ## View Collector Logs
 
-If there is an issue with your processor configuration, the collector will log an error and will not start:
+If there is an issue with your action or processor configuration, the collector will log an error and will not start:
 
 ```sh
 kubectl get pods -n odigos-system
@@ -45,7 +45,7 @@ And might find an error message like:
 
 ## View Autoscaler Logs
 
-The `odigos-autoscaler` controller is the component that watch for changes in the processor CRD and generates the collector confgiuration.
+The `odigos-autoscaler` controller is the component that watch for changes in the action or processor CRD and generates the collector confgiuration.
 
 If you don't see your processor in the collector configuration, you can check the logs of the autoscaler for errors or clues:
 
