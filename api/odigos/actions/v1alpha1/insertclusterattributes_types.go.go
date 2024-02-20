@@ -28,7 +28,7 @@ type OtelAttributeWithValue struct {
 
 	// if the value is a string, this field should be used.
 	// empty string is a valid value
-	AttributeStringValue *string `json:"attributeStringValue,omitempty"`
+	AttributeStringValue *string `json:"attributeStringValue"`
 }
 
 // InsertClusterAttributesSpec defines the desired state of InsertClusterAttributes action

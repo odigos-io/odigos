@@ -68,7 +68,7 @@ func NewInsertClusterAttributesCRD() *apiextensionsv1.CustomResourceDefinition {
 															Type:        "string",
 														},
 													},
-													Required: []string{"attributeName"},
+													Required: []string{"attributeName", "attributeStringValue"},
 												},
 											},
 										},

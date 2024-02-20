@@ -51,6 +51,7 @@ spec:
                       type: string
                   required:
                   - attributeName
+                  - attributeStringValue
                   type: object
                 type: array
               disabled:
