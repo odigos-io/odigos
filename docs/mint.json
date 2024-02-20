@@ -68,6 +68,7 @@
           "group": "Processors",
           "pages": [
             "pipeline/processors/introduction",
+            "pipeline/processors/insertclusterattributes",
             "pipeline/processors/crd",
             "pipeline/processors/troubleshooting"
           ]

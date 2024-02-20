@@ -63,7 +63,7 @@ func NewInsertClusterAttributesCRD() *apiextensionsv1.CustomResourceDefinition {
 															Description: "the name of the attribute to insert",
 															Type:        "string",
 														},
-														"attributeValue": {
+														"attributeStringValue": {
 															Description: "if the value is a string, this field should be used. empty string is a valid value",
 															Type:        "string",
 														},

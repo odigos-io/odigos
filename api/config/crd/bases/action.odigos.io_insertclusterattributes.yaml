@@ -45,7 +45,7 @@ spec:
                     attributeName:
                       description: the name of the attribute to insert
                       type: string
-                    attributeValue:
+                    attributeStringValue:
                       description: if the value is a string, this field should be
                         used. empty string is a valid value
                       type: string
