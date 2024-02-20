@@ -50,27 +50,21 @@ func (n *Dynatrace) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/dynatrace-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/dynatrace-" + dest.Name
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/dynatrace-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 }

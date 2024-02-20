@@ -33,6 +33,30 @@ type CollectorsGroupReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+// up until v1.0.31, the collectors group role names were "GATEWAY" and "DATA_COLLECTION".
+// in v1.0.32, the role names were changed to "CLUSTER_GATEWAY" and "NODE_COLLECTOR",
+// due to adding the Processor CRD which uses these role names.
+// the new names are more descriptive and are preparations for future roles.
+// unfortunately, the role names are used in the collectorgroup CR, which needs to be updated
+// when a user upgrades from <=v1.0.31 to >=v1.0.32.
+// this function is responsible to do this update.
+// once we drop support for <=v1.0.31, we can remove this function.
+func (r *CollectorsGroupReconciler) applyNewCollectorRoleNames(ctx context.Context, collectorGroup *odigosv1.CollectorsGroup) error {
+	if collectorGroup.Spec.Role == "GATEWAY" {
+		logger := log.FromContext(ctx)
+		logger.Info("updating collector group role name", "old", "GATEWAY", "new", "CLUSTER_GATEWAY")
+		collectorGroup.Spec.Role = odigosv1.CollectorsGroupRoleClusterGateway
+		return r.Update(ctx, collectorGroup)
+	}
+	if collectorGroup.Spec.Role == "DATA_COLLECTION" {
+		logger := log.FromContext(ctx)
+		logger.Info("updating collector group role name", "old", "DATA_COLLECTION", "new", "NODE_COLLECTOR")
+		collectorGroup.Spec.Role = odigosv1.CollectorsGroupRoleNodeCollector
+		return r.Update(ctx, collectorGroup)
+	}
+	return nil
+}
+
 // +kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/finalizers,verbs=update
@@ -48,11 +72,17 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	gatewayReady := false
 	dataCollectionExists := false
 	for _, collectorGroup := range collectorGroups.Items {
-		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleGateway && collectorGroup.Status.Ready {
+		err := r.applyNewCollectorRoleNames(ctx, &collectorGroup)
+		if err != nil {
+			logger.Error(err, "failed to apply new collector role names")
+			return ctrl.Result{}, err
+		}
+
+		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleClusterGateway && collectorGroup.Status.Ready {
 			gatewayReady = true
 		}
 
-		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleDataCollection {
+		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleNodeCollector {
 			dataCollectionExists = true
 		}
 	}

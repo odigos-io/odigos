@@ -47,9 +47,7 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		}
 		metricsPipelineName := "metrics/qryn-" + dest.Name
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{rwExporterName},
+			Exporters: []string{rwExporterName},
 		}
 	}
 
@@ -60,9 +58,7 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		}
 		tracesPipelineName := "traces/qryn-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
@@ -80,9 +76,7 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		}
 		logsPipelineName := "logs/qryn-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{lokiExporterName},
+			Exporters: []string{lokiExporterName},
 		}
 	}
 }

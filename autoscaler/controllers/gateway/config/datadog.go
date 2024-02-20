@@ -41,27 +41,21 @@ func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/datadog-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/datadog-" + dest.Name
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/datadog-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 }

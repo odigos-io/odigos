@@ -72,10 +72,10 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | qryn.cloud              | ✅      | ✅      | ✅    |
 | OpsVerse                | ✅      | ✅      | ✅    |
 | Dynatrace               | ✅      | ✅      | ✅    |
+| AWS S3                  | ✅      | ✅      | ✅    |
 | Google Cloud Monitoring | ✅      |         | ✅    |
 | Google Cloud Storage    | ✅      |         | ✅    |
 | Azure Blob Storage      | ✅      |         | ✅    |
-| AWS S3                  | ✅      |         | ✅    |
 | Splunk                  | ✅      |         |      |
 | Lightstep               | ✅      |         |      |
 | Sentry                  | ✅      |         |      |

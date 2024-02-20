@@ -46,9 +46,7 @@ func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 		}
 		tracesPipelineName := "traces/logzio-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
@@ -66,9 +64,7 @@ func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 		}
 		metricsPipelineName := "metrics/logzio-" + dest.Name
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
@@ -97,8 +93,7 @@ func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 		}
 		logsPipelineName := "logs/logzio-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch", "attributes/logzio"},
+			Processors: []string{"attributes/logzio"},
 			Exporters:  []string{exporterName},
 		}
 	}

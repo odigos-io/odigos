@@ -88,7 +88,7 @@ export const OVERVIEW = {
   DELETE_BUTTON: 'I want to delete this destination',
   CONFIRM_SOURCE_DELETE: 'I want to delete this source',
   CONNECT: 'Connect',
-  REPORTED_NAME: 'Reported Name',
+  REPORTED_NAME: 'Override service.name',
 };
 
 export const ACTION = {

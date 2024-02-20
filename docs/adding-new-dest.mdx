@@ -172,8 +172,6 @@ func (m *MyDest) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 		}
 
 		currentConfig.Service.Pipelines["traces/mydest"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
 			Exporters:  []string{"otlp/mydest"},
 		}
 	}

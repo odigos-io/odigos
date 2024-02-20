@@ -61,22 +61,37 @@
       ]
     },
     {
+      "group": "Odigos Pipeline",
+      "pages": [
+        "pipeline/overview",
+        {
+          "group": "Processors",
+          "pages": [
+            "pipeline/processors/introduction",
+            "pipeline/processors/crd",
+            "pipeline/processors/troubleshooting"
+          ]
+        }
+      ]
+    },
+    {
       "group": "Observability Backends",
       "pages": [    
+        "backends/awss3",
         "backends/azureblob",
         "backends/coralogix",
         "backends/datadog",
         "backends/elasticsearch",
-        "backends/googlecloud",
         "backends/gcs",
+        "backends/googlecloud",
         "backends/grafanacloudloki",
         "backends/grafanacloudprometheus",
         "backends/grafanacloudtempo",
         "backends/honeycomb",
         "backends/jaeger",
         "backends/lightstep",
-        "backends/loki",
         "backends/logzio",
+        "backends/loki",
         "backends/newrelic",
         "backends/opentelemetry",
         "backends/opsverse",

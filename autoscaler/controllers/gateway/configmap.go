@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/gateway/config"
 	v1 "k8s.io/api/core/v1"
@@ -17,9 +18,9 @@ const (
 	configKey = "collector-conf"
 )
 
-func syncConfigMap(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (string, error) {
+func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (string, error) {
 	logger := log.FromContext(ctx)
-	desireddData, err := config.Calculate(dests)
+	desiredData, err := config.Calculate(dests, processors)
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
 		return "", err
@@ -31,7 +32,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, gateway *odigosv1.Collectors
 			Namespace: gateway.Namespace,
 		},
 		Data: map[string]string{
-			configKey: desireddData,
+			configKey: desiredData,
 		},
 	}
 
@@ -49,7 +50,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, gateway *odigosv1.Collectors
 				logger.Error(err, "failed to create config map")
 				return "", err
 			}
-			return desireddData, nil
+			return desiredData, nil
 		} else {
 			logger.Error(err, "failed to get config map")
 			return "", err
@@ -64,10 +65,10 @@ func syncConfigMap(dests *odigosv1.DestinationList, gateway *odigosv1.Collectors
 			return "", err
 		}
 
-		return desireddData, nil
+		return desiredData, nil
 	}
 
-	return desireddData, nil
+	return desiredData, nil
 }
 
 func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {

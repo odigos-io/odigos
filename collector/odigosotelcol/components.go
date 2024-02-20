@@ -20,9 +20,9 @@ import (
 	loggingexporter "go.opentelemetry.io/collector/exporter/loggingexporter"
 	otlpexporter "go.opentelemetry.io/collector/exporter/otlpexporter"
 	otlphttpexporter "go.opentelemetry.io/collector/exporter/otlphttpexporter"
-	awss3exporter "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/awss3exporter"
 	azureblobstorageexporter "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter"
 	googlecloudstorageexporter "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter"
+	awss3exporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter"
 	awsxrayexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter"
 	azuredataexplorerexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter"
 	azuremonitorexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter"
@@ -60,7 +60,6 @@ import (
 	splunkhecexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/splunkhecexporter"
 	sumologicexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sumologicexporter"
 	syslogexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/syslogexporter"
-	tanzuobservabilityexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/tanzuobservabilityexporter"
 	tencentcloudlogserviceexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/tencentcloudlogserviceexporter"
 	zipkinexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter"
 	zpagesextension "go.opentelemetry.io/collector/extension/zpagesextension"
@@ -73,7 +72,6 @@ import (
 	memorylimiterprocessor "go.opentelemetry.io/collector/processor/memorylimiterprocessor"
 	attributesprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor"
 	cumulativetodeltaprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor"
-	datadogprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/datadogprocessor"
 	deltatorateprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor"
 	filterprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
 	groupbyattrsprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor"
@@ -86,11 +84,11 @@ import (
 	resourcedetectionprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor"
 	resourceprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor"
 	routingprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor"
-	servicegraphprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/servicegraphprocessor"
 	spanmetricsprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanmetricsprocessor"
 	sumologicprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/sumologicprocessor"
 	spanprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanprocessor"
 	tailsamplingprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor"
+	transformprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	remotetapprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor"
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
 	zipkinreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver"
@@ -128,9 +126,9 @@ func components() (otelcol.Factories, error) {
 		loggingexporter.NewFactory(),
 		otlpexporter.NewFactory(),
 		otlphttpexporter.NewFactory(),
-		awss3exporter.NewFactory(),
 		azureblobstorageexporter.NewFactory(),
 		googlecloudstorageexporter.NewFactory(),
+		awss3exporter.NewFactory(),
 		awsxrayexporter.NewFactory(),
 		azuredataexplorerexporter.NewFactory(),
 		azuremonitorexporter.NewFactory(),
@@ -168,7 +166,6 @@ func components() (otelcol.Factories, error) {
 		splunkhecexporter.NewFactory(),
 		sumologicexporter.NewFactory(),
 		syslogexporter.NewFactory(),
-		tanzuobservabilityexporter.NewFactory(),
 		tencentcloudlogserviceexporter.NewFactory(),
 		zipkinexporter.NewFactory(),
 	)
@@ -182,7 +179,6 @@ func components() (otelcol.Factories, error) {
 		memorylimiterprocessor.NewFactory(),
 		attributesprocessor.NewFactory(),
 		cumulativetodeltaprocessor.NewFactory(),
-		datadogprocessor.NewFactory(),
 		deltatorateprocessor.NewFactory(),
 		filterprocessor.NewFactory(),
 		groupbyattrsprocessor.NewFactory(),
@@ -195,11 +191,11 @@ func components() (otelcol.Factories, error) {
 		resourcedetectionprocessor.NewFactory(),
 		resourceprocessor.NewFactory(),
 		routingprocessor.NewFactory(),
-		servicegraphprocessor.NewFactory(),
 		spanmetricsprocessor.NewFactory(),
 		sumologicprocessor.NewFactory(),
 		spanprocessor.NewFactory(),
 		tailsamplingprocessor.NewFactory(),
+		transformprocessor.NewFactory(),
 		remotetapprocessor.NewFactory(),
 	)
 	if err != nil {
