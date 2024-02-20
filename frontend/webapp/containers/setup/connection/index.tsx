@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useDestinations } from '@/hooks';
 import { SelectedDestination } from '@/types';
-import { ConnectionSection } from '@/containers/setup';
+import { ConnectionSection } from './connection.section';
 import { KeyvalCard, KeyvalLoader } from '@/design.system';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useDestinations } from '@/hooks/destinations/useDestinations';
 import {
   SetupBackButton,
   ConnectDestinationHeader,
@@ -32,10 +32,6 @@ export function ConnectDestinationContainer() {
     }
   }
 
-  function onBackClick() {
-    router.back();
-  }
-
   if (isLoading) {
     return <KeyvalLoader />;
   }
@@ -49,7 +45,7 @@ export function ConnectDestinationContainer() {
 
   return (
     <KeyvalCard type={'secondary'} header={{ body: cardHeaderBody }}>
-      <SetupBackButton onBackClick={onBackClick} />
+      <SetupBackButton onBackClick={() => router.back()} />
       <ConnectionSection
         supportedSignals={selectedDestination?.supported_signals}
       />
