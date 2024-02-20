@@ -54,8 +54,6 @@ func (j *Jaeger) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 
 	pipelineName := "traces/jaeger-" + dest.Name
 	currentConfig.Service.Pipelines[pipelineName] = commonconf.Pipeline{
-		Receivers:  []string{"otlp"},
-		Processors: []string{"batch"},
-		Exporters:  []string{exporterName},
+		Exporters: []string{exporterName},
 	}
 }

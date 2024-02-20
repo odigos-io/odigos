@@ -35,9 +35,7 @@ func (s *Splunk) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 
 		tracesPipelineName := "traces/splunk-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 }

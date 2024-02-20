@@ -80,8 +80,7 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest *odigosv1.Destination, currentConfi
 	logsPipelineName := "logs/grafana-" + dest.Name
 	currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-		Receivers:  []string{"otlp"},
-		Processors: append([]string{"batch"}, processorNames...),
+		Processors: processorNames,
 		Exporters:  []string{exporterName},
 	}
 

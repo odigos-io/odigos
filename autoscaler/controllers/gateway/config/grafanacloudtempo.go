@@ -61,9 +61,7 @@ func (g *GrafanaCloudTempo) ModifyConfig(dest *odigosv1.Destination, currentConf
 	tracesPipelineName := "traces/grafana-" + dest.Name
 	currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-		Receivers:  []string{"otlp"},
-		Processors: []string{"batch"},
-		Exporters:  []string{exporterName},
+		Exporters: []string{exporterName},
 	}
 
 }

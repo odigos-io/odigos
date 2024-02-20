@@ -45,27 +45,21 @@ func (s *Signoz) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/signoz-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{signozExporterName},
+			Exporters: []string{signozExporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/signoz-" + dest.Name
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{signozExporterName},
+			Exporters: []string{signozExporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/signoz-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{signozExporterName},
+			Exporters: []string{signozExporterName},
 		}
 	}
 }

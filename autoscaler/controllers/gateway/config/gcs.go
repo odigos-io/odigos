@@ -41,18 +41,14 @@ func (g *GoogleCloudStorage) ModifyConfig(dest *odigosv1.Destination, currentCon
 	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/gcs-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/gcs-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 }

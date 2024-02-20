@@ -28,27 +28,21 @@ func (g *GenericOTLP) ModifyConfig(dest *odigosv1.Destination, currentConfig *co
 		if isTracingEnabled(dest) {
 			tracesPipelineName := "traces/generic-" + dest.Name
 			currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{genericOtlpExporterName},
+				Exporters: []string{genericOtlpExporterName},
 			}
 		}
 
 		if isMetricsEnabled(dest) {
 			metricsPipelineName := "metrics/generic-" + dest.Name
 			currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{genericOtlpExporterName},
+				Exporters: []string{genericOtlpExporterName},
 			}
 		}
 
 		if isLoggingEnabled(dest) {
 			logsPipelineName := "logs/generic-" + dest.Name
 			currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{genericOtlpExporterName},
+				Exporters: []string{genericOtlpExporterName},
 			}
 		}
 	}

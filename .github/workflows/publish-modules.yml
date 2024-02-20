@@ -91,9 +91,9 @@ jobs:
           - service: instrumentor
             runner: ubuntu-latest
           - service: collector
-            runner: ubuntu-latest
-          - service: odiglet
             runner: large-runner
+          - service: odiglet
+            runner: ubuntu-latest
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
