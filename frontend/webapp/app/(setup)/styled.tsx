@@ -23,3 +23,19 @@ export const LogoWrapper = styled.div`
   top: 20px;
   left: 20px;
 `;
+
+export const StepListWrapper = styled.div`
+  height: 5%;
+  padding: 32px;
+  width: 100%;
+  display: inline-flex;
+  justify-content: center;
+`;
+
+export const PageContainer = styled.div`
+  height: 100vh;
+`;
+
+export const CardWrapper = styled.div`
+  height: 85%;
+`;

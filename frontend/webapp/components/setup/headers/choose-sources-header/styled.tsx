@@ -2,14 +2,9 @@ import styled from 'styled-components';
 
 export const SetupHeaderWrapper = styled.header`
   display: inline-flex;
-  padding: 2vh 0px;
-  align-items: center;
-  width: 100%;
-  max-width: 1288px;
   justify-content: space-between;
-  border-radius: 24px;
-  border: ${({ theme }) => `1px solid ${theme.colors.blue_grey}`};
-  background: ${({ theme }) => theme.colors.light_dark};
+  width: 100%;
+  align-items: center;
 `;
 
 export const HeaderTitleWrapper = styled.div`
