@@ -1,29 +1,33 @@
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { ROUTES } from '@/utils';
+import { setSources } from '@/store';
+import { useSectionData } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { KeyvalCard } from '@/design.system';
-import { NOTIFICATION, ROUTES, SETUP } from '@/utils';
 import { SourcesSection } from './sources.section';
+import { useDispatch, useSelector } from 'react-redux';
 import { ChooseSourcesHeader } from '@/components/setup/headers';
-import { useNotification, useSectionData, useSources } from '@/hooks';
-
 export function ChooseSourcesContainer() {
   const router = useRouter();
-  const { upsertSources } = useSources();
-  const { show, Notification } = useNotification();
+
+  const dispatch = useDispatch();
+  const selectedSources = useSelector(({ app }) => app.sources);
+
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
+
+  useEffect(onload, []);
+
+  function onload() {
+    if (selectedSources) {
+      setSectionData({ ...selectedSources });
+    }
+    console.log({ selectedSources });
+  }
+
   async function onNextClick() {
-    upsertSources({
-      sectionData,
-      onSuccess: () => router.push(ROUTES.CHOOSE_DESTINATION),
-      onError: ({ response }) => {
-        const message = response?.data?.message || SETUP.ERROR;
-        show({
-          type: NOTIFICATION.ERROR,
-          message,
-        });
-      },
-    });
+    dispatch(setSources(sectionData));
+    router.push(ROUTES.CHOOSE_DESTINATION);
   }
 
   const cardHeaderBody = () => (
@@ -39,7 +43,6 @@ export function ChooseSourcesContainer() {
         sectionData={sectionData}
         setSectionData={setSectionData}
       />
-      <Notification />
     </KeyvalCard>
   );
 }
