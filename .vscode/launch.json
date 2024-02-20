@@ -34,7 +34,10 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/autoscaler",
-            "cwd": "${workspaceFolder}/autoscaler"
+            "cwd": "${workspaceFolder}/autoscaler",
+            "env": {
+                "ODIGOS_VERSION": "v1.0.34"
+            }
         },
         {
             "name": "scheduler local",

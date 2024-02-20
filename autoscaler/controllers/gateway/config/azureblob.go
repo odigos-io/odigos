@@ -50,9 +50,7 @@ func (a *AzureBlobStorage) ModifyConfig(dest *odigosv1.Destination, currentConfi
 
 		logsPipelineName := "logs/azureblobstorage-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
@@ -66,9 +64,7 @@ func (a *AzureBlobStorage) ModifyConfig(dest *odigosv1.Destination, currentConfi
 
 		tracesPipelineName := "traces/azureblobstorage-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 }

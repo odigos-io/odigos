@@ -2,8 +2,8 @@ dist:
   module: odigos.io/opentelemetry-collector/cmd/odigosotelcol
   name: odigosotelcol
   description: OpenTelemetry Collector for Odigos
-  version: 0.91.0
-  otelcol_version: 0.91.0
+  version: 0.94.0
+  otelcol_version: 0.94.0
   output_path: ./odigosotelcol
 
 extensions:

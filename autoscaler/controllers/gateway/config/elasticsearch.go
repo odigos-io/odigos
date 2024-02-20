@@ -51,9 +51,7 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 
 		tracesPipelineName := "traces/elasticsearch-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{esTraceExporterName},
+			Exporters: []string{esTraceExporterName},
 		}
 	}
 
@@ -71,9 +69,7 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 
 		logsPipelineName := "logs/elasticsearch-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{esLogExporterName},
+			Exporters: []string{esLogExporterName},
 		}
 	}
 }

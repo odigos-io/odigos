@@ -57,8 +57,7 @@ func (l *Loki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 
 	logsPipelineName := "logs/loki-" + dest.Name
 	currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-		Receivers:  []string{"otlp"},
-		Processors: append([]string{"batch"}, processorNames...),
+		Processors: processorNames,
 		Exporters:  []string{lokiExporterName},
 	}
 }

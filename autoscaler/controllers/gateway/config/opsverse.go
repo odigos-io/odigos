@@ -36,9 +36,7 @@ func (g *OpsVerse) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 
 		metricsPipelineName := "metrics/opsverse-" + dest.Name
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{rwExporterName},
+			Exporters: []string{rwExporterName},
 		}
 	}
 
@@ -56,9 +54,7 @@ func (g *OpsVerse) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 		}
 
 		currentConfig.Service.Pipelines["traces/opsverse"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
@@ -82,9 +78,7 @@ func (g *OpsVerse) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 
 		logsPipelineName := "logs/opsverse-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{lokiExporterName},
+			Exporters: []string{lokiExporterName},
 		}
 	}
 }
