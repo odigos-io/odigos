@@ -15,10 +15,11 @@ export function NewDestinationList() {
         title={OVERVIEW.MENU.DESTINATIONS}
         onBackClick={() => router.back()}
       />
+
       <NewDestinationContainer>
         <DestinationSection
-          setSectionData={(data) => {
-            router.push(`${ROUTES.MANAGE_DESTINATION}${data.type}`);
+          onSelectItem={(type) => {
+            router.push(`${ROUTES.MANAGE_DESTINATION}${type}`);
           }}
         />
       </NewDestinationContainer>
