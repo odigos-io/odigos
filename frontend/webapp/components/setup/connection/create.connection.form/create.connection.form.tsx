@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import theme from '@/styles/palette';
+import { useKeyDown } from '@/hooks';
 import { SETUP } from '@/utils/constants';
 import { Field } from '@/types/destinations';
 import { renderFields } from './dynamic.fields';
@@ -16,7 +17,6 @@ import {
   FieldWrapper,
   CreateDestinationButtonWrapper,
 } from './create.connection.form.styled';
-import { useKeyDown } from '@/hooks';
 
 interface CreateConnectionFormProps {
   fields: Field[];
@@ -173,7 +173,6 @@ export function CreateConnectionForm({
       signals,
       fields: dynamicFields,
     };
-
     onSubmit(body);
   }
 
@@ -204,6 +203,7 @@ export function CreateConnectionForm({
           label={SETUP.DESTINATION_NAME}
           value={destinationName}
           onChange={setDestinationName}
+          required
         />
       </FieldWrapper>
       {renderFields(fields, dynamicFields, handleDynamicFieldChange)}

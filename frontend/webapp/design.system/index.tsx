@@ -23,3 +23,4 @@ export { DangerZoneArea as DangerZone } from './danger.zone/danger.zone';
 export { KeyvalModal } from './modal/modal';
 export { KeyvalSteps as Steps } from './steps/steps';
 export { KeyvalMultiInput as MultiInput } from './multi-input';
+export { KeyValuePair } from './key-value-input';
