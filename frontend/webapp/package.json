@@ -10,8 +10,9 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@keyval-dev/design-system": "^1.4.8",
+    "@keyval-dev/design-system": "^1.5.3",
     "@next/font": "^13.4.7",
+    "@reduxjs/toolkit": "^2.2.1",
     "@svgr/webpack": "^6.2.1",
     "@types/node": "20.3.3",
     "@types/react": "18.2.11",
@@ -26,6 +27,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-query": "^3.39.3",
+    "react-redux": "^9.1.0",
     "styled-components": "^6.0.2",
     "swr": "^2.1.5",
     "typescript": "5.1.3"

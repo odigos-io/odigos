@@ -59,27 +59,21 @@ func (c *Coralogix) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/coralogix-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/coralogix-" + dest.Name
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/coralogix-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 }

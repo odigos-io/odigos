@@ -65,11 +65,12 @@
       "pages": [
         "pipeline/overview",
         {
-          "group": "Processors",
+          "group": "Actions",
           "pages": [
-            "pipeline/processors/introduction",
-            "pipeline/processors/crd",
-            "pipeline/processors/troubleshooting"
+            "pipeline/actions/introduction",
+            "pipeline/actions/insertclusterattributes",
+            "pipeline/actions/crd",
+            "pipeline/actions/troubleshooting"
           ]
         }
       ]

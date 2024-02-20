@@ -12,6 +12,7 @@ const colors = {
   blue_grey: '#374A5B',
   white: '#fff',
   error: '#FD3F3F',
+  orange_brown: '#b98a01',
 };
 
 const text = {

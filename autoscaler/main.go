@@ -39,9 +39,11 @@ import (
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	apiactions "github.com/keyval-dev/odigos/api/odigos/actions/v1alpha1"
 	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 
 	"github.com/keyval-dev/odigos/autoscaler/controllers"
+	"github.com/keyval-dev/odigos/autoscaler/controllers/actions"
 	nameutils "github.com/keyval-dev/odigos/autoscaler/utils"
 	//+kubebuilder:scaffold:imports
 )
@@ -54,6 +56,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(observabilitycontrolplanev1.AddToScheme(scheme))
+	utilruntime.Must(apiactions.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -154,6 +157,12 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
 		os.Exit(1)
 	}
+
+	if err = actions.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create odigos actions controllers")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

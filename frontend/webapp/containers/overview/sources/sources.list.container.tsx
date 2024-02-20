@@ -1,17 +1,14 @@
 'use client';
 import React from 'react';
-import { useQuery } from 'react-query';
-import { getSources } from '@/services';
 import { useNotification } from '@/hooks';
 import { useRouter } from 'next/navigation';
+import { OVERVIEW, ROUTES } from '@/utils/constants';
 import { OverviewHeader } from '@/components/overview';
-import { OVERVIEW, QUERIES, ROUTES } from '@/utils/constants';
 import { NewSourcesList } from '@/containers/overview/sources/new.source.flow';
 
 export function SourcesListContainer() {
-  const { Notification } = useNotification();
   const router = useRouter();
-  const { data: sources } = useQuery([QUERIES.API_SOURCES], getSources);
+  const { Notification } = useNotification();
 
   function onNewSourceSuccess() {
     setTimeout(() => {
@@ -20,13 +17,13 @@ export function SourcesListContainer() {
   }
 
   return (
-    <>
+    <div style={{ height: '100vh' }}>
       <OverviewHeader
         title={OVERVIEW.MENU.SOURCES}
         onBackClick={() => router.back()}
       />
       <NewSourcesList onSuccess={onNewSourceSuccess} />
       <Notification />
-    </>
+    </div>
   );
 }

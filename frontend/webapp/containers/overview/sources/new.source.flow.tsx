@@ -21,7 +21,7 @@ export function NewSourcesList({ onSuccess }) {
   }
 
   return (
-    <SourcesSectionWrapper>
+    <>
       <ButtonWrapper>
         <KeyvalText>{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
         <KeyvalButton
@@ -34,12 +34,13 @@ export function NewSourcesList({ onSuccess }) {
           </KeyvalText>
         </KeyvalButton>
       </ButtonWrapper>
-
-      <SourcesSection
-        sectionData={sectionData}
-        setSectionData={setSectionData}
-      />
-      <Notification />
-    </SourcesSectionWrapper>
+      <SourcesSectionWrapper>
+        <SourcesSection
+          sectionData={sectionData}
+          setSectionData={setSectionData}
+        />
+        <Notification />
+      </SourcesSectionWrapper>
+    </>
   );
 }

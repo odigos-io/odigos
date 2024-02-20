@@ -24,9 +24,7 @@ func (l *Lightstep) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 
 		tracesPipelineName := "traces/lightstep-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 }
