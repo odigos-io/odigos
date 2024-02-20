@@ -20,9 +20,7 @@ func (g *GoogleCloud) ModifyConfig(dest *odigosv1.Destination, currentConfig *co
 
 		tracesPipelineName := "traces/googlecloud-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
@@ -36,9 +34,7 @@ func (g *GoogleCloud) ModifyConfig(dest *odigosv1.Destination, currentConfig *co
 
 		logsPipelineName := "logs/googlecloud-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{exporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 }

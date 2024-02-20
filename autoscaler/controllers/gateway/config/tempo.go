@@ -47,9 +47,7 @@ func (t *Tempo) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 
 		tracesPipelineName := "traces/tempo-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{tempoExporterName},
+			Exporters: []string{tempoExporterName},
 		}
 	}
 }

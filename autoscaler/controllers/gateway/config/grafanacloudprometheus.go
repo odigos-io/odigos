@@ -80,8 +80,7 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest *odigosv1.Destination, curren
 	metricsPipelineName := "metrics/grafana-" + dest.Name
 	currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
-		Receivers:  []string{"otlp"},
-		Processors: append([]string{"batch"}, processorNames...),
+		Processors: processorNames,
 		Exporters:  []string{rwExporterName},
 	}
 }
