@@ -1,7 +1,7 @@
 package actions
 
 import (
-	v1 "github.com/keyval-dev/odigos/api/odigos/action/v1alpha1"
+	v1 "github.com/keyval-dev/odigos/api/odigos/actions/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

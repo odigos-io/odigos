@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 
-	actionv1 "github.com/keyval-dev/odigos/api/odigos/action/v1alpha1"
+	actionv1 "github.com/keyval-dev/odigos/api/odigos/actions/v1alpha1"
 	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,9 +66,9 @@ func (r *InsertClusterAttributesReconciler) Reconcile(ctx context.Context, req c
 }
 
 type insertclusterattributesAttributeConfig struct {
-	Key    string `json:"key"`
-	Value  string `json:"value"`
-	Action string `json:"action"`
+	Key    string  `json:"key"`
+	Value  *string `json:"value"`
+	Action string  `json:"action"`
 }
 
 type insertclusterattributesConfig struct {
@@ -117,12 +117,9 @@ func (r *InsertClusterAttributesReconciler) convertToProcessor(action *actionv1.
 		Attributes: []insertclusterattributesAttributeConfig{},
 	}
 	for _, attr := range action.Spec.ClusterAttributes {
-		if attr.AttributeStringValue == nil {
-			continue
-		}
 		config.Attributes = append(config.Attributes, insertclusterattributesAttributeConfig{
 			Key:    attr.AttributeName,
-			Value:  *attr.AttributeStringValue,
+			Value:  attr.AttributeStringValue,
 			Action: "insert",
 		})
 	}

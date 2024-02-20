@@ -13,10 +13,10 @@ func NewInsertClusterAttributesCRD() *apiextensionsv1.CustomResourceDefinition {
 			APIVersion: "apiextensions.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "insertclusterattributes.action.odigos.io",
+			Name: "insertclusterattributes.actions.odigos.io",
 		},
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-			Group: "action.odigos.io",
+			Group: "actions.odigos.io",
 			Names: apiextensionsv1.CustomResourceDefinitionNames{
 				Kind:     "InsertClusterAttributes",
 				ListKind: "InsertClusterAttributesList",

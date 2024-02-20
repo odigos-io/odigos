@@ -244,7 +244,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"list",
 				},
 				APIGroups: []string{
-					"action.odigos.io",
+					"actions.odigos.io",
 				},
 				Resources: []string{
 					"insertclusterattributes",
@@ -257,7 +257,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"update",
 				},
 				APIGroups: []string{
-					"action.odigos.io",
+					"actions.odigos.io",
 				},
 				Resources: []string{
 					"insertclusterattributes/status",

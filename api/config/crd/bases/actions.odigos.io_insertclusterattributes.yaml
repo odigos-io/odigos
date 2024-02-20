@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: insertclusterattributes.action.odigos.io
+  name: insertclusterattributes.actions.odigos.io
 spec:
-  group: action.odigos.io
+  group: actions.odigos.io
   names:
     kind: InsertClusterAttributes
     listKind: InsertClusterAttributesList
