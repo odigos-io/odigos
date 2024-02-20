@@ -34,6 +34,7 @@ export const SETUP = {
   APPLICATIONS: 'Applications',
   RUNNING_INSTANCES: 'Running Instances',
   SELECTED: 'Selected',
+  NONE_SOURCE_SELECTED: 'No source selected',
   MANAGED: 'Managed',
   CREATE_CONNECTION: 'Create Connection',
   UPDATE_CONNECTION: 'Update Connection',

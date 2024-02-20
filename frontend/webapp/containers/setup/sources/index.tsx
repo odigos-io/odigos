@@ -19,10 +19,7 @@ export function ChooseSourcesContainer() {
   useEffect(onload, []);
 
   function onload() {
-    if (selectedSources) {
-      setSectionData({ ...selectedSources });
-    }
-    console.log({ selectedSources });
+    selectedSources && setSectionData({ ...selectedSources });
   }
 
   async function onNextClick() {

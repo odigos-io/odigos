@@ -24,4 +24,5 @@ export const HeaderButtonWrapper = styled.div`
 export const TotalSelectedWrapper = styled.div`
   display: flex;
   gap: 6px;
+  margin-right: 40px;
 `;
