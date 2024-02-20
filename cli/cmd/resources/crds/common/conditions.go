@@ -1,16 +1,18 @@
 package common
 
-import apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+import (
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+)
 
 var (
 	messageMaxLength          int64   = 32768
 	observedGenerationMinimum float64 = 0
 	reasonMaxLength           int64   = 1024
 	typeMaxLength             int64   = 316
-	signalsEnumValues                 = []apiextensionsv1.JSON{
-		{Raw: []byte(`"LOGS"`)},
-		{Raw: []byte(`"TRACES"`)},
-		{Raw: []byte(`"METRICS"`)},
+	statusEnumValues                  = []apiextensionsv1.JSON{
+		{Raw: []byte(`"True"`)},
+		{Raw: []byte(`"False"`)},
+		{Raw: []byte(`"Unknown"`)},
 	}
 
 	Conditions = apiextensionsv1.JSONSchemaProps{
@@ -45,7 +47,7 @@ var (
 					"status": {
 						Description: "status of the condition, one of True, False, Unknown.",
 						Type:        "string",
-						Enum:        signalsEnumValues,
+						Enum:        statusEnumValues,
 					},
 					"type": {
 						Description: "type of condition in CamelCase or in foo.example.com/CamelCase.",

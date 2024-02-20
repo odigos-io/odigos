@@ -22,6 +22,7 @@ import (
 
 	actionv1 "github.com/keyval-dev/odigos/api/odigos/action/v1alpha1"
 	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,10 +47,17 @@ func (r *InsertClusterAttributesReconciler) Reconcile(ctx context.Context, req c
 
 	processor, err := r.convertToProcessor(action)
 	if err != nil {
+		r.ReportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
 		return ctrl.Result{}, err
 	}
 
 	err = r.Patch(ctx, processor, client.Apply, client.FieldOwner(action.Name), client.ForceOwnership)
+	if err != nil {
+		r.ReportReconciledToProcessorFailed(ctx, action, FailedToCreateProcessorReason, err.Error())
+		return ctrl.Result{}, err
+	}
+
+	err = r.ReportReconciledToProcessor(ctx, action)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -65,6 +73,42 @@ type insertclusterattributesAttributeConfig struct {
 
 type insertclusterattributesConfig struct {
 	Attributes []insertclusterattributesAttributeConfig `json:"attributes"`
+}
+
+func (r *InsertClusterAttributesReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.InsertClusterAttributes, reason string, msg string) error {
+	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
+		Type:               ActionTransformedToProcessorType,
+		Status:             metav1.ConditionFalse,
+		Reason:             reason,
+		Message:            msg,
+		ObservedGeneration: action.Generation,
+	})
+
+	if changed {
+		err := r.Status().Update(ctx, action)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *InsertClusterAttributesReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.InsertClusterAttributes) error {
+	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
+		Type:               ActionTransformedToProcessorType,
+		Status:             metav1.ConditionTrue,
+		Reason:             ProcessorCreatedReason,
+		Message:            "The action has been reconciled to a processor resource.",
+		ObservedGeneration: action.Generation,
+	})
+
+	if changed {
+		err := r.Status().Update(ctx, action)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *InsertClusterAttributesReconciler) convertToProcessor(action *actionv1.InsertClusterAttributes) (*v1.Processor, error) {
@@ -112,7 +156,7 @@ func (r *InsertClusterAttributesReconciler) convertToProcessor(action *actionv1.
 			Notes:           action.Spec.Notes,
 			Signals:         action.Spec.Signals,
 			CollectorRoles:  []v1.CollectorsGroupRole{v1.CollectorsGroupRoleClusterGateway},
-			OrderHint:       1, // it doesn't really matters the order, but better to have it in the beginning if downstream processors depend on it
+			OrderHint:       1, // it is better to do it as soon as possible, after the batch processor
 			ProcessorConfig: runtime.RawExtension{Raw: configJson},
 		},
 	}
