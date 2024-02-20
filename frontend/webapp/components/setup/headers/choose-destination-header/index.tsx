@@ -28,7 +28,7 @@ export function ChooseDestinationHeader({
         {totalSelectedApps ? (
           <>
             <KeyvalText>{totalSelectedApps}</KeyvalText>
-            <KeyvalText>{SETUP.SELECTED}</KeyvalText>
+            <KeyvalText>{SETUP.SOURCE_SELECTED}</KeyvalText>
           </>
         ) : (
           <>

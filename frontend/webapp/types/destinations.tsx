@@ -5,6 +5,23 @@ export interface DestinationType {
   id: string;
 }
 
+interface SupportedSignal {
+  supported: boolean;
+}
+
+interface SupportedSignals {
+  traces: SupportedSignal;
+  metrics: SupportedSignal;
+  logs: SupportedSignal;
+}
+
+export interface SelectedDestination {
+  type: string;
+  display_name: string;
+  image_url: string;
+  supported_signals: SupportedSignals;
+}
+
 export interface Destination {
   name: string;
   id: string;
@@ -32,4 +49,13 @@ export interface Field {
   component_properties: any;
   video_url: string;
   initial_value?: string;
+}
+
+export interface DestinationConfig {
+  type: string;
+  name: string;
+  signals: SupportedSignals;
+  fields: {
+    [key: string]: string;
+  };
 }
