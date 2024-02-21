@@ -32,13 +32,14 @@ export function ActionSourcesOptions({
         />
       </SwitcherWrapper>
       <CheckboxWrapper>
-        <KeyvalCheckbox
-          label={SETUP.MENU.FUTURE_APPLY}
-          value={checked}
-          onChange={() => onFutureApplyChange(!checked)}
-          disabled={!toggle}
-        />
-        <KeyvalTooltip content={SETUP.MENU.TOOLTIP} />
+        <KeyvalTooltip text={SETUP.MENU.TOOLTIP}>
+          <KeyvalCheckbox
+            label={SETUP.MENU.FUTURE_APPLY}
+            value={checked}
+            onChange={() => onFutureApplyChange(!checked)}
+            disabled={!toggle}
+          />
+        </KeyvalTooltip>
       </CheckboxWrapper>
     </>
   );

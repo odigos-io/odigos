@@ -38,3 +38,7 @@ Make sure your token scope includes "metrics:write" scope.
 
 To use [resource attributes as labels in your data points](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/prometheusremotewriteexporter#setting-resource-attributes-as-metric-labels),
 you can set the resource attribute names in the `Resource Attributes as Labels` multi-input config option in the destination page in the Odigos UI. 
+
+### Cluster Static Labels
+
+You can set static labels for each metric data pointsent exported to Grafana Cloud Prometheus from the cluster by setting the `External Labels` configuration with lable keys and values.

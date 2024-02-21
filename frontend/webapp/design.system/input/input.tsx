@@ -1,5 +1,5 @@
-import React from "react";
-import { Input } from "@keyval-dev/design-system";
+import React from 'react';
+import { Input } from '@keyval-dev/design-system';
 interface InputProps {
   label?: string;
   value: string;
@@ -7,6 +7,7 @@ interface InputProps {
   type?: string;
   error?: string;
   style?: React.CSSProperties;
+  required?: boolean;
 }
 
 export function KeyvalInput(props: InputProps): JSX.Element {

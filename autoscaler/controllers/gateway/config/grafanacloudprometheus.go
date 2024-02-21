@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	grafanaCloudPrometheusRWurlKey         = "GRAFANA_CLOUD_PROMETHEUS_RW_ENDPOINT"
-	grafanaCloudPrometheusUserKey          = "GRAFANA_CLOUD_PROMETHEUS_USERNAME"
-	prometheusResourceAttributesLabelsKeys = "PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS"
+	grafanaCloudPrometheusRWurlKey        = "GRAFANA_CLOUD_PROMETHEUS_RW_ENDPOINT"
+	grafanaCloudPrometheusUserKey         = "GRAFANA_CLOUD_PROMETHEUS_USERNAME"
+	prometheusResourceAttributesLabelsKey = "PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS"
+	prometheusExternalLabelsKey           = "PROMETHEUS_RESOURCE_EXTERNAL_LABELS"
 )
 
 type GrafanaCloudPrometheus struct{}
@@ -47,7 +48,7 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest *odigosv1.Destination, curren
 		return
 	}
 
-	resourceAttributesLabels, exists := dest.Spec.Data[prometheusResourceAttributesLabelsKeys]
+	resourceAttributesLabels, exists := dest.Spec.Data[prometheusResourceAttributesLabelsKey]
 	processors, err := promResourceAttributesProcessors(resourceAttributesLabels, exists, dest.Name)
 	if err != nil {
 		log.Log.Error(err, "failed to parse grafana cloud prometheus resource attributes labels, gateway will not be configured for Prometheus")
@@ -62,14 +63,29 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest *odigosv1.Destination, curren
 		},
 	}
 
-	rwExporterName := "prometheusremotewrite/grafana-" + dest.Name
-	currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
+	exporterConf := commonconf.GenericMap{
 		"endpoint":            promRwUrl,
 		"add_metric_suffixes": false,
 		"auth": commonconf.GenericMap{
 			"authenticator": authExtensionName,
 		},
 	}
+
+	// add external labels if they exist
+	externalLabels, exists := dest.Spec.Data[prometheusExternalLabelsKey]
+	if exists {
+		labels := map[string]string{}
+		err := json.Unmarshal([]byte(externalLabels), &labels)
+		if err != nil {
+			log.Log.Error(err, "failed to parse grafana cloud prometheus external labels, gateway will not be configured for Prometheus")
+			return
+		}
+
+		exporterConf["external_labels"] = labels
+	}
+
+	rwExporterName := "prometheusremotewrite/grafana-" + dest.Name
+	currentConfig.Exporters[rwExporterName] = exporterConf
 
 	processorNames := []string{}
 	for k, v := range processors {
