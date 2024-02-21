@@ -1,5 +1,6 @@
 package cmd
-
+// sdvsdfsdf
+// hello world
 import (
 	"fmt"
 	"os"
