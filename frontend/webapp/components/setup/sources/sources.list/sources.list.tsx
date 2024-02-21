@@ -6,7 +6,7 @@ import {
 } from './sources.list.styled';
 import { SourceCard } from '../source.card/source.card';
 import { KeyvalLink, KeyvalText } from '@/design.system';
-import { OVERVIEW, ROUTES, SETUP } from '@/utils/constants';
+import { OVERVIEW, SETUP } from '@/utils/constants';
 import { EmptyList } from '@/components/lists';
 
 export function SourcesList({
@@ -36,9 +36,6 @@ export function SourcesList({
 
   const isListEmpty = () => data?.length === 0;
 
-  const getNumberOfItemsRepeated = () =>
-    window.location.pathname.includes(ROUTES.CREATE_SOURCE) ? 5 : 4;
-
   return !data ? null : (
     <SourcesListContainer>
       {isListEmpty() ? (
@@ -49,9 +46,7 @@ export function SourcesList({
             <KeyvalText>{`${data?.length} ${SETUP.APPLICATIONS}`}</KeyvalText>
             <KeyvalLink onClick={onClearClick} value={SETUP.CLEAR_SELECTION} />
           </SourcesTitleWrapper>
-          <SourcesListWrapper repeat={getNumberOfItemsRepeated()}>
-            {renderList()}
-          </SourcesListWrapper>
+          <SourcesListWrapper>{renderList()}</SourcesListWrapper>
         </>
       )}
     </SourcesListContainer>

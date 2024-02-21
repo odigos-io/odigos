@@ -10,8 +10,21 @@ export const MenuWrapper = styled.div`
   padding: 0 32px;
 `;
 
-export const SourcesSectionWrapper = styled(MenuWrapper)`
+export const SourcesSectionWrapper = styled.div`
   position: relative;
+  height: 81%;
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  @media screen and (max-height: 650px) {
+    height: 72%;
+  }
+  @media screen and (max-height: 550px) {
+    height: 65%;
+  }
 `;
 
 export const ButtonWrapper = styled.div`

@@ -34,6 +34,8 @@ export const SETUP = {
   APPLICATIONS: 'Applications',
   RUNNING_INSTANCES: 'Running Instances',
   SELECTED: 'Selected',
+  SOURCE_SELECTED: 'Source selected',
+  NONE_SOURCE_SELECTED: 'No source selected',
   MANAGED: 'Managed',
   CREATE_CONNECTION: 'Create Connection',
   UPDATE_CONNECTION: 'Update Connection',
@@ -54,6 +56,7 @@ export const INPUT_TYPES = {
   INPUT: 'input',
   DROPDOWN: 'dropdown',
   MULTI_INPUT: 'multiInput',
+  KEY_VALUE_PAIR: 'keyValuePairs',
 };
 
 export const OVERVIEW = {

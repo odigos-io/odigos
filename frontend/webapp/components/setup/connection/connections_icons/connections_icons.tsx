@@ -31,7 +31,7 @@ export function ConnectionsIcons({
   icon: string;
   imageStyle?: React.CSSProperties;
 }) {
-  return (
+  return icon ? (
     <ConnectionsIconsWrapper>
       <Connect />
       <Divider />
@@ -42,5 +42,5 @@ export function ConnectionsIcons({
         style={{ ...IMAGE_STYLE, ...imageStyle }}
       />
     </ConnectionsIconsWrapper>
-  );
+  ) : null;
 }
