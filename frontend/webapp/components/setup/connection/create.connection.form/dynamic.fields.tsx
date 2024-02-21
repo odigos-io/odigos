@@ -78,12 +78,9 @@ export function renderFields(
 
         return (
           <FieldWrapper key={name}>
-            <KeyvalText size={14} weight={600} style={{ marginBottom: 8 }}>
-              {display_name}
-            </KeyvalText>
             <MultiInput
               initialList={initialList}
-              label={display_name}
+              title={display_name}
               onListChange={(value: string[]) =>
                 onChange(name, value.length === 0 ? '' : JSON.stringify(value))
               }

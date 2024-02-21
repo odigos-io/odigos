@@ -150,16 +150,16 @@ export function CreateConnectionForm({
   }
 
   function isFormValid() {
-    const areDynamicFieldsFilled = Object.values(dynamicFields).every(
-      (field) => field
-    );
-    const isFieldLengthMatching =
-      (fields?.length ?? 0) ===
-      (dynamicFields ? Object.keys(dynamicFields).length : 0);
-
-    const isValid =
-      !!destinationName && areDynamicFieldsFilled && isFieldLengthMatching;
-
+    let isValid = true;
+    for (let field of fields) {
+      if (field.component_properties.required) {
+        const value = dynamicFields[field.name];
+        if (value === undefined || value.trim() === '' || !destinationName) {
+          isValid = false;
+          break;
+        }
+      }
+    }
     setIsCreateButtonDisabled(!isValid);
   }
 
