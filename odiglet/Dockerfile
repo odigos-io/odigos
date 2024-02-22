@@ -31,7 +31,7 @@ ARG TARGETARCH
 # Go does not call go generate on dependencies, so we need to do it manually
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    cd $(go list -m -f '{{.Dir}}' "go.opentelemetry.io/auto") && make generate
+    bash -c 'cd $(go list -m -f "{{.Dir}}" "go.opentelemetry.io/auto") && make generate'
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     GOOS=linux GOARCH=$TARGETARCH go build -o odiglet cmd/main.go
