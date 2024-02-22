@@ -65,6 +65,7 @@ export const OVERVIEW = {
     OVERVIEW: 'Overview',
     SOURCES: 'Sources',
     DESTINATIONS: 'Destinations',
+    ACTIONS: 'Actions',
   },
   ADD_NEW_SOURCE: 'Add New Source',
   ADD_NEW_DESTINATION: 'Add New Destination',

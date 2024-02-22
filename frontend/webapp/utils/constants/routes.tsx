@@ -3,6 +3,7 @@ export const ROUTES = {
   OVERVIEW: '/overview',
   SOURCES: '/sources',
   DESTINATIONS: '/destinations',
+  ACTIONS: '/actions',
   NEW_DESTINATION: '/setup?state=destinations',
   MANAGE_DESTINATION: '/destinations/create/form?dest=',
   UPDATE_DESTINATION: 'destinations/manage?dest=',
