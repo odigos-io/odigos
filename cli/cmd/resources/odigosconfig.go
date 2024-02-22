@@ -67,7 +67,7 @@ func otelSdkConfigCloud() (map[common.ProgrammingLanguage]common.OtelSdk, map[co
 			common.PythonProgrammingLanguage:     {nativeCommunity, eBPFEnterprise},
 			common.GoProgrammingLanguage:         {eBPFEnterprise},
 			common.DotNetProgrammingLanguage:     {nativeCommunity},
-			common.JavascriptProgrammingLanguage: {nativeCommunity},
+			common.JavascriptProgrammingLanguage: {nativeCommunity, eBPFEnterprise},
 		}
 }
 
@@ -88,14 +88,14 @@ func otelSdkConfigOnPrem() (map[common.ProgrammingLanguage]common.OtelSdk, map[c
 			common.PythonProgrammingLanguage:     eBPFEnterprise, // Also Python
 			common.GoProgrammingLanguage:         eBPFEnterprise,
 			common.DotNetProgrammingLanguage:     nativeCommunity,
-			common.JavascriptProgrammingLanguage: nativeCommunity,
+			common.JavascriptProgrammingLanguage: eBPFEnterprise, // Also Javascript
 		},
 		map[common.ProgrammingLanguage][]common.OtelSdk{
 			common.JavaProgrammingLanguage:       {nativeCommunity, eBPFEnterprise},
 			common.PythonProgrammingLanguage:     {nativeCommunity, eBPFEnterprise},
 			common.GoProgrammingLanguage:         {eBPFEnterprise},
 			common.DotNetProgrammingLanguage:     {nativeCommunity},
-			common.JavascriptProgrammingLanguage: {nativeCommunity},
+			common.JavascriptProgrammingLanguage: {nativeCommunity, eBPFEnterprise},
 		}
 }
 
