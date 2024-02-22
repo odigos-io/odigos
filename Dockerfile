@@ -16,7 +16,10 @@ COPY $SERVICE_NAME/ .
 # Build for target architecture
 ARG TARGETARCH
 RUN go mod tidy
-RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -a -o /workspace/build/$SERVICE_NAME main.go
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    CGO_ENABLED=0 GOARCH=$TARGETARCH \
+    go build -a -o /workspace/build/$SERVICE_NAME main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
