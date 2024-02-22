@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
-import { KeyvalImage, KeyvalText } from '@/design.system';
+import { KeyvalImage, KeyvalLink, KeyvalText } from '@/design.system';
+import theme from '@/styles/palette';
+import { Link } from '@/assets/icons/app';
 
 const ManageDestinationHeaderWrapper = styled.div`
   display: flex;
@@ -25,7 +27,10 @@ const IMAGE_STYLE: React.CSSProperties = {
   marginLeft: 16,
 };
 
-export function ManageDestinationHeader({ data: { image_url, display_name } }) {
+export function ManageDestinationHeader({
+  data: { image_url, display_name, type },
+}) {
+  console.log({ type });
   return (
     <ManageDestinationHeaderWrapper>
       <KeyvalImage src={image_url} style={IMAGE_STYLE} />
@@ -33,6 +38,18 @@ export function ManageDestinationHeader({ data: { image_url, display_name } }) {
         <KeyvalText size={24} weight={700}>
           {display_name}
         </KeyvalText>
+        <div
+          style={{ cursor: 'pointer' }}
+          onClick={() =>
+            window.open(`https://docs.odigos.io/backends/${type}`, '_blank')
+          }
+        >
+          <KeyvalText style={{ display: 'flex', gap: 3 }}>
+            find out more about {display_name} in{' '}
+            <a style={{ color: theme.colors.torquiz_light }}>our docs</a>
+            <Link style={{ marginTop: 2 }} />
+          </KeyvalText>
+        </div>
       </TextWrapper>
     </ManageDestinationHeaderWrapper>
   );

@@ -2,15 +2,16 @@ package endpoints
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net/http"
 
-	corev1 "k8s.io/api/core/v1"
+	"go.uber.org/multierr"
 
 	"github.com/keyval-dev/odigos/common/consts"
 
 	"github.com/keyval-dev/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/gin-gonic/gin"
 )
@@ -62,14 +63,14 @@ func GetNamespaces(c *gin.Context) {
 type PersistNamespaceItem struct {
 	Name           string                   `json:"name"`
 	SelectedAll    bool                     `json:"selected_all"`
-	FutureSelected bool                     `json:"future_selected"`
+	FutureSelected *bool                    `json:"future_selected,omitempty"`
 	Objects        []PersistNamespaceObject `json:"objects"`
 }
 
 type PersistNamespaceObject struct {
-	Name     string          `json:"name"`
-	Kind     ApplicationKind `json:"kind"`
-	Selected bool            `json:"selected"`
+	Name     string       `json:"name"`
+	Kind     WorkloadKind `json:"kind"`
+	Selected *bool        `json:"selected,omitempty"`
 }
 
 func PersistNamespaces(c *gin.Context) {
@@ -79,166 +80,47 @@ func PersistNamespaces(c *gin.Context) {
 		return
 	}
 
-	namespaces, err := kube.DefaultClient.CoreV1().Namespaces().List(c.Request.Context(), metav1.ListOptions{})
-	if err != nil {
-		returnError(c, err)
-		return
-	}
-
-	for _, ns := range namespaces.Items {
-		if IsSystemNamespace(ns.Name) {
+	for nsName, nsItem := range request {
+		if IsSystemNamespace(nsName) {
 			// skip system namespaces which should not be instrumented
 			continue
 		}
-		labeled := isLabeled(&ns)
-		userSelection, exists := request[ns.Name]
-		if !exists {
-			continue;
-		} 
-		labeledByUser := userSelection.SelectedAll || userSelection.FutureSelected
-		changed := false
-		if labeledByUser && !labeled {
-			ns.Labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationEnabled
-			changed = true
-		} else if !labeledByUser && labeled {
-			delete(ns.Labels, consts.OdigosInstrumentationLabel)
-			changed = true
+
+		jsonMergePayload := getJsonMergePatchForInstrumentationLabel(nsItem.FutureSelected)
+		_, err := kube.DefaultClient.CoreV1().Namespaces().Patch(c.Request.Context(), nsName, types.MergePatchType, jsonMergePayload, metav1.PatchOptions{})
+		if err != nil {
+			returnError(c, err)
+			return
 		}
 
-		if changed {
-			_, err = kube.DefaultClient.CoreV1().Namespaces().Update(c.Request.Context(), &ns, metav1.UpdateOptions{})
-			if err != nil {
-				returnError(c, err)
-				return
-			}
+		err = syncWorkloadsInNamespace(c.Request.Context(), nsName, nsItem.Objects)
+		if err != nil {
+			returnError(c, err)
+			return
 		}
-
-		err = syncObjectsInNamespace(c.Request.Context(), &ns, userSelection.Objects)
 	}
 }
 
-func isLabeled(obj metav1.Object) bool {
-	if val, exists := obj.GetLabels()[consts.OdigosInstrumentationLabel]; exists {
-		if val == consts.InstrumentationEnabled {
-			return true
+func getJsonMergePatchForInstrumentationLabel(enabled *bool) []byte {
+	labelJsonMergePatchValue := "null"
+	if enabled != nil {
+		if *enabled {
+			labelJsonMergePatchValue = fmt.Sprintf("\"%s\"", consts.InstrumentationEnabled)
+		} else {
+			labelJsonMergePatchValue = fmt.Sprintf("\"%s\"", consts.InstrumentationDisabled)
 		}
 	}
 
-	return false
+	jsonMergePatchContent := fmt.Sprintf(`{"metadata":{"labels":{"%s":%s}}}`, consts.OdigosInstrumentationLabel, labelJsonMergePatchValue)
+	return []byte(jsonMergePatchContent)
 }
-
-func syncObjectsInNamespace(ctx context.Context, ns *corev1.Namespace, objects []PersistNamespaceObject) error {
-	deps, err := kube.DefaultClient.AppsV1().Deployments(ns.Name).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return err
+func syncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []PersistNamespaceObject) error {
+	var errs error
+	for _, workload := range workloads {
+		err := setWorkloadInstrumentationLabel(ctx, nsName, workload.Name, workload.Kind, workload.Selected)
+		errs = multierr.Append(errs, err)
 	}
-
-	for _, dep := range deps.Items {
-		labeled := isLabeled(&dep)
-		if !labeled {
-			if dep.Labels != nil && dep.Labels[consts.OdigosInstrumentationLabel] == consts.InstrumentationDisabled {
-				// skip deployments which are explicitly disabled
-				continue
-			}
-		}
-
-		userSelection, exists := findObject(objects, dep.Name, ApplicationKindDeployment)
-		if !exists {
-			log.Printf("Deployment %s not found in request, skipping\n", dep.Name)
-		} else {
-			labeledByUser := userSelection.Selected
-			changed := false
-			if labeledByUser && !labeled {
-				if dep.Labels == nil {
-					dep.Labels = make(map[string]string)
-				}
-				dep.Labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationEnabled
-				changed = true
-			} else if !labeledByUser && labeled {
-				delete(dep.Labels, consts.OdigosInstrumentationLabel)
-				changed = true
-			}
-
-			if changed {
-				_, err = kube.DefaultClient.AppsV1().Deployments(ns.Name).Update(ctx, &dep, metav1.UpdateOptions{})
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	sts, err := kube.DefaultClient.AppsV1().StatefulSets(ns.Name).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-
-	for _, st := range sts.Items {
-		labeled := isLabeled(&st)
-		userSelection, exists := findObject(objects, st.Name, ApplicationKindStatefulSet)
-		if !exists {
-			log.Printf("StatefulSet %s not found in request, skipping\n", st.Name)
-		} else {
-			labeledByUser := userSelection.Selected
-			changed := false
-			if labeledByUser && !labeled {
-				st.Labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationEnabled
-				changed = true
-			} else if !labeledByUser && labeled {
-				delete(st.Labels, consts.OdigosInstrumentationLabel)
-				changed = true
-			}
-
-			if changed {
-				_, err = kube.DefaultClient.AppsV1().StatefulSets(ns.Name).Update(ctx, &st, metav1.UpdateOptions{})
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	dss, err := kube.DefaultClient.AppsV1().DaemonSets(ns.Name).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-
-	for _, ds := range dss.Items {
-		labeled := isLabeled(&ds)
-		userSelection, exists := findObject(objects, ds.Name, ApplicationKindDaemonSet)
-		if !exists {
-			log.Printf("DaemonSet %s not found in request, skipping\n", ds.Name)
-		} else {
-			labeledByUser := userSelection.Selected
-			changed := false
-			if labeledByUser && !labeled {
-				ds.Labels[consts.OdigosInstrumentationLabel] = consts.InstrumentationEnabled
-				changed = true
-			} else if !labeledByUser && labeled {
-				delete(ds.Labels, consts.OdigosInstrumentationLabel)
-				changed = true
-			}
-
-			if changed {
-				_, err = kube.DefaultClient.AppsV1().DaemonSets(ns.Name).Update(ctx, &ds, metav1.UpdateOptions{})
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func findObject(objects []PersistNamespaceObject, name string, kind ApplicationKind) (*PersistNamespaceObject, bool) {
-	for _, obj := range objects {
-		if obj.Name == name && obj.Kind == kind {
-			return &obj, true
-		}
-	}
-
-	return nil, false
+	return errs
 }
 
 // returns a map, where the key is a namespace name and the value is the

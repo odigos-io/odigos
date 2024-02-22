@@ -24,11 +24,12 @@ import (
 const (
 	collectorLabel       = "odigos.io/data-collection"
 	containerName        = "data-collection"
-	containerImage       = "keyval/otel-collector-contrib:v0.6"
+	containerImage       = "keyval/odigos-collector"
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
 	dataCollectionSA     = "odigos-data-collection"
+	odigletDaemonSetName = "odiglet"
 )
 
 var (
@@ -37,10 +38,27 @@ var (
 	}
 )
 
+func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace string) (*corev1.PodSpec, error) {
+	odigletDaemonset := &appsv1.DaemonSet{}
+
+	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: odigletDaemonSetName}, odigletDaemonset); err != nil {
+		return nil, err
+	}
+
+	return &odigletDaemonset.Spec.Template.Spec, nil
+}
+
 func syncDaemonSet(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup, configData string, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string) (*appsv1.DaemonSet, error) {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
-	desiredDs, err := getDesiredDaemonSet(datacollection, configData, scheme, imagePullSecrets)
+
+	odigletDaemonsetPodSpec, err := getOdigletDaemonsetPodSpec(ctx, c, datacollection.Namespace)
+	if err != nil {
+		logger.Error(err, "Failed to get Odiglet DaemonSet")
+		return nil, err
+	}
+
+	desiredDs, err := getDesiredDaemonSet(datacollection, configData, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -76,7 +94,9 @@ func syncDaemonSet(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 }
 
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string,
-	scheme *runtime.Scheme, imagePullSecrets []string) (*appsv1.DaemonSet, error) {
+	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
+	odigletDaemonsetPodSpec *corev1.PodSpec,
+) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -96,6 +116,9 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 					},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector:       odigletDaemonsetPodSpec.NodeSelector,
+					Affinity:           odigletDaemonsetPodSpec.Affinity,
+					Tolerations:        odigletDaemonsetPodSpec.Tolerations,
 					ServiceAccountName: dataCollectionSA,
 					Volumes: []corev1.Volume{
 						{
@@ -142,7 +165,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 					Containers: []corev1.Container{
 						{
 							Name:    containerName,
-							Image:   utils.GetContainerImage(containerImage),
+							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, configKey)},
 							VolumeMounts: []corev1.VolumeMount{
 								{

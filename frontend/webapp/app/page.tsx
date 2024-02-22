@@ -1,31 +1,44 @@
 'use client';
-import { useQuery } from 'react-query';
 import { useEffect } from 'react';
-import { getConfig } from '@/services/config';
+import { useQuery } from 'react-query';
 import { useRouter } from 'next/navigation';
-import { ROUTES, CONFIG, QUERIES } from '@/utils/constants';
+import { ROUTES, CONFIG, QUERIES } from '@/utils';
+import { Loader } from '@keyval-dev/design-system';
+import { getDestinations, getConfig } from '@/services';
 
 export default function App() {
   const router = useRouter();
-  const { data } = useQuery([QUERIES.API_CONFIG], getConfig);
-
+  const { data, isLoading: isConfigLoading } = useQuery(
+    [QUERIES.API_CONFIG],
+    getConfig
+  );
+  const { isLoading: isDestinationLoading, data: destinationList } = useQuery(
+    [QUERIES.API_DESTINATIONS],
+    getDestinations
+  );
   useEffect(() => {
-    data && renderCurrentPage();
-  }, [data]);
+    if (isConfigLoading || isDestinationLoading) return;
+
+    renderCurrentPage();
+  }, [data, destinationList]);
 
   function renderCurrentPage() {
     const { installation } = data;
-    const state =
-      installation === CONFIG.APPS_SELECTED
-        ? `?state=${CONFIG.APPS_SELECTED}`
-        : '';
+
+    if (destinationList.length > 0) {
+      router.push(ROUTES.OVERVIEW);
+      return;
+    }
+
     switch (installation) {
       case CONFIG.NEW:
       case CONFIG.APPS_SELECTED:
-        router.push(`${ROUTES.SETUP}${state}`);
+        router.push(ROUTES.CHOOSE_SOURCES);
         break;
       case CONFIG.FINISHED:
         router.push(ROUTES.OVERVIEW);
     }
   }
+
+  return <Loader />;
 }

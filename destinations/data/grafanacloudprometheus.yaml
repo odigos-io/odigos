@@ -14,19 +14,34 @@ spec:
     logs:
       supported: false
   fields:
-    - name: GRAFANA_API_KEY
-      displayName: API Key
+    - name: GRAFANA_CLOUD_PROMETHEUS_RW_ENDPOINT
+      displayName: Prometheus Remote Write Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        placeholder: 'e.g https://prometheus-us-central1.grafana.net/api/prom/push'
+    - name: GRAFANA_CLOUD_PROMETHEUS_USERNAME
+      displayName: Username / Instance ID
+      componentType: input
+      componentProps:
+        type: text
+    - name: GRAFANA_CLOUD_PROMETHEUS_PASSWORD
+      displayName: Password / Api Token
       componentType: input
       componentProps:
         type: password
       secret: true
-    - name: GRAFANA_REMOTEWRITE_URL
-      displayName: Remote Write URL
-      componentType: input
+    - name: PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS
+      displayName: Resource Attributes Labels
+      componentType: multiInput
       componentProps:
         type: text
-    - name: GRAFANA_PROM_USERNAME
-      displayName: Username
-      componentType: input
+      initialValue: '["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]'
+    - name: PROMETHEUS_RESOURCE_EXTERNAL_LABELS
+      displayName: External Labels
+      componentType: keyValuePairs
       componentProps:
-        type: text
+        titleKey: 'Label Name'
+        titleButton: 'Add Label'
+        titleValue: 'Value'
+        tooltip: 'map of labels names and values to be attached to each metric data point'

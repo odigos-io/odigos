@@ -39,9 +39,11 @@ import (
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	apiactions "github.com/keyval-dev/odigos/api/odigos/actions/v1alpha1"
 	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 
 	"github.com/keyval-dev/odigos/autoscaler/controllers"
+	"github.com/keyval-dev/odigos/autoscaler/controllers/actions"
 	nameutils "github.com/keyval-dev/odigos/autoscaler/utils"
 	//+kubebuilder:scaffold:imports
 )
@@ -54,6 +56,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(observabilitycontrolplanev1.AddToScheme(scheme))
+	utilruntime.Must(apiactions.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -63,6 +66,8 @@ func main() {
 	var probeAddr string
 	var imagePullSecretsString string
 	var imagePullSecrets []string
+	odigosVersion := os.Getenv("ODIGOS_VERSION")
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -71,6 +76,10 @@ func main() {
 	flag.StringVar(&imagePullSecretsString, "image-pull-secrets", "",
 		"The image pull secrets to use for the collectors created by autoscaler")
 	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler")
+
+	if odigosVersion == "" {
+		flag.StringVar(&odigosVersion, "version", "", "for development purposes only")
+	}
 
 	opts := ctrlzap.Options{
 		Development: true,
@@ -86,6 +95,12 @@ func main() {
 	zapLogger = bridge.AttachToZapLogger(zapLogger)
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
+
+	if odigosVersion == "" {
+		setupLog.Error(nil, "ODIGOS_VERSION environment variable is not set and version flag is not provided")
+		os.Exit(1)
+	}
+	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
@@ -110,14 +125,25 @@ func main() {
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Destination")
+		os.Exit(1)
+	}
+	if err = (&controllers.ProcessorReconciler{
+		Client:           mgr.GetClient(),
+		Scheme:           mgr.GetScheme(),
+		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Processor")
 		os.Exit(1)
 	}
 	if err = (&controllers.CollectorsGroupReconciler{
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
 		os.Exit(1)
@@ -126,10 +152,17 @@ func main() {
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
 		os.Exit(1)
 	}
+
+	if err = actions.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create odigos actions controllers")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

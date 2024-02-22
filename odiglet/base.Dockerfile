@@ -1,6 +1,7 @@
-FROM fedora:38 as builder
-ARG TARGETARCH
-# git is used by go mod download
-RUN dnf install clang llvm make libbpf-devel git -y
-RUN curl -LO https://go.dev/dl/go1.21.0.linux-${TARGETARCH}.tar.gz && tar -C /usr/local -xzf go*.linux-${TARGETARCH}.tar.gz
-ENV PATH="/usr/local/go/bin:${PATH}"
+FROM golang:1.21.6-bullseye as builder
+
+# fury is our registry for linux packages
+RUN echo "deb [trusted=yes] https://apt.fury.io/cli/ * *" > /etc/apt/sources.list.d/fury-cli.list
+# goreleaser is used to build vmagent
+RUN echo "deb [trusted=yes] https://repo.goreleaser.com/apt/ /" > /etc/apt/sources.list.d/goreleaser.list
+RUN apt-get update && apt-get install -y curl clang gcc llvm make libbpf-dev fury-cli goreleaser

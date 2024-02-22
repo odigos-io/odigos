@@ -16,6 +16,7 @@ package odigosresourcenameprocessor // import "github.com/open-telemetry/opentel
 
 import (
 	"context"
+
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -43,19 +44,44 @@ func (rp *resourceProcessor) processAttributes(ctx context.Context, logger *zap.
 			return
 		}
 
-		name, err := rp.nameResolver.Resolve(resourceName.AsString())
+		resourceAttributes, err := rp.nameResolver.Resolve(resourceName.AsString())
 		if err != nil {
 			logger.Error("Could not resolve pod name", zap.Error(err))
 			return
 		}
 
-		// Replace resource name
-		resourceName.SetStr(string(name))
+		// Replace service name
+		resourceName.SetStr(resourceAttributes.OtelServiceName)
+
+		// add k8s resource attributes
+		if resourceAttributes.Namespace != "" {
+			attrs.PutStr(string(semconv.K8SNamespaceNameKey), resourceAttributes.Namespace)
+		}
+		if resourceAttributes.WorkloadName != "" {
+			switch resourceAttributes.WorkloadKind {
+			case "Deployment":
+				attrs.PutStr(string(semconv.K8SDeploymentNameKey), resourceAttributes.WorkloadName)
+			case "StatefulSet":
+				attrs.PutStr(string(semconv.K8SStatefulsetNameKey), resourceAttributes.WorkloadName)
+			case "DaemonSet":
+				attrs.PutStr(string(semconv.K8SDaemonsetNameKey), resourceAttributes.WorkloadName)
+			}
+		}
+		if resourceAttributes.PodName != "" {
+			attrs.PutStr(string(semconv.K8SPodNameKey), resourceAttributes.PodName)
+		}
+		if resourceAttributes.ContainerName != "" {
+			attrs.PutStr(string(semconv.ContainerNameKey), resourceAttributes.ContainerName)
+		}
 		return
 	}
 }
 
 func (rp *resourceProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
+	if rp.nameResolver == nil {
+		return td, nil
+	}
+
 	rss := td.ResourceSpans()
 	for i := 0; i < rss.Len(); i++ {
 		rp.processAttributes(ctx, rp.logger, rss.At(i).Resource().Attributes())
@@ -64,6 +90,10 @@ func (rp *resourceProcessor) processTraces(ctx context.Context, td ptrace.Traces
 }
 
 func (rp *resourceProcessor) processMetrics(ctx context.Context, md pmetric.Metrics) (pmetric.Metrics, error) {
+	if rp.nameResolver == nil {
+		return md, nil
+	}
+
 	rms := md.ResourceMetrics()
 	for i := 0; i < rms.Len(); i++ {
 		rp.processAttributes(ctx, rp.logger, rms.At(i).Resource().Attributes())
@@ -72,6 +102,10 @@ func (rp *resourceProcessor) processMetrics(ctx context.Context, md pmetric.Metr
 }
 
 func (rp *resourceProcessor) processLogs(ctx context.Context, ld plog.Logs) (plog.Logs, error) {
+	if rp.nameResolver == nil {
+		return ld, nil
+	}
+
 	rls := ld.ResourceLogs()
 	for i := 0; i < rls.Len(); i++ {
 		rp.processAttributes(ctx, rp.logger, rls.At(i).Resource().Attributes())

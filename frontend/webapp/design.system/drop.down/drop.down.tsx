@@ -1,5 +1,5 @@
-import React from "react";
-import { DropDown } from "@keyval-dev/design-system";
+import React from 'react';
+import { DropDown } from '@keyval-dev/design-system';
 
 interface DropDownItem {
   id: number;
@@ -10,6 +10,9 @@ interface KeyvalDropDownProps {
   onChange: (item: DropDownItem) => void;
   width?: number;
   value?: DropDownItem | null;
+  label?: string;
+  tooltip?: string;
+  required?: boolean;
 }
 
 export function KeyvalDropDown(props: KeyvalDropDownProps) {

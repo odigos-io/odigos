@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
@@ -37,33 +38,33 @@ func (a *AzureBlobStorage) ModifyConfig(dest *odigosv1.Destination, currentConfi
 		return
 	}
 
+	exporterName := "azureblobstorage/" + dest.Name
+
 	if isLoggingEnabled(dest) {
-		currentConfig.Exporters["azureblobstorage"] = commonconf.GenericMap{
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"blob": commonconf.GenericMap{
 				"account_name": accountName,
 				"container":    containerName,
 			},
 		}
 
-		currentConfig.Service.Pipelines["logs/azureblobstorage"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"azureblobstorage"},
+		logsPipelineName := "logs/azureblobstorage-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isTracingEnabled(dest) {
-		currentConfig.Exporters["azureblobstorage"] = commonconf.GenericMap{
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"blob": commonconf.GenericMap{
 				"account_name": accountName,
 				"container":    containerName,
 			},
 		}
 
-		currentConfig.Service.Pipelines["traces/azureblobstorage"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"azureblobstorage"},
+		tracesPipelineName := "traces/azureblobstorage-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
 }

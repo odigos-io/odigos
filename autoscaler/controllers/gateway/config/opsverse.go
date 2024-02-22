@@ -26,7 +26,7 @@ func (g *OpsVerse) DestType() common.DestinationType {
 func (g *OpsVerse) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if isMetricsEnabled(dest) && g.isMetricsVarsExists(dest) {
 		url := fmt.Sprintf("%s/api/v1/write", dest.Spec.Data[opsverseMetricsUrl])
-		rwExporterName := "prometheusremotewrite/opsverse"
+		rwExporterName := "prometheusremotewrite/opsverse-" + dest.Name
 		currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
 			"endpoint": url,
 			"headers": commonconf.GenericMap{
@@ -34,10 +34,9 @@ func (g *OpsVerse) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 			},
 		}
 
-		currentConfig.Service.Pipelines["metrics/opsverse"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{rwExporterName},
+		metricsPipelineName := "metrics/opsverse-" + dest.Name
+		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{rwExporterName},
 		}
 	}
 
@@ -46,7 +45,8 @@ func (g *OpsVerse) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 		url = strings.TrimPrefix(url, "http://")
 		url = strings.TrimPrefix(url, "https://")
 		url = fmt.Sprintf("%s:443", url)
-		currentConfig.Exporters["otlp/opsverse"] = commonconf.GenericMap{
+		exporterName := "otlp/opsverse-" + dest.Name
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"endpoint": url,
 			"headers": commonconf.GenericMap{
 				"authorization": "Basic ${OPSVERSE_AUTH_TOKEN}",
@@ -54,16 +54,14 @@ func (g *OpsVerse) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 		}
 
 		currentConfig.Service.Pipelines["traces/opsverse"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/opsverse"},
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) && g.isLogsVarsExists(dest) {
 		url := fmt.Sprintf("%s/loki/api/v1/push", dest.Spec.Data[opsverseLogsUrl])
 
-		lokiExporterName := "loki/opsverse"
+		lokiExporterName := "loki/opsverse-" + dest.Name
 		currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
 			"endpoint": url,
 			"headers": commonconf.GenericMap{
@@ -78,10 +76,9 @@ func (g *OpsVerse) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 			},
 		}
 
-		currentConfig.Service.Pipelines["logs/opsverse"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{lokiExporterName},
+		logsPipelineName := "logs/opsverse-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{lokiExporterName},
 		}
 	}
 }

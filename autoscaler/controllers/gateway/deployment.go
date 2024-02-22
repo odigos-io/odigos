@@ -21,16 +21,16 @@ import (
 
 const (
 	containerName        = "gateway"
-	containerImage       = "keyval/otel-collector-contrib:v0.6"
+	containerImage       = "keyval/odigos-collector"
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
 )
 
 func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
-	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string) (*appsv1.Deployment, error) {
+	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
-	desiredDeployment, err := getDesiredDeployment(dests, configData, gateway, scheme, imagePullSecrets)
+	desiredDeployment, err := getDesiredDeployment(dests, configData, gateway, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
 		logger.Error(err, "Failed to get desired deployment")
 		return nil, err
@@ -96,7 +96,7 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 }
 
 func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
-	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string) (*appsv1.Deployment, error) {
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      gateway.Name,
@@ -137,7 +137,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 					Containers: []corev1.Container{
 						{
 							Name:    containerName,
-							Image:   utils.GetContainerImage(containerImage),
+							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, configKey)},
 							EnvFrom: getSecretsFromDests(dests),
 							SecurityContext: &corev1.SecurityContext{

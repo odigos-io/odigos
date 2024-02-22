@@ -199,6 +199,22 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 			},
 			{
 				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"patch",
+					"create",
+					"update",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"processors",
+				},
+			},
+			{
+				Verbs: []string{
 					"update",
 				},
 				APIGroups: []string{
@@ -219,6 +235,32 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				},
 				Resources: []string{
 					"destinations/status",
+				},
+			},
+			{
+				Verbs: []string{
+					"watch",
+					"get",
+					"list",
+				},
+				APIGroups: []string{
+					"actions.odigos.io",
+				},
+				Resources: []string{
+					"insertclusterattributes",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"patch",
+					"update",
+				},
+				APIGroups: []string{
+					"actions.odigos.io",
+				},
+				Resources: []string{
+					"insertclusterattributes/status",
 				},
 			},
 		},
@@ -361,21 +403,21 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      AutoScalerDeploymentName,
 			Namespace: ns,
-			Annotations: map[string]string{
-				"odigos.io/skip": "true",
+			Labels: map[string]string{
+				"app.kubernetes.io/name": AutoScalerAppLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": AutoScalerAppLabelValue,
+					"app.kubernetes.io/name": AutoScalerAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": AutoScalerAppLabelValue,
+						"app.kubernetes.io/name": AutoScalerAppLabelValue,
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": AutoScalerContainerName,
@@ -413,6 +455,13 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
 										LocalObjectReference: corev1.LocalObjectReference{
 											Name: ownTelemetryOtelConfig,
+										},
+									},
+								},
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: OdigosDeploymentConfigMapName,
 										},
 									},
 								},

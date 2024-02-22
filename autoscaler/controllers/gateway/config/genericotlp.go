@@ -18,7 +18,7 @@ func (g *GenericOTLP) DestType() common.DestinationType {
 
 func (g *GenericOTLP) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if url, exists := dest.Spec.Data[genericOtlpUrlKey]; exists {
-		genericOtlpExporterName := "otlp/generic"
+		genericOtlpExporterName := "otlp/generic-" + dest.Name
 		currentConfig.Exporters[genericOtlpExporterName] = commonconf.GenericMap{
 			"endpoint": url,
 			"tls": commonconf.GenericMap{
@@ -26,26 +26,23 @@ func (g *GenericOTLP) ModifyConfig(dest *odigosv1.Destination, currentConfig *co
 			},
 		}
 		if isTracingEnabled(dest) {
-			currentConfig.Service.Pipelines["traces/generic"] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{genericOtlpExporterName},
+			tracesPipelineName := "traces/generic-" + dest.Name
+			currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
+				Exporters: []string{genericOtlpExporterName},
 			}
 		}
 
 		if isMetricsEnabled(dest) {
-			currentConfig.Service.Pipelines["metrics/generic"] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{genericOtlpExporterName},
+			metricsPipelineName := "metrics/generic-" + dest.Name
+			currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
+				Exporters: []string{genericOtlpExporterName},
 			}
 		}
 
 		if isLoggingEnabled(dest) {
-			currentConfig.Service.Pipelines["logs/generic"] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{genericOtlpExporterName},
+			logsPipelineName := "logs/generic-" + dest.Name
+			currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
+				Exporters: []string{genericOtlpExporterName},
 			}
 		}
 	}

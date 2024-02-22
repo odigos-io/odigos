@@ -34,6 +34,8 @@ export const SETUP = {
   APPLICATIONS: 'Applications',
   RUNNING_INSTANCES: 'Running Instances',
   SELECTED: 'Selected',
+  SOURCE_SELECTED: 'Source selected',
+  NONE_SOURCE_SELECTED: 'No source selected',
   MANAGED: 'Managed',
   CREATE_CONNECTION: 'Create Connection',
   UPDATE_CONNECTION: 'Update Connection',
@@ -53,6 +55,8 @@ export const SETUP = {
 export const INPUT_TYPES = {
   INPUT: 'input',
   DROPDOWN: 'dropdown',
+  MULTI_INPUT: 'multiInput',
+  KEY_VALUE_PAIR: 'keyValuePairs',
 };
 
 export const OVERVIEW = {
@@ -78,14 +82,14 @@ export const OVERVIEW = {
   DELETE_SOURCE: 'Delete Source',
   SOURCE_DANGER_ZONE_TITLE: 'Delete this source',
   SOURCE_DANGER_ZONE_SUBTITLE:
-    'This action cannot be undone. This will permanently delete the source and all associated data.',
+    'Uninstrument this source, and delete all odigos associated data. You can always re-instrument this source later with odigos.',
   DELETE_MODAL_TITLE: 'Delete this destination',
   DELETE_MODAL_SUBTITLE:
     'This action cannot be undone. This will permanently delete the destination and all associated data.',
   DELETE_BUTTON: 'I want to delete this destination',
   CONFIRM_SOURCE_DELETE: 'I want to delete this source',
   CONNECT: 'Connect',
-  REPORTED_NAME: 'Reported Name',
+  REPORTED_NAME: 'Override service.name',
 };
 
 export const ACTION = {

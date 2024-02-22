@@ -4,6 +4,7 @@ import { ThemeProvider } from 'styled-components';
 import theme from '@/styles/palette';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ThemeProviderWrapper } from '@keyval-dev/design-system';
+import ReduxProvider from '@/store/redux-provider';
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
@@ -11,6 +12,7 @@ const LAYOUT_STYLE: React.CSSProperties = {
   scrollbarWidth: 'none',
   width: '100vw',
   height: '100vh',
+  backgroundColor: theme.colors.dark,
 };
 
 export default function RootLayout({
@@ -29,15 +31,17 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
-          <ThemeProviderWrapper>
-            <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
-              {children}
-            </body>
-          </ThemeProviderWrapper>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <ReduxProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider theme={theme}>
+            <ThemeProviderWrapper>
+              <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
+                {children}
+              </body>
+            </ThemeProviderWrapper>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ReduxProvider>
     </html>
   );
 }

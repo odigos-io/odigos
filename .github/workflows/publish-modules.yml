@@ -90,8 +90,10 @@ jobs:
             runner: ubuntu-latest
           - service: instrumentor
             runner: ubuntu-latest
-          - service: odiglet
+          - service: collector
             runner: large-runner
+          - service: odiglet
+            runner: ubuntu-latest
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
@@ -126,8 +128,18 @@ jobs:
           tags: keyval/odigos-${{ matrix.service }}:${{ steps.extract_tag.outputs.tag }}
           build-args: SERVICE_NAME=${{ matrix.service }}
           platforms: linux/amd64,linux/arm64
-          file: ${{ matrix.service == 'odiglet' && 'odiglet/Dockerfile' || 'Dockerfile' }}
-
+          file: >-
+            ${{ 
+              (matrix.service == 'odiglet' && 'odiglet/Dockerfile') || 
+              (matrix.service == 'collector' && 'collector/Dockerfile') || 
+              'Dockerfile' 
+            }}
+          context: >-
+            ${{ 
+              (matrix.service == 'collector' && 'collector') || 
+              '.' 
+            }}
+          
       - name: Notify Slack End
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}

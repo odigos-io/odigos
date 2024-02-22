@@ -18,6 +18,34 @@
             "mode": "debug",
             "program": "${workspaceFolder}/instrumentor",
             "cwd": "${workspaceFolder}/instrumentor"
+        },
+        {
+            "name": "frontend",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/frontend",
+            "cwd": "${workspaceFolder}/frontend",
+            "args": ["--port", "8085", "--address", "0.0.0.0"]
+        },
+        {
+            "name": "autoscaler local",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/autoscaler",
+            "cwd": "${workspaceFolder}/autoscaler",
+            "env": {
+                "ODIGOS_VERSION": "v1.0.34"
+            }
+        },
+        {
+            "name": "scheduler local",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/scheduler",
+            "cwd": "${workspaceFolder}/scheduler"
         }
     ]
 }

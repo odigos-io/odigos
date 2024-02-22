@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
-import { NOTIFICATION, OVERVIEW, QUERIES, SETUP } from '@/utils/constants';
+import { KeyvalLoader } from '@/design.system';
+import { EmptyList } from '@/components/lists';
+import { getDestinationsTypes } from '@/services';
+import { useNotification, useSectionData } from '@/hooks';
 import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
+import { NOTIFICATION, OVERVIEW, QUERIES, SETUP } from '@/utils/constants';
 import { DestinationList, DestinationOptionMenu } from '@/components/setup';
 import {
-  DestinationListContainer,
   LoaderWrapper,
+  DestinationContainerWrapper,
 } from './destination.section.styled';
 import {
-  filterDataByMonitorsOption,
+  sortDestinationList,
   filterDataByTextQuery,
   isDestinationListEmpty,
-  sortDestinationList,
+  filterDataByMonitorsOption,
 } from './utils';
-import { KeyvalLoader } from '@/design.system';
-import { useNotification } from '@/hooks';
-import { getDestinationsTypes } from '@/services';
-import { EmptyList } from '@/components/lists';
 
 interface DestinationTypes {
   image_url: string;
@@ -30,18 +30,14 @@ interface DestinationTypes {
 }
 
 type DestinationSectionProps = {
-  sectionData?: any;
-  setSectionData: (data: any) => void;
-  onSelectItem?: () => void;
+  onSelectItem?: (type: string) => void;
 };
 
-export function DestinationSection({
-  sectionData,
-  setSectionData,
-  onSelectItem,
-}: DestinationSectionProps) {
+export function DestinationSection({ onSelectItem }: DestinationSectionProps) {
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [dropdownData, setDropdownData] = useState<any>(null);
+
+  const { sectionData, setSectionData } = useSectionData({});
   const { show, Notification } = useNotification();
   const [monitoringOption, setMonitoringOption] =
     useState<any>(MONITORING_OPTIONS);
@@ -61,7 +57,7 @@ export function DestinationSection({
 
   function handleSelectItem(item: DestinationTypes) {
     setSectionData(item);
-    onSelectItem && onSelectItem();
+    onSelectItem && onSelectItem(item.type);
   }
 
   function renderDestinationLists() {
@@ -102,7 +98,7 @@ export function DestinationSection({
   }
 
   return (
-    <>
+    <DestinationContainerWrapper>
       <DestinationOptionMenu
         searchFilter={searchFilter}
         setSearchFilter={setSearchFilter}
@@ -111,12 +107,8 @@ export function DestinationSection({
         setMonitoringOption={setMonitoringOption}
         data={data?.categories}
       />
-      {data && (
-        <DestinationListContainer>
-          {renderDestinationLists()}
-        </DestinationListContainer>
-      )}
+      {data && renderDestinationLists()}
       <Notification />
-    </>
+    </DestinationContainerWrapper>
   );
 }

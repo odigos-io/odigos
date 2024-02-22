@@ -13,31 +13,30 @@ func (s *SumoLogic) DestType() common.DestinationType {
 }
 
 func (s *SumoLogic) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
-	currentConfig.Exporters["otlphttp/sumologic"] = commonconf.GenericMap{
+
+	exporterName := "otlphttp/sumologic-" + dest.Name
+	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 		"endpoint": "${SUMOLOGIC_COLLECTION_URL}",
 	}
 
 	if isTracingEnabled(dest) {
-		currentConfig.Service.Pipelines["traces/sumologic"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"otlphttp/sumologic"},
+		tracesPipelineName := "traces/sumologic-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		currentConfig.Service.Pipelines["logs/sumologic"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"otlphttp/sumologic"},
+		logsPipelineName := "logs/sumologic-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		currentConfig.Service.Pipelines["metrics/sumologic"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"otlphttp/sumologic"},
+		metricsPipelineName := "metrics/sumologic-" + dest.Name
+		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
 }

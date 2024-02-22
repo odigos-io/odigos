@@ -16,7 +16,7 @@ func NewGateway(namespace string) *odigosv1.CollectorsGroup {
 			Namespace: namespace,
 		},
 		Spec: odigosv1.CollectorsGroupSpec{
-			Role: odigosv1.CollectorsGroupRoleGateway,
+			Role: odigosv1.CollectorsGroupRoleClusterGateway,
 		},
 	}
 }

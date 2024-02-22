@@ -39,19 +39,21 @@ func (l *Logzio) DestType() common.DestinationType {
 func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	region := dest.Spec.Data["LOGZIO_REGION"]
 	if isTracingEnabled(dest) {
-		currentConfig.Exporters["logzio/tracing"] = commonconf.GenericMap{
+		exporterName := "logzio/tracing-" + dest.Name
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"region":        region,
 			"account_token": "${LOGZIO_TRACING_TOKEN}",
 		}
-		currentConfig.Service.Pipelines["traces/logzio"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"logzio/tracing"},
+		tracesPipelineName := "traces/logzio-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
+
 	if isMetricsEnabled(dest) {
 		listenerUrl := l.GetListenerUrl(region)
-		currentConfig.Exporters["prometheusremotewrite/logzio"] = commonconf.GenericMap{
+		exporterName := "prometheusremotewrite/logzio-" + dest.Name
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"endpoint": listenerUrl,
 			"external_labels": commonconf.GenericMap{
 				"p8s_logzio_name": "odigos",
@@ -60,15 +62,15 @@ func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 				"authorization": "Bearer ${LOGZIO_METRICS_TOKEN}",
 			},
 		}
-		currentConfig.Service.Pipelines["metrics/logzio"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"prometheusremotewrite/logzio"},
+		metricsPipelineName := "metrics/logzio-" + dest.Name
+		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		currentConfig.Exporters["logzio/logs"] = commonconf.GenericMap{
+		exporterName := "logzio/logs-" + dest.Name
+		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"region":        region,
 			"account_token": "${LOGZIO_LOGS_TOKEN}",
 		}
@@ -89,10 +91,10 @@ func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 				},
 			},
 		}
-		currentConfig.Service.Pipelines["logs/logzio"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch", "attributes/logzio"},
-			Exporters:  []string{"logzio/logs"},
+		logsPipelineName := "logs/logzio-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
+			Processors: []string{"attributes/logzio"},
+			Exporters:  []string{exporterName},
 		}
 	}
 }

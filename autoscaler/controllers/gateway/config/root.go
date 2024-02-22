@@ -10,7 +10,7 @@ import (
 	"github.com/keyval-dev/odigos/common"
 )
 
-var availableConfigers = []Configer{&Middleware{}, &Honeycomb{}, &Grafana{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{},
+var availableConfigers = []Configer{&Middleware{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{}, &GrafanaCloudLoki{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{},
 	&Tempo{}, &Loki{}, &Jaeger{}, &GenericOTLP{}, &Elasticsearch{}, &Signoz{}, &Qryn{},
 	&OpsVerse{}, &Splunk{}, &Lightstep{}, &GoogleCloud{}, &GoogleCloudStorage{}, &Sentry{}, &AzureBlobStorage{},
 	&AWSS3{}, &Dynatrace{}, &Chronosphere{}, &ElasticAPM{}, &Axiom{}, &SumoLogic{}, &Coralogix{}}
@@ -20,8 +20,9 @@ type Configer interface {
 	ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config)
 }
 
-func Calculate(dests *odigosv1.DestinationList) (string, error) {
+func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList) (string, error) {
 	currentConfig := getBasicConfig()
+
 	configers, err := loadConfigers()
 	if err != nil {
 		return "", err
@@ -34,6 +35,26 @@ func Calculate(dests *odigosv1.DestinationList) (string, error) {
 		}
 
 		configer.ModifyConfig(&dest, currentConfig)
+	}
+
+	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := commonconf.GetCrdProcessorsConfigMap(processors, odigosv1.CollectorsGroupRoleClusterGateway)
+	for processorKey, processorCfg := range processorsCfg {
+		currentConfig.Processors[processorKey] = processorCfg
+	}
+
+	for pipelineName, pipeline := range currentConfig.Service.Pipelines {
+		if strings.HasPrefix(pipelineName, "traces/") {
+			pipeline.Processors = append(tracesProcessors, pipeline.Processors...)
+		} else if strings.HasPrefix(pipelineName, "metrics/") {
+			pipeline.Processors = append(metricsProcessors, pipeline.Processors...)
+		} else if strings.HasPrefix(pipelineName, "logs/") {
+			pipeline.Processors = append(logsProcessors, pipeline.Processors...)
+		}
+
+		// basic config common to all pipelines
+		pipeline.Receivers = []string{"otlp"}
+		pipeline.Processors = append([]string{"batch"}, pipeline.Processors...)
+		currentConfig.Service.Pipelines[pipelineName] = pipeline
 	}
 
 	data, err := yaml.Marshal(currentConfig)

@@ -18,42 +18,44 @@ func (m *Middleware) DestType() common.DestinationType {
 }
 
 func (m *Middleware) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
-	if isTracingEnabled(dest) || isMetricsEnabled(dest) || isLoggingEnabled(dest) {
-		_, exists := dest.Spec.Data[target]
-		if !exists {
-			log.Log.V(0).Info("Middleware target not specified, gateway will not be configured for Middleware")
-			return
-		}
 
-		currentConfig.Exporters["otlp/middleware"] = commonconf.GenericMap{
-			"endpoint": "${MW_TARGET}",
-			"headers": commonconf.GenericMap{
-				"authorization": "${MW_API_KEY}",
-			},
-		}
+	if !isTracingEnabled(dest) && !isMetricsEnabled(dest) && !isLoggingEnabled(dest) {
+		log.Log.V(0).Info("Middleware is not enabled for any supported signals, skipping")
+		return
+	}
+
+	_, exists := dest.Spec.Data[target]
+	if !exists {
+		log.Log.V(0).Info("Middleware target not specified, gateway will not be configured for Middleware")
+		return
+	}
+
+	exporterName := "otlp/middleware-" + dest.Name
+	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
+		"endpoint": "${MW_TARGET}",
+		"headers": commonconf.GenericMap{
+			"authorization": "${MW_API_KEY}",
+		},
 	}
 
 	if isTracingEnabled(dest) {
-		currentConfig.Service.Pipelines["traces/middleware"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/middleware"},
+		tracesPipelineName := "traces/middleware-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		currentConfig.Service.Pipelines["metrics/middleware"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/middleware"},
+		metricsPipelineName := "metrics/middleware-" + dest.Name
+		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		currentConfig.Service.Pipelines["logs/middleware"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"otlp/middleware"},
+		logsPipelineName := "logs/middleware-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
 }

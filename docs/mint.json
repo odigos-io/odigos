@@ -41,6 +41,7 @@
             "intro",
             "installation",
             "instrumenting",
+            "generation",
             "viewing",
             "next-steps"
           ]
@@ -60,30 +61,48 @@
       ]
     },
     {
-      "group": "Observability Backends",
+      "group": "Odigos Pipeline",
       "pages": [
-        "backends/datadog",
-        "backends/prometheus",
-        "backends/tempo",
-        "backends/grafanacloud",
-        "backends/honeycomb",
-        "backends/newrelic",
-        "backends/splunk",
-        "backends/lightstep",
-        "backends/jaeger",
-        "backends/sumologic",
-        "backends/qryn",
-        "backends/loki",
-        "backends/elasticsearch",
-        "backends/googlecloud",
-        "backends/gcs",
+        "pipeline/overview",
+        {
+          "group": "Actions",
+          "pages": [
+            "pipeline/actions/introduction",
+            "pipeline/actions/insertclusterattributes",
+            "pipeline/actions/crd",
+            "pipeline/actions/troubleshooting"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "Observability Backends",
+      "pages": [    
+        "backends/awss3",
         "backends/azureblob",
-        "backends/opsverse",
+        "backends/coralogix",
+        "backends/datadog",
+        "backends/elasticsearch",
+        "backends/gcs",
+        "backends/googlecloud",
+        "backends/grafanacloudloki",
+        "backends/grafanacloudprometheus",
+        "backends/grafanacloudtempo",
+        "backends/honeycomb",
+        "backends/jaeger",
+        "backends/lightstep",
         "backends/logzio",
+        "backends/loki",
+        "backends/newrelic",
+        "backends/opentelemetry",
+        "backends/opsverse",
+        "backends/prometheus",
+        "backends/qryn",
         "backends/sentry",
         "backends/signoz",
-        "backends/opentelemetry",
-        "backends/coralogix"
+        "backends/splunk",
+        "backends/sumologic",
+        "backends/tempo"
       ]
     },
     {

@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/gateway"
@@ -35,6 +36,7 @@ type CollectorsGroupReconciler struct {
 	client.Client
 	Scheme           *runtime.Scheme
 	ImagePullSecrets []string
+	OdigosVersion    string
 }
 
 //+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectorsgroups,verbs=get;list;watch;create;update;patch;delete
@@ -59,12 +61,12 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling CollectorsGroup")
 
-	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets)
+	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets)
+	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

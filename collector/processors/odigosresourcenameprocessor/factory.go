@@ -16,13 +16,14 @@ package odigosresourcenameprocessor // import "github.com/open-telemetry/opentel
 
 import (
 	"context"
+	"sync"
+
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processorhelper"
 	"go.uber.org/zap"
-	"sync"
 )
 
 const (
@@ -58,7 +59,7 @@ func createTracesProcessor(
 	nextConsumer consumer.Traces) (processor.Traces, error) {
 
 	if err := initNameResolver(cfg, set.Logger); err != nil {
-		return nil, err
+		set.Logger.Error("failed to initialize name resolver", zap.Error(err))
 	}
 
 	proc := &resourceProcessor{logger: set.Logger, nameResolver: nameResolver}
@@ -79,7 +80,7 @@ func createMetricsProcessor(
 	nextConsumer consumer.Metrics) (processor.Metrics, error) {
 
 	if err := initNameResolver(cfg, set.Logger); err != nil {
-		return nil, err
+		set.Logger.Error("failed to initialize name resolver", zap.Error(err))
 	}
 
 	proc := &resourceProcessor{logger: set.Logger, nameResolver: nameResolver}
@@ -100,7 +101,7 @@ func createLogsProcessor(
 	nextConsumer consumer.Logs) (processor.Logs, error) {
 
 	if err := initNameResolver(cfg, set.Logger); err != nil {
-		return nil, err
+		set.Logger.Error("failed to initialize name resolver", zap.Error(err))
 	}
 
 	proc := &resourceProcessor{logger: set.Logger, nameResolver: nameResolver}
@@ -136,11 +137,11 @@ func initNameResolver(cfg component.Config, logger *zap.Logger) error {
 	}
 
 	nameResolver = &NameResolver{
-		logger:        logger,
-		devicesToPods: map[string]string{},
-		mu:            sync.RWMutex{},
-		kubelet:       kubelet,
-		shutdown:      make(chan struct{}),
+		logger:                      logger,
+		devicesToResourceAttributes: map[string]*K8sResourceAttributes{},
+		mu:                          sync.RWMutex{},
+		kubelet:                     kubelet,
+		shutdown:                    make(chan struct{}),
 	}
 
 	return nameResolver.Start()

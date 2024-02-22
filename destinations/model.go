@@ -39,4 +39,5 @@ type Field struct {
 	ComponentType  string                 `yaml:"componentType"`
 	ComponentProps map[string]interface{} `yaml:"componentProps"`
 	Secret         bool                   `yaml:"secret"`
+	InitialValue   string                 `yaml:"initialValue"`
 }

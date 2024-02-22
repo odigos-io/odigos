@@ -2,10 +2,12 @@ package config
 
 import (
 	"fmt"
+	"strings"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	"strings"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -19,39 +21,45 @@ func (s *Signoz) DestType() common.DestinationType {
 }
 
 func (s *Signoz) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
-	if url, exists := dest.Spec.Data[signozUrlKey]; exists {
-		url = strings.TrimPrefix(url, "http://")
-		url = strings.TrimPrefix(url, "https://")
-		url = strings.TrimSuffix(url, ":4317")
-		signozExporterName := "otlp/signoz"
-		currentConfig.Exporters[signozExporterName] = commonconf.GenericMap{
-			"endpoint": fmt.Sprintf("%s:4317", url),
-			"tls": commonconf.GenericMap{
-				"insecure": true,
-			},
-		}
-		if isTracingEnabled(dest) {
-			currentConfig.Service.Pipelines["traces/signoz"] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{signozExporterName},
-			}
-		}
+	url, exists := dest.Spec.Data[signozUrlKey]
+	if !exists {
+		log.Log.V(0).Info("Signoz url not specified, gateway will not be configured for Signoz")
+		return
+	}
 
-		if isMetricsEnabled(dest) {
-			currentConfig.Service.Pipelines["metrics/signoz"] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{signozExporterName},
-			}
-		}
+	if strings.HasPrefix(url, "https://") {
+		log.Log.V(0).Info("Signoz does not currently supports tls export, gateway will not be configured for Signoz")
+		return
+	}
 
-		if isLoggingEnabled(dest) {
-			currentConfig.Service.Pipelines["logs/signoz"] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{signozExporterName},
-			}
+	url = strings.TrimPrefix(url, "http://")
+	url = strings.TrimSuffix(url, ":4317")
+	signozExporterName := "otlp/signoz-" + dest.Name
+	currentConfig.Exporters[signozExporterName] = commonconf.GenericMap{
+		"endpoint": fmt.Sprintf("%s:4317", url),
+		"tls": commonconf.GenericMap{
+			"insecure": true,
+		},
+	}
+
+	if isTracingEnabled(dest) {
+		tracesPipelineName := "traces/signoz-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
+			Exporters: []string{signozExporterName},
+		}
+	}
+
+	if isMetricsEnabled(dest) {
+		metricsPipelineName := "metrics/signoz-" + dest.Name
+		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{signozExporterName},
+		}
+	}
+
+	if isLoggingEnabled(dest) {
+		logsPipelineName := "logs/signoz-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{signozExporterName},
 		}
 	}
 }

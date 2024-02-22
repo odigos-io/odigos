@@ -47,7 +47,7 @@ var uninstallCmd = &cobra.Command{
 			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already uninstalled: %s\n", err)
 			os.Exit(1)
 		}
-		
+
 		if !cmd.Flag("yes").Changed {
 			fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
 			confirmed, err := confirm.Ask("Are you sure?")
@@ -65,8 +65,6 @@ var uninstallCmd = &cobra.Command{
 			client, cmd, ns, uninstallConfigMaps)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Services",
 			client, cmd, ns, uninstallServices)
-		createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
-			client, cmd, ns, uninstallCRDs)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos RBAC",
 			client, cmd, ns, uninstallRBAC)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
@@ -93,6 +91,8 @@ var uninstallCmd = &cobra.Command{
 			l.Success()
 		}
 
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
+			client, cmd, ns, uninstallCRDs)
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
 }
@@ -114,7 +114,7 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 	if err != nil {
 		return err
 	}
-	
+
 	for _, dep := range deps.Items {
 		if dep.Namespace == consts.DefaultNamespace {
 			continue
@@ -170,7 +170,7 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 	}
 
 	for _, d := range dd.Items {
-		if d.Namespace == consts.DefaultNamespace{
+		if d.Namespace == consts.DefaultNamespace {
 			continue
 		}
 
@@ -275,8 +275,6 @@ func uninstallDeployments(ctx context.Context, cmd *cobra.Command, client *kube.
 
 	return nil
 }
-
-
 
 func uninstallServices(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
 	list, err := client.CoreV1().Services(ns).List(ctx, metav1.ListOptions{
@@ -421,5 +419,5 @@ func uninstallNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Cl
 
 func init() {
 	rootCmd.AddCommand(uninstallCmd)
-	uninstallCmd.Flags().Bool("yes", false, "Skip the confirmation prompt")
+	uninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 }

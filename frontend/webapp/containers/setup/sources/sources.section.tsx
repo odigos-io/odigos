@@ -1,22 +1,27 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { SourcesList, SourcesOptionMenu } from '@/components/setup';
-import { getApplication, getNamespaces } from '@/services';
-import { LoaderWrapper } from './sources.section.styled';
 import { useQuery } from 'react-query';
-import { NOTIFICATION, QUERIES } from '@/utils/constants';
-import { KeyvalLoader } from '@/design.system';
 import { useNotification } from '@/hooks';
-
-const DEFAULT_CONFIG = {
-  selected_all: false,
-  future_selected: false,
-};
+import { KeyvalLoader } from '@/design.system';
+import { NOTIFICATION, QUERIES } from '@/utils/constants';
+import { getApplication, getNamespaces } from '@/services';
+import { SourcesList, SourcesOptionMenu } from '@/components/setup';
+import {
+  LoaderWrapper,
+  SectionContainerWrapper,
+} from './sources.section.styled';
+import {
+  Namespace,
+  SourceConfig,
+  NamespaceConfiguration,
+  SelectedSourcesConfiguration,
+} from '@/types';
 
 const DEFAULT = 'default';
 
-export function SourcesSection({ sectionData, setSectionData }: any) {
-  const [currentNamespace, setCurrentNamespace] = useState<any>(null);
+export function SourcesSection({ sectionData, setSectionData }) {
+  const [currentNamespace, setCurrentNamespace] = useState<Namespace>();
   const [searchFilter, setSearchFilter] = useState<string>('');
+
   const { show, Notification } = useNotification();
   const { isLoading, data, isError, error } = useQuery(
     [QUERIES.API_NAMESPACES],
@@ -26,7 +31,7 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
   useEffect(() => {
     if (!currentNamespace && data) {
       const currentNamespace = data?.namespaces.find(
-        (item: any) => item.name === DEFAULT
+        (item: Namespace) => item.name === DEFAULT
       );
       setCurrentNamespace(currentNamespace);
     }
@@ -46,7 +51,7 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
 
   const namespacesList = useMemo(
     () =>
-      data?.namespaces?.map((item: any, index: number) => ({
+      data?.namespaces?.map((item: Namespace, index: number) => ({
         id: index,
         label: item.name,
       })),
@@ -54,47 +59,66 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
   );
 
   const sourceData = useMemo(() => {
+    if (!currentNamespace) return;
+
     let namespace = sectionData[currentNamespace?.name];
+
     //filter by search query
     namespace = searchFilter
-      ? namespace?.objects.filter((item: any) =>
+      ? namespace?.objects.filter((item: SourceConfig) =>
           item.name.toLowerCase().includes(searchFilter.toLowerCase())
         )
       : namespace?.objects;
     //remove instrumented applications
-    return namespace?.filter((item: any) => !item.instrumentation_effective);
+    return namespace?.filter(
+      (item: SourceConfig) => !item.instrumentation_effective
+    );
   }, [searchFilter, currentNamespace, sectionData]);
 
   async function onNameSpaceChange() {
     if (!currentNamespace || sectionData[currentNamespace?.name]) return;
     const namespace = await getApplication(currentNamespace?.name);
+
+    const { selected } = data.namespaces.find(
+      (item: Namespace) => item.name === currentNamespace?.name
+    );
+
     const newSelectedNamespace = {
       ...sectionData,
       [currentNamespace?.name]: {
-        ...DEFAULT_CONFIG,
+        selected_all: selected,
+        future_selected: selected,
         objects: [...namespace?.applications],
       },
     };
-
     setSectionData(newSelectedNamespace);
+    if (selected) {
+      onSelectAllChange(true, newSelectedNamespace);
+    }
   }
 
-  function handleSourceClick({ item }: any) {
+  function handleSourceClick({ item }: { item: SourceConfig }) {
+    if (!currentNamespace) return;
+
     const objIndex = sectionData[currentNamespace?.name].objects.findIndex(
-      (app) => app.name === item.name
+      (app: SourceConfig) => app.name === item.name
     );
 
     const namespace = sectionData[currentNamespace?.name];
     let objects = [...namespace.objects];
 
-    objects[objIndex].selected = !objects[objIndex].selected;
+    // Make a shallow copy of the object to ensure it's extensible
+    let objectToUpdate = { ...objects[objIndex] };
+
+    objectToUpdate.selected = !objectToUpdate.selected;
+    objects[objIndex] = objectToUpdate;
 
     let currentNamespaceConfig = {
       ...namespace,
       objects,
     };
 
-    if (!objects[objIndex].selected && namespace.selected_all) {
+    if (!objectToUpdate.selected && namespace.selected_all) {
       currentNamespaceConfig = {
         ...currentNamespaceConfig,
         selected_all: false,
@@ -104,14 +128,21 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
     handleSetNewSelectedConfig(currentNamespaceConfig);
   }
 
-  function onSelectAllChange(value: boolean) {
-    const namespace = sectionData[currentNamespace?.name];
-    let objects = [...namespace.objects];
-    objects.forEach((item) => {
-      item.selected = value;
-    });
+  function onSelectAllChange(
+    value: boolean,
+    data?: SelectedSourcesConfiguration
+  ) {
+    if (!currentNamespace) return;
+
+    const currentData = data || sectionData;
+    const namespace = currentData[currentNamespace?.name];
+    let objects = namespace.objects.map((item: SourceConfig) => ({
+      ...item,
+      selected: value,
+    }));
 
     const currentNamespaceConfig = {
+      ...namespace,
       future_selected: value,
       selected_all: value,
       objects,
@@ -120,6 +151,8 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
   }
 
   function onFutureApplyChange(value: boolean) {
+    if (!currentNamespace) return;
+
     const currentNamespaceConfig = {
       ...sectionData[currentNamespace?.name],
       future_selected: value,
@@ -127,15 +160,18 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
     handleSetNewSelectedConfig(currentNamespaceConfig);
   }
 
-  function handleSetNewSelectedConfig(config: any) {
-    const newSelectedNamespaceConfig = {
+  function handleSetNewSelectedConfig(config: NamespaceConfiguration) {
+    if (!currentNamespace) return;
+
+    const newSelectedNamespaceConfig: SelectedSourcesConfiguration = {
       ...sectionData,
       [currentNamespace?.name]: config,
     };
+
     setSectionData(newSelectedNamespaceConfig);
   }
 
-  if (isLoading) {
+  if (isLoading || currentNamespace === undefined) {
     return (
       <LoaderWrapper>
         <KeyvalLoader />
@@ -144,7 +180,7 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
   }
 
   return (
-    <>
+    <SectionContainerWrapper>
       <SourcesOptionMenu
         currentNamespace={currentNamespace}
         setCurrentItem={setCurrentNamespace}
@@ -162,6 +198,6 @@ export function SourcesSection({ sectionData, setSectionData }: any) {
         onClearClick={() => onSelectAllChange(false)}
       />
       <Notification />
-    </>
+    </SectionContainerWrapper>
   );
 }

@@ -1,16 +1,22 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
+	ctrl "sigs.k8s.io/controller-runtime"
+)
+
+var (
+	ErrorChronosphereMissingURL = errors.New("missing CHRONOSPHERE_DOMAIN config")
 )
 
 const (
-	chronosphereCollector = "CHRONOSPHERE_COLLECTOR"
+	chronosphereDomain = "CHRONOSPHERE_DOMAIN"
 )
 
 type Chronosphere struct{}
@@ -20,37 +26,48 @@ func (c *Chronosphere) DestType() common.DestinationType {
 }
 
 func (c *Chronosphere) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
-	if url, exists := dest.Spec.Data[chronosphereCollector]; exists {
-		url = strings.TrimPrefix(url, "http://")
-		url = strings.TrimPrefix(url, "https://")
-		url = strings.TrimSuffix(url, ":4317")
-		url = strings.TrimSuffix(url, "/remote/write")
 
-		if isTracingEnabled(dest) {
-			currentConfig.Exporters["otlp/chronosphere"] = commonconf.GenericMap{
-				"endpoint": fmt.Sprintf("%s:4317", url),
-				"tls": commonconf.GenericMap{
-					"insecure": true,
-				},
-			}
+	url, exists := dest.Spec.Data[chronosphereDomain]
+	if !exists {
+		ctrl.Log.Error(ErrorChronosphereMissingURL, "skipping Chronosphere destination config")
+		return
+	}
 
-			currentConfig.Service.Pipelines["traces/chronosphere"] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{"otlp/chronosphere"},
-			}
-		}
+	company := c.getCompanyNameFromURL(url)
 
-		if isMetricsEnabled(dest) {
-			currentConfig.Exporters["prometheusremotewrite/chronosphere"] = commonconf.GenericMap{
-				"endpoint": fmt.Sprintf("http://%s:3030/remote/write", url),
-			}
+	chronosphereExporterName := "otlp/chronosphere-" + dest.Name
+	currentConfig.Exporters[chronosphereExporterName] = commonconf.GenericMap{
+		"endpoint": fmt.Sprintf("%s.chronosphere.io:443", company),
+		"retry_on_failure": commonconf.GenericMap{
+			"enabled": true,
+		},
+		"compression": "gzip",
+		"headers": commonconf.GenericMap{
+			"API-Token": "${CHRONOSPHERE_API_TOKEN}",
+		},
+	}
 
-			currentConfig.Service.Pipelines["metrics/chronosphere"] = commonconf.Pipeline{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"batch"},
-				Exporters:  []string{"prometheusremotewrite/chronosphere"},
-			}
+	if isTracingEnabled(dest) {
+		tracePipelineName := "traces/chronosphere-" + dest.Name
+		currentConfig.Service.Pipelines[tracePipelineName] = commonconf.Pipeline{
+			Exporters: []string{chronosphereExporterName},
 		}
 	}
+
+	if isMetricsEnabled(dest) {
+		metricsPipelineName := "metrics/chronosphere-" + dest.Name
+		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{chronosphereExporterName},
+		}
+	}
+}
+
+func (c *Chronosphere) getCompanyNameFromURL(url string) string {
+	// Remove trailing slash if present
+	url = strings.TrimSuffix(url, "/")
+
+	// Support the following cases: COMAPNY / COMPANY.chronosphere.io / COMPANY.chronosphere.io:443
+	url = strings.TrimSuffix(url, ".chronosphere.io:443")
+	url = strings.TrimSuffix(url, ".chronosphere.io")
+	return url
 }

@@ -18,43 +18,44 @@ func (d *Datadog) DestType() common.DestinationType {
 }
 
 func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
-	if isTracingEnabled(dest) || isMetricsEnabled(dest) || isLoggingEnabled(dest) {
-		site, exists := dest.Spec.Data[datadogSiteKey]
-		if !exists {
-			log.Log.V(0).Info("Datadog site not specified, gateway will not be configured for Datadog")
-			return
-		}
+	if !isTracingEnabled(dest) && !isLoggingEnabled(dest) && !isMetricsEnabled(dest) {
+		log.Log.V(0).Info("Datadog destination does not have any signals to export")
+		return
+	}
 
-		currentConfig.Exporters["datadog"] = commonconf.GenericMap{
-			"hostname": "odigos-gateway",
-			"api": commonconf.GenericMap{
-				"key":  "${DATADOG_API_KEY}",
-				"site": site,
-			},
-		}
+	site, exists := dest.Spec.Data[datadogSiteKey]
+	if !exists {
+		log.Log.V(0).Info("Datadog site not specified, gateway will not be configured for Datadog")
+		return
+	}
+
+	exporterName := "datadog/" + dest.Name
+	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
+		"hostname": "odigos-gateway",
+		"api": commonconf.GenericMap{
+			"key":  "${DATADOG_API_KEY}",
+			"site": site,
+		},
 	}
 
 	if isTracingEnabled(dest) {
-		currentConfig.Service.Pipelines["traces/datadog"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"datadog"},
+		tracesPipelineName := "traces/datadog-" + dest.Name
+		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		currentConfig.Service.Pipelines["metrics/datadog"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"datadog"},
+		metricsPipelineName := "metrics/datadog-" + dest.Name
+		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		currentConfig.Service.Pipelines["logs/datadog"] = commonconf.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: []string{"batch"},
-			Exporters:  []string{"datadog"},
+		logsPipelineName := "logs/datadog-" + dest.Name
+		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
+			Exporters: []string{exporterName},
 		}
 	}
 }
