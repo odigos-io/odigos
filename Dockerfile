@@ -10,7 +10,8 @@ WORKDIR /workspace/$SERVICE_NAME
 RUN mkdir -p /workspace/build
 # Pre-copy/cache go.mod for pre-downloading dependencies and only redownloading
 COPY $SERVICE_NAME/go.mod $SERVICE_NAME/go.sum ./
-RUN go mod download && go mod verify
+RUN --mount=type=cache,target=/go/pkg \
+    go mod download && go mod verify
 # Copy rest of source code
 COPY $SERVICE_NAME/ .
 # Build for target architecture
