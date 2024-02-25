@@ -18,34 +18,22 @@ limitations under the License.
 package fake
 
 import (
-	v1alpha1 "github.com/keyval-dev/odigos/frontend/generated/clientset/versioned/typed/odigos/v1alpha1"
+	v1alpha1 "github.com/keyval-dev/odigos/frontend/generated/clientset/versioned/typed/actions/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeOdigosV1alpha1 struct {
+type FakeActionsV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeOdigosV1alpha1) Destinations(namespace string) v1alpha1.DestinationInterface {
-	return &FakeDestinations{c, namespace}
-}
-
-func (c *FakeOdigosV1alpha1) InstrumentedApplications(namespace string) v1alpha1.InstrumentedApplicationInterface {
-	return &FakeInstrumentedApplications{c, namespace}
-}
-
-func (c *FakeOdigosV1alpha1) OdigosConfigurations(namespace string) v1alpha1.OdigosConfigurationInterface {
-	return &FakeOdigosConfigurations{c, namespace}
-}
-
-func (c *FakeOdigosV1alpha1) Processors(namespace string) v1alpha1.ProcessorInterface {
-	return &FakeProcessors{c, namespace}
+func (c *FakeActionsV1alpha1) InsertClusterAttributes(namespace string) v1alpha1.InsertClusterAttributeInterface {
+	return &FakeInsertClusterAttributes{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeOdigosV1alpha1) RESTClient() rest.Interface {
+func (c *FakeActionsV1alpha1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }
