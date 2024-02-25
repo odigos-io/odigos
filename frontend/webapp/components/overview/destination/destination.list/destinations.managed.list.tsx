@@ -18,7 +18,6 @@ export function DestinationsManagedList({
   onMenuButtonClick,
 }: DestinationsManagedListProps) {
   function renderDestinations() {
-    console.log('object');
     return data.map((destination: any) => (
       <DestinationManagedCard
         onClick={() => onItemClick(destination)}

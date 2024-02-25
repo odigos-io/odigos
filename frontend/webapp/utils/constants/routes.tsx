@@ -12,4 +12,5 @@ export const ROUTES = {
   MANAGE_SOURCE: '/sources/manage',
   CHOOSE_DESTINATION: '/choose-destination',
   CHOOSE_SOURCES: '/choose-sources',
+  CHOOSE_ACTIONS: '/choose-action',
 };
