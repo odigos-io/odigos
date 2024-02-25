@@ -4,3 +4,4 @@ export { DestinationsManagedList } from './destination/destination.list/destinat
 export { SourcesManagedList } from './sources/sources.manage.list/sources.manage.list';
 export { SourcesActionMenu } from './sources/action.menu/sources.action.menu';
 export { DeleteSource } from './sources/delete.source/delete.source';
+export * from './add.item.menu';
