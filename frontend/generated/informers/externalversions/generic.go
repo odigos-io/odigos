@@ -20,7 +20,8 @@ package externalversions
 import (
 	"fmt"
 
-	v1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	v1alpha1 "github.com/keyval-dev/odigos/api/odigos/actions/v1alpha1"
+	odigosv1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -51,13 +52,19 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=odigos.io, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("destinations"):
+	// Group=actions, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("insertclusterattributes"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().InsertClusterAttributes().Informer()}, nil
+
+		// Group=odigos.io, Version=v1alpha1
+	case odigosv1alpha1.SchemeGroupVersion.WithResource("destinations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Destinations().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("instrumentedapplications"):
+	case odigosv1alpha1.SchemeGroupVersion.WithResource("instrumentedapplications"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().InstrumentedApplications().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("odigosconfigurations"):
+	case odigosv1alpha1.SchemeGroupVersion.WithResource("odigosconfigurations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().OdigosConfigurations().Informer()}, nil
+	case odigosv1alpha1.SchemeGroupVersion.WithResource("processors"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Processors().Informer()}, nil
 
 	}
 
