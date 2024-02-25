@@ -18,7 +18,8 @@ FROM keyval/odiglet-base:v1.0 as builder
 WORKDIR /go/src/github.com/keyval-dev/odigos
 COPY . .
 WORKDIR ./odiglet/
-RUN go mod download && go mod verify
+RUN --mount=type=cache,target=/go/pkg \
+    go mod download && go mod verify
 # Go does not call go generate on dependencies, so we need to do it manually
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
