@@ -76,6 +76,22 @@
       ]
     },
     {
+      "group": "Generated Data",
+      "pages": [
+        {
+          "group": "Enrich with OpenTelemetry APIs",
+          "pages": [
+            "data/otel-apis",
+            "data/java",
+            "data/python",
+            "data/javascript",
+            "data/golang",
+            "data/dotnet"
+          ]
+        }
+      ]
+    },
+    {
       "group": "Observability Backends",
       "pages": [    
         "backends/awss3",
