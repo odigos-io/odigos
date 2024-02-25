@@ -19,7 +19,7 @@ const EmptyListWrapper = styled.div`
   justify-content: center;
   align-items: center;
 `;
-const BUTTON_STYLES = { gap: 10, width: 224, height: 40 };
+const BUTTON_STYLES = { gap: 10, height: 40 };
 export function EmptyList({ title, btnTitle, btnAction }: EmptyListProps) {
   return (
     <EmptyListWrapper>

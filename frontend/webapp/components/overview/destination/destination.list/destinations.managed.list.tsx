@@ -1,12 +1,13 @@
 import React from 'react';
-import DestinationManagedCard from './destination.managed.card';
-import { KeyvalText, KeyvalButton } from '@/design.system';
-import { Plus } from '@/assets/icons/overview';
-import { OVERVIEW } from '@/utils/constants';
 import theme from '@/styles/palette';
-import { MenuWrapper, ManagedListWrapper } from './destination.list.styled';
-import { Destination } from '@/types/destinations';
+import { OVERVIEW } from '@/utils/constants';
+import { Plus } from '@/assets/icons/overview';
 import { EmptyList } from '@/components/lists';
+import { AddItemMenu } from '../../add.item.menu';
+import { Destination } from '@/types/destinations';
+import { KeyvalText, KeyvalButton } from '@/design.system';
+import DestinationManagedCard from './destination.managed.card';
+import { MenuWrapper, ManagedListWrapper } from './destination.list.styled';
 
 const BUTTON_STYLES = { gap: 10, width: 224, height: 40 };
 interface DestinationsManagedListProps {
@@ -40,15 +41,12 @@ export function DestinationsManagedList({
         />
       ) : (
         <>
-          <MenuWrapper>
-            <KeyvalText>{`${data.length} ${OVERVIEW.MENU.DESTINATIONS}`}</KeyvalText>
-            <KeyvalButton onClick={onMenuButtonClick} style={BUTTON_STYLES}>
-              <Plus />
-              <KeyvalText size={16} weight={700} color={theme.text.dark_button}>
-                {OVERVIEW.ADD_NEW_DESTINATION}
-              </KeyvalText>
-            </KeyvalButton>
-          </MenuWrapper>
+          <AddItemMenu
+            length={data?.length}
+            onClick={onMenuButtonClick}
+            btnLabel={OVERVIEW.ADD_NEW_DESTINATION}
+            lengthLabel={OVERVIEW.MENU.DESTINATIONS}
+          />
           <ManagedListWrapper>{renderDestinations()}</ManagedListWrapper>
         </>
       )}
