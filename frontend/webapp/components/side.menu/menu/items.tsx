@@ -30,4 +30,13 @@ export const MENU_ITEMS: MenuItem[] = [
     },
     navigate: ROUTES.DESTINATIONS,
   },
+  {
+    id: 4,
+    name: OVERVIEW.MENU.ACTIONS,
+    icons: {
+      focus: () => <ICONS.FocusAction width={24} height={24} />,
+      notFocus: () => <ICONS.UnFocusAction width={24} height={24} />,
+    },
+    navigate: ROUTES.ACTIONS,
+  },
 ];
