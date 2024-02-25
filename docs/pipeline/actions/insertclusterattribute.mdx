@@ -3,7 +3,7 @@ title: "Insert Cluster Attributes"
 sidebarTitle: "Insert Cluster Attributes"
 ---
 
-The "Insert Cluster Attributes" Oridog Action can be used to add resource attributes 
+The "Insert Cluster Attributes" Odigos Action can be used to add resource attributes 
 to telemetry signals originated from the k8s cluster where the Odigos is running.
 
 ### Mechanism
@@ -23,7 +23,7 @@ Create a file named `insert-cluster-name.yaml` with the following content:
 
 ```yaml
 apiVersion: actions.odigos.io/v1alpha1
-kind: InsertClusterAttributes
+kind: InsertClusterAttribute
 metadata:
   name: insert-cluster-name
   namespace: odigos-system

@@ -20,44 +20,29 @@ package v1alpha1
 import (
 	"net/http"
 
-	v1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	v1alpha1 "github.com/keyval-dev/odigos/api/odigos/actions/v1alpha1"
 	"github.com/keyval-dev/odigos/frontend/generated/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 
-type OdigosV1alpha1Interface interface {
+type ActionsV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	DestinationsGetter
-	InstrumentedApplicationsGetter
-	OdigosConfigurationsGetter
-	ProcessorsGetter
+	InsertClusterAttributesGetter
 }
 
-// OdigosV1alpha1Client is used to interact with features provided by the odigos.io group.
-type OdigosV1alpha1Client struct {
+// ActionsV1alpha1Client is used to interact with features provided by the actions group.
+type ActionsV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *OdigosV1alpha1Client) Destinations(namespace string) DestinationInterface {
-	return newDestinations(c, namespace)
+func (c *ActionsV1alpha1Client) InsertClusterAttributes(namespace string) InsertClusterAttributeInterface {
+	return newInsertClusterAttributes(c, namespace)
 }
 
-func (c *OdigosV1alpha1Client) InstrumentedApplications(namespace string) InstrumentedApplicationInterface {
-	return newInstrumentedApplications(c, namespace)
-}
-
-func (c *OdigosV1alpha1Client) OdigosConfigurations(namespace string) OdigosConfigurationInterface {
-	return newOdigosConfigurations(c, namespace)
-}
-
-func (c *OdigosV1alpha1Client) Processors(namespace string) ProcessorInterface {
-	return newProcessors(c, namespace)
-}
-
-// NewForConfig creates a new OdigosV1alpha1Client for the given config.
+// NewForConfig creates a new ActionsV1alpha1Client for the given config.
 // NewForConfig is equivalent to NewForConfigAndClient(c, httpClient),
 // where httpClient was generated with rest.HTTPClientFor(c).
-func NewForConfig(c *rest.Config) (*OdigosV1alpha1Client, error) {
+func NewForConfig(c *rest.Config) (*ActionsV1alpha1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -69,9 +54,9 @@ func NewForConfig(c *rest.Config) (*OdigosV1alpha1Client, error) {
 	return NewForConfigAndClient(&config, httpClient)
 }
 
-// NewForConfigAndClient creates a new OdigosV1alpha1Client for the given config and http client.
+// NewForConfigAndClient creates a new ActionsV1alpha1Client for the given config and http client.
 // Note the http client provided takes precedence over the configured transport values.
-func NewForConfigAndClient(c *rest.Config, h *http.Client) (*OdigosV1alpha1Client, error) {
+func NewForConfigAndClient(c *rest.Config, h *http.Client) (*ActionsV1alpha1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -80,12 +65,12 @@ func NewForConfigAndClient(c *rest.Config, h *http.Client) (*OdigosV1alpha1Clien
 	if err != nil {
 		return nil, err
 	}
-	return &OdigosV1alpha1Client{client}, nil
+	return &ActionsV1alpha1Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new OdigosV1alpha1Client for the given config and
+// NewForConfigOrDie creates a new ActionsV1alpha1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *OdigosV1alpha1Client {
+func NewForConfigOrDie(c *rest.Config) *ActionsV1alpha1Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -93,9 +78,9 @@ func NewForConfigOrDie(c *rest.Config) *OdigosV1alpha1Client {
 	return client
 }
 
-// New creates a new OdigosV1alpha1Client for the given RESTClient.
-func New(c rest.Interface) *OdigosV1alpha1Client {
-	return &OdigosV1alpha1Client{c}
+// New creates a new ActionsV1alpha1Client for the given RESTClient.
+func New(c rest.Interface) *ActionsV1alpha1Client {
+	return &ActionsV1alpha1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -113,7 +98,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *OdigosV1alpha1Client) RESTClient() rest.Interface {
+func (c *ActionsV1alpha1Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

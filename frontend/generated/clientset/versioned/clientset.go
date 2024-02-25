@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
+	actionsv1alpha1 "github.com/keyval-dev/odigos/frontend/generated/clientset/versioned/typed/actions/v1alpha1"
 	odigosv1alpha1 "github.com/keyval-dev/odigos/frontend/generated/clientset/versioned/typed/odigos/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -29,13 +30,20 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
+	ActionsV1alpha1() actionsv1alpha1.ActionsV1alpha1Interface
 	OdigosV1alpha1() odigosv1alpha1.OdigosV1alpha1Interface
 }
 
 // Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	odigosV1alpha1 *odigosv1alpha1.OdigosV1alpha1Client
+	actionsV1alpha1 *actionsv1alpha1.ActionsV1alpha1Client
+	odigosV1alpha1  *odigosv1alpha1.OdigosV1alpha1Client
+}
+
+// ActionsV1alpha1 retrieves the ActionsV1alpha1Client
+func (c *Clientset) ActionsV1alpha1() actionsv1alpha1.ActionsV1alpha1Interface {
+	return c.actionsV1alpha1
 }
 
 // OdigosV1alpha1 retrieves the OdigosV1alpha1Client
@@ -87,6 +95,10 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs Clientset
 	var err error
+	cs.actionsV1alpha1, err = actionsv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	if err != nil {
+		return nil, err
+	}
 	cs.odigosV1alpha1, err = odigosv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
@@ -112,6 +124,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
+	cs.actionsV1alpha1 = actionsv1alpha1.New(c)
 	cs.odigosV1alpha1 = odigosv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
