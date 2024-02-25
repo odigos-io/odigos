@@ -18,6 +18,7 @@ limitations under the License.
 package scheme
 
 import (
+	actionsv1alpha1 "github.com/keyval-dev/odigos/api/odigos/actions/v1alpha1"
 	odigosv1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -30,6 +31,7 @@ var Scheme = runtime.NewScheme()
 var Codecs = serializer.NewCodecFactory(Scheme)
 var ParameterCodec = runtime.NewParameterCodec(Scheme)
 var localSchemeBuilder = runtime.SchemeBuilder{
+	actionsv1alpha1.AddToScheme,
 	odigosv1alpha1.AddToScheme,
 }
 

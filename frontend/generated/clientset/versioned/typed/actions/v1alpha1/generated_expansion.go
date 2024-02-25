@@ -17,10 +17,4 @@ limitations under the License.
 
 package v1alpha1
 
-type DestinationExpansion interface{}
-
-type InstrumentedApplicationExpansion interface{}
-
-type OdigosConfigurationExpansion interface{}
-
-type ProcessorExpansion interface{}
+type InsertClusterAttributeExpansion interface{}
