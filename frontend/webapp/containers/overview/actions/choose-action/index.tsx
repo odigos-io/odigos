@@ -1,4 +1,5 @@
 import React from 'react';
+import { ActionItemCard } from '@/types';
 import { NewActionCard } from '@/components';
 import { KeyvalLink, KeyvalText } from '@/design.system';
 import { ACTION, ACTION_DOCS_LINK, OVERVIEW } from '@/utils';
@@ -8,6 +9,7 @@ import {
   ActionsListWrapper,
   DescriptionWrapper,
 } from './styled';
+import { useRouter } from 'next/navigation';
 
 const ITEMS = [
   {
@@ -27,9 +29,11 @@ const ITEMS = [
   },
 ];
 
-export function ChooseActionContainer() {
-  function onItemClick() {
-    console.log('Item clicked');
+export function ChooseActionContainer(): React.JSX.Element {
+  const router = useRouter();
+
+  function onItemClick({ item }: { item: ActionItemCard }) {
+    router.push(`/create-action?type=${item.type}`);
   }
 
   function renderActionsList() {

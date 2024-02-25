@@ -93,6 +93,7 @@ export const OVERVIEW = {
   CONFIRM_SOURCE_DELETE: 'I want to delete this source',
   CONNECT: 'Connect',
   REPORTED_NAME: 'Override service.name',
+  CREATE_ACTION: 'Create Action',
   ACTION_DESCRIPTION:
     'Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your Odigos Destinations.',
 };
