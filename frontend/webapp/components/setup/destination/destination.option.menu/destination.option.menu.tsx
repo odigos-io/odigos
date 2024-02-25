@@ -1,3 +1,4 @@
+'use client';
 import React, { useEffect, useMemo } from 'react';
 import { SETUP } from '@/utils/constants';
 import { KeyvalDropDown, KeyvalSearchInput, KeyvalText } from '@/design.system';

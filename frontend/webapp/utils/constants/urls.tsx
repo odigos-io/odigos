@@ -25,4 +25,7 @@ const QUERIES = {
 const SLACK_INVITE_LINK =
   'https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email';
 
+export const ACTION_DOCS_LINK =
+  'https://docs.odigos.io/pipeline/actions/introduction';
+
 export { API, QUERIES, SLACK_INVITE_LINK };
