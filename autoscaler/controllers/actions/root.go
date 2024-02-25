@@ -8,8 +8,8 @@ import (
 func SetupWithManager(mgr ctrl.Manager) error {
 
 	err := ctrl.NewControllerManagedBy(mgr).
-		For(&v1.InsertClusterAttributes{}).
-		Complete(&InsertClusterAttributesReconciler{
+		For(&v1.InsertClusterAttribute{}).
+		Complete(&InsertClusterAttributeReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})

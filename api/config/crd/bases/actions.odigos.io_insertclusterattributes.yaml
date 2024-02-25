@@ -9,16 +9,16 @@ metadata:
 spec:
   group: actions.odigos.io
   names:
-    kind: InsertClusterAttributes
-    listKind: InsertClusterAttributesList
+    kind: InsertClusterAttribute
+    listKind: InsertClusterAttributeList
     plural: insertclusterattributes
-    singular: insertclusterattributes
+    singular: insertclusterattribute
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: InsertClusterAttributes is the Schema for the insertclusterattributes
+        description: InsertClusterAttribute is the Schema for the insertclusterattribute
           odigos action API
         properties:
           apiVersion:
@@ -34,8 +34,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: InsertClusterAttributesSpec defines the desired state of
-              InsertClusterAttributes action
+            description: InsertClusterAttributeSpec defines the desired state of InsertClusterAttribute
+              action
             properties:
               actionName:
                 type: string
@@ -71,8 +71,8 @@ spec:
             - signals
             type: object
           status:
-            description: InsertClusterAttributesStatus defines the observed state
-              of InsertClusterAttributes action
+            description: InsertClusterAttributeStatus defines the observed state of
+              InsertClusterAttribute action
             properties:
               conditions:
                 description: 'Represents the observations of a insertclusterattributes''s
