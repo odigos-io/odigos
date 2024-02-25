@@ -30,14 +30,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type InsertClusterAttributesReconciler struct {
+type InsertClusterAttributeReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *InsertClusterAttributesReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *InsertClusterAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling InsertClusterAttributes action")
+	logger.V(0).Info("Reconciling InsertClusterAttribute action")
 
 	action := &actionv1.InsertClusterAttribute{}
 	err := r.Get(ctx, req.NamespacedName, action)
@@ -75,7 +75,7 @@ type insertclusterattributesConfig struct {
 	Attributes []insertclusterattributesAttributeConfig `json:"attributes"`
 }
 
-func (r *InsertClusterAttributesReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.InsertClusterAttribute, reason string, msg string) error {
+func (r *InsertClusterAttributeReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.InsertClusterAttribute, reason string, msg string) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               ActionTransformedToProcessorType,
 		Status:             metav1.ConditionFalse,
@@ -93,7 +93,7 @@ func (r *InsertClusterAttributesReconciler) ReportReconciledToProcessorFailed(ct
 	return nil
 }
 
-func (r *InsertClusterAttributesReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.InsertClusterAttribute) error {
+func (r *InsertClusterAttributeReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.InsertClusterAttribute) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               ActionTransformedToProcessorType,
 		Status:             metav1.ConditionTrue,
@@ -111,7 +111,7 @@ func (r *InsertClusterAttributesReconciler) ReportReconciledToProcessor(ctx cont
 	return nil
 }
 
-func (r *InsertClusterAttributesReconciler) convertToProcessor(action *actionv1.InsertClusterAttribute) (*v1.Processor, error) {
+func (r *InsertClusterAttributeReconciler) convertToProcessor(action *actionv1.InsertClusterAttribute) (*v1.Processor, error) {
 
 	config := insertclusterattributesConfig{
 		Attributes: []insertclusterattributesAttributeConfig{},
