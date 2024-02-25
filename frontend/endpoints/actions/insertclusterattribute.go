@@ -8,32 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type InsertClusterAttributesResponse struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-}
-
-func GetActionInsertClusterAttributes(c *gin.Context, odigosns string) {
-
-	actions, err := kube.DefaultClient.ActionsClient.InsertClusterAttributes(odigosns).List(c, metav1.ListOptions{})
-	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	response := make([]InsertClusterAttributesResponse, 0, len(actions.Items))
-	for _, action := range actions.Items {
-		response = append(response, InsertClusterAttributesResponse{
-			Id:   action.Name,
-			Name: action.Spec.ActionName,
-		})
-	}
-
-	c.JSON(200, response)
-}
-
 func GetInsertClusterAttribute(c *gin.Context, odigosns string, id string) {
 	action, err := kube.DefaultClient.ActionsClient.InsertClusterAttributes(odigosns).Get(c, id, metav1.GetOptions{})
 	if err != nil {
