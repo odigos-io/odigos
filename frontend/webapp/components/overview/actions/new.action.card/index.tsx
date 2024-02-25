@@ -1,21 +1,21 @@
 import React from 'react';
+import theme from '@/styles/palette';
 import styled from 'styled-components';
+import { ACTION_ICONS } from '@/assets';
 import { ActionItemCard } from '@/types';
 import { KeyvalCard, KeyvalText } from '@/design.system';
-import theme from '@/styles/palette';
-import { ACTION_ICONS } from '@/assets';
 
 interface NewActionCardProps {
   item: ActionItemCard;
+  onClick: () => void;
 }
 
 const CardContentWrapper = styled.div`
   padding: 12px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  max-width: 220px;
+  height: 100%;
+  gap: 8px;
   border: 1px solid transparent;
   cursor: pointer;
   &:hover {
@@ -23,12 +23,13 @@ const CardContentWrapper = styled.div`
     border: 1px solid ${theme.colors.secondary};
   }
 `;
-export function NewActionCard({ item }: NewActionCardProps) {
+
+export function NewActionCard({ item, onClick }: NewActionCardProps) {
   const SvgIcon = ACTION_ICONS[item.icon];
 
   return (
     <KeyvalCard>
-      <CardContentWrapper>
+      <CardContentWrapper onClick={onClick}>
         <SvgIcon style={{ width: 56, height: 56 }} />
         <KeyvalText size={18} weight={700}>
           {item.title}
