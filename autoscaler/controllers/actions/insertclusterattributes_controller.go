@@ -39,7 +39,7 @@ func (r *InsertClusterAttributesReconciler) Reconcile(ctx context.Context, req c
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling InsertClusterAttributes action")
 
-	action := &actionv1.InsertClusterAttributes{}
+	action := &actionv1.InsertClusterAttribute{}
 	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -75,7 +75,7 @@ type insertclusterattributesConfig struct {
 	Attributes []insertclusterattributesAttributeConfig `json:"attributes"`
 }
 
-func (r *InsertClusterAttributesReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.InsertClusterAttributes, reason string, msg string) error {
+func (r *InsertClusterAttributesReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.InsertClusterAttribute, reason string, msg string) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               ActionTransformedToProcessorType,
 		Status:             metav1.ConditionFalse,
@@ -93,7 +93,7 @@ func (r *InsertClusterAttributesReconciler) ReportReconciledToProcessorFailed(ct
 	return nil
 }
 
-func (r *InsertClusterAttributesReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.InsertClusterAttributes) error {
+func (r *InsertClusterAttributesReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.InsertClusterAttribute) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               ActionTransformedToProcessorType,
 		Status:             metav1.ConditionTrue,
@@ -111,7 +111,7 @@ func (r *InsertClusterAttributesReconciler) ReportReconciledToProcessor(ctx cont
 	return nil
 }
 
-func (r *InsertClusterAttributesReconciler) convertToProcessor(action *actionv1.InsertClusterAttributes) (*v1.Processor, error) {
+func (r *InsertClusterAttributesReconciler) convertToProcessor(action *actionv1.InsertClusterAttribute) (*v1.Processor, error) {
 
 	config := insertclusterattributesConfig{
 		Attributes: []insertclusterattributesAttributeConfig{},
