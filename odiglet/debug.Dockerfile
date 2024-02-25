@@ -18,10 +18,15 @@ FROM keyval/odiglet-base:v1.0 as builder
 WORKDIR /go/src/github.com/keyval-dev/odigos
 COPY . .
 WORKDIR ./odiglet/
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg \
+    go mod download && go mod verify
 # Go does not call go generate on dependencies, so we need to do it manually
-RUN cd $(go list -m -f '{{.Dir}}' "go.opentelemetry.io/auto") && make generate
-RUN GOOS=linux go build -gcflags "all=-N -l" -o odiglet cmd/main.go
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    bash -c 'cd $(go list -m -f "{{.Dir}}" "go.opentelemetry.io/auto") && make generate'
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=linux go build -gcflags "all=-N -l" -o odiglet cmd/main.go
 
 # Install delve
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
