@@ -11,6 +11,7 @@ export default function CreateActionPage() {
     router.back();
   }
 
+  console.log('object');
   return (
     <>
       <OverviewHeader
