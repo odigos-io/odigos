@@ -1,9 +1,13 @@
 import React from 'react';
-import styled from 'styled-components';
 import { NewActionCard } from '@/components';
 import { KeyvalLink, KeyvalText } from '@/design.system';
-
-const ACTION_DOCS_LINK = 'https://docs.odigos.io/pipeline/actions/introduction';
+import { ACTION, ACTION_DOCS_LINK, OVERVIEW } from '@/utils';
+import {
+  LinkWrapper,
+  ActionCardWrapper,
+  ActionsListWrapper,
+  DescriptionWrapper,
+} from './styled';
 
 const ITEMS = [
   {
@@ -23,30 +27,6 @@ const ITEMS = [
   },
 ];
 
-const ActionsListWrapper = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-  padding: 0 24px 24px 24px;
-  overflow-y: auto;
-  align-items: start;
-  max-height: 100%;
-  padding-bottom: 220px;
-  box-sizing: border-box;
-`;
-
-const DescriptionWrapper = styled.div`
-  padding: 24px;
-  gap: 4px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-`;
-
-const LinkWrapper = styled.div`
-  width: 100px;
-`;
-
 export function ChooseActionContainer() {
   function onItemClick() {
     console.log('Item clicked');
@@ -55,9 +35,9 @@ export function ChooseActionContainer() {
   function renderActionsList() {
     return ITEMS.map((item) => {
       return (
-        <div style={{ height: '100%', maxHeight: 220 }} key={item.id}>
+        <ActionCardWrapper key={item.id}>
           <NewActionCard item={item} onClick={onItemClick} />
-        </div>
+        </ActionCardWrapper>
       );
     });
   }
@@ -65,14 +45,10 @@ export function ChooseActionContainer() {
   return (
     <>
       <DescriptionWrapper>
-        <KeyvalText>
-          {
-            'Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your Odigos Destinations.'
-          }
-        </KeyvalText>
+        <KeyvalText>{OVERVIEW.ACTION_DESCRIPTION}</KeyvalText>
         <LinkWrapper>
           <KeyvalLink
-            value="Learn more"
+            value={ACTION.LEARN_MORE}
             onClick={() => window.open(ACTION_DOCS_LINK, '_blank')}
           />
         </LinkWrapper>

@@ -93,11 +93,14 @@ export const OVERVIEW = {
   CONFIRM_SOURCE_DELETE: 'I want to delete this source',
   CONNECT: 'Connect',
   REPORTED_NAME: 'Override service.name',
+  ACTION_DESCRIPTION:
+    'Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your Odigos Destinations.',
 };
 
 export const ACTION = {
   SAVE: 'Save',
   CONTACT_US: 'Contact Us',
+  LEARN_MORE: 'Learn more',
 };
 
 export const NOTIFICATION = {
