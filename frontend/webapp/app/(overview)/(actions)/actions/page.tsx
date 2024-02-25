@@ -1,10 +1,14 @@
 'use client';
-import React, { useEffect } from 'react';
+import React from 'react';
+import { OVERVIEW } from '@/utils';
+import { OverviewHeader } from '@/components';
+import { ManagedActionsContainer } from '@/containers';
 
 export default function OverviewPage() {
   return (
     <>
-      <div>Actions</div>
+      <OverviewHeader title={OVERVIEW.MENU.ACTIONS} />
+      <ManagedActionsContainer />
     </>
   );
 }
