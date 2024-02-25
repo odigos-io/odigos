@@ -1,15 +1,11 @@
 import React from 'react';
-import theme from '@/styles/palette';
 import { OVERVIEW } from '@/utils/constants';
-import { Plus } from '@/assets/icons/overview';
 import { EmptyList } from '@/components/lists';
 import { AddItemMenu } from '../../add.item.menu';
 import { Destination } from '@/types/destinations';
-import { KeyvalText, KeyvalButton } from '@/design.system';
+import { ManagedListWrapper } from './destination.list.styled';
 import DestinationManagedCard from './destination.managed.card';
-import { MenuWrapper, ManagedListWrapper } from './destination.list.styled';
 
-const BUTTON_STYLES = { gap: 10, width: 224, height: 40 };
 interface DestinationsManagedListProps {
   data: Destination[];
   onItemClick: (destination: Destination) => void;
