@@ -112,10 +112,10 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.DELETE("/destinations/:id", func(c *gin.Context) { endpoints.DeleteDestination(c, flags.Namespace) })
 
 		apis.GET("/actions", func(c *gin.Context) { actions.GetActions(c, flags.Namespace) })
-		apis.GET("/actions/types/InsertClusterAttribute/:id", func(c *gin.Context) { actions.GetInsertClusterAttribute(c, flags.Namespace, c.Param("id")) })
-		apis.POST("/actions/types/InsertClusterAttribute", func(c *gin.Context) { actions.CreateInsertClusterAttribute(c, flags.Namespace) })
-		apis.PUT("/actions/types/InsertClusterAttribute/:id", func(c *gin.Context) { actions.UpdateInsertClusterAttribute(c, flags.Namespace, c.Param("id")) })
-		apis.DELETE("/actions/types/InsertClusterAttribute/:id", func(c *gin.Context) { actions.DeleteInsertClusterAttribute(c, flags.Namespace, c.Param("id")) })
+		apis.GET("/actions/types/AddClusterInfo/:id", func(c *gin.Context) { actions.GetAddClusterInfo(c, flags.Namespace, c.Param("id")) })
+		apis.POST("/actions/types/AddClusterInfo", func(c *gin.Context) { actions.CreateAddClusterInfo(c, flags.Namespace) })
+		apis.PUT("/actions/types/AddClusterInfo/:id", func(c *gin.Context) { actions.UpdateAddClusterInfo(c, flags.Namespace, c.Param("id")) })
+		apis.DELETE("/actions/types/AddClusterInfo/:id", func(c *gin.Context) { actions.DeleteAddClusterInfo(c, flags.Namespace, c.Param("id")) })
 	}
 
 	return r, nil
