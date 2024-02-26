@@ -27,8 +27,8 @@ type FakeActionsV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeActionsV1alpha1) InsertClusterAttributes(namespace string) v1alpha1.InsertClusterAttributeInterface {
-	return &FakeInsertClusterAttributes{c, namespace}
+func (c *FakeActionsV1alpha1) AddClusterInfos(namespace string) v1alpha1.AddClusterInfoInterface {
+	return &FakeAddClusterInfos{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

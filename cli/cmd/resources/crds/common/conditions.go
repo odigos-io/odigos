@@ -16,7 +16,7 @@ var (
 	}
 
 	Conditions = apiextensionsv1.JSONSchemaProps{
-		Description: "Represents the observations of a insertclusterattributes's current state. Known .status.conditions.type are: \"Available\", \"Progressing\"",
+		Description: "Represents the observations of a addclusterinfos's current state. Known .status.conditions.type are: \"Available\", \"Progressing\"",
 		Type:        "array",
 		Items: &apiextensionsv1.JSONSchemaPropsOrArray{
 			Schema: &apiextensionsv1.JSONSchemaProps{

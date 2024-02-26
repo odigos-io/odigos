@@ -8,8 +8,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func GetInsertClusterAttribute(c *gin.Context, odigosns string, id string) {
-	action, err := kube.DefaultClient.ActionsClient.InsertClusterAttributes(odigosns).Get(c, id, metav1.GetOptions{})
+func GetAddClusterInfo(c *gin.Context, odigosns string, id string) {
+	action, err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).Get(c, id, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			c.JSON(404, gin.H{
@@ -26,8 +26,8 @@ func GetInsertClusterAttribute(c *gin.Context, odigosns string, id string) {
 	c.JSON(200, action.Spec)
 }
 
-func CreateInsertClusterAttribute(c *gin.Context, odigosns string) {
-	var action v1alpha1.InsertClusterAttribute
+func CreateAddClusterInfo(c *gin.Context, odigosns string) {
+	var action v1alpha1.AddClusterInfo
 	if err := c.ShouldBindJSON(&action.Spec); err != nil {
 		c.JSON(400, gin.H{
 			"error": err.Error(),
@@ -35,7 +35,7 @@ func CreateInsertClusterAttribute(c *gin.Context, odigosns string) {
 		return
 	}
 	action.GenerateName = "ica-"
-	generatedAction, err := kube.DefaultClient.ActionsClient.InsertClusterAttributes(odigosns).Create(c, &action, metav1.CreateOptions{})
+	generatedAction, err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).Create(c, &action, metav1.CreateOptions{})
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": err.Error(),
@@ -47,8 +47,8 @@ func CreateInsertClusterAttribute(c *gin.Context, odigosns string) {
 	})
 }
 
-func UpdateInsertClusterAttribute(c *gin.Context, odigosns string, id string) {
-	action, err := kube.DefaultClient.ActionsClient.InsertClusterAttributes(odigosns).Get(c, id, metav1.GetOptions{})
+func UpdateAddClusterInfo(c *gin.Context, odigosns string, id string) {
+	action, err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).Get(c, id, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			c.JSON(404, gin.H{
@@ -62,7 +62,7 @@ func UpdateInsertClusterAttribute(c *gin.Context, odigosns string, id string) {
 		}
 		return
 	}
-	action.Spec = v1alpha1.InsertClusterAttributeSpec{}
+	action.Spec = v1alpha1.AddClusterInfoSpec{}
 	if err := c.ShouldBindJSON(&action.Spec); err != nil {
 		c.JSON(400, gin.H{
 			"error": err.Error(),
@@ -71,7 +71,7 @@ func UpdateInsertClusterAttribute(c *gin.Context, odigosns string, id string) {
 	}
 	action.Name = id
 
-	_, err = kube.DefaultClient.ActionsClient.InsertClusterAttributes(odigosns).Update(c, action, metav1.UpdateOptions{})
+	_, err = kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).Update(c, action, metav1.UpdateOptions{})
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": err.Error(),
@@ -81,8 +81,8 @@ func UpdateInsertClusterAttribute(c *gin.Context, odigosns string, id string) {
 	c.JSON(204, nil)
 }
 
-func DeleteInsertClusterAttribute(c *gin.Context, odigosns string, id string) {
-	err := kube.DefaultClient.ActionsClient.InsertClusterAttributes(odigosns).Delete(c, id, metav1.DeleteOptions{})
+func DeleteAddClusterInfo(c *gin.Context, odigosns string, id string) {
+	err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).Delete(c, id, metav1.DeleteOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			c.JSON(404, gin.H{
