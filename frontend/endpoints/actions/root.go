@@ -14,7 +14,7 @@ type IcaInstanceResponse struct {
 
 func GetActions(c *gin.Context, odigosns string) {
 
-	icaActions, err := kube.DefaultClient.ActionsClient.InsertClusterAttributes(odigosns).List(c, metav1.ListOptions{})
+	icaActions, err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).List(c, metav1.ListOptions{})
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": err.Error(),

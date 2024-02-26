@@ -1,9 +1,9 @@
 ---
-title: "Insert Cluster Attribute"
-sidebarTitle: "Insert Cluster Attribute"
+title: "Add Cluster Info"
+sidebarTitle: "Add Cluster Info"
 ---
 
-The "Insert Cluster Attribute" Odigos Action can be used to add resource attributes 
+The "Add Cluster Info" Odigos Action can be used to add resource attributes 
 to telemetry signals originated from the k8s cluster where the Odigos is running.
 
 ### Mechanism
@@ -23,7 +23,7 @@ Create a file named `insert-cluster-name.yaml` with the following content:
 
 ```yaml
 apiVersion: actions.odigos.io/v1alpha1
-kind: InsertClusterAttribute
+kind: AddClusterInfo
 metadata:
   name: insert-cluster-name
   namespace: odigos-system
@@ -46,7 +46,7 @@ kubectl apply -f insert-cluster-name.yaml
 
 ### Full Action Options
 
-The full list of options available for the "InsertClusterAttribute" action are:
+The full list of options available for the "AddClusterInfo" action are:
 
 - `clusterAttributes` (required): An array of attributes to be added to the telemetry signals. Each attribute is defined by the following fields:
 

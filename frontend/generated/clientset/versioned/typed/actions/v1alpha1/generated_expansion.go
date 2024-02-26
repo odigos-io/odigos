@@ -17,4 +17,4 @@ limitations under the License.
 
 package v1alpha1
 
-type InsertClusterAttributeExpansion interface{}
+type AddClusterInfoExpansion interface{}

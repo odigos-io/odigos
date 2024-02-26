@@ -23,8 +23,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// InsertClusterAttributes returns a InsertClusterAttributeInformer.
-	InsertClusterAttributes() InsertClusterAttributeInformer
+	// AddClusterInfos returns a AddClusterInfoInformer.
+	AddClusterInfos() AddClusterInfoInformer
 }
 
 type version struct {
@@ -38,7 +38,7 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// InsertClusterAttributes returns a InsertClusterAttributeInformer.
-func (v *version) InsertClusterAttributes() InsertClusterAttributeInformer {
-	return &insertClusterAttributeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// AddClusterInfos returns a AddClusterInfoInformer.
+func (v *version) AddClusterInfos() AddClusterInfoInformer {
+	return &addClusterInfoInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

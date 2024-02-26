@@ -53,8 +53,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=actions, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("insertclusterattributes"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().InsertClusterAttributes().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("addclusterinfos"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().AddClusterInfos().Informer()}, nil
 
 		// Group=odigos.io, Version=v1alpha1
 	case odigosv1alpha1.SchemeGroupVersion.WithResource("destinations"):

@@ -17,10 +17,10 @@ limitations under the License.
 
 package v1alpha1
 
-// InsertClusterAttributeListerExpansion allows custom methods to be added to
-// InsertClusterAttributeLister.
-type InsertClusterAttributeListerExpansion interface{}
+// AddClusterInfoListerExpansion allows custom methods to be added to
+// AddClusterInfoLister.
+type AddClusterInfoListerExpansion interface{}
 
-// InsertClusterAttributeNamespaceListerExpansion allows custom methods to be added to
-// InsertClusterAttributeNamespaceLister.
-type InsertClusterAttributeNamespaceListerExpansion interface{}
+// AddClusterInfoNamespaceListerExpansion allows custom methods to be added to
+// AddClusterInfoNamespaceLister.
+type AddClusterInfoNamespaceListerExpansion interface{}
