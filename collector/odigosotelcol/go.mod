@@ -455,8 +455,6 @@ require (
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor => ../processors/odigosresourcenameprocessor
 
-replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/awss3exporter => ../exporters/awss3exporter
-
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter => ../exporters/azureblobstorageexporter
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter => ../exporters/googlecloudstorageexporter
