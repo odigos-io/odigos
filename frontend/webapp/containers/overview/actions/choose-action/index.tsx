@@ -1,4 +1,5 @@
 import React from 'react';
+import { ActionItemCard } from '@/types';
 import { NewActionCard } from '@/components';
 import { KeyvalLink, KeyvalText } from '@/design.system';
 import { ACTION, ACTION_DOCS_LINK, OVERVIEW } from '@/utils';
@@ -8,15 +9,16 @@ import {
   ActionsListWrapper,
   DescriptionWrapper,
 } from './styled';
+import { useRouter } from 'next/navigation';
 
 const ITEMS = [
   {
     id: '1',
-    title: 'Cluster Attributes',
+    title: 'Insert Cluster Attributes',
     description:
       'With cluster attributes, you can define the attributes of the cluster. This is useful for filtering and grouping spans in your backend.',
-    type: 'cluster-attributes',
-    icon: 'cluster-attributes',
+    type: 'insert-cluster-attributes',
+    icon: 'insert-cluster-attributes',
   },
   {
     id: '2',
@@ -27,9 +29,11 @@ const ITEMS = [
   },
 ];
 
-export function ChooseActionContainer() {
-  function onItemClick() {
-    console.log('Item clicked');
+export function ChooseActionContainer(): React.JSX.Element {
+  const router = useRouter();
+
+  function onItemClick({ item }: { item: ActionItemCard }) {
+    router.push(`/create-action?type=${item.type}`);
   }
 
   function renderActionsList() {
@@ -45,10 +49,11 @@ export function ChooseActionContainer() {
   return (
     <>
       <DescriptionWrapper>
-        <KeyvalText>{OVERVIEW.ACTION_DESCRIPTION}</KeyvalText>
+        <KeyvalText size={14}>{OVERVIEW.ACTION_DESCRIPTION}</KeyvalText>
         <LinkWrapper>
           <KeyvalLink
-            value={ACTION.LEARN_MORE}
+            fontSize={14}
+            value={ACTION.LINK_TO_DOCS}
             onClick={() => window.open(ACTION_DOCS_LINK, '_blank')}
           />
         </LinkWrapper>

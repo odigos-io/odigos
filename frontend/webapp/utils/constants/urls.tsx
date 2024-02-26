@@ -10,6 +10,7 @@ const API = {
   DESTINATION_TYPE: `${BASE_URL}/destination-types`,
   DESTINATIONS: `${BASE_URL}/destinations`,
   SOURCES: `${BASE_URL}/sources`,
+  SET_ACTION: (type: string) => `${BASE_URL}/actions/types/${type}`,
 };
 
 const QUERIES = {

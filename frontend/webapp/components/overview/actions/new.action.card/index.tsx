@@ -7,7 +7,7 @@ import { KeyvalCard, KeyvalText } from '@/design.system';
 
 interface NewActionCardProps {
   item: ActionItemCard;
-  onClick: () => void;
+  onClick: ({ item }: { item: ActionItemCard }) => void;
 }
 
 const CardContentWrapper = styled.div`
@@ -29,7 +29,7 @@ export function NewActionCard({ item, onClick }: NewActionCardProps) {
 
   return (
     <KeyvalCard>
-      <CardContentWrapper onClick={onClick}>
+      <CardContentWrapper onClick={() => onClick({ item })}>
         <SvgIcon style={{ width: 56, height: 56 }} />
         <KeyvalText size={18} weight={700}>
           {item.title}

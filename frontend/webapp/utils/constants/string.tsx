@@ -93,6 +93,7 @@ export const OVERVIEW = {
   CONFIRM_SOURCE_DELETE: 'I want to delete this source',
   CONNECT: 'Connect',
   REPORTED_NAME: 'Override service.name',
+  CREATE_ACTION: 'Create Action',
   ACTION_DESCRIPTION:
     'Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your Odigos Destinations.',
 };
@@ -101,6 +102,7 @@ export const ACTION = {
   SAVE: 'Save',
   CONTACT_US: 'Contact Us',
   LEARN_MORE: 'Learn more',
+  LINK_TO_DOCS: 'Link to docs',
 };
 
 export const NOTIFICATION = {
@@ -113,4 +115,16 @@ export const PARAMS = {
   DELETED: 'deleted',
   CREATED: 'created',
   UPDATED: 'updated',
+};
+
+//odigos actions
+export const ACTIONS = {
+  MONITORS_TITLE: 'This action monitors',
+  ACTION_NAME: 'Action Name',
+  ACTION_NOTE: 'Note',
+  NOTE_PLACEHOLDER: 'Add a note to describe the use case of this action',
+  CREATE_ACTION: 'Create Action',
+  'insert-cluster-attributes': {
+    DESCRIPTION: `The "Insert Cluster Attribute" Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`,
+  },
 };
