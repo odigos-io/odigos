@@ -7,3 +7,7 @@ export const CreateActionWrapper = styled.div`
   padding: 24px;
   box-sizing: border-box;
 `;
+
+export const KeyvalInputWrapper = styled.div`
+  width: 360px;
+`;

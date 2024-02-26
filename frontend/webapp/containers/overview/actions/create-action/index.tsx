@@ -2,8 +2,9 @@
 import { ActionsType } from '@/types';
 import { useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import { CreateActionWrapper } from './styled';
+import { CreateActionWrapper, KeyvalInputWrapper } from './styled';
 import { KeyvalInput } from '@/design.system';
+import { MultiCheckboxComponent } from '@/components';
 
 export function CreateActionContainer(): React.JSX.Element {
   const [currentAction, setCurrentAction] = useState<string>();
@@ -29,13 +30,24 @@ export function CreateActionContainer(): React.JSX.Element {
 
   return (
     <CreateActionWrapper>
-      <KeyvalInput
-        label="Action Name"
-        value={''}
-        onChange={function (value: string): void {
-          throw new Error('Function not implemented.');
-        }}
+      <MultiCheckboxComponent
+        title="This action monitors"
+        checkboxes={[
+          { id: '1', label: 'Logs', checked: false },
+          { id: '2', label: 'Metrics', checked: false },
+          { id: '3', label: 'Traces', checked: false },
+        ]}
+        onSelectionChange={() => {}}
       />
+      <KeyvalInputWrapper>
+        <KeyvalInput
+          label="Action Name"
+          value={''}
+          onChange={function (value: string): void {
+            throw new Error('Function not implemented.');
+          }}
+        />
+      </KeyvalInputWrapper>
       {renderCurrentAction()}
     </CreateActionWrapper>
   );
