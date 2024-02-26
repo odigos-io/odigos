@@ -18,10 +18,11 @@ func NewAddClusterInfoCRD() *apiextensionsv1.CustomResourceDefinition {
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Group: "actions.odigos.io",
 			Names: apiextensionsv1.CustomResourceDefinitionNames{
-				Kind:     "AddClusterInfo",
-				ListKind: "AddClusterInfoList",
-				Plural:   "addclusterinfos",
-				Singular: "addclusterinfo",
+				Kind:       "AddClusterInfo",
+				ListKind:   "AddClusterInfoList",
+				Plural:     "addclusterinfos",
+				Singular:   "addclusterinfo",
+				ShortNames: []string{"aci"},
 			},
 			Scope: apiextensionsv1.NamespaceScoped,
 			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{

@@ -34,7 +34,7 @@ func CreateAddClusterInfo(c *gin.Context, odigosns string) {
 		})
 		return
 	}
-	action.GenerateName = "ica-"
+	action.GenerateName = "aci-"
 	generatedAction, err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).Create(c, &action, metav1.CreateOptions{})
 	if err != nil {
 		c.JSON(500, gin.H{
