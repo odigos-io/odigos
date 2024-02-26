@@ -9,13 +9,14 @@ import {
   KeyvalLink,
   KeyvalLoader,
   KeyvalText,
+  KeyvalTextArea,
 } from '@/design.system';
 import {
   CreateActionWrapper,
   CreateButtonWrapper,
   DescriptionWrapper,
   KeyvalInputWrapper,
-  LinkWrapper,
+  TextareaWrapper,
 } from './styled';
 import {
   MultiCheckboxComponent,
@@ -26,17 +27,17 @@ import { ACTION, ACTION_DOCS_LINK } from '@/utils';
 const ACTION_TYPE = 'type';
 
 export function CreateActionContainer(): React.JSX.Element {
-  const [currentAction, setCurrentAction] = useState<string>();
+  const [currentActionType, setCurrentActionType] = useState<string>();
 
   const search = useSearchParams();
 
   useEffect(() => {
     const action = search.get(ACTION_TYPE);
-    action && setCurrentAction(action);
+    action && setCurrentActionType(action);
   }, [search]);
 
   function renderCurrentAction() {
-    switch (currentAction) {
+    switch (currentActionType) {
       case ActionsType.INSERT_CLUSTER_ATTRIBUTES:
         return <InsertClusterAttributesForm onChange={() => {}} />;
       default:
@@ -56,7 +57,7 @@ export function CreateActionContainer(): React.JSX.Element {
             {`The "Insert Cluster Attribute" Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`}
           </KeyvalText>
           <KeyvalLink
-            value={ACTION.LEARN_MORE}
+            value={ACTION.LINK_TO_DOCS}
             fontSize={14}
             onClick={() => window.open(ACTION_DOCS_LINK, '_blank')}
           />
@@ -74,8 +75,16 @@ export function CreateActionContainer(): React.JSX.Element {
           <KeyvalInput label="Action Name" value={''} onChange={() => {}} />
         </KeyvalInputWrapper>
         {renderCurrentAction()}
+        <TextareaWrapper>
+          <KeyvalTextArea
+            label="Note"
+            value={''}
+            placeholder="Add a note"
+            onChange={(e) => console.log(e.target.value)}
+          />
+        </TextareaWrapper>
         <CreateButtonWrapper>
-          <KeyvalButton disabled>
+          <KeyvalButton>
             <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
               Create Action
             </KeyvalText>

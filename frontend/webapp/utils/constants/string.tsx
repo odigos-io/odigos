@@ -102,6 +102,7 @@ export const ACTION = {
   SAVE: 'Save',
   CONTACT_US: 'Contact Us',
   LEARN_MORE: 'Learn more',
+  LINK_TO_DOCS: 'Link to docs',
 };
 
 export const NOTIFICATION = {

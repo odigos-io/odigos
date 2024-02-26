@@ -12,6 +12,10 @@ export const KeyvalInputWrapper = styled.div`
   width: 362px;
 `;
 
+export const TextareaWrapper = styled.div`
+  width: 375px;
+`;
+
 export const CreateButtonWrapper = styled.div`
   margin-top: 32px;
   width: 375px;
@@ -21,6 +25,9 @@ export const DescriptionWrapper = styled.div`
   width: 50vw;
   max-width: 600px;
   margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 `;
 
 export const LinkWrapper = styled.div`
