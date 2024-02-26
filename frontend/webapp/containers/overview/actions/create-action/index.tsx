@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import {
   KeyvalButton,
   KeyvalInput,
+  KeyvalLink,
   KeyvalLoader,
   KeyvalText,
 } from '@/design.system';
@@ -14,11 +15,13 @@ import {
   CreateButtonWrapper,
   DescriptionWrapper,
   KeyvalInputWrapper,
+  LinkWrapper,
 } from './styled';
 import {
   MultiCheckboxComponent,
   InsertClusterAttributesForm,
 } from '@/components';
+import { ACTION, ACTION_DOCS_LINK } from '@/utils';
 
 const ACTION_TYPE = 'type';
 
@@ -52,6 +55,11 @@ export function CreateActionContainer(): React.JSX.Element {
           <KeyvalText size={14}>
             {`The "Insert Cluster Attribute" Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`}
           </KeyvalText>
+          <KeyvalLink
+            value={ACTION.LEARN_MORE}
+            fontSize={14}
+            onClick={() => window.open(ACTION_DOCS_LINK, '_blank')}
+          />
         </DescriptionWrapper>
         <MultiCheckboxComponent
           title="This action monitors"

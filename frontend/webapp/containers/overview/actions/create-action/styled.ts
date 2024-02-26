@@ -22,3 +22,8 @@ export const DescriptionWrapper = styled.div`
   max-width: 600px;
   margin-bottom: 16px;
 `;
+
+export const LinkWrapper = styled.div`
+  margin-left: 8px;
+  width: 100px;
+`;
