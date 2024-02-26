@@ -40,7 +40,11 @@ export const MultiCheckboxComponent: React.FC<MultiCheckboxProps> = ({
 
   return (
     <>
-      {title && <KeyvalText size={14}>{title}</KeyvalText>}
+      {title && (
+        <KeyvalText size={14} weight={600}>
+          {title}
+        </KeyvalText>
+      )}
       <CheckboxWrapper>
         {selectedMonitors.map((checkbox) => (
           <KeyvalCheckbox
