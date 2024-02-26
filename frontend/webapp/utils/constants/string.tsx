@@ -116,3 +116,15 @@ export const PARAMS = {
   CREATED: 'created',
   UPDATED: 'updated',
 };
+
+//odigos actions
+export const ACTIONS = {
+  MONITORS_TITLE: 'This action monitors',
+  ACTION_NAME: 'Action Name',
+  ACTION_NOTE: 'Note',
+  NOTE_PLACEHOLDER: 'Add a note to describe the use case of this action',
+  CREATE_ACTION: 'Create Action',
+  'insert-cluster-attributes': {
+    DESCRIPTION: `The "Insert Cluster Attribute" Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`,
+  },
+};

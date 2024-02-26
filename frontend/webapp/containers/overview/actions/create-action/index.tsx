@@ -2,7 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import theme from '@/styles/palette';
 import { ActionsType } from '@/types';
+import { useActionState } from '@/hooks';
 import { useSearchParams } from 'next/navigation';
+import { ACTION, ACTIONS, ACTION_DOCS_LINK } from '@/utils';
 import {
   KeyvalButton,
   KeyvalInput,
@@ -16,14 +18,13 @@ import {
   CreateButtonWrapper,
   DescriptionWrapper,
   KeyvalInputWrapper,
+  LoaderWrapper,
   TextareaWrapper,
 } from './styled';
 import {
   MultiCheckboxComponent,
   InsertClusterAttributesForm,
 } from '@/components';
-import { ACTION, ACTION_DOCS_LINK } from '@/utils';
-import { useActionState } from '@/hooks';
 
 const ACTION_TYPE = 'type';
 
@@ -66,12 +67,19 @@ export function CreateActionContainer(): React.JSX.Element {
     }
   }
 
+  if (!currentActionType)
+    return (
+      <LoaderWrapper>
+        <KeyvalLoader />
+      </LoaderWrapper>
+    );
+
   return (
     <>
       <CreateActionWrapper>
         <DescriptionWrapper>
           <KeyvalText size={14}>
-            {`The "Insert Cluster Attribute" Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`}
+            {ACTIONS[currentActionType].DESCRIPTION}
           </KeyvalText>
           <KeyvalLink
             value={ACTION.LINK_TO_DOCS}
@@ -80,13 +88,13 @@ export function CreateActionContainer(): React.JSX.Element {
           />
         </DescriptionWrapper>
         <MultiCheckboxComponent
-          title="This action monitors"
+          title={ACTIONS.MONITORS_TITLE}
           checkboxes={selectedMonitors}
           onSelectionChange={setSelectedMonitors}
         />
         <KeyvalInputWrapper>
           <KeyvalInput
-            label="Action Name"
+            label={ACTIONS.ACTION_NAME}
             value={actionName}
             onChange={setActionName}
           />
@@ -94,16 +102,16 @@ export function CreateActionContainer(): React.JSX.Element {
         {renderCurrentAction()}
         <TextareaWrapper>
           <KeyvalTextArea
-            label="Note"
+            label={ACTIONS.ACTION_NOTE}
             value={actionNote}
-            placeholder="Add a note"
+            placeholder={ACTIONS.NOTE_PLACEHOLDER}
             onChange={(e) => setActionNote(e.target.value)}
           />
         </TextareaWrapper>
         <CreateButtonWrapper>
           <KeyvalButton onClick={createNewAction}>
             <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
-              Create Action
+              {ACTIONS.CREATE_ACTION}
             </KeyvalText>
           </KeyvalButton>
         </CreateButtonWrapper>

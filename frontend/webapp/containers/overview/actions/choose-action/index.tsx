@@ -49,10 +49,11 @@ export function ChooseActionContainer(): React.JSX.Element {
   return (
     <>
       <DescriptionWrapper>
-        <KeyvalText>{OVERVIEW.ACTION_DESCRIPTION}</KeyvalText>
+        <KeyvalText size={14}>{OVERVIEW.ACTION_DESCRIPTION}</KeyvalText>
         <LinkWrapper>
           <KeyvalLink
-            value={ACTION.LEARN_MORE}
+            fontSize={14}
+            value={ACTION.LINK_TO_DOCS}
             onClick={() => window.open(ACTION_DOCS_LINK, '_blank')}
           />
         </LinkWrapper>
