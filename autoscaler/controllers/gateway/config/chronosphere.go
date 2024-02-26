@@ -55,9 +55,32 @@ func (c *Chronosphere) ModifyConfig(dest *odigosv1.Destination, currentConfig *c
 	}
 
 	if isMetricsEnabled(dest) {
+		// Set service.instance.id to pod name or node name
+		chronosphereMetricProcessorName := "resource/chornosphere-" + dest.Name
+		currentConfig.Processors[chronosphereMetricProcessorName] = commonconf.GenericMap{
+			"attributes": []commonconf.GenericMap{
+				{
+					"key":            "service.instance.id",
+					"from_attribute": "k8s.node.name",
+					"action":         "insert",
+				},
+				{
+					"key":            "service.instance.id",
+					"from_attribute": "k8s.pod.name",
+					"action":         "upsert",
+				},
+				{
+					"key":    "instrumentation.control.plane",
+					"value":  "odigos",
+					"action": "insert",
+				},
+			},
+		}
+
 		metricsPipelineName := "metrics/chronosphere-" + dest.Name
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
-			Exporters: []string{chronosphereExporterName},
+			Exporters:  []string{chronosphereExporterName},
+			Processors: []string{chronosphereMetricProcessorName},
 		}
 	}
 }

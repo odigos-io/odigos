@@ -22,3 +22,5 @@ type DestinationExpansion interface{}
 type InstrumentedApplicationExpansion interface{}
 
 type OdigosConfigurationExpansion interface{}
+
+type ProcessorExpansion interface{}

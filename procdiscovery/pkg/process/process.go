@@ -54,9 +54,8 @@ func GetPidDetails(pid int) Details {
 }
 
 func getPidDetails(pid int, pidStr string) Details {
-	procDirName := path.Join("/proc", pidStr)
-	exeName := getExecName(procDirName)
-	cmdLine := getCommandLine(procDirName)
+	exeName := getExecName(pidStr)
+	cmdLine := getCommandLine(pidStr)
 
 	return Details{
 		ProcessID: pid,

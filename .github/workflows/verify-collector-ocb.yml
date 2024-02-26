@@ -1,0 +1,25 @@
+name: verify collector ocb
+on:
+  pull_request:
+    paths:
+        - "collector/**"
+
+jobs:
+  verify-collector-ocb:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.0"
+      - name: Generate collector with ocb
+        working-directory: ./collector
+        run: "make genodigoscol"
+      - name: Verify Generate
+        working-directory: ./collector
+        run: |
+          if [[ $(git diff --exit-code) ]]; then
+            echo "odigos collector distribution module is not in sync with builder config. Please run 'make genodigoscol' in 'collector' directory and commit the changes."
+            exit 1
+          fi
