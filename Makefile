@@ -1,6 +1,6 @@
 .PHONY: build-odiglet
 build-odiglet:
-	docker build -t keyval/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --no-cache
+	docker build -t keyval/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile
 
 .PHONY: build-autoscaler
 build-autoscaler:
