@@ -20,6 +20,6 @@ jobs:
         working-directory: ./collector
         run: |
           if [[ $(git diff --exit-code) ]]; then
-            echo "collector module is not in sync with builder config. Please run 'make genodigoscol' and commit the changes."
+            echo "odigos collector distribution module is not in sync with builder config. Please run 'make genodigoscol' in 'collector' directory and commit the changes."
             exit 1
           fi
