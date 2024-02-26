@@ -7,7 +7,7 @@ dist:
   output_path: ./odigosotelcol
 
 extensions:
-  - gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.93.0
+  - gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.94.0
   - gomod: go.opentelemetry.io/collector/extension/ballastextension v0.94.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.94.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.94.0
