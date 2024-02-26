@@ -107,6 +107,5 @@ connectors:
 
 replaces:
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor => ../processors/odigosresourcenameprocessor
-  - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/awss3exporter => ../exporters/awss3exporter
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter => ../exporters/azureblobstorageexporter
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter => ../exporters/googlecloudstorageexporter
