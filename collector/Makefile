@@ -24,3 +24,7 @@ download_builder:
 .PHONY: genodigoscol
 genodigoscol: download_builder
 	$(BUILDER) --config builder-config.yaml
+
+.PHONY: build-odigoscol
+build-odigoscol: download_builder
+	$(BUILDER) --config builder-config.yaml --skip-generate --skip-get-modules
