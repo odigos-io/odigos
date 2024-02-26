@@ -30,17 +30,9 @@ const ACTION_TYPE = 'type';
 
 export function CreateActionContainer(): React.JSX.Element {
   const [currentActionType, setCurrentActionType] = useState<string>();
-  const {
-    actionName,
-    setActionName,
-    actionNote,
-    setActionNote,
-    selectedMonitors,
-    setSelectedMonitors,
-    actionData,
-    setActionData,
-    createNewAction,
-  } = useActionState();
+  const { actionState, onChangeActionState, createNewAction } =
+    useActionState();
+  const { actionName, actionNote, actionData, selectedMonitors } = actionState;
 
   const search = useSearchParams();
 
@@ -55,7 +47,7 @@ export function CreateActionContainer(): React.JSX.Element {
         return (
           <InsertClusterAttributesForm
             data={actionData}
-            onChange={setActionData}
+            onChange={onChangeActionState}
           />
         );
       default:
@@ -90,13 +82,15 @@ export function CreateActionContainer(): React.JSX.Element {
         <MultiCheckboxComponent
           title={ACTIONS.MONITORS_TITLE}
           checkboxes={selectedMonitors}
-          onSelectionChange={setSelectedMonitors}
+          onSelectionChange={() =>
+            onChangeActionState('selectedMonitors', selectedMonitors)
+          }
         />
         <KeyvalInputWrapper>
           <KeyvalInput
             label={ACTIONS.ACTION_NAME}
             value={actionName}
-            onChange={setActionName}
+            onChange={(name) => onChangeActionState('actionName', name)}
           />
         </KeyvalInputWrapper>
         {renderCurrentAction()}
@@ -105,7 +99,7 @@ export function CreateActionContainer(): React.JSX.Element {
             label={ACTIONS.ACTION_NOTE}
             value={actionNote}
             placeholder={ACTIONS.NOTE_PLACEHOLDER}
-            onChange={(e) => setActionNote(e.target.value)}
+            onChange={(e) => onChangeActionState('actionNote', e.target.value)}
           />
         </TextareaWrapper>
         <CreateButtonWrapper>

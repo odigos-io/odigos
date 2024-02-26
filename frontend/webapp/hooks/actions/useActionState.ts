@@ -1,24 +1,36 @@
-import { setAction } from '@/services';
-import { ActionItem } from '@/types';
 import { ROUTES } from '@/utils';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { ActionItem } from '@/types';
+import { setAction } from '@/services';
 import { useMutation } from 'react-query';
+import { useRouter } from 'next/navigation';
 
-const DEFAULT_MONITORS = [
+interface Monitor {
+  id: string;
+  label: string;
+  checked: boolean;
+}
+
+interface ActionState {
+  actionName: string;
+  actionNote: string;
+  actionData: any;
+  selectedMonitors: Monitor[];
+}
+
+const DEFAULT_MONITORS: Monitor[] = [
   { id: '1', label: 'Logs', checked: true },
   { id: '2', label: 'Metrics', checked: true },
   { id: '3', label: 'Traces', checked: true },
 ];
 
 export function useActionState() {
-  const [actionName, setActionName] = useState<string>('');
-  const [actionNote, setActionNote] = useState<string>('');
-  const [actionData, setActionData] = useState<any>(null);
-  const [selectedMonitors, setSelectedMonitors] =
-    useState<{ id: string; label: string; checked: boolean }[]>(
-      DEFAULT_MONITORS
-    );
+  const [actionState, setActionState] = useState<ActionState>({
+    actionName: '',
+    actionNote: '',
+    actionData: null,
+    selectedMonitors: DEFAULT_MONITORS,
+  });
 
   const router = useRouter();
   const { mutateAsync } = useMutation((body: ActionItem) => setAction(body));
@@ -27,7 +39,17 @@ export function useActionState() {
     router.push(ROUTES.ACTIONS);
   }
 
+  function onChangeActionState(key: string, value: any) {
+    setActionState((prevState) => ({
+      ...prevState,
+      [key]: value,
+    }));
+  }
+
   async function createNewAction() {
+    const { actionName, actionNote, actionData, selectedMonitors } =
+      actionState;
+
     const signals = selectedMonitors
       .filter((monitor) => monitor.checked)
       .map((monitor) => monitor.label.toUpperCase());
@@ -38,6 +60,7 @@ export function useActionState() {
       signals,
       ...actionData,
     };
+
     try {
       await mutateAsync(action);
       onCreateSuccess();
@@ -47,14 +70,8 @@ export function useActionState() {
   }
 
   return {
-    actionName,
-    setActionName,
-    actionNote,
-    setActionNote,
-    selectedMonitors,
-    setSelectedMonitors,
-    actionData,
-    setActionData,
+    actionState,
+    onChangeActionState,
     createNewAction,
   };
 }

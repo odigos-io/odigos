@@ -17,12 +17,15 @@ const FormWrapper = styled.div`
 
 interface InsertClusterAttributesFormProps {
   data: KeyValue[] | null;
-  onChange: (keyValues: {
-    clusterAttributes: {
-      attributeName: string;
-      attributeStringValue: string;
-    }[];
-  }) => void;
+  onChange: (
+    key: string,
+    keyValues: {
+      clusterAttributes: {
+        attributeName: string;
+        attributeStringValue: string;
+      }[];
+    }
+  ) => void;
 }
 
 export function InsertClusterAttributesForm({
@@ -42,7 +45,7 @@ export function InsertClusterAttributesForm({
         attributeStringValue: keyValue.value,
       };
     });
-    onChange({ clusterAttributes: data });
+    onChange('actionData', { clusterAttributes: data });
   }
 
   return (
