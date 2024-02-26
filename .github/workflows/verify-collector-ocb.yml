@@ -5,7 +5,7 @@ on:
         - "collector"
 
 jobs:
-  verify-api-crds:
+  verify-collector-ocb:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
