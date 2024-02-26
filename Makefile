@@ -8,7 +8,7 @@ build-autoscaler:
 
 .PHONY: build-collector
 build-collector:
-	docker build -t keyval/odigos-collector:$(TAG) collector -f collector/Dockerfile
+	docker build -t keyval/odigos-collector:$(TAG) collector -f collector/Dockerfile --no-cache
 
 .PHONY: build-images
 build-images:
