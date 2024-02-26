@@ -23,20 +23,20 @@ export const MENU_ITEMS: MenuItem[] = [
   },
   {
     id: 3,
-    name: OVERVIEW.MENU.DESTINATIONS,
-    icons: {
-      focus: () => <ICONS.FocusDestinations width={24} height={24} />,
-      notFocus: () => <ICONS.UnFocusDestinations width={24} height={24} />,
-    },
-    navigate: ROUTES.DESTINATIONS,
-  },
-  {
-    id: 4,
     name: OVERVIEW.MENU.ACTIONS,
     icons: {
       focus: () => <ICONS.FocusAction width={24} height={24} />,
       notFocus: () => <ICONS.UnFocusAction width={24} height={24} />,
     },
     navigate: ROUTES.ACTIONS,
+  },
+  {
+    id: 4,
+    name: OVERVIEW.MENU.DESTINATIONS,
+    icons: {
+      focus: () => <ICONS.FocusDestinations width={24} height={24} />,
+      notFocus: () => <ICONS.UnFocusDestinations width={24} height={24} />,
+    },
+    navigate: ROUTES.DESTINATIONS,
   },
 ];

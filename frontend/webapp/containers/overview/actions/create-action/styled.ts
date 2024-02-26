@@ -6,6 +6,12 @@ export const CreateActionWrapper = styled.div`
   gap: 16px;
   padding: 24px;
   box-sizing: border-box;
+  max-height: 90%;
+  overflow-y: auto;
+
+  @media screen and (max-height: 450px) {
+    max-height: 85%;
+  }
 `;
 
 export const KeyvalInputWrapper = styled.div`

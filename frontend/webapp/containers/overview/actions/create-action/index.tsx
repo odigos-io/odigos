@@ -67,49 +67,47 @@ export function CreateActionContainer(): React.JSX.Element {
     );
 
   return (
-    <>
-      <CreateActionWrapper>
-        <DescriptionWrapper>
-          <KeyvalText size={14}>
-            {ACTIONS[currentActionType].DESCRIPTION}
-          </KeyvalText>
-          <KeyvalLink
-            value={ACTION.LINK_TO_DOCS}
-            fontSize={14}
-            onClick={() => window.open(ACTION_DOCS_LINK, '_blank')}
-          />
-        </DescriptionWrapper>
-        <MultiCheckboxComponent
-          title={ACTIONS.MONITORS_TITLE}
-          checkboxes={selectedMonitors}
-          onSelectionChange={() =>
-            onChangeActionState('selectedMonitors', selectedMonitors)
-          }
+    <CreateActionWrapper>
+      <DescriptionWrapper>
+        <KeyvalText size={14}>
+          {ACTIONS[currentActionType].DESCRIPTION}
+        </KeyvalText>
+        <KeyvalLink
+          value={ACTION.LINK_TO_DOCS}
+          fontSize={14}
+          onClick={() => window.open(ACTION_DOCS_LINK, '_blank')}
         />
-        <KeyvalInputWrapper>
-          <KeyvalInput
-            label={ACTIONS.ACTION_NAME}
-            value={actionName}
-            onChange={(name) => onChangeActionState('actionName', name)}
-          />
-        </KeyvalInputWrapper>
-        {renderCurrentAction()}
-        <TextareaWrapper>
-          <KeyvalTextArea
-            label={ACTIONS.ACTION_NOTE}
-            value={actionNote}
-            placeholder={ACTIONS.NOTE_PLACEHOLDER}
-            onChange={(e) => onChangeActionState('actionNote', e.target.value)}
-          />
-        </TextareaWrapper>
-        <CreateButtonWrapper>
-          <KeyvalButton onClick={createNewAction}>
-            <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
-              {ACTIONS.CREATE_ACTION}
-            </KeyvalText>
-          </KeyvalButton>
-        </CreateButtonWrapper>
-      </CreateActionWrapper>
-    </>
+      </DescriptionWrapper>
+      <MultiCheckboxComponent
+        title={ACTIONS.MONITORS_TITLE}
+        checkboxes={selectedMonitors}
+        onSelectionChange={() =>
+          onChangeActionState('selectedMonitors', selectedMonitors)
+        }
+      />
+      <KeyvalInputWrapper>
+        <KeyvalInput
+          label={ACTIONS.ACTION_NAME}
+          value={actionName}
+          onChange={(name) => onChangeActionState('actionName', name)}
+        />
+      </KeyvalInputWrapper>
+      {renderCurrentAction()}
+      <TextareaWrapper>
+        <KeyvalTextArea
+          label={ACTIONS.ACTION_NOTE}
+          value={actionNote}
+          placeholder={ACTIONS.NOTE_PLACEHOLDER}
+          onChange={(e) => onChangeActionState('actionNote', e.target.value)}
+        />
+      </TextareaWrapper>
+      <CreateButtonWrapper>
+        <KeyvalButton onClick={createNewAction}>
+          <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
+            {ACTIONS.CREATE_ACTION}
+          </KeyvalText>
+        </KeyvalButton>
+      </CreateButtonWrapper>
+    </CreateActionWrapper>
   );
 }
