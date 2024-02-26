@@ -1,8 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import { KeyValuePair, KeyvalText } from '@/design.system';
+import { KeyValuePair } from '@/design.system';
 import { KeyValue } from '@keyval-dev/design-system';
-import theme from '@/styles/palette';
 
 const DEFAULT_KEY_VALUE_PAIR = [
   {
@@ -17,19 +16,33 @@ const FormWrapper = styled.div`
 `;
 
 interface InsertClusterAttributesFormProps {
-  onChange: (keyValues: KeyValue[]) => void;
+  data: KeyValue[] | null;
+  onChange: (keyValues: {
+    clusterAttributes: {
+      attributeName: string;
+      attributeStringValue: string;
+    }[];
+  }) => void;
 }
 
 export function InsertClusterAttributesForm({
+  data,
   onChange,
 }: InsertClusterAttributesFormProps): React.JSX.Element {
   const [keyValues, setKeyValues] = React.useState<KeyValue[]>(
-    DEFAULT_KEY_VALUE_PAIR
+    data || DEFAULT_KEY_VALUE_PAIR
   );
 
   function handleKeyValuesChange(keyValues: KeyValue[]): void {
     setKeyValues(keyValues);
-    onChange(keyValues);
+
+    const data = keyValues.map((keyValue) => {
+      return {
+        attributeName: keyValue.key,
+        attributeStringValue: keyValue.value,
+      };
+    });
+    onChange({ clusterAttributes: data });
   }
 
   return (

@@ -23,11 +23,23 @@ import {
   InsertClusterAttributesForm,
 } from '@/components';
 import { ACTION, ACTION_DOCS_LINK } from '@/utils';
+import { useActionState } from '@/hooks';
 
 const ACTION_TYPE = 'type';
 
 export function CreateActionContainer(): React.JSX.Element {
   const [currentActionType, setCurrentActionType] = useState<string>();
+  const {
+    actionName,
+    setActionName,
+    actionNote,
+    setActionNote,
+    selectedMonitors,
+    setSelectedMonitors,
+    actionData,
+    setActionData,
+    createNewAction,
+  } = useActionState();
 
   const search = useSearchParams();
 
@@ -39,7 +51,12 @@ export function CreateActionContainer(): React.JSX.Element {
   function renderCurrentAction() {
     switch (currentActionType) {
       case ActionsType.INSERT_CLUSTER_ATTRIBUTES:
-        return <InsertClusterAttributesForm onChange={() => {}} />;
+        return (
+          <InsertClusterAttributesForm
+            data={actionData}
+            onChange={setActionData}
+          />
+        );
       default:
         return (
           <KeyvalInputWrapper>
@@ -64,27 +81,27 @@ export function CreateActionContainer(): React.JSX.Element {
         </DescriptionWrapper>
         <MultiCheckboxComponent
           title="This action monitors"
-          checkboxes={[
-            { id: '1', label: 'Logs', checked: false },
-            { id: '2', label: 'Metrics', checked: false },
-            { id: '3', label: 'Traces', checked: false },
-          ]}
-          onSelectionChange={() => {}}
+          checkboxes={selectedMonitors}
+          onSelectionChange={setSelectedMonitors}
         />
         <KeyvalInputWrapper>
-          <KeyvalInput label="Action Name" value={''} onChange={() => {}} />
+          <KeyvalInput
+            label="Action Name"
+            value={actionName}
+            onChange={setActionName}
+          />
         </KeyvalInputWrapper>
         {renderCurrentAction()}
         <TextareaWrapper>
           <KeyvalTextArea
             label="Note"
-            value={''}
+            value={actionNote}
             placeholder="Add a note"
-            onChange={(e) => console.log(e.target.value)}
+            onChange={(e) => setActionNote(e.target.value)}
           />
         </TextareaWrapper>
         <CreateButtonWrapper>
-          <KeyvalButton>
+          <KeyvalButton onClick={createNewAction}>
             <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
               Create Action
             </KeyvalText>
