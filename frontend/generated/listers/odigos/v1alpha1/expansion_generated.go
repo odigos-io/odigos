@@ -40,3 +40,11 @@ type OdigosConfigurationListerExpansion interface{}
 // OdigosConfigurationNamespaceListerExpansion allows custom methods to be added to
 // OdigosConfigurationNamespaceLister.
 type OdigosConfigurationNamespaceListerExpansion interface{}
+
+// ProcessorListerExpansion allows custom methods to be added to
+// ProcessorLister.
+type ProcessorListerExpansion interface{}
+
+// ProcessorNamespaceListerExpansion allows custom methods to be added to
+// ProcessorNamespaceLister.
+type ProcessorNamespaceListerExpansion interface{}

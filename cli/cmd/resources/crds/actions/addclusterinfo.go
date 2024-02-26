@@ -6,22 +6,23 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewInsertClusterAttributesCRD() *apiextensionsv1.CustomResourceDefinition {
+func NewAddClusterInfoCRD() *apiextensionsv1.CustomResourceDefinition {
 	return &apiextensionsv1.CustomResourceDefinition{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CustomResourceDefinition",
 			APIVersion: "apiextensions.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "insertclusterattributes.actions.odigos.io",
+			Name: "addclusterinfos.actions.odigos.io",
 		},
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Group: "actions.odigos.io",
 			Names: apiextensionsv1.CustomResourceDefinitionNames{
-				Kind:     "InsertClusterAttributes",
-				ListKind: "InsertClusterAttributesList",
-				Plural:   "insertclusterattributes",
-				Singular: "insertclusterattributes",
+				Kind:       "AddClusterInfo",
+				ListKind:   "AddClusterInfoList",
+				Plural:     "addclusterinfos",
+				Singular:   "addclusterinfo",
+				ShortNames: []string{"aci"},
 			},
 			Scope: apiextensionsv1.NamespaceScoped,
 			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
@@ -31,7 +32,7 @@ func NewInsertClusterAttributesCRD() *apiextensionsv1.CustomResourceDefinition {
 					Storage: true,
 					Schema: &apiextensionsv1.CustomResourceValidation{
 						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
-							Description: "InsertClusterAttributes is the Schema for the insertclusterattributes odigos action API",
+							Description: "AddClusterInfo is the Schema for the addclusterinfo odigos action API",
 							Type:        "object",
 							Properties: map[string]apiextensionsv1.JSONSchemaProps{
 								"apiVersion": {
@@ -46,7 +47,7 @@ func NewInsertClusterAttributesCRD() *apiextensionsv1.CustomResourceDefinition {
 									Type: "object",
 								},
 								"spec": {
-									Description: "InsertClusterAttributesSpec defines the desired state of InsertClusterAttributes action",
+									Description: "AddClusterInfoSpec defines the desired state of AddClusterInfo action",
 									Type:        "object",
 									Required:    []string{"clusterAttributes", "signals"},
 									Properties: map[string]apiextensionsv1.JSONSchemaProps{
@@ -94,7 +95,7 @@ func NewInsertClusterAttributesCRD() *apiextensionsv1.CustomResourceDefinition {
 									},
 								},
 								"status": {
-									Description: "InsertClusterAttributesStatus defines the observed state of InsertClusterAttributes action",
+									Description: "AddClusterInfoStatus defines the observed state of AddClusterInfo action",
 									Type:        "object",
 									Properties: map[string]apiextensionsv1.JSONSchemaProps{
 										"conditions": common.Conditions,

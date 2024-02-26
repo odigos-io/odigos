@@ -14,6 +14,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 
+	"github.com/keyval-dev/odigos/frontend/endpoints/actions"
 	"github.com/keyval-dev/odigos/frontend/kube"
 	"github.com/keyval-dev/odigos/frontend/version"
 
@@ -109,6 +110,12 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.POST("/destinations", func(c *gin.Context) { endpoints.CreateNewDestination(c, flags.Namespace) })
 		apis.PUT("/destinations/:id", func(c *gin.Context) { endpoints.UpdateExistingDestination(c, flags.Namespace) })
 		apis.DELETE("/destinations/:id", func(c *gin.Context) { endpoints.DeleteDestination(c, flags.Namespace) })
+
+		apis.GET("/actions", func(c *gin.Context) { actions.GetActions(c, flags.Namespace) })
+		apis.GET("/actions/types/AddClusterInfo/:id", func(c *gin.Context) { actions.GetAddClusterInfo(c, flags.Namespace, c.Param("id")) })
+		apis.POST("/actions/types/AddClusterInfo", func(c *gin.Context) { actions.CreateAddClusterInfo(c, flags.Namespace) })
+		apis.PUT("/actions/types/AddClusterInfo/:id", func(c *gin.Context) { actions.UpdateAddClusterInfo(c, flags.Namespace, c.Param("id")) })
+		apis.DELETE("/actions/types/AddClusterInfo/:id", func(c *gin.Context) { actions.DeleteAddClusterInfo(c, flags.Namespace, c.Param("id")) })
 	}
 
 	return r, nil

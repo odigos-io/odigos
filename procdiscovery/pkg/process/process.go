@@ -3,6 +3,7 @@ package process
 import (
 	"os"
 	"path"
+	"strconv"
 )
 
 type Details struct {
@@ -40,17 +41,27 @@ func FindAllProcesses(predicate func(string) bool) ([]Details, error) {
 			continue
 		}
 
-		exeName := getExecName(dirName)
-		cmdLine := getCommandLine(dirName)
-
-		result = append(result, Details{
-			ProcessID: pid,
-			ExeName:   exeName,
-			CmdLine:   cmdLine,
-		})
+		details := getPidDetails(pid, dirName)
+		result = append(result, details)
 	}
 
 	return result, nil
+}
+
+func GetPidDetails(pid int) Details {
+	pidStr := strconv.Itoa(pid)
+	return getPidDetails(pid, pidStr)
+}
+
+func getPidDetails(pid int, pidStr string) Details {
+	exeName := getExecName(pidStr)
+	cmdLine := getCommandLine(pidStr)
+
+	return Details{
+		ProcessID: pid,
+		ExeName:   exeName,
+		CmdLine:   cmdLine,
+	}
 }
 
 // The exe Symbolic Link: Inside each process's directory in /proc,

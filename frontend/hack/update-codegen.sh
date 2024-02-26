@@ -13,6 +13,6 @@ CODEGEN_PKG=${CODEGEN_PKG:-$(cd "${SCRIPT_ROOT}"; ls -d -1 ./vendor/k8s.io/code-
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 bash "${CODEGEN_PKG}"/generate-groups.sh "client,informer,lister" \
   github.com/keyval-dev/odigos/frontend/generated github.com/keyval-dev/odigos/api \
-  odigos:v1alpha1 \
+  "odigos:v1alpha1 odigos/actions:v1alpha1" \
   --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate.go.txt \
   --output-base $(PWD)/vendor

@@ -5,21 +5,23 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: insertclusterattributes.actions.odigos.io
+  name: addclusterinfos.actions.odigos.io
 spec:
   group: actions.odigos.io
   names:
-    kind: InsertClusterAttributes
-    listKind: InsertClusterAttributesList
-    plural: insertclusterattributes
-    singular: insertclusterattributes
+    kind: AddClusterInfo
+    listKind: AddClusterInfoList
+    plural: addclusterinfos
+    shortNames:
+    - aci
+    singular: addclusterinfo
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: InsertClusterAttributes is the Schema for the insertclusterattributes
-          odigos action API
+        description: AddClusterInfo is the Schema for the addclusterinfo odigos action
+          API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,8 +36,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: InsertClusterAttributesSpec defines the desired state of
-              InsertClusterAttributes action
+            description: AddClusterInfoSpec defines the desired state of AddClusterInfo
+              action
             properties:
               actionName:
                 type: string
@@ -71,12 +73,12 @@ spec:
             - signals
             type: object
           status:
-            description: InsertClusterAttributesStatus defines the observed state
-              of InsertClusterAttributes action
+            description: AddClusterInfoStatus defines the observed state of AddClusterInfo
+              action
             properties:
               conditions:
-                description: 'Represents the observations of a insertclusterattributes''s
-                  current state. Known .status.conditions.type are: "Available", "Progressing"'
+                description: 'Represents the observations of a addclusterinfo''s current
+                  state. Known .status.conditions.type are: "Available", "Progressing"'
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
