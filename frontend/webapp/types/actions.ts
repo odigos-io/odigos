@@ -9,3 +9,11 @@ export interface ActionItemCard {
   type: string;
   icon: string;
 }
+
+export interface ActionItem {
+  id?: string;
+  actionName: string;
+  notes: string;
+  signals: string[];
+  [key: string]: any;
+}

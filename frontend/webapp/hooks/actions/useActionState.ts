@@ -1,4 +1,9 @@
+import { setAction } from '@/services';
+import { ActionItem } from '@/types';
+import { ROUTES } from '@/utils';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useMutation } from 'react-query';
 
 const DEFAULT_MONITORS = [
   { id: '1', label: 'Logs', checked: true },
@@ -15,7 +20,14 @@ export function useActionState() {
       DEFAULT_MONITORS
     );
 
-  function createNewAction() {
+  const router = useRouter();
+  const { mutateAsync } = useMutation((body: ActionItem) => setAction(body));
+
+  function onCreateSuccess() {
+    router.push(ROUTES.ACTIONS);
+  }
+
+  async function createNewAction() {
     const signals = selectedMonitors
       .filter((monitor) => monitor.checked)
       .map((monitor) => monitor.label.toUpperCase());
@@ -26,8 +38,12 @@ export function useActionState() {
       signals,
       ...actionData,
     };
-
-    console.log({ action });
+    try {
+      await mutateAsync(action);
+      onCreateSuccess();
+    } catch (error) {
+      console.error({ error });
+    }
   }
 
   return {
