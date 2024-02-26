@@ -30,16 +30,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type InsertClusterAttributeReconciler struct {
+type AddClusterInfoReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *InsertClusterAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *AddClusterInfoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling InsertClusterAttribute action")
+	logger.V(0).Info("Reconciling AddClusterInfo action")
 
-	action := &actionv1.InsertClusterAttribute{}
+	action := &actionv1.AddClusterInfo{}
 	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -65,17 +65,17 @@ func (r *InsertClusterAttributeReconciler) Reconcile(ctx context.Context, req ct
 	return ctrl.Result{}, nil
 }
 
-type insertclusterattributesAttributeConfig struct {
+type addClusterInfoAttributeConfig struct {
 	Key    string  `json:"key"`
 	Value  *string `json:"value"`
 	Action string  `json:"action"`
 }
 
-type insertclusterattributesConfig struct {
-	Attributes []insertclusterattributesAttributeConfig `json:"attributes"`
+type addclusterinfoConfig struct {
+	Attributes []addClusterInfoAttributeConfig `json:"attributes"`
 }
 
-func (r *InsertClusterAttributeReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.InsertClusterAttribute, reason string, msg string) error {
+func (r *AddClusterInfoReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.AddClusterInfo, reason string, msg string) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               ActionTransformedToProcessorType,
 		Status:             metav1.ConditionFalse,
@@ -93,7 +93,7 @@ func (r *InsertClusterAttributeReconciler) ReportReconciledToProcessorFailed(ctx
 	return nil
 }
 
-func (r *InsertClusterAttributeReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.InsertClusterAttribute) error {
+func (r *AddClusterInfoReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.AddClusterInfo) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               ActionTransformedToProcessorType,
 		Status:             metav1.ConditionTrue,
@@ -111,13 +111,13 @@ func (r *InsertClusterAttributeReconciler) ReportReconciledToProcessor(ctx conte
 	return nil
 }
 
-func (r *InsertClusterAttributeReconciler) convertToProcessor(action *actionv1.InsertClusterAttribute) (*v1.Processor, error) {
+func (r *AddClusterInfoReconciler) convertToProcessor(action *actionv1.AddClusterInfo) (*v1.Processor, error) {
 
-	config := insertclusterattributesConfig{
-		Attributes: []insertclusterattributesAttributeConfig{},
+	config := addclusterinfoConfig{
+		Attributes: []addClusterInfoAttributeConfig{},
 	}
 	for _, attr := range action.Spec.ClusterAttributes {
-		config.Attributes = append(config.Attributes, insertclusterattributesAttributeConfig{
+		config.Attributes = append(config.Attributes, addClusterInfoAttributeConfig{
 			Key:    attr.AttributeName,
 			Value:  attr.AttributeStringValue,
 			Action: "insert",

@@ -31,8 +31,8 @@ type OtelAttributeWithValue struct {
 	AttributeStringValue *string `json:"attributeStringValue"`
 }
 
-// InsertClusterAttributeSpec defines the desired state of InsertClusterAttribute action
-type InsertClusterAttributeSpec struct {
+// AddClusterInfoSpec defines the desired state of AddClusterInfo action
+type AddClusterInfoSpec struct {
 	ActionName string                       `json:"actionName,omitempty"`
 	Notes      string                       `json:"notes,omitempty"`
 	Disabled   bool                         `json:"disabled,omitempty"`
@@ -41,9 +41,9 @@ type InsertClusterAttributeSpec struct {
 	ClusterAttributes []OtelAttributeWithValue `json:"clusterAttributes"`
 }
 
-// InsertClusterAttributeStatus defines the observed state of InsertClusterAttribute action
-type InsertClusterAttributeStatus struct {
-	// Represents the observations of a insertclusterattributes's current state.
+// AddClusterInfoStatus defines the observed state of AddClusterInfo action
+type AddClusterInfoStatus struct {
+	// Represents the observations of a addclusterinfo's current state.
 	// Known .status.conditions.type are: "Available", "Progressing"
 	// +patchMergeKey=type
 	// +patchStrategy=merge
@@ -55,25 +55,26 @@ type InsertClusterAttributeStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:path=addclusterinfos,scope=Namespaced,shortName=aci
 
-// InsertClusterAttribute is the Schema for the insertclusterattribute odigos action API
-type InsertClusterAttribute struct {
+// AddClusterInfo is the Schema for the addclusterinfo odigos action API
+type AddClusterInfo struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   InsertClusterAttributeSpec   `json:"spec,omitempty"`
-	Status InsertClusterAttributeStatus `json:"status,omitempty"`
+	Spec   AddClusterInfoSpec   `json:"spec,omitempty"`
+	Status AddClusterInfoStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// InsertClusterAttributeList contains a list of InsertClusterAttribute
-type InsertClusterAttributeList struct {
+// AddClusterInfoList contains a list of AddClusterInfo
+type AddClusterInfoList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []InsertClusterAttribute `json:"items"`
+	Items           []AddClusterInfo `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&InsertClusterAttribute{}, &InsertClusterAttributeList{})
+	SchemeBuilder.Register(&AddClusterInfo{}, &AddClusterInfoList{})
 }

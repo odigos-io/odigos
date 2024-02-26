@@ -31,59 +31,59 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// InsertClusterAttributeInformer provides access to a shared informer and lister for
-// InsertClusterAttributes.
-type InsertClusterAttributeInformer interface {
+// AddClusterInfoInformer provides access to a shared informer and lister for
+// AddClusterInfos.
+type AddClusterInfoInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.InsertClusterAttributeLister
+	Lister() v1alpha1.AddClusterInfoLister
 }
 
-type insertClusterAttributeInformer struct {
+type addClusterInfoInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewInsertClusterAttributeInformer constructs a new informer for InsertClusterAttribute type.
+// NewAddClusterInfoInformer constructs a new informer for AddClusterInfo type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewInsertClusterAttributeInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredInsertClusterAttributeInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewAddClusterInfoInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredAddClusterInfoInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredInsertClusterAttributeInformer constructs a new informer for InsertClusterAttribute type.
+// NewFilteredAddClusterInfoInformer constructs a new informer for AddClusterInfo type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredInsertClusterAttributeInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredAddClusterInfoInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ActionsV1alpha1().InsertClusterAttributes(namespace).List(context.TODO(), options)
+				return client.ActionsV1alpha1().AddClusterInfos(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ActionsV1alpha1().InsertClusterAttributes(namespace).Watch(context.TODO(), options)
+				return client.ActionsV1alpha1().AddClusterInfos(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&actionsv1alpha1.InsertClusterAttribute{},
+		&actionsv1alpha1.AddClusterInfo{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *insertClusterAttributeInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredInsertClusterAttributeInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *addClusterInfoInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredAddClusterInfoInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *insertClusterAttributeInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&actionsv1alpha1.InsertClusterAttribute{}, f.defaultInformer)
+func (f *addClusterInfoInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&actionsv1alpha1.AddClusterInfo{}, f.defaultInformer)
 }
 
-func (f *insertClusterAttributeInformer) Lister() v1alpha1.InsertClusterAttributeLister {
-	return v1alpha1.NewInsertClusterAttributeLister(f.Informer().GetIndexer())
+func (f *addClusterInfoInformer) Lister() v1alpha1.AddClusterInfoLister {
+	return v1alpha1.NewAddClusterInfoLister(f.Informer().GetIndexer())
 }
