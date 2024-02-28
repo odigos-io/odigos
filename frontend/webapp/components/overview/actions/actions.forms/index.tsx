@@ -1,1 +1,1 @@
-export * from './insert.cluster.attributes';
+export * from './add.cluster.info';
