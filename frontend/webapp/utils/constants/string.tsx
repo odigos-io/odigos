@@ -94,6 +94,7 @@ export const OVERVIEW = {
   CONNECT: 'Connect',
   REPORTED_NAME: 'Override service.name',
   CREATE_ACTION: 'Create Action',
+  EDIT_ACTION: 'Edit Action',
   ACTION_DESCRIPTION:
     'Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your Odigos Destinations.',
 };
