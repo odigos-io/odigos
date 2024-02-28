@@ -15,46 +15,58 @@ const FormWrapper = styled.div`
   width: 375px;
 `;
 
-interface AddClusterInfoFormProps {
-  data: KeyValue[] | null;
-  onChange: (
-    key: string,
-    keyValues: {
-      clusterAttributes:
-        | {
-            attributeName: string;
-            attributeStringValue: string;
-          }[];
-    } | null
-  ) => void;
+interface ClusterAttributes {
+  clusterAttributes: {
+    attributeName: string;
+    attributeStringValue: string;
+  }[];
 }
+
+interface AddClusterInfoFormProps {
+  data: ClusterAttributes | null;
+  onChange: (key: string, keyValues: ClusterAttributes | null) => void;
+}
+
+const ACTION_DATA_KEY = 'actionData';
 
 export function AddClusterInfoForm({
   data,
   onChange,
 }: AddClusterInfoFormProps): React.JSX.Element {
-  const [keyValues, setKeyValues] = React.useState<KeyValue[]>(
-    data || DEFAULT_KEY_VALUE_PAIR
+  const [keyValues, setKeyValues] = React.useState<ClusterAttributes>(
+    data || { clusterAttributes: [] }
   );
 
   function handleKeyValuesChange(keyValues: KeyValue[]): void {
-    setKeyValues(keyValues);
+    const actionData = {
+      clusterAttributes: keyValues.map((keyValue) => ({
+        attributeName: keyValue.key,
+        attributeStringValue: keyValue.value,
+      })),
+    };
 
-    let newData = keyValues.map((keyValue) => ({
-      attributeName: keyValue.key,
-      attributeStringValue: keyValue.value,
-    }));
-
-    // Set newData to null if it meets the condition to indicate a "false" value
+    setKeyValues(actionData);
     if (
-      newData.length === 1 &&
-      newData[0].attributeName === '' &&
-      newData[0].attributeStringValue === ''
+      actionData.clusterAttributes.length === 1 &&
+      actionData.clusterAttributes[0].attributeName === '' &&
+      actionData.clusterAttributes[0].attributeStringValue === ''
     ) {
-      onChange('actionData', null);
+      onChange(ACTION_DATA_KEY, null);
     } else {
-      onChange('actionData', { clusterAttributes: newData });
+      onChange(ACTION_DATA_KEY, actionData);
     }
+  }
+
+  function getKeyValuePairs(): KeyValue[] {
+    if (keyValues.clusterAttributes.length === 0) {
+      return DEFAULT_KEY_VALUE_PAIR;
+    }
+
+    return keyValues.clusterAttributes.map((keyValue, index) => ({
+      id: index,
+      key: keyValue.attributeName,
+      value: keyValue.attributeStringValue,
+    }));
   }
 
   return (
@@ -64,7 +76,7 @@ export function AddClusterInfoForm({
           title="Cluster Attributes *"
           titleKey="Attribute"
           titleButton="Add Attribute"
-          keyValues={keyValues}
+          keyValues={getKeyValuePairs()}
           setKeyValues={handleKeyValuesChange}
         />
       </FormWrapper>

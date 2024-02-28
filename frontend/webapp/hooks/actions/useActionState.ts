@@ -1,9 +1,11 @@
 import { ROUTES } from '@/utils';
 import { useState } from 'react';
 import { ActionItem } from '@/types';
-import { setAction } from '@/services';
+import { putAction, setAction } from '@/services';
 import { useMutation } from 'react-query';
 import { useRouter } from 'next/navigation';
+import { capitalizeFirstLetter } from '@/utils/functions';
+import { useActions } from './useActions';
 
 interface Monitor {
   id: string;
@@ -12,6 +14,7 @@ interface Monitor {
 }
 
 interface ActionState {
+  id?: string;
   actionName: string;
   actionNote: string;
   actionData: any;
@@ -33,8 +36,12 @@ export function useActionState() {
   });
 
   const router = useRouter();
-  const { mutateAsync } = useMutation((body: ActionItem) => setAction(body));
+  const { getActionById } = useActions();
 
+  const { mutateAsync } = useMutation((body: ActionItem) => setAction(body));
+  const { mutateAsync: updateAction } = useMutation((body: ActionItem) =>
+    putAction(actionState?.id, body)
+  );
   function onCreateSuccess() {
     router.push(ROUTES.ACTIONS);
   }
@@ -44,6 +51,32 @@ export function useActionState() {
       ...prevState,
       [key]: value,
     }));
+  }
+
+  function buildActionData(actionId: string) {
+    const action = getActionById(actionId);
+
+    const actionState = {
+      id: action?.id,
+      actionName: action?.spec?.actionName || '',
+      actionNote: action?.spec?.notes || '',
+      actionData: {
+        clusterAttributes:
+          action?.spec.clusterAttributes.map((attr, index) => ({
+            attributeName: attr.attributeName,
+            attributeStringValue: attr.attributeStringValue,
+            id: index,
+          })) || [],
+      },
+      selectedMonitors:
+        action?.spec?.signals.map((signal) => ({
+          id: signal,
+          label: capitalizeFirstLetter(signal.toLowerCase()),
+          checked: true,
+        })) || [],
+    };
+
+    setActionState(actionState);
   }
 
   async function createNewAction() {
@@ -69,9 +102,35 @@ export function useActionState() {
     }
   }
 
+  async function updateCurrentAction() {
+    const { actionName, actionNote, actionData, selectedMonitors } =
+      actionState;
+
+    const signals = selectedMonitors
+      .filter((monitor) => monitor.checked)
+      .map((monitor) => monitor.label.toUpperCase());
+
+    const action = {
+      actionName,
+      notes: actionNote,
+      signals,
+      ...actionData,
+    };
+
+    console.log({ action });
+    try {
+      await updateAction(action);
+      onCreateSuccess();
+    } catch (error) {
+      console.error({ error });
+    }
+  }
+
   return {
     actionState,
     onChangeActionState,
     createNewAction,
+    updateCurrentAction,
+    buildActionData,
   };
 }

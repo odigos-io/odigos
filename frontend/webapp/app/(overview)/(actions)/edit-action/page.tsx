@@ -3,7 +3,7 @@ import React from 'react';
 import { OVERVIEW } from '@/utils';
 import { useRouter } from 'next/navigation';
 import { OverviewHeader } from '@/components';
-import { CreateActionContainer } from '@/containers';
+import { EditActionContainer } from '@/containers';
 
 export default function EditActionPage() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function EditActionPage() {
         onBackClick={onButtonClick}
         title={OVERVIEW.EDIT_ACTION}
       />
-      <CreateActionContainer />
+      <EditActionContainer />
     </>
   );
 }

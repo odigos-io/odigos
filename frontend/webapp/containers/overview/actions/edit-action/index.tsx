@@ -22,22 +22,30 @@ import {
   TextareaWrapper,
 } from './styled';
 
-const ACTION_TYPE = 'type';
+const ACTION_ID = 'id';
 
-export function CreateActionContainer(): React.JSX.Element {
+export function EditActionContainer(): React.JSX.Element {
   const [currentActionType, setCurrentActionType] = useState<string>();
-  const { actionState, onChangeActionState, createNewAction } =
-    useActionState();
+
+  const {
+    actionState,
+    onChangeActionState,
+    updateCurrentAction,
+    buildActionData,
+  } = useActionState();
+
   const { actionName, actionNote, actionData, selectedMonitors } = actionState;
 
   const search = useSearchParams();
 
   useEffect(() => {
-    const action = search.get(ACTION_TYPE);
-    action && setCurrentActionType(action);
+    const actionId = search.get(ACTION_ID);
+    if (!actionId) return;
+    setCurrentActionType('add-cluster-info');
+    buildActionData(actionId);
   }, [search]);
 
-  if (!currentActionType)
+  if (!actionState || !currentActionType)
     return (
       <LoaderWrapper>
         <KeyvalLoader />
@@ -84,9 +92,9 @@ export function CreateActionContainer(): React.JSX.Element {
         />
       </TextareaWrapper>
       <CreateButtonWrapper>
-        <KeyvalButton onClick={createNewAction} disabled={!actionData}>
+        <KeyvalButton onClick={updateCurrentAction} disabled={!actionData}>
           <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
-            {ACTIONS.CREATE_ACTION}
+            {ACTIONS.UPDATE_ACTION}
           </KeyvalText>
         </KeyvalButton>
       </CreateButtonWrapper>
