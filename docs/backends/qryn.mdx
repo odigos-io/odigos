@@ -1,11 +1,30 @@
 ---
-title: "Qryn"
+title: "qryn"
 ---
 
-## Configuring Qryn Backend
+You can use [qryn](https://qryn.dev) as a polyglot backend for Odigos to store your logs, metrics, and traces. 
+The **qryn** APIs are compatible with _Loki, Prometheus, Tempo_ and can be used with the native drivers.
 
-Fill in the following information using your relevant qryn details:
+This page describes how to configure Odigos to use [qryn](https://qryn.dev) as an **all-in-one** backend.
 
-- **Tempo URL**: https://qryn.host/tempo/api/push
-- **Prometheus URL**: https://qryn.host/api/prom/remote/write
-- **Loki URL**: https://qryn.host/loki/api/v1/push
+### Traces
+To send traces to **qryn**, use the native Tempo integration in the Odigos UI. 
+
+#### Configuration
+The URL should be in the format `https://<qryn-host>:<qryn-port>/tempo/api/push`.
+
+### Metrics
+To send metrics to **qryn**, use the native Prometheus `remote_write` integration in the Odigos UI. 
+
+#### Configuration
+The URL should be in the format `https://<qryn-host>:<qryn-port>/api/prom/remote/write`.
+
+### Logs
+To send logs to **qryn**, use the native Loki integration in the Odigos UI. 
+
+#### Configuration
+The URL should be in the format `https://<qryn-host>:<qryn-port>/loki/api/v1/push`.
+
+- If scheme is not provided, it defaults to `http`.
+- If port is not provided, it defaults to `3100`.
+- If path is not provided, it defaults to `/loki/api/v1/push`.
