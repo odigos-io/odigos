@@ -15,23 +15,24 @@ const FormWrapper = styled.div`
   width: 375px;
 `;
 
-interface InsertClusterAttributesFormProps {
+interface AddClusterInfoFormProps {
   data: KeyValue[] | null;
   onChange: (
     key: string,
     keyValues: {
-      clusterAttributes: {
-        attributeName: string;
-        attributeStringValue: string;
-      }[];
-    }
+      clusterAttributes:
+        | {
+            attributeName: string;
+            attributeStringValue: string;
+          }[];
+    } | null
   ) => void;
 }
 
-export function InsertClusterAttributesForm({
+export function AddClusterInfoForm({
   data,
   onChange,
-}: InsertClusterAttributesFormProps): React.JSX.Element {
+}: AddClusterInfoFormProps): React.JSX.Element {
   const [keyValues, setKeyValues] = React.useState<KeyValue[]>(
     data || DEFAULT_KEY_VALUE_PAIR
   );
@@ -39,20 +40,28 @@ export function InsertClusterAttributesForm({
   function handleKeyValuesChange(keyValues: KeyValue[]): void {
     setKeyValues(keyValues);
 
-    const data = keyValues.map((keyValue) => {
-      return {
-        attributeName: keyValue.key,
-        attributeStringValue: keyValue.value,
-      };
-    });
-    onChange('actionData', { clusterAttributes: data });
+    let newData = keyValues.map((keyValue) => ({
+      attributeName: keyValue.key,
+      attributeStringValue: keyValue.value,
+    }));
+
+    // Set newData to null if it meets the condition to indicate a "false" value
+    if (
+      newData.length === 1 &&
+      newData[0].attributeName === '' &&
+      newData[0].attributeStringValue === ''
+    ) {
+      onChange('actionData', null);
+    } else {
+      onChange('actionData', { clusterAttributes: newData });
+    }
   }
 
   return (
     <>
       <FormWrapper>
         <KeyValuePair
-          title="Insert cluster attributes"
+          title="Cluster Attributes *"
           titleKey="Attribute"
           titleButton="Add Attribute"
           keyValues={keyValues}

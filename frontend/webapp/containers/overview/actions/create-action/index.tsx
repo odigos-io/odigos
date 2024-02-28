@@ -5,6 +5,7 @@ import { ActionsType } from '@/types';
 import { useActionState } from '@/hooks';
 import { useSearchParams } from 'next/navigation';
 import { ACTION, ACTIONS, ACTION_DOCS_LINK } from '@/utils';
+import { MultiCheckboxComponent, AddClusterInfoForm } from '@/components';
 import {
   KeyvalButton,
   KeyvalInput,
@@ -21,10 +22,6 @@ import {
   LoaderWrapper,
   TextareaWrapper,
 } from './styled';
-import {
-  MultiCheckboxComponent,
-  InsertClusterAttributesForm,
-} from '@/components';
 
 const ACTION_TYPE = 'type';
 
@@ -43,9 +40,9 @@ export function CreateActionContainer(): React.JSX.Element {
 
   function renderCurrentAction() {
     switch (currentActionType) {
-      case ActionsType.INSERT_CLUSTER_ATTRIBUTES:
+      case ActionsType.ADD_CLUSTER_INFO:
         return (
-          <InsertClusterAttributesForm
+          <AddClusterInfoForm
             data={actionData}
             onChange={onChangeActionState}
           />
@@ -102,7 +99,7 @@ export function CreateActionContainer(): React.JSX.Element {
         />
       </TextareaWrapper>
       <CreateButtonWrapper>
-        <KeyvalButton onClick={createNewAction}>
+        <KeyvalButton onClick={createNewAction} disabled={!actionData}>
           <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
             {ACTIONS.CREATE_ACTION}
           </KeyvalText>

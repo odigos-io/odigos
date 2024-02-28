@@ -14,11 +14,10 @@ import { useRouter } from 'next/navigation';
 const ITEMS = [
   {
     id: '1',
-    title: 'Insert Cluster Attributes',
-    description:
-      'With cluster attributes, you can define the attributes of the cluster. This is useful for filtering and grouping spans in your backend.',
-    type: 'insert-cluster-attributes',
-    icon: 'insert-cluster-attributes',
+    title: 'Add Cluster Info',
+    description: 'Add static cluster-scoped attributes to your data.',
+    type: 'add-cluster-info',
+    icon: 'add-cluster-info',
   },
   {
     id: '2',

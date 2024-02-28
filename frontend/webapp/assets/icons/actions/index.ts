@@ -1,6 +1,6 @@
-import ClusterAttributes from './cluster-attr.svg';
+import AddClusterInfo from './cluster-attr.svg';
 
 export const ACTION_ICONS = {
-  'insert-cluster-attributes': ClusterAttributes,
-  filter: ClusterAttributes,
+  'add-cluster-info': AddClusterInfo,
+  filter: AddClusterInfo,
 };
