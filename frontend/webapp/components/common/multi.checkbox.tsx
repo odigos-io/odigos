@@ -56,7 +56,6 @@ export const MultiCheckboxComponent: React.FC<MultiCheckboxProps> = ({
     setIsCheckboxDisabled(newCheckedCount <= 1);
   };
 
-  console.log('object');
   return (
     <>
       {title && (
