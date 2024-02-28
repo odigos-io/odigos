@@ -1,17 +1,34 @@
 import React from 'react';
+import { useActions } from '@/hooks';
 import { OVERVIEW, ROUTES } from '@/utils';
 import { useRouter } from 'next/navigation';
-import { AddItemMenu, EmptyList } from '@/components';
+import { KeyvalLoader } from '@/design.system';
+import { AddItemMenu, EmptyList, ManagedActionCard } from '@/components';
+import { ActionsListWrapper } from '../choose-action/styled';
 
 export function ManagedActionsContainer() {
   const router = useRouter();
+  const { isLoading, actions } = useActions();
 
   function handleAddAction() {
     router.push(ROUTES.CHOOSE_ACTIONS);
   }
+
+  function renderManagedActionsList() {
+    return actions.map((item) => {
+      return (
+        <div key={item.id}>
+          <ManagedActionCard item={item} onClick={() => {}} />
+        </div>
+      );
+    });
+  }
+
+  if (isLoading) return <KeyvalLoader />;
+
   return (
     <>
-      {true ? (
+      {!actions?.length ? (
         <EmptyList
           title={OVERVIEW.EMPTY_ACTION}
           btnTitle={OVERVIEW.ADD_NEW_ACTION}
@@ -21,10 +38,11 @@ export function ManagedActionsContainer() {
         <>
           <AddItemMenu
             btnLabel={OVERVIEW.ADD_NEW_ACTION}
-            length={0}
+            length={actions.length}
             onClick={handleAddAction}
             lengthLabel={OVERVIEW.MENU.ACTIONS}
           />
+          <ActionsListWrapper>{renderManagedActionsList()}</ActionsListWrapper>
         </>
       )}
     </>

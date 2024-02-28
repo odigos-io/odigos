@@ -11,6 +11,7 @@ const API = {
   DESTINATIONS: `${BASE_URL}/destinations`,
   SOURCES: `${BASE_URL}/sources`,
   SET_ACTION: (type: string) => `${BASE_URL}/actions/types/${type}`,
+  ACTIONS: `${BASE_URL}/actions`,
 };
 
 const QUERIES = {
@@ -21,6 +22,7 @@ const QUERIES = {
   API_SOURCES: 'apiSources',
   API_DESTINATION_TYPE: 'apiDestinationType',
   API_DESTINATION_TYPES: 'apiDestinationTypes',
+  API_ACTIONS: 'apiActions',
 };
 
 const SLACK_INVITE_LINK =

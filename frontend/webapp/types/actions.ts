@@ -11,9 +11,14 @@ export interface ActionItemCard {
 }
 
 export interface ActionItem {
-  id?: string;
   actionName: string;
   notes: string;
   signals: string[];
   [key: string]: any;
+}
+
+export interface ActionData {
+  id: string;
+  type: string;
+  spec: ActionItem;
 }
