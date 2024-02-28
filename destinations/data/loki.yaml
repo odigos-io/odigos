@@ -19,9 +19,12 @@ spec:
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: LOKI_LABELS
       displayName: Labels
       componentType: multiInput
       componentProps:
         type: text
+        required: true
+        tooltip: 'use these OpenTelemetry resource attributes as loki labels for each log record'
       initialValue: '["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]'
