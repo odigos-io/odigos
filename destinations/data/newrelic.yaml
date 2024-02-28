@@ -19,6 +19,7 @@ spec:
       componentType: input
       componentProps:
         type: password
+        required: true
       secret: true
     - name: NEWRELIC_ENDPOINT
       displayName: Endpoint
@@ -27,3 +28,4 @@ spec:
         values:
           - https://otlp.nr-data.net
           - https://otlp.eu01.nr-data.net
+        required: true

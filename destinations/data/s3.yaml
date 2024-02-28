@@ -19,11 +19,13 @@ spec:
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: S3_REGION
       displayName: Bucket Region
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: S3_PARTITION
       displayName: Time granularity of S3 Bucket
       componentType: dropdown
@@ -31,6 +33,7 @@ spec:
         values:
           - minute
           - hour
+        required: true
       initialValue: minute
     - name: S3_MARSHALER
       displayName: Marshaller (Data Format)
@@ -39,4 +42,5 @@ spec:
         values:
           - otlp_json
           - otlp_proto
+        required: true
       initialValue: otlp_json
