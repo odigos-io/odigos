@@ -1,5 +1,5 @@
 export enum ActionsType {
-  INSERT_CLUSTER_ATTRIBUTES = 'insert-cluster-attributes',
+  ADD_CLUSTER_INFO = 'add-cluster-info',
 }
 
 export interface ActionItemCard {

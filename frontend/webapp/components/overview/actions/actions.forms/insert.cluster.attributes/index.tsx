@@ -15,7 +15,7 @@ const FormWrapper = styled.div`
   width: 375px;
 `;
 
-interface InsertClusterAttributesFormProps {
+interface AddClusterInfoFormProps {
   data: KeyValue[] | null;
   onChange: (
     key: string,
@@ -28,10 +28,10 @@ interface InsertClusterAttributesFormProps {
   ) => void;
 }
 
-export function InsertClusterAttributesForm({
+export function AddClusterInfoForm({
   data,
   onChange,
-}: InsertClusterAttributesFormProps): React.JSX.Element {
+}: AddClusterInfoFormProps): React.JSX.Element {
   const [keyValues, setKeyValues] = React.useState<KeyValue[]>(
     data || DEFAULT_KEY_VALUE_PAIR
   );
@@ -52,7 +52,7 @@ export function InsertClusterAttributesForm({
     <>
       <FormWrapper>
         <KeyValuePair
-          title="Insert cluster attributes"
+          title="Cluster Attributes"
           titleKey="Attribute"
           titleButton="Add Attribute"
           keyValues={keyValues}

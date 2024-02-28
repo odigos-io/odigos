@@ -124,7 +124,7 @@ export const ACTIONS = {
   ACTION_NOTE: 'Note',
   NOTE_PLACEHOLDER: 'Add a note to describe the use case of this action',
   CREATE_ACTION: 'Create Action',
-  'insert-cluster-attributes': {
-    DESCRIPTION: `The "Insert Cluster Attribute" Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`,
+  'add-cluster-info': {
+    DESCRIPTION: `The “Add Cluster Info” Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`,
   },
 };
