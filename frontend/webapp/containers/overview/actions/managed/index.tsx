@@ -1,20 +1,27 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { useActions } from '@/hooks';
 import { OVERVIEW, ROUTES } from '@/utils';
 import { useRouter } from 'next/navigation';
-import { AddItemMenu, EmptyList } from '@/components';
-import { useActions } from '@/hooks';
 import { KeyvalLoader } from '@/design.system';
+import { AddItemMenu, EmptyList, ManagedActionCard } from '@/components';
+import { ActionsListWrapper } from '../choose-action/styled';
 
 export function ManagedActionsContainer() {
   const router = useRouter();
   const { isLoading, actions } = useActions();
 
-  useEffect(() => {
-    console.log({ actions, isLoading });
-  }, [actions]);
-
   function handleAddAction() {
     router.push(ROUTES.CHOOSE_ACTIONS);
+  }
+
+  function renderManagedActionsList() {
+    return actions.map((item) => {
+      return (
+        <div key={item.id}>
+          <ManagedActionCard item={item} onClick={() => {}} />
+        </div>
+      );
+    });
   }
 
   if (isLoading) return <KeyvalLoader />;
@@ -35,6 +42,7 @@ export function ManagedActionsContainer() {
             onClick={handleAddAction}
             lengthLabel={OVERVIEW.MENU.ACTIONS}
           />
+          <ActionsListWrapper>{renderManagedActionsList()}</ActionsListWrapper>
         </>
       )}
     </>

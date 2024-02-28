@@ -12,6 +12,6 @@ export function useActions() {
 
   return {
     isLoading,
-    actions: data,
+    actions: data || [],
   };
 }
