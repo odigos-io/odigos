@@ -99,7 +99,7 @@ export function CreateActionContainer(): React.JSX.Element {
         />
       </TextareaWrapper>
       <CreateButtonWrapper>
-        <KeyvalButton onClick={createNewAction}>
+        <KeyvalButton onClick={createNewAction} disabled={!actionData}>
           <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
             {ACTIONS.CREATE_ACTION}
           </KeyvalText>

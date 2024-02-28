@@ -20,11 +20,12 @@ interface AddClusterInfoFormProps {
   onChange: (
     key: string,
     keyValues: {
-      clusterAttributes: {
-        attributeName: string;
-        attributeStringValue: string;
-      }[];
-    }
+      clusterAttributes:
+        | {
+            attributeName: string;
+            attributeStringValue: string;
+          }[];
+    } | null
   ) => void;
 }
 
@@ -39,20 +40,28 @@ export function AddClusterInfoForm({
   function handleKeyValuesChange(keyValues: KeyValue[]): void {
     setKeyValues(keyValues);
 
-    const data = keyValues.map((keyValue) => {
-      return {
-        attributeName: keyValue.key,
-        attributeStringValue: keyValue.value,
-      };
-    });
-    onChange('actionData', { clusterAttributes: data });
+    let newData = keyValues.map((keyValue) => ({
+      attributeName: keyValue.key,
+      attributeStringValue: keyValue.value,
+    }));
+
+    // Set newData to null if it meets the condition to indicate a "false" value
+    if (
+      newData.length === 1 &&
+      newData[0].attributeName === '' &&
+      newData[0].attributeStringValue === ''
+    ) {
+      onChange('actionData', null);
+    } else {
+      onChange('actionData', { clusterAttributes: newData });
+    }
   }
 
   return (
     <>
       <FormWrapper>
         <KeyValuePair
-          title="Cluster Attributes"
+          title="Cluster Attributes *"
           titleKey="Attribute"
           titleButton="Add Attribute"
           keyValues={keyValues}

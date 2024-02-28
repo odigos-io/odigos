@@ -15,8 +15,7 @@ const ITEMS = [
   {
     id: '1',
     title: 'Add Cluster Info',
-    description:
-      'Add cluster information to the span, such as the cluster name, the environment, and the region.',
+    description: 'Add static cluster-scoped attributes to your data.',
     type: 'add-cluster-info',
     icon: 'add-cluster-info',
   },
