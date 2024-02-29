@@ -191,7 +191,7 @@ export function CreateConnectionForm({
           ? SETUP.UPDATE_CONNECTION
           : SETUP.CREATE_CONNECTION}
       </KeyvalText>
-      {selectedMonitors?.length > 1 && (
+      {selectedMonitors?.length >= 1 && (
         <ConnectionMonitorsWrapper>
           <KeyvalText size={14}>{SETUP.CONNECTION_MONITORS}</KeyvalText>
           <CheckboxWrapper>
