@@ -7,9 +7,8 @@ import { FieldWrapper } from './create.connection.form.styled';
 import {
   KeyvalDropDown,
   KeyvalInput,
-  KeyvalText,
-  MultiInput,
   KeyValuePair,
+  MultiInputTable,
 } from '@/design.system';
 
 const DEFAULT_KEY_VALUE_PAIR = [
@@ -23,7 +22,7 @@ const DEFAULT_KEY_VALUE_PAIR = [
 export function renderFields(
   fields: Field[],
   dynamicFields: object,
-  onChange: (name: string, value: string) => void
+  onChange: (name: string, value: any) => void
 ) {
   return fields?.map((field) => {
     const { name, component_type, display_name, component_properties } = field;
@@ -65,75 +64,55 @@ export function renderFields(
           </FieldWrapper>
         );
       case INPUT_TYPES.MULTI_INPUT:
-        const userInputData = safeJsonParse<string[] | null>(
-          dynamicFields[name],
-          null
-        );
-
-        // Use safeJsonParse to parse field?.initial_value, defaulting to an empty string if not available.
-        // This assumes that the initial value is supposed to be a string when parsed successfully.
-        // Adjust the fallback value as necessary to match the expected type
-        const initialList =
-          userInputData || safeJsonParse<string[]>(field?.initial_value, []);
-
+        let values = dynamicFields[name] || field.initial_value;
+        if (typeof values === 'string') {
+          values = safeJsonParse<string[]>(values, []);
+        }
         return (
-          <FieldWrapper key={name}>
-            <MultiInput
-              initialList={initialList}
+          <div key={name} style={{ marginTop: 22 }}>
+            <MultiInputTable
               title={display_name}
-              onListChange={(value: string[]) =>
-                onChange(name, value.length === 0 ? '' : JSON.stringify(value))
+              values={values}
+              placeholder="Add value"
+              onValuesChange={(value: string[]) =>
+                onChange(name, value.length === 0 ? [] : value)
               }
               {...component_properties}
             />
-          </FieldWrapper>
+          </div>
         );
 
       case INPUT_TYPES.KEY_VALUE_PAIR:
-        let keyValues: KeyValue[] = safeJsonParse<KeyValue[]>(
-          dynamicFields[name],
-          DEFAULT_KEY_VALUE_PAIR
-        );
-
-        if (dynamicFields[name] === '') {
-          onChange(name, stringifyKeyValues(keyValues));
+        let keyValues = dynamicFields[name] || DEFAULT_KEY_VALUE_PAIR;
+        if (typeof keyValues === 'string') {
+          keyValues = safeJsonParse<KeyValue[]>(keyValues, []);
         }
 
-        if (!Array.isArray(keyValues)) {
-          //data return as json from server
-          const array: KeyValue[] = [];
-          let id = 0;
-          for (const [key, value] of Object.entries(keyValues)) {
-            array.push({ id: id++, key: key, value: value as string });
-          }
-          keyValues = array;
+        const array: KeyValue[] = [];
+        let id = 0;
+        for (const item of keyValues) {
+          const { key, value } = item;
+          array.push({ id: id++, key: key, value: value as string });
         }
+        keyValues = array;
 
         return (
           <div key={name} style={{ marginTop: 22 }}>
-            <div>
-              <KeyValuePair
-                title={display_name}
-                setKeyValues={(value) => {
-                  onChange(name, stringifyKeyValues(value));
-                }}
-                keyValues={keyValues}
-                {...component_properties}
-              />
-            </div>
+            <KeyValuePair
+              title={display_name}
+              setKeyValues={(value) => {
+                const data = value.map((item) => {
+                  return { key: item.key, value: item.value };
+                });
+                onChange(name, data);
+              }}
+              keyValues={keyValues}
+              {...component_properties}
+            />
           </div>
         );
       default:
         return null;
     }
   });
-}
-
-function stringifyKeyValues(keyValues: KeyValue[]) {
-  const resultMap = {};
-  keyValues.forEach((item) => {
-    const { key, value } = item;
-    resultMap[key] = value;
-  });
-  return JSON.stringify(resultMap);
 }
