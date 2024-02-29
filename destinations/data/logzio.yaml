@@ -26,6 +26,7 @@ spec:
           - listener-nl.logz.io
           - listener-uk.logz.io
           - listener-wa.logz.io
+        required: true
     - name: LOGZIO_TRACING_TOKEN
       displayName: Tracing token
       componentType: input

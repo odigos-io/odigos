@@ -19,8 +19,10 @@ spec:
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: AZURE_BLOB_CONTAINER_NAME
       displayName: Container Name
       componentType: input
       componentProps:
         type: text
+        required: true

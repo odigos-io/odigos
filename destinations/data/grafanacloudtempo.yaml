@@ -19,14 +19,17 @@ spec:
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: GRAFANA_CLOUD_TEMPO_USERNAME
       displayName: Username
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: GRAFANA_CLOUD_TEMPO_PASSWORD
       displayName: Password (Api Token)
       componentType: input
       componentProps:
         type: password
+        required: true
       secret: true

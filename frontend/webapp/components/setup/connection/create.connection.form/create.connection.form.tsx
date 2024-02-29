@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import theme from '@/styles/palette';
 import { useKeyDown } from '@/hooks';
-import { SETUP } from '@/utils/constants';
 import { Field } from '@/types/destinations';
 import { renderFields } from './dynamic.fields';
+import {
+  cleanObjectEmptyStringsValues,
+  SETUP,
+  stringifyNonStringValues,
+} from '@/utils';
 import { DestinationBody } from '@/containers/setup/connection/connection.section';
 import {
   KeyvalButton,
@@ -150,16 +154,16 @@ export function CreateConnectionForm({
   }
 
   function isFormValid() {
-    const areDynamicFieldsFilled = Object.values(dynamicFields).every(
-      (field) => field
-    );
-    const isFieldLengthMatching =
-      (fields?.length ?? 0) ===
-      (dynamicFields ? Object.keys(dynamicFields).length : 0);
-
-    const isValid =
-      !!destinationName && areDynamicFieldsFilled && isFieldLengthMatching;
-
+    let isValid = true;
+    for (let field of fields) {
+      if (field.component_properties.required) {
+        const value = dynamicFields[field.name];
+        if (value === undefined || value.trim() === '' || !destinationName) {
+          isValid = false;
+          break;
+        }
+      }
+    }
     setIsCreateButtonDisabled(!isValid);
   }
 
@@ -168,10 +172,14 @@ export function CreateConnectionForm({
       (acc, { id, checked }) => ({ ...acc, [id]: checked }),
       {}
     );
+
+    const stringifyFields = stringifyNonStringValues(dynamicFields);
+    const fields = cleanObjectEmptyStringsValues(stringifyFields);
+
     const body = {
       name: destinationName,
       signals,
-      fields: dynamicFields,
+      fields,
     };
     onSubmit(body);
   }
@@ -183,7 +191,7 @@ export function CreateConnectionForm({
           ? SETUP.UPDATE_CONNECTION
           : SETUP.CREATE_CONNECTION}
       </KeyvalText>
-      {selectedMonitors?.length > 1 && (
+      {selectedMonitors?.length >= 1 && (
         <ConnectionMonitorsWrapper>
           <KeyvalText size={14}>{SETUP.CONNECTION_MONITORS}</KeyvalText>
           <CheckboxWrapper>
