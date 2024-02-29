@@ -1,14 +1,13 @@
 package envOverwrite
 
 import (
-	"strings"
-
 	"github.com/keyval-dev/odigos/common"
 )
 
 type Overwriter interface {
 	EnvName() string
 	ValueFor(sdkType common.OtelSdkType) string
+	Revert(str string) string
 }
 
 var all = []Overwriter{
@@ -50,7 +49,7 @@ func Patch(envName string, currentVal string, sdkType common.OtelSdkType) string
 	return currentVal + " " + additionalVal
 }
 
-func Revert(envName string, currentVal string, sdkType common.OtelSdkType) string {
+func Revert(envName string, currentVal string) string {
 	if len(byName) == 0 {
 		loadToMap()
 	}
@@ -60,10 +59,5 @@ func Revert(envName string, currentVal string, sdkType common.OtelSdkType) strin
 		return ""
 	}
 
-	additionalVal := o.ValueFor(sdkType)
-	if currentVal == "" {
-		return ""
-	}
-
-	return strings.Replace(currentVal, additionalVal, "", -1)
+	return o.Revert(currentVal)
 }

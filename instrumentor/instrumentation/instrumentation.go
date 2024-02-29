@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/keyval-dev/odigos/common/envOverwrite"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
 	v1 "k8s.io/api/core/v1"
@@ -37,6 +39,13 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 		}
 		container.Resources.Limits[v1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
 
+		// Overwrite env var if needed
+		for i, envVar := range container.Env {
+			if envOverwrite.ShouldOverwrite(envVar.Name) {
+				container.Env[i].Value = envOverwrite.Patch(envVar.Name, envVar.Value, otelSdk.SdkType)
+			}
+		}
+
 		modifiedContainers = append(modifiedContainers, container)
 	}
 
@@ -55,6 +64,12 @@ func Revert(original *v1.PodTemplateSpec) {
 		for resourceName := range container.Resources.Requests {
 			if strings.HasPrefix(string(resourceName), common.OdigosResourceNamespace) {
 				delete(container.Resources.Requests, resourceName)
+			}
+		}
+
+		for i, envVar := range container.Env {
+			if envOverwrite.ShouldOverwrite(envVar.Name) {
+				container.Env[i].Value = envOverwrite.Revert(envVar.Name, envVar.Value)
 			}
 		}
 	}
