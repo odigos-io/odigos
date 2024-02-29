@@ -74,7 +74,7 @@ var uninstallCmd = &cobra.Command{
 			waitForNamespaceDeletion(ctx, client, ns)
 
 		} else {
-			fmt.Println("Odigos is not installed in any namespace. verifying if there are any Odigos resources left in the cluster...")
+			fmt.Println("Odigos is not installed in any namespace. cleaning up any other Odigos resources that might be left in the cluster...")
 		}
 
 		l := log.Print("Rolling back odigos changes to pods")
