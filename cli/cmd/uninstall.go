@@ -212,26 +212,26 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 }
 
 func rollbackNamespaceChanges(ctx context.Context, client *kube.Client) error {
-	var enabledOdigosInstrumentationLabel = map[string]string{
-		consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled,
-	}
-	ns, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
-			MatchLabels: enabledOdigosInstrumentationLabel,
-		}),
-	})
+	ns, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
+	var errs error
 	for _, n := range ns.Items {
-		delete(n.Labels, consts.OdigosInstrumentationLabel)
-		_, err := client.CoreV1().Namespaces().Update(ctx, &n, metav1.UpdateOptions{})
+		if n.GetLabels() == nil {
+			continue
+		}
+		_, found := n.GetLabels()[consts.OdigosInstrumentationLabel]
+		if !found {
+			continue
+		}
+		_, err := client.CoreV1().Namespaces().Patch(ctx, n.Name, types.JSONPatchType, []byte(`[{"op": "remove", "path": "/metadata/labels/`+consts.OdigosInstrumentationLabel+`"}]`), metav1.PatchOptions{})
 		if err != nil {
-			return err
+			errs = multierr.Append(errs, err)
 		}
 	}
 
-	return nil
+	return errs
 }
 
 func uninstallDeployments(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
