@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -14,16 +15,14 @@ import (
 	"github.com/keyval-dev/odigos/cli/pkg/log"
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/consts"
+	"go.uber.org/multierr"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/spf13/cobra"
-)
-
-const (
-	goAgentImage                = "keyval/otel-go-agent"
-	golangKernelDebugVolumeName = "kernel-debug"
 )
 
 // uninstallCmd represents the uninstall command
@@ -40,40 +39,43 @@ var uninstallCmd = &cobra.Command{
 		ctx := cmd.Context()
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
-		if resources.IsErrNoOdigosNamespaceFound(err) {
-			fmt.Println("\033[31mERROR\033[0m odigos is not currently installed in the cluster, so there is nothing to uninstall")
-			os.Exit(1)
-		} else if !resources.IsErrNoOdigosNamespaceFound(err) && err != nil {
+		if err != nil && !resources.IsErrNoOdigosNamespaceFound(err) {
 			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already uninstalled: %s\n", err)
 			os.Exit(1)
 		}
+		odigosNsFound := !resources.IsErrNoOdigosNamespaceFound(err)
 
-		if !cmd.Flag("yes").Changed {
-			fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
-			confirmed, err := confirm.Ask("Are you sure?")
-			if err != nil || !confirmed {
-				fmt.Println("Aborting uninstall")
-				return
+		if odigosNsFound {
+			if !cmd.Flag("yes").Changed {
+				fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
+				confirmed, err := confirm.Ask("Are you sure?")
+				if err != nil || !confirmed {
+					fmt.Println("Aborting uninstall")
+					return
+				}
 			}
+
+			createKubeResourceWithLogging(ctx, "Uninstalling Odigos Deployments",
+				client, cmd, ns, uninstallDeployments)
+			createKubeResourceWithLogging(ctx, "Uninstalling Odigos DaemonSets",
+				client, cmd, ns, uninstallDaemonSets)
+			createKubeResourceWithLogging(ctx, "Uninstalling Odigos ConfigMaps",
+				client, cmd, ns, uninstallConfigMaps)
+			createKubeResourceWithLogging(ctx, "Uninstalling Odigos Services",
+				client, cmd, ns, uninstallServices)
+			createKubeResourceWithLogging(ctx, "Uninstalling Odigos RBAC",
+				client, cmd, ns, uninstallRBAC)
+			createKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
+				client, cmd, ns, uninstallSecrets)
+			createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
+				client, cmd, ns, uninstallNamespace)
+
+			// Wait for namespace to be deleted
+			waitForNamespaceDeletion(ctx, client, ns)
+
+		} else {
+			fmt.Println("Odigos is not installed in any namespace. verifying if there are any Odigos resources left in the cluster...")
 		}
-
-		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Deployments",
-			client, cmd, ns, uninstallDeployments)
-		createKubeResourceWithLogging(ctx, "Uninstalling Odigos DaemonSets",
-			client, cmd, ns, uninstallDaemonSets)
-		createKubeResourceWithLogging(ctx, "Uninstalling Odigos ConfigMaps",
-			client, cmd, ns, uninstallConfigMaps)
-		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Services",
-			client, cmd, ns, uninstallServices)
-		createKubeResourceWithLogging(ctx, "Uninstalling Odigos RBAC",
-			client, cmd, ns, uninstallRBAC)
-		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
-			client, cmd, ns, uninstallSecrets)
-		createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
-			client, cmd, ns, uninstallNamespace)
-
-		// Wait for namespace to be deleted
-		waitForNamespaceDeletion(ctx, client, ns)
 
 		l := log.Print("Rolling back odigos changes to pods")
 		err = rollbackPodChanges(ctx, client)
@@ -110,30 +112,21 @@ func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns strin
 }
 
 func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
+	var errs error
+
 	deps, err := client.AppsV1().Deployments("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
-
 	for _, dep := range deps.Items {
-		if dep.Namespace == consts.DefaultNamespace {
+		jsonPatchPayloadBytes, err := getWorkloadRolloutJsonPatch(&dep, &dep.Spec.Template)
+		if err != nil {
+			errs = multierr.Append(errs, err)
 			continue
 		}
-		// Remove the "odigos.io/reported-name"
-		if annotations := dep.GetAnnotations(); annotations != nil {
-			delete(annotations, consts.OdigosReportedNameAnnotation)
-			dep.SetAnnotations(annotations)
-		}
-
-		// Remove the "odigos-instrumentation" label
-		if labels := dep.GetLabels(); labels != nil {
-			delete(labels, consts.OdigosInstrumentationLabel)
-			dep.SetLabels(labels)
-		}
-
-		rollbackPodTemplateSpec(ctx, client, &dep.Spec.Template)
-		if _, err := client.AppsV1().Deployments(dep.Namespace).Update(ctx, &dep, metav1.UpdateOptions{}); err != nil {
-			return err
+		_, err = client.AppsV1().Deployments(dep.Namespace).Patch(ctx, dep.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
+		if err != nil {
+			errs = multierr.Append(errs, err)
 		}
 	}
 
@@ -141,26 +134,15 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 	if err != nil {
 		return err
 	}
-
 	for _, s := range ss.Items {
-		if s.Namespace == consts.DefaultNamespace {
+		jsonPatchPayloadBytes, err := getWorkloadRolloutJsonPatch(&s, &s.Spec.Template)
+		if err != nil {
+			errs = multierr.Append(errs, err)
 			continue
 		}
-
-		if annotations := s.GetAnnotations(); annotations != nil {
-			delete(annotations, consts.OdigosReportedNameAnnotation)
-			s.SetAnnotations(annotations)
-		}
-
-		// Remove the "odigos-instrumentation" label
-		if labels := s.GetLabels(); labels != nil {
-			delete(labels, consts.OdigosInstrumentationLabel)
-			s.SetLabels(labels)
-		}
-
-		rollbackPodTemplateSpec(ctx, client, &s.Spec.Template)
-		if _, err := client.AppsV1().StatefulSets(s.Namespace).Update(ctx, &s, metav1.UpdateOptions{}); err != nil {
-			return err
+		_, err = client.AppsV1().StatefulSets(s.Namespace).Patch(ctx, s.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
+		if err != nil {
+			errs = multierr.Append(errs, err)
 		}
 	}
 
@@ -168,69 +150,65 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 	if err != nil {
 		return err
 	}
-
 	for _, d := range dd.Items {
-		if d.Namespace == consts.DefaultNamespace {
+		jsonPatchPayloadBytes, err := getWorkloadRolloutJsonPatch(&d, &d.Spec.Template)
+		if err != nil {
+			errs = multierr.Append(errs, err)
 			continue
 		}
-
-		if annotations := d.GetAnnotations(); annotations != nil {
-			delete(annotations, consts.OdigosReportedNameAnnotation)
-			d.SetAnnotations(annotations)
-		}
-
-		// Remove the "odigos-instrumentation" label
-		if labels := d.GetLabels(); labels != nil {
-			delete(labels, consts.OdigosInstrumentationLabel)
-			d.SetLabels(labels)
-		}
-
-		rollbackPodTemplateSpec(ctx, client, &d.Spec.Template)
-		if _, err := client.AppsV1().DaemonSets(d.Namespace).Update(ctx, &d, metav1.UpdateOptions{}); err != nil {
-			return err
+		_, err = client.AppsV1().DaemonSets(d.Namespace).Patch(ctx, d.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
+		if err != nil {
+			errs = multierr.Append(errs, err)
 		}
 	}
 
-	return nil
+	return errs
 }
 
-func rollbackPodTemplateSpec(ctx context.Context, client *kube.Client, pts *v1.PodTemplateSpec) {
-	// Odigos instruments pods in two ways:
-	// A. For Java/.NET/Python/NodeJS apps, it adds a resource limit to the container
-	instrumentedViaResourceLimit := false
+// with json patch, "/" is used to separate levels in the JSON structure.
+// to escape it, we replace it with "~1"
+func jsonPatchEscapeKey(key string) string {
+	return strings.Replace(key, "/", "~1", 1)
+}
+
+func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]byte, error) {
+	patchOperations := []map[string]interface{}{}
+
+	// Remove odigos instrumentation label
+	if obj.GetLabels() != nil {
+		if _, found := obj.GetLabels()[consts.OdigosInstrumentationLabel]; found {
+			patchOperations = append(patchOperations, map[string]interface{}{
+				"op":   "remove",
+				"path": "/metadata/labels/" + consts.OdigosInstrumentationLabel,
+			})
+		}
+	}
+
+	// remove odigos reported name annotation
+	if obj.GetAnnotations() != nil {
+		if _, found := obj.GetAnnotations()[consts.OdigosReportedNameAnnotation]; found {
+			patchOperations = append(patchOperations, map[string]interface{}{
+				"op":   "remove",
+				"path": "/metadata/annotations/" + jsonPatchEscapeKey(consts.OdigosReportedNameAnnotation),
+			})
+		}
+	}
+
+	// remove odigos instrumentation device from containers
 	for i, c := range pts.Spec.Containers {
 		if c.Resources.Limits != nil {
 			for val := range c.Resources.Limits {
-				if strings.Contains(val.String(), common.OdigosResourceNamespace) {
-					instrumentedViaResourceLimit = true
-					delete(pts.Spec.Containers[i].Resources.Limits, val)
+				if strings.HasPrefix(val.String(), common.OdigosResourceNamespace) {
+					patchOperations = append(patchOperations, map[string]interface{}{
+						"op":   "remove",
+						"path": fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits/%s", i, jsonPatchEscapeKey(val.String())),
+					})
 				}
 			}
 		}
 	}
 
-	if instrumentedViaResourceLimit {
-		return
-	}
-
-	// B. For Go apps, it adds a sidecar container
-
-	// Remove containers with go agent image
-	for i, c := range pts.Spec.Containers {
-		if strings.Contains(c.Image, goAgentImage) {
-			pts.Spec.Containers = append(pts.Spec.Containers[:i], pts.Spec.Containers[i+1:]...)
-		}
-	}
-
-	// Roll back shared process namespace
-	pts.Spec.ShareProcessNamespace = nil
-
-	// Remove odigos volumes
-	for i, v := range pts.Spec.Volumes {
-		if v.Name == golangKernelDebugVolumeName {
-			pts.Spec.Volumes = append(pts.Spec.Volumes[:i], pts.Spec.Volumes[i+1:]...)
-		}
-	}
+	return json.Marshal(patchOperations)
 }
 
 func rollbackNamespaceChanges(ctx context.Context, client *kube.Client) error {
