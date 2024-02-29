@@ -19,6 +19,7 @@ spec:
       componentType: input
       componentProps:
         type: password
+        required: true
       secret: true
     - name: CORALOGIX_DOMAIN
       displayName: Domain
@@ -31,13 +32,16 @@ spec:
           - cx498.coralogix.com
           - coralogix.in
           - coralogixsg.com
+        required: true
     - name: CORALOGIX_APPLICATION_NAME
       displayName: Application Name
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: CORALOGIX_SUBSYSTEM_NAME
       displayName: Subsystem Name
       componentType: input
       componentProps:
         type: text
+        required: true

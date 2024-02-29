@@ -19,9 +19,11 @@ spec:
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: MW_API_KEY
       displayName: API Key
       componentType: input
       componentProps:
         type: password
+        required: true
       secret: true

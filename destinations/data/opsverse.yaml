@@ -19,24 +19,29 @@ spec:
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: OPSVERSE_PASSWORD
       displayName: Password
       componentType: input
       componentProps:
         type: password
+        required: true
       secret: true
     - name: OPSVERSE_LOGS_URL
       displayName: Logs Endpoint
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: OPSVERSE_METRICS_URL
       displayName: Metrics Endpoint
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: OPSVERSE_TRACES_URL
       displayName: Traces Endpoint
       componentType: input
       componentProps:
         type: text
+        required: true

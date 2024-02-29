@@ -6,6 +6,8 @@ interface MultiInputProps {
   onListChange?: (list: string[]) => void;
   placeholder?: string;
   limit?: number;
+  tooltip?: string;
+  title?: string;
 }
 
 export function KeyvalMultiInput(props: MultiInputProps): JSX.Element {

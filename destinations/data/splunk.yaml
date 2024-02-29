@@ -19,9 +19,11 @@ spec:
       componentType: input
       componentProps:
         type: password
+        required: true
       secret: true
     - name: SPLUNK_REALM
       displayName: Realm
       componentType: input
       componentProps:
         type: text
+        required: true
