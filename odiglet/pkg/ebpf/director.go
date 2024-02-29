@@ -18,7 +18,7 @@ type OtelEbpfSdk interface {
 
 // users can use different eBPF otel SDKs by returning them from this function
 type InstrumentationFactory[T OtelEbpfSdk] interface {
-	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload, containerName string) (T, error)
+	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload, containerName string, podName string) (T, error)
 }
 
 // Director manages the instrumentation for a specific SDK in a specific language
