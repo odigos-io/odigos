@@ -7,9 +7,8 @@ import { FieldWrapper } from './create.connection.form.styled';
 import {
   KeyvalDropDown,
   KeyvalInput,
-  KeyvalText,
-  MultiInput,
   KeyValuePair,
+  MultiInputTable,
 } from '@/design.system';
 
 const DEFAULT_KEY_VALUE_PAIR = [
@@ -65,28 +64,31 @@ export function renderFields(
           </FieldWrapper>
         );
       case INPUT_TYPES.MULTI_INPUT:
-        const userInputData = safeJsonParse<string[] | null>(
-          dynamicFields[name],
-          null
-        );
+        // const userInputData = safeJsonParse<string[] | null>(
+        //   dynamicFields[name],
+        //   null
+        // );
 
-        // Use safeJsonParse to parse field?.initial_value, defaulting to an empty string if not available.
-        // This assumes that the initial value is supposed to be a string when parsed successfully.
-        // Adjust the fallback value as necessary to match the expected type
-        const initialList =
-          userInputData || safeJsonParse<string[]>(field?.initial_value, []);
+        // // Use safeJsonParse to parse field?.initial_value, defaulting to an empty string if not available.
+        // // This assumes that the initial value is supposed to be a string when parsed successfully.
+        // // Adjust the fallback value as necessary to match the expected type
+        // const initialList =
+        //   userInputData || safeJsonParse<string[]>(field?.initial_value, []);
+
+        const values = safeJsonParse<string[]>(dynamicFields[name], []);
 
         return (
-          <FieldWrapper key={name}>
-            <MultiInput
-              initialList={initialList}
+          <div key={name} style={{ marginTop: 22 }}>
+            <MultiInputTable
               title={display_name}
-              onListChange={(value: string[]) =>
+              values={values}
+              placeholder="Add value"
+              onValuesChange={(value: string[]) =>
                 onChange(name, value.length === 0 ? '' : JSON.stringify(value))
               }
               {...component_properties}
             />
-          </FieldWrapper>
+          </div>
         );
 
       case INPUT_TYPES.KEY_VALUE_PAIR:
@@ -111,16 +113,14 @@ export function renderFields(
 
         return (
           <div key={name} style={{ marginTop: 22 }}>
-            <div>
-              <KeyValuePair
-                title={display_name}
-                setKeyValues={(value) => {
-                  onChange(name, stringifyKeyValues(value));
-                }}
-                keyValues={keyValues}
-                {...component_properties}
-              />
-            </div>
+            <KeyValuePair
+              title={display_name}
+              setKeyValues={(value) => {
+                onChange(name, stringifyKeyValues(value));
+              }}
+              keyValues={keyValues}
+              {...component_properties}
+            />
           </div>
         );
       default:
