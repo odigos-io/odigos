@@ -21,21 +21,12 @@ COPY api/ api/
 COPY common/ common/
 COPY procdiscovery/ procdiscovery/
 WORKDIR /go/src/github.com/keyval-dev/odigos/odiglet
-# Pre-copy/cache go.mod for pre-downloading dependencies and only redownloading
-# them in subsequent builds if they change
-COPY odiglet/go.mod odiglet/go.sum ./
-RUN --mount=type=cache,target=/go/pkg \
-    go mod download && go mod verify
-# Copy rest of source code
 COPY odiglet/ .
 
 ARG TARGETARCH
-# Go does not call go generate on dependencies, so we need to do it manually
-RUN --mount=type=cache,target=/go/pkg \
-    cd $(go list -m -f '{{.Dir}}' "go.opentelemetry.io/auto") && make generate
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    GOOS=linux GOARCH=$TARGETARCH go build -o odiglet cmd/main.go
+    GOOS=linux GOARCH=$TARGETARCH make build-odiglet
 
 WORKDIR /instrumentations
 
