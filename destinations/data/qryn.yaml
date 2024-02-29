@@ -19,15 +19,18 @@ spec:
       componentType: input
       componentProps:
         type: password
+        required: true
       secret: true
     - name: QRYN_API_KEY
       displayName: API Key
       componentType: input
       componentProps:
         type: password
+        required: true
       secret: true
     - name: QRYN_URL
       displayName: API Url
       componentType: input
       componentProps:
         type: text
+        required: true

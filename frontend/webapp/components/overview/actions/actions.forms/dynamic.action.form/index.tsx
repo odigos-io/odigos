@@ -17,7 +17,7 @@ export function DynamicActionForm({
   function renderCurrentAction() {
     switch (type) {
       case ActionsType.ADD_CLUSTER_INFO:
-        return <AddClusterInfoForm data={data} onChange={onChange} />;
+      // return <AddClusterInfoForm data={data} onChange={onChange} />;
       default:
         return <></>;
     }

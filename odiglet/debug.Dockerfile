@@ -19,7 +19,7 @@ WORKDIR /go/src/github.com/keyval-dev/odigos
 COPY . .
 WORKDIR ./odiglet/
 RUN --mount=type=cache,target=/go/pkg \
-    go mod download && go mod verify
+    go mod download
 # Go does not call go generate on dependencies, so we need to do it manually
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \

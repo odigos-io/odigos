@@ -19,9 +19,11 @@ spec:
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: DYNATRACE_API_TOKEN
       displayName: API Access Token
       componentType: input
       componentProps:
         type: password
+        required: true
       secret: true

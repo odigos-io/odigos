@@ -19,13 +19,16 @@ spec:
       componentType: input
       componentProps:
         type: text
+        required: true
     - name: ES_TRACES_INDEX
       displayName: Traces Index
       componentType: input
       componentProps:
-          type: text
+        type: text
+        required: true
     - name: ES_LOGS_INDEX
       displayName: Logs Index
       componentType: input
       componentProps:
-          type: text
+        type: text
+        required: true
