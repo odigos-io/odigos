@@ -25,7 +25,7 @@ WORKDIR /go/src/github.com/keyval-dev/odigos/odiglet
 # them in subsequent builds if they change
 COPY odiglet/go.mod odiglet/go.sum ./
 RUN --mount=type=cache,target=/go/pkg \
-    go mod download && go mod verify
+    go mod download
 # Copy rest of source code
 COPY odiglet/ .
 
