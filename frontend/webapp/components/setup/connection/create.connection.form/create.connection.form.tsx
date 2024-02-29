@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import theme from '@/styles/palette';
 import { useKeyDown } from '@/hooks';
-import { SETUP } from '@/utils/constants';
 import { Field } from '@/types/destinations';
 import { renderFields } from './dynamic.fields';
+import { cleanObjectEmptyStringsValues, SETUP } from '@/utils';
 import { DestinationBody } from '@/containers/setup/connection/connection.section';
 import {
   KeyvalButton,
@@ -168,11 +168,15 @@ export function CreateConnectionForm({
       (acc, { id, checked }) => ({ ...acc, [id]: checked }),
       {}
     );
+
+    const fields = cleanObjectEmptyStringsValues(dynamicFields);
+
     const body = {
       name: destinationName,
       signals,
-      fields: dynamicFields,
+      fields,
     };
+
     onSubmit(body);
   }
 

@@ -85,9 +85,6 @@ export function NewDestinationForm() {
       type: sectionData.type,
     };
 
-    console.log({ newDestination });
-
-    // return;
     mutate(destination, {
       onSuccess: () => router.push(`${ROUTES.DESTINATIONS}?status=created`),
       onError,

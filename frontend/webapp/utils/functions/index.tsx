@@ -1,1 +1,1 @@
-export { capitalizeFirstLetter } from "./strings";
+export * from './strings';
