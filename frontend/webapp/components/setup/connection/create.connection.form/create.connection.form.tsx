@@ -3,7 +3,11 @@ import theme from '@/styles/palette';
 import { useKeyDown } from '@/hooks';
 import { Field } from '@/types/destinations';
 import { renderFields } from './dynamic.fields';
-import { cleanObjectEmptyStringsValues, SETUP } from '@/utils';
+import {
+  cleanObjectEmptyStringsValues,
+  SETUP,
+  stringifyNonStringValues,
+} from '@/utils';
 import { DestinationBody } from '@/containers/setup/connection/connection.section';
 import {
   KeyvalButton,
@@ -169,14 +173,14 @@ export function CreateConnectionForm({
       {}
     );
 
-    const fields = cleanObjectEmptyStringsValues(dynamicFields);
+    const stringifyFields = stringifyNonStringValues(dynamicFields);
+    const fields = cleanObjectEmptyStringsValues(stringifyFields);
 
     const body = {
       name: destinationName,
       signals,
       fields,
     };
-
     onSubmit(body);
   }
 
