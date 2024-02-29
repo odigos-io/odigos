@@ -104,7 +104,6 @@ export function CreateConnectionForm({
       const defaultValues = fields.reduce(
         (acc: { [key: string]: string }, field: Field) => {
           const value = dynamicFields[field.name] || field.initial_value || '';
-          console.log({ value });
           acc[field.name] = value;
           return acc;
         },
