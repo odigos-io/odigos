@@ -42,7 +42,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 		// Overwrite env var if needed
 		for i, envVar := range container.Env {
 			if envOverwrite.ShouldOverwrite(envVar.Name) {
-				container.Env[i].Value = envOverwrite.Patch(envVar.Name, envVar.Value, otelSdk.SdkType)
+				container.Env[i].Value = envOverwrite.Patch(envVar.Name, envVar.Value)
 			}
 		}
 

@@ -1,63 +1,34 @@
 package envOverwrite
 
-import (
-	"github.com/keyval-dev/odigos/common"
-)
+import "strings"
 
-type Overwriter interface {
-	EnvName() string
-	ValueFor(sdkType common.OtelSdkType) string
-	Revert(str string) string
-}
-
-var all = []Overwriter{
-	&nodeOptions{},
-}
-
-var byName = map[string]Overwriter{}
-
-func loadToMap() {
-	for _, o := range all {
-		byName[o.EnvName()] = o
-	}
+var envValues = map[string]string{
+	"NODE_OPTIONS": "--require /var/odigos/nodejs/autoinstrumentation.js",
 }
 
 func ShouldOverwrite(envName string) bool {
-	if len(byName) == 0 {
-		loadToMap()
-	}
-
-	_, ok := byName[envName]
+	_, ok := envValues[envName]
 	return ok
 }
 
-func Patch(envName string, currentVal string, sdkType common.OtelSdkType) string {
-	if len(byName) == 0 {
-		loadToMap()
-	}
-
-	o, exists := byName[envName]
+func Patch(envName string, currentVal string) string {
+	val, exists := envValues[envName]
 	if !exists {
 		return ""
 	}
 
-	additionalVal := o.ValueFor(sdkType)
 	if currentVal == "" {
-		return additionalVal
+		return val
 	}
 
-	return currentVal + " " + additionalVal
+	return currentVal + " " + val
 }
 
 func Revert(envName string, currentVal string) string {
-	if len(byName) == 0 {
-		loadToMap()
-	}
-
-	o, exists := byName[envName]
+	val, exists := envValues[envName]
 	if !exists {
 		return ""
 	}
 
-	return o.Revert(currentVal)
+	return strings.Replace(currentVal, " "+val, "", 1)
 }
