@@ -209,9 +209,14 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 			}
 		}
 
-		for i, envVar := range c.Env {
+		for iEnv, envVar := range c.Env {
 			if envOverwrite.ShouldOverwrite(envVar.Name) {
-				c.Env[i].Value = envOverwrite.Revert(envVar.Name, envVar.Value)
+				newVal := envOverwrite.Revert(envVar.Name, envVar.Value)
+				patchOperations = append(patchOperations, map[string]interface{}{
+					"op":    "replace",
+					"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", i, iEnv),
+					"value": newVal,
+				})
 			}
 		}
 	}
