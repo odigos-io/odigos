@@ -390,6 +390,10 @@ func verifyDestinationDataScheme(destType common.DestinationType, destTypeConfig
 
 	// verify all fields in config are present in data (assuming here all fields are required)
 	for _, field := range destTypeConfig.Spec.Fields {
+		required, ok := field.ComponentProps["required"].(bool)
+		if !ok || !required {
+			continue
+		}
 		fieldValue, found := data[field.Name]
 		if !found || fieldValue == "" {
 			errors = append(errors, fmt.Errorf("field %s is required", field.Name))
