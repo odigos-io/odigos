@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/keyval-dev/odigos/common/envOverwrite"
+
 	"github.com/keyval-dev/odigos/cli/cmd/resources"
 	"github.com/keyval-dev/odigos/cli/pkg/confirm"
 	"github.com/keyval-dev/odigos/cli/pkg/kube"
@@ -204,6 +206,17 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 						"path": fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits/%s", i, jsonPatchEscapeKey(val.String())),
 					})
 				}
+			}
+		}
+
+		for iEnv, envVar := range c.Env {
+			if envOverwrite.ShouldOverwrite(envVar.Name) {
+				newVal := envOverwrite.Revert(envVar.Name, envVar.Value)
+				patchOperations = append(patchOperations, map[string]interface{}{
+					"op":    "replace",
+					"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", i, iEnv),
+					"value": newVal,
+				})
 			}
 		}
 	}
