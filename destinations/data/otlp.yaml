@@ -21,3 +21,6 @@ spec:
       componentProps:
         type: text
         required: true
+        placeholder: "host:port"
+        tooltip: 'OTLP gRPC unencrypted endpoint of the receiver'
+
