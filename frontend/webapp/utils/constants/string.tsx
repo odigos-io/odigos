@@ -83,14 +83,20 @@ export const OVERVIEW = {
   DELETE: 'Delete',
   DELETE_DESTINATION: 'Delete Destination',
   DELETE_SOURCE: 'Delete Source',
+  DELETE_ACTION: 'Delete Action',
+
   SOURCE_DANGER_ZONE_TITLE: 'Delete this source',
+  ACTION_DANGER_ZONE_TITLE: 'Delete this action',
   SOURCE_DANGER_ZONE_SUBTITLE:
     'Uninstrument this source, and delete all odigos associated data. You can always re-instrument this source later with odigos.',
+  ACTION_DANGER_ZONE_SUBTITLE:
+    'This action cannot be undone. This will permanently delete the action and all associated data.',
   DELETE_MODAL_TITLE: 'Delete this destination',
   DELETE_MODAL_SUBTITLE:
     'This action cannot be undone. This will permanently delete the destination and all associated data.',
   DELETE_BUTTON: 'I want to delete this destination',
   CONFIRM_SOURCE_DELETE: 'I want to delete this source',
+  CONFIRM_DELETE_ACTION: 'I want to delete this action',
   CONNECT: 'Connect',
   REPORTED_NAME: 'Override service.name',
   CREATE_ACTION: 'Create Action',
@@ -127,6 +133,7 @@ export const ACTIONS = {
   CREATE_ACTION: 'Create Action',
   UPDATE_ACTION: 'Update Action',
   'add-cluster-info': {
+    TITLE: 'Add Cluster Info',
     DESCRIPTION: `The “Add Cluster Info” Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`,
   },
 };

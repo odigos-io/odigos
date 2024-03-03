@@ -14,6 +14,8 @@ const API = {
   PUT_ACTION: (type: string, id: string) =>
     `${BASE_URL}/actions/types/${type}/${id}`,
   ACTIONS: `${BASE_URL}/actions`,
+  DELETE_ACTION: (type: string, id: string) =>
+    `${BASE_URL}/actions/types/${type}/${id}`,
 };
 
 const QUERIES = {

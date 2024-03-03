@@ -6,7 +6,7 @@ export const CreateActionWrapper = styled.div`
   gap: 16px;
   padding: 24px;
   box-sizing: border-box;
-  max-height: 90%;
+  max-height: 93%;
   overflow-y: auto;
 
   @media screen and (max-height: 450px) {
@@ -46,4 +46,10 @@ export const LoaderWrapper = styled.div`
   justify-content: center;
   align-items: center;
   height: 100%;
+`;
+
+export const HeaderText = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
 `;

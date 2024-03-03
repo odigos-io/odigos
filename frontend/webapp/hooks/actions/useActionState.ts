@@ -1,11 +1,10 @@
 import { ROUTES } from '@/utils';
 import { useState } from 'react';
 import { ActionItem } from '@/types';
-import { putAction, setAction } from '@/services';
 import { useMutation } from 'react-query';
-import { useRouter } from 'next/navigation';
-import { capitalizeFirstLetter } from '@/utils/functions';
 import { useActions } from './useActions';
+import { useRouter } from 'next/navigation';
+import { putAction, setAction, deleteAction } from '@/services';
 
 interface Monitor {
   id: string;
@@ -38,11 +37,18 @@ export function useActionState() {
   const router = useRouter();
   const { getActionById } = useActions();
 
-  const { mutateAsync } = useMutation((body: ActionItem) => setAction(body));
+  const { mutateAsync: createAction } = useMutation((body: ActionItem) =>
+    setAction(body)
+  );
   const { mutateAsync: updateAction } = useMutation((body: ActionItem) =>
     putAction(actionState?.id, body)
   );
-  function onCreateSuccess() {
+
+  const { mutateAsync: deleteActionMutation } = useMutation((id: string) =>
+    deleteAction(id)
+  );
+
+  function onSuccess() {
     router.push(ROUTES.ACTIONS);
   }
 
@@ -78,7 +84,7 @@ export function useActionState() {
     setActionState(actionState);
   }
 
-  async function createNewAction() {
+  async function upsertAction() {
     const { actionName, actionNote, actionData, selectedMonitors } =
       actionState;
 
@@ -99,49 +105,32 @@ export function useActionState() {
     };
 
     try {
-      await mutateAsync(action);
-      onCreateSuccess();
+      if (action?.id) {
+        await updateAction(action);
+      } else {
+        await createAction(action);
+      }
+      onSuccess();
     } catch (error) {
       console.error({ error });
     }
   }
 
-  async function updateCurrentAction() {
-    const { actionName, actionNote, actionData, selectedMonitors } =
-      actionState;
-
-    const signals = selectedMonitors
-      .filter((monitor) => monitor.checked)
-      .map((monitor) => monitor.label.toUpperCase());
-
-    const filteredActionData = filterEmptyActionDataFieldsByType(
-      'add-cluster-info',
-      actionData
-    );
-
-    const action = {
-      actionName,
-      notes: actionNote,
-      signals,
-      ...filteredActionData,
-    };
-
-    console.log({ action });
-
+  function onDeleteAction() {
     try {
-      await updateAction(action);
-      onCreateSuccess();
-    } catch (error) {
-      console.error({ error });
-    }
+      if (actionState?.id) {
+        deleteActionMutation(actionState.id);
+        onSuccess();
+      }
+    } catch (error) {}
   }
 
   return {
     actionState,
     onChangeActionState,
-    createNewAction,
-    updateCurrentAction,
+    upsertAction,
     buildActionData,
+    onDeleteAction,
   };
 }
 

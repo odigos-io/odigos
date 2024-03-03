@@ -1,5 +1,5 @@
 import { API } from '@/utils';
-import { get, post, put } from './api';
+import { get, httpDelete, post, put } from './api';
 import { ActionItem, ActionData } from '@/types';
 
 export async function setAction(body: ActionItem): Promise<void> {
@@ -11,6 +11,13 @@ export async function putAction(
   body: ActionItem
 ): Promise<void> {
   return put(API.PUT_ACTION('AddClusterInfo', id), body);
+}
+
+export async function deleteAction(
+  id: string,
+  type: string = 'AddClusterInfo'
+): Promise<void> {
+  return httpDelete(API.DELETE_ACTION(type, id));
 }
 
 export async function getActions(): Promise<ActionData[]> {

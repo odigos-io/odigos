@@ -26,8 +26,7 @@ const ACTION_TYPE = 'type';
 
 export function CreateActionContainer(): React.JSX.Element {
   const [currentActionType, setCurrentActionType] = useState<string>();
-  const { actionState, onChangeActionState, createNewAction } =
-    useActionState();
+  const { actionState, onChangeActionState, upsertAction } = useActionState();
   const { actionName, actionNote, actionData, selectedMonitors } = actionState;
 
   const search = useSearchParams();
@@ -84,7 +83,7 @@ export function CreateActionContainer(): React.JSX.Element {
         />
       </TextareaWrapper>
       <CreateButtonWrapper>
-        <KeyvalButton onClick={createNewAction} disabled={!actionData}>
+        <KeyvalButton onClick={upsertAction} disabled={!actionData}>
           <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
             {ACTIONS.CREATE_ACTION}
           </KeyvalText>
