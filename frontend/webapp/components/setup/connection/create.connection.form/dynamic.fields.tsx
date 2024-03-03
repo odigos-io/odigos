@@ -11,14 +11,7 @@ import {
   MultiInputTable,
 } from '@/design.system';
 
-const DEFAULT_KEY_VALUE_PAIR = [
-  {
-    id: 0,
-    key: '',
-    value: '',
-  },
-];
-
+const DEFAULT_KEY_VALUE_PAIR = {};
 export function renderFields(
   fields: Field[],
   dynamicFields: object,
@@ -86,10 +79,13 @@ export function renderFields(
         console.log(dynamicFields[name]);
         let keyValues = dynamicFields[name] || DEFAULT_KEY_VALUE_PAIR;
         if (typeof keyValues === 'string') {
-          keyValues = safeJsonParse<KeyValue[]>(keyValues, []);
+          keyValues = safeJsonParse<{ [key: string]: string }>(keyValues, {});
         }
 
-        console.log({ keyValues });
+        keyValues = Object.keys(keyValues).map((key) => ({
+          key,
+          value: keyValues[key],
+        }));
 
         const array: KeyValue[] = [];
         let id = 0;
@@ -104,9 +100,14 @@ export function renderFields(
             <KeyValuePair
               title={display_name}
               setKeyValues={(value) => {
-                const data = value.map((item) => {
-                  return { key: item.key, value: item.value };
-                });
+                const data = value
+                  .map((item) => {
+                    return { key: item.key, value: item.value };
+                  })
+                  .reduce((obj, item) => {
+                    obj[item.key] = item.value;
+                    return obj;
+                  }, {});
                 onChange(name, data);
               }}
               keyValues={keyValues}
