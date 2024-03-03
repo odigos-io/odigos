@@ -11,7 +11,11 @@ const API = {
   DESTINATIONS: `${BASE_URL}/destinations`,
   SOURCES: `${BASE_URL}/sources`,
   SET_ACTION: (type: string) => `${BASE_URL}/actions/types/${type}`,
+  PUT_ACTION: (type: string, id: string) =>
+    `${BASE_URL}/actions/types/${type}/${id}`,
   ACTIONS: `${BASE_URL}/actions`,
+  DELETE_ACTION: (type: string, id: string) =>
+    `${BASE_URL}/actions/types/${type}/${id}`,
 };
 
 const QUERIES = {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { KeyvalLoader } from '@/design.system';
 import { AddItemMenu, EmptyList, ManagedActionCard } from '@/components';
 import { ActionsListWrapper } from '../choose-action/styled';
+import { func } from 'prop-types';
 
 export function ManagedActionsContainer() {
   const router = useRouter();
@@ -14,11 +15,18 @@ export function ManagedActionsContainer() {
     router.push(ROUTES.CHOOSE_ACTIONS);
   }
 
+  function handleEditAction(id: string) {
+    router.push(`${ROUTES.EDIT_ACTION}?id=${id}`);
+  }
+
   function renderManagedActionsList() {
     return actions.map((item) => {
       return (
         <div key={item.id}>
-          <ManagedActionCard item={item} onClick={() => {}} />
+          <ManagedActionCard
+            item={item}
+            onClick={() => handleEditAction(item.id)}
+          />
         </div>
       );
     });
