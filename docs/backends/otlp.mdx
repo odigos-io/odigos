@@ -1,0 +1,22 @@
+---
+title: "OTLP gRPC"
+---
+
+## Configuring Generic OTLP gRPC Backend
+
+For advanced users trying to implement complex observability pipelines, Odigos support sending data to any OTLP gRPC unencrypted endpoint.
+
+If your destination is supported natively in Odigos its recommended to use the native integration.
+
+## Configuration
+
+The only required configuration is the endpoint of the OTLP gRPC server. Note that odigos only supports unencrypted endpoints (no tls).
+
+The endpoint format is `host:port`. 
+- host is required
+- port is optional and defaults to the default OTLP gRPC port `4317`.
+
+<Tip>
+  Can't find your destination in Odigos? Please tell us! We are constantly
+  adding new integrations.
+</Tip>

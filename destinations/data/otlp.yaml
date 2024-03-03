@@ -1,0 +1,23 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: otlp
+  displayName: OTLP gRPC
+  category: self hosted
+spec:
+  image: opentelemetry.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    
+  fields:
+    - name: OTLP_GRPC_ENDPOINT
+      displayName: OTLP gRPC Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
