@@ -59,8 +59,8 @@ export function CreateActionContainer(): React.JSX.Element {
       <MultiCheckboxComponent
         title={ACTIONS.MONITORS_TITLE}
         checkboxes={selectedMonitors}
-        onSelectionChange={() =>
-          onChangeActionState('selectedMonitors', selectedMonitors)
+        onSelectionChange={(newMonitors) =>
+          onChangeActionState('selectedMonitors', newMonitors)
         }
       />
       <KeyvalInputWrapper>

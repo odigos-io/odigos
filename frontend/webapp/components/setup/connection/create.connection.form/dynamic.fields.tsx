@@ -76,7 +76,6 @@ export function renderFields(
         );
 
       case INPUT_TYPES.KEY_VALUE_PAIR:
-        console.log(dynamicFields[name]);
         let keyValues = dynamicFields[name] || DEFAULT_KEY_VALUE_PAIR;
         if (typeof keyValues === 'string') {
           keyValues = safeJsonParse<{ [key: string]: string }>(keyValues, {});

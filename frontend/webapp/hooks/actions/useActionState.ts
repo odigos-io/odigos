@@ -68,12 +68,11 @@ export function useActionState() {
             id: index,
           })) || [],
       },
-      selectedMonitors:
-        action?.spec?.signals.map((signal) => ({
-          id: signal,
-          label: capitalizeFirstLetter(signal.toLowerCase()),
-          checked: true,
-        })) || [],
+      selectedMonitors: DEFAULT_MONITORS.map((monitor) => ({
+        ...monitor,
+
+        checked: !!action?.spec?.signals.includes(monitor.label.toUpperCase()),
+      })),
     };
 
     setActionState(actionState);
@@ -87,11 +86,16 @@ export function useActionState() {
       .filter((monitor) => monitor.checked)
       .map((monitor) => monitor.label.toUpperCase());
 
+    const filteredActionData = filterEmptyActionDataFieldsByType(
+      'add-cluster-info',
+      actionData
+    );
+
     const action = {
       actionName,
       notes: actionNote,
       signals,
-      ...actionData,
+      ...filteredActionData,
     };
 
     try {
@@ -110,14 +114,20 @@ export function useActionState() {
       .filter((monitor) => monitor.checked)
       .map((monitor) => monitor.label.toUpperCase());
 
+    const filteredActionData = filterEmptyActionDataFieldsByType(
+      'add-cluster-info',
+      actionData
+    );
+
     const action = {
       actionName,
       notes: actionNote,
       signals,
-      ...actionData,
+      ...filteredActionData,
     };
 
     console.log({ action });
+
     try {
       await updateAction(action);
       onCreateSuccess();
@@ -133,4 +143,18 @@ export function useActionState() {
     updateCurrentAction,
     buildActionData,
   };
+}
+
+function filterEmptyActionDataFieldsByType(type: string, data: any) {
+  switch (type) {
+    case 'add-cluster-info':
+      return {
+        clusterAttributes: data.clusterAttributes.filter(
+          (attr: any) =>
+            attr.attributeStringValue !== '' && attr.attributeName !== ''
+        ),
+      };
+    default:
+      return data;
+  }
 }
