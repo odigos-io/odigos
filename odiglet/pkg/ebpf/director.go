@@ -18,7 +18,7 @@ type OtelEbpfSdk interface {
 
 // users can use different eBPF otel SDKs by returning them from this function
 type InstrumentationFactory[T OtelEbpfSdk] interface {
-	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload, containerName string) (T, error)
+	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload, containerName string, podName string) (T, error)
 }
 
 // Director manages the instrumentation for a specific SDK in a specific language
@@ -97,7 +97,7 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 	d.workloadToPods[*podWorkload][pod] = struct{}{}
 
 	go func() {
-		inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName)
+		inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName, pod.Name)
 		if err != nil {
 			log.Logger.Error(err, "instrumentation setup failed", "workload", podWorkload, "pod", pod)
 			return
