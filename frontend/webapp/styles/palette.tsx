@@ -13,6 +13,7 @@ const colors = {
   white: '#fff',
   error: '#FD3F3F',
   orange_brown: '#b98a01',
+  success: '#a5ff96',
 };
 
 const text = {
