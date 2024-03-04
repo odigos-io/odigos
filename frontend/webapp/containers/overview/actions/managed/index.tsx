@@ -2,8 +2,8 @@ import React from 'react';
 import { useActions } from '@/hooks';
 import theme from '@/styles/palette';
 import { useRouter } from 'next/navigation';
-import { EmptyList, Table } from '@/components';
 import { ACTIONS, OVERVIEW, ROUTES } from '@/utils';
+import { EmptyList, ActionsTable } from '@/components';
 import {
   KeyvalText,
   KeyvalButton,
@@ -60,7 +60,7 @@ export function ManagedActionsContainer() {
             </HeaderRight>
           </Header>
           <Content>
-            <Table data={actions} onRowClick={handleEditAction} />
+            <ActionsTable data={actions} onRowClick={handleEditAction} />
           </Content>
         </ActionsContainer>
       )}
