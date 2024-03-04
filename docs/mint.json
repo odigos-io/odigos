@@ -112,6 +112,7 @@
         "backends/newrelic",
         "backends/opsverse",
         "backends/otlp",
+        "backends/otlphttp",
         "backends/prometheus",
         "backends/qryn",
         "backends/sentry",

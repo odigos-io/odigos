@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -190,20 +191,12 @@ func CreateNewDestination(c *gin.Context, odigosns string) {
 
 	createSecret := len(secretFields) > 0
 	if createSecret {
-		secret := k8s.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: generateNamePrefix,
-			},
-			StringData: secretFields,
-		}
-		newSecret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Create(c, &secret, metav1.CreateOptions{})
+		secretRef, err := createDestinationSecret(c, destType, secretFields, odigosns)
 		if err != nil {
 			returnError(c, err)
 			return
 		}
-		k8sDestination.Spec.SecretRef = &k8s.LocalObjectReference{
-			Name: newSecret.Name,
-		}
+		k8sDestination.Spec.SecretRef = secretRef
 	}
 
 	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Create(c, &k8sDestination, metav1.CreateOptions{})
@@ -250,6 +243,42 @@ func UpdateExistingDestination(c *gin.Context, odigosns string) {
 	if err != nil {
 		returnError(c, err)
 		return
+	}
+
+	// handle the secret, based on the updated (which might add or remove optional secret fields),
+	// we might need to create, delete or update the existing secret
+	destUpdateHasSecrets := len(secretFields) > 0
+	destCurrentlyHasSecrets := dest.Spec.SecretRef != nil
+
+	if !destUpdateHasSecrets && destCurrentlyHasSecrets {
+		// delete the secret if it's not needed anymore
+		err := kube.DefaultClient.CoreV1().Secrets(odigosns).Delete(c, dest.Spec.SecretRef.Name, metav1.DeleteOptions{})
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+		dest.Spec.SecretRef = nil
+	} else if destUpdateHasSecrets && !destCurrentlyHasSecrets {
+		// create the secret if it was added in this update
+		secretRef, err := createDestinationSecret(c, destType, secretFields, odigosns)
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+		dest.Spec.SecretRef = secretRef
+	} else if destUpdateHasSecrets && destCurrentlyHasSecrets {
+		// update the secret in case it is modified
+		secret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Get(c, dest.Spec.SecretRef.Name, metav1.GetOptions{})
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+		secret.StringData = secretFields
+		_, err = kube.DefaultClient.CoreV1().Secrets(odigosns).Update(c, secret, metav1.UpdateOptions{})
+		if err != nil {
+			returnError(c, err)
+			return
+		}
 	}
 
 	secretRef := dest.Spec.SecretRef
@@ -434,6 +463,13 @@ func transformFieldsToDataAndSecrets(destTypeConfig *destinations.Destination, f
 	secretFields := map[string]string{}
 
 	for fieldName, fieldValue := range fields {
+
+		// it is possible that some fields are not required and are empty.
+		// we should treat them as empty
+		if fieldValue == "" {
+			continue
+		}
+
 		// for each field in the data, find it's config
 		// assuming the list is small so it's ok to iterate it
 		for _, fieldConfig := range destTypeConfig.Spec.Fields {
@@ -488,4 +524,21 @@ func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) De
 			},
 		},
 	}
+}
+
+func createDestinationSecret(ctx context.Context, destType common.DestinationType, secretFields map[string]string, odigosns string) (*k8s.LocalObjectReference, error) {
+	generateNamePrefix := "odigos.io.dest." + string(destType) + "-"
+	secret := k8s.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: generateNamePrefix,
+		},
+		StringData: secretFields,
+	}
+	newSecret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Create(ctx, &secret, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return &k8s.LocalObjectReference{
+		Name: newSecret.Name,
+	}, nil
 }
