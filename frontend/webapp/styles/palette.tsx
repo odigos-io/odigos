@@ -2,7 +2,7 @@ import { DefaultTheme } from 'styled-components';
 
 // Define your color palette
 const colors = {
-  primary: '#FF0000',
+  primary: '#07111A',
   secondary: '#0EE6F3',
   torquiz_light: '#96F2FF',
   dark: '#07111A',
