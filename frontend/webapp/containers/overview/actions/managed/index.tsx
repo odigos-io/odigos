@@ -1,11 +1,22 @@
 import React from 'react';
 import { useActions } from '@/hooks';
-import { OVERVIEW, ROUTES } from '@/utils';
+import theme from '@/styles/palette';
 import { useRouter } from 'next/navigation';
-import { KeyvalLoader } from '@/design.system';
-import { AddItemMenu, EmptyList, ManagedActionCard } from '@/components';
-import { ActionsListWrapper } from '../choose-action/styled';
-import { func } from 'prop-types';
+import { EmptyList, Table } from '@/components';
+import { ACTIONS, OVERVIEW, ROUTES } from '@/utils';
+import {
+  KeyvalText,
+  KeyvalButton,
+  KeyvalLoader,
+  KeyvalSearchInput,
+} from '@/design.system';
+import {
+  ActionsContainer,
+  Container,
+  Content,
+  Header,
+  HeaderRight,
+} from './styled';
 
 export function ManagedActionsContainer() {
   const router = useRouter();
@@ -19,23 +30,10 @@ export function ManagedActionsContainer() {
     router.push(`${ROUTES.EDIT_ACTION}?id=${id}`);
   }
 
-  function renderManagedActionsList() {
-    return actions.map((item) => {
-      return (
-        <div key={item.id}>
-          <ManagedActionCard
-            item={item}
-            onClick={() => handleEditAction(item.id)}
-          />
-        </div>
-      );
-    });
-  }
-
   if (isLoading) return <KeyvalLoader />;
 
   return (
-    <>
+    <Container>
       {!actions?.length ? (
         <EmptyList
           title={OVERVIEW.EMPTY_ACTION}
@@ -43,16 +41,29 @@ export function ManagedActionsContainer() {
           btnAction={handleAddAction}
         />
       ) : (
-        <>
-          <AddItemMenu
-            btnLabel={OVERVIEW.ADD_NEW_ACTION}
-            length={actions.length}
-            onClick={handleAddAction}
-            lengthLabel={OVERVIEW.MENU.ACTIONS}
-          />
-          <ActionsListWrapper>{renderManagedActionsList()}</ActionsListWrapper>
-        </>
+        <ActionsContainer>
+          <Header>
+            <KeyvalSearchInput
+              containerStyle={{ padding: '6px 8px' }}
+              placeholder={ACTIONS.SEARCH_ACTION}
+            />
+            <HeaderRight>
+              <KeyvalButton onClick={handleAddAction} style={{ height: 32 }}>
+                <KeyvalText
+                  size={14}
+                  weight={600}
+                  color={theme.text.dark_button}
+                >
+                  {OVERVIEW.ADD_NEW_ACTION}
+                </KeyvalText>
+              </KeyvalButton>
+            </HeaderRight>
+          </Header>
+          <Content>
+            <Table data={actions} onRowClick={handleEditAction} />
+          </Content>
+        </ActionsContainer>
       )}
-    </>
+    </Container>
   );
 }
