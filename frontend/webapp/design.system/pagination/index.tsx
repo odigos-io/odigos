@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 import theme from '@/styles/palette';
+import { Expand } from '@/assets/icons/app';
 
 type PaginationProps = {
   total: number;
@@ -15,6 +16,7 @@ const PaginationContainer = styled.div`
   width: 100%;
   justify-content: center;
   padding: 20px;
+  gap: 2px;
 `;
 
 const PageButton = styled.button<{
@@ -35,13 +37,17 @@ const PageButton = styled.button<{
   &:disabled {
     cursor: default;
   }
+
+  &:hover {
+    background-color: ${theme.colors.blue_grey};
+  }
 `;
 
-const Expand = styled.svg<{ rotation: number }>`
-  width: 14px;
-  height: 14px;
-  transform: rotate(${(props) => props.rotation}deg);
-`;
+// const Expand = styled.svg<{ rotation: number }>`
+//   width: 14px;
+//   height: 14px;
+//   transform: rotate(${(props) => props.rotation}deg);
+// `;
 
 export const Pagination: React.FC<PaginationProps> = ({
   total,
@@ -58,7 +64,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         disabled={currentPage === 1}
         isDisabled={currentPage === 1}
       >
-        <Expand rotation={90} />
+        <Expand style={{ transform: 'rotate(90deg)' }} />
         Previous
       </PageButton>
       {new Array(pageCount).fill(0).map((_, index) => (
@@ -76,7 +82,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         isDisabled={currentPage === pageCount}
       >
         Next
-        <Expand rotation={-90} />
+        <Expand style={{ transform: 'rotate(-90deg)' }} />
       </PageButton>
     </PaginationContainer>
   );
