@@ -14,8 +14,8 @@ import (
 
 const (
 	otlpHttpEndpointKey          = "OTLP_HTTP_ENDPOINT"
-	otlpHttpBasicAuthUsernameKey = "OTLP_HTTP_AUTH_USERNAME"
-	otlpHttpBasicAuthPasswordKey = "OTLP_HTTP_AUTH_PASSWORD"
+	otlpHttpBasicAuthUsernameKey = "OTLP_HTTP_BASIC_AUTH_USERNAME"
+	otlpHttpBasicAuthPasswordKey = "OTLP_HTTP_BASIC_AUTH_PASSWORD"
 )
 
 type OTLPHttp struct{}

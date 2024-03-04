@@ -24,7 +24,7 @@ spec:
         placeholder: "http://host:port"
         tooltip: 'OTLP http endpoint of the receiver'
 
-    - name: OTLP_HTTP_AUTH_USERNAME
+    - name: OTLP_HTTP_BASIC_AUTH_USERNAME
       displayName: Basic Auth Username
       componentType: input
       componentProps:
@@ -32,8 +32,8 @@ spec:
         required: false
         placeholder: "username"
         tooltip: in case the otlp receiver requires basic auth, this is the username
-        
-    - name: OTLP_HTTP_AUTH_PASSWORD
+
+    - name: OTLP_HTTP_BASIC_AUTH_PASSWORD
       displayName: Basic Auth Password
       componentType: input
       componentProps:
