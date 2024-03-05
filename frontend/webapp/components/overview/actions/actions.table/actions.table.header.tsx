@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { OVERVIEW } from '@/utils';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
+import { ActionsSortType } from '@/types';
 import { UnFocusAction } from '@/assets/icons/side.menu';
 import { ActionsGroup, KeyvalCheckbox, KeyvalText } from '@/design.system';
 
@@ -31,16 +32,31 @@ const ActionGroupContainer = styled.div`
 `;
 
 const SELECT_ALL_CHECKBOX = 'select_all';
+
+interface ActionsTableHeaderProps {
+  data: any[];
+  selectedCheckbox: string[];
+  onSelectedCheckboxChange: (id: string) => void;
+  sortActions?: (condition: string) => void;
+}
+
 export function ActionsTableHeader({
   data,
   selectedCheckbox,
   onSelectedCheckboxChange,
-}) {
+  sortActions,
+}: ActionsTableHeaderProps) {
+  const [currentSortId, setCurrentSortId] = useState('');
+
+  function onSortClick(id: string) {
+    setCurrentSortId(id);
+    sortActions && sortActions(id);
+  }
+
   const actionGroups = [
     {
       label: 'Active Status',
       subTitle: 'Toggle active status',
-      currentSortId: 'newest',
       items: [
         {
           label: 'Enabled',
@@ -59,7 +75,7 @@ export function ActionsTableHeader({
     {
       label: 'Metrics',
       subTitle: 'Sort by',
-      currentSortId: 'type',
+
       items: [
         {
           label: 'Traces',
@@ -82,22 +98,24 @@ export function ActionsTableHeader({
     {
       label: 'Sort by',
       subTitle: 'Sort by',
-      currentSortId: 'type',
       items: [
         {
           label: 'Type',
-          onClick: () => console.log('Type clicked'),
-          id: 'type',
+          onClick: () => onSortClick(ActionsSortType.TYPE),
+          id: ActionsSortType.TYPE,
+          selected: currentSortId === ActionsSortType.TYPE,
         },
         {
           label: 'Action Name',
-          onClick: () => console.log('Action Name clicked'),
-          id: 'action_name',
+          onClick: () => onSortClick(ActionsSortType.ACTION_NAME),
+          id: ActionsSortType.ACTION_NAME,
+          selected: currentSortId === ActionsSortType.ACTION_NAME,
         },
         {
           label: 'Status',
-          onClick: () => console.log('Status clicked'),
-          id: 'status',
+          onClick: () => onSortClick(ActionsSortType.STATUS),
+          id: ActionsSortType.STATUS,
+          selected: currentSortId === ActionsSortType.STATUS,
         },
       ],
       condition: true,

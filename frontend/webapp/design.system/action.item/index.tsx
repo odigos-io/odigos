@@ -41,30 +41,34 @@ const PopupItem = styled.div`
   p {
     cursor: pointer !important;
   }
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.light_dark};
+  }
 `;
 
 interface Item {
   label: string;
   onClick: () => void;
   id: string;
+  selected?: boolean;
 }
 
 interface DropdownProps {
   label: string;
   subTitle: string;
   items: Item[];
-  currentSortId: string;
 }
 
 export const ActionItem: React.FC<DropdownProps> = ({
   label,
   items,
-  currentSortId,
   subTitle,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef(null);
   useOnClickOutside(ref, () => setIsOpen(false));
+
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <Label onClick={() => setIsOpen(!isOpen)}>
@@ -81,11 +85,7 @@ export const ActionItem: React.FC<DropdownProps> = ({
         </div>
         {items.map((item, index) => (
           <PopupItem key={index} onClick={item.onClick}>
-            {currentSortId === item.id ? (
-              <Check />
-            ) : (
-              <div style={{ width: 10 }} />
-            )}
+            {item.selected ? <Check /> : <div style={{ width: 10 }} />}
             <KeyvalText size={12} weight={600}>
               {item.label}
             </KeyvalText>

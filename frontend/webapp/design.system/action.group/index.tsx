@@ -1,5 +1,4 @@
 import React from 'react';
-import styled from 'styled-components';
 import { ActionItem } from '../action.item';
 
 // Define the type for individual action items
@@ -7,13 +6,13 @@ interface ActionItem {
   label: string;
   onClick: () => void;
   id: string;
+  selected?: boolean;
 }
 
 // Define the type for the groups of action items, including any conditional rendering logic
 interface ActionGroup {
   label: string;
   subTitle: string;
-  currentSortId: string;
   items: ActionItem[];
   condition?: boolean; // Optional condition to determine if the group should be rendered
 }

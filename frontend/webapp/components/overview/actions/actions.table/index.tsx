@@ -7,11 +7,16 @@ import { ActionsTableRow } from './actions.table.row';
 type TableProps = {
   data: ActionData[];
   onRowClick: (id: string) => void;
+  sortActions?: (condition: string) => void;
 };
 
 const SELECT_ALL_CHECKBOX = 'select_all';
 
-export const ActionsTable: React.FC<TableProps> = ({ data, onRowClick }) => {
+export const ActionsTable: React.FC<TableProps> = ({
+  data,
+  onRowClick,
+  sortActions,
+}) => {
   const [selectedCheckbox, setSelectedCheckbox] = useState<string[]>([]);
 
   function onSelectedCheckboxChange(id: string) {
@@ -37,6 +42,7 @@ export const ActionsTable: React.FC<TableProps> = ({ data, onRowClick }) => {
         data={data}
         selectedCheckbox={selectedCheckbox}
         onSelectedCheckboxChange={onSelectedCheckboxChange}
+        sortActions={sortActions}
       />
     );
   }

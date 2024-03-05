@@ -2,6 +2,12 @@ export enum ActionsType {
   ADD_CLUSTER_INFO = 'add-cluster-info',
 }
 
+export enum ActionsSortType {
+  ACTION_NAME = 'action_name',
+  STATUS = 'status',
+  TYPE = 'type',
+}
+
 export interface ActionItemCard {
   id: string;
   title: string;
@@ -14,6 +20,7 @@ export interface ActionItem {
   actionName: string;
   notes: string;
   signals: string[];
+  disabled?: boolean;
   [key: string]: any;
 }
 
