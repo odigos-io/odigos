@@ -5,6 +5,9 @@ title: "Elasticsearch"
 ## Configuring Elasticsearch Backend
 
 The only required field is the Elasticsearch endpoint. This endpoint must be a valid URL for your Elasticsearch cluster.
+
+- If port is not specified, it defaults to 9200.
+
 The following fields are optional:
 
 - **Traces Index** - The name of the index where traces will be stored. Defaults to `trace_index`.
