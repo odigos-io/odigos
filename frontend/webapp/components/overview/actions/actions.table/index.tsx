@@ -1,14 +1,15 @@
 import { ActionData } from '@/types';
 import React, { useState } from 'react';
 import { Table } from '@/design.system';
-import { ActionsTableHeader } from './actions.table.header';
 import { ActionsTableRow } from './actions.table.row';
+import { ActionsTableHeader } from './actions.table.header';
 
 type TableProps = {
   data: ActionData[];
   onRowClick: (id: string) => void;
   sortActions?: (condition: string) => void;
   filterActionsBySignal?: (signals: string[]) => void;
+  toggleActionStatus?: (ids: string[], disabled: boolean) => void;
 };
 
 const SELECT_ALL_CHECKBOX = 'select_all';
@@ -18,6 +19,7 @@ export const ActionsTable: React.FC<TableProps> = ({
   onRowClick,
   sortActions,
   filterActionsBySignal,
+  toggleActionStatus,
 }) => {
   const [selectedCheckbox, setSelectedCheckbox] = useState<string[]>([]);
 
@@ -46,6 +48,7 @@ export const ActionsTable: React.FC<TableProps> = ({
         onSelectedCheckboxChange={onSelectedCheckboxChange}
         sortActions={sortActions}
         filterActionsBySignal={filterActionsBySignal}
+        toggleActionStatus={toggleActionStatus}
       />
     );
   }

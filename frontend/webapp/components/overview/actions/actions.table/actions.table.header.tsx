@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MONITORS, OVERVIEW } from '@/utils';
+import { ACTION, MONITORS, OVERVIEW } from '@/utils';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
 import { ActionsSortType } from '@/types';
@@ -39,6 +39,7 @@ interface ActionsTableHeaderProps {
   onSelectedCheckboxChange: (id: string) => void;
   sortActions?: (condition: string) => void;
   filterActionsBySignal?: (signals: string[]) => void;
+  toggleActionStatus?: (ids: string[], disabled: boolean) => void;
 }
 
 export function ActionsTableHeader({
@@ -47,6 +48,7 @@ export function ActionsTableHeader({
   onSelectedCheckboxChange,
   sortActions,
   filterActionsBySignal,
+  toggleActionStatus,
 }: ActionsTableHeaderProps) {
   const [currentSortId, setCurrentSortId] = useState('');
   const [groupActions, setGroupActions] = useState([
@@ -72,6 +74,10 @@ export function ActionsTableHeader({
     filterActionsBySignal && filterActionsBySignal(newGroup);
   }
 
+  function onToggleActionStatus(disabled: boolean) {
+    toggleActionStatus && toggleActionStatus(selectedCheckbox, disabled);
+  }
+
   const actionGroups = [
     {
       label: 'Active Status',
@@ -79,13 +85,13 @@ export function ActionsTableHeader({
       disabled: false,
       items: [
         {
-          label: 'Enabled',
-          onClick: () => console.log('Enabled clicked'),
+          label: ACTION.ENABLE,
+          onClick: () => onToggleActionStatus(false),
           id: 'enabled',
         },
         {
-          label: 'Disabled',
-          onClick: () => console.log('Disabled clicked'),
+          label: ACTION.DISABLE,
+          onClick: () => onToggleActionStatus(true),
           id: 'disabled',
         },
       ],

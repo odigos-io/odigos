@@ -1,17 +1,21 @@
 import { QUERIES } from '@/utils';
-import { useQuery } from 'react-query';
-import { getActions } from '@/services';
+import { useMutation, useQuery } from 'react-query';
+import { getActions, putAction } from '@/services';
 import { useEffect, useState } from 'react';
-import { ActionData, ActionsSortType } from '@/types';
+import { ActionData, ActionItem, ActionsSortType } from '@/types';
 
 export function useActions() {
-  const { isLoading, data } = useQuery<ActionData[]>(
+  const { isLoading, data, refetch } = useQuery<ActionData[]>(
     [QUERIES.API_ACTIONS],
     getActions
   );
 
   const [sortedActions, setSortedActions] = useState<ActionData[] | undefined>(
     undefined
+  );
+
+  const { mutateAsync: updateAction } = useMutation((body: ActionItem) =>
+    putAction(body?.id, body)
   );
 
   useEffect(() => {
@@ -55,11 +59,39 @@ export function useActions() {
     setSortedActions(filteredData);
   }
 
+  async function toggleActionStatus(
+    ids: string[],
+    disabled: boolean
+  ): Promise<boolean> {
+    for (const id of ids) {
+      const action = getActionById(id);
+      if (action && action.spec.disabled !== disabled) {
+        const body = {
+          id: action.id,
+          ...action.spec,
+          disabled,
+        };
+        try {
+          await updateAction(body);
+        } catch (error) {
+          return Promise.reject(false);
+        }
+      }
+    }
+    setTimeout(async () => {
+      const res = await refetch();
+      setSortedActions(res.data || []);
+    }, 1000);
+
+    return Promise.resolve(true);
+  }
+
   return {
     isLoading,
     actions: sortedActions || [],
     sortActions,
     getActionById,
     filterActionsBySignal,
+    toggleActionStatus,
   };
 }

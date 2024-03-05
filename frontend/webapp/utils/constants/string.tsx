@@ -79,6 +79,8 @@ export const OVERVIEW = {
   SOURCE_UPDATE_SUCCESS: 'Source updated successfully',
   SOURCE_CREATED_SUCCESS: 'Source created successfully',
   SOURCE_DELETED_SUCCESS: 'Source deleted successfully',
+  ACTION_UPDATE_SUCCESS: 'Action updated successfully',
+  ACTION_UPDATE_ERROR: 'Failed to update action',
   MANAGE: 'Manage',
   DELETE: 'Delete',
   DELETE_DESTINATION: 'Delete Destination',
@@ -110,7 +112,7 @@ export const ACTION = {
   CONTACT_US: 'Contact Us',
   LEARN_MORE: 'Learn more',
   LINK_TO_DOCS: 'Link to docs',
-  DISABLE: 'Disabled',
+  DISABLE: 'Disable',
   RUNNING: 'Running',
   ENABLE: 'Enable',
 };
