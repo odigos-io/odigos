@@ -14,6 +14,7 @@ import {
   KeyvalInput,
   KeyvalLink,
   KeyvalLoader,
+  KeyvalSwitch,
   KeyvalText,
   KeyvalTextArea,
 } from '@/design.system';
@@ -25,6 +26,8 @@ import {
   CreateActionWrapper,
   KeyvalInputWrapper,
   TextareaWrapper,
+  SwitchWrapper,
+  FormFieldsWrapper,
 } from './styled';
 import { ACTION_ICONS } from '@/assets';
 
@@ -41,7 +44,8 @@ export function EditActionContainer(): React.JSX.Element {
     onDeleteAction,
   } = useActionState();
 
-  const { actionName, actionNote, actionData, selectedMonitors } = actionState;
+  const { actionName, actionNote, actionData, selectedMonitors, disabled } =
+    actionState;
 
   const search = useSearchParams();
 
@@ -66,6 +70,15 @@ export function EditActionContainer(): React.JSX.Element {
         <KeyvalText size={18} weight={700}>
           {ACTIONS[currentActionType].TITLE}
         </KeyvalText>
+        <SwitchWrapper disabled={disabled}>
+          <KeyvalSwitch
+            toggle={!disabled}
+            handleToggleChange={() =>
+              onChangeActionState('disabled', !disabled)
+            }
+            label={disabled ? ACTION.DISABLE : ACTION.RUNNING}
+          />
+        </SwitchWrapper>
       </HeaderText>
       <DescriptionWrapper>
         <KeyvalText size={14}>
@@ -77,45 +90,47 @@ export function EditActionContainer(): React.JSX.Element {
           onClick={() => window.open(ACTION_DOCS_LINK, '_blank')}
         />
       </DescriptionWrapper>
-      <MultiCheckboxComponent
-        title={ACTIONS.MONITORS_TITLE}
-        checkboxes={selectedMonitors}
-        onSelectionChange={(newMonitors) =>
-          onChangeActionState('selectedMonitors', newMonitors)
-        }
-      />
-      <KeyvalInputWrapper>
-        <KeyvalInput
-          label={ACTIONS.ACTION_NAME}
-          value={actionName}
-          onChange={(name) => onChangeActionState('actionName', name)}
+      <FormFieldsWrapper disabled={disabled}>
+        <MultiCheckboxComponent
+          title={ACTIONS.MONITORS_TITLE}
+          checkboxes={selectedMonitors}
+          onSelectionChange={(newMonitors) =>
+            onChangeActionState('selectedMonitors', newMonitors)
+          }
         />
-      </KeyvalInputWrapper>
-      <DynamicActionForm
-        type={currentActionType}
-        data={actionData}
-        onChange={onChangeActionState}
-      />
-      <TextareaWrapper>
-        <KeyvalTextArea
-          label={ACTIONS.ACTION_NOTE}
-          value={actionNote}
-          placeholder={ACTIONS.NOTE_PLACEHOLDER}
-          onChange={(e) => onChangeActionState('actionNote', e.target.value)}
+        <KeyvalInputWrapper>
+          <KeyvalInput
+            label={ACTIONS.ACTION_NAME}
+            value={actionName}
+            onChange={(name) => onChangeActionState('actionName', name)}
+          />
+        </KeyvalInputWrapper>
+        <DynamicActionForm
+          type={currentActionType}
+          data={actionData}
+          onChange={onChangeActionState}
         />
-      </TextareaWrapper>
-      <CreateButtonWrapper>
-        <KeyvalButton onClick={upsertAction} disabled={!actionData}>
-          <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
-            {ACTIONS.UPDATE_ACTION}
-          </KeyvalText>
-        </KeyvalButton>
-      </CreateButtonWrapper>
-      <DeleteAction
-        onDelete={onDeleteAction}
-        name={actionName}
-        type={currentActionType}
-      />
+        <TextareaWrapper>
+          <KeyvalTextArea
+            label={ACTIONS.ACTION_NOTE}
+            value={actionNote}
+            placeholder={ACTIONS.NOTE_PLACEHOLDER}
+            onChange={(e) => onChangeActionState('actionNote', e.target.value)}
+          />
+        </TextareaWrapper>
+        <CreateButtonWrapper>
+          <KeyvalButton onClick={upsertAction} disabled={!actionData}>
+            <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
+              {ACTIONS.UPDATE_ACTION}
+            </KeyvalText>
+          </KeyvalButton>
+        </CreateButtonWrapper>
+        <DeleteAction
+          onDelete={onDeleteAction}
+          name={actionName}
+          type={currentActionType}
+        />
+      </FormFieldsWrapper>
     </CreateActionWrapper>
   );
 }

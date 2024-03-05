@@ -47,12 +47,12 @@ const ClusterAttributesContainer = styled.div`
   align-items: center;
 `;
 
-const StatusIndicator = styled.div<{ enabled: boolean }>`
+const StatusIndicator = styled.div<{ disabled: boolean }>`
   width: 6px;
   height: 6px;
   border-radius: 4px;
-  background-color: ${({ enabled }) =>
-    enabled ? theme.colors.orange_brown : theme.colors.success};
+  background-color: ${({ disabled }) =>
+    disabled ? theme.colors.orange_brown : theme.colors.success};
 `;
 
 const TapListContainer = styled.div`
@@ -142,7 +142,7 @@ export function ActionsTableRow({
               <KeyvalText weight={600}>
                 {`${item.spec.actionName || 'Action'} `}
               </KeyvalText>
-              <StatusIndicator enabled={item.spec.enabled} />
+              <StatusIndicator disabled={!!item.spec.disabled} />
 
               <KeyvalText color={theme.text.grey} size={14} weight={400}>
                 {`${item?.spec.clusterAttributes.length} cluster attributes`}

@@ -1,3 +1,4 @@
+import theme from '@/styles/palette';
 import styled from 'styled-components';
 
 export const CreateActionWrapper = styled.div`
@@ -11,6 +12,23 @@ export const CreateActionWrapper = styled.div`
 
   @media screen and (max-height: 450px) {
     max-height: 85%;
+  }
+`;
+
+export const FormFieldsWrapper = styled.div<{ disabled: boolean }>`
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  opacity: ${({ disabled }) => (disabled ? 0.3 : 1)};
+  pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
+`;
+
+export const SwitchWrapper = styled.div<{ disabled: boolean }>`
+  p {
+    color: ${({ disabled }) =>
+      disabled ? theme.colors.orange_brown : theme.colors.success};
+    font-weight: 600;
   }
 `;
 

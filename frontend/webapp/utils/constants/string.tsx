@@ -110,6 +110,9 @@ export const ACTION = {
   CONTACT_US: 'Contact Us',
   LEARN_MORE: 'Learn more',
   LINK_TO_DOCS: 'Link to docs',
+  DISABLE: 'Disabled',
+  RUNNING: 'Running',
+  ENABLE: 'Enable',
 };
 
 export const NOTIFICATION = {
