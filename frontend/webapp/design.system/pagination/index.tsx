@@ -43,12 +43,6 @@ const PageButton = styled.button<{
   }
 `;
 
-// const Expand = styled.svg<{ rotation: number }>`
-//   width: 14px;
-//   height: 14px;
-//   transform: rotate(${(props) => props.rotation}deg);
-// `;
-
 export const Pagination: React.FC<PaginationProps> = ({
   total,
   itemsPerPage,

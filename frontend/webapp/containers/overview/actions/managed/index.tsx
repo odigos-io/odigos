@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useActions } from '@/hooks';
 import theme from '@/styles/palette';
 import { useRouter } from 'next/navigation';
@@ -19,6 +19,8 @@ import {
 } from './styled';
 
 export function ManagedActionsContainer() {
+  const [searchInput, setSearchInput] = useState('');
+
   const router = useRouter();
   const { isLoading, actions } = useActions();
 
@@ -28,6 +30,14 @@ export function ManagedActionsContainer() {
 
   function handleEditAction(id: string) {
     router.push(`${ROUTES.EDIT_ACTION}?id=${id}`);
+  }
+
+  function filterActions() {
+    return actions.filter(
+      ({ spec: { actionName } }) =>
+        actionName &&
+        actionName.toLowerCase().includes(searchInput.toLowerCase())
+    );
   }
 
   if (isLoading) return <KeyvalLoader />;
@@ -46,6 +56,8 @@ export function ManagedActionsContainer() {
             <KeyvalSearchInput
               containerStyle={{ padding: '6px 8px' }}
               placeholder={ACTIONS.SEARCH_ACTION}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
             <HeaderRight>
               <KeyvalButton onClick={handleAddAction} style={{ height: 32 }}>
@@ -60,7 +72,10 @@ export function ManagedActionsContainer() {
             </HeaderRight>
           </Header>
           <Content>
-            <ActionsTable data={actions} onRowClick={handleEditAction} />
+            <ActionsTable
+              data={searchInput ? filterActions() : actions}
+              onRowClick={handleEditAction}
+            />
           </Content>
         </ActionsContainer>
       )}
