@@ -22,7 +22,8 @@ export function ManagedActionsContainer() {
   const [searchInput, setSearchInput] = useState('');
 
   const router = useRouter();
-  const { isLoading, actions, sortActions } = useActions();
+  const { isLoading, actions, sortActions, filterActionsBySignal } =
+    useActions();
 
   function handleAddAction() {
     router.push(ROUTES.CHOOSE_ACTIONS);
@@ -76,6 +77,7 @@ export function ManagedActionsContainer() {
               data={searchInput ? filterActions() : actions}
               onRowClick={handleEditAction}
               sortActions={sortActions}
+              filterActionsBySignal={filterActionsBySignal}
             />
           </Content>
         </ActionsContainer>

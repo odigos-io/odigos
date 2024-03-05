@@ -142,3 +142,9 @@ export const ACTIONS = {
   },
   SEARCH_ACTION: 'Search Action',
 };
+
+export const MONITORS = {
+  LOGS: 'Logs',
+  METRICS: 'Metrics',
+  TRACES: 'Traces',
+};

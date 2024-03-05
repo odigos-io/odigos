@@ -7,6 +7,7 @@ interface ActionItem {
   onClick: () => void;
   id: string;
   selected?: boolean;
+  disabled?: boolean;
 }
 
 // Define the type for the groups of action items, including any conditional rendering logic

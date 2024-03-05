@@ -30,13 +30,14 @@ const Popup = styled.div<{ isOpen: boolean }>`
   margin-top: 5px;
 `;
 
-const PopupItem = styled.div`
+const PopupItem = styled.div<{ disabled: boolean }>`
   display: flex;
   padding: 7px 12px;
   gap: 4px;
   border-top: ${({ theme }) => `1px solid ${theme.colors.blue_grey}`};
   align-items: center;
-
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+  pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
   cursor: pointer;
   p {
     cursor: pointer !important;
@@ -52,6 +53,7 @@ interface Item {
   onClick: () => void;
   id: string;
   selected?: boolean;
+  disabled?: boolean;
 }
 
 interface DropdownProps {
@@ -84,7 +86,11 @@ export const ActionItem: React.FC<DropdownProps> = ({
           </KeyvalText>
         </div>
         {items.map((item, index) => (
-          <PopupItem key={index} onClick={item.onClick}>
+          <PopupItem
+            key={index}
+            onClick={item.onClick}
+            disabled={!!item.disabled}
+          >
             {item.selected ? <Check /> : <div style={{ width: 10 }} />}
             <KeyvalText size={12} weight={600}>
               {item.label}

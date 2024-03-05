@@ -8,6 +8,7 @@ type TableProps = {
   data: ActionData[];
   onRowClick: (id: string) => void;
   sortActions?: (condition: string) => void;
+  filterActionsBySignal?: (signals: string[]) => void;
 };
 
 const SELECT_ALL_CHECKBOX = 'select_all';
@@ -16,6 +17,7 @@ export const ActionsTable: React.FC<TableProps> = ({
   data,
   onRowClick,
   sortActions,
+  filterActionsBySignal,
 }) => {
   const [selectedCheckbox, setSelectedCheckbox] = useState<string[]>([]);
 
@@ -43,6 +45,7 @@ export const ActionsTable: React.FC<TableProps> = ({
         selectedCheckbox={selectedCheckbox}
         onSelectedCheckboxChange={onSelectedCheckboxChange}
         sortActions={sortActions}
+        filterActionsBySignal={filterActionsBySignal}
       />
     );
   }

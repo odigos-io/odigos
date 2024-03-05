@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { OVERVIEW } from '@/utils';
+import { MONITORS, OVERVIEW } from '@/utils';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
 import { ActionsSortType } from '@/types';
@@ -38,6 +38,7 @@ interface ActionsTableHeaderProps {
   selectedCheckbox: string[];
   onSelectedCheckboxChange: (id: string) => void;
   sortActions?: (condition: string) => void;
+  filterActionsBySignal?: (signals: string[]) => void;
 }
 
 export function ActionsTableHeader({
@@ -45,18 +46,37 @@ export function ActionsTableHeader({
   selectedCheckbox,
   onSelectedCheckboxChange,
   sortActions,
+  filterActionsBySignal,
 }: ActionsTableHeaderProps) {
   const [currentSortId, setCurrentSortId] = useState('');
-
+  const [groupActions, setGroupActions] = useState([
+    'traces',
+    'logs',
+    'metrics',
+  ]);
   function onSortClick(id: string) {
     setCurrentSortId(id);
     sortActions && sortActions(id);
+  }
+
+  function onGroupClick(id: string) {
+    let newGroup: string[] = [];
+    if (groupActions.includes(id)) {
+      setGroupActions(groupActions.filter((item) => item !== id));
+      newGroup = groupActions.filter((item) => item !== id);
+    } else {
+      setGroupActions([...groupActions, id]);
+      newGroup = [...groupActions, id];
+    }
+
+    filterActionsBySignal && filterActionsBySignal(newGroup);
   }
 
   const actionGroups = [
     {
       label: 'Active Status',
       subTitle: 'Toggle active status',
+      disabled: false,
       items: [
         {
           label: 'Enabled',
@@ -74,23 +94,34 @@ export function ActionsTableHeader({
 
     {
       label: 'Metrics',
-      subTitle: 'Sort by',
-
+      subTitle: 'Display',
       items: [
         {
-          label: 'Traces',
-          onClick: () => console.log('Type clicked'),
-          id: 'traces',
+          label: MONITORS.TRACES,
+          onClick: () => onGroupClick(MONITORS.TRACES.toLowerCase()),
+          id: MONITORS.TRACES.toLowerCase(),
+          selected: groupActions.includes(MONITORS.TRACES.toLowerCase()),
+          disabled:
+            groupActions.length === 1 &&
+            groupActions.includes(MONITORS.TRACES.toLowerCase()),
         },
         {
-          label: 'Logs',
-          onClick: () => console.log('Action Name clicked'),
-          id: 'logs',
+          label: MONITORS.LOGS,
+          onClick: () => onGroupClick(MONITORS.LOGS.toLowerCase()),
+          id: MONITORS.LOGS.toLowerCase(),
+          selected: groupActions.includes(MONITORS.LOGS.toLowerCase()),
+          disabled:
+            groupActions.length === 1 &&
+            groupActions.includes(MONITORS.LOGS.toLowerCase()),
         },
         {
-          label: 'Metrics',
-          onClick: () => console.log('Status clicked'),
-          id: 'metrics',
+          label: MONITORS.METRICS,
+          onClick: () => onGroupClick(MONITORS.METRICS.toLowerCase()),
+          id: MONITORS.METRICS.toLowerCase(),
+          selected: groupActions.includes(MONITORS.METRICS.toLowerCase()),
+          disabled:
+            groupActions.length === 1 &&
+            groupActions.includes(MONITORS.METRICS.toLowerCase()),
         },
       ],
       condition: true,

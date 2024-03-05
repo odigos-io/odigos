@@ -45,10 +45,21 @@ export function useActions() {
     setSortedActions(sorted);
   }
 
+  function filterActionsBySignal(signals: string[]) {
+    const filteredData = data?.filter((action) => {
+      return signals.some((signal) =>
+        action.spec.signals.includes(signal.toUpperCase())
+      );
+    });
+
+    setSortedActions(filteredData);
+  }
+
   return {
     isLoading,
     actions: sortedActions || [],
     sortActions,
     getActionById,
+    filterActionsBySignal,
   };
 }
