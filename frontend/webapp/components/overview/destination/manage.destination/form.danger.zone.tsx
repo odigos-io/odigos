@@ -1,9 +1,9 @@
+'use client';
 import React, { useState } from 'react';
 import { styled } from 'styled-components';
 import { ConnectionsIcons } from '@/components/setup';
 import { DangerZone, KeyvalModal, KeyvalText } from '@/design.system';
 import { ModalPositionX, ModalPositionY } from '@/design.system/modal/types';
-import theme from '@/styles/palette';
 import { OVERVIEW } from '@/utils/constants';
 
 const FieldWrapper = styled.div`

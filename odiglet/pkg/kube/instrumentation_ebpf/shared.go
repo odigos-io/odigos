@@ -58,6 +58,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 			return err
 		}
 
+		var errs []error
 		for _, d := range details {
 			podDetails := types.NamespacedName{
 				Namespace: pod.Namespace,
@@ -67,8 +68,13 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 
 			if err != nil {
 				logger.Error(err, "error initiating process instrumentation", "pid", d.ProcessID)
-				return err
+				errs = append(errs, err)
 			}
+		}
+
+		// Failed to instrument all processes in the container
+		if len(errs) > 0 && len(errs) == len(details) {
+			return errors.Join(errs...)
 		}
 	}
 	return nil

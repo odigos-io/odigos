@@ -65,10 +65,13 @@ export const OVERVIEW = {
     OVERVIEW: 'Overview',
     SOURCES: 'Sources',
     DESTINATIONS: 'Destinations',
+    ACTIONS: 'Actions',
   },
   ADD_NEW_SOURCE: 'Add New Source',
   ADD_NEW_DESTINATION: 'Add New Destination',
+  ADD_NEW_ACTION: 'Add New Action',
   EMPTY_DESTINATION: 'No destinations found',
+  EMPTY_ACTION: 'No actions found',
   EMPTY_SOURCE: 'No sources found',
   DESTINATION_UPDATE_SUCCESS: 'Destination updated successfully',
   DESTINATION_CREATED_SUCCESS: 'Destination created successfully',
@@ -76,25 +79,43 @@ export const OVERVIEW = {
   SOURCE_UPDATE_SUCCESS: 'Source updated successfully',
   SOURCE_CREATED_SUCCESS: 'Source created successfully',
   SOURCE_DELETED_SUCCESS: 'Source deleted successfully',
+  ACTION_UPDATE_SUCCESS: 'Action updated successfully',
+  ACTION_UPDATE_ERROR: 'Failed to update action',
   MANAGE: 'Manage',
   DELETE: 'Delete',
   DELETE_DESTINATION: 'Delete Destination',
   DELETE_SOURCE: 'Delete Source',
+  DELETE_ACTION: 'Delete Action',
+
   SOURCE_DANGER_ZONE_TITLE: 'Delete this source',
+  ACTION_DANGER_ZONE_TITLE: 'Delete this action',
   SOURCE_DANGER_ZONE_SUBTITLE:
     'Uninstrument this source, and delete all odigos associated data. You can always re-instrument this source later with odigos.',
+  ACTION_DANGER_ZONE_SUBTITLE:
+    'This action cannot be undone. This will permanently delete the action and all associated data.',
   DELETE_MODAL_TITLE: 'Delete this destination',
   DELETE_MODAL_SUBTITLE:
     'This action cannot be undone. This will permanently delete the destination and all associated data.',
   DELETE_BUTTON: 'I want to delete this destination',
   CONFIRM_SOURCE_DELETE: 'I want to delete this source',
+  CONFIRM_DELETE_ACTION: 'I want to delete this action',
   CONNECT: 'Connect',
   REPORTED_NAME: 'Override service.name',
+  CREATE_ACTION: 'Create Action',
+  EDIT_ACTION: 'Edit Action',
+  ACTION_DESCRIPTION:
+    'Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your Odigos Destinations.',
 };
 
 export const ACTION = {
   SAVE: 'Save',
   CONTACT_US: 'Contact Us',
+  LEARN_MORE: 'Learn more',
+  LINK_TO_DOCS: 'Link to docs',
+  DISABLE: 'Disable',
+  RUNNING: 'Running',
+  APPLIED: 'Applied',
+  ENABLE: 'Enable',
 };
 
 export const NOTIFICATION = {
@@ -107,4 +128,26 @@ export const PARAMS = {
   DELETED: 'deleted',
   CREATED: 'created',
   UPDATED: 'updated',
+};
+
+//odigos actions
+export const ACTIONS = {
+  MONITORS_TITLE: 'This action monitors',
+  ACTION_NAME: 'Action Name',
+  ACTION_NOTE: 'Note',
+  NOTE_PLACEHOLDER: 'Add a note to describe the use case of this action',
+  CREATE_ACTION: 'Create Action',
+  UPDATE_ACTION: 'Update Action',
+
+  AddClusterInfo: {
+    TITLE: 'Add Cluster Info',
+    DESCRIPTION: `The “Add Cluster Info” Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`,
+  },
+  SEARCH_ACTION: 'Search Action',
+};
+
+export const MONITORS = {
+  LOGS: 'Logs',
+  METRICS: 'Metrics',
+  TRACES: 'Traces',
 };

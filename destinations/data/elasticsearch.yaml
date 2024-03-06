@@ -25,10 +25,8 @@ spec:
       componentType: input
       componentProps:
         type: text
-        required: true
     - name: ES_LOGS_INDEX
       displayName: Logs Index
       componentType: input
       componentProps:
         type: text
-        required: true

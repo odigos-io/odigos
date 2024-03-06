@@ -34,9 +34,10 @@ func GetRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 	return filteredPods, nil
 }
 
-func GetResourceAttributes(workload *common.PodWorkload) []attribute.KeyValue {
+func GetResourceAttributes(workload *common.PodWorkload, podName string) []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
 		semconv.K8SNamespaceName(workload.Namespace),
+		semconv.K8SPodName(podName),
 	}
 
 	switch workload.Kind {

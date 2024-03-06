@@ -5,3 +5,4 @@ export { useKeyDown } from './useKeyDown';
 export * from './sources';
 export * from './setup';
 export * from './destinations';
+export * from './actions';

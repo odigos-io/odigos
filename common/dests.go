@@ -17,6 +17,7 @@ const (
 	JaegerDestinationType                 DestinationType = "jaeger"
 	ElasticsearchDestinationType          DestinationType = "elasticsearch"
 	GenericOTLPDestinationType            DestinationType = "otlp"
+	OtlpHttpDestinationType               DestinationType = "otlphttp"
 	SignozDestinationType                 DestinationType = "signoz"
 	QrynDestinationType                   DestinationType = "qryn"
 	OpsVerseDestinationType               DestinationType = "opsverse"
