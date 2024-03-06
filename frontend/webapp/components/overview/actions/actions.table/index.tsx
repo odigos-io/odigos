@@ -63,7 +63,7 @@ export const ActionsTable: React.FC<TableProps> = ({
 
   return (
     <>
-      <Table
+      <Table<ActionData>
         data={data}
         renderTableHeader={renderTableHeader}
         onPaginate={onPaginate}

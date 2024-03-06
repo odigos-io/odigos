@@ -1,14 +1,14 @@
 import theme from '@/styles/palette';
-import { ActionData } from '@/types';
 import styled from 'styled-components';
 import React, { useState } from 'react';
 import { Pagination } from '@/design.system';
 import { EmptyList } from '@/components';
 
-type TableProps = {
-  data: ActionData[];
+// Updated TableProps to be generic
+type TableProps<T> = {
+  data: T[];
   renderTableHeader: () => JSX.Element;
-  renderTableRows: (item: any, index: number) => any;
+  renderTableRows: (item: T, index: number) => JSX.Element;
   onPaginate?: (pageNumber: number) => void;
 };
 
@@ -24,12 +24,13 @@ const StyledTable = styled.table`
 
 const StyledTbody = styled.tbody``;
 
-export const Table: React.FC<TableProps> = ({
+// Applying generic type T to the Table component
+export const Table = <T,>({
   data,
   renderTableHeader,
   renderTableRows,
   onPaginate,
-}) => {
+}: TableProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -37,9 +38,11 @@ export const Table: React.FC<TableProps> = ({
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
 
-  const handlePageChange = (pageNumber) => {
+  const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
-    onPaginate && onPaginate(pageNumber);
+    if (onPaginate) {
+      onPaginate(pageNumber);
+    }
   };
 
   function renderEmptyResult() {
@@ -50,7 +53,9 @@ export const Table: React.FC<TableProps> = ({
     <>
       <StyledTable>
         {renderTableHeader()}
-        <StyledTbody>{currentItems.map(renderTableRows)}</StyledTbody>
+        <StyledTbody>
+          {currentItems.map((item, index) => renderTableRows(item, index))}
+        </StyledTbody>
       </StyledTable>
 
       {data.length === 0 ? (

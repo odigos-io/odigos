@@ -1,12 +1,17 @@
-import React, { useMemo } from 'react';
-import { ACTIONS } from '@/utils';
+import React from 'react';
 import theme from '@/styles/palette';
-import { ActionData } from '@/types';
-import { ACTION_ICONS } from '@/assets';
+import { ManagedSource } from '@/types';
+import { Container, Namespace } from '@/assets';
 import styled, { css } from 'styled-components';
-import { KeyvalCheckbox, KeyvalText } from '@/design.system';
-import { TapList } from '@/components/setup/destination/tap.list/tap.list';
-import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
+import {
+  KeyvalCheckbox,
+  KeyvalImage,
+  KeyvalTag,
+  KeyvalText,
+} from '@/design.system';
+import { LANGUAGES_LOGOS } from '@/assets/images';
+import { KIND_COLORS } from '@/styles/global';
+import { LANGUAGES_COLORS } from '@/assets/images/sources.card/sources.card';
 
 const StyledTr = styled.tr`
   &:hover {
@@ -30,89 +35,72 @@ const StyledMainTd = styled(StyledTd)`
   padding: 10px 0px;
 `;
 
-const ActionIconContainer = styled.div`
+const SourceIconContainer = styled.div`
   display: flex;
+  align-items: center;
   gap: 8px;
 `;
 
-const ActionDetails = styled.div`
+const SourceDetails = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
 `;
 
-const ClusterAttributesContainer = styled.div`
+const NameContainer = styled.div`
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 `;
 
-const StatusIndicator = styled.div<{ disabled: boolean }>`
+const FooterContainer = styled.div`
+  display: flex;
+  gap: 16px;
+  align-items: center;
+`;
+
+const FooterItemWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const StatusIndicator = styled.div<{ color: string }>`
   width: 6px;
   height: 6px;
   border-radius: 4px;
-  background-color: ${({ disabled }) =>
-    disabled ? theme.colors.orange_brown : theme.colors.success};
+  background-color: ${({ color }) => color};
 `;
 
-const TapListContainer = styled.div`
+const TagWrapper = styled.div`
   padding: 0 20px;
+  width: 300px;
   display: flex;
   align-items: center;
 `;
 
-const TAP_STYLE: React.CSSProperties = { padding: '4px 8px', gap: 4 };
-
-const supported_signals = {
-  traces: {
-    supported: true,
-  },
-  metrics: {
-    supported: true,
-  },
-  logs: {
-    supported: true,
-  },
+const LOGO_STYLE: React.CSSProperties = {
+  padding: 4,
+  backgroundColor: theme.colors.white,
 };
 
-export function ActionsTableRow({
+const DEPLOYMENT = 'deployment';
+export function SourcesTableRow({
   item,
   index,
-  data,
   selectedCheckbox,
   onSelectedCheckboxChange,
   onRowClick,
 }: {
-  item: ActionData;
+  item: ManagedSource;
   index: number;
-  data: ActionData[];
+  data: ManagedSource[];
   selectedCheckbox: string[];
   onSelectedCheckboxChange: (id: string) => void;
-  onRowClick: (id: string) => void;
+  onRowClick: (source: ManagedSource) => void;
 }) {
-  const ActionIcon = ACTION_ICONS[item.type];
-
-  const monitors = useMemo(() => {
-    return Object?.entries(supported_signals).reduce((acc, [key, _]) => {
-      const monitor = MONITORING_OPTIONS.find(
-        (option) => option.title.toLowerCase() === key
-      );
-      if (monitor && supported_signals[key].supported) {
-        return [
-          ...acc,
-          {
-            ...monitor,
-            tapped: item.spec.signals.includes(key.toUpperCase()),
-          },
-        ];
-      }
-
-      return acc;
-    }, []);
-  }, [data]);
-
   return (
-    <StyledTr key={item.id}>
+    <StyledTr key={item.kind}>
       <StyledTd
         isFirstRow={index === 0}
         style={{
@@ -122,40 +110,74 @@ export function ActionsTableRow({
         }}
       >
         <KeyvalCheckbox
-          value={selectedCheckbox.includes(item.id)}
-          onChange={() => onSelectedCheckboxChange(item.id)}
+          value={selectedCheckbox.includes(item.kind)}
+          onChange={() => onSelectedCheckboxChange(item.kind)}
         />
       </StyledTd>
-      <StyledMainTd
-        onClick={() => onRowClick(item.id)}
-        isFirstRow={index === 0}
-      >
-        <ActionIconContainer>
+      <StyledMainTd onClick={() => onRowClick(item)} isFirstRow={index === 0}>
+        <SourceIconContainer>
           <div>
-            <ActionIcon style={{ width: 16, height: 16 }} />
+            <KeyvalImage
+              src={LANGUAGES_LOGOS[item?.languages?.[0].language || '']}
+              width={32}
+              height={32}
+              style={LOGO_STYLE}
+              alt="source-logo"
+            />
           </div>
-          <ActionDetails>
-            <KeyvalText color={theme.colors.light_grey} size={12}>
-              {ACTIONS[item?.type || ''].TITLE}
-            </KeyvalText>
-            <ClusterAttributesContainer>
+          <SourceDetails>
+            <NameContainer>
               <KeyvalText weight={600}>
-                {`${item.spec.actionName || 'Action'} `}
+                {`${item.name || 'Source'} `}
               </KeyvalText>
-              <StatusIndicator disabled={!!item.spec.disabled} />
+              <KeyvalText weight={600}>
+                {`${item.reported_name || ''} `}
+              </KeyvalText>
+            </NameContainer>
+            <FooterContainer>
+              <FooterItemWrapper>
+                <StatusIndicator
+                  color={
+                    LANGUAGES_COLORS[item?.languages?.[0].language] ||
+                    theme.text.light_grey
+                  }
+                />
+                <KeyvalText color={theme.text.light_grey} size={14}>
+                  {item?.languages?.[0].language}
+                </KeyvalText>
+              </FooterItemWrapper>
+              <FooterItemWrapper>
+                <Namespace
+                  style={{
+                    width: 16,
+                    height: 16,
+                  }}
+                />
+                <KeyvalText color={theme.text.light_grey} size={14}>
+                  {item.namespace}
+                </KeyvalText>
+              </FooterItemWrapper>
+              <FooterItemWrapper>
+                <Container
+                  style={{
+                    width: 16,
+                    height: 16,
+                  }}
+                />
+                <KeyvalText color={theme.text.light_grey} size={14}>
+                  {item?.languages?.[0].container_name}
+                </KeyvalText>
+              </FooterItemWrapper>
+            </FooterContainer>
+          </SourceDetails>
 
-              <KeyvalText color={theme.text.grey} size={14} weight={400}>
-                {`${item?.spec.clusterAttributes.length} cluster attributes`}
-              </KeyvalText>
-            </ClusterAttributesContainer>
-            <KeyvalText color={theme.text.light_grey} size={14}>
-              {item.spec.notes}
-            </KeyvalText>
-          </ActionDetails>
-          <TapListContainer>
-            <TapList gap={4} list={monitors} tapStyle={TAP_STYLE} />
-          </TapListContainer>
-        </ActionIconContainer>
+          <TagWrapper>
+            <KeyvalTag
+              title={item?.kind || ''}
+              color={KIND_COLORS[item?.kind?.toLowerCase() || DEPLOYMENT]}
+            />
+          </TagWrapper>
+        </SourceIconContainer>
       </StyledMainTd>
     </StyledTr>
   );

@@ -1,10 +1,13 @@
 import { QUERIES } from '@/utils/constants';
-import { SelectedSources } from '@/types/sources';
+import { SelectedSources, ManagedSource } from '@/types';
 import { useMutation, useQuery } from 'react-query';
 import { getSources, setNamespaces } from '@/services';
 
 export function useSources() {
-  const { data: sources } = useQuery([QUERIES.API_SOURCES], getSources);
+  const { data: sources, isLoading } = useQuery<ManagedSource[]>(
+    [QUERIES.API_SOURCES],
+    getSources
+  );
 
   const { mutateAsync } = useMutation((body: SelectedSources) =>
     setNamespaces(body)
@@ -12,7 +15,7 @@ export function useSources() {
 
   async function upsertSources({ sectionData, onSuccess, onError }) {
     const sourceNamesSet = new Set(
-      sources?.map((source: SelectedSources) => source.name)
+      sources?.map((source: ManagedSource) => source.name)
     );
     const updatedSectionData: SelectedSources = {};
 
@@ -41,5 +44,5 @@ export function useSources() {
     }
   }
 
-  return { upsertSources };
+  return { upsertSources, sources: sources || [], isLoading };
 }
