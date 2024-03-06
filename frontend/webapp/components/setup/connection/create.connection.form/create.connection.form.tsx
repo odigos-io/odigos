@@ -1,27 +1,26 @@
+import React, { useState, useEffect } from 'react';
+import theme from '@/styles/palette';
+import { useKeyDown } from '@/hooks';
+import { Field } from '@/types/destinations';
+import { renderFields } from './dynamic.fields';
 import {
-  CheckboxWrapper,
-  ConnectionMonitorsWrapper,
-  CreateDestinationButtonWrapper,
-  FieldWrapper,
-} from './create.connection.form.styled';
+  cleanObjectEmptyStringsValues,
+  SETUP,
+  stringifyNonStringValues,
+} from '@/utils';
+import { DestinationBody } from '@/containers/setup/connection/connection.section';
 import {
   KeyvalButton,
   KeyvalCheckbox,
   KeyvalInput,
   KeyvalText,
 } from '@/design.system';
-import React, { useEffect, useState } from 'react';
 import {
-  SETUP,
-  cleanObjectEmptyStringsValues,
-  stringifyNonStringValues,
-} from '@/utils';
-
-import { DestinationBody } from '@/containers/setup/connection/connection.section';
-import { Field } from '@/types/destinations';
-import { renderFields } from './dynamic.fields';
-import theme from '@/styles/palette';
-import { useKeyDown } from '@/hooks';
+  CheckboxWrapper,
+  ConnectionMonitorsWrapper,
+  FieldWrapper,
+  CreateDestinationButtonWrapper,
+} from './create.connection.form.styled';
 
 interface CreateConnectionFormProps {
   fields: Field[];
@@ -217,10 +216,7 @@ export function CreateConnectionForm({
       </FieldWrapper>
       {renderFields(fields, dynamicFields, handleDynamicFieldChange)}
       <CreateDestinationButtonWrapper>
-        <KeyvalButton
-          disabled={isCreateButtonDisabled}
-          onClick={onCreateClick}
-          onKeyPress={handleKeyPress}>
+        <KeyvalButton disabled={isCreateButtonDisabled} onClick={onCreateClick}>
           <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
             {dynamicFieldsValues
               ? SETUP.UPDATE_DESTINATION
