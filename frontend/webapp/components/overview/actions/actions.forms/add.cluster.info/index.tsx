@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { KeyValuePair } from '@/design.system';
 import { KeyValue } from '@keyval-dev/design-system';
@@ -33,9 +33,11 @@ export function AddClusterInfoForm({
   data,
   onChange,
 }: AddClusterInfoFormProps): React.JSX.Element {
-  const [keyValues, setKeyValues] = React.useState<ClusterAttributes>(
-    data || { clusterAttributes: [] }
-  );
+  const [keyValuePairs, setKeyValuePairs] = React.useState<KeyValue[]>([]);
+
+  useEffect(() => {
+    buildKeyValuePairs();
+  }, [data]);
 
   function handleKeyValuesChange(keyValues: KeyValue[]): void {
     const actionData = {
@@ -45,7 +47,6 @@ export function AddClusterInfoForm({
       })),
     };
 
-    setKeyValues(actionData);
     if (
       actionData.clusterAttributes.length === 1 &&
       actionData.clusterAttributes[0].attributeName === '' &&
@@ -57,16 +58,18 @@ export function AddClusterInfoForm({
     }
   }
 
-  function getKeyValuePairs(): KeyValue[] {
-    if (keyValues.clusterAttributes.length === 0) {
-      return DEFAULT_KEY_VALUE_PAIR;
+  function buildKeyValuePairs() {
+    if (data?.clusterAttributes.length === 0) {
+      setKeyValuePairs(DEFAULT_KEY_VALUE_PAIR);
     }
 
-    return keyValues.clusterAttributes.map((keyValue, index) => ({
+    const values = data?.clusterAttributes.map((keyValue, index) => ({
       id: index,
       key: keyValue.attributeName,
       value: keyValue.attributeStringValue,
     }));
+
+    setKeyValuePairs(values || DEFAULT_KEY_VALUE_PAIR);
   }
 
   return (
@@ -76,7 +79,7 @@ export function AddClusterInfoForm({
           title="Cluster Attributes *"
           titleKey="Attribute"
           titleButton="Add Attribute"
-          keyValues={getKeyValuePairs()}
+          keyValues={keyValuePairs}
           setKeyValues={handleKeyValuesChange}
         />
       </FormWrapper>

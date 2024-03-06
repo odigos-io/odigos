@@ -50,7 +50,7 @@ export function useActionState() {
     deleteAction(id)
   );
 
-  function onSuccess() {
+  async function onSuccess() {
     router.push(ROUTES.ACTIONS);
   }
 
@@ -62,8 +62,8 @@ export function useActionState() {
     if (key === 'disabled') upsertAction(false);
   }
 
-  function buildActionData(actionId: string) {
-    const action = getActionById(actionId);
+  async function buildActionData(actionId: string) {
+    const action = await getActionById(actionId);
 
     const actionState = {
       id: action?.id,
@@ -106,7 +106,7 @@ export function useActionState() {
       notes: actionNote,
       signals,
       ...filteredActionData,
-      disabled: !disabled,
+      disabled: callback ? disabled : !disabled,
     };
 
     try {

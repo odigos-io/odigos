@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useActions, useNotification } from '@/hooks';
 import theme from '@/styles/palette';
 import { useRouter } from 'next/navigation';
@@ -29,7 +29,12 @@ export function ManagedActionsContainer() {
     sortActions,
     filterActionsBySignal,
     toggleActionStatus,
+    refetch,
   } = useActions();
+
+  useEffect(() => {
+    refetch();
+  }, []);
 
   function handleAddAction() {
     router.push(ROUTES.CHOOSE_ACTIONS);

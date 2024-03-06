@@ -1,7 +1,7 @@
+import { useEffect, useState } from 'react';
 import { QUERIES } from '@/utils';
 import { useMutation, useQuery } from 'react-query';
 import { getActions, putAction } from '@/services';
-import { useEffect, useState } from 'react';
 import { ActionData, ActionItem, ActionsSortType } from '@/types';
 
 export function useActions() {
@@ -22,8 +22,13 @@ export function useActions() {
     setSortedActions(data || []);
   }, [data]);
 
-  function getActionById(id: string) {
-    return data?.find((action) => action.id === id);
+  async function getActionById(id: string) {
+    let actions = data;
+    if (!data) {
+      const res = await refetch();
+      actions = res.data;
+    }
+    return actions?.find((action) => action.id === id);
   }
 
   function sortActions(condition: string) {
@@ -64,7 +69,7 @@ export function useActions() {
     disabled: boolean
   ): Promise<boolean> {
     for (const id of ids) {
-      const action = getActionById(id);
+      const action = await getActionById(id);
       if (action && action.spec.disabled !== disabled) {
         const body = {
           id: action.id,
@@ -86,6 +91,11 @@ export function useActions() {
     return Promise.resolve(true);
   }
 
+  async function handleActionsRefresh() {
+    const res = await refetch();
+    setSortedActions(res.data || []);
+  }
+
   return {
     isLoading,
     actions: sortedActions || [],
@@ -93,5 +103,6 @@ export function useActions() {
     getActionById,
     filterActionsBySignal,
     toggleActionStatus,
+    refetch: handleActionsRefresh,
   };
 }
