@@ -61,9 +61,6 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 	}
 
 	if caPem != "" {
-		// pemDataOneLine := strings.Replace(caPem, "\r\n", "", -1)       // For Windows-style line breaks
-		// pemDataOneLine = strings.Replace(pemDataOneLine, "\n", "", -1) // For Unix-style line breaks
-		// pemDataOneLine = strings.Replace(pemDataOneLine, "\r", "", -1) // For old Mac-style line breaks
 		exporterConfig["tls"] = commonconf.GenericMap{
 			"ca_pem": caPem,
 		}
