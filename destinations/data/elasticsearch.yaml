@@ -51,3 +51,12 @@ spec:
         required: false
         tooltip: "Password used for HTTP Basic Authentication"
       secret: true
+    - name: ELASTICSEARCH_CA_PEM
+      displayName: CA Certificate
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: "-----BEGIN CERTIFICATE-----"
+        tooltip: "When using https, provide the CA certificate to verify the server. If empty uses system root CA"
+

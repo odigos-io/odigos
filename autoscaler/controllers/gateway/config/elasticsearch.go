@@ -17,6 +17,7 @@ const (
 	esLogsIndexKey      = "ES_LOGS_INDEX"
 	esUsername          = "ELASTICSEARCH_USERNAME"
 	esPassword          = "ELASTICSEARCH_PASSWORD"
+	esCaPem             = "ELASTICSEARCH_CA_PEM"
 )
 
 var _ Configer = (*Elasticsearch)(nil)
@@ -51,11 +52,21 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 	}
 
 	basicAuthUsername := dest.Spec.Data[esUsername]
+	caPem := dest.Spec.Data[esCaPem]
 
 	exporterConfig := commonconf.GenericMap{
 		"endpoints":    []string{parsedURL},
 		"traces_index": traceIndexVal,
 		"logs_index":   logIndexVal,
+	}
+
+	if caPem != "" {
+		// pemDataOneLine := strings.Replace(caPem, "\r\n", "", -1)       // For Windows-style line breaks
+		// pemDataOneLine = strings.Replace(pemDataOneLine, "\n", "", -1) // For Unix-style line breaks
+		// pemDataOneLine = strings.Replace(pemDataOneLine, "\r", "", -1) // For old Mac-style line breaks
+		exporterConfig["tls"] = commonconf.GenericMap{
+			"ca_pem": caPem,
+		}
 	}
 
 	if basicAuthUsername != "" {

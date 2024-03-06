@@ -6,12 +6,21 @@ title: "Elasticsearch"
 
 The only required field is the Elasticsearch endpoint. This endpoint must be a valid URL for your Elasticsearch cluster.
 
+- Scheme can be `http` or `https`. If `https` is used
 - If port is not specified, it defaults to 9200.
 
 The following fields are optional:
 
 - **Traces Index** - The name of the index where traces will be stored. Defaults to `trace_index`.
 - **Logs Index** - The name of the index where logs will be stored. Defaults to `log_index`.
+
+## https
+
+If your Elasticsearch cluster uses `https`, you can provide the certificate authority (CA) to validate the server certificate.
+
+The content should be the certificate in PEM format (starts with `-----BEGIN CERTIFICATE-----` and ends with `-----END CERTIFICATE-----`).
+
+If empty, the system root CA will be used to validate the server certificate.
 
 ## Authentication
 
