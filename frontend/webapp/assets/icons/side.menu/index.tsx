@@ -1,9 +1,11 @@
-import FocusOverview from "../../../assets/icons/side.menu/focus-overview.svg";
-import UnFocusOverview from "../../../assets/icons/side.menu/unfocus-overview.svg";
-import FocusSources from "../../../assets/icons/side.menu/sources-focus.svg";
-import UnFocusSources from "../../../assets/icons/side.menu/sources-unfocus.svg";
-import FocusDestinations from "../../../assets/icons/side.menu/destinations-focus.svg";
-import UnFocusDestinations from "../../../assets/icons/side.menu/destinations-unfocus.svg";
+import FocusOverview from './focus-overview.svg';
+import UnFocusOverview from './unfocus-overview.svg';
+import FocusSources from './sources-focus.svg';
+import UnFocusSources from './sources-unfocus.svg';
+import FocusDestinations from './destinations-focus.svg';
+import UnFocusDestinations from './destinations-unfocus.svg';
+import FocusAction from './transform-focus.svg';
+import UnFocusAction from './transform-unfocus.svg';
 
 export {
   FocusOverview,
@@ -12,4 +14,6 @@ export {
   UnFocusSources,
   FocusDestinations,
   UnFocusDestinations,
+  FocusAction,
+  UnFocusAction,
 };

@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import theme from '@/styles/palette';
 import { useKeyDown } from '@/hooks';
