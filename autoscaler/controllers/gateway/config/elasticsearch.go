@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
@@ -14,6 +15,8 @@ const (
 	elasticsearchUrlKey = "ELASTICSEARCH_URL"
 	esTracesIndexKey    = "ES_TRACES_INDEX"
 	esLogsIndexKey      = "ES_LOGS_INDEX"
+	esUsername          = "ELASTICSEARCH_USERNAME"
+	esPassword          = "ELASTICSEARCH_PASSWORD"
 )
 
 var _ Configer = (*Elasticsearch)(nil)
@@ -37,39 +40,43 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 		return
 	}
 
+	traceIndexVal, exists := dest.Spec.Data[esTracesIndexKey]
+	if !exists {
+		traceIndexVal = "trace_index"
+	}
+
+	logIndexVal, exists := dest.Spec.Data[esLogsIndexKey]
+	if !exists {
+		logIndexVal = "log_index"
+	}
+
+	basicAuthUsername := dest.Spec.Data[esUsername]
+
+	exporterConfig := commonconf.GenericMap{
+		"endpoints":    []string{parsedURL},
+		"traces_index": traceIndexVal,
+		"logs_index":   logIndexVal,
+	}
+
+	if basicAuthUsername != "" {
+		exporterConfig["user"] = basicAuthUsername
+		exporterConfig["password"] = fmt.Sprintf("${%s}", esPassword)
+	}
+
+	exporterName := "elasticsearch/" + dest.Name
+	currentConfig.Exporters[exporterName] = exporterConfig
+
 	if isTracingEnabled(dest) {
-		esTraceExporterName := "elasticsearch/trace-" + dest.Name
-		traceIndexVal, exists := dest.Spec.Data[esTracesIndexKey]
-		if !exists {
-			traceIndexVal = "trace_index"
-		}
-
-		currentConfig.Exporters[esTraceExporterName] = commonconf.GenericMap{
-			"endpoints":    []string{parsedURL},
-			"traces_index": traceIndexVal,
-		}
-
 		tracesPipelineName := "traces/elasticsearch-" + dest.Name
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
-			Exporters: []string{esTraceExporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		esLogExporterName := "elasticsearch/log-" + dest.Name
-		logIndexVal, exists := dest.Spec.Data[esLogsIndexKey]
-		if !exists {
-			logIndexVal = "log_index"
-		}
-
-		currentConfig.Exporters[esLogExporterName] = commonconf.GenericMap{
-			"endpoints":  []string{parsedURL},
-			"logs_index": logIndexVal,
-		}
-
 		logsPipelineName := "logs/elasticsearch-" + dest.Name
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
-			Exporters: []string{esLogExporterName},
+			Exporters: []string{exporterName},
 		}
 	}
 }
