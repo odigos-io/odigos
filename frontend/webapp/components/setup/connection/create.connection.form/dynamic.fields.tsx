@@ -19,7 +19,7 @@ export function renderFields(
 ) {
   return fields?.map((field) => {
     const { name, component_type, display_name, component_properties } = field;
-
+    //
     switch (component_type) {
       case INPUT_TYPES.INPUT:
         return (
