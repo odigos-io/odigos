@@ -1,3 +1,4 @@
+'use client';
 import { NewDestinationForm } from '@/containers/overview';
 
 export default function CreateNewDestinationPage() {

@@ -1,11 +1,11 @@
 import styled from 'styled-components';
 
-export const MenuContainer = styled.div<{ $isExpanded?: boolean; }>`
+export const MenuContainer = styled.div<{ $isExpanded?: boolean }>`
   transition: width 0.1s;
   height: 100%;
   border-right: 1px solid rgba(255, 255, 255, 0.04);
   background: ${({ theme }) => theme.colors.dark_blue};
-  width: ${({$isExpanded}) => $isExpanded ? 234 : 70}px;
+  width: ${({ $isExpanded }) => ($isExpanded ? 234 : 70)}px;
 `;
 
 export const LogoWrapper = styled.div`

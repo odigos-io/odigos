@@ -1,3 +1,4 @@
+'use client';
 import React, { useEffect, useState } from 'react';
 import { CheckboxWrapper, SwitcherWrapper } from './sources.option.menu.styled';
 import { KeyvalCheckbox, KeyvalSwitch, KeyvalTooltip } from '@/design.system';
