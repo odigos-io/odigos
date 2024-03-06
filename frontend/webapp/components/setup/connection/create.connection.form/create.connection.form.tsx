@@ -216,7 +216,10 @@ export function CreateConnectionForm({
       </FieldWrapper>
       {renderFields(fields, dynamicFields, handleDynamicFieldChange)}
       <CreateDestinationButtonWrapper>
-        <KeyvalButton disabled={isCreateButtonDisabled} onClick={onCreateClick}>
+        <KeyvalButton
+          disabled={isCreateButtonDisabled}
+          onClick={onCreateClick}
+          onKeyPress={handleKeyPress}>
           <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
             {dynamicFieldsValues
               ? SETUP.UPDATE_DESTINATION
