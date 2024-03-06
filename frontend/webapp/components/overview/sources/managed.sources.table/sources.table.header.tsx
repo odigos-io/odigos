@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ACTION, MONITORS, OVERVIEW } from '@/utils';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
-import { ActionsSortType } from '@/types';
+import { ActionsSortType, SourceSortOptions } from '@/types';
 import { UnFocusAction, UnFocusSources } from '@/assets/icons/side.menu';
 import { ActionsGroup, KeyvalCheckbox, KeyvalText } from '@/design.system';
 
@@ -35,7 +35,7 @@ const SELECT_ALL_CHECKBOX = 'select_all';
 
 interface ActionsTableHeaderProps {
   data: any[];
-  sortActions?: (condition: string) => void;
+  sortSources?: (condition: string) => void;
   filterActionsBySignal?: (signals: string[]) => void;
   toggleActionStatus?: (ids: string[], disabled: boolean) => void;
 }
@@ -43,7 +43,7 @@ interface ActionsTableHeaderProps {
 export function SourcesTableHeader({
   data,
 
-  sortActions,
+  sortSources,
   filterActionsBySignal,
   toggleActionStatus,
 }: ActionsTableHeaderProps) {
@@ -55,7 +55,7 @@ export function SourcesTableHeader({
   ]);
   function onSortClick(id: string) {
     setCurrentSortId(id);
-    sortActions && sortActions(id);
+    sortSources && sortSources(id);
   }
 
   function onGroupClick(id: string) {
@@ -111,22 +111,28 @@ export function SourcesTableHeader({
       subTitle: 'Sort by',
       items: [
         {
-          label: 'Type',
-          onClick: () => onSortClick(ActionsSortType.TYPE),
-          id: ActionsSortType.TYPE,
-          selected: currentSortId === ActionsSortType.TYPE,
+          label: 'Kind',
+          onClick: () => onSortClick(SourceSortOptions.KIND),
+          id: SourceSortOptions.KIND,
+          selected: currentSortId === SourceSortOptions.KIND,
         },
         {
-          label: 'Action Name',
-          onClick: () => onSortClick(ActionsSortType.ACTION_NAME),
-          id: ActionsSortType.ACTION_NAME,
-          selected: currentSortId === ActionsSortType.ACTION_NAME,
+          label: 'Language',
+          onClick: () => onSortClick(SourceSortOptions.LANGUAGE),
+          id: SourceSortOptions.LANGUAGE,
+          selected: currentSortId === SourceSortOptions.LANGUAGE,
         },
         {
-          label: 'Status',
-          onClick: () => onSortClick(ActionsSortType.STATUS),
-          id: ActionsSortType.STATUS,
-          selected: currentSortId === ActionsSortType.STATUS,
+          label: 'Name',
+          onClick: () => onSortClick(SourceSortOptions.NAME),
+          id: SourceSortOptions.NAME,
+          selected: currentSortId === SourceSortOptions.NAME,
+        },
+        {
+          label: 'Namespace',
+          onClick: () => onSortClick(SourceSortOptions.NAMESPACE),
+          id: SourceSortOptions.NAMESPACE,
+          selected: currentSortId === SourceSortOptions.NAMESPACE,
         },
       ],
       condition: true,

@@ -7,7 +7,7 @@ import { SourcesTableHeader } from './sources.table.header';
 type TableProps = {
   data: ManagedSource[];
   onRowClick: (source: ManagedSource) => void;
-  sortActions?: (condition: string) => void;
+  sortSources?: (condition: string) => void;
   filterActionsBySignal?: (signals: string[]) => void;
   toggleActionStatus?: (ids: string[], disabled: boolean) => void;
 };
@@ -15,7 +15,7 @@ type TableProps = {
 export const ManagedSourcesTable: React.FC<TableProps> = ({
   data,
   onRowClick,
-  sortActions,
+  sortSources,
   filterActionsBySignal,
   toggleActionStatus,
 }) => {
@@ -29,7 +29,7 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
     return (
       <SourcesTableHeader
         data={data}
-        sortActions={sortActions}
+        sortSources={sortSources}
         filterActionsBySignal={filterActionsBySignal}
         toggleActionStatus={toggleActionStatus}
       />
