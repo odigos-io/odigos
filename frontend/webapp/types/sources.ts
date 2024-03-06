@@ -1,3 +1,10 @@
+export enum SourceSortOptions {
+  NAME = 'name',
+  KIND = 'kind',
+  NAMESPACE = 'namespace',
+  LANGUAGE = 'language',
+}
+
 export interface ManagedSource {
   kind: string;
   name: string;

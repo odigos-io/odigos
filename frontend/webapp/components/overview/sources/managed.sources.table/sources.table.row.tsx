@@ -32,7 +32,7 @@ const StyledTd = styled.td<{ isFirstRow?: boolean }>`
 
 const StyledMainTd = styled(StyledTd)`
   cursor: pointer;
-  padding: 10px 0px;
+  padding: 10px 20px;
 `;
 
 const SourceIconContainer = styled.div`
@@ -88,32 +88,17 @@ const DEPLOYMENT = 'deployment';
 export function SourcesTableRow({
   item,
   index,
-  selectedCheckbox,
-  onSelectedCheckboxChange,
+
   onRowClick,
 }: {
   item: ManagedSource;
   index: number;
   data: ManagedSource[];
-  selectedCheckbox: string[];
-  onSelectedCheckboxChange: (id: string) => void;
+
   onRowClick: (source: ManagedSource) => void;
 }) {
   return (
     <StyledTr key={item.kind}>
-      <StyledTd
-        isFirstRow={index === 0}
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'flex-start',
-        }}
-      >
-        <KeyvalCheckbox
-          value={selectedCheckbox.includes(item.kind)}
-          onChange={() => onSelectedCheckboxChange(item.kind)}
-        />
-      </StyledTd>
       <StyledMainTd onClick={() => onRowClick(item)} isFirstRow={index === 0}>
         <SourceIconContainer>
           <div>

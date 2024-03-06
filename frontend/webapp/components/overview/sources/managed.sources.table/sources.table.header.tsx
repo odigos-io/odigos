@@ -3,7 +3,7 @@ import { ACTION, MONITORS, OVERVIEW } from '@/utils';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
 import { ActionsSortType } from '@/types';
-import { UnFocusAction } from '@/assets/icons/side.menu';
+import { UnFocusAction, UnFocusSources } from '@/assets/icons/side.menu';
 import { ActionsGroup, KeyvalCheckbox, KeyvalText } from '@/design.system';
 
 const StyledThead = styled.thead`
@@ -17,7 +17,7 @@ const StyledTh = styled.th`
 `;
 
 const StyledMainTh = styled(StyledTh)`
-  padding: 10px 0px;
+  padding: 10px 20px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -35,17 +35,14 @@ const SELECT_ALL_CHECKBOX = 'select_all';
 
 interface ActionsTableHeaderProps {
   data: any[];
-  selectedCheckbox: string[];
-  onSelectedCheckboxChange: (id: string) => void;
   sortActions?: (condition: string) => void;
   filterActionsBySignal?: (signals: string[]) => void;
   toggleActionStatus?: (ids: string[], disabled: boolean) => void;
 }
 
-export function ActionsTableHeader({
+export function SourcesTableHeader({
   data,
-  selectedCheckbox,
-  onSelectedCheckboxChange,
+
   sortActions,
   filterActionsBySignal,
   toggleActionStatus,
@@ -74,64 +71,41 @@ export function ActionsTableHeader({
     filterActionsBySignal && filterActionsBySignal(newGroup);
   }
 
-  function onToggleActionStatus(disabled: boolean) {
-    toggleActionStatus && toggleActionStatus(selectedCheckbox, disabled);
-  }
-
   const actionGroups = [
-    {
-      label: 'Active Status',
-      subTitle: 'Toggle active status',
-      disabled: false,
-      items: [
-        {
-          label: ACTION.ENABLE,
-          onClick: () => onToggleActionStatus(false),
-          id: 'enabled',
-        },
-        {
-          label: ACTION.DISABLE,
-          onClick: () => onToggleActionStatus(true),
-          id: 'disabled',
-        },
-      ],
-      condition: !!selectedCheckbox.length,
-    },
-
-    {
-      label: 'Metrics',
-      subTitle: 'Display',
-      items: [
-        {
-          label: MONITORS.TRACES,
-          onClick: () => onGroupClick(MONITORS.TRACES.toLowerCase()),
-          id: MONITORS.TRACES.toLowerCase(),
-          selected: groupActions.includes(MONITORS.TRACES.toLowerCase()),
-          disabled:
-            groupActions.length === 1 &&
-            groupActions.includes(MONITORS.TRACES.toLowerCase()),
-        },
-        {
-          label: MONITORS.LOGS,
-          onClick: () => onGroupClick(MONITORS.LOGS.toLowerCase()),
-          id: MONITORS.LOGS.toLowerCase(),
-          selected: groupActions.includes(MONITORS.LOGS.toLowerCase()),
-          disabled:
-            groupActions.length === 1 &&
-            groupActions.includes(MONITORS.LOGS.toLowerCase()),
-        },
-        {
-          label: MONITORS.METRICS,
-          onClick: () => onGroupClick(MONITORS.METRICS.toLowerCase()),
-          id: MONITORS.METRICS.toLowerCase(),
-          selected: groupActions.includes(MONITORS.METRICS.toLowerCase()),
-          disabled:
-            groupActions.length === 1 &&
-            groupActions.includes(MONITORS.METRICS.toLowerCase()),
-        },
-      ],
-      condition: true,
-    },
+    // {
+    //   label: 'Metrics',
+    //   subTitle: 'Display',
+    //   items: [
+    //     {
+    //       label: MONITORS.TRACES,
+    //       onClick: () => onGroupClick(MONITORS.TRACES.toLowerCase()),
+    //       id: MONITORS.TRACES.toLowerCase(),
+    //       selected: groupActions.includes(MONITORS.TRACES.toLowerCase()),
+    //       disabled:
+    //         groupActions.length === 1 &&
+    //         groupActions.includes(MONITORS.TRACES.toLowerCase()),
+    //     },
+    //     {
+    //       label: MONITORS.LOGS,
+    //       onClick: () => onGroupClick(MONITORS.LOGS.toLowerCase()),
+    //       id: MONITORS.LOGS.toLowerCase(),
+    //       selected: groupActions.includes(MONITORS.LOGS.toLowerCase()),
+    //       disabled:
+    //         groupActions.length === 1 &&
+    //         groupActions.includes(MONITORS.LOGS.toLowerCase()),
+    //     },
+    //     {
+    //       label: MONITORS.METRICS,
+    //       onClick: () => onGroupClick(MONITORS.METRICS.toLowerCase()),
+    //       id: MONITORS.METRICS.toLowerCase(),
+    //       selected: groupActions.includes(MONITORS.METRICS.toLowerCase()),
+    //       disabled:
+    //         groupActions.length === 1 &&
+    //         groupActions.includes(MONITORS.METRICS.toLowerCase()),
+    //     },
+    //   ],
+    //   condition: true,
+    // },
     {
       label: 'Sort by',
       subTitle: 'Sort by',
@@ -161,18 +135,10 @@ export function ActionsTableHeader({
 
   return (
     <StyledThead>
-      <StyledTh>
-        <KeyvalCheckbox
-          value={selectedCheckbox.length === data.length && data.length > 0}
-          onChange={() => onSelectedCheckboxChange(SELECT_ALL_CHECKBOX)}
-        />
-      </StyledTh>
       <StyledMainTh>
-        <UnFocusAction style={{ width: 18, height: 18 }} />
+        <UnFocusSources style={{ width: 18, height: 18 }} />
         <KeyvalText size={14} weight={600} color={theme.text.white}>
-          {selectedCheckbox.length > 0
-            ? `${selectedCheckbox.length} selected`
-            : `${data.length} ${OVERVIEW.MENU.ACTIONS}`}
+          {`${data.length} ${OVERVIEW.MENU.ACTIONS}`}
         </KeyvalText>
         <ActionGroupContainer>
           <ActionsGroup actionGroups={actionGroups} />

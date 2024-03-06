@@ -24,13 +24,6 @@ export function ManagedSourcesContainer() {
 
   const router = useRouter();
   const { show, Notification } = useNotification();
-  const {
-    actions,
-    sortActions,
-    filterActionsBySignal,
-    toggleActionStatus,
-    // refetch,
-  } = useActions();
 
   const { sources, isLoading } = useSources();
 
@@ -38,38 +31,23 @@ export function ManagedSourcesContainer() {
     console.log({ sources });
   }, [sources]);
 
-  // useEffect(() => {
-  //   refetch();
-  // }, []);
-
   function handleAddSources() {
     router.push(ROUTES.CREATE_SOURCE);
   }
 
-  function handleEditAction(source: ManagedSource) {
+  function handleEditSource(source: ManagedSource) {
     router.push(
       `${ROUTES.MANAGE_SOURCE}?name=${source?.name}&kind=${source?.kind}&namespace=${source?.namespace}`
     );
   }
 
-  // function filterActions() {
-  //   return actions.filter(
-  //     ({ spec: { actionName } }) =>
-  //       actionName &&
-  //       actionName.toLowerCase().includes(searchInput.toLowerCase())
-  //   );
-  // }
-
-  // async function onSelectStatus(ids: string[], disabled: boolean) {
-  //   const res = await toggleActionStatus(ids, disabled);
-
-  //   show({
-  //     type: res ? NOTIFICATION.SUCCESS : NOTIFICATION.ERROR,
-  //     message: res
-  //       ? OVERVIEW.ACTION_UPDATE_SUCCESS
-  //       : OVERVIEW.ACTION_UPDATE_ERROR,
-  //   });
-  // }
+  function filterSources() {
+    return sources.filter(
+      (source) =>
+        source.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+        source.namespace.toLowerCase().includes(searchInput.toLowerCase())
+    );
+  }
 
   if (isLoading) return <KeyvalLoader />;
 
@@ -77,7 +55,7 @@ export function ManagedSourcesContainer() {
     <>
       <Notification />
       <Container>
-        {!actions?.length ? (
+        {!sources?.length ? (
           <EmptyList
             title={OVERVIEW.EMPTY_SOURCE}
             btnTitle={OVERVIEW.ADD_NEW_SOURCE}
@@ -106,11 +84,10 @@ export function ManagedSourcesContainer() {
             </Header>
             <Content>
               <ManagedSourcesTable
-                data={sources}
-                onRowClick={handleEditAction}
-                sortActions={sortActions}
-                filterActionsBySignal={filterActionsBySignal}
-                // toggleActionStatus={onSelectStatus}
+                data={searchInput ? filterSources() : sources}
+                onRowClick={handleEditSource}
+                // sortActions={sortActions}
+                // filterActionsBySignal={filterActionsBySignal}
               />
             </Content>
           </SourcesContainer>
