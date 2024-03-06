@@ -9,6 +9,7 @@ import {
   KeyvalInput,
   KeyValuePair,
   MultiInputTable,
+  TextArea,
 } from '@/design.system';
 
 const DEFAULT_KEY_VALUE_PAIR = {};
@@ -19,7 +20,7 @@ export function renderFields(
 ) {
   return fields?.map((field) => {
     const { name, component_type, display_name, component_properties } = field;
-    //
+
     switch (component_type) {
       case INPUT_TYPES.INPUT:
         return (
@@ -113,6 +114,17 @@ export function renderFields(
               {...component_properties}
             />
           </div>
+        );
+      case INPUT_TYPES.TEXTAREA:
+        return (
+          <FieldWrapper key={name} style={{ width: 362 }}>
+            <TextArea
+              label={display_name}
+              value={dynamicFields[name]}
+              onChange={(value) => onChange(name, value.target.value)}
+              {...component_properties}
+            />
+          </FieldWrapper>
         );
       default:
         return null;

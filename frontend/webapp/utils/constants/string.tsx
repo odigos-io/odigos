@@ -57,6 +57,7 @@ export const INPUT_TYPES = {
   DROPDOWN: 'dropdown',
   MULTI_INPUT: 'multiInput',
   KEY_VALUE_PAIR: 'keyValuePairs',
+  TEXTAREA: 'textarea',
 };
 
 export const OVERVIEW = {

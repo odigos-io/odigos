@@ -25,3 +25,4 @@ export { KeyvalSteps as Steps } from './steps/steps';
 export { KeyvalMultiInput as MultiInput } from './multi-input';
 export { KeyValuePair } from './key-value-input';
 export { KeyvalMultiInputTable as MultiInputTable } from './multi-input-table';
+export { KeyvalTextArea as TextArea } from './textarea';
