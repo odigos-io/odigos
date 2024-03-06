@@ -7,3 +7,4 @@ export { UpdateDestinationFlow } from './destinations/update.destination.flow';
 export { UpdateSourceForm } from './sources/update.source.form';
 export { SourcesListContainer } from './sources/sources.list.container';
 export * from './actions';
+export * from './sources';
