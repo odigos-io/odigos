@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { ActionsType } from '@/types';
-import { AddClusterInfoForm } from '@/components';
+import { AddClusterInfoForm } from '../add.cluster.info';
 
 interface DynamicActionFormProps {
   type: string | undefined;
@@ -19,7 +19,7 @@ export function DynamicActionForm({
       case ActionsType.ADD_CLUSTER_INFO:
         return <AddClusterInfoForm data={data} onChange={onChange} />;
       default:
-        return <></>;
+        return <div></div>;
     }
   }
 

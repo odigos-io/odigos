@@ -79,6 +79,8 @@ export const OVERVIEW = {
   SOURCE_UPDATE_SUCCESS: 'Source updated successfully',
   SOURCE_CREATED_SUCCESS: 'Source created successfully',
   SOURCE_DELETED_SUCCESS: 'Source deleted successfully',
+  ACTION_UPDATE_SUCCESS: 'Action updated successfully',
+  ACTION_UPDATE_ERROR: 'Failed to update action',
   MANAGE: 'Manage',
   DELETE: 'Delete',
   DELETE_DESTINATION: 'Delete Destination',
@@ -110,6 +112,10 @@ export const ACTION = {
   CONTACT_US: 'Contact Us',
   LEARN_MORE: 'Learn more',
   LINK_TO_DOCS: 'Link to docs',
+  DISABLE: 'Disable',
+  RUNNING: 'Running',
+  APPLIED: 'Applied',
+  ENABLE: 'Enable',
 };
 
 export const NOTIFICATION = {
@@ -132,8 +138,16 @@ export const ACTIONS = {
   NOTE_PLACEHOLDER: 'Add a note to describe the use case of this action',
   CREATE_ACTION: 'Create Action',
   UPDATE_ACTION: 'Update Action',
-  'add-cluster-info': {
+
+  AddClusterInfo: {
     TITLE: 'Add Cluster Info',
     DESCRIPTION: `The “Add Cluster Info” Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`,
   },
+  SEARCH_ACTION: 'Search Action',
+};
+
+export const MONITORS = {
+  LOGS: 'Logs',
+  METRICS: 'Metrics',
+  TRACES: 'Traces',
 };

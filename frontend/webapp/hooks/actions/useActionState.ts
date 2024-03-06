@@ -1,9 +1,9 @@
 import { ROUTES } from '@/utils';
 import { useState } from 'react';
-import { ActionItem } from '@/types';
 import { useMutation } from 'react-query';
 import { useActions } from './useActions';
 import { useRouter } from 'next/navigation';
+import { ActionItem, ActionsType } from '@/types';
 import { putAction, setAction, deleteAction } from '@/services';
 
 interface Monitor {
@@ -18,6 +18,7 @@ interface ActionState {
   actionNote: string;
   actionData: any;
   selectedMonitors: Monitor[];
+  disabled: boolean;
 }
 
 const DEFAULT_MONITORS: Monitor[] = [
@@ -32,6 +33,7 @@ export function useActionState() {
     actionNote: '',
     actionData: null,
     selectedMonitors: DEFAULT_MONITORS,
+    disabled: false,
   });
 
   const router = useRouter();
@@ -48,7 +50,7 @@ export function useActionState() {
     deleteAction(id)
   );
 
-  function onSuccess() {
+  async function onSuccess() {
     router.push(ROUTES.ACTIONS);
   }
 
@@ -57,10 +59,11 @@ export function useActionState() {
       ...prevState,
       [key]: value,
     }));
+    if (key === 'disabled') upsertAction(false);
   }
 
-  function buildActionData(actionId: string) {
-    const action = getActionById(actionId);
+  async function buildActionData(actionId: string) {
+    const action = await getActionById(actionId);
 
     const actionState = {
       id: action?.id,
@@ -79,13 +82,14 @@ export function useActionState() {
 
         checked: !!action?.spec?.signals.includes(monitor.label.toUpperCase()),
       })),
+      disabled: action?.spec?.disabled || false,
     };
 
     setActionState(actionState);
   }
 
-  async function upsertAction() {
-    const { actionName, actionNote, actionData, selectedMonitors } =
+  async function upsertAction(callback: boolean = true) {
+    const { actionName, actionNote, actionData, selectedMonitors, disabled } =
       actionState;
 
     const signals = selectedMonitors
@@ -93,7 +97,7 @@ export function useActionState() {
       .map((monitor) => monitor.label.toUpperCase());
 
     const filteredActionData = filterEmptyActionDataFieldsByType(
-      'add-cluster-info',
+      'AddClusterInfo',
       actionData
     );
 
@@ -102,15 +106,17 @@ export function useActionState() {
       notes: actionNote,
       signals,
       ...filteredActionData,
+      disabled: callback ? disabled : !disabled,
     };
 
     try {
-      if (action?.id) {
+      if (actionState?.id) {
         await updateAction(action);
       } else {
+        delete action.disabled;
         await createAction(action);
       }
-      onSuccess();
+      callback && onSuccess();
     } catch (error) {
       console.error({ error });
     }
@@ -136,7 +142,7 @@ export function useActionState() {
 
 function filterEmptyActionDataFieldsByType(type: string, data: any) {
   switch (type) {
-    case 'add-cluster-info':
+    case ActionsType.ADD_CLUSTER_INFO:
       return {
         clusterAttributes: data.clusterAttributes.filter(
           (attr: any) =>

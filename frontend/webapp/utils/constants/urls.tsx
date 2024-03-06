@@ -34,5 +34,6 @@ const SLACK_INVITE_LINK =
 
 export const ACTION_DOCS_LINK =
   'https://docs.odigos.io/pipeline/actions/introduction';
+export const ACTION_ITEM_DOCS_LINK = 'https://docs.odigos.io/pipeline/actions';
 
 export { API, QUERIES, SLACK_INVITE_LINK };
