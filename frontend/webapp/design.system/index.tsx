@@ -26,6 +26,7 @@ export { KeyvalMultiInput as MultiInput } from './multi-input';
 export { KeyValuePair } from './key-value-input';
 export { KeyvalTextArea } from './text.area';
 export { KeyvalMultiInputTable as MultiInputTable } from './multi-input-table';
+export { KeyvalTextArea as TextArea } from './textarea';
 export { Pagination } from './pagination';
 export { ActionItem } from './action.item';
 export { ActionsGroup } from './action.group';
