@@ -9,6 +9,7 @@ type TableProps = {
   data: ActionData[];
   renderTableHeader: () => JSX.Element;
   renderTableRows: (item: any, index: number) => any;
+  onPaginate?: (pageNumber: number) => void;
 };
 
 const StyledTable = styled.table`
@@ -27,6 +28,7 @@ export const Table: React.FC<TableProps> = ({
   data,
   renderTableHeader,
   renderTableRows,
+  onPaginate,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -37,6 +39,7 @@ export const Table: React.FC<TableProps> = ({
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
+    onPaginate && onPaginate(pageNumber);
   };
 
   function renderEmptyResult() {

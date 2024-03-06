@@ -23,12 +23,15 @@ export const ActionsTable: React.FC<TableProps> = ({
 }) => {
   const [selectedCheckbox, setSelectedCheckbox] = useState<string[]>([]);
 
+  const currentPageRef = React.useRef(1);
   function onSelectedCheckboxChange(id: string) {
     if (id === SELECT_ALL_CHECKBOX) {
-      if (selectedCheckbox.length === data.length) {
+      if (selectedCheckbox.length > 0) {
         setSelectedCheckbox([]);
       } else {
-        setSelectedCheckbox(data.map((item) => item.id));
+        const start = (currentPageRef.current - 1) * 10;
+        const end = currentPageRef.current * 10;
+        setSelectedCheckbox(data.slice(start, end).map((item) => item.id));
       }
       return;
     }
@@ -38,6 +41,11 @@ export const ActionsTable: React.FC<TableProps> = ({
     } else {
       setSelectedCheckbox([...selectedCheckbox, id]);
     }
+  }
+
+  function onPaginate(pageNumber: number) {
+    currentPageRef.current = pageNumber;
+    selectedCheckbox.length > 0 && setSelectedCheckbox([]);
   }
 
   function renderTableHeader() {
@@ -58,6 +66,7 @@ export const ActionsTable: React.FC<TableProps> = ({
       <Table
         data={data}
         renderTableHeader={renderTableHeader}
+        onPaginate={onPaginate}
         renderTableRows={(item, index) => (
           <ActionsTableRow
             onRowClick={onRowClick}
