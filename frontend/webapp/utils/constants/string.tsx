@@ -114,6 +114,7 @@ export const ACTION = {
   LINK_TO_DOCS: 'Link to docs',
   DISABLE: 'Disable',
   RUNNING: 'Running',
+  APPLIED: 'Applied',
   ENABLE: 'Enable',
 };
 
@@ -137,10 +138,7 @@ export const ACTIONS = {
   NOTE_PLACEHOLDER: 'Add a note to describe the use case of this action',
   CREATE_ACTION: 'Create Action',
   UPDATE_ACTION: 'Update Action',
-  'add-cluster-info': {
-    TITLE: 'Add Cluster Info',
-    DESCRIPTION: `The “Add Cluster Info” Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`,
-  },
+
   AddClusterInfo: {
     TITLE: 'Add Cluster Info',
     DESCRIPTION: `The “Add Cluster Info” Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`,

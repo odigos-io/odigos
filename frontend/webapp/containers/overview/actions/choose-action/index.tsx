@@ -1,6 +1,7 @@
 import React from 'react';
-import { ActionItemCard } from '@/types';
+import { useRouter } from 'next/navigation';
 import { NewActionCard } from '@/components';
+import { ActionItemCard, ActionsType } from '@/types';
 import { KeyvalLink, KeyvalText } from '@/design.system';
 import { ACTION, ACTION_DOCS_LINK, OVERVIEW } from '@/utils';
 import {
@@ -9,23 +10,22 @@ import {
   ActionsListWrapper,
   DescriptionWrapper,
 } from './styled';
-import { useRouter } from 'next/navigation';
 
 const ITEMS = [
   {
     id: '1',
     title: 'Add Cluster Info',
     description: 'Add static cluster-scoped attributes to your data.',
-    type: 'add-cluster-info',
-    icon: 'add-cluster-info',
+    type: ActionsType.ADD_CLUSTER_INFO,
+    icon: ActionsType.ADD_CLUSTER_INFO,
   },
-  {
-    id: '2',
-    title: 'Filter',
-    description: 'Filter spans based on the attributes of the span.',
-    type: 'filter',
-    icon: 'filter',
-  },
+  // {
+  //   id: '2',
+  //   title: 'Filter',
+  //   description: 'Filter spans based on the attributes of the span.',
+  //   type: 'filter',
+  //   icon: 'filter',
+  // },
 ];
 
 export function ChooseActionContainer(): React.JSX.Element {

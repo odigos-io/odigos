@@ -1,9 +1,10 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import theme from '@/styles/palette';
+import { ACTION_ICONS } from '@/assets';
 import { useActionState } from '@/hooks';
 import { useSearchParams } from 'next/navigation';
-import { ACTION, ACTIONS, ACTION_DOCS_LINK } from '@/utils';
+import { ACTION, ACTIONS, ACTION_ITEM_DOCS_LINK } from '@/utils';
 import {
   DeleteAction,
   DynamicActionForm,
@@ -29,7 +30,6 @@ import {
   SwitchWrapper,
   FormFieldsWrapper,
 } from './styled';
-import { ACTION_ICONS } from '@/assets';
 
 const ACTION_ID = 'id';
 
@@ -52,7 +52,7 @@ export function EditActionContainer(): React.JSX.Element {
   useEffect(() => {
     const actionId = search.get(ACTION_ID);
     if (!actionId) return;
-    setCurrentActionType('add-cluster-info');
+    setCurrentActionType('AddClusterInfo');
     buildActionData(actionId);
   }, [search]);
 
@@ -76,7 +76,7 @@ export function EditActionContainer(): React.JSX.Element {
             handleToggleChange={() =>
               onChangeActionState('disabled', !disabled)
             }
-            label={disabled ? ACTION.DISABLE : ACTION.RUNNING}
+            label={disabled ? ACTION.DISABLE : ACTION.APPLIED}
           />
         </SwitchWrapper>
       </HeaderText>
@@ -87,7 +87,12 @@ export function EditActionContainer(): React.JSX.Element {
         <KeyvalLink
           value={ACTION.LINK_TO_DOCS}
           fontSize={14}
-          onClick={() => window.open(ACTION_DOCS_LINK, '_blank')}
+          onClick={() =>
+            window.open(
+              `${ACTION_ITEM_DOCS_LINK}/${currentActionType.toLowerCase()}`,
+              '_blank'
+            )
+          }
         />
       </DescriptionWrapper>
       <FormFieldsWrapper disabled={disabled}>

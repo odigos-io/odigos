@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import theme from '@/styles/palette';
 import { useActionState } from '@/hooks';
 import { useSearchParams } from 'next/navigation';
-import { ACTION, ACTIONS, ACTION_DOCS_LINK } from '@/utils';
+import { ACTION, ACTIONS, ACTION_ITEM_DOCS_LINK } from '@/utils';
 import { MultiCheckboxComponent, DynamicActionForm } from '@/components';
 import {
   KeyvalButton,
@@ -52,7 +52,12 @@ export function CreateActionContainer(): React.JSX.Element {
         <KeyvalLink
           value={ACTION.LINK_TO_DOCS}
           fontSize={14}
-          onClick={() => window.open(ACTION_DOCS_LINK, '_blank')}
+          onClick={() =>
+            window.open(
+              `${ACTION_ITEM_DOCS_LINK}/${currentActionType.toLowerCase()}`,
+              '_blank'
+            )
+          }
         />
       </DescriptionWrapper>
       <MultiCheckboxComponent

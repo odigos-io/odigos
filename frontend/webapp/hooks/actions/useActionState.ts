@@ -1,9 +1,9 @@
 import { ROUTES } from '@/utils';
 import { useState } from 'react';
-import { ActionItem } from '@/types';
 import { useMutation } from 'react-query';
 import { useActions } from './useActions';
 import { useRouter } from 'next/navigation';
+import { ActionItem, ActionsType } from '@/types';
 import { putAction, setAction, deleteAction } from '@/services';
 
 interface Monitor {
@@ -97,7 +97,7 @@ export function useActionState() {
       .map((monitor) => monitor.label.toUpperCase());
 
     const filteredActionData = filterEmptyActionDataFieldsByType(
-      'add-cluster-info',
+      'AddClusterInfo',
       actionData
     );
 
@@ -142,7 +142,7 @@ export function useActionState() {
 
 function filterEmptyActionDataFieldsByType(type: string, data: any) {
   switch (type) {
-    case 'add-cluster-info':
+    case ActionsType.ADD_CLUSTER_INFO:
       return {
         clusterAttributes: data.clusterAttributes.filter(
           (attr: any) =>

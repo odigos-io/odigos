@@ -1,5 +1,5 @@
 export enum ActionsType {
-  ADD_CLUSTER_INFO = 'add-cluster-info',
+  ADD_CLUSTER_INFO = 'AddClusterInfo',
 }
 
 export enum ActionsSortType {
