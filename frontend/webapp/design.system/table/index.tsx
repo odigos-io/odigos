@@ -3,6 +3,7 @@ import { ActionData } from '@/types';
 import styled from 'styled-components';
 import React, { useState } from 'react';
 import { Pagination } from '@/design.system';
+import { EmptyList } from '@/components';
 
 type TableProps = {
   data: ActionData[];
@@ -38,18 +39,27 @@ export const Table: React.FC<TableProps> = ({
     setCurrentPage(pageNumber);
   };
 
+  function renderEmptyResult() {
+    return <EmptyList title="No actions found" />;
+  }
+
   return (
     <>
       <StyledTable>
         {renderTableHeader()}
         <StyledTbody>{currentItems.map(renderTableRows)}</StyledTbody>
       </StyledTable>
-      <Pagination
-        total={data.length}
-        itemsPerPage={itemsPerPage}
-        currentPage={currentPage}
-        onPageChange={handlePageChange}
-      />
+
+      {data.length === 0 ? (
+        renderEmptyResult()
+      ) : (
+        <Pagination
+          total={data.length}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          onPageChange={handlePageChange}
+        />
+      )}
     </>
   );
 };

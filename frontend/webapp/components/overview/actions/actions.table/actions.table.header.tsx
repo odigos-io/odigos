@@ -163,7 +163,7 @@ export function ActionsTableHeader({
     <StyledThead>
       <StyledTh>
         <KeyvalCheckbox
-          value={selectedCheckbox.length === data.length}
+          value={selectedCheckbox.length === data.length && data.length > 0}
           onChange={() => onSelectedCheckboxChange(SELECT_ALL_CHECKBOX)}
         />
       </StyledTh>
