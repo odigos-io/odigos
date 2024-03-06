@@ -1,0 +1,45 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: otlphttp
+  displayName: OTLP http
+  category: self hosted
+spec:
+  image: opentelemetry.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    
+  fields:
+    - name: OTLP_HTTP_ENDPOINT
+      displayName: OTLP http Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: "http://host:port"
+        tooltip: 'OTLP http endpoint of the receiver'
+
+    - name: OTLP_HTTP_BASIC_AUTH_USERNAME
+      displayName: Basic Auth Username
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: "username"
+        tooltip: in case the otlp receiver requires basic auth, this is the username
+
+    - name: OTLP_HTTP_BASIC_AUTH_PASSWORD
+      displayName: Basic Auth Password
+      componentType: input
+      componentProps:
+        type: password
+        required: false
+        placeholder: "password"
+        tooltip: in case the otlp receiver requires basic auth, this is the password
+      secret: true
+

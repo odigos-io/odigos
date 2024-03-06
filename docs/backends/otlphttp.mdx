@@ -1,0 +1,28 @@
+---
+title: "OTLP http"
+---
+
+For advanced users trying to implement complex observability pipelines, Odigos support sending data to any OTLP http endpoint.
+
+- Notice that if your backend expects [OTLP over gRPC](https://opentelemetry.io/docs/specs/otel/protocol/exporter/#configuration-options) you should use the [OTLP gRPC](/backends/otlp) destination instead.
+- If your backend is supported natively in Odigos its recommended to use the native integration.
+
+<Tip>
+  Can't find your backend in Odigos? Please tell us! We are constantly
+  adding new integrations.
+</Tip>
+
+## Configuration
+
+The only required configuration is the endpoint of the OTLP gRPC server.
+
+The endpoint format is `http://host:port`.
+- host is required
+- port is optional and defaults to the default OTLP http port `4318`.
+- the signal path (e.g. `/v1/traces` / `/v1/metrics` / `/v1/logs`) is added automatically and should not be included in the endpoint.
+
+### Using Basic Authentication
+
+This section is relevant if your OTLP http endpoint requires [basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) (username and password).
+
+To configure basic authentication, use the optional config options `Basic Auth Username` and `Basic Auth Password`.
