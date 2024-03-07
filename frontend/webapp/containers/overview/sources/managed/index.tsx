@@ -25,7 +25,13 @@ export function ManagedSourcesContainer() {
   const router = useRouter();
   const { show, Notification } = useNotification();
 
-  const { sources, isLoading, sortSources } = useSources();
+  const {
+    sources,
+    isLoading,
+    sortSources,
+    filterSourcesByNamespace,
+    instrumentedNamespaces,
+  } = useSources();
 
   useEffect(() => {
     console.log({ sources });
@@ -87,7 +93,8 @@ export function ManagedSourcesContainer() {
                 data={searchInput ? filterSources() : sources}
                 onRowClick={handleEditSource}
                 sortSources={sortSources}
-                // filterActionsBySignal={filterActionsBySignal}
+                filterSourcesByNamespace={filterSourcesByNamespace}
+                namespaces={instrumentedNamespaces}
               />
             </Content>
           </SourcesContainer>

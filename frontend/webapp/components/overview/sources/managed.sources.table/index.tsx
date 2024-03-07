@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Table } from '@/design.system';
-import { ManagedSource } from '@/types';
+import { ManagedSource, Namespace } from '@/types';
 import { SourcesTableRow } from './sources.table.row';
 import { SourcesTableHeader } from './sources.table.header';
 
@@ -8,16 +8,18 @@ type TableProps = {
   data: ManagedSource[];
   onRowClick: (source: ManagedSource) => void;
   sortSources?: (condition: string) => void;
-  filterActionsBySignal?: (signals: string[]) => void;
+  filterSourcesByNamespace?: (namespaces: string[]) => void;
   toggleActionStatus?: (ids: string[], disabled: boolean) => void;
+  namespaces?: Namespace[];
 };
 
 export const ManagedSourcesTable: React.FC<TableProps> = ({
   data,
   onRowClick,
   sortSources,
-  filterActionsBySignal,
+  filterSourcesByNamespace,
   toggleActionStatus,
+  namespaces,
 }) => {
   const currentPageRef = React.useRef(1);
 
@@ -30,8 +32,9 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
       <SourcesTableHeader
         data={data}
         sortSources={sortSources}
-        filterActionsBySignal={filterActionsBySignal}
+        filterSourcesByNamespace={filterSourcesByNamespace}
         toggleActionStatus={toggleActionStatus}
+        namespaces={namespaces}
       />
     );
   }

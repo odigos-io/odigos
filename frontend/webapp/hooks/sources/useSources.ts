@@ -1,14 +1,44 @@
 import { QUERIES } from '@/utils/constants';
-import { SelectedSources, ManagedSource, SourceSortOptions } from '@/types';
+import {
+  SelectedSources,
+  ManagedSource,
+  SourceSortOptions,
+  Namespace,
+} from '@/types';
 import { useMutation, useQuery } from 'react-query';
-import { getSources, setNamespaces } from '@/services';
+import { getNamespaces, getSources, setNamespaces } from '@/services';
 import { useEffect, useState } from 'react';
 
 export function useSources() {
+  const [instrumentedNamespaces, setInstrumentedNamespaces] = useState<
+    Namespace[]
+  >([]);
   const { data: sources, isLoading } = useQuery<ManagedSource[]>(
     [QUERIES.API_SOURCES],
     getSources
   );
+
+  const { data: namespaces } = useQuery<{ namespaces: Namespace[] }>(
+    [QUERIES.API_NAMESPACES],
+    getNamespaces
+  );
+
+  useEffect(() => {
+    if (namespaces?.namespaces && sources) {
+      const instrumented = namespaces.namespaces.map((item) => {
+        const totalApps =
+          sources?.filter((source) => source.namespace === item.name).length ||
+          0;
+        return {
+          ...item,
+          totalApps,
+          selected: false,
+        };
+      });
+
+      setInstrumentedNamespaces(instrumented);
+    }
+  }, [namespaces, sources]);
 
   const [sortedSources, setSortedSources] = useState<
     ManagedSource[] | undefined
@@ -71,10 +101,20 @@ export function useSources() {
     setSortedSources(sorted);
   }
 
+  function filterSourcesByNamespace(namespaces: string[]) {
+    const filtered = sources?.filter((source) =>
+      namespaces.includes(source.namespace)
+    );
+    setSortedSources(filtered);
+  }
+
   return {
     upsertSources,
     sources: sortedSources || [],
     isLoading,
     sortSources,
+    filterSourcesByNamespace,
+    instrumentedNamespaces,
+    namespaces: namespaces?.namespaces || [],
   };
 }
