@@ -1,6 +1,6 @@
 'use client';
-import { DestinationContainer } from '@/containers/overview';
 import { styled } from 'styled-components';
+import { DestinationContainer } from '@/containers/overview';
 
 const DestinationContainerWrapper = styled.div`
   height: 100vh;
