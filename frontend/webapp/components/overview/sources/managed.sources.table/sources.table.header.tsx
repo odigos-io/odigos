@@ -4,7 +4,12 @@ import theme from '@/styles/palette';
 import styled from 'styled-components';
 import { UnFocusSources } from '@/assets/icons/side.menu';
 import { ActionsGroup, KeyvalText } from '@/design.system';
-import { K8SSourceTypes, Namespace, SourceSortOptions } from '@/types';
+import {
+  K8SSourceTypes,
+  ManagedSource,
+  Namespace,
+  SourceSortOptions,
+} from '@/types';
 
 const StyledThead = styled.div`
   background-color: ${theme.colors.light_dark};
@@ -34,7 +39,7 @@ const ActionGroupContainer = styled.div`
 `;
 
 interface ActionsTableHeaderProps {
-  data: any[];
+  data: ManagedSource[];
   namespaces?: Namespace[];
   sortSources?: (condition: string) => void;
   filterSourcesByKind?: (kinds: string[]) => void;

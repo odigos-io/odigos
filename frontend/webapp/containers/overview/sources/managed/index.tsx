@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
-import { useNotification, useSources } from '@/hooks';
 import theme from '@/styles/palette';
-import { useRouter } from 'next/navigation';
+import { ManagedSource } from '@/types';
 import { OVERVIEW, ROUTES } from '@/utils';
+import { useRouter } from 'next/navigation';
+import { useNotification, useSources } from '@/hooks';
 import { EmptyList, ManagedSourcesTable } from '@/components';
 import {
   KeyvalText,
-  KeyvalButton,
   KeyvalLoader,
+  KeyvalButton,
   KeyvalSearchInput,
 } from '@/design.system';
 import {
-  SourcesContainer,
-  Container,
-  Content,
   Header,
+  Content,
+  Container,
   HeaderRight,
+  SourcesContainer,
 } from './styled';
-import { ManagedSource } from '@/types';
 
 export function ManagedSourcesContainer() {
   const [searchInput, setSearchInput] = useState('');
@@ -87,12 +87,12 @@ export function ManagedSourcesContainer() {
             </Header>
             <Content>
               <ManagedSourcesTable
-                data={searchInput ? filterSources() : sources}
-                onRowClick={handleEditSource}
                 sortSources={sortSources}
-                filterSourcesByNamespace={filterSourcesByNamespace}
-                filterSourcesByKind={filterSourcesByKind}
+                onRowClick={handleEditSource}
                 namespaces={instrumentedNamespaces}
+                filterSourcesByKind={filterSourcesByKind}
+                data={searchInput ? filterSources() : sources}
+                filterSourcesByNamespace={filterSourcesByNamespace}
               />
             </Content>
           </SourcesContainer>

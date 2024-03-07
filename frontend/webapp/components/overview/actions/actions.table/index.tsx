@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Table } from '@/design.system';
 import { ActionsTableRow } from './actions.table.row';
 import { ActionsTableHeader } from './actions.table.header';
+import { EmptyList } from '@/components/lists';
+import { OVERVIEW } from '@/utils';
 
 type TableProps = {
   data: ActionData[];
@@ -61,12 +63,17 @@ export const ActionsTable: React.FC<TableProps> = ({
     );
   }
 
+  function renderEmptyResult() {
+    return <EmptyList title={OVERVIEW.EMPTY_ACTION} />;
+  }
+
   return (
     <>
       <Table<ActionData>
         data={data}
         renderTableHeader={renderTableHeader}
         onPaginate={onPaginate}
+        renderEmptyResult={renderEmptyResult}
         renderTableRows={(item, index) => (
           <ActionsTableRow
             onRowClick={onRowClick}

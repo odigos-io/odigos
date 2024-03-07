@@ -28,4 +28,5 @@ export const HeaderRight = styled.div`
 
 export const Content = styled.div`
   padding: 20px;
+  min-height: 200px;
 `;

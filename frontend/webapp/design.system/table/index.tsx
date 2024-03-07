@@ -9,6 +9,7 @@ type TableProps<T> = {
   data: T[];
   renderTableHeader: () => JSX.Element;
   renderTableRows: (item: T, index: number) => JSX.Element;
+  renderEmptyResult: () => JSX.Element;
   onPaginate?: (pageNumber: number) => void;
 };
 
@@ -17,7 +18,6 @@ const StyledTable = styled.table`
   background-color: ${theme.colors.dark};
   border: 1px solid ${theme.colors.blue_grey};
   border-radius: 6px;
-  /* overflow: hidden; */
   border-collapse: separate;
   border-spacing: 0;
 `;
@@ -27,9 +27,10 @@ const StyledTbody = styled.tbody``;
 // Applying generic type T to the Table component
 export const Table = <T,>({
   data,
-  renderTableHeader,
-  renderTableRows,
   onPaginate,
+  renderTableRows,
+  renderTableHeader,
+  renderEmptyResult,
 }: TableProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -44,10 +45,6 @@ export const Table = <T,>({
       onPaginate(pageNumber);
     }
   };
-
-  function renderEmptyResult() {
-    return <EmptyList title="No actions found" />;
-  }
 
   return (
     <>

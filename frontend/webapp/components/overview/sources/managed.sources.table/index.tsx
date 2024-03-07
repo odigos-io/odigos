@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Table } from '@/design.system';
 import { ManagedSource, Namespace } from '@/types';
 import { SourcesTableRow } from './sources.table.row';
 import { SourcesTableHeader } from './sources.table.header';
+import { EmptyList } from '@/components/lists';
+import { OVERVIEW } from '@/utils';
 
 type TableProps = {
   data: ManagedSource[];
@@ -29,6 +31,10 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
     currentPageRef.current = pageNumber;
   }
 
+  function renderEmptyResult() {
+    return <EmptyList title={OVERVIEW.EMPTY_SOURCE} />;
+  }
+
   function renderTableHeader() {
     return (
       <SourcesTableHeader
@@ -48,6 +54,7 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
         data={data}
         renderTableHeader={renderTableHeader}
         onPaginate={onPaginate}
+        renderEmptyResult={renderEmptyResult}
         renderTableRows={(item, index) => (
           <SourcesTableRow
             onRowClick={onRowClick}
