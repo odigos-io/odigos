@@ -15,7 +15,7 @@ import {
   BackButtonWrapper,
   FieldWrapper,
   SaveSourceButtonWrapper,
-} from './sources.styled';
+} from './styled';
 import { LANGUAGES_LOGOS } from '@/assets/images';
 import { Back } from '@/assets/icons/overview';
 import {
@@ -34,7 +34,7 @@ const NAME = 'name';
 const KIND = 'kind';
 const NAMESPACE = 'namespace';
 
-export function UpdateSourceForm() {
+export function EditSourceForm() {
   const [inputValue, setInputValue] = useState('');
   const [currentSource, setCurrentSource] = useState<ManagedSource>();
 
@@ -112,11 +112,7 @@ export function UpdateSourceForm() {
         <Back width={14} />
         <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
       </BackButtonWrapper>
-      {currentSource && (
-        <ManageSourceHeader
-          source={currentSource}
-        />
-      )}
+      {currentSource && <ManageSourceHeader source={currentSource} />}
       <FieldWrapper>
         <KeyvalInput
           label={OVERVIEW.REPORTED_NAME}

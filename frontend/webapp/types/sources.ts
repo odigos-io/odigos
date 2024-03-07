@@ -1,3 +1,16 @@
+export enum SourceSortOptions {
+  NAME = 'name',
+  KIND = 'kind',
+  NAMESPACE = 'namespace',
+  LANGUAGE = 'language',
+}
+
+export enum K8SSourceTypes {
+  DEPLOYMENT = 'deployment',
+  STATEFUL_SET = 'statefulset',
+  DAEMON_SET = 'daemonset',
+}
+
 export interface ManagedSource {
   kind: string;
   name: string;

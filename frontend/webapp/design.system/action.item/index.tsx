@@ -22,7 +22,7 @@ const Popup = styled.div<{ isOpen: boolean }>`
   position: absolute;
   right: 0px;
   box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
+  z-index: 9999;
   flex-direction: column;
   border-radius: 8px;
   border: ${({ theme }) => `1px solid ${theme.colors.blue_grey}`};

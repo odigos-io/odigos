@@ -1,9 +1,9 @@
 import React from 'react';
 import theme from '@/styles/palette';
 import { KeyvalButton, KeyvalText } from '@/design.system';
+import { SourcesSectionWrapper, ButtonWrapper } from './styled';
 import { NOTIFICATION, OVERVIEW, SETUP } from '@/utils/constants';
 import { useNotification, useSectionData, useSources } from '@/hooks';
-import { SourcesSectionWrapper, ButtonWrapper } from './sources.styled';
 import { SourcesSection } from '@/containers/setup/sources/sources.section';
 
 export function NewSourcesList({ onSuccess }) {
