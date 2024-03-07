@@ -29,8 +29,9 @@ export function ManagedSourcesContainer() {
     sources,
     isLoading,
     sortSources,
-    filterSourcesByNamespace,
+    filterSourcesByKind,
     instrumentedNamespaces,
+    filterSourcesByNamespace,
   } = useSources();
 
   function handleAddSources() {
@@ -90,6 +91,7 @@ export function ManagedSourcesContainer() {
                 onRowClick={handleEditSource}
                 sortSources={sortSources}
                 filterSourcesByNamespace={filterSourcesByNamespace}
+                filterSourcesByKind={filterSourcesByKind}
                 namespaces={instrumentedNamespaces}
               />
             </Content>

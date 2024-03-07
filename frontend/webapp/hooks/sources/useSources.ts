@@ -108,12 +108,21 @@ export function useSources() {
     setSortedSources(filtered);
   }
 
+  function filterSourcesByKind(kind: string[]) {
+    const filtered = sources?.filter((source) =>
+      kind.includes(source.kind.toLowerCase())
+    );
+
+    setSortedSources(filtered);
+  }
+
   return {
     upsertSources,
     sources: sortedSources || [],
     isLoading,
     sortSources,
     filterSourcesByNamespace,
+    filterSourcesByKind,
     instrumentedNamespaces,
     namespaces: namespaces?.namespaces || [],
   };

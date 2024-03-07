@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { OVERVIEW } from '@/utils';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
-import { Namespace, SourceSortOptions } from '@/types';
 import { UnFocusSources } from '@/assets/icons/side.menu';
 import { ActionsGroup, KeyvalText } from '@/design.system';
+import { K8SSourceTypes, Namespace, SourceSortOptions } from '@/types';
 
 const StyledThead = styled.div`
   background-color: ${theme.colors.light_dark};
@@ -35,20 +35,27 @@ const ActionGroupContainer = styled.div`
 
 interface ActionsTableHeaderProps {
   data: any[];
+  namespaces?: Namespace[];
   sortSources?: (condition: string) => void;
+  filterSourcesByKind?: (kinds: string[]) => void;
   filterSourcesByNamespace?: (namespaces: string[]) => void;
   toggleActionStatus?: (ids: string[], disabled: boolean) => void;
-  namespaces?: Namespace[];
 }
 
 export function SourcesTableHeader({
   data,
   namespaces,
   sortSources,
+  filterSourcesByKind,
   filterSourcesByNamespace,
 }: ActionsTableHeaderProps) {
   const [currentSortId, setCurrentSortId] = useState('');
   const [groupNamespaces, setGroupNamespaces] = useState<string[]>([]);
+  const [groupKinds, setGroupKinds] = useState<string[]>([
+    K8SSourceTypes.DEPLOYMENT,
+    K8SSourceTypes.STATEFUL_SET,
+    K8SSourceTypes.DAEMON_SET,
+  ]);
 
   useEffect(() => {
     if (namespaces) {
@@ -63,7 +70,7 @@ export function SourcesTableHeader({
     sortSources && sortSources(id);
   }
 
-  function onGroupClick(id: string) {
+  function onNamespaceClick(id: string) {
     let newGroup: string[] = [];
     if (groupNamespaces.includes(id)) {
       setGroupNamespaces(groupNamespaces.filter((item) => item !== id));
@@ -74,6 +81,19 @@ export function SourcesTableHeader({
     }
 
     filterSourcesByNamespace && filterSourcesByNamespace(newGroup);
+  }
+
+  function onKindClick(id: string) {
+    let newGroup: string[] = [];
+    if (groupKinds.includes(id)) {
+      setGroupKinds(groupKinds.filter((item) => item !== id));
+      newGroup = groupKinds.filter((item) => item !== id);
+    } else {
+      setGroupKinds([...groupKinds, id]);
+      newGroup = [...groupKinds, id];
+    }
+
+    filterSourcesByKind && filterSourcesByKind(newGroup);
   }
 
   const sourcesGroups = useMemo(() => {
@@ -87,7 +107,7 @@ export function SourcesTableHeader({
       .sort((a, b) => b.totalApps - a.totalApps)
       ?.map((item: Namespace, index: number) => ({
         label: `${item.name} (${item.totalApps} apps) `,
-        onClick: () => onGroupClick(item.name),
+        onClick: () => onNamespaceClick(item.name),
         id: item.name,
         selected: groupNamespaces.includes(item.name) && item.totalApps > 0,
         disabled:
@@ -98,6 +118,63 @@ export function SourcesTableHeader({
       }));
 
     return [
+      {
+        label: 'Kind',
+        subTitle: 'Filter',
+        condition: true,
+        items: [
+          {
+            label: 'Deployment',
+            onClick: () => onKindClick(K8SSourceTypes.DEPLOYMENT),
+            id: K8SSourceTypes.DEPLOYMENT,
+            selected:
+              groupKinds.includes(K8SSourceTypes.DEPLOYMENT) &&
+              data.some(
+                (item) => item.kind.toLowerCase() === K8SSourceTypes.DEPLOYMENT
+              ),
+            disabled:
+              groupKinds.length === 1 &&
+              groupKinds.includes(K8SSourceTypes.DEPLOYMENT) &&
+              data.some(
+                (item) => item.kind.toLowerCase() === K8SSourceTypes.DEPLOYMENT
+              ),
+          },
+          {
+            label: 'StatefulSet',
+            onClick: () => onKindClick(K8SSourceTypes.STATEFUL_SET),
+            id: K8SSourceTypes.STATEFUL_SET,
+            selected:
+              groupKinds.includes(K8SSourceTypes.STATEFUL_SET) &&
+              data.some(
+                (item) =>
+                  item.kind.toLowerCase() === K8SSourceTypes.STATEFUL_SET
+              ),
+            disabled:
+              (groupKinds.length === 1 &&
+                groupKinds.includes(K8SSourceTypes.STATEFUL_SET)) ||
+              data.every(
+                (item) =>
+                  item.kind.toLowerCase() !== K8SSourceTypes.STATEFUL_SET
+              ),
+          },
+          {
+            label: 'DemonSet',
+            onClick: () => onKindClick(K8SSourceTypes.DAEMON_SET),
+            id: K8SSourceTypes.DAEMON_SET,
+            selected:
+              groupKinds.includes(K8SSourceTypes.DAEMON_SET) &&
+              data.some(
+                (item) => item.kind.toLowerCase() === K8SSourceTypes.DAEMON_SET
+              ),
+            disabled:
+              (groupKinds.length === 1 &&
+                groupKinds.includes(K8SSourceTypes.DAEMON_SET)) ||
+              data.every(
+                (item) => item.kind.toLowerCase() !== K8SSourceTypes.DAEMON_SET
+              ),
+          },
+        ],
+      },
       {
         label: 'Namespaces',
         subTitle: 'Display',
@@ -143,7 +220,7 @@ export function SourcesTableHeader({
       <StyledMainTh>
         <UnFocusSources style={{ width: 18, height: 18 }} />
         <KeyvalText size={14} weight={600} color={theme.text.white}>
-          {`${data.length} ${OVERVIEW.MENU.ACTIONS}`}
+          {`${data.length} ${OVERVIEW.MENU.SOURCES}`}
         </KeyvalText>
         <ActionGroupContainer>
           <ActionsGroup actionGroups={sourcesGroups} />

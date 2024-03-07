@@ -6,20 +6,22 @@ import { SourcesTableHeader } from './sources.table.header';
 
 type TableProps = {
   data: ManagedSource[];
+  namespaces?: Namespace[];
   onRowClick: (source: ManagedSource) => void;
   sortSources?: (condition: string) => void;
+  filterSourcesByKind?: (kinds: string[]) => void;
   filterSourcesByNamespace?: (namespaces: string[]) => void;
   toggleActionStatus?: (ids: string[], disabled: boolean) => void;
-  namespaces?: Namespace[];
 };
 
 export const ManagedSourcesTable: React.FC<TableProps> = ({
   data,
+  namespaces,
   onRowClick,
   sortSources,
-  filterSourcesByNamespace,
   toggleActionStatus,
-  namespaces,
+  filterSourcesByKind,
+  filterSourcesByNamespace,
 }) => {
   const currentPageRef = React.useRef(1);
 
@@ -31,10 +33,11 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
     return (
       <SourcesTableHeader
         data={data}
-        sortSources={sortSources}
-        filterSourcesByNamespace={filterSourcesByNamespace}
-        toggleActionStatus={toggleActionStatus}
         namespaces={namespaces}
+        sortSources={sortSources}
+        toggleActionStatus={toggleActionStatus}
+        filterSourcesByKind={filterSourcesByKind}
+        filterSourcesByNamespace={filterSourcesByNamespace}
       />
     );
   }
