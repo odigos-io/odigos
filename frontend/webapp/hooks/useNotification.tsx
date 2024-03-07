@@ -1,5 +1,6 @@
-import { KeyvalNotification } from "@/design.system";
-import { useState } from "react";
+'use client';
+import { useState } from 'react';
+import { KeyvalNotification } from '@/design.system';
 
 export function useNotification() {
   const [data, show] = useState<any>(false);
