@@ -7,7 +7,7 @@ export const Container = styled.div`
   overflow-y: auto;
 `;
 
-export const ActionsContainer = styled.div`
+export const SourcesContainer = styled.div`
   margin-top: 24px;
   width: 100%;
   max-width: 1216px;

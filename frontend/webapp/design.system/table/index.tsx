@@ -1,14 +1,15 @@
 import theme from '@/styles/palette';
-import { ActionData } from '@/types';
 import styled from 'styled-components';
 import React, { useState } from 'react';
 import { Pagination } from '@/design.system';
 import { EmptyList } from '@/components';
 
-type TableProps = {
-  data: ActionData[];
+// Updated TableProps to be generic
+type TableProps<T> = {
+  data: T[];
   renderTableHeader: () => JSX.Element;
-  renderTableRows: (item: any, index: number) => any;
+  renderTableRows: (item: T, index: number) => JSX.Element;
+  renderEmptyResult: () => JSX.Element;
   onPaginate?: (pageNumber: number) => void;
 };
 
@@ -17,19 +18,20 @@ const StyledTable = styled.table`
   background-color: ${theme.colors.dark};
   border: 1px solid ${theme.colors.blue_grey};
   border-radius: 6px;
-  overflow: hidden;
   border-collapse: separate;
   border-spacing: 0;
 `;
 
 const StyledTbody = styled.tbody``;
 
-export const Table: React.FC<TableProps> = ({
+// Applying generic type T to the Table component
+export const Table = <T,>({
   data,
-  renderTableHeader,
-  renderTableRows,
   onPaginate,
-}) => {
+  renderTableRows,
+  renderTableHeader,
+  renderEmptyResult,
+}: TableProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -37,32 +39,32 @@ export const Table: React.FC<TableProps> = ({
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
 
-  const handlePageChange = (pageNumber) => {
+  const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
-    onPaginate && onPaginate(pageNumber);
+    if (onPaginate) {
+      onPaginate(pageNumber);
+    }
   };
-
-  function renderEmptyResult() {
-    return <EmptyList title="No actions found" />;
-  }
 
   return (
     <>
       <StyledTable>
         {renderTableHeader()}
-        <StyledTbody>{currentItems.map(renderTableRows)}</StyledTbody>
+        <StyledTbody>
+          {currentItems.map((item, index) => renderTableRows(item, index))}
+        </StyledTbody>
       </StyledTable>
 
       {data.length === 0 ? (
         renderEmptyResult()
-      ) : (
+      ) : data.length > 10 ? (
         <Pagination
           total={data.length}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
           onPageChange={handlePageChange}
         />
-      )}
+      ) : null}
     </>
   );
 };
