@@ -4,7 +4,7 @@ import { useNotification } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { OVERVIEW, ROUTES } from '@/utils/constants';
 import { OverviewHeader } from '@/components/overview';
-import { NewSourcesList } from '@/containers/overview/sources/new.source.flow';
+import { NewSourcesList } from './new.source.flow';
 
 export function SelectSourcesContainer() {
   const router = useRouter();
