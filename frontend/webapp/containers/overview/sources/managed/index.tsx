@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { useActions, useNotification, useSources } from '@/hooks';
+import React, { useState } from 'react';
+import { useNotification, useSources } from '@/hooks';
 import theme from '@/styles/palette';
 import { useRouter } from 'next/navigation';
-import { ACTIONS, NOTIFICATION, OVERVIEW, ROUTES } from '@/utils';
-import { EmptyList, ActionsTable, ManagedSourcesTable } from '@/components';
+import { OVERVIEW, ROUTES } from '@/utils';
+import { EmptyList, ManagedSourcesTable } from '@/components';
 import {
   KeyvalText,
   KeyvalButton,
@@ -32,10 +32,6 @@ export function ManagedSourcesContainer() {
     filterSourcesByNamespace,
     instrumentedNamespaces,
   } = useSources();
-
-  useEffect(() => {
-    console.log({ sources });
-  }, [sources]);
 
   function handleAddSources() {
     router.push(ROUTES.CREATE_SOURCE);

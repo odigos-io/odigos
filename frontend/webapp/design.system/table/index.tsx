@@ -17,7 +17,7 @@ const StyledTable = styled.table`
   background-color: ${theme.colors.dark};
   border: 1px solid ${theme.colors.blue_grey};
   border-radius: 6px;
-  overflow: hidden;
+  /* overflow: hidden; */
   border-collapse: separate;
   border-spacing: 0;
 `;
@@ -60,14 +60,14 @@ export const Table = <T,>({
 
       {data.length === 0 ? (
         renderEmptyResult()
-      ) : (
+      ) : data.length > 10 ? (
         <Pagination
           total={data.length}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
           onPageChange={handlePageChange}
         />
-      )}
+      ) : null}
     </>
   );
 };

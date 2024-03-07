@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { OVERVIEW } from '@/utils';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
 import { Namespace, SourceSortOptions } from '@/types';
-import { OVERVIEW } from '@/utils';
 import { UnFocusSources } from '@/assets/icons/side.menu';
 import { ActionsGroup, KeyvalText } from '@/design.system';
 
-const StyledThead = styled.thead`
+const StyledThead = styled.div`
   background-color: ${theme.colors.light_dark};
+  border-top-right-radius: 6px;
+  border-top-left-radius: 6px;
 `;
 
 const StyledTh = styled.th`
@@ -50,7 +52,6 @@ export function SourcesTableHeader({
 
   useEffect(() => {
     if (namespaces) {
-      console.log({ object: namespaces });
       setGroupNamespaces(
         namespaces.filter((item) => item.totalApps > 0).map((item) => item.name)
       );
