@@ -93,11 +93,6 @@ func parseOtlpHttpEndpoint(rawUrl string) (string, error) {
 		return "", fmt.Errorf("invalid otlp http endpoint scheme: %s", parsedUrl.Scheme)
 	}
 
-	// validate no path is provided, as the otlphttp exporter will add the path according to the signal
-	if parsedUrl.Path != "" {
-		return "", fmt.Errorf("no path should be specified for otlphttp endpoint %s", parsedUrl.Path)
-	}
-
 	// validate no query is provided, as this indicates using improper endpoint
 	if parsedUrl.RawQuery != "" {
 		return "", fmt.Errorf("unexpected query for otlp http endpoint %s", parsedUrl.RawQuery)
