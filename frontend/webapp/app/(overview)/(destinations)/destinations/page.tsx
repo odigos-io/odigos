@@ -1,21 +1,13 @@
 'use client';
-import { styled } from 'styled-components';
-import { DestinationContainer } from '@/containers/overview';
-
-const DestinationContainerWrapper = styled.div`
-  height: 100vh;
-  overflow-y: hidden;
-  ::-webkit-scrollbar {
-    display: none;
-  }
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-`;
+import { OVERVIEW } from '@/utils';
+import { OverviewHeader } from '@/components';
+import { DestinationContainer } from '@/containers';
 
 export default function DestinationDashboardPage() {
   return (
-    <DestinationContainerWrapper>
+    <>
+      <OverviewHeader title={OVERVIEW.MENU.DESTINATIONS} />
       <DestinationContainer />
-    </DestinationContainerWrapper>
+    </>
   );
 }

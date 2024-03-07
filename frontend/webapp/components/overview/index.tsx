@@ -6,3 +6,4 @@ export { DeleteSource } from './sources/delete.source/delete.source';
 export * from './add.item.menu';
 export * from './actions';
 export * from './sources';
+export * from './destination';
