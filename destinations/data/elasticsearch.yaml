@@ -20,13 +20,42 @@ spec:
       componentProps:
         type: text
         required: true
+        placeholder: 'http://host:port'
+        tooltip: 'Elasticsearch endpoint. port defaults to 9200 if not specified'
     - name: ES_TRACES_INDEX
       displayName: Traces Index
       componentType: input
       componentProps:
         type: text
+        placeholder: 'trace_index'
+        tooltip: 'The name of the index where traces will be stored. Defaults to trace_index'
     - name: ES_LOGS_INDEX
       displayName: Logs Index
       componentType: input
       componentProps:
         type: text
+        placeholder: 'log_index'
+        tooltip: 'The name of the index where logs will be stored. Defaults to log_index'
+    - name: ELASTICSEARCH_USERNAME
+      displayName: Username
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: 'Username used for HTTP Basic Authentication'
+    - name: ELASTICSEARCH_PASSWORD
+      displayName: Password
+      componentType: input
+      componentProps:
+        type: password
+        required: false
+        tooltip: 'Password used for HTTP Basic Authentication'
+      secret: true
+    - name: ELASTICSEARCH_CA_PEM
+      displayName: CA Certificate
+      componentType: textarea
+      componentProps:
+        type: text
+        required: false
+        placeholder: '-----BEGIN CERTIFICATE-----'
+        tooltip: 'When using https, provide the CA certificate to verify the server. If empty uses system root CA'
