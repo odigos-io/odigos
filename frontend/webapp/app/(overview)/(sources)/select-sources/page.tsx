@@ -1,6 +1,6 @@
 'use client';
-import { SourcesListContainer } from '@/containers/overview';
+import { SelectSourcesContainer } from '@/containers';
 
 export default function CreateNewSourcesPage() {
-  return <SourcesListContainer />;
+  return <SelectSourcesContainer />;
 }

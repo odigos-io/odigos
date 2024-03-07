@@ -9,7 +9,7 @@ export const ROUTES = {
   UPDATE_DESTINATION: 'destinations/manage?dest=',
   CREATE_DESTINATION: 'destinations/create',
   CREATE_SOURCE: '/select-sources',
-  MANAGE_SOURCE: '/manage',
+  MANAGE_SOURCE: '/edit-source',
   CHOOSE_DESTINATION: '/choose-destination',
   CHOOSE_SOURCES: '/choose-sources',
   CHOOSE_ACTIONS: '/choose-action',
