@@ -46,7 +46,6 @@ const SourceIconContainer = styled.div`
 const SourceDetails = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 4px;
 `;
 
 const NameContainer = styled.div`
@@ -57,7 +56,6 @@ const NameContainer = styled.div`
 
 const FooterContainer = styled.div`
   display: flex;
-  gap: 16px;
   align-items: center;
 `;
 
@@ -130,11 +128,9 @@ export function DestinationsTableRow({
               </KeyvalText>
             </NameContainer>
             <FooterContainer>
-              <FooterItemWrapper>
-                <KeyvalText weight={600}>
-                  {`${item.name || 'Destination'} `}
-                </KeyvalText>
-              </FooterItemWrapper>
+              <KeyvalText size={20} weight={600}>
+                {`${item.name || 'Destination'} `}
+              </KeyvalText>
             </FooterContainer>
           </SourceDetails>
 
