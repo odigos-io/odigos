@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { OVERVIEW } from '@/utils/constants';
+import { OVERVIEW } from '@/utils';
 import { OverviewHeader } from '@/components';
 import { DataFlowContainer } from '@/containers';
 
