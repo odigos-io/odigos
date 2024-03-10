@@ -9,11 +9,15 @@ import { DestinationsTableRow } from './destinations.table.row';
 type TableProps = {
   data: Destination[];
   onRowClick: (source: Destination) => void;
+  sortDestinations?: (condition: string) => void;
+  filterDestinationsBySignal?: (signals: string[]) => void;
 };
 
 export const ManagedDestinationsTable: React.FC<TableProps> = ({
   data,
   onRowClick,
+  sortDestinations,
+  filterDestinationsBySignal,
 }) => {
   const currentPageRef = React.useRef(1);
 
@@ -26,7 +30,13 @@ export const ManagedDestinationsTable: React.FC<TableProps> = ({
   }
 
   function renderTableHeader() {
-    return <DestinationsTableHeader data={data} />;
+    return (
+      <DestinationsTableHeader
+        data={data}
+        sortDestinations={sortDestinations}
+        filterDestinationsBySignal={filterDestinationsBySignal}
+      />
+    );
   }
 
   return (

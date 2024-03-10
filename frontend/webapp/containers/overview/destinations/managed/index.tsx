@@ -21,7 +21,12 @@ import {
 
 export function DestinationContainer() {
   const [searchInput, setSearchInput] = useState('');
-  const { destinationList, destinationLoading } = useDestinations();
+  const {
+    destinationList,
+    destinationLoading,
+    sortDestinations,
+    filterDestinationsBySignal,
+  } = useDestinations();
 
   const { show, Notification } = useNotification();
 
@@ -74,6 +79,8 @@ export function DestinationContainer() {
           </Header>
           <Content>
             <ManagedDestinationsTable
+              sortDestinations={sortDestinations}
+              filterDestinationsBySignal={filterDestinationsBySignal}
               data={searchInput ? filterDestinations() : destinationList}
               onRowClick={({ id }) =>
                 router.push(`${ROUTES.UPDATE_DESTINATION}${id}`)
