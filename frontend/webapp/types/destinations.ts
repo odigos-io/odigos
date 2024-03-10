@@ -1,3 +1,8 @@
+export enum DestinationsSortType {
+  NAME = 'name',
+  TYPE = 'type',
+}
+
 export interface DestinationType {
   fields: any;
   display_name: string;
