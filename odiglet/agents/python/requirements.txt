@@ -146,7 +146,7 @@ opentelemetry-instrumentation-botocore==0.43b0
     # via -r requirements.in
 opentelemetry-instrumentation-celery==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-confluent-kafka==0.43b0
+opentelemetry-instrumentation-confluent-kafka==0.44b0
     # via -r requirements.in
 opentelemetry-instrumentation-dbapi==0.43b0
     # via
@@ -181,7 +181,7 @@ opentelemetry-instrumentation-mysql==0.43b0
     # via -r requirements.in
 opentelemetry-instrumentation-mysqlclient==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-pika==0.43b0
+opentelemetry-instrumentation-pika==0.44b0
     # via -r requirements.in
 opentelemetry-instrumentation-psycopg2==0.43b0
     # via -r requirements.in
@@ -207,7 +207,7 @@ opentelemetry-instrumentation-sqlite3==0.43b0
     # via -r requirements.in
 opentelemetry-instrumentation-starlette==0.43b0
     # via -r requirements.in
-opentelemetry-instrumentation-system-metrics==0.43b0
+opentelemetry-instrumentation-system-metrics==0.44b0
     # via -r requirements.in
 opentelemetry-instrumentation-tornado==0.43b0
     # via -r requirements.in
@@ -228,11 +228,11 @@ opentelemetry-propagator-aws-xray==1.0.1
     # via
     #   -r requirements.in
     #   opentelemetry-instrumentation-botocore
-opentelemetry-propagator-b3==1.22.0
+opentelemetry-propagator-b3==1.23.0
     # via -r requirements.in
-opentelemetry-propagator-jaeger==1.22.0
+opentelemetry-propagator-jaeger==1.23.0
     # via -r requirements.in
-opentelemetry-propagator-ot-trace==0.43b0
+opentelemetry-propagator-ot-trace==0.44b0
     # via -r requirements.in
 opentelemetry-proto==1.22.0
     # via
