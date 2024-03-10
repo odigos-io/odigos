@@ -1,18 +1,18 @@
 'use client';
 import React, { useCallback, useMemo, useState } from 'react';
-import { KeyvalDataFlow, KeyvalLoader } from '@/design.system';
-import { QUERIES } from '@/utils/constants';
+import { QUERIES } from '@/utils';
 import { useQuery } from 'react-query';
+import { OverviewDataFlowWrapper } from './styled';
 import { getDestinations, getSources } from '@/services';
+import { KeyvalDataFlow, KeyvalLoader } from '@/design.system';
 import { getEdges, groupSourcesNamespace, getNodes } from './utils';
-import { OverviewDataFlowWrapper } from './overview.styled';
 
 const NAMESPACE_NODE_HEIGHT = 84;
 const NAMESPACE_NODE_POSITION = 0;
 const DESTINATION_NODE_HEIGHT = 136;
 const DESTINATION_NODE_POSITION = 800;
 
-export function OverviewContainer() {
+export function DataFlowContainer() {
   const [containerHeight, setContainerHeight] = useState(0);
 
   const containerRef = useCallback((node: HTMLDivElement) => {
