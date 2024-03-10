@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   KeyvalButton,
   KeyvalLoader,
@@ -25,12 +25,17 @@ export function DestinationContainer() {
     destinationList,
     destinationLoading,
     sortDestinations,
+    refetchDestinations,
     filterDestinationsBySignal,
   } = useDestinations();
 
   const { show, Notification } = useNotification();
 
   const router = useRouter();
+
+  useEffect(() => {
+    refetchDestinations();
+  }, []);
 
   function handleAddDestination() {
     router.push(ROUTES.CREATE_DESTINATION);

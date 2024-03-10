@@ -62,12 +62,13 @@ export function useDestinations() {
   }
 
   return {
-    getCurrentDestinationByType,
-    destinationsTypes: data,
     isLoading,
-    destinationList: sortedDestinations || [],
     destinationLoading,
-    filterDestinationsBySignal,
+    destinationsTypes: data,
+    destinationList: sortedDestinations || [],
     sortDestinations,
+    refetchDestinations,
+    filterDestinationsBySignal,
+    getCurrentDestinationByType,
   };
 }

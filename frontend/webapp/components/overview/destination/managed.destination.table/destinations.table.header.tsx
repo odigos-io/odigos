@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import theme from '@/styles/palette';
-import { Destination, DestinationsSortType } from '@/types';
 import styled from 'styled-components';
 import { MONITORS, OVERVIEW } from '@/utils';
-import { UnFocusDestinations } from '@/assets/icons/side.menu';
 import { ActionsGroup, KeyvalText } from '@/design.system';
+import { Destination, DestinationsSortType } from '@/types';
+import { UnFocusDestinations } from '@/assets/icons/side.menu';
 
 const StyledThead = styled.div`
   background-color: ${theme.colors.light_dark};
