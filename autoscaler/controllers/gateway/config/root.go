@@ -71,7 +71,10 @@ func getBasicConfig() *commonconf.Config {
 		Receivers: commonconf.GenericMap{
 			"otlp": commonconf.GenericMap{
 				"protocols": commonconf.GenericMap{
-					"grpc": empty,
+					"grpc": commonconf.GenericMap{
+						// setting it to a large value to avoid dropping batches.
+						"max_recv_msg_size_mib": 128 * 1024 * 1024,
+					},
 					"http": empty,
 				},
 			},
