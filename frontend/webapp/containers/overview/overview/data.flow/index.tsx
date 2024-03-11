@@ -1,10 +1,8 @@
 'use client';
-import React, { useCallback, useMemo, useState } from 'react';
-import { QUERIES } from '@/utils';
-import { useQuery } from 'react-query';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { OverviewDataFlowWrapper } from './styled';
-import { getDestinations, getSources } from '@/services';
 import { KeyvalDataFlow, KeyvalLoader } from '@/design.system';
+import { useActions, useDestinations, useSources } from '@/hooks';
 import { getEdges, groupSourcesNamespace, getNodes } from './utils';
 
 const NAMESPACE_NODE_HEIGHT = 84;
@@ -21,12 +19,15 @@ export function DataFlowContainer() {
     }
   }, []);
 
-  const { data: destinations } = useQuery(
-    [QUERIES.API_DESTINATIONS],
-    getDestinations
-  );
+  const { sources } = useSources();
+  const { destinationList } = useDestinations();
+  const { actions } = useActions();
 
-  const { data: sources } = useQuery([QUERIES.API_SOURCES], getSources);
+  useEffect(() => {
+    console.log({ sources });
+    console.log({ destinationList });
+    console.log({ actions });
+  }, [actions, destinationList, sources]);
   const sourcesNodes = useMemo(() => {
     const groupedSources = groupSourcesNamespace(sources);
 
@@ -46,14 +47,26 @@ export function DataFlowContainer() {
     () =>
       getNodes(
         containerHeight,
-        destinations,
+        destinationList,
         'destination',
-        destinations?.length > 1
+        destinationList?.length > 1
           ? DESTINATION_NODE_HEIGHT
           : NAMESPACE_NODE_HEIGHT,
         DESTINATION_NODE_POSITION
       ),
-    [destinations, containerHeight]
+    [destinationList, containerHeight]
+  );
+
+  const actionsNodes = useMemo(
+    () =>
+      getNodes(
+        containerHeight,
+        actions,
+        'namespace',
+        NAMESPACE_NODE_HEIGHT,
+        DESTINATION_NODE_POSITION + 200
+      ),
+    [actions, containerHeight]
   );
 
   const edges = useMemo(() => {
