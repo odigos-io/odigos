@@ -29,8 +29,8 @@ export function DataFlowContainer() {
   const [edges, setEdges] = useState<FlowEdge[]>();
 
   const { sources } = useSources();
-  const { destinationList } = useDestinations();
   const { actions } = useActions();
+  const { destinationList } = useDestinations();
 
   useEffect(() => {
     if (!sources || !destinationList || !actions) return;
