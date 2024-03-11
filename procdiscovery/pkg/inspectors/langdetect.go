@@ -5,6 +5,7 @@ import (
 	"github.com/keyval-dev/odigos/procdiscovery/pkg/inspectors/dotnet"
 	"github.com/keyval-dev/odigos/procdiscovery/pkg/inspectors/golang"
 	"github.com/keyval-dev/odigos/procdiscovery/pkg/inspectors/java"
+	"github.com/keyval-dev/odigos/procdiscovery/pkg/inspectors/mysql"
 	"github.com/keyval-dev/odigos/procdiscovery/pkg/inspectors/nodejs"
 	"github.com/keyval-dev/odigos/procdiscovery/pkg/inspectors/python"
 	"github.com/keyval-dev/odigos/procdiscovery/pkg/process"
@@ -20,6 +21,7 @@ var inspectorsList = []inspector{
 	&python.PythonInspector{},
 	&dotnet.DotnetInspector{},
 	&nodejs.NodejsInspector{},
+	&mysql.MySQLInspector{},
 }
 
 type LanguageDetectionResult struct {
