@@ -1,5 +1,6 @@
 export enum ActionsType {
   ADD_CLUSTER_INFO = 'AddClusterInfo',
+  DELETE_ATTRIBUTES = 'deleteattribute',
 }
 
 export enum ActionsSortType {
