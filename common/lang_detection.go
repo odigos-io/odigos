@@ -3,10 +3,9 @@ package common
 type LanguageByContainer struct {
 	ContainerName string              `json:"containerName"`
 	Language      ProgrammingLanguage `json:"language"`
-	ProcessName   string              `json:"processName,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript
+// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;mysql
 type ProgrammingLanguage string
 
 const (
@@ -15,4 +14,7 @@ const (
 	GoProgrammingLanguage         ProgrammingLanguage = "go"
 	DotNetProgrammingLanguage     ProgrammingLanguage = "dotnet"
 	JavascriptProgrammingLanguage ProgrammingLanguage = "javascript"
+	// This is an experimental feature, It is not a language
+	// but in order to avoid huge refactoring we are adding it here for now
+	MySQLProgrammingLanguage      ProgrammingLanguage = "mysql"
 )

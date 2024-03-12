@@ -78,7 +78,6 @@ func runtimeInspection(pods []corev1.Pod) ([]common.LanguageByContainer, error) 
 			resultsMap[container.Name] = common.LanguageByContainer{
 				ContainerName: container.Name,
 				Language:      detectionResults[0].Language,
-				ProcessName:   detectionResults[0].ExeName,
 			}
 		}
 	}

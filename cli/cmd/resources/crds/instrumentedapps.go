@@ -77,10 +77,10 @@ func NewInstrumentedApp() *apiextensionsv1.CustomResourceDefinition {
 																{
 																	Raw: []byte(`"javascript"`),
 																},
+																{
+																	Raw: []byte(`"mysql"`),
+																},
 															},
-														},
-														"processName": {
-															Type: "string",
 														},
 													},
 												},
