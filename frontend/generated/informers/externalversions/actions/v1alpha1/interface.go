@@ -25,6 +25,8 @@ import (
 type Interface interface {
 	// AddClusterInfos returns a AddClusterInfoInformer.
 	AddClusterInfos() AddClusterInfoInformer
+	// DeleteAttributes returns a DeleteAttributeInformer.
+	DeleteAttributes() DeleteAttributeInformer
 }
 
 type version struct {
@@ -41,4 +43,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // AddClusterInfos returns a AddClusterInfoInformer.
 func (v *version) AddClusterInfos() AddClusterInfoInformer {
 	return &addClusterInfoInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// DeleteAttributes returns a DeleteAttributeInformer.
+func (v *version) DeleteAttributes() DeleteAttributeInformer {
+	return &deleteAttributeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

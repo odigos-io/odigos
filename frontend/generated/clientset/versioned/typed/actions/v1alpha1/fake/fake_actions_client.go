@@ -31,6 +31,10 @@ func (c *FakeActionsV1alpha1) AddClusterInfos(namespace string) v1alpha1.AddClus
 	return &FakeAddClusterInfos{c, namespace}
 }
 
+func (c *FakeActionsV1alpha1) DeleteAttributes(namespace string) v1alpha1.DeleteAttributeInterface {
+	return &FakeDeleteAttributes{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeActionsV1alpha1) RESTClient() rest.Interface {
