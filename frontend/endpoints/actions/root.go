@@ -14,6 +14,8 @@ type IcaInstanceResponse struct {
 
 func GetActions(c *gin.Context, odigosns string) {
 
+	response := []IcaInstanceResponse{}
+
 	icaActions, err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).List(c, metav1.ListOptions{})
 	if err != nil {
 		c.JSON(500, gin.H{
@@ -22,8 +24,23 @@ func GetActions(c *gin.Context, odigosns string) {
 		return
 	}
 
-	response := []IcaInstanceResponse{}
 	for _, action := range icaActions.Items {
+		response = append(response, IcaInstanceResponse{
+			Id:   action.Name,
+			Type: action.Kind,
+			Spec: action.Spec,
+		})
+	}
+
+	daActions, err := kube.DefaultClient.ActionsClient.DeleteAttributes(odigosns).List(c, metav1.ListOptions{})
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	for _, action := range daActions.Items {
 		response = append(response, IcaInstanceResponse{
 			Id:   action.Name,
 			Type: action.Kind,
