@@ -1,5 +1,5 @@
+import { ActionsGroup } from '@keyval-dev/design-system';
 import React from 'react';
-import { ActionItem } from '../action.item';
 
 // Define the type for individual action items
 interface ActionItem {
@@ -23,13 +23,8 @@ interface ActionsListProps {
   actionGroups: ActionGroup[];
 }
 
-export const ActionsGroup: React.FC<ActionsListProps> = ({ actionGroups }) => {
-  return (
-    <>
-      {actionGroups.map(
-        (group, index) =>
-          group.condition && <ActionItem key={index} {...group} />
-      )}
-    </>
-  );
+export const OdigosActionsGroup: React.FC<ActionsListProps> = ({
+  actionGroups,
+}) => {
+  return <ActionsGroup actionGroups={actionGroups} />;
 };
