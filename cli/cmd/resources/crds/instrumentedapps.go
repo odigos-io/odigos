@@ -79,9 +79,6 @@ func NewInstrumentedApp() *apiextensionsv1.CustomResourceDefinition {
 																},
 															},
 														},
-														"processName": {
-															Type: "string",
-														},
 													},
 												},
 											},
