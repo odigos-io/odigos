@@ -144,9 +144,9 @@ export function ActionsTableRow({
               </KeyvalText>
               <StatusIndicator disabled={!!item.spec.disabled} />
 
-              <KeyvalText color={theme.text.grey} size={14} weight={400}>
+              {/* <KeyvalText color={theme.text.grey} size={14} weight={400}>
                 {`${item?.spec.clusterAttributes.length} cluster attributes`}
-              </KeyvalText>
+              </KeyvalText> */}
             </ClusterAttributesContainer>
             <KeyvalText color={theme.text.light_grey} size={14}>
               {item.spec.notes}

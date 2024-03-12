@@ -19,6 +19,7 @@ export function useActions() {
   );
 
   useEffect(() => {
+    console.log({ data });
     setSortedActions(data || []);
   }, [data]);
 

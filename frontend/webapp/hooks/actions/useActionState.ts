@@ -104,7 +104,7 @@ export function useActionState() {
     const signals = selectedMonitors
       .filter((monitor) => monitor.checked)
       .map((monitor) => monitor.label.toUpperCase());
-    console.log({ actionData, type });
+
     const filteredActionData = filterEmptyActionDataFieldsByType(
       type,
       actionData
