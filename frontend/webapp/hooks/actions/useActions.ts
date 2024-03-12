@@ -15,7 +15,7 @@ export function useActions() {
   );
 
   const { mutateAsync: updateAction } = useMutation((body: ActionItem) =>
-    putAction(body?.id, body)
+    putAction(body?.id, body, body.type)
   );
 
   useEffect(() => {
@@ -75,6 +75,7 @@ export function useActions() {
           id: action.id,
           ...action.spec,
           disabled,
+          type: action.type,
         };
         try {
           await updateAction(body);

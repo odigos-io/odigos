@@ -3,5 +3,5 @@ import DeleteAttribute from './delete-attr.svg';
 export const ACTION_ICONS = {
   AddClusterInfo: AddClusterInfo,
   filter: AddClusterInfo,
-  deleteattribute: DeleteAttribute,
+  DeleteAttribute: DeleteAttribute,
 };

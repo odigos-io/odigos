@@ -145,7 +145,7 @@ export const ACTIONS = {
     TITLE: 'Add Cluster Info',
     DESCRIPTION: `The “Add Cluster Info” Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.`,
   },
-  deleteattribute: {
+  DeleteAttribute: {
     TITLE: 'Delete Attribute',
     DESCRIPTION: `The “Delete Attribute” Odigos Action can be used to delete attributes from telemetry signals originated from the k8s cluster where the Odigos is running.`,
   },

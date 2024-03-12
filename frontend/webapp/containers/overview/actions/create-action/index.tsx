@@ -25,18 +25,18 @@ import {
 const ACTION_TYPE = 'type';
 
 export function CreateActionContainer(): React.JSX.Element {
-  const [currentActionType, setCurrentActionType] = useState<string>();
   const { actionState, onChangeActionState, upsertAction } = useActionState();
-  const { actionName, actionNote, actionData, selectedMonitors } = actionState;
+  const { actionName, actionNote, actionData, selectedMonitors, type } =
+    actionState;
 
   const search = useSearchParams();
 
   useEffect(() => {
     const action = search.get(ACTION_TYPE);
-    action && setCurrentActionType(action);
+    action && onChangeActionState('type', action);
   }, [search]);
 
-  if (!currentActionType)
+  if (!type)
     return (
       <LoaderWrapper>
         <KeyvalLoader />
@@ -46,15 +46,13 @@ export function CreateActionContainer(): React.JSX.Element {
   return (
     <CreateActionWrapper>
       <DescriptionWrapper>
-        <KeyvalText size={14}>
-          {ACTIONS[currentActionType].DESCRIPTION}
-        </KeyvalText>
+        <KeyvalText size={14}>{ACTIONS[type].DESCRIPTION}</KeyvalText>
         <KeyvalLink
           value={ACTION.LINK_TO_DOCS}
           fontSize={14}
           onClick={() =>
             window.open(
-              `${ACTION_ITEM_DOCS_LINK}/${currentActionType.toLowerCase()}`,
+              `${ACTION_ITEM_DOCS_LINK}/${type.toLowerCase()}`,
               '_blank'
             )
           }
@@ -75,7 +73,7 @@ export function CreateActionContainer(): React.JSX.Element {
         />
       </KeyvalInputWrapper>
       <DynamicActionForm
-        type={currentActionType}
+        type={type}
         data={actionData}
         onChange={onChangeActionState}
       />

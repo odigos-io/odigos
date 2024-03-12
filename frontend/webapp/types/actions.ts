@@ -1,6 +1,6 @@
 export enum ActionsType {
   ADD_CLUSTER_INFO = 'AddClusterInfo',
-  DELETE_ATTRIBUTES = 'deleteattribute',
+  DELETE_ATTRIBUTES = 'DeleteAttribute',
 }
 
 export enum ActionsSortType {
@@ -22,6 +22,7 @@ export interface ActionItem {
   notes: string;
   signals: string[];
   disabled?: boolean;
+  type: string;
   [key: string]: any;
 }
 
