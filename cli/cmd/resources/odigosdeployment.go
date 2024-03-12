@@ -116,6 +116,7 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 		crds.NewInstrumentedApp(),
 		crds.NewProcessor(),
 		actions.NewAddClusterInfoCRD(),
+		actions.NewDeleteAttributeCRD(),
 	}
 	if a.odigosTier != common.CommunityOdigosTier {
 		resources = append(resources, crds.NewInstrumentationConfig())

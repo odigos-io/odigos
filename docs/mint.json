@@ -69,6 +69,7 @@
           "pages": [
             "pipeline/actions/introduction",
             "pipeline/actions/addclusterinfo",
+            "pipeline/actions/deleteattribute",
             "pipeline/actions/crd",
             "pipeline/actions/troubleshooting"
           ]
