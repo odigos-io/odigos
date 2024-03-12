@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useMutation } from 'react-query';
 import { useActions } from './useActions';
 import { useRouter } from 'next/navigation';
-import { ActionItem, ActionsType } from '@/types';
+import { ActionData, ActionItem, ActionsType } from '@/types';
 import { putAction, setAction, deleteAction } from '@/services';
 
 interface Monitor {
@@ -72,14 +72,7 @@ export function useActionState() {
       actionName: action?.spec?.actionName || '',
       actionNote: action?.spec?.notes || '',
       type: action?.type || '',
-      actionData: {
-        clusterAttributes:
-          action?.spec.clusterAttributes.map((attr, index) => ({
-            attributeName: attr.attributeName,
-            attributeStringValue: attr.attributeStringValue,
-            id: index,
-          })) || [],
-      },
+      actionData: getActionDataByType(action),
       selectedMonitors: DEFAULT_MONITORS.map((monitor) => ({
         ...monitor,
 
@@ -167,5 +160,25 @@ function filterEmptyActionDataFieldsByType(type: string, data: any) {
 
     default:
       return data;
+  }
+}
+
+function getActionDataByType(action: ActionData | undefined) {
+  if (!action) return {};
+  switch (action.type) {
+    case ActionsType.ADD_CLUSTER_INFO:
+      return {
+        clusterAttributes: action.spec.clusterAttributes.map((attr, index) => ({
+          attributeName: attr.attributeName,
+          attributeStringValue: attr.attributeStringValue,
+          id: index,
+        })),
+      };
+    case ActionsType.DELETE_ATTRIBUTES:
+      return {
+        attributeNamesToDelete: action.spec.attributeNamesToDelete,
+      };
+    default:
+      return {};
   }
 }
