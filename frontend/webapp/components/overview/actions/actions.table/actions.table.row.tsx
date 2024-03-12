@@ -5,6 +5,7 @@ import { ActionData } from '@/types';
 import { ACTION_ICONS } from '@/assets';
 import styled, { css } from 'styled-components';
 import { KeyvalCheckbox, KeyvalText } from '@/design.system';
+import ActionRowDynamicContent from './action.row.dynamic.content';
 import { TapList } from '@/components/setup/destination/tap.list/tap.list';
 import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
 
@@ -143,10 +144,7 @@ export function ActionsTableRow({
                 {`${item.spec.actionName || 'Action'} `}
               </KeyvalText>
               <StatusIndicator disabled={!!item.spec.disabled} />
-
-              {/* <KeyvalText color={theme.text.grey} size={14} weight={400}>
-                {`${item?.spec.clusterAttributes.length} cluster attributes`}
-              </KeyvalText> */}
+              <ActionRowDynamicContent item={item} />
             </ClusterAttributesContainer>
             <KeyvalText color={theme.text.light_grey} size={14}>
               {item.spec.notes}
