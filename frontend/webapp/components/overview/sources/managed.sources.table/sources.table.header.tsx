@@ -4,13 +4,19 @@ import theme from '@/styles/palette';
 import styled from 'styled-components';
 import { UnFocusSources } from '@/assets/icons/side.menu';
 import { ActionsGroup, KeyvalText } from '@/design.system';
-import {
-  K8SSourceTypes,
-  ManagedSource,
-  Namespace,
-  SourceSortOptions,
-} from '@/types';
+import { ManagedSource, Namespace } from '@/types';
 
+enum K8SSourceTypes {
+  DEPLOYMENT = 'deployment',
+  STATEFUL_SET = 'statefulset',
+  DAEMON_SET = 'daemonset',
+}
+enum SourceSortOptions {
+  NAME = 'name',
+  KIND = 'kind',
+  NAMESPACE = 'namespace',
+  LANGUAGE = 'language',
+}
 const StyledThead = styled.div`
   background-color: ${theme.colors.light_dark};
   border-top-right-radius: 6px;
