@@ -18,7 +18,7 @@ The only required configuration is the endpoint of the OTLP gRPC server.
 
 The endpoint format is `http://host:port`.
 - host is required
-- port is optional and defaults to the default OTLP http port `4318`.
+- port is optional and defaults to the port of the scheme (`80` / `443`). OTLP/HTTP sometimes uses port `4318`, in which case it should be specified.
 - the signal path (e.g. `/v1/traces` / `/v1/metrics` / `/v1/logs`) is added automatically and should not be included in the endpoint.
 
 ### Using Basic Authentication
