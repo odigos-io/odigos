@@ -67,6 +67,7 @@ spec:
                             - go
                             - dotnet
                             - javascript
+                            - mysql
                             type: string
                         required:
                         - instrumentationLibraryName

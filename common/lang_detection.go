@@ -5,7 +5,7 @@ type LanguageByContainer struct {
 	Language      ProgrammingLanguage `json:"language"`
 }
 
-// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript
+// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;mysql
 type ProgrammingLanguage string
 
 const (
