@@ -13,19 +13,19 @@ import {
 
 const ITEMS = [
   {
-    id: '1',
+    id: 'add_cluster_info',
     title: 'Add Cluster Info',
     description: 'Add static cluster-scoped attributes to your data.',
     type: ActionsType.ADD_CLUSTER_INFO,
     icon: ActionsType.ADD_CLUSTER_INFO,
   },
-  // {
-  //   id: '2',
-  //   title: 'Filter',
-  //   description: 'Filter spans based on the attributes of the span.',
-  //   type: 'filter',
-  //   icon: 'filter',
-  // },
+  {
+    id: 'delete_attribute',
+    title: 'Delete Attribute',
+    description: 'Delete attributes from logs, metrics, and traces.',
+    type: ActionsType.DELETE_ATTRIBUTES,
+    icon: ActionsType.DELETE_ATTRIBUTES,
+  },
 ];
 
 export function ChooseActionContainer(): React.JSX.Element {

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useMutation } from 'react-query';
 import { useActions } from './useActions';
 import { useRouter } from 'next/navigation';
-import { ActionItem, ActionsType } from '@/types';
+import { ActionData, ActionItem, ActionsType } from '@/types';
 import { putAction, setAction, deleteAction } from '@/services';
 
 interface Monitor {
@@ -19,6 +19,7 @@ interface ActionState {
   actionData: any;
   selectedMonitors: Monitor[];
   disabled: boolean;
+  type: string;
 }
 
 const DEFAULT_MONITORS: Monitor[] = [
@@ -34,20 +35,21 @@ export function useActionState() {
     actionData: null,
     selectedMonitors: DEFAULT_MONITORS,
     disabled: false,
+    type: '',
   });
 
   const router = useRouter();
   const { getActionById } = useActions();
 
   const { mutateAsync: createAction } = useMutation((body: ActionItem) =>
-    setAction(body)
+    setAction(body, actionState.type)
   );
   const { mutateAsync: updateAction } = useMutation((body: ActionItem) =>
-    putAction(actionState?.id, body)
+    putAction(actionState?.id, body, actionState.type)
   );
 
   const { mutateAsync: deleteActionMutation } = useMutation((id: string) =>
-    deleteAction(id)
+    deleteAction(id, actionState.type)
   );
 
   async function onSuccess() {
@@ -69,14 +71,8 @@ export function useActionState() {
       id: action?.id,
       actionName: action?.spec?.actionName || '',
       actionNote: action?.spec?.notes || '',
-      actionData: {
-        clusterAttributes:
-          action?.spec.clusterAttributes.map((attr, index) => ({
-            attributeName: attr.attributeName,
-            attributeStringValue: attr.attributeStringValue,
-            id: index,
-          })) || [],
-      },
+      type: action?.type || '',
+      actionData: getActionDataByType(action),
       selectedMonitors: DEFAULT_MONITORS.map((monitor) => ({
         ...monitor,
 
@@ -89,15 +85,21 @@ export function useActionState() {
   }
 
   async function upsertAction(callback: boolean = true) {
-    const { actionName, actionNote, actionData, selectedMonitors, disabled } =
-      actionState;
+    const {
+      actionName,
+      actionNote,
+      actionData,
+      selectedMonitors,
+      disabled,
+      type,
+    } = actionState;
 
     const signals = selectedMonitors
       .filter((monitor) => monitor.checked)
       .map((monitor) => monitor.label.toUpperCase());
 
     const filteredActionData = filterEmptyActionDataFieldsByType(
-      'AddClusterInfo',
+      type,
       actionData
     );
 
@@ -149,7 +151,34 @@ function filterEmptyActionDataFieldsByType(type: string, data: any) {
             attr.attributeStringValue !== '' && attr.attributeName !== ''
         ),
       };
+    case ActionsType.DELETE_ATTRIBUTES:
+      return {
+        attributeNamesToDelete: data.attributeNamesToDelete.filter(
+          (attr: string) => attr !== ''
+        ),
+      };
+
     default:
       return data;
+  }
+}
+
+function getActionDataByType(action: ActionData | undefined) {
+  if (!action) return {};
+  switch (action.type) {
+    case ActionsType.ADD_CLUSTER_INFO:
+      return {
+        clusterAttributes: action.spec.clusterAttributes.map((attr, index) => ({
+          attributeName: attr.attributeName,
+          attributeStringValue: attr.attributeStringValue,
+          id: index,
+        })),
+      };
+    case ActionsType.DELETE_ATTRIBUTES:
+      return {
+        attributeNamesToDelete: action.spec.attributeNamesToDelete,
+      };
+    default:
+      return {};
   }
 }

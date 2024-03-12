@@ -34,8 +34,6 @@ import {
 const ACTION_ID = 'id';
 
 export function EditActionContainer(): React.JSX.Element {
-  const [currentActionType, setCurrentActionType] = useState<string>();
-
   const {
     actionState,
     onChangeActionState,
@@ -44,31 +42,36 @@ export function EditActionContainer(): React.JSX.Element {
     onDeleteAction,
   } = useActionState();
 
-  const { actionName, actionNote, actionData, selectedMonitors, disabled } =
-    actionState;
+  const {
+    actionName,
+    actionNote,
+    actionData,
+    selectedMonitors,
+    disabled,
+    type,
+  } = actionState;
 
   const search = useSearchParams();
 
   useEffect(() => {
     const actionId = search.get(ACTION_ID);
     if (!actionId) return;
-    setCurrentActionType('AddClusterInfo');
     buildActionData(actionId);
   }, [search]);
 
-  if (!actionState || !currentActionType)
+  if (!actionState || !type)
     return (
       <LoaderWrapper>
         <KeyvalLoader />
       </LoaderWrapper>
     );
-  const ActionIcon = ACTION_ICONS[currentActionType];
+  const ActionIcon = ACTION_ICONS[type];
   return (
     <CreateActionWrapper>
       <HeaderText>
         <ActionIcon style={{ width: 34, height: 34 }} />
         <KeyvalText size={18} weight={700}>
-          {ACTIONS[currentActionType].TITLE}
+          {ACTIONS[type].TITLE}
         </KeyvalText>
         <SwitchWrapper disabled={disabled}>
           <KeyvalSwitch
@@ -81,15 +84,13 @@ export function EditActionContainer(): React.JSX.Element {
         </SwitchWrapper>
       </HeaderText>
       <DescriptionWrapper>
-        <KeyvalText size={14}>
-          {ACTIONS[currentActionType].DESCRIPTION}
-        </KeyvalText>
+        <KeyvalText size={14}>{ACTIONS[type].DESCRIPTION}</KeyvalText>
         <KeyvalLink
           value={ACTION.LINK_TO_DOCS}
           fontSize={14}
           onClick={() =>
             window.open(
-              `${ACTION_ITEM_DOCS_LINK}/${currentActionType.toLowerCase()}`,
+              `${ACTION_ITEM_DOCS_LINK}/${type.toLowerCase()}`,
               '_blank'
             )
           }
@@ -111,7 +112,7 @@ export function EditActionContainer(): React.JSX.Element {
           />
         </KeyvalInputWrapper>
         <DynamicActionForm
-          type={currentActionType}
+          type={type}
           data={actionData}
           onChange={onChangeActionState}
         />
@@ -130,11 +131,7 @@ export function EditActionContainer(): React.JSX.Element {
             </KeyvalText>
           </KeyvalButton>
         </CreateButtonWrapper>
-        <DeleteAction
-          onDelete={onDeleteAction}
-          name={actionName}
-          type={currentActionType}
-        />
+        <DeleteAction onDelete={onDeleteAction} name={actionName} type={type} />
       </FormFieldsWrapper>
     </CreateActionWrapper>
   );
