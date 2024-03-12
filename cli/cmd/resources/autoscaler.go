@@ -248,6 +248,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				},
 				Resources: []string{
 					"addclusterinfos",
+					"deleteattributes",
 				},
 			},
 			{
@@ -261,6 +262,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				},
 				Resources: []string{
 					"addclusterinfos/status",
+					"deleteattributes/status",
 				},
 			},
 		},
