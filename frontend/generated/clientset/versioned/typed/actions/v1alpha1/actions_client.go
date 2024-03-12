@@ -28,6 +28,7 @@ import (
 type ActionsV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AddClusterInfosGetter
+	DeleteAttributesGetter
 }
 
 // ActionsV1alpha1Client is used to interact with features provided by the actions group.
@@ -37,6 +38,10 @@ type ActionsV1alpha1Client struct {
 
 func (c *ActionsV1alpha1Client) AddClusterInfos(namespace string) AddClusterInfoInterface {
 	return newAddClusterInfos(c, namespace)
+}
+
+func (c *ActionsV1alpha1Client) DeleteAttributes(namespace string) DeleteAttributeInterface {
+	return newDeleteAttributes(c, namespace)
 }
 
 // NewForConfig creates a new ActionsV1alpha1Client for the given config.

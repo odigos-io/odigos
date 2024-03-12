@@ -24,3 +24,11 @@ type AddClusterInfoListerExpansion interface{}
 // AddClusterInfoNamespaceListerExpansion allows custom methods to be added to
 // AddClusterInfoNamespaceLister.
 type AddClusterInfoNamespaceListerExpansion interface{}
+
+// DeleteAttributeListerExpansion allows custom methods to be added to
+// DeleteAttributeLister.
+type DeleteAttributeListerExpansion interface{}
+
+// DeleteAttributeNamespaceListerExpansion allows custom methods to be added to
+// DeleteAttributeNamespaceLister.
+type DeleteAttributeNamespaceListerExpansion interface{}
