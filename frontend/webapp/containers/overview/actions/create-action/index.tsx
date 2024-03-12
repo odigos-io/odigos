@@ -4,7 +4,11 @@ import theme from '@/styles/palette';
 import { useActionState } from '@/hooks';
 import { useSearchParams } from 'next/navigation';
 import { ACTION, ACTIONS, ACTION_ITEM_DOCS_LINK } from '@/utils';
-import { MultiCheckboxComponent, DynamicActionForm } from '@/components';
+import {
+  MultiCheckboxComponent,
+  DynamicActionForm,
+  ActionsYaml,
+} from '@/components';
 import {
   KeyvalButton,
   KeyvalInput,
@@ -12,8 +16,10 @@ import {
   KeyvalLoader,
   KeyvalText,
   KeyvalTextArea,
+  YMLEditor,
 } from '@/design.system';
 import {
+  Container,
   CreateActionWrapper,
   CreateButtonWrapper,
   DescriptionWrapper,
@@ -44,54 +50,59 @@ export function CreateActionContainer(): React.JSX.Element {
     );
 
   return (
-    <CreateActionWrapper>
-      <DescriptionWrapper>
-        <KeyvalText size={14}>{ACTIONS[type].DESCRIPTION}</KeyvalText>
-        <KeyvalLink
-          value={ACTION.LINK_TO_DOCS}
-          fontSize={14}
-          onClick={() =>
-            window.open(
-              `${ACTION_ITEM_DOCS_LINK}/${type.toLowerCase()}`,
-              '_blank'
-            )
+    <Container>
+      <CreateActionWrapper>
+        <DescriptionWrapper>
+          <KeyvalText size={14}>{ACTIONS[type].DESCRIPTION}</KeyvalText>
+          <KeyvalLink
+            value={ACTION.LINK_TO_DOCS}
+            fontSize={14}
+            onClick={() =>
+              window.open(
+                `${ACTION_ITEM_DOCS_LINK}/${type.toLowerCase()}`,
+                '_blank'
+              )
+            }
+          />
+        </DescriptionWrapper>
+        <MultiCheckboxComponent
+          title={ACTIONS.MONITORS_TITLE}
+          checkboxes={selectedMonitors}
+          onSelectionChange={(newMonitors) =>
+            onChangeActionState('selectedMonitors', newMonitors)
           }
         />
-      </DescriptionWrapper>
-      <MultiCheckboxComponent
-        title={ACTIONS.MONITORS_TITLE}
-        checkboxes={selectedMonitors}
-        onSelectionChange={(newMonitors) =>
-          onChangeActionState('selectedMonitors', newMonitors)
-        }
-      />
-      <KeyvalInputWrapper>
-        <KeyvalInput
-          label={ACTIONS.ACTION_NAME}
-          value={actionName}
-          onChange={(name) => onChangeActionState('actionName', name)}
+        <KeyvalInputWrapper>
+          <KeyvalInput
+            label={ACTIONS.ACTION_NAME}
+            value={actionName}
+            onChange={(name) => onChangeActionState('actionName', name)}
+          />
+        </KeyvalInputWrapper>
+        <DynamicActionForm
+          type={type}
+          data={actionData}
+          onChange={onChangeActionState}
         />
-      </KeyvalInputWrapper>
-      <DynamicActionForm
-        type={type}
-        data={actionData}
-        onChange={onChangeActionState}
-      />
-      <TextareaWrapper>
-        <KeyvalTextArea
-          label={ACTIONS.ACTION_NOTE}
-          value={actionNote}
-          placeholder={ACTIONS.NOTE_PLACEHOLDER}
-          onChange={(e) => onChangeActionState('actionNote', e.target.value)}
-        />
-      </TextareaWrapper>
-      <CreateButtonWrapper>
-        <KeyvalButton onClick={upsertAction} disabled={!actionData}>
-          <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
-            {ACTIONS.CREATE_ACTION}
-          </KeyvalText>
-        </KeyvalButton>
-      </CreateButtonWrapper>
-    </CreateActionWrapper>
+        <TextareaWrapper>
+          <KeyvalTextArea
+            label={ACTIONS.ACTION_NOTE}
+            value={actionNote}
+            placeholder={ACTIONS.NOTE_PLACEHOLDER}
+            onChange={(e) => onChangeActionState('actionNote', e.target.value)}
+          />
+        </TextareaWrapper>
+        <CreateButtonWrapper>
+          <KeyvalButton onClick={upsertAction} disabled={!actionData}>
+            <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
+              {ACTIONS.CREATE_ACTION}
+            </KeyvalText>
+          </KeyvalButton>
+        </CreateButtonWrapper>
+      </CreateActionWrapper>
+      <CreateActionWrapper>
+        <ActionsYaml type={type} />
+      </CreateActionWrapper>
+    </Container>
   );
 }
