@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { KeyvalImage, KeyvalText } from '@/design.system';
 import { ManagedSource } from '@/types/sources';
-import { LANGUAGES_LOGOS } from '@/assets/images';
+import { LANGUAGES_LOGOS } from '@/utils';
 
 const ManageSourceHeaderWrapper = styled.div`
   display: flex;
