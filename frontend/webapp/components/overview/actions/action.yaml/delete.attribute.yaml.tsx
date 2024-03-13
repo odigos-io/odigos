@@ -104,7 +104,7 @@ export default function DeleteAttributeYaml({
   }
 
   return (
-    <div style={{ width: 600, overflowX: 'hidden', padding: 30 }}>
+    <div style={{ width: 600, overflowX: 'hidden' }}>
       <YMLEditor data={yaml} setData={() => {}} />
 
       <CodeBlockWrapper>
@@ -114,7 +114,7 @@ export default function DeleteAttributeYaml({
           <YamlIcon style={{ width: 18, height: 18 }} />
         )}
         <a style={{ margin: '0 4px' }} onClick={handleCopy}>
-          click here
+          Click here
         </a>
         to copy as kubectl command.
       </CodeBlockWrapper>
