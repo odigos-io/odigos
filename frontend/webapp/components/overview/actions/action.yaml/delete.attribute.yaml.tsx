@@ -20,12 +20,13 @@ const CodeBlockWrapper = styled.p`
 export default function DeleteAttributeYaml({
   data,
   onChange,
+  setEchoCommand,
 }: {
   data: ActionState;
   onChange: (key: string, value: any) => void;
+  setEchoCommand: (value: string) => void;
 }) {
   const [yaml, setYaml] = useState({});
-  const [echoCommand, setEchoCommand] = useState('');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -76,7 +77,9 @@ export default function DeleteAttributeYaml({
     ${
       data.actionData?.attributeNamesToDelete
         ? `attributeNamesToDelete:
-      - ${data.actionData?.attributeNamesToDelete.join('\n      - ')}`
+      - ${data.actionData?.attributeNamesToDelete
+        .filter((attr) => attr !== '')
+        .join('\n      - ')}`
         : ''
     }
     signals:
@@ -91,33 +94,9 @@ export default function DeleteAttributeYaml({
     setEchoCommand(echoCommand);
   }, [data]);
 
-  function handleCopy() {
-    navigator.clipboard.writeText(echoCommand);
-    setCopied(true);
-    setTimeout(() => {
-      setCopied(false);
-    }, 3000);
-  }
-
   if (Object.keys(yaml).length === 0) {
     return null;
   }
 
-  return (
-    <div style={{ width: 600, overflowX: 'hidden' }}>
-      <YMLEditor data={yaml} setData={() => {}} />
-
-      <CodeBlockWrapper>
-        {copied ? (
-          <Check style={{ width: 18, height: 12 }} />
-        ) : (
-          <YamlIcon style={{ width: 18, height: 18 }} />
-        )}
-        <a style={{ margin: '0 4px' }} onClick={handleCopy}>
-          Click here
-        </a>
-        to copy as kubectl command.
-      </CodeBlockWrapper>
-    </div>
-  );
+  return <YMLEditor data={yaml} setData={() => {}} />;
 }
