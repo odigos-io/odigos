@@ -8,9 +8,8 @@ const Container = styled.div`
   position: relative;
   background-color: ${theme.colors.blue_grey};
   border-radius: 8px;
-  width: 100%;
-  pointer-events: none;
   padding: 4px;
+
   div {
     color: ${theme.colors.light_grey};
   }
@@ -33,15 +32,13 @@ const Container = styled.div`
   }
 `;
 
-const DisabledOverlay = styled.div`
+const EditorOverlay = styled.div`
   position: absolute;
-  overflow-y: auto;
-  max-height: 100%;
-  border-radius: 8px;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10; // Ensure this is higher than the editor's z-index
 `;
 
 const CopyIconWrapper = styled.div`
@@ -63,7 +60,7 @@ export const YMLEditor = ({ data, setData }) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleChange = (value) => {
-    console.log({ value });
+    setData(data);
   };
 
   const handleCopy = () => {
@@ -87,11 +84,15 @@ export const YMLEditor = ({ data, setData }) => {
             <Copy style={{ width: 18, height: 18 }} />
           )}
         </CopyIconWrapper>
-        <YamlEditor
-          key={JSON.stringify(data)}
-          json={data}
-          onChange={handleChange}
-        />
+
+        <div style={{ position: 'relative' }}>
+          <YamlEditor
+            key={JSON.stringify(data)}
+            json={data}
+            onChange={handleChange}
+          />
+          <EditorOverlay />
+        </div>
       </Container>
     </>
   );
