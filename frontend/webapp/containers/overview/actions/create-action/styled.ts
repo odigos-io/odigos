@@ -4,6 +4,9 @@ export const Container = styled.div`
   display: flex;
   height: 100%;
   padding: 24px;
+  @media screen and (max-height: 700px) {
+    height: 90%;
+  }
 `;
 
 export const CreateActionWrapper = styled.div`
