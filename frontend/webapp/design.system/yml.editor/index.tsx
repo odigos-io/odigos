@@ -8,7 +8,7 @@ const Container = styled.div`
   position: relative;
   background-color: ${theme.colors.blue_grey};
   border-radius: 8px;
-  width: fit-content;
+  width: 100%;
   pointer-events: none;
   padding: 4px;
   div {
@@ -63,7 +63,7 @@ export const YMLEditor = ({ data, setData }) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleChange = (value) => {
-    // setData(value);
+    console.log({ value });
   };
 
   const handleCopy = () => {
@@ -78,7 +78,7 @@ export const YMLEditor = ({ data, setData }) => {
       .catch((err) => console.error('Error copying YAML to clipboard: ', err));
   };
   return (
-    <DisabledOverlay>
+    <>
       <Container>
         <CopyIconWrapper onClick={handleCopy}>
           {isCopied ? (
@@ -93,6 +93,6 @@ export const YMLEditor = ({ data, setData }) => {
           onChange={handleChange}
         />
       </Container>
-    </DisabledOverlay>
+    </>
   );
 };
