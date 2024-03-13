@@ -1,20 +1,43 @@
+import React, { useEffect, useState } from 'react';
 import { YMLEditor } from '@/design.system';
 import { ActionState } from '@/types';
-import React, { useEffect, useMemo, useState } from 'react';
 
-export default function DeleteAttributeYaml({ data }: { data: ActionState }) {
-  const [actionName, setActionName] = useState('');
+export default function DeleteAttributeYaml({
+  data,
+  onChange,
+}: {
+  data: ActionState;
+  onChange: (key: string, value: any) => void;
+}) {
   const [yaml, setYaml] = useState({});
+
   useEffect(() => {
-    console.log({ data });
-    setYaml({
+    if (data.actionName && data.actionName.endsWith(' ')) {
+      return;
+    }
+
+    if (data.actionNote && data.actionNote.endsWith(' ')) {
+      return;
+    }
+
+    if (data.actionData?.attributeNamesToDelete) {
+      if (
+        data.actionData.attributeNamesToDelete.some((attr) =>
+          attr.endsWith(' ')
+        )
+      ) {
+        return;
+      }
+    }
+
+    const newYaml = {
       apiVersion: 'v1',
       items: [
         {
           apiVersion: 'actions.odigos.io/v1alpha1',
           kind: 'DeleteAttribute',
           metadata: {
-            creationTimestamp: '2024-03-12T13:30:36Z',
+            creationTimestamp: new Date().toISOString(),
             generateName: 'da-',
             generation: 1,
             name: 'da-25p5x',
@@ -25,7 +48,9 @@ export default function DeleteAttributeYaml({ data }: { data: ActionState }) {
           spec: {
             actionName: data.actionName,
             attributeNamesToDelete: data.actionData?.attributeNamesToDelete,
-            signals: data.selectedMonitors.map((monitor) => monitor.label),
+            signals: data.selectedMonitors
+              .filter((m) => m.checked)
+              .map((m) => m.label),
             actionNote: data.actionNote,
           },
           status: {
@@ -47,11 +72,12 @@ export default function DeleteAttributeYaml({ data }: { data: ActionState }) {
       metadata: {
         resourceVersion: '',
       },
-    });
+    };
+    setYaml(newYaml);
   }, [data]);
 
   if (Object.keys(yaml).length === 0) {
-    return <></>;
+    return null;
   }
 
   return (

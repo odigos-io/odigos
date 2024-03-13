@@ -1,17 +1,17 @@
 import React from 'react';
 import { ActionState, ActionsType } from '@/types';
-import DeleteAttributeYaml from './delete.attribute.ymal';
+import DeleteAttributeYaml from './delete.attribute.yaml';
 
 interface ActionsYamlProps {
-  type: string;
   data: ActionState;
+  onChange: (key: string, value: any) => void;
 }
 
-export function ActionsYaml({ type, data }: ActionsYamlProps) {
+export function ActionsYaml({ data, onChange }: ActionsYamlProps) {
   function renderYamlEditor() {
-    switch (type) {
+    switch (data.type) {
       case ActionsType.DELETE_ATTRIBUTES:
-        return <DeleteAttributeYaml data={data} />;
+        return <DeleteAttributeYaml data={data} onChange={onChange} />;
       default:
         return <></>;
     }

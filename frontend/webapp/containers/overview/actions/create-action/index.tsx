@@ -101,7 +101,7 @@ export function CreateActionContainer(): React.JSX.Element {
         </CreateButtonWrapper>
       </CreateActionWrapper>
       <CreateActionWrapper>
-        <ActionsYaml type={type} data={actionState} />
+        <ActionsYaml data={actionState} onChange={onChangeActionState} />
       </CreateActionWrapper>
     </Container>
   );

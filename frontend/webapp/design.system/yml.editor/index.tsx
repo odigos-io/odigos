@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import YamlEditor from '@focus-reactive/react-yaml';
 import styled from 'styled-components';
 import theme from '@/styles/palette';
@@ -9,6 +9,7 @@ const Container = styled.div`
   background-color: ${theme.colors.blue_grey};
   border-radius: 8px;
   width: fit-content;
+  pointer-events: none;
   padding: 4px;
   div {
     color: ${theme.colors.light_grey};
@@ -32,6 +33,16 @@ const Container = styled.div`
   }
 `;
 
+const DisabledOverlay = styled.div`
+  position: absolute;
+
+  border-radius: 8px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
 const CopyIconWrapper = styled.div`
   background-color: ${theme.colors.dark};
   z-index: 999;
@@ -44,13 +55,14 @@ const CopyIconWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: all;
 `;
 
 export const YMLEditor = ({ data, setData }) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleChange = (value) => {
-    console.log(value);
+    // setData(value);
   };
 
   const handleCopy = () => {
@@ -65,19 +77,21 @@ export const YMLEditor = ({ data, setData }) => {
       .catch((err) => console.error('Error copying YAML to clipboard: ', err));
   };
   return (
-    <Container>
-      <CopyIconWrapper onClick={handleCopy}>
-        {isCopied ? (
-          <Copied style={{ width: 18, height: 18 }} />
-        ) : (
-          <Copy style={{ width: 18, height: 18 }} />
-        )}
-      </CopyIconWrapper>
-      <YamlEditor
-        key={JSON.stringify(data)}
-        json={data}
-        onChange={handleChange}
-      />
-    </Container>
+    <DisabledOverlay>
+      <Container>
+        <CopyIconWrapper onClick={handleCopy}>
+          {isCopied ? (
+            <Copied style={{ width: 18, height: 18 }} />
+          ) : (
+            <Copy style={{ width: 18, height: 18 }} />
+          )}
+        </CopyIconWrapper>
+        <YamlEditor
+          key={JSON.stringify(data)}
+          json={data}
+          onChange={handleChange}
+        />
+      </Container>
+    </DisabledOverlay>
   );
 };
