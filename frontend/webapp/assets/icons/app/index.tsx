@@ -6,4 +6,17 @@ import WhiteArrow from './white-arrow-right.svg';
 import Link from './link.svg';
 import Expand from './expand-arrow.svg';
 import Check from './check.svg';
-export { RightArrow, Charge, Connect, Note, WhiteArrow, Link, Expand, Check };
+import Copy from './copy.svg';
+import Copied from './copied.svg';
+export {
+  RightArrow,
+  Charge,
+  Connect,
+  Note,
+  WhiteArrow,
+  Link,
+  Expand,
+  Check,
+  Copy,
+  Copied,
+};

@@ -3,23 +3,13 @@ import { useState } from 'react';
 import { useMutation } from 'react-query';
 import { useActions } from './useActions';
 import { useRouter } from 'next/navigation';
-import { ActionData, ActionItem, ActionsType } from '@/types';
 import { putAction, setAction, deleteAction } from '@/services';
+import { ActionData, ActionItem, ActionState, ActionsType } from '@/types';
 
 interface Monitor {
   id: string;
   label: string;
   checked: boolean;
-}
-
-interface ActionState {
-  id?: string;
-  actionName: string;
-  actionNote: string;
-  actionData: any;
-  selectedMonitors: Monitor[];
-  disabled: boolean;
-  type: string;
 }
 
 const DEFAULT_MONITORS: Monitor[] = [
