@@ -2,11 +2,12 @@
 import { ManageSourceHeader } from '@/components/overview/sources/manage.source.header/manage.source.header';
 import {
   ACTION,
+  LANGUAGES_LOGOS,
   NOTIFICATION,
   OVERVIEW,
   ROUTES,
   SETUP,
-} from '@/utils/constants';
+} from '@/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { useMutation } from 'react-query';
@@ -16,7 +17,6 @@ import {
   FieldWrapper,
   SaveSourceButtonWrapper,
 } from './styled';
-import { LANGUAGES_LOGOS } from '@/assets/images';
 import { Back } from '@/assets/icons/overview';
 import {
   KeyvalButton,

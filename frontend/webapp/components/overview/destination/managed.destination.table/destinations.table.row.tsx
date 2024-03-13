@@ -1,17 +1,8 @@
 import React, { useMemo } from 'react';
 import theme from '@/styles/palette';
-import { Destination, ManagedSource } from '@/types';
-import { Container, Namespace } from '@/assets';
+import { Destination } from '@/types';
 import styled, { css } from 'styled-components';
-import {
-  KeyvalCheckbox,
-  KeyvalImage,
-  KeyvalTag,
-  KeyvalText,
-} from '@/design.system';
-import { LANGUAGES_LOGOS } from '@/assets/images';
-import { KIND_COLORS } from '@/styles/global';
-import { LANGUAGES_COLORS } from '@/assets/images/sources.card/sources.card';
+import { KeyvalImage, KeyvalText } from '@/design.system';
 import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
 import { TapList } from '@/components/setup/destination/tap.list/tap.list';
 
