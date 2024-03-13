@@ -7,9 +7,9 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"path/filepath"
 
 	"github.com/keyval-dev/odigos/common/consts"
+	"github.com/keyval-dev/odigos/common/utils"
 	"github.com/keyval-dev/odigos/destinations"
 
 	"github.com/gin-contrib/cors"
@@ -17,8 +17,6 @@ import (
 	"github.com/keyval-dev/odigos/frontend/endpoints/actions"
 	"github.com/keyval-dev/odigos/frontend/kube"
 	"github.com/keyval-dev/odigos/frontend/version"
-
-	"k8s.io/client-go/util/homedir"
 
 	"github.com/keyval-dev/odigos/frontend/endpoints"
 
@@ -42,10 +40,7 @@ type Flags struct {
 var uiFS embed.FS
 
 func parseFlags() Flags {
-	defaultKubeConfig := ""
-	if home := homedir.HomeDir(); home != "" {
-		defaultKubeConfig = filepath.Join(home, ".kube", "config")
-	}
+	defaultKubeConfig := utils.GetDefaultKubeConfigPath()
 
 	var flags Flags
 	flag.BoolVar(&flags.Version, "version", false, "Print odigos ui version.")

@@ -1,8 +1,16 @@
 package utils
 
 import (
-	"github.com/keyval-dev/odigos/common/consts"
 	"os"
+	"path/filepath"
+
+	"github.com/keyval-dev/odigos/common/consts"
+
+	"k8s.io/client-go/util/homedir"
+)
+
+const (
+	KUBECONFIG = "KUBECONFIG"
 )
 
 func getEnvVarOrDefault(envKey string, defaultVal string) string {
@@ -16,4 +24,15 @@ func getEnvVarOrDefault(envKey string, defaultVal string) string {
 
 func GetCurrentNamespace() string {
 	return getEnvVarOrDefault(consts.CurrentNamespaceEnvVar, consts.DefaultNamespace)
+}
+
+func GetDefaultKubeConfigPath() string {
+	if val, ok := os.LookupEnv(KUBECONFIG); ok {
+		return val
+	} else {
+		if home := homedir.HomeDir(); home != "" {
+			return filepath.Join(home, ".kube", "config")
+		}
+	}
+	return ""
 }
