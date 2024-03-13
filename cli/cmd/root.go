@@ -8,6 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	KUBECONFIG = "KUBECONFIG"
+)
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "odigos",
@@ -39,10 +43,17 @@ func Execute() {
 	}
 }
 
-func init() {
-	if home := homedir.HomeDir(); home != "" {
-		rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+func getDefaultKubeConfigPath() string {
+	if val, ok := os.LookupEnv(KUBECONFIG); ok {
+		return val
 	} else {
-		rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", "", "(optional) absolute path to the kubeconfig file")
+		if home := homedir.HomeDir(); home != "" {
+			return filepath.Join(home, ".kube", "config")
+		}
 	}
+	return ""
+}
+
+func init() {
+	rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", getDefaultKubeConfigPath(), "(optional) absolute path to the kubeconfig file")
 }
