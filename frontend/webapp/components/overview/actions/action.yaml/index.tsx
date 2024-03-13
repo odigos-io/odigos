@@ -6,12 +6,12 @@ import styled from 'styled-components';
 import AddClusterInfoYaml from './add.cluster.info.yaml';
 
 import theme from '@/styles/palette';
-import { Check, YamlIcon } from '@/assets/icons/app';
+import { Check, Copy, YamlIcon } from '@/assets/icons/app';
 
 const CodeBlockWrapper = styled.p`
   display: flex;
   align-items: center;
-  font-family: Inter;
+  font-family: ${theme.font_family.primary};
   color: ${theme.text.light_grey};
   a {
     color: ${theme.text.secondary};
@@ -86,7 +86,7 @@ export function ActionsYaml({ data, onChange }: ActionsYamlProps) {
           {copied ? (
             <Check style={{ width: 18, height: 12 }} />
           ) : (
-            <YamlIcon style={{ width: 18, height: 18 }} />
+            <Copy style={{ width: 18, height: 16 }} />
           )}
           <a style={{ margin: '0 4px' }} onClick={handleCopy}>
             Click here
