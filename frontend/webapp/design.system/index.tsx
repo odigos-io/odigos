@@ -31,3 +31,5 @@ export { OdigosPagination as Pagination } from './pagination';
 export { OdigosActionItem as ActionItem } from './action.item';
 export { OdigosActionsGroup as ActionsGroup } from './action.group';
 export { OdigosTable as Table } from './table';
+export { YMLEditor } from './yml.editor';
+export { CodeBlock } from './code-block';

@@ -29,8 +29,8 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
   assert_equal "$result" '"POST"'
 }
 
-@test "go :: includes http.method attribute" {
-  result=$(server_span_attributes_for ${GO_SCOPE} | jq "select(.key == \"http.method\").value.stringValue")
+@test "go :: includes http.request.method attribute" {
+  result=$(server_span_attributes_for ${GO_SCOPE} | jq "select(.key == \"http.request.method\").value.stringValue")
   assert_equal "$result" '"GET"'
 }
 
@@ -41,12 +41,12 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
 }
 
 @test "js :: includes http.method attribute" {
-  result=$(server_span_attributes_for ${GO_SCOPE} | jq "select(.key == \"http.method\").value.stringValue")
-  assert_equal "$result" '"GET"'
+  result=$(server_span_attributes_for ${JS_SCOPE} | jq "select(.key == \"http.method\").value.stringValue")
+  assert_equal "$result" '"POST"'
 }
 
-@test "go :: includes http.target  attribute" {
-  result=$(server_span_attributes_for ${GO_SCOPE} | jq "select(.key == \"http.target\").value.stringValue")
+@test "go :: includes url.path attribute" {
+  result=$(server_span_attributes_for ${GO_SCOPE} | jq "select(.key == \"url.path\").value.stringValue")
   assert_equal "$result" '"/isMember"'
 }
 
