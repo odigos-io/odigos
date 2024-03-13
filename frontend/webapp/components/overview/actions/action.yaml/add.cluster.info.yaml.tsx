@@ -1,32 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { YMLEditor } from '@/design.system';
 import { ActionState } from '@/types';
-import styled from 'styled-components';
-import theme from '@/styles/palette';
-import { Check, YamlIcon } from '@/assets/icons/app';
+import { YMLEditor } from '@/design.system';
 
-const CodeBlockWrapper = styled.p`
-  display: flex;
-  align-items: center;
-  font-family: Inter;
-  color: ${theme.text.light_grey};
-  a {
-    color: ${theme.text.secondary};
-    text-decoration: none;
-    cursor: pointer;
-  }
-`;
 export default function AddClusterInfoYaml({
   data,
-  onChange,
   setEchoCommand,
 }: {
   data: ActionState;
   setEchoCommand: (value: string) => void;
-  onChange: (key: string, value: any) => void;
 }) {
   const [yaml, setYaml] = useState({});
-  const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (data.actionName && data.actionName.endsWith(' ')) {
       return;
@@ -92,5 +75,5 @@ export default function AddClusterInfoYaml({
     return null;
   }
 
-  return <YMLEditor data={yaml} setData={() => {}} />;
+  return <YMLEditor data={yaml} />;
 }

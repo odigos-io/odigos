@@ -45,19 +45,11 @@ export function ActionsYaml({ data, onChange }: ActionsYamlProps) {
     switch (data.type) {
       case ActionsType.DELETE_ATTRIBUTES:
         return (
-          <DeleteAttributeYaml
-            data={data}
-            onChange={onChange}
-            setEchoCommand={setEchoCommand}
-          />
+          <DeleteAttributeYaml data={data} setEchoCommand={setEchoCommand} />
         );
       case ActionsType.ADD_CLUSTER_INFO:
         return (
-          <AddClusterInfoYaml
-            data={data}
-            onChange={onChange}
-            setEchoCommand={setEchoCommand}
-          />
+          <AddClusterInfoYaml data={data} setEchoCommand={setEchoCommand} />
         );
       default:
         return <></>;

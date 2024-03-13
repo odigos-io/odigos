@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import YamlEditor from '@focus-reactive/react-yaml';
-import styled from 'styled-components';
 import theme from '@/styles/palette';
+import styled from 'styled-components';
 import { Copied, Copy } from '@/assets/icons/app';
+import YamlEditor from '@focus-reactive/react-yaml';
 
 const Container = styled.div`
   position: relative;
@@ -56,12 +56,10 @@ const CopyIconWrapper = styled.div`
   pointer-events: all;
 `;
 
-export const YMLEditor = ({ data, setData }) => {
+export const YMLEditor = ({ data }) => {
   const [isCopied, setIsCopied] = useState(false);
 
-  const handleChange = (value) => {
-    setData(data);
-  };
+  const handleChange = (value) => {};
 
   const handleCopy = () => {
     navigator.clipboard

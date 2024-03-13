@@ -1,33 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { YMLEditor } from '@/design.system';
 import { ActionState } from '@/types';
-import styled from 'styled-components';
-import theme from '@/styles/palette';
-import { Check, YamlIcon } from '@/assets/icons/app';
-
-const CodeBlockWrapper = styled.p`
-  display: flex;
-  align-items: center;
-  font-family: Inter;
-  color: ${theme.text.light_grey};
-  a {
-    color: ${theme.text.secondary};
-    text-decoration: none;
-    cursor: pointer;
-  }
-`;
+import { YMLEditor } from '@/design.system';
 
 export default function DeleteAttributeYaml({
   data,
-  onChange,
   setEchoCommand,
 }: {
   data: ActionState;
-  onChange: (key: string, value: any) => void;
   setEchoCommand: (value: string) => void;
 }) {
   const [yaml, setYaml] = useState({});
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (data.actionName && data.actionName.endsWith(' ')) {
@@ -98,5 +80,5 @@ export default function DeleteAttributeYaml({
     return null;
   }
 
-  return <YMLEditor data={yaml} setData={() => {}} />;
+  return <YMLEditor data={yaml} />;
 }
