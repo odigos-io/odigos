@@ -41,8 +41,8 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
 }
 
 @test "js :: includes http.method attribute" {
-  result=$(server_span_attributes_for ${GO_SCOPE} | jq "select(.key == \"http.method\").value.stringValue")
-  assert_equal "$result" '"GET"'
+  result=$(server_span_attributes_for ${JS_SCOPE} | jq "select(.key == \"http.method\").value.stringValue")
+  assert_equal "$result" '"POST"'
 }
 
 @test "go :: includes url.path attribute" {
