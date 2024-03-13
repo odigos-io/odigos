@@ -11,7 +11,7 @@ const Container = styled.div`
   padding: 4px;
 
   div {
-    color: ${theme.colors.light_grey};
+    color: #f5b175;
   }
   .ͼb {
     color: #64a8fd;
@@ -23,7 +23,7 @@ const Container = styled.div`
     color: #f5b175;
   }
   .ͼc {
-    color: ${theme.colors.white};
+    color: #f5b175;
   }
   .cm-gutters {
     display: none;
