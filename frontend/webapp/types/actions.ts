@@ -31,3 +31,19 @@ export interface ActionData {
   type: string;
   spec: ActionItem;
 }
+
+interface Monitor {
+  id: string;
+  label: string;
+  checked: boolean;
+}
+
+export interface ActionState {
+  id?: string;
+  actionName: string;
+  actionNote: string;
+  actionData: any;
+  selectedMonitors: Monitor[];
+  disabled: boolean;
+  type: string;
+}
