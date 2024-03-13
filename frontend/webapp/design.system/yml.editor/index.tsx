@@ -35,7 +35,8 @@ const Container = styled.div`
 
 const DisabledOverlay = styled.div`
   position: absolute;
-
+  overflow-y: auto;
+  max-height: 100%;
   border-radius: 8px;
   pointer-events: none;
   display: flex;

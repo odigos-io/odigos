@@ -8,6 +8,7 @@ import Expand from './expand-arrow.svg';
 import Check from './check.svg';
 import Copy from './copy.svg';
 import Copied from './copied.svg';
+import YamlIcon from './yaml.svg';
 export {
   RightArrow,
   Charge,
@@ -19,4 +20,5 @@ export {
   Check,
   Copy,
   Copied,
+  YamlIcon,
 };
