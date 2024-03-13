@@ -15,7 +15,7 @@ require (
 	github.com/keyval-dev/opentelemetry-zap-bridge v0.0.3
 	github.com/kubevirt/device-plugin-manager v1.19.5
 	github.com/otiai10/copy v1.14.0
-	go.opentelemetry.io/auto v0.10.1-alpha.0.20240229132106-93aa6b83e8bc
+	go.opentelemetry.io/auto v0.10.1-alpha.0.20240311152122-02686f0a149b
 	go.opentelemetry.io/otel v1.24.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.24.0
 	go.uber.org/zap v1.27.0
@@ -83,7 +83,7 @@ require (
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/oauth2 v0.16.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/term v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
