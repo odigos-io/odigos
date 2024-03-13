@@ -18,14 +18,17 @@ import {
   KeyvalTextArea,
 } from '@/design.system';
 import {
+  ActionYamlWrapper,
   Container,
   CreateActionWrapper,
   CreateButtonWrapper,
   DescriptionWrapper,
+  HeaderText,
   KeyvalInputWrapper,
   LoaderWrapper,
   TextareaWrapper,
 } from './styled';
+import { ACTION_ICONS } from '@/assets';
 
 const ACTION_TYPE = 'type';
 
@@ -48,9 +51,17 @@ export function CreateActionContainer(): React.JSX.Element {
       </LoaderWrapper>
     );
 
+  const ActionIcon = ACTION_ICONS[type];
+
   return (
     <Container>
       <CreateActionWrapper>
+        <HeaderText>
+          <ActionIcon style={{ width: 34, height: 34 }} />
+          <KeyvalText size={18} weight={700}>
+            {ACTIONS[type].TITLE}
+          </KeyvalText>
+        </HeaderText>
         <DescriptionWrapper>
           <KeyvalText size={14}>{ACTIONS[type].DESCRIPTION}</KeyvalText>
           <KeyvalLink
@@ -91,6 +102,9 @@ export function CreateActionContainer(): React.JSX.Element {
             onChange={(e) => onChangeActionState('actionNote', e.target.value)}
           />
         </TextareaWrapper>
+        <div className="action-yaml-column ">
+          <ActionsYaml data={actionState} onChange={onChangeActionState} />
+        </div>
         <CreateButtonWrapper>
           <KeyvalButton onClick={upsertAction} disabled={!actionData}>
             <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
@@ -99,9 +113,9 @@ export function CreateActionContainer(): React.JSX.Element {
           </KeyvalButton>
         </CreateButtonWrapper>
       </CreateActionWrapper>
-      <CreateActionWrapper>
+      <ActionYamlWrapper className="action-yaml-row">
         <ActionsYaml data={actionState} onChange={onChangeActionState} />
-      </CreateActionWrapper>
+      </ActionYamlWrapper>
     </Container>
   );
 }

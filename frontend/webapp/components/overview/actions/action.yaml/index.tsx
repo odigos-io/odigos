@@ -24,6 +24,12 @@ const TitleWrapper = styled.div`
   align-items: center;
   gap: 6px;
   margin-bottom: 8px;
+  max-width: 600px;
+`;
+
+const DescriptionWrapper = styled(TitleWrapper)`
+  line-height: 1.3;
+  margin: 10px 0 8px 0;
 `;
 
 interface ActionsYamlProps {
@@ -75,13 +81,16 @@ export function ActionsYaml({ data, onChange }: ActionsYamlProps) {
         >{`YAML Preview - ${data.type.toLowerCase()}.actions.odigos.io`}</KeyvalText>
       </TitleWrapper>
 
-      <TitleWrapper>
+      <DescriptionWrapper>
         <KeyvalText size={14}>
-          This is the YAML representation of the action you are creating.
+          This is the YAML representation of the action you are creating. You
+          can use this YAML to create the action using kubectl as well as the
+          UI.
         </KeyvalText>
-      </TitleWrapper>
-      {renderYamlEditor()}
-      <div style={{ width: 600, overflowX: 'hidden' }}>
+        <KeyvalText size={14}></KeyvalText>
+      </DescriptionWrapper>
+      <div style={{ width: 400 }}>{renderYamlEditor()}</div>
+      <div style={{ overflowX: 'hidden' }}>
         <CodeBlockWrapper>
           {copied ? (
             <Check style={{ width: 18, height: 12 }} />
