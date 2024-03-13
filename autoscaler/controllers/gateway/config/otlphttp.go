@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"net"
 	"net/url"
 	"strings"
 
@@ -84,7 +83,8 @@ func (g *OTLPHttp) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 }
 
 func parseOtlpHttpEndpoint(rawUrl string) (string, error) {
-	parsedUrl, err := url.Parse(strings.TrimSpace(rawUrl))
+	noWhiteSpaces := strings.TrimSpace(rawUrl)
+	parsedUrl, err := url.Parse(noWhiteSpaces)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse otlp http endpoint: %w", err)
 	}
@@ -93,34 +93,7 @@ func parseOtlpHttpEndpoint(rawUrl string) (string, error) {
 		return "", fmt.Errorf("invalid otlp http endpoint scheme: %s", parsedUrl.Scheme)
 	}
 
-	// validate no query is provided, as this indicates using improper endpoint
-	if parsedUrl.RawQuery != "" {
-		return "", fmt.Errorf("unexpected query for otlp http endpoint %s", parsedUrl.RawQuery)
-	}
-
-	// we default to port 4317 for otlp grpc.
-	// if missing we add it.
-	hostport := parsedUrl.Host
-	if !urlHostContainsPort(hostport) {
-		hostport += ":4318"
-	}
-
-	host, port, err := net.SplitHostPort(hostport)
-	if err != nil {
-		return "", err
-	}
-
-	if host == "" {
-		return "", fmt.Errorf("missing host in otlp http endpoint %s", rawUrl)
-	}
-
-	// Check if the host is an IPv6 address and enclose it in square brackets
-	if strings.Contains(host, ":") {
-		host = "[" + host + "]"
-	}
-	parsedUrl.Host = host + ":" + port
-
-	return parsedUrl.String(), nil
+	return noWhiteSpaces, nil
 }
 
 func applyBasicAuth(dest *odigosv1.Destination) (extensionName string, extensionConf *commonconf.GenericMap, err error) {

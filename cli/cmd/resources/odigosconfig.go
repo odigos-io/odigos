@@ -89,6 +89,7 @@ func otelSdkConfigOnPrem() (map[common.ProgrammingLanguage]common.OtelSdk, map[c
 			common.GoProgrammingLanguage:         eBPFEnterprise,
 			common.DotNetProgrammingLanguage:     nativeCommunity,
 			common.JavascriptProgrammingLanguage: eBPFEnterprise, // Also Javascript
+			common.MySQLProgrammingLanguage:      eBPFEnterprise,
 		},
 		map[common.ProgrammingLanguage][]common.OtelSdk{
 			common.JavaProgrammingLanguage:       {nativeCommunity, eBPFEnterprise},
@@ -96,6 +97,7 @@ func otelSdkConfigOnPrem() (map[common.ProgrammingLanguage]common.OtelSdk, map[c
 			common.GoProgrammingLanguage:         {eBPFEnterprise},
 			common.DotNetProgrammingLanguage:     {nativeCommunity},
 			common.JavascriptProgrammingLanguage: {nativeCommunity, eBPFEnterprise},
+			common.MySQLProgrammingLanguage:      {eBPFEnterprise},
 		}
 }
 
