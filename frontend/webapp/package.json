@@ -10,7 +10,8 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@keyval-dev/design-system": "^1.7.6",
+    "@focus-reactive/react-yaml": "^1.1.2",
+    "@keyval-dev/design-system": "^1.7.8",
     "@next/font": "^13.4.7",
     "@reduxjs/toolkit": "^2.2.1",
     "@svgr/webpack": "^6.2.1",
