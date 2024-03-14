@@ -26,13 +26,14 @@ const text = {
 };
 
 const font_family = {
-  primary: 'Inter',
+  primary: 'Inter, sans-serif',
 };
 
 // Define the theme interface
 interface ThemeInterface extends DefaultTheme {
   colors: typeof colors;
   text: typeof text;
+  font_family: typeof font_family;
 }
 
 // Create your theme object
