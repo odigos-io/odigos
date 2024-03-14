@@ -1450,10 +1450,10 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@keyval-dev/design-system@^1.7.8":
-  version "1.7.8"
-  resolved "https://registry.yarnpkg.com/@keyval-dev/design-system/-/design-system-1.7.8.tgz#eaf85d4fe37ecafb90852ab716788bb43a6a851b"
-  integrity sha512-lJzKnNpomGxJwZHhDzAU3GF3NvQwTlCC52huJPdR2Z0QnKwTZXHiUwIjPlV92wJ+rwLhvfQn9B/MaSK/gKnm2w==
+"@keyval-dev/design-system@^1.7.9":
+  version "1.7.9"
+  resolved "https://registry.yarnpkg.com/@keyval-dev/design-system/-/design-system-1.7.9.tgz#63338b840ea999f2cb42c5112e1d47012f541db7"
+  integrity sha512-Ih2OdTEX9mWyZi8NcLpU9Mkyy3Iz/qWtK73NsaMzKWhc+vtSFS5s7qvTsQgtgRJobZWjZ/sEzEnO11v91hq//w==
   dependencies:
     "@focus-reactive/react-yaml" "^1.1.2"
     "@svgr/core" "^8.0.0"
