@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"k8s.io/client-go/util/homedir"
 	"os"
-	"path/filepath"
+
+	"github.com/keyval-dev/odigos/common/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -40,9 +40,5 @@ func Execute() {
 }
 
 func init() {
-	if home := homedir.HomeDir(); home != "" {
-		rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", "", "(optional) absolute path to the kubeconfig file")
-	}
+	rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", utils.GetDefaultKubeConfigPath(), "(optional) absolute path to the kubeconfig file")
 }
