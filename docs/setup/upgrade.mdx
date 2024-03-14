@@ -1,0 +1,41 @@
+---
+title: "Upgrade"
+sidebarTitle: "Upgrade"
+---
+
+## Finding the Current Version
+
+```shell
+odigos version
+```
+
+Will print the version of the CLI tool and the version of odigos that is currently installed in the active cluster.
+
+## Upgrading Existing Odigos Installation with CLI
+
+First, upgrade the CLI tool to latest version:
+
+<Tabs>
+  <Tab title="Homebrew">
+    ```shell
+    brew update && brew install keyval-dev/homebrew-odigos-cli/odigos
+    ```
+  </Tab>
+  <Tab title="GitHub Releases">
+    Download the latest release from the [GitHub Releases](https://github.com/keyval-dev/odigos/releases)
+    page and extract the binary to a directory in your `PATH`.
+  </Tab>
+</Tabs>
+
+And upgrade Odigos installation in the active kubernetes cluster with CLI:
+
+```shell
+odigos upgrade
+```
+
+## Upgrade Existing Odigos Installation with Helm
+
+```shell
+helm repo update
+helm upgrade odigos odigos/odigos --namespace odigos-system
+```
