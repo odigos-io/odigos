@@ -1,0 +1,64 @@
+---
+title: "Installation"
+sidebarTitle: "Installation"
+---
+
+<Tip>
+  Installation issues? Need help? Message us on [Slack](https://join.slack.com/t/odigos/shared_invite/zt-24u91yknm-0fLXu6qnqYfNHS_GSUgTJw)
+</Tip>
+
+There are 2 ways to install odigos in your kubernetes cluster:
+- [Odigos CLI](#odigos-cli)
+- [Helm Chart](#helm-chart)
+
+Both install methods will deploy and configure resources in the active Kubernetes cluster as per the current context. 
+Before proceeding with the installation, ensure that you are targeting the correct cluster with `kubectl config current-context`.
+
+## Odigos CLI
+
+### Install the CLI
+
+<Tabs>
+  <Tab title="Homebrew">
+    If you are on MacOS, you can install Odigos CLI using Homebrew:
+
+    ```bash
+    brew install keyval-dev/homebrew-odigos-cli/odigos
+    ```
+  </Tab>
+  <Tab title="GitHub Releases">
+    Download the latest release from the [GitHub Releases](https://github.com/keyval-dev/odigos/releases)
+    page and extract the binary to a directory in your `PATH`.
+
+  </Tab>
+</Tabs>
+
+### Install Odigos
+
+```shell
+odigos install
+```
+
+This will install odigos in the `odigos-system` namespace in your kubernetes cluster.
+
+<Notice>
+    foo bar
+</Notice>
+
+At this point, odigos is installed in your cluster. You can now add sources and destinations to instrument your cluster with OpenTelemetry.
+
+## Helm Chart
+
+### Add Helm Repoistory
+
+```shell
+helm repo add odigos https://keyval-dev.github.io/odigos-charts/
+```
+
+### Install Odigos
+
+```shell
+helm repo update
+helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace
+kubectl label namespace odigos-system odigos.io/system-object="true"
+```
