@@ -28,7 +28,7 @@ func (e *Quickwit) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 		}
 
 		if isTracingEnabled(dest) {
-                         tracesPipelineName := "traces/quickwit-" + dest.Name
+			tracesPipelineName := "traces/quickwit-" + dest.Name
 			currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 				Receivers:  []string{"otlp"},
 				Processors: []string{"batch"},
