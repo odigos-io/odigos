@@ -108,6 +108,7 @@
         "backends/coralogix",
         "backends/datadog",
         "backends/elasticsearch",
+        "backends/quickwit",
         "backends/gcs",
         "backends/googlecloud",
         "backends/grafanacloudloki",
