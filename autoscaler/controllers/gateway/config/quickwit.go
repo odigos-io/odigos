@@ -18,7 +18,7 @@ func (e *Quickwit) DestType() common.DestinationType {
 
 func (e *Quickwit) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
 	if url, exists := dest.Spec.Data[qwUrlKey]; exists {
-		exporterName := "otlp/quickwit/" + dest.Name
+		exporterName := "otlp/quickwit-" + dest.Name
 
 		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"endpoint": url,
