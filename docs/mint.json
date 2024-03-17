@@ -124,6 +124,7 @@
         "backends/otlphttp",
         "backends/prometheus",
         "backends/qryn",
+        "backends/quickwit",
         "backends/sentry",
         "backends/signoz",
         "backends/splunk",
