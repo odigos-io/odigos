@@ -13,6 +13,12 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
   assert_equal "$result_separated" '"coupon" "frontend" "inventory" "membership" "pricing"'
 }
 
+@test "all :: includes odigos.version in resource attributes" {
+  result=$(resource_attributes_received | jq "select(.key == \"odigos.version\").value.stringValue")
+  result_separated=$(echo $result | sed 's/\n/,/g')
+  assert_equal "$result_separated" '"e2e-test" "e2e-test" "e2e-test" "e2e-test" "e2e-test" "e2e-test"'
+}
+
 @test "go :: emits a span name '{http.method}' (per semconv)" {
   result=$(server_span_names_for ${GO_SCOPE})
   assert_equal "$result" '"GET"'
