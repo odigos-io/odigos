@@ -1,0 +1,17 @@
+name: go mod tidy
+on:
+  pull_request:
+
+jobs:
+  go-mod-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.0"
+      - name: run make go-mod-tidy
+        run: make go-mod-tidy
+      - name: Check clean repository
+        run: make check-clean-work-tree

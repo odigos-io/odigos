@@ -83,3 +83,20 @@ debug-odiglet:
 ,PHONY: e2e-test
 e2e-test:
 	./e2e-test.sh
+
+ALL_GO_MOD_DIRS := $(shell go list -m -f '{{.Dir}}' | sort)
+
+.PHONY: go-mod-tidy
+go-mod-tidy: $(ALL_GO_MOD_DIRS:%=go-mod-tidy/%)
+go-mod-tidy/%: DIR=$*
+go-mod-tidy/%:
+	@cd $(DIR) && go mod tidy -compat=1.21
+
+.PHONY: check-clean-work-tree
+check-clean-work-tree:
+	if [ -n "$$(git status --porcelain)" ]; then \
+		git status; \
+		git --no-pager diff; \
+		echo 'Working tree is not clean, did you forget to run "make go-mod-tidy"?'; \
+		exit 1; \
+	fi
