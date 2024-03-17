@@ -73,6 +73,12 @@
       "pages": [
         "pipeline/overview",
         {
+          "group": "Sources",
+          "pages": [
+            "pipeline/sources/introduction"
+          ]
+        },
+        {
           "group": "Actions",
           "pages": [
             "pipeline/actions/introduction",
