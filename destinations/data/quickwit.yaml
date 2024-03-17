@@ -1,0 +1,21 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: quickwit
+  displayName: Quickwit
+  category: self hosted
+spec:
+  image: quickwit.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: true
+  fields:
+    - name: QUICKWIT_URL
+      displayName: Quickwit OTLP gRPC Endpoint
+      componentType: input
+      componentProps:
+        type: text
