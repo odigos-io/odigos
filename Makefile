@@ -90,7 +90,7 @@ ALL_GO_MOD_DIRS := $(shell go list -m -f '{{.Dir}}' | sort)
 go-mod-tidy: $(ALL_GO_MOD_DIRS:%=go-mod-tidy/%)
 go-mod-tidy/%: DIR=$*
 go-mod-tidy/%:
-	@cd $(DIR) && go mod tidy -compat=1.20
+	@cd $(DIR) && go mod tidy -compat=1.21
 
 .PHONY: check-clean-work-tree
 check-clean-work-tree:
