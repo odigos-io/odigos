@@ -53,7 +53,7 @@ func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorLi
 
 		// basic config common to all pipelines
 		pipeline.Receivers = []string{"otlp"}
-		pipeline.Processors = append([]string{"batch"}, pipeline.Processors...)
+		pipeline.Processors = append([]string{"batch", "resource/odigos-version"}, pipeline.Processors...)
 		currentConfig.Service.Pipelines[pipelineName] = pipeline
 	}
 
@@ -81,6 +81,15 @@ func getBasicConfig() *commonconf.Config {
 		},
 		Processors: commonconf.GenericMap{
 			"batch": empty,
+			"resource/odigos-version": commonconf.GenericMap{
+				"attributes": []commonconf.GenericMap{
+					{
+						"key": "odigos.version",
+						"value": "${ODIGOS_VERSION}",
+						"action": "upsert",
+					},
+				},
+			},
 		},
 		Extensions: commonconf.GenericMap{
 			"health_check": empty,

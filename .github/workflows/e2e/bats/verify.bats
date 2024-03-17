@@ -13,6 +13,21 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
   assert_equal "$result_separated" '"coupon" "frontend" "inventory" "membership" "pricing"'
 }
 
+@test "all :: includes odigos.version in resource attributes" {
+  result=$(resource_attributes_received | jq -r "select(.key == \"odigos.version\").value.stringValue")
+
+  # Count occurrences of "e2e-test"
+  e2e_test_count=$(echo "$result" | grep -Fx "e2e-test" | wc -l | xargs)
+
+  # Ensure all values match "e2e-test" by comparing counts
+  total_count=$(echo "$result" | wc -l | xargs)
+
+  assert_equal "$e2e_test_count" "$total_count"
+
+  # Ensure there are at least 5 elements in the array (currently 5 services)
+  assert_ge "$total_count" 5
+}
+
 @test "go :: emits a span name '{http.method}' (per semconv)" {
   result=$(server_span_names_for ${GO_SCOPE})
   assert_equal "$result" '"GET"'
