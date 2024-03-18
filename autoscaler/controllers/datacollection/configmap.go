@@ -21,15 +21,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-
 const (
 	configKey = "conf"
-	az09Glob = "[0-9a-z]"
+	az09Glob  = "[0-9a-z]"
 )
 
 var (
 	replicasetSuffix = strings.Repeat(az09Glob, 10)
-	podSuffix = strings.Repeat(az09Glob, 5)
+	podSuffix        = strings.Repeat(az09Glob, 5)
 )
 
 func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
@@ -187,16 +186,23 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 			// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[10]>-<pod suffix[5]>_<pod ID>
 			// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[5]            >_<pod ID>
 			// 	StatefulSet: <namespace>_<statefulset name>-<        ordinal index integer        >_<pod ID>
-			// It happens to be that we include the kind in the instrumented application's name
-			parts := strings.SplitN(element.Name, "-", 2)
-			kind := parts[0]
-			name := parts[1]
+			// We expect there to exactly one OwnerReference
+			if len(element.OwnerReferences) != 1 {
+				log.Log.V(0).Error(
+					fmt.Errorf("Unexpected number of OwnerReferences: %d", len(element.OwnerReferences)),
+					"failed to compile include list for configmap",
+				)
+				continue
+			}
+			owner := element.OwnerReferences[0]
+			kind := owner.Kind
+			name := owner.Name
 			switch kind {
-			case "deployment":
+			case "Deployment":
 				includes[i] = fmt.Sprintf("/var/log/pods/%s_%s-%s-%s_*/*/*.log", element.Namespace, name, replicasetSuffix, podSuffix)
-			case "daemonset":
+			case "DaemonSet":
 				includes[i] = fmt.Sprintf("/var/log/pods/%s_%s-%s_*/*/*.log", element.Namespace, name, podSuffix)
-			case "statefulset":
+			case "StatefulSet":
 				includes[i] = fmt.Sprintf("/var/log/pods/%s_%s-+([0-9])_*/*/*.log", element.Namespace, name)
 			}
 		}
