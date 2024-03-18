@@ -39,24 +39,6 @@ func NewMockTestDeployment(ns *corev1.Namespace) *appsv1.Deployment {
 			Name:      mockDeploymentName,
 			Namespace: ns.GetName(),
 		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": "test-dep"},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app.kubernetes.io/name": "test-dep"},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "test",
-							Image: "test",
-						},
-					},
-				},
-			},
-		},
 	}
 }
 
@@ -66,24 +48,6 @@ func NewMockTestDaemonSet(ns *corev1.Namespace) *appsv1.DaemonSet {
 			Name:      mockDaemonSetName,
 			Namespace: ns.GetName(),
 		},
-		Spec: appsv1.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": "test-ds"},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app.kubernetes.io/name": "test-ds"},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "test",
-							Image: "test",
-						},
-					},
-				},
-			},
-		},
 	}
 }
 
@@ -92,24 +56,6 @@ func NewMockTestStatefulSet(ns *corev1.Namespace) *appsv1.StatefulSet {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mockStatefulSetName,
 			Namespace: ns.GetName(),
-		},
-		Spec: appsv1.StatefulSetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": "test-ss"},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app.kubernetes.io/name": "test-ss"},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "test",
-							Image: "test",
-						},
-					},
-				},
-			},
 		},
 	}
 }
@@ -128,14 +74,6 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
           Kind: gvk.Kind,
         },
       },
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			Languages: []common.LanguageByContainer{
-				{
-					ContainerName: "test",
-					Language:      common.GoProgrammingLanguage,
-				},
-			},
 		},
 	}
 }
