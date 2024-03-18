@@ -68,12 +68,22 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.GetRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
 			Namespace: workloadObject.GetNamespace(),
-      OwnerReferences: []metav1.OwnerReference{
-        {
-          Name: workloadObject.GetName(),
-          Kind: gvk.Kind,
-        },
-      },
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					Name: workloadObject.GetName(),
+					Kind: gvk.Kind,
+				},
+			},
+		},
+	}
+}
+
+func NewMockInstrumentedApplicationWoOwner(workloadObject client.Object) *odigosv1.InstrumentedApplication {
+	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
+	return &odigosv1.InstrumentedApplication{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      utils.GetRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
+			Namespace: workloadObject.GetNamespace(),
 		},
 	}
 }
@@ -105,16 +115,14 @@ func TestGetConfigMapData(t *testing.T) {
 	want := openTestData(t, "testdata/logs_included.yaml")
 
 	ns := NewMockNamespace("default")
-	deployment := NewMockTestDeployment(ns)
-	daemonSet := NewMockTestDaemonSet(ns)
-	statefulSet := NewMockTestStatefulSet(
-		NewMockNamespace("other-namespace"),
-	)
+	ns2 := NewMockNamespace("other-namespace")
 
-	items := make([]v1alpha1.InstrumentedApplication, 3)
-	items[0] = *NewMockInstrumentedApplication(deployment)
-	items[1] = *NewMockInstrumentedApplication(daemonSet)
-	items[2] = *NewMockInstrumentedApplication(statefulSet)
+	items := []v1alpha1.InstrumentedApplication{
+		*NewMockInstrumentedApplication(NewMockTestDeployment(ns)),
+		*NewMockInstrumentedApplication(NewMockTestDaemonSet(ns)),
+		*NewMockInstrumentedApplication(NewMockTestStatefulSet(ns2)),
+		*NewMockInstrumentedApplicationWoOwner(NewMockTestDeployment(ns2)),
+	}
 
 	got, err := getConfigMapData(
 		&v1alpha1.InstrumentedApplicationList{
