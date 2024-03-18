@@ -3,6 +3,7 @@ package datacollection
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection/custom"
 
@@ -20,8 +21,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+
 const (
 	configKey = "conf"
+	az09Glob = "[0-9a-z]"
+)
+
+var (
+	replicasetSuffix = strings.Repeat(az09Glob, 10)
+	podSuffix = strings.Repeat(az09Glob, 5)
 )
 
 func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
@@ -172,9 +180,30 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	}
 
 	if collectLogs {
+		includes := make([]string, len(apps.Items))
+		for i, element := range apps.Items {
+			// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
+			// Pod specifiers
+			// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[10]>-<pod suffix[5]>_<pod ID>
+			// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[5]            >_<pod ID>
+			// 	StatefulSet: <namespace>_<statefulset name>-<        ordinal index integer        >_<pod ID>
+			// It happens to be that we include the kind in the instrumented application's name
+			parts := strings.SplitN(element.Name, "-", 2)
+			kind := parts[0]
+			name := parts[1]
+			switch kind {
+			case "deployment":
+				includes[i] = fmt.Sprintf("/var/log/pods/%s_%s-%s-%s_*/*/*.log", element.Namespace, name, replicasetSuffix, podSuffix)
+			case "daemonset":
+				includes[i] = fmt.Sprintf("/var/log/pods/%s_%s-%s_*/*/*.log", element.Namespace, name, podSuffix)
+			case "statefulset":
+				includes[i] = fmt.Sprintf("/var/log/pods/%s_%s-+([0-9])_*/*/*.log", element.Namespace, name)
+			}
+		}
+
 		odigosSystemNamespaceName := utils.GetCurrentNamespace()
 		cfg.Receivers["filelog"] = commonconf.GenericMap{
-			"include":           []string{"/var/log/pods/*/*/*.log"},
+			"include":           includes,
 			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},
 			"start_at":          "beginning",
 			"include_file_path": true,
