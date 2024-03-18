@@ -16,6 +16,7 @@ const (
 	TempoDestinationType                  DestinationType = "tempo"
 	JaegerDestinationType                 DestinationType = "jaeger"
 	ElasticsearchDestinationType          DestinationType = "elasticsearch"
+	QuickwitDestinationType               DestinationType = "quickwit"
 	GenericOTLPDestinationType            DestinationType = "otlp"
 	OtlpHttpDestinationType               DestinationType = "otlphttp"
 	SignozDestinationType                 DestinationType = "signoz"

@@ -38,12 +38,20 @@
         {
           "group": "Quickstart",
           "pages": [
-            "intro",
-            "installation",
-            "instrumenting",
-            "generation",
-            "viewing",
-            "next-steps"
+            "quickstart/introduction",
+            "quickstart/installation",
+            "quickstart/building-a-pipeline",
+            "quickstart/generation-data",
+            "quickstart/viewing-traces",
+            "quickstart/next-steps"
+          ]
+        },
+        {
+          "group": "Setup",
+          "pages": [
+            "setup/installation",
+            "setup/upgrade",
+            "setup/uninstall"
           ]
         },
         {
@@ -116,6 +124,7 @@
         "backends/otlphttp",
         "backends/prometheus",
         "backends/qryn",
+        "backends/quickwit",
         "backends/sentry",
         "backends/signoz",
         "backends/splunk",

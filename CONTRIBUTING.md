@@ -83,18 +83,17 @@ The code for the odigos cli tool is found in the `cli` directory [here](https://
 Test your cli code changes by running `go run .` from the `cli` directory:
 
 ```bash
-➜  odigos git:(main) cd cli/
-➜  cli git:(main) go run .
+go run cli/main.go
 ```
 
-- To run `odigos install` cli command from a local source, you will need to supply a version flag to tell odigos which image tags to install:
+To run `odigos install` cli command from a local source, you will need to supply a version flag to tell odigos which image tags to install:
 
 ```bash
-➜  cli git:(main) go run . install --version v0.1.81
-Installing Odigos version v0.1.81 in namespace odigos-system ...
+go run cli/main.go install --version v0.1.81
+# Installing Odigos version v0.1.81 in namespace odigos-system ...
 ```
 
-- If you test changes to the `install` command, you will need to `go run . uninstall` first before you can `go run . install` again.
+If you test changes to the `install` command, you will need to `go run cli/main.go uninstall` first before you can run install again.
 
 ### How to Develop Odigos Locally
 
@@ -103,14 +102,14 @@ The main steps involved when debugging Odigos locally are:
 - Use a Kind kubernetes cluster
 - Build custom images of Odigos and load them into Kind via:
 
-```
+```bash
 TAG=<CURRENT-ODIGOS-VERSION> make build-images load-to-kind
 ```
 
 - Ensure the TAG matches the Odigos version output from: `odigos version`
 - Restart all pods in the `odigos-system` namespace:
 
-```
+```bash
 kubectl delete pods --all -n odigos-system
 ```
 
@@ -118,20 +117,21 @@ See the [Odigos docs](https://docs.odigos.io/intro) for the full steps on debugg
 
 ### How to Build and run Odigos Frontend Locally
 
-- go to `frontend` folder
-- run:
+Build the frontend
 
+```bash
+cd frontend/webapp 
+yarn install
+yarn build
+yarn dev
+cd ../.. # back to root of the project for next steps
 ```
+
+Then run the web server
+
+```bash
+cd frontend
 go build -o odigos-backend && ./odigos-backend --port 8085 --debug --address 0.0.0.0
-```
-
-- go to `frontend/webapp`
-- run:
-
-```
- yarn install
- yarn build
- yarn dev
 ```
 
 ## Odiglet
@@ -148,7 +148,7 @@ After the image is published, update the dependency in `./odiglet/Dockerfile` to
 First, you will have to find which version of Odigos you are running. You can do this by running `odigos version` in your terminal.
 Then, run the following command to build Odiglet in debug mode and restart the Odiglet pod:
 
-```
+```bash
 TAG=<CURRENT-ODIGOS-VERSION> make debug-odiglet
 ```
 
