@@ -73,6 +73,15 @@
       "pages": [
         "pipeline/overview",
         {
+          "group": "Sources",
+          "pages": [
+            "pipeline/sources/introduction",
+            "pipeline/sources/adding-sources",
+            "pipeline/sources/source-configuration",
+            "pipeline/sources/troubleshooting"
+          ]
+        },
+        {
           "group": "Actions",
           "pages": [
             "pipeline/actions/introduction",
