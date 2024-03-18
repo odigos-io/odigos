@@ -179,8 +179,8 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	}
 
 	if collectLogs {
-		includes := make([]string, len(apps.Items))
-		for i, element := range apps.Items {
+		includes := make([]string, 0)
+		for _, element := range apps.Items {
 			// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
 			// Pod specifiers
 			// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[10]>-<pod suffix[5]>_<pod ID>
@@ -199,11 +199,11 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 			name := owner.Name
 			switch kind {
 			case "Deployment":
-				includes[i] = fmt.Sprintf("/var/log/pods/%s_%s-%s-%s_*/*/*.log", element.Namespace, name, replicasetSuffix, podSuffix)
+				includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-%s-%s_*/*/*.log", element.Namespace, name, replicasetSuffix, podSuffix))
 			case "DaemonSet":
-				includes[i] = fmt.Sprintf("/var/log/pods/%s_%s-%s_*/*/*.log", element.Namespace, name, podSuffix)
+				includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-%s_*/*/*.log", element.Namespace, name, podSuffix))
 			case "StatefulSet":
-				includes[i] = fmt.Sprintf("/var/log/pods/%s_%s-+([0-9])_*/*/*.log", element.Namespace, name)
+				includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-+([0-9])_*/*/*.log", element.Namespace, name))
 			}
 		}
 
