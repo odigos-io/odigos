@@ -46,7 +46,7 @@ type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *
 var installCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install Odigos",
-	Long: `Install Odigos in your kubernetes cluster. 
+	Long: `Install Odigos in your kubernetes cluster.
 This command will install k8s components that will auto-instrument your applications with OpenTelemetry and send traces, metrics and logs to any telemetry backend`,
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -61,7 +61,7 @@ This command will install k8s components that will auto-instrument your applicat
 		// Check if Odigos already installed
 		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 		if err == nil && cm != nil {
-			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace")
+			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace\n")
 			os.Exit(1)
 		}
 
