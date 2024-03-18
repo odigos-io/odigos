@@ -140,6 +140,20 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, configKey)},
 							EnvFrom: getSecretsFromDests(dests),
+							// Add the ODIGOS_VERSION environment variable from the ConfigMap
+							Env: []corev1.EnvVar{
+								{
+									Name: "ODIGOS_VERSION",
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "odigos-deployment",
+											},
+											Key: "ODIGOS_VERSION",
+										},
+									},
+								},
+							},
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser: int64Ptr(10000),
 							},

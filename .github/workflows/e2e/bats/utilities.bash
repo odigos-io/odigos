@@ -124,6 +124,20 @@ assert_equal() {
 	fi
 }
 
+assert_ge() {
+  if [[ $1 -lt $2 ]]; then
+    {
+      echo
+      echo "-- 💥 Assertion failed: value is not greater than or equal to expected 💥 --"
+      echo "expected to be greater than or equal to: $2"
+      echo "actual: $1"
+      echo "--"
+      echo
+    } >&2 # output error to STDERR
+    return 1
+  fi
+}
+
 assert_regex() {
 	if ! [[ $1 =~ $2 ]]; then
 		{
