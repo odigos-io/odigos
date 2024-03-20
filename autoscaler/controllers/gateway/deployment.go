@@ -11,6 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -25,6 +26,8 @@ const (
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
+	requestMemory        = "500Mi"
+	gomemlimit           = "400MiB" // according to memorylimiter processor docs, this should be 80% of the hard memory limit of your collector
 )
 
 func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
@@ -153,6 +156,10 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 										},
 									},
 								},
+								{
+									Name:  "GOMEMLIMIT",
+									Value: "400Mi",
+								},
 							},
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser: int64Ptr(10000),
@@ -177,6 +184,11 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 										Path: "/",
 										Port: intstr.FromInt(13133),
 									},
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceMemory: resource.MustParse(requestMemory),
 								},
 							},
 						},
