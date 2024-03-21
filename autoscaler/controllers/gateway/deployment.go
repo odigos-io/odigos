@@ -27,7 +27,19 @@ const (
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
 	requestMemory        = "500Mi"
-	gomemlimit           = "400MiB" // according to memorylimiter processor docs, this should be 80% of the hard memory limit of your collector
+
+	// this configures the processor limit_mib, which is the hard limit in MiB, afterwhich garbage collection will be forced.
+	// as recommended by the processor docs, this is set to 50MiB less than the memory limit of the collector
+	memoryLimiterLimitMib = 450
+
+	// confgiures the processor spike_limit_mib. When memory usage exceeds the hard limit minus this amount,
+	// the processor will enter memory limited mode and will start refusing data.
+	// as recommended by the processor docs, this is set to 20% of the hard limit
+	memoryLimiterSpikeLimitMiB = 90
+
+	// the value for GOMEMLIMIT environment variable.
+	// per the docs, set to 80% of the hard memory limit of the collector
+	gomemlimit = "360MiB"
 )
 
 func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
@@ -158,7 +170,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 								},
 								{
 									Name:  "GOMEMLIMIT",
-									Value: "400Mi",
+									Value: gomemlimit,
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/gateway/config"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -20,7 +21,14 @@ const (
 
 func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (string, error) {
 	logger := log.FromContext(ctx)
-	desiredData, err := config.Calculate(dests, processors)
+
+	memoryLimiterConfiguration := common.GenericMap{
+		"check_interval":  "1s",
+		"limit_mib":       memoryLimiterLimitMib,
+		"spike_limit_mib": memoryLimiterSpikeLimitMiB,
+	}
+
+	desiredData, err := config.Calculate(dests, processors, memoryLimiterConfiguration)
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
 		return "", err
