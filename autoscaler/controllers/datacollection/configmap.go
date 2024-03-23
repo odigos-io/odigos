@@ -3,6 +3,7 @@ package datacollection
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection/custom"
@@ -58,8 +59,8 @@ func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 		}
 	}
 
-	logger.V(0).Info("patching config map")
-	_, err = patchConfigMap(existing, desired, ctx, c)
+	logger.V(0).Info("Patching config map")
+	_, err = patchConfigMap(ctx, existing, desired, c)
 	if err != nil {
 		logger.Error(err, "failed to patch config map")
 		return "", err
@@ -68,7 +69,12 @@ func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 	return desiredData, nil
 }
 
-func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {
+func patchConfigMap(ctx context.Context, existing *v1.ConfigMap, desired *v1.ConfigMap, c client.Client) (*v1.ConfigMap, error) {
+	if reflect.DeepEqual(existing.Data, desired.Data) &&
+		reflect.DeepEqual(existing.ObjectMeta.OwnerReferences, desired.ObjectMeta.OwnerReferences) {
+		log.FromContext(ctx).V(0).Info("Config maps already match")
+		return existing, nil
+	}
 	updated := existing.DeepCopy()
 	updated.Data = desired.Data
 	updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
