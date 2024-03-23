@@ -60,9 +60,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"watch",
 				},
 				APIGroups: []string{""},
-				Resources: []string{
-					"configmaps",
-				},
+				Resources: []string{"configmaps"},
 			},
 			{
 				Verbs: []string{
@@ -75,9 +73,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"watch",
 				},
 				APIGroups: []string{""},
-				Resources: []string{
-					"services",
-				},
+				Resources: []string{"services"},
 			},
 			{
 				Verbs: []string{
@@ -89,12 +85,8 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"update",
 					"watch",
 				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"daemonsets",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets"},
 			},
 			{
 				Verbs: []string{
@@ -102,12 +94,8 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"patch",
 					"update",
 				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"daemonsets/status",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets/status"},
 			},
 			{
 				Verbs: []string{
@@ -119,12 +107,8 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"update",
 					"watch",
 				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"deployments",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments"},
 			},
 			{
 				Verbs: []string{
@@ -132,12 +116,8 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"patch",
 					"update",
 				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"deployments/status",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments/status"},
 			},
 			{
 				Verbs: []string{
@@ -149,23 +129,15 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"update",
 					"watch",
 				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"collectorsgroups",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups"},
 			},
 			{
 				Verbs: []string{
 					"update",
 				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"collectorsgroups/finalizers",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/finalizers"},
 			},
 			{
 				Verbs: []string{
@@ -173,12 +145,8 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"patch",
 					"update",
 				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"collectorsgroups/status",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/status"},
 			},
 			{
 				Verbs: []string{
@@ -190,12 +158,8 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"update",
 					"watch",
 				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"destinations",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations"},
 			},
 			{
 				Verbs: []string{
@@ -206,23 +170,15 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"create",
 					"update",
 				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"processors",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"processors"},
 			},
 			{
 				Verbs: []string{
 					"update",
 				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"destinations/finalizers",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations/finalizers"},
 			},
 			{
 				Verbs: []string{
@@ -230,12 +186,8 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"patch",
 					"update",
 				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"destinations/status",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations/status"},
 			},
 			{
 				Verbs: []string{
@@ -243,13 +195,8 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"get",
 					"list",
 				},
-				APIGroups: []string{
-					"actions.odigos.io",
-				},
-				Resources: []string{
-					"addclusterinfos",
-					"deleteattributes",
-				},
+				APIGroups: []string{"actions.odigos.io"},
+				Resources: []string{"addclusterinfos", "deleteattributes"},
 			},
 			{
 				Verbs: []string{
@@ -257,13 +204,8 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 					"patch",
 					"update",
 				},
-				APIGroups: []string{
-					"actions.odigos.io",
-				},
-				Resources: []string{
-					"addclusterinfos/status",
-					"deleteattributes/status",
-				},
+				APIGroups: []string{"actions.odigos.io"},
+				Resources: []string{"addclusterinfos/status", "deleteattributes/status"},
 			},
 		},
 	}
@@ -313,23 +255,15 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 					"update",
 					"watch",
 				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentedapplications"},
 			},
 			{
 				Verbs: []string{
 					"update",
 				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications/finalizers",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentedapplications/finalizers"},
 			},
 			{
 				Verbs: []string{
@@ -337,12 +271,8 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 					"patch",
 					"update",
 				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications/status",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentedapplications/status"},
 			},
 		},
 	}
