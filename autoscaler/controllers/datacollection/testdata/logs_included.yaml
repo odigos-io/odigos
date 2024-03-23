@@ -25,9 +25,9 @@ receivers:
     - /var/log/pods/kube-system_*/**/*
     - /var/log/pods/odigos-system_*/**/*
     include:
-    - /var/log/pods/default_test-deployment-[0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z]-[0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z]_*/*/*.log
-    - /var/log/pods/default_test-daemonset-[0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z]_*/*/*.log
-    - /var/log/pods/other-namespace_test-statefulset-+([0-9])_*/*/*.log
+    - /var/log/pods/default_test-deployment-*_*/*/*.log
+    - /var/log/pods/default_test-daemonset-*_*/*/*.log
+    - /var/log/pods/other-namespace_test-statefulset-*_*/*/*.log
     include_file_name: false
     include_file_path: true
     operators:

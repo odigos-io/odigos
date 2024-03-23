@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection/custom"
 
@@ -24,12 +23,6 @@ import (
 
 const (
 	configKey = "conf"
-	az09Glob  = "[0-9a-z]"
-)
-
-var (
-	replicasetSuffix = strings.Repeat(az09Glob, 10)
-	podSuffix        = strings.Repeat(az09Glob, 5)
 )
 
 func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
@@ -189,9 +182,10 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 		for _, element := range apps.Items {
 			// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
 			// Pod specifiers
-			// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[10]>-<pod suffix[5]>_<pod ID>
-			// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[5]            >_<pod ID>
+			// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[~10]>-<pod suffix[~5]>_<pod ID>
+			// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[~5]            >_<pod ID>
 			// 	StatefulSet: <namespace>_<statefulset name>-<        ordinal index integer        >_<pod ID>
+			// The suffixes are not the same lenght always, so we cannot match the pattern reliably.
 			// We expect there to exactly one OwnerReference
 			if len(element.OwnerReferences) != 1 {
 				log.Log.V(0).Error(
@@ -201,16 +195,8 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 				continue
 			}
 			owner := element.OwnerReferences[0]
-			kind := owner.Kind
 			name := owner.Name
-			switch kind {
-			case "Deployment":
-				includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-%s-%s_*/*/*.log", element.Namespace, name, replicasetSuffix, podSuffix))
-			case "DaemonSet":
-				includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-%s_*/*/*.log", element.Namespace, name, podSuffix))
-			case "StatefulSet":
-				includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-+([0-9])_*/*/*.log", element.Namespace, name))
-			}
+			includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
 		}
 
 		odigosSystemNamespaceName := utils.GetCurrentNamespace()
