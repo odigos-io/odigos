@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"reflect"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/common"
@@ -52,28 +53,24 @@ func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.Process
 	existing := &v1.ConfigMap{}
 	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: kubeObjectName}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(0).Info("Creating config map")
+			logger.V(0).Info("Creating gateway config map")
 			_, err := createConfigMap(desired, ctx, c)
 			if err != nil {
-				logger.Error(err, "failed to create config map")
+				logger.Error(err, "Failed to create gateway config map")
 				return "", err
 			}
 			return desiredData, nil
 		} else {
-			logger.Error(err, "failed to get config map")
+			logger.Error(err, "Failed to get gateway config map")
 			return "", err
 		}
 	}
 
-	if existing.Data[configKey] != desired.Data[configKey] {
-		logger.V(0).Info("Updating config map")
-		_, err := patchConfigMap(existing, desired, ctx, c)
-		if err != nil {
-			logger.Error(err, "failed to patch config map")
-			return "", err
-		}
-
-		return desiredData, nil
+	logger.V(0).Info("Patching gateway config map")
+	_, err = patchConfigMap(existing, desired, ctx, c)
+	if err != nil {
+		logger.Error(err, "Failed to patch gateway config map")
+		return "", err
 	}
 
 	return desiredData, nil
@@ -88,6 +85,11 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 }
 
 func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {
+	if reflect.DeepEqual(existing.Data, desired.Data) &&
+		reflect.DeepEqual(existing.ObjectMeta.OwnerReferences, desired.ObjectMeta.OwnerReferences) {
+		log.FromContext(ctx).V(0).Info("Gateway config maps already match")
+		return existing, nil
+	}
 	updated := existing.DeepCopy()
 	updated.Data = desired.Data
 	updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
