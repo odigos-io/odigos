@@ -3,6 +3,7 @@ package datacollection
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection/custom"
 
@@ -51,8 +52,8 @@ func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 		}
 	}
 
-	logger.V(0).Info("patching config map")
-	_, err = patchConfigMap(existing, desired, ctx, c)
+	logger.V(0).Info("Patching config map")
+	_, err = patchConfigMap(ctx, existing, desired, c)
 	if err != nil {
 		logger.Error(err, "failed to patch config map")
 		return "", err
@@ -61,7 +62,12 @@ func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 	return desiredData, nil
 }
 
-func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {
+func patchConfigMap(ctx context.Context, existing *v1.ConfigMap, desired *v1.ConfigMap, c client.Client) (*v1.ConfigMap, error) {
+	if reflect.DeepEqual(existing.Data, desired.Data) &&
+		reflect.DeepEqual(existing.ObjectMeta.OwnerReferences, desired.ObjectMeta.OwnerReferences) {
+		log.FromContext(ctx).V(0).Info("Config maps already match")
+		return existing, nil
+	}
 	updated := existing.DeepCopy()
 	updated.Data = desired.Data
 	updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
@@ -172,9 +178,30 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	}
 
 	if collectLogs {
+		includes := make([]string, 0)
+		for _, element := range apps.Items {
+			// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
+			// Pod specifiers
+			// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[~10]>-<pod suffix[~5]>_<pod ID>
+			// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[~5]            >_<pod ID>
+			// 	StatefulSet: <namespace>_<statefulset name>-<        ordinal index integer        >_<pod ID>
+			// The suffixes are not the same lenght always, so we cannot match the pattern reliably.
+			// We expect there to exactly one OwnerReference
+			if len(element.OwnerReferences) != 1 {
+				log.Log.V(0).Error(
+					fmt.Errorf("Unexpected number of OwnerReferences: %d", len(element.OwnerReferences)),
+					"failed to compile include list for configmap",
+				)
+				continue
+			}
+			owner := element.OwnerReferences[0]
+			name := owner.Name
+			includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
+		}
+
 		odigosSystemNamespaceName := utils.GetCurrentNamespace()
 		cfg.Receivers["filelog"] = commonconf.GenericMap{
-			"include":           []string{"/var/log/pods/*/*/*.log"},
+			"include":           includes,
 			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},
 			"start_at":          "beginning",
 			"include_file_path": true,
