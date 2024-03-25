@@ -2,9 +2,11 @@ package gateway
 
 import (
 	"context"
+	"fmt"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -80,6 +82,8 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	gateway.Status.Ready = dep.Status.ReadyReplicas > 0
-	return c.Status().Update(ctx, gateway)
+	return c.Status().Patch(ctx, gateway, client.RawPatch(
+		types.JSONPatchType,
+		[]byte(fmt.Sprintf(`[{"op": "replace", "path": "/status/ready", "value": %t }]`, dep.Status.ReadyReplicas > 0)),
+	))
 }
