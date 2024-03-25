@@ -69,10 +69,10 @@ First, follow the [Quickstart Guide](https://docs.odigos.io/intro) in odigos doc
 
 Make sure you are able to:
 
-- [x] run Odigos cli in your terminal.
-- [x] open the demo application ui in your browser to interact with it.
+- [x] run Odigos CLI in your terminal.
+- [x] open the demo application UI in your browser to interact with it.
 - [x] install odigos in your development cluster with `odigos install`.
-- [x] open odigos ui in your browser to interact with it.
+- [x] open Odigos UI in your browser to interact with it.
 - [x] see telemetry data that odigos generates, for example traces in jaeger.
 
 After you have a working odigos setup, you can start making changes to the code and test them locally.

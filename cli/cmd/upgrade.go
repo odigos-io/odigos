@@ -120,7 +120,7 @@ and apply any required migrations and adaptations.`,
 		_, binaryDir := GetOdigosUiBinaryPath()
 		err = DoDownloadNewUiBinary(targetVersion.String(), binaryDir, runtime.GOARCH, runtime.GOOS)
 		if err != nil {
-			fmt.Printf("Error downloading new odigos UI binary: %v\n", err)
+			fmt.Printf("Error downloading new Odigos UI binary: %v\n", err)
 		}
 	},
 }
