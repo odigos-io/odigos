@@ -43,12 +43,12 @@ func parseFlags() Flags {
 	defaultKubeConfig := utils.GetDefaultKubeConfigPath()
 
 	var flags Flags
-	flag.BoolVar(&flags.Version, "version", false, "Print odigos ui version.")
+	flag.BoolVar(&flags.Version, "version", false, "Print Odigos UI version.")
 	flag.StringVar(&flags.Address, "address", "localhost", "Address to listen on")
 	flag.IntVar(&flags.Port, "port", defaultPort, "Port to listen on")
 	flag.BoolVar(&flags.Debug, "debug", false, "Enable debug mode")
 	flag.StringVar(&flags.KubeConfig, "kubeconfig", defaultKubeConfig, "Path to kubeconfig file")
-	flag.StringVar(&flags.Namespace, "namespace", consts.DefaultNamespace, "Kubernetes namespace where odigos is installed")
+	flag.StringVar(&flags.Namespace, "namespace", consts.DefaultNamespace, "Kubernetes namespace where Odigos is installed")
 	flag.Parse()
 	return flags
 }
