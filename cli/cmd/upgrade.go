@@ -71,8 +71,8 @@ and apply any required migrations and adaptations.`,
 
 		var operation string
 		if sourceVersion.Equal(targetVersion) {
-			fmt.Printf("Odigos version is already '%s'. Aborting Upgrade\n", versionFlag)
-			return
+			fmt.Printf("Odigos version is already '%s', synching installation\n", versionFlag)
+			operation = "Synching"
 		} else if sourceVersion.GreaterThan(targetVersion) {
 			fmt.Printf("About to DOWNGRADE Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
 			operation = "Downgrading"

@@ -19,13 +19,13 @@ const (
 	configKey = "collector-conf"
 )
 
-func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (string, error) {
+func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) (string, error) {
 	logger := log.FromContext(ctx)
 
 	memoryLimiterConfiguration := common.GenericMap{
 		"check_interval":  "1s",
-		"limit_mib":       memoryLimiterLimitMib,
-		"spike_limit_mib": memoryLimiterSpikeLimitMiB,
+		"limit_mib":       memConfig.memoryLimiterLimitMib,
+		"spike_limit_mib": memConfig.memoryLimiterSpikeLimitMiB,
 	}
 
 	desiredData, err := config.Calculate(dests, processors, memoryLimiterConfiguration)

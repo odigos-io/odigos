@@ -26,26 +26,12 @@ const (
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
-	requestMemory        = "500Mi"
-
-	// this configures the processor limit_mib, which is the hard limit in MiB, afterwhich garbage collection will be forced.
-	// as recommended by the processor docs, this is set to 50MiB less than the memory limit of the collector
-	memoryLimiterLimitMib = 450
-
-	// confgiures the processor spike_limit_mib. When memory usage exceeds the hard limit minus this amount,
-	// the processor will enter memory limited mode and will start refusing data.
-	// as recommended by the processor docs, this is set to 20% of the hard limit
-	memoryLimiterSpikeLimitMiB = 90
-
-	// the value for GOMEMLIMIT environment variable.
-	// per the docs, set to 80% of the hard memory limit of the collector
-	gomemlimit = "360MiB"
 )
 
 func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
-	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
+	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
-	desiredDeployment, err := getDesiredDeployment(dests, configData, gateway, scheme, imagePullSecrets, odigosVersion)
+	desiredDeployment, err := getDesiredDeployment(dests, configData, gateway, scheme, imagePullSecrets, odigosVersion, memConfig)
 	if err != nil {
 		logger.Error(err, "Failed to get desired deployment")
 		return nil, err
@@ -111,7 +97,10 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 }
 
 func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
-	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
+
+	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", memConfig.memoryRequestMib))
+
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      gateway.Name,
@@ -170,7 +159,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 								},
 								{
 									Name:  "GOMEMLIMIT",
-									Value: gomemlimit,
+									Value: fmt.Sprintf("%dMiB", memConfig.gomemlimitMib),
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
@@ -200,7 +189,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 							},
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
-									corev1.ResourceMemory: resource.MustParse(requestMemory),
+									corev1.ResourceMemory: requestMemoryQuantity,
 								},
 							},
 						},
@@ -210,7 +199,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 		},
 	}
 
-	if imagePullSecrets != nil && len(imagePullSecrets) > 0 {
+	if len(imagePullSecrets) > 0 {
 		desiredDeployment.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
 		for _, secret := range imagePullSecrets {
 			desiredDeployment.Spec.Template.Spec.ImagePullSecrets = append(desiredDeployment.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})
