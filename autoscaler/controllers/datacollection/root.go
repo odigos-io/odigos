@@ -2,10 +2,12 @@ package datacollection
 
 import (
 	"context"
+	"fmt"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -70,9 +72,11 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 		return err
 	}
 
-	dataCollection.Status.Ready = calcDataCollectionReadyStatus(ds)
-	if err := c.Status().Update(ctx, dataCollection); err != nil {
-		logger.Error(err, "failed to update data collection status")
+	if err := c.Status().Patch(ctx, dataCollection, client.RawPatch(
+		types.JSONPatchType,
+		[]byte(fmt.Sprintf(`[{"op": "replace", "path": "/status/ready", "value": %t }]`, calcDataCollectionReadyStatus(ds))),
+	)); err != nil {
+		logger.Error(err, "Failed to update data collection status")
 		return err
 	}
 
