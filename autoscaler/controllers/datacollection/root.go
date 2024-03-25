@@ -16,7 +16,7 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 	logger := log.FromContext(ctx)
 	var collectorGroups odigosv1.CollectorsGroupList
 	if err := c.List(ctx, &collectorGroups); err != nil {
-		logger.Error(err, "failed to list collectors groups")
+		logger.Error(err, "Failed to list collectors groups")
 		return err
 	}
 
@@ -29,25 +29,25 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 	}
 
 	if dataCollectionCollectorGroup == nil {
-		logger.V(3).Info("data collection collector group doesn't exist, nothing to sync")
+		logger.V(3).Info("Data collection collector group doesn't exist, nothing to sync")
 		return nil
 	}
 
 	var instApps odigosv1.InstrumentedApplicationList
 	if err := c.List(ctx, &instApps); err != nil {
-		logger.Error(err, "failed to list instrumented apps")
+		logger.Error(err, "Failed to list instrumented apps")
 		return err
 	}
 
 	var dests odigosv1.DestinationList
 	if err := c.List(ctx, &dests); err != nil {
-		logger.Error(err, "failed to list destinations")
+		logger.Error(err, "Failed to list destinations")
 		return err
 	}
 
 	var processors odigosv1.ProcessorList
 	if err := c.List(ctx, &processors); err != nil {
-		logger.Error(err, "failed to list processors")
+		logger.Error(err, "Failed to list processors")
 		return err
 	}
 
@@ -58,17 +58,17 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 	dataCollection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client,
 	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("syncing data collection")
+	logger.V(0).Info("Syncing data collection")
 
 	configData, err := syncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme)
 	if err != nil {
-		logger.Error(err, "failed to sync config map")
+		logger.Error(err, "Failed to sync config map")
 		return err
 	}
 
 	ds, err := syncDaemonSet(instApps, dests, dataCollection, configData, ctx, c, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
-		logger.Error(err, "failed to sync daemon set")
+		logger.Error(err, "Failed to sync daemon set")
 		return err
 	}
 
