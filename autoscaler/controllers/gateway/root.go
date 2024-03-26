@@ -2,9 +2,11 @@ package gateway
 
 import (
 	"context"
+	"fmt"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -24,7 +26,7 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 	logger := log.FromContext(ctx)
 	var collectorGroups odigosv1.CollectorsGroupList
 	if err := client.List(ctx, &collectorGroups); err != nil {
-		logger.Error(err, "failed to list collectors groups")
+		logger.Error(err, "Failed to list collectors groups")
 		return err
 	}
 
@@ -37,19 +39,19 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 	}
 
 	if gatewayCollectorGroup == nil {
-		logger.V(3).Info("gateway collector group doesn't exist, nothing to sync")
+		logger.V(3).Info("Gateway collector group doesn't exist, nothing to sync")
 		return nil
 	}
 
 	var dests odigosv1.DestinationList
 	if err := client.List(ctx, &dests); err != nil {
-		logger.Error(err, "failed to list destinations")
+		logger.Error(err, "Failed to list destinations")
 		return err
 	}
 
 	var processors odigosv1.ProcessorList
 	if err := client.List(ctx, &processors); err != nil {
-		logger.Error(err, "failed to list processors")
+		logger.Error(err, "Failed to list processors")
 		return err
 	}
 
@@ -60,26 +62,28 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("syncing gateway")
+	logger.V(0).Info("Syncing gateway")
 
 	configData, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme)
 	if err != nil {
-		logger.Error(err, "failed to sync config map")
+		logger.Error(err, "Failed to sync config map")
 		return err
 	}
 
 	_, err = syncService(gateway, ctx, c, scheme)
 	if err != nil {
-		logger.Error(err, "failed to sync service")
+		logger.Error(err, "Failed to sync service")
 		return err
 	}
 
 	dep, err := syncDeployment(dests, gateway, configData, ctx, c, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
-		logger.Error(err, "failed to sync deployment")
+		logger.Error(err, "Failed to sync deployment")
 		return err
 	}
 
-	gateway.Status.Ready = dep.Status.ReadyReplicas > 0
-	return c.Status().Update(ctx, gateway)
+	return c.Status().Patch(ctx, gateway, client.RawPatch(
+		types.MergePatchType,
+		[]byte(fmt.Sprintf(`{"status": { "ready": %t }}`, dep.Status.ReadyReplicas > 0)),
+	))
 }
