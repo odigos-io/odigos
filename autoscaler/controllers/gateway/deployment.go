@@ -99,7 +99,7 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
 
-	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", memConfig.memoryRequestMib))
+	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", memConfig.memoryRequestMiB))
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -159,7 +159,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 								},
 								{
 									Name:  "GOMEMLIMIT",
-									Value: fmt.Sprintf("%dMiB", memConfig.gomemlimitMib),
+									Value: fmt.Sprintf("%dMiB", memConfig.gomemlimitMiB),
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{

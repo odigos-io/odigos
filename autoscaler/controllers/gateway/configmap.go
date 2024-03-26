@@ -25,7 +25,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.Process
 
 	memoryLimiterConfiguration := common.GenericMap{
 		"check_interval":  "1s",
-		"limit_mib":       memConfig.memoryLimiterLimitMib,
+		"limit_mib":       memConfig.memoryLimiterLimitMiB,
 		"spike_limit_mib": memConfig.memoryLimiterSpikeLimitMiB,
 	}
 

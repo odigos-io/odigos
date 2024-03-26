@@ -37,13 +37,13 @@ spec:
             properties:
               autoscalerImage:
                 type: string
-              collectorGatewayGoMemLimit:
+              collectorGatewayGoMemLimitMiB:
                 description: the GOMEMLIMIT environment variable value for the collector
                   gateway deployment. this is when go runtime will start garbage collection.
                   if not set, it will be set to 80% of the hard limit of the memory
                   limiter.
                 type: integer
-              collectorGatewayMemoryLimiterLimitMib:
+              collectorGatewayMemoryLimiterLimitMiB:
                 description: this parameter sets the "limit_mib" parameter in the
                   memory limiter configuration for the collector gateway. it is the
                   hard limit after which a force garbage collection will be performed.
@@ -57,8 +57,8 @@ spec:
                   to 20% of the hard limit (so the soft limit will be 80% of the hard
                   limit).
                 type: integer
-              collectorGatewayRequestMemoryMi:
-                description: 'CollectorGatewayRequestMemoryMi is the memory request
+              collectorGatewayRequestMemoryMiB:
+                description: 'CollectorGatewayRequestMemoryMiB is the memory request
                   for the cluster gateway collector deployment. it will be embedded
                   in the deployment as a resource request of the form "memory: <value>Mi"
                   default value is 500Mi'

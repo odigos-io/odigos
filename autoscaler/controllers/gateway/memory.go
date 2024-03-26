@@ -19,39 +19,39 @@ const (
 )
 
 type memoryConfigurations struct {
-	memoryRequestMib           uint
-	memoryLimiterLimitMib      uint
+	memoryRequestMiB           uint
+	memoryLimiterLimitMiB      uint
 	memoryLimiterSpikeLimitMiB uint
-	gomemlimitMib              uint
+	gomemlimitMiB              uint
 }
 
 func getMemoryConfigurations(odigosConfig *odigosv1.OdigosConfiguration) *memoryConfigurations {
 
-	memoryRequestMib := defaultRequestMemoryMiB
-	if odigosConfig.Spec.CollectorGatewayRequestMemoryMi != 0 {
-		memoryRequestMib = odigosConfig.Spec.CollectorGatewayRequestMemoryMi
+	memoryRequestMiB := defaultRequestMemoryMiB
+	if odigosConfig.Spec.CollectorGatewayRequestMemoryMiB != 0 {
+		memoryRequestMiB = odigosConfig.Spec.CollectorGatewayRequestMemoryMiB
 	}
 
 	// the memory limiter hard limit is set as 50 MiB less than the memory request
-	memoryLimiterLimitMib := memoryRequestMib - defaultMemoryLimiterLimitDiffMib
-	if odigosConfig.Spec.CollectorGatewayMemoryLimiterLimitMib != 0 {
-		memoryLimiterLimitMib = odigosConfig.Spec.CollectorGatewayMemoryLimiterLimitMib
+	memoryLimiterLimitMiB := memoryRequestMiB - defaultMemoryLimiterLimitDiffMib
+	if odigosConfig.Spec.CollectorGatewayMemoryLimiterLimitMiB != 0 {
+		memoryLimiterLimitMiB = odigosConfig.Spec.CollectorGatewayMemoryLimiterLimitMiB
 	}
 
-	memoryLimiterSpikeLimitMiB := memoryLimiterLimitMib * defaultMemoryLimiterSpikePercentage / 100.0
+	memoryLimiterSpikeLimitMiB := memoryLimiterLimitMiB * defaultMemoryLimiterSpikePercentage / 100.0
 	if odigosConfig.Spec.CollectorGatewayMemoryLimiterSpikeLimitMiB != 0 {
 		memoryLimiterSpikeLimitMiB = odigosConfig.Spec.CollectorGatewayMemoryLimiterSpikeLimitMiB
 	}
 
-	gomemlimitMib := uint(memoryLimiterLimitMib * defaultGoMemLimitPercentage / 100.0)
+	gomemlimitMiB := uint(memoryLimiterLimitMiB * defaultGoMemLimitPercentage / 100.0)
 	if odigosConfig.Spec.CollectorGatewayGoMemLimitMib != 0 {
-		gomemlimitMib = odigosConfig.Spec.CollectorGatewayGoMemLimitMib
+		gomemlimitMiB = odigosConfig.Spec.CollectorGatewayGoMemLimitMib
 	}
 
 	return &memoryConfigurations{
-		memoryRequestMib:           memoryRequestMib,
-		memoryLimiterLimitMib:      memoryLimiterLimitMib,
+		memoryRequestMiB:           memoryRequestMiB,
+		memoryLimiterLimitMiB:      memoryLimiterLimitMiB,
 		memoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
-		gomemlimitMib:              gomemlimitMib,
+		gomemlimitMiB:              gomemlimitMiB,
 	}
 }

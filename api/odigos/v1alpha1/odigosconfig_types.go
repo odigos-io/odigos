@@ -21,15 +21,15 @@ type OdigosConfigurationSpec struct {
 	SupportedSDKs     map[common.ProgrammingLanguage][]common.OtelSdk `json:"supportedSDKs,omitempty"`
 	DefaultSDKs       map[common.ProgrammingLanguage]common.OtelSdk   `json:"defaultSDKs,omitempty"`
 
-	// CollectorGatewayRequestMemoryMi is the memory request for the cluster gateway collector deployment.
+	// CollectorGatewayRequestMemoryMiB is the memory request for the cluster gateway collector deployment.
 	// it will be embedded in the deployment as a resource request of the form "memory: <value>Mi"
 	// default value is 500Mi
-	CollectorGatewayRequestMemoryMi uint `json:"collectorGatewayRequestMemoryMi,omitempty"`
+	CollectorGatewayRequestMemoryMiB uint `json:"collectorGatewayRequestMemoryMiB,omitempty"`
 
 	// this parameter sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
 	// it is the hard limit after which a force garbage collection will be performed.
 	// if not set, it will be 50Mi below the memory request.
-	CollectorGatewayMemoryLimiterLimitMib uint `json:"collectorGatewayMemoryLimiterLimitMib,omitempty"`
+	CollectorGatewayMemoryLimiterLimitMiB uint `json:"collectorGatewayMemoryLimiterLimitMiB,omitempty"`
 
 	// this parameter sets the "spike_limit_mib" parameter in the memory limiter configuration for the collector gateway.
 	// note that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.
@@ -39,7 +39,7 @@ type OdigosConfigurationSpec struct {
 	// the GOMEMLIMIT environment variable value for the collector gateway deployment.
 	// this is when go runtime will start garbage collection.
 	// if not set, it will be set to 80% of the hard limit of the memory limiter.
-	CollectorGatewayGoMemLimitMib uint `json:"collectorGatewayGoMemLimit,omitempty"`
+	CollectorGatewayGoMemLimitMib uint `json:"collectorGatewayGoMemLimitMiB,omitempty"`
 }
 
 //+genclient
