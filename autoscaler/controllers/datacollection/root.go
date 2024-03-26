@@ -73,8 +73,8 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 	}
 
 	if err := c.Status().Patch(ctx, dataCollection, client.RawPatch(
-		types.JSONPatchType,
-		[]byte(fmt.Sprintf(`[{"op": "replace", "path": "/status/ready", "value": %t }]`, calcDataCollectionReadyStatus(ds))),
+		types.MergePatchType,
+		[]byte(fmt.Sprintf(`{"status": { "ready": %t }}`, calcDataCollectionReadyStatus(ds))),
 	)); err != nil {
 		logger.Error(err, "Failed to update data collection status")
 		return err
