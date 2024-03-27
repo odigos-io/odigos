@@ -39,6 +39,7 @@ type CollectorsGroupStatus struct {
 	Ready bool `json:"ready,omitempty"`
 }
 
+//+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
