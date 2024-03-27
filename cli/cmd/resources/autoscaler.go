@@ -309,6 +309,15 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 				APIGroups: []string{"actions.odigos.io"},
 				Resources: []string{"addclusterinfos/status", "deleteattributes/status"},
 			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"odigosconfigurations"},
+			},
 		},
 	}
 }

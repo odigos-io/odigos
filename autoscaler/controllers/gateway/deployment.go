@@ -11,6 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -28,9 +29,9 @@ const (
 )
 
 func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
-	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
+	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
-	desiredDeployment, err := getDesiredDeployment(dests, configData, gateway, scheme, imagePullSecrets, odigosVersion)
+	desiredDeployment, err := getDesiredDeployment(dests, configData, gateway, scheme, imagePullSecrets, odigosVersion, memConfig)
 	if err != nil {
 		logger.Error(err, "Failed to get desired deployment")
 		return nil, err
@@ -96,7 +97,10 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 }
 
 func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
-	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
+
+	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", memConfig.memoryRequestMiB))
+
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      gateway.Name,
@@ -153,6 +157,10 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 										},
 									},
 								},
+								{
+									Name:  "GOMEMLIMIT",
+									Value: fmt.Sprintf("%dMiB", memConfig.gomemlimitMiB),
+								},
 							},
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser: int64Ptr(10000),
@@ -179,6 +187,11 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 									},
 								},
 							},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceMemory: requestMemoryQuantity,
+								},
+							},
 						},
 					},
 				},
@@ -186,7 +199,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 		},
 	}
 
-	if imagePullSecrets != nil && len(imagePullSecrets) > 0 {
+	if len(imagePullSecrets) > 0 {
 		desiredDeployment.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
 		for _, secret := range imagePullSecrets {
 			desiredDeployment.Spec.Template.Spec.ImagePullSecrets = append(desiredDeployment.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})

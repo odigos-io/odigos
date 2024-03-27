@@ -10,6 +10,10 @@ import (
 	"github.com/keyval-dev/odigos/common"
 )
 
+const (
+	memoryLimiterProcessorName = "memory_limiter"
+)
+
 var availableConfigers = []Configer{&Middleware{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{}, &GrafanaCloudLoki{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{},
 	&Tempo{}, &Loki{}, &Jaeger{}, &GenericOTLP{}, &OTLPHttp{}, &Elasticsearch{}, &Quickwit{}, &Signoz{}, &Qryn{},
 	&OpsVerse{}, &Splunk{}, &Lightstep{}, &GoogleCloud{}, &GoogleCloudStorage{}, &Sentry{}, &AzureBlobStorage{},
@@ -20,8 +24,8 @@ type Configer interface {
 	ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config)
 }
 
-func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList) (string, error) {
-	currentConfig := getBasicConfig()
+func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, memoryLimiterConfig commonconf.GenericMap) (string, error) {
+	currentConfig := getBasicConfig(memoryLimiterConfig)
 
 	configers, err := loadConfigers()
 	if err != nil {
@@ -53,7 +57,8 @@ func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorLi
 
 		// basic config common to all pipelines
 		pipeline.Receivers = []string{"otlp"}
-		pipeline.Processors = append([]string{"batch", "resource/odigos-version"}, pipeline.Processors...)
+		// memory limiter processor should be the first processor in the pipeline
+		pipeline.Processors = append([]string{memoryLimiterProcessorName, "batch", "resource/odigos-version"}, pipeline.Processors...)
 		currentConfig.Service.Pipelines[pipelineName] = pipeline
 	}
 
@@ -65,7 +70,7 @@ func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorLi
 	return string(data), nil
 }
 
-func getBasicConfig() *commonconf.Config {
+func getBasicConfig(memoryLimiterConfig commonconf.GenericMap) *commonconf.Config {
 	empty := struct{}{}
 	return &commonconf.Config{
 		Receivers: commonconf.GenericMap{
@@ -80,12 +85,13 @@ func getBasicConfig() *commonconf.Config {
 			},
 		},
 		Processors: commonconf.GenericMap{
-			"batch": empty,
+			memoryLimiterProcessorName: memoryLimiterConfig,
+			"batch":                    empty,
 			"resource/odigos-version": commonconf.GenericMap{
 				"attributes": []commonconf.GenericMap{
 					{
-						"key": "odigos.version",
-						"value": "${ODIGOS_VERSION}",
+						"key":    "odigos.version",
+						"value":  "${ODIGOS_VERSION}",
 						"action": "upsert",
 					},
 				},
