@@ -1,0 +1,155 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - odigos.io
+  resources:
+  - instrumentedapplications
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - odigos.io
+  resources:
+  - instrumentedapplications/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - odigos.io
+  resources:
+  - instrumentedapplications/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manager-role
+  namespace: odigos-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - odigos.io
+  resources:
+  - collectorsgroups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - odigos.io
+  resources:
+  - collectorsgroups/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - odigos.io
+  resources:
+  - collectorsgroups/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - odigos.io
+  resources:
+  - destinations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - odigos.io
+  resources:
+  - destinations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - odigos.io
+  resources:
+  - destinations/status
+  verbs:
+  - get
+  - patch
+  - update
