@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/autoscaler/controllers/gateway/config"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -19,9 +20,16 @@ const (
 	configKey = "collector-conf"
 )
 
-func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (string, error) {
+func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) (string, error) {
 	logger := log.FromContext(ctx)
-	desiredData, err := config.Calculate(dests, processors)
+
+	memoryLimiterConfiguration := common.GenericMap{
+		"check_interval":  "1s",
+		"limit_mib":       memConfig.memoryLimiterLimitMiB,
+		"spike_limit_mib": memConfig.memoryLimiterSpikeLimitMiB,
+	}
+
+	desiredData, err := config.Calculate(dests, processors, memoryLimiterConfiguration)
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
 		return "", err

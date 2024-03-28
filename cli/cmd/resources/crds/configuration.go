@@ -121,6 +121,27 @@ func NewConfiguration() *apiextensionsv1.CustomResourceDefinition {
 												},
 											},
 										},
+										"collectorGateway": {
+											Type: "object",
+											Properties: map[string]apiextensionsv1.JSONSchemaProps{
+												"requestMemoryMiB": {
+													Description: "requestMemoryMi is the memory request for the cluster gateway collector deployment.",
+													Type:        "integer",
+												},
+												"memoryLimiterLimitMiB": {
+													Description: "this parameter sets the 'limit_mib' parameter in the memory limiter configuration for the collector gateway.",
+													Type:        "integer",
+												},
+												"memoryLimiterSpikeLimitMiB": {
+													Description: "this parameter sets the 'spike_limit_mib' parameter in the memory limiter configuration for the collector gateway.",
+													Type:        "integer",
+												},
+												"goMemLimitMiB": {
+													Description: "the GOMEMLIMIT environment variable value for the collector gateway deployment.",
+													Type:        "integer",
+												},
+											},
+										},
 									},
 								},
 							},

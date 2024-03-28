@@ -60,6 +60,12 @@ kubectl apply -f https://raw.githubusercontent.com/keyval-dev/simple-demo/main/k
 ### Waiting for the applications to start
 
 Before moving to the next step, make sure that the application pods and Jaeger pods are running, this may take a few minutes.
+```bash
+kubectl get pods -n tracing
+```
+```bash
+kubectl get pods -n default
+```
 <Frame>
   <img src="/images/pods_ready.png" alt="Pods ready" />
 </Frame>

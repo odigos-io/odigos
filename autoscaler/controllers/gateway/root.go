@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/common/consts"
+	"github.com/keyval-dev/odigos/common/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,16 +57,25 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 		return err
 	}
 
-	return syncGateway(&dests, &processors, gatewayCollectorGroup, ctx, client, scheme, imagePullSecrets, odigosVersion)
+	odigosSystemNamespaceName := utils.GetCurrentNamespace()
+	var odigosConfig odigosv1.OdigosConfiguration
+	if err := client.Get(ctx, types.NamespacedName{Namespace: odigosSystemNamespaceName, Name: consts.DefaultOdigosConfigurationName}, &odigosConfig); err != nil {
+		logger.Error(err, "failed to get odigos config")
+		return err
+	}
+
+	return syncGateway(&dests, &processors, gatewayCollectorGroup, ctx, client, scheme, imagePullSecrets, odigosVersion, &odigosConfig)
 }
 
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigosConfig *odigosv1.OdigosConfiguration) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing gateway")
 
-	configData, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme)
+	memConfig := getMemoryConfigurations(odigosConfig)
+
+	configData, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme, memConfig)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
@@ -76,7 +87,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	dep, err := syncDeployment(dests, gateway, configData, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	dep, err := syncDeployment(dests, gateway, configData, ctx, c, scheme, imagePullSecrets, odigosVersion, memConfig)
 	if err != nil {
 		logger.Error(err, "Failed to sync deployment")
 		return err
