@@ -46,6 +46,18 @@ spec:
                   properties:
                     containerName:
                       type: string
+                    envVars:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                        required:
+                        - name
+                        - value
+                        type: object
+                      type: array
                     language:
                       enum:
                       - java

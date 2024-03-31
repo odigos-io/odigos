@@ -76,7 +76,7 @@ func reconcileSingleInstrumentedApplication(ctx context.Context, kubeClient clie
 
 	runtimeDetailsNamespacedName := client.ObjectKeyFromObject(runtimeDetails)
 
-	if len(runtimeDetails.Spec.Languages) == 0 {
+	if len(runtimeDetails.Spec.RuntimeDetails) == 0 {
 		err := removeInstrumentation(logger, ctx, kubeClient, runtimeDetailsNamespacedName)
 		if err != nil {
 			logger.Error(err, "error removing instrumentation")

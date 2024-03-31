@@ -54,6 +54,7 @@ func NewInstrumentedApp() *apiextensionsv1.CustomResourceDefinition {
 													Required: []string{
 														"containerName",
 														"language",
+														"envVars",
 													},
 													Properties: map[string]apiextensionsv1.JSONSchemaProps{
 														"containerName": {
@@ -79,6 +80,26 @@ func NewInstrumentedApp() *apiextensionsv1.CustomResourceDefinition {
 																},
 																{
 																	Raw: []byte(`"mysql"`),
+																},
+															},
+														},
+														"envVars": {
+															Type: "array",
+															Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+																Schema: &apiextensionsv1.JSONSchemaProps{
+																	Type: "object",
+																	Required: []string{
+																		"name",
+																		"value",
+																	},
+																	Properties: map[string]apiextensionsv1.JSONSchemaProps{
+																		"name": {
+																			Type: "string",
+																		},
+																		"value": {
+																			Type: "string",
+																		},
+																	},
 																},
 															},
 														},

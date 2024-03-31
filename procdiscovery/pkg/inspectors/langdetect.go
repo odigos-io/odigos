@@ -1,6 +1,8 @@
 package inspectors
 
 import (
+	"errors"
+
 	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/procdiscovery/pkg/inspectors/dotnet"
 	"github.com/keyval-dev/odigos/procdiscovery/pkg/inspectors/golang"
@@ -24,25 +26,16 @@ var inspectorsList = []inspector{
 	&mysql.MySQLInspector{},
 }
 
-type LanguageDetectionResult struct {
-	Language common.ProgrammingLanguage
-}
+var ErrLanguageNotDetected = errors.New("language not detected")
 
-// DetectLanguage returns a list of all the detected languages in the process list
-func DetectLanguage(processes []process.Details) []LanguageDetectionResult {
-	var result []LanguageDetectionResult
-	for _, p := range processes {
-		for _, i := range inspectorsList {
-			language, detected := i.Inspect(&p)
-			if detected {
-				detectionResult := LanguageDetectionResult{
-					Language: language,
-				}
-				result = append(result, detectionResult)
-				break
-			}
+// DetectLanguage returns the detected language for the process
+func DetectLanguage(process process.Details) (common.ProgrammingLanguage, error) {
+	for _, i := range inspectorsList {
+		language, detected := i.Inspect(&process)
+		if detected {
+			return language, nil
 		}
 	}
 
-	return result
+	return common.UnknownProgrammingLanguage, ErrLanguageNotDetected
 }

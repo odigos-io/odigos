@@ -196,29 +196,55 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 		}
 	}
 
+	// read the original env vars (of the manifest) from the annotation
+	var origManifestEnv map[string]map[string]string
+	if obj.GetAnnotations() != nil {
+		manifestEnvAnnotation := obj.GetAnnotations()[consts.ManifestEnvOriginalValAnnotation]
+		json.Unmarshal([]byte(manifestEnvAnnotation), &origManifestEnv)
+	}
+
 	// remove odigos instrumentation device from containers
-	for i, c := range pts.Spec.Containers {
+	for iContainer, c := range pts.Spec.Containers {
 		if c.Resources.Limits != nil {
 			for val := range c.Resources.Limits {
 				if strings.HasPrefix(val.String(), common.OdigosResourceNamespace) {
 					patchOperations = append(patchOperations, map[string]interface{}{
 						"op":   "remove",
-						"path": fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits/%s", i, jsonPatchEscapeKey(val.String())),
+						"path": fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits/%s", iContainer, jsonPatchEscapeKey(val.String())),
 					})
 				}
 			}
 		}
 
+		containerOriginalEnv := origManifestEnv[c.Name]
+
 		for iEnv, envVar := range c.Env {
-			if envOverwrite.ShouldOverwrite(envVar.Name) {
-				newVal := envOverwrite.Revert(envVar.Name, envVar.Value)
-				patchOperations = append(patchOperations, map[string]interface{}{
-					"op":    "replace",
-					"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", i, iEnv),
-					"value": newVal,
-				})
+			if envOverwrite.ShouldRevert(envVar.Name, envVar.Value) {
+				if origVal, ok := containerOriginalEnv[envVar.Name]; ok {
+					// revert the env var to its original value
+					patchOperations = append(patchOperations, map[string]interface{}{
+						"op":    "replace",
+						"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", iContainer, iEnv),
+						"value": origVal,
+					})
+				} else {
+					// remove the env var
+					patchOperations = append(patchOperations, map[string]interface{}{
+						"op":    "remove",
+						"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d", iContainer, iEnv),
+					})
+				}
 			}
 		}
+	}
+
+	// remove the env var original value annotation
+	if obj.GetAnnotations() != nil {
+		patchOperations = append(patchOperations, map[string]interface{}{
+			"op":   "remove",
+			"path": "/metadata/annotations/" + jsonPatchEscapeKey(consts.ManifestEnvOriginalValAnnotation),
+		})
+	
 	}
 
 	return json.Marshal(patchOperations)
