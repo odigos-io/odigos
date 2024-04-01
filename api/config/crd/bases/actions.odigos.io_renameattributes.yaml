@@ -11,8 +11,6 @@ spec:
     kind: RenameAttribute
     listKind: RenameAttributeList
     plural: renameattributes
-    shortNames:
-    - da
     singular: renameattribute
   scope: Namespaced
   versions:

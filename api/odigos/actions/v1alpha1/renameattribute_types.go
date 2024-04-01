@@ -45,7 +45,7 @@ type RenameAttributeStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:path=renameattributes,scope=Namespaced,shortName=da
+//+kubebuilder:resource:path=renameattributes,scope=Namespaced
 
 // RenameAttribute is the Schema for the RenameAttribute odigos action API
 type RenameAttribute struct {

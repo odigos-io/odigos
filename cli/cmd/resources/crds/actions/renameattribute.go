@@ -21,7 +21,6 @@ func NewRenameAttributeCRD() *apiextensionsv1.CustomResourceDefinition {
 				Kind:       "RenameAttribute",
 				ListKind:   "RenameAttributeList",
 				Plural:     "renameattributes",
-				ShortNames: []string{"rat"},
 				Singular:   "renameattribute",
 			},
 			Scope: apiextensionsv1.NamespaceScoped,
