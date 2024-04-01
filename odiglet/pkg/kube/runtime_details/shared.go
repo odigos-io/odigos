@@ -2,7 +2,6 @@ package runtime_details
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
