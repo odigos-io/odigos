@@ -5,7 +5,14 @@ sidebarTitle: "Generating Data"
 
 ## Wait for collectors to be ready
 
-Before generating data, make sure that the collectors and applications are ready:
+Before generating data, make sure that the collectors and applications are ready. To check this run the following command:
+
+```bash
+kubectl get pods -n default
+```
+```bash
+kubectl get pods -n odigos-system
+```
 
 <Frame>
     <img src="/images/collectors_ready.png" alt="Wait for collectors to be ready" />
