@@ -54,7 +54,7 @@ type OptionByContainer struct {
 
 // InstrumentedApplicationSpec defines the desired state of InstrumentedApplication
 type InstrumentedApplicationSpec struct {
-	RuntimeDetails []RuntimeDetailsByContainer `json:"languages,omitempty"`
+	RuntimeDetails []RuntimeDetailsByContainer `json:"runtimeDetails,omitempty"`
 	Options  []OptionByContainer   `json:"options,omitempty"`
 }
 

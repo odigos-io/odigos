@@ -200,7 +200,10 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 	var origManifestEnv map[string]map[string]string
 	if obj.GetAnnotations() != nil {
 		manifestEnvAnnotation := obj.GetAnnotations()[consts.ManifestEnvOriginalValAnnotation]
-		json.Unmarshal([]byte(manifestEnvAnnotation), &origManifestEnv)
+		err := json.Unmarshal([]byte(manifestEnvAnnotation), &origManifestEnv)
+		if err != nil {
+			fmt.Printf("Failed to unmarshal original env vars: %s\n", err)
+		}
 	}
 
 	// remove odigos instrumentation device from containers

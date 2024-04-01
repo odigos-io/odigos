@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/utils"
 	kubeutils "github.com/keyval-dev/odigos/odiglet/pkg/kube/utils"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
@@ -65,8 +66,8 @@ func runtimeInspection(pods []corev1.Pod) ([]odigosv1.RuntimeDetailsByContainer,
 			}
 
 			for _, process := range processes {
-				lang, err := inspectors.DetectLanguage(process)
-				if err != nil {
+				lang := inspectors.DetectLanguage(process)
+				if lang == common.UnknownProgrammingLanguage {
 					log.Logger.V(0).Info("no supported language detected for container in pod", "process", process, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 					continue
 				}

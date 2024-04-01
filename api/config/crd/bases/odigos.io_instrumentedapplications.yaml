@@ -41,37 +41,6 @@ spec:
             description: InstrumentedApplicationSpec defines the desired state of
               InstrumentedApplication
             properties:
-              languages:
-                items:
-                  properties:
-                    containerName:
-                      type: string
-                    envVars:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          value:
-                            type: string
-                        required:
-                        - name
-                        - value
-                        type: object
-                      type: array
-                    language:
-                      enum:
-                      - java
-                      - python
-                      - go
-                      - dotnet
-                      - javascript
-                      - mysql
-                      type: string
-                  required:
-                  - containerName
-                  - language
-                  type: object
-                type: array
               options:
                 items:
                   properties:
@@ -111,6 +80,37 @@ spec:
                   required:
                   - containerName
                   - instrumentationsLibraries
+                  type: object
+                type: array
+              runtimeDetails:
+                items:
+                  properties:
+                    containerName:
+                      type: string
+                    envVars:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                        required:
+                        - name
+                        - value
+                        type: object
+                      type: array
+                    language:
+                      enum:
+                      - java
+                      - python
+                      - go
+                      - dotnet
+                      - javascript
+                      - mysql
+                      type: string
+                  required:
+                  - containerName
+                  - language
                   type: object
                 type: array
             type: object

@@ -60,7 +60,10 @@ func Revert(original *v1.PodTemplateSpec, targetObj client.Object) {
 	annotations := targetObj.GetAnnotations()
 	if annotations != nil {
 		manifestEnvAnnotation := annotations[consts.ManifestEnvOriginalValAnnotation]
-		json.Unmarshal([]byte(manifestEnvAnnotation), &origManifestEnv)
+		err := json.Unmarshal([]byte(manifestEnvAnnotation), &origManifestEnv)
+		if err != nil {
+			fmt.Printf("failed to unmarshal manifest env original annotation in Revert: %v", err)
+		}
 	}
 
 	for iContainer, container := range original.Spec.Containers {

@@ -26,13 +26,13 @@ func ShouldPatch(envName string, value string) bool {
 }
 
 func ShouldRevert(envName string, value string) bool {
-	_, ok := EnvValues[envName]
+	valToAppend, ok := EnvValues[envName]
 	if !ok {
 		// We don't care about this environment variable
 		return false
 	}
 
-	if !strings.Contains(value, EnvValues[envName].Value) {
+	if !strings.Contains(value, valToAppend.Value) {
 		// The environment variable is not patched
 		return false
 	}
