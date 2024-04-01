@@ -46,7 +46,7 @@ func NewInstrumentedApp() *apiextensionsv1.CustomResourceDefinition {
 									Description: "InstrumentedApplicationSpec defines the desired state of InstrumentedApplication",
 									Type:        "object",
 									Properties: map[string]apiextensionsv1.JSONSchemaProps{
-										"languages": {
+										"runtimeDetails": {
 											Type: "array",
 											Items: &apiextensionsv1.JSONSchemaPropsOrArray{
 												Schema: &apiextensionsv1.JSONSchemaProps{
