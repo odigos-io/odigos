@@ -88,6 +88,7 @@ func Revert(original *v1.PodTemplateSpec, targetObj client.Object) {
 						Value: origVal,
 					})
 				}
+				// If the original value is not found, we are not going to add the env var back
 			} else {
 				revertedEnvVars = append(revertedEnvVars, envVar)
 			}
@@ -136,8 +137,7 @@ func patchEnvVars(runtimeDetails *odigosv1.InstrumentedApplication, container *v
 		annotations = make(map[string]string)
 	}
 
-	currentEnvAnnotation, ok := annotations[consts.ManifestEnvOriginalValAnnotation]
-	if ok {
+	if currentEnvAnnotation, ok := annotations[consts.ManifestEnvOriginalValAnnotation]; ok {
 		// The annotation is already present, unmarshal it
 		err := json.Unmarshal([]byte(currentEnvAnnotation), &manifestEnvOriginal)
 		if err != nil {
@@ -151,12 +151,15 @@ func patchEnvVars(runtimeDetails *odigosv1.InstrumentedApplication, container *v
 		manifestEnvOriginal[container.Name] = make(map[string]string)
 	}
 
+	savedEnvVar := false
+
 	// Overwrite env var if needed
 	for i, envVar := range container.Env {
 		if envOverwrite.ShouldPatch(envVar.Name, envVar.Value) {
 			// We are about to patch this env var, check if we need to save the original value
 			// If the original value is not saved, save it to the annotation.
 			if _, ok := manifestEnvOriginal[container.Name][envVar.Name]; !ok {
+				savedEnvVar = true
 				manifestEnvOriginal[container.Name][envVar.Name] = envVar.Value
 				container.Env[i].Value = envOverwrite.Patch(envVar.Name, envVar.Value)
 			}
@@ -165,7 +168,7 @@ func patchEnvVars(runtimeDetails *odigosv1.InstrumentedApplication, container *v
 		delete(envs, envVar.Name)
 	}
 
-	// Add the remaining env vars (which are not defined in a manifest
+	// Add the remaining env vars (which are not defined in a manifest)
 	for envName, envValue := range envs {
 		if envOverwrite.ShouldPatch(envName, envValue) {
 			container.Env = append(container.Env, v1.EnvVar{
@@ -175,13 +178,15 @@ func patchEnvVars(runtimeDetails *odigosv1.InstrumentedApplication, container *v
 		}
 	}
 
-	// Update the annotation with the original values
-	updatedAnnotation, err := json.Marshal(manifestEnvOriginal)
-	if err != nil {
-		return fmt.Errorf("failed to marshal manifest env original annotation: %v", err)
+	// Update the annotation with the original values from the manifest (if there are any to save)
+	if savedEnvVar {
+		updatedAnnotation, err := json.Marshal(manifestEnvOriginal)
+		if err != nil {
+			return fmt.Errorf("failed to marshal manifest env original annotation: %v", err)
+		}
+		annotations[consts.ManifestEnvOriginalValAnnotation] = string(updatedAnnotation)
+		obj.SetAnnotations(annotations)
 	}
-	annotations[consts.ManifestEnvOriginalValAnnotation] = string(updatedAnnotation)
-	obj.SetAnnotations(annotations)
 
 	return nil
 }

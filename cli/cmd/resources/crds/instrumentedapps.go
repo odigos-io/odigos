@@ -54,7 +54,6 @@ func NewInstrumentedApp() *apiextensionsv1.CustomResourceDefinition {
 													Required: []string{
 														"containerName",
 														"language",
-														"envVars",
 													},
 													Properties: map[string]apiextensionsv1.JSONSchemaProps{
 														"containerName": {

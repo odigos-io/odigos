@@ -57,8 +57,6 @@ func getPidDetails(pid int) Details {
 	cmdLine := getCommandLine(pid)
 	envVars := getEnvVars(pid)
 
-	fmt.Printf("PID: %d with envs %+v\n", pid, envVars)
-
 	return Details{
 		ProcessID: pid,
 		ExeName:   exeName,

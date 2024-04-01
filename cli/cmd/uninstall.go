@@ -221,7 +221,7 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 		for iEnv, envVar := range c.Env {
 			if envOverwrite.ShouldRevert(envVar.Name, envVar.Value) {
 				if origVal, ok := containerOriginalEnv[envVar.Name]; ok {
-					// revert the env var to its original value
+					// revert the env var to its original value if we have it
 					patchOperations = append(patchOperations, map[string]interface{}{
 						"op":    "replace",
 						"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", iContainer, iEnv),
@@ -240,11 +240,12 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 
 	// remove the env var original value annotation
 	if obj.GetAnnotations() != nil {
-		patchOperations = append(patchOperations, map[string]interface{}{
-			"op":   "remove",
-			"path": "/metadata/annotations/" + jsonPatchEscapeKey(consts.ManifestEnvOriginalValAnnotation),
-		})
-	
+		if _, found := obj.GetAnnotations()[consts.ManifestEnvOriginalValAnnotation]; found {
+			patchOperations = append(patchOperations, map[string]interface{}{
+				"op":   "remove",
+				"path": "/metadata/annotations/" + jsonPatchEscapeKey(consts.ManifestEnvOriginalValAnnotation),
+			})
+		}
 	}
 
 	return json.Marshal(patchOperations)

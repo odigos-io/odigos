@@ -22,16 +22,7 @@ var EnvValues = map[string]struct{
 
 func ShouldPatch(envName string, value string) bool {
 	_, ok := EnvValues[envName]
-	if !ok {
-		// We don't care about this environment variable
-		return false
-	}
-
-	if strings.Contains(value, EnvValues[envName].Value) {
-		// The environment variable is already patched
-		return false
-	}
-	return true
+	return ok
 }
 
 func ShouldRevert(envName string, value string) bool {
@@ -57,6 +48,11 @@ func Patch(envName string, currentVal string) string {
 
 	if currentVal == "" {
 		return env.Value
+	}
+
+	if strings.Contains(currentVal, env.Value) {
+		// The environment variable is already patched
+		return currentVal
 	}
 
 	return currentVal + env.Delim + env.Value

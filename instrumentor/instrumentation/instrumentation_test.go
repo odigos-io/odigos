@@ -27,6 +27,17 @@ func assertAnnotation(t *testing.T, targetObj *appsv1.Deployment, key, value str
 	assert.Equal(t, value, targetObj.GetAnnotations()[key])
 }
 
+func assertContainerNoEnvVar(t *testing.T, podTemplate *v1.PodTemplateSpec, containerIndex int, envVarName string) {
+	if len(podTemplate.Spec.Containers) <= containerIndex {
+		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() missing container at index %d", containerIndex)
+	}
+
+	container := podTemplate.Spec.Containers[containerIndex]
+	for _, envVar := range container.Env {
+		assert.NotEqual(t, envVar.Name, envVarName)
+	}
+}
+
 func assertContainerWithEnvVar(t *testing.T, podTemplate *v1.PodTemplateSpec, containerIndex int, envVarName, envVarValue string) {
 	if len(podTemplate.Spec.Containers) <= containerIndex {
 		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() missing container at index %d", containerIndex)
@@ -678,5 +689,160 @@ func TestEnvVarAppendMultipleContainers(t *testing.T) {
 
 	assertContainerWithEnvVar(t, podTemplate, 0, "PYTHONPATH", "/very/important/path")
 	assertContainerWithEnvVar(t, podTemplate, 1, "NODE_OPTIONS", "--max-old-space-size=8192")
+	assertNoAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation)
+}
+
+func TestEnvVarFromRuntimeDetails(t *testing.T) {
+	podTemplate := &v1.PodTemplateSpec{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{Name: "pythonContainer"},
+				{Name: "nodeContainer"},
+			},
+		},
+	}
+
+	runtimeDetails := &odigosv1.InstrumentedApplication{
+		Spec: odigosv1.InstrumentedApplicationSpec{
+			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+				{
+					Language:      common.PythonProgrammingLanguage,
+					ContainerName: "pythonContainer",
+					EnvVars: []odigosv1.EnvVar{
+						{
+							Name:  "PYTHONPATH",
+							Value: "/very/important/path",
+						},
+					},
+				},
+				{
+					Language:      common.JavascriptProgrammingLanguage,
+					ContainerName: "nodeContainer",
+					EnvVars: []odigosv1.EnvVar{
+						{
+							Name:  "NODE_OPTIONS",
+							Value: "--max-old-space-size=8192",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+	}
+
+	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
+		common.JavascriptProgrammingLanguage: {SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.PythonProgrammingLanguage:     {SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+	}
+
+	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
+	if err != nil {
+		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() error = %v", err)
+	}
+
+	want := "/very/important/path:" + envOverwrite.EnvValues["PYTHONPATH"].Value
+	assertContainerWithEnvVar(t, podTemplate, 0, "PYTHONPATH", want)
+	want = "--max-old-space-size=8192 " + envOverwrite.EnvValues["NODE_OPTIONS"].Value
+	assertContainerWithEnvVar(t, podTemplate, 1, "NODE_OPTIONS", want)
+
+	// The env vars originated from the runtime details should not be stored in the annotation
+	assertNoAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation)
+
+	Revert(podTemplate, deployment)
+	// After reverting, the env vars should not be present in the container since they originated from the runtime details
+	// and were not present in the original pod template
+	assertContainerNoEnvVar(t, podTemplate, 0, "PYTHONPATH")
+	assertContainerNoEnvVar(t, podTemplate, 1, "NODE_OPTIONS")
+}
+
+func TestEnvVarAppendFromSpecAndRuntimeDetails(t *testing.T) {
+	podTemplate := &v1.PodTemplateSpec{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Name: "pythonContainer",
+					Env: []v1.EnvVar{
+						{
+							Name:  "PYTHONPATH",
+							Value: "/very/important/path/template",
+						},
+					},
+				},
+				{
+					Name: "nodeContainer",
+				},
+			},
+		},
+	}
+
+	runtimeDetails := &odigosv1.InstrumentedApplication{
+		Spec: odigosv1.InstrumentedApplicationSpec{
+			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+				{
+					Language:      common.PythonProgrammingLanguage,
+					ContainerName: "pythonContainer",
+					EnvVars: []odigosv1.EnvVar{
+						{
+							Name:  "PYTHONPATH",
+							Value: "/very/important/path/runtime",
+						},
+					},
+				},
+				{
+					Language:      common.JavascriptProgrammingLanguage,
+					ContainerName: "nodeContainer",
+					EnvVars: []odigosv1.EnvVar{
+						{
+							Name:  "NODE_OPTIONS",
+							Value: "--max-old-space-size=8192-runtime",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+	}
+
+	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
+		common.JavascriptProgrammingLanguage: {SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.PythonProgrammingLanguage:     {SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+	}
+
+	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
+	if err != nil {
+		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() error = %v", err)
+	}
+
+	// If env vars are present in both the template and runtime details, the template value should be used (pythonContainer in this case)
+	want := "/very/important/path/template:" + envOverwrite.EnvValues["PYTHONPATH"].Value
+	assertContainerWithEnvVar(t, podTemplate, 0, "PYTHONPATH", want)
+	// The env var from the runtime details should be used for nodeContainer since it is not present in the template
+	want = "--max-old-space-size=8192-runtime " + envOverwrite.EnvValues["NODE_OPTIONS"].Value
+	assertContainerWithEnvVar(t, podTemplate, 1, "NODE_OPTIONS", want)
+	// The original value of the env var should be stored in an annotation
+	a, _ := json.Marshal(map[string]map[string]string{
+		"pythonContainer": {
+			"PYTHONPATH": "/very/important/path/template",
+		},
+	})
+	want = string(a)
+	assertAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation, want)
+
+	Revert(podTemplate, deployment)
+	// After reverting, make sure we are back to the original state
+	assertContainerWithEnvVar(t, podTemplate, 0, "PYTHONPATH", "/very/important/path/template")
+	assertContainerNoEnvVar(t, podTemplate, 1, "NODE_OPTIONS")
 	assertNoAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation)
 }
