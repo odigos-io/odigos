@@ -28,14 +28,14 @@ var inspectorsList = []inspector{
 
 var ErrLanguageNotDetected = errors.New("language not detected")
 
-// DetectLanguage returns the detected language for the process
-func DetectLanguage(process process.Details) common.ProgrammingLanguage {
+// DetectLanguage returns the detected language for the process or nil if the language could not be detected
+func DetectLanguage(process process.Details) *common.ProgrammingLanguage {
 	for _, i := range inspectorsList {
 		language, detected := i.Inspect(&process)
 		if detected {
-			return language
+			return &language
 		}
 	}
 
-	return common.UnknownProgrammingLanguage
+	return nil
 }

@@ -199,10 +199,12 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 	// read the original env vars (of the manifest) from the annotation
 	var origManifestEnv map[string]map[string]string
 	if obj.GetAnnotations() != nil {
-		manifestEnvAnnotation := obj.GetAnnotations()[consts.ManifestEnvOriginalValAnnotation]
-		err := json.Unmarshal([]byte(manifestEnvAnnotation), &origManifestEnv)
-		if err != nil {
-			fmt.Printf("Failed to unmarshal original env vars: %s\n", err)
+		manifestEnvAnnotation, ok := obj.GetAnnotations()[consts.ManifestEnvOriginalValAnnotation]
+		if ok {
+			err := json.Unmarshal([]byte(manifestEnvAnnotation), &origManifestEnv)
+			if err != nil {
+				fmt.Printf("Failed to unmarshal original env vars from annotation: %s. %s: %s\n", err, obj.GetName(), obj.GetNamespace())
+			}
 		}
 	}
 

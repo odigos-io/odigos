@@ -12,7 +12,4 @@ const (
 	// This is an experimental feature, It is not a language
 	// but in order to avoid huge refactoring we are adding it here for now
 	MySQLProgrammingLanguage      ProgrammingLanguage = "mysql"
-
-	// This is a special value that is used when the language is not detected
-	UnknownProgrammingLanguage ProgrammingLanguage = "unknown"
 )
