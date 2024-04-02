@@ -64,25 +64,29 @@ func runtimeInspection(pods []corev1.Pod) ([]odigosv1.RuntimeDetailsByContainer,
 				log.Logger.V(0).Info("no processes found in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				continue
 			}
+			if len(processes) > 1 {
+				// Currently we don't support multiple processes in the same container, where each one can have a different language
+				// We only take the first process into account, when we'll support multiple processes we'll need to change this.
+				log.Logger.V(0).Info("multiple processes found in pod container, only taking the first one into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+			}
+			process := processes[0]
 
-			for _, process := range processes {
-				lang := inspectors.DetectLanguage(process)
-				if lang == common.UnknownProgrammingLanguage {
-					log.Logger.V(0).Info("no supported language detected for container in pod", "process", process, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
-					continue
-				}
+			lang := inspectors.DetectLanguage(process)
+			if lang == common.UnknownProgrammingLanguage {
+				log.Logger.V(0).Info("no supported language detected for container in pod", "process", process, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+				continue
+			}
 
-				// Convert map to slice for k8s format
-				envs := make([]odigosv1.EnvVar, 0, len(process.Envs))
-				for envName, envValue := range process.Envs {
-					envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
-				}
+			// Convert map to slice for k8s format
+			envs := make([]odigosv1.EnvVar, 0, len(process.Envs))
+			for envName, envValue := range process.Envs {
+				envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
+			}
 
-				resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
-					ContainerName: container.Name,
-					Language:      lang,
-					EnvVars:       envs,
-				}
+			resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
+				ContainerName: container.Name,
+				Language:      lang,
+				EnvVars:       envs,
 			}
 		}
 	}
