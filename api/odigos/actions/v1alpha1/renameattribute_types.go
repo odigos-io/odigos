@@ -28,6 +28,7 @@ type RenameAttributeSpec struct {
 	Disabled   bool                         `json:"disabled,omitempty"`
 	Signals    []common.ObservabilitySignal `json:"signals"`
 
+	// +kubebuilder:validation:Type=object
 	Renames map[string]string `json:"renames"`
 }
 
