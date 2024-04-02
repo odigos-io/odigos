@@ -15,6 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -237,6 +238,9 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 		odigosProToken = append(odigosProToken, odigospro.OnPremTokenAsEnvVar())
 	}
 
+	maxUnavailable := intstr.FromString("50%")
+	maxSurge := intstr.FromInt(0)
+
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
@@ -253,6 +257,13 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/name": OdigletAppLabelValue,
+				},
+			},
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type: appsv1.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxUnavailable: &maxUnavailable,
+					MaxSurge:       &maxSurge,
 				},
 			},
 			Template: corev1.PodTemplateSpec{

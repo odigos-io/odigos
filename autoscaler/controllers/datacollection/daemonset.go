@@ -98,6 +98,10 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 	odigletDaemonsetPodSpec *corev1.PodSpec,
 ) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
+
+	maxUnavailable := intstr.FromString("50%")
+	maxSurge := intstr.FromInt(0)
+
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      datacollection.Name,
@@ -107,6 +111,13 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: commonLabels,
+			},
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type: appsv1.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxUnavailable: &maxUnavailable,
+					MaxSurge:       &maxSurge,
+				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -226,7 +237,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 		},
 	}
 
-	if imagePullSecrets != nil && len(imagePullSecrets) > 0 {
+	if len(imagePullSecrets) > 0 {
 		desiredDs.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
 		for _, secret := range imagePullSecrets {
 			desiredDs.Spec.Template.Spec.ImagePullSecrets = append(desiredDs.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})
