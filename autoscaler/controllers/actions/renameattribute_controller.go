@@ -32,16 +32,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type DeleteAttributeReconciler struct {
+type RenameAttributeReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *DeleteAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *RenameAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling DeleteAttribute action")
+	logger.V(0).Info("Reconciling RenameAttribute action")
 
-	action := &actionv1.DeleteAttribute{}
+	action := &actionv1.RenameAttribute{}
 	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -67,7 +67,7 @@ func (r *DeleteAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	return ctrl.Result{}, nil
 }
 
-func (r *DeleteAttributeReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.DeleteAttribute, reason string, msg string) error {
+func (r *RenameAttributeReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.RenameAttribute, reason string, msg string) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               ActionTransformedToProcessorType,
 		Status:             metav1.ConditionFalse,
@@ -85,7 +85,7 @@ func (r *DeleteAttributeReconciler) ReportReconciledToProcessorFailed(ctx contex
 	return nil
 }
 
-func (r *DeleteAttributeReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.DeleteAttribute) error {
+func (r *RenameAttributeReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.RenameAttribute) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               ActionTransformedToProcessorType,
 		Status:             metav1.ConditionTrue,
@@ -103,19 +103,23 @@ func (r *DeleteAttributeReconciler) ReportReconciledToProcessor(ctx context.Cont
 	return nil
 }
 
-func (r *DeleteAttributeReconciler) convertToProcessor(action *actionv1.DeleteAttribute) (*v1.Processor, error) {
+func (r *RenameAttributeReconciler) convertToProcessor(action *actionv1.RenameAttribute) (*v1.Processor, error) {
 
 	config := TransformProcessorConfig{
-		ErrorMode: "propagate", // deleting attributes is a security sensitive operation, so we should propagate errors
+		ErrorMode: "ignore",
 	}
 
 	if action.Spec.Signals == nil {
 		return nil, fmt.Errorf("Signals must be set")
 	}
 
-	ottlDeleteKeyStatements := make([]string, len(action.Spec.AttributeNamesToDelete))
-	for i, attr := range action.Spec.AttributeNamesToDelete {
-		ottlDeleteKeyStatements[i] = fmt.Sprintf("delete_key(attributes, \"%s\")", attr)
+	// Every rename produces 2 OTTL statement
+	ottlStatements := make([]string, 2 * len(action.Spec.Renames))
+	i := 0
+	for from, to := range action.Spec.Renames {
+		ottlStatements[i] = fmt.Sprintf("set(attributes[\"%s\"], attributes[\"%s\"])", to, from)
+		ottlStatements[i + 1] = fmt.Sprintf("delete_key(attributes, \"%s\")", from)
+		i += 2;
 	}
 
 	for _, signal := range action.Spec.Signals {
@@ -125,15 +129,15 @@ func (r *DeleteAttributeReconciler) convertToProcessor(action *actionv1.DeleteAt
 			config.LogStatements = []OttlStatementConfig{
 				{
 					Context:    "resource",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "scope",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "log",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 			}
 
@@ -141,15 +145,15 @@ func (r *DeleteAttributeReconciler) convertToProcessor(action *actionv1.DeleteAt
 			config.MetricStatements = []OttlStatementConfig{
 				{
 					Context:    "resource",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "scope",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "datapoint",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 			}
 
@@ -157,19 +161,19 @@ func (r *DeleteAttributeReconciler) convertToProcessor(action *actionv1.DeleteAt
 			config.TraceStatements = []OttlStatementConfig{
 				{
 					Context:    "resource",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "scope",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "span",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "spanevent",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 			}
 		}
@@ -204,7 +208,7 @@ func (r *DeleteAttributeReconciler) convertToProcessor(action *actionv1.DeleteAt
 			Notes:           action.Spec.Notes,
 			Signals:         action.Spec.Signals,
 			CollectorRoles:  []v1.CollectorsGroupRole{v1.CollectorsGroupRoleClusterGateway},
-			OrderHint:       -100, // since this is a security action, it should be applied as soon as possible
+			OrderHint:       0,
 			ProcessorConfig: runtime.RawExtension{Raw: configJson},
 		},
 	}
