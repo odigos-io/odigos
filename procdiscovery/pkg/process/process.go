@@ -13,6 +13,7 @@ type Details struct {
 	ProcessID int
 	ExeName   string
 	CmdLine   string
+	// Envs only contains the environment variables that we are interested in
 	Envs      map[string]string
 }
 
@@ -55,7 +56,7 @@ func FindAllProcesses(predicate func(string) bool) ([]Details, error) {
 func getPidDetails(pid int) Details {
 	exeName := getExecName(pid)
 	cmdLine := getCommandLine(pid)
-	envVars := getEnvVars(pid)
+	envVars := getRelevantEnvVars(pid)
 
 	return Details{
 		ProcessID: pid,
@@ -93,7 +94,7 @@ func getCommandLine(pid int) string {
 	}
 }
 
-func getEnvVars(pid int) map[string]string {
+func getRelevantEnvVars(pid int) map[string]string {
 	envFileName := fmt.Sprintf("/proc/%d/environ", pid)
 	fileContent, err := os.ReadFile(envFileName)
 	if err != nil {
