@@ -98,6 +98,17 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 	odigletDaemonsetPodSpec *corev1.PodSpec,
 ) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
+
+	// 50% of the nodes can be unavailable during the update.
+	// if we do not set it, the default value is 1.
+	// 1 means that if 1 daemonset pod fails to update, the whole rollout will be broken.
+	// this can happen when a single node has memory pressure, scheduling issues, not enough resources, etc.
+	// by setting it to 50% we can tolerate more failures and the rollout will be more stable.
+	maxUnavailable := intstr.FromString("50%")
+	// maxSurge is the number of pods that can be created above the desired number of pods.
+	// we do not want more then 1 datacollection pod on the same node as they need to bind to oltp ports.
+	maxSurge := intstr.FromInt(0)
+
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      datacollection.Name,
@@ -107,6 +118,13 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: commonLabels,
+			},
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type: appsv1.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxUnavailable: &maxUnavailable,
+					MaxSurge:       &maxSurge,
+				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -226,7 +244,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 		},
 	}
 
-	if imagePullSecrets != nil && len(imagePullSecrets) > 0 {
+	if len(imagePullSecrets) > 0 {
 		desiredDs.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
 		for _, secret := range imagePullSecrets {
 			desiredDs.Spec.Template.Spec.ImagePullSecrets = append(desiredDs.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})

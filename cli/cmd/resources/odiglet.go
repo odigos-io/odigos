@@ -15,6 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -237,6 +238,16 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 		odigosProToken = append(odigosProToken, odigospro.OnPremTokenAsEnvVar())
 	}
 
+	// 50% of the nodes can be unavailable during the update.
+	// if we do not set it, the default value is 1.
+	// 1 means that if 1 daemonset pod fails to update, the whole rollout will be broken.
+	// this can happen when a single node has memory pressure, scheduling issues, not enough resources, etc.
+	// by setting it to 50% we can tolerate more failures and the rollout will be more stable.
+	maxUnavailable := intstr.FromString("50%")
+	// maxSurge is the number of pods that can be created above the desired number of pods.
+	// we do not want more then 1 odiglet pod on the same node as it is not supported by the eBPF.
+	maxSurge := intstr.FromInt(0)
+
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
@@ -253,6 +264,13 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/name": OdigletAppLabelValue,
+				},
+			},
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type: appsv1.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxUnavailable: &maxUnavailable,
+					MaxSurge:       &maxSurge,
 				},
 			},
 			Template: corev1.PodTemplateSpec{

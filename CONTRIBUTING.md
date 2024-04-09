@@ -65,7 +65,7 @@ The best way to reach us with a question when contributing is to ask on:
 This section describes how to setup your local development environment
 and test your code changes.
 
-First, follow the [Quickstart Guide](https://docs.odigos.io/intro) in odigos docs to create a local k8s development cluster with a demo application and a functioning odigos installation.
+First, follow the [Quickstart Guide](https://docs.odigos.io/quickstart/introduction) in odigos docs to create a local k8s development cluster with a demo application and a functioning odigos installation.
 
 Make sure you are able to:
 
