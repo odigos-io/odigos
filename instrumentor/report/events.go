@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
+	"time"
+
 	"github.com/google/uuid"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
 	corev1 "k8s.io/api/core/v1"
-	"net/http"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 const (
@@ -97,7 +98,7 @@ func report(c client.Client, installationId string) error {
 	jsApps := 0
 	unrecognizedApps := 0
 	for _, app := range apps.Items {
-		for _, l := range app.Spec.Languages {
+		for _, l := range app.Spec.RuntimeDetails {
 			switch l.Language {
 			case common.GoProgrammingLanguage:
 				goApps++
@@ -114,7 +115,7 @@ func report(c client.Client, installationId string) error {
 			}
 		}
 
-		if len(app.Spec.Languages) == 0 {
+		if len(app.Spec.RuntimeDetails) == 0 {
 			unrecognizedApps++
 		}
 	}

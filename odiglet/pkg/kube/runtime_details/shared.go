@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/common/utils"
 	kubeutils "github.com/keyval-dev/odigos/odiglet/pkg/kube/utils"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
@@ -50,8 +49,8 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 	return ctrl.Result{}, nil
 }
 
-func runtimeInspection(pods []corev1.Pod) ([]common.LanguageByContainer, error) {
-	resultsMap := make(map[string]common.LanguageByContainer)
+func runtimeInspection(pods []corev1.Pod) ([]odigosv1.RuntimeDetailsByContainer, error) {
+	resultsMap := make(map[string]odigosv1.RuntimeDetailsByContainer)
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
 
@@ -64,25 +63,34 @@ func runtimeInspection(pods []corev1.Pod) ([]common.LanguageByContainer, error) 
 				log.Logger.V(0).Info("no processes found in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				continue
 			}
+			if len(processes) > 1 {
+				// Currently we don't support multiple processes in the same container, where each one can have a different language
+				// We only take the first process into account, when we'll support multiple processes we'll need to change this.
+				log.Logger.V(0).Info("multiple processes found in pod container, only taking the first one into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+			}
+			process := processes[0]
 
-			detectionResults := inspectors.DetectLanguage(processes)
-			if len(detectionResults) == 0 {
-				log.Logger.V(0).Info("no supported language detected for container in pod", "processes", processes, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+			lang := inspectors.DetectLanguage(process)
+			if lang == nil {
+				log.Logger.V(0).Info("no supported language detected for container in pod", "process", process, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				continue
 			}
 
-			if len(detectionResults) > 1 {
-				log.Logger.V(0).Info("multiple languages detected for pod container processes, selecting first one", "processes", processes, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+			// Convert map to slice for k8s format
+			envs := make([]odigosv1.EnvVar, 0, len(process.Envs))
+			for envName, envValue := range process.Envs {
+				envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
 			}
 
-			resultsMap[container.Name] = common.LanguageByContainer{
+			resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
 				ContainerName: container.Name,
-				Language:      detectionResults[0].Language,
+				Language:      *lang,
+				EnvVars:       envs,
 			}
 		}
 	}
 
-	results := make([]common.LanguageByContainer, 0, len(resultsMap))
+	results := make([]odigosv1.RuntimeDetailsByContainer, 0, len(resultsMap))
 	for _, value := range resultsMap {
 		results = append(results, value)
 	}
@@ -90,7 +98,7 @@ func runtimeInspection(pods []corev1.Pod) ([]common.LanguageByContainer, error) 
 	return results, nil
 }
 
-func persistRuntimeResults(ctx context.Context, results []common.LanguageByContainer, owner client.Object, kubeClient client.Client, scheme *runtime.Scheme) error {
+func persistRuntimeResults(ctx context.Context, results []odigosv1.RuntimeDetailsByContainer, owner client.Object, kubeClient client.Client, scheme *runtime.Scheme) error {
 	updatedIa := &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.GetRuntimeObjectName(owner.GetName(), owner.GetObjectKind().GroupVersionKind().Kind),
@@ -105,9 +113,14 @@ func persistRuntimeResults(ctx context.Context, results []common.LanguageByConta
 	}
 
 	operationResult, err := controllerutil.CreateOrPatch(ctx, kubeClient, updatedIa, func() error {
-		updatedIa.Spec.Languages = results
+		updatedIa.Spec.RuntimeDetails = results
 		return nil
 	})
+
+	if err != nil {
+		log.Logger.Error(err, "Failed to update runtime info", "name", owner.GetName(), "kind",
+			owner.GetObjectKind().GroupVersionKind().Kind, "namespace", owner.GetNamespace())
+	}
 
 	if operationResult != controllerutil.OperationResultNone {
 		log.Logger.V(0).Info("updated runtime info", "result", operationResult, "name", owner.GetName(), "kind",

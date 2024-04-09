@@ -1,10 +1,5 @@
 package common
 
-type LanguageByContainer struct {
-	ContainerName string              `json:"containerName"`
-	Language      ProgrammingLanguage `json:"language"`
-}
-
 // +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;mysql
 type ProgrammingLanguage string
 
