@@ -1,0 +1,46 @@
+{
+  "bootstrap-sha": "53591fc3a2319325f4bf08f26da1c709e2a69297",
+  "packages": {
+    "api": {
+      "release-type": "go",
+      "package-name": "api"
+    },
+    "autoscaler": {
+      "release-type": "go",
+      "package-name": "autoscaler"
+    },
+    "cli": {
+      "release-type": "go",
+      "package-name": "cli"
+    },
+    "collector": {
+      "release-type": "go",
+      "package-name": "collector"
+    },
+    "common": {
+      "release-type": "go",
+      "package-name": "common"
+    },
+    "destinations": {
+      "release-type": "go",
+      "package-name": "destinations"
+    },
+    "instrumentor": {
+      "release-type": "go",
+      "package-name": "instrumentor"
+    },
+    "odiglet": {
+      "release-type": "go",
+      "package-name": "odiglet"
+    },
+    "procdiscovery": {
+      "release-type": "go",
+      "package-name": "procdiscovery"
+    },
+    "scheduler": {
+      "release-type": "go",
+      "package-name": "scheduler"
+    }
+  },
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+}

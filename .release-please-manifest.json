@@ -1,0 +1,12 @@
+{
+    "api": "v1.0.54",
+    "autoscaler": "v1.0.54",
+    "cli": "v1.0.54",
+    "collector": "v1.0.54",
+    "common": "v1.0.54",
+    "destinations": "v1.0.54",
+    "instrumentor": "v1.0.54",
+    "odiglet": "v1.0.54",
+    "procdiscovery": "v1.0.54",
+    "scheduler": "v1.0.54"
+}
