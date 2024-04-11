@@ -1,7 +1,7 @@
 {
-    "api": "v1.0.54",
-    "autoscaler": "v1.0.54",
-    "cli": "v1.0.54",
+    "api": "1.1.0",
+    "autoscaler": "1.1.0",
+    "cli": "1.1.0",
     "collector": "v1.0.54",
     "common": "v1.0.54",
     "destinations": "v1.0.54",
