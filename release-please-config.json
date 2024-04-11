@@ -1,0 +1,45 @@
+{
+  "packages": {
+    "api": {
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "go"
+    },
+    "autoscaler": {
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "go"
+    },
+    "cli": {
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "go"
+    },
+    "collector": {
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "go"
+    },
+    "common": {
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "go"
+    },
+    "destinations": {
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "go"
+    },
+    "instrumentor": {
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "go"
+    },
+    "odiglet": {
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "go"
+    },
+    "procdiscovery": {
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "go"
+    },
+    "scheduler": {
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "go"
+    }
+  },
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+}
