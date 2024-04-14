@@ -48,7 +48,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 		// we want to give each one a unique service.name attribute to differentiate them
 		containerName := container.Name
 		serviceName := containerName
-		if len(runtimeDetails.Spec.Languages) == 1 {
+		if len(runtimeDetails.Spec.RuntimeDetails) == 1 {
 			serviceName = podWorkload.Name
 		}
 

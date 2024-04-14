@@ -33,6 +33,18 @@ type InstrumentationLibraryOptions struct {
 	Options []ConfigOption `json:"options"`
 }
 
+//+kubebuilder:object:generate=true
+type EnvVar struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+//+kubebuilder:object:generate=true
+type RuntimeDetailsByContainer struct {
+	ContainerName string              `json:"containerName"`
+	Language      common.ProgrammingLanguage `json:"language"`
+	EnvVars       []EnvVar            `json:"envVars,omitempty"`
+}
 
 // +kubebuilder:object:generate=true
 type OptionByContainer struct {
@@ -42,7 +54,7 @@ type OptionByContainer struct {
 
 // InstrumentedApplicationSpec defines the desired state of InstrumentedApplication
 type InstrumentedApplicationSpec struct {
-	Languages []common.LanguageByContainer `json:"languages,omitempty"`
+	RuntimeDetails []RuntimeDetailsByContainer `json:"runtimeDetails,omitempty"`
 	Options  []OptionByContainer   `json:"options,omitempty"`
 }
 

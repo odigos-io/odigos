@@ -13,6 +13,11 @@ const (
 	InstrumentationDisabled        = "disabled"
 	OdigosReportedNameAnnotation   = "odigos.io/reported-name"
 	EbpfInstrumentationAnnotation  = "instrumentation.odigos.io/ebpf" // deprecated.
+	// Used to store the original value of the environment variable in the pod manifest.
+	// This is used to restore the original value when an instrumentation is removed
+	// or odigos is uninstalled.
+	// Should only be used for environment variables that are modified by odigos.
+	ManifestEnvOriginalValAnnotation = "odigos.io/manifest-env-original-val"
 )
 
 var (
