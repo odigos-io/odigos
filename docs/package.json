@@ -1,0 +1,14 @@
+{
+  "name": "@keyval-dev/odigos-docs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The content and configuration powering the Odigos documentation is available at [docs.odigos.io](https://docs.odigos.io)",
+  "scripts": {
+    "dev": "mintlify dev"
+  },
+  "author": "Odigos",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "mintlify": "^4.0.135"
+  }
+}
