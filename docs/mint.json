@@ -87,6 +87,7 @@
             "pipeline/actions/introduction",
             "pipeline/actions/addclusterinfo",
             "pipeline/actions/deleteattribute",
+            "pipeline/actions/rename-attribute",
             "pipeline/actions/crd",
             "pipeline/actions/troubleshooting"
           ]
@@ -111,7 +112,7 @@
     },
     {
       "group": "Observability Backends",
-      "pages": [    
+      "pages": [
         "backends/awss3",
         "backends/azureblob",
         "backends/coralogix",
