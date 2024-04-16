@@ -35,10 +35,6 @@ func (c *FakeActionsV1alpha1) DeleteAttributes(namespace string) v1alpha1.Delete
 	return &FakeDeleteAttributes{c, namespace}
 }
 
-func (c *FakeActionsV1alpha1) RenameAttributes(namespace string) v1alpha1.RenameAttributeInterface {
-	return &FakeRenameAttributes{c, namespace}
-}
-
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeActionsV1alpha1) RESTClient() rest.Interface {

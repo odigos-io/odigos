@@ -17,8 +17,6 @@ limitations under the License.
 
 package v1alpha1
 
-type CollectorsGroupExpansion interface{}
-
 type DestinationExpansion interface{}
 
 type InstrumentedApplicationExpansion interface{}

@@ -29,7 +29,6 @@ type ActionsV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AddClusterInfosGetter
 	DeleteAttributesGetter
-	RenameAttributesGetter
 }
 
 // ActionsV1alpha1Client is used to interact with features provided by the actions group.
@@ -43,10 +42,6 @@ func (c *ActionsV1alpha1Client) AddClusterInfos(namespace string) AddClusterInfo
 
 func (c *ActionsV1alpha1Client) DeleteAttributes(namespace string) DeleteAttributeInterface {
 	return newDeleteAttributes(c, namespace)
-}
-
-func (c *ActionsV1alpha1Client) RenameAttributes(namespace string) RenameAttributeInterface {
-	return newRenameAttributes(c, namespace)
 }
 
 // NewForConfig creates a new ActionsV1alpha1Client for the given config.

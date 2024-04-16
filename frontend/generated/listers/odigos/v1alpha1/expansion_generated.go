@@ -17,14 +17,6 @@ limitations under the License.
 
 package v1alpha1
 
-// CollectorsGroupListerExpansion allows custom methods to be added to
-// CollectorsGroupLister.
-type CollectorsGroupListerExpansion interface{}
-
-// CollectorsGroupNamespaceListerExpansion allows custom methods to be added to
-// CollectorsGroupNamespaceLister.
-type CollectorsGroupNamespaceListerExpansion interface{}
-
 // DestinationListerExpansion allows custom methods to be added to
 // DestinationLister.
 type DestinationListerExpansion interface{}

@@ -20,5 +20,3 @@ package v1alpha1
 type AddClusterInfoExpansion interface{}
 
 type DeleteAttributeExpansion interface{}
-
-type RenameAttributeExpansion interface{}

@@ -57,12 +57,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().AddClusterInfos().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("deleteattributes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().DeleteAttributes().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("renameattributes"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().RenameAttributes().Informer()}, nil
 
 		// Group=odigos.io, Version=v1alpha1
-	case odigosv1alpha1.SchemeGroupVersion.WithResource("collectorsgroups"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().CollectorsGroups().Informer()}, nil
 	case odigosv1alpha1.SchemeGroupVersion.WithResource("destinations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Destinations().Informer()}, nil
 	case odigosv1alpha1.SchemeGroupVersion.WithResource("instrumentedapplications"):
