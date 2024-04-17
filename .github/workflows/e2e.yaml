@@ -46,6 +46,8 @@ jobs:
         with:
           repository: 'open-telemetry/opentelemetry-helm-charts'
           path: opentelemetry-helm-charts
+          # Remove once open-telemetry/opentelemetry-helm-charts#1143 is merged
+          ref: e0c6b9c95c4c4710c3d986e56b9e86ff32de6210
       - name: Install Collector - Helm install
         run: helm install test -f .github/workflows/e2e/collector-helm-values.yaml opentelemetry-helm-charts/charts/opentelemetry-collector --namespace traces --create-namespace
       - name: Wait for Collector to be ready
