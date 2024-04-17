@@ -92,6 +92,7 @@ jobs:
           echo "Sleeping for 10 seconds to allow traces to be collected"
           sleep 10
           kubectl cp -c filecp traces/test-opentelemetry-collector-0:tmp/trace.json ./.github/workflows/e2e/bats/traces-orig.json
+          cat ./.github/workflows/e2e/bats/traces-orig.json
       - name: Verify output trace
         run: |
           bats .github/workflows/e2e/bats/verify.bats
