@@ -32,3 +32,11 @@ type DeleteAttributeListerExpansion interface{}
 // DeleteAttributeNamespaceListerExpansion allows custom methods to be added to
 // DeleteAttributeNamespaceLister.
 type DeleteAttributeNamespaceListerExpansion interface{}
+
+// RenameAttributeListerExpansion allows custom methods to be added to
+// RenameAttributeLister.
+type RenameAttributeListerExpansion interface{}
+
+// RenameAttributeNamespaceListerExpansion allows custom methods to be added to
+// RenameAttributeNamespaceLister.
+type RenameAttributeNamespaceListerExpansion interface{}

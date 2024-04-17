@@ -177,7 +177,7 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 	source.Name = app.OwnerReferences[0].Name
 	source.Kind = app.OwnerReferences[0].Kind
 	source.Namespace = app.Namespace
-	for _, language := range app.Spec.Languages {
+	for _, language := range app.Spec.RuntimeDetails {
 		source.Languages = append(source.Languages, SourceLanguage{
 			ContainerName: language.ContainerName,
 			Language:      string(language.Language),

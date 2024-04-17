@@ -69,7 +69,7 @@ The full list of options available for the "DeleteAttribute" action are:
 
 - `attributeNamesToDelete` (required): An array of strings representing the names of the attributes to be deleted from the telemetry signals. 
 
-- `signals` (require): An array with the signals that the processor will act on (`TRACES`, `METRICS`, `LOGS`).
+- `signals` (required): An array with the signals that the processor will act on (`TRACES`, `METRICS`, `LOGS`).
 
 - `actionName` (optional): Allows you to attach a meaningful name to the action for convenience. Odigos does not use or assume any meaning from this field.
 
@@ -79,6 +79,6 @@ The full list of options available for the "DeleteAttribute" action are:
 
 ### Notes
 
-- This action will delete selected attributes from spans, metric data points and log record but will not delete the entire span, metric data point or log record. If you wish to delete the object itself.
+- This action will delete selected attributes from spans, metric data points and log record but will not delete the entire span, metric data point or log record.
 - For matching attributes, the attribute value will be deleted entirely. This action is not suitable for partial deletion or masking of the attribute value. For example, if you collect an `http.request.body` attribute, this action can be used to delete the attribute but not a key from the JSON object.
-- While common for data to be recorded as attributes, notice that it can also be recorded into names or other fields, for which this action will not be effective.
+- While it is common for information to be recorded in attributes, it can also be recorded into names or other fields, for which this action will not be effective.

@@ -68,7 +68,7 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 			return err
 		}
 
-		return instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, odigosConfig.Spec.DefaultSDKs)
+		return instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, odigosConfig.Spec.DefaultSDKs, obj)
 	})
 
 	if err != nil {
@@ -111,7 +111,7 @@ func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Cli
 			return err
 		}
 
-		instrumentation.Revert(podSpec)
+		instrumentation.Revert(podSpec, obj)
 		return nil
 	})
 

@@ -27,6 +27,8 @@ type Interface interface {
 	AddClusterInfos() AddClusterInfoInformer
 	// DeleteAttributes returns a DeleteAttributeInformer.
 	DeleteAttributes() DeleteAttributeInformer
+	// RenameAttributes returns a RenameAttributeInformer.
+	RenameAttributes() RenameAttributeInformer
 }
 
 type version struct {
@@ -48,4 +50,9 @@ func (v *version) AddClusterInfos() AddClusterInfoInformer {
 // DeleteAttributes returns a DeleteAttributeInformer.
 func (v *version) DeleteAttributes() DeleteAttributeInformer {
 	return &deleteAttributeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// RenameAttributes returns a RenameAttributeInformer.
+func (v *version) RenameAttributes() RenameAttributeInformer {
+	return &renameAttributeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

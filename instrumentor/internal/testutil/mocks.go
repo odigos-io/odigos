@@ -122,7 +122,7 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
 			Namespace: workloadObject.GetNamespace(),
 		},
 		Spec: odigosv1.InstrumentedApplicationSpec{
-			Languages: []common.LanguageByContainer{
+			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test",
 					Language:      common.GoProgrammingLanguage,
