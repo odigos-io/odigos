@@ -3,7 +3,6 @@ package kube
 import (
 	"context"
 
-	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
 	"github.com/keyval-dev/odigos/odiglet/pkg/kube/instrumentation_ebpf"
 	"github.com/keyval-dev/odigos/odiglet/pkg/kube/runtime_details"
@@ -50,7 +49,7 @@ func StartManager(ctx context.Context, mgr ctrl.Manager) error {
 	return nil
 }
 
-func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLanguage]ebpf.Director) error {
+func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap) error {
 	err := runtime_details.SetupWithManager(mgr)
 	if err != nil {
 		return err

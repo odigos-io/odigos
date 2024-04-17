@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func cleanupEbpf(directors map[common.ProgrammingLanguage]ebpf.Director, name types.NamespacedName) {
+func cleanupEbpf(directors ebpf.DirectorsMap, name types.NamespacedName) {
 	// cleanup using all available directors
 	// the Cleanup method is idempotent, so no harm in calling it multiple times
 	for _, director := range directors {
@@ -25,7 +25,7 @@ func cleanupEbpf(directors map[common.ProgrammingLanguage]ebpf.Director, name ty
 	}
 }
 
-func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[common.ProgrammingLanguage]ebpf.Director, runtimeDetails *odigosv1.InstrumentedApplication, podWorkload *common.PodWorkload) error {
+func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.DirectorsMap, runtimeDetails *odigosv1.InstrumentedApplication, podWorkload *common.PodWorkload) error {
 	logger := log.FromContext(ctx)
 	podUid := string(pod.UID)
 
@@ -36,9 +36,9 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 			continue
 		}
 
-		language, _, _ := common.InstrumentationDeviceNameToComponents(*ebpfDeviceName)
+		language, sdkType, sdkTier := common.InstrumentationDeviceNameToComponents(*ebpfDeviceName)
 
-		director := directors[language]
+		director := directors[ebpf.DirectorKey{Language: language, OtelSdk: common.OtelSdk{SdkType: sdkType, SdkTier: sdkTier}}]
 		if director == nil {
 			logger.Error(errors.New("no ebpf director found"), "language", string(language))
 			continue

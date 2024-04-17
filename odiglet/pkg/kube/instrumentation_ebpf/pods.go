@@ -19,7 +19,7 @@ import (
 type PodsReconciler struct {
 	client.Client
 	Scheme    *runtime.Scheme
-	Directors map[common.ProgrammingLanguage]ebpf.Director
+	Directors ebpf.DirectorsMap
 }
 
 func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
