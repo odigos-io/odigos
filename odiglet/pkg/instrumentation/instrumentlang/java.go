@@ -13,7 +13,7 @@ const (
 	javaToolOptionsEnvVar        = "JAVA_TOOL_OPTIONS"
 	javaOptsEnvVar               = "JAVA_OPTS"
 	javaToolOptionsPattern       = "-javaagent:/var/odigos/java/javaagent.jar " +
-		"-Dotel.traces.sampler=always_on -Dotel.exporter.otlp.protocol=grpc -Dotel.exporter.otlp.endpoint=http://%s:%d"
+		"-Dotel.traces.sampler=always_on -Dotel.logs.exporter=none -Dotel.exporter.otlp.protocol=grpc -Dotel.exporter.otlp.endpoint=http://%s:%d"
 )
 
 func Java(deviceId string) *v1beta1.ContainerAllocateResponse {
