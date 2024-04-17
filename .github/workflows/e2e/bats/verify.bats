@@ -49,8 +49,8 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
   assert_equal "$result" '"GET"'
 }
 
-@test "java :: includes http.method attribute" {
-  result=$(server_span_attributes_for ${JAVA_SCOPE} | jq "select(.key == \"http.method\").value.stringValue" | sort)
+@test "java :: includes http.request.method attribute" {
+  result=$(server_span_attributes_for ${JAVA_SCOPE} | jq "select(.key == \"http.request.method\").value.stringValue" | sort)
   result_separated=$(echo $result | sed 's/\n/,/g')
   assert_equal "$result_separated" '"GET" "POST"'
 }
@@ -65,10 +65,10 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
   assert_equal "$result" '"/isMember"'
 }
 
-@test "java :: includes http.target attribute" {
-  result=$(server_span_attributes_for ${JAVA_SCOPE} | jq "select(.key == \"http.target\").value.stringValue" | sort)
+@test "java :: includes url.path attributes" {
+  result=$(server_span_attributes_for ${JAVA_SCOPE} | jq "select(.key == \"url.path\").value.stringValue" | sort)
   result_separated=$(echo $result | sed 's/\n/,/g')
-  assert_equal "$result_separated" '"/buy?id=123" "/price?id=123"'
+  assert_equal "$result_separated" '"/buy" "/price"'
 }
 
 @test "js :: includes http.target attribute" {
@@ -76,13 +76,13 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
   assert_equal "$result" '"/apply-coupon"'
 }
 
-@test "go :: includes hhttp.response.status_code attribute" {
+@test "go :: includes http.response.status_code attribute" {
   result=$(server_span_attributes_for ${GO_SCOPE} | jq "select(.key == \"http.response.status_code\").value.intValue")
   assert_equal "$result" '"200"'
 }
 
-@test "java :: includes http.status_code attribute" {
-  result=$(server_span_attributes_for ${JAVA_SCOPE} | jq "select(.key == \"http.status_code\").value.intValue" | sort)
+@test "java :: includes http.response.status_code attribute" {
+  result=$(server_span_attributes_for ${JAVA_SCOPE} | jq "select(.key == \"http.response.status_code\").value.intValue" | sort)
   result_separated=$(echo $result | sed 's/\n/,/g')
   assert_equal "$result_separated" '"200" "200"'
 }
@@ -93,7 +93,7 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
 }
 
 @test "client :: includes http.response.status_code attribute" {
-  result=$(client_span_attributes_for ${JAVA_CLIENT_SCOPE} | jq "select(.key == \"http.status_code\").value.intValue" | sort)
+  result=$(client_span_attributes_for ${JAVA_CLIENT_SCOPE} | jq "select(.key == \"http.response.status_code\").value.intValue" | sort)
   result_separated=$(echo $result | sed 's/\n/,/g')
   assert_equal "$result_separated" '"200" "200" "200"'
 }
