@@ -27,6 +27,10 @@ type FakeOdigosV1alpha1 struct {
 	*testing.Fake
 }
 
+func (c *FakeOdigosV1alpha1) CollectorsGroups(namespace string) v1alpha1.CollectorsGroupInterface {
+	return &FakeCollectorsGroups{c, namespace}
+}
+
 func (c *FakeOdigosV1alpha1) Destinations(namespace string) v1alpha1.DestinationInterface {
 	return &FakeDestinations{c, namespace}
 }

@@ -15,4 +15,4 @@ bash "${CODEGEN_PKG}"/generate-groups.sh "client,informer,lister" \
   github.com/keyval-dev/odigos/frontend/generated github.com/keyval-dev/odigos/api \
   "odigos:v1alpha1 odigos/actions:v1alpha1" \
   --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate.go.txt \
-  --output-base $(PWD)/vendor
+  --output-base ${PWD}/vendor
