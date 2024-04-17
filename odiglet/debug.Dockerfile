@@ -34,7 +34,7 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 WORKDIR /instrumentations
 
 # Java
-ARG JAVA_OTEL_VERSION=v2.0.0
+ARG JAVA_OTEL_VERSION=v2.3.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
