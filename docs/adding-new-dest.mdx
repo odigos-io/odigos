@@ -90,7 +90,7 @@ corresponds to the type of input field that will be displayed in the UI.
    field of the returned object and secret data (like API key) - defined in the
    `Secret` field of the returned object.
 
-```js
+```ts
 toObjects = (req: NextApiRequest) => {
   return {
     Data: {
@@ -112,7 +112,7 @@ toObjects = (req: NextApiRequest) => {
    Kubernetes data store to the data that will be displayed in the UI. This
    method is invoked when user edits the destination in the UI.
 
-```js
+```ts
 mapDataToFields = (data: any) => {
   return {
     url: data.MYDEST_URL,
@@ -146,7 +146,7 @@ need to implement the collector configuration.
 2. Go to `autoscaler/controllers/gateway/config` directory and create a new file
    called `mydest.go` with the following content:
 
-```js
+```go
 package config
 
 import (
@@ -196,7 +196,7 @@ func (m *MyDest) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 - The last step is to register the new destination struct in the
   `autoscaler/controllers/gateway/config/root.go` file:
 
-```js
+```go
 var availableConfigers = []Configer{/* List of existing destinations  */, &MyDest{}}
 ```
 
