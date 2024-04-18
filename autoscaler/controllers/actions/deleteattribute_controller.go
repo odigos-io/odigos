@@ -39,7 +39,7 @@ type DeleteAttributeReconciler struct {
 
 func (r *DeleteAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling RemoveAttribute action")
+	logger.V(0).Info("Reconciling DeleteAttribute action")
 
 	action := &actionv1.DeleteAttribute{}
 	err := r.Get(ctx, req.NamespacedName, action)
@@ -65,18 +65,6 @@ func (r *DeleteAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	return ctrl.Result{}, nil
-}
-
-type ottlStatementConfig struct {
-	Context    string   `json:"context"`
-	Statements []string `json:"statements"`
-}
-
-type deleteAttributeConfig struct {
-	ErrorMode        string                `json:"error_mode"`
-	TraceStatements  []ottlStatementConfig `json:"trace_statements,omitempty"`
-	MetricStatements []ottlStatementConfig `json:"metric_statements,omitempty"`
-	LogStatements    []ottlStatementConfig `json:"log_statements,omitempty"`
 }
 
 func (r *DeleteAttributeReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.DeleteAttribute, reason string, msg string) error {
@@ -117,12 +105,12 @@ func (r *DeleteAttributeReconciler) ReportReconciledToProcessor(ctx context.Cont
 
 func (r *DeleteAttributeReconciler) convertToProcessor(action *actionv1.DeleteAttribute) (*v1.Processor, error) {
 
-	config := deleteAttributeConfig{
+	config := TransformProcessorConfig{
 		ErrorMode: "propagate", // deleting attributes is a security sensitive operation, so we should propagate errors
 	}
 
 	if action.Spec.Signals == nil {
-		return nil, fmt.Errorf("signals must be set")
+		return nil, fmt.Errorf("Signals must be set")
 	}
 
 	ottlDeleteKeyStatements := make([]string, len(action.Spec.AttributeNamesToDelete))
@@ -134,7 +122,7 @@ func (r *DeleteAttributeReconciler) convertToProcessor(action *actionv1.DeleteAt
 		switch signal {
 
 		case common.LogsObservabilitySignal:
-			config.LogStatements = []ottlStatementConfig{
+			config.LogStatements = []OttlStatementConfig{
 				{
 					Context:    "resource",
 					Statements: ottlDeleteKeyStatements,
@@ -150,7 +138,7 @@ func (r *DeleteAttributeReconciler) convertToProcessor(action *actionv1.DeleteAt
 			}
 
 		case common.MetricsObservabilitySignal:
-			config.MetricStatements = []ottlStatementConfig{
+			config.MetricStatements = []OttlStatementConfig{
 				{
 					Context:    "resource",
 					Statements: ottlDeleteKeyStatements,
@@ -166,7 +154,7 @@ func (r *DeleteAttributeReconciler) convertToProcessor(action *actionv1.DeleteAt
 			}
 
 		case common.TracesObservabilitySignal:
-			config.TraceStatements = []ottlStatementConfig{
+			config.TraceStatements = []OttlStatementConfig{
 				{
 					Context:    "resource",
 					Statements: ottlDeleteKeyStatements,

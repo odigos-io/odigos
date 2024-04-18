@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: instrumentedapplications.odigos.io
 spec:
   group: odigos.io
@@ -22,14 +21,19 @@ spec:
           API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -37,25 +41,6 @@ spec:
             description: InstrumentedApplicationSpec defines the desired state of
               InstrumentedApplication
             properties:
-              languages:
-                items:
-                  properties:
-                    containerName:
-                      type: string
-                    language:
-                      enum:
-                      - java
-                      - python
-                      - go
-                      - dotnet
-                      - javascript
-                      - mysql
-                      type: string
-                  required:
-                  - containerName
-                  - language
-                  type: object
-                type: array
               options:
                 items:
                   properties:
@@ -72,9 +57,9 @@ spec:
                                 optionKey:
                                   type: string
                                 spanKind:
-                                  description: SpanKind is already defined in opentelemetry-go
-                                    as int. this value can go into the CRD in which
-                                    case it will be string for user convenience.
+                                  description: |-
+                                    SpanKind is already defined in opentelemetry-go as int.
+                                    this value can go into the CRD in which case it will be string for user convenience.
                                   enum:
                                   - client
                                   - server
@@ -97,6 +82,37 @@ spec:
                   - instrumentationsLibraries
                   type: object
                 type: array
+              runtimeDetails:
+                items:
+                  properties:
+                    containerName:
+                      type: string
+                    envVars:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                        required:
+                        - name
+                        - value
+                        type: object
+                      type: array
+                    language:
+                      enum:
+                      - java
+                      - python
+                      - go
+                      - dotnet
+                      - javascript
+                      - mysql
+                      type: string
+                  required:
+                  - containerName
+                  - language
+                  type: object
+                type: array
             type: object
           status:
             description: InstrumentedApplicationStatus defines the observed state
@@ -107,9 +123,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

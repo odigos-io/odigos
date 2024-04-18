@@ -23,9 +23,6 @@ import (
 
 	"github.com/go-logr/zapr"
 	bridge "github.com/keyval-dev/opentelemetry-zap-bridge"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-
-	"github.com/keyval-dev/odigos/common/utils"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -108,11 +105,6 @@ func main() {
 			BindAddress: metricsAddr,
 		},
 		HealthProbeBindAddress: probeAddr,
-		Cache: cache.Options{
-			DefaultNamespaces: map[string]cache.Config{
-				utils.GetCurrentNamespace(): {},
-			},
-		},
 		LeaderElection:   enableLeaderElection,
 		LeaderElectionID: "f681cfed.odigos.io",
 	})
@@ -155,6 +147,15 @@ func main() {
 		OdigosVersion:    odigosVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
+		os.Exit(1)
+	}
+	if err = (&controllers.OdigosConfigReconciler{
+		Client:           mgr.GetClient(),
+		Scheme:           mgr.GetScheme(),
+		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "OdigosConfig")
 		os.Exit(1)
 	}
 

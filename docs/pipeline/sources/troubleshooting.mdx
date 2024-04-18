@@ -1,0 +1,70 @@
+---
+title: "Troubleshooting"
+sidebarTitle: "Troubleshooting"
+---
+
+The process Odigos takes to instrument workloads is as follows:
+
+## Instrumentation Label Added to Workload
+
+A following label is required to trigger Odigos to instrument the workload or the namespace:
+
+```yaml
+odigos-instrumentation: enabled
+```
+
+That label can be added in Odigos UI or manually through the Kubernetes APIs.
+
+If you expect to see data from a workload but don't, check that the label is present, for example:
+
+```shell
+kubectl get deployment <deployment-name> -n <namespace> -o jsonpath='{.metadata.labels}'
+```
+
+## Language Detection
+
+After an `odigos-instrumentation` label is added to a workload, Odigos will attempt to detect the programming language
+of the containers in the workload pods and write the detected language to an `instrumentedapplications.odigos.io` CRD in same namespace.
+
+The resulting language is used to determine which instrumentation to apply.
+
+If your workload is labeled, verify that the `instrumentedapplications.odigos.io` CRD exists:
+
+```shell
+kubectl get instrumentedapplications.odigos.io -n <namespace>
+```
+
+and that `languages` array contains the expected content.
+
+## Instrumentation Device
+
+Once a supported language is detected and the `instrumentedapplications.odigos.io` CRD is created,
+Odigos will wait until a destination is added, and OpenTelemetry Collectors are deployed to the cluster which can receive the telemetry.
+
+To inject the instrumentation agent into pods, Odigos will patch the workload template containers with a resource based on the detected language. It would look something like this:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    odigos-instrumentation: enabled
+  name: my-deployment
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - resources:
+          limits:
+            instrumentation.odigos.io/go-ebpf-community: "1"
+```
+
+The `instrumentation.odigos.io/go-ebpf-community` resource limit instruct Odigos on how to mount the relevant OpenTelemetry agent and environment variables into the container, 
+and which processes should be instrumented with eBPF.
+
+## Getting Help
+
+If you are still having trouble, please open an issue in [GitHub](https://github.com/keyval-dev/odigos) or reach out to us in [Odigos Slack](https://join.slack.com/t/odigos/shared_invite/zt-24u91yknm-0fLXu6qnqYfNHS_GSUgTJw)
+
+
