@@ -38,6 +38,7 @@ export function useSources() {
 
       setInstrumentedNamespaces(instrumented);
     }
+    console.log({ sources });
   }, [namespaces, sources]);
 
   const [sortedSources, setSortedSources] = useState<
