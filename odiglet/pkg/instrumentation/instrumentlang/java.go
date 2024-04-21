@@ -12,17 +12,25 @@ const (
 	otelResourceAttrPatteern     = "service.name=%s,odigos.device=java"
 	javaToolOptionsEnvVar        = "JAVA_TOOL_OPTIONS"
 	javaOptsEnvVar               = "JAVA_OPTS"
-	javaToolOptionsPattern       = "-javaagent:/var/odigos/java/javaagent.jar " +
-		"-Dotel.traces.sampler=always_on -Dotel.exporter.otlp.endpoint=http://%s:%d"
+	javaOtlpEndpointEnvVar       = "OTEL_EXPORTER_OTLP_ENDPOINT"
+	javaOtlpProtocolEnvVar       = "OTEL_EXPORTER_OTLP_PROTOCOL"
+	javaOtelLogsExporterEnvVar   = "OTEL_LOGS_EXPORTER"
+	javaOtelTracesSamplerEnvVar  = "OTEL_TRACES_SAMPLER"
+	javaToolOptions              = "-javaagent:/var/odigos/java/javaagent.jar"
 )
 
 func Java(deviceId string) *v1beta1.ContainerAllocateResponse {
-	javaOpts := fmt.Sprintf(javaToolOptionsPattern, env.Current.NodeIP, consts.OTLPPort)
+	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPPort)
+
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
 			otelResourceAttributesEnvVar: fmt.Sprintf(otelResourceAttrPatteern, deviceId),
-			javaToolOptionsEnvVar:        javaOpts,
-			javaOptsEnvVar:               javaOpts,
+			javaToolOptionsEnvVar:        javaToolOptions,
+			javaOptsEnvVar:               javaToolOptions,
+			javaOtlpEndpointEnvVar:       otlpEndpoint,
+			javaOtlpProtocolEnvVar:	      "grpc",
+			javaOtelLogsExporterEnvVar:   "none",
+			javaOtelTracesSamplerEnvVar:  "always_on",
 		},
 		Mounts: []*v1beta1.Mount{
 			{
