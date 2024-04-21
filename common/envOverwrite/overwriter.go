@@ -18,6 +18,14 @@ var EnvValues = map[string]struct{
 		Value: "/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation:/var/odigos/python",
 		Delim: ":",
 	},
+	"JAVA_OPTS": {
+		Value: "-javaagent:/var/odigos/java/javaagent.jar",
+		Delim: " ",
+	},
+	"JAVA_TOOL_OPTIONS": {
+		Value: "-javaagent:/var/odigos/java/javaagent.jar",
+		Delim: " ",
+	},
 }
 
 func ShouldPatch(envName string, value string) bool {
