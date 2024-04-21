@@ -8,16 +8,12 @@ Simply merge in this PR and your documentation will be connected!
 
 ### 👩‍💻 Development
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mintlify) to preview the documentation changes locally. To install, use the following command
+The documentation is build on [Mintlify](https://www.npmjs.com/package/mintlify). To preview the documentation changes locally:
 
 ```
-npm i mintlify -g
-```
-
-Run the following command at the root of your documentation (where mint.json is)
-
-```
-mintlify dev
+# make sure you're in `/docs` folder, where `mint.json` and `package.json` files are
+npm ci
+npm run dev
 ```
 
 ### 😎 Publishing Changes
@@ -25,8 +21,3 @@ mintlify dev
 Changes will be deployed to production automatically after pushing to the default branch.
 
 You can also preview changes using PRs, which generates a preview link of the docs.
-
-#### Troubleshooting
-
-- Mintlify dev isn't running - Run `mintlify install` it'll re-install dependencies.
-- Mintlify dev is updating really slowly - Run `mintlify clear` to clear the cache.
