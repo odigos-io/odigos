@@ -1,5 +1,6 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { use, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { OverviewDataFlowWrapper } from './styled';
 import { KeyvalDataFlow, KeyvalLoader } from '@/design.system';
 import { useActions, useDestinations, useSources } from '@/hooks';
@@ -24,20 +25,25 @@ interface FlowEdge {
   data?: any;
 }
 
+const POLL_DATA = 'poll';
+const POLL_INTERVAL = 2000; // Interval in milliseconds between polls
+const MAX_ATTEMPTS = 5; // Maximum number of polling attempts
+
 export function DataFlowContainer() {
   const [nodes, setNodes] = useState<FlowNode[]>();
   const [edges, setEdges] = useState<FlowEdge[]>();
+  const [pollingAttempts, setPollingAttempts] = useState(0);
 
-  const { sources } = useSources();
   const { actions } = useActions();
-  const { destinationList } = useDestinations();
+  const { sources, refetchSources } = useSources();
+  const { destinationList, refetchDestinations } = useDestinations();
 
+  const useSearch = useSearchParams();
+  const intervalId = useRef<NodeJS.Timer>();
   useEffect(() => {
     if (!sources || !destinationList || !actions) return;
 
-    const filteredActions = actions.filter(
-      (action) => action.spec.disabled !== true
-    );
+    const filteredActions = actions.filter((action) => !action.spec.disabled);
 
     const { nodes, edges } = buildFlowNodesAndEdges(
       sources,
@@ -47,6 +53,28 @@ export function DataFlowContainer() {
     setNodes(nodes);
     setEdges(edges);
   }, [actions, destinationList, sources]);
+
+  useEffect(() => {
+    const pullData = useSearch.get(POLL_DATA);
+    if (pullData) {
+      intervalId.current = setInterval(() => {
+        Promise.all([refetchSources(), refetchDestinations()])
+          .then(() => {})
+          .catch(console.error);
+
+        setPollingAttempts((prev) => prev + 1);
+      }, POLL_INTERVAL);
+
+      return () => clearInterval(intervalId.current);
+    }
+  }, [refetchDestinations, refetchSources, pollingAttempts, useSearch]);
+
+  useEffect(() => {
+    if (pollingAttempts >= MAX_ATTEMPTS) {
+      clearInterval(intervalId.current);
+      return;
+    }
+  }, [pollingAttempts]);
 
   if (!nodes || !edges) {
     return <KeyvalLoader />;
