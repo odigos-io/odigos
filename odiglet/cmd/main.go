@@ -110,11 +110,15 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 	manager.Run()
 }
 
-func initEbpf() (map[common.ProgrammingLanguage]ebpf.Director, error) {
+func initEbpf() (ebpf.DirectorsMap, error) {
 	goInstrumentationFactory := ebpf.NewGoInstrumentationFactory()
 	goDirector := ebpf.NewEbpfDirector(common.GoProgrammingLanguage, goInstrumentationFactory)
+	goDirectorKey := ebpf.DirectorKey{
+		Language: common.GoProgrammingLanguage,
+		OtelSdk:  common.OtelSdk{SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+	}
 
-	return map[common.ProgrammingLanguage]ebpf.Director{
-		common.GoProgrammingLanguage: goDirector,
+	return ebpf.DirectorsMap{
+		goDirectorKey: goDirector,
 	}, nil
 }
