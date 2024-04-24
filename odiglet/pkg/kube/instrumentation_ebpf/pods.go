@@ -19,7 +19,7 @@ import (
 type PodsReconciler struct {
 	client.Client
 	Scheme    *runtime.Scheme
-	Directors map[common.ProgrammingLanguage]ebpf.Director
+	Directors ebpf.DirectorsMap
 }
 
 func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
@@ -46,16 +46,6 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	shouldBeEbpfInstrumented := isPodEbpfInstrumented(&pod)
-	if err != nil {
-		logger.Error(err, "error checking if pod should be ebpf instrumented")
-		return ctrl.Result{}, err
-	}
-	if !shouldBeEbpfInstrumented {
-		cleanupEbpf(p.Directors, request.NamespacedName)
-		return ctrl.Result{}, nil
-	}
-
 	podWorkload, err := p.getPodWorkloadObject(ctx, &pod)
 	if err != nil {
 		logger.Error(err, "error getting pod workload object")
@@ -67,24 +57,28 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	}
 
 	if pod.Status.Phase == corev1.PodRunning {
-		err := p.instrumentWithEbpf(ctx, &pod, podWorkload)
+		err, instrumentedEbpf := p.instrumentWithEbpf(ctx, &pod, podWorkload)
 		if err != nil {
 			logger.Error(err, "error instrumenting pod")
+			cleanupEbpf(p.Directors, request.NamespacedName)
 			return ctrl.Result{}, err
+		} else if !instrumentedEbpf {
+			cleanupEbpf(p.Directors, request.NamespacedName)
+			return ctrl.Result{}, nil
 		}
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod, podWorkload *common.PodWorkload) error {
+func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod, podWorkload *common.PodWorkload) (error, bool) {
 	runtimeDetails, err := getRuntimeDetails(ctx, p.Client, podWorkload)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// Probably shutdown in progress, cleanup will be done as soon as the pod object is deleted
-			return nil
+			return nil, false
 		}
-		return err
+		return err, false
 	}
 
 	return instrumentPodWithEbpf(ctx, pod, p.Directors, runtimeDetails, podWorkload)
