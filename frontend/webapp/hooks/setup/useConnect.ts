@@ -32,7 +32,7 @@ export function useConnect() {
       });
 
       await mutateAsync(body, {
-        onSuccess: () => router.push(ROUTES.OVERVIEW),
+        onSuccess: () => router.push(`${ROUTES.OVERVIEW}?poll=true`),
         onError: (error) => handleError(error),
       });
     } catch (error) {
