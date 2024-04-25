@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func cleanupEbpf(directors map[common.ProgrammingLanguage]ebpf.Director, name types.NamespacedName) {
+func cleanupEbpf(directors ebpf.DirectorsMap, name types.NamespacedName) {
 	// cleanup using all available directors
 	// the Cleanup method is idempotent, so no harm in calling it multiple times
 	for _, director := range directors {
@@ -25,22 +25,22 @@ func cleanupEbpf(directors map[common.ProgrammingLanguage]ebpf.Director, name ty
 	}
 }
 
-func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[common.ProgrammingLanguage]ebpf.Director, runtimeDetails *odigosv1.InstrumentedApplication, podWorkload *common.PodWorkload) error {
+func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.DirectorsMap, runtimeDetails *odigosv1.InstrumentedApplication, podWorkload *common.PodWorkload) (error, bool) {
 	logger := log.FromContext(ctx)
 	podUid := string(pod.UID)
+	instrumentedEbpf := false
 
 	for _, container := range pod.Spec.Containers {
 
-		ebpfDeviceName := podContainerEbpfDeviceName(container)
-		if ebpfDeviceName == nil {
+		deviceName := podContainerDeviceName(container)
+		if deviceName == nil {
 			continue
 		}
 
-		language, _, _ := common.InstrumentationDeviceNameToComponents(*ebpfDeviceName)
+		language, sdkType, sdkTier := common.InstrumentationDeviceNameToComponents(*deviceName)
 
-		director := directors[language]
+		director := directors[ebpf.DirectorKey{Language: language, OtelSdk: common.OtelSdk{SdkType: sdkType, SdkTier: sdkTier}}]
 		if director == nil {
-			logger.Error(errors.New("no ebpf director found"), "language", string(language))
 			continue
 		}
 
@@ -55,7 +55,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 		details, err := process.FindAllInContainer(podUid, containerName)
 		if err != nil {
 			logger.Error(err, "error finding processes")
-			return err
+			return err, instrumentedEbpf
 		}
 
 		var errs []error
@@ -69,40 +69,32 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors map[c
 			if err != nil {
 				logger.Error(err, "error initiating process instrumentation", "pid", d.ProcessID)
 				errs = append(errs, err)
+				continue
 			}
+			instrumentedEbpf = true
 		}
 
 		// Failed to instrument all processes in the container
 		if len(errs) > 0 && len(errs) == len(details) {
-			return errors.Join(errs...)
+			return errors.Join(errs...), instrumentedEbpf
 		}
 	}
-	return nil
+	return nil, instrumentedEbpf
 }
 
-func podContainerEbpfDeviceName(container v1.Container) *string {
+func podContainerDeviceName(container v1.Container) *string {
 	if container.Resources.Limits == nil {
 		return nil
 	}
 
 	for resourceName, _ := range container.Resources.Limits {
 		resourceNameStr := string(resourceName)
-		if strings.HasPrefix(resourceNameStr, common.OdigosResourceNamespace) &&
-			strings.Contains(resourceNameStr, "ebpf") {
+		if strings.HasPrefix(resourceNameStr, common.OdigosResourceNamespace) {
 			return &resourceNameStr
 		}
 	}
 
 	return nil
-}
-
-func isPodEbpfInstrumented(pod *corev1.Pod) bool {
-	for _, container := range pod.Spec.Containers {
-		if podContainerEbpfDeviceName(container) != nil {
-			return true
-		}
-	}
-	return false
 }
 
 func getRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *common.PodWorkload) (*odigosv1.InstrumentedApplication, error) {

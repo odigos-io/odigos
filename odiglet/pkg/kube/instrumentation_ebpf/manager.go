@@ -4,7 +4,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	"github.com/keyval-dev/odigos/common"
 	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
 	"github.com/keyval-dev/odigos/odiglet/pkg/log"
 	corev1 "k8s.io/api/core/v1"
@@ -48,7 +47,7 @@ func (i *podPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
-func SetupWithManager(mgr ctrl.Manager, ebpfDirectors map[common.ProgrammingLanguage]ebpf.Director) error {
+func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap) error {
 
 	log.Logger.V(0).Info("Starting reconcileres for ebpf instrumentation")
 

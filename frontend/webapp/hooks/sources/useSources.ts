@@ -13,10 +13,11 @@ export function useSources() {
   const [instrumentedNamespaces, setInstrumentedNamespaces] = useState<
     Namespace[]
   >([]);
-  const { data: sources, isLoading } = useQuery<ManagedSource[]>(
-    [QUERIES.API_SOURCES],
-    getSources
-  );
+  const {
+    data: sources,
+    isLoading,
+    refetch: refetchSources,
+  } = useQuery<ManagedSource[]>([QUERIES.API_SOURCES], getSources);
 
   const { data: namespaces } = useQuery<{ namespaces: Namespace[] }>(
     [QUERIES.API_NAMESPACES],
@@ -118,6 +119,7 @@ export function useSources() {
 
   return {
     upsertSources,
+    refetchSources,
     sources: sortedSources || [],
     isLoading,
     sortSources,
