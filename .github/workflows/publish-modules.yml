@@ -177,7 +177,7 @@ jobs:
 
       - name: Install GemFury CLI
         run: |
-          echo "deb [trusted=yes] https://apt.fury.io/cli/ * *" > /etc/apt/sources.list.d/fury-cli.list
+          sudo bash -c "echo 'deb [trusted=yes] https://apt.fury.io/cli/ * *' > /etc/apt/sources.list.d/fury-cli.list"
           sudo apt-get update
           sudo apt-get install -y fury-cli
 
