@@ -9,10 +9,8 @@ builds:
     binary: odigos-otelcol
     dir: odigosotelcol
     ldflags:
-      # TODO: set the info in the collector executable
-      # - -X github.com/keyval-dev/vm-agent/pkg/version.OdigosVmagentVersion={{ .Tag }}
-      # - -X github.com/keyval-dev/vm-agent/pkg/version.OdigosVmagentCommit={{ .ShortCommit }}
-      # - -X github.com/keyval-dev/vm-agent/pkg/version.OdigosVmagentDate={{ .Date }}
+      - -s
+      - -w
     flags:
       - -trimpath
 nfpms:
