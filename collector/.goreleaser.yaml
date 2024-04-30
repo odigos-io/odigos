@@ -1,0 +1,62 @@
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    binary: odigos-otelcol
+    dir: odigosotelcol
+    ldflags:
+      # TODO: set the info in the collector executable
+      # - -X github.com/keyval-dev/vm-agent/pkg/version.OdigosVmagentVersion={{ .Tag }}
+      # - -X github.com/keyval-dev/vm-agent/pkg/version.OdigosVmagentCommit={{ .ShortCommit }}
+      # - -X github.com/keyval-dev/vm-agent/pkg/version.OdigosVmagentDate={{ .Date }}
+    flags:
+      - -trimpath
+nfpms:
+  - id: packages # this id is used in the publisher section to specify which artifacts to publish
+    package_name: odigos-otelcol
+    contents:
+      - src: distribution/odigos-otelcol/odigos-otelcol.service
+        dst: /lib/systemd/system/odigos-otelcol.service
+      - src: distribution/odigos-otelcol/odigos-otelcol.conf
+        dst: /etc/odigos-otelcol/odigos-otelcol.conf
+        type: config|noreplace
+      - src: distribution/odigos-otelcol/config.yaml
+        dst: /etc/odigos-otelcol/config.yaml
+        type: config|noreplace
+    scripts:
+      preinstall: distribution/odigos-otelcol/preinstall.sh
+      preremove: distribution/odigos-otelcol/preremove.sh
+    vendor: Keyval Inc.
+    homepage: https://odigos.io
+    formats:
+      - deb
+      - rpm
+    description: Instant distributed tracing without code changes using eBPF
+    file_name_template: "{{ .ConventionalFileName }}"
+    maintainer: Keyval Inc.
+publishers:
+  - name: fury deb publisher
+    ids: # publish only the artifacts created in the nfpms section. e.g. ignore the tar.gz archive
+      - packages
+    cmd: fury push {{ .ArtifactName }} --account {{ .Env.FURY_ACCOUNT }} --api-token {{ .Env.FURY_API_TOKEN }} --public --quiet
+    dir: dist
+# archives:
+#   builds:
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+# we don't need the otelcol to have releases in github.
+# this goreleaser is only about publishing the collector as deb/rpm package to the fury repository
+release:
+  disable: true
