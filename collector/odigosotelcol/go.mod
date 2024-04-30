@@ -2,7 +2,7 @@
 
 module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
-go 1.20
+go 1.21.0
 
 require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.94.0
