@@ -1,6 +1,6 @@
 module github.com/keyval-dev/odigos/destinations
 
-go 1.21
+go 1.22
 
 require (
 	github.com/keyval-dev/odigos/common v1.0.48
