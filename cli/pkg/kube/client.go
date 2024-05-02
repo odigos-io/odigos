@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	"github.com/keyval-dev/odigos/cli/pkg/generated/clientset/versioned/typed/odigos/v1alpha1"
+	"github.com/keyval-dev/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	odigoslabels "github.com/keyval-dev/odigos/cli/pkg/labels"
 	"github.com/spf13/cobra"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"

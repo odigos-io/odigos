@@ -138,9 +138,9 @@ JS_SCOPE="@opentelemetry/instrumentation-http"
 }
 
 @test "client, server :: spans have same trace ID" {
-  client_trace_id=$(server_spans_from_scope_named ${JAVA_CLIENT_SCOPE} | jq ".traceId")
+  client_trace_id=$(client_spans_from_scope_named ${JAVA_CLIENT_SCOPE} | jq ".traceId" | uniq)
   assert_not_empty "$client_trace_id"
-  server_trace_id=$(client_spans_from_scope_named ${JAVA_SCOPE} | jq ".traceId")
+  server_trace_id=$(server_spans_from_scope_named ${JAVA_SCOPE} | jq ".traceId" | uniq)
   assert_not_empty "$server_trace_id"
   assert_equal "$server_trace_id" "$client_trace_id"
 }

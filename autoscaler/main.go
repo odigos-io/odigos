@@ -36,7 +36,7 @@ import (
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	apiactions "github.com/keyval-dev/odigos/api/odigos/actions/v1alpha1"
+	apiactions "github.com/keyval-dev/odigos/api/actions/v1alpha1"
 	observabilitycontrolplanev1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 
 	"github.com/keyval-dev/odigos/autoscaler/controllers"
