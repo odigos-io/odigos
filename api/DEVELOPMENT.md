@@ -5,7 +5,8 @@
 1. Update the relevant CRD `go` file in the `api/odigos` directory.
 2. Run `make generate` to update the auto generated `zz_generated.deepcopy.go` file.
 3. Run `make manifests` to update the CRD yaml files in the `config/crd/bases` directory.
-4. Update the code in `cli` module to reflect the changes in the CRD in the `cli/cmd/resources/crds` directory
+4. Run `make generate-client` to update the auto generated files under `api/generated`.
+5. Update the code in `cli` module to reflect the changes in the CRD in the `cli/cmd/resources/crds` directory
 
 ## CRD versioning
 
