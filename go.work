@@ -4,12 +4,12 @@ use (
 	./api
 	./autoscaler
 	./cli
+	./collector/odigosotelcol
 	./common
 	./destinations
 	./frontend
 	./instrumentor
 	./odiglet
-	./scheduler
-	./collector/odigosotelcol
 	./procdiscovery
+	./scheduler
 )
