@@ -11,11 +11,11 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.29.3
-	k8s.io/apiextensions-apiserver v0.29.2
+	k8s.io/api v0.30.0
+	k8s.io/apiextensions-apiserver v0.30.0
 	k8s.io/apimachinery v0.30.0
-	k8s.io/client-go v0.29.3
-	sigs.k8s.io/controller-runtime v0.17.3
+	k8s.io/client-go v0.30.0
+	sigs.k8s.io/controller-runtime v0.18.1
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -23,7 +23,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
-	github.com/evanphx/json-patch/v5 v5.8.0 // indirect
+	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
