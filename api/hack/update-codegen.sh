@@ -12,6 +12,7 @@ source "${CODEGEN_PKG}/kube_codegen.sh"
 
 THIS_PKG="k8s.io/code-generator/examples"
 
+# https://github.com/kubernetes/code-generator/blob/de98b55e3b8c7dca2dfcbf840c0d0a4e6f6b29c9/kube_codegen.sh#L436
 kube::codegen::gen_client \
     --with-watch \
     --with-applyconfig \
