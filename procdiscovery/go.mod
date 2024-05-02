@@ -1,8 +1,6 @@
 module github.com/keyval-dev/odigos/procdiscovery
 
-go 1.21.0
-
-toolchain go1.21.3
+go 1.22.0
 
 require github.com/keyval-dev/odigos/common v1.0.48
 

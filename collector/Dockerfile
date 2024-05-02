@@ -1,4 +1,4 @@
-FROM golang:1.21-bullseye AS builder
+FROM golang:1.22-bullseye AS builder
 COPY . /go/src/
 WORKDIR /go/src/
 RUN make build-odigoscol

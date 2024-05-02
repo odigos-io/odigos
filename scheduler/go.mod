@@ -1,8 +1,6 @@
 module github.com/keyval-dev/odigos/scheduler
 
-go 1.21.0
-
-toolchain go1.22.0
+go 1.22.0
 
 require (
 	github.com/go-logr/zapr v1.3.0

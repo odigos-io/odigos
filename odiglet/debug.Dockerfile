@@ -14,7 +14,7 @@ ARG DOTNET_OTEL_VERSION=v0.7.0
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
 
-FROM keyval/odiglet-base:v1.0 as builder
+FROM keyval/odiglet-base:v1.4 as builder
 WORKDIR /go/src/github.com/keyval-dev/odigos
 COPY . .
 WORKDIR ./odiglet/
