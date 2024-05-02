@@ -1,6 +1,6 @@
 module github.com/keyval-dev/odigos/frontend
 
-go 1.22
+go 1.22.0
 
 require (
 	github.com/gin-contrib/cors v1.4.0

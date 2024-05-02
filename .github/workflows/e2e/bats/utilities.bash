@@ -153,8 +153,7 @@ assert_regex() {
 }
 
 assert_not_empty() {
-	EMPTY=(\"\")
-	if [[ "$1" == "${EMPTY}" ]]; then
+	if [[ -z "$1" ]]; then
 		{
 			echo
 			echo "-- 💥 value is empty 💥 --"

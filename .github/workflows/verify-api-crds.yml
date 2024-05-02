@@ -25,3 +25,12 @@ jobs:
             echo "api CRDs are not up to date. Please run 'make generate && make manifests' and commit the changes."
             exit 1
           fi
+      - name: Generate client files
+        run: make generate-client
+      - name: Verify Generate
+        run: |
+          if [[ $(git diff --exit-code) ]]; then
+            git diff
+            echo "client files are not up to date. Please run 'make generate-client' and commit the changes."
+            exit 1
+          fi
