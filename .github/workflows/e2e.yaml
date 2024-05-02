@@ -25,7 +25,7 @@ jobs:
       - name: Setup BATS
         uses: mig4/setup-bats@v1
       - name: Create Kind Cluster
-        uses: helm/kind-action@v1.9.0
+        uses: helm/kind-action@v1.10.0
         with:
           cluster_name: kind
       - name: Build CLI
