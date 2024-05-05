@@ -57,7 +57,7 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 		}
 
 		// runtime details deleted: remove instrumentation from resource requests
-		err = removeInstrumentation(logger, ctx, r.Client, req.NamespacedName)
+		err = removeInstrumentation(logger, ctx, r.Client, req.NamespacedName, UnInstrumentReasonNoRuntimeDetails)
 		if err != nil {
 			logger.Error(err, "error removing instrumentation")
 			return ctrl.Result{}, err
@@ -77,7 +77,7 @@ func reconcileSingleInstrumentedApplication(ctx context.Context, kubeClient clie
 	runtimeDetailsNamespacedName := client.ObjectKeyFromObject(runtimeDetails)
 
 	if len(runtimeDetails.Spec.RuntimeDetails) == 0 {
-		err := removeInstrumentation(logger, ctx, kubeClient, runtimeDetailsNamespacedName)
+		err := removeInstrumentation(logger, ctx, kubeClient, runtimeDetailsNamespacedName, UnInstrumentReasonNoRuntimeDetails)
 		if err != nil {
 			logger.Error(err, "error removing instrumentation")
 			return err
@@ -87,7 +87,7 @@ func reconcileSingleInstrumentedApplication(ctx context.Context, kubeClient clie
 	}
 
 	if !isDataCollectionReady(ctx, kubeClient) {
-		err := removeInstrumentation(logger, ctx, kubeClient, runtimeDetailsNamespacedName)
+		err := removeInstrumentation(logger, ctx, kubeClient, runtimeDetailsNamespacedName, UnInstrumentReasonDataCollectionNotReady)
 		if err != nil {
 			logger.Error(err, "error removing instrumentation")
 			return err
@@ -103,13 +103,13 @@ func reconcileSingleInstrumentedApplication(ctx context.Context, kubeClient clie
 	return nil
 }
 
-func removeInstrumentation(logger logr.Logger, ctx context.Context, kubeClient client.Client, instrumentedApplicationName types.NamespacedName) error {
+func removeInstrumentation(logger logr.Logger, ctx context.Context, kubeClient client.Client, instrumentedApplicationName types.NamespacedName, reason UnInstrumentReason) error {
 	name, kind, err := utils.GetTargetFromRuntimeName(instrumentedApplicationName.Name)
 	if err != nil {
 		return err
 	}
 
-	err = uninstrument(logger, ctx, kubeClient, instrumentedApplicationName.Namespace, name, kind)
+	err = uninstrument(logger, ctx, kubeClient, instrumentedApplicationName.Namespace, name, kind, reason)
 	if err != nil {
 		logger.Error(err, "error removing instrumentation")
 		return err
