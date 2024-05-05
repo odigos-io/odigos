@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { KeyValueTable, KeyValueTableProps } from '@keyval-dev/design-system';
+import { KeyValueTable, KeyValueTableProps } from '@odigos-io/design-system';
 
 export const KeyValuePair: React.FC<KeyValueTableProps> = (
   props: KeyValueTableProps

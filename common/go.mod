@@ -1,4 +1,4 @@
-module github.com/keyval-dev/odigos/common
+module github.com/odigos-io/odigos/common
 
 go 1.22
 

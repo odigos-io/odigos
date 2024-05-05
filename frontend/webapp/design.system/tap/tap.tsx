@@ -1,5 +1,5 @@
 import React from "react";
-import { Tap } from "@keyval-dev/design-system";
+import { Tap } from "@odigos-io/design-system";
 
 interface TapProps {
   icons: object;

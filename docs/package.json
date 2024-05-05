@@ -1,5 +1,5 @@
 {
-  "name": "@keyval-dev/odigos-docs",
+  "name": "@odigos-io/odigos-docs",
   "version": "1.0.0",
   "private": true,
   "description": "The content and configuration powering the Odigos documentation is available at [docs.odigos.io](https://docs.odigos.io)",

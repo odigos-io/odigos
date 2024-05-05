@@ -1,13 +1,13 @@
-module github.com/keyval-dev/odigos/frontend
+module github.com/odigos-io/odigos/frontend
 
 go 1.22.0
 
 require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
-	github.com/keyval-dev/odigos/api v0.0.0
-	github.com/keyval-dev/odigos/common v0.0.0
-	github.com/keyval-dev/odigos/destinations v0.0.0-20240223090638-df3328a088bc
+	github.com/odigos-io/odigos/api v0.0.0
+	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/destinations v0.0.0-20240223090638-df3328a088bc
 	go.uber.org/multierr v1.6.0
 	k8s.io/api v0.29.2
 	k8s.io/apimachinery v0.30.0
@@ -74,6 +74,6 @@ require (
 )
 
 replace (
-	github.com/keyval-dev/odigos/api => ../api
-	github.com/keyval-dev/odigos/common => ../common
+	github.com/odigos-io/odigos/api => ../api
+	github.com/odigos-io/odigos/common => ../common
 )

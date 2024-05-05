@@ -1,5 +1,5 @@
 import React from "react";
-import { SelectedCounter } from "@keyval-dev/design-system";
+import { SelectedCounter } from "@odigos-io/design-system";
 
 interface SelectedCounterProps {
   total: number;

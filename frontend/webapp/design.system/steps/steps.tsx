@@ -1,5 +1,5 @@
 import React from "react";
-import { Steps } from "@keyval-dev/design-system";
+import { Steps } from "@odigos-io/design-system";
 
 type StepItemProps = {
   title: string;

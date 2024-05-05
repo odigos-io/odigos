@@ -1,9 +1,9 @@
-module github.com/keyval-dev/odigos/api
+module github.com/odigos-io/odigos/api
 
 go 1.22.0
 
 require (
-	github.com/keyval-dev/odigos/common v0.0.0
+	github.com/odigos-io/odigos/common v0.0.0
 	k8s.io/api v0.29.2
 	k8s.io/apimachinery v0.30.0
 	k8s.io/client-go v0.29.2
@@ -57,4 +57,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/keyval-dev/odigos/common => ../common
+replace github.com/odigos-io/odigos/common => ../common

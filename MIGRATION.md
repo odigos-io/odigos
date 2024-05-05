@@ -21,14 +21,14 @@ This cli output (at the time of writing) shows that the cli version is `v1.0.0` 
 ### Brew (MacOS only)
 
 ```sh
-brew install keyval-dev/homebrew-odigos-cli/odigos
+brew install odigos-io/homebrew-odigos-cli/odigos
 ```
 
 Will install the latest version of the Odigos cli from brew.
 
 ### GitHub Releases
 
-Go to the [Releases Page](https://github.com/keyval-dev/odigos/releases), download the latest version for your arch and os, and install it by coping the executable to a directory in your `PATH`. You can execute `odigos version` in your shell to verify that odigos is installed correctly.
+Go to the [Releases Page](https://github.com/odigos-io/odigos/releases), download the latest version for your arch and os, and install it by coping the executable to a directory in your `PATH`. You can execute `odigos version` in your shell to verify that odigos is installed correctly.
 
 ## Upgrade Odigos in the Cluster
 

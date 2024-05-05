@@ -1,5 +1,5 @@
 import React from "react";
-import { Notification } from "@keyval-dev/design-system";
+import { Notification } from "@odigos-io/design-system";
 
 interface KeyvalNotificationProps {
   type: "success" | "error" | "warning" | "info";

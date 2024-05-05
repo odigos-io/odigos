@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card } from '@keyval-dev/design-system';
+import { Card } from '@odigos-io/design-system';
 
 interface CardProps {
   children: JSX.Element | JSX.Element[];

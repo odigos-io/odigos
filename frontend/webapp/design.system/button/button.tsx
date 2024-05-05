@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { Button } from '@keyval-dev/design-system';
+import { Button } from '@odigos-io/design-system';
 interface ButtonProps {
   variant?: string;
   children: JSX.Element | JSX.Element[];

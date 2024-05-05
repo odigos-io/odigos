@@ -1,5 +1,5 @@
 import React from 'react';
-import { Code } from '@keyval-dev/design-system';
+import { Code } from '@odigos-io/design-system';
 
 interface CodeProps {
   text: string;

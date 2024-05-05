@@ -1,5 +1,5 @@
 import React from "react";
-import { Video } from "@keyval-dev/design-system";
+import { Video } from "@odigos-io/design-system";
 
 type VideoComponentProps = {
   videoSrc: string;

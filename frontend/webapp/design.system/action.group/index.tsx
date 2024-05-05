@@ -1,4 +1,4 @@
-import { ActionsGroup } from '@keyval-dev/design-system';
+import { ActionsGroup } from '@odigos-io/design-system';
 import React from 'react';
 
 // Define the type for individual action items

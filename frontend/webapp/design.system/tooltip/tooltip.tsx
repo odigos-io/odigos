@@ -1,5 +1,5 @@
 import React from "react";
-import { Tooltip } from "@keyval-dev/design-system";
+import { Tooltip } from "@odigos-io/design-system";
 
 export function KeyvalTooltip(props: any) {
   return <Tooltip {...props} />;

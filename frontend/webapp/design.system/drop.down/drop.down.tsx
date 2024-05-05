@@ -1,5 +1,5 @@
 import React from 'react';
-import { DropDown } from '@keyval-dev/design-system';
+import { DropDown } from '@odigos-io/design-system';
 
 interface DropDownItem {
   id: number;

@@ -1,4 +1,4 @@
-module github.com/keyval-dev/odigos/odiglet
+module github.com/odigos-io/odigos/odiglet
 
 go 1.22.0
 
@@ -7,10 +7,10 @@ require (
 	github.com/go-logr/logr v1.4.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.6.0
-	github.com/keyval-dev/odigos/api v0.0.0-00010101000000-000000000000
-	github.com/keyval-dev/odigos/common v1.0.48
-	github.com/keyval-dev/odigos/procdiscovery v0.0.0
-	github.com/keyval-dev/opentelemetry-zap-bridge v0.0.3
+	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/common v1.0.48
+	github.com/odigos-io/odigos/procdiscovery v0.0.0
+	github.com/odigos-io/opentelemetry-zap-bridge v0.0.3
 	github.com/kubevirt/device-plugin-manager v1.19.5
 	github.com/otiai10/copy v1.14.0
 	go.opentelemetry.io/auto v0.12.0-alpha
@@ -102,7 +102,7 @@ require (
 )
 
 replace (
-	github.com/keyval-dev/odigos/api => ../api
-	github.com/keyval-dev/odigos/common => ../common
-	github.com/keyval-dev/odigos/procdiscovery => ../procdiscovery
+	github.com/odigos-io/odigos/api => ../api
+	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/procdiscovery => ../procdiscovery
 )

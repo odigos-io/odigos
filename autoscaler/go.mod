@@ -1,4 +1,4 @@
-module github.com/keyval-dev/odigos/autoscaler
+module github.com/odigos-io/odigos/autoscaler
 
 go 1.22.0
 
@@ -6,9 +6,9 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/zapr v1.3.0
 	github.com/goccy/go-yaml v1.11.3
-	github.com/keyval-dev/odigos/api v0.0.0
-	github.com/keyval-dev/odigos/common v0.0.0
-	github.com/keyval-dev/opentelemetry-zap-bridge v0.0.3
+	github.com/odigos-io/odigos/api v0.0.0
+	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/opentelemetry-zap-bridge v0.0.3
 	github.com/stretchr/testify v1.8.4
 	k8s.io/api v0.30.0
 	k8s.io/apimachinery v0.30.0
@@ -90,6 +90,6 @@ require (
 )
 
 replace (
-	github.com/keyval-dev/odigos/api => ../api
-	github.com/keyval-dev/odigos/common => ../common
+	github.com/odigos-io/odigos/api => ../api
+	github.com/odigos-io/odigos/common => ../common
 )

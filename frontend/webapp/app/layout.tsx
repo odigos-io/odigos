@@ -3,7 +3,7 @@ import React from 'react';
 import { ThemeProvider } from 'styled-components';
 import theme from '@/styles/palette';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { ThemeProviderWrapper } from '@keyval-dev/design-system';
+import { ThemeProviderWrapper } from '@odigos-io/design-system';
 import ReduxProvider from '@/store/redux-provider';
 
 const LAYOUT_STYLE: React.CSSProperties = {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pagination } from '@keyval-dev/design-system';
+import { Pagination } from '@odigos-io/design-system';
 
 type PaginationProps = {
   total: number;

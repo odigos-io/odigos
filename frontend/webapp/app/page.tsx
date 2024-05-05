@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useQuery } from 'react-query';
 import { useRouter } from 'next/navigation';
 import { ROUTES, CONFIG, QUERIES } from '@/utils';
-import { Loader } from '@keyval-dev/design-system';
+import { Loader } from '@odigos-io/design-system';
 import { getDestinations, getConfig } from '@/services';
 
 export default function App() {

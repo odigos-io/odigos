@@ -1,5 +1,5 @@
 import React from "react";
-import { Tag } from "@keyval-dev/design-system";
+import { Tag } from "@odigos-io/design-system";
 
 interface TagProps {
   title: string;

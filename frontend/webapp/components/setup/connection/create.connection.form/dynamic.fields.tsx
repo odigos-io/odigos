@@ -1,6 +1,6 @@
 import React from 'react';
 import { Field } from '@/types/destinations';
-import { KeyValue } from '@keyval-dev/design-system';
+import { KeyValue } from '@odigos-io/design-system';
 import { INPUT_TYPES } from '@/utils/constants/string';
 import { safeJsonParse } from '@/utils/functions/strings';
 import { FieldWrapper } from './create.connection.form.styled';

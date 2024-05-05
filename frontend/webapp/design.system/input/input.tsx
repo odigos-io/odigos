@@ -1,5 +1,5 @@
 import React from 'react';
-import { Input } from '@keyval-dev/design-system';
+import { Input } from '@odigos-io/design-system';
 interface InputProps {
   label?: string;
   value: string;

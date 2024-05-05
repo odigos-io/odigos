@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { KeyValuePair } from '@/design.system';
-import { KeyValue } from '@keyval-dev/design-system';
+import { KeyValue } from '@odigos-io/design-system';
 
 const DEFAULT_KEY_VALUE_PAIR = [
   {

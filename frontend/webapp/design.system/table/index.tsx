@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table } from '@keyval-dev/design-system';
+import { Table } from '@odigos-io/design-system';
 
 // Updated TableProps to be generic
 type TableProps<T> = {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Checkbox } from "@keyval-dev/design-system";
+import { Checkbox } from "@odigos-io/design-system";
 
 interface KeyvalCheckboxProps {
   value: boolean;

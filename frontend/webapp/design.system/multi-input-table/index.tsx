@@ -2,7 +2,7 @@ import React from 'react';
 import {
   MultiInputTable,
   MultiInputTableProps,
-} from '@keyval-dev/design-system';
+} from '@odigos-io/design-system';
 
 export function KeyvalMultiInputTable(
   props: MultiInputTableProps

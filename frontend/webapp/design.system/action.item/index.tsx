@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActionItem } from '@keyval-dev/design-system';
+import { ActionItem } from '@odigos-io/design-system';
 
 interface Item {
   label: string;

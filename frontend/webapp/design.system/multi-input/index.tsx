@@ -1,5 +1,5 @@
 import React from 'react';
-import { MultiInput } from '@keyval-dev/design-system';
+import { MultiInput } from '@odigos-io/design-system';
 
 interface MultiInputProps {
   initialList?: string[];

@@ -1,5 +1,5 @@
 import React from "react";
-import { FloatBox } from "@keyval-dev/design-system";
+import { FloatBox } from "@odigos-io/design-system";
 
 type FloatBoxProps = {
   style?: object;

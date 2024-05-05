@@ -1,5 +1,5 @@
 import React from "react";
-import { SearchInput } from "@keyval-dev/design-system";
+import { SearchInput } from "@odigos-io/design-system";
 interface KeyvalSearchInputProps {
   placeholder?: string;
   value?: string;

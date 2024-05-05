@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { OverviewDataFlowWrapper } from './styled';
 import { KeyvalDataFlow, KeyvalLoader } from '@/design.system';
 import { useActions, useDestinations, useSources } from '@/hooks';
-import { buildFlowNodesAndEdges } from '@keyval-dev/design-system';
+import { buildFlowNodesAndEdges } from '@odigos-io/design-system';
 
 interface FlowNode {
   id: string;
