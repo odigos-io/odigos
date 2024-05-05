@@ -1,13 +1,13 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -20,16 +20,14 @@ func (p *Prometheus) DestType() common.DestinationType {
 	return common.PrometheusDestinationType
 }
 
-func (p *Prometheus) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (p *Prometheus) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	url, exists := dest.Spec.Data[promRWurlKey]
 	if !exists {
-		log.Log.V(0).Info("Prometheus remote writer url not specified, gateway will not be configured for prometheus")
-		return
+		return errors.New("Prometheus remote writer url not specified, gateway will not be configured for prometheus")
 	}
 
 	if !isMetricsEnabled(dest) {
-		log.Log.V(0).Info("Metrics not enabled for prometheus destination, gateway will not be configured for prometheus")
-		return
+		return errors.New("Metrics not enabled for prometheus destination, gateway will not be configured for prometheus")
 	}
 
 	url = addProtocol(url)
@@ -67,4 +65,6 @@ func (p *Prometheus) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 		"dimensions_cache_size":   1000,
 		"aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
 	}
+
+	return nil
 }

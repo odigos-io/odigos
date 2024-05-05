@@ -1,13 +1,12 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -28,23 +27,20 @@ func (s *AWSS3) DestType() common.DestinationType {
 	return common.AWSS3DestinationType
 }
 
-func (s *AWSS3) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (s *AWSS3) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	if !isLoggingEnabled(dest) && !isTracingEnabled(dest) && !isMetricsEnabled(dest) {
-		log.Log.V(0).Info("No metrics, logs or traces enabled, gateway will not be configured for AWS S3")
-		return
+		return errors.New("No metrics, logs or traces enabled, gateway will not be configured for AWS S3")
 	}
 
 	bucket, ok := dest.Spec.Data[s3BucketKey]
 	if !ok {
-		ctrl.Log.Error(ErrS3BucketNotSpecified, "s3 bucket not specified")
-		return
+		return ErrS3BucketNotSpecified
 	}
 
 	region, ok := dest.Spec.Data[s3RegionKey]
 	if !ok {
-		ctrl.Log.Error(ErrS3RegionNotSpecified, "s3 region not specified")
-		return
+		return ErrS3RegionNotSpecified
 	}
 
 	partition, ok := dest.Spec.Data[s3PartitionKey]
@@ -52,8 +48,7 @@ func (s *AWSS3) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 		partition = "minute"
 	}
 	if partition != "minute" && partition != "hour" {
-		log.Log.V(0).Info("Invalid partition specified, gateway will not be configured for AWS S3")
-		return
+		return errors.New("Invalid partition specified, gateway will not be configured for AWS S3")
 	}
 
 	marshaler, ok := dest.Spec.Data[s3Marshaller]
@@ -61,8 +56,7 @@ func (s *AWSS3) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 		marshaler = "otlp_json"
 	}
 	if marshaler != "otlp_json" && marshaler != "otlp_proto" {
-		log.Log.V(0).Info("Invalid marshaller specified, gateway will not be configured for AWS S3")
-		return
+		return errors.New("Invalid marshaller specified, gateway will not be configured for AWS S3")
 	}
 
 	exporterName := "awss3/" + dest.Name
@@ -95,4 +89,6 @@ func (s *AWSS3) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }

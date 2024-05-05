@@ -12,7 +12,7 @@ func (l *Lightstep) DestType() common.DestinationType {
 	return common.LightstepDestinationType
 }
 
-func (l *Lightstep) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (l *Lightstep) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	if isTracingEnabled(dest) {
 		exporterName := "otlp/lightstep-" + dest.Name
 		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
@@ -27,4 +27,6 @@ func (l *Lightstep) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }

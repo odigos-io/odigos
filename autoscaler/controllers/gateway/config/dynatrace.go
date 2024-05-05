@@ -1,13 +1,13 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -26,17 +26,15 @@ func (n *Dynatrace) DestType() common.DestinationType {
 	return common.DynatraceDestinationType
 }
 
-func (n *Dynatrace) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (n *Dynatrace) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	if !n.requiredVarsExists(dest) {
-		log.Log.V(0).Info("Dynatrace config is missing required variables")
-		return
+		return errors.New("Dynatrace config is missing required variables")
 	}
 
 	baseURL, err := parsetheDTurl(dest.Spec.Data[dynatraceURLKey])
 	if err != nil {
-		log.Log.V(0).Info("Dynatrace url is not a valid")
-		return
+		return errors.New("Dynatrace url is not a valid")
 	}
 
 	exporterName := "otlphttp/dynatrace-" + dest.Name
@@ -67,7 +65,10 @@ func (n *Dynatrace) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }
+
 func (g *Dynatrace) requiredVarsExists(dest *odigosv1.Destination) bool {
 	if _, ok := dest.Spec.Data[dynatraceURLKey]; !ok {
 		return false

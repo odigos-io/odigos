@@ -12,7 +12,7 @@ func (s *SumoLogic) DestType() common.DestinationType {
 	return common.SumoLogicDestinationType
 }
 
-func (s *SumoLogic) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (s *SumoLogic) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	exporterName := "otlphttp/sumologic-" + dest.Name
 	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
@@ -39,4 +39,6 @@ func (s *SumoLogic) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }
