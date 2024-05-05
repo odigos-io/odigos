@@ -17,6 +17,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+type UnInstrumentReason string
+
+const (
+	UnInstrumentReasonDataCollectionNotReady UnInstrumentReason = "DataCollection not ready"
+	UnInstrumentReasonNoRuntimeDetails       UnInstrumentReason = "No runtime details"
+	UnInstrumentReasonRemoveAll              UnInstrumentReason = "Remove all"
+)
+
 func clearInstrumentationEbpf(obj client.Object) {
 	annotations := obj.GetAnnotations()
 	if annotations == nil {
@@ -82,7 +90,7 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 	return nil
 }
 
-func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Client, namespace string, name string, kind string) error {
+func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Client, namespace string, name string, kind string, reason UnInstrumentReason) error {
 	obj, err := getObjectFromKindString(kind)
 	if err != nil {
 		logger.Error(err, "error getting object from kind string")
@@ -120,7 +128,7 @@ func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Cli
 	}
 
 	if result != controllerutil.OperationResultNone {
-		logger.V(0).Info("uninstrumented application", "name", obj.GetName(), "namespace", obj.GetNamespace())
+		logger.V(0).Info("uninstrumented application", "name", obj.GetName(), "namespace", obj.GetNamespace(), "reason", reason)
 	}
 
 	return nil

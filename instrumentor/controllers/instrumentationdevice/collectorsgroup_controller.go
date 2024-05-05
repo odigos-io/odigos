@@ -87,7 +87,7 @@ func (r *CollectorsGroupReconciler) removeAllInstrumentations(ctx context.Contex
 			return err
 		}
 
-		err = uninstrument(logger, ctx, r.Client, instApp.Namespace, name, kind)
+		err = uninstrument(logger, ctx, r.Client, instApp.Namespace, name, kind, UnInstrumentReasonRemoveAll)
 		if err != nil {
 			logger.Error(err, "failed to remove instrumentation", "application", name, "namespace", instApp.Namespace, "kind", kind)
 			return err
