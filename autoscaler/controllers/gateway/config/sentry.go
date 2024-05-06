@@ -1,10 +1,11 @@
 package config
 
 import (
+	"errors"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Sentry struct{}
@@ -13,10 +14,9 @@ func (s *Sentry) DestType() common.DestinationType {
 	return common.SentryDestinationType
 }
 
-func (s *Sentry) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (s *Sentry) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	if !isTracingEnabled(dest) {
-		log.Log.V(0).Info("Sentry is not enabled for any supported signals, skipping")
-		return
+		return errors.New("Sentry is not enabled for any supported signals, skipping")
 	}
 
 	if isTracingEnabled(dest) {
@@ -30,4 +30,6 @@ func (s *Sentry) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }

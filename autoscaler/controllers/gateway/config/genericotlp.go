@@ -1,10 +1,11 @@
 package config
 
 import (
+	"errors"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -17,18 +18,16 @@ func (g *GenericOTLP) DestType() common.DestinationType {
 	return common.GenericOTLPDestinationType
 }
 
-func (g *GenericOTLP) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (g *GenericOTLP) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	url, exists := dest.Spec.Data[genericOtlpUrlKey]
 	if !exists {
-		log.Log.V(0).Info("Generic OTLP gRPC endpoint not specified, gateway will not be configured for otlp")
-		return
+		return errors.New("Generic OTLP gRPC endpoint not specified, gateway will not be configured for otlp")
 	}
 
 	grpcEndpoint, err := parseUnencryptedOtlpGrpcUrl(url)
 	if err != nil {
-		log.Log.V(0).Error(err, "otlp endpoint invalid, gateway will not be configured for otlp")
-		return
+		return errors.Join(err, errors.New("otlp endpoint invalid, gateway will not be configured for otlp"))
 	}
 
 	genericOtlpExporterName := "otlp/generic-" + dest.Name
@@ -59,4 +58,6 @@ func (g *GenericOTLP) ModifyConfig(dest *odigosv1.Destination, currentConfig *co
 			Exporters: []string{genericOtlpExporterName},
 		}
 	}
+	
+	return nil
 }

@@ -36,7 +36,7 @@ func (l *Logzio) DestType() common.DestinationType {
 	return common.LogzioDestinationType
 }
 
-func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	region := dest.Spec.Data["LOGZIO_REGION"]
 	if isTracingEnabled(dest) {
 		exporterName := "logzio/tracing-" + dest.Name
@@ -97,4 +97,6 @@ func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 			Exporters:  []string{exporterName},
 		}
 	}
+
+	return nil
 }

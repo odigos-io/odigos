@@ -12,7 +12,7 @@ func (g *GoogleCloud) DestType() common.DestinationType {
 	return common.GoogleCloudDestinationType
 }
 
-func (g *GoogleCloud) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (g *GoogleCloud) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	if isTracingEnabled(dest) {
 		exporterName := "googlecloud/" + dest.Name
@@ -37,4 +37,6 @@ func (g *GoogleCloud) ModifyConfig(dest *odigosv1.Destination, currentConfig *co
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }

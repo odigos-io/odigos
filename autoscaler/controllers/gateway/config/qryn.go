@@ -1,10 +1,9 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
-
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
@@ -23,21 +22,18 @@ func (g *Qryn) DestType() common.DestinationType {
 	return common.QrynDestinationType
 }
 
-func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	if !g.requiredVarsExists(dest) {
-		log.Log.V(0).Info("Qryn config is missing required variables")
-		return
+		return errors.New("Qryn config is missing required variables")
 	}
 	apiKey, apiSecret := g.authData(dest)
 	if apiKey == "" || apiSecret == "" {
-		log.Log.V(0).Info("Qryn API key or secret not set")
-		return
+		return errors.New("Qryn API key or secret not set")
 	}
 
 	baseURL, err := parseURL(dest.Spec.Data[qrynHost], apiKey, apiSecret)
 	if err != nil {
-		log.Log.V(0).Info("Qryn API host is not a valid")
-		return
+		return errors.New("Qryn API host is not a valid")
 	}
 
 	if isMetricsEnabled(dest) {
@@ -79,6 +75,8 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 			Exporters: []string{lokiExporterName},
 		}
 	}
+
+	return nil
 }
 
 func (g *Qryn) requiredVarsExists(dest *odigosv1.Destination) bool {

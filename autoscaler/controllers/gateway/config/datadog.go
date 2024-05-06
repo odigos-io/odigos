@@ -1,10 +1,11 @@
 package config
 
 import (
+	"errors"
+
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -17,16 +18,14 @@ func (d *Datadog) DestType() common.DestinationType {
 	return common.DatadogDestinationType
 }
 
-func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	if !isTracingEnabled(dest) && !isLoggingEnabled(dest) && !isMetricsEnabled(dest) {
-		log.Log.V(0).Info("Datadog destination does not have any signals to export")
-		return
+		return errors.New("Datadog destination does not have any signals to export")
 	}
 
 	site, exists := dest.Spec.Data[datadogSiteKey]
 	if !exists {
-		log.Log.V(0).Info("Datadog site not specified, gateway will not be configured for Datadog")
-		return
+		return errors.New("Datadog site not specified, gateway will not be configured for Datadog")
 	}
 
 	exporterName := "datadog/" + dest.Name
@@ -58,4 +57,6 @@ func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }

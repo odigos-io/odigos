@@ -21,24 +21,27 @@ var availableConfigers = []Configer{&Middleware{}, &Honeycomb{}, &GrafanaCloudPr
 
 type Configer interface {
 	DestType() common.DestinationType
-	ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config)
+	ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error
 }
 
-func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, memoryLimiterConfig commonconf.GenericMap) (string, error) {
+func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, memoryLimiterConfig commonconf.GenericMap) (string, error, map[string]error) {
 	currentConfig := getBasicConfig(memoryLimiterConfig)
 
 	configers, err := loadConfigers()
 	if err != nil {
-		return "", err
+		return "", err, nil
 	}
+
+	destsStatus := map[string]error{}
 
 	for _, dest := range dests.Items {
 		configer, exists := configers[dest.Spec.Type]
 		if !exists {
-			return "", fmt.Errorf("no configer for %s", dest.Spec.Type)
+			return "", fmt.Errorf("no configer for %s", dest.Spec.Type), nil
 		}
 
-		configer.ModifyConfig(&dest, currentConfig)
+		err := configer.ModifyConfig(&dest, currentConfig)
+		destsStatus[dest.ObjectMeta.Name] = err
 	}
 
 	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := commonconf.GetCrdProcessorsConfigMap(processors, odigosv1.CollectorsGroupRoleClusterGateway)
@@ -64,10 +67,10 @@ func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorLi
 
 	data, err := yaml.Marshal(currentConfig)
 	if err != nil {
-		return "", err
+		return "", err, destsStatus
 	}
 
-	return string(data), nil
+	return string(data), nil, destsStatus
 }
 
 func getBasicConfig(memoryLimiterConfig commonconf.GenericMap) *commonconf.Config {

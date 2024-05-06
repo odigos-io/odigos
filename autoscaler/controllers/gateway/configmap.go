@@ -29,10 +29,17 @@ func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.Process
 		"spike_limit_mib": memConfig.memoryLimiterSpikeLimitMiB,
 	}
 
-	desiredData, err := config.Calculate(dests, processors, memoryLimiterConfiguration)
+	desiredData, err, destsStatus := config.Calculate(dests, processors, memoryLimiterConfiguration)
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
 		return "", err
+	}
+
+	for destName, destErr := range destsStatus {
+		// TODO: update destination k8s status
+		if destErr != nil {
+			logger.Error(destErr, "Failed to calculate config for destination", "destination", destName)
+		}
 	}
 
 	desired := &v1.ConfigMap{

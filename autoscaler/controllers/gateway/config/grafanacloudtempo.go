@@ -1,13 +1,13 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -21,23 +21,20 @@ func (g *GrafanaCloudTempo) DestType() common.DestinationType {
 	return common.GrafanaCloudTempoDestinationType
 }
 
-func (g *GrafanaCloudTempo) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (g *GrafanaCloudTempo) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	if !isTracingEnabled(dest) {
-		log.Log.V(0).Info("Tracing not enabled, gateway will not be configured for grafana cloud Tempo")
-		return
+		return errors.New("Tracing not enabled, gateway will not be configured for grafana cloud Tempo")
 	}
 
 	tempoUrl, exists := dest.Spec.Data[grafanaCloudTempoEndpointKey]
 	if !exists {
-		log.Log.V(0).Info("Grafana Cloud Tempo endpoint not specified, gateway will not be configured for Tempo")
-		return
+		return errors.New("Grafana Cloud Tempo endpoint not specified, gateway will not be configured for Tempo")
 	}
 
 	tempoUsername, exists := dest.Spec.Data[grafanaCloudTempoUsernameKey]
 	if !exists {
-		log.Log.V(0).Info("Grafana Cloud Tempo username not specified, gateway will not be configured for Tempo")
-		return
+		return errors.New("Grafana Cloud Tempo username not specified, gateway will not be configured for Tempo")
 	}
 
 	grpcEndpointUrl := grafanaTempoUrlFromInput(tempoUrl)
@@ -64,6 +61,7 @@ func (g *GrafanaCloudTempo) ModifyConfig(dest *odigosv1.Destination, currentConf
 		Exporters: []string{exporterName},
 	}
 
+	return nil
 }
 
 // grafana cloud tempo url for otlp grpc should be of the form:

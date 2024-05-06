@@ -1,13 +1,13 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -20,16 +20,14 @@ func (s *Signoz) DestType() common.DestinationType {
 	return common.SignozDestinationType
 }
 
-func (s *Signoz) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (s *Signoz) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	url, exists := dest.Spec.Data[signozUrlKey]
 	if !exists {
-		log.Log.V(0).Info("Signoz url not specified, gateway will not be configured for Signoz")
-		return
+		return errors.New("Signoz url not specified, gateway will not be configured for Signoz")
 	}
 
 	if strings.HasPrefix(url, "https://") {
-		log.Log.V(0).Info("Signoz does not currently supports tls export, gateway will not be configured for Signoz")
-		return
+		return errors.New("Signoz does not currently supports tls export, gateway will not be configured for Signoz")
 	}
 
 	url = strings.TrimPrefix(url, "http://")
@@ -62,4 +60,6 @@ func (s *Signoz) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 			Exporters: []string{signozExporterName},
 		}
 	}
+
+	return nil
 }

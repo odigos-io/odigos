@@ -8,7 +8,6 @@ import (
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
 	"github.com/keyval-dev/odigos/common"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
@@ -25,12 +24,11 @@ func (c *Chronosphere) DestType() common.DestinationType {
 	return common.ChronosphereDestinationType
 }
 
-func (c *Chronosphere) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (c *Chronosphere) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	url, exists := dest.Spec.Data[chronosphereDomain]
 	if !exists {
-		ctrl.Log.Error(ErrorChronosphereMissingURL, "skipping Chronosphere destination config")
-		return
+		return ErrorChronosphereMissingURL
 	}
 
 	company := c.getCompanyNameFromURL(url)
@@ -83,6 +81,8 @@ func (c *Chronosphere) ModifyConfig(dest *odigosv1.Destination, currentConfig *c
 			Processors: []string{chronosphereMetricProcessorName},
 		}
 	}
+
+	return nil
 }
 
 func (c *Chronosphere) getCompanyNameFromURL(url string) string {

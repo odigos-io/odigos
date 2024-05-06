@@ -17,7 +17,7 @@ func (a *Axiom) DestType() common.DestinationType {
 	return common.AxiomDestinationType
 }
 
-func (a *Axiom) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (a *Axiom) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	dataset, exists := dest.Spec.Data[axiomDatasetKey]
 	if !exists {
 		dataset = "default"
@@ -47,4 +47,6 @@ func (a *Axiom) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 			Exporters: []string{axiomExporterName},
 		}
 	}
+
+	return nil
 }
