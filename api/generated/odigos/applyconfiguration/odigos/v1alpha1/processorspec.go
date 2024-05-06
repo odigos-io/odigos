@@ -18,8 +18,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	common "github.com/keyval-dev/odigos/common"
+	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	common "github.com/odigos-io/odigos/common"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 

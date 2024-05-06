@@ -18,7 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	odigosv1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"

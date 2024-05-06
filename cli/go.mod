@@ -1,13 +1,13 @@
-module github.com/keyval-dev/odigos/cli
+module github.com/odigos-io/odigos/cli
 
 go 1.22.0
 
 require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.6.0
-	github.com/keyval-dev/odigos/api v0.0.0
-	github.com/keyval-dev/odigos/autoscaler v0.0.0-20240430141418-3a8d9d8de37b
-	github.com/keyval-dev/odigos/common v0.0.0
+	github.com/odigos-io/odigos/api v0.0.0
+	github.com/odigos-io/odigos/autoscaler v0.0.0-20240430141418-3a8d9d8de37b
+	github.com/odigos-io/odigos/common v0.0.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	gopkg.in/yaml.v2 v2.4.0
@@ -63,6 +63,6 @@ require (
 )
 
 replace (
-	github.com/keyval-dev/odigos/api => ../api
-	github.com/keyval-dev/odigos/common => ../common
+	github.com/odigos-io/odigos/api => ../api
+	github.com/odigos-io/odigos/common => ../common
 )

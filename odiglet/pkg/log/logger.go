@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
-	bridge "github.com/keyval-dev/opentelemetry-zap-bridge"
+	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 	"go.uber.org/zap"
 )
 

@@ -2,7 +2,7 @@ domain: odigos.io
 layout:
 - go.kubebuilder.io/v3
 projectName: autoscaler
-repo: github.com/keyval-dev/odigos/autoscaler
+repo: github.com/odigos-io/odigos/autoscaler
 resources:
 - api:
     crdVersion: v1
@@ -10,7 +10,7 @@ resources:
   controller: true
   domain: odigos.io
   kind: Destination
-  path: github.com/keyval-dev/odigos/api/odigos/v1alpha1
+  path: github.com/odigos-io/odigos/api/odigos/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -18,7 +18,7 @@ resources:
   controller: true
   domain: odigos.io
   kind: CollectorsGroup
-  path: github.com/keyval-dev/odigos/api/odigos/v1alpha1
+  path: github.com/odigos-io/odigos/api/odigos/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -26,6 +26,6 @@ resources:
   controller: true
   domain: odigos.io
   kind: InstrumentedApplication
-  path: github.com/keyval-dev/odigos/api/odigos/v1alpha1
+  path: github.com/odigos-io/odigos/api/odigos/v1alpha1
   version: v1alpha1
 version: "3"

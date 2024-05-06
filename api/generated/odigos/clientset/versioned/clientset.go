@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
-	odigosv1alpha1 "github.com/keyval-dev/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

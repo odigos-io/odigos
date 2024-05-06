@@ -20,8 +20,8 @@ package v1alpha1
 import (
 	"net/http"
 
-	"github.com/keyval-dev/odigos/api/generated/odigos/clientset/versioned/scheme"
-	v1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
+	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	rest "k8s.io/client-go/rest"
 )
 

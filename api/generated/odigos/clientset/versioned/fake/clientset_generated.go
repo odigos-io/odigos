@@ -18,9 +18,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/keyval-dev/odigos/api/generated/odigos/clientset/versioned"
-	odigosv1alpha1 "github.com/keyval-dev/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
-	fakeodigosv1alpha1 "github.com/keyval-dev/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1/fake"
+	clientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
+	fakeodigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

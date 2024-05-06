@@ -18,8 +18,8 @@ limitations under the License.
 package odigos
 
 import (
-	internalinterfaces "github.com/keyval-dev/odigos/api/generated/odigos/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/keyval-dev/odigos/api/generated/odigos/informers/externalversions/odigos/v1alpha1"
+	internalinterfaces "github.com/odigos-io/odigos/api/generated/odigos/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/informers/externalversions/odigos/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

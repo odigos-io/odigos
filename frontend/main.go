@@ -8,17 +8,17 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/utils"
-	"github.com/keyval-dev/odigos/destinations"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/utils"
+	"github.com/odigos-io/odigos/destinations"
 
 	"github.com/gin-contrib/cors"
 
-	"github.com/keyval-dev/odigos/frontend/endpoints/actions"
-	"github.com/keyval-dev/odigos/frontend/kube"
-	"github.com/keyval-dev/odigos/frontend/version"
+	"github.com/odigos-io/odigos/frontend/endpoints/actions"
+	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/version"
 
-	"github.com/keyval-dev/odigos/frontend/endpoints"
+	"github.com/odigos-io/odigos/frontend/endpoints"
 
 	"github.com/gin-gonic/gin"
 )

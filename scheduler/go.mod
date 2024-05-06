@@ -1,11 +1,11 @@
-module github.com/keyval-dev/odigos/scheduler
+module github.com/odigos-io/odigos/scheduler
 
 go 1.22.0
 
 require (
 	github.com/go-logr/zapr v1.3.0
-	github.com/keyval-dev/odigos/api v0.0.0
-	github.com/keyval-dev/opentelemetry-zap-bridge v0.0.3
+	github.com/odigos-io/odigos/api v0.0.0
+	github.com/odigos-io/opentelemetry-zap-bridge v0.0.3
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.32.0
 	k8s.io/apimachinery v0.30.0
@@ -38,7 +38,7 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/keyval-dev/odigos/common v0.0.0 // indirect
+	github.com/odigos-io/odigos/common v0.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -86,6 +86,6 @@ require (
 )
 
 replace (
-	github.com/keyval-dev/odigos/api => ../api
-	github.com/keyval-dev/odigos/common => ../common
+	github.com/odigos-io/odigos/api => ../api
+	github.com/odigos-io/odigos/common => ../common
 )

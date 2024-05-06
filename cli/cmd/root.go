@@ -3,7 +3,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/keyval-dev/odigos/common/utils"
+	"github.com/odigos-io/odigos/common/utils"
 
 	"github.com/spf13/cobra"
 )

@@ -1,6 +1,6 @@
 package destinations
 
-import "github.com/keyval-dev/odigos/common"
+import "github.com/odigos-io/odigos/common"
 
 type Destination struct {
 	ApiVersion string   `yaml:"apiVersion"`

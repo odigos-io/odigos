@@ -6,7 +6,7 @@ domain: odigos.io
 layout:
 - go.kubebuilder.io/v3
 projectName: instrumentor
-repo: github.com/keyval-dev/odigos/instrumentor
+repo: github.com/odigos-io/odigos/instrumentor
 resources:
 - api:
     crdVersion: v1
@@ -14,7 +14,7 @@ resources:
   controller: true
   domain: odigos.io
   kind: InstrumentedApplication
-  path: github.com/keyval-dev/odigos/api/odigos/v1alpha1
+  path: github.com/odigos-io/odigos/api/odigos/v1alpha1
   version: v1alpha1
 - controller: true
   group: apps
@@ -32,7 +32,7 @@ resources:
   controller: true
   domain: odigos.io
   kind: CollectorsGroup
-  path: github.com/keyval-dev/odigos/api/odigos/v1alpha1
+  path: github.com/odigos-io/odigos/api/odigos/v1alpha1
   version: v1alpha1
 - controller: true
   group: core
