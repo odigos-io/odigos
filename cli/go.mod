@@ -64,5 +64,6 @@ require (
 
 replace (
 	github.com/odigos-io/odigos/api => ../api
+	github.com/odigos-io/odigos/autoscaler => ../autoscaler
 	github.com/odigos-io/odigos/common => ../common
 )

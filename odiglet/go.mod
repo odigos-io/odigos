@@ -7,11 +7,11 @@ require (
 	github.com/go-logr/logr v1.4.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.6.0
+	github.com/kubevirt/device-plugin-manager v1.19.5
 	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/common v1.0.48
 	github.com/odigos-io/odigos/procdiscovery v0.0.0
-	github.com/odigos-io/opentelemetry-zap-bridge v0.0.3
-	github.com/kubevirt/device-plugin-manager v1.19.5
+	github.com/odigos-io/opentelemetry-zap-bridge v0.0.4
 	github.com/otiai10/copy v1.14.0
 	go.opentelemetry.io/auto v0.12.0-alpha
 	go.opentelemetry.io/otel v1.25.0
