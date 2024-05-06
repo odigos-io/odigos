@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/envOverwrite"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )

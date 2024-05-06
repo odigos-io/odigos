@@ -3,9 +3,9 @@ package controllers
 import (
 	"context"
 
-	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection"
-	"github.com/keyval-dev/odigos/autoscaler/controllers/gateway"
+	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection"
+	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"

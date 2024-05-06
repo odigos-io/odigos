@@ -22,9 +22,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/keyval-dev/odigos/api/generated/odigos/clientset/versioned"
-	internalinterfaces "github.com/keyval-dev/odigos/api/generated/odigos/informers/externalversions/internalinterfaces"
-	odigos "github.com/keyval-dev/odigos/api/generated/odigos/informers/externalversions/odigos"
+	versioned "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
+	internalinterfaces "github.com/odigos-io/odigos/api/generated/odigos/informers/externalversions/internalinterfaces"
+	odigos "github.com/odigos-io/odigos/api/generated/odigos/informers/externalversions/odigos"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/procdiscovery/pkg/process"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
 type DotnetInspector struct{}

@@ -20,7 +20,7 @@ package internalinterfaces
 import (
 	time "time"
 
-	versioned "github.com/keyval-dev/odigos/api/generated/odigos/clientset/versioned"
+	versioned "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	cache "k8s.io/client-go/tools/cache"

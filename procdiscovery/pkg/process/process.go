@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/keyval-dev/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/common/envOverwrite"
 )
 
 type Details struct {

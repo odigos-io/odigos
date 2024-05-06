@@ -1,8 +1,8 @@
 package kube
 
 import (
-	actionsv1alpha1 "github.com/keyval-dev/odigos/api/generated/actions/clientset/versioned/typed/actions/v1alpha1"
-	odigosv1alpha1 "github.com/keyval-dev/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/clientset/versioned/typed/actions/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"

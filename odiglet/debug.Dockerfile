@@ -15,7 +15,7 @@ ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/relea
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
 
 FROM keyval/odiglet-base:v1.4 as builder
-WORKDIR /go/src/github.com/keyval-dev/odigos
+WORKDIR /go/src/github.com/odigos-io/odigos
 COPY . .
 WORKDIR ./odiglet/
 RUN --mount=type=cache,target=/go/pkg \
@@ -48,7 +48,7 @@ COPY --from=nodejs-builder /nodejs-instrumentation/build/workspace /instrumentat
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 FROM registry.fedoraproject.org/fedora-minimal:38
-COPY --from=builder /go/src/github.com/keyval-dev/odigos/odiglet/odiglet /root/odiglet
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=builder /root/go/bin/dlv /root/dlv
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .

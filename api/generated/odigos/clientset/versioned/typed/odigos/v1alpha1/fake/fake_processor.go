@@ -22,8 +22,8 @@ import (
 	json "encoding/json"
 	"fmt"
 
-	odigosv1alpha1 "github.com/keyval-dev/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
-	v1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
+	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"

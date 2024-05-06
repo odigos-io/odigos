@@ -18,8 +18,8 @@ limitations under the License.
 package applyconfiguration
 
 import (
-	v1alpha1 "github.com/keyval-dev/odigos/api/actions/v1alpha1"
-	actionsv1alpha1 "github.com/keyval-dev/odigos/api/generated/actions/applyconfiguration/actions/v1alpha1"
+	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/applyconfiguration/actions/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 )
 

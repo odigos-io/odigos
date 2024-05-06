@@ -3,9 +3,9 @@ package deleteinstrumentedapplication
 import (
 	"context"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/utils"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"

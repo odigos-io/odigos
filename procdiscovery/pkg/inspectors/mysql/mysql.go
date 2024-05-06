@@ -3,8 +3,8 @@ package mysql
 import (
 	"strings"
 
-	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/procdiscovery/pkg/process"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
 // This is an experimental feature, It is not a language

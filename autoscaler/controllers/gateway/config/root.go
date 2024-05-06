@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/goccy/go-yaml"
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (

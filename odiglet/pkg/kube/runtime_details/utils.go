@@ -3,8 +3,8 @@ package runtime_details
 import (
 	"context"
 
-	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
