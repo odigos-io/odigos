@@ -16,7 +16,7 @@
   },
   "topbarCtaButton": {
     "type": "github",
-    "url": "https://github.com/keyval-dev/odigos"
+    "url": "https://github.com/odigos-io/odigos"
   },
   "anchors": [
     {
@@ -162,7 +162,7 @@
   ],
   "footerSocials": {
     "X": "https://twitter.com/odigosio",
-    "github": "https://github.com/keyval-dev/odigos",
+    "github": "https://github.com/odigos-io/odigos",
     "slack": "https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email"
   }
 }
