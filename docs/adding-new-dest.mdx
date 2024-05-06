@@ -133,7 +133,7 @@ const Vendors = [/* List of existing vendors... */ new MyDest()];
 ```
 
 For a complete UI implementation example, see
-[one of our existing vendors](https://github.com/keyval-dev/odigos/tree/main/ui/vendors).
+[one of our existing vendors](https://github.com/odigos-io/odigos/tree/main/ui/vendors).
 
 ## Collector Configuration
 
@@ -150,9 +150,9 @@ need to implement the collector configuration.
 package config
 
 import (
-	odigosv1 "github.com/keyval-dev/odigos/api/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
+	odigosv1 "github.com/odigos-io/odigos/api/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 type MyDest struct{}
@@ -203,5 +203,5 @@ var availableConfigers = []Configer{/* List of existing destinations  */, &MyDes
 That’s it! Now you can use your new destination in the UI and send data to it.
 
 **Please submit a PR to the
-[odigos git repository](https://github.com/keyval-dev/odigos), we are happy to
+[odigos git repository](https://github.com/odigos-io/odigos), we are happy to
 accept new destinations.**
