@@ -1,13 +1,13 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -20,17 +20,15 @@ func (t *Tempo) DestType() common.DestinationType {
 	return common.TempoDestinationType
 }
 
-func (t *Tempo) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (t *Tempo) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	url, exists := dest.Spec.Data[tempoUrlKey]
 	if !exists {
-		log.Log.V(0).Info("Tempo url not specified, gateway will not be configured for Tempo")
-		return
+		return errors.New("Tempo url not specified, gateway will not be configured for Tempo")
 	}
 
 	if strings.HasPrefix(url, "https://") {
-		log.Log.V(0).Info("Tempo does not currently supports tls export, gateway will not be configured for Tempo")
-		return
+		return errors.New("Tempo does not currently supports tls export, gateway will not be configured for Tempo")
 	}
 
 	if isTracingEnabled(dest) {
@@ -50,4 +48,6 @@ func (t *Tempo) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 			Exporters: []string{tempoExporterName},
 		}
 	}
+
+	return nil
 }

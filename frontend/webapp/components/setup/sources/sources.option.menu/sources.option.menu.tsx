@@ -16,6 +16,7 @@ export function SourcesOptionMenu({
   return (
     <SourcesOptionMenuWrapper>
       <FilterSourcesOptions
+        currentNamespace={currentNamespace}
         setCurrentItem={setCurrentItem}
         data={data}
         searchFilter={searchFilter}

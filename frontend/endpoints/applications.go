@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,12 +39,6 @@ func GetApplicationsInNamespace(c *gin.Context) {
 	var request GetApplicationsInNamespaceRequest
 	if err := c.ShouldBindUri(&request); err != nil {
 		returnError(c, err)
-		return
-	}
-
-	if IsSystemNamespace(request.Namespace) {
-		// skip system namespaces which should not be instrumented
-		c.JSON(http.StatusOK, GetApplicationsInNamespaceResponse{})
 		return
 	}
 

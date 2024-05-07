@@ -1,9 +1,11 @@
 name: Sync logos to S3 bucket
 on:
+  workflow_dispatch:
   push:
-    workflow_dispatch:
     branches:
       - main
+    paths:
+      - 'destinations/logos/**/*'      
 env:
   AWS_REGION: us-east-2
   S3_BUCKET: odigos-destinations

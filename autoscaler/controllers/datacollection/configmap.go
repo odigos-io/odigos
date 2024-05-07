@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/keyval-dev/odigos/autoscaler/controllers/datacollection/custom"
+	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 
 	"github.com/ghodss/yaml"
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/common/utils"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/utils"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

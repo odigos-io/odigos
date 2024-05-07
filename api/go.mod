@@ -1,14 +1,14 @@
-module github.com/keyval-dev/odigos/api
+module github.com/odigos-io/odigos/api
 
 go 1.22.0
 
 require (
-	github.com/keyval-dev/odigos/common v0.0.0
-	k8s.io/api v0.29.2
+	github.com/odigos-io/odigos/common v0.0.0
+	k8s.io/api v0.30.0
 	k8s.io/apimachinery v0.30.0
-	k8s.io/client-go v0.29.2
+	k8s.io/client-go v0.30.0
 	k8s.io/code-generator v0.30.0
-	sigs.k8s.io/controller-runtime v0.11.2
+	sigs.k8s.io/controller-runtime v0.18.2
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1
 )
 
@@ -38,7 +38,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	golang.org/x/mod v0.15.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/oauth2 v0.10.0 // indirect
+	golang.org/x/oauth2 v0.12.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
@@ -57,4 +57,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/keyval-dev/odigos/common => ../common
+replace github.com/odigos-io/odigos/common => ../common

@@ -1,14 +1,14 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -23,24 +23,21 @@ func (g *OTLPHttp) DestType() common.DestinationType {
 	return common.OtlpHttpDestinationType
 }
 
-func (g *OTLPHttp) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (g *OTLPHttp) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	url, exists := dest.Spec.Data[otlpHttpEndpointKey]
 	if !exists {
-		log.Log.V(0).Info("OTLP http endpoint not specified, gateway will not be configured for otlp http")
-		return
+		return errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
 	}
 
 	parsedUrl, err := parseOtlpHttpEndpoint(url)
 	if err != nil {
-		log.Log.Error(err, "otlp http endpoint invalid, gateway will not be configured for otlp http")
-		return
+		return errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
 	}
 
 	basicAuthExtensionName, basicAuthExtensionConf, err := applyBasicAuth(dest)
 	if err != nil {
-		log.Log.Error(err, "failed to apply basic auth to otlp http exporter")
-		return
+		return errors.Join(err, errors.New("failed to apply basic auth to otlp http exporter"))
 	}
 
 	// add authenticator extension
@@ -80,6 +77,8 @@ func (g *OTLPHttp) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 			Exporters: []string{otlpHttpExporterName},
 		}
 	}
+
+	return nil
 }
 
 func parseOtlpHttpEndpoint(rawUrl string) (string, error) {

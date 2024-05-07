@@ -32,7 +32,7 @@ export function SourcesSection({ sectionData, setSectionData }) {
     if (!currentNamespace && data) {
       const currentNamespace = data?.namespaces.find(
         (item: Namespace) => item.name === DEFAULT
-      );
+      ) ?? data?.namespaces[0];
       setCurrentNamespace(currentNamespace);
     }
   }, [data]);

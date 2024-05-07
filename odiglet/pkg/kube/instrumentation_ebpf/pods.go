@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
-	kubeutils "github.com/keyval-dev/odigos/odiglet/pkg/kube/utils"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
+	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

@@ -3,10 +3,9 @@ package config
 import (
 	"errors"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 var (
@@ -25,23 +24,20 @@ func (j *Jaeger) DestType() common.DestinationType {
 	return common.JaegerDestinationType
 }
 
-func (j *Jaeger) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (j *Jaeger) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	if !isTracingEnabled(dest) {
-		log.Log.V(0).Error(ErrorJaegerTracingDisabled, "skipping Jaeger destination config")
-		return
+		return ErrorJaegerTracingDisabled
 	}
 
 	url, urlExist := dest.Spec.Data[jaegerUrlKey]
 	if !urlExist {
-		log.Log.V(0).Error(ErrorJaegerMissingURL, "skipping Jaeger destination config")
-		return
+		return ErrorJaegerMissingURL
 	}
 
 	grpcEndpoint, err := parseUnencryptedOtlpGrpcUrl(url)
 	if err != nil {
-		log.Log.V(0).Error(err, "skipping Jaeger destination config")
-		return
+		return err
 	}
 
 	exporterName := "otlp/jaeger-" + dest.Name
@@ -56,4 +52,5 @@ func (j *Jaeger) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 	currentConfig.Service.Pipelines[pipelineName] = commonconf.Pipeline{
 		Exporters: []string{exporterName},
 	}
+	return nil
 }

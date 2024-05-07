@@ -18,8 +18,8 @@ limitations under the License.
 package actions
 
 import (
-	v1alpha1 "github.com/keyval-dev/odigos/api/generated/actions/informers/externalversions/actions/v1alpha1"
-	internalinterfaces "github.com/keyval-dev/odigos/api/generated/actions/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/odigos-io/odigos/api/generated/actions/informers/externalversions/actions/v1alpha1"
+	internalinterfaces "github.com/odigos-io/odigos/api/generated/actions/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.

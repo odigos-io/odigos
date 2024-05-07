@@ -1,14 +1,13 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -22,19 +21,17 @@ func (e *ElasticAPM) DestType() common.DestinationType {
 	return common.ElasticAPMDestinationType
 }
 
-func (e *ElasticAPM) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (e *ElasticAPM) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	var isTlsDisabled = false
 	if !e.requiredVarsExists(dest) {
-		log.Log.V(0).Info("ElasticAPM config is missing required variables")
-		return
+		return errors.New("ElasticAPM config is missing required variables")
 	}
 
 	isTlsDisabled = strings.Contains(dest.Spec.Data[elasticApmServerEndpoint], "http://")
 
 	elasticApmEndpoint, err := e.parseEndpoint(dest.Spec.Data[elasticApmServerEndpoint])
 	if err != nil {
-		log.Log.V(0).Info("ElasticAPM endpoint is not a valid")
-		return
+		return errors.Join(err, errors.New("ElasticAPM endpoint is not a valid"))
 	}
 
 	exporterName := "otlp/elastic-" + dest.Name
@@ -69,6 +66,7 @@ func (e *ElasticAPM) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 		}
 	}
 
+	return nil
 }
 
 func (e *ElasticAPM) requiredVarsExists(dest *odigosv1.Destination) bool {

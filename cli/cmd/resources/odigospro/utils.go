@@ -3,8 +3,8 @@ package odigospro
 import (
 	"context"
 
-	"github.com/keyval-dev/odigos/cli/pkg/kube"
-	"github.com/keyval-dev/odigos/common"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/common"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

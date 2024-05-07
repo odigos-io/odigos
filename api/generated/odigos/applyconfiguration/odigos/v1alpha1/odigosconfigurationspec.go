@@ -18,7 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	common "github.com/keyval-dev/odigos/common"
+	common "github.com/odigos-io/odigos/common"
 )
 
 // OdigosConfigurationSpecApplyConfiguration represents an declarative configuration of the OdigosConfigurationSpec type for use

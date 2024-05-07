@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"net/url"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -28,17 +27,15 @@ func (e *Elasticsearch) DestType() common.DestinationType {
 	return common.ElasticsearchDestinationType
 }
 
-func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	rawURL, exists := dest.Spec.Data[elasticsearchUrlKey]
 	if !exists {
-		log.Log.V(0).Info("ElasticSearch url not specified, gateway will not be configured for ElasticSearch")
-		return
+		return errors.New("ElasticSearch url not specified, gateway will not be configured for ElasticSearch")
 	}
 
 	parsedURL, err := e.SanitizeURL(rawURL)
 	if err != nil {
-		log.Log.V(0).Error(err, "failed to sanitize URL", "elasticsearch-url", rawURL)
-		return
+		return errors.Join(err, errors.New(fmt.Sprintf("failed to sanitize URL. elasticsearch-url: %s", rawURL)))
 	}
 
 	traceIndexVal, exists := dest.Spec.Data[esTracesIndexKey]
@@ -87,6 +84,8 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }
 
 // SanitizeURL will check whether URL is correct by utilizing url.ParseRequestURI

@@ -18,8 +18,8 @@ limitations under the License.
 package applyconfiguration
 
 import (
-	odigosv1alpha1 "github.com/keyval-dev/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
-	v1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
+	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -42,6 +42,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.DestinationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DestinationSpec"):
 		return &odigosv1alpha1.DestinationSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("DestinationStatus"):
+		return &odigosv1alpha1.DestinationStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("EnvVar"):
 		return &odigosv1alpha1.EnvVarApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryOptions"):

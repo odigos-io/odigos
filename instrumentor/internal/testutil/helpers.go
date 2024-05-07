@@ -1,7 +1,7 @@
 package testutil
 
 import (
-	"github.com/keyval-dev/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/consts"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

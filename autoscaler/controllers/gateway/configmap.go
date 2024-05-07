@@ -4,9 +4,10 @@ import (
 	"context"
 	"reflect"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/autoscaler/controllers/gateway/config"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/autoscaler/controllers/gateway/config"
+	odgiosK8s "github.com/odigos-io/odigos/common/k8s"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,7 +18,8 @@ import (
 )
 
 const (
-	configKey = "collector-conf"
+	configKey                 = "collector-conf"
+	destinationConfiguredType = "DestinationConfigured"
 )
 
 func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) (string, error) {
@@ -29,10 +31,33 @@ func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.Process
 		"spike_limit_mib": memConfig.memoryLimiterSpikeLimitMiB,
 	}
 
-	desiredData, err := config.Calculate(dests, processors, memoryLimiterConfiguration)
+	desiredData, err, destsStatus := config.Calculate(dests, processors, memoryLimiterConfiguration)
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
 		return "", err
+	}
+
+	for destName, destErr := range destsStatus {
+		if destErr != nil {
+			logger.Error(destErr, "Failed to calculate config for destination", "destination", destName)
+		}
+	}
+
+	// Update destination status conditions in k8s
+	for _, dest := range dests.Items {
+		if destErr, found := destsStatus[dest.ObjectMeta.Name]; found {
+			if destErr != nil {
+				err := odgiosK8s.UpdateStatusConditions(ctx, c, &dest, &dest.Status.Conditions, metav1.ConditionFalse, destinationConfiguredType, "ErrConfigDestination", destErr.Error())
+				if err != nil {
+					logger.Error(err, "Failed to update destination error status conditions")
+				}
+			} else {
+				err := odgiosK8s.UpdateStatusConditions(ctx, c, &dest, &dest.Status.Conditions, metav1.ConditionTrue, destinationConfiguredType, "TransformedToOtelcolConfig", "destination successfully transformed to otelcol configuration")
+				if err != nil {
+					logger.Error(err, "Failed to update destination success status conditions")
+				}
+			}
+		}
 	}
 
 	desired := &v1.ConfigMap{

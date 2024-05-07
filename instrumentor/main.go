@@ -23,13 +23,13 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/go-logr/zapr"
-	bridge "github.com/keyval-dev/opentelemetry-zap-bridge"
+	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 
-	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 
-	"github.com/keyval-dev/odigos/instrumentor/controllers/deleteinstrumentedapplication"
-	"github.com/keyval-dev/odigos/instrumentor/controllers/instrumentationdevice"
-	"github.com/keyval-dev/odigos/instrumentor/report"
+	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentedapplication"
+	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationdevice"
+	"github.com/odigos-io/odigos/instrumentor/report"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.

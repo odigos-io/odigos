@@ -41,8 +41,8 @@ We welcome many different types of contributions, including:
 ## Find an Issue
 
 We have good first issues for new contributors and help wanted issues suitable
-for any contributor. [good first issue](https://github.com/keyval-dev/odigos/labels/good%20first%20issue) has extra information to
-help you make your first contribution. [help wanted](https://github.com/keyval-dev/odigos/labels/help%20wanted) are issues
+for any contributor. [good first issue](https://github.com/odigos-io/odigos/labels/good%20first%20issue) has extra information to
+help you make your first contribution. [help wanted](https://github.com/odigos-io/odigos/labels/help%20wanted) are issues
 suitable for someone who isn't a core maintainer and is good to move onto after
 your first pull request.
 
@@ -79,7 +79,7 @@ After you have a working odigos setup, you can start making changes to the code 
 
 ### Run Odigos Cli from code
 
-The code for the odigos cli tool is found in the `cli` directory [here](https://github.com/keyval-dev/odigos/tree/main/cli).
+The code for the odigos cli tool is found in the `cli` directory [here](https://github.com/odigos-io/odigos/tree/main/cli).
 Test your cli code changes by running `go run .` from the `cli` directory:
 
 ```bash

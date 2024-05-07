@@ -2,14 +2,14 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -23,25 +23,22 @@ func (l *Loki) DestType() common.DestinationType {
 	return common.LokiDestinationType
 }
 
-func (l *Loki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (l *Loki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	rawUrl, exists := dest.Spec.Data[lokiUrlKey]
 	if !exists {
-		log.Log.V(0).Info("Loki endpoint not specified, gateway will not be configured for Loki")
-		return
+		return errors.New("Loki endpoint not specified, gateway will not be configured for Loki")
 	}
 
 	url, err := lokiUrlFromInput(rawUrl)
 	if err != nil {
-		log.Log.V(0).Error(err, "failed to parse loki endpoint, gateway will not be configured for Loki")
-		return
+		return errors.Join(err, errors.New("failed to parse loki endpoint, gateway will not be configured for Loki"))
 	}
 
 	rawLokiLabels, exists := dest.Spec.Data[lokiLabelsKey]
 	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.Name)
 	if err != nil {
-		log.Log.V(0).Error(err, "failed to parse loki labels, gateway will not be configured for Loki")
-		return
+		return errors.Join(err, errors.New("failed to parse loki labels, gateway will not be configured for Loki"))
 	}
 
 	lokiExporterName := "loki/loki-" + dest.Name
@@ -60,6 +57,8 @@ func (l *Loki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		Processors: processorNames,
 		Exporters:  []string{lokiExporterName},
 	}
+
+	return nil
 }
 
 func lokiUrlFromInput(rawUrl string) (string, error) {

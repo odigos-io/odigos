@@ -2,13 +2,13 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -24,35 +24,30 @@ func (g *GrafanaCloudPrometheus) DestType() common.DestinationType {
 	return common.GrafanaCloudPrometheusDestinationType
 }
 
-func (g *GrafanaCloudPrometheus) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (g *GrafanaCloudPrometheus) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	if !isMetricsEnabled(dest) {
-		log.Log.V(0).Info("Metrics not enabled, gateway will not be configured for grafana cloud prometheus")
-		return
+		return errors.New("Metrics not enabled, gateway will not be configured for grafana cloud prometheus")
 	}
 
 	promRwUrl, exists := dest.Spec.Data[grafanaCloudPrometheusRWurlKey]
 	if !exists {
-		log.Log.V(0).Info("Grafana Cloud Prometheus remote write endpoint not specified, gateway will not be configured for Prometheus")
-		return
+		return errors.New("Grafana Cloud Prometheus remote write endpoint not specified, gateway will not be configured for Prometheus")
 	}
 
 	if err := validateGrafanaPrometheusUrl(promRwUrl); err != nil {
-		log.Log.Error(err, "failed to validate grafana cloud prometheus remote write endpoint, gateway will not be configured for Prometheus")
-		return
+		return errors.Join(err, errors.New("failed to validate grafana cloud prometheus remote write endpoint, gateway will not be configured for Prometheus"))
 	}
 
 	prometheusUsername, exists := dest.Spec.Data[grafanaCloudPrometheusUserKey]
 	if !exists {
-		log.Log.V(0).Info("Grafana Cloud Prometheus username not specified, gateway will not be configured for Prometheus")
-		return
+		return errors.New("Grafana Cloud Prometheus username not specified, gateway will not be configured for Prometheus")
 	}
 
 	resourceAttributesLabels, exists := dest.Spec.Data[prometheusResourceAttributesLabelsKey]
 	processors, err := promResourceAttributesProcessors(resourceAttributesLabels, exists, dest.Name)
 	if err != nil {
-		log.Log.Error(err, "failed to parse grafana cloud prometheus resource attributes labels, gateway will not be configured for Prometheus")
-		return
+		return errors.Join(err, errors.New("failed to parse grafana cloud prometheus resource attributes labels, gateway will not be configured for Prometheus"))
 	}
 
 	authExtensionName := "basicauth/grafana" + dest.Name
@@ -77,8 +72,7 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest *odigosv1.Destination, curren
 		labels := map[string]string{}
 		err := json.Unmarshal([]byte(externalLabels), &labels)
 		if err != nil {
-			log.Log.Error(err, "failed to parse grafana cloud prometheus external labels, gateway will not be configured for Prometheus")
-			return
+			return errors.Join(err, errors.New("failed to parse grafana cloud prometheus external labels, gateway will not be configured for Prometheus"))
 		}
 
 		exporterConf["external_labels"] = labels
@@ -99,6 +93,8 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest *odigosv1.Destination, curren
 		Processors: processorNames,
 		Exporters:  []string{rwExporterName},
 	}
+
+	return nil
 }
 
 func validateGrafanaPrometheusUrl(input string) error {

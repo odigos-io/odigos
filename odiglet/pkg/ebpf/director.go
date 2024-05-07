@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"k8s.io/apimachinery/pkg/types"
 )
 

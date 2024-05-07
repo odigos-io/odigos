@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/fntlnz/mountinfo"
-	procdiscovery "github.com/keyval-dev/odigos/procdiscovery/pkg/process"
+	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
 func isPodContainerPredicate(podUID string, containerName string) func(string) bool {

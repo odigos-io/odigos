@@ -1,9 +1,11 @@
 package config
 
 import (
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
+	"errors"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -18,11 +20,10 @@ func (g *GoogleCloudStorage) DestType() common.DestinationType {
 	return common.GCSDestinationType
 }
 
-func (g *GoogleCloudStorage) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (g *GoogleCloudStorage) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	if !isTracingEnabled(dest) && !isLoggingEnabled(dest) {
-		log.Log.V(0).Info("GoogleCloudStorage is not enabled for any supported signals, skipping")
-		return
+		return errors.New("GoogleCloudStorage is not enabled for any supported signals, skipping")
 	}
 
 	bucket, ok := dest.Spec.Data[gcsBucketKey]
@@ -51,4 +52,6 @@ func (g *GoogleCloudStorage) ModifyConfig(dest *odigosv1.Destination, currentCon
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }

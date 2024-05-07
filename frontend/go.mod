@@ -1,17 +1,17 @@
-module github.com/keyval-dev/odigos/frontend
+module github.com/odigos-io/odigos/frontend
 
 go 1.22.0
 
 require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
-	github.com/keyval-dev/odigos/api v0.0.0
-	github.com/keyval-dev/odigos/common v0.0.0
-	github.com/keyval-dev/odigos/destinations v0.0.0-20240223090638-df3328a088bc
-	go.uber.org/multierr v1.6.0
-	k8s.io/api v0.29.2
+	github.com/odigos-io/odigos/api v0.0.0
+	github.com/odigos-io/odigos/common v1.0.48
+	github.com/odigos-io/odigos/destinations v0.0.0-20240223090638-df3328a088bc
+	golang.org/x/sync v0.6.0
+	k8s.io/api v0.30.0
 	k8s.io/apimachinery v0.30.0
-	k8s.io/client-go v0.29.2
+	k8s.io/client-go v0.30.0
 )
 
 require (
@@ -50,11 +50,10 @@ require (
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	go.opentelemetry.io/otel v1.24.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/oauth2 v0.10.0 // indirect
+	golang.org/x/oauth2 v0.12.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
@@ -67,13 +66,14 @@ require (
 	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
-	sigs.k8s.io/controller-runtime v0.11.2 // indirect
+	sigs.k8s.io/controller-runtime v0.18.2 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 replace (
-	github.com/keyval-dev/odigos/api => ../api
-	github.com/keyval-dev/odigos/common => ../common
+	github.com/odigos-io/odigos/api => ../api
+	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/destinations => ../destinations
 )

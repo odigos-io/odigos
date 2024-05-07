@@ -1,6 +1,6 @@
 package gateway
 
-import odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+import odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 
 const (
 	defaultRequestMemoryMiB = 500

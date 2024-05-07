@@ -1,9 +1,9 @@
 package config
 
 import (
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -17,7 +17,7 @@ func (a *Axiom) DestType() common.DestinationType {
 	return common.AxiomDestinationType
 }
 
-func (a *Axiom) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (a *Axiom) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	dataset, exists := dest.Spec.Data[axiomDatasetKey]
 	if !exists {
 		dataset = "default"
@@ -47,4 +47,6 @@ func (a *Axiom) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 			Exporters: []string{axiomExporterName},
 		}
 	}
+
+	return nil
 }

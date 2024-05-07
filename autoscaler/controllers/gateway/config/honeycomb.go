@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -22,10 +22,9 @@ func (h *Honeycomb) DestType() common.DestinationType {
 	return common.HoneycombDestinationType
 }
 
-func (h *Honeycomb) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (h *Honeycomb) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	if !isTracingEnabled(dest) {
-		log.Log.V(0).Error(ErrorHoneycombTracingDisabled, "skipping Honeycomb destination config")
-		return
+		return ErrorHoneycombTracingDisabled
 	}
 
 	log.Log.V(0).Info("Honeycomb tracing is enabled, configuring Honeycomb destination")
@@ -47,4 +46,6 @@ func (h *Honeycomb) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 	currentConfig.Service.Pipelines[tracePipelineName] = commonconf.Pipeline{
 		Exporters: []string{exporterName},
 	}
+
+	return nil
 }

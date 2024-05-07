@@ -9,10 +9,12 @@ import (
 	"runtime"
 
 	"github.com/hashicorp/go-version"
-	"github.com/keyval-dev/odigos/cli/cmd/resources"
-	"github.com/keyval-dev/odigos/cli/cmd/resources/odigospro"
-	"github.com/keyval-dev/odigos/cli/pkg/confirm"
-	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
+	"github.com/odigos-io/odigos/cli/pkg/confirm"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/utils"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -98,6 +100,9 @@ and apply any required migrations and adaptations.`,
 		// update the config on upgrade
 		config.Spec.OdigosVersion = versionFlag
 		config.Spec.ConfigVersion += 1
+
+		// make sure the current system namespaces is in the ignored in config
+		config.Spec.IgnoredNamespaces = utils.AddSystemNamespacesToIgnored(config.Spec.IgnoredNamespaces, consts.SystemNamespaces)
 
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {

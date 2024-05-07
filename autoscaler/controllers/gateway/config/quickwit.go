@@ -1,9 +1,11 @@
 package config
 
 import (
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
+	"errors"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -16,7 +18,7 @@ func (e *Quickwit) DestType() common.DestinationType {
 	return common.QuickwitDestinationType
 }
 
-func (e *Quickwit) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (e *Quickwit) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	if url, exists := dest.Spec.Data[qwUrlKey]; exists {
 		exporterName := "otlp/quickwit-" + dest.Name
 
@@ -40,5 +42,9 @@ func (e *Quickwit) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 				Exporters: []string{exporterName},
 			}
 		}
+
+		return nil
 	}
+
+	return errors.New("Quickwit url not specified, gateway will not be configured for Quickwit")
 }

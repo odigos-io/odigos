@@ -18,7 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 // CollectorsGroupSpecApplyConfiguration represents an declarative configuration of the CollectorsGroupSpec type for use

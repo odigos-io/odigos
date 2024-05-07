@@ -1,7 +1,7 @@
 package actions
 
 import (
-	"github.com/keyval-dev/odigos/cli/cmd/resources/crds/common"
+	"github.com/odigos-io/odigos/cli/cmd/resources/crds/common"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
