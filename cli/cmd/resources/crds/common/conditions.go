@@ -7,6 +7,7 @@ import (
 var (
 	messageMaxLength          int64   = 32768
 	observedGenerationMinimum float64 = 0
+	reasonMinLength           int64   = 1
 	reasonMaxLength           int64   = 1024
 	typeMaxLength             int64   = 316
 	statusEnumValues                  = []apiextensionsv1.JSON{
@@ -41,6 +42,7 @@ var (
 					"reason": {
 						Description: "reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.",
 						Type:        "string",
+						MinLength:   &reasonMinLength,
 						MaxLength:   &reasonMaxLength,
 						Pattern:     "^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$",
 					},

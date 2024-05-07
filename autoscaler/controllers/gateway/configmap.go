@@ -7,6 +7,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway/config"
+	odgiosK8s "github.com/odigos-io/odigos/common/k8s"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,11 +15,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	odgiosK8s "github.com/odigos-io/odigos/common/k8s"
 )
 
 const (
-	configKey = "collector-conf"
+	configKey                 = "collector-conf"
 	destinationConfiguredType = "DestinationConfigured"
 )
 
@@ -52,7 +52,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.Process
 					logger.Error(err, "Failed to update destination error status conditions")
 				}
 			} else {
-				err := odgiosK8s.UpdateStatusConditions(ctx, c, &dest, &dest.Status.Conditions, metav1.ConditionTrue, destinationConfiguredType, "", "")
+				err := odgiosK8s.UpdateStatusConditions(ctx, c, &dest, &dest.Status.Conditions, metav1.ConditionTrue, destinationConfiguredType, "TransformedToOtelcolConfig", "destination successfully transformed to otelcol configuration")
 				if err != nil {
 					logger.Error(err, "Failed to update destination success status conditions")
 				}
