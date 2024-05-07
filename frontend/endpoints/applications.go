@@ -42,12 +42,6 @@ func GetApplicationsInNamespace(c *gin.Context) {
 		return
 	}
 
-	if IsSystemNamespace(request.Namespace) {
-		// skip system namespaces which should not be instrumented
-		c.JSON(http.StatusOK, GetApplicationsInNamespaceResponse{})
-		return
-	}
-
 	ctx := c.Request.Context()
 	deps, err := getDeployments(request.Namespace, ctx)
 	if err != nil {
