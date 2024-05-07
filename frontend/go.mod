@@ -8,7 +8,7 @@ require (
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v1.0.48
 	github.com/odigos-io/odigos/destinations v0.0.0-20240223090638-df3328a088bc
-	go.uber.org/multierr v1.11.0
+	golang.org/x/sync v0.6.0
 	k8s.io/api v0.30.0
 	k8s.io/apimachinery v0.30.0
 	k8s.io/client-go v0.30.0
