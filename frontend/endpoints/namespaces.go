@@ -27,9 +27,9 @@ type GetNamespaceItem struct {
 	TotalApps int    `json:"totalApps"`
 }
 
-func GetNamespaces(c *gin.Context) {
+func GetNamespaces(c *gin.Context, odigosns string) {
 
-	odigosConfig, err := kube.DefaultClient.OdigosClient.OdigosConfigurations("odigos-system").Get(c.Request.Context(), "odigos-config", metav1.GetOptions{})
+	odigosConfig, err := kube.DefaultClient.OdigosClient.OdigosConfigurations(odigosns).Get(c.Request.Context(), "odigos-config", metav1.GetOptions{})
 	if err != nil {
 		returnError(c, err)
 		return

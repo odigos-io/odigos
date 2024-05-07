@@ -88,7 +88,7 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 	// Serve API
 	apis := r.Group("/api")
 	{
-		apis.GET("/namespaces", endpoints.GetNamespaces)
+		apis.GET("/namespaces", func(c *gin.Context) { endpoints.GetNamespaces(c, flags.Namespace) })
 		apis.POST("/namespaces", endpoints.PersistNamespaces)
 
 		apis.GET("/sources", endpoints.GetSources)
