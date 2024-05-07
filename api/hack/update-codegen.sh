@@ -18,7 +18,7 @@ kube::codegen::gen_client \
     --with-applyconfig \
     --one-input-api "actions/v1alpha1" \
     --output-dir "${SCRIPT_ROOT}/generated/actions" \
-    --output-pkg "github.com/keyval-dev/odigos/api/generated/actions" \
+    --output-pkg "github.com/odigos-io/odigos/api/generated/actions" \
     --boilerplate "${SCRIPT_ROOT}/hack/boilerplate.go.txt" \
     "${SCRIPT_ROOT}"
 
@@ -27,6 +27,6 @@ kube::codegen::gen_client \
     --with-applyconfig \
     --one-input-api "odigos/v1alpha1" \
     --output-dir "${SCRIPT_ROOT}/generated/odigos" \
-    --output-pkg "github.com/keyval-dev/odigos/api/generated/odigos" \
+    --output-pkg "github.com/odigos-io/odigos/api/generated/odigos" \
     --boilerplate "${SCRIPT_ROOT}/hack/boilerplate.go.txt" \
     "${SCRIPT_ROOT}"

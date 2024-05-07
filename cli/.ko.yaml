@@ -2,6 +2,6 @@ builds:
   - id: cli
     main: "."
     ldflags:
-      - -X github.com/keyval-dev/odigos/cli/cmd.OdigosVersion={{ .Env.VERSION }}
-      - -X github.com/keyval-dev/odigos/cli/cmd.OdigosCommit={{ .Env.SHORT_COMMIT }}
-      - -X github.com/keyval-dev/odigos/cli/cmd.OdigosDate={{ .Env.DATE }}
+      - -X github.com/odigos-io/odigos/cli/cmd.OdigosVersion={{ .Env.VERSION }}
+      - -X github.com/odigos-io/odigos/cli/cmd.OdigosCommit={{ .Env.SHORT_COMMIT }}
+      - -X github.com/odigos-io/odigos/cli/cmd.OdigosDate={{ .Env.DATE }}

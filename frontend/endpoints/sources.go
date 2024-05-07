@@ -2,10 +2,10 @@ package endpoints
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/utils"
-	"github.com/keyval-dev/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/utils"
+	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

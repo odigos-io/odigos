@@ -2,7 +2,7 @@ package actions
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/keyval-dev/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/keyval-dev/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/consts"
 
 	"k8s.io/client-go/util/homedir"
 )

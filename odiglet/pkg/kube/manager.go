@@ -3,13 +3,13 @@ package kube
 import (
 	"context"
 
-	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
-	"github.com/keyval-dev/odigos/odiglet/pkg/kube/instrumentation_ebpf"
-	"github.com/keyval-dev/odigos/odiglet/pkg/kube/runtime_details"
-	"github.com/keyval-dev/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
+	"github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_ebpf"
+	"github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
+	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"

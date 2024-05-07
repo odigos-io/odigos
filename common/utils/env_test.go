@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/keyval-dev/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 func TestGetEnvVarOrDefault_Exists(t *testing.T) {

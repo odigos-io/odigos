@@ -1,7 +1,7 @@
 package v1alpha1
 
 import (
-	"github.com/keyval-dev/odigos/common"
+	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

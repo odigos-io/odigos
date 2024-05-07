@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 )
 
 func TestLokiUrlFromInput(t *testing.T) {

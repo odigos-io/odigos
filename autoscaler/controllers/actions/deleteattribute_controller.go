@@ -21,9 +21,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	actionv1 "github.com/keyval-dev/odigos/api/actions/v1alpha1"
-	v1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common"
+	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"

@@ -6,17 +6,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
+	"github.com/odigos-io/odigos/cli/pkg/labels"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/common/consts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 
-	"github.com/keyval-dev/odigos/cli/cmd/resources"
-	"github.com/keyval-dev/odigos/cli/pkg/kube"
-	"github.com/keyval-dev/odigos/cli/pkg/log"
+	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

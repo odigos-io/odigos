@@ -23,9 +23,9 @@ import (
 	"fmt"
 	"time"
 
-	odigosv1alpha1 "github.com/keyval-dev/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
-	scheme "github.com/keyval-dev/odigos/api/generated/odigos/clientset/versioned/scheme"
-	v1alpha1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
+	scheme "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
+	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

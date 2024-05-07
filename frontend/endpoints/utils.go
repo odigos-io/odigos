@@ -5,8 +5,8 @@ import (
 	"errors"
 	"path"
 
-	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )

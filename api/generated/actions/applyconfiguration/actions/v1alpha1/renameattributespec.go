@@ -18,7 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	common "github.com/keyval-dev/odigos/common"
+	common "github.com/odigos-io/odigos/common"
 )
 
 // RenameAttributeSpecApplyConfiguration represents an declarative configuration of the RenameAttributeSpec type for use
