@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/destinations
 
-go 1.22
+go 1.22.0
 
 require (
 	github.com/odigos-io/odigos/common v1.0.48
