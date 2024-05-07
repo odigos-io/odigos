@@ -14,10 +14,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	odgiosK8s "github.com/keyval-dev/odigos/common/k8s"
 )
 
 const (
 	configKey = "collector-conf"
+	destinationConfiguredType = "DestinationConfigured"
 )
 
 func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) (string, error) {
@@ -36,9 +38,25 @@ func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.Process
 	}
 
 	for destName, destErr := range destsStatus {
-		// TODO: update destination k8s status
 		if destErr != nil {
 			logger.Error(destErr, "Failed to calculate config for destination", "destination", destName)
+		}
+	}
+
+	// Update destination status conditions in k8s
+	for _, dest := range dests.Items {
+		if destErr, found := destsStatus[dest.ObjectMeta.Name]; found {
+			if destErr != nil {
+				err := odgiosK8s.UpdateStatusConditions(ctx, c, &dest, &dest.Status.Conditions, metav1.ConditionFalse, destinationConfiguredType, "ErrConfigDestination", destErr.Error())
+				if err != nil {
+					logger.Error(err, "Failed to update destination error status conditions")
+				}
+			} else {
+				err := odgiosK8s.UpdateStatusConditions(ctx, c, &dest, &dest.Status.Conditions, metav1.ConditionTrue, destinationConfiguredType, "", "")
+				if err != nil {
+					logger.Error(err, "Failed to update destination success status conditions")
+				}
+			}
 		}
 	}
 

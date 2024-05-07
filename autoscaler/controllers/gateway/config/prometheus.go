@@ -27,7 +27,7 @@ func (p *Prometheus) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 	}
 
 	if !isMetricsEnabled(dest) {
-		return errors.New("Metrics not enabled for prometheus destination, gateway will not be configured for prometheus")
+		return errors.New("metrics not enabled for prometheus destination, gateway will not be configured for prometheus")
 	}
 
 	url = addProtocol(url)
