@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.uber.org/multierr"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
@@ -117,12 +117,16 @@ func getJsonMergePatchForInstrumentationLabel(enabled *bool) []byte {
 	return []byte(jsonMergePatchContent)
 }
 func syncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []PersistNamespaceObject) error {
-	var errs error
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(kube.K8sClientDefaultBurst)
+
 	for _, workload := range workloads {
-		err := setWorkloadInstrumentationLabel(ctx, nsName, workload.Name, workload.Kind, workload.Selected)
-		errs = multierr.Append(errs, err)
+		currWorkload := workload
+		g.Go(func() error {
+			return setWorkloadInstrumentationLabel(ctx, nsName, currWorkload.Name, currWorkload.Kind, currWorkload.Selected)
+		})
 	}
-	return errs
+	return g.Wait()
 }
 
 // returns a map, where the key is a namespace name and the value is the
