@@ -26,7 +26,23 @@ type GetNamespaceItem struct {
 	TotalApps int    `json:"totalApps"`
 }
 
+func isNamespaceIgnored(namespace string, ignoredNamespaces []string) bool {
+	for _, ignoredNamespace := range ignoredNamespaces {
+		if namespace == ignoredNamespace {
+			return true
+		}
+	}
+	return false
+}
+
 func GetNamespaces(c *gin.Context) {
+
+	odigosConfig, err := kube.DefaultClient.OdigosClient.OdigosConfigurations("odigos-system").Get(c.Request.Context(), "odigos-config", metav1.GetOptions{})
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
 	list, err := kube.DefaultClient.CoreV1().Namespaces().List(c.Request.Context(), metav1.ListOptions{})
 	if err != nil {
 		returnError(c, err)
@@ -41,9 +57,7 @@ func GetNamespaces(c *gin.Context) {
 
 	var response GetNamespacesResponse
 	for _, namespace := range list.Items {
-
-		if IsSystemNamespace(namespace.Name) {
-			// skip system namespaces which should not be instrumented
+		if isNamespaceIgnored(namespace.Name, odigosConfig.Spec.IgnoredNamespaces) {
 			continue
 		}
 
@@ -81,10 +95,6 @@ func PersistNamespaces(c *gin.Context) {
 	}
 
 	for nsName, nsItem := range request {
-		if IsSystemNamespace(nsName) {
-			// skip system namespaces which should not be instrumented
-			continue
-		}
 
 		jsonMergePayload := getJsonMergePatchForInstrumentationLabel(nsItem.FutureSelected)
 		_, err := kube.DefaultClient.CoreV1().Namespaces().Patch(c.Request.Context(), nsName, types.MergePatchType, jsonMergePayload, metav1.PatchOptions{})
