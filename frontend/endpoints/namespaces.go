@@ -8,6 +8,7 @@ import (
 	"go.uber.org/multierr"
 
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/utils"
 
 	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,15 +25,6 @@ type GetNamespaceItem struct {
 	Name      string `json:"name"`
 	Selected  bool   `json:"selected"`
 	TotalApps int    `json:"totalApps"`
-}
-
-func isNamespaceIgnored(namespace string, ignoredNamespaces []string) bool {
-	for _, ignoredNamespace := range ignoredNamespaces {
-		if namespace == ignoredNamespace {
-			return true
-		}
-	}
-	return false
 }
 
 func GetNamespaces(c *gin.Context) {
@@ -57,7 +49,7 @@ func GetNamespaces(c *gin.Context) {
 
 	var response GetNamespacesResponse
 	for _, namespace := range list.Items {
-		if isNamespaceIgnored(namespace.Name, odigosConfig.Spec.IgnoredNamespaces) {
+		if utils.IsNamespaceIgnored(namespace.Name, odigosConfig.Spec.IgnoredNamespaces) {
 			continue
 		}
 

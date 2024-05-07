@@ -22,3 +22,12 @@ func AddSystemNamespacesToIgnored(userIgnoredNamespaces []string, systemNamespac
 
 	return mergedList
 }
+
+func IsNamespaceIgnored(namespace string, ignoredNamespaces []string) bool {
+	for _, ignoredNamespace := range ignoredNamespaces {
+		if namespace == ignoredNamespace {
+			return true
+		}
+	}
+	return false
+}
