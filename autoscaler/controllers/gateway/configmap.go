@@ -14,7 +14,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	odgiosK8s "github.com/keyval-dev/odigos/common/k8s"
+	odgiosK8s "github.com/odigos-io/odigos/common/k8s"
 )
 
 const (
