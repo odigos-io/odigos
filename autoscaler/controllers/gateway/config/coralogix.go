@@ -3,11 +3,9 @@ package config
 import (
 	"errors"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 var (
@@ -26,26 +24,22 @@ func (c *Coralogix) DestType() common.DestinationType {
 	return common.CoralogixDestinationType
 }
 
-func (c *Coralogix) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (c *Coralogix) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	if !isTracingEnabled(dest) && !isLoggingEnabled(dest) && !isMetricsEnabled(dest) {
-		ctrl.Log.Error(ErrorCoralogixNoSignals, "skipping Coralogix destination config")
-		return
+		return ErrorCoralogixNoSignals
 	}
 
 	domain, exists := dest.Spec.Data[coralogixDomain]
 	if !exists {
-		log.Log.V(0).Info("Coralogix domain not specified, gateway will not be configured for Coralogix")
-		return
+		return errors.New("Coralogix domain not specified, gateway will not be configured for Coralogix")
 	}
 	appName, exists := dest.Spec.Data[coralogixApplicationName]
 	if !exists {
-		log.Log.V(0).Info("Coralogix application name not specified, gateway will not be configured for Coralogix")
-		return
+		return errors.New("Coralogix application name not specified, gateway will not be configured for Coralogix")
 	}
 	subName, exists := dest.Spec.Data[coralogixSubsystemName]
 	if !exists {
-		log.Log.V(0).Info("Coralogix subsystem name not specified, gateway will not be configured for Coralogix")
-		return
+		return errors.New("Coralogix subsystem name not specified, gateway will not be configured for Coralogix")
 	}
 
 	exporterName := "coralogix/" + dest.Name
@@ -76,4 +70,6 @@ func (c *Coralogix) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }

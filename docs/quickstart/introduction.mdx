@@ -35,7 +35,7 @@ Create a new local Kubernetes cluster, by running the following command:
 
 ### Deploying the target application
 
-We are going to install a [demo application](https://github.com/keyval-dev/simple-demo) that consists of 5 microservices written in Go, Java, Python, .NET and Node.js.
+We are going to install a [demo application](https://github.com/odigos-io/simple-demo) that consists of 5 microservices written in Go, Java, Python, .NET and Node.js.
 
 <Frame>
     <img src="/images/demo_architecture.png" alt="Architecture of demo application" />
@@ -44,7 +44,7 @@ We are going to install a [demo application](https://github.com/keyval-dev/simpl
 Deploy the application using the following command:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/keyval-dev/simple-demo/main/kubernetes/deployment.yaml
+kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/deployment.yaml
 ```
 
 ### Deploying Jaeger
@@ -54,7 +54,7 @@ Jaeger is a popular open source distributed tracing backend. We are going to use
 Install Jaeger using the following command:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/keyval-dev/simple-demo/main/kubernetes/jaeger.yaml
+kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/jaeger.yaml
 ```
 
 ### Waiting for the applications to start

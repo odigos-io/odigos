@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/keyval-dev/odigos/odiglet/pkg/kube/utils"
+	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 
-	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/odiglet/pkg/env"
-	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/consts"
-	"github.com/keyval-dev/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/odiglet/pkg/env"
+	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/consts"
+	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"go.opentelemetry.io/auto"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 )

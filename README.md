@@ -1,12 +1,12 @@
 <p align="center">
-    <a href="https://github.com/keyval-dev/odigos/actions/workflows/publish-cli.yml" target="_blank">
-        <img src="https://github.com/keyval-dev/odigos/actions/workflows/publish-cli.yml/badge.svg" alt="Release Odigos CLI" style="margin-right: 10px; border: 1px solid #007acc; border-radius: 4px; padding: 5px;">
+    <a href="https://github.com/odigos-io/odigos/actions/workflows/publish-cli.yml" target="_blank">
+        <img src="https://github.com/odigos-io/odigos/actions/workflows/publish-cli.yml/badge.svg" alt="Release Odigos CLI" style="margin-right: 10px; border: 1px solid #007acc; border-radius: 4px; padding: 5px;">
     </a>
-    <a href="https://goreportcard.com/report/github.com/keyval-dev/odigos/cli" target="_blank">
-        <img src="https://goreportcard.com/badge/github.com/keyval-dev/odigos/cli" alt="Go Report Card" style="margin-right: 10px; border: 1px solid #4CAF50; border-radius: 4px; padding: 5px;">
+    <a href="https://goreportcard.com/report/github.com/odigos-io/odigos/cli" target="_blank">
+        <img src="https://goreportcard.com/badge/github.com/odigos-io/odigos/cli" alt="Go Report Card" style="margin-right: 10px; border: 1px solid #4CAF50; border-radius: 4px; padding: 5px;">
     </a>
-    <a href="https://godoc.org/github.com/keyval-dev/odigos/cli" target="_blank">
-        <img src="https://godoc.org/github.com/keyval-dev/odigos/cli?status.svg" alt="GoDoc" style="border: 1px solid #f39c12; border-radius: 4px; padding: 5px;">
+    <a href="https://godoc.org/github.com/odigos-io/odigos/cli" target="_blank">
+        <img src="https://godoc.org/github.com/odigos-io/odigos/cli?status.svg" alt="GoDoc" style="border: 1px solid #f39c12; border-radius: 4px; padding: 5px;">
     </a>
 </p>
 
@@ -104,7 +104,7 @@ Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information abou
 
 ## All Thanks To Our Contributors
 
-<a href="https://github.com/keyval-dev/odigos/graphs/contributors">
+<a href="https://github.com/odigos-io/odigos/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=keyval-dev/odigos" />
 </a>
 

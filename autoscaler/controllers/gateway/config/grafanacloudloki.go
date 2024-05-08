@@ -1,14 +1,14 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -23,36 +23,31 @@ func (g *GrafanaCloudLoki) DestType() common.DestinationType {
 	return common.GrafanaCloudLokiDestinationType
 }
 
-func (g *GrafanaCloudLoki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (g *GrafanaCloudLoki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	if !isLoggingEnabled(dest) {
-		log.Log.V(0).Info("Logging not enabled, gateway will not be configured for grafana cloud Loki")
-		return
+		return errors.New("Logging not enabled, gateway will not be configured for grafana cloud Loki")
 	}
 
 	lokiUrl, exists := dest.Spec.Data[grafanaCloudLokiEndpointKey]
 	if !exists {
-		log.Log.V(0).Info("Grafana Cloud Loki endpoint not specified, gateway will not be configured for Loki")
-		return
+		return errors.New("Grafana Cloud Loki endpoint not specified, gateway will not be configured for Loki")
 	}
 
 	lokiExporterEndpoint, err := grafanaLokiUrlFromInput(lokiUrl)
 	if err != nil {
-		log.Log.Error(err, "failed to parse grafana cloud loki endpoint, gateway will not be configured for Loki")
-		return
+		return errors.Join(err, errors.New("failed to parse grafana cloud loki endpoint, gateway will not be configured for Loki"))
 	}
 
 	lokiUsername, exists := dest.Spec.Data[grafanaCloudLokiUsernameKey]
 	if !exists {
-		log.Log.V(0).Info("Grafana Cloud Loki username not specified, gateway will not be configured for Loki")
-		return
+		return errors.New("Grafana Cloud Loki username not specified, gateway will not be configured for Loki")
 	}
 
 	rawLokiLabels, exists := dest.Spec.Data[grafanaCloudLokiLabelsKey]
 	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.Name)
 	if err != nil {
-		log.Log.Error(err, "failed to parse grafana cloud loki labels, gateway will not be configured for Loki")
-		return
+		return errors.Join(err, errors.New("failed to parse grafana cloud loki labels, gateway will not be configured for Loki"))
 	}
 
 	authExtensionName := "basicauth/grafana" + dest.Name
@@ -84,6 +79,7 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest *odigosv1.Destination, currentConfi
 		Exporters:  []string{exporterName},
 	}
 
+	return nil
 }
 
 // to send logs to grafana cloud we use the loki exporter, which uses a loki

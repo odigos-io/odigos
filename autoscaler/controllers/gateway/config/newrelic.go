@@ -1,12 +1,12 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -19,11 +19,10 @@ func (n *NewRelic) DestType() common.DestinationType {
 	return common.NewRelicDestinationType
 }
 
-func (n *NewRelic) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (n *NewRelic) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	endpoint, exists := dest.Spec.Data[newRelicEndpoint]
 	if !exists {
-		log.Log.V(0).Info("New relic endpoint not specified, gateway will not be configured for New Relic")
-		return
+		return errors.New("New relic endpoint not specified, gateway will not be configured for New Relic")
 	}
 
 	exporterName := "otlp/newrelic-" + dest.Name
@@ -54,4 +53,6 @@ func (n *NewRelic) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }

@@ -6,8 +6,8 @@ import (
 
 	"encoding/json"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 

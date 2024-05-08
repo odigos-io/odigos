@@ -1,9 +1,9 @@
 package config
 
 import (
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 type Lightstep struct{}
@@ -12,7 +12,7 @@ func (l *Lightstep) DestType() common.DestinationType {
 	return common.LightstepDestinationType
 }
 
-func (l *Lightstep) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (l *Lightstep) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	if isTracingEnabled(dest) {
 		exporterName := "otlp/lightstep-" + dest.Name
 		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
@@ -27,4 +27,6 @@ func (l *Lightstep) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }

@@ -1,9 +1,9 @@
 package config
 
 import (
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 type GoogleCloud struct{}
@@ -12,7 +12,7 @@ func (g *GoogleCloud) DestType() common.DestinationType {
 	return common.GoogleCloudDestinationType
 }
 
-func (g *GoogleCloud) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (g *GoogleCloud) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	if isTracingEnabled(dest) {
 		exporterName := "googlecloud/" + dest.Name
@@ -37,4 +37,6 @@ func (g *GoogleCloud) ModifyConfig(dest *odigosv1.Destination, currentConfig *co
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }

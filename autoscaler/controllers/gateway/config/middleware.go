@@ -1,10 +1,10 @@
 package config
 
 import (
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"errors"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -17,17 +17,15 @@ func (m *Middleware) DestType() common.DestinationType {
 	return common.MiddlewareDestinationType
 }
 
-func (m *Middleware) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (m *Middleware) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 
 	if !isTracingEnabled(dest) && !isMetricsEnabled(dest) && !isLoggingEnabled(dest) {
-		log.Log.V(0).Info("Middleware is not enabled for any supported signals, skipping")
-		return
+		return errors.New("Middleware is not enabled for any supported signals, skipping")
 	}
 
 	_, exists := dest.Spec.Data[target]
 	if !exists {
-		log.Log.V(0).Info("Middleware target not specified, gateway will not be configured for Middleware")
-		return
+		return errors.New("Middleware target not specified, gateway will not be configured for Middleware")
 	}
 
 	exporterName := "otlp/middleware-" + dest.Name
@@ -58,4 +56,6 @@ func (m *Middleware) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }

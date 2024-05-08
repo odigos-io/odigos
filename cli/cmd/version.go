@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/keyval-dev/odigos/cli/cmd/resources"
-	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

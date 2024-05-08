@@ -1,12 +1,12 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -19,11 +19,10 @@ func (s *Splunk) DestType() common.DestinationType {
 	return common.SplunkDestinationType
 }
 
-func (s *Splunk) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (s *Splunk) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	realm, exists := dest.Spec.Data[splunkRealm]
 	if !exists {
-		log.Log.V(0).Info("Splunk realm not specified, gateway will not be configured for Splunk")
-		return
+		return errors.New("Splunk realm not specified, gateway will not be configured for Splunk")
 	}
 
 	if isTracingEnabled(dest) {
@@ -38,4 +37,6 @@ func (s *Splunk) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }

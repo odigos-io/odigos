@@ -21,14 +21,14 @@ import (
 	"os"
 
 	"github.com/go-logr/zapr"
-	bridge "github.com/keyval-dev/opentelemetry-zap-bridge"
+	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/keyval-dev/odigos/scheduler/controllers"
+	"github.com/odigos-io/odigos/scheduler/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

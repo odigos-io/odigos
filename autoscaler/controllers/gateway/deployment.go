@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/keyval-dev/odigos/autoscaler/utils"
+	"github.com/odigos-io/odigos/autoscaler/utils"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/autoscaler/controllers/common"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

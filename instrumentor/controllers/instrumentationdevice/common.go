@@ -5,16 +5,24 @@ import (
 	"errors"
 
 	"github.com/go-logr/logr"
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/utils"
-	"github.com/keyval-dev/odigos/instrumentor/instrumentation"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/utils"
+	"github.com/odigos-io/odigos/instrumentor/instrumentation"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+type UnInstrumentReason string
+
+const (
+	UnInstrumentReasonDataCollectionNotReady UnInstrumentReason = "DataCollection not ready"
+	UnInstrumentReasonNoRuntimeDetails       UnInstrumentReason = "No runtime details"
+	UnInstrumentReasonRemoveAll              UnInstrumentReason = "Remove all"
 )
 
 func clearInstrumentationEbpf(obj client.Object) {
@@ -82,7 +90,7 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 	return nil
 }
 
-func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Client, namespace string, name string, kind string) error {
+func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Client, namespace string, name string, kind string, reason UnInstrumentReason) error {
 	obj, err := getObjectFromKindString(kind)
 	if err != nil {
 		logger.Error(err, "error getting object from kind string")
@@ -120,7 +128,7 @@ func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Cli
 	}
 
 	if result != controllerutil.OperationResultNone {
-		logger.V(0).Info("uninstrumented application", "name", obj.GetName(), "namespace", obj.GetNamespace())
+		logger.V(0).Info("uninstrumented application", "name", obj.GetName(), "namespace", obj.GetNamespace(), "reason", reason)
 	}
 
 	return nil

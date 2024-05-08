@@ -3,10 +3,9 @@ package config
 import (
 	"errors"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/keyval-dev/odigos/autoscaler/controllers/common"
-	"github.com/keyval-dev/odigos/common"
-	ctrl "sigs.k8s.io/controller-runtime"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -25,17 +24,15 @@ func (a *AzureBlobStorage) DestType() common.DestinationType {
 	return common.AzureBlobDestinationType
 }
 
-func (a *AzureBlobStorage) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
+func (a *AzureBlobStorage) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
 	accountName, ok := dest.Spec.Data[blobAccountName]
 	if !ok {
-		ctrl.Log.Error(ErrorMissingAzureBlobAccountName, "skipping Azure Blob Storage config")
-		return
+		return ErrorMissingAzureBlobAccountName
 	}
 
 	containerName, ok := dest.Spec.Data[blobContainerName]
 	if !ok {
-		ctrl.Log.Error(ErrorMissingAzureBlobContainerName, "skipping Azure Blob Storage config")
-		return
+		return ErrorMissingAzureBlobContainerName
 	}
 
 	exporterName := "azureblobstorage/" + dest.Name
@@ -67,4 +64,6 @@ func (a *AzureBlobStorage) ModifyConfig(dest *odigosv1.Destination, currentConfi
 			Exporters: []string{exporterName},
 		}
 	}
+
+	return nil
 }
