@@ -45,7 +45,7 @@ jobs:
       - name: tag common
         run: |
           git tag common/${{ steps.extract_tag.outputs.tag }}
-      
+
       - name: tag procdiscovery
         run: |
           git tag procdiscovery/${{ steps.extract_tag.outputs.tag }}
@@ -130,17 +130,17 @@ jobs:
           build-args: SERVICE_NAME=${{ matrix.service }}
           platforms: linux/amd64,linux/arm64
           file: >-
-            ${{ 
-              (matrix.service == 'odiglet' && 'odiglet/Dockerfile') || 
-              (matrix.service == 'collector' && 'collector/Dockerfile') || 
-              'Dockerfile' 
+            ${{
+              (matrix.service == 'odiglet' && 'odiglet/Dockerfile') ||
+              (matrix.service == 'collector' && 'collector/Dockerfile') ||
+              'Dockerfile'
             }}
           context: >-
-            ${{ 
-              (matrix.service == 'collector' && 'collector') || 
-              '.' 
+            ${{
+              (matrix.service == 'collector' && 'collector') ||
+              '.'
             }}
-          
+
       - name: Notify Slack End
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
@@ -168,10 +168,10 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Start releasing odigos collector as linux packages", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
-      
+
       - name: Checkout repository
         uses: actions/checkout@v4
-        with: 
+        with:
           fetch-depth: 0
           ref: ${{ steps.extract_tag.outputs.tag }}
 
@@ -185,7 +185,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.22"
-          
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
@@ -202,7 +202,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos collector linux packages released successfully", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
-  
+
       - name: Notify Slack on Failure
         if: failure()
         env:
@@ -211,4 +211,3 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos collector linux packages", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
-  

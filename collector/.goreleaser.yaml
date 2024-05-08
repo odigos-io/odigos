@@ -27,6 +27,7 @@ nfpms:
         type: config|noreplace
     scripts:
       preinstall: distribution/odigos-otelcol/preinstall.sh
+      postinstall: distribution/odigos-otelcol/postinstall.sh
       preremove: distribution/odigos-otelcol/preremove.sh
     vendor: Keyval Inc.
     homepage: https://odigos.io
