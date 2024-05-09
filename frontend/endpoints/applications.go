@@ -15,18 +15,18 @@ type GetApplicationsInNamespaceRequest struct {
 }
 
 type GetApplicationsInNamespaceResponse struct {
-	Applications []GetApplicationItem `json:"applications"`
+	Applications []GetApplicationItemInNamespace `json:"applications"`
 }
 
 type WorkloadKind string
 
 const (
-	WorkloadKindDeployment  WorkloadKind = "deployment"
-	WorkloadKindStatefulSet WorkloadKind = "statefulset"
-	WorkloadKindDaemonSet   WorkloadKind = "daemonset"
+	WorkloadKindDeployment  WorkloadKind = "Deployment"
+	WorkloadKindStatefulSet WorkloadKind = "StatefulSet"
+	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
 )
 
-type GetApplicationItem struct {
+type GetApplicationItemInNamespace struct {
 	Name                      string       `json:"name"`
 	Kind                      WorkloadKind `json:"kind"`
 	Instances                 int          `json:"instances"`
@@ -43,25 +43,34 @@ func GetApplicationsInNamespace(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	deps, err := getDeployments(request.Namespace, ctx)
+	items, err := getApplicationsInNamespace(ctx, request.Namespace)
 	if err != nil {
 		returnError(c, err)
 		return
 	}
 
-	ss, err := getStatefulSets(request.Namespace, ctx)
+	c.JSON(http.StatusOK, GetApplicationsInNamespaceResponse{
+		Applications: items,
+	})
+}
+
+func getApplicationsInNamespace(ctx context.Context, ns string) ([]GetApplicationItemInNamespace, error) {
+	deps, err := getDeployments(ns, ctx)
 	if err != nil {
-		returnError(c, err)
-		return
+		return nil, err
 	}
 
-	dss, err := getDaemonSets(request.Namespace, ctx)
+	ss, err := getStatefulSets(ns, ctx)
 	if err != nil {
-		returnError(c, err)
-		return
+		return nil, err
 	}
 
-	items := make([]GetApplicationItem, len(deps)+len(ss)+len(dss))
+	dss, err := getDaemonSets(ns, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]GetApplicationItemInNamespace, len(deps)+len(ss)+len(dss))
 	copy(items, deps)
 	copy(items[len(deps):], ss)
 	copy(items[len(deps)+len(ss):], dss)
@@ -69,10 +78,9 @@ func GetApplicationsInNamespace(c *gin.Context) {
 	// check if the entire namespace is instrumented
 	// as it affects the applications in the namespace
 	// which use this label to determine if they should be instrumented
-	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(c.Request.Context(), request.Namespace, metav1.GetOptions{})
+	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
-		returnError(c, err)
-		return
+		return nil, err
 	}
 	namespaceInstrumented, found := namespace.Labels[consts.OdigosInstrumentationLabel]
 	var nsInstrumentationLabeled *bool
@@ -89,18 +97,16 @@ func GetApplicationsInNamespace(c *gin.Context) {
 		item.InstrumentationEffective = appInstrumented || (appInstrumentationInherited && nsInstrumented)
 	}
 
-	c.JSON(http.StatusOK, GetApplicationsInNamespaceResponse{
-		Applications: items,
-	})
+	return items, nil
 }
 
-func getDeployments(namespace string, ctx context.Context) ([]GetApplicationItem, error) {
+func getDeployments(namespace string, ctx context.Context) ([]GetApplicationItemInNamespace, error) {
 	deps, err := kube.DefaultClient.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	response := make([]GetApplicationItem, len(deps.Items))
+	response := make([]GetApplicationItemInNamespace, len(deps.Items))
 	for i, dep := range deps.Items {
 		instrumentationLabel, found := dep.Labels[consts.OdigosInstrumentationLabel]
 		var appInstrumentationLabeled *bool
@@ -108,7 +114,7 @@ func getDeployments(namespace string, ctx context.Context) ([]GetApplicationItem
 			instrumentationLabel := instrumentationLabel == consts.InstrumentationEnabled
 			appInstrumentationLabeled = &instrumentationLabel
 		}
-		response[i] = GetApplicationItem{
+		response[i] = GetApplicationItemInNamespace{
 			Name:                      dep.Name,
 			Kind:                      WorkloadKindDeployment,
 			Instances:                 int(dep.Status.AvailableReplicas),
@@ -119,15 +125,15 @@ func getDeployments(namespace string, ctx context.Context) ([]GetApplicationItem
 	return response, nil
 }
 
-func getStatefulSets(namespace string, ctx context.Context) ([]GetApplicationItem, error) {
+func getStatefulSets(namespace string, ctx context.Context) ([]GetApplicationItemInNamespace, error) {
 	ss, err := kube.DefaultClient.AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	response := make([]GetApplicationItem, len(ss.Items))
+	response := make([]GetApplicationItemInNamespace, len(ss.Items))
 	for i, s := range ss.Items {
-		response[i] = GetApplicationItem{
+		response[i] = GetApplicationItemInNamespace{
 			Name:      s.Name,
 			Kind:      WorkloadKindStatefulSet,
 			Instances: int(s.Status.ReadyReplicas),
@@ -137,15 +143,15 @@ func getStatefulSets(namespace string, ctx context.Context) ([]GetApplicationIte
 	return response, nil
 }
 
-func getDaemonSets(namespace string, ctx context.Context) ([]GetApplicationItem, error) {
+func getDaemonSets(namespace string, ctx context.Context) ([]GetApplicationItemInNamespace, error) {
 	dss, err := kube.DefaultClient.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	response := make([]GetApplicationItem, len(dss.Items))
+	response := make([]GetApplicationItemInNamespace, len(dss.Items))
 	for i, ds := range dss.Items {
-		response[i] = GetApplicationItem{
+		response[i] = GetApplicationItemInNamespace{
 			Name:      ds.Name,
 			Kind:      WorkloadKindDaemonSet,
 			Instances: int(ds.Status.NumberReady),

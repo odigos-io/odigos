@@ -28,23 +28,31 @@ type GetNamespaceItem struct {
 }
 
 func GetNamespaces(c *gin.Context, odigosns string) {
-
-	odigosConfig, err := kube.DefaultClient.OdigosClient.OdigosConfigurations(odigosns).Get(c.Request.Context(), "odigos-config", metav1.GetOptions{})
+	response, err := getRelevantNameSpaces(c.Request.Context(), odigosns)
 	if err != nil {
 		returnError(c, err)
 		return
 	}
 
-	list, err := kube.DefaultClient.CoreV1().Namespaces().List(c.Request.Context(), metav1.ListOptions{})
+	c.JSON(http.StatusOK, response)
+}
+
+// getRelevantNameSpaces returns a list of namespaces that are relevant for instrumentation.
+// Taking into account the ignored namespaces from the OdigosConfiguration.
+func getRelevantNameSpaces(ctx context.Context, odigosns string) (GetNamespacesResponse, error) {
+	odigosConfig, err := kube.DefaultClient.OdigosClient.OdigosConfigurations(odigosns).Get(ctx, consts.DefaultOdigosConfigurationName, metav1.GetOptions{})
 	if err != nil {
-		returnError(c, err)
-		return
+		return GetNamespacesResponse{}, err
 	}
 
-	appsPerNamespace, err := CountAppsPerNamespace(c)
+	list, err := kube.DefaultClient.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		returnError(c, err)
-		return
+		return GetNamespacesResponse{}, err
+	}
+
+	appsPerNamespace, err := CountAppsPerNamespace(ctx)
+	if err != nil {
+		return GetNamespacesResponse{}, err
 	}
 
 	var response GetNamespacesResponse
@@ -63,7 +71,7 @@ func GetNamespaces(c *gin.Context, odigosns string) {
 		})
 	}
 
-	c.JSON(http.StatusOK, response)
+	return response, nil
 }
 
 type PersistNamespaceItem struct {
@@ -116,6 +124,7 @@ func getJsonMergePatchForInstrumentationLabel(enabled *bool) []byte {
 	jsonMergePatchContent := fmt.Sprintf(`{"metadata":{"labels":{"%s":%s}}}`, consts.OdigosInstrumentationLabel, labelJsonMergePatchValue)
 	return []byte(jsonMergePatchContent)
 }
+
 func syncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []PersistNamespaceObject) error {
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(kube.K8sClientDefaultBurst)

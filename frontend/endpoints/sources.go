@@ -6,6 +6,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -16,13 +17,15 @@ type SourceLanguage struct {
 
 // this object contains only part of the source fields. It is used to display the sources in the frontend
 type ThinSource struct {
+	SourceID
+	Languages []SourceLanguage `json:"languages"`
+}
 
+type SourceID struct {
 	// combination of namespace, kind and name is unique
 	Name      string `json:"name"`
 	Kind      string `json:"kind"`
 	Namespace string `json:"namespace"`
-
-	Languages []SourceLanguage `json:"languages"`
 }
 
 type Source struct {
@@ -34,19 +37,71 @@ type PatchSourceRequest struct {
 	ReportedName *string `json:"reported_name"`
 }
 
-func GetSources(c *gin.Context) {
+func GetSources(c *gin.Context, odigosns string) {
+	ctx := c.Request.Context()
+	effectiveInstrumentedSources := map[SourceID]ThinSource{}
+
+	nsResponse, err := getRelevantNameSpaces(ctx, odigosns)
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	// go over the relevant namespaces and get the applications in each namespace
+	// which are considered effective sources to instrument (based on instrumentation label on the workload or namespace) 
+	for _, ns := range nsResponse.Namespaces {
+		nsName := ns.Name
+		g.Go(func() error {
+			items, err := getApplicationsInNamespace(ctx, nsName)
+			if err != nil {
+				return err
+			}
+
+			for _, item := range items {
+				if item.InstrumentationEffective {
+					id := SourceID{Namespace: nsName, Kind: string(item.Kind), Name: item.Name}
+					effectiveInstrumentedSources[id] = ThinSource{
+						SourceID: id,
+						Languages: []SourceLanguage{},
+					}
+				}
+			}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		returnError(c, err)
+		return
+	}
+
 	instrumentedApplications, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(c, metav1.ListOptions{})
 	if err != nil {
 		returnError(c, err)
 		return
 	}
 
-	sources := []ThinSource{}
+	sourcesResult := []ThinSource{}
+	// go over the instrumented applications and update the languages of the effective sources
+	// Not all effective sources necessarily have a corresponding instrumented application,
+	// it may take some time for the instrumented application to be created. In that case the languages
+	// slice will be empty.
 	for _, app := range instrumentedApplications.Items {
-		sources = append(sources, k8sInstrumentedAppToThinSource(&app))
+		thinSource := k8sInstrumentedAppToThinSource(&app)
+		sourceID := SourceID{Namespace: thinSource.Namespace, Kind: thinSource.Kind, Name: thinSource.Name}
+		if source, ok := effectiveInstrumentedSources[sourceID]; ok {
+			source.Languages = thinSource.Languages
+			effectiveInstrumentedSources[sourceID] = source
+		}
 	}
 
-	c.JSON(200, sources)
+	for _, source := range effectiveInstrumentedSources {
+		sourcesResult = append(sourcesResult, source)
+	}
+
+	c.JSON(200, sourcesResult)
 }
 
 func GetSource(c *gin.Context) {
