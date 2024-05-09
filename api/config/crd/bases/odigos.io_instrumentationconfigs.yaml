@@ -75,6 +75,7 @@ spec:
                             - dotnet
                             - javascript
                             - mysql
+                            - unknown
                             type: string
                         required:
                         - instrumentationLibraryName
