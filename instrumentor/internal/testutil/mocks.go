@@ -120,6 +120,14 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.GetRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
 			Namespace: workloadObject.GetNamespace(),
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: gvk.GroupVersion().String(),
+					Kind:       gvk.Kind,
+					Name:       workloadObject.GetName(),
+					UID:        workloadObject.GetUID(),
+				},
+			},
 		},
 		Spec: odigosv1.InstrumentedApplicationSpec{
 			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
