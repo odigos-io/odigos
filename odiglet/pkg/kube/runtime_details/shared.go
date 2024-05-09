@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
+	"github.com/odigos-io/odigos/common"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -71,9 +72,8 @@ func runtimeInspection(pods []corev1.Pod) ([]odigosv1.RuntimeDetailsByContainer,
 			process := processes[0]
 
 			lang := inspectors.DetectLanguage(process)
-			if lang == nil {
+			if lang == common.UnknownProgrammingLanguage {
 				log.Logger.V(0).Info("no supported language detected for container in pod", "process", process, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
-				continue
 			}
 
 			// Convert map to slice for k8s format
@@ -84,7 +84,7 @@ func runtimeInspection(pods []corev1.Pod) ([]odigosv1.RuntimeDetailsByContainer,
 
 			resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
 				ContainerName: container.Name,
-				Language:      *lang,
+				Language:      lang,
 				EnvVars:       envs,
 			}
 		}

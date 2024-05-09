@@ -80,6 +80,9 @@ func NewInstrumentedApp() *apiextensionsv1.CustomResourceDefinition {
 																{
 																	Raw: []byte(`"mysql"`),
 																},
+																{
+																	Raw: []byte(`"unknown"`),
+																},
 															},
 														},
 														"envVars": {
