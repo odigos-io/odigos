@@ -6,7 +6,7 @@ import "strings"
 // The key is the environment variable name and the value is the value to be set or appended
 // to the environment variable. We need to make sure that in case any of these environment
 // variables is already set, we append the value to it instead of overwriting it.
-var EnvValues = map[string]struct{
+var EnvValues = map[string]struct {
 	Value string
 	Delim string
 }{
@@ -20,7 +20,7 @@ var EnvValues = map[string]struct{
 	},
 }
 
-func ShouldPatch(envName string, value string) bool {
+func ShouldPatch(envName string) bool {
 	_, ok := EnvValues[envName]
 	return ok
 }

@@ -70,13 +70,15 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 		return err
 	}
 
+	var beforeInfo, afterInfo instrumentation.InstrumentationInfo
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
 		podSpec, err := getPodSpecFromObject(obj)
 		if err != nil {
 			return err
 		}
 
-		return instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, odigosConfig.Spec.DefaultSDKs, obj)
+		beforeInfo, afterInfo, err = instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, odigosConfig.Spec.DefaultSDKs, obj)
+		return err
 	})
 
 	if err != nil {
@@ -84,7 +86,7 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 	}
 
 	if result != controllerutil.OperationResultNone {
-		logger.V(0).Info("instrumented application", "name", obj.GetName(), "namespace", obj.GetNamespace())
+		logger.V(0).Info("instrumented application", "name", obj.GetName(), "namespace", obj.GetNamespace(), "before", beforeInfo, "after", afterInfo)
 	}
 
 	return nil

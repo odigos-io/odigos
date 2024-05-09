@@ -15,7 +15,40 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) error {
+func getInstrumentationInfo(original *v1.PodTemplateSpec) InstrumentationInfo {
+	instrumentationInfo := InstrumentationInfo{
+		InstrumentationDevices: make(map[string]string),
+		Envs:                   make(map[string]map[string]string),
+	}
+
+	for _, container := range original.Spec.Containers {
+
+		// instrumentation devices
+		for resourceName := range container.Resources.Limits {
+			if strings.HasPrefix(string(resourceName), common.OdigosResourceNamespace) {
+				instrumentationInfo.InstrumentationDevices[container.Name] = string(resourceName)
+			}
+		}
+
+		// overwriting env vars
+		for _, envVar := range container.Env {
+			if envOverwrite.ShouldPatch(envVar.Name) {
+				instrumentationInfo.Envs[container.Name][envVar.Name] = envVar.Value
+			}
+		}
+	}
+
+	return instrumentationInfo
+}
+
+type InstrumentationInfo struct {
+	InstrumentationDevices map[string]string
+	Envs                   map[string]map[string]string
+}
+
+func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) (InstrumentationInfo, InstrumentationInfo, error) {
+
+	beforeInfo := getInstrumentationInfo(original)
 
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
@@ -32,7 +65,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 
 		otelSdk, found := defaultSdks[*containerLanguage]
 		if !found {
-			return fmt.Errorf("default sdk not found for language %s", *containerLanguage)
+			return InstrumentationInfo{}, InstrumentationInfo{}, fmt.Errorf("default sdk not found for language %s", *containerLanguage)
 		}
 
 		instrumentationDeviceName := common.InstrumentationDeviceName(*containerLanguage, otelSdk)
@@ -44,14 +77,15 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 
 		err := patchEnvVars(runtimeDetails, &container, targetObj)
 		if err != nil {
-			return fmt.Errorf("failed to patch env vars: %v", err)
+			return InstrumentationInfo{}, InstrumentationInfo{}, fmt.Errorf("failed to patch env vars: %v", err)
 		}
 
 		modifiedContainers = append(modifiedContainers, container)
 	}
 
 	original.Spec.Containers = modifiedContainers
-	return nil
+	afterInfo := getInstrumentationInfo(original)
+	return beforeInfo, afterInfo, nil
 }
 
 func Revert(original *v1.PodTemplateSpec, targetObj client.Object) {
@@ -160,7 +194,7 @@ func patchEnvVars(runtimeDetails *odigosv1.InstrumentedApplication, container *v
 
 	// Overwrite env var if needed
 	for i, envVar := range container.Env {
-		if envOverwrite.ShouldPatch(envVar.Name, envVar.Value) {
+		if envOverwrite.ShouldPatch(envVar.Name) {
 			// We are about to patch this env var, check if we need to save the original value
 			// If the original value is not saved, save it to the annotation.
 			if _, ok := manifestEnvOriginal[container.Name][envVar.Name]; !ok {
@@ -175,7 +209,7 @@ func patchEnvVars(runtimeDetails *odigosv1.InstrumentedApplication, container *v
 
 	// Add the remaining env vars (which are not defined in a manifest)
 	for envName, envValue := range envs {
-		if envOverwrite.ShouldPatch(envName, envValue) {
+		if envOverwrite.ShouldPatch(envName) {
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  envName,
 				Value: envOverwrite.Patch(envName, envValue),
