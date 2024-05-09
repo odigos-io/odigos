@@ -25,7 +25,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 	var modifiedContainers []v1.Container
 	for _, container := range original.Spec.Containers {
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
-		if containerLanguage == nil {
+		if containerLanguage == nil || *containerLanguage == common.UnknownProgrammingLanguage {
 			modifiedContainers = append(modifiedContainers, container)
 			continue
 		}
