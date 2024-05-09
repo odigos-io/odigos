@@ -64,14 +64,14 @@ type InstrumentedApplicationReconciler struct {
 func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var runtimeDetails odigosv1.InstrumentedApplication
-	err := r.Client.Get(ctx, req.NamespacedName, &runtimeDetails)
+	var instrumentedApplication odigosv1.InstrumentedApplication
+	err := r.Client.Get(ctx, req.NamespacedName, &instrumentedApplication)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	// find the workload object which is the owner of the InstrumentedApplication
-	ownerReferences := runtimeDetails.GetOwnerReferences()
+	ownerReferences := instrumentedApplication.GetOwnerReferences()
 	if len(ownerReferences) != 1 {
 		logger.Info("InstrumentedApplication should have exactly one owner reference")
 		return ctrl.Result{}, nil
@@ -90,7 +90,7 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 
 	if !instEffectiveEnabled {
 		logger.Info("Deleting instrumented application for non-enabled workload")
-		err := r.Client.Delete(ctx, &runtimeDetails)
+		err := r.Client.Delete(ctx, &instrumentedApplication)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 

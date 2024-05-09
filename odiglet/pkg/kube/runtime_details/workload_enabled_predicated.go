@@ -39,38 +39,37 @@ func (i *WorkloadEnabledPredicate) Update(e event.UpdateEvent) bool {
 	newEnabled := isInstrumentationEnabled(e.ObjectNew)
 	becameEnabled := !oldEnabled && newEnabled
 
-	// special case for deployments, where we also want to pass events if the
-	// deployment pods become available so language detection can run
-	oldDeployment, oldOk := e.ObjectOld.(*appsv1.Deployment)
-	newDeployment, newOk := e.ObjectNew.(*appsv1.Deployment)
-	if oldOk && newOk {
-		hadAvailableReplicas := isDeploymentAvailableReplicas(oldDeployment)
-		hasAvailableReplicas := isDeploymentAvailableReplicas(newDeployment)
-		replicasBecameAvailable := !hadAvailableReplicas && hasAvailableReplicas
-		return becameEnabled || replicasBecameAvailable
+	switch e.ObjectNew.GetObjectKind().GroupVersionKind().Kind {
+	case "Deployment":
+		oldDeployment, oldOk := e.ObjectOld.(*appsv1.Deployment)
+		newDeployment, newOk := e.ObjectNew.(*appsv1.Deployment)
+		if oldOk && newOk {
+			hadAvailableReplicas := isDeploymentAvailableReplicas(oldDeployment)
+			hasAvailableReplicas := isDeploymentAvailableReplicas(newDeployment)
+			replicasBecameAvailable := !hadAvailableReplicas && hasAvailableReplicas
+			return becameEnabled || replicasBecameAvailable
+		}
+	case "DaemonSet":
+		oldDaemonSet, oldOk := e.ObjectOld.(*appsv1.DaemonSet)
+		newDaemonSet, newOk := e.ObjectNew.(*appsv1.DaemonSet)
+		if oldOk && newOk {
+			hadAvailableReplicas := isDaemonsetAvailableReplicas(oldDaemonSet)
+			hasAvailableReplicas := isDaemonsetAvailableReplicas(newDaemonSet)
+			replicasBecameAvailable := !hadAvailableReplicas && hasAvailableReplicas
+			return becameEnabled || replicasBecameAvailable
+		}
+	case "StatefulSet":
+		oldStatefulSet, oldOk := e.ObjectOld.(*appsv1.StatefulSet)
+		newStatefulSet, newOk := e.ObjectNew.(*appsv1.StatefulSet)
+		if oldOk && newOk {
+			hadAvailableReplicas := isStatefulsetAvailableReplicas(oldStatefulSet)
+			hasAvailableReplicas := isStatefulsetAvailableReplicas(newStatefulSet)
+			replicasBecameAvailable := !hadAvailableReplicas && hasAvailableReplicas
+			return becameEnabled || replicasBecameAvailable
+		}
 	}
 
-	// special case for daemonset
-	oldDaemonSet, oldOk := e.ObjectOld.(*appsv1.DaemonSet)
-	newDaemonSet, newOk := e.ObjectNew.(*appsv1.DaemonSet)
-	if oldOk && newOk {
-		hadAvailableReplicas := isDaemonsetAvailableReplicas(oldDaemonSet)
-		hasAvailableReplicas := isDaemonsetAvailableReplicas(newDaemonSet)
-		replicasBecameAvailable := !hadAvailableReplicas && hasAvailableReplicas
-		return becameEnabled || replicasBecameAvailable
-	}
-
-	// special case for statefulset
-	oldStatefulSet, oldOk := e.ObjectOld.(*appsv1.StatefulSet)
-	newStatefulSet, newOk := e.ObjectNew.(*appsv1.StatefulSet)
-	if oldOk && newOk {
-		hadAvailableReplicas := isStatefulsetAvailableReplicas(oldStatefulSet)
-		hasAvailableReplicas := isStatefulsetAvailableReplicas(newStatefulSet)
-		replicasBecameAvailable := !hadAvailableReplicas && hasAvailableReplicas
-		return becameEnabled || replicasBecameAvailable
-	}
-
-	// for namespace events
+	// for namespace events or if there was issue with type casting
 	return becameEnabled
 }
 
