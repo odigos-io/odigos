@@ -7,10 +7,12 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
 
 	"github.com/odigos-io/odigos/frontend/kube"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -28,39 +30,32 @@ type GetNamespaceItem struct {
 }
 
 func GetNamespaces(c *gin.Context, odigosns string) {
-	response, err := getRelevantNameSpaces(c.Request.Context(), odigosns)
-	if err != nil {
+	ctx := c.Request.Context()
+	var (
+		relevantNameSpaces []v1.Namespace
+		appsPerNamespace   map[string]int
+	)
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		var err error
+		relevantNameSpaces, err = getRelevantNameSpaces(ctx, odigosns)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		appsPerNamespace, err = CountAppsPerNamespace(ctx)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		returnError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, response)
-}
-
-// getRelevantNameSpaces returns a list of namespaces that are relevant for instrumentation.
-// Taking into account the ignored namespaces from the OdigosConfiguration.
-func getRelevantNameSpaces(ctx context.Context, odigosns string) (GetNamespacesResponse, error) {
-	odigosConfig, err := kube.DefaultClient.OdigosClient.OdigosConfigurations(odigosns).Get(ctx, consts.DefaultOdigosConfigurationName, metav1.GetOptions{})
-	if err != nil {
-		return GetNamespacesResponse{}, err
-	}
-
-	list, err := kube.DefaultClient.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return GetNamespacesResponse{}, err
-	}
-
-	appsPerNamespace, err := CountAppsPerNamespace(ctx)
-	if err != nil {
-		return GetNamespacesResponse{}, err
-	}
-
 	var response GetNamespacesResponse
-	for _, namespace := range list.Items {
-		if utils.IsNamespaceIgnored(namespace.Name, odigosConfig.Spec.IgnoredNamespaces) {
-			continue
-		}
-
+	for _, namespace := range relevantNameSpaces {
 		// check if entire namespace is instrumented
 		selected := namespace.Labels[consts.OdigosInstrumentationLabel] == consts.InstrumentationEnabled
 
@@ -71,7 +66,44 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) (GetNamespacesR
 		})
 	}
 
-	return response, nil
+	c.JSON(http.StatusOK, response)
+}
+
+// getRelevantNameSpaces returns a list of namespaces that are relevant for instrumentation.
+// Taking into account the ignored namespaces from the OdigosConfiguration.
+func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace, error) {
+	var (
+		odigosConfig *v1alpha1.OdigosConfiguration
+		list 	   *v1.NamespaceList
+	)
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		var err error
+		odigosConfig, err = kube.DefaultClient.OdigosClient.OdigosConfigurations(odigosns).Get(ctx, consts.DefaultOdigosConfigurationName, metav1.GetOptions{})
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		list, err = kube.DefaultClient.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
+		return []v1.Namespace{}, err
+	}
+
+	result := []v1.Namespace{}
+	for _, namespace := range list.Items {
+		if utils.IsNamespaceIgnored(namespace.Name, odigosConfig.Spec.IgnoredNamespaces) {
+			continue
+		}
+
+		result = append(result, namespace)
+	}
+
+	return result, nil
 }
 
 type PersistNamespaceItem struct {
