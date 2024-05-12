@@ -59,8 +59,12 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
 
-			// Skip ignored containers
+			// Skip ignored containers, but label them as ignored
 			if utils.IsItemIgnored(container.Name, ignoredContainers) {
+				resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
+					ContainerName: container.Name,
+					Language:      common.IgnoredProgrammingLanguage,
+				}
 				continue
 			}
 

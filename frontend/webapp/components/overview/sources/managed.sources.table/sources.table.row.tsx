@@ -5,7 +5,7 @@ import { Container, Namespace } from '@/assets';
 import styled, { css } from 'styled-components';
 import { KeyvalImage, KeyvalTag, KeyvalText } from '@/design.system';
 import { KIND_COLORS } from '@/styles/global';
-import { LANGUAGES_COLORS, LANGUAGES_LOGOS } from '@/utils';
+import { LANGUAGES_COLORS, LANGUAGES_LOGOS, WORKLOAD_PROGRAMMING_LANGUAGES, getMainContainerLanguage } from '@/utils';
 
 const StyledTr = styled.tr`
   &:hover {
@@ -78,20 +78,6 @@ const LOGO_STYLE: React.CSSProperties = {
   backgroundColor: theme.colors.white,
 };
 
-const getMainContainerLanguage = (languages: Array<{
-  container_name: string;
-  language: string;
-}> | undefined): string => {
-  if(!languages) {
-    return 'processing...';
-  } else if (languages.length === 0) {
-    return 'no containers';
-  } else {
-    const mainContainer = languages[0];
-    return mainContainer.language;
-  }
-}
-
 const DEPLOYMENT = 'deployment';
 export function SourcesTableRow({
   item,
@@ -105,13 +91,14 @@ export function SourcesTableRow({
 
   onRowClick: (source: ManagedSource) => void;
 }) {
+  const workloadProgrammingLanguage = getMainContainerLanguage(item?.languages);
   return (
     <StyledTr key={item.kind}>
       <StyledMainTd onClick={() => onRowClick(item)} isFirstRow={index === 0}>
         <SourceIconContainer>
           <div>
             <KeyvalImage
-              src={LANGUAGES_LOGOS[item?.languages?.[0]?.language || 'default']}
+              src={LANGUAGES_LOGOS[workloadProgrammingLanguage]}
               width={32}
               height={32}
               style={LOGO_STYLE}
@@ -131,12 +118,12 @@ export function SourcesTableRow({
               <FooterItemWrapper>
                 <StatusIndicator
                   color={
-                    LANGUAGES_COLORS[item?.languages?.[0].language] ||
+                    LANGUAGES_COLORS[workloadProgrammingLanguage] ||
                     theme.text.light_grey
                   }
                 />
                 <KeyvalText color={theme.text.light_grey} size={14}>
-                  {getMainContainerLanguage(item?.languages)}
+                  {workloadProgrammingLanguage}
                 </KeyvalText>
               </FooterItemWrapper>
               <FooterItemWrapper>

@@ -108,6 +108,7 @@ spec:
                       - javascript
                       - mysql
                       - unknown
+                      - ignored
                       type: string
                   required:
                   - containerName
