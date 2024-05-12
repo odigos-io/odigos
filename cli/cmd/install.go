@@ -33,6 +33,7 @@ var (
 	telemetryEnabled           bool
 	psp                        bool
 	userInputIgnoredNamespaces []string
+	userInputIgnoredContainers []string
 
 	instrumentorImage string
 	odigletImage      string
@@ -164,13 +165,15 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 
 func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
 
-	fullIgnoredNamespaces := utils.AddSystemNamespacesToIgnored(userInputIgnoredNamespaces, consts.SystemNamespaces)
+	fullIgnoredNamespaces := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredNamespaces, consts.SystemNamespaces)
+	fullIgnoredContainers := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredContainers, consts.IgnoredContainers)
 
 	return odigosv1.OdigosConfigurationSpec{
 		OdigosVersion:     versionFlag,
 		ConfigVersion:     1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:  telemetryEnabled,
 		IgnoredNamespaces: fullIgnoredNamespaces,
+		IgnoredContainers: fullIgnoredContainers,
 		Psp:               psp,
 		ImagePrefix:       imagePrefix,
 		OdigletImage:      odigletImage,
@@ -202,6 +205,7 @@ func init() {
 	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "", "prefix for all container images. used when your cluster doesn't have access to docker hub")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "enable pod security policy")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", consts.SystemNamespaces, "namespaces not to show in odigos ui")
+	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", consts.IgnoredContainers, "container names to exclude from instrumentation")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion

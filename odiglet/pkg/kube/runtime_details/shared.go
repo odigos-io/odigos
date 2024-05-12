@@ -5,12 +5,13 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
-	"github.com/odigos-io/odigos/common"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,14 +32,17 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 		return ctrl.Result{}, nil
 	}
 
-	runtimeResults, err := runtimeInspection(pods)
+	odigosConfig := &odigosv1.OdigosConfiguration{}
+	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: "odigos-system", Name: consts.DefaultOdigosConfigurationName}, odigosConfig)
 	if err != nil {
-		logger.Error(err, "error inspecting pods")
+		logger.Error(err, "error fetching odigos configuration")
 		return ctrl.Result{}, err
 	}
 
-	if len(runtimeResults) == 0 {
-		return ctrl.Result{}, nil
+	runtimeResults, err := runtimeInspection(pods, odigosConfig.Spec.IgnoredContainers)
+	if err != nil {
+		logger.Error(err, "error inspecting pods")
+		return ctrl.Result{}, err
 	}
 
 	err = persistRuntimeResults(ctx, runtimeResults, object, kubeClient, scheme)
@@ -50,10 +54,15 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 	return ctrl.Result{}, nil
 }
 
-func runtimeInspection(pods []corev1.Pod) ([]odigosv1.RuntimeDetailsByContainer, error) {
+func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv1.RuntimeDetailsByContainer, error) {
 	resultsMap := make(map[string]odigosv1.RuntimeDetailsByContainer)
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
+
+			// Skip ignored containers
+			if utils.IsItemIgnored(container.Name, ignoredContainers) {
+				continue
+			}
 
 			processes, err := process.FindAllInContainer(string(pod.UID), container.Name)
 			if err != nil {
