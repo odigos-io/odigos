@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	odigosCloudProxyVersion = "v0.10.0"
+	odigosCloudProxyVersion = "v0.11.0"
 )
 
 const (
@@ -217,6 +217,19 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 				Resources: []string{
 					"instrumentationconfigs",
 				},
+			},
+			{
+				Verbs: []string{
+					"watch",
+					"get",
+					"list",
+					"update",
+					"patch",
+					"create",
+					"delete",
+				},
+				APIGroups: []string{"actions.odigos.io"},
+				Resources: []string{"addclusterinfos", "deleteattributes", "renameattributes"},
 			},
 		},
 	}
