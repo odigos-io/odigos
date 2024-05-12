@@ -36,8 +36,8 @@ type GetApplicationItemInNamespace struct {
 }
 
 type GetApplicationItem struct {
-	// nameSpace is used when querying all the namespaces, the response can be grouped/filtered by namespace
-	nameSpace string
+	// namespace is used when querying all the namespaces, the response can be grouped/filtered by namespace
+	namespace string
 	nsItem GetApplicationItemInNamespace
 }
 
@@ -114,7 +114,7 @@ func getApplicationsInNamespace(ctx context.Context, nsName string, nsInstrument
 		// check if the entire namespace is instrumented
 		// as it affects the applications in the namespace
 		// which use this label to determine if they should be instrumented
-		nsInstrumentationLabeled := nsInstrumentedMap[item.nameSpace]
+		nsInstrumentationLabeled := nsInstrumentedMap[item.namespace]
 		item.nsItem.NsInstrumentationLabeled = nsInstrumentationLabeled
 		appInstrumented := (item.nsItem.AppInstrumentationLabeled != nil && *item.nsItem.AppInstrumentationLabeled)
 		appInstrumentationInherited := item.nsItem.AppInstrumentationLabeled == nil
@@ -135,7 +135,7 @@ func getDeployments(namespace string, ctx context.Context) ([]GetApplicationItem
 	for i, dep := range deps.Items {
 		appInstrumentationLabeled := isObjectLabeledForInstrumentation(dep.ObjectMeta)
 		response[i] = GetApplicationItem{
-			nameSpace:                 dep.Namespace,
+			namespace:                 dep.Namespace,
 			nsItem: GetApplicationItemInNamespace {
 				Name:                      dep.Name,
 				Kind:                      WorkloadKindDeployment,
@@ -156,12 +156,14 @@ func getStatefulSets(namespace string, ctx context.Context) ([]GetApplicationIte
 
 	response := make([]GetApplicationItem, len(ss.Items))
 	for i, s := range ss.Items {
+		appInstrumentationLabeled := isObjectLabeledForInstrumentation(s.ObjectMeta)
 		response[i] = GetApplicationItem{
-			nameSpace: s.Namespace,
+			namespace: s.Namespace,
 			nsItem: GetApplicationItemInNamespace {
 				Name:      s.Name,
 				Kind:      WorkloadKindStatefulSet,
 				Instances: int(s.Status.ReadyReplicas),
+				AppInstrumentationLabeled: appInstrumentationLabeled,
 			},
 		}
 	}
@@ -177,12 +179,14 @@ func getDaemonSets(namespace string, ctx context.Context) ([]GetApplicationItem,
 
 	response := make([]GetApplicationItem, len(dss.Items))
 	for i, ds := range dss.Items {
+		appInstrumentationLabeled := isObjectLabeledForInstrumentation(ds.ObjectMeta)
 		response[i] = GetApplicationItem{
-			nameSpace: ds.Namespace,
+			namespace: ds.Namespace,
 			nsItem: GetApplicationItemInNamespace {
 				Name:      ds.Name,
 				Kind:      WorkloadKindDaemonSet,
 				Instances: int(ds.Status.NumberReady),
+				AppInstrumentationLabeled: appInstrumentationLabeled,
 			},
 		}
 	}

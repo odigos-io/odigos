@@ -16,10 +16,14 @@ type SourceLanguage struct {
 	Language      string `json:"language"`
 }
 
+type InstrumentedApplicationDetails struct {
+	Languages []SourceLanguage `json:"languages,omitempty"`
+}
+
 // this object contains only part of the source fields. It is used to display the sources in the frontend
 type ThinSource struct {
 	SourceID
-	Languages []SourceLanguage `json:"languages"`
+	IaDetails *InstrumentedApplicationDetails `json:"instrumented_application_details"`
 }
 
 type SourceID struct {
@@ -77,10 +81,9 @@ func GetSources(c *gin.Context, odigosns string) {
 
 	for _, item := range items {
 		if item.nsItem.InstrumentationEffective {
-			id := SourceID{Namespace: item.nameSpace, Kind: string(item.nsItem.Kind), Name: item.nsItem.Name}
+			id := SourceID{Namespace: item.namespace, Kind: string(item.nsItem.Kind), Name: item.nsItem.Name}
 			effectiveInstrumentedSources[id] = ThinSource{
 				SourceID: id,
-				Languages: []SourceLanguage{},
 			}
 		}
 	}
@@ -92,10 +95,9 @@ func GetSources(c *gin.Context, odigosns string) {
 	// slice will be empty.
 	for _, app := range instrumentedApplications.Items {
 		thinSource := k8sInstrumentedAppToThinSource(&app)
-		sourceID := SourceID{Namespace: thinSource.Namespace, Kind: thinSource.Kind, Name: thinSource.Name}
-		if source, ok := effectiveInstrumentedSources[sourceID]; ok {
-			source.Languages = thinSource.Languages
-			effectiveInstrumentedSources[sourceID] = source
+		if source, ok := effectiveInstrumentedSources[thinSource.SourceID]; ok {
+			source.IaDetails = thinSource.IaDetails
+			effectiveInstrumentedSources[thinSource.SourceID] = source
 		}
 	}
 
@@ -131,13 +133,12 @@ func GetSource(c *gin.Context) {
 			Kind:      kind,
 			Name:      name,
 		},
-		Languages: []SourceLanguage{},
 	}
 
 	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(c, k8sObjectName, metav1.GetOptions{})
 	if err == nil {
 		// valid instrumented application, grab the runtime details
-		ts.Languages = k8sInstrumentedAppToThinSource(instrumentedApplication).Languages
+		ts.IaDetails = k8sInstrumentedAppToThinSource(instrumentedApplication).IaDetails
 	}
 
 	c.JSON(200, Source{
@@ -243,8 +244,11 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 	source.Name = app.OwnerReferences[0].Name
 	source.Kind = app.OwnerReferences[0].Kind
 	source.Namespace = app.Namespace
+	source.IaDetails = &InstrumentedApplicationDetails{
+		Languages: []SourceLanguage{},
+	}
 	for _, language := range app.Spec.RuntimeDetails {
-		source.Languages = append(source.Languages, SourceLanguage{
+		source.IaDetails.Languages = append(source.IaDetails.Languages, SourceLanguage{
 			ContainerName: language.ContainerName,
 			Language:      string(language.Language),
 		})
