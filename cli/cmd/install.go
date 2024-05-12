@@ -205,7 +205,7 @@ func init() {
 	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "", "prefix for all container images. used when your cluster doesn't have access to docker hub")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "enable pod security policy")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", consts.SystemNamespaces, "namespaces not to show in odigos ui")
-	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", consts.IgnoredContainers, "container names to exclude from instrumentation")
+	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", consts.IgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion

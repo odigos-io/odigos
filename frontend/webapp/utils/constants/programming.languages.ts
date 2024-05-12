@@ -7,6 +7,7 @@ export const LANGUAGES_LOGOS = {
   python: `${BASE_URL}python.svg`,
   dotnet: `${BASE_URL}dotnet.svg`,
   mysql: `${BASE_URL}mysql.svg`,
+  default: `${BASE_URL}default.svg`,
 };
 
 export const LANGUAGES_COLORS = {

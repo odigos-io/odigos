@@ -30,13 +30,9 @@ func (d *DaemonSetsReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 		return ctrl.Result{}, err
 	}
 
-	if isInstrumentationDisabledExplicitly(&ds) {
+	if !isWorkloadInstrumentationEffectiveEnabled(ctx, d.Client, &ds) {
 		return ctrl.Result{}, nil
 	}
 
-	if isObjectLabeled(&ds) || isNamespaceLabeled(ctx, &ds, d.Client) {
-		return inspectRuntimesOfRunningPods(ctx, &logger, ds.Spec.Selector.MatchLabels, d.Client, d.Scheme, &ds)
-	}
-
-	return ctrl.Result{}, nil
+	return inspectRuntimesOfRunningPods(ctx, &logger, ds.Spec.Selector.MatchLabels, d.Client, d.Scheme, &ds)
 }

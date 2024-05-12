@@ -78,6 +78,20 @@ const LOGO_STYLE: React.CSSProperties = {
   backgroundColor: theme.colors.white,
 };
 
+const getMainContainerLanguage = (languages: Array<{
+  container_name: string;
+  language: string;
+}> | undefined): string => {
+  if(!languages) {
+    return 'processing...';
+  } else if (languages.length === 0) {
+    return 'no containers';
+  } else {
+    const mainContainer = languages[0];
+    return mainContainer.language;
+  }
+}
+
 const DEPLOYMENT = 'deployment';
 export function SourcesTableRow({
   item,
@@ -97,7 +111,7 @@ export function SourcesTableRow({
         <SourceIconContainer>
           <div>
             <KeyvalImage
-              src={LANGUAGES_LOGOS[item?.languages?.[0].language || '']}
+              src={LANGUAGES_LOGOS[item?.languages?.[0]?.language || 'default']}
               width={32}
               height={32}
               style={LOGO_STYLE}
@@ -122,7 +136,7 @@ export function SourcesTableRow({
                   }
                 />
                 <KeyvalText color={theme.text.light_grey} size={14}>
-                  {item?.languages?.[0].language}
+                  {getMainContainerLanguage(item?.languages)}
                 </KeyvalText>
               </FooterItemWrapper>
               <FooterItemWrapper>
