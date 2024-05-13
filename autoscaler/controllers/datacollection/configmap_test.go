@@ -11,6 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -129,7 +130,25 @@ func TestGetConfigMapData(t *testing.T) {
 			Items: items,
 		},
 		NewMockDestinationList(),
-		&v1alpha1.ProcessorList{},
+		[]*v1alpha1.Processor{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "test_processor"},
+				Spec: v1alpha1.ProcessorSpec{
+					OrderHint:      1,
+					Type:           "test_type",
+					CollectorRoles: []odigosv1.CollectorsGroupRole{odigosv1.CollectorsGroupRoleNodeCollector},
+					Disabled:       false,
+					ProcessorConfig: runtime.RawExtension{
+						Raw: []byte(`{"key":"val"}`),
+					},
+					Signals: []common.ObservabilitySignal{
+						common.LogsObservabilitySignal,
+						common.MetricsObservabilitySignal,
+						common.TracesObservabilitySignal,
+					},
+				},
+			},
+		},
 	)
 
 	assert.Equal(t, err, nil)
