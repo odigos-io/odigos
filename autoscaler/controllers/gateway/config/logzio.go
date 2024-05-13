@@ -1,7 +1,6 @@
 package config
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -36,15 +35,15 @@ func (l *Logzio) DestType() common.DestinationType {
 	return common.LogzioDestinationType
 }
 
-func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
-	region := dest.Spec.Data["LOGZIO_REGION"]
+func (l *Logzio) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
+	region := dest.GetConfig()["LOGZIO_REGION"]
 	if isTracingEnabled(dest) {
-		exporterName := "logzio/tracing-" + dest.Name
+		exporterName := "logzio/tracing-" + dest.GetName()
 		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"region":        region,
 			"account_token": "${LOGZIO_TRACING_TOKEN}",
 		}
-		tracesPipelineName := "traces/logzio-" + dest.Name
+		tracesPipelineName := "traces/logzio-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
@@ -52,7 +51,7 @@ func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 
 	if isMetricsEnabled(dest) {
 		listenerUrl := l.GetListenerUrl(region)
-		exporterName := "prometheusremotewrite/logzio-" + dest.Name
+		exporterName := "prometheusremotewrite/logzio-" + dest.GetName()
 		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"endpoint": listenerUrl,
 			"external_labels": commonconf.GenericMap{
@@ -62,14 +61,14 @@ func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 				"authorization": "Bearer ${LOGZIO_METRICS_TOKEN}",
 			},
 		}
-		metricsPipelineName := "metrics/logzio-" + dest.Name
+		metricsPipelineName := "metrics/logzio-" + dest.GetName()
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		exporterName := "logzio/logs-" + dest.Name
+		exporterName := "logzio/logs-" + dest.GetName()
 		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"region":        region,
 			"account_token": "${LOGZIO_LOGS_TOKEN}",
@@ -91,7 +90,7 @@ func (l *Logzio) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 				},
 			},
 		}
-		logsPipelineName := "logs/logzio-" + dest.Name
+		logsPipelineName := "logs/logzio-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Processors: []string{"attributes/logzio"},
 			Exporters:  []string{exporterName},

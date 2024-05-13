@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -23,9 +22,9 @@ func (g *OTLPHttp) DestType() common.DestinationType {
 	return common.OtlpHttpDestinationType
 }
 
-func (g *OTLPHttp) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (g *OTLPHttp) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 
-	url, exists := dest.Spec.Data[otlpHttpEndpointKey]
+	url, exists := dest.GetConfig()[otlpHttpEndpointKey]
 	if !exists {
 		return errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
 	}
@@ -46,7 +45,7 @@ func (g *OTLPHttp) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, basicAuthExtensionName)
 	}
 
-	otlpHttpExporterName := "otlphttp/generic-" + dest.Name
+	otlpHttpExporterName := "otlphttp/generic-" + dest.GetName()
 	exporterConf := commonconf.GenericMap{
 		"endpoint": parsedUrl,
 	}
@@ -58,21 +57,21 @@ func (g *OTLPHttp) ModifyConfig(dest *odigosv1.Destination, currentConfig *commo
 	currentConfig.Exporters[otlpHttpExporterName] = exporterConf
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/otlphttp-" + dest.Name
+		tracesPipelineName := "traces/otlphttp-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{otlpHttpExporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/otlphttp-" + dest.Name
+		metricsPipelineName := "metrics/otlphttp-" + dest.GetName()
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{otlpHttpExporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/otlphttp-" + dest.Name
+		logsPipelineName := "logs/otlphttp-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{otlpHttpExporterName},
 		}
@@ -95,14 +94,14 @@ func parseOtlpHttpEndpoint(rawUrl string) (string, error) {
 	return noWhiteSpaces, nil
 }
 
-func applyBasicAuth(dest *odigosv1.Destination) (extensionName string, extensionConf *commonconf.GenericMap, err error) {
+func applyBasicAuth(dest common.ExporterConfigurer) (extensionName string, extensionConf *commonconf.GenericMap, err error) {
 
-	username := dest.Spec.Data[otlpHttpBasicAuthUsernameKey]
+	username := dest.GetConfig()[otlpHttpBasicAuthUsernameKey]
 	if username == "" {
 		return "", nil, nil
 	}
 
-	extensionName = "basicauth/otlphttp-" + dest.Name
+	extensionName = "basicauth/otlphttp-" + dest.GetName()
 	extensionConf = &commonconf.GenericMap{
 		"client_auth": commonconf.GenericMap{
 			"username": username,

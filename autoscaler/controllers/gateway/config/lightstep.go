@@ -1,7 +1,6 @@
 package config
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -12,9 +11,9 @@ func (l *Lightstep) DestType() common.DestinationType {
 	return common.LightstepDestinationType
 }
 
-func (l *Lightstep) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (l *Lightstep) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 	if isTracingEnabled(dest) {
-		exporterName := "otlp/lightstep-" + dest.Name
+		exporterName := "otlp/lightstep-" + dest.GetName()
 		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"endpoint": "ingest.lightstep.com:443",
 			"headers": commonconf.GenericMap{
@@ -22,7 +21,7 @@ func (l *Lightstep) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 			},
 		}
 
-		tracesPipelineName := "traces/lightstep-" + dest.Name
+		tracesPipelineName := "traces/lightstep-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}

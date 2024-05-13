@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -24,13 +23,13 @@ func (j *Jaeger) DestType() common.DestinationType {
 	return common.JaegerDestinationType
 }
 
-func (j *Jaeger) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (j *Jaeger) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 
 	if !isTracingEnabled(dest) {
 		return ErrorJaegerTracingDisabled
 	}
 
-	url, urlExist := dest.Spec.Data[jaegerUrlKey]
+	url, urlExist := dest.GetConfig()[jaegerUrlKey]
 	if !urlExist {
 		return ErrorJaegerMissingURL
 	}
@@ -40,7 +39,7 @@ func (j *Jaeger) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 		return err
 	}
 
-	exporterName := "otlp/jaeger-" + dest.Name
+	exporterName := "otlp/jaeger-" + dest.GetName()
 	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 		"endpoint": grpcEndpoint,
 		"tls": commonconf.GenericMap{
@@ -48,7 +47,7 @@ func (j *Jaeger) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 		},
 	}
 
-	pipelineName := "traces/jaeger-" + dest.Name
+	pipelineName := "traces/jaeger-" + dest.GetName()
 	currentConfig.Service.Pipelines[pipelineName] = commonconf.Pipeline{
 		Exporters: []string{exporterName},
 	}

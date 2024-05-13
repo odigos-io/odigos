@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -20,8 +19,8 @@ func (p *Prometheus) DestType() common.DestinationType {
 	return common.PrometheusDestinationType
 }
 
-func (p *Prometheus) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
-	url, exists := dest.Spec.Data[promRWurlKey]
+func (p *Prometheus) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
+	url, exists := dest.GetConfig()[promRWurlKey]
 	if !exists {
 		return errors.New("Prometheus remote writer url not specified, gateway will not be configured for prometheus")
 	}
@@ -32,19 +31,19 @@ func (p *Prometheus) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 
 	url = addProtocol(url)
 	url = strings.TrimSuffix(url, "/api/v1/write")
-	rwExporterName := "prometheusremotewrite/prometheus-" + dest.Name
-	spanMetricsProcessorName := "spanmetrics/prometheus-" + dest.Name
+	rwExporterName := "prometheusremotewrite/prometheus-" + dest.GetName()
+	spanMetricsProcessorName := "spanmetrics/prometheus-" + dest.GetName()
 	currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
 		"endpoint": fmt.Sprintf("%s/api/v1/write", url),
 	}
 
-	metricsPipelineName := "metrics/prometheus-" + dest.Name
+	metricsPipelineName := "metrics/prometheus-" + dest.GetName()
 	currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 		Exporters: []string{rwExporterName},
 	}
 
 	// Send SpanMetrics to prometheus
-	tracesPipelineName := "traces/spanmetrics-" + dest.Name
+	tracesPipelineName := "traces/spanmetrics-" + dest.GetName()
 	currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 		Processors: []string{spanMetricsProcessorName},
 		Exporters:  []string{"logging"},

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -19,20 +18,20 @@ func (s *Splunk) DestType() common.DestinationType {
 	return common.SplunkDestinationType
 }
 
-func (s *Splunk) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
-	realm, exists := dest.Spec.Data[splunkRealm]
+func (s *Splunk) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
+	realm, exists := dest.GetConfig()[splunkRealm]
 	if !exists {
 		return errors.New("Splunk realm not specified, gateway will not be configured for Splunk")
 	}
 
 	if isTracingEnabled(dest) {
-		exporterName := "sapm/" + dest.Name
+		exporterName := "sapm/" + dest.GetName()
 		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"access_token": "${SPLUNK_ACCESS_TOKEN}",
 			"endpoint":     fmt.Sprintf("https://ingest.%s.signalfx.com/v2/trace", realm),
 		}
 
-		tracesPipelineName := "traces/splunk-" + dest.Name
+		tracesPipelineName := "traces/splunk-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}

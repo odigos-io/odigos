@@ -21,7 +21,7 @@ var availableConfigers = []Configer{&Middleware{}, &Honeycomb{}, &GrafanaCloudPr
 
 type Configer interface {
 	DestType() common.DestinationType
-	ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error
+	ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error
 }
 
 func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, memoryLimiterConfig commonconf.GenericMap) (string, error, map[string]error) {
@@ -125,8 +125,8 @@ func loadConfigers() (map[common.DestinationType]Configer, error) {
 	return configers, nil
 }
 
-func isSignalExists(dest *odigosv1.Destination, signal common.ObservabilitySignal) bool {
-	for _, s := range dest.Spec.Signals {
+func isSignalExists(dest common.ExporterConfigurer, signal common.ObservabilitySignal) bool {
+	for _, s := range dest.GetSignals() {
 		if s == signal {
 			return true
 		}
@@ -135,15 +135,15 @@ func isSignalExists(dest *odigosv1.Destination, signal common.ObservabilitySigna
 	return false
 }
 
-func isTracingEnabled(dest *odigosv1.Destination) bool {
+func isTracingEnabled(dest common.ExporterConfigurer) bool {
 	return isSignalExists(dest, common.TracesObservabilitySignal)
 }
 
-func isMetricsEnabled(dest *odigosv1.Destination) bool {
+func isMetricsEnabled(dest common.ExporterConfigurer) bool {
 	return isSignalExists(dest, common.MetricsObservabilitySignal)
 }
 
-func isLoggingEnabled(dest *odigosv1.Destination) bool {
+func isLoggingEnabled(dest common.ExporterConfigurer) bool {
 	return isSignalExists(dest, common.LogsObservabilitySignal)
 }
 

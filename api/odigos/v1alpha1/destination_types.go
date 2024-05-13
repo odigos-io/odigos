@@ -62,3 +62,17 @@ type DestinationList struct {
 func init() {
 	SchemeBuilder.Register(&Destination{}, &DestinationList{})
 }
+
+
+func (dest Destination) GetName() string {
+	return dest.Name
+}
+func (dest Destination) GetType() common.DestinationType {
+	return dest.Spec.Type
+}
+func (dest Destination) GetConfig() map[string]string {
+	return dest.Spec.Data
+}
+func (dest Destination) GetSignals() []common.ObservabilitySignal {
+	return dest.Spec.Signals
+}

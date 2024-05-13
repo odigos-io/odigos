@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -22,7 +21,7 @@ func (g *Qryn) DestType() common.DestinationType {
 	return common.QrynDestinationType
 }
 
-func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (g *Qryn) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 	if !g.requiredVarsExists(dest) {
 		return errors.New("Qryn config is missing required variables")
 	}
@@ -31,35 +30,35 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		return errors.New("Qryn API key or secret not set")
 	}
 
-	baseURL, err := parseURL(dest.Spec.Data[qrynHost], apiKey, apiSecret)
+	baseURL, err := parseURL(dest.GetConfig()[qrynHost], apiKey, apiSecret)
 	if err != nil {
 		return errors.New("Qryn API host is not a valid")
 	}
 
 	if isMetricsEnabled(dest) {
-		rwExporterName := "prometheusremotewrite/qryn-" + dest.Name
+		rwExporterName := "prometheusremotewrite/qryn-" + dest.GetName()
 		currentConfig.Exporters[rwExporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("%s/api/v1/prom/remote/write", baseURL),
 		}
-		metricsPipelineName := "metrics/qryn-" + dest.Name
+		metricsPipelineName := "metrics/qryn-" + dest.GetName()
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{rwExporterName},
 		}
 	}
 
 	if isTracingEnabled(dest) {
-		exporterName := "otlp/qryn-" + dest.Name
+		exporterName := "otlp/qryn-" + dest.GetName()
 		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("%s/tempo/spans", baseURL),
 		}
-		tracesPipelineName := "traces/qryn-" + dest.Name
+		tracesPipelineName := "traces/qryn-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		lokiExporterName := "loki/qryn-" + dest.Name
+		lokiExporterName := "loki/qryn-" + dest.GetName()
 		currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
 			"endpoint": fmt.Sprintf("%s/loki/api/v1/push", baseURL),
 			"labels": commonconf.GenericMap{
@@ -70,7 +69,7 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 				},
 			},
 		}
-		logsPipelineName := "logs/qryn-" + dest.Name
+		logsPipelineName := "logs/qryn-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{lokiExporterName},
 		}
@@ -79,16 +78,16 @@ func (g *Qryn) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 	return nil
 }
 
-func (g *Qryn) requiredVarsExists(dest *odigosv1.Destination) bool {
-	if _, ok := dest.Spec.Data[qrynHost]; !ok {
+func (g *Qryn) requiredVarsExists(dest common.ExporterConfigurer) bool {
+	if _, ok := dest.GetConfig()[qrynHost]; !ok {
 		return false
 	}
 	return true
 }
 
-func (g *Qryn) authData(dest *odigosv1.Destination) (string, string) {
+func (g *Qryn) authData(dest common.ExporterConfigurer) (string, string) {
 	var key string
-	if k, ok := dest.Spec.Data[qrynAPIKey]; ok {
+	if k, ok := dest.GetConfig()[qrynAPIKey]; ok {
 		key = k
 	}
 	return key, qrynAPISecret

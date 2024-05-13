@@ -1,7 +1,6 @@
 package config
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -12,27 +11,27 @@ func (g *GoogleCloud) DestType() common.DestinationType {
 	return common.GoogleCloudDestinationType
 }
 
-func (g *GoogleCloud) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (g *GoogleCloud) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 
 	if isTracingEnabled(dest) {
-		exporterName := "googlecloud/" + dest.Name
+		exporterName := "googlecloud/" + dest.GetName()
 		currentConfig.Exporters[exporterName] = struct{}{}
 
-		tracesPipelineName := "traces/googlecloud-" + dest.Name
+		tracesPipelineName := "traces/googlecloud-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		exporterName := "googlecloud/" + dest.Name
+		exporterName := "googlecloud/" + dest.GetName()
 		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 			"log": commonconf.GenericMap{
 				"default_log_name": "opentelemetry.io/collector-exported-log",
 			},
 		}
 
-		logsPipelineName := "logs/googlecloud-" + dest.Name
+		logsPipelineName := "logs/googlecloud-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}

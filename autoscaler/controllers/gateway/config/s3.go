@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -27,23 +26,23 @@ func (s *AWSS3) DestType() common.DestinationType {
 	return common.AWSS3DestinationType
 }
 
-func (s *AWSS3) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (s *AWSS3) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 
 	if !isLoggingEnabled(dest) && !isTracingEnabled(dest) && !isMetricsEnabled(dest) {
 		return errors.New("No metrics, logs or traces enabled, gateway will not be configured for AWS S3")
 	}
 
-	bucket, ok := dest.Spec.Data[s3BucketKey]
+	bucket, ok := dest.GetConfig()[s3BucketKey]
 	if !ok {
 		return ErrS3BucketNotSpecified
 	}
 
-	region, ok := dest.Spec.Data[s3RegionKey]
+	region, ok := dest.GetConfig()[s3RegionKey]
 	if !ok {
 		return ErrS3RegionNotSpecified
 	}
 
-	partition, ok := dest.Spec.Data[s3PartitionKey]
+	partition, ok := dest.GetConfig()[s3PartitionKey]
 	if !ok {
 		partition = "minute"
 	}
@@ -51,7 +50,7 @@ func (s *AWSS3) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 		return errors.New("Invalid partition specified, gateway will not be configured for AWS S3")
 	}
 
-	marshaler, ok := dest.Spec.Data[s3Marshaller]
+	marshaler, ok := dest.GetConfig()[s3Marshaller]
 	if !ok {
 		marshaler = "otlp_json"
 	}
@@ -59,7 +58,7 @@ func (s *AWSS3) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 		return errors.New("Invalid marshaller specified, gateway will not be configured for AWS S3")
 	}
 
-	exporterName := "awss3/" + dest.Name
+	exporterName := "awss3/" + dest.GetName()
 	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 		"s3uploader": commonconf.GenericMap{
 			"region":       region,
@@ -70,21 +69,21 @@ func (s *AWSS3) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/awss3-" + dest.Name
+		logsPipelineName := "logs/awss3-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/awss3-" + dest.Name
+		metricsPipelineName := "metrics/awss3-" + dest.GetName()
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/awss3-" + dest.Name
+		tracesPipelineName := "traces/awss3-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}

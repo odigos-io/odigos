@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -24,25 +23,25 @@ func (c *Coralogix) DestType() common.DestinationType {
 	return common.CoralogixDestinationType
 }
 
-func (c *Coralogix) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (c *Coralogix) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 	if !isTracingEnabled(dest) && !isLoggingEnabled(dest) && !isMetricsEnabled(dest) {
 		return ErrorCoralogixNoSignals
 	}
 
-	domain, exists := dest.Spec.Data[coralogixDomain]
+	domain, exists := dest.GetConfig()[coralogixDomain]
 	if !exists {
 		return errors.New("Coralogix domain not specified, gateway will not be configured for Coralogix")
 	}
-	appName, exists := dest.Spec.Data[coralogixApplicationName]
+	appName, exists := dest.GetConfig()[coralogixApplicationName]
 	if !exists {
 		return errors.New("Coralogix application name not specified, gateway will not be configured for Coralogix")
 	}
-	subName, exists := dest.Spec.Data[coralogixSubsystemName]
+	subName, exists := dest.GetConfig()[coralogixSubsystemName]
 	if !exists {
 		return errors.New("Coralogix subsystem name not specified, gateway will not be configured for Coralogix")
 	}
 
-	exporterName := "coralogix/" + dest.Name
+	exporterName := "coralogix/" + dest.GetName()
 	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 		"private_key":      "${CORALOGIX_PRIVATE_KEY}",
 		"domain":           domain,
@@ -51,21 +50,21 @@ func (c *Coralogix) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/coralogix-" + dest.Name
+		tracesPipelineName := "traces/coralogix-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/coralogix-" + dest.Name
+		metricsPipelineName := "metrics/coralogix-" + dest.GetName()
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/coralogix-" + dest.Name
+		logsPipelineName := "logs/coralogix-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}

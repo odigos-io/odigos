@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -20,8 +19,8 @@ func (s *Signoz) DestType() common.DestinationType {
 	return common.SignozDestinationType
 }
 
-func (s *Signoz) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
-	url, exists := dest.Spec.Data[signozUrlKey]
+func (s *Signoz) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
+	url, exists := dest.GetConfig()[signozUrlKey]
 	if !exists {
 		return errors.New("Signoz url not specified, gateway will not be configured for Signoz")
 	}
@@ -32,7 +31,7 @@ func (s *Signoz) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 
 	url = strings.TrimPrefix(url, "http://")
 	url = strings.TrimSuffix(url, ":4317")
-	signozExporterName := "otlp/signoz-" + dest.Name
+	signozExporterName := "otlp/signoz-" + dest.GetName()
 	currentConfig.Exporters[signozExporterName] = commonconf.GenericMap{
 		"endpoint": fmt.Sprintf("%s:4317", url),
 		"tls": commonconf.GenericMap{
@@ -41,21 +40,21 @@ func (s *Signoz) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/signoz-" + dest.Name
+		tracesPipelineName := "traces/signoz-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{signozExporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/signoz-" + dest.Name
+		metricsPipelineName := "metrics/signoz-" + dest.GetName()
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{signozExporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/signoz-" + dest.Name
+		logsPipelineName := "logs/signoz-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{signozExporterName},
 		}

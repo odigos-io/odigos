@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -18,17 +17,17 @@ func (d *Datadog) DestType() common.DestinationType {
 	return common.DatadogDestinationType
 }
 
-func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (d *Datadog) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 	if !isTracingEnabled(dest) && !isLoggingEnabled(dest) && !isMetricsEnabled(dest) {
 		return errors.New("Datadog destination does not have any signals to export")
 	}
 
-	site, exists := dest.Spec.Data[datadogSiteKey]
+	site, exists := dest.GetConfig()[datadogSiteKey]
 	if !exists {
 		return errors.New("Datadog site not specified, gateway will not be configured for Datadog")
 	}
 
-	exporterName := "datadog/" + dest.Name
+	exporterName := "datadog/" + dest.GetName()
 	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 		"hostname": "odigos-gateway",
 		"api": commonconf.GenericMap{
@@ -38,21 +37,21 @@ func (d *Datadog) ModifyConfig(dest *odigosv1.Destination, currentConfig *common
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/datadog-" + dest.Name
+		tracesPipelineName := "traces/datadog-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/datadog-" + dest.Name
+		metricsPipelineName := "metrics/datadog-" + dest.GetName()
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/datadog-" + dest.Name
+		logsPipelineName := "logs/datadog-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}

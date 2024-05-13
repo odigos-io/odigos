@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -21,25 +20,25 @@ func (g *GrafanaCloudTempo) DestType() common.DestinationType {
 	return common.GrafanaCloudTempoDestinationType
 }
 
-func (g *GrafanaCloudTempo) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (g *GrafanaCloudTempo) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 
 	if !isTracingEnabled(dest) {
 		return errors.New("Tracing not enabled, gateway will not be configured for grafana cloud Tempo")
 	}
 
-	tempoUrl, exists := dest.Spec.Data[grafanaCloudTempoEndpointKey]
+	tempoUrl, exists := dest.GetConfig()[grafanaCloudTempoEndpointKey]
 	if !exists {
 		return errors.New("Grafana Cloud Tempo endpoint not specified, gateway will not be configured for Tempo")
 	}
 
-	tempoUsername, exists := dest.Spec.Data[grafanaCloudTempoUsernameKey]
+	tempoUsername, exists := dest.GetConfig()[grafanaCloudTempoUsernameKey]
 	if !exists {
 		return errors.New("Grafana Cloud Tempo username not specified, gateway will not be configured for Tempo")
 	}
 
 	grpcEndpointUrl := grafanaTempoUrlFromInput(tempoUrl)
 
-	authExtensionName := "basicauth/grafana" + dest.Name
+	authExtensionName := "basicauth/grafana" + dest.GetName()
 	currentConfig.Extensions[authExtensionName] = commonconf.GenericMap{
 		"client_auth": commonconf.GenericMap{
 			"username": tempoUsername,
@@ -47,7 +46,7 @@ func (g *GrafanaCloudTempo) ModifyConfig(dest *odigosv1.Destination, currentConf
 		},
 	}
 
-	exporterName := "otlp/grafana-" + dest.Name
+	exporterName := "otlp/grafana-" + dest.GetName()
 	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 		"endpoint": grpcEndpointUrl,
 		"auth": commonconf.GenericMap{
@@ -55,7 +54,7 @@ func (g *GrafanaCloudTempo) ModifyConfig(dest *odigosv1.Destination, currentConf
 		},
 	}
 
-	tracesPipelineName := "traces/grafana-" + dest.Name
+	tracesPipelineName := "traces/grafana-" + dest.GetName()
 	currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 		Exporters: []string{exporterName},

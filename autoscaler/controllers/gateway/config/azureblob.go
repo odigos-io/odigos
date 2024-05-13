@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -24,18 +23,18 @@ func (a *AzureBlobStorage) DestType() common.DestinationType {
 	return common.AzureBlobDestinationType
 }
 
-func (a *AzureBlobStorage) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
-	accountName, ok := dest.Spec.Data[blobAccountName]
+func (a *AzureBlobStorage) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
+	accountName, ok := dest.GetConfig()[blobAccountName]
 	if !ok {
 		return ErrorMissingAzureBlobAccountName
 	}
 
-	containerName, ok := dest.Spec.Data[blobContainerName]
+	containerName, ok := dest.GetConfig()[blobContainerName]
 	if !ok {
 		return ErrorMissingAzureBlobContainerName
 	}
 
-	exporterName := "azureblobstorage/" + dest.Name
+	exporterName := "azureblobstorage/" + dest.GetName()
 
 	if isLoggingEnabled(dest) {
 		currentConfig.Exporters[exporterName] = commonconf.GenericMap{
@@ -45,7 +44,7 @@ func (a *AzureBlobStorage) ModifyConfig(dest *odigosv1.Destination, currentConfi
 			},
 		}
 
-		logsPipelineName := "logs/azureblobstorage-" + dest.Name
+		logsPipelineName := "logs/azureblobstorage-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
@@ -59,7 +58,7 @@ func (a *AzureBlobStorage) ModifyConfig(dest *odigosv1.Destination, currentConfi
 			},
 		}
 
-		tracesPipelineName := "traces/azureblobstorage-" + dest.Name
+		tracesPipelineName := "traces/azureblobstorage-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}

@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -18,9 +17,9 @@ func (g *GenericOTLP) DestType() common.DestinationType {
 	return common.GenericOTLPDestinationType
 }
 
-func (g *GenericOTLP) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (g *GenericOTLP) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 
-	url, exists := dest.Spec.Data[genericOtlpUrlKey]
+	url, exists := dest.GetConfig()[genericOtlpUrlKey]
 	if !exists {
 		return errors.New("Generic OTLP gRPC endpoint not specified, gateway will not be configured for otlp")
 	}
@@ -30,7 +29,7 @@ func (g *GenericOTLP) ModifyConfig(dest *odigosv1.Destination, currentConfig *co
 		return errors.Join(err, errors.New("otlp endpoint invalid, gateway will not be configured for otlp"))
 	}
 
-	genericOtlpExporterName := "otlp/generic-" + dest.Name
+	genericOtlpExporterName := "otlp/generic-" + dest.GetName()
 	currentConfig.Exporters[genericOtlpExporterName] = commonconf.GenericMap{
 		"endpoint": grpcEndpoint,
 		"tls": commonconf.GenericMap{
@@ -39,25 +38,25 @@ func (g *GenericOTLP) ModifyConfig(dest *odigosv1.Destination, currentConfig *co
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/generic-" + dest.Name
+		tracesPipelineName := "traces/generic-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{genericOtlpExporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/generic-" + dest.Name
+		metricsPipelineName := "metrics/generic-" + dest.GetName()
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{genericOtlpExporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/generic-" + dest.Name
+		logsPipelineName := "logs/generic-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{genericOtlpExporterName},
 		}
 	}
-	
+
 	return nil
 }

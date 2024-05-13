@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -23,13 +22,13 @@ func (g *GrafanaCloudLoki) DestType() common.DestinationType {
 	return common.GrafanaCloudLokiDestinationType
 }
 
-func (g *GrafanaCloudLoki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (g *GrafanaCloudLoki) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 
 	if !isLoggingEnabled(dest) {
 		return errors.New("Logging not enabled, gateway will not be configured for grafana cloud Loki")
 	}
 
-	lokiUrl, exists := dest.Spec.Data[grafanaCloudLokiEndpointKey]
+	lokiUrl, exists := dest.GetConfig()[grafanaCloudLokiEndpointKey]
 	if !exists {
 		return errors.New("Grafana Cloud Loki endpoint not specified, gateway will not be configured for Loki")
 	}
@@ -39,18 +38,18 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest *odigosv1.Destination, currentConfi
 		return errors.Join(err, errors.New("failed to parse grafana cloud loki endpoint, gateway will not be configured for Loki"))
 	}
 
-	lokiUsername, exists := dest.Spec.Data[grafanaCloudLokiUsernameKey]
+	lokiUsername, exists := dest.GetConfig()[grafanaCloudLokiUsernameKey]
 	if !exists {
 		return errors.New("Grafana Cloud Loki username not specified, gateway will not be configured for Loki")
 	}
 
-	rawLokiLabels, exists := dest.Spec.Data[grafanaCloudLokiLabelsKey]
-	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.Name)
+	rawLokiLabels, exists := dest.GetConfig()[grafanaCloudLokiLabelsKey]
+	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.GetName())
 	if err != nil {
 		return errors.Join(err, errors.New("failed to parse grafana cloud loki labels, gateway will not be configured for Loki"))
 	}
 
-	authExtensionName := "basicauth/grafana" + dest.Name
+	authExtensionName := "basicauth/grafana" + dest.GetName()
 	currentConfig.Extensions[authExtensionName] = commonconf.GenericMap{
 		"client_auth": commonconf.GenericMap{
 			"username": lokiUsername,
@@ -58,7 +57,7 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest *odigosv1.Destination, currentConfi
 		},
 	}
 
-	exporterName := "loki/grafana-" + dest.Name
+	exporterName := "loki/grafana-" + dest.GetName()
 	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 		"endpoint": lokiExporterEndpoint,
 		"auth": commonconf.GenericMap{
@@ -72,7 +71,7 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest *odigosv1.Destination, currentConfi
 		processorNames = append(processorNames, k)
 	}
 
-	logsPipelineName := "logs/grafana-" + dest.Name
+	logsPipelineName := "logs/grafana-" + dest.GetName()
 	currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 		Processors: processorNames,

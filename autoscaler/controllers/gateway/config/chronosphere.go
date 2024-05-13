@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -24,16 +23,16 @@ func (c *Chronosphere) DestType() common.DestinationType {
 	return common.ChronosphereDestinationType
 }
 
-func (c *Chronosphere) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (c *Chronosphere) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 
-	url, exists := dest.Spec.Data[chronosphereDomain]
+	url, exists := dest.GetConfig()[chronosphereDomain]
 	if !exists {
 		return ErrorChronosphereMissingURL
 	}
 
 	company := c.getCompanyNameFromURL(url)
 
-	chronosphereExporterName := "otlp/chronosphere-" + dest.Name
+	chronosphereExporterName := "otlp/chronosphere-" + dest.GetName()
 	currentConfig.Exporters[chronosphereExporterName] = commonconf.GenericMap{
 		"endpoint": fmt.Sprintf("%s.chronosphere.io:443", company),
 		"retry_on_failure": commonconf.GenericMap{
@@ -46,7 +45,7 @@ func (c *Chronosphere) ModifyConfig(dest *odigosv1.Destination, currentConfig *c
 	}
 
 	if isTracingEnabled(dest) {
-		tracePipelineName := "traces/chronosphere-" + dest.Name
+		tracePipelineName := "traces/chronosphere-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracePipelineName] = commonconf.Pipeline{
 			Exporters: []string{chronosphereExporterName},
 		}
@@ -54,7 +53,7 @@ func (c *Chronosphere) ModifyConfig(dest *odigosv1.Destination, currentConfig *c
 
 	if isMetricsEnabled(dest) {
 		// Set service.instance.id to pod name or node name
-		chronosphereMetricProcessorName := "resource/chornosphere-" + dest.Name
+		chronosphereMetricProcessorName := "resource/chornosphere-" + dest.GetName()
 		currentConfig.Processors[chronosphereMetricProcessorName] = commonconf.GenericMap{
 			"attributes": []commonconf.GenericMap{
 				{
@@ -75,7 +74,7 @@ func (c *Chronosphere) ModifyConfig(dest *odigosv1.Destination, currentConfig *c
 			},
 		}
 
-		metricsPipelineName := "metrics/chronosphere-" + dest.Name
+		metricsPipelineName := "metrics/chronosphere-" + dest.GetName()
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Exporters:  []string{chronosphereExporterName},
 			Processors: []string{chronosphereMetricProcessorName},

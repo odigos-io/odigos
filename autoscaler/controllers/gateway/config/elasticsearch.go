@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -27,8 +26,8 @@ func (e *Elasticsearch) DestType() common.DestinationType {
 	return common.ElasticsearchDestinationType
 }
 
-func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
-	rawURL, exists := dest.Spec.Data[elasticsearchUrlKey]
+func (e *Elasticsearch) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
+	rawURL, exists := dest.GetConfig()[elasticsearchUrlKey]
 	if !exists {
 		return errors.New("ElasticSearch url not specified, gateway will not be configured for ElasticSearch")
 	}
@@ -38,18 +37,18 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 		return errors.Join(err, errors.New(fmt.Sprintf("failed to sanitize URL. elasticsearch-url: %s", rawURL)))
 	}
 
-	traceIndexVal, exists := dest.Spec.Data[esTracesIndexKey]
+	traceIndexVal, exists := dest.GetConfig()[esTracesIndexKey]
 	if !exists {
 		traceIndexVal = "trace_index"
 	}
 
-	logIndexVal, exists := dest.Spec.Data[esLogsIndexKey]
+	logIndexVal, exists := dest.GetConfig()[esLogsIndexKey]
 	if !exists {
 		logIndexVal = "log_index"
 	}
 
-	basicAuthUsername := dest.Spec.Data[esUsername]
-	caPem := dest.Spec.Data[esCaPem]
+	basicAuthUsername := dest.GetConfig()[esUsername]
+	caPem := dest.GetConfig()[esCaPem]
 
 	exporterConfig := commonconf.GenericMap{
 		"endpoints":    []string{parsedURL},
@@ -68,18 +67,18 @@ func (e *Elasticsearch) ModifyConfig(dest *odigosv1.Destination, currentConfig *
 		exporterConfig["password"] = fmt.Sprintf("${%s}", esPassword)
 	}
 
-	exporterName := "elasticsearch/" + dest.Name
+	exporterName := "elasticsearch/" + dest.GetName()
 	currentConfig.Exporters[exporterName] = exporterConfig
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/elasticsearch-" + dest.Name
+		tracesPipelineName := "traces/elasticsearch-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/elasticsearch-" + dest.Name
+		logsPipelineName := "logs/elasticsearch-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}

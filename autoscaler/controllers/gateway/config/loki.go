@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"strings"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -23,9 +22,9 @@ func (l *Loki) DestType() common.DestinationType {
 	return common.LokiDestinationType
 }
 
-func (l *Loki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (l *Loki) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 
-	rawUrl, exists := dest.Spec.Data[lokiUrlKey]
+	rawUrl, exists := dest.GetConfig()[lokiUrlKey]
 	if !exists {
 		return errors.New("Loki endpoint not specified, gateway will not be configured for Loki")
 	}
@@ -35,13 +34,13 @@ func (l *Loki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		return errors.Join(err, errors.New("failed to parse loki endpoint, gateway will not be configured for Loki"))
 	}
 
-	rawLokiLabels, exists := dest.Spec.Data[lokiLabelsKey]
-	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.Name)
+	rawLokiLabels, exists := dest.GetConfig()[lokiLabelsKey]
+	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.GetName())
 	if err != nil {
 		return errors.Join(err, errors.New("failed to parse loki labels, gateway will not be configured for Loki"))
 	}
 
-	lokiExporterName := "loki/loki-" + dest.Name
+	lokiExporterName := "loki/loki-" + dest.GetName()
 	currentConfig.Exporters[lokiExporterName] = commonconf.GenericMap{
 		"endpoint": url,
 	}
@@ -52,7 +51,7 @@ func (l *Loki) ModifyConfig(dest *odigosv1.Destination, currentConfig *commoncon
 		processorNames = append(processorNames, k)
 	}
 
-	logsPipelineName := "logs/loki-" + dest.Name
+	logsPipelineName := "logs/loki-" + dest.GetName()
 	currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 		Processors: processorNames,
 		Exporters:  []string{lokiExporterName},

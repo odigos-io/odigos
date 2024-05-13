@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -21,20 +20,20 @@ func (e *ElasticAPM) DestType() common.DestinationType {
 	return common.ElasticAPMDestinationType
 }
 
-func (e *ElasticAPM) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (e *ElasticAPM) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 	var isTlsDisabled = false
 	if !e.requiredVarsExists(dest) {
 		return errors.New("ElasticAPM config is missing required variables")
 	}
 
-	isTlsDisabled = strings.Contains(dest.Spec.Data[elasticApmServerEndpoint], "http://")
+	isTlsDisabled = strings.Contains(dest.GetConfig()[elasticApmServerEndpoint], "http://")
 
-	elasticApmEndpoint, err := e.parseEndpoint(dest.Spec.Data[elasticApmServerEndpoint])
+	elasticApmEndpoint, err := e.parseEndpoint(dest.GetConfig()[elasticApmServerEndpoint])
 	if err != nil {
 		return errors.Join(err, errors.New("ElasticAPM endpoint is not a valid"))
 	}
 
-	exporterName := "otlp/elastic-" + dest.Name
+	exporterName := "otlp/elastic-" + dest.GetName()
 	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 		"endpoint": elasticApmEndpoint,
 		"tls": commonconf.GenericMap{
@@ -46,21 +45,21 @@ func (e *ElasticAPM) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/elastic-" + dest.Name
+		tracesPipelineName := "traces/elastic-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/elastic-" + dest.Name
+		metricsPipelineName := "metrics/elastic-" + dest.GetName()
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/elastic-" + dest.Name
+		logsPipelineName := "logs/elastic-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
@@ -69,12 +68,12 @@ func (e *ElasticAPM) ModifyConfig(dest *odigosv1.Destination, currentConfig *com
 	return nil
 }
 
-func (e *ElasticAPM) requiredVarsExists(dest *odigosv1.Destination) bool {
-	if _, ok := dest.Spec.Data[elasticApmServerEndpoint]; !ok {
+func (e *ElasticAPM) requiredVarsExists(dest common.ExporterConfigurer) bool {
+	if _, ok := dest.GetConfig()[elasticApmServerEndpoint]; !ok {
 		return false
 	}
 
-	if _, ok := dest.Spec.Data[elasticApmServerToken]; !ok {
+	if _, ok := dest.GetConfig()[elasticApmServerToken]; !ok {
 		return false
 	}
 

@@ -1,7 +1,6 @@
 package config
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -17,14 +16,14 @@ func (a *Axiom) DestType() common.DestinationType {
 	return common.AxiomDestinationType
 }
 
-func (a *Axiom) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
-	dataset, exists := dest.Spec.Data[axiomDatasetKey]
+func (a *Axiom) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
+	dataset, exists := dest.GetConfig()[axiomDatasetKey]
 	if !exists {
 		dataset = "default"
 		ctrl.Log.V(0).Info("Axiom dataset not specified, using default")
 	}
 
-	axiomExporterName := "otlphttp/axiom-" + dest.Name
+	axiomExporterName := "otlphttp/axiom-" + dest.GetName()
 	currentConfig.Exporters[axiomExporterName] = commonconf.GenericMap{
 		"compression": "gzip",
 		"endpoint":    "https://api.axiom.co",
@@ -35,14 +34,14 @@ func (a *Axiom) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonco
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/axiom-" + dest.Name
+		tracesPipelineName := "traces/axiom-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{axiomExporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/axiom-" + dest.Name
+		logsPipelineName := "logs/axiom-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{axiomExporterName},
 		}

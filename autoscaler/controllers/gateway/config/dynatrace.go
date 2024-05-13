@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 )
@@ -26,18 +25,18 @@ func (n *Dynatrace) DestType() common.DestinationType {
 	return common.DynatraceDestinationType
 }
 
-func (n *Dynatrace) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) error {
+func (n *Dynatrace) ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error {
 
 	if !n.requiredVarsExists(dest) {
 		return errors.New("Dynatrace config is missing required variables")
 	}
 
-	baseURL, err := parsetheDTurl(dest.Spec.Data[dynatraceURLKey])
+	baseURL, err := parsetheDTurl(dest.GetConfig()[dynatraceURLKey])
 	if err != nil {
 		return errors.New("Dynatrace url is not a valid")
 	}
 
-	exporterName := "otlphttp/dynatrace-" + dest.Name
+	exporterName := "otlphttp/dynatrace-" + dest.GetName()
 	currentConfig.Exporters[exporterName] = commonconf.GenericMap{
 		"endpoint": baseURL + "/api/v2/otlp",
 		"headers": commonconf.GenericMap{
@@ -46,21 +45,21 @@ func (n *Dynatrace) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/dynatrace-" + dest.Name
+		tracesPipelineName := "traces/dynatrace-" + dest.GetName()
 		currentConfig.Service.Pipelines[tracesPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/dynatrace-" + dest.Name
+		metricsPipelineName := "metrics/dynatrace-" + dest.GetName()
 		currentConfig.Service.Pipelines[metricsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/dynatrace-" + dest.Name
+		logsPipelineName := "logs/dynatrace-" + dest.GetName()
 		currentConfig.Service.Pipelines[logsPipelineName] = commonconf.Pipeline{
 			Exporters: []string{exporterName},
 		}
@@ -69,8 +68,8 @@ func (n *Dynatrace) ModifyConfig(dest *odigosv1.Destination, currentConfig *comm
 	return nil
 }
 
-func (g *Dynatrace) requiredVarsExists(dest *odigosv1.Destination) bool {
-	if _, ok := dest.Spec.Data[dynatraceURLKey]; !ok {
+func (g *Dynatrace) requiredVarsExists(dest common.ExporterConfigurer) bool {
+	if _, ok := dest.GetConfig()[dynatraceURLKey]; !ok {
 		return false
 	}
 	return true
