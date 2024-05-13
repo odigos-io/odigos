@@ -24,7 +24,7 @@ type Configer interface {
 	ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error
 }
 
-func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, memoryLimiterConfig commonconf.GenericMap) (string, error, map[string]error) {
+func Calculate(dests []common.ExporterConfigurer, processors []*odigosv1.Processor, memoryLimiterConfig commonconf.GenericMap) (string, error, map[string]error) {
 	currentConfig := getBasicConfig(memoryLimiterConfig)
 
 	configers, err := loadConfigers()
@@ -34,17 +34,17 @@ func Calculate(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorLi
 
 	destsStatus := map[string]error{}
 
-	for _, dest := range dests.Items {
-		configer, exists := configers[dest.Spec.Type]
+	for _, dest := range dests {
+		configer, exists := configers[dest.GetType()]
 		if !exists {
-			return "", fmt.Errorf("no configer for %s", dest.Spec.Type), nil
+			return "", fmt.Errorf("no configer for %s", dest.GetType()), nil
 		}
 
-		err := configer.ModifyConfig(&dest, currentConfig)
-		destsStatus[dest.ObjectMeta.Name] = err
+		err := configer.ModifyConfig(dest, currentConfig)
+		destsStatus[dest.GetName()] = err
 	}
 
-	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := commonconf.GetCrdProcessorsConfigMap(processors, odigosv1.CollectorsGroupRoleClusterGateway)
+	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := commonconf.GetCrdProcessorsConfigMap(processors)
 	for processorKey, processorCfg := range processorsCfg {
 		currentConfig.Processors[processorKey] = processorCfg
 	}

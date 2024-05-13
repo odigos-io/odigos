@@ -63,7 +63,7 @@ func init() {
 	SchemeBuilder.Register(&Destination{}, &DestinationList{})
 }
 
-
+/* Implement common.ExporterConfigurer */
 func (dest Destination) GetName() string {
 	return dest.Name
 }
@@ -75,4 +75,13 @@ func (dest Destination) GetConfig() map[string]string {
 }
 func (dest Destination) GetSignals() []common.ObservabilitySignal {
 	return dest.Spec.Signals
+}
+
+/* Convenience method on DestinationList to get an array of ExporterConfigurers */
+func (dests DestinationList) ToExporterConfigurerArray() []common.ExporterConfigurer {
+	exporterConfigurers := make([]common.ExporterConfigurer, len(dests.Items))
+	for i := range dests.Items {
+	    exporterConfigurers[i] = dests.Items[i]
+	}
+	return exporterConfigurers
 }

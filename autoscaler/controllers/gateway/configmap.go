@@ -22,7 +22,7 @@ const (
 	destinationConfiguredType = "DestinationConfigured"
 )
 
-func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) (string, error) {
+func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) (string, error) {
 	logger := log.FromContext(ctx)
 
 	memoryLimiterConfiguration := common.GenericMap{
@@ -31,7 +31,9 @@ func syncConfigMap(dests *odigosv1.DestinationList, processors *odigosv1.Process
 		"spike_limit_mib": memConfig.memoryLimiterSpikeLimitMiB,
 	}
 
-	desiredData, err, destsStatus := config.Calculate(dests, processors, memoryLimiterConfiguration)
+	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
+
+	desiredData, err, destsStatus := config.Calculate(dests.ToExporterConfigurerArray(), processors, memoryLimiterConfiguration)
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
 		return "", err

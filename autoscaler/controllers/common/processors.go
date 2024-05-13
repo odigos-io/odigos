@@ -75,10 +75,9 @@ func ProcessorCrToCollectorConfig(processor *odigosv1.Processor) (GenericMap, st
 	return processorConfig, processorKey, nil
 }
 
-func GetCrdProcessorsConfigMap(processors *odigosv1.ProcessorList, collectorRole odigosv1.CollectorsGroupRole) (cfg GenericMap, tracesProcessors []string, metricsProcessors []string, logsProcessors []string) {
+func GetCrdProcessorsConfigMap(processors []*odigosv1.Processor) (cfg GenericMap, tracesProcessors []string, metricsProcessors []string, logsProcessors []string) {
 	cfg = GenericMap{}
-	datacollectionProcessors := FilterAndSortProcessorsByOrderHint(processors, collectorRole)
-	for _, processor := range datacollectionProcessors {
+	for _, processor := range processors {
 		processorsConfig, processorKey, err := ProcessorCrToCollectorConfig(processor)
 		if err != nil {
 			// TODO: write the error to the status of the processor
