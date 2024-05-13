@@ -11,8 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func IsProcessorTracingEnabled(processor *odigosv1.Processor) bool {
-	for _, signal := range processor.Spec.Signals {
+func IsProcessorTracingEnabled(processor common.ProcessorConfigurer) bool {
+	for _, signal := range processor.GetSignals() {
 		if signal == common.TracesObservabilitySignal {
 			return true
 		}
@@ -20,8 +20,8 @@ func IsProcessorTracingEnabled(processor *odigosv1.Processor) bool {
 	return false
 }
 
-func IsProcessorMetricsEnabled(processor *odigosv1.Processor) bool {
-	for _, signal := range processor.Spec.Signals {
+func IsProcessorMetricsEnabled(processor common.ProcessorConfigurer) bool {
+	for _, signal := range processor.GetSignals() {
 		if signal == common.MetricsObservabilitySignal {
 			return true
 		}
@@ -29,8 +29,8 @@ func IsProcessorMetricsEnabled(processor *odigosv1.Processor) bool {
 	return false
 }
 
-func IsProcessorLogsEnabled(processor *odigosv1.Processor) bool {
-	for _, signal := range processor.Spec.Signals {
+func IsProcessorLogsEnabled(processor common.ProcessorConfigurer) bool {
+	for _, signal := range processor.GetSignals() {
 		if signal == common.LogsObservabilitySignal {
 			return true
 		}
@@ -39,7 +39,6 @@ func IsProcessorLogsEnabled(processor *odigosv1.Processor) bool {
 }
 
 func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, collectorRole odigosv1.CollectorsGroupRole) []*odigosv1.Processor {
-
 	filteredProcessors := []*odigosv1.Processor{}
 	for i, processor := range processors.Items {
 
@@ -64,25 +63,17 @@ func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, coll
 	return filteredProcessors
 }
 
-func ProcessorCrToCollectorConfig(processor *odigosv1.Processor) (GenericMap, string, error) {
-	processorKey := fmt.Sprintf("%s/%s", processor.Spec.Type, processor.Name)
-	var processorConfig map[string]interface{}
-	err := json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &processorConfig)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to unmarshal processor %s data: %v", processor.Name, err)
-	}
-
-	return processorConfig, processorKey, nil
-}
-
-func GetCrdProcessorsConfigMap(processors []*odigosv1.Processor) (cfg GenericMap, tracesProcessors []string, metricsProcessors []string, logsProcessors []string) {
+func GetCrdProcessorsConfigMap(processors []common.ProcessorConfigurer) (cfg GenericMap, tracesProcessors []string, metricsProcessors []string, logsProcessors []string) {
 	cfg = GenericMap{}
 	for _, processor := range processors {
-		processorsConfig, processorKey, err := ProcessorCrToCollectorConfig(processor)
+		fmt.Printf("processors: %+v\n", processor)
+		processorKey := fmt.Sprintf("%s/%s", processor.GetType(), processor.GetName())
+		processorsConfig, err := processor.GetConfig()
+		fmt.Printf("err: %+v\n", err)
 		if err != nil {
 			// TODO: write the error to the status of the processor
 			// consider how to handle this error
-			log.Log.V(0).Info("failed to convert data-collection processor to collector config", "processor", processor.Name, "error", err)
+			log.Log.V(0).Info("failed to convert data-collection processor to collector config", "processor", processor.GetName(), "error", err)
 			continue
 		}
 		if processorKey == "" || processorsConfig == nil {

@@ -24,7 +24,7 @@ type Configer interface {
 	ModifyConfig(dest common.ExporterConfigurer, currentConfig *commonconf.Config) error
 }
 
-func Calculate(dests []common.ExporterConfigurer, processors []*odigosv1.Processor, memoryLimiterConfig commonconf.GenericMap) (string, error, map[string]error) {
+func Calculate(dests []common.ExporterConfigurer, processors []common.ProcessorConfigurer, memoryLimiterConfig commonconf.GenericMap) (string, error, map[string]error) {
 	currentConfig := getBasicConfig(memoryLimiterConfig)
 
 	configers, err := loadConfigers()

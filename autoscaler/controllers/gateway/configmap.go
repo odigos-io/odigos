@@ -33,7 +33,11 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
-	desiredData, err, destsStatus := config.Calculate(dests.ToExporterConfigurerArray(), processors, memoryLimiterConfiguration)
+	desiredData, err, destsStatus := config.Calculate(
+		dests.ToExporterConfigurerArray(),
+		common.ToProcessorConfigurerArray(processors),
+		memoryLimiterConfiguration,
+	)
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
 		return "", err

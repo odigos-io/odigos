@@ -1,9 +1,22 @@
 package common
 
-import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
-)
+type SignalSpecific interface {
+	GetSignals() []ObservabilitySignal
+}
+
+type ExporterConfigurer interface {
+	SignalSpecific
+	GetType() DestinationType
+	GetName() string
+	GetConfig() map[string]string
+}
+
+type ProcessorConfigurer interface {
+	SignalSpecific
+	GetType() string
+	GetName() string
+	GetConfig() (GenericMap, error)
+}
 
 type GenericMap map[string]interface{}
 
@@ -24,13 +37,4 @@ type Pipeline struct {
 	Receivers  []string `json:"receivers"`
 	Processors []string `json:"processors"`
 	Exporters  []string `json:"exporters"`
-}
-
-/* Convenience methods to convert between k8s types and config interfaces */
-func ToProcessorConfigurerArray(items []*odigosv1.Processor) []common.ProcessorConfigurer {
-	configurers := make([]common.ProcessorConfigurer, len(items))
-	for i := range items {
-	    configurers[i] = items[i]
-	}
-	return configurers
 }
