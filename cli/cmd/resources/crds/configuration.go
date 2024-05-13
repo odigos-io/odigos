@@ -80,6 +80,14 @@ func NewConfiguration() *apiextensionsv1.CustomResourceDefinition {
 												},
 											},
 										},
+										"ignoredContainers": {
+											Type: "array",
+											Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+												Schema: &apiextensionsv1.JSONSchemaProps{
+													Type: "string",
+												},
+											},
+										},
 										"imagePrefix": {
 											Type: "string",
 										},

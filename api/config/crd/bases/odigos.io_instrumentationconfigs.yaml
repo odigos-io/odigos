@@ -76,6 +76,7 @@ spec:
                             - javascript
                             - mysql
                             - unknown
+                            - ignored
                             type: string
                         required:
                         - instrumentationLibraryName

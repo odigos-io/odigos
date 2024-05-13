@@ -49,7 +49,7 @@ func GetNamespaces(c *gin.Context, odigosns string) {
 
 	var response GetNamespacesResponse
 	for _, namespace := range list.Items {
-		if utils.IsNamespaceIgnored(namespace.Name, odigosConfig.Spec.IgnoredNamespaces) {
+		if utils.IsItemIgnored(namespace.Name, odigosConfig.Spec.IgnoredNamespaces) {
 			continue
 		}
 
