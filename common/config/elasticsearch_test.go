@@ -3,7 +3,7 @@ package config_test
 import (
 	"testing"
 
-	"github.com/odigos-io/odigos/autoscaler/controllers/gateway/config"
+	"github.com/odigos-io/odigos/common/config"
 	"github.com/stretchr/testify/require"
 )
 
