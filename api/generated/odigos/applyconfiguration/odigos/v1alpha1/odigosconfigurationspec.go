@@ -28,6 +28,7 @@ type OdigosConfigurationSpecApplyConfiguration struct {
 	ConfigVersion     *int                                             `json:"configVersion,omitempty"`
 	TelemetryEnabled  *bool                                            `json:"telemetryEnabled,omitempty"`
 	IgnoredNamespaces []string                                         `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers []string                                         `json:"ignoredContainers,omitempty"`
 	Psp               *bool                                            `json:"psp,omitempty"`
 	ImagePrefix       *string                                          `json:"imagePrefix,omitempty"`
 	OdigletImage      *string                                          `json:"odigletImage,omitempty"`
@@ -74,6 +75,16 @@ func (b *OdigosConfigurationSpecApplyConfiguration) WithTelemetryEnabled(value b
 func (b *OdigosConfigurationSpecApplyConfiguration) WithIgnoredNamespaces(values ...string) *OdigosConfigurationSpecApplyConfiguration {
 	for i := range values {
 		b.IgnoredNamespaces = append(b.IgnoredNamespaces, values[i])
+	}
+	return b
+}
+
+// WithIgnoredContainers adds the given value to the IgnoredContainers field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the IgnoredContainers field.
+func (b *OdigosConfigurationSpecApplyConfiguration) WithIgnoredContainers(values ...string) *OdigosConfigurationSpecApplyConfiguration {
+	for i := range values {
+		b.IgnoredContainers = append(b.IgnoredContainers, values[i])
 	}
 	return b
 }

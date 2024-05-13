@@ -558,6 +558,11 @@ func (in *OdigosConfigurationSpec) DeepCopyInto(out *OdigosConfigurationSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.IgnoredContainers != nil {
+		in, out := &in.IgnoredContainers, &out.IgnoredContainers
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.SupportedSDKs != nil {
 		in, out := &in.SupportedSDKs, &out.SupportedSDKs
 		*out = make(map[common.ProgrammingLanguage][]common.OtelSdk, len(*in))

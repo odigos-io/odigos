@@ -27,5 +27,6 @@ var (
 )
 
 var (
-	SystemNamespaces = []string{DefaultNamespace, "kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
+	SystemNamespaces  = []string{DefaultNamespace, "kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
+	IgnoredContainers = []string{"istio-proxy"}
 )
