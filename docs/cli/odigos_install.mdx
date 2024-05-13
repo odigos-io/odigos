@@ -43,6 +43,7 @@ odigos install [flags]
         --image-prefix              prefix for collector images. Used when your cluster doesn't have access to docker hub.
         --psp                       enable pod security policy
         --ignore-namespace          namespaces not to show in odigos ui
+        --ignore-container          container names to exclude from instrumentation (useful for sidecar container)
 ```
 
 The `--api-key` is required if you use Odigos Cloud.

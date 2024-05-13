@@ -43,3 +43,23 @@ func isNamespaceLabeled(ctx context.Context, obj client.Object, c client.Client)
 
 	return isObjectLabeled(&ns)
 }
+
+func isWorkloadInstrumentationEffectiveEnabled(ctx context.Context, c client.Client, workload client.Object) bool {
+
+	// ignore if instrumentation is disabled explicitly
+	if isInstrumentationDisabledExplicitly(workload) {
+		return false
+	}
+
+	// if the workload has instrumentation enabled explicitly
+	if isObjectLabeled(workload) {
+		return true
+	}
+
+	// workload is not labeled for instrumentation, check if the namespace is labeled
+	if isNamespaceLabeled(ctx, workload, c) {
+		return true
+	}
+
+	return false
+}

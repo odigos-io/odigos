@@ -35,6 +35,7 @@ type OdigosConfigurationSpec struct {
 	ConfigVersion     int                                             `json:"configVersion"`
 	TelemetryEnabled  bool                                            `json:"telemetryEnabled,omitempty"`
 	IgnoredNamespaces []string                                        `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers []string                                        `json:"ignoredContainers,omitempty"`
 	Psp               bool                                            `json:"psp,omitempty"`
 	ImagePrefix       string                                          `json:"imagePrefix,omitempty"`
 	OdigletImage      string                                          `json:"odigletImage,omitempty"`
