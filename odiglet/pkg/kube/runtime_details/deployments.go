@@ -29,13 +29,9 @@ func (d *DeploymentsReconciler) Reconcile(ctx context.Context, request ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	if isInstrumentationDisabledExplicitly(&dep) {
+	if !isWorkloadInstrumentationEffectiveEnabled(ctx, d.Client, &dep) {
 		return ctrl.Result{}, nil
 	}
 
-	if isObjectLabeled(&dep) || isNamespaceLabeled(ctx, &dep, d.Client) {
-		return inspectRuntimesOfRunningPods(ctx, &logger, dep.Spec.Selector.MatchLabels, d.Client, d.Scheme, &dep)
-	}
-
-	return ctrl.Result{}, nil
+	return inspectRuntimesOfRunningPods(ctx, &logger, dep.Spec.Selector.MatchLabels, d.Client, d.Scheme, &dep)
 }

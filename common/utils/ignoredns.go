@@ -9,12 +9,12 @@ func arrayContainsString(arr []string, str string) bool {
 	return false
 }
 
-func AddSystemNamespacesToIgnored(userIgnoredNamespaces []string, systemNamespaces []string) []string {
+func MergeDefaultIgnoreWithUserInput(userInputIgnore []string, defaultIgnored []string) []string {
 
-	mergedList := make([]string, len(userIgnoredNamespaces))
-	copy(mergedList, userIgnoredNamespaces)
+	mergedList := make([]string, len(userInputIgnore))
+	copy(mergedList, userInputIgnore)
 
-	for _, ns := range systemNamespaces {
+	for _, ns := range defaultIgnored {
 		if !arrayContainsString(mergedList, ns) {
 			mergedList = append(mergedList, ns)
 		}
@@ -23,9 +23,9 @@ func AddSystemNamespacesToIgnored(userIgnoredNamespaces []string, systemNamespac
 	return mergedList
 }
 
-func IsNamespaceIgnored(namespace string, ignoredNamespaces []string) bool {
-	for _, ignoredNamespace := range ignoredNamespaces {
-		if namespace == ignoredNamespace {
+func IsItemIgnored(item string, ignoredList []string) bool {
+	for _, ignoredListItem := range ignoredList {
+		if item == ignoredListItem {
 			return true
 		}
 	}

@@ -62,5 +62,16 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = builder.
+		ControllerManagedBy(mgr).
+		For(&odigosv1.OdigosConfiguration{}).
+		Complete(&OdigosConfigReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
