@@ -83,6 +83,9 @@ func NewInstrumentedApp() *apiextensionsv1.CustomResourceDefinition {
 																{
 																	Raw: []byte(`"unknown"`),
 																},
+																{
+																	Raw: []byte(`"ignored"`),
+																},
 															},
 														},
 														"envVars": {
