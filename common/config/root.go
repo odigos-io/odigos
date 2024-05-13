@@ -44,10 +44,10 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 
 	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := GetCrdProcessorsConfigMap(processors)
 	for processorKey, processorCfg := range processorsCfg {
-		currentProcessors[processorKey] = processorCfg
+		currentConfig.Processors[processorKey] = processorCfg
 	}
 
-	for pipelineName, pipeline := range currentService.Pipelines {
+	for pipelineName, pipeline := range currentConfig.Service.Pipelines {
 		if strings.HasPrefix(pipelineName, "traces/") {
 			pipeline.Processors = append(tracesProcessors, pipeline.Processors...)
 		} else if strings.HasPrefix(pipelineName, "metrics/") {
@@ -60,7 +60,7 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 		pipeline.Receivers = []string{"otlp"}
 		// memory limiter processor should be the first processor in the pipeline
 		pipeline.Processors = append([]string{memoryLimiterProcessorName, "batch", "resource/odigos-version"}, pipeline.Processors...)
-		currentService.Pipelines[pipelineName] = pipeline
+		currentConfig.Service.Pipelines[pipelineName] = pipeline
 	}
 
 	data, err := yaml.Marshal(currentConfig)
