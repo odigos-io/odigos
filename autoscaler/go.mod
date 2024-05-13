@@ -8,7 +8,7 @@ require (
 	github.com/goccy/go-yaml v1.11.3
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/opentelemetry-zap-bridge v0.0.4
+	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
 	github.com/stretchr/testify v1.8.4
 	k8s.io/api v0.30.0
 	k8s.io/apimachinery v0.30.0
