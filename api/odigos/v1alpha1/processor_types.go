@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -100,7 +101,7 @@ func (processor Processor) GetName() string {
 func (processor Processor) GetType() string {
 	return processor.Spec.Type
 }
-func (processor Processor) GetConfig() (common.GenericMap, error) {
+func (processor Processor) GetConfig() (config.GenericMap, error) {
 	var processorConfig map[string]interface{}
 	err := json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &processorConfig)
 	if err != nil {

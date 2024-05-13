@@ -11,6 +11,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/utils"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -121,43 +122,43 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor) (string, error) {
 	empty := struct{}{}
 
-	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := commonconf.GetCrdProcessorsConfigMap(processors)
+	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := config.GetCrdProcessorsConfigMap(commonconf.ToProcessorConfigurerArray(processors))
 	processorsCfg["batch"] = empty
 	processorsCfg["odigosresourcename"] = empty
-	processorsCfg["resource"] = commonconf.GenericMap{
-		"attributes": []commonconf.GenericMap{{
+	processorsCfg["resource"] = config.GenericMap{
+		"attributes": []config.GenericMap{{
 			"key":    "k8s.node.name",
 			"value":  "${NODE_NAME}",
 			"action": "upsert",
 		}},
 	}
-	processorsCfg["resourcedetection"] = commonconf.GenericMap{"detectors": []string{"ec2", "gcp", "azure"}}
+	processorsCfg["resourcedetection"] = config.GenericMap{"detectors": []string{"ec2", "gcp", "azure"}}
 
-	cfg := commonconf.Config{
-		Receivers: commonconf.GenericMap{
+	cfg := config.Config{
+		Receivers: config.GenericMap{
 			"zipkin": empty,
-			"otlp": commonconf.GenericMap{
-				"protocols": commonconf.GenericMap{
+			"otlp": config.GenericMap{
+				"protocols": config.GenericMap{
 					"grpc": empty,
 					"http": empty,
 				},
 			},
 		},
-		Exporters: commonconf.GenericMap{
-			"otlp/gateway": commonconf.GenericMap{
+		Exporters: config.GenericMap{
+			"otlp/gateway": config.GenericMap{
 				"endpoint": fmt.Sprintf("odigos-gateway.%s:4317", utils.GetCurrentNamespace()),
-				"tls": commonconf.GenericMap{
+				"tls": config.GenericMap{
 					"insecure": true,
 				},
 			},
 		},
 		Processors: processorsCfg,
-		Extensions: commonconf.GenericMap{
+		Extensions: config.GenericMap{
 			"health_check": empty,
 			"zpages":       empty,
 		},
-		Service: commonconf.Service{
-			Pipelines:  map[string]commonconf.Pipeline{},
+		Service: config.Service{
+			Pipelines:  map[string]config.Pipeline{},
 			Extensions: []string{"health_check", "zpages"},
 		},
 	}
@@ -202,17 +203,17 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 		}
 
 		odigosSystemNamespaceName := utils.GetCurrentNamespace()
-		cfg.Receivers["filelog"] = commonconf.GenericMap{
+		cfg.Receivers["filelog"] = config.GenericMap{
 			"include":           includes,
 			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},
 			"start_at":          "beginning",
 			"include_file_path": true,
 			"include_file_name": false,
-			"operators": []commonconf.GenericMap{
+			"operators": []config.GenericMap{
 				{
 					"type": "router",
 					"id":   "get-format",
-					"routes": []commonconf.GenericMap{
+					"routes": []config.GenericMap{
 						{
 							"output": "parser-docker",
 							"expr":   `body matches "^\\{"`,
@@ -232,7 +233,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 					"id":     "parser-crio",
 					"regex":  `^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$`,
 					"output": "extract_metadata_from_filepath",
-					"timestamp": commonconf.GenericMap{
+					"timestamp": config.GenericMap{
 						"parse_from":  "attributes.time",
 						"layout_type": "gotime",
 						"layout":      "2006-01-02T15:04:05.999999999Z07:00",
@@ -243,7 +244,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 					"id":     "parser-containerd",
 					"regex":  `^(?P<time>[^ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$`,
 					"output": "extract_metadata_from_filepath",
-					"timestamp": commonconf.GenericMap{
+					"timestamp": config.GenericMap{
 						"parse_from": "attributes.time",
 						"layout":     "%Y-%m-%dT%H:%M:%S.%LZ",
 					},
@@ -252,7 +253,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 					"type":   "json_parser",
 					"id":     "parser-docker",
 					"output": "extract_metadata_from_filepath",
-					"timestamp": commonconf.GenericMap{
+					"timestamp": config.GenericMap{
 						"parse_from": "attributes.time",
 						"layout":     "%Y-%m-%dT%H:%M:%S.%LZ",
 					},
@@ -301,7 +302,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 			},
 		}
 
-		cfg.Service.Pipelines["logs"] = commonconf.Pipeline{
+		cfg.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
 			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, logsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
@@ -309,7 +310,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	}
 
 	if collectTraces {
-		cfg.Service.Pipelines["traces"] = commonconf.Pipeline{
+		cfg.Service.Pipelines["traces"] = config.Pipeline{
 			Receivers:  []string{"otlp", "zipkin"},
 			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, tracesProcessors...),
 			Exporters:  []string{"otlp/gateway"},
@@ -317,14 +318,14 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	}
 
 	if collectMetrics {
-		cfg.Receivers["kubeletstats"] = commonconf.GenericMap{
+		cfg.Receivers["kubeletstats"] = config.GenericMap{
 			"auth_type":            "serviceAccount",
 			"endpoint":             "https://${env:NODE_NAME}:10250",
 			"insecure_skip_verify": true,
 			"collection_interval":  "10s",
 		}
 
-		cfg.Service.Pipelines["metrics"] = commonconf.Pipeline{
+		cfg.Service.Pipelines["metrics"] = config.Pipeline{
 			Receivers:  []string{"otlp", "kubeletstats"},
 			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, metricsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
