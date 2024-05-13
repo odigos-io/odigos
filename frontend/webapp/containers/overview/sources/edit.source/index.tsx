@@ -7,6 +7,7 @@ import {
   OVERVIEW,
   ROUTES,
   SETUP,
+  getMainContainerLanguage,
 } from '@/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
@@ -131,7 +132,7 @@ export function EditSourceForm() {
         onDelete={onSourceDelete}
         name={currentSource?.name}
         image_url={
-          LANGUAGES_LOGOS[currentSource?.languages?.[0].language || '']
+          LANGUAGES_LOGOS[getMainContainerLanguage(currentSource?.languages)]
         }
       />
       <Notification />
