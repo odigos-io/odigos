@@ -33,7 +33,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
-	desiredData, err, destsStatus := config.Calculate(
+	desiredData, err, status := config.Calculate(
 		common.ToExporterConfigurerArray(dests),
 		common.ToProcessorConfigurerArray(processors),
 		memoryLimiterConfiguration,
@@ -43,15 +43,20 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		return "", err
 	}
 
-	for destName, destErr := range destsStatus {
+	for destName, destErr := range status.Destination {
 		if destErr != nil {
 			logger.Error(destErr, "Failed to calculate config for destination", "destination", destName)
+		}
+	}
+	for name, err := range status.Processor {
+		if err != nil {
+			logger.Info(err, "processor", name)
 		}
 	}
 
 	// Update destination status conditions in k8s
 	for _, dest := range dests.Items {
-		if destErr, found := destsStatus[dest.ObjectMeta.Name]; found {
+		if destErr, found := status.Destination[dest.ObjectMeta.Name]; found {
 			if destErr != nil {
 				err := odgiosK8s.UpdateStatusConditions(ctx, c, &dest, &dest.Status.Conditions, metav1.ConditionFalse, destinationConfiguredType, "ErrConfigDestination", destErr.Error())
 				if err != nil {

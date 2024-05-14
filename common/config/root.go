@@ -22,7 +22,12 @@ type Configer interface {
 	ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error
 }
 
-func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, map[string]error) {
+type ResourceStatuses struct {
+	Destination map[string]error
+	Processor map[string]error
+}
+
+func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, *ResourceStatuses) {
 	currentConfig := getBasicConfig(memoryLimiterConfig)
 
 	configers, err := loadConfigers()
@@ -30,7 +35,10 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 		return "", err, nil
 	}
 
-	destsStatus := map[string]error{}
+	status := &ResourceStatuses{
+		Destination: make(map[string]error),
+		Processor: make(map[string]error),
+	}
 
 	for _, dest := range dests {
 		configer, exists := configers[dest.GetType()]
@@ -39,10 +47,13 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 		}
 
 		err := configer.ModifyConfig(dest, currentConfig)
-		destsStatus[dest.GetName()] = err
+		status.Destination[dest.GetName()] = err
 	}
 
-	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := GetCrdProcessorsConfigMap(processors)
+	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := GetCrdProcessorsConfigMap(processors)
+	if errs != nil {
+		status.Processor = errs
+	}
 	for processorKey, processorCfg := range processorsCfg {
 		currentConfig.Processors[processorKey] = processorCfg
 	}
@@ -65,10 +76,10 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 
 	data, err := yaml.Marshal(currentConfig)
 	if err != nil {
-		return "", err, destsStatus
+		return "", err, status
 	}
 
-	return string(data), nil, destsStatus
+	return string(data), nil, status
 }
 
 func getBasicConfig(memoryLimiterConfig GenericMap) *Config {

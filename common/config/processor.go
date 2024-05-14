@@ -2,21 +2,18 @@ package config
 
 import (
 	"fmt"
-
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap, tracesProcessors []string, metricsProcessors []string, logsProcessors []string) {
+func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap, tracesProcessors []string, metricsProcessors []string, logsProcessors []string, errs map[string]error) {
+	errs = make(map[string]error)
 	cfg = GenericMap{}
 	for _, processor := range processors {
-		fmt.Printf("processors: %+v\n", processor)
 		processorKey := fmt.Sprintf("%s/%s", processor.GetType(), processor.GetName())
 		processorsConfig, err := processor.GetConfig()
-		fmt.Printf("err: %+v\n", err)
 		if err != nil {
 			// TODO: write the error to the status of the processor
 			// consider how to handle this error
-			log.Log.V(0).Info("failed to convert processor to collector config", "processor", processor.GetName(), "error", err)
+			errs[processor.GetName()] = fmt.Errorf("failed to convert processor %q to collector config: %w", err)
 			continue
 		}
 		if processorKey == "" || processorsConfig == nil {
@@ -33,6 +30,9 @@ func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap
 		if isLoggingEnabled(processor) {
 			logsProcessors = append(logsProcessors, processorKey)
 		}
+	}
+	if len(errs) == 0 {
+		return cfg, tracesProcessors, metricsProcessors, logsProcessors, nil
 	}
 	return
 }

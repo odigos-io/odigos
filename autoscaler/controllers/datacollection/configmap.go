@@ -122,7 +122,12 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor) (string, error) {
 	empty := struct{}{}
 
-	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors := config.GetCrdProcessorsConfigMap(commonconf.ToProcessorConfigurerArray(processors))
+	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(commonconf.ToProcessorConfigurerArray(processors))
+	if errs != nil {
+		for name, err := range errs {
+			log.Log.V(0).Info(err.Error(), "processor", name)
+		}
+	}
 	processorsCfg["batch"] = empty
 	processorsCfg["odigosresourcename"] = empty
 	processorsCfg["resource"] = config.GenericMap{
