@@ -92,7 +92,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
 
-      - name: Trigger Release PR in Odigos Enterprise
+      - name: Trigger Release PR in Odigos Charts
         run: |
           curl -X POST \
             -H "Accept: application/vnd.github.v3+json" \
