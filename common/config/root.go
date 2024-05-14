@@ -123,7 +123,7 @@ func loadConfigers() (map[common.DestinationType]Configer, error) {
 	return configers, nil
 }
 
-func isSignalExists(dest ExporterConfigurer, signal common.ObservabilitySignal) bool {
+func isSignalExists(dest SignalSpecific, signal common.ObservabilitySignal) bool {
 	for _, s := range dest.GetSignals() {
 		if s == signal {
 			return true
@@ -133,15 +133,15 @@ func isSignalExists(dest ExporterConfigurer, signal common.ObservabilitySignal) 
 	return false
 }
 
-func isTracingEnabled(dest ExporterConfigurer) bool {
+func isTracingEnabled(dest SignalSpecific) bool {
 	return isSignalExists(dest, common.TracesObservabilitySignal)
 }
 
-func isMetricsEnabled(dest ExporterConfigurer) bool {
+func isMetricsEnabled(dest SignalSpecific) bool {
 	return isSignalExists(dest, common.MetricsObservabilitySignal)
 }
 
-func isLoggingEnabled(dest ExporterConfigurer) bool {
+func isLoggingEnabled(dest SignalSpecific) bool {
 	return isSignalExists(dest, common.LogsObservabilitySignal)
 }
 
