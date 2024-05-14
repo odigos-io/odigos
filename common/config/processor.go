@@ -13,7 +13,7 @@ func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap
 		if err != nil {
 			// TODO: write the error to the status of the processor
 			// consider how to handle this error
-			errs[processor.GetName()] = fmt.Errorf("failed to convert processor %q to collector config: %w", err)
+			errs[processor.GetName()] = fmt.Errorf("failed to convert processor %q to collector config: %w", processor.GetName(), err)
 			continue
 		}
 		if processorKey == "" || processorsConfig == nil {
