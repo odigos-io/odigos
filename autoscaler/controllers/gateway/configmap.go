@@ -50,7 +50,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	}
 	for name, err := range status.Processor {
 		if err != nil {
-			logger.Info(err, "processor", name)
+			logger.Info(err.Error(), "processor", name)
 		}
 	}
 
