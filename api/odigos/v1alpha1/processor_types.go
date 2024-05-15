@@ -17,7 +17,11 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -88,4 +92,23 @@ type ProcessorList struct {
 
 func init() {
 	SchemeBuilder.Register(&Processor{}, &ProcessorList{})
+}
+
+/* Implement common.ProcessorConfigurer */
+func (processor Processor) GetName() string {
+	return processor.Name
+}
+func (processor Processor) GetType() string {
+	return processor.Spec.Type
+}
+func (processor Processor) GetConfig() (config.GenericMap, error) {
+	var processorConfig map[string]interface{}
+	err := json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &processorConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal processor %s data: %v", processor.Name, err)
+	}
+	return processorConfig, err
+}
+func (processor Processor) GetSignals() []common.ObservabilitySignal {
+	return processor.Spec.Signals
 }
