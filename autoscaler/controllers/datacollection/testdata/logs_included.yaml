@@ -19,6 +19,8 @@ processors:
     - ec2
     - gcp
     - azure
+  test_type/test_processor:
+    key: val
 receivers:
   filelog:
     exclude:
@@ -105,5 +107,6 @@ service:
       - odigosresourcename
       - resource
       - resourcedetection
+      - test_type/test_processor
       receivers:
       - filelog
