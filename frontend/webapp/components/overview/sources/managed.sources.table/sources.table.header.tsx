@@ -3,7 +3,7 @@ import { OVERVIEW } from '@/utils';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
 import { UnFocusSources } from '@/assets/icons/side.menu';
-import { ActionsGroup, KeyvalText } from '@/design.system';
+import { ActionsGroup, KeyvalCheckbox, KeyvalText } from '@/design.system';
 import { ManagedSource, Namespace } from '@/types';
 
 enum K8SSourceTypes {
@@ -43,7 +43,7 @@ const ActionGroupContainer = styled.div`
   gap: 24px;
   flex: 1;
 `;
-
+const SELECT_ALL_CHECKBOX = 'select_all';
 interface ActionsTableHeaderProps {
   data: ManagedSource[];
   namespaces?: Namespace[];
@@ -51,6 +51,8 @@ interface ActionsTableHeaderProps {
   filterSourcesByKind?: (kinds: string[]) => void;
   filterSourcesByNamespace?: (namespaces: string[]) => void;
   toggleActionStatus?: (ids: string[], disabled: boolean) => void;
+  selectedCheckbox: string[];
+  onSelectedCheckboxChange: (id: string) => void;
 }
 
 export function SourcesTableHeader({
@@ -59,6 +61,9 @@ export function SourcesTableHeader({
   sortSources,
   filterSourcesByKind,
   filterSourcesByNamespace,
+  toggleActionStatus,
+  selectedCheckbox,
+  onSelectedCheckboxChange,
 }: ActionsTableHeaderProps) {
   const [currentSortId, setCurrentSortId] = useState('');
   const [groupNamespaces, setGroupNamespaces] = useState<string[]>([]);
@@ -229,6 +234,10 @@ export function SourcesTableHeader({
   return (
     <StyledThead>
       <StyledMainTh>
+        <KeyvalCheckbox
+          value={selectedCheckbox.length === data.length && data.length > 0}
+          onChange={() => onSelectedCheckboxChange(SELECT_ALL_CHECKBOX)}
+        />
         <UnFocusSources style={{ width: 18, height: 18 }} />
         <KeyvalText size={14} weight={600} color={theme.text.white}>
           {`${data.length} ${OVERVIEW.MENU.SOURCES}`}

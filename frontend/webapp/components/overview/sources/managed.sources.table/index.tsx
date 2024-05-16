@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Table } from '@/design.system';
 import { ManagedSource, Namespace } from '@/types';
 import { SourcesTableRow } from './sources.table.row';
@@ -16,6 +16,8 @@ type TableProps = {
   toggleActionStatus?: (ids: string[], disabled: boolean) => void;
 };
 
+const SELECT_ALL_CHECKBOX = 'select_all';
+
 export const ManagedSourcesTable: React.FC<TableProps> = ({
   data,
   namespaces,
@@ -25,6 +27,7 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
   filterSourcesByKind,
   filterSourcesByNamespace,
 }) => {
+  const [selectedCheckbox, setSelectedCheckbox] = useState<string[]>([]);
   const currentPageRef = React.useRef(1);
 
   function onPaginate(pageNumber: number) {
@@ -33,6 +36,26 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
 
   function renderEmptyResult() {
     return <EmptyList title={OVERVIEW.EMPTY_SOURCE} />;
+  }
+
+  function onSelectedCheckboxChange(id: string) {
+    const start = (currentPageRef.current - 1) * 10;
+    const end = currentPageRef.current * 10;
+    const slicedData = data.slice(start, end);
+    if (id === SELECT_ALL_CHECKBOX) {
+      if (selectedCheckbox.length === slicedData.length) {
+        setSelectedCheckbox([]);
+      } else {
+        setSelectedCheckbox(slicedData.map((item) => JSON.stringify(item)));
+      }
+      return;
+    }
+
+    if (selectedCheckbox.includes(id)) {
+      setSelectedCheckbox(selectedCheckbox.filter((item) => item !== id));
+    } else {
+      setSelectedCheckbox([...selectedCheckbox, id]);
+    }
   }
 
   function renderTableHeader() {
@@ -44,6 +67,8 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
         toggleActionStatus={toggleActionStatus}
         filterSourcesByKind={filterSourcesByKind}
         filterSourcesByNamespace={filterSourcesByNamespace}
+        selectedCheckbox={selectedCheckbox}
+        onSelectedCheckboxChange={onSelectedCheckboxChange}
       />
     );
   }
@@ -57,10 +82,12 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
         renderEmptyResult={renderEmptyResult}
         renderTableRows={(item, index) => (
           <SourcesTableRow
-            onRowClick={onRowClick}
             data={data}
             item={item}
             index={index}
+            onRowClick={onRowClick}
+            selectedCheckbox={selectedCheckbox}
+            onSelectedCheckboxChange={onSelectedCheckboxChange}
           />
         )}
       />
