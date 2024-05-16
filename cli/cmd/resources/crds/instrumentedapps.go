@@ -1,6 +1,7 @@
 package crds
 
 import (
+	"github.com/odigos-io/odigos/cli/cmd/resources/crds/common"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -187,6 +188,9 @@ func NewInstrumentedApp() *apiextensionsv1.CustomResourceDefinition {
 								},
 								"status": {
 									Type: "object",
+									Properties: map[string]apiextensionsv1.JSONSchemaProps{
+										"conditions": common.Conditions,
+									},
 								},
 							},
 						},
