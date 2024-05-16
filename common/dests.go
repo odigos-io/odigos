@@ -37,4 +37,5 @@ const (
 	SumoLogicDestinationType              DestinationType = "sumologic"
 	CoralogixDestinationType              DestinationType = "coralogix"
 	CauselyDestinationType                DestinationType = "causely"
+	UptraceDestinationType                DestinationType = "uptrace"
 )

@@ -1,0 +1,66 @@
+package config
+
+import (
+	"errors"
+
+	"github.com/odigos-io/odigos/common"
+)
+
+const (
+	dsnKey = "UPTRACE_DSN"
+	endpointKey = "UPTRACE_ENDPOINT"
+)
+
+type Uptrace struct{}
+
+func (s *Uptrace) DestType() common.DestinationType {
+	return common.UptraceDestinationType
+}
+
+func (s *Uptrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+	config := dest.GetConfig()
+	dsn, exists := config[dsnKey]
+	if !exists {
+		return errors.New("Uptrace url(\"UPTRACE_DSN\") not specified, gateway will not be configured for Uptrace")
+	}
+
+	endpoint, exists := config[endpointKey]
+	if !exists {
+		endpoint = "https://otlp.uptrace.dev:4317"
+	}
+
+	exporterName := "otlp/uptrace-" + dest.GetName()
+
+	currentConfig.Exporters[exporterName] = GenericMap{
+		"endpoint": endpoint,
+		"tls": GenericMap{
+			"insecure": false,
+		},
+		"headers": GenericMap{
+			"uptrace-dsn": dsn,
+		},
+	}
+
+	if isTracingEnabled(dest) {
+		tracesPipelineName := "traces/uptrace-" + dest.GetName()
+		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
+			Exporters: []string{exporterName},
+		}
+	}
+
+	if isMetricsEnabled(dest) {
+		metricsPipelineName := "metrics/uptrace-" + dest.GetName()
+		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
+			Exporters: []string{exporterName},
+		}
+	}
+
+	if isLoggingEnabled(dest) {
+		logsPipelineName := "logs/uptrace-" + dest.GetName()
+		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
+			Exporters: []string{exporterName},
+		}
+	}
+
+	return nil
+}
