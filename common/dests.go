@@ -3,6 +3,7 @@ package common
 type DestinationType string
 
 const (
+	DebugDestinationType                  DestinationType = "debug"
 	MiddlewareDestinationType             DestinationType = "middleware"
 	GrafanaCloudPrometheusDestinationType DestinationType = "grafanacloudprometheus"
 	GrafanaCloudTempoDestinationType      DestinationType = "grafanacloudtempo"
