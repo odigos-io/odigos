@@ -109,9 +109,14 @@ export function useSources() {
         name: source.name,
       })
     );
-
-    await Promise.all(promises);
-    refetchSources();
+    try {
+      await Promise.all(promises);
+      setTimeout(() => {
+        refetchSources();
+      }, 1000);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   function sortSources(condition: string) {
