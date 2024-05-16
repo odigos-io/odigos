@@ -14,6 +14,7 @@ type TableProps = {
   filterSourcesByKind?: (kinds: string[]) => void;
   filterSourcesByNamespace?: (namespaces: string[]) => void;
   toggleActionStatus?: (ids: string[], disabled: boolean) => void;
+  deleteSourcesHandler?: (sources: ManagedSource[]) => void;
 };
 
 const SELECT_ALL_CHECKBOX = 'select_all';
@@ -25,6 +26,7 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
   sortSources,
   toggleActionStatus,
   filterSourcesByKind,
+  deleteSourcesHandler,
   filterSourcesByNamespace,
 }) => {
   const [selectedCheckbox, setSelectedCheckbox] = useState<string[]>([]);
@@ -58,6 +60,11 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
     }
   }
 
+  function parseSelectedSources() {
+    const selectedSources = selectedCheckbox.map((item) => JSON.parse(item));
+    deleteSourcesHandler && deleteSourcesHandler(selectedSources);
+  }
+
   function renderTableHeader() {
     return (
       <SourcesTableHeader
@@ -69,6 +76,7 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
         filterSourcesByNamespace={filterSourcesByNamespace}
         selectedCheckbox={selectedCheckbox}
         onSelectedCheckboxChange={onSelectedCheckboxChange}
+        deleteSourcesHandler={parseSelectedSources}
       />
     );
   }

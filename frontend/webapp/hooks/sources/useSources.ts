@@ -6,7 +6,12 @@ import {
   Namespace,
 } from '@/types';
 import { useMutation, useQuery } from 'react-query';
-import { getNamespaces, getSources, setNamespaces } from '@/services';
+import {
+  deleteSource,
+  getNamespaces,
+  getSources,
+  setNamespaces,
+} from '@/services';
 import { useEffect, useState } from 'react';
 
 export function useSources() {
@@ -22,6 +27,18 @@ export function useSources() {
   const { data: namespaces } = useQuery<{ namespaces: Namespace[] }>(
     [QUERIES.API_NAMESPACES],
     getNamespaces
+  );
+
+  const { mutate: deleteSourceMutation } = useMutation(
+    ({
+      namespace,
+      kind,
+      name,
+    }: {
+      namespace: string;
+      kind: string;
+      name: string;
+    }) => deleteSource(namespace, kind, name)
   );
 
   useEffect(() => {
@@ -84,6 +101,19 @@ export function useSources() {
     }
   }
 
+  async function deleteSourcesHandler(sources: ManagedSource[]) {
+    const promises = sources.map((source) =>
+      deleteSourceMutation({
+        namespace: source.namespace,
+        kind: source.kind,
+        name: source.name,
+      })
+    );
+
+    await Promise.all(promises);
+    refetchSources();
+  }
+
   function sortSources(condition: string) {
     const sorted = [...(sources || [])].sort((a, b) => {
       switch (condition) {
@@ -127,5 +157,6 @@ export function useSources() {
     filterSourcesByKind,
     instrumentedNamespaces,
     namespaces: namespaces?.namespaces || [],
+    deleteSourcesHandler,
   };
 }

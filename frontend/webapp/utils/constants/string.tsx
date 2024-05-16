@@ -118,6 +118,7 @@ export const ACTION = {
   RUNNING: 'Running',
   APPLIED: 'Applied',
   ENABLE: 'Enable',
+  DELETE_ALL: 'Delete All',
 };
 
 export const NOTIFICATION = {
