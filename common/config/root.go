@@ -43,7 +43,8 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 	for _, dest := range dests {
 		configer, exists := configers[dest.GetType()]
 		if !exists {
-			return "", fmt.Errorf("no configer for %s", dest.GetType()), nil
+			status.Destination[dest.GetName()] = fmt.Errorf("no configer for %s", dest.GetType())
+			continue
 		}
 
 		err := configer.ModifyConfig(dest, currentConfig)
