@@ -100,8 +100,6 @@ export function useActionState() {
       ...filteredActionData,
       disabled: callback ? disabled : !disabled,
     };
-    console.log({ actionData });
-    console.log({ action });
 
     try {
       if (actionState?.id) {

@@ -11,7 +11,6 @@ export default function ActionRowDynamicContent({
   item,
 }: ActionRowDynamicContentProps) {
   function renderContentByType() {
-    console.log({ item });
     switch (item.type) {
       case ActionsType.ADD_CLUSTER_INFO:
         return (
