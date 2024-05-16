@@ -151,7 +151,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 		},
 		Exporters: config.GenericMap{
 			"otlp/gateway": config.GenericMap{
-				"endpoint": fmt.Sprintf("odigos-gateway.%s:4317", utils.GetCurrentNamespace()),
+				"endpoint": fmt.Sprintf("dns:///odigos-gateway.%s:4317", utils.GetCurrentNamespace()),
 				"tls": config.GenericMap{
 					"insecure": true,
 				},
