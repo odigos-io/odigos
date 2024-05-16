@@ -106,7 +106,7 @@ export function useSources() {
     const filtered = sources?.filter((source) =>
       namespaces.includes(source.namespace)
     );
-    setSortedSources(filtered);
+    setSortedSources(filtered); //
   }
 
   function filterSourcesByKind(kind: string[]) {
