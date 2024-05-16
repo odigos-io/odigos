@@ -168,6 +168,10 @@ function getActionDataByType(action: ActionData | undefined) {
       return {
         attributeNamesToDelete: action.spec.attributeNamesToDelete,
       };
+    case ActionsType.RENAME_ATTRIBUTES:
+      return {
+        renames: action.spec.renames,
+      };
     default:
       return {};
   }

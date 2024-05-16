@@ -11,6 +11,7 @@ export default function ActionRowDynamicContent({
   item,
 }: ActionRowDynamicContentProps) {
   function renderContentByType() {
+    console.log({ item });
     switch (item.type) {
       case ActionsType.ADD_CLUSTER_INFO:
         return (
@@ -22,6 +23,12 @@ export default function ActionRowDynamicContent({
         return (
           <KeyvalText color={theme.text.grey} size={14} weight={400}>
             {`${item?.spec.attributeNamesToDelete.length} deleted attributes`}
+          </KeyvalText>
+        );
+      case ActionsType.RENAME_ATTRIBUTES:
+        return (
+          <KeyvalText color={theme.text.grey} size={14} weight={400}>
+            {`${Object.keys(item?.spec?.renames).length} renamed attributes`}
           </KeyvalText>
         );
       default:
