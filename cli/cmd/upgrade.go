@@ -102,7 +102,7 @@ and apply any required migrations and adaptations.`,
 		config.Spec.ConfigVersion += 1
 
 		// make sure the current system namespaces is in the ignored in config
-		config.Spec.IgnoredNamespaces = utils.AddSystemNamespacesToIgnored(config.Spec.IgnoredNamespaces, consts.SystemNamespaces)
+		config.Spec.IgnoredNamespaces = utils.MergeDefaultIgnoreWithUserInput(config.Spec.IgnoredNamespaces, consts.SystemNamespaces)
 
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {

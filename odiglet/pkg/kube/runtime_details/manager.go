@@ -6,8 +6,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
@@ -16,6 +14,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		Owns(&odigosv1.InstrumentedApplication{}).
+		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Complete(&DeploymentsReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -28,6 +27,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		For(&appsv1.StatefulSet{}).
 		Owns(&odigosv1.InstrumentedApplication{}).
+		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Complete(&StatefulSetsReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -40,6 +40,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		For(&appsv1.DaemonSet{}).
 		Owns(&odigosv1.InstrumentedApplication{}).
+		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Complete(&DaemonSetsReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -51,11 +52,20 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&corev1.Namespace{}).
-		WithEventFilter(predicate.NewPredicateFuncs(func(obj client.Object) bool {
-			return isObjectLabeled(obj)
-		})).
+		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Owns(&odigosv1.InstrumentedApplication{}).
 		Complete(&NamespacesReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		ControllerManagedBy(mgr).
+		For(&odigosv1.OdigosConfiguration{}).
+		Complete(&OdigosConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
