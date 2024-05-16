@@ -26,6 +26,13 @@ const ITEMS = [
     type: ActionsType.DELETE_ATTRIBUTES,
     icon: ActionsType.DELETE_ATTRIBUTES,
   },
+  {
+    id: 'rename_attribute',
+    title: 'Rename Attribute',
+    description: 'Rename attributes in logs, metrics, and traces.',
+    type: ActionsType.RENAME_ATTRIBUTES,
+    icon: ActionsType.RENAME_ATTRIBUTES,
+  },
 ];
 
 export function ChooseActionContainer(): React.JSX.Element {
