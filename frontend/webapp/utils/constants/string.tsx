@@ -149,6 +149,10 @@ export const ACTIONS = {
     TITLE: 'Delete Attribute',
     DESCRIPTION: `The “Delete Attribute” Odigos Action can be used to delete attributes from telemetry signals originated from the k8s cluster where the Odigos is running.`,
   },
+  RenameAttribute: {
+    TITLE: 'Rename Attribute',
+    DESCRIPTION: `The “Rename Attribute” Odigos Action can be used to rename attributes from telemetry signals originated from the k8s cluster where the Odigos is running.`,
+  },
   SEARCH_ACTION: 'Search Action',
 };
 

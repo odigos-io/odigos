@@ -147,7 +147,14 @@ function filterEmptyActionDataFieldsByType(type: string, data: any) {
           (attr: string) => attr !== ''
         ),
       };
-
+    case ActionsType.RENAME_ATTRIBUTES:
+      return {
+        renames: Object.fromEntries(
+          Object.entries(data.renames).filter(
+            ([key, value]: [string, string]) => key !== '' && value !== ''
+          )
+        ),
+      };
     default:
       return data;
   }
@@ -167,6 +174,10 @@ function getActionDataByType(action: ActionData | undefined) {
     case ActionsType.DELETE_ATTRIBUTES:
       return {
         attributeNamesToDelete: action.spec.attributeNamesToDelete,
+      };
+    case ActionsType.RENAME_ATTRIBUTES:
+      return {
+        renames: action.spec.renames,
       };
     default:
       return {};
