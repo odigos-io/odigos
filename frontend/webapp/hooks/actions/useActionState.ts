@@ -100,6 +100,8 @@ export function useActionState() {
       ...filteredActionData,
       disabled: callback ? disabled : !disabled,
     };
+    console.log({ actionData });
+    console.log({ action });
 
     try {
       if (actionState?.id) {
@@ -147,7 +149,14 @@ function filterEmptyActionDataFieldsByType(type: string, data: any) {
           (attr: string) => attr !== ''
         ),
       };
-
+    case ActionsType.RENAME_ATTRIBUTES:
+      return {
+        renames: Object.fromEntries(
+          Object.entries(data.renames).filter(
+            ([key, value]: [string, string]) => key !== '' && value !== ''
+          )
+        ),
+      };
     default:
       return data;
   }

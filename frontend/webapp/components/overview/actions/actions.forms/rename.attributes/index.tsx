@@ -42,12 +42,11 @@ export function RenameAttributesForm({
     keyValues.forEach((keyValue) => {
       renames[keyValue.key] = keyValue.value;
     });
-    console.log({ object: renames });
+
     onChange(ACTION_DATA_KEY, { renames });
   }
 
   function buildKeyValuePairs() {
-    console.log({ data });
     if (!data?.renames) {
       setKeyValuePairs(DEFAULT_KEY_VALUE_PAIR);
       return;
@@ -58,7 +57,7 @@ export function RenameAttributesForm({
       key,
       value,
     }));
-    console.log({ values });
+
     setKeyValuePairs(values || DEFAULT_KEY_VALUE_PAIR);
   }
 
@@ -66,8 +65,9 @@ export function RenameAttributesForm({
     <>
       <FormWrapper>
         <KeyValuePair
-          title="Cluster Attributes *"
-          titleKey="Attribute"
+          title="Attributes To Rename  *"
+          titleKey="Original Attribute"
+          titleValue="New Attribute"
           titleButton="Add Attribute"
           keyValues={keyValuePairs}
           setKeyValues={handleKeyValuesChange}
