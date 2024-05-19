@@ -7,11 +7,13 @@ import (
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/k8s"
 	"github.com/odigos-io/odigos/common/utils"
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -23,6 +25,10 @@ const (
 	UnInstrumentReasonDataCollectionNotReady UnInstrumentReason = "DataCollection not ready"
 	UnInstrumentReasonNoRuntimeDetails       UnInstrumentReason = "No runtime details"
 	UnInstrumentReasonRemoveAll              UnInstrumentReason = "Remove all"
+)
+
+const (
+	appliedInstrumentationDeviceType = "AppliedInstrumentationDevice"
 )
 
 func clearInstrumentationEbpf(obj client.Object) {
@@ -80,8 +86,10 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 	})
 
 	if err != nil {
+		k8s.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, "ErrApplyInstrumentationDevice", err.Error())
 		return err
 	}
+	k8s.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionTrue, appliedInstrumentationDeviceType, string(result), "Successfully applied instrumentation device to pod template")
 
 	if result != controllerutil.OperationResultNone {
 		logger.V(0).Info("instrumented application", "name", obj.GetName(), "namespace", obj.GetNamespace())
