@@ -52,6 +52,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentedApplicationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentedApplicationSpec"):
 		return &odigosv1alpha1.InstrumentedApplicationSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentedApplicationStatus"):
+		return &odigosv1alpha1.InstrumentedApplicationStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OdigosConfiguration"):
 		return &odigosv1alpha1.OdigosConfigurationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OdigosConfigurationSpec"):

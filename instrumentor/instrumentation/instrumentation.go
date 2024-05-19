@@ -2,6 +2,7 @@ package instrumentation
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -13,6 +14,11 @@ import (
 	"github.com/odigos-io/odigos/common"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+)
+
+var (
+	ErrNoDefaultSDK = errors.New("no default sdks found")
+	ErrPatchEnvVars = errors.New("failed to patch env vars")
 )
 
 func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) error {
@@ -32,7 +38,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 
 		otelSdk, found := defaultSdks[*containerLanguage]
 		if !found {
-			return fmt.Errorf("default sdk not found for language %s", *containerLanguage)
+			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, *containerLanguage, container.Name)
 		}
 
 		instrumentationDeviceName := common.InstrumentationDeviceName(*containerLanguage, otelSdk)
@@ -44,7 +50,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 
 		err := patchEnvVars(runtimeDetails, &container, targetObj)
 		if err != nil {
-			return fmt.Errorf("failed to patch env vars: %v", err)
+			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
 		}
 
 		modifiedContainers = append(modifiedContainers, container)

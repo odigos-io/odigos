@@ -3,9 +3,19 @@ import theme from '@/styles/palette';
 import { ManagedSource } from '@/types';
 import { Container, Namespace } from '@/assets';
 import styled, { css } from 'styled-components';
-import { KeyvalImage, KeyvalTag, KeyvalText } from '@/design.system';
+import {
+  KeyvalCheckbox,
+  KeyvalImage,
+  KeyvalTag,
+  KeyvalText,
+} from '@/design.system';
 import { KIND_COLORS } from '@/styles/global';
-import { LANGUAGES_COLORS, LANGUAGES_LOGOS, WORKLOAD_PROGRAMMING_LANGUAGES, getMainContainerLanguage } from '@/utils';
+import {
+  LANGUAGES_COLORS,
+  LANGUAGES_LOGOS,
+  WORKLOAD_PROGRAMMING_LANGUAGES,
+  getMainContainerLanguage,
+} from '@/utils';
 
 const StyledTr = styled.tr`
   &:hover {
@@ -82,21 +92,27 @@ const DEPLOYMENT = 'deployment';
 export function SourcesTableRow({
   item,
   index,
-
+  selectedCheckbox,
+  onSelectedCheckboxChange,
   onRowClick,
 }: {
   item: ManagedSource;
   index: number;
   data: ManagedSource[];
-
+  selectedCheckbox: string[];
+  onSelectedCheckboxChange: (id: string) => void;
   onRowClick: (source: ManagedSource) => void;
 }) {
   const workloadProgrammingLanguage = getMainContainerLanguage(item?.languages);
   return (
     <StyledTr key={item.kind}>
-      <StyledMainTd onClick={() => onRowClick(item)} isFirstRow={index === 0}>
+      <StyledMainTd isFirstRow={index === 0}>
         <SourceIconContainer>
-          <div>
+          <KeyvalCheckbox
+            value={selectedCheckbox.includes(JSON.stringify(item))}
+            onChange={() => onSelectedCheckboxChange(JSON.stringify(item))}
+          />
+          <div onClick={() => onRowClick(item)}>
             <KeyvalImage
               src={LANGUAGES_LOGOS[workloadProgrammingLanguage]}
               width={32}
@@ -105,7 +121,7 @@ export function SourcesTableRow({
               alt="source-logo"
             />
           </div>
-          <SourceDetails>
+          <SourceDetails onClick={() => onRowClick(item)}>
             <NameContainer>
               <KeyvalText weight={600}>
                 {`${item.name || 'Source'} `}
