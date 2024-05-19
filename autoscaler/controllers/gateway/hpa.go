@@ -19,6 +19,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+const (
+	memoryLimitPercentageForHPA = 75
+)
+
 var (
 	minReplicas = intPtr(1)
 	maxReplicas = int32(10)
@@ -26,7 +30,8 @@ var (
 
 func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) error {
 	logger := log.FromContext(ctx)
-	metricQuantity := resource.MustParse(fmt.Sprintf("%dMi", memConfig.gomemlimitMiB))
+	memLimit := memConfig.gomemlimitMiB * memoryLimitPercentageForHPA / 100.0
+	metricQuantity := resource.MustParse(fmt.Sprintf("%dMi", memLimit))
 	hpa := &autoscaling.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "autoscaling/v2beta2",
