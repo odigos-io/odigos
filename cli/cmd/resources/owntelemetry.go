@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common" // TODO: move it to neutral place
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -76,33 +76,33 @@ func NewOwnTelemetryConfigMapOtlpGrpc(ns string, odigosVersion string) *corev1.C
 
 func getOtelcolConfigMapValue() string {
 	empty := struct{}{}
-	cfg := commonconf.Config{
-		Receivers: commonconf.GenericMap{
-			"otlp": commonconf.GenericMap{
-				"protocols": commonconf.GenericMap{
+	cfg := config.Config{
+		Receivers: config.GenericMap{
+			"otlp": config.GenericMap{
+				"protocols": config.GenericMap{
 					"grpc": empty,
 					"http": empty,
 				},
 			},
 		},
-		Processors: commonconf.GenericMap{
+		Processors: config.GenericMap{
 			"batch": empty,
 		},
-		Exporters: commonconf.GenericMap{
-			"otlp": commonconf.GenericMap{
+		Exporters: config.GenericMap{
+			"otlp": config.GenericMap{
 				"endpoint": "${env:ODIGOS_CLOUD_COL_HOST}:4317",
-				"headers": commonconf.GenericMap{
+				"headers": config.GenericMap{
 					"authorization": "Bearer ${ODIGOS_CLOUD_TOKEN}",
 				},
 			},
 		},
-		Extensions: commonconf.GenericMap{
+		Extensions: config.GenericMap{
 			"health_check": empty,
 			"zpages":       empty,
 		},
-		Service: commonconf.Service{
-			Pipelines: map[string]commonconf.Pipeline{
-				"logs": commonconf.Pipeline{
+		Service: config.Service{
+			Pipelines: map[string]config.Pipeline{
+				"logs": config.Pipeline{
 					Receivers:  []string{"otlp"},
 					Processors: []string{"batch"},
 					Exporters:  []string{"otlp"},
