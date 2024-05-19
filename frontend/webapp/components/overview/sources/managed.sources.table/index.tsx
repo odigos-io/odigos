@@ -82,6 +82,7 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
   function parseSelectedSources() {
     const selectedSources = selectedCheckbox.map((item) => JSON.parse(item));
     deleteSourcesHandler && deleteSourcesHandler(selectedSources);
+    setSelectedCheckbox([]);
   }
 
   function renderTableHeader() {
