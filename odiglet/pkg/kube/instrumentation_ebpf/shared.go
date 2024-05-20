@@ -7,7 +7,6 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	corev1 "k8s.io/api/core/v1"
@@ -25,7 +24,7 @@ func cleanupEbpf(directors ebpf.DirectorsMap, name types.NamespacedName) {
 	}
 }
 
-func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.DirectorsMap, runtimeDetails *odigosv1.InstrumentedApplication, podWorkload *common.PodWorkload) (error, bool) {
+func instrumentPodWithEbpf(ctx context.Context, client client.Client, pod *corev1.Pod, directors ebpf.DirectorsMap, runtimeDetails *odigosv1.InstrumentedApplication, podWorkload *common.PodWorkload) (error, bool) {
 	logger := log.FromContext(ctx)
 	podUid := string(pod.UID)
 	instrumentedEbpf := false
@@ -95,19 +94,4 @@ func podContainerDeviceName(container v1.Container) *string {
 	}
 
 	return nil
-}
-
-func getRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *common.PodWorkload) (*odigosv1.InstrumentedApplication, error) {
-	instrumentedApplicationName := utils.GetRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
-
-	var runtimeDetails odigosv1.InstrumentedApplication
-	err := kubeClient.Get(ctx, client.ObjectKey{
-		Namespace: podWorkload.Namespace,
-		Name:      instrumentedApplicationName,
-	}, &runtimeDetails)
-	if err != nil {
-		return nil, err
-	}
-
-	return &runtimeDetails, nil
 }

@@ -141,3 +141,18 @@ func persistRuntimeResults(ctx context.Context, results []odigosv1.RuntimeDetail
 	}
 	return nil
 }
+
+func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *common.PodWorkload) (*odigosv1.InstrumentedApplication, error) {
+	instrumentedApplicationName := utils.GetRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
+
+	var runtimeDetails odigosv1.InstrumentedApplication
+	err := kubeClient.Get(ctx, client.ObjectKey{
+		Namespace: podWorkload.Namespace,
+		Name:      instrumentedApplicationName,
+	}, &runtimeDetails)
+	if err != nil {
+		return nil, err
+	}
+
+	return &runtimeDetails, nil
+}

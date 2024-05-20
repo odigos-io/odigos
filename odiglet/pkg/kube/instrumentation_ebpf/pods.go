@@ -6,6 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
+	runtime_details "github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -72,7 +73,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 }
 
 func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod, podWorkload *common.PodWorkload) (error, bool) {
-	runtimeDetails, err := getRuntimeDetails(ctx, p.Client, podWorkload)
+	runtimeDetails, err := runtime_details.GetRuntimeDetails(ctx, p.Client, podWorkload)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// Probably shutdown in progress, cleanup will be done as soon as the pod object is deleted
@@ -81,7 +82,7 @@ func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod
 		return err, false
 	}
 
-	return instrumentPodWithEbpf(ctx, pod, p.Directors, runtimeDetails, podWorkload)
+	return instrumentPodWithEbpf(ctx, p.Client, pod, p.Directors, runtimeDetails, podWorkload)
 }
 
 func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*common.PodWorkload, error) {
