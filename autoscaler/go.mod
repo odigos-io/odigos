@@ -7,10 +7,11 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
 	github.com/stretchr/testify v1.8.4
 	k8s.io/api v0.30.0
-	k8s.io/apimachinery v0.30.0
+	k8s.io/apimachinery v0.30.1
 	k8s.io/client-go v0.30.0
 	sigs.k8s.io/controller-runtime v0.18.2
 	sigs.k8s.io/yaml v1.4.0
@@ -92,4 +93,5 @@ require (
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 )

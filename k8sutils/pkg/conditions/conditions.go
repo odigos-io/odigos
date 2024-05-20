@@ -1,4 +1,4 @@
-package k8s
+package conditions
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 
 // UpdateStatusConditions updates the status conditions of the object if the passed conditions have changed.
 // conditions is a pointer to the conditions of the object.
-func UpdateStatusConditions(ctx context.Context, c client.Client, obj client.Object, conditions *[]metav1.Condition, 
-									status metav1.ConditionStatus, conditionType string, reason string, msg string) error {
+func UpdateStatusConditions(ctx context.Context, c client.Client, obj client.Object, conditions *[]metav1.Condition,
+	status metav1.ConditionStatus, conditionType string, reason string, msg string) error {
 	cond := metav1.Condition{
 		Type:               conditionType,
 		Status:             status,

@@ -7,11 +7,12 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.33.1
 	github.com/stretchr/testify v1.9.0
 	k8s.io/api v0.30.0
-	k8s.io/apimachinery v0.30.0
+	k8s.io/apimachinery v0.30.1
 	k8s.io/client-go v0.30.0
 	sigs.k8s.io/controller-runtime v0.18.2
 )
@@ -98,4 +99,5 @@ require (
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 )
