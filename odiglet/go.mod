@@ -10,6 +10,7 @@ require (
 	github.com/kubevirt/device-plugin-manager v1.19.5
 	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/common v1.0.48
+	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/odigos/procdiscovery v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
 	github.com/otiai10/copy v1.14.0
@@ -19,7 +20,7 @@ require (
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.63.2
 	k8s.io/api v0.30.0
-	k8s.io/apimachinery v0.30.0
+	k8s.io/apimachinery v0.30.1
 	k8s.io/client-go v0.30.0
 	k8s.io/kubelet v0.30.0
 	sigs.k8s.io/controller-runtime v0.18.2
@@ -109,5 +110,6 @@ require (
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/procdiscovery => ../procdiscovery
 )

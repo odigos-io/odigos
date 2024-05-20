@@ -6,13 +6,13 @@ import (
 	"reflect"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
+	"github.com/odigos-io/odigos/common"
 
 	"github.com/ghodss/yaml"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
-	"github.com/odigos-io/odigos/common/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -151,7 +151,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 		},
 		Exporters: config.GenericMap{
 			"otlp/gateway": config.GenericMap{
-				"endpoint": fmt.Sprintf("dns:///odigos-gateway.%s:4317", utils.GetCurrentNamespace()),
+				"endpoint": fmt.Sprintf("dns:///odigos-gateway.%s:4317", env.GetCurrentNamespace()),
 				"tls": config.GenericMap{
 					"insecure": true,
 				},
@@ -207,7 +207,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 			includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
 		}
 
-		odigosSystemNamespaceName := utils.GetCurrentNamespace()
+		odigosSystemNamespaceName := env.GetCurrentNamespace()
 		cfg.Receivers["filelog"] = config.GenericMap{
 			"include":           includes,
 			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},

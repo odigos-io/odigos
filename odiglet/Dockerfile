@@ -19,6 +19,7 @@ WORKDIR /go/src/github.com/odigos-io/odigos
 # Copyy local modules required by the build
 COPY api/ api/
 COPY common/ common/
+COPY k8sutils/ k8sutils/
 COPY procdiscovery/ procdiscovery/
 WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
 COPY odiglet/ .
