@@ -2,7 +2,11 @@ module github.com/odigos-io/odigos/k8sutils
 
 go 1.22.0
 
-require k8s.io/apimachinery v0.30.1
+require (
+	github.com/odigos-io/odigos/common v0.0.0
+	k8s.io/apimachinery v0.30.1
+	k8s.io/client-go v0.30.0
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -26,7 +30,6 @@ require (
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/api v0.30.0 // indirect
-	k8s.io/client-go v0.30.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
@@ -48,3 +51,5 @@ require (
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
+
+replace github.com/odigos-io/odigos/common => ../common

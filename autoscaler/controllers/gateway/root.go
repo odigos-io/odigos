@@ -7,7 +7,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,7 +58,7 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 		return err
 	}
 
-	odigosSystemNamespaceName := utils.GetCurrentNamespace()
+	odigosSystemNamespaceName := env.GetCurrentNamespace()
 	var odigosConfig odigosv1.OdigosConfiguration
 	if err := client.Get(ctx, types.NamespacedName{Namespace: odigosSystemNamespaceName, Name: consts.DefaultOdigosConfigurationName}, &odigosConfig); err != nil {
 		logger.Error(err, "failed to get odigos config")

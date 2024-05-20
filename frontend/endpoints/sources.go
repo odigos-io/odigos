@@ -4,8 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/utils"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -53,7 +53,7 @@ func GetSource(c *gin.Context) {
 	ns := c.Param("namespace")
 	kind := c.Param("kind")
 	name := c.Param("name")
-	k8sObjectName := utils.GetRuntimeObjectName(name, kind)
+	k8sObjectName := workload.GetRuntimeObjectName(name, kind)
 
 	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(c, k8sObjectName, metav1.GetOptions{})
 	if err != nil {
