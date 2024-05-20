@@ -7,9 +7,9 @@ import (
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/k8s"
 	"github.com/odigos-io/odigos/common/utils"
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
+	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -86,10 +86,10 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 	})
 
 	if err != nil {
-		k8s.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, "ErrApplyInstrumentationDevice", err.Error())
+		conditions.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, "ErrApplyInstrumentationDevice", err.Error())
 		return err
 	}
-	k8s.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionTrue, appliedInstrumentationDeviceType, string(result), "Successfully applied instrumentation device to pod template")
+	conditions.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionTrue, appliedInstrumentationDeviceType, string(result), "Successfully applied instrumentation device to pod template")
 
 	if result != controllerutil.OperationResultNone {
 		logger.V(0).Info("instrumented application", "name", obj.GetName(), "namespace", obj.GetNamespace())
