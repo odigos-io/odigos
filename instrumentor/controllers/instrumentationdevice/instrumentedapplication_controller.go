@@ -21,7 +21,7 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -104,7 +104,7 @@ func reconcileSingleInstrumentedApplication(ctx context.Context, kubeClient clie
 }
 
 func removeInstrumentation(logger logr.Logger, ctx context.Context, kubeClient client.Client, instrumentedApplicationName types.NamespacedName, reason UnInstrumentReason) error {
-	name, kind, err := utils.GetTargetFromRuntimeName(instrumentedApplicationName.Name)
+	name, kind, err := workload.GetWorkloadInfoRuntimeName(instrumentedApplicationName.Name)
 	if err != nil {
 		return err
 	}
