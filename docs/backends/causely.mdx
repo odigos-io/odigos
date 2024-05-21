@@ -4,8 +4,20 @@ title: "Causely"
 
 ## Configuring the Causely Backend
 
-To complete adding a new Causely backend, input the following information into the Odigos UI:
-1. Endpoint URL
-- The endpoint URL is the `http://host:port` to access your Causely Mediator service.
-- following the host format: `mediator.<namespace>`)
-- Example: `http://mediator.causely:4317`
+To complete adding a new Causely backend, input the following information into the Odigos UI
+
+### Causely Destination Settings
+
+To send Metrics/Traces to Causely, you need to configure the Causely URL in the Odigos UI.
+This destination is for the Causely Mediator Service, so you will need to have a Causely instance running and accessible from the k8s cluster running odigos.
+
+#### Endpoint
+
+The endpoint URL is the combined `<protocol>://<hostname>:<port>` to access your Causely Mediator service.
+
+- Protocol should be `http`; using `https` or omitting it will automatically be converted to `http`
+- Hostname should typically follow the format: `mediator.<namespace>`
+    - `namespace` is the k8s namespace where the Causely Mediator service is deployed
+- Default port is `4317`; if no port is specified, it will be appended automatically
+
+Example: `http://mediator.causely:4317`
