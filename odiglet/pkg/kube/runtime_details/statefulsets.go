@@ -30,13 +30,9 @@ func (s *StatefulSetsReconciler) Reconcile(ctx context.Context, request ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	if isInstrumentationDisabledExplicitly(&ss) {
+	if !isWorkloadInstrumentationEffectiveEnabled(ctx, s.Client, &ss) {
 		return ctrl.Result{}, nil
 	}
 
-	if isObjectLabeled(&ss) || isNamespaceLabeled(ctx, &ss, s.Client) {
-		return inspectRuntimesOfRunningPods(ctx, &logger, ss.Spec.Selector.MatchLabels, s.Client, s.Scheme, &ss)
-	}
-
-	return ctrl.Result{}, nil
+	return inspectRuntimesOfRunningPods(ctx, &logger, ss.Spec.Selector.MatchLabels, s.Client, s.Scheme, &ss)
 }

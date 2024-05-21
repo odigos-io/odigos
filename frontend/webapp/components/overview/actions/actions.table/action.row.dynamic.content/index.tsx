@@ -24,6 +24,12 @@ export default function ActionRowDynamicContent({
             {`${item?.spec.attributeNamesToDelete.length} deleted attributes`}
           </KeyvalText>
         );
+      case ActionsType.RENAME_ATTRIBUTES:
+        return (
+          <KeyvalText color={theme.text.grey} size={14} weight={400}>
+            {`${Object.keys(item?.spec?.renames).length} renamed attributes`}
+          </KeyvalText>
+        );
       default:
         return <div>{item.type}</div>;
     }

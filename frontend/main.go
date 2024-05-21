@@ -7,10 +7,11 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/utils"
 	"github.com/odigos-io/odigos/destinations"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	"github.com/gin-contrib/cors"
 
@@ -40,7 +41,7 @@ type Flags struct {
 var uiFS embed.FS
 
 func parseFlags() Flags {
-	defaultKubeConfig := utils.GetDefaultKubeConfigPath()
+	defaultKubeConfig := env.GetDefaultKubeConfigPath()
 
 	var flags Flags
 	flag.BoolVar(&flags.Version, "version", false, "Print Odigos UI version.")
@@ -142,6 +143,7 @@ func httpFileServerWith404(fs http.FileSystem) http.Handler {
 }
 
 func main() {
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := parseFlags()
 
 	if flags.Version {

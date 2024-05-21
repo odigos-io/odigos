@@ -12,7 +12,7 @@ import (
 	"github.com/odigos-io/odigos/common/utils"
 
 	"github.com/odigos-io/odigos/frontend/kube"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -74,7 +74,7 @@ func GetNamespaces(c *gin.Context, odigosns string) {
 func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace, error) {
 	var (
 		odigosConfig *v1alpha1.OdigosConfiguration
-		list 	   *v1.NamespaceList
+		list         *v1.NamespaceList
 	)
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -96,7 +96,7 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace
 
 	result := []v1.Namespace{}
 	for _, namespace := range list.Items {
-		if utils.IsNamespaceIgnored(namespace.Name, odigosConfig.Spec.IgnoredNamespaces) {
+		if utils.IsItemIgnored(namespace.Name, odigosConfig.Spec.IgnoredNamespaces) {
 			continue
 		}
 

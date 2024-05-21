@@ -60,6 +60,8 @@ type InstrumentedApplicationSpec struct {
 
 // InstrumentedApplicationStatus defines the observed state of InstrumentedApplication
 type InstrumentedApplicationStatus struct {
+	// Represents the observations of a nstrumentedApplication's current state.
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 //+genclient

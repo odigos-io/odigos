@@ -1,0 +1,40 @@
+---
+title: "Installation Options"
+sidebarTitle: "Options"
+---
+
+You can configure odigos installation using the following options:
+
+## Ignore Namespaces
+
+Don't show specific uninteresting namespaces in the Odigos UI.
+
+Default values: `kube-system`, `local-path-storage`, `istio-system`, `linkerd`, `kube-node-lease`
+
+Add additional namespaces to ignore with **cli**:
+```shell
+odigos install --ignore-namespace <namespace1> --ignore-namespace <namespace2>
+```
+
+List all namespaces to be ignored with **helm chart**:
+```shell
+helm install odigos odigos/odigos --set ignoreNamespace=<namespace1>,<namespace2>
+```
+
+Any `odigos-instrumentation` label on the namespace and workloads in the namespace will still be honored.
+
+## Ignore Containers
+
+This option is useful for excluding specific sidecar containers from being instrumentated by odigos. 
+
+Default values: `istio-proxy`
+
+Add additional containers to ignore with **cli**:
+```shell
+odigos install --ignore-container <container1> --ignore-container <container2>
+```
+
+List all containers to be ignored with **helm chart**:
+```shell
+helm install odigos odigos/odigos --set ignoreContainer=<container1>,<container2>
+```

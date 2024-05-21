@@ -7,7 +7,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	corev1 "k8s.io/api/core/v1"
@@ -98,7 +98,7 @@ func podContainerDeviceName(container v1.Container) *string {
 }
 
 func getRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *common.PodWorkload) (*odigosv1.InstrumentedApplication, error) {
-	instrumentedApplicationName := utils.GetRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
+	instrumentedApplicationName := workload.GetRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
 
 	var runtimeDetails odigosv1.InstrumentedApplication
 	err := kubeClient.Get(ctx, client.ObjectKey{

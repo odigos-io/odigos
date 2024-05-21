@@ -5,6 +5,7 @@ ARG SERVICE_NAME
 WORKDIR /workspace
 COPY api/ api/
 COPY common/ common/
+COPY k8sutils/ k8sutils/
 
 WORKDIR /workspace/$SERVICE_NAME
 RUN mkdir -p /workspace/build

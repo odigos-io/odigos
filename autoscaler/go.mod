@@ -5,15 +5,16 @@ go 1.22.0
 require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/zapr v1.3.0
-	github.com/goccy/go-yaml v1.11.3
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/opentelemetry-zap-bridge v0.0.4
+	github.com/odigos-io/odigos/k8sutils v0.0.0
+	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
 	github.com/stretchr/testify v1.8.4
 	k8s.io/api v0.30.0
-	k8s.io/apimachinery v0.30.0
+	k8s.io/apimachinery v0.30.1
 	k8s.io/client-go v0.30.0
 	sigs.k8s.io/controller-runtime v0.18.2
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -31,6 +32,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
+	github.com/goccy/go-yaml v1.11.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
@@ -86,10 +88,10 @@ require (
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 )

@@ -3,8 +3,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/odigos-io/odigos/common/utils"
-
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/spf13/cobra"
 )
 
@@ -40,5 +39,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", utils.GetDefaultKubeConfigPath(), "(optional) absolute path to the kubeconfig file")
+	rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", env.GetDefaultKubeConfigPath(), "(optional) absolute path to the kubeconfig file")
 }

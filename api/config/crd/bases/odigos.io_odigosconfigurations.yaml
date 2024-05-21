@@ -84,6 +84,10 @@ spec:
                   - sdkType
                   type: object
                 type: object
+              ignoredContainers:
+                items:
+                  type: string
+                type: array
               ignoredNamespaces:
                 items:
                   type: string

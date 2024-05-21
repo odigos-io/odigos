@@ -6,17 +6,25 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/autoscaler v0.0.0-20240430141418-3a8d9d8de37b
 	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.30.0
-	k8s.io/apiextensions-apiserver v0.30.0
-	k8s.io/apimachinery v0.30.0
-	k8s.io/client-go v0.30.0
+	k8s.io/api v0.30.1
+	k8s.io/apiextensions-apiserver v0.30.1
+	k8s.io/apimachinery v0.30.1
+	k8s.io/client-go v0.30.1
 	sigs.k8s.io/controller-runtime v0.18.2
 	sigs.k8s.io/yaml v1.4.0
+)
+
+require (
+	github.com/fatih/color v1.16.0 // indirect
+	github.com/goccy/go-yaml v1.11.3 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 )
 
 require (
@@ -66,4 +74,5 @@ replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/autoscaler => ../autoscaler
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 )

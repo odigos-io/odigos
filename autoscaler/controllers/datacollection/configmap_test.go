@@ -7,10 +7,11 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -66,7 +67,7 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
 	return &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      utils.GetRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
+			Name:      workload.GetRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
 			Namespace: workloadObject.GetNamespace(),
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -82,7 +83,7 @@ func NewMockInstrumentedApplicationWoOwner(workloadObject client.Object) *odigos
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
 	return &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      utils.GetRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
+			Name:      workload.GetRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
 			Namespace: workloadObject.GetNamespace(),
 		},
 	}
@@ -129,7 +130,25 @@ func TestGetConfigMapData(t *testing.T) {
 			Items: items,
 		},
 		NewMockDestinationList(),
-		&v1alpha1.ProcessorList{},
+		[]*v1alpha1.Processor{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "test_processor"},
+				Spec: v1alpha1.ProcessorSpec{
+					OrderHint:      1,
+					Type:           "test_type",
+					CollectorRoles: []odigosv1.CollectorsGroupRole{odigosv1.CollectorsGroupRoleNodeCollector},
+					Disabled:       false,
+					ProcessorConfig: runtime.RawExtension{
+						Raw: []byte(`{"key":"val"}`),
+					},
+					Signals: []common.ObservabilitySignal{
+						common.LogsObservabilitySignal,
+						common.MetricsObservabilitySignal,
+						common.TracesObservabilitySignal,
+					},
+				},
+			},
+		},
 	)
 
 	assert.Equal(t, err, nil)

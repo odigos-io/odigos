@@ -4,10 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/utils"
 	"github.com/odigos-io/odigos/frontend/kube"
-	"golang.org/x/sync/errgroup"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,7 +47,7 @@ func GetSources(c *gin.Context, odigosns string) {
 	effectiveInstrumentedSources := map[SourceID]ThinSource{}
 
 	var (
-		items []GetApplicationItem
+		items                    []GetApplicationItem
 		instrumentedApplications *v1alpha1.InstrumentedApplicationList
 	)
 
@@ -112,7 +112,7 @@ func GetSource(c *gin.Context) {
 	ns := c.Param("namespace")
 	kind := c.Param("kind")
 	name := c.Param("name")
-	k8sObjectName := utils.GetRuntimeObjectName(name, kind)
+	k8sObjectName := workload.GetRuntimeObjectName(name, kind)
 
 	owner := getK8sObject(c, ns, kind, name)
 	if owner == nil {
