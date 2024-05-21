@@ -21,7 +21,7 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -82,7 +82,7 @@ func (r *CollectorsGroupReconciler) removeAllInstrumentations(ctx context.Contex
 	}
 
 	for _, instApp := range instApps.Items {
-		name, kind, err := utils.GetTargetFromRuntimeName(instApp.Name)
+		name, kind, err := workload.GetWorkloadInfoRuntimeName(instApp.Name)
 		if err != nil {
 			return err
 		}

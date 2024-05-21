@@ -6,7 +6,7 @@ import (
 
 	_ "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/k8s"
+	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	runtime_details "github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
@@ -141,13 +141,13 @@ func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context) {
 			if !status.Healthy {
 				log.Logger.Error(nil, "eBPF instrumentation unhealthy", "reason", status.Reason, "message", status.Reason, "workload", status.Workload)
 				msg := "Failed to load eBPF probes to pod: " + status.PodName.String() + ".message: " + status.Message
-				err := k8s.UpdateStatusConditions(ctx, d.client, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionFalse, ebpfSDKConditionRunning, string(status.Reason), msg)
+				err := conditions.UpdateStatusConditions(ctx, d.client, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionFalse, ebpfSDKConditionRunning, string(status.Reason), msg)
 				if err != nil {
 					log.Logger.Error(err, "error updating status conditions", "workload", status.Workload)
 				}
 			} else {
 				log.Logger.V(0).Info("eBPF instrumentation healthy", "workload", status.Workload)
-				err := k8s.UpdateStatusConditions(ctx, d.client, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionTrue, ebpfSDKConditionRunning, "Success", "Successfully loaded eBPF probes to pod: " + status.PodName.String())
+				err := conditions.UpdateStatusConditions(ctx, d.client, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionTrue, ebpfSDKConditionRunning, "Success", "Successfully loaded eBPF probes to pod: " + status.PodName.String())
 				if err != nil {
 					log.Logger.Error(err, "error updating status conditions", "workload", status.Workload)
 				}
