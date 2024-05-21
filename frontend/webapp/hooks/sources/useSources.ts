@@ -6,7 +6,12 @@ import {
   Namespace,
 } from '@/types';
 import { useMutation, useQuery } from 'react-query';
-import { getNamespaces, getSources, setNamespaces } from '@/services';
+import {
+  deleteSource,
+  getNamespaces,
+  getSources,
+  setNamespaces,
+} from '@/services';
 import { useEffect, useState } from 'react';
 
 export function useSources() {
@@ -22,6 +27,18 @@ export function useSources() {
   const { data: namespaces } = useQuery<{ namespaces: Namespace[] }>(
     [QUERIES.API_NAMESPACES],
     getNamespaces
+  );
+
+  const { mutate: deleteSourceMutation } = useMutation(
+    ({
+      namespace,
+      kind,
+      name,
+    }: {
+      namespace: string;
+      kind: string;
+      name: string;
+    }) => deleteSource(namespace, kind, name)
   );
 
   useEffect(() => {
@@ -84,6 +101,24 @@ export function useSources() {
     }
   }
 
+  async function deleteSourcesHandler(sources: ManagedSource[]) {
+    const promises = sources.map((source) =>
+      deleteSourceMutation({
+        namespace: source.namespace,
+        kind: source.kind,
+        name: source.name,
+      })
+    );
+    try {
+      await Promise.all(promises);
+      setTimeout(() => {
+        refetchSources();
+      }, 1000);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   function sortSources(condition: string) {
     const sorted = [...(sources || [])].sort((a, b) => {
       switch (condition) {
@@ -94,7 +129,11 @@ export function useSources() {
         case SourceSortOptions.KIND:
           return a.kind.localeCompare(b.kind);
         case SourceSortOptions.LANGUAGE:
-          return a.languages[0].language.localeCompare(b.languages[0].language);
+          const aLanguage =
+            a.instrumented_application_details?.languages?.[0]?.language || '';
+          const bLanguage =
+            b.instrumented_application_details?.languages?.[0]?.language || '';
+          return aLanguage.localeCompare(bLanguage);
         default:
           return 0;
       }
@@ -127,5 +166,6 @@ export function useSources() {
     filterSourcesByKind,
     instrumentedNamespaces,
     namespaces: namespaces?.namespaces || [],
+    deleteSourcesHandler,
   };
 }

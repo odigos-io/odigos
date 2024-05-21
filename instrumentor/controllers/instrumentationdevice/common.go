@@ -7,11 +7,14 @@ import (
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/utils"
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
+	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -23,6 +26,10 @@ const (
 	UnInstrumentReasonDataCollectionNotReady UnInstrumentReason = "DataCollection not ready"
 	UnInstrumentReasonNoRuntimeDetails       UnInstrumentReason = "No runtime details"
 	UnInstrumentReasonRemoveAll              UnInstrumentReason = "Remove all"
+)
+
+const (
+	appliedInstrumentationDeviceType = "AppliedInstrumentationDevice"
 )
 
 func clearInstrumentationEbpf(obj client.Object) {
@@ -37,7 +44,7 @@ func clearInstrumentationEbpf(obj client.Object) {
 func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	logger := log.FromContext(ctx)
 	var collectorGroups odigosv1.CollectorsGroupList
-	err := c.List(ctx, &collectorGroups, client.InNamespace(utils.GetCurrentNamespace()))
+	err := c.List(ctx, &collectorGroups, client.InNamespace(env.GetCurrentNamespace()))
 	if err != nil {
 		logger.Error(err, "error getting collectors groups, skipping instrumentation")
 		return false
@@ -65,7 +72,7 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 	}
 
 	var odigosConfig odigosv1.OdigosConfiguration
-	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: utils.GetCurrentNamespace(), Name: "odigos-config"}, &odigosConfig)
+	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: "odigos-config"}, &odigosConfig)
 	if err != nil {
 		return err
 	}
@@ -80,8 +87,10 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 	})
 
 	if err != nil {
+		conditions.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, "ErrApplyInstrumentationDevice", err.Error())
 		return err
 	}
+	conditions.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionTrue, appliedInstrumentationDeviceType, string(result), "Successfully applied instrumentation device to pod template")
 
 	if result != controllerutil.OperationResultNone {
 		logger.V(0).Info("instrumented application", "name", obj.GetName(), "namespace", obj.GetNamespace())
@@ -135,7 +144,7 @@ func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Cli
 }
 
 func getTargetObject(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) (client.Object, error) {
-	name, kind, err := utils.GetTargetFromRuntimeName(runtimeDetails.Name)
+	name, kind, err := workload.GetWorkloadInfoRuntimeName(runtimeDetails.Name)
 	if err != nil {
 		return nil, err
 	}

@@ -16,12 +16,12 @@ export interface ManagedSource {
   name: string;
   namespace: string;
   reported_name?: string;
-  languages: [
-    {
+  instrumented_application_details: {
+    languages: Array<{
       container_name: string;
       language: string;
-    }
-  ];
+    }> | null;
+  };
 }
 
 export interface Namespace {

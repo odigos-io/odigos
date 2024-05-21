@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var ErrorHoneycombTracingDisabled = errors.New("attempting to configure Honeycomb tracing, but tracing is disabled")
@@ -24,8 +23,6 @@ func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	if !isTracingEnabled(dest) {
 		return ErrorHoneycombTracingDisabled
 	}
-
-	log.Log.V(0).Info("Honeycomb tracing is enabled, configuring Honeycomb destination")
 
 	endpoint, exists := dest.GetConfig()[honeycombEndpoint]
 	if !exists {

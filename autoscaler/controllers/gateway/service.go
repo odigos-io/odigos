@@ -65,4 +65,5 @@ func updateGatewaySvc(svc *v1.Service) {
 	}
 
 	svc.Spec.Selector = commonLabels
+	svc.Spec.ClusterIP = "None"
 }

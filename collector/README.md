@@ -10,3 +10,11 @@ The following command downloads the `ocb` tool and builds the collector:
 ```bash
 make genodigoscol
 ```
+
+## Metadata Generation
+
+To generate metadata for a component, create `metadata.yaml` in the component's directory and run:
+
+```bash
+make generate
+```

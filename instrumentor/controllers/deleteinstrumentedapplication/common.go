@@ -5,7 +5,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,7 +43,7 @@ func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient clien
 	ns := workloadObject.GetNamespace()
 	name := workloadObject.GetName()
 	kind := workloadObject.GetObjectKind().GroupVersionKind().Kind
-	instrumentedApplicationName := utils.GetRuntimeObjectName(name, kind)
+	instrumentedApplicationName := workload.GetRuntimeObjectName(name, kind)
 
 	err := kubeClient.Delete(ctx, &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{

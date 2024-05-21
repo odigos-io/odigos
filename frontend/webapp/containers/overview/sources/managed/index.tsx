@@ -30,6 +30,7 @@ export function ManagedSourcesContainer() {
     isLoading,
     sortSources,
     filterSourcesByKind,
+    deleteSourcesHandler,
     instrumentedNamespaces,
     filterSourcesByNamespace,
   } = useSources();
@@ -89,6 +90,7 @@ export function ManagedSourcesContainer() {
               <ManagedSourcesTable
                 sortSources={sortSources}
                 onRowClick={handleEditSource}
+                deleteSourcesHandler={deleteSourcesHandler}
                 namespaces={instrumentedNamespaces}
                 filterSourcesByKind={filterSourcesByKind}
                 data={searchInput ? filterSources() : sources}

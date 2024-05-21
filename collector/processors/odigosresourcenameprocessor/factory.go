@@ -18,6 +18,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor/internal/metadata"
+
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
@@ -26,24 +28,17 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	// The value of "type" key in configuration.
-	typeStr = "odigosresourcename"
-	// The stability level of the processor.
-	stability = component.StabilityLevelBeta
-)
-
 var processorCapabilities = consumer.Capabilities{MutatesData: true}
 var nameResolver *NameResolver
 
 // NewFactory returns a new factory for the Resource processor.
 func NewFactory() processor.Factory {
 	return processor.NewFactory(
-		typeStr,
+		metadata.Type,
 		createDefaultConfig,
-		processor.WithTraces(createTracesProcessor, stability),
-		processor.WithMetrics(createMetricsProcessor, stability),
-		processor.WithLogs(createLogsProcessor, stability))
+		processor.WithTraces(createTracesProcessor, metadata.TracesStability),
+		processor.WithMetrics(createMetricsProcessor, metadata.MetricsStability),
+		processor.WithLogs(createLogsProcessor, metadata.LogsStability))
 }
 
 func createDefaultConfig() component.Config {
