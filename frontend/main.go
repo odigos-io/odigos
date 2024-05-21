@@ -92,7 +92,7 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.GET("/namespaces", func(c *gin.Context) { endpoints.GetNamespaces(c, flags.Namespace) })
 		apis.POST("/namespaces", endpoints.PersistNamespaces)
 
-		apis.GET("/sources", endpoints.GetSources)
+		apis.GET("/sources", func(c *gin.Context) { endpoints.GetSources(c, flags.Namespace) })
 		apis.GET("/sources/namespace/:namespace/kind/:kind/name/:name", endpoints.GetSource)
 		apis.DELETE("/sources/namespace/:namespace/kind/:kind/name/:name", endpoints.DeleteSource)
 		apis.PATCH("/sources/namespace/:namespace/kind/:kind/name/:name", endpoints.PatchSource)

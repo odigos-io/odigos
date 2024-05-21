@@ -44,9 +44,20 @@ export function DataFlowContainer() {
     if (!sources || !destinationList || !actions) return;
 
     const filteredActions = actions.filter((action) => !action.spec.disabled);
+    const mapSources = sources.map((source) => {
+      const languages =
+        source?.instrumented_application_details?.languages || [];
+      return {
+        ...source,
+        languages:
+          languages.length > 0
+            ? languages
+            : [{ language: 'default', container_name: '' }],
+      };
+    });
 
     const { nodes, edges } = buildFlowNodesAndEdges(
-      sources,
+      mapSources,
       destinationList,
       filteredActions
     );

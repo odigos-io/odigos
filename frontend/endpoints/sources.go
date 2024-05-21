@@ -5,7 +5,9 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/kube"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -14,15 +16,21 @@ type SourceLanguage struct {
 	Language      string `json:"language"`
 }
 
+type InstrumentedApplicationDetails struct {
+	Languages []SourceLanguage `json:"languages,omitempty"`
+}
+
 // this object contains only part of the source fields. It is used to display the sources in the frontend
 type ThinSource struct {
+	SourceID
+	IaDetails *InstrumentedApplicationDetails `json:"instrumented_application_details"`
+}
 
+type SourceID struct {
 	// combination of namespace, kind and name is unique
 	Name      string `json:"name"`
 	Kind      string `json:"kind"`
 	Namespace string `json:"namespace"`
-
-	Languages []SourceLanguage `json:"languages"`
 }
 
 type Source struct {
@@ -34,19 +42,70 @@ type PatchSourceRequest struct {
 	ReportedName *string `json:"reported_name"`
 }
 
-func GetSources(c *gin.Context) {
-	instrumentedApplications, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(c, metav1.ListOptions{})
-	if err != nil {
+func GetSources(c *gin.Context, odigosns string) {
+	ctx := c.Request.Context()
+	effectiveInstrumentedSources := map[SourceID]ThinSource{}
+
+	var (
+		items                    []GetApplicationItem
+		instrumentedApplications *v1alpha1.InstrumentedApplicationList
+	)
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		relevantNamespaces, err := getRelevantNameSpaces(ctx, odigosns)
+		if err != nil {
+			return err
+		}
+		nsInstrumentedMap := map[string]*bool{}
+		for _, ns := range relevantNamespaces {
+			nsInstrumentedMap[ns.Name] = isObjectLabeledForInstrumentation(ns.ObjectMeta)
+		}
+		// get all the applications in all the namespaces,
+		// passing an empty string here is more efficient compared to iterating over the namespaces
+		// since it will make a single request per workload type to the k8s api server
+		items, err = getApplicationsInNamespace(ctx, "", nsInstrumentedMap)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		instrumentedApplications, err = kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(c, metav1.ListOptions{})
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		returnError(c, err)
 		return
 	}
 
-	sources := []ThinSource{}
-	for _, app := range instrumentedApplications.Items {
-		sources = append(sources, k8sInstrumentedAppToThinSource(&app))
+	for _, item := range items {
+		if item.nsItem.InstrumentationEffective {
+			id := SourceID{Namespace: item.namespace, Kind: string(item.nsItem.Kind), Name: item.nsItem.Name}
+			effectiveInstrumentedSources[id] = ThinSource{
+				SourceID: id,
+			}
+		}
 	}
 
-	c.JSON(200, sources)
+	sourcesResult := []ThinSource{}
+	// go over the instrumented applications and update the languages of the effective sources.
+	// Not all effective sources necessarily have a corresponding instrumented application,
+	// it may take some time for the instrumented application to be created. In that case the languages
+	// slice will be empty.
+	for _, app := range instrumentedApplications.Items {
+		thinSource := k8sInstrumentedAppToThinSource(&app)
+		if source, ok := effectiveInstrumentedSources[thinSource.SourceID]; ok {
+			source.IaDetails = thinSource.IaDetails
+			effectiveInstrumentedSources[thinSource.SourceID] = source
+		}
+	}
+
+	for _, source := range effectiveInstrumentedSources {
+		sourcesResult = append(sourcesResult, source)
+	}
+
+	c.JSON(200, sourcesResult)
 }
 
 func GetSource(c *gin.Context) {
@@ -54,12 +113,6 @@ func GetSource(c *gin.Context) {
 	kind := c.Param("kind")
 	name := c.Param("name")
 	k8sObjectName := workload.GetRuntimeObjectName(name, kind)
-
-	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(c, k8sObjectName, metav1.GetOptions{})
-	if err != nil {
-		returnError(c, err)
-		return
-	}
 
 	owner := getK8sObject(c, ns, kind, name)
 	if owner == nil {
@@ -74,8 +127,22 @@ func GetSource(c *gin.Context) {
 		reportedName = ownerAnnotations[consts.OdigosReportedNameAnnotation]
 	}
 
+	ts := ThinSource{
+		SourceID: SourceID{
+			Namespace: ns,
+			Kind:      kind,
+			Name:      name,
+		},
+	}
+
+	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(c, k8sObjectName, metav1.GetOptions{})
+	if err == nil {
+		// valid instrumented application, grab the runtime details
+		ts.IaDetails = k8sInstrumentedAppToThinSource(instrumentedApplication).IaDetails
+	}
+
 	c.JSON(200, Source{
-		ThinSource:   k8sInstrumentedAppToThinSource(instrumentedApplication),
+		ThinSource:   ts,
 		ReportedName: reportedName,
 	})
 }
@@ -177,8 +244,11 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 	source.Name = app.OwnerReferences[0].Name
 	source.Kind = app.OwnerReferences[0].Kind
 	source.Namespace = app.Namespace
+	source.IaDetails = &InstrumentedApplicationDetails{
+		Languages: []SourceLanguage{},
+	}
 	for _, language := range app.Spec.RuntimeDetails {
-		source.Languages = append(source.Languages, SourceLanguage{
+		source.IaDetails.Languages = append(source.IaDetails.Languages, SourceLanguage{
 			ContainerName: language.ContainerName,
 			Language:      string(language.Language),
 		})

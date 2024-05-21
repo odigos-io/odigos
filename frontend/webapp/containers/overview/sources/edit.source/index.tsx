@@ -132,7 +132,12 @@ export function EditSourceForm() {
         onDelete={onSourceDelete}
         name={currentSource?.name}
         image_url={
-          LANGUAGES_LOGOS[getMainContainerLanguage(currentSource?.languages)]
+          LANGUAGES_LOGOS[
+            getMainContainerLanguage(
+              currentSource?.instrumented_application_details.languages ||
+                undefined
+            )
+          ]
         }
       />
       <Notification />
