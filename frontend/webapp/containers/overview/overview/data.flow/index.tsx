@@ -45,7 +45,8 @@ export function DataFlowContainer() {
 
     const filteredActions = actions.filter((action) => !action.spec.disabled);
     const mapSources = sources.map((source) => {
-      const languages = source.instrumented_application_details.languages || [];
+      const languages =
+        source?.instrumented_application_details?.languages || [];
       return {
         ...source,
         languages:
