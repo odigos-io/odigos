@@ -104,7 +104,7 @@ export function SourcesTableRow({
   onRowClick: (source: ManagedSource) => void;
 }) {
   const workloadProgrammingLanguage = getMainContainerLanguage(
-    item?.instrumented_application_details.languages || []
+    item?.instrumented_application_details?.languages || undefined
   );
 
   const containerName =
