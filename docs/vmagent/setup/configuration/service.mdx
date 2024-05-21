@@ -1,0 +1,32 @@
+---
+title: "Updating the Authentication Token"
+sidebarTitle: "Updating the Authentication Token"
+---
+
+Odigos VM Agent is a PRO feature, and requires a license key which is read from `/etc/odigos-vmagent/service.yaml`.
+If you installed odigos with `ODIGOS_ONPREM_LICENSE_KEY` environemnt variable, the license key should already be set in the file.
+
+The yaml file should contain the following content:
+
+```yaml
+on_prem:
+  token: "<your-license-key>"
+```
+
+To set or update the license key, edit the file and restart the service:
+
+```shell
+systemctl restart odigos-vmagent
+```
+
+To verify that the license key is set correctly, check the service logs:
+
+```shell
+journalctl -u odigos-vmagent
+```
+
+The following log message should be displayed if the license key is set correctly:
+
+```
+INFO OnPrem token verified aud=<your-organization>
+```

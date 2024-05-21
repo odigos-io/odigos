@@ -1,0 +1,55 @@
+---
+title: "Reference"
+sidebarTitle: "Reference"
+---
+
+Odigos VM Agent reads it's configuration from `/etc/odigos-vmagent/agent.yaml`. This file controls the following aspects of the agent:
+
+- Sources - list of systemd service names to auto-instrument.
+- Destinations - list of Observability Backends to send telemetry data to.
+- Processors - modify telemetry data before sending it to the destination.
+
+An example of the `agent.yaml` file is shown below:
+
+```yaml
+sources:
+  systemd:
+    services:
+    - service_name: <my-service>
+      instrumentation_enabled: true
+    ignored_service_names:
+    - rsyslog
+    - ssh
+    - networkd-dispatcher
+
+processors:
+- name: addinfo
+  type: resource
+  config:
+    attributes:
+    - action: insert
+      key: cluster.name
+      value: "my-cluster"
+  signals:
+  - LOGS
+  - METRICS
+  - TRACES
+
+destinations:
+- name: jaeger
+  type: jaeger
+  config:
+    JAEGER_URL: <jaeger-collector-otlp-grpc-endpoint>
+  signals:
+  - TRACES
+```
+
+## Sources
+
+The `sources` section of the `agent.yaml` file contains the following fields:
+
+- `systemd` - systemd sources configuration.
+  - `services` - configuration op
+    - `service_name` - name of the systemd service.
+    - `instrumentation_enabled` - enable or disable instrumentation for the service.
+  - `ignored_service_names` - list of systemd services to ignore.

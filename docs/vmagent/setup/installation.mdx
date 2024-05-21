@@ -1,0 +1,42 @@
+---
+title: "Installation"
+sidebarTitle: "Installation"
+---
+
+<Info> Odigos VM Agent is currently available with the Odigos Pro plan. Contact us for more info </Info>
+
+## Prerequisites
+
+- Odigos Pro license key for VM Agent.
+- Linux machine running services managed by Systemd.
+- Debian or RPM based Linux distribution (Ubuntu, Debian, CentOS, RHEL, etc.).
+
+## DEB Installation
+
+For debian based systems (Ubuntu, Debian, etc), install odigos with apt:
+
+1. Set up APT with Odigos deb repository:
+
+```shell
+echo "deb [trusted=yes] https://apt.fury.io/odigos/ * *" > /etc/apt/sources.list.d/odigos.list
+```
+
+2. Update APT package index after adding the odigos repository:
+
+```shell
+sudo apt update
+```
+
+3. Set odigos license key as environment variable in the local shell:
+
+```shell
+export ODIGOS_ONPREM_LICENSE_KEY=<your-license-key>
+```
+
+4. Install Odigos deb package:
+
+```shell
+sudo apt install odigos
+```
+
+Odigos VM Agent is now installed on your system. and enabled as a Systemd service.
