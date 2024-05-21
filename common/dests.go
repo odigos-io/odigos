@@ -35,4 +35,5 @@ const (
 	AxiomDestinationType                  DestinationType = "axiom"
 	SumoLogicDestinationType              DestinationType = "sumologic"
 	CoralogixDestinationType              DestinationType = "coralogix"
+	CauselyDestinationType                DestinationType = "causely"
 )
