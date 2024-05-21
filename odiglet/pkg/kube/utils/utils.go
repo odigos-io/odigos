@@ -3,11 +3,11 @@ package utils
 import (
 	"context"
 
-	"github.com/keyval-dev/odigos/common"
+	"github.com/odigos-io/odigos/common"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 
-	"github.com/keyval-dev/odigos/odiglet/pkg/env"
+	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

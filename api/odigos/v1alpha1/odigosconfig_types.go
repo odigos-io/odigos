@@ -3,7 +3,7 @@
 package v1alpha1
 
 import (
-	"github.com/keyval-dev/odigos/common"
+	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,6 +35,7 @@ type OdigosConfigurationSpec struct {
 	ConfigVersion     int                                             `json:"configVersion"`
 	TelemetryEnabled  bool                                            `json:"telemetryEnabled,omitempty"`
 	IgnoredNamespaces []string                                        `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers []string                                        `json:"ignoredContainers,omitempty"`
 	Psp               bool                                            `json:"psp,omitempty"`
 	ImagePrefix       string                                          `json:"imagePrefix,omitempty"`
 	OdigletImage      string                                          `json:"odigletImage,omitempty"`

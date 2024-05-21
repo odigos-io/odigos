@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/keyval-dev/odigos/common"
+	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -60,6 +60,8 @@ type InstrumentedApplicationSpec struct {
 
 // InstrumentedApplicationStatus defines the observed state of InstrumentedApplication
 type InstrumentedApplicationStatus struct {
+	// Represents the observations of a nstrumentedApplication's current state.
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 //+genclient

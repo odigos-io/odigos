@@ -2,11 +2,12 @@ package gateway
 
 import (
 	"context"
-	"fmt"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/utils"
+	appsv1 "k8s.io/api/apps/v1"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,7 +58,7 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 		return err
 	}
 
-	odigosSystemNamespaceName := utils.GetCurrentNamespace()
+	odigosSystemNamespaceName := env.GetCurrentNamespace()
 	var odigosConfig odigosv1.OdigosConfiguration
 	if err := client.Get(ctx, types.NamespacedName{Namespace: odigosSystemNamespaceName, Name: consts.DefaultOdigosConfigurationName}, &odigosConfig); err != nil {
 		logger.Error(err, "failed to get odigos config")
@@ -93,8 +94,43 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	return c.Status().Patch(ctx, gateway, client.RawPatch(
-		types.MergePatchType,
-		[]byte(fmt.Sprintf(`{"status": { "ready": %t }}`, dep.Status.ReadyReplicas > 0)),
-	))
+	if isMetricsServerInstalled(ctx, c) {
+		err = syncHPA(gateway, ctx, c, scheme, memConfig)
+		if err != nil {
+			logger.Error(err, "Failed to sync HPA")
+			return err
+		}
+	}
+
+	isReady := dep.Status.ReadyReplicas > 0
+	if !gateway.Status.Ready && isReady {
+		err := c.Status().Patch(ctx, gateway, client.RawPatch(
+			types.MergePatchType,
+			[]byte(`{"status": { "ready": true }}`),
+		))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func isMetricsServerInstalled(ctx context.Context, c client.Client) bool {
+	// Check if Kubernetes metrics server is installed by checking if the metrics-server deployment exists
+	logger := log.FromContext(ctx)
+	var metricsServerDeployment appsv1.Deployment
+	err := c.Get(ctx, types.NamespacedName{Name: "metrics-server", Namespace: "kube-system"}, &metricsServerDeployment)
+	if err != nil {
+		if client.IgnoreNotFound(err) != nil {
+			logger.Error(err, "Failed to get metrics-server deployment")
+			return false
+		}
+
+		logger.V(0).Info("Metrics server not found, skipping HPA creation")
+		return false
+	}
+
+	logger.V(0).Info("Metrics server found, creating HPA for Gateway")
+	return true
 }

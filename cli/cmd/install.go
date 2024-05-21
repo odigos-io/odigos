@@ -6,17 +6,18 @@ import (
 	"os"
 	"time"
 
-	"github.com/keyval-dev/odigos/cli/pkg/labels"
+	"github.com/odigos-io/odigos/cli/pkg/labels"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/common/consts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/utils"
 
-	"github.com/keyval-dev/odigos/cli/cmd/resources"
-	"github.com/keyval-dev/odigos/cli/pkg/kube"
-	"github.com/keyval-dev/odigos/cli/pkg/log"
+	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,15 +25,15 @@ import (
 )
 
 var (
-	odigosCloudApiKeyFlag    string
-	odigosOnPremToken        string
-	namespaceFlag            string
-	versionFlag              string
-	skipWait                 bool
-	telemetryEnabled         bool
-	psp                      bool
-	ignoredNamespaces        []string
-	DefaultIgnoredNamespaces = []string{"odigos-system", "kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
+	odigosCloudApiKeyFlag      string
+	odigosOnPremToken          string
+	namespaceFlag              string
+	versionFlag                string
+	skipWait                   bool
+	telemetryEnabled           bool
+	psp                        bool
+	userInputIgnoredNamespaces []string
+	userInputIgnoredContainers []string
 
 	instrumentorImage string
 	odigletImage      string
@@ -56,7 +57,6 @@ This command will install k8s components that will auto-instrument your applicat
 		}
 		ctx := cmd.Context()
 		ns := cmd.Flag("namespace").Value.String()
-		cmd.Flags().StringSliceVar(&ignoredNamespaces, "ignore-namespace", DefaultIgnoredNamespaces, "--ignore-namespace foo logging")
 
 		// Check if Odigos already installed
 		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
@@ -165,11 +165,15 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 
 func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
 
+	fullIgnoredNamespaces := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredNamespaces, consts.SystemNamespaces)
+	fullIgnoredContainers := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredContainers, consts.IgnoredContainers)
+
 	return odigosv1.OdigosConfigurationSpec{
 		OdigosVersion:     versionFlag,
 		ConfigVersion:     1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:  telemetryEnabled,
-		IgnoredNamespaces: ignoredNamespaces,
+		IgnoredNamespaces: fullIgnoredNamespaces,
+		IgnoredContainers: fullIgnoredContainers,
 		Psp:               psp,
 		ImagePrefix:       imagePrefix,
 		OdigletImage:      odigletImage,
@@ -200,6 +204,8 @@ func init() {
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image name")
 	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "", "prefix for all container images. used when your cluster doesn't have access to docker hub")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "enable pod security policy")
+	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", consts.SystemNamespaces, "namespaces not to show in odigos ui")
+	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", consts.IgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion

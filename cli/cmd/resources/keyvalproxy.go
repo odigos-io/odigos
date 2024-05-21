@@ -3,11 +3,11 @@ package resources
 import (
 	"context"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/cli/cmd/resources/odigospro"
-	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
-	"github.com/keyval-dev/odigos/cli/pkg/containers"
-	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
+	"github.com/odigos-io/odigos/cli/pkg/containers"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	odigosCloudProxyVersion = "v0.10.0"
+	odigosCloudProxyVersion = "v0.11.0"
 )
 
 const (
@@ -217,6 +217,19 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 				Resources: []string{
 					"instrumentationconfigs",
 				},
+			},
+			{
+				Verbs: []string{
+					"watch",
+					"get",
+					"list",
+					"update",
+					"patch",
+					"create",
+					"delete",
+				},
+				APIGroups: []string{"actions.odigos.io"},
+				Resources: []string{"addclusterinfos", "deleteattributes", "renameattributes"},
 			},
 		},
 	}

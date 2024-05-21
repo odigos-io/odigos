@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.uber.org/multierr"
+	"golang.org/x/sync/errgroup"
 
-	"github.com/keyval-dev/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/utils"
 
-	"github.com/keyval-dev/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -26,7 +27,14 @@ type GetNamespaceItem struct {
 	TotalApps int    `json:"totalApps"`
 }
 
-func GetNamespaces(c *gin.Context) {
+func GetNamespaces(c *gin.Context, odigosns string) {
+
+	odigosConfig, err := kube.DefaultClient.OdigosClient.OdigosConfigurations(odigosns).Get(c.Request.Context(), "odigos-config", metav1.GetOptions{})
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
 	list, err := kube.DefaultClient.CoreV1().Namespaces().List(c.Request.Context(), metav1.ListOptions{})
 	if err != nil {
 		returnError(c, err)
@@ -41,9 +49,7 @@ func GetNamespaces(c *gin.Context) {
 
 	var response GetNamespacesResponse
 	for _, namespace := range list.Items {
-
-		if IsSystemNamespace(namespace.Name) {
-			// skip system namespaces which should not be instrumented
+		if utils.IsItemIgnored(namespace.Name, odigosConfig.Spec.IgnoredNamespaces) {
 			continue
 		}
 
@@ -81,10 +87,6 @@ func PersistNamespaces(c *gin.Context) {
 	}
 
 	for nsName, nsItem := range request {
-		if IsSystemNamespace(nsName) {
-			// skip system namespaces which should not be instrumented
-			continue
-		}
 
 		jsonMergePayload := getJsonMergePatchForInstrumentationLabel(nsItem.FutureSelected)
 		_, err := kube.DefaultClient.CoreV1().Namespaces().Patch(c.Request.Context(), nsName, types.MergePatchType, jsonMergePayload, metav1.PatchOptions{})
@@ -115,12 +117,16 @@ func getJsonMergePatchForInstrumentationLabel(enabled *bool) []byte {
 	return []byte(jsonMergePatchContent)
 }
 func syncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []PersistNamespaceObject) error {
-	var errs error
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(kube.K8sClientDefaultBurst)
+
 	for _, workload := range workloads {
-		err := setWorkloadInstrumentationLabel(ctx, nsName, workload.Name, workload.Kind, workload.Selected)
-		errs = multierr.Append(errs, err)
+		currWorkload := workload
+		g.Go(func() error {
+			return setWorkloadInstrumentationLabel(ctx, nsName, currWorkload.Name, currWorkload.Kind, currWorkload.Selected)
+		})
 	}
-	return errs
+	return g.Wait()
 }
 
 // returns a map, where the key is a namespace name and the value is the

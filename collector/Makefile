@@ -8,12 +8,15 @@ BUILDER := $(TOOLS_BIN_DIR)/builder
 # Determine the current operating system and architecture
 CURRENT_OS := $(shell go env GOOS)
 CURRENT_ARCH := $(shell go env GOARCH)
+GOBIN := $(shell go env GOPATH)/bin
 
 # Define the tool version
-BUILDER_VERSION = 0.94.0
+BUILDER_VERSION = 0.100.0
 
 # Define the URL format for the tool executable
 BUILDER_URL = https://github.com/open-telemetry/opentelemetry-collector/releases/download/cmd%2Fbuilder%2Fv$(BUILDER_VERSION)/ocb_$(BUILDER_VERSION)_$(CURRENT_OS)_$(CURRENT_ARCH)
+
+GOCMD?= go
 
 .PHONY: download_builder
 download_builder:
@@ -28,3 +31,21 @@ genodigoscol: download_builder
 .PHONY: build-odigoscol
 build-odigoscol: download_builder
 	$(BUILDER) --config builder-config.yaml --skip-generate --skip-get-modules
+
+.PHONY: install-tools
+install-tools:
+	cd ./internal/tools && go install github.com/client9/misspell/cmd/misspell
+	cd ./internal/tools && go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	cd ./internal/tools && go install github.com/google/addlicense
+	cd ./internal/tools && go install github.com/jstemmer/go-junit-report
+	cd ./internal/tools && go install go.opentelemetry.io/collector/cmd/mdatagen
+	cd ./internal/tools && go install github.com/ory/go-acc
+	cd ./internal/tools && go install github.com/pavius/impi/cmd/impi
+	cd ./internal/tools && go install github.com/tcnksm/ghr
+	cd ./internal/tools && go install golang.org/x/tools/cmd/goimports
+	cd ./internal/tools && go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment
+	cd ./internal/tools && go install golang.org/x/vuln/cmd/govulncheck@master
+
+.PHONY: generate
+generate: install-tools
+	@find . -type f -name 'metadata.yaml' -print0 | xargs -0 -I {} sh -c 'cd $$(dirname {}); $(GOBIN)/mdatagen metadata.yaml'

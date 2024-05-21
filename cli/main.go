@@ -1,6 +1,6 @@
 package main
 
-import "github.com/keyval-dev/odigos/cli/cmd"
+import "github.com/odigos-io/odigos/cli/cmd"
 
 func main() {
 	cmd.Execute()

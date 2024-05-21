@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { KeyvalImage, KeyvalText } from '@/design.system';
 import { ManagedSource } from '@/types/sources';
-import { LANGUAGES_LOGOS } from '@/utils';
+import { LANGUAGES_LOGOS, getMainContainerLanguage } from '@/utils';
 
 const ManageSourceHeaderWrapper = styled.div`
   display: flex;
@@ -28,7 +28,7 @@ const IMAGE_STYLE: React.CSSProperties = {
 };
 
 export function ManageSourceHeader({ source }: { source: ManagedSource }) {
-  const mainLanguage = source?.languages?.[0].language;
+  const mainLanguage = getMainContainerLanguage(source?.languages);
   const imageUrl = LANGUAGES_LOGOS[mainLanguage];
   return (
     <ManageSourceHeaderWrapper>

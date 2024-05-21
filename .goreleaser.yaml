@@ -17,9 +17,9 @@ builds:
     dir: ./cli
     id: odigos
     ldflags:
-      - -X github.com/keyval-dev/odigos/cli/cmd.OdigosVersion={{ .Tag }}
-      - -X github.com/keyval-dev/odigos/cli/cmd.OdigosCommit={{ .ShortCommit }}
-      - -X github.com/keyval-dev/odigos/cli/cmd.OdigosDate={{ .Date }}
+      - -X github.com/odigos-io/odigos/cli/cmd.OdigosVersion={{ .Tag }}
+      - -X github.com/odigos-io/odigos/cli/cmd.OdigosCommit={{ .ShortCommit }}
+      - -X github.com/odigos-io/odigos/cli/cmd.OdigosDate={{ .Date }}
   - env:
       - CGO_ENABLED=0
     goos:
@@ -32,9 +32,9 @@ builds:
     dir: ./frontend
     id: odigos-ui
     ldflags:
-      - -X github.com/keyval-dev/odigos/frontend/version.OdigosVersion={{ .Tag }}
-      - -X github.com/keyval-dev/odigos/frontend/version.OdigosCommit={{ .ShortCommit }}
-      - -X github.com/keyval-dev/odigos/frontend/version.OdigosDate={{ .Date }}
+      - -X github.com/odigos-io/odigos/frontend/version.OdigosVersion={{ .Tag }}
+      - -X github.com/odigos-io/odigos/frontend/version.OdigosCommit={{ .ShortCommit }}
+      - -X github.com/odigos-io/odigos/frontend/version.OdigosDate={{ .Date }}
     binary: odigos-ui
 archives:
   - id: odigos

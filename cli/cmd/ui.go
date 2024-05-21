@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/keyval-dev/odigos/cli/cmd/resources"
-	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/spf13/pflag"
 
 	"github.com/spf13/cobra"
@@ -24,7 +24,7 @@ import (
 
 const (
 	defaultPort   = 3000
-	uiDownloadUrl = "https://github.com/keyval-dev/odigos/releases/download/v%s/ui_%s_%s_%s.tar.gz"
+	uiDownloadUrl = "https://github.com/odigos-io/odigos/releases/download/v%s/ui_%s_%s_%s.tar.gz"
 )
 
 // uiCmd represents the ui command

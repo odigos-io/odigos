@@ -1,0 +1,15 @@
+[Unit]
+Description=Odigos Distribution of the OpenTelemetry Collector
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/odigos-otelcol/odigos-otelcol.conf
+ExecStart=/usr/bin/odigos-otelcol $OTELCOL_OPTIONS
+KillMode=mixed
+Restart=on-failure
+Type=simple
+User=odigos
+Group=odigos
+
+[Install]
+WantedBy=multi-user.target

@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -57,6 +57,13 @@ type EbpfDirector[T OtelEbpfSdk] struct {
 	// this map can be used when we only have the workload, and need to find the pods to derive pids.
 	workloadToPods map[common.PodWorkload]map[types.NamespacedName]struct{}
 }
+
+type DirectorKey struct {
+	Language common.ProgrammingLanguage
+	common.OtelSdk
+}
+
+type DirectorsMap map[DirectorKey]Director
 
 func NewEbpfDirector[T OtelEbpfSdk](language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
 	return &EbpfDirector[T]{

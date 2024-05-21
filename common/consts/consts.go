@@ -1,6 +1,8 @@
 package consts
 
-import "errors"
+import (
+	"errors"
+)
 
 const (
 	CurrentNamespaceEnvVar         = "CURRENT_NS"
@@ -22,4 +24,9 @@ const (
 
 var (
 	PodsNotFoundErr = errors.New("could not find a ready pod")
+)
+
+var (
+	SystemNamespaces  = []string{DefaultNamespace, "kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
+	IgnoredContainers = []string{"istio-proxy"}
 )

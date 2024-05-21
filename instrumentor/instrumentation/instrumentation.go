@@ -2,17 +2,23 @@ package instrumentation
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/envOverwrite"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/common"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+)
+
+var (
+	ErrNoDefaultSDK = errors.New("no default sdks found")
+	ErrPatchEnvVars = errors.New("failed to patch env vars")
 )
 
 func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) error {
@@ -25,14 +31,14 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 	var modifiedContainers []v1.Container
 	for _, container := range original.Spec.Containers {
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
-		if containerLanguage == nil {
+		if containerLanguage == nil || *containerLanguage == common.UnknownProgrammingLanguage || *containerLanguage == common.IgnoredProgrammingLanguage {
 			modifiedContainers = append(modifiedContainers, container)
 			continue
 		}
 
 		otelSdk, found := defaultSdks[*containerLanguage]
 		if !found {
-			return fmt.Errorf("default sdk not found for language %s", *containerLanguage)
+			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, *containerLanguage, container.Name)
 		}
 
 		instrumentationDeviceName := common.InstrumentationDeviceName(*containerLanguage, otelSdk)
@@ -44,7 +50,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 
 		err := patchEnvVars(runtimeDetails, &container, targetObj)
 		if err != nil {
-			return fmt.Errorf("failed to patch env vars: %v", err)
+			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
 		}
 
 		modifiedContainers = append(modifiedContainers, container)

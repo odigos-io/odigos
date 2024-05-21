@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/keyval-dev/odigos/common"
+	"github.com/odigos-io/odigos/common"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,6 +33,8 @@ type DestinationSpec struct {
 
 // DestinationStatus defines the observed state of Destination
 type DestinationStatus struct {
+	// Represents the observations of a destination's current state.
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 //+genclient
@@ -59,4 +61,18 @@ type DestinationList struct {
 
 func init() {
 	SchemeBuilder.Register(&Destination{}, &DestinationList{})
+}
+
+/* Implement common.ExporterConfigurer */
+func (dest Destination) GetName() string {
+	return dest.Name
+}
+func (dest Destination) GetType() common.DestinationType {
+	return dest.Spec.Type
+}
+func (dest Destination) GetConfig() map[string]string {
+	return dest.Spec.Data
+}
+func (dest Destination) GetSignals() []common.ObservabilitySignal {
+	return dest.Spec.Signals
 }

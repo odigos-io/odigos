@@ -6,7 +6,8 @@ import (
 	"io"
 	"os"
 	"strings"
-	"github.com/keyval-dev/odigos/common/envOverwrite"
+
+	"github.com/odigos-io/odigos/common/envOverwrite"
 )
 
 type Details struct {
@@ -14,7 +15,7 @@ type Details struct {
 	ExeName   string
 	CmdLine   string
 	// Envs only contains the environment variables that we are interested in
-	Envs      map[string]string
+	Envs map[string]string
 }
 
 // Find all processes in the system.
@@ -46,14 +47,14 @@ func FindAllProcesses(predicate func(string) bool) ([]Details, error) {
 			continue
 		}
 
-		details := getPidDetails(pid)
+		details := GetPidDetails(pid)
 		result = append(result, details)
 	}
 
 	return result, nil
 }
 
-func getPidDetails(pid int) Details {
+func GetPidDetails(pid int) Details {
 	exeName := getExecName(pid)
 	cmdLine := getCommandLine(pid)
 	envVars := getRelevantEnvVars(pid)
@@ -114,7 +115,7 @@ func getRelevantEnvVars(pid int) map[string]string {
 
 	for {
 		// The entries are  separated  by
-		// null bytes ('\0'), and there may be a null byte at the end. 
+		// null bytes ('\0'), and there may be a null byte at the end.
 		str, err := r.ReadString(0)
 		if err == io.EOF {
 			break

@@ -6,6 +6,14 @@ build-odiglet:
 build-autoscaler:
 	docker build -t keyval/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
 
+.PHONY: build-instrumentor
+build-instrumentor:
+	docker build -t keyval/odigos-instrumentor:$(TAG) . --build-arg SERVICE_NAME=instrumentor
+
+.PHONY: build-scheduler
+build-scheduler:
+	docker build -t keyval/odigos-scheduler:$(TAG) . --build-arg SERVICE_NAME=scheduler
+
 .PHONY: build-collector
 build-collector:
 	docker build -t keyval/odigos-collector:$(TAG) collector -f collector/Dockerfile
@@ -13,9 +21,9 @@ build-collector:
 .PHONY: build-images
 build-images:
 	make build-autoscaler TAG=$(TAG)
-	docker build -t keyval/odigos-scheduler:$(TAG) . --build-arg SERVICE_NAME=scheduler
+	make build-scheduler TAG=$(TAG)
 	make build-odiglet TAG=$(TAG)
-	docker build -t keyval/odigos-instrumentor:$(TAG) . --build-arg SERVICE_NAME=instrumentor
+	make build-instrumentor TAG=$(TAG)
 	make build-collector TAG=$(TAG)
 
 .PHONY: push-images
@@ -38,6 +46,10 @@ load-to-kind-autoscaler:
 load-to-kind-collector:
 	kind load docker-image keyval/odigos-collector:$(TAG)
 
+.PHONY: load-to-kind-instrumentor
+load-to-kind-instrumentor:
+	kind load docker-image keyval/odigos-instrumentor:$(TAG)
+
 .PHONY: load-to-kind
 load-to-kind:
 	make load-to-kind-autoscaler TAG=$(TAG)
@@ -53,6 +65,10 @@ restart-odiglet:
 .PHONY: restart-autoscaler
 restart-autoscaler:
 	kubectl rollout restart deployment odigos-autoscaler -n odigos-system
+
+.PHONY: restart-instrumentor
+restart-instrumentor:
+	kubectl rollout restart deployment odigos-instrumentor -n odigos-system
 
 .PHONY: restart-collector
 restart-collector:
@@ -71,6 +87,10 @@ deploy-autoscaler:
 .PHONY: deploy-collector
 deploy-collector:
 	make build-collector TAG=$(TAG) && make load-to-kind-collector TAG=$(TAG) && make restart-collector
+
+.PHONY: deploy-instrumentor
+deploy-instrumentor:
+	make build-instrumentor TAG=$(TAG) && make load-to-kind-instrumentor TAG=$(TAG) && make restart-instrumentor
 
 .PHONY: debug-odiglet
 debug-odiglet:

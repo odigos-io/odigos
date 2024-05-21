@@ -4,13 +4,13 @@ import (
 	"context"
 	"os"
 
-	"github.com/keyval-dev/odigos/common"
-	"github.com/keyval-dev/odigos/odiglet/pkg/ebpf"
-	"github.com/keyval-dev/odigos/odiglet/pkg/env"
-	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation"
-	"github.com/keyval-dev/odigos/odiglet/pkg/instrumentation/instrumentlang"
-	"github.com/keyval-dev/odigos/odiglet/pkg/kube"
-	"github.com/keyval-dev/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
+	"github.com/odigos-io/odigos/odiglet/pkg/env"
+	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
+	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
+	"github.com/odigos-io/odigos/odiglet/pkg/kube"
+	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -110,11 +110,15 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 	manager.Run()
 }
 
-func initEbpf() (map[common.ProgrammingLanguage]ebpf.Director, error) {
+func initEbpf() (ebpf.DirectorsMap, error) {
 	goInstrumentationFactory := ebpf.NewGoInstrumentationFactory()
 	goDirector := ebpf.NewEbpfDirector(common.GoProgrammingLanguage, goInstrumentationFactory)
+	goDirectorKey := ebpf.DirectorKey{
+		Language: common.GoProgrammingLanguage,
+		OtelSdk:  common.OtelSdk{SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+	}
 
-	return map[common.ProgrammingLanguage]ebpf.Director{
-		common.GoProgrammingLanguage: goDirector,
+	return ebpf.DirectorsMap{
+		goDirectorKey: goDirector,
 	}, nil
 }

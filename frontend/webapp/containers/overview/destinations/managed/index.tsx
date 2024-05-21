@@ -55,8 +55,8 @@ export function DestinationContainer() {
     <Container>
       {!destinationList?.length ? (
         <EmptyList
-          title={OVERVIEW.EMPTY_ACTION}
-          btnTitle={OVERVIEW.ADD_NEW_ACTION}
+          title={OVERVIEW.EMPTY_DESTINATION}
+          btnTitle={OVERVIEW.ADD_NEW_DESTINATION}
           btnAction={handleAddDestination}
         />
       ) : (

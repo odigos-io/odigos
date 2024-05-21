@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/keyval-dev/odigos/autoscaler/utils"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/autoscaler/utils"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -71,29 +73,19 @@ func createDeployment(desired *appsv1.Deployment, ctx context.Context, c client.
 }
 
 func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ctx context.Context, c client.Client) (*appsv1.Deployment, error) {
-	updated := existing.DeepCopy()
-	if updated.Annotations == nil {
-		updated.Annotations = map[string]string{}
-	}
-	if updated.Labels == nil {
-		updated.Labels = map[string]string{}
-	}
+	logger := log.FromContext(ctx)
+	res, err := controllerutil.CreateOrPatch(ctx, c, existing, func() error {
+		existing.Spec.Template = desired.Spec.Template
+		return nil
+	})
 
-	updated.Spec = desired.Spec
-	updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
-	for k, v := range desired.ObjectMeta.Annotations {
-		updated.ObjectMeta.Annotations[k] = v
-	}
-	for k, v := range desired.ObjectMeta.Labels {
-		updated.ObjectMeta.Labels[k] = v
-	}
-
-	patch := client.MergeFrom(existing)
-	if err := c.Patch(ctx, updated, patch); err != nil {
+	if err != nil {
+		logger.Error(err, "Failed to patch deployment")
 		return nil, err
 	}
 
-	return updated, nil
+	logger.V(0).Info("Deployment patched", "result", res)
+	return existing, nil
 }
 
 func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,

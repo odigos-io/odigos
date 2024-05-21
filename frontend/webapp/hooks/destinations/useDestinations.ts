@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { getDestinations, getDestinationsTypes } from '@/services';
 
 export function useDestinations() {
-  const { isLoading, data, isError, error } = useQuery(
+  const { isLoading, data } = useQuery(
     [QUERIES.API_DESTINATION_TYPES],
     getDestinationsTypes
   );

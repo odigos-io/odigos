@@ -3,10 +3,10 @@ package resources
 import (
 	"context"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
-	"github.com/keyval-dev/odigos/cli/pkg/containers"
-	"github.com/keyval-dev/odigos/cli/pkg/kube"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
+	"github.com/odigos-io/odigos/cli/pkg/containers"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -118,6 +118,16 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				},
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments/status"},
+			},
+			{
+				Verbs: []string{
+					"create",
+					"patch",
+					"update",
+					"delete",
+				},
+				APIGroups: []string{"autoscaling"},
+				Resources: []string{"horizontalpodautoscalers"},
 			},
 		},
 	}

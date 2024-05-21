@@ -84,3 +84,9 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: generate-client
+generate-client:
+	GOWORK=off go mod vendor
+	./hack/update-codegen.sh
+	rm -rf ./vendor

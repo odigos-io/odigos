@@ -3,10 +3,10 @@ package resources
 import (
 	"context"
 
-	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
-	"github.com/keyval-dev/odigos/cli/cmd/resources/resourcemanager"
-	"github.com/keyval-dev/odigos/cli/pkg/kube"
-	"github.com/keyval-dev/odigos/common"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -83,6 +83,11 @@ func otelSdkConfigOnPrem() (map[common.ProgrammingLanguage]common.OtelSdk, map[c
 		SdkTier: common.EnterpriseOtelSdkTier,
 	}
 
+	nativeEnterprise := common.OtelSdk{
+		SdkType: common.NativeOtelSdkType,
+		SdkTier: common.EnterpriseOtelSdkTier,
+	}
+
 	return map[common.ProgrammingLanguage]common.OtelSdk{
 			common.JavaProgrammingLanguage:       eBPFEnterprise, // Notice - for onprem, the default for java is eBPF
 			common.PythonProgrammingLanguage:     eBPFEnterprise, // Also Python
@@ -92,7 +97,7 @@ func otelSdkConfigOnPrem() (map[common.ProgrammingLanguage]common.OtelSdk, map[c
 			common.MySQLProgrammingLanguage:      eBPFEnterprise,
 		},
 		map[common.ProgrammingLanguage][]common.OtelSdk{
-			common.JavaProgrammingLanguage:       {nativeCommunity, eBPFEnterprise},
+			common.JavaProgrammingLanguage:       {nativeCommunity, eBPFEnterprise, nativeEnterprise},
 			common.PythonProgrammingLanguage:     {nativeCommunity, eBPFEnterprise},
 			common.GoProgrammingLanguage:         {eBPFEnterprise},
 			common.DotNetProgrammingLanguage:     {nativeCommunity},

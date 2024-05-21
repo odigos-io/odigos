@@ -15,6 +15,7 @@ const EmptyListWrapper = styled.div`
   width: 100%;
   margin-top: 130px;
   display: flex;
+  gap: 6px;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -26,9 +27,7 @@ export function EmptyList({ title, btnTitle, btnAction }: EmptyListProps) {
       <Empty />
       {title && (
         <>
-          <br />
           <KeyvalText size={14}>{title}</KeyvalText>
-          <br />
         </>
       )}
       {btnAction && (

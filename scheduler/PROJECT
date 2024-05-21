@@ -2,7 +2,7 @@ domain: odigos.io
 layout:
 - go.kubebuilder.io/v3
 projectName: scheduler
-repo: github.com/keyval-dev/odigos/scheduler
+repo: github.com/odigos-io/odigos/scheduler
 resources:
 - controller: true
   domain: odigos.io

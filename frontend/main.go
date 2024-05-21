@@ -7,18 +7,19 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 
-	"github.com/keyval-dev/odigos/common/consts"
-	"github.com/keyval-dev/odigos/common/utils"
-	"github.com/keyval-dev/odigos/destinations"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/destinations"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	"github.com/gin-contrib/cors"
 
-	"github.com/keyval-dev/odigos/frontend/endpoints/actions"
-	"github.com/keyval-dev/odigos/frontend/kube"
-	"github.com/keyval-dev/odigos/frontend/version"
+	"github.com/odigos-io/odigos/frontend/endpoints/actions"
+	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/version"
 
-	"github.com/keyval-dev/odigos/frontend/endpoints"
+	"github.com/odigos-io/odigos/frontend/endpoints"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,7 +41,7 @@ type Flags struct {
 var uiFS embed.FS
 
 func parseFlags() Flags {
-	defaultKubeConfig := utils.GetDefaultKubeConfigPath()
+	defaultKubeConfig := env.GetDefaultKubeConfigPath()
 
 	var flags Flags
 	flag.BoolVar(&flags.Version, "version", false, "Print Odigos UI version.")
@@ -88,7 +89,7 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 	// Serve API
 	apis := r.Group("/api")
 	{
-		apis.GET("/namespaces", endpoints.GetNamespaces)
+		apis.GET("/namespaces", func(c *gin.Context) { endpoints.GetNamespaces(c, flags.Namespace) })
 		apis.POST("/namespaces", endpoints.PersistNamespaces)
 
 		apis.GET("/sources", endpoints.GetSources)
@@ -142,6 +143,7 @@ func httpFileServerWith404(fs http.FileSystem) http.Handler {
 }
 
 func main() {
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := parseFlags()
 
 	if flags.Version {
