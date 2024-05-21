@@ -3,43 +3,6 @@ title: "Agent Configuration"
 sidebarTitle: "Agent Configuration"
 ---
 
-Odigos VM Agent reads it's configuration from `/etc/odigos-vmagent/agent.yaml`. This file controls the following aspects of the agent:
+After installing the agent, you need to add a configuration file to instruct the agents which sources to instrument, which destinations to send telemetry data to, and which processors to apply to the telemetry data.
 
-- Sources - list of systemd service names to auto-instrument.
-- Destinations - list of Observability Backends to send telemetry data to.
-- Processors - modify telemetry data before sending it to the destination.
-
-An example format of the `agent.yaml` file is shown below:
-
-```yaml
-sources:
-  systemd:
-    services:
-    - service_name: <my-service>
-      instrumentation_enabled: true
-    ignored_service_names:
-    - rsyslog
-    - ssh
-    - networkd-dispatcher
-
-processors:
-- name: addinfo
-  type: resource
-  config:
-    attributes:
-    - action: insert
-      key: cluster.name
-      value: "my-cluster"
-  signals:
-  - LOGS
-  - METRICS
-  - TRACES
-
-destinations:
-- name: jaeger
-  type: jaeger
-  config:
-    JAEGER_URL: <jaeger-collector-otlp-grpc-endpoint>
-  signals:
-  - TRACES
-```
+Read more about the agent configuration in the [Reference](/vmagent/configuration/reference).

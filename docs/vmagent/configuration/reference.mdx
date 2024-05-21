@@ -49,7 +49,34 @@ destinations:
 The `sources` section of the `agent.yaml` file contains the following fields:
 
 - `systemd` - systemd sources configuration.
-  - `services` - configuration op
-    - `service_name` - name of the systemd service.
-    - `instrumentation_enabled` - enable or disable instrumentation for the service.
-  - `ignored_service_names` - list of systemd services to ignore.
+  - `services` - configuration of specific systemd services by name.
+    - `service_name` - name of the systemd service. Do not include the `.service` suffix if present (e.g. `my-app` instead of `my-app.service`).
+    - `instrumentation_enabled` - enable or disable instrumentation for the service. Default is `false` (disabled).
+  - `ignored_service_names` - list of systemd services to ignore, useful for excluding os services like `ssh`, `rsyslog`, etc.
+
+## Destinations
+
+The `destinations` section of the `agent.yaml` file contains an unordered list of Observability Backends to send telemetry data to.
+
+Each destination has the following fields:
+
+- `name` (optional): A name for the destination. This field is not used by Odigos and is only for your convenience.
+- `type` (required): The type of the destination.
+- `config` (required): A field with key-value pairs that are specific to the destination type.
+- `signals` (required): An array with the signals that the destination will export (TRACES, METRICS, LOGS).
+
+## Processors
+
+The `processors` section of the `agent.yaml` file contains a list of OpenTelemetry collector processors to include in the agent pipeline.
+You can read more about it [here](/pipeline/actions/introduction).
+
+The configuration is a list with the following characteristics:
+- Each entry in the list will be included in the agent OpenTelemetry Collector pipeline. To disable a processor, remove/comment it from the list.
+- The processors will be included in the order they are defined in the list. If a processor depends on another, the dependent processor should be defined first.
+
+For each processor, the following fields are configurable:
+- `type` (require): The type of the processor. This is the name of the processor you want to use, as defined in the OpenTelemetry Collector (batch, attributes, etc).
+- `signals` (required): An array with the signals that the processor will act on (TRACES, METRICS, LOGS).
+- `config` (optional): A field to pass configuration to the processor. The structure of this field is specific to each processor, and you can find the configuration options for each processor in the OpenTelemetry Collector Contrib codebase.
+- `name` (optional): Allows you to attach a meaningful name to a processor for convenience. Odigos does not use or assume any meaning from this field.
+
