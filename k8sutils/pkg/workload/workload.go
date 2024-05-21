@@ -1,27 +1,29 @@
-package utils
+package workload
 
 import (
 	"errors"
 	"strings"
 )
 
+// runtime name is a way to store workload specific CRs with odigos
+// and give the k8s object a name which is unique and can be used to extract the workload name and kind
 func GetRuntimeObjectName(name string, kind string) string {
 	return strings.ToLower(kind + "-" + name)
 }
 
-func GetTargetFromRuntimeName(name string) (string, string, error) {
+func GetWorkloadInfoRuntimeName(name string) (workloadName string, workloadKind string, err error) {
 	hyphenIndex := strings.Index(name, "-")
 	if hyphenIndex == -1 {
-		return "", "", errors.New("invalid runtime name")
+		err = errors.New("invalid runtime name")
+		return
 	}
 
-	workloadKind, err := kindFromLowercase(name[:hyphenIndex])
+	workloadKind, err = kindFromLowercase(name[:hyphenIndex])
 	if err != nil {
-		return "", "", err
+		return
 	}
-	workloadName := name[hyphenIndex+1:]
-
-	return workloadName, workloadKind, nil
+	workloadName = name[hyphenIndex+1:]
+	return
 }
 
 func kindFromLowercase(lowercaseKind string) (string, error) {

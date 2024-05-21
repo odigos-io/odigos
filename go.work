@@ -9,6 +9,7 @@ use (
 	./destinations
 	./frontend
 	./instrumentor
+	./k8sutils
 	./odiglet
 	./procdiscovery
 	./scheduler

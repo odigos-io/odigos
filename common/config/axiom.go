@@ -2,7 +2,6 @@ package config
 
 import (
 	"github.com/odigos-io/odigos/common"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const (
@@ -19,7 +18,7 @@ func (a *Axiom) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 	dataset, exists := dest.GetConfig()[axiomDatasetKey]
 	if !exists {
 		dataset = "default"
-		ctrl.Log.V(0).Info("Axiom dataset not specified, using default")
+		// ctrl.Log.V(0).Info("Axiom dataset not specified, using default")
 	}
 
 	axiomExporterName := "otlphttp/axiom-" + dest.GetName()

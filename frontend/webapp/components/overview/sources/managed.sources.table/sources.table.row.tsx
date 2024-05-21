@@ -103,7 +103,12 @@ export function SourcesTableRow({
   onSelectedCheckboxChange: (id: string) => void;
   onRowClick: (source: ManagedSource) => void;
 }) {
-  const workloadProgrammingLanguage = getMainContainerLanguage(item?.languages);
+  const workloadProgrammingLanguage = getMainContainerLanguage(
+    item?.instrumented_application_details?.languages || undefined
+  );
+
+  const containerName =
+    item?.instrumented_application_details.languages?.[0].container_name || '';
   return (
     <StyledTr key={item.kind}>
       <StyledMainTd isFirstRow={index === 0}>
@@ -143,25 +148,15 @@ export function SourcesTableRow({
                 </KeyvalText>
               </FooterItemWrapper>
               <FooterItemWrapper>
-                <Namespace
-                  style={{
-                    width: 16,
-                    height: 16,
-                  }}
-                />
+                <Namespace style={{ width: 16, height: 16 }} />
                 <KeyvalText color={theme.text.light_grey} size={14}>
                   {item.namespace}
                 </KeyvalText>
               </FooterItemWrapper>
               <FooterItemWrapper>
-                <Container
-                  style={{
-                    width: 16,
-                    height: 16,
-                  }}
-                />
+                <Container style={{ width: 16, height: 16 }} />
                 <KeyvalText color={theme.text.light_grey} size={14}>
-                  {item?.languages?.[0].container_name}
+                  {containerName}
                 </KeyvalText>
               </FooterItemWrapper>
             </FooterContainer>

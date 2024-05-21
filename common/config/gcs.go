@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/odigos-io/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -26,7 +25,7 @@ func (g *GoogleCloudStorage) ModifyConfig(dest ExporterConfigurer, currentConfig
 
 	bucket, ok := dest.GetConfig()[gcsBucketKey]
 	if !ok {
-		log.Log.V(0).Info("GCS bucket not specified, using default bucket %s", defaultGCSBucket)
+		// log.Log.V(0).Info("GCS bucket not specified, using default bucket %s", defaultGCSBucket)
 		bucket = defaultGCSBucket
 	}
 

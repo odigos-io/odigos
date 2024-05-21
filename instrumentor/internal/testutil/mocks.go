@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -118,7 +118,7 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
 	return &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      utils.GetRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
+			Name:      workload.GetRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
 			Namespace: workloadObject.GetNamespace(),
 			OwnerReferences: []metav1.OwnerReference{
 				{

@@ -2,21 +2,18 @@ package googlecloudstorageexporter
 
 import (
 	"context"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter/internal/metadata"
 	"go.opentelemetry.io/collector/exporter"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 )
 
-const (
-	// The value of "type" key in configuration.
-	typeStr = "googlecloudstorage"
-)
-
 // NewFactory creates a factory for GCS exporter.
 func NewFactory() exporter.Factory {
 	return exporter.NewFactory(
-		typeStr,
+		metadata.Type,
 		createDefaultConfig,
 		exporter.WithLogs(createLogsExporter, component.StabilityLevelBeta),
 		exporter.WithTraces(createTracesExporter, component.StabilityLevelBeta))

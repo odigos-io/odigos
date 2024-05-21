@@ -5,6 +5,7 @@ import (
 	"errors"
 	"path"
 
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,4 +33,20 @@ func setWorkloadInstrumentationLabel(ctx context.Context, nsName string, workloa
 	default:
 		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
+}
+
+// getNsInstrumentedLabel return the instrumentation label of the object.
+// if the object is not labeled, it returns nil
+func isObjectLabeledForInstrumentation(metav metav1.ObjectMeta) *bool {
+	labels := metav.GetLabels()
+	if labels == nil {
+		return nil
+	}
+	namespaceInstrumented, found := labels[consts.OdigosInstrumentationLabel]
+	var nsInstrumentationLabeled *bool
+	if found {
+		instrumentationLabel := namespaceInstrumented == consts.InstrumentationEnabled
+		nsInstrumentationLabeled = &instrumentationLabel
+	}
+	return nsInstrumentationLabeled
 }

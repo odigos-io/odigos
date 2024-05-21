@@ -1,0 +1,9 @@
+type: googlecloudstorage
+
+status:
+  class: exporter
+  stability:
+    beta: [traces, logs]
+  distributions: [contrib]
+  codeowners:
+    active: [edeNFed]
