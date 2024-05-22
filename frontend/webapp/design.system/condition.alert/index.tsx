@@ -40,7 +40,7 @@ const ConditionSeparator = styled.div`
   margin-left: 10px;
 `;
 
-const Conditions: React.FC<ConditionAlertProps> = ({ conditions }) => {
+export const Conditions: React.FC<ConditionAlertProps> = ({ conditions }) => {
   return (
     <div>
       <KeyvalText weight={600}>Status</KeyvalText>
@@ -72,5 +72,3 @@ const Conditions: React.FC<ConditionAlertProps> = ({ conditions }) => {
     </div>
   );
 };
-
-export default Conditions;

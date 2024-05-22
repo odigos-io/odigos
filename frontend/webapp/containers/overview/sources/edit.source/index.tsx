@@ -6,7 +6,6 @@ import { useMutation } from 'react-query';
 import { Back } from '@/assets/icons/overview';
 import { DeleteSource } from '@/components/overview';
 import { useKeyDown, useNotification } from '@/hooks';
-import Conditions from '@/design.system/condition.alert';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { deleteSource, getSource, patchSources } from '@/services';
 import { ManageSourceHeader } from '@/components/overview/sources/manage.source.header/manage.source.header';
@@ -30,6 +29,7 @@ import {
   KeyvalInput,
   KeyvalLoader,
   KeyvalText,
+  Conditions,
 } from '@/design.system';
 
 const NAME = 'name';
