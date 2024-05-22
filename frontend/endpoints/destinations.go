@@ -53,6 +53,7 @@ type Destination struct {
 	ExportedSignals ExportedSignals              `json:"signals"`
 	Fields          map[string]string            `json:"fields"`
 	DestinationType DestinationTypesCategoryItem `json:"destination_type"`
+	Conditions      []metav1.Condition           `json:"conditions,omitempty"`
 }
 
 func GetDestinationTypes(c *gin.Context) {
@@ -360,6 +361,16 @@ func k8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 	mergedFields := mergeDataAndSecrets(k8sDest.Spec.Data, secretFields)
 	destTypeConfig := DestinationTypeConfigToCategoryItem(destinations.GetDestinationByType(string(destType)))
 
+	var conditions []metav1.Condition
+	for _, condition := range k8sDest.Status.Conditions {
+		conditions = append(conditions, metav1.Condition{
+			Type:               condition.Type,
+			Status:             condition.Status,
+			Message:            condition.Message,
+			LastTransitionTime: condition.LastTransitionTime,
+		})
+	}
+
 	return Destination{
 		Id:   k8sDest.Name,
 		Name: destName,
@@ -371,6 +382,7 @@ func k8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 		},
 		Fields:          mergedFields,
 		DestinationType: destTypeConfig,
+		Conditions:      conditions,
 	}
 }
 
