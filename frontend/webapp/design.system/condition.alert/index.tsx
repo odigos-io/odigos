@@ -7,6 +7,7 @@ import { Error, Success } from '@/assets/icons/app';
 
 interface ConditionAlertProps {
   conditions: Condition[] | undefined;
+  title?: string;
 }
 
 const ConditionAlertContainer = styled.div`
@@ -40,11 +41,14 @@ const ConditionSeparator = styled.div`
   margin-left: 10px;
 `;
 
-export const Conditions: React.FC<ConditionAlertProps> = ({ conditions }) => {
+export const Conditions: React.FC<ConditionAlertProps> = ({
+  conditions,
+  title = 'Status',
+}) => {
   return conditions ? (
     <div>
       <KeyvalText size={14} weight={600}>
-        Status
+        {title}
       </KeyvalText>
       <ConditionAlertContainer>
         {conditions.map((condition, index) => (
