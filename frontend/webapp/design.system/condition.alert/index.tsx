@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import theme from '@/styles/palette';
 import { Condition } from '@/types';
 import { KeyvalText } from '../text/text';
-import { Error, GreenCheck, RedError, Success } from '@/assets/icons/app';
+import { GreenCheck, RedError } from '@/assets/icons/app';
 
 interface ConditionAlertProps {
   conditions: Condition[] | undefined;
