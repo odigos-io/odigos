@@ -17,21 +17,14 @@ type SourceLanguage struct {
 }
 
 type InstrumentedApplicationDetails struct {
-	Languages []SourceLanguage `json:"languages,omitempty"`
-}
-
-type Condition struct {
-	Type               string `json:"type"`
-	Status             string `json:"status"`
-	Message            string `json:"message"`
-	LastTransitionTime string `json:"last_transition_time"`
+	Languages  []SourceLanguage   `json:"languages,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // this object contains only part of the source fields. It is used to display the sources in the frontend
 type ThinSource struct {
 	SourceID
-	IaDetails  *InstrumentedApplicationDetails `json:"instrumented_application_details"`
-	Conditions []Condition                     `json:"conditions,omitempty"`
+	IaDetails *InstrumentedApplicationDetails `json:"instrumented_application_details"`
 }
 
 type SourceID struct {
@@ -149,15 +142,6 @@ func GetSource(c *gin.Context) {
 		ts.IaDetails = k8sInstrumentedAppToThinSource(instrumentedApplication).IaDetails
 	}
 
-	for _, condition := range instrumentedApplication.Status.Conditions {
-		ts.Conditions = append(ts.Conditions, Condition{
-			Type:               condition.Type,
-			Status:             string(condition.Status),
-			Message:            condition.Message,
-			LastTransitionTime: condition.LastTransitionTime.String(),
-		})
-	}
-
 	c.JSON(200, Source{
 		ThinSource:   ts,
 		ReportedName: reportedName,
@@ -261,8 +245,18 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 	source.Name = app.OwnerReferences[0].Name
 	source.Kind = app.OwnerReferences[0].Kind
 	source.Namespace = app.Namespace
+	var conditions []metav1.Condition
+	for _, condition := range app.Status.Conditions {
+		conditions = append(conditions, metav1.Condition{
+			Type:               condition.Type,
+			Status:             condition.Status,
+			Message:            condition.Message,
+			LastTransitionTime: condition.LastTransitionTime,
+		})
+	}
 	source.IaDetails = &InstrumentedApplicationDetails{
-		Languages: []SourceLanguage{},
+		Languages:  []SourceLanguage{},
+		Conditions: conditions,
 	}
 	for _, language := range app.Spec.RuntimeDetails {
 		source.IaDetails.Languages = append(source.IaDetails.Languages, SourceLanguage{
