@@ -30,10 +30,26 @@ import { deleteSource, getSource, patchSources } from '@/services/sources';
 import { useKeyDown, useNotification } from '@/hooks';
 import theme from '@/styles/palette';
 import { ManagedSource } from '@/types/sources';
+import ConditionAlert from '@/design.system/condition.alert';
 
 const NAME = 'name';
 const KIND = 'kind';
 const NAMESPACE = 'namespace';
+
+const exampleConditions = [
+  {
+    type: 'AppliedInstrumentationDevice',
+    status: 'True',
+    message: 'Successfully applied instrumentation device to pod template',
+    last_transition_time: '2024-05-21 11:44:53 +0300 IDT',
+  },
+  {
+    type: 'FailedToLoad',
+    status: 'False',
+    message: 'offset not found: net/http.response:status (1.22.3)',
+    last_transition_time: '2024-05-21 11:45:00 +0300 IDT',
+  },
+];
 
 export function EditSourceForm() {
   const [inputValue, setInputValue] = useState('');
@@ -114,32 +130,38 @@ export function EditSourceForm() {
         <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
       </BackButtonWrapper>
       {currentSource && <ManageSourceHeader source={currentSource} />}
-      <FieldWrapper>
-        <KeyvalInput
-          label={OVERVIEW.REPORTED_NAME}
-          value={inputValue}
-          onChange={(e) => setInputValue(e)}
-        />
-      </FieldWrapper>
-      <SaveSourceButtonWrapper>
-        <KeyvalButton disabled={!inputValue} onClick={onSaveClick}>
-          <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
-            {ACTION.SAVE}
-          </KeyvalText>
-        </KeyvalButton>
-      </SaveSourceButtonWrapper>
-      <DeleteSource
-        onDelete={onSourceDelete}
-        name={currentSource?.name}
-        image_url={
-          LANGUAGES_LOGOS[
-            getMainContainerLanguage(
-              currentSource?.instrumented_application_details.languages ||
-                undefined
-            )
-          ]
-        }
-      />
+      <div style={{ display: 'flex', gap: 60 }}>
+        <div>
+          <FieldWrapper>
+            <KeyvalInput
+              label={OVERVIEW.REPORTED_NAME}
+              value={inputValue}
+              onChange={(e) => setInputValue(e)}
+            />
+          </FieldWrapper>
+          <SaveSourceButtonWrapper>
+            <KeyvalButton disabled={!inputValue} onClick={onSaveClick}>
+              <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
+                {ACTION.SAVE}
+              </KeyvalText>
+            </KeyvalButton>
+          </SaveSourceButtonWrapper>
+          <DeleteSource
+            onDelete={onSourceDelete}
+            name={currentSource?.name}
+            image_url={
+              LANGUAGES_LOGOS[
+                getMainContainerLanguage(
+                  currentSource?.instrumented_application_details.languages ||
+                    undefined
+                )
+              ]
+            }
+          />
+        </div>
+        <ConditionAlert conditions={currentSource.conditions} />
+      </div>
+
       <Notification />
     </ManageSourcePageContainer>
   );
