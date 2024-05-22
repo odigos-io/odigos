@@ -6,7 +6,7 @@ import { KeyvalText } from '../text/text';
 import { Error, Success } from '@/assets/icons/app';
 
 interface ConditionAlertProps {
-  conditions: Condition[];
+  conditions: Condition[] | undefined;
 }
 
 const ConditionAlertContainer = styled.div`
@@ -41,7 +41,7 @@ const ConditionSeparator = styled.div`
 `;
 
 export const Conditions: React.FC<ConditionAlertProps> = ({ conditions }) => {
-  return (
+  return conditions ? (
     <div>
       <KeyvalText weight={600}>Status</KeyvalText>
       <ConditionAlertContainer>
@@ -70,5 +70,5 @@ export const Conditions: React.FC<ConditionAlertProps> = ({ conditions }) => {
         ))}
       </ConditionAlertContainer>
     </div>
-  );
+  ) : null;
 };

@@ -144,7 +144,11 @@ export function EditSourceForm() {
             }
           />
         </div>
-        <Conditions conditions={currentSource.conditions} />
+        <Conditions
+          conditions={
+            currentSource.instrumented_application_details?.conditions
+          }
+        />
       </div>
 
       <Notification />

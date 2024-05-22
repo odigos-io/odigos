@@ -18,8 +18,8 @@ export interface ManagedSource {
   name: string;
   namespace: string;
   reported_name?: string;
-  conditions: Array<Condition>;
   instrumented_application_details: {
+    conditions: Array<Condition>;
     languages: Array<{
       container_name: string;
       language: string;
