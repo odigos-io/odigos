@@ -13,9 +13,9 @@ import { KIND_COLORS } from '@/styles/global';
 import {
   LANGUAGES_COLORS,
   LANGUAGES_LOGOS,
-  WORKLOAD_PROGRAMMING_LANGUAGES,
   getMainContainerLanguage,
 } from '@/utils';
+import { ConditionCheck } from '@/components/common';
 
 const StyledTr = styled.tr`
   &:hover {
@@ -109,6 +109,7 @@ export function SourcesTableRow({
 
   const containerName =
     item?.instrumented_application_details.languages?.[0].container_name || '';
+
   return (
     <StyledTr key={item.kind}>
       <StyledMainTd isFirstRow={index === 0}>
@@ -131,8 +132,12 @@ export function SourcesTableRow({
               <KeyvalText weight={600}>
                 {`${item.name || 'Source'} `}
               </KeyvalText>
-              <KeyvalText weight={600}>
-                {`${item.reported_name || ''} `}
+              <KeyvalText color={theme.text.light_grey} size={14}>
+                <ConditionCheck
+                  conditions={
+                    item?.instrumented_application_details?.conditions || []
+                  }
+                />
               </KeyvalText>
             </NameContainer>
             <FooterContainer>
