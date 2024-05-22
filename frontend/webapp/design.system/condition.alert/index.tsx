@@ -104,7 +104,7 @@ export const Conditions: React.FC<ConditionAlertProps> = ({
                     {condition.type}
                   </KeyvalText>
                   <KeyvalText color={theme.text.grey} size={12}>
-                    {condition.last_transition_time}
+                    {condition.lastTransitionTime}
                   </KeyvalText>
                 </ConditionDetails>
               </div>
