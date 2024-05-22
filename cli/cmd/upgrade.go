@@ -4,7 +4,6 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"runtime"
@@ -17,7 +16,6 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
 	"github.com/spf13/cobra"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -123,12 +121,6 @@ and apply any required migrations and adaptations.`,
 			os.Exit(1)
 		}
 
-		err = fixBreakingChangesAfterUpgrade(ctx, client, ns)
-		if err != nil {
-			fmt.Println("Odigos upgrade failed - unable to fix breaking changes.")
-			os.Exit(1)
-		}
-
 		// download a ui binary for the new version
 		_, binaryDir := GetOdigosUiBinaryPath()
 		err = DoDownloadNewUiBinary(targetVersion.String(), binaryDir, runtime.GOARCH, runtime.GOOS)
@@ -136,31 +128,6 @@ and apply any required migrations and adaptations.`,
 			fmt.Printf("Error downloading new Odigos UI binary: %v\n", err)
 		}
 	},
-}
-
-func fixBreakingChangesAfterUpgrade(ctx context.Context, client *kube.Client, ns string) error {
-
-	// to support multiple gateways, odigos service changed it's ClusterIP to None
-	// this change is not automatically applied to existing installations, we need to delete the service
-	// so that it can be recreated with the new ClusterIP value
-	svc, err := client.CoreV1().Services(ns).Get(ctx, "odigos-gateway", metav1.GetOptions{})
-	if err != nil && !apierrors.IsNotFound(err) {
-		fmt.Println("Odigos upgrade failed - unable to read the Odigos gateway service.")
-		return err
-	}
-
-	if svc != nil {
-		if svc.Spec.ClusterIP != "None" {
-			fmt.Println("Odigos upgrade - recreating the Odigos gateway service to support multiple gateways.")
-			err = client.CoreV1().Services(ns).Delete(ctx, "odigos-gateway", metav1.DeleteOptions{})
-			if err != nil {
-				fmt.Println("Odigos upgrade failed - unable to delete the Odigos gateway service")
-				return err
-			}
-		}
-	}
-
-	return nil
 }
 
 func init() {
