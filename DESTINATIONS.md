@@ -20,6 +20,7 @@
 | Splunk                  | ✅      |         |      |
 | Lightstep               | ✅      |         |      |
 | Sentry                  | ✅      |         |      |
+| Causely                 | ✅      | ✅      |      |
 
 ## Open Source
 
