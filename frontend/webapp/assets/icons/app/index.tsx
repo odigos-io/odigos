@@ -9,8 +9,7 @@ import Check from './check.svg';
 import Copy from './copy.svg';
 import Copied from './copied.svg';
 import YamlIcon from './yaml.svg';
-import Error from './error.svg';
-import Success from './success.svg';
+
 import GreenCheck from './green-check.svg';
 import RedError from './red-error.svg';
 
@@ -26,8 +25,6 @@ export {
   Copy,
   Copied,
   YamlIcon,
-  Error,
-  Success,
   GreenCheck,
   RedError,
 };
