@@ -20,10 +20,18 @@ type InstrumentedApplicationDetails struct {
 	Languages []SourceLanguage `json:"languages,omitempty"`
 }
 
+type Condition struct {
+	Type               string `json:"type"`
+	Status             string `json:"status"`
+	Message            string `json:"message"`
+	LastTransitionTime string `json:"last_transition_time"`
+}
+
 // this object contains only part of the source fields. It is used to display the sources in the frontend
 type ThinSource struct {
 	SourceID
-	IaDetails *InstrumentedApplicationDetails `json:"instrumented_application_details"`
+	IaDetails  *InstrumentedApplicationDetails `json:"instrumented_application_details"`
+	Conditions []Condition                     `json:"conditions,omitempty"`
 }
 
 type SourceID struct {
@@ -139,6 +147,15 @@ func GetSource(c *gin.Context) {
 	if err == nil {
 		// valid instrumented application, grab the runtime details
 		ts.IaDetails = k8sInstrumentedAppToThinSource(instrumentedApplication).IaDetails
+	}
+
+	for _, condition := range instrumentedApplication.Status.Conditions {
+		ts.Conditions = append(ts.Conditions, Condition{
+			Type:               condition.Type,
+			Status:             string(condition.Status),
+			Message:            condition.Message,
+			LastTransitionTime: condition.LastTransitionTime.String(),
+		})
 	}
 
 	c.JSON(200, Source{
