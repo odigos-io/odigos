@@ -1,35 +1,36 @@
 'use client';
+import React, { useEffect, useState } from 'react';
+import theme from '@/styles/palette';
+import { ManagedSource } from '@/types';
+import { useMutation } from 'react-query';
+import { Back } from '@/assets/icons/overview';
+import { DeleteSource } from '@/components/overview';
+import { useKeyDown, useNotification } from '@/hooks';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { deleteSource, getSource, patchSources } from '@/services';
 import { ManageSourceHeader } from '@/components/overview/sources/manage.source.header/manage.source.header';
 import {
-  ACTION,
-  LANGUAGES_LOGOS,
-  NOTIFICATION,
-  OVERVIEW,
-  ROUTES,
   SETUP,
+  ACTION,
+  ROUTES,
+  OVERVIEW,
+  NOTIFICATION,
+  LANGUAGES_LOGOS,
   getMainContainerLanguage,
 } from '@/utils';
-import { useRouter, useSearchParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
-import { useMutation } from 'react-query';
 import {
-  ManageSourcePageContainer,
-  BackButtonWrapper,
   FieldWrapper,
+  BackButtonWrapper,
+  ManageSourcePageContainer,
   SaveSourceButtonWrapper,
 } from './styled';
-import { Back } from '@/assets/icons/overview';
 import {
   KeyvalButton,
   KeyvalInput,
   KeyvalLoader,
   KeyvalText,
+  Conditions,
 } from '@/design.system';
-import { DeleteSource } from '@/components/overview';
-import { deleteSource, getSource, patchSources } from '@/services/sources';
-import { useKeyDown, useNotification } from '@/hooks';
-import theme from '@/styles/palette';
-import { ManagedSource } from '@/types/sources';
 
 const NAME = 'name';
 const KIND = 'kind';
@@ -114,32 +115,42 @@ export function EditSourceForm() {
         <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
       </BackButtonWrapper>
       {currentSource && <ManageSourceHeader source={currentSource} />}
-      <FieldWrapper>
-        <KeyvalInput
-          label={OVERVIEW.REPORTED_NAME}
-          value={inputValue}
-          onChange={(e) => setInputValue(e)}
+      <div style={{ display: 'flex', gap: 60 }}>
+        <div>
+          <FieldWrapper>
+            <KeyvalInput
+              label={OVERVIEW.REPORTED_NAME}
+              value={inputValue}
+              onChange={(e) => setInputValue(e)}
+            />
+          </FieldWrapper>
+          <SaveSourceButtonWrapper>
+            <KeyvalButton disabled={!inputValue} onClick={onSaveClick}>
+              <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
+                {ACTION.SAVE}
+              </KeyvalText>
+            </KeyvalButton>
+          </SaveSourceButtonWrapper>
+          <DeleteSource
+            onDelete={onSourceDelete}
+            name={currentSource?.name}
+            image_url={
+              LANGUAGES_LOGOS[
+                getMainContainerLanguage(
+                  currentSource?.instrumented_application_details.languages ||
+                    undefined
+                )
+              ]
+            }
+          />
+        </div>
+        <Conditions
+          conditions={
+            currentSource.instrumented_application_details?.conditions
+          }
         />
-      </FieldWrapper>
-      <SaveSourceButtonWrapper>
-        <KeyvalButton disabled={!inputValue} onClick={onSaveClick}>
-          <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
-            {ACTION.SAVE}
-          </KeyvalText>
-        </KeyvalButton>
-      </SaveSourceButtonWrapper>
-      <DeleteSource
-        onDelete={onSourceDelete}
-        name={currentSource?.name}
-        image_url={
-          LANGUAGES_LOGOS[
-            getMainContainerLanguage(
-              currentSource?.instrumented_application_details.languages ||
-                undefined
-            )
-          ]
-        }
-      />
+      </div>
+
       <Notification />
     </ManageSourcePageContainer>
   );

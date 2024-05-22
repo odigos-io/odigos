@@ -1,3 +1,5 @@
+import { Condition } from './common';
+
 export enum SourceSortOptions {
   NAME = 'name',
   KIND = 'kind',
@@ -17,6 +19,7 @@ export interface ManagedSource {
   namespace: string;
   reported_name?: string;
   instrumented_application_details: {
+    conditions: Array<Condition>;
     languages: Array<{
       container_name: string;
       language: string;
