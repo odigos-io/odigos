@@ -1,55 +1,40 @@
 'use client';
+import React, { useEffect, useState } from 'react';
+import theme from '@/styles/palette';
+import { ManagedSource } from '@/types';
+import { useMutation } from 'react-query';
+import { Back } from '@/assets/icons/overview';
+import { DeleteSource } from '@/components/overview';
+import { useKeyDown, useNotification } from '@/hooks';
+import Conditions from '@/design.system/condition.alert';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { deleteSource, getSource, patchSources } from '@/services';
 import { ManageSourceHeader } from '@/components/overview/sources/manage.source.header/manage.source.header';
 import {
-  ACTION,
-  LANGUAGES_LOGOS,
-  NOTIFICATION,
-  OVERVIEW,
-  ROUTES,
   SETUP,
+  ACTION,
+  ROUTES,
+  OVERVIEW,
+  NOTIFICATION,
+  LANGUAGES_LOGOS,
   getMainContainerLanguage,
 } from '@/utils';
-import { useRouter, useSearchParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
-import { useMutation } from 'react-query';
 import {
-  ManageSourcePageContainer,
-  BackButtonWrapper,
   FieldWrapper,
+  BackButtonWrapper,
+  ManageSourcePageContainer,
   SaveSourceButtonWrapper,
 } from './styled';
-import { Back } from '@/assets/icons/overview';
 import {
   KeyvalButton,
   KeyvalInput,
   KeyvalLoader,
   KeyvalText,
 } from '@/design.system';
-import { DeleteSource } from '@/components/overview';
-import { deleteSource, getSource, patchSources } from '@/services/sources';
-import { useKeyDown, useNotification } from '@/hooks';
-import theme from '@/styles/palette';
-import { ManagedSource } from '@/types/sources';
-import ConditionAlert from '@/design.system/condition.alert';
 
 const NAME = 'name';
 const KIND = 'kind';
 const NAMESPACE = 'namespace';
-
-const exampleConditions = [
-  {
-    type: 'AppliedInstrumentationDevice',
-    status: 'True',
-    message: 'Successfully applied instrumentation device to pod template',
-    last_transition_time: '2024-05-21 11:44:53 +0300 IDT',
-  },
-  {
-    type: 'FailedToLoad',
-    status: 'False',
-    message: 'offset not found: net/http.response:status (1.22.3)',
-    last_transition_time: '2024-05-21 11:45:00 +0300 IDT',
-  },
-];
 
 export function EditSourceForm() {
   const [inputValue, setInputValue] = useState('');
@@ -159,7 +144,7 @@ export function EditSourceForm() {
             }
           />
         </div>
-        <ConditionAlert conditions={currentSource.conditions} />
+        <Conditions conditions={currentSource.conditions} />
       </div>
 
       <Notification />
