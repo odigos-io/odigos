@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { styled } from 'styled-components';
 import { Back } from '@/assets/icons/overview';
 import { CreateConnectionForm, QuickHelp } from '@/components/setup';
-import { KeyvalText } from '@/design.system';
+import { Conditions, KeyvalText } from '@/design.system';
 import { SETUP } from '@/utils/constants';
 import { ManageDestinationHeader } from '../manage.destination.header/manage.destination.header';
 import { DestinationType } from '@/types/destinations';
@@ -72,7 +72,10 @@ export function ManageDestination({
             <FormDangerZone onDelete={onDelete} data={selectedDestination} />
           )}
         </div>
-        {videoList?.length > 0 && <QuickHelp data={videoList} />}
+        <>
+          <Conditions conditions={selectedDestination?.conditions} />
+          {videoList?.length > 0 && <QuickHelp data={videoList} />}
+        </>
       </CreateConnectionWrapper>
     </>
   );
