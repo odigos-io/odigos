@@ -11,7 +11,7 @@ interface ConditionAlertProps {
 
 const ConditionAlertContainer = styled.div`
   border: 1px solid ${theme.colors.blue_grey};
-  border-radius: 5px;
+  border-radius: 8px;
   padding: 10px;
   margin-top: 8px;
 `;
@@ -43,7 +43,9 @@ const ConditionSeparator = styled.div`
 export const Conditions: React.FC<ConditionAlertProps> = ({ conditions }) => {
   return conditions ? (
     <div>
-      <KeyvalText weight={600}>Status</KeyvalText>
+      <KeyvalText size={14} weight={600}>
+        Status
+      </KeyvalText>
       <ConditionAlertContainer>
         {conditions.map((condition, index) => (
           <ConditionItem key={index}>
