@@ -15,10 +15,12 @@ sidebarTitle: "Installation"
 
 For debian based systems (Ubuntu, Debian, etc), install odigos with apt:
 
-1. Set up APT with Odigos deb repository:
+1. Set up APT with Odigos deb repository and GPG key:
 
 ```shell
-echo "deb [trusted=yes] https://apt.fury.io/odigos/ * *" > /etc/apt/sources.list.d/odigos.list
+sudo mkdir -p /etc/apt/keyrings/
+wget -q -O - https://apt.fury.io/odigos/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/odigos.gpg > /dev/null
+deb [signed-by=/etc/apt/keyrings/odigos.gpg] https://apt.fury.io/odigos/ * *
 ```
 
 2. Update APT package index after adding the odigos repository:
