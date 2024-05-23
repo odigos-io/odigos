@@ -15,6 +15,28 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+func deletePreviousServices(ctx context.Context, c client.Client, ns string) error {
+	// to support multiple gateways, odigos service changed it's ClusterIP to None
+	// this change is not automatically applied to existing installations, we need to delete the service
+	// so that it can be recreated with the new ClusterIP value
+	logger := log.FromContext(ctx)
+	svc := &v1.Service{}
+	err := c.Get(ctx, client.ObjectKey{Name: kubeObjectName, Namespace: ns}, svc)
+	if err != nil || svc == nil {
+		return client.IgnoreNotFound(err)
+	}
+
+	if svc.Spec.ClusterIP != "None" {
+		logger.Info("Deleting the Odigos gateway service to support multiple gateways.")
+		err = c.Delete(ctx, svc, &client.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func syncService(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (*v1.Service, error) {
 	logger := log.FromContext(ctx)
 	gatewaySvc := &v1.Service{

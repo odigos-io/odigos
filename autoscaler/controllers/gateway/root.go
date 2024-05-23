@@ -82,6 +82,12 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
+	err = deletePreviousServices(ctx, c, gateway.Namespace)
+	if err != nil {
+		logger.Error(err, "Failed to delete previous services")
+		return err
+	}
+
 	_, err = syncService(gateway, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "Failed to sync service")
