@@ -44,9 +44,9 @@ func TestInstrumentationDeviceNameToComponents(t *testing.T) {
 		t.Errorf("InstrumentationDeviceNameToComponents() gotLanguage = %v, want %v", gotLanguage, language)
 	}
 	if gotSdk.SdkType != otelSdkType {
-		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkType = %v, want %v", gotSdk.GetSdkType(), otelSdkType)
+		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkType = %v, want %v", gotSdk.SdkType, otelSdkType)
 	}
 	if gotSdk.SdkTier != otelSdkTier {
-		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkTier = %v, want %v", gotSdk.GetSdkTier(), otelSdkTier)
+		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkTier = %v, want %v", gotSdk.SdkTier, otelSdkTier)
 	}
 }
