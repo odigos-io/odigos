@@ -5,10 +5,10 @@ sidebarTitle: "Building a pipeline"
 
 We will set up odigos to auto instrument our demo application and send the traces to Jaeger.
 
-Save the following configuration to the file `/etc/odigos-agent/agent.yaml`:
+Save the following configuration to the file `/etc/odigos-vmagent/agent.yaml`:
 
 ```shell
-sudo bash -c 'cat > /etc/odigos-agent/agent.yaml <<EOF
+sudo bash -c 'cat > /etc/odigos-vmagent/agent.yaml <<EOF
 sources:
   systemd:
     services:
