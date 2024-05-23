@@ -7,8 +7,8 @@ import (
 func TestInstrumentationPluginName(t *testing.T) {
 	language := DotNetProgrammingLanguage
 	otelSdk := OtelSdk{
-		sdkType: NativeOtelSdkType,
-		sdkTier: CommunityOtelSdkTier,
+		SdkType: NativeOtelSdkType,
+		SdkTier: CommunityOtelSdkTier,
 	}
 	pluginName := InstrumentationPluginName(language, otelSdk)
 	want := "dotnet-native-community"
@@ -20,8 +20,8 @@ func TestInstrumentationPluginName(t *testing.T) {
 func TestInstrumentationDeviceName(t *testing.T) {
 	language := JavaProgrammingLanguage
 	otelSdk := OtelSdk{
-		sdkType: EbpfOtelSdkType,
-		sdkTier: EnterpriseOtelSdkTier,
+		SdkType: EbpfOtelSdkType,
+		SdkTier: EnterpriseOtelSdkTier,
 	}
 	deviceName := InstrumentationDeviceName(language, otelSdk)
 	want := "instrumentation.odigos.io/java-ebpf-enterprise"
@@ -35,7 +35,7 @@ func TestInstrumentationDeviceNameToComponents(t *testing.T) {
 	language := GoProgrammingLanguage
 	otelSdkType := EbpfOtelSdkType
 	otelSdkTier := CommunityOtelSdkTier
-	sdk := OtelSdk{sdkType: otelSdkType, sdkTier: otelSdkTier}
+	sdk := OtelSdk{SdkType: otelSdkType, SdkTier: otelSdkTier}
 
 	deviceName := InstrumentationDeviceName(language, sdk)
 	gotLanguage, gotSdk := InstrumentationDeviceNameToComponents(string(deviceName))
@@ -43,10 +43,10 @@ func TestInstrumentationDeviceNameToComponents(t *testing.T) {
 	if gotLanguage != language {
 		t.Errorf("InstrumentationDeviceNameToComponents() gotLanguage = %v, want %v", gotLanguage, language)
 	}
-	if gotSdk.GetSdkType() != otelSdkType {
+	if gotSdk.SdkType != otelSdkType {
 		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkType = %v, want %v", gotSdk.GetSdkType(), otelSdkType)
 	}
-	if gotSdk.GetSdkTier() != otelSdkTier {
+	if gotSdk.SdkTier != otelSdkTier {
 		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkTier = %v, want %v", gotSdk.GetSdkTier(), otelSdkTier)
 	}
 }

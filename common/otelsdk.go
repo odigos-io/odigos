@@ -1,9 +1,5 @@
 package common
 
-import (
-	"encoding/json"
-)
-
 // Odigos supports two types of OpenTelemetry SDKs: native and ebpf.
 type OtelSdkType string
 
@@ -25,48 +21,17 @@ const (
 )
 
 type OtelSdk struct {
-	sdkType OtelSdkType
-	sdkTier OtelSdkTier
+	SdkType OtelSdkType `json:"sdkType"`
+	SdkTier OtelSdkTier `json:"sdkTier"`
 }
 
 var (
-	OtelSdkNativeCommunity  = OtelSdk{sdkType: NativeOtelSdkType, sdkTier: CommunityOtelSdkTier}
-	OtelSdkEbpfCommunity    = OtelSdk{sdkType: EbpfOtelSdkType, sdkTier: CommunityOtelSdkTier}
-	OtelSdkNativeEnterprise = OtelSdk{sdkType: NativeOtelSdkType, sdkTier: EnterpriseOtelSdkTier}
-	OtelSdkEbpfEnterprise   = OtelSdk{sdkType: EbpfOtelSdkType, sdkTier: EnterpriseOtelSdkTier}
+	OtelSdkNativeCommunity  = OtelSdk{SdkType: NativeOtelSdkType, SdkTier: CommunityOtelSdkTier}
+	OtelSdkEbpfCommunity    = OtelSdk{SdkType: EbpfOtelSdkType, SdkTier: CommunityOtelSdkTier}
+	OtelSdkNativeEnterprise = OtelSdk{SdkType: NativeOtelSdkType, SdkTier: EnterpriseOtelSdkTier}
+	OtelSdkEbpfEnterprise   = OtelSdk{SdkType: EbpfOtelSdkType, SdkTier: EnterpriseOtelSdkTier}
 )
 
 func NewOtelSdk(sdkType OtelSdkType, sdkTier OtelSdkTier) OtelSdk {
-	return OtelSdk{sdkType: sdkType, sdkTier: sdkTier}
-}
-
-func (s OtelSdk) GetSdkType() OtelSdkType {
-	return s.sdkType
-}
-
-func (s OtelSdk) GetSdkTier() OtelSdkTier {
-	return s.sdkTier
-}
-
-func (s OtelSdk) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&struct {
-		SdkType OtelSdkType `json:"sdkType"`
-		SdkTier OtelSdkTier `json:"sdkTier"`
-	}{
-		SdkType: s.sdkType,	
-		SdkTier: s.sdkTier,
-	})
-}
-
-func (s *OtelSdk) UnmarshalJSON(data []byte) error {
-	var v struct {
-		SdkType OtelSdkType `json:"sdkType"`
-		SdkTier OtelSdkTier `json:"sdkTier"`
-	}
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	s.sdkType = v.SdkType
-	s.sdkTier = v.SdkTier
-	return nil
+	return OtelSdk{SdkType: sdkType, SdkTier: sdkTier}
 }

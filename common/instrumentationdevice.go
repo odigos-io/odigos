@@ -22,12 +22,12 @@ const OdigosResourceNamespace = "instrumentation.odigos.io"
 // the ebpf Java enterprise sdk will be named "java-ebpf-enterprise".
 
 func InstrumentationPluginName(language ProgrammingLanguage, otelSdk OtelSdk) string {
-	return string(language) + "-" + string(otelSdk.sdkType) + "-" + string(otelSdk.sdkTier)
+	return string(language) + "-" + string(otelSdk.SdkType) + "-" + string(otelSdk.SdkTier)
 }
 
 func InstrumentationPluginNameToComponents(pluginName string) (ProgrammingLanguage, OtelSdk) {
 	components := strings.Split(pluginName, "-")
-	otelSdk := OtelSdk{sdkType: OtelSdkType(components[1]), sdkTier: OtelSdkTier(components[2])}
+	otelSdk := OtelSdk{SdkType: OtelSdkType(components[1]), SdkTier: OtelSdkTier(components[2])}
 	return ProgrammingLanguage(components[0]), otelSdk
 }
 

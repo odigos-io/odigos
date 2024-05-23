@@ -53,7 +53,7 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf
 	availablePlugins := map[string]dpm.PluginInterface{}
 	for lang, otelSdkLsfMap := range otelSdksLsf {
 		for otelSdk, lsf := range otelSdkLsfMap {
-			if otelSdk.GetSdkType() == common.EbpfOtelSdkType && !isEbpfSupported {
+			if otelSdk.SdkType == common.EbpfOtelSdkType && !isEbpfSupported {
 				continue
 			}
 			pluginName := common.InstrumentationPluginName(lang, otelSdk)
