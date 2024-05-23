@@ -1,3 +1,5 @@
+import { Condition } from './common';
+
 export enum DestinationsSortType {
   NAME = 'name',
   TYPE = 'type',
@@ -37,6 +39,7 @@ export interface Destination {
     logs: boolean;
   };
   fields: Record<string, any>;
+  conditions: Condition[];
   destination_type: {
     type: string;
     display_name: string;

@@ -145,7 +145,8 @@
         "backends/signoz",
         "backends/splunk",
         "backends/sumologic",
-        "backends/tempo"
+        "backends/tempo",
+        "backends/causely"
       ]
     },
     {

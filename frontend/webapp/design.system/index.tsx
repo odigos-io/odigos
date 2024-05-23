@@ -33,3 +33,4 @@ export { OdigosActionsGroup as ActionsGroup } from './action.group';
 export { OdigosTable as Table } from './table';
 export { YMLEditor } from './yml.editor';
 export { CodeBlock } from './code-block';
+export { Conditions } from './condition.alert';
