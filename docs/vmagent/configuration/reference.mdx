@@ -16,7 +16,7 @@ sources:
   systemd:
     services:
     - service_name: <my-service>
-      instrumentation_enabled: true
+      instrumentation_disabled: false
     ignored_service_names:
     - rsyslog
     - ssh
@@ -51,7 +51,7 @@ The `sources` section of the `agent.yaml` file contains the following fields:
 - `systemd` - systemd sources configuration.
   - `services` - configuration of specific systemd services by name.
     - `service_name` - name of the systemd service. Do not include the `.service` suffix if present (e.g. `my-app` instead of `my-app.service`).
-    - `instrumentation_enabled` - enable or disable instrumentation for the service. Default is `false` (disabled).
+    - `instrumentation_disabled` (optional) - by default all services in the config are auto instrumented. set to `false` to disable auto instrumentation for a specific service.
   - `ignored_service_names` - list of systemd services to ignore, useful for excluding os services like `ssh`, `rsyslog`, etc.
 
 ## Destinations
