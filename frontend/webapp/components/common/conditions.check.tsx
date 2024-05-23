@@ -2,6 +2,7 @@ import React from 'react';
 import { GreenCheck, RedError } from '@/assets/icons/app';
 import styled from 'styled-components';
 import { KeyvalText } from '@/design.system';
+import theme from '@/styles/palette';
 
 const Container = styled.div`
   display: inline-block;
@@ -11,6 +12,12 @@ const Container = styled.div`
 const StatusIcon = styled.div`
   font-size: 24px;
   cursor: pointer;
+`;
+const ProgressStatus = styled.div`
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: ${theme.colors.orange_brown};
 `;
 
 const Tooltip = styled.div`
@@ -36,19 +43,26 @@ const Tooltip = styled.div`
 `;
 
 export const ConditionCheck = ({ conditions }) => {
-  const healthyCount = conditions.filter(
+  const healthyCount = conditions?.filter(
     (condition) => condition.status === 'True'
   ).length;
-  const totalCount = conditions.length;
+  const totalCount = conditions?.length;
   const allHealthy = healthyCount === totalCount;
 
-  return (
+  return conditions ? (
     <Container>
       <StatusIcon>{allHealthy ? <GreenCheck /> : <RedError />}</StatusIcon>
       <Tooltip>
         <KeyvalText
           size={12}
         >{`${healthyCount}/${totalCount} checks OK`}</KeyvalText>
+      </Tooltip>
+    </Container>
+  ) : (
+    <Container>
+      <ProgressStatus />
+      <Tooltip>
+        <KeyvalText size={12}>{`validating checks...`}</KeyvalText>
       </Tooltip>
     </Container>
   );
