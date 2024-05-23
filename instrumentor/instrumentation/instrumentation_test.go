@@ -863,3 +863,67 @@ func TestEnvVarAppendFromSpecAndRuntimeDetails(t *testing.T) {
 	assertContainerNoEnvVar(t, podTemplate, 1, "NODE_OPTIONS")
 	assertNoAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation)
 }
+
+func TestMoveBetweenSDKs(t *testing.T) {
+	jsOptionsValEbpf, _ := envOverwrite.ValToAppend("NODE_OPTIONS", common.OtelSdkEbpfEnterprise)
+	jsOptionsValNative, _ := envOverwrite.ValToAppend("NODE_OPTIONS", common.OtelSdkNativeCommunity)
+	userDefinedVal := "--max-old-space-size=8192-runtime"
+
+	podTemplate := &v1.PodTemplateSpec{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Name: "nodeContainer",
+					Env: []v1.EnvVar{
+						{
+							Name:  "NODE_OPTIONS",
+							Value: userDefinedVal + " " + jsOptionsValEbpf,
+						},
+					},
+				},
+				{
+					Name: "nodeContainer",
+				},
+			},
+		},
+	}
+
+	runtimeDetails := &odigosv1.InstrumentedApplication{
+		Spec: odigosv1.InstrumentedApplicationSpec{
+			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+				{
+					Language:      common.JavascriptProgrammingLanguage,
+					ContainerName: "nodeContainer",
+					EnvVars: []odigosv1.EnvVar{
+						{
+							Name:  "NODE_OPTIONS",
+							Value: userDefinedVal,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+	}
+
+	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
+		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+	}
+
+	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
+	if err != nil {
+		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() error = %v", err)
+	}
+
+	want := userDefinedVal + " " + jsOptionsValNative
+	assertContainerWithEnvVar(t, podTemplate, 0, "NODE_OPTIONS", want)
+
+	Revert(podTemplate, deployment)
+	assertNoAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation)
+}

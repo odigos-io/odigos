@@ -109,8 +109,17 @@ func Patch(envName string, currentVal string, sdk common.OtelSdk) string {
 	}
 
 	if strings.Contains(currentVal, valToAppend) {
-		// The environment variable is already patched
+		// The environment variable is already patched with the correct value for this SDK
 		return currentVal
+	}
+
+	for sdkKey, val := range env.values {
+		if sdkKey != sdk && strings.Contains(currentVal, val){
+			// The environment variable is patched by another SDK
+			// but we need to append our value to it, so replace the
+			// value of the other SDK with ours
+			return strings.ReplaceAll(currentVal, val, valToAppend)
+		}
 	}
 
 	return currentVal + env.delim + valToAppend
