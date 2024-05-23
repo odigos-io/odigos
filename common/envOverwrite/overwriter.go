@@ -62,11 +62,21 @@ func ShouldPatch(envName string, observedValue string, sdk common.OtelSdk) bool 
 		return false
 	}
 
-	if val == observedValue {
-		// if the observed value is the same as the value odigos sets,
-		// that means the user does not add any additional values,
-		// so we should not add it to the deployment manifest
+	if strings.Contains(observedValue, val) {
+		// if the observed value contains the value odigos sets for this SDK,
+		// that means that either:
+		//    1. the user does not add any additional values and we see here our own value only,
+		//    2. we already patched the value in the deployment manifest and we see here the patched value,
+		// so we should not patch it
 		return false
+	}
+
+	// if we are moving from one SDK to another, avoid patching the value
+	// it there is no user defined value (observedValue is equal to the value odigos sets for the previous SDK)
+	for _, v := range env.values {
+		if v == observedValue {
+			return false
+		}
 	}
 
 	return true

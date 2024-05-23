@@ -173,9 +173,11 @@ func patchEnvVars(runtimeDetails *odigosv1.InstrumentedApplication, container *v
 	// Overwrite env var if needed
 	for i, envVar := range container.Env {
 		if envOverwrite.ShouldPatch(envVar.Name, envVar.Value, sdk) {
+			fmt.Printf("######Patching env var %s for container %s currentVal %s sdk %v ##########\n", envVar.Name, container.Name, envVar.Value, sdk)
 			// We are about to patch this env var, check if we need to save the original value
 			// If the original value is not saved, save it to the annotation.
 			if _, ok := manifestEnvOriginal[container.Name][envVar.Name]; !ok {
+				fmt.Printf("######Saving original value of env var %s for container %s ##########\n", envVar.Name, container.Name)
 				savedEnvVar = true
 				manifestEnvOriginal[container.Name][envVar.Name] = envVar.Value
 				container.Env[i].Value = envOverwrite.Patch(envVar.Name, envVar.Value, sdk)
