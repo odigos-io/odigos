@@ -7,8 +7,8 @@ import (
 func TestInstrumentationPluginName(t *testing.T) {
 	language := DotNetProgrammingLanguage
 	otelSdk := OtelSdk{
-		SdkType: NativeOtelSdkType,
-		SdkTier: CommunityOtelSdkTier,
+		sdkType: NativeOtelSdkType,
+		sdkTier: CommunityOtelSdkTier,
 	}
 	pluginName := InstrumentationPluginName(language, otelSdk)
 	want := "dotnet-native-community"
@@ -20,8 +20,8 @@ func TestInstrumentationPluginName(t *testing.T) {
 func TestInstrumentationDeviceName(t *testing.T) {
 	language := JavaProgrammingLanguage
 	otelSdk := OtelSdk{
-		SdkType: EbpfOtelSdkType,
-		SdkTier: EnterpriseOtelSdkTier,
+		sdkType: EbpfOtelSdkType,
+		sdkTier: EnterpriseOtelSdkTier,
 	}
 	deviceName := InstrumentationDeviceName(language, otelSdk)
 	want := "instrumentation.odigos.io/java-ebpf-enterprise"
@@ -35,17 +35,18 @@ func TestInstrumentationDeviceNameToComponents(t *testing.T) {
 	language := GoProgrammingLanguage
 	otelSdkType := EbpfOtelSdkType
 	otelSdkTier := CommunityOtelSdkTier
+	sdk := OtelSdk{sdkType: otelSdkType, sdkTier: otelSdkTier}
 
-	deviceName := InstrumentationDeviceName(language, OtelSdk{SdkType: otelSdkType, SdkTier: otelSdkTier})
-	gotLanguage, gotOtelSdkType, gotOtelSdkTier := InstrumentationDeviceNameToComponents(string(deviceName))
+	deviceName := InstrumentationDeviceName(language, sdk)
+	gotLanguage, gotSdk := InstrumentationDeviceNameToComponents(string(deviceName))
 
 	if gotLanguage != language {
 		t.Errorf("InstrumentationDeviceNameToComponents() gotLanguage = %v, want %v", gotLanguage, language)
 	}
-	if gotOtelSdkType != otelSdkType {
-		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkType = %v, want %v", gotOtelSdkType, otelSdkType)
+	if gotSdk.GetSdkType() != otelSdkType {
+		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkType = %v, want %v", gotSdk.GetSdkType(), otelSdkType)
 	}
-	if gotOtelSdkTier != otelSdkTier {
-		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkTier = %v, want %v", gotOtelSdkTier, otelSdkTier)
+	if gotSdk.GetSdkTier() != otelSdkTier {
+		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkTier = %v, want %v", gotSdk.GetSdkTier(), otelSdkTier)
 	}
 }

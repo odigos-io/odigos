@@ -109,7 +109,7 @@ func getRelevantEnvVars(pid int) map[string]string {
 
 	// We only care about the environment variables that we might overwrite
 	relevantEnvVars := make(map[string]interface{})
-	for k := range envOverwrite.EnvValues {
+	for k := range envOverwrite.EnvValuesMap {
 		relevantEnvVars[k] = nil
 	}
 

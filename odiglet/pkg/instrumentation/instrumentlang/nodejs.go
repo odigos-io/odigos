@@ -2,6 +2,9 @@ package instrumentlang
 
 import (
 	"fmt"
+
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/envOverwrite"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/consts"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
@@ -19,6 +22,8 @@ const (
 
 func NodeJS(deviceId string) *v1beta1.ContainerAllocateResponse {
 	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPPort)
+	nodeOptionsVal, _ := envOverwrite.ValToAppend(nodeEnvNodeOptions, common.OtelSdkNativeCommunity)
+
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
 			nodeEnvNodeDebug:          "true",
@@ -26,7 +31,7 @@ func NodeJS(deviceId string) *v1beta1.ContainerAllocateResponse {
 			nodeEnvEndpoint:           otlpEndpoint,
 			nodeEnvServiceName:        deviceId,
 			nodeEnvResourceAttributes: "odigos.device=nodejs",
-			nodeEnvNodeOptions:        fmt.Sprintf("--require %s/autoinstrumentation.js", nodeMountPath),
+			nodeEnvNodeOptions:        nodeOptionsVal,
 		},
 		Mounts: []*v1beta1.Mount{
 			{

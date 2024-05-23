@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"go.uber.org/multierr"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -210,6 +211,11 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 
 	// remove odigos instrumentation device from containers
 	for iContainer, c := range pts.Spec.Containers {
+		_, sdk, found := odgiosK8s.GetLanguageAndOtelSdk(c)
+		if !found {
+			continue
+		}
+	
 		if c.Resources.Limits != nil {
 			for val := range c.Resources.Limits {
 				if strings.HasPrefix(val.String(), common.OdigosResourceNamespace) {
@@ -224,7 +230,7 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 		containerOriginalEnv := origManifestEnv[c.Name]
 
 		for iEnv, envVar := range c.Env {
-			if envOverwrite.ShouldRevert(envVar.Name, envVar.Value) {
+			if envOverwrite.ShouldRevert(envVar.Name, envVar.Value, sdk) {
 				if origVal, ok := containerOriginalEnv[envVar.Name]; ok {
 					// revert the env var to its original value if we have it
 					patchOperations = append(patchOperations, map[string]interface{}{

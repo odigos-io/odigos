@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/common"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -48,7 +49,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 		}
 		container.Resources.Limits[v1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
 
-		err := patchEnvVars(runtimeDetails, &container, targetObj)
+		err := patchEnvVars(runtimeDetails, &container, targetObj, otelSdk)
 		if err != nil {
 			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
 		}
@@ -75,6 +76,11 @@ func Revert(original *v1.PodTemplateSpec, targetObj client.Object) {
 	}
 
 	for iContainer, container := range original.Spec.Containers {
+		_, sdk, found := odgiosK8s.GetLanguageAndOtelSdk(container)
+		if !found {
+			continue
+		}
+	
 		for resourceName := range container.Resources.Limits {
 			if strings.HasPrefix(string(resourceName), common.OdigosResourceNamespace) {
 				delete(container.Resources.Limits, resourceName)
@@ -91,7 +97,7 @@ func Revert(original *v1.PodTemplateSpec, targetObj client.Object) {
 		revertedEnvVars := make([]v1.EnvVar, 0, len(container.Env))
 
 		for _, envVar := range container.Env {
-			if envOverwrite.ShouldRevert(envVar.Name, envVar.Value) {
+			if envOverwrite.ShouldRevert(envVar.Name, envVar.Value, sdk) {
 				if origVal, ok := containerOriginalEnv[envVar.Name]; ok {
 					// Revert the env var to its original value
 					revertedEnvVars = append(revertedEnvVars, v1.EnvVar{
@@ -138,7 +144,7 @@ func getEnvVarsOfContainer(instrumentation *odigosv1.InstrumentedApplication, co
 	return envVars
 }
 
-func patchEnvVars(runtimeDetails *odigosv1.InstrumentedApplication, container *v1.Container, obj client.Object) error {
+func patchEnvVars(runtimeDetails *odigosv1.InstrumentedApplication, container *v1.Container, obj client.Object, sdk common.OtelSdk) error {
 	envs := getEnvVarsOfContainer(runtimeDetails, container.Name)
 
 	var manifestEnvOriginal map[string]map[string]string
@@ -166,13 +172,13 @@ func patchEnvVars(runtimeDetails *odigosv1.InstrumentedApplication, container *v
 
 	// Overwrite env var if needed
 	for i, envVar := range container.Env {
-		if envOverwrite.ShouldPatch(envVar.Name, envVar.Value) {
+		if envOverwrite.ShouldPatch(envVar.Name, envVar.Value, sdk) {
 			// We are about to patch this env var, check if we need to save the original value
 			// If the original value is not saved, save it to the annotation.
 			if _, ok := manifestEnvOriginal[container.Name][envVar.Name]; !ok {
 				savedEnvVar = true
 				manifestEnvOriginal[container.Name][envVar.Name] = envVar.Value
-				container.Env[i].Value = envOverwrite.Patch(envVar.Name, envVar.Value)
+				container.Env[i].Value = envOverwrite.Patch(envVar.Name, envVar.Value, sdk)
 			}
 		}
 		// If an env var is defined both in the container build and in the container spec, the value in the container spec will be used.
@@ -181,10 +187,10 @@ func patchEnvVars(runtimeDetails *odigosv1.InstrumentedApplication, container *v
 
 	// Add the remaining env vars (which are not defined in a manifest)
 	for envName, envValue := range envs {
-		if envOverwrite.ShouldPatch(envName, envValue) {
+		if envOverwrite.ShouldPatch(envName, envValue, sdk) {
 			container.Env = append(container.Env, v1.EnvVar{
 				Name:  envName,
-				Value: envOverwrite.Patch(envName, envValue),
+				Value: envOverwrite.Patch(envName, envValue, sdk),
 			})
 		}
 	}

@@ -2,6 +2,9 @@ package instrumentlang
 
 import (
 	"fmt"
+
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/envOverwrite"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/consts"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
@@ -16,17 +19,18 @@ const (
 	javaOtlpProtocolEnvVar       = "OTEL_EXPORTER_OTLP_PROTOCOL"
 	javaOtelLogsExporterEnvVar   = "OTEL_LOGS_EXPORTER"
 	javaOtelTracesSamplerEnvVar  = "OTEL_TRACES_SAMPLER"
-	javaToolOptions              = "-javaagent:/var/odigos/java/javaagent.jar"
 )
 
 func Java(deviceId string) *v1beta1.ContainerAllocateResponse {
 	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPPort)
+	javaOptsVal, _ := envOverwrite.ValToAppend(javaOptsEnvVar, common.OtelSdkNativeCommunity)
+	javaToolOptionsVal, _ := envOverwrite.ValToAppend(javaToolOptionsEnvVar, common.OtelSdkNativeCommunity)
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
 			otelResourceAttributesEnvVar: fmt.Sprintf(otelResourceAttrPatteern, deviceId),
-			javaToolOptionsEnvVar:        javaToolOptions,
-			javaOptsEnvVar:               javaToolOptions,
+			javaToolOptionsEnvVar:        javaToolOptionsVal,
+			javaOptsEnvVar:               javaOptsVal,
 			javaOtlpEndpointEnvVar:       otlpEndpoint,
 			javaOtlpProtocolEnvVar:	      "grpc",
 			javaOtelLogsExporterEnvVar:   "none",
