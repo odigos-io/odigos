@@ -17,7 +17,8 @@ type SourceLanguage struct {
 }
 
 type InstrumentedApplicationDetails struct {
-	Languages []SourceLanguage `json:"languages,omitempty"`
+	Languages  []SourceLanguage   `json:"languages,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // this object contains only part of the source fields. It is used to display the sources in the frontend
@@ -244,8 +245,18 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 	source.Name = app.OwnerReferences[0].Name
 	source.Kind = app.OwnerReferences[0].Kind
 	source.Namespace = app.Namespace
+	var conditions []metav1.Condition
+	for _, condition := range app.Status.Conditions {
+		conditions = append(conditions, metav1.Condition{
+			Type:               condition.Type,
+			Status:             condition.Status,
+			Message:            condition.Message,
+			LastTransitionTime: condition.LastTransitionTime,
+		})
+	}
 	source.IaDetails = &InstrumentedApplicationDetails{
-		Languages: []SourceLanguage{},
+		Languages:  []SourceLanguage{},
+		Conditions: conditions,
 	}
 	for _, language := range app.Spec.RuntimeDetails {
 		source.IaDetails.Languages = append(source.IaDetails.Languages, SourceLanguage{
