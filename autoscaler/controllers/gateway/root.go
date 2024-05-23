@@ -16,12 +16,12 @@ import (
 
 const (
 	kubeObjectName = "odigos-gateway"
-	collectorLabel = "odigos.io/collector"
+	CollectorLabel = "odigos.io/gateway"
 )
 
 var (
 	commonLabels = map[string]string{
-		collectorLabel: "true",
+		CollectorLabel: "true",
 	}
 )
 

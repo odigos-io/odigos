@@ -20,6 +20,9 @@ import (
 	"flag"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/odigos-io/odigos/autoscaler/collectormetrics"
 
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
@@ -37,7 +40,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	observabilitycontrolplanev1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
@@ -52,7 +55,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(observabilitycontrolplanev1.AddToScheme(scheme))
+	utilruntime.Must(odigosv1.AddToScheme(scheme))
 	utilruntime.Must(apiactions.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -105,8 +108,8 @@ func main() {
 			BindAddress: metricsAddr,
 		},
 		HealthProbeBindAddress: probeAddr,
-		LeaderElection:   enableLeaderElection,
-		LeaderElectionID: "f681cfed.odigos.io",
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       "f681cfed.odigos.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -164,6 +167,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	ctx := ctrl.SetupSignalHandler()
+	gatewayAutoscaler := collectormetrics.NewAutoscaler(
+		collectormetrics.WithCollectorsGroup(odigosv1.CollectorsGroupRoleClusterGateway),
+		collectormetrics.WithInterval(15*time.Second),
+		collectormetrics.WithScaleRange(1, 5))
+	go gatewayAutoscaler.Run(ctx)
+
+	if err = (&controllers.PodsReconciler{
+		Client:     mgr.GetClient(),
+		Autoscaler: gatewayAutoscaler,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Pods")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -176,7 +194,7 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}

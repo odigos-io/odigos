@@ -328,6 +328,17 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"odigosconfigurations"},
 			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{""},
+				Resources: []string{
+					"pods",
+				},
+			},
 		},
 	}
 }
