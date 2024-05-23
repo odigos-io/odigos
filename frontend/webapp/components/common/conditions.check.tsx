@@ -62,7 +62,7 @@ export const ConditionCheck = ({ conditions }) => {
     <Container>
       <ProgressStatus />
       <Tooltip>
-        <KeyvalText size={12}>{`validating checks...`}</KeyvalText>
+        <KeyvalText size={12}>{'validating checks...'}</KeyvalText>
       </Tooltip>
     </Container>
   );
