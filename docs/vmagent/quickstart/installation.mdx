@@ -1,0 +1,21 @@
+---
+title: "Installation"
+sidebarTitle: "Installation"
+---
+
+For full instructions on how to install the Odigos VM Agent, see the [Odigos VM Agent Installation Guide](/vmagent/setup/installation).
+
+If you haven't done so already Add the odigos repository to your package manager and update it:
+
+```shell
+sudo mkdir -p /etc/apt/keyrings/
+wget -q -O - https://apt.fury.io/odigos/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/odigos.gpg > /dev/null
+deb [signed-by=/etc/apt/keyrings/odigos.gpg] https://apt.fury.io/odigos/ * *
+sudo apt update
+```
+
+Then install odigos vmagent with the following command:
+
+```shell
+sudo apt install odigos-vmagent
+```

@@ -177,6 +177,16 @@
       "pages": [
         "vmagent/overview",
         {
+          "group": "Quickstart",
+          "pages": [
+            "vmagent/quickstart/introduction",
+            "vmagent/quickstart/installation",
+            "vmagent/quickstart/building-a-pipeline",
+            "vmagent/quickstart/generating-data",
+            "vmagent/quickstart/viewing-traces"
+          ]
+        },
+        {
           "group": "Setup",
           "pages": [
             "vmagent/setup/installation",
