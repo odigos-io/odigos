@@ -32,6 +32,10 @@ func assertContainerNoEnvVar(t *testing.T, podTemplate *v1.PodTemplateSpec, cont
 		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() missing container at index %d", containerIndex)
 	}
 
+	if len(podTemplate.Spec.Containers[containerIndex].Env) == 0 {
+		return
+	}
+
 	container := podTemplate.Spec.Containers[containerIndex]
 	for _, envVar := range container.Env {
 		assert.NotEqual(t, envVar.Name, envVarName)
@@ -864,7 +868,7 @@ func TestEnvVarAppendFromSpecAndRuntimeDetails(t *testing.T) {
 	assertNoAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation)
 }
 
-func TestMoveBetweenSDKs(t *testing.T) {
+func TestMoveBetweenSDKsWithUserValue(t *testing.T) {
 	jsOptionsValEbpf, _ := envOverwrite.ValToAppend("NODE_OPTIONS", common.OtelSdkEbpfEnterprise)
 	jsOptionsValNative, _ := envOverwrite.ValToAppend("NODE_OPTIONS", common.OtelSdkNativeCommunity)
 	userDefinedVal := "--max-old-space-size=8192-runtime"
@@ -926,4 +930,53 @@ func TestMoveBetweenSDKs(t *testing.T) {
 
 	Revert(podTemplate, deployment)
 	assertNoAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation)
+}
+
+func TestMoveBetweenSDKsWithoutUserValue(t *testing.T) {
+	jsOptionsValEbpf, _ := envOverwrite.ValToAppend("NODE_OPTIONS", common.OtelSdkEbpfEnterprise)
+
+	podTemplate := &v1.PodTemplateSpec{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Name: "nodeContainer",
+				},
+			},
+		},
+	}
+
+	runtimeDetails := &odigosv1.InstrumentedApplication{
+		Spec: odigosv1.InstrumentedApplicationSpec{
+			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+				{
+					Language:      common.JavascriptProgrammingLanguage,
+					ContainerName: "nodeContainer",
+					EnvVars: []odigosv1.EnvVar{
+						{
+							Name:  "NODE_OPTIONS",
+							Value: jsOptionsValEbpf,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+	}
+
+	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
+		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+	}
+
+	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
+	if err != nil {
+		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() error = %v", err)
+	}
+
+	assertContainerNoEnvVar(t, podTemplate, 0, "NODE_OPTIONS")
 }
