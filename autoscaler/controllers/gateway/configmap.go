@@ -87,7 +87,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	}
 
 	existing := &v1.ConfigMap{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: kubeObjectName}, existing); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: KubeObjectName}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(0).Info("Creating gateway config map")
 			_, err := createConfigMap(desired, ctx, c)

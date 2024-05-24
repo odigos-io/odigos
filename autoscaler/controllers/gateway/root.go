@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	kubeObjectName = "odigos-gateway"
+	KubeObjectName = "odigos-gateway"
 	CollectorLabel = "odigos.io/gateway"
 )
 

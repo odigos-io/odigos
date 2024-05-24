@@ -3,6 +3,8 @@ package collectormetrics
 import (
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection"
@@ -21,6 +23,7 @@ type AutoscalerOptions struct {
 	collectorsGroup odigosv1.CollectorsGroupRole
 	minReplicas     int
 	maxReplicas     int
+	algorithm       AutoscalerAlgorithm
 }
 
 type AutoscalerOption func(*AutoscalerOptions)
@@ -44,14 +47,21 @@ func WithCollectorsGroup(collectorsGroup odigosv1.CollectorsGroupRole) Autoscale
 	}
 }
 
+func WithAlgorithm(algorithm AutoscalerAlgorithm) AutoscalerOption {
+	return func(o *AutoscalerOptions) {
+		o.algorithm = algorithm
+	}
+}
+
 type Autoscaler struct {
+	kubeClient    client.Client
 	options       AutoscalerOptions
 	ticker        *time.Ticker
 	notifications chan Notification
 	podIPs        map[string]string
 }
 
-func NewAutoscaler(opts ...AutoscalerOption) *Autoscaler {
+func NewAutoscaler(kubeClient client.Client, opts ...AutoscalerOption) *Autoscaler {
 	// Set default options
 	options := AutoscalerOptions{
 		interval:    15 * time.Second,
@@ -64,6 +74,7 @@ func NewAutoscaler(opts ...AutoscalerOption) *Autoscaler {
 	}
 
 	return &Autoscaler{
+		kubeClient:    kubeClient,
 		options:       options,
 		ticker:        time.NewTicker(options.interval),
 		notifications: make(chan Notification),

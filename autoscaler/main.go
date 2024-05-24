@@ -168,10 +168,11 @@ func main() {
 	}
 
 	ctx := ctrl.SetupSignalHandler()
-	gatewayAutoscaler := collectormetrics.NewAutoscaler(
+	gatewayAutoscaler := collectormetrics.NewAutoscaler(mgr.GetClient(),
 		collectormetrics.WithCollectorsGroup(odigosv1.CollectorsGroupRoleClusterGateway),
 		collectormetrics.WithInterval(15*time.Second),
-		collectormetrics.WithScaleRange(1, 5))
+		collectormetrics.WithScaleRange(1, 5),
+		collectormetrics.WithAlgorithm(collectormetrics.ScaleBasedOnExporterQueueAndBatchQueue))
 	go gatewayAutoscaler.Run(ctx)
 
 	if err = (&controllers.PodsReconciler{
