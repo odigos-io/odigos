@@ -9,6 +9,10 @@ import Check from './check.svg';
 import Copy from './copy.svg';
 import Copied from './copied.svg';
 import YamlIcon from './yaml.svg';
+
+import GreenCheck from './green-check.svg';
+import RedError from './red-error.svg';
+
 export {
   RightArrow,
   Charge,
@@ -21,4 +25,6 @@ export {
   Copy,
   Copied,
   YamlIcon,
+  GreenCheck,
+  RedError,
 };

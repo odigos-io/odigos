@@ -5,6 +5,7 @@ import styled, { css } from 'styled-components';
 import { KeyvalImage, KeyvalText } from '@/design.system';
 import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
 import { TapList } from '@/components/setup/destination/tap.list/tap.list';
+import { ConditionCheck } from '@/components/common';
 
 const StyledTr = styled.tr`
   &:hover {
@@ -117,6 +118,7 @@ export function DestinationsTableRow({
               <KeyvalText color={theme.text.light_grey} size={14}>
                 {item.destination_type.display_name}
               </KeyvalText>
+              <ConditionCheck conditions={item.conditions} />
             </NameContainer>
             <FooterContainer>
               <KeyvalText size={20} weight={600}>
