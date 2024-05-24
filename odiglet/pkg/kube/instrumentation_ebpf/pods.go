@@ -82,7 +82,7 @@ func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod
 		return err, false
 	}
 
-	return instrumentPodWithEbpf(ctx, p.Client, pod, p.Directors, runtimeDetails, podWorkload)
+	return instrumentPodWithEbpf(ctx, pod, p.Directors, runtimeDetails, podWorkload)
 }
 
 func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*common.PodWorkload, error) {

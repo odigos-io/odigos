@@ -39,11 +39,12 @@ type podDetails struct {
 	Pids     []int
 }
 
-type InstrumentationUnHealthyReason string
+type InstrumentationStatusReason string
 
 const (
-	FailedToLoad       InstrumentationUnHealthyReason = "FailedToLoad"
-	FailedToInitialize InstrumentationUnHealthyReason = "FailedToInitialize"
+	FailedToLoad       InstrumentationStatusReason = "FailedToLoad"
+	FailedToInitialize InstrumentationStatusReason = "FailedToInitialize"
+	LoadedSuccessfully InstrumentationStatusReason = "LoadedSuccessfully"
 )
 
 const ebpfSDKConditionRunning = "ebpfSDKRunning"
@@ -51,9 +52,9 @@ const ebpfSDKConditionRunning = "ebpfSDKRunning"
 type instrumentationStatus struct {
 	Workload common.PodWorkload
 	PodName  types.NamespacedName
-	Healthy bool
-	Message string
-	Reason  InstrumentationUnHealthyReason
+	Healthy  bool
+	Message  string
+	Reason   InstrumentationStatusReason
 }
 
 type EbpfDirector[T OtelEbpfSdk] struct {
@@ -135,22 +136,21 @@ func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context) {
 				continue
 			}
 
+			condStatus := metav1.ConditionTrue
+			if !status.Healthy {
+				condStatus = metav1.ConditionFalse
+			}
+
+			if !status.Healthy {
+				log.Logger.Error(nil, "eBPF instrumentation unhealthy", "reason", status.Reason, "message", status.Message, "workload", status.Workload)
+			}
+
 			// write the status to the CR. Since we are writing the status to the instrumentedApplication CR,
 			// we might overwrite the status of another pod which corresponds to the same workload.
 			// this can cause the status to not represent the full state of the workload, in case some of the pods are healthy and some are not for the same workload.
-			if !status.Healthy {
-				log.Logger.Error(nil, "eBPF instrumentation unhealthy", "reason", status.Reason, "message", status.Reason, "workload", status.Workload)
-				msg := "Failed to load eBPF probes to pod: " + status.PodName.String() + ".message: " + status.Message
-				err := conditions.UpdateStatusConditions(ctx, d.client, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionFalse, ebpfSDKConditionRunning, string(status.Reason), msg)
-				if err != nil {
-					log.Logger.Error(err, "error updating status conditions", "workload", status.Workload)
-				}
-			} else {
-				log.Logger.V(0).Info("eBPF instrumentation healthy", "workload", status.Workload)
-				err := conditions.UpdateStatusConditions(ctx, d.client, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionTrue, ebpfSDKConditionRunning, "Success", "Successfully loaded eBPF probes to pod: " + status.PodName.String())
-				if err != nil {
-					log.Logger.Error(err, "error updating status conditions", "workload", status.Workload)
-				}
+			err = conditions.UpdateStatusConditions(ctx, d.client, runtimeDetails, &runtimeDetails.Status.Conditions, condStatus, ebpfSDKConditionRunning, string(status.Reason), status.Message)
+			if err != nil {
+				log.Logger.Error(err, "error updating status conditions", "workload", status.Workload)
 			}
 		}
 	}
@@ -188,11 +188,9 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 	go func() {
 		select {
 		case <-loadedCtx.Done():
-			// TODO: remove this print before merging
-			log.Logger.V(0).Info("eBPF instrumentation loaded observer cancelled", "workload", podWorkload, "pod", pod)
 			return
 		case <-loadedIndicator:
-			d.instrumentationStatusChan <- instrumentationStatus{Healthy: true, Workload: *podWorkload, PodName: pod}
+			d.instrumentationStatusChan <- instrumentationStatus{Healthy: true, Message: "Successfully loaded eBPF probes to pod: " + pod.String(), Workload: *podWorkload, PodName: pod, Reason: LoadedSuccessfully}
 		}
 	}()
 

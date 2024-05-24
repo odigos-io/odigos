@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -24,7 +23,7 @@ func cleanupEbpf(directors ebpf.DirectorsMap, name types.NamespacedName) {
 	}
 }
 
-func instrumentPodWithEbpf(ctx context.Context, client client.Client, pod *corev1.Pod, directors ebpf.DirectorsMap, runtimeDetails *odigosv1.InstrumentedApplication, podWorkload *common.PodWorkload) (error, bool) {
+func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.DirectorsMap, runtimeDetails *odigosv1.InstrumentedApplication, podWorkload *common.PodWorkload) (error, bool) {
 	logger := log.FromContext(ctx)
 	podUid := string(pod.UID)
 	instrumentedEbpf := false

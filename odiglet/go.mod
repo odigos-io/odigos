@@ -14,8 +14,7 @@ require (
 	github.com/odigos-io/odigos/procdiscovery v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
 	github.com/otiai10/copy v1.14.0
-	// TODO revert this change before merging
-	go.opentelemetry.io/auto v0.12.0-alpha
+	go.opentelemetry.io/auto v0.12.0-alpha.0.20240523062926-f9ad92d875aa
 	go.opentelemetry.io/otel v1.26.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.26.0
 	go.uber.org/zap v1.27.0
@@ -114,6 +113,3 @@ replace (
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/procdiscovery => ../procdiscovery
 )
-
-// TODO: remove this replace before merging
-replace go.opentelemetry.io/auto => github.com/RonFed/opentelemetry-go-instrumentation_fork v0.0.0-20240520102826-7e7c5a0992b5
