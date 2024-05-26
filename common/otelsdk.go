@@ -31,7 +31,3 @@ var (
 	OtelSdkNativeEnterprise = OtelSdk{SdkType: NativeOtelSdkType, SdkTier: EnterpriseOtelSdkTier}
 	OtelSdkEbpfEnterprise   = OtelSdk{SdkType: EbpfOtelSdkType, SdkTier: EnterpriseOtelSdkTier}
 )
-
-func NewOtelSdk(sdkType OtelSdkType, sdkTier OtelSdkTier) OtelSdk {
-	return OtelSdk{SdkType: sdkType, SdkTier: sdkTier}
-}

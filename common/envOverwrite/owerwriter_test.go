@@ -23,6 +23,13 @@ func TestShouldPatch(t *testing.T) {
 		patchedValueExpected string
 	}{
 		{
+			name: "un-relevant env var",
+			envName: "PATH",
+			observedValue: "/usr/local/bin:/usr/bin:/bin",
+			sdk: common.OtelSdkNativeCommunity,
+			shouldPatchExpected: false,
+		},
+		{
 			name: "only user value",
 			envName: "NODE_OPTIONS",
 			observedValue: userVal,
@@ -71,6 +78,51 @@ func TestShouldPatch(t *testing.T) {
 				gotPatchedValue := Patch(tt.envName, tt.observedValue, tt.sdk)
 				assert.Equal(t, tt.patchedValueExpected, gotPatchedValue)
 			}
+		})
+	}
+}
+
+func TestShouldRevert(t *testing.T) {
+	nodeOptionsNativeCommunity, _ := ValToAppend("NODE_OPTIONS", common.OtelSdkNativeCommunity)
+	userVal := "--max-old-space-size=4096"
+
+	// test different cases
+	tests := []struct {
+		name string
+		envName string
+		observedValue string
+		wantRevert bool
+	}{
+		{
+			name: "un-relevant env var",
+			envName: "PATH",
+			observedValue: "/usr/local/bin:/usr/bin:/bin",
+			wantRevert: false,
+		},
+		{
+			name: "only user value",
+			envName: "NODE_OPTIONS",
+			observedValue: userVal,
+			wantRevert: false,
+		},
+		{
+			name: "only odigos value",
+			envName: "NODE_OPTIONS",
+			observedValue: nodeOptionsNativeCommunity,
+			wantRevert: false,
+		},
+		{
+			name: "user value with odigos value matching SDKs",
+			envName: "NODE_OPTIONS",
+			observedValue: userVal + " " + nodeOptionsNativeCommunity,
+			wantRevert: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRevert := ShouldRevert(tt.envName, tt.observedValue)
+			assert.Equal(t, tt.wantRevert, gotRevert, "mismatch in ShouldRevert: %s", tt.name)
 		})
 	}
 }

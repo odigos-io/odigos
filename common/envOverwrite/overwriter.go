@@ -14,6 +14,9 @@ type envValues struct {
 // The key is the environment variable name and the value is the value to be set or appended
 // to the environment variable. We need to make sure that in case any of these environment
 // variables is already set, we append the value to it instead of overwriting it.
+//
+// Note: The values here needs to be in sync with the paths used in the odigos images.
+// If the paths are changed in the odigos images, the values here should be updated accordingly.
 var EnvValuesMap = map[string]envValues{
 	"NODE_OPTIONS": {
 		delim: " ",
@@ -56,13 +59,13 @@ func ShouldPatch(envName string, observedValue string, sdk common.OtelSdk) bool 
 		return false
 	}
 
-	val, ok := env.values[sdk]
+	desiredValue, ok := env.values[sdk]
 	if !ok {
 		// No specific overwrite is required for this SDK
 		return false
 	}
 
-	if strings.Contains(observedValue, val) {
+	if strings.Contains(observedValue, desiredValue) {
 		// if the observed value contains the value odigos sets for this SDK,
 		// that means that either:
 		//    1. the user does not add any additional values and we see here our own value only,
@@ -82,25 +85,22 @@ func ShouldPatch(envName string, observedValue string, sdk common.OtelSdk) bool 
 	return true
 }
 
-func ShouldRevert(envName string, value string, sdk common.OtelSdk) bool {
+func ShouldRevert(envName string, observedValue string) bool {
 	env, ok := EnvValuesMap[envName]
 	if !ok {
 		// We don't care about this environment variable
 		return false
 	}
 
-	val, ok := env.values[sdk]
-	if !ok {
-		// We don't care about this environment variable for this SDK
-		return false
+	// If we find any of the values odigos sets for any SDK in the observed value,
+	// that means that the environment variable is patched by odigos and we need to revert it
+	for _, val := range env.values {
+		if strings.Contains(observedValue, val) && observedValue != val {
+			return true
+		}
 	}
 
-	if !strings.Contains(value, val) {
-		// The environment variable is not patched
-		return false
-	}
-	return true
-
+	return false
 }
 
 func Patch(envName string, currentVal string, sdk common.OtelSdk) string {

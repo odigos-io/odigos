@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/common"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -76,11 +75,6 @@ func Revert(original *v1.PodTemplateSpec, targetObj client.Object) {
 	}
 
 	for iContainer, container := range original.Spec.Containers {
-		_, sdk, found := odgiosK8s.GetLanguageAndOtelSdk(container)
-		if !found {
-			continue
-		}
-	
 		for resourceName := range container.Resources.Limits {
 			if strings.HasPrefix(string(resourceName), common.OdigosResourceNamespace) {
 				delete(container.Resources.Limits, resourceName)
@@ -97,7 +91,7 @@ func Revert(original *v1.PodTemplateSpec, targetObj client.Object) {
 		revertedEnvVars := make([]v1.EnvVar, 0, len(container.Env))
 
 		for _, envVar := range container.Env {
-			if envOverwrite.ShouldRevert(envVar.Name, envVar.Value, sdk) {
+			if envOverwrite.ShouldRevert(envVar.Name, envVar.Value) {
 				if origVal, ok := containerOriginalEnv[envVar.Name]; ok {
 					// Revert the env var to its original value
 					revertedEnvVars = append(revertedEnvVars, v1.EnvVar{
