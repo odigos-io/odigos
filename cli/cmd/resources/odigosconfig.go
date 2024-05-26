@@ -16,93 +16,55 @@ const (
 )
 
 func otelSdkConfigCommunity() (map[common.ProgrammingLanguage]common.OtelSdk, map[common.ProgrammingLanguage][]common.OtelSdk) {
-
-	nativeCommunity := common.OtelSdk{
-		SdkType: common.NativeOtelSdkType,
-		SdkTier: common.CommunityOtelSdkTier,
-	}
-
-	eBPFCommunity := common.OtelSdk{
-		SdkType: common.EbpfOtelSdkType,
-		SdkTier: common.CommunityOtelSdkTier,
-	}
-
 	return map[common.ProgrammingLanguage]common.OtelSdk{
-			common.JavaProgrammingLanguage:       nativeCommunity,
-			common.PythonProgrammingLanguage:     nativeCommunity,
-			common.GoProgrammingLanguage:         eBPFCommunity,
-			common.DotNetProgrammingLanguage:     nativeCommunity,
-			common.JavascriptProgrammingLanguage: nativeCommunity,
+			common.JavaProgrammingLanguage:       common.OtelSdkNativeCommunity,
+			common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
+			common.GoProgrammingLanguage:         common.OtelSdkEbpfCommunity,
+			common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
+			common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
 		},
 		map[common.ProgrammingLanguage][]common.OtelSdk{
-			common.JavaProgrammingLanguage:       {nativeCommunity},
-			common.PythonProgrammingLanguage:     {nativeCommunity},
-			common.GoProgrammingLanguage:         {eBPFCommunity},
-			common.DotNetProgrammingLanguage:     {nativeCommunity},
-			common.JavascriptProgrammingLanguage: {nativeCommunity},
+			common.JavaProgrammingLanguage:       {common.OtelSdkNativeCommunity},
+			common.PythonProgrammingLanguage:     {common.OtelSdkNativeCommunity},
+			common.GoProgrammingLanguage:         {common.OtelSdkEbpfCommunity},
+			common.DotNetProgrammingLanguage:     {common.OtelSdkNativeCommunity},
+			common.JavascriptProgrammingLanguage: {common.OtelSdkNativeCommunity},
 		}
 }
 
 func otelSdkConfigCloud() (map[common.ProgrammingLanguage]common.OtelSdk, map[common.ProgrammingLanguage][]common.OtelSdk) {
-
-	nativeCommunity := common.OtelSdk{
-		SdkType: common.NativeOtelSdkType,
-		SdkTier: common.CommunityOtelSdkTier,
-	}
-
-	eBPFEnterprise := common.OtelSdk{
-		SdkType: common.EbpfOtelSdkType,
-		SdkTier: common.EnterpriseOtelSdkTier,
-	}
-
 	return map[common.ProgrammingLanguage]common.OtelSdk{
-			common.JavaProgrammingLanguage:       nativeCommunity,
-			common.PythonProgrammingLanguage:     nativeCommunity,
-			common.GoProgrammingLanguage:         eBPFEnterprise,
-			common.DotNetProgrammingLanguage:     nativeCommunity,
-			common.JavascriptProgrammingLanguage: nativeCommunity,
+			common.JavaProgrammingLanguage:       common.OtelSdkNativeCommunity,
+			common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
+			common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
+			common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
+			common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
 		},
 		map[common.ProgrammingLanguage][]common.OtelSdk{
-			common.JavaProgrammingLanguage:       {nativeCommunity, eBPFEnterprise},
-			common.PythonProgrammingLanguage:     {nativeCommunity, eBPFEnterprise},
-			common.GoProgrammingLanguage:         {eBPFEnterprise},
-			common.DotNetProgrammingLanguage:     {nativeCommunity},
-			common.JavascriptProgrammingLanguage: {nativeCommunity, eBPFEnterprise},
+			common.JavaProgrammingLanguage:       {common.OtelSdkNativeCommunity, common.OtelSdkEbpfEnterprise},
+			common.PythonProgrammingLanguage:     {common.OtelSdkNativeCommunity, common.OtelSdkEbpfEnterprise},
+			common.GoProgrammingLanguage:         {common.OtelSdkEbpfEnterprise},
+			common.DotNetProgrammingLanguage:     {common.OtelSdkNativeCommunity},
+			common.JavascriptProgrammingLanguage: {common.OtelSdkNativeCommunity, common.OtelSdkEbpfEnterprise},
 		}
 }
 
 func otelSdkConfigOnPrem() (map[common.ProgrammingLanguage]common.OtelSdk, map[common.ProgrammingLanguage][]common.OtelSdk) {
-
-	nativeCommunity := common.OtelSdk{
-		SdkType: common.NativeOtelSdkType,
-		SdkTier: common.CommunityOtelSdkTier,
-	}
-
-	eBPFEnterprise := common.OtelSdk{
-		SdkType: common.EbpfOtelSdkType,
-		SdkTier: common.EnterpriseOtelSdkTier,
-	}
-
-	nativeEnterprise := common.OtelSdk{
-		SdkType: common.NativeOtelSdkType,
-		SdkTier: common.EnterpriseOtelSdkTier,
-	}
-
 	return map[common.ProgrammingLanguage]common.OtelSdk{
-			common.JavaProgrammingLanguage:       eBPFEnterprise, // Notice - for onprem, the default for java is eBPF
-			common.PythonProgrammingLanguage:     eBPFEnterprise, // Also Python
-			common.GoProgrammingLanguage:         eBPFEnterprise,
-			common.DotNetProgrammingLanguage:     nativeCommunity,
-			common.JavascriptProgrammingLanguage: eBPFEnterprise, // Also Javascript
-			common.MySQLProgrammingLanguage:      eBPFEnterprise,
+			common.JavaProgrammingLanguage:       common.OtelSdkEbpfEnterprise, // Notice - for onprem, the default for java is eBPF
+			common.PythonProgrammingLanguage:     common.OtelSdkEbpfEnterprise, // Also Python
+			common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
+			common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
+			common.JavascriptProgrammingLanguage: common.OtelSdkEbpfEnterprise, // Also Javascript
+			common.MySQLProgrammingLanguage:      common.OtelSdkEbpfEnterprise,
 		},
 		map[common.ProgrammingLanguage][]common.OtelSdk{
-			common.JavaProgrammingLanguage:       {nativeCommunity, eBPFEnterprise, nativeEnterprise},
-			common.PythonProgrammingLanguage:     {nativeCommunity, eBPFEnterprise},
-			common.GoProgrammingLanguage:         {eBPFEnterprise},
-			common.DotNetProgrammingLanguage:     {nativeCommunity},
-			common.JavascriptProgrammingLanguage: {nativeCommunity, eBPFEnterprise},
-			common.MySQLProgrammingLanguage:      {eBPFEnterprise},
+			common.JavaProgrammingLanguage:       {common.OtelSdkNativeCommunity, common.OtelSdkEbpfEnterprise, common.OtelSdkNativeEnterprise},
+			common.PythonProgrammingLanguage:     {common.OtelSdkNativeCommunity, common.OtelSdkEbpfEnterprise},
+			common.GoProgrammingLanguage:         {common.OtelSdkEbpfEnterprise},
+			common.DotNetProgrammingLanguage:     {common.OtelSdkNativeCommunity},
+			common.JavascriptProgrammingLanguage: {common.OtelSdkNativeCommunity, common.OtelSdkEbpfEnterprise},
+			common.MySQLProgrammingLanguage:      {common.OtelSdkEbpfEnterprise},
 		}
 }
 

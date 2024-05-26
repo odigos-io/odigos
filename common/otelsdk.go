@@ -24,3 +24,10 @@ type OtelSdk struct {
 	SdkType OtelSdkType `json:"sdkType"`
 	SdkTier OtelSdkTier `json:"sdkTier"`
 }
+
+var (
+	OtelSdkNativeCommunity  = OtelSdk{SdkType: NativeOtelSdkType, SdkTier: CommunityOtelSdkTier}
+	OtelSdkEbpfCommunity    = OtelSdk{SdkType: EbpfOtelSdkType, SdkTier: CommunityOtelSdkTier}
+	OtelSdkNativeEnterprise = OtelSdk{SdkType: NativeOtelSdkType, SdkTier: EnterpriseOtelSdkTier}
+	OtelSdkEbpfEnterprise   = OtelSdk{SdkType: EbpfOtelSdkType, SdkTier: EnterpriseOtelSdkTier}
+)
