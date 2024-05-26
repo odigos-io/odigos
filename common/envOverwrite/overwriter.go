@@ -58,7 +58,7 @@ func ShouldPatch(envName string, observedValue string, sdk common.OtelSdk) bool 
 
 	val, ok := env.values[sdk]
 	if !ok {
-		// Odigos does not manipulate this environment variable for this SDK, so ignore it
+		// No specific overwrite is required for this SDK
 		return false
 	}
 
