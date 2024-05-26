@@ -81,24 +81,21 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	otelSdkEbpfCommunity := common.OtelSdk{SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier}
-	otelSdkNativeCommunity := common.OtelSdk{SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier}
-
 	otelSdkLsf := map[common.ProgrammingLanguage]map[common.OtelSdk]instrumentation.LangSpecificFunc{
 		common.GoProgrammingLanguage: {
-			otelSdkEbpfCommunity: instrumentlang.Go,
+			common.OtelSdkEbpfCommunity: instrumentlang.Go,
 		},
 		common.JavaProgrammingLanguage: {
-			otelSdkNativeCommunity: instrumentlang.Java,
+			common.OtelSdkNativeCommunity: instrumentlang.Java,
 		},
 		common.PythonProgrammingLanguage: {
-			otelSdkNativeCommunity: instrumentlang.Python,
+			common.OtelSdkNativeCommunity: instrumentlang.Python,
 		},
 		common.JavascriptProgrammingLanguage: {
-			otelSdkNativeCommunity: instrumentlang.NodeJS,
+			common.OtelSdkNativeCommunity: instrumentlang.NodeJS,
 		},
 		common.DotNetProgrammingLanguage: {
-			otelSdkNativeCommunity: instrumentlang.DotNet,
+			common.OtelSdkNativeCommunity: instrumentlang.DotNet,
 		},
 	}
 
@@ -117,7 +114,7 @@ func initEbpf(ctx context.Context, client client.Client) (ebpf.DirectorsMap, err
 	goDirector := ebpf.NewEbpfDirector(ctx, client, common.GoProgrammingLanguage, goInstrumentationFactory)
 	goDirectorKey := ebpf.DirectorKey{
 		Language: common.GoProgrammingLanguage,
-		OtelSdk:  common.OtelSdk{SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		OtelSdk:  common.OtelSdkEbpfCommunity,
 	}
 
 	return ebpf.DirectorsMap{

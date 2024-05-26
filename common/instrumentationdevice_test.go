@@ -35,17 +35,18 @@ func TestInstrumentationDeviceNameToComponents(t *testing.T) {
 	language := GoProgrammingLanguage
 	otelSdkType := EbpfOtelSdkType
 	otelSdkTier := CommunityOtelSdkTier
+	sdk := OtelSdk{SdkType: otelSdkType, SdkTier: otelSdkTier}
 
-	deviceName := InstrumentationDeviceName(language, OtelSdk{SdkType: otelSdkType, SdkTier: otelSdkTier})
-	gotLanguage, gotOtelSdkType, gotOtelSdkTier := InstrumentationDeviceNameToComponents(string(deviceName))
+	deviceName := InstrumentationDeviceName(language, sdk)
+	gotLanguage, gotSdk := InstrumentationDeviceNameToComponents(string(deviceName))
 
 	if gotLanguage != language {
 		t.Errorf("InstrumentationDeviceNameToComponents() gotLanguage = %v, want %v", gotLanguage, language)
 	}
-	if gotOtelSdkType != otelSdkType {
-		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkType = %v, want %v", gotOtelSdkType, otelSdkType)
+	if gotSdk.SdkType != otelSdkType {
+		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkType = %v, want %v", gotSdk.SdkType, otelSdkType)
 	}
-	if gotOtelSdkTier != otelSdkTier {
-		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkTier = %v, want %v", gotOtelSdkTier, otelSdkTier)
+	if gotSdk.SdkTier != otelSdkTier {
+		t.Errorf("InstrumentationDeviceNameToComponents() gotOtelSdkTier = %v, want %v", gotSdk.SdkTier, otelSdkTier)
 	}
 }

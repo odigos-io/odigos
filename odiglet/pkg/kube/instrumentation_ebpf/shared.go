@@ -3,14 +3,13 @@ package instrumentation_ebpf
 import (
 	"context"
 	"errors"
-	"strings"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -29,15 +28,13 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 	instrumentedEbpf := false
 
 	for _, container := range pod.Spec.Containers {
+		language, sdk, found := odgiosK8s.GetLanguageAndOtelSdk(container)
 
-		deviceName := podContainerDeviceName(container)
-		if deviceName == nil {
+		if !found {
 			continue
 		}
 
-		language, sdkType, sdkTier := common.InstrumentationDeviceNameToComponents(*deviceName)
-
-		director := directors[ebpf.DirectorKey{Language: language, OtelSdk: common.OtelSdk{SdkType: sdkType, SdkTier: sdkTier}}]
+		director := directors[ebpf.DirectorKey{Language: language, OtelSdk: sdk}]
 		if director == nil {
 			continue
 		}
@@ -78,19 +75,4 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 		}
 	}
 	return nil, instrumentedEbpf
-}
-
-func podContainerDeviceName(container v1.Container) *string {
-	if container.Resources.Limits == nil {
-		return nil
-	}
-
-	for resourceName, _ := range container.Resources.Limits {
-		resourceNameStr := string(resourceName)
-		if strings.HasPrefix(resourceNameStr, common.OdigosResourceNamespace) {
-			return &resourceNameStr
-		}
-	}
-
-	return nil
 }
