@@ -19,3 +19,20 @@ Then install odigos vmagent with the following command:
 ```shell
 sudo apt install odigos
 ```
+
+## Adding License Key
+
+Add the following configuration to the file `/etc/odigos-vmagent/service.yaml`:
+
+```shell
+on_prem:
+  token: "<your_license_key>"
+```
+
+## Start the Agent
+
+Start the agent systemd service:
+
+```shell
+sudo systemctl enable --now odigos-vmagent
+```

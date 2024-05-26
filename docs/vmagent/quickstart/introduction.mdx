@@ -26,7 +26,7 @@ Deploy the application using the following commands:
 ```shell
 sudo mkdir -p /etc/apt/keyrings/
 wget -q -O - https://apt.fury.io/odigos/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/odigos.gpg > /dev/null
-deb [signed-by=/etc/apt/keyrings/odigos.gpg] https://apt.fury.io/odigos/ * *
+echo "deb [signed-by=/etc/apt/keyrings/odigos.gpg] https://apt.fury.io/odigos/ * *" | sudo tee /etc/apt/sources.list.d/odigos.list
 ```
 
 2. Update the package manager:
@@ -49,25 +49,32 @@ sudo systemctl status membership
 
 ## Deploying Jaeger
 
-This Jaeger setup is just for demonstration purposes. In a production environment, you would deploy Jaeger in a more robust way.
+This Jaeger setup is just for demonstration purposes. In a production environment, you would deploy Jaeger or any other backend in a more robust way.
 
 Install Jaeger using the following commands:
 
-1. Download a version of Jaeger which is compatible to your OS and arch from [GitHub releases page](https://github.com/jaegertracing/jaeger/releases).
-For example, to download version `1.57.0` for linux amd64:
+1. Download a version of Jaeger which is compatible to your OS and arch from [GitHub releases page](https://github.com/jaegertracing/jaeger/releases) and extract the archive.
 
-```shell
+Examples for jaeger `v1.0.57`:
+
+<Tabs>
+  <Tab title="amd64">
+  ```bash
 wget https://github.com/jaegertracing/jaeger/releases/download/v1.57.0/jaeger-1.57.0-linux-amd64.tar.gz
-```
+tar -xvf jaeger-1.57.0-linux-amd64.tar.gz
+cd jaeger-1.57.0-linux-amd64
+  ```
+  </Tab>
+  <Tab title="arm64">
+  ```bash
+wget https://github.com/jaegertracing/jaeger/releases/download/v1.57.0/jaeger-1.57.0-linux-arm64.tar.gz
+tar -xvf jaeger-1.57.0-linux-arm64.tar.gz
+cd jaeger-1.57.0-linux-arm64
+  ```
+  </Tab>
+</Tabs>
 
-2. Extract the downloaded archive:
-
-```shell
-tar -xvf jaeger-<version>-linux-<arch>.tar.gz
-cd jaeger-<version>-linux-<arch>
-```
-
-3. Run the Jaeger All-in-One binary:
+2. Run the Jaeger All-in-One binary:
 
 ```shell
 ./jaeger-all-in-one --collector.otlp.grpc.host-port 0.0.0.0:44317 --collector.otlp.http.host-port 0.0.0.0:44318
@@ -75,6 +82,6 @@ cd jaeger-<version>-linux-<arch>
 
 We map the otlp endpoints for Jaeger to different ports (44317\44318 instead of 4317\4318) to avoid conflicts with odigos collector.
 
-4. Browse to Jaeger UI at `http://localhost:16686`. Replace `localhost` with the IP address of the machine where Jaeger is running if you are accessing it from a different machine.
+3. Browse to Jaeger UI at `http://localhost:16686`. Replace `localhost` with the IP address of the machine where Jaeger is running if you are accessing it from a different machine.
 
 At this point, jaeger is running and ready to receive traces from the demo application.
