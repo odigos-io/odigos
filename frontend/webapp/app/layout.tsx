@@ -5,7 +5,7 @@ import theme from '@/styles/palette';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ThemeProviderWrapper } from '@keyval-dev/design-system';
 import ReduxProvider from '@/store/redux-provider';
-import { useNotify } from '@/hooks';
+import { useNotify, useSSE } from '@/hooks';
 import NotificationManager from '@/components/notification/notification-manager';
 
 const LAYOUT_STYLE: React.CSSProperties = {
@@ -31,25 +31,7 @@ export default function RootLayout({
     },
   });
 
-  const notify = useNotify();
-  useEffect(() => {
-    const eventSource = new EventSource('http://localhost:8085/events');
-
-    eventSource.onmessage = function (event) {
-      const data = JSON.parse(event.data);
-      console.log({ data });
-      notify(data.data, data.event, data.target, '', data.type);
-    };
-
-    eventSource.onerror = function (event) {
-      console.error('EventSource failed:', event);
-    };
-
-    // Clean up event source on component unmount
-    return () => {
-      eventSource.close();
-    };
-  }, []);
+  useSSE();
 
   return (
     <html lang="en">

@@ -6,6 +6,8 @@ import styled, { keyframes } from 'styled-components';
 import { BlueInfo, GreenCheck, RedError } from '@/assets/icons/app';
 import { markAsOld, markAsSeen } from '@/store';
 import { KeyvalLink, KeyvalText } from '@/design.system';
+import { ROUTES } from '@/utils';
+import { useRouter } from 'next/navigation';
 
 interface NotificationProps {
   id: string;
@@ -14,6 +16,8 @@ interface NotificationProps {
   type: 'success' | 'error' | 'info';
   time?: string;
   onClick?: () => void;
+  crdType?: string;
+  target?: string;
 }
 
 const slideIn = keyframes`
@@ -39,6 +43,7 @@ const NotificationContainer = styled.div<{ type: string; isLeaving: boolean }>`
   background-color: ${theme.colors.dark};
   border-radius: 8px;
   padding: 10px;
+  gap: 12px;
   margin-top: 8px;
   max-width: 450px;
   display: flex;
@@ -92,10 +97,11 @@ const Notification: React.FC<NotificationProps> = ({
   message,
   type,
   title,
-  onClick = () => {},
-  time,
+  crdType,
+  target,
 }) => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
@@ -149,7 +155,19 @@ const Notification: React.FC<NotificationProps> = ({
   function onDetailsClick() {
     dispatch(markAsSeen(id));
     dispatch(markAsOld(id));
-    onClick();
+
+    if (target) {
+      switch (crdType) {
+        case 'Destination':
+          router.push(`${ROUTES.UPDATE_DESTINATION}${target}`);
+          break;
+        case 'Source':
+          router.push(`${ROUTES.MANAGE_SOURCE}?${target}`);
+          break;
+        default:
+          break;
+      }
+    }
   }
 
   return (
@@ -164,7 +182,7 @@ const Notification: React.FC<NotificationProps> = ({
         </NotificationDetails>
       </NotificationContent>
       <ButtonContainer>
-        <KeyvalLink fontSize={14} value="Details" onClick={onDetailsClick} />
+        <KeyvalLink fontSize={12} value="Details" onClick={onDetailsClick} />
       </ButtonContainer>
     </NotificationContainer>
   );

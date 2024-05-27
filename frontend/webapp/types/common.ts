@@ -14,5 +14,6 @@ export interface Notification {
   time?: string;
   target?: string;
   event?: string;
+  crdType?: string;
   type: 'success' | 'error' | 'info';
 }

@@ -192,20 +192,8 @@ func main() {
 			switch event.Type {
 			case watch.Added:
 				fmt.Printf("New pod added: %s\n", event.Object.(*v1alpha1.InstrumentedApplication).Name)
-
 			case watch.Modified:
 				fmt.Printf("Pod modified: %s\n", event.Object.(*v1alpha1.InstrumentedApplication).Name)
-				// conditions := event.Object.(*v1alpha1.InstrumentedApplication).Status.Conditions
-				// if len(conditions) == 0 {
-				// 	continue
-				// }
-
-				// // Send the message to the client
-				// for _, condition := range conditions {
-				// 	data := &condition.Message
-
-				// }
-
 			case watch.Deleted:
 				fmt.Printf("Pod deleted: %s\n", event.Object.(*v1alpha1.InstrumentedApplication).Name)
 			case watch.Error:
@@ -238,7 +226,12 @@ func main() {
 				for _, condition := range conditions {
 					data := &condition.Message
 					target := event.Object.(*v1alpha1.Destination).Name
-					sse.SendMessageToClient(sse.SSEMessage{Event: "Modified", Type: "success", Target: target, Data: *data})
+					conditionType := "success"
+					if condition.Status == "False" {
+						conditionType = "error"
+					}
+
+					sse.SendMessageToClient(sse.SSEMessage{Event: "Modified", Type: conditionType, Target: target, Data: *data, CRDType: "Destination"})
 				}
 
 			case watch.Deleted:

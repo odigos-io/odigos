@@ -23,7 +23,6 @@ const NotificationListContainer = styled.div`
 
 const BellIconWrapper = styled.div`
   position: relative;
-
   padding: 6px;
   border-radius: 8px;
   border: 1px solid ${theme.colors.blue_grey};
@@ -90,7 +89,7 @@ const NotificationList: React.FC = () => {
       }
     });
   }
-
+  console.log({ notifications });
   return notifications.length > 0 ? (
     <div ref={containerRef}>
       <BellIconWrapper>
@@ -100,12 +99,12 @@ const NotificationList: React.FC = () => {
           style={{ cursor: 'pointer' }}
           onClick={() => setShowNotifications(!showNotifications)}
         />
+        {unseenCount > 0 && (
+          <NotificationBadge>
+            <KeyvalText size={10}>{unseenCount}</KeyvalText>
+          </NotificationBadge>
+        )}
       </BellIconWrapper>
-      {unseenCount > 0 && (
-        <NotificationBadge>
-          <KeyvalText size={10}>{unseenCount}</KeyvalText>
-        </NotificationBadge>
-      )}
       {showNotifications && (
         <NotificationListContainer>
           <NotificationHeader>

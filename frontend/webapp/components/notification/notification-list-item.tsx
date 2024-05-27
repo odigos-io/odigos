@@ -14,7 +14,7 @@ interface NotificationListItemProps {
   type: 'success' | 'error' | 'info';
   seen: boolean;
   title?: string;
-  onClick?: () => void;
+  crdType?: string;
   time?: string;
   target?: string;
 }
@@ -78,7 +78,7 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
   type,
   seen,
   title,
-  onClick = () => {},
+  crdType,
   target,
   time,
 }) => {
@@ -125,7 +125,16 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
   };
   function onDetailsClick() {
     if (target) {
-      router.push(`${ROUTES.UPDATE_DESTINATION}${target}`);
+      switch (crdType) {
+        case 'Destination':
+          router.push(`${ROUTES.UPDATE_DESTINATION}${target}`);
+          break;
+        case 'Source':
+          router.push(`${ROUTES.MANAGE_SOURCE}?${target}`);
+          break;
+        default:
+          break;
+      }
     }
   }
   return (
@@ -133,7 +142,7 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
       <NotificationContent>
         <div>{getIcon()}</div>
         <NotificationDetails>
-          <KeyvalText size={18} weight={600}>
+          <KeyvalText size={16} weight={600}>
             {title}
           </KeyvalText>
           <KeyvalText size={14}>{message}</KeyvalText>
