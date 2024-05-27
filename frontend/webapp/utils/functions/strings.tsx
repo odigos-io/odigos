@@ -87,6 +87,12 @@ export const timeAgo = (timestamp: string) => {
   const differenceInHours = Math.floor(differenceInMinutes / 60);
 
   if (differenceInMinutes < 60) {
+    if (differenceInMinutes === 0) {
+      return 'Just now';
+    } else if (differenceInMinutes === 1) {
+      return '1 minute ago';
+    }
+
     return `${differenceInMinutes} minutes ago`;
   } else if (differenceInHours < 24) {
     return `${differenceInHours} hours ago`;

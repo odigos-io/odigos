@@ -27,6 +27,11 @@ const NotificationItemContainer = styled.div<{ seen: boolean }>`
   align-items: center;
   background-color: ${({ seen }) =>
     seen ? theme.colors.light_dark : theme.colors.dark};
+
+  &:hover {
+    cursor: pointer;
+    background-color: ${theme.colors.dark};
+  }
 `;
 
 const NotificationContent = styled.div`

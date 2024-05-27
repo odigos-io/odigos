@@ -7,6 +7,7 @@ import theme from '@/styles/palette';
 import { Bell } from '@/assets/icons/app';
 import { KeyvalText } from '@/design.system';
 import { transform } from 'typescript';
+import { useOnClickOutside } from '@/hooks';
 
 const NotificationListContainer = styled.div`
   position: absolute;
@@ -47,6 +48,8 @@ const NotificationList: React.FC = () => {
   );
 
   const dispatch = useDispatch();
+  const containerRef = useRef(null);
+  useOnClickOutside(containerRef, () => setShowNotifications(false));
 
   const isInitialRender = useRef(true);
   const unseenCount = notifications.filter(
@@ -73,7 +76,10 @@ const NotificationList: React.FC = () => {
 
   return (
     <>
-      <BellIconWrapper onClick={() => setShowNotifications(!showNotifications)}>
+      <BellIconWrapper
+        ref={containerRef}
+        onClick={() => setShowNotifications(!showNotifications)}
+      >
         <Bell width={24} height={24} />
         {unseenCount > 0 && (
           <NotificationBadge>
@@ -82,7 +88,7 @@ const NotificationList: React.FC = () => {
         )}
         {showNotifications && (
           <NotificationListContainer>
-            {notifications.map((notification) => (
+            {[...notifications].reverse().map((notification) => (
               <NotificationListItem
                 key={notification.id}
                 id={notification.id}
