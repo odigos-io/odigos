@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"flag"
 	"fmt"
@@ -15,13 +16,18 @@ import (
 
 	"github.com/gin-contrib/cors"
 
+	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/endpoints/actions"
+	"github.com/odigos-io/odigos/frontend/endpoints/sse"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/version"
 
 	"github.com/odigos-io/odigos/frontend/endpoints"
 
 	"github.com/gin-gonic/gin"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 const (
@@ -36,6 +42,11 @@ type Flags struct {
 	KubeConfig string
 	Namespace  string
 }
+
+// type SSEMessage struct {
+// 	Time string `json:"time"`
+// 	Type string `json:"type"`
+// }
 
 //go:embed all:webapp/out/*
 var uiFS embed.FS
@@ -168,6 +179,119 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error starting server: %s", err)
 	}
+
+	instrumentedApplicationWatcher, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").Watch(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		log.Fatalf("Error creating watcher: %v", err)
+	}
+
+	// Handle the watch events for InstrumentedApplications
+	go func() {
+		ch := instrumentedApplicationWatcher.ResultChan()
+		for event := range ch {
+			switch event.Type {
+			case watch.Added:
+				fmt.Printf("New pod added: %s\n", event.Object.(*v1alpha1.InstrumentedApplication).Name)
+				data := "InstrumentedApplication added successfully"
+				sse.SendMessageToClient(sse.SSEMessage{Time: "2021-09-01 15:04:05", Type: "message", Data: data})
+			case watch.Modified:
+				fmt.Printf("Pod modified: %s\n", event.Object.(*v1alpha1.InstrumentedApplication).Name)
+				conditions := event.Object.(*v1alpha1.InstrumentedApplication).Status.Conditions
+				if len(conditions) == 0 {
+					continue
+				}
+
+				// Send the message to the client
+				for _, condition := range conditions {
+					data := &condition.Message
+					sse.SendMessageToClient(sse.SSEMessage{Time: "2021-09-01 15:04:05", Type: "message", Data: *data})
+				}
+
+			case watch.Deleted:
+				fmt.Printf("Pod deleted: %s\n", event.Object.(*v1alpha1.InstrumentedApplication).Name)
+			case watch.Error:
+				fmt.Printf("Error watching pod: %v\n", event.Object)
+			}
+		}
+	}()
+
+	destinationWatcher, err := kube.DefaultClient.OdigosClient.Destinations(flags.Namespace).Watch(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		log.Fatalf("Error creating watcher: %v", err)
+	}
+
+	// Handle the watch events for Destination
+	go func() {
+		ch := destinationWatcher.ResultChan()
+		for event := range ch {
+			switch event.Type {
+			case watch.Added:
+				fmt.Printf("New pod added: %s\n", event.Object.(*v1alpha1.Destination).Name)
+				data := "Destination added successfully"
+				sse.SendMessageToClient(sse.SSEMessage{Time: "2021-09-01 15:04:05", Type: "message", Data: data})
+
+			case watch.Modified:
+				fmt.Printf("Pod modified: %s\n", event.Object.(*v1alpha1.Destination).Name)
+				conditions := event.Object.(*v1alpha1.Destination).Status.Conditions
+				if len(conditions) == 0 {
+					continue
+				}
+
+				// Send the message to the client
+				for _, condition := range conditions {
+					data := &condition.Message
+					sse.SendMessageToClient(sse.SSEMessage{Time: "2021-09-01 15:04:05", Type: "message", Data: *data})
+				}
+
+			case watch.Deleted:
+				fmt.Printf("Pod deleted: %s\n", event.Object.(*v1alpha1.Destination).Name)
+			case watch.Error:
+				fmt.Printf("Error watching pod: %v\n", event.Object)
+			}
+		}
+	}()
+
+	r.GET("/events", sse.HandleSSEConnections)
+
+	// // Add SSE endpoint
+	// r.GET("/events", func(c *gin.Context) {
+	// 	c.Header("Content-Type", "text/event-stream")
+	// 	c.Header("Cache-Control", "no-cache")
+	// 	c.Header("Connection", "keep-alive")
+	// 	c.Header("Transfer-Encoding", "chunked")
+
+	// 	// Create a channel to send SSE messages
+	// 	messageChan := make(chan SSEMessage)
+
+	// 	// Start a goroutine to send SSE messages
+	// 	go func() {
+	// 		defer close(messageChan)
+	// 		for {
+	// 			// Create SSE message
+	// 			message := SSEMessage{Time: time.Now().Format("2006-01-02 15:04:05"), Type: "message"}
+
+	// 			// Marshal message to JSON
+	// 			jsonData, err := json.Marshal(message)
+	// 			if err != nil {
+	// 				log.Printf("Error marshaling JSON: %s", err)
+	// 				continue
+	// 			}
+
+	// 			// Send JSON data as SSE message
+	// 			fmt.Fprintf(c.Writer, "data: %s\n\n", string(jsonData))
+	// 			c.Writer.Flush()
+
+	// 			// Wait for 2 seconds before sending the next message
+	// 			time.Sleep(2 * time.Second)
+	// 		}
+	// 	}()
+
+	// 	// Continuously send SSE messages to the client
+	// 	for range c.Writer.CloseNotify() {
+	// 		// Client connection closed, stop sending messages
+	// 		return
+	// 	}
+	// })
 
 	log.Println("Starting Odigos UI...")
 	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
