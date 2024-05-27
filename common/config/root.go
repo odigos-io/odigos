@@ -12,10 +12,13 @@ const (
 	memoryLimiterProcessorName = "memory_limiter"
 )
 
-var availableConfigers = []Configer{&Middleware{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{}, &GrafanaCloudLoki{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{},
+var availableConfigers = []Configer{
+	&Middleware{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{},
+	&GrafanaCloudLoki{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{},
 	&Tempo{}, &Loki{}, &Jaeger{}, &GenericOTLP{}, &OTLPHttp{}, &Elasticsearch{}, &Quickwit{}, &Signoz{}, &Qryn{},
 	&OpsVerse{}, &Splunk{}, &Lightstep{}, &GoogleCloud{}, &GoogleCloudStorage{}, &Sentry{}, &AzureBlobStorage{},
-	&AWSS3{}, &Dynatrace{}, &Chronosphere{}, &ElasticAPM{}, &Axiom{}, &SumoLogic{}, &Coralogix{}, &Causely{}}
+	&AWSS3{}, &Dynatrace{}, &Chronosphere{}, &ElasticAPM{}, &Axiom{}, &SumoLogic{}, &Coralogix{}, &Causely{}, &Uptrace{}, &Debug{},
+}
 
 type Configer interface {
 	DestType() common.DestinationType
@@ -24,7 +27,7 @@ type Configer interface {
 
 type ResourceStatuses struct {
 	Destination map[string]error
-	Processor map[string]error
+	Processor   map[string]error
 }
 
 func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, *ResourceStatuses) {
@@ -37,7 +40,7 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 
 	status := &ResourceStatuses{
 		Destination: make(map[string]error),
-		Processor: make(map[string]error),
+		Processor:   make(map[string]error),
 	}
 
 	for _, dest := range dests {
