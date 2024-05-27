@@ -38,14 +38,7 @@ const BackButtonWrapper = styled.div`
   }
 `;
 
-const BellIconWrapper = styled.div`
-  position: relative;
-  cursor: pointer;
-`;
-
 export function OverviewHeader({ title, onBackClick }: OverviewHeaderProps) {
-  const [showNotifications, setShowNotifications] = useState(false);
-
   return (
     <OverviewHeaderContainer>
       <HeaderTop>
@@ -60,10 +53,7 @@ export function OverviewHeader({ title, onBackClick }: OverviewHeaderProps) {
         </KeyvalText>
       </HeaderTop>
 
-      <BellIconWrapper onClick={() => setShowNotifications(!showNotifications)}>
-        <Bell width={24} height={24} />
-        {showNotifications && <NotificationList />}
-      </BellIconWrapper>
+      <NotificationList />
     </OverviewHeaderContainer>
   );
 }
