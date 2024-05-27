@@ -52,6 +52,11 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 
 		err := configer.ModifyConfig(dest, currentConfig)
 		status.Destination[dest.GetName()] = err
+
+		// If configurer ran without errors, but there were no signals enabled, warn the user
+		if len(dest.GetSignals()) == 0 && err == nil {
+			status.Destination[dest.GetName()] = fmt.Errorf("no signals enabled for %s(%s)", dest.GetName(), dest.GetType())
+		}
 	}
 
 	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := GetCrdProcessorsConfigMap(processors)
