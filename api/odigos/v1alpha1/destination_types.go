@@ -64,7 +64,7 @@ func init() {
 }
 
 /* Implement common.ExporterConfigurer */
-func (dest Destination) GetName() string {
+func (dest Destination) GetID() string {
 	return dest.Name
 }
 func (dest Destination) GetType() common.DestinationType {

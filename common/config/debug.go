@@ -17,21 +17,21 @@ func (s *Debug) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/debug-" + dest.GetName()
+		tracesPipelineName := "traces/debug-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/debug-" + dest.GetName()
+		metricsPipelineName := "metrics/debug-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/debug-" + dest.GetName()
+		logsPipelineName := "logs/debug-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}

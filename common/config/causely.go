@@ -71,7 +71,7 @@ func (e *Causely) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 		return errors.Join(err, errors.New("failed to parse Causely endpoint, gateway will not be configured for Causely"))
 	}
 
-	exporterName := "otlp/causely-" + dest.GetName()
+	exporterName := "otlp/causely-" + dest.GetID()
 
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": validatedUrl,
@@ -81,14 +81,14 @@ func (e *Causely) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/causely-" + dest.GetName()
+		tracesPipelineName := "traces/causely-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		logsPipelineName := "metrics/causely-" + dest.GetName()
+		logsPipelineName := "metrics/causely-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}

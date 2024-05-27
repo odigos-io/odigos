@@ -35,29 +35,29 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 	}
 
 	if isMetricsEnabled(dest) {
-		rwExporterName := "prometheusremotewrite/qryn-" + dest.GetName()
+		rwExporterName := "prometheusremotewrite/qryn-" + dest.GetID()
 		currentConfig.Exporters[rwExporterName] = GenericMap{
 			"endpoint": fmt.Sprintf("%s/api/v1/prom/remote/write", baseURL),
 		}
-		metricsPipelineName := "metrics/qryn-" + dest.GetName()
+		metricsPipelineName := "metrics/qryn-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{rwExporterName},
 		}
 	}
 
 	if isTracingEnabled(dest) {
-		exporterName := "otlp/qryn-" + dest.GetName()
+		exporterName := "otlp/qryn-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"endpoint": fmt.Sprintf("%s/tempo/spans", baseURL),
 		}
-		tracesPipelineName := "traces/qryn-" + dest.GetName()
+		tracesPipelineName := "traces/qryn-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		lokiExporterName := "loki/qryn-" + dest.GetName()
+		lokiExporterName := "loki/qryn-" + dest.GetID()
 		currentConfig.Exporters[lokiExporterName] = GenericMap{
 			"endpoint": fmt.Sprintf("%s/loki/api/v1/push", baseURL),
 			"labels": GenericMap{
@@ -68,7 +68,7 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 				},
 			},
 		}
-		logsPipelineName := "logs/qryn-" + dest.GetName()
+		logsPipelineName := "logs/qryn-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{lokiExporterName},
 		}

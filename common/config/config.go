@@ -12,7 +12,7 @@ type ExporterConfigurer interface {
 	SignalSpecific
 	GetType() common.DestinationType
 	// expected to be unique across all instances of exporters used in collector config, [a-zA-Z0-9-_]+
-	GetName() string
+	GetID() string
 	GetConfig() map[string]string
 }
 
@@ -20,7 +20,7 @@ type ProcessorConfigurer interface {
 	SignalSpecific
 	GetType() string
 	// expected to be unique across all instances of exporters used in collector config, [a-zA-Z0-9-_]+
-	GetName() string
+	GetID() string
 	GetConfig() (GenericMap, error)
 }
 

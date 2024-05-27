@@ -29,7 +29,7 @@ func (s *Uptrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 		endpoint = "https://otlp.uptrace.dev:4317"
 	}
 
-	exporterName := "otlp/uptrace-" + dest.GetName()
+	exporterName := "otlp/uptrace-" + dest.GetID()
 
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
@@ -42,21 +42,21 @@ func (s *Uptrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/uptrace-" + dest.GetName()
+		tracesPipelineName := "traces/uptrace-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/uptrace-" + dest.GetName()
+		metricsPipelineName := "metrics/uptrace-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/uptrace-" + dest.GetName()
+		logsPipelineName := "logs/uptrace-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}

@@ -46,16 +46,16 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 	for _, dest := range dests {
 		configer, exists := configers[dest.GetType()]
 		if !exists {
-			status.Destination[dest.GetName()] = fmt.Errorf("no configer for %s", dest.GetType())
+			status.Destination[dest.GetID()] = fmt.Errorf("no configer for %s", dest.GetType())
 			continue
 		}
 
 		err := configer.ModifyConfig(dest, currentConfig)
-		status.Destination[dest.GetName()] = err
+		status.Destination[dest.GetID()] = err
 
 		// If configurer ran without errors, but there were no signals enabled, warn the user
 		if len(dest.GetSignals()) == 0 && err == nil {
-			status.Destination[dest.GetName()] = fmt.Errorf("no signals enabled for %s(%s)", dest.GetName(), dest.GetType())
+			status.Destination[dest.GetID()] = fmt.Errorf("no signals enabled for %s(%s)", dest.GetID(), dest.GetType())
 		}
 	}
 
