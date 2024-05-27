@@ -1,15 +1,18 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
-import { markAsSeen, removeNotification } from '@/store';
+import { markAsOld, markAsSeen } from '@/store';
 import { GreenCheck, RedError } from '@/assets/icons/app';
 import theme from '@/styles/palette';
+import { KeyvalLink, KeyvalText } from '@/design.system';
 
 interface NotificationListItemProps {
   id: string;
   message: string;
   type: 'success' | 'error' | 'info';
   seen: boolean;
+  title?: string;
+  onClick?: () => void;
 }
 
 const NotificationItemContainer = styled.div<{ seen: boolean }>`
@@ -26,9 +29,10 @@ const NotificationContent = styled.div`
   gap: 8px;
 `;
 
-const ConditionIconContainer = styled.div`
+const NotificationDetails = styled.div`
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
 `;
 
 const IconWrapper = styled.div<{ bgColor: string }>`
@@ -56,15 +60,9 @@ const ButtonsContainer = styled.div`
   gap: 8px;
 `;
 
-const Button = styled.button`
-  background: transparent;
-  border: none;
-  color: ${theme.text.primary};
-  cursor: pointer;
-
-  &:hover {
-    color: ${theme.text.secondary};
-  }
+const ButtonContainer = styled.div`
+  display: flex;
+  gap: 8px;
 `;
 
 const NotificationListItem: React.FC<NotificationListItemProps> = ({
@@ -72,6 +70,8 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
   message,
   type,
   seen,
+  title,
+  onClick = () => {},
 }) => {
   const dispatch = useDispatch();
 
@@ -116,19 +116,25 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
         return null;
     }
   };
-
+  function onDetailsClick() {
+    dispatch(markAsSeen(id));
+    dispatch(markAsOld(id));
+    onClick();
+  }
   return (
     <NotificationItemContainer seen={seen}>
       <NotificationContent>
-        <ConditionIconContainer>{getIcon()}</ConditionIconContainer>
-        <div>
-          <div>{message}</div>
-        </div>
+        <div>{getIcon()}</div>
+        <NotificationDetails>
+          <KeyvalText size={18} weight={600}>
+            {title}
+          </KeyvalText>
+          <KeyvalText size={14}>{message}</KeyvalText>
+        </NotificationDetails>
       </NotificationContent>
-      <ButtonsContainer>
-        <Button onClick={() => dispatch(markAsSeen(id))}>Seen</Button>
-        <Button onClick={() => dispatch(removeNotification(id))}>Close</Button>
-      </ButtonsContainer>
+      <ButtonContainer>
+        <KeyvalLink fontSize={14} value="Details" onClick={onDetailsClick} />
+      </ButtonContainer>
     </NotificationItemContainer>
   );
 };
