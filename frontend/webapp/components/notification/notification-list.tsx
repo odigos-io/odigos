@@ -9,10 +9,9 @@ const NotificationListContainer = styled.div`
   position: absolute;
   top: 50px;
   right: 20px;
-  background-color: ${({ theme }) => theme.colors.light_dark};
+  background-color: ${({ theme }) => theme.colors.dark};
   border: 1px solid ${theme.colors.blue_grey};
   border-radius: 8px;
-  width: 300px;
   max-height: 400px;
   overflow-y: auto;
   z-index: 1000;
@@ -32,6 +31,7 @@ const NotificationList: React.FC = () => {
           message={notification.message}
           type={notification.type}
           seen={notification.seen}
+          title={notification.title}
         />
       ))}
     </NotificationListContainer>

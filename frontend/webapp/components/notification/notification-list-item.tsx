@@ -18,14 +18,18 @@ interface NotificationListItemProps {
 const NotificationItemContainer = styled.div<{ seen: boolean }>`
   border-bottom: 1px solid ${theme.colors.blue_grey};
   padding: 10px;
+  gap: 12px;
+
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: ${({ seen }) => (seen ? 'white' : theme.colors.light_dark)};
+  background-color: ${({ seen }) =>
+    seen ? theme.colors.light_dark : theme.colors.dark};
 `;
 
 const NotificationContent = styled.div`
   display: flex;
+  width: 300px;
   gap: 8px;
 `;
 
@@ -53,11 +57,6 @@ const InnerIconWrapper = styled.div<{ borderColor: string }>`
   align-items: center;
   justify-content: center;
   border: 2px solid ${({ borderColor }) => borderColor};
-`;
-
-const ButtonsContainer = styled.div`
-  display: flex;
-  gap: 8px;
 `;
 
 const ButtonContainer = styled.div`
