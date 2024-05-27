@@ -31,7 +31,6 @@ const NotificationItemContainer = styled.div<{ seen: boolean }>`
     seen ? theme.colors.light_dark : theme.colors.dark};
 
   &:hover {
-    cursor: pointer;
     background-color: ${theme.colors.dark};
   }
 `;
@@ -125,9 +124,6 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
     }
   };
   function onDetailsClick() {
-    dispatch(markAsSeen(id));
-    dispatch(markAsOld(id));
-    console.log({ target });
     if (target) {
       router.push(`${ROUTES.UPDATE_DESTINATION}${target}`);
     }

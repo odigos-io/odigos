@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { use, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, markAsSeen } from '@/store';
 
@@ -11,8 +11,8 @@ import NotificationListItem from './notification-list-item';
 
 const NotificationListContainer = styled.div`
   position: absolute;
-  top: 30px;
-  right: 20px;
+  top: 50px;
+  right: 60px;
   background-color: ${theme.colors.light_dark};
   border: 1px solid ${theme.colors.blue_grey};
   border-radius: 8px;
@@ -23,7 +23,7 @@ const NotificationListContainer = styled.div`
 
 const BellIconWrapper = styled.div`
   position: relative;
-  cursor: pointer;
+
   padding: 6px;
   border-radius: 8px;
   border: 1px solid ${theme.colors.blue_grey};
@@ -65,8 +65,9 @@ const NotificationList: React.FC = () => {
   );
 
   const dispatch = useDispatch();
-
+  const containerRef = useRef(null);
   const isInitialRender = useRef(true);
+  useOnClickOutside(containerRef, () => setShowNotifications(false));
   const unseenCount = notifications.filter(
     (notification) => !notification.seen
   ).length;
@@ -91,29 +92,34 @@ const NotificationList: React.FC = () => {
   }
 
   return notifications.length > 0 ? (
-    <>
-      <BellIconWrapper onClick={() => setShowNotifications(!showNotifications)}>
-        <Bell width={20} height={20} />
-        {unseenCount > 0 && (
-          <NotificationBadge>
-            <KeyvalText size={10}>{unseenCount}</KeyvalText>
-          </NotificationBadge>
-        )}
-        {showNotifications && (
-          <NotificationListContainer>
-            <NotificationHeader>
-              <KeyvalText size={18} weight={600}>
-                Notifications
-              </KeyvalText>
-            </NotificationHeader>
-
-            {[...notifications].reverse().map((notification) => (
-              <NotificationListItem key={notification.id} {...notification} />
-            ))}
-          </NotificationListContainer>
-        )}
+    <div ref={containerRef}>
+      <BellIconWrapper>
+        <Bell
+          width={20}
+          height={20}
+          style={{ cursor: 'pointer' }}
+          onClick={() => setShowNotifications(!showNotifications)}
+        />
       </BellIconWrapper>
-    </>
+      {unseenCount > 0 && (
+        <NotificationBadge>
+          <KeyvalText size={10}>{unseenCount}</KeyvalText>
+        </NotificationBadge>
+      )}
+      {showNotifications && (
+        <NotificationListContainer>
+          <NotificationHeader>
+            <KeyvalText size={18} weight={600}>
+              Notifications
+            </KeyvalText>
+          </NotificationHeader>
+
+          {[...notifications].reverse().map((notification) => (
+            <NotificationListItem key={notification.id} {...notification} />
+          ))}
+        </NotificationListContainer>
+      )}
+    </div>
   ) : null;
 };
 
