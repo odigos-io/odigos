@@ -101,3 +101,41 @@ export const timeAgo = (timestamp: string) => {
     return `${days} days ago`;
   }
 };
+
+export function formatDate(dateString: string) {
+  // Parse the date string into a Date object
+  const date = new Date(dateString);
+
+  // Get individual components
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth(); // Note: months are zero-based
+  const day = date.getUTCDate();
+  const hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  const seconds = date.getUTCSeconds();
+
+  // Define month names
+  const monthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
+  // Format the components into a readable string
+  const formattedDate = `${monthNames[month]} ${day}, ${year} ${hours
+    .toString()
+    .padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds
+    .toString()
+    .padStart(2, '0')}`;
+
+  return formattedDate;
+}

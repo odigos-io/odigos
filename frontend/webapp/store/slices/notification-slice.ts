@@ -1,16 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-interface Notification {
-  id: string;
-  message: string;
-  title?: string;
-  seen: boolean;
-  isNew?: boolean;
-  time?: string;
-  target?: string;
-  event?: string;
-  type: 'success' | 'error' | 'info';
-}
+import { Notification } from '@/types';
 
 interface NotificationState {
   notifications: Notification[];
