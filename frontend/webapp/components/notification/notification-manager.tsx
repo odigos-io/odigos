@@ -25,13 +25,7 @@ const NotificationManager: React.FC = () => {
       {notifications
         .filter((notification) => notification.isNew)
         .map((notification) => (
-          <Notification
-            key={notification.id}
-            id={notification.id}
-            message={notification.message}
-            title={notification.title}
-            type={notification.type}
-          />
+          <Notification key={notification.id} {...notification} />
         ))}
     </NotificationsWrapper>
   );

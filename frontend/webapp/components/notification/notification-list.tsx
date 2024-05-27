@@ -1,19 +1,19 @@
-import React, { use, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, markAsSeen } from '@/store';
-import NotificationListItem from './notification-list-item';
+
 import styled from 'styled-components';
 import theme from '@/styles/palette';
 import { Bell } from '@/assets/icons/app';
 import { KeyvalText } from '@/design.system';
-import { transform } from 'typescript';
 import { useOnClickOutside } from '@/hooks';
+import NotificationListItem from './notification-list-item';
 
 const NotificationListContainer = styled.div`
   position: absolute;
   top: 30px;
   right: 20px;
-  background-color: ${({ theme }) => theme.colors.dark};
+  background-color: ${theme.colors.light_dark};
   border: 1px solid ${theme.colors.blue_grey};
   border-radius: 8px;
   max-height: 400px;
@@ -24,6 +24,14 @@ const NotificationListContainer = styled.div`
 const BellIconWrapper = styled.div`
   position: relative;
   cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid ${theme.colors.blue_grey};
+  display: flex;
+  align-items: center;
+  &:hover {
+    background-color: ${theme.colors.dark};
+  }
 `;
 
 const NotificationBadge = styled.div`
@@ -41,20 +49,28 @@ const NotificationBadge = styled.div`
   font-size: 12px;
 `;
 
+const NotificationHeader = styled.div`
+  padding: 14px;
+  border-bottom: 1px solid ${theme.colors.blue_grey};
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
 const NotificationList: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
+
   const notifications = useSelector(
     (state: RootState) => state.notification.notifications
   );
 
   const dispatch = useDispatch();
-  const containerRef = useRef(null);
-  useOnClickOutside(containerRef, () => setShowNotifications(false));
 
   const isInitialRender = useRef(true);
   const unseenCount = notifications.filter(
     (notification) => !notification.seen
   ).length;
+
   useEffect(() => {
     if (isInitialRender.current) {
       isInitialRender.current = false;
@@ -74,13 +90,10 @@ const NotificationList: React.FC = () => {
     });
   }
 
-  return (
+  return notifications.length > 0 ? (
     <>
-      <BellIconWrapper
-        ref={containerRef}
-        onClick={() => setShowNotifications(!showNotifications)}
-      >
-        <Bell width={24} height={24} />
+      <BellIconWrapper onClick={() => setShowNotifications(!showNotifications)}>
+        <Bell width={20} height={20} />
         {unseenCount > 0 && (
           <NotificationBadge>
             <KeyvalText size={10}>{unseenCount}</KeyvalText>
@@ -88,22 +101,20 @@ const NotificationList: React.FC = () => {
         )}
         {showNotifications && (
           <NotificationListContainer>
+            <NotificationHeader>
+              <KeyvalText size={18} weight={600}>
+                Notifications
+              </KeyvalText>
+            </NotificationHeader>
+
             {[...notifications].reverse().map((notification) => (
-              <NotificationListItem
-                key={notification.id}
-                id={notification.id}
-                message={notification.message}
-                type={notification.type}
-                seen={notification.seen}
-                title={notification.title}
-                time={notification.time}
-              />
+              <NotificationListItem key={notification.id} {...notification} />
             ))}
           </NotificationListContainer>
         )}
       </BellIconWrapper>
     </>
-  );
+  ) : null;
 };
 
 export default NotificationList;

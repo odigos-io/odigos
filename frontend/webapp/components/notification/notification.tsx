@@ -102,7 +102,7 @@ const Notification: React.FC<NotificationProps> = ({
     const timer = setTimeout(() => {
       setIsLeaving(true);
       setTimeout(() => dispatch(markAsOld(id)), 500);
-    }, 3000);
+    }, 5000);
 
     return () => clearTimeout(timer);
   }, [id, dispatch]);
