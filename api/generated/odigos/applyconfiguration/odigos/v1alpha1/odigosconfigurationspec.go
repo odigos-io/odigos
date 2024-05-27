@@ -27,6 +27,7 @@ type OdigosConfigurationSpecApplyConfiguration struct {
 	OdigosVersion     *string                                          `json:"odigosVersion,omitempty"`
 	ConfigVersion     *int                                             `json:"configVersion,omitempty"`
 	TelemetryEnabled  *bool                                            `json:"telemetryEnabled,omitempty"`
+	OpenshiftEnabled  *bool                                            `json:"openshiftEnabled,omitempty"`
 	IgnoredNamespaces []string                                         `json:"ignoredNamespaces,omitempty"`
 	IgnoredContainers []string                                         `json:"ignoredContainers,omitempty"`
 	Psp               *bool                                            `json:"psp,omitempty"`
@@ -66,6 +67,14 @@ func (b *OdigosConfigurationSpecApplyConfiguration) WithConfigVersion(value int)
 // If called multiple times, the TelemetryEnabled field is set to the value of the last call.
 func (b *OdigosConfigurationSpecApplyConfiguration) WithTelemetryEnabled(value bool) *OdigosConfigurationSpecApplyConfiguration {
 	b.TelemetryEnabled = &value
+	return b
+}
+
+// WithOpenshiftEnabled sets the OpenshiftEnabled field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the OpenshiftEnabled field is set to the value of the last call.
+func (b *OdigosConfigurationSpecApplyConfiguration) WithOpenshiftEnabled(value bool) *OdigosConfigurationSpecApplyConfiguration {
+	b.OpenshiftEnabled = &value
 	return b
 }
 

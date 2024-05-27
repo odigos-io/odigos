@@ -100,6 +100,8 @@ spec:
                 type: string
               odigosVersion:
                 type: string
+              openshiftEnabled:
+                type: boolean
               psp:
                 type: boolean
               supportedSDKs:

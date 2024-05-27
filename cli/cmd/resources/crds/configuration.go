@@ -106,6 +106,9 @@ func NewConfiguration() *apiextensionsv1.CustomResourceDefinition {
 										"telemetryEnabled": {
 											Type: "boolean",
 										},
+										"openshiftEnabled": {
+											Type: "boolean",
+										},
 										"supportedSDKs": {
 											Type: "object",
 											AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
