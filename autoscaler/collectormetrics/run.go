@@ -52,17 +52,36 @@ func (a *Autoscaler) Run(ctx context.Context) {
 			close(a.notifications)
 			return
 		case <-a.ticker.C:
-			logger.V(0).Info("Checking collectors metrics")
 			results := a.getCollectorsMetrics(ctx)
 			decision := a.options.algorithm.Decide(ctx, results)
-			a.executeDecision(ctx, decision)
+			a.executeDecision(ctx, decision, len(results))
 		}
 	}
 }
 
-func (a *Autoscaler) executeDecision(ctx context.Context, decision AutoscalerDecision) bool {
+func (a *Autoscaler) adjustDecisionToBounds(decision AutoscalerDecision) AutoscalerDecision {
+	current := int(decision)
+	if current < a.options.minReplicas {
+		return AutoscalerDecision(a.options.minReplicas)
+	} else if current > a.options.maxReplicas {
+		return AutoscalerDecision(a.options.maxReplicas)
+	}
+
+	return decision
+}
+
+func (a *Autoscaler) executeDecision(ctx context.Context, decision AutoscalerDecision, currentReplicas int) bool {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Executing decision", "decision", decision)
+	newDecision := a.adjustDecisionToBounds(decision)
+	if newDecision != decision {
+		logger.V(0).Info("Decision out of bounds, adjusting", "old", decision, "new", newDecision)
+	}
+
+	if newDecision == AutoscalerDecision(currentReplicas) {
+		logger.V(0).Info("No need to scale", "current", currentReplicas)
+		return false
+	}
+
 	obj := a.getTargetKubernetesObject()
 	if obj == nil {
 		logger.Error(errObjectNotFoundForCollectorsGroup, "No target object found", "group", a.options.collectorsGroup)
