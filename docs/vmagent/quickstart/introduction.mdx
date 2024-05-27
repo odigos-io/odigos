@@ -3,45 +3,35 @@ title: "Introduction"
 sidebarTitle: "Introduction"
 ---
 
-In this tutorial, we are going to use Odigos for generating distributes traces for an application written in Go.
+In this tutorial, we are going to use Odigos for instrumenting and collecting distributed traces from an application written in Go.
 
 We are going to deploy the application on a virtual machine and use Jaeger as the backend for storing and visualizing the traces.
 
-## Preparing the environment
-
-- A Linux machine with debian or red hat based distribution.
-
 ## Deploying the target application
 
-We are going to install a subset of odigos [demo application](https://github.com/odigos-io/simple-demo) that consists of 1 microservices written in Go.
+We are going to install a subset of Odigos [demo application](https://github.com/odigos-io/simple-demo) that consists of 1 microservices written in Go.
 
 <Frame>
     <img src="/images/demo_architecture.png" alt="Architecture of demo application" />
 </Frame>
 
-Deploy the application using the following commands:
+1. Install the application using the following commands:
 
-1. Add the odigos repository to your package manager:
+<Tabs>
+  <Tab title="APT">
+  ```shell
+  sudo apt update
+  sudo apt install membership
+  ```
+  </Tab>
+  <Tab title="DNF">
+  ```shell
+  sudo dnf install membership
+  ```
+  </Tab>
+</Tabs>
 
-```shell
-sudo mkdir -p /etc/apt/keyrings/
-wget -q -O - https://apt.fury.io/odigos/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/odigos.gpg > /dev/null
-echo "deb [signed-by=/etc/apt/keyrings/odigos.gpg] https://apt.fury.io/odigos/ * *" | sudo tee /etc/apt/sources.list.d/odigos.list
-```
-
-2. Update the package manager:
-
-```shell
-sudo apt update
-```
-
-3. Install the demo application:
-
-```shell
-sudo apt install membership
-```
-
-4. Check that the application is running:
+2. Check that the application is running:
 
 ```shell
 sudo systemctl status membership
@@ -80,7 +70,7 @@ cd jaeger-1.57.0-linux-arm64
 ./jaeger-all-in-one --collector.otlp.grpc.host-port 0.0.0.0:44317 --collector.otlp.http.host-port 0.0.0.0:44318
 ```
 
-We map the otlp endpoints for Jaeger to different ports (44317\44318 instead of 4317\4318) to avoid conflicts with odigos collector.
+We map the OTLP endpoints for Jaeger to different ports (44317\44318 instead of 4317\4318) to avoid conflicts with Odigos collector.
 
 3. Browse to Jaeger UI at `http://localhost:16686`. Replace `localhost` with the IP address of the machine where Jaeger is running if you are accessing it from a different machine.
 
