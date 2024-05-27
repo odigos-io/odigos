@@ -1,0 +1,32 @@
+---
+title: "Building a pipeline"
+sidebarTitle: "Building a pipeline"
+---
+
+We will set up odigos to auto instrument our demo application and send the traces to Jaeger.
+
+Save the following configuration to the file `/etc/odigos-vmagent/agent.yaml`:
+
+```shell
+sudo bash -c 'cat > /etc/odigos-vmagent/agent.yaml <<EOF
+sources:
+  systemd:
+    services:
+    - service_name: membership
+destinations:
+- name: demo-jaeger
+  type: jaeger
+  config:
+    JAEGER_URL: localhost:44317
+  signals:
+  - TRACES
+EOF'
+```
+
+And reload the agent to apply the new configuration:
+
+```shell
+sudo systemctl reload odigos-vmagent
+```
+
+

@@ -30,6 +30,12 @@
       "url": "https://odigos.io/blog"
     }
   ],
+  "tabs": [
+    {
+    "name": "VM Agent",
+    "url": "vmagent"
+    }
+  ],
   "navigation": [
     {
       "group": "Getting Started",
@@ -164,6 +170,43 @@
       "pages": [
         "adding-new-dest",
         "debugging"
+      ]
+    },
+    {
+      "group": "VM Agent",
+      "pages": [
+        "vmagent/overview",
+        {
+          "group": "Quickstart",
+          "pages": [
+            "vmagent/quickstart/introduction",
+            "vmagent/quickstart/installation",
+            "vmagent/quickstart/building-a-pipeline",
+            "vmagent/quickstart/generating-data",
+            "vmagent/quickstart/viewing-traces"
+          ]
+        },
+        {
+          "group": "Setup",
+          "pages": [
+            "vmagent/setup/installation",
+            {
+              "group": "Configuration",
+              "pages": [
+                "vmagent/setup/configuration/service",
+                "vmagent/setup/configuration/agent"
+              ]
+            },
+            "vmagent/setup/uninstall"
+          ]
+        },
+        {
+          "group": "Configuration",
+          "pages": [
+            "vmagent/configuration/reference",
+            "vmagent/configuration/updating"
+          ]
+        }
       ]
     }
   ],
