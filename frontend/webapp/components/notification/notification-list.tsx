@@ -90,6 +90,7 @@ const NotificationList: React.FC = () => {
                 type={notification.type}
                 seen={notification.seen}
                 title={notification.title}
+                time={notification.time}
               />
             ))}
           </NotificationListContainer>

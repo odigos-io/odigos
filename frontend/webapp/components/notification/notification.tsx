@@ -12,6 +12,7 @@ interface NotificationProps {
   message: string;
   title?: string;
   type: 'success' | 'error' | 'info';
+  time?: string;
   onClick?: () => void;
 }
 
@@ -92,6 +93,7 @@ const Notification: React.FC<NotificationProps> = ({
   type,
   title,
   onClick = () => {},
+  time,
 }) => {
   const dispatch = useDispatch();
   const [isLeaving, setIsLeaving] = useState(false);
@@ -159,6 +161,7 @@ const Notification: React.FC<NotificationProps> = ({
             {title}
           </KeyvalText>
           <KeyvalText size={14}>{message}</KeyvalText>
+          <KeyvalText size={12}>{time}</KeyvalText>
         </NotificationDetails>
       </NotificationContent>
       <ButtonContainer>

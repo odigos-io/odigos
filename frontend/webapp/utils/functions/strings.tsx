@@ -73,3 +73,25 @@ export function stringifyNonStringValues(
     return acc;
   }, {} as Record<string, string>);
 }
+
+export const timeAgo = (timestamp: string) => {
+  const now = new Date();
+  const notificationTime = new Date(timestamp);
+
+  if (isNaN(notificationTime.getTime())) {
+    return '';
+  }
+
+  const differenceInMs = now.getTime() - notificationTime.getTime();
+  const differenceInMinutes = Math.floor(differenceInMs / (1000 * 60));
+  const differenceInHours = Math.floor(differenceInMinutes / 60);
+
+  if (differenceInMinutes < 60) {
+    return `${differenceInMinutes} minutes ago`;
+  } else if (differenceInHours < 24) {
+    return `${differenceInHours} hours ago`;
+  } else {
+    const days = Math.floor(differenceInHours / 24);
+    return `${days} days ago`;
+  }
+};

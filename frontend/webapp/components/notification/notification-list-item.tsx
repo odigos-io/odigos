@@ -5,6 +5,7 @@ import { markAsOld, markAsSeen } from '@/store';
 import { GreenCheck, RedError } from '@/assets/icons/app';
 import theme from '@/styles/palette';
 import { KeyvalLink, KeyvalText } from '@/design.system';
+import { timeAgo } from '@/utils';
 
 interface NotificationListItemProps {
   id: string;
@@ -13,6 +14,7 @@ interface NotificationListItemProps {
   seen: boolean;
   title?: string;
   onClick?: () => void;
+  time?: string;
 }
 
 const NotificationItemContainer = styled.div<{ seen: boolean }>`
@@ -71,6 +73,7 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
   seen,
   title,
   onClick = () => {},
+  time,
 }) => {
   const dispatch = useDispatch();
 
@@ -129,6 +132,11 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
             {title}
           </KeyvalText>
           <KeyvalText size={14}>{message}</KeyvalText>
+          {time && (
+            <KeyvalText color={theme.text.light_grey} size={12}>
+              {timeAgo(time)}
+            </KeyvalText>
+          )}
         </NotificationDetails>
       </NotificationContent>
       <ButtonContainer>

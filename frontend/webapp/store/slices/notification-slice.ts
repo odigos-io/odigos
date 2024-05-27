@@ -6,6 +6,7 @@ interface Notification {
   title?: string;
   seen: boolean;
   isNew?: boolean;
+  time?: string;
   type: 'success' | 'error' | 'info';
 }
 
@@ -25,7 +26,12 @@ export const notificationSlice = createSlice({
       state,
       action: PayloadAction<Omit<Notification, 'seen'>>
     ) => {
-      state.notifications.push({ ...action.payload, seen: false, isNew: true });
+      state.notifications.push({
+        ...action.payload,
+        seen: false,
+        isNew: true,
+        time: new Date().toISOString(),
+      });
     },
     markAsSeen: (state, action: PayloadAction<string>) => {
       const notification = state.notifications.find(
