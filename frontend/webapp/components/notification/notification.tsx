@@ -157,11 +157,10 @@ const Notification: React.FC<NotificationProps> = ({
       <NotificationContent>
         <div>{getIcon()}</div>
         <NotificationDetails>
-          <KeyvalText size={18} weight={600}>
+          <KeyvalText size={16} weight={600}>
             {title}
           </KeyvalText>
           <KeyvalText size={14}>{message}</KeyvalText>
-          <KeyvalText size={12}>{time}</KeyvalText>
         </NotificationDetails>
       </NotificationContent>
       <ButtonContainer>

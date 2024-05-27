@@ -37,7 +37,8 @@ export default function RootLayout({
 
     eventSource.onmessage = function (event) {
       const data = JSON.parse(event.data);
-      notify(data.data, 'destination', 'success');
+      console.log({ data });
+      notify(data.data, data.event, data.target, '', data.type);
     };
 
     eventSource.onerror = function (event) {

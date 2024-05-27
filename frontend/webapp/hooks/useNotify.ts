@@ -6,10 +6,12 @@ export const useNotify = () => {
   const notify = (
     message: string,
     title: string,
+    target: string,
+    event: string,
     type: 'success' | 'error' | 'info'
   ) => {
     const id = new Date().getTime().toString();
-    dispatch(addNotification({ id, message, title, type }));
+    dispatch(addNotification({ id, message, title, type, target }));
   };
 
   return notify;

@@ -7,6 +7,8 @@ interface Notification {
   seen: boolean;
   isNew?: boolean;
   time?: string;
+  target?: string;
+  event?: string;
   type: 'success' | 'error' | 'info';
 }
 

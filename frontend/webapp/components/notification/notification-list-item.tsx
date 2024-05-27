@@ -2,10 +2,11 @@ import React from 'react';
 import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
 import { markAsOld, markAsSeen } from '@/store';
-import { GreenCheck, RedError } from '@/assets/icons/app';
+import { BlueInfo, GreenCheck, RedError } from '@/assets/icons/app';
 import theme from '@/styles/palette';
 import { KeyvalLink, KeyvalText } from '@/design.system';
-import { timeAgo } from '@/utils';
+import { ROUTES, timeAgo } from '@/utils';
+import { useRouter } from 'next/navigation';
 
 interface NotificationListItemProps {
   id: string;
@@ -15,6 +16,7 @@ interface NotificationListItemProps {
   title?: string;
   onClick?: () => void;
   time?: string;
+  target?: string;
 }
 
 const NotificationItemContainer = styled.div<{ seen: boolean }>`
@@ -78,9 +80,11 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
   seen,
   title,
   onClick = () => {},
+  target,
   time,
 }) => {
   const dispatch = useDispatch();
+  const router = useRouter();
 
   const getSuccessIcon = () => (
     <IconWrapper bgColor="#3fb94f40">
@@ -103,10 +107,7 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
   const getInfoIcon = () => (
     <IconWrapper bgColor="#2196F340">
       <InnerIconWrapper borderColor="#2196F3">
-        <i
-          className="fa fa-info"
-          style={{ color: '#2196F3', fontSize: '10px' }}
-        ></i>
+        <BlueInfo />
       </InnerIconWrapper>
     </IconWrapper>
   );
@@ -126,7 +127,10 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
   function onDetailsClick() {
     dispatch(markAsSeen(id));
     dispatch(markAsOld(id));
-    onClick();
+    console.log({ target });
+    if (target) {
+      router.push(`${ROUTES.UPDATE_DESTINATION}${target}`);
+    }
   }
   return (
     <NotificationItemContainer seen={seen}>
