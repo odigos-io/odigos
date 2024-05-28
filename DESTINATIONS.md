@@ -2,26 +2,6 @@
 
 **For step by step instructions detailed for every destination see these [docs](https://docs.odigos.io/backends).**
 
-## Managed
-
-|                         | Traces | Metrics | Logs |
-|-------------------------| ------ | ------- | ---- |
-| New Relic               | ✅      | ✅      | ✅   |
-| Datadog                 | ✅      | ✅      | ✅   |
-| Grafana Cloud           | ✅      | ✅      | ✅   |
-| Honeycomb               | ✅      | ✅      | ✅   |
-| Logz.io                 | ✅      | ✅      | ✅   |
-| qryn.cloud              | ✅      | ✅      | ✅   |
-| OpsVerse                | ✅      | ✅      | ✅   |
-| Google Cloud Monitoring | ✅      |         | ✅   |
-| Google Cloud Storage    | ✅      |         | ✅   |
-| Azure Blob Storage      | ✅      |         | ✅   |
-| AWS S3                  | ✅      |         | ✅   |
-| Splunk                  | ✅      |         |      |
-| Lightstep               | ✅      |         |      |
-| Sentry                  | ✅      |         |      |
-| Causely                 | ✅      | ✅      |      |
-
 ## Open Source
 
 |               | Traces | Metrics | Logs |
@@ -34,6 +14,26 @@
 | qryn          | ✅     | ✅      | ✅   |
 | Elasticsearch | ✅     |         | ✅   |
 | Uptrace       | ✅     | ✅      | ✅   |
+
+## Managed
+
+|                         | Traces | Metrics | Logs |
+|-------------------------| ------ | ------- | ---- |
+| Datadog                 | ✅      | ✅      | ✅   |
+| Grafana Cloud           | ✅      | ✅      | ✅   |
+| Honeycomb               | ✅      | ✅      | ✅   |
+| Logz.io                 | ✅      | ✅      | ✅   |
+| New Relic               | ✅      | ✅      | ✅   |
+| OpsVerse                | ✅      | ✅      | ✅   |
+| qryn.cloud              | ✅      | ✅      | ✅   |
+| Causely                 | ✅      | ✅      |      |
+| AWS S3                  | ✅      |         | ✅   |
+| Azure Blob Storage      | ✅      |         | ✅   |
+| Google Cloud Monitoring | ✅      |         | ✅   |
+| Google Cloud Storage    | ✅      |         | ✅   |
+| Lightstep               | ✅      |         |      |
+| Sentry                  | ✅      |         |      |
+| Splunk                  | ✅      |         |      |
 
 **Many more destinations are coming soon.**
 
