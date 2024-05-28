@@ -33,6 +33,7 @@
 | SigNoz        | ✅     | ✅      | ✅   |
 | qryn          | ✅     | ✅      | ✅   |
 | Elasticsearch | ✅     |         | ✅   |
+| Uptrace       | ✅     | ✅      | ✅   |
 
 **Many more destinations are coming soon.**
 

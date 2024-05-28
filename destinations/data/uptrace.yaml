@@ -1,11 +1,11 @@
 apiVersion: internal.odigos.io/v1beta1
 kind: Destination
 metadata:
-  type: dynatrace
-  displayName: Dynatrace
+  type: uptrace
+  displayName: Uptrace
   category: managed
 spec:
-  image: dynatrace.svg
+  image: uptrace.svg
   signals:
     traces:
       supported: true
@@ -14,16 +14,17 @@ spec:
     logs:
       supported: true
   fields:
-    - name: DYNATRACE_URL
-      displayName: Tenant URL
+    - name: UPTRACE_DSN
+      displayName: Data Source Name(DSN)
       componentType: input
       componentProps:
         type: text
         required: true
-    - name: DYNATRACE_API_TOKEN
-      displayName: API Access Token
+    - name: UPTRACE_ENDPOINT
+      displayName: Endpoint
       componentType: input
       componentProps:
-        type: password
-        required: true
-      secret: true
+        type: text
+        required: false
+        tooltip: 'Overwrite Uptrace endpoint when self-hosting'
+        placeholder: 'https://otlp.uptrace.dev:4317'
