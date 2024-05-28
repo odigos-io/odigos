@@ -2,12 +2,13 @@ package config
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 )
 
 const (
-	dsnKey = "UPTRACE_DSN"
+	dsnKey      = "UPTRACE_DSN"
 	endpointKey = "UPTRACE_ENDPOINT"
 )
 
@@ -29,12 +30,13 @@ func (s *Uptrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 		endpoint = "https://otlp.uptrace.dev:4317"
 	}
 
+	isHttpEndpoint := strings.HasPrefix(endpoint, "http://")
 	exporterName := "otlp/uptrace-" + dest.GetID()
 
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"tls": GenericMap{
-			"insecure": false,
+			"insecure": isHttpEndpoint,
 		},
 		"headers": GenericMap{
 			"uptrace-dsn": dsn,
