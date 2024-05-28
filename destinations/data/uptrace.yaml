@@ -20,11 +20,11 @@ spec:
       componentProps:
         type: text
         required: true
-    - name: UPTRACE_ENDPOINT
-      displayName: Endpoint
-      componentType: input
-      componentProps:
-        type: text
-        required: false
-        tooltip: 'Overwrite Uptrace endpoint when self-hosting'
-        placeholder: 'https://otlp.uptrace.dev:4317'
+    # - name: UPTRACE_ENDPOINT
+    #   displayName: Endpoint
+    #   componentType: input
+    #   componentProps:
+    #     type: text
+    #     required: false
+    #     tooltip: 'Overwrite Uptrace endpoint when self-hosting'
+    #     placeholder: 'https://otlp.uptrace.dev:4317'
