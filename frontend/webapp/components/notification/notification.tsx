@@ -53,7 +53,7 @@ const Notification: React.FC<NotificationProps> = ({
         case 'Destination':
           router.push(`${ROUTES.UPDATE_DESTINATION}${target}`);
           break;
-        case 'Source':
+        case 'InstrumentedApplication':
           router.push(`${ROUTES.MANAGE_SOURCE}?${target}`);
           break;
         default:
