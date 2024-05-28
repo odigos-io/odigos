@@ -1,6 +1,6 @@
 import React from 'react';
+import { SETUP } from '@/utils';
 import styled from 'styled-components';
-import { SETUP } from '@/utils/constants';
 import { KeyvalText } from '@/design.system';
 import { Back } from '@/assets/icons/overview';
 import { NotificationList } from '@/components';

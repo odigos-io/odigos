@@ -10,7 +10,7 @@ export function useSSE() {
 
     eventSource.onmessage = function (event) {
       const data = JSON.parse(event.data);
-      console.log({ data });
+
       notify({
         message: data.data,
         title: data.event,
