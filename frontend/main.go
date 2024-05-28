@@ -22,9 +22,9 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/version"
 
-	"github.com/odigos-io/odigos/frontend/endpoints"
-
 	"github.com/gin-gonic/gin"
+	"github.com/odigos-io/odigos/frontend/endpoints"
+	commonutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -191,11 +191,36 @@ func main() {
 		for event := range ch {
 			switch event.Type {
 			case watch.Added:
+				name, _, _ := commonutils.GetWorkloadInfoRuntimeName(event.Object.(*v1alpha1.InstrumentedApplication).Name)
 				fmt.Printf("New pod added: %s\n", event.Object.(*v1alpha1.InstrumentedApplication).Name)
+				data := fmt.Sprintf("InstrumentedApplication %s created", name)
+				sse.SendMessageToClient(sse.SSEMessage{Event: "Created", Type: "success", Target: "target", Data: data, CRDType: "InstrumentedApplication"})
 			case watch.Modified:
 				fmt.Printf("Pod modified: %s\n", event.Object.(*v1alpha1.InstrumentedApplication).Name)
+				conditions := event.Object.(*v1alpha1.InstrumentedApplication).Status.Conditions
+				if len(conditions) == 0 {
+					continue
+				}
+				name, kind, err := commonutils.GetWorkloadInfoRuntimeName(event.Object.(*v1alpha1.InstrumentedApplication).Name)
+				if err != nil {
+					log.Fatalf("Error getting target from runtime name: %s", err)
+				}
+				// Send the message to the client
+				for _, condition := range conditions {
+					data := &condition.Message
+					namespace := event.Object.(*v1alpha1.InstrumentedApplication).Namespace
+					target := fmt.Sprintf("name=%s, kind=%s, namespace=%s", name, kind, namespace)
+					conditionType := "success"
+					if condition.Status == "False" {
+						conditionType = "error"
+					}
+
+					sse.SendMessageToClient(sse.SSEMessage{Event: "Modified", Type: conditionType, Target: target, Data: *data, CRDType: "InstrumentedApplication"})
+				}
 			case watch.Deleted:
 				fmt.Printf("Pod deleted: %s\n", event.Object.(*v1alpha1.InstrumentedApplication).Name)
+				data := fmt.Sprintf("InstrumentedApplication %s deleted", event.Object.(*v1alpha1.InstrumentedApplication).Name)
+				sse.SendMessageToClient(sse.SSEMessage{Event: "Deleted", Type: "success", Target: "", Data: data, CRDType: "InstrumentedApplication"})
 			case watch.Error:
 				fmt.Printf("Error watching pod: %v\n", event.Object)
 			}
@@ -213,8 +238,10 @@ func main() {
 		for event := range ch {
 			switch event.Type {
 			case watch.Added:
-				fmt.Printf("New pod added: %s\n", event.Object.(*v1alpha1.Destination).Name)
-
+				target := event.Object.(*v1alpha1.Destination).Name
+				fmt.Printf("New pod added: %s\n", target)
+				data := fmt.Sprintf("Destination %s created", event.Object.(*v1alpha1.Destination).Spec.DestinationName)
+				sse.SendMessageToClient(sse.SSEMessage{Event: "Created", Type: "success", Target: target, Data: data, CRDType: "Destination"})
 			case watch.Modified:
 				fmt.Printf("Pod modified: %s\n", event.Object.(*v1alpha1.Destination).Name)
 				conditions := event.Object.(*v1alpha1.Destination).Status.Conditions
@@ -236,6 +263,8 @@ func main() {
 
 			case watch.Deleted:
 				fmt.Printf("Pod deleted: %s\n", event.Object.(*v1alpha1.Destination).Name)
+				data := fmt.Sprintf("Destination %s deleted", event.Object.(*v1alpha1.Destination).Spec.DestinationName)
+				sse.SendMessageToClient(sse.SSEMessage{Event: "Deleted", Type: "success", Target: "", Data: data, CRDType: "Destination"})
 			case watch.Error:
 				fmt.Printf("Error watching pod: %v\n", event.Object)
 			}
