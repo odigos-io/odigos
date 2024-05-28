@@ -1,18 +1,18 @@
 ---
-title: "Update Agent Configuration"
-sidebarTitle: "Update Config"
+title: "Updating Agent Configuration"
+sidebarTitle: "Reloading"
 ---
 
-To update the agent configuration, edit the configuration file and reload the configuration with:
+To reload the agent configuration after chaning the configuration file, run:
 
-```
+```bash
 systemctl reload odigos-vmagent
 ```
 
 To verify the agent after updating the configuration:
 
-```
+```bash
 systemctl status odigos-vmagent
 ```
 
-And check that the agent Active state is `active (running)`.
+And check that the agent "Active" state is `active (running)`.
