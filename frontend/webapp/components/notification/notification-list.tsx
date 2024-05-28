@@ -56,7 +56,7 @@ const NotificationHeader = styled.div`
   align-items: center;
 `;
 
-const NotificationList: React.FC = () => {
+export const NotificationList: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const notifications = useSelector(
@@ -89,7 +89,7 @@ const NotificationList: React.FC = () => {
       }
     });
   }
-  console.log({ notifications });
+
   return notifications.length > 0 ? (
     <div ref={containerRef}>
       <BellIconWrapper>
@@ -121,5 +121,3 @@ const NotificationList: React.FC = () => {
     </div>
   ) : null;
 };
-
-export default NotificationList;

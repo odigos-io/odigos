@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
+import { SETUP } from '@/utils/constants';
 import { KeyvalText } from '@/design.system';
 import { Back } from '@/assets/icons/overview';
-import { SETUP } from '@/utils/constants';
-import { Bell } from '@/assets/icons/app';
-import NotificationList from '@/components/notification/notification-list';
+import { NotificationList } from '@/components';
 
 export interface OverviewHeaderProps {
   title?: string;
