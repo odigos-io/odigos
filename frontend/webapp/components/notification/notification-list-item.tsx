@@ -1,13 +1,14 @@
 import React from 'react';
-import styled from 'styled-components';
-import { useDispatch } from 'react-redux';
-import { markAsOld, markAsSeen } from '@/store';
-import { BlueInfo, GreenCheck, RedError } from '@/assets/icons/app';
 import theme from '@/styles/palette';
-import { KeyvalLink, KeyvalText } from '@/design.system';
+import styled from 'styled-components';
 import { ROUTES, timeAgo } from '@/utils';
 import { useRouter } from 'next/navigation';
-
+import { getIcon } from './notification-icon';
+import { KeyvalLink, KeyvalText } from '@/design.system';
+import {
+  NotificationButtonContainer,
+  NotificationDetailsWrapper,
+} from './notification-container';
 interface NotificationListItemProps {
   id: string;
   message: string;
@@ -23,7 +24,6 @@ const NotificationItemContainer = styled.div<{ seen: boolean }>`
   border-bottom: 1px solid ${theme.colors.blue_grey};
   padding: 10px;
   gap: 12px;
-
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -41,39 +41,7 @@ const NotificationContent = styled.div`
   gap: 8px;
 `;
 
-const NotificationDetails = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const IconWrapper = styled.div<{ bgColor: string }>`
-  width: 32px;
-  height: 32px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: ${({ bgColor }) => bgColor};
-`;
-
-const InnerIconWrapper = styled.div<{ borderColor: string }>`
-  width: 16px;
-  height: 16px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid ${({ borderColor }) => borderColor};
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  gap: 8px;
-`;
-
 const NotificationListItem: React.FC<NotificationListItemProps> = ({
-  id,
   message,
   type,
   seen,
@@ -82,47 +50,8 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
   target,
   time,
 }) => {
-  const dispatch = useDispatch();
   const router = useRouter();
 
-  const getSuccessIcon = () => (
-    <IconWrapper bgColor="#3fb94f40">
-      <InnerIconWrapper borderColor="#3fb950">
-        <GreenCheck style={{ width: 10, height: 10 }} />
-      </InnerIconWrapper>
-    </IconWrapper>
-  );
-
-  const getErrorIcon = () => (
-    <IconWrapper bgColor="#f8524952">
-      <InnerIconWrapper borderColor="#f85249">
-        <RedError
-          style={{ width: 10, height: 10, marginLeft: 2, marginBottom: 2 }}
-        />
-      </InnerIconWrapper>
-    </IconWrapper>
-  );
-
-  const getInfoIcon = () => (
-    <IconWrapper bgColor="#2196F340">
-      <InnerIconWrapper borderColor="#2196F3">
-        <BlueInfo />
-      </InnerIconWrapper>
-    </IconWrapper>
-  );
-
-  const getIcon = () => {
-    switch (type) {
-      case 'success':
-        return getSuccessIcon();
-      case 'error':
-        return getErrorIcon();
-      case 'info':
-        return getInfoIcon();
-      default:
-        return null;
-    }
-  };
   function onDetailsClick() {
     if (target) {
       switch (crdType) {
@@ -140,8 +69,8 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
   return (
     <NotificationItemContainer seen={seen}>
       <NotificationContent>
-        <div>{getIcon()}</div>
-        <NotificationDetails>
+        <div>{getIcon(type)}</div>
+        <NotificationDetailsWrapper>
           <KeyvalText size={16} weight={600}>
             {title}
           </KeyvalText>
@@ -151,11 +80,11 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
               {timeAgo(time)}
             </KeyvalText>
           )}
-        </NotificationDetails>
+        </NotificationDetailsWrapper>
       </NotificationContent>
-      <ButtonContainer>
+      <NotificationButtonContainer>
         <KeyvalLink fontSize={12} value="Details" onClick={onDetailsClick} />
-      </ButtonContainer>
+      </NotificationButtonContainer>
     </NotificationItemContainer>
   );
 };
