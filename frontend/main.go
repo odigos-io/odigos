@@ -192,21 +192,8 @@ func main() {
 			switch event.Type {
 			case watch.Added:
 				fmt.Printf("New pod added: %s\n", event.Object.(*v1alpha1.InstrumentedApplication).Name)
-				data := "InstrumentedApplication added successfully"
-				sse.SendMessageToClient(sse.SSEMessage{Time: "2021-09-01 15:04:05", Type: "message", Data: data})
 			case watch.Modified:
 				fmt.Printf("Pod modified: %s\n", event.Object.(*v1alpha1.InstrumentedApplication).Name)
-				conditions := event.Object.(*v1alpha1.InstrumentedApplication).Status.Conditions
-				if len(conditions) == 0 {
-					continue
-				}
-
-				// Send the message to the client
-				for _, condition := range conditions {
-					data := &condition.Message
-					sse.SendMessageToClient(sse.SSEMessage{Time: "2021-09-01 15:04:05", Type: "message", Data: *data})
-				}
-
 			case watch.Deleted:
 				fmt.Printf("Pod deleted: %s\n", event.Object.(*v1alpha1.InstrumentedApplication).Name)
 			case watch.Error:
@@ -227,8 +214,6 @@ func main() {
 			switch event.Type {
 			case watch.Added:
 				fmt.Printf("New pod added: %s\n", event.Object.(*v1alpha1.Destination).Name)
-				data := "Destination added successfully"
-				sse.SendMessageToClient(sse.SSEMessage{Time: "2021-09-01 15:04:05", Type: "message", Data: data})
 
 			case watch.Modified:
 				fmt.Printf("Pod modified: %s\n", event.Object.(*v1alpha1.Destination).Name)
@@ -240,7 +225,13 @@ func main() {
 				// Send the message to the client
 				for _, condition := range conditions {
 					data := &condition.Message
-					sse.SendMessageToClient(sse.SSEMessage{Time: "2021-09-01 15:04:05", Type: "message", Data: *data})
+					target := event.Object.(*v1alpha1.Destination).Name
+					conditionType := "success"
+					if condition.Status == "False" {
+						conditionType = "error"
+					}
+
+					sse.SendMessageToClient(sse.SSEMessage{Event: "Modified", Type: conditionType, Target: target, Data: *data, CRDType: "Destination"})
 				}
 
 			case watch.Deleted:
@@ -252,46 +243,6 @@ func main() {
 	}()
 
 	r.GET("/events", sse.HandleSSEConnections)
-
-	// // Add SSE endpoint
-	// r.GET("/events", func(c *gin.Context) {
-	// 	c.Header("Content-Type", "text/event-stream")
-	// 	c.Header("Cache-Control", "no-cache")
-	// 	c.Header("Connection", "keep-alive")
-	// 	c.Header("Transfer-Encoding", "chunked")
-
-	// 	// Create a channel to send SSE messages
-	// 	messageChan := make(chan SSEMessage)
-
-	// 	// Start a goroutine to send SSE messages
-	// 	go func() {
-	// 		defer close(messageChan)
-	// 		for {
-	// 			// Create SSE message
-	// 			message := SSEMessage{Time: time.Now().Format("2006-01-02 15:04:05"), Type: "message"}
-
-	// 			// Marshal message to JSON
-	// 			jsonData, err := json.Marshal(message)
-	// 			if err != nil {
-	// 				log.Printf("Error marshaling JSON: %s", err)
-	// 				continue
-	// 			}
-
-	// 			// Send JSON data as SSE message
-	// 			fmt.Fprintf(c.Writer, "data: %s\n\n", string(jsonData))
-	// 			c.Writer.Flush()
-
-	// 			// Wait for 2 seconds before sending the next message
-	// 			time.Sleep(2 * time.Second)
-	// 		}
-	// 	}()
-
-	// 	// Continuously send SSE messages to the client
-	// 	for range c.Writer.CloseNotify() {
-	// 		// Client connection closed, stop sending messages
-	// 		return
-	// 	}
-	// })
 
 	log.Println("Starting Odigos UI...")
 	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)

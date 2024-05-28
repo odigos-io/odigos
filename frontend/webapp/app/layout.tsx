@@ -1,11 +1,12 @@
 'use client';
-import React, { useEffect } from 'react';
-import { ThemeProvider } from 'styled-components';
+import React from 'react';
+import { useSSE } from '@/hooks';
 import theme from '@/styles/palette';
+import { ThemeProvider } from 'styled-components';
+import { NotificationManager } from '@/components';
+import ReduxProvider from '@/store/redux-provider';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ThemeProviderWrapper } from '@keyval-dev/design-system';
-import ReduxProvider from '@/store/redux-provider';
-import { useNotification } from '@/hooks';
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
@@ -29,26 +30,8 @@ export default function RootLayout({
       },
     },
   });
-  const { show, Notification } = useNotification();
-  useEffect(() => {
-    const eventSource = new EventSource('http://localhost:8085/events');
 
-    eventSource.onmessage = function (event) {
-      // Update state with SSE data
-      console.log('SSE data:', event.data);
-      const data = JSON.parse(event.data);
-      show({ message: data.data });
-    };
-
-    eventSource.onerror = function (event) {
-      console.error('EventSource failed:', event);
-    };
-
-    // Clean up event source on component unmount
-    return () => {
-      eventSource.close();
-    };
-  }, []);
+  useSSE();
 
   return (
     <html lang="en">
@@ -58,7 +41,7 @@ export default function RootLayout({
             <ThemeProviderWrapper>
               <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
                 {children}
-                <Notification />
+                <NotificationManager />
               </body>
             </ThemeProviderWrapper>
           </ThemeProvider>

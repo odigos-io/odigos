@@ -9,9 +9,11 @@ import (
 )
 
 type SSEMessage struct {
-	Time string `json:"time"`
-	Type string `json:"type"`
-	Data string `json:"data"`
+	Type    string `json:"type"`
+	Data    string `json:"data"`
+	Event   string `json:"event"`
+	Target  string `json:"target"`
+	CRDType string `json:"crdType"`
 }
 
 // This map will hold channels for each client connected to the SSE endpoint

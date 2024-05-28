@@ -4,6 +4,7 @@ import theme from '@/styles/palette';
 import { Condition } from '@/types';
 import { KeyvalText } from '../text/text';
 import { GreenCheck, RedError } from '@/assets/icons/app';
+import { formatDate } from '@/utils';
 
 interface ConditionAlertProps {
   conditions: Condition[] | undefined;
@@ -104,7 +105,7 @@ export const Conditions: React.FC<ConditionAlertProps> = ({
                     {condition.type}
                   </KeyvalText>
                   <KeyvalText color={theme.text.grey} size={12}>
-                    {condition.lastTransitionTime}
+                    {formatDate(condition.lastTransitionTime)}
                   </KeyvalText>
                 </ConditionDetails>
               </div>
