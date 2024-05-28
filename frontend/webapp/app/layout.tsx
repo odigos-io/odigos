@@ -1,12 +1,12 @@
 'use client';
-import React, { useEffect } from 'react';
-import { ThemeProvider } from 'styled-components';
+import React from 'react';
+import { useSSE } from '@/hooks';
 import theme from '@/styles/palette';
+import { ThemeProvider } from 'styled-components';
+import { NotificationManager } from '@/components';
+import ReduxProvider from '@/store/redux-provider';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ThemeProviderWrapper } from '@keyval-dev/design-system';
-import ReduxProvider from '@/store/redux-provider';
-import { useNotify, useSSE } from '@/hooks';
-import NotificationManager from '@/components/notification/notification-manager';
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,

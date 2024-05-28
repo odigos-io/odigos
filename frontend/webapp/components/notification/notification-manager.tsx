@@ -15,7 +15,7 @@ const NotificationsWrapper = styled.div`
   z-index: 1000;
 `;
 
-const NotificationManager: React.FC = () => {
+export const NotificationManager: React.FC = () => {
   const notifications = useSelector(
     (state: RootState) => state.notification.notifications
   );
@@ -30,5 +30,3 @@ const NotificationManager: React.FC = () => {
     </NotificationsWrapper>
   );
 };
-
-export default NotificationManager;
