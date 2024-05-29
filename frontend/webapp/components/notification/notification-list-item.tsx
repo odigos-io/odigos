@@ -83,7 +83,9 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
         </NotificationDetailsWrapper>
       </NotificationContent>
       <NotificationButtonContainer>
-        <KeyvalLink fontSize={12} value="Details" onClick={onDetailsClick} />
+        {!!target && (
+          <KeyvalLink fontSize={12} value="Details" onClick={onDetailsClick} />
+        )}
       </NotificationButtonContainer>
     </NotificationItemContainer>
   );

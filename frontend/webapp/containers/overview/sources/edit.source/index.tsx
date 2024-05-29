@@ -137,7 +137,7 @@ export function EditSourceForm() {
             image_url={
               LANGUAGES_LOGOS[
                 getMainContainerLanguage(
-                  currentSource?.instrumented_application_details.languages ||
+                  currentSource?.instrumented_application_details?.languages ||
                     undefined
                 )
               ]
