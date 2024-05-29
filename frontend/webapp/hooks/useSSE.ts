@@ -1,5 +1,5 @@
-import { addNotification, store } from '@/store';
 import { useEffect, useRef } from 'react';
+import { addNotification, store } from '@/store';
 
 const URL = 'http://localhost:8085/events';
 
@@ -12,42 +12,33 @@ export function useSSE() {
     eventSource.onmessage = function (event) {
       const data = JSON.parse(event.data);
       const key = event.data;
-      console.log({ key, data });
+
+      const notification = {
+        id: Date.now(),
+        message: data.data,
+        title: data.event,
+        type: data.type,
+        target: data.target,
+        crdType: data.crdType,
+      };
 
       // Check if the event is already in the buffer
       if (
         eventBuffer.current[key] &&
         eventBuffer.current[key].id > Date.now() - 2000
       ) {
-        eventBuffer.current[key] = {
-          id: Date.now(),
-          title: data.event,
-          type: data.type,
-          target: data.target,
-          crdType: data.crdType,
-          messages: [data.data],
-        };
+        eventBuffer.current[key] = notification;
         return;
       } else {
         // Add a new event to the buffer
-        eventBuffer.current[key] = {
-          id: Date.now(),
-          title: data.event,
-          type: data.type,
-          target: data.target,
-          crdType: data.crdType,
-          messages: [data.data],
-        };
+        eventBuffer.current[key] = notification;
       }
-
-      // Combine messages for the notification
-      const combinedMessage = eventBuffer.current[key].messages;
 
       // Dispatch the notification to the store
       store.dispatch(
         addNotification({
           id: eventBuffer.current[key].id,
-          message: combinedMessage,
+          message: eventBuffer.current[key].message,
           title: eventBuffer.current[key].title,
           type: eventBuffer.current[key].type,
           target: eventBuffer.current[key].target,
