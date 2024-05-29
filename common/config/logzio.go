@@ -37,12 +37,12 @@ func (l *Logzio) DestType() common.DestinationType {
 func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
 	region := dest.GetConfig()["LOGZIO_REGION"]
 	if isTracingEnabled(dest) {
-		exporterName := "logzio/tracing-" + dest.GetName()
+		exporterName := "logzio/tracing-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"region":        region,
 			"account_token": "${LOGZIO_TRACING_TOKEN}",
 		}
-		tracesPipelineName := "traces/logzio-" + dest.GetName()
+		tracesPipelineName := "traces/logzio-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
@@ -50,7 +50,7 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 
 	if isMetricsEnabled(dest) {
 		listenerUrl := l.GetListenerUrl(region)
-		exporterName := "prometheusremotewrite/logzio-" + dest.GetName()
+		exporterName := "prometheusremotewrite/logzio-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"endpoint": listenerUrl,
 			"external_labels": GenericMap{
@@ -60,14 +60,14 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 				"authorization": "Bearer ${LOGZIO_METRICS_TOKEN}",
 			},
 		}
-		metricsPipelineName := "metrics/logzio-" + dest.GetName()
+		metricsPipelineName := "metrics/logzio-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		exporterName := "logzio/logs-" + dest.GetName()
+		exporterName := "logzio/logs-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"region":        region,
 			"account_token": "${LOGZIO_LOGS_TOKEN}",
@@ -89,7 +89,7 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 				},
 			},
 		}
-		logsPipelineName := "logs/logzio-" + dest.GetName()
+		logsPipelineName := "logs/logzio-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Processors: []string{"attributes/logzio"},
 			Exporters:  []string{exporterName},

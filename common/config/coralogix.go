@@ -40,7 +40,7 @@ func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		return errors.New("Coralogix subsystem name not specified, gateway will not be configured for Coralogix")
 	}
 
-	exporterName := "coralogix/" + dest.GetName()
+	exporterName := "coralogix/" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"private_key":      "${CORALOGIX_PRIVATE_KEY}",
 		"domain":           domain,
@@ -49,21 +49,21 @@ func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/coralogix-" + dest.GetName()
+		tracesPipelineName := "traces/coralogix-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/coralogix-" + dest.GetName()
+		metricsPipelineName := "metrics/coralogix-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/coralogix-" + dest.GetName()
+		logsPipelineName := "logs/coralogix-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}

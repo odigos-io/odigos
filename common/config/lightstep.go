@@ -12,7 +12,7 @@ func (l *Lightstep) DestType() common.DestinationType {
 
 func (l *Lightstep) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
 	if isTracingEnabled(dest) {
-		exporterName := "otlp/lightstep-" + dest.GetName()
+		exporterName := "otlp/lightstep-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"endpoint": "ingest.lightstep.com:443",
 			"headers": GenericMap{
@@ -20,7 +20,7 @@ func (l *Lightstep) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 			},
 		}
 
-		tracesPipelineName := "traces/lightstep-" + dest.GetName()
+		tracesPipelineName := "traces/lightstep-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}

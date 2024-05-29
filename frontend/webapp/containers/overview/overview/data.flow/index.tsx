@@ -1,7 +1,8 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { ROUTES } from '@/utils';
 import { OverviewDataFlowWrapper } from './styled';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { KeyvalDataFlow, KeyvalLoader } from '@/design.system';
 import { useActions, useDestinations, useSources } from '@/hooks';
 import { buildFlowNodesAndEdges } from '@keyval-dev/design-system';
@@ -34,6 +35,7 @@ export function DataFlowContainer() {
   const [edges, setEdges] = useState<FlowEdge[]>();
   const [pollingAttempts, setPollingAttempts] = useState(0);
 
+  const router = useRouter();
   const { actions } = useActions();
   const { sources, refetchSources } = useSources();
   const { destinationList, refetchDestinations } = useDestinations();
@@ -47,8 +49,11 @@ export function DataFlowContainer() {
     const mapSources = sources.map((source) => {
       const languages =
         source?.instrumented_application_details?.languages || [];
+      const conditions =
+        source?.instrumented_application_details?.conditions || [];
       return {
         ...source,
+        conditions,
         languages:
           languages.length > 0
             ? languages
@@ -87,13 +92,27 @@ export function DataFlowContainer() {
     }
   }, [pollingAttempts]);
 
+  function onNodeClick(node: FlowNode, object: any) {
+    if (object?.type === 'destination') {
+      router.push(`${ROUTES.UPDATE_DESTINATION}${object.data.id}`);
+    }
+    if (object?.type === 'action') {
+      router.push(`${ROUTES.EDIT_ACTION}?id=${object.data.id}`);
+    }
+    if (object?.data?.kind) {
+      router.push(
+        `${ROUTES.MANAGE_SOURCE}?name=${object.data.name}&namespace=${object.data.namespace}&kind=${object.data.kind}`
+      );
+    }
+  }
+
   if (!nodes || !edges) {
     return <KeyvalLoader />;
   }
 
   return (
     <OverviewDataFlowWrapper>
-      <KeyvalDataFlow nodes={nodes} edges={edges} />
+      <KeyvalDataFlow nodes={nodes} edges={edges} onNodeClick={onNodeClick} />
     </OverviewDataFlowWrapper>
   );
 }

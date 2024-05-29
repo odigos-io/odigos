@@ -73,3 +73,69 @@ export function stringifyNonStringValues(
     return acc;
   }, {} as Record<string, string>);
 }
+
+export const timeAgo = (timestamp: string) => {
+  const now = new Date();
+  const notificationTime = new Date(timestamp);
+
+  if (isNaN(notificationTime.getTime())) {
+    return '';
+  }
+
+  const differenceInMs = now.getTime() - notificationTime.getTime();
+  const differenceInMinutes = Math.floor(differenceInMs / (1000 * 60));
+  const differenceInHours = Math.floor(differenceInMinutes / 60);
+
+  if (differenceInMinutes < 60) {
+    if (differenceInMinutes === 0) {
+      return 'Just now';
+    } else if (differenceInMinutes === 1) {
+      return '1 minute ago';
+    }
+
+    return `${differenceInMinutes} minutes ago`;
+  } else if (differenceInHours < 24) {
+    return `${differenceInHours} hours ago`;
+  } else {
+    const days = Math.floor(differenceInHours / 24);
+    return `${days} days ago`;
+  }
+};
+
+export function formatDate(dateString: string) {
+  // Parse the date string into a Date object
+  const date = new Date(dateString);
+
+  // Get individual components
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth(); // Note: months are zero-based
+  const day = date.getUTCDate();
+  const hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  const seconds = date.getUTCSeconds();
+
+  // Define month names
+  const monthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
+  // Format the components into a readable string
+  const formattedDate = `${monthNames[month]} ${day}, ${year} ${hours
+    .toString()
+    .padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds
+    .toString()
+    .padStart(2, '0')}`;
+
+  return formattedDate;
+}
