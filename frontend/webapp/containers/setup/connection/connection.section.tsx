@@ -1,10 +1,10 @@
 import React, { useLayoutEffect, useMemo, useState } from 'react';
+import { useConnect } from '@/hooks';
 import { useQuery } from 'react-query';
 import { QUERIES } from '@/utils/constants';
 import { getDestination } from '@/services';
 import { KeyvalLoader } from '@/design.system';
 import { useSearchParams } from 'next/navigation';
-import { useConnect, useNotification } from '@/hooks';
 import { CreateConnectionForm, QuickHelp } from '@/components/setup';
 import {
   LoaderWrapper,
@@ -27,7 +27,6 @@ export function ConnectionSection({ supportedSignals }) {
 
   const { connect } = useConnect();
   const searchParams = useSearchParams();
-  const { Notification } = useNotification();
 
   const { isLoading, data } = useQuery(
     [QUERIES.API_DESTINATION_TYPE],
@@ -77,7 +76,6 @@ export function ConnectionSection({ supportedSignals }) {
         />
       )}
       {videoList?.length > 0 && <QuickHelp data={videoList} />}
-      <Notification />
     </CreateConnectionContainer>
   );
 }
