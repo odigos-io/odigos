@@ -1,12 +1,12 @@
 'use client';
 import React, { useEffect } from 'react';
+import { useSectionData } from '@/hooks';
 import { styled } from 'styled-components';
 import { HideScroll } from '@/styles/styled';
 import { useMutation, useQuery } from 'react-query';
-import { useNotification, useSectionData } from '@/hooks';
+import { OVERVIEW, QUERIES, ROUTES } from '@/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ManageDestination, OverviewHeader } from '@/components/overview';
-import { NOTIFICATION, OVERVIEW, QUERIES, ROUTES } from '@/utils/constants';
+import { ManageDestination, OverviewHeader } from '@/components';
 import {
   getDestination,
   getDestinationsTypes,
@@ -32,7 +32,7 @@ const NewDestinationContainer = styled.div`
 
 export function NewDestinationForm() {
   const { sectionData, setSectionData } = useSectionData(null);
-  const { show, Notification } = useNotification();
+
   const { mutate } = useMutation((body) => setDestination(body));
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -71,14 +71,6 @@ export function NewDestinationForm() {
     setSectionData(currentData);
   }
 
-  function onError({ response }) {
-    const message = response?.data?.message;
-    show({
-      type: NOTIFICATION.ERROR,
-      message,
-    });
-  }
-
   function onSubmit(newDestination) {
     const destination = {
       ...newDestination,
@@ -87,7 +79,6 @@ export function NewDestinationForm() {
 
     mutate(destination, {
       onSuccess: () => router.push(`${ROUTES.DESTINATIONS}?status=created`),
-      onError,
     });
   }
 
@@ -112,7 +103,6 @@ export function NewDestinationForm() {
           </NewDestinationContainer>
         )}
       </HideScroll>
-      <Notification />
     </>
   );
 }
