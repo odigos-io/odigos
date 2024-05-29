@@ -45,6 +45,10 @@ type OdigosConfigurationSpec struct {
 	SupportedSDKs     map[common.ProgrammingLanguage][]common.OtelSdk `json:"supportedSDKs,omitempty"`
 	DefaultSDKs       map[common.ProgrammingLanguage]common.OtelSdk   `json:"defaultSDKs,omitempty"`
 	CollectorGateway  *CollectorGatewayConfiguration                  `json:"collectorGateway,omitempty"`
+
+	// this is internal currently, and is not exposed on the CLI / helm
+	// used for odigos enterprise
+	GoAutoIncludeCodeAttributes bool `json:"goAutoIncludeCodeAttributes,omitempty"`
 }
 
 //+genclient
