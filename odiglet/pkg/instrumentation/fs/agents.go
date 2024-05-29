@@ -55,7 +55,7 @@ func CopyAgentsDirectoryToHost() error {
 
 	// Check if the restorecon command exists when running on RHEL/CoreOS
 	_, err = exec.LookPath(filepath.Join(chrootDir, restoreconPath))
-	if err != nil {
+	if err == nil {
 		// Run the restorecon command to apply the new context
 		cmd := exec.Command(restoreconPath, "-r", "/var/odigos")
 		syscall.Chroot(chrootDir)
