@@ -125,7 +125,7 @@
     {
       "group": "Destinations",
       "pages": [
-        "backends/index",
+        "backends",
         {
           "group": "Supported Backends",
           "pages": [
@@ -216,6 +216,12 @@
           ]
         }
       ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/backends/:slug*",
+      "destination": "/backends"
     }
   ],
   "footerSocials": {
