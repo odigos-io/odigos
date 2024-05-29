@@ -344,7 +344,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 	if goAutoIncludeCodeAttributes {
 		dynamicEnv = append(dynamicEnv, corev1.EnvVar{
 			Name:  "OTEL_GO_AUTO_INCLUDE_CODE_ATTRIBUTES",
-			Value: "true", // we don't care about the value, just that it is set.
+			Value: "true",
 		})
 	}
 
