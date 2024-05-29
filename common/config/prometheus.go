@@ -30,20 +30,20 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	url = addProtocol(url)
 	url = strings.TrimSuffix(url, "/api/v1/write")
-	rwExporterName := "prometheusremotewrite/prometheus-" + dest.GetName()
-	spanMetricsConnectorName := "spanmetrics/prometheus-" + dest.GetName()
+	rwExporterName := "prometheusremotewrite/prometheus-" + dest.GetID()
+	spanMetricsConnectorName := "spanmetrics/prometheus-" + dest.GetID()
 	currentConfig.Exporters[rwExporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s/api/v1/write", url),
 	}
 
-	metricsPipelineName := "metrics/prometheus-" + dest.GetName()
+	metricsPipelineName := "metrics/prometheus-" + dest.GetID()
 	currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 		Receivers: []string{spanMetricsConnectorName},
 		Exporters: []string{rwExporterName},
 	}
 
 	// Send SpanMetrics to prometheus
-	tracesPipelineName := "traces/spanmetrics-" + dest.GetName()
+	tracesPipelineName := "traces/spanmetrics-" + dest.GetID()
 	currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 		Exporters: []string{spanMetricsConnectorName},
 	}

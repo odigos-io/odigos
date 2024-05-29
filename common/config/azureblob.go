@@ -33,7 +33,7 @@ func (a *AzureBlobStorage) ModifyConfig(dest ExporterConfigurer, currentConfig *
 		return ErrorMissingAzureBlobContainerName
 	}
 
-	exporterName := "azureblobstorage/" + dest.GetName()
+	exporterName := "azureblobstorage/" + dest.GetID()
 
 	if isLoggingEnabled(dest) {
 		currentConfig.Exporters[exporterName] = GenericMap{
@@ -43,7 +43,7 @@ func (a *AzureBlobStorage) ModifyConfig(dest ExporterConfigurer, currentConfig *
 			},
 		}
 
-		logsPipelineName := "logs/azureblobstorage-" + dest.GetName()
+		logsPipelineName := "logs/azureblobstorage-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
@@ -57,7 +57,7 @@ func (a *AzureBlobStorage) ModifyConfig(dest ExporterConfigurer, currentConfig *
 			},
 		}
 
-		tracesPipelineName := "traces/azureblobstorage-" + dest.GetName()
+		tracesPipelineName := "traces/azureblobstorage-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
