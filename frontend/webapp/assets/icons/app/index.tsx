@@ -12,7 +12,8 @@ import YamlIcon from './yaml.svg';
 
 import GreenCheck from './green-check.svg';
 import RedError from './red-error.svg';
-
+import BlueInfo from './blue-info.svg';
+import Bell from './bell.svg';
 export {
   RightArrow,
   Charge,
@@ -27,4 +28,6 @@ export {
   YamlIcon,
   GreenCheck,
   RedError,
+  BlueInfo,
+  Bell,
 };
