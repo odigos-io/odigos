@@ -332,13 +332,20 @@ func NewSCClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool) *appsv1.DaemonSet {
+func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool, goAutoIncludeCodeAttributes bool) *appsv1.DaemonSet {
 
-	odigosProToken := []corev1.EnvVar{}
+	dynamicEnv := []corev1.EnvVar{}
 	if odigosTier == common.CloudOdigosTier {
-		odigosProToken = append(odigosProToken, odigospro.CloudTokenAsEnvVar())
+		dynamicEnv = append(dynamicEnv, odigospro.CloudTokenAsEnvVar())
 	} else if odigosTier == common.OnPremOdigosTier {
-		odigosProToken = append(odigosProToken, odigospro.OnPremTokenAsEnvVar())
+		dynamicEnv = append(dynamicEnv, odigospro.OnPremTokenAsEnvVar())
+	}
+
+	if goAutoIncludeCodeAttributes {
+		dynamicEnv = append(dynamicEnv, corev1.EnvVar{
+			Name:  "OTEL_GO_AUTO_INCLUDE_CODE_ATTRIBUTES",
+			Value: "true", // we don't care about the value, just that it is set.
+		})
 	}
 
 	odigosSeLinuxHostVolumes := []corev1.Volume{}
@@ -460,7 +467,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 										},
 									},
 								},
-							}, odigosProToken...),
+							}, dynamicEnv...),
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -596,7 +603,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
 	resources = append(resources,
-		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled))
+		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled, a.config.GoAutoIncludeCodeAttributes))
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
