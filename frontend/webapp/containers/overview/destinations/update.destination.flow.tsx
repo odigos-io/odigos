@@ -1,15 +1,14 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
-import { KeyvalLoader } from '@/design.system';
-import { NOTIFICATION, QUERIES, ROUTES } from '@/utils/constants';
-import { useMutation, useQuery } from 'react-query';
-import { getDestination, updateDestination } from '@/services';
-import { ManageDestination } from '@/components/overview';
-import { deleteDestination, getDestinations } from '@/services/destinations';
-import { ManageDestinationWrapper } from './destinations.styled';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useNotification } from '@/hooks';
+import { QUERIES, ROUTES } from '@/utils';
 import { HideScroll } from '@/styles/styled';
+import { KeyvalLoader } from '@/design.system';
+import { ManageDestination } from '@/components';
+import { useMutation, useQuery } from 'react-query';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { getDestination, updateDestination } from '@/services';
+import { ManageDestinationWrapper } from './destinations.styled';
+import { deleteDestination, getDestinations } from '@/services/destinations';
 const DEST = 'dest';
 
 export function UpdateDestinationFlow() {
@@ -17,7 +16,6 @@ export function UpdateDestinationFlow() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { show, Notification } = useNotification();
 
   const manageData = useMemo(() => {
     return {
@@ -34,11 +32,10 @@ export function UpdateDestinationFlow() {
     }
   );
 
-  const {
-    isLoading: destinationLoading,
-    data: destinationList,
-    refetch,
-  } = useQuery([QUERIES.API_DESTINATIONS], getDestinations);
+  const { isLoading: destinationLoading, data: destinationList } = useQuery(
+    [QUERIES.API_DESTINATIONS],
+    getDestinations
+  );
 
   const { mutate: handleUpdateDestination } = useMutation((body) =>
     updateDestination(body, selectedDestination?.id)
@@ -53,7 +50,6 @@ export function UpdateDestinationFlow() {
   function onDelete() {
     handleDeleteDestination(selectedDestination.id, {
       onSuccess: () => router.push(`${ROUTES.DESTINATIONS}?status=deleted`),
-      onError,
     });
   }
 
@@ -65,7 +61,6 @@ export function UpdateDestinationFlow() {
 
     handleUpdateDestination(newDestinations, {
       onSuccess: () => router.push(`${ROUTES.DESTINATIONS}?status=updated`),
-      onError,
     });
   }
 
@@ -77,14 +72,6 @@ export function UpdateDestinationFlow() {
     if (currentDestination?.length) {
       setSelectedDestination(currentDestination[0]);
     }
-  }
-
-  function onError({ response }) {
-    const message = response?.data?.message;
-    show({
-      type: NOTIFICATION.ERROR,
-      message,
-    });
   }
 
   if (destinationLoading || !selectedDestination) {
@@ -103,7 +90,6 @@ export function UpdateDestinationFlow() {
           onSubmit={onSubmit}
           onDelete={onDelete}
         />
-        <Notification />
       </ManageDestinationWrapper>
     </HideScroll>
   );

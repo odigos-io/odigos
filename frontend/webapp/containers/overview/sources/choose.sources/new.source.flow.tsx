@@ -1,24 +1,14 @@
 import React from 'react';
 import theme from '@/styles/palette';
+import { OVERVIEW, SETUP } from '@/utils';
+import { useSectionData, useSources } from '@/hooks';
 import { KeyvalButton, KeyvalText } from '@/design.system';
 import { SourcesSectionWrapper, ButtonWrapper } from './styled';
-import { NOTIFICATION, OVERVIEW, SETUP } from '@/utils/constants';
-import { useNotification, useSectionData, useSources } from '@/hooks';
 import { SourcesSection } from '@/containers/setup/sources/sources.section';
 
 export function NewSourcesList({ onSuccess }) {
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
   const { upsertSources } = useSources();
-
-  const { show, Notification } = useNotification();
-
-  function onError({ response }) {
-    const message = response?.data?.message || SETUP.ERROR;
-    show({
-      type: NOTIFICATION.ERROR,
-      message,
-    });
-  }
 
   return (
     <>
@@ -26,7 +16,9 @@ export function NewSourcesList({ onSuccess }) {
         <KeyvalText>{`${totalSelected} ${SETUP.SELECTED}`}</KeyvalText>
         <KeyvalButton
           disabled={totalSelected === 0}
-          onClick={() => upsertSources({ sectionData, onSuccess, onError })}
+          onClick={() =>
+            upsertSources({ sectionData, onSuccess, onError: null })
+          }
           style={{ width: 110 }}
         >
           <KeyvalText weight={600} color={theme.text.dark_button}>
@@ -39,7 +31,6 @@ export function NewSourcesList({ onSuccess }) {
           sectionData={sectionData}
           setSectionData={setSectionData}
         />
-        <Notification />
       </SourcesSectionWrapper>
     </>
   );

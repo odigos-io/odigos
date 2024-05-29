@@ -3,9 +3,8 @@ package resources
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/cli/cmd/resources/crds"
-	"github.com/odigos-io/odigos/cli/cmd/resources/crds/actions"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
@@ -110,17 +109,21 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 	resources := []client.Object{
 		NewOdigosDeploymentConfigMap(a.ns, a.config.OdigosVersion),
 		NewLeaderElectionRole(a.ns),
-		crds.NewCollectorsGroup(),
-		crds.NewConfiguration(),
-		crds.NewDestination(),
-		crds.NewInstrumentedApp(),
-		crds.NewProcessor(),
-		actions.NewAddClusterInfoCRD(),
-		actions.NewDeleteAttributeCRD(),
-		actions.NewRenameAttributeCRD(),
 	}
-	if a.odigosTier != common.CommunityOdigosTier {
-		resources = append(resources, crds.NewInstrumentationConfig())
+
+	excludedCRDs := []string{}
+	if a.odigosTier == common.CommunityOdigosTier {
+		excludedCRDs = append(excludedCRDs, "odigos.io_instrumentationconfigs.yaml")
 	}
+
+	availableCrds, err := api.GetCRDs(excludedCRDs)
+	if err != nil {
+		return err
+	}
+
+	for _, c := range availableCrds {
+		resources = append(resources, c)
+	}
+
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

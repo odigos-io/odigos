@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from 'react-query';
-import { useNotification } from '@/hooks';
 import { KeyvalLoader } from '@/design.system';
-import { NOTIFICATION, QUERIES } from '@/utils/constants';
+import { NOTIFICATION, QUERIES } from '@/utils';
 import { getApplication, getNamespaces } from '@/services';
 import { SourcesList, SourcesOptionMenu } from '@/components/setup';
 import {
@@ -22,7 +21,6 @@ export function SourcesSection({ sectionData, setSectionData }) {
   const [currentNamespace, setCurrentNamespace] = useState<Namespace>();
   const [searchFilter, setSearchFilter] = useState<string>('');
 
-  const { show, Notification } = useNotification();
   const { isLoading, data, isError, error } = useQuery(
     [QUERIES.API_NAMESPACES],
     getNamespaces
@@ -30,9 +28,9 @@ export function SourcesSection({ sectionData, setSectionData }) {
 
   useEffect(() => {
     if (!currentNamespace && data) {
-      const currentNamespace = data?.namespaces.find(
-        (item: Namespace) => item.name === DEFAULT
-      ) ?? data?.namespaces[0];
+      const currentNamespace =
+        data?.namespaces.find((item: Namespace) => item.name === DEFAULT) ??
+        data?.namespaces[0];
       setCurrentNamespace(currentNamespace);
     }
   }, [data]);
@@ -40,14 +38,6 @@ export function SourcesSection({ sectionData, setSectionData }) {
   useEffect(() => {
     onNameSpaceChange();
   }, [currentNamespace]);
-
-  useEffect(() => {
-    isError &&
-      show({
-        type: NOTIFICATION.ERROR,
-        message: error,
-      });
-  }, [isError]);
 
   const namespacesList = useMemo(
     () =>
@@ -197,7 +187,6 @@ export function SourcesSection({ sectionData, setSectionData }) {
         onItemClick={handleSourceClick}
         onClearClick={() => onSelectAllChange(false)}
       />
-      <Notification />
     </SectionContainerWrapper>
   );
 }

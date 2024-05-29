@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import theme from '@/styles/palette';
+import { useSources } from '@/hooks';
 import { ManagedSource } from '@/types';
 import { OVERVIEW, ROUTES } from '@/utils';
 import { useRouter } from 'next/navigation';
-import { useNotification, useSources } from '@/hooks';
 import { EmptyList, ManagedSourcesTable } from '@/components';
 import {
   KeyvalText,
@@ -23,7 +23,6 @@ export function ManagedSourcesContainer() {
   const [searchInput, setSearchInput] = useState('');
 
   const router = useRouter();
-  const { show, Notification } = useNotification();
 
   const {
     sources,
@@ -57,7 +56,6 @@ export function ManagedSourcesContainer() {
 
   return (
     <>
-      <Notification />
       <Container>
         {!sources?.length ? (
           <EmptyList
