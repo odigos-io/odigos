@@ -24,20 +24,21 @@ import (
 // OdigosConfigurationSpecApplyConfiguration represents an declarative configuration of the OdigosConfigurationSpec type for use
 // with apply.
 type OdigosConfigurationSpecApplyConfiguration struct {
-	OdigosVersion     *string                                          `json:"odigosVersion,omitempty"`
-	ConfigVersion     *int                                             `json:"configVersion,omitempty"`
-	TelemetryEnabled  *bool                                            `json:"telemetryEnabled,omitempty"`
-	OpenshiftEnabled  *bool                                            `json:"openshiftEnabled,omitempty"`
-	IgnoredNamespaces []string                                         `json:"ignoredNamespaces,omitempty"`
-	IgnoredContainers []string                                         `json:"ignoredContainers,omitempty"`
-	Psp               *bool                                            `json:"psp,omitempty"`
-	ImagePrefix       *string                                          `json:"imagePrefix,omitempty"`
-	OdigletImage      *string                                          `json:"odigletImage,omitempty"`
-	InstrumentorImage *string                                          `json:"instrumentorImage,omitempty"`
-	AutoscalerImage   *string                                          `json:"autoscalerImage,omitempty"`
-	SupportedSDKs     map[common.ProgrammingLanguage][]common.OtelSdk  `json:"supportedSDKs,omitempty"`
-	DefaultSDKs       map[common.ProgrammingLanguage]common.OtelSdk    `json:"defaultSDKs,omitempty"`
-	CollectorGateway  *CollectorGatewayConfigurationApplyConfiguration `json:"collectorGateway,omitempty"`
+	OdigosVersion               *string                                          `json:"odigosVersion,omitempty"`
+	ConfigVersion               *int                                             `json:"configVersion,omitempty"`
+	TelemetryEnabled            *bool                                            `json:"telemetryEnabled,omitempty"`
+	OpenshiftEnabled            *bool                                            `json:"openshiftEnabled,omitempty"`
+	IgnoredNamespaces           []string                                         `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers           []string                                         `json:"ignoredContainers,omitempty"`
+	Psp                         *bool                                            `json:"psp,omitempty"`
+	ImagePrefix                 *string                                          `json:"imagePrefix,omitempty"`
+	OdigletImage                *string                                          `json:"odigletImage,omitempty"`
+	InstrumentorImage           *string                                          `json:"instrumentorImage,omitempty"`
+	AutoscalerImage             *string                                          `json:"autoscalerImage,omitempty"`
+	SupportedSDKs               map[common.ProgrammingLanguage][]common.OtelSdk  `json:"supportedSDKs,omitempty"`
+	DefaultSDKs                 map[common.ProgrammingLanguage]common.OtelSdk    `json:"defaultSDKs,omitempty"`
+	CollectorGateway            *CollectorGatewayConfigurationApplyConfiguration `json:"collectorGateway,omitempty"`
+	GoAutoIncludeCodeAttributes *bool                                            `json:"goAutoIncludeCodeAttributes,omitempty"`
 }
 
 // OdigosConfigurationSpecApplyConfiguration constructs an declarative configuration of the OdigosConfigurationSpec type for use with
@@ -171,5 +172,13 @@ func (b *OdigosConfigurationSpecApplyConfiguration) WithDefaultSDKs(entries map[
 // If called multiple times, the CollectorGateway field is set to the value of the last call.
 func (b *OdigosConfigurationSpecApplyConfiguration) WithCollectorGateway(value *CollectorGatewayConfigurationApplyConfiguration) *OdigosConfigurationSpecApplyConfiguration {
 	b.CollectorGateway = value
+	return b
+}
+
+// WithGoAutoIncludeCodeAttributes sets the GoAutoIncludeCodeAttributes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the GoAutoIncludeCodeAttributes field is set to the value of the last call.
+func (b *OdigosConfigurationSpecApplyConfiguration) WithGoAutoIncludeCodeAttributes(value bool) *OdigosConfigurationSpecApplyConfiguration {
+	b.GoAutoIncludeCodeAttributes = &value
 	return b
 }
