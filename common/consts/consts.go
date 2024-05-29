@@ -20,6 +20,8 @@ const (
 	// or odigos is uninstalled.
 	// Should only be used for environment variables that are modified by odigos.
 	ManifestEnvOriginalValAnnotation = "odigos.io/manifest-env-original-val"
+	// Used to label instrumentation instances for better query performance
+	InstrumentedAppNameLabel         = "instrumented-app"
 )
 
 var (

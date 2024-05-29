@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -11,11 +12,11 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
-	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
@@ -52,7 +53,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	ebpfDirectors, err := initEbpf(ctx, mgr.GetClient())
+	ebpfDirectors, err := initEbpf(ctx, mgr.GetClient(), mgr.GetScheme())
 	if err != nil {
 		log.Logger.Error(err, "Failed to init eBPF director")
 		os.Exit(-1)
@@ -109,9 +110,9 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 	manager.Run()
 }
 
-func initEbpf(ctx context.Context, client client.Client) (ebpf.DirectorsMap, error) {
+func initEbpf(ctx context.Context, client client.Client, scheme *runtime.Scheme) (ebpf.DirectorsMap, error) {
 	goInstrumentationFactory := ebpf.NewGoInstrumentationFactory()
-	goDirector := ebpf.NewEbpfDirector(ctx, client, common.GoProgrammingLanguage, goInstrumentationFactory)
+	goDirector := ebpf.NewEbpfDirector(ctx, client, scheme, common.GoProgrammingLanguage, goInstrumentationFactory)
 	goDirectorKey := ebpf.DirectorKey{
 		Language: common.GoProgrammingLanguage,
 		OtelSdk:  common.OtelSdkEbpfCommunity,

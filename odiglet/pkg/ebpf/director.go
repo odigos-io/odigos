@@ -4,14 +4,16 @@ import (
 	"context"
 	"sync"
 
-	_ "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
-	runtime_details "github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	inst "github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_instance"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
-	"k8s.io/apimachinery/pkg/types"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // This interface should be implemented by all ebpf sdks
@@ -98,7 +100,7 @@ type DirectorKey struct {
 
 type DirectorsMap map[DirectorKey]Director
 
-func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
+func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, scheme *runtime.Scheme, language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
 	director := &EbpfDirector[T]{
 		language:                     language,
 		instrumentationFactory:       instrumentationFactory,
@@ -110,12 +112,12 @@ func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, l
 		client:                       client,
 	}
 
-	go director.observeInstrumentations(ctx)
+	go director.observeInstrumentations(ctx, scheme)
 
 	return director
 }
 
-func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context) {
+func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context, scheme *runtime.Scheme) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -130,25 +132,20 @@ func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context) {
 				continue
 			}
 
-			runtimeDetails, err := runtime_details.GetRuntimeDetails(ctx, d.client, &status.Workload)
+			var pod corev1.Pod
+			err := d.client.Get(ctx, status.PodName, &pod)
 			if err != nil {
-				log.Logger.Error(err, "error getting runtime details", "workload", status.Workload)
+				log.Logger.Error(err, "error getting pod", "workload", status.Workload)
 				continue
 			}
 
-			condStatus := metav1.ConditionTrue
-			if !status.Healthy {
-				condStatus = metav1.ConditionFalse
-			}
+			instrumentedAppName := workload.GetRuntimeObjectName(status.Workload.Name, status.Workload.Kind)
+			err = inst.PersistInstrumentationInstanceStatus(ctx, &pod, d.client, instrumentedAppName, scheme,
+				inst.WithHealthy(&status.Healthy),
+				inst.WithMessage(status.Message),
+				inst.WithReason(string(status.Reason)),
+			)
 
-			if !status.Healthy {
-				log.Logger.Error(nil, "eBPF instrumentation unhealthy", "reason", status.Reason, "message", status.Message, "workload", status.Workload)
-			}
-
-			// write the status to the CR. Since we are writing the status to the instrumentedApplication CR,
-			// we might overwrite the status of another pod which corresponds to the same workload.
-			// this can cause the status to not represent the full state of the workload, in case some of the pods are healthy and some are not for the same workload.
-			err = conditions.UpdateStatusConditions(ctx, d.client, runtimeDetails, &runtimeDetails.Status.Conditions, condStatus, ebpfSDKConditionRunning, string(status.Reason), status.Message)
 			if err != nil {
 				log.Logger.Error(err, "error updating status conditions", "workload", status.Workload)
 			}
@@ -250,6 +247,17 @@ func (d *EbpfDirector[T]) Cleanup(pod types.NamespacedName) {
 	delete(d.workloadToPods[*workload], pod)
 	if len(d.workloadToPods[*workload]) == 0 {
 		delete(d.workloadToPods, *workload)
+	}
+
+	err := d.client.Delete(context.Background(), &odigosv1.InstrumentationInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      pod.Name,
+			Namespace: pod.Namespace,
+		},
+	})
+
+	if err != nil {
+		log.Logger.Error(err, "error deleting instrumentation instance", "pod", pod)
 	}
 
 	for _, pid := range details.Pids {
