@@ -84,6 +84,11 @@ spec:
                   - sdkType
                   type: object
                 type: object
+              goAutoIncludeCodeAttributes:
+                description: |-
+                  this is internal currently, and is not exposed on the CLI / helm
+                  used for odigos enterprise
+                type: boolean
               ignoredContainers:
                 items:
                   type: string
