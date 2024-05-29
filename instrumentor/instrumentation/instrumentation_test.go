@@ -32,6 +32,10 @@ func assertContainerNoEnvVar(t *testing.T, podTemplate *v1.PodTemplateSpec, cont
 		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() missing container at index %d", containerIndex)
 	}
 
+	if len(podTemplate.Spec.Containers[containerIndex].Env) == 0 {
+		return
+	}
+
 	container := podTemplate.Spec.Containers[containerIndex]
 	for _, envVar := range container.Env {
 		assert.NotEqual(t, envVar.Name, envVarName)
@@ -100,7 +104,7 @@ func TestApplyInstrumentationDevicesToPodTemplate(t *testing.T) {
 	}
 
 	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
-		common.GoProgrammingLanguage: {SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.GoProgrammingLanguage: common.OtelSdkEbpfCommunity,
 	}
 
 	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
@@ -183,7 +187,6 @@ func TestApplyInstrumentationDevicesToPodTemplate_MissingOtelSdk(t *testing.T) {
 }
 
 func TestApplyInstrumentationDevicesToPodTemplate_MultipleContainers(t *testing.T) {
-
 	podTemplate := &v1.PodTemplateSpec{
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
@@ -216,7 +219,7 @@ func TestApplyInstrumentationDevicesToPodTemplate_MultipleContainers(t *testing.
 	}
 
 	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
-		common.GoProgrammingLanguage: {SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.GoProgrammingLanguage: common.OtelSdkEbpfCommunity,
 	}
 
 	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
@@ -267,8 +270,8 @@ func TestApplyInstrumentationDevicesToPodTemplate_MultipleHeterogeneousContainer
 	}
 
 	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
-		common.GoProgrammingLanguage:   {SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
-		common.JavaProgrammingLanguage: {SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.GoProgrammingLanguage:   common.OtelSdkEbpfCommunity,
+		common.JavaProgrammingLanguage: common.OtelSdkNativeCommunity,
 	}
 
 	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
@@ -309,8 +312,8 @@ func TestApplyInstrumentationDevicesToPodTemplate_MultiplePartialContainers(t *t
 	deployment := &appsv1.Deployment{}
 
 	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
-		common.GoProgrammingLanguage:   {SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
-		common.JavaProgrammingLanguage: {SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.GoProgrammingLanguage:   common.OtelSdkEbpfCommunity,
+		common.JavaProgrammingLanguage: common.OtelSdkNativeCommunity,
 	}
 
 	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
@@ -359,7 +362,7 @@ func TestApplyInstrumentationDevicesToPodTemplate_AppendExistingLimits(t *testin
 	deployment := &appsv1.Deployment{}
 
 	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
-		common.GoProgrammingLanguage: {SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.GoProgrammingLanguage: common.OtelSdkEbpfCommunity,
 	}
 
 	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
@@ -412,7 +415,7 @@ func TestApplyInstrumentationDevicesToPodTemplate_RemoveExistingLimits(t *testin
 	deployment := &appsv1.Deployment{}
 
 	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
-		common.GoProgrammingLanguage: {SdkType: common.EbpfOtelSdkType, SdkTier: common.EnterpriseOtelSdkTier},
+		common.GoProgrammingLanguage: common.OtelSdkEbpfEnterprise,
 	}
 
 	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
@@ -463,7 +466,7 @@ func TestRevert(t *testing.T) {
 		Spec: odigosv1.InstrumentedApplicationSpec{
 			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
 				{
-					Language:      common.GoProgrammingLanguage,
+					Language:      common.PythonProgrammingLanguage,
 					ContainerName: "test",
 				},
 			},
@@ -471,7 +474,7 @@ func TestRevert(t *testing.T) {
 	}
 
 	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
-		common.GoProgrammingLanguage: {SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.PythonProgrammingLanguage: common.OtelSdkNativeCommunity,
 	}
 
 	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
@@ -480,7 +483,10 @@ func TestRevert(t *testing.T) {
 	}
 
 	// make sure the env var is appended
-	want := "/very/important/path:" + envOverwrite.EnvValues["PYTHONPATH"].Value
+	val, ok := envOverwrite.ValToAppend("PYTHONPATH", common.OtelSdkNativeCommunity)
+	assert.True(t, ok)
+
+	want := "/very/important/path:" + val
 	assertContainerWithEnvVar(t, podTemplate, 0, "PYTHONPATH", want)
 
 	// The original value of the env var should be stored in an annotation
@@ -539,7 +545,7 @@ func TestRevert_ExistingResources(t *testing.T) {
 	}
 
 	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
-		common.GoProgrammingLanguage: {SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.GoProgrammingLanguage: common.OtelSdkEbpfCommunity,
 	}
 
 	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
@@ -596,7 +602,7 @@ func TestRevert_MultipleContainers(t *testing.T) {
 	}
 
 	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
-		common.GoProgrammingLanguage: {SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.GoProgrammingLanguage: common.OtelSdkEbpfCommunity,
 	}
 
 	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
@@ -659,8 +665,8 @@ func TestEnvVarAppendMultipleContainers(t *testing.T) {
 	}
 
 	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavascriptProgrammingLanguage: {SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
-		common.PythonProgrammingLanguage:     {SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
 	}
 
 	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
@@ -668,9 +674,14 @@ func TestEnvVarAppendMultipleContainers(t *testing.T) {
 		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() error = %v", err)
 	}
 
-	want := "/very/important/path:" + envOverwrite.EnvValues["PYTHONPATH"].Value
+	pythonpathVal, ok := envOverwrite.ValToAppend("PYTHONPATH", common.OtelSdkNativeCommunity)
+	assert.True(t, ok)
+	want := "/very/important/path:" + pythonpathVal
 	assertContainerWithEnvVar(t, podTemplate, 0, "PYTHONPATH", want)
-	want = "--max-old-space-size=8192 " + envOverwrite.EnvValues["NODE_OPTIONS"].Value
+
+	nodeOptionsVal, ok := envOverwrite.ValToAppend("NODE_OPTIONS", common.OtelSdkNativeCommunity)
+	assert.True(t, ok)
+	want = "--max-old-space-size=8192 " + nodeOptionsVal
 	assertContainerWithEnvVar(t, podTemplate, 1, "NODE_OPTIONS", want)
 
 	// The original value of the env var should be stored in an annotation
@@ -737,8 +748,8 @@ func TestEnvVarFromRuntimeDetails(t *testing.T) {
 	}
 
 	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavascriptProgrammingLanguage: {SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
-		common.PythonProgrammingLanguage:     {SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
 	}
 
 	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
@@ -746,9 +757,14 @@ func TestEnvVarFromRuntimeDetails(t *testing.T) {
 		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() error = %v", err)
 	}
 
-	want := "/very/important/path:" + envOverwrite.EnvValues["PYTHONPATH"].Value
+	pythonpathVal, ok := envOverwrite.ValToAppend("PYTHONPATH", common.OtelSdkNativeCommunity)
+	assert.True(t, ok)
+	want := "/very/important/path:" + pythonpathVal
 	assertContainerWithEnvVar(t, podTemplate, 0, "PYTHONPATH", want)
-	want = "--max-old-space-size=8192 " + envOverwrite.EnvValues["NODE_OPTIONS"].Value
+
+	nodeOptionsVal, ok := envOverwrite.ValToAppend("NODE_OPTIONS", common.OtelSdkNativeCommunity)
+	assert.True(t, ok)
+	want = "--max-old-space-size=8192 " + nodeOptionsVal
 	assertContainerWithEnvVar(t, podTemplate, 1, "NODE_OPTIONS", want)
 
 	// The env vars originated from the runtime details should not be stored in the annotation
@@ -816,8 +832,8 @@ func TestEnvVarAppendFromSpecAndRuntimeDetails(t *testing.T) {
 	}
 
 	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavascriptProgrammingLanguage: {SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
-		common.PythonProgrammingLanguage:     {SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
 	}
 
 	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
@@ -826,10 +842,15 @@ func TestEnvVarAppendFromSpecAndRuntimeDetails(t *testing.T) {
 	}
 
 	// If env vars are present in both the template and runtime details, the template value should be used (pythonContainer in this case)
-	want := "/very/important/path/template:" + envOverwrite.EnvValues["PYTHONPATH"].Value
+	pythonpathVal, ok := envOverwrite.ValToAppend("PYTHONPATH", common.OtelSdkNativeCommunity)
+	assert.True(t, ok)
+	want := "/very/important/path/template:" + pythonpathVal
 	assertContainerWithEnvVar(t, podTemplate, 0, "PYTHONPATH", want)
+
 	// The env var from the runtime details should be used for nodeContainer since it is not present in the template
-	want = "--max-old-space-size=8192-runtime " + envOverwrite.EnvValues["NODE_OPTIONS"].Value
+	nodeOptionsVal, ok := envOverwrite.ValToAppend("NODE_OPTIONS", common.OtelSdkNativeCommunity)
+	assert.True(t, ok)
+	want = "--max-old-space-size=8192-runtime " + nodeOptionsVal
 	assertContainerWithEnvVar(t, podTemplate, 1, "NODE_OPTIONS", want)
 	// The original value of the env var should be stored in an annotation
 	a, _ := json.Marshal(map[string]map[string]string{
@@ -845,4 +866,117 @@ func TestEnvVarAppendFromSpecAndRuntimeDetails(t *testing.T) {
 	assertContainerWithEnvVar(t, podTemplate, 0, "PYTHONPATH", "/very/important/path/template")
 	assertContainerNoEnvVar(t, podTemplate, 1, "NODE_OPTIONS")
 	assertNoAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation)
+}
+
+func TestMoveBetweenSDKsWithUserValue(t *testing.T) {
+	jsOptionsValEbpf, _ := envOverwrite.ValToAppend("NODE_OPTIONS", common.OtelSdkEbpfEnterprise)
+	jsOptionsValNative, _ := envOverwrite.ValToAppend("NODE_OPTIONS", common.OtelSdkNativeCommunity)
+	userDefinedVal := "--max-old-space-size=8192-runtime"
+
+	podTemplate := &v1.PodTemplateSpec{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Name: "nodeContainer",
+					Env: []v1.EnvVar{
+						{
+							Name:  "NODE_OPTIONS",
+							Value: userDefinedVal + " " + jsOptionsValEbpf,
+						},
+					},
+				},
+				{
+					Name: "nodeContainer",
+				},
+			},
+		},
+	}
+
+	runtimeDetails := &odigosv1.InstrumentedApplication{
+		Spec: odigosv1.InstrumentedApplicationSpec{
+			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+				{
+					Language:      common.JavascriptProgrammingLanguage,
+					ContainerName: "nodeContainer",
+					EnvVars: []odigosv1.EnvVar{
+						{
+							Name:  "NODE_OPTIONS",
+							Value: userDefinedVal,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+	}
+
+	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
+		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+	}
+
+	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
+	if err != nil {
+		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() error = %v", err)
+	}
+
+	want := userDefinedVal + " " + jsOptionsValNative
+	assertContainerWithEnvVar(t, podTemplate, 0, "NODE_OPTIONS", want)
+
+	Revert(podTemplate, deployment)
+	assertNoAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation)
+}
+
+func TestMoveBetweenSDKsWithoutUserValue(t *testing.T) {
+	jsOptionsValEbpf, _ := envOverwrite.ValToAppend("NODE_OPTIONS", common.OtelSdkEbpfEnterprise)
+
+	podTemplate := &v1.PodTemplateSpec{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Name: "nodeContainer",
+				},
+			},
+		},
+	}
+
+	runtimeDetails := &odigosv1.InstrumentedApplication{
+		Spec: odigosv1.InstrumentedApplicationSpec{
+			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+				{
+					Language:      common.JavascriptProgrammingLanguage,
+					ContainerName: "nodeContainer",
+					EnvVars: []odigosv1.EnvVar{
+						{
+							Name:  "NODE_OPTIONS",
+							Value: jsOptionsValEbpf,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+	}
+
+	defaultSdks := map[common.ProgrammingLanguage]common.OtelSdk{
+		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+	}
+
+	err := ApplyInstrumentationDevicesToPodTemplate(podTemplate, runtimeDetails, defaultSdks, deployment)
+	if err != nil {
+		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() error = %v", err)
+	}
+
+	assertContainerNoEnvVar(t, podTemplate, 0, "NODE_OPTIONS")
 }

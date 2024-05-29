@@ -108,7 +108,7 @@ export function SourcesTableRow({
   );
 
   const containerName =
-    item?.instrumented_application_details.languages?.[0].container_name || '';
+    item?.instrumented_application_details?.languages?.[0].container_name || '';
 
   return (
     <StyledTr key={item.kind}>

@@ -30,7 +30,7 @@ func (s *Signoz) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 
 	url = strings.TrimPrefix(url, "http://")
 	url = strings.TrimSuffix(url, ":4317")
-	signozExporterName := "otlp/signoz-" + dest.GetName()
+	signozExporterName := "otlp/signoz-" + dest.GetID()
 	currentConfig.Exporters[signozExporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s:4317", url),
 		"tls": GenericMap{
@@ -39,21 +39,21 @@ func (s *Signoz) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/signoz-" + dest.GetName()
+		tracesPipelineName := "traces/signoz-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{signozExporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/signoz-" + dest.GetName()
+		metricsPipelineName := "metrics/signoz-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{signozExporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/signoz-" + dest.GetName()
+		logsPipelineName := "logs/signoz-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{signozExporterName},
 		}

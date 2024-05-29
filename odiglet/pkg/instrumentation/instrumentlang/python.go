@@ -3,6 +3,8 @@ package instrumentlang
 import (
 	"fmt"
 
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/envOverwrite"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/consts"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
@@ -21,10 +23,12 @@ const (
 
 func Python(deviceId string) *v1beta1.ContainerAllocateResponse {
 	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort)
+	pythonpathVal, _ := envOverwrite.ValToAppend("PYTHONPATH", common.OtelSdkNativeCommunity)
+
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
 			envLogCorrelation:                  "true",
-			envPythonPath:                      "/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation:/var/odigos/python",
+			envPythonPath:                      pythonpathVal,
 			"OTEL_EXPORTER_OTLP_ENDPOINT":      otlpEndpoint,
 			"OTEL_RESOURCE_ATTRIBUTES":         fmt.Sprintf("service.name=%s,odigos.device=python", deviceId),
 			envOtelTracesExporter:              envValOtelHttpExporter,

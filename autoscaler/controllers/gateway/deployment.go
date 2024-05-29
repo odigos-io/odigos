@@ -155,7 +155,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
-								RunAsUser: int64Ptr(10000),
+								AllowPrivilegeEscalation: boolPtr(false),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -221,6 +221,10 @@ func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSou
 	}
 
 	return result
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }
 
 func intPtr(n int32) *int32 {

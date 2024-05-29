@@ -72,6 +72,9 @@ func NewConfiguration() *apiextensionsv1.CustomResourceDefinition {
 												},
 											},
 										},
+										"goAutoIncludeCodeAttributes": {
+											Type: "boolean",
+										},
 										"ignoredNamespaces": {
 											Type: "array",
 											Items: &apiextensionsv1.JSONSchemaPropsOrArray{
@@ -104,6 +107,9 @@ func NewConfiguration() *apiextensionsv1.CustomResourceDefinition {
 											Type: "boolean",
 										},
 										"telemetryEnabled": {
+											Type: "boolean",
+										},
+										"openshiftEnabled": {
 											Type: "boolean",
 										},
 										"supportedSDKs": {
