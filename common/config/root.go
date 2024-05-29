@@ -24,7 +24,7 @@ type Configer interface {
 
 type ResourceStatuses struct {
 	Destination map[string]error
-	Processor map[string]error
+	Processor   map[string]error
 }
 
 func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, *ResourceStatuses) {
@@ -37,7 +37,7 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 
 	status := &ResourceStatuses{
 		Destination: make(map[string]error),
-		Processor: make(map[string]error),
+		Processor:   make(map[string]error),
 	}
 
 	for _, dest := range dests {
@@ -68,7 +68,7 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 		}
 
 		// basic config common to all pipelines
-		pipeline.Receivers = []string{"otlp"}
+		pipeline.Receivers = append([]string{"otlp"}, pipeline.Receivers...)
 		// memory limiter processor should be the first processor in the pipeline
 		pipeline.Processors = append([]string{memoryLimiterProcessorName, "batch", "resource/odigos-version"}, pipeline.Processors...)
 		currentConfig.Service.Pipelines[pipelineName] = pipeline
@@ -113,7 +113,8 @@ func getBasicConfig(memoryLimiterConfig GenericMap) *Config {
 			"health_check": empty,
 			"zpages":       empty,
 		},
-		Exporters: map[string]interface{}{},
+		Exporters:  map[string]interface{}{},
+		Connectors: map[string]interface{}{},
 		Service: Service{
 			Pipelines:  map[string]Pipeline{},
 			Extensions: []string{"health_check", "zpages"},
