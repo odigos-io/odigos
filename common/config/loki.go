@@ -34,12 +34,12 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 	}
 
 	rawLokiLabels, exists := dest.GetConfig()[lokiLabelsKey]
-	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.GetName())
+	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.GetID())
 	if err != nil {
 		return errors.Join(err, errors.New("failed to parse loki labels, gateway will not be configured for Loki"))
 	}
 
-	lokiExporterName := "loki/loki-" + dest.GetName()
+	lokiExporterName := "loki/loki-" + dest.GetID()
 	currentConfig.Exporters[lokiExporterName] = GenericMap{
 		"endpoint": url,
 	}
@@ -50,7 +50,7 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 		processorNames = append(processorNames, k)
 	}
 
-	logsPipelineName := "logs/loki-" + dest.GetName()
+	logsPipelineName := "logs/loki-" + dest.GetID()
 	currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 		Processors: processorNames,
 		Exporters:  []string{lokiExporterName},
