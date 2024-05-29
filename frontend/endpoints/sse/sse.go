@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,59 +17,54 @@ type SSEMessage struct {
 	CRDType string `json:"crdType"`
 }
 
-// This map will hold channels for each client connected to the SSE endpoint
-var clients = make(map[chan SSEMessage]bool)
+var (
+	clients   = make(map[chan SSEMessage]bool)
+	clientsMu sync.Mutex
+)
 
-// Function to handle SSE connections
 func HandleSSEConnections(c *gin.Context) {
-	// Set headers for SSE
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
 
-	// Create a new channel for this client
 	messageChan := make(chan SSEMessage)
-	// Register the channel for this client
+	clientsMu.Lock()
 	clients[messageChan] = true
+	clientsMu.Unlock()
 
-	// Remove the channel from the map when this client closes the connection
 	defer func() {
+		clientsMu.Lock()
 		delete(clients, messageChan)
+		clientsMu.Unlock()
 		close(messageChan)
 	}()
 
-	// Continuously send SSE messages to the client
 	for {
 		select {
 		case message := <-messageChan:
-			// Marshal the message to JSON
 			jsonData, err := json.Marshal(message)
 			if err != nil {
 				log.Printf("Error marshaling JSON: %s", err)
 				continue
 			}
-			// Send the message to the client
 			fmt.Fprintf(c.Writer, "data: %s\n\n", string(jsonData))
 			c.Writer.Flush()
 		case <-c.Writer.CloseNotify():
-			// Client connection closed, stop sending messages
 			return
 		}
 	}
 }
 
-// // Function to send a message to all connected clients
-// func sendMessageToClients(message SSEMessage) {
-// 	for client := range clients {
-// 		client <- message
-// 	}
-// }
-
-// Function to send a message to the client
 func SendMessageToClient(message SSEMessage) {
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
+
 	for client := range clients {
-		client <- message
-		// For single client, you can break after sending the message
+		select {
+		case client <- message:
+		default:
+			log.Printf("Channel is closed for client: %v", client)
+		}
 		break
 	}
 }

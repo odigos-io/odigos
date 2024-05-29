@@ -37,11 +37,6 @@ type Flags struct {
 	Namespace  string
 }
 
-// type SSEMessage struct {
-// 	Time string `json:"time"`
-// 	Type string `json:"type"`
-// }
-
 //go:embed all:webapp/out/*
 var uiFS embed.FS
 

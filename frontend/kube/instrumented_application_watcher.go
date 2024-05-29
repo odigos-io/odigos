@@ -3,7 +3,6 @@ package kube
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -144,15 +143,17 @@ func handleInstrumentedApplicationWatchEvents(watcher watch.Interface) {
 		// 	handleModifiedEvent(event.Object.(*v1alpha1.InstrumentedApplication))
 		case watch.Deleted:
 			handleDeletedEvent(event.Object.(*v1alpha1.InstrumentedApplication))
-		case watch.Error:
-			log.Printf("Error watching pod: %v\n", event.Object)
+
 		}
 	}
 }
 
 func handleAddedEvent(app *v1alpha1.InstrumentedApplication) {
-	fmt.Printf("New pod added: %s\n", app.Name)
-	name, kind, _ := commonutils.GetWorkloadInfoRuntimeName(app.Name)
+	name, kind, err := commonutils.GetWorkloadInfoRuntimeName(app.Name)
+	if err != nil {
+		genericErrorMessage("Added")
+		return
+	}
 	namespace := app.Namespace
 	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
 	data := fmt.Sprintf("InstrumentedApplication %s created", name)
@@ -167,14 +168,12 @@ func handleAddedEvent(app *v1alpha1.InstrumentedApplication) {
 }
 
 func handleModifiedEvent(app *v1alpha1.InstrumentedApplication) {
-	fmt.Printf("Pod modified: %s\n", app.Name)
 	conditions := app.Status.Conditions
 	if len(conditions) == 0 {
 		return
 	}
 	name, kind, err := commonutils.GetWorkloadInfoRuntimeName(app.Name)
 	if err != nil {
-		log.Printf("Error getting target from runtime name: %s", err)
 		return
 	}
 
@@ -199,10 +198,9 @@ func handleModifiedEvent(app *v1alpha1.InstrumentedApplication) {
 }
 
 func handleDeletedEvent(app *v1alpha1.InstrumentedApplication) {
-	fmt.Printf("Pod deleted: %s\n", app.Name)
 	name, _, err := commonutils.GetWorkloadInfoRuntimeName(app.Name)
 	if err != nil {
-		log.Printf("Error getting target from runtime name: %s", err)
+		genericErrorMessage("Deleted")
 		return
 	}
 	data := fmt.Sprintf("Source %s deleted successfully", name)
