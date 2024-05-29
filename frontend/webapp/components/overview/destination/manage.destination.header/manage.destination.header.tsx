@@ -30,7 +30,6 @@ const IMAGE_STYLE: React.CSSProperties = {
 export function ManageDestinationHeader({
   data: { image_url, display_name, type },
 }) {
-  console.log({ type });
   return (
     <ManageDestinationHeaderWrapper>
       <KeyvalImage src={image_url} style={IMAGE_STYLE} />
