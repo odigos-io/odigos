@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from 'react-query';
+import { useSectionData } from '@/hooks';
 import { KeyvalLoader } from '@/design.system';
 import { EmptyList } from '@/components/lists';
+import { OVERVIEW, QUERIES, SETUP } from '@/utils';
 import { getDestinationsTypes } from '@/services';
-import { useNotification, useSectionData } from '@/hooks';
 import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
-import { NOTIFICATION, OVERVIEW, QUERIES, SETUP } from '@/utils/constants';
 import { DestinationList, DestinationOptionMenu } from '@/components/setup';
 import {
   LoaderWrapper,
@@ -38,22 +38,14 @@ export function DestinationSection({ onSelectItem }: DestinationSectionProps) {
   const [dropdownData, setDropdownData] = useState<any>(null);
 
   const { sectionData, setSectionData } = useSectionData({});
-  const { show, Notification } = useNotification();
+
   const [monitoringOption, setMonitoringOption] =
     useState<any>(MONITORING_OPTIONS);
 
-  const { isLoading, data, isError, error } = useQuery(
+  const { isLoading, data } = useQuery(
     [QUERIES.API_DESTINATION_TYPES],
     getDestinationsTypes
   );
-
-  useEffect(() => {
-    isError &&
-      show({
-        type: NOTIFICATION.ERROR,
-        message: error,
-      });
-  }, [isError]);
 
   function handleSelectItem(item: DestinationTypes) {
     setSectionData(item);
@@ -108,7 +100,6 @@ export function DestinationSection({ onSelectItem }: DestinationSectionProps) {
         data={data?.categories}
       />
       {data && renderDestinationLists()}
-      <Notification />
     </DestinationContainerWrapper>
   );
 }
