@@ -66,18 +66,18 @@ func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 		exporterConfig["password"] = fmt.Sprintf("${%s}", esPassword)
 	}
 
-	exporterName := "elasticsearch/" + dest.GetName()
+	exporterName := "elasticsearch/" + dest.GetID()
 	currentConfig.Exporters[exporterName] = exporterConfig
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/elasticsearch-" + dest.GetName()
+		tracesPipelineName := "traces/elasticsearch-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/elasticsearch-" + dest.GetName()
+		logsPipelineName := "logs/elasticsearch-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
