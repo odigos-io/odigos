@@ -37,13 +37,13 @@ FilesLoop:
 			}
 		}
 
-		b, err := DefaultFS.ReadFile(crdBasePath + "/" + file.Name())
+		crdBytes, err := DefaultFS.ReadFile(crdBasePath + "/" + file.Name())
 		if err != nil {
 			return nil, err
 		}
 
 		var crd v1.CustomResourceDefinition
-		err = yaml.Unmarshal(b, &crd)
+		err = yaml.Unmarshal(crdBytes, &crd)
 		if err != nil {
 			return nil, err
 		}
