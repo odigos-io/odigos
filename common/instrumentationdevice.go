@@ -25,9 +25,10 @@ func InstrumentationPluginName(language ProgrammingLanguage, otelSdk OtelSdk) st
 	return string(language) + "-" + string(otelSdk.SdkType) + "-" + string(otelSdk.SdkTier)
 }
 
-func InstrumentationPluginNameToComponents(pluginName string) (ProgrammingLanguage, OtelSdkType, OtelSdkTier) {
+func InstrumentationPluginNameToComponents(pluginName string) (ProgrammingLanguage, OtelSdk) {
 	components := strings.Split(pluginName, "-")
-	return ProgrammingLanguage(components[0]), OtelSdkType(components[1]), OtelSdkTier(components[2])
+	otelSdk := OtelSdk{SdkType: OtelSdkType(components[1]), SdkTier: OtelSdkTier(components[2])}
+	return ProgrammingLanguage(components[0]), otelSdk
 }
 
 func InstrumentationDeviceName(language ProgrammingLanguage, otelSdk OtelSdk) OdigosInstrumentationDevice {
@@ -35,7 +36,7 @@ func InstrumentationDeviceName(language ProgrammingLanguage, otelSdk OtelSdk) Od
 	return OdigosInstrumentationDevice(OdigosResourceNamespace + "/" + pluginName)
 }
 
-func InstrumentationDeviceNameToComponents(deviceName string) (ProgrammingLanguage, OtelSdkType, OtelSdkTier) {
+func InstrumentationDeviceNameToComponents(deviceName string) (ProgrammingLanguage, OtelSdk) {
 	pluginName := strings.Split(deviceName, "/")[1]
 	return InstrumentationPluginNameToComponents(pluginName)
 }

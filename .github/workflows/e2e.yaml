@@ -31,7 +31,7 @@ jobs:
       - name: Build CLI
         run: |
           cd cli
-          go build -o odigos
+          go build -tags=embed_manifests -o odigos
       - name: Build and Load Odigos Images
         run: |
           TAG=e2e-test make build-images load-to-kind

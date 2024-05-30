@@ -18,122 +18,46 @@ involves two steps:
 For our new destination to be visible in the UI, we need to make several changes
 to the UI code:
 
-1. Go to `ui/img/vendor` directory and add your logo file, for example
+1. Go to `destinations/logos/` directory and add your logo file, for example
    `mydest.svg`. Please use svg format for the logo.
-2. Go to `ui/vendors` directory and create a new file called `mydest.tsx`.
-3. Start by adding the required import statements (Notice that line 6 points to
-   the file you created in step 1).
+2. Go to `destinations/data/` directory and create a new file called `mydest.yaml` by duplicating one of the others.
+  That file makes setup page for set destination available and is quite self-explanatory to use:
 
-```js
-import {
-  ObservabilityVendor,
-  ObservabilitySignals,
-  VendorObjects,
-} from "@/vendors/index";
-import MyDestLogo from "@/img/vendor/mydest.svg";
-import { NextApiRequest } from "next";
+```yaml mydest.yaml
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: mydest
+  displayName: My Destination
+  category: managed
+spec:
+  image: mydest.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: MYDEST_URL
+      displayName: URL
+      componentType: input
+      componentProps:
+        required: true
+    - name: MYDEST_REGION
+      displayName: Region
+      componentType: input
+      componentProps:
+        required: true
+    - name: MYDEST_API_KEY
+      displayName: API Key
+      componentType: input
+      componentProps:
+        type: password
+        required: true
+      secret: true
 ```
-
-4. Create a class called `MyDest` that implements the `ObservabilityVendor`
-   interface:
-
-```js
-export class MyDest implements ObservabilityVendor {
-  name = "mydest";
-  displayName = "My Destination";
-  supportedSignals = [ObservabilitySignals.Traces, ObservabilitySignals.Metrics];
-
-  getLogo = (props: any) => {
-    return <MyDestLogo {...props} />;
-  };
-```
-
-Everything should be self-explanatory. Specify the name (unique lowercase
-string) of the destination, the display name (human-readable string) and the
-observability signals your destination supports. The `getLogo` method should
-return a React component that will be used as the logo for the destination.
-
-5. Specify the required fields for communicating with the destination by
-   implementing the `getFields` method:
-
-```js
-getFields = () => {
-  return [
-    {
-      displayName: "URL",
-      id: "url",
-      name: "url",
-      type: "url",
-    },
-    {
-      displayName: "Region",
-      id: "region",
-      name: "region",
-      type: "text",
-    },
-    {
-      displayName: "API Key",
-      id: "apikey",
-      name: "apikey",
-      type: "password",
-    },
-  ];
-};
-```
-
-This method returns an array of `IDestField` objects. The `type` field
-corresponds to the type of input field that will be displayed in the UI.
-
-6. Add the method `toObjects`. This method converts the data received from the
-   UI to the data that will be persisted in the Kubernetes data store. Each
-   destination can have nonsecret data (like region) - defined in the `Data`
-   field of the returned object and secret data (like API key) - defined in the
-   `Secret` field of the returned object.
-
-```ts
-toObjects = (req: NextApiRequest) => {
-  return {
-    Data: {
-      MYDEST_URL: req.body.url,
-      MYDEST_REGION: req.body.region,
-    },
-    Secret: {
-      MYDEST_API_KEY: Buffer.from(req.body.apikey).toString("base64"),
-    },
-  };
-};
-```
-
-<Note>
-  Notice that Kubernetes requires that the secret data be base64 encoded.
-</Note>
-
-7. Add the method `mapDataToFields` which converts the data received from the
-   Kubernetes data store to the data that will be displayed in the UI. This
-   method is invoked when user edits the destination in the UI.
-
-```ts
-mapDataToFields = (data: any) => {
-  return {
-    url: data.MYDEST_URL,
-    region: data.MYDEST_REGION,
-  };
-};
-```
-
-8. Finally, register the destination you just created by modifying
-   `theui/vendors/index.ts` file:
-
-```js
-// Add an import for the new destination
-import { MyDest } from "@/vendors/mydest";
-
-// Add the new destination to the list of vendors
-const Vendors = [/* List of existing vendors... */ new MyDest()];
-```
-
-For a complete UI implementation example, see
-[one of our existing vendors](https://github.com/odigos-io/odigos/tree/main/ui/vendors).
 
 ## Collector Configuration
 
@@ -141,40 +65,76 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
 need to implement the collector configuration.
 
 1. Go to `common/dests.go` and add your new destination to the `DestinationType`
-   enum. Make sure the value is the same as the `name` property of the
-   destination UI class.
+   enum. Make sure the value is the same as the `type` property of the
+   destination UI class - `mydest` in the current case.
 2. Go to `autoscaler/controllers/gateway/config` directory and create a new file
    called `mydest.go` with the following content:
 
-```go
+```go mydest.go
 package config
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/v1alpha1"
-	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
-	"github.com/odigos-io/odigos/common"
+  "errors"
+  "fmt"
+
+  "github.com/odigos-io/odigos/common"
+)
+
+const (
+  regionKey = "MYDEST_REGION"
+  urlKey    = "MYDEST_URL"
+  apiKeyKey = "MYDEST_API_KEY"
 )
 
 type MyDest struct{}
 
 func (m *MyDest) DestType() common.DestinationType {
-	return common.MyDestDestinationType
+  // DestinationType defined in common/dests.go
+  return common.MyDestDestinationType
 }
 
-func (m *MyDest) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonconf.Config) {
-    // Modify the config here
-    	if isTracingEnabled(dest) {
-		currentConfig.Exporters["otlp/mydest"] = commonconf.GenericMap{
-			"endpoint": "https://mydest.com:4317",
-			"headers": commonconf.GenericMap{
-				"x-mydest-header-apikey": "${MYDEST_API_KEY}",
-			},
-		}
+func (m *MyDest) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+  config := dest.GetConfig()
+  apiKey, exists := config[apiKeyKey]
+  if !exists {
+    return errors.New("My Destination API key(\"MYDEST_API_KEY\") not specified, MyDest will not be configured")
+  }
 
-		currentConfig.Service.Pipelines["traces/mydest"] = commonconf.Pipeline{
-			Exporters:  []string{"otlp/mydest"},
-		}
-	}
+  region, exists := config[regionKey]
+  if !exists {
+    region = "us"
+  }
+
+  endpoint, exists := config[urlKey]
+  if !exists {
+    endpoint = fmt.Sprintf("https://%s.mydest.com:4317", region)
+  }
+
+  // to make sure that the exporter name is unique, we'll ask a ID from destination
+  exporterName := "otlp/mydest-" + dest.GetID()
+  currentConfig.Exporters["otlp/mydest"] = GenericMap{
+    "endpoint": endpoint,
+    "headers": GenericMap{
+      "x-mydest-header-apikey": apiKey,
+    },
+  }
+
+  // Modify the config here
+  if isTracingEnabled(dest) {
+    tracesPipelineName := "traces/mydest-" + dest.GetID()
+    currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
+      Exporters: []string{exporterName},
+    }
+  }
+
+  if isMetricsEnabled(dest) {
+    metricsPipelineName := "metrics/mydest-" + dest.GetID()
+    currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
+      Exporters: []string{exporterName},
+    }
+  }
+
+  return nil
 }
 ```
 
@@ -186,15 +146,15 @@ func (m *MyDest) ModifyConfig(dest *odigosv1.Destination, currentConfig *commonc
   [OpenTelemetry configuration](https://opentelemetry.io/docs/collector/configuration/)
   needed by your destination. Make sure to give any exporter or pipeline a
   unique name in order to avoid conflicts (use the convention
-  `traces/<dest-name>` for traces pipelines and `otlp/<dest-name>` for
+  `traces/<dest-name>-<dest.GetID()>` for traces pipelines and `otlp/<dest-name>-<dest.GetID()>` for
   OpenTelemetry exporters). You can assume a basic configuration is already
   provided in the `currentConfig` object, for details see `getBasicConfig`
-  method in autoscaler/controllers/gateway/config/root.go file.
+  method in `common/config/root.go` file.
 - You can use the utility methods `isTracingEnabled`, `isMetricsEnabled` and
   `isLoggingEnabled` to determine which signals are selected by the user for the
   destination and configure the collector accordingly.
 - The last step is to register the new destination struct in the
-  `autoscaler/controllers/gateway/config/root.go` file:
+  `common/config/root.go` file:
 
 ```go
 var availableConfigers = []Configer{/* List of existing destinations  */, &MyDest{}}

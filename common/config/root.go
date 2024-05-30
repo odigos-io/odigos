@@ -12,10 +12,13 @@ const (
 	memoryLimiterProcessorName = "memory_limiter"
 )
 
-var availableConfigers = []Configer{&Middleware{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{}, &GrafanaCloudLoki{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{},
+var availableConfigers = []Configer{
+	&Middleware{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{},
+	&GrafanaCloudLoki{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{},
 	&Tempo{}, &Loki{}, &Jaeger{}, &GenericOTLP{}, &OTLPHttp{}, &Elasticsearch{}, &Quickwit{}, &Signoz{}, &Qryn{},
 	&OpsVerse{}, &Splunk{}, &Lightstep{}, &GoogleCloud{}, &GoogleCloudStorage{}, &Sentry{}, &AzureBlobStorage{},
-	&AWSS3{}, &Dynatrace{}, &Chronosphere{}, &ElasticAPM{}, &Axiom{}, &SumoLogic{}, &Coralogix{}, &Causely{}}
+	&AWSS3{}, &Dynatrace{}, &Chronosphere{}, &ElasticAPM{}, &Axiom{}, &SumoLogic{}, &Coralogix{}, &Causely{}, &Uptrace{}, &Debug{},
+}
 
 type Configer interface {
 	DestType() common.DestinationType
@@ -24,7 +27,7 @@ type Configer interface {
 
 type ResourceStatuses struct {
 	Destination map[string]error
-	Processor map[string]error
+	Processor   map[string]error
 }
 
 func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, *ResourceStatuses) {
@@ -37,17 +40,23 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 
 	status := &ResourceStatuses{
 		Destination: make(map[string]error),
-		Processor: make(map[string]error),
+		Processor:   make(map[string]error),
 	}
 
 	for _, dest := range dests {
 		configer, exists := configers[dest.GetType()]
 		if !exists {
-			return "", fmt.Errorf("no configer for %s", dest.GetType()), nil
+			status.Destination[dest.GetID()] = fmt.Errorf("no configer for %s", dest.GetType())
+			continue
 		}
 
 		err := configer.ModifyConfig(dest, currentConfig)
-		status.Destination[dest.GetName()] = err
+		status.Destination[dest.GetID()] = err
+
+		// If configurer ran without errors, but there were no signals enabled, warn the user
+		if len(dest.GetSignals()) == 0 && err == nil {
+			status.Destination[dest.GetID()] = fmt.Errorf("no signals enabled for %s(%s)", dest.GetID(), dest.GetType())
+		}
 	}
 
 	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := GetCrdProcessorsConfigMap(processors)
@@ -68,7 +77,7 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 		}
 
 		// basic config common to all pipelines
-		pipeline.Receivers = []string{"otlp"}
+		pipeline.Receivers = append([]string{"otlp"}, pipeline.Receivers...)
 		// memory limiter processor should be the first processor in the pipeline
 		pipeline.Processors = append([]string{memoryLimiterProcessorName, "batch", "resource/odigos-version"}, pipeline.Processors...)
 		currentConfig.Service.Pipelines[pipelineName] = pipeline
@@ -113,7 +122,8 @@ func getBasicConfig(memoryLimiterConfig GenericMap) *Config {
 			"health_check": empty,
 			"zpages":       empty,
 		},
-		Exporters: map[string]interface{}{},
+		Exporters:  map[string]interface{}{},
+		Connectors: map[string]interface{}{},
 		Service: Service{
 			Pipelines:  map[string]Pipeline{},
 			Extensions: []string{"health_check", "zpages"},

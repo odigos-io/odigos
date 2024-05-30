@@ -1,11 +1,11 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import theme from '@/styles/palette';
+import { useKeyDown } from '@/hooks';
 import { ManagedSource } from '@/types';
 import { useMutation } from 'react-query';
 import { Back } from '@/assets/icons/overview';
 import { DeleteSource } from '@/components/overview';
-import { useKeyDown, useNotification } from '@/hooks';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { deleteSource, getSource, patchSources } from '@/services';
 import { ManageSourceHeader } from '@/components/overview/sources/manage.source.header/manage.source.header';
@@ -42,7 +42,6 @@ export function EditSourceForm() {
 
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { show, Notification } = useNotification();
 
   const { mutate: handleDeleteSource } = useMutation(() =>
     deleteSource(
@@ -82,17 +81,9 @@ export function EditSourceForm() {
     const currentSource = await getSource(namespace, kind, name);
     setCurrentSource(currentSource);
   }
-  function onError({ response }) {
-    const message = response?.data?.message;
-    show({
-      type: NOTIFICATION.ERROR,
-      message,
-    });
-  }
 
   function onSaveClick() {
     editSource(undefined, {
-      onError,
       onSuccess: () => router.push(`${ROUTES.SOURCES}?status=updated`),
     });
   }
@@ -100,7 +91,6 @@ export function EditSourceForm() {
   function onSourceDelete() {
     handleDeleteSource(undefined, {
       onSuccess: () => router.push(`${ROUTES.SOURCES}?status=deleted`),
-      onError,
     });
   }
 
@@ -137,7 +127,7 @@ export function EditSourceForm() {
             image_url={
               LANGUAGES_LOGOS[
                 getMainContainerLanguage(
-                  currentSource?.instrumented_application_details.languages ||
+                  currentSource?.instrumented_application_details?.languages ||
                     undefined
                 )
               ]
@@ -150,8 +140,6 @@ export function EditSourceForm() {
           }
         />
       </div>
-
-      <Notification />
     </ManageSourcePageContainer>
   );
 }

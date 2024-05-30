@@ -1,0 +1,38 @@
+---
+title: "Preparation"
+sidebarTitle: "Preparation"
+---
+
+<Info> Odigos VM Agent is currently available with the Odigos Pro plan. Contact us for more info.</Info>
+
+## Prerequisites
+
+- Odigos Pro license key for VM Agent.
+- Linux machine running services managed by systemd.
+- Debian or RPM based Linux distribution (Ubuntu, Debian, CentOS, RHEL, etc.).
+
+To install Odigos or the demo applications in the quickstart guide, enabling Odigos package repositories are necessary:
+
+<Tabs>
+  <Tab title="APT">
+    For Debian-based systems (Ubuntu, Debian, etc), add Odigos package repository and GPG key:
+
+    ```shell
+    sudo mkdir -p /etc/apt/keyrings/
+    wget -q -O - https://apt.fury.io/odigos/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/odigos.gpg > /dev/null
+    echo "deb [signed-by=/etc/apt/keyrings/odigos.gpg] https://apt.fury.io/odigos/ * *" | sudo tee /etc/apt/sources.list.d/odigos.list
+    ```
+  </Tab>
+  <Tab title="DNF">
+    For RHEL-based systems (RHEL, Fedora, Rocky Linux, etc), add Odigos package repository:
+
+    ```shell
+    sudo tee /etc/yum.repos.d/odigos-fury-io.repo <<EOF > /dev/null
+    [odigos-fury-io]
+    name=Odigos
+    baseurl=https://yum.fury.io/odigos/
+    gpgcheck=0
+    EOF
+    ```
+  </Tab>
+</Tabs>

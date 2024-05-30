@@ -7,9 +7,9 @@ import {
   KeyvalText,
 } from '@/design.system';
 import theme from '@/styles/palette';
+import { useDestinations } from '@/hooks';
+import { OVERVIEW, ROUTES } from '@/utils';
 import { useRouter } from 'next/navigation';
-import { OVERVIEW, ROUTES } from '@/utils/constants';
-import { useDestinations, useNotification } from '@/hooks';
 import { EmptyList, ManagedDestinationsTable } from '@/components';
 import {
   Header,
@@ -28,8 +28,6 @@ export function DestinationContainer() {
     refetchDestinations,
     filterDestinationsBySignal,
   } = useDestinations();
-
-  const { show, Notification } = useNotification();
 
   const router = useRouter();
 
@@ -94,7 +92,6 @@ export function DestinationContainer() {
           </Content>
         </DestinationsContainer>
       )}
-      <Notification />
     </Container>
   );
 }

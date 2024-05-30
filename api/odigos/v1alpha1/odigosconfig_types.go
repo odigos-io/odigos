@@ -34,6 +34,7 @@ type OdigosConfigurationSpec struct {
 	OdigosVersion     string                                          `json:"odigosVersion"`
 	ConfigVersion     int                                             `json:"configVersion"`
 	TelemetryEnabled  bool                                            `json:"telemetryEnabled,omitempty"`
+	OpenshiftEnabled  bool                                            `json:"openshiftEnabled,omitempty"`
 	IgnoredNamespaces []string                                        `json:"ignoredNamespaces,omitempty"`
 	IgnoredContainers []string                                        `json:"ignoredContainers,omitempty"`
 	Psp               bool                                            `json:"psp,omitempty"`
@@ -44,6 +45,10 @@ type OdigosConfigurationSpec struct {
 	SupportedSDKs     map[common.ProgrammingLanguage][]common.OtelSdk `json:"supportedSDKs,omitempty"`
 	DefaultSDKs       map[common.ProgrammingLanguage]common.OtelSdk   `json:"defaultSDKs,omitempty"`
 	CollectorGateway  *CollectorGatewayConfiguration                  `json:"collectorGateway,omitempty"`
+
+	// this is internal currently, and is not exposed on the CLI / helm
+	// used for odigos enterprise
+	GoAutoIncludeCodeAttributes bool `json:"goAutoIncludeCodeAttributes,omitempty"`
 }
 
 //+genclient

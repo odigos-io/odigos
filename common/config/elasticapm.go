@@ -32,7 +32,7 @@ func (e *ElasticAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		return errors.Join(err, errors.New("ElasticAPM endpoint is not a valid"))
 	}
 
-	exporterName := "otlp/elastic-" + dest.GetName()
+	exporterName := "otlp/elastic-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": elasticApmEndpoint,
 		"tls": GenericMap{
@@ -44,21 +44,21 @@ func (e *ElasticAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/elastic-" + dest.GetName()
+		tracesPipelineName := "traces/elastic-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/elastic-" + dest.GetName()
+		metricsPipelineName := "metrics/elastic-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/elastic-" + dest.GetName()
+		logsPipelineName := "logs/elastic-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
