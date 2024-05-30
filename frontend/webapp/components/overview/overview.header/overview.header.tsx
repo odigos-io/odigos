@@ -52,7 +52,7 @@ export function OverviewHeader({ title, onBackClick }: OverviewHeaderProps) {
         </KeyvalText>
       </HeaderTop>
 
-      <NotificationList />
+      {!onBackClick && <NotificationList />}
     </OverviewHeaderContainer>
   );
 }

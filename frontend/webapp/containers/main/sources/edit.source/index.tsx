@@ -84,13 +84,13 @@ export function EditSourceForm() {
 
   function onSaveClick() {
     editSource(undefined, {
-      onSuccess: () => router.push(`${ROUTES.SOURCES}?status=updated`),
+      onSuccess: () => router.push(`${ROUTES.SOURCES}??poll=true`),
     });
   }
 
   function onSourceDelete() {
     handleDeleteSource(undefined, {
-      onSuccess: () => router.push(`${ROUTES.SOURCES}?status=deleted`),
+      onSuccess: () => router.push(`${ROUTES.SOURCES}??poll=true`),
     });
   }
 
