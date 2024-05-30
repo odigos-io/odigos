@@ -46,20 +46,22 @@ export function DataFlowContainer() {
     if (!sources || !destinationList || !actions) return;
 
     const filteredActions = actions.filter((action) => !action.spec.disabled);
-    const mapSources = sources.map((source) => {
-      const languages =
-        source?.instrumented_application_details?.languages || [];
-      const conditions =
-        source?.instrumented_application_details?.conditions || [];
-      return {
-        ...source,
-        conditions,
-        languages:
-          languages.length > 0
-            ? languages
-            : [{ language: 'default', container_name: '' }],
-      };
-    });
+    const mapSources = sources
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((source) => {
+        const languages =
+          source?.instrumented_application_details?.languages || [];
+        const conditions =
+          source?.instrumented_application_details?.conditions || [];
+        return {
+          ...source,
+          conditions,
+          languages:
+            languages.length > 0
+              ? languages
+              : [{ language: 'default', container_name: '' }],
+        };
+      });
 
     const { nodes, edges } = buildFlowNodesAndEdges(
       mapSources,
