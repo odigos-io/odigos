@@ -1,4 +1,4 @@
-package kube
+package watchers
 
 import (
 	"context"
@@ -7,12 +7,13 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/endpoints/sse"
+	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
 func StartDestinationWatcher(namespace string) error {
-	watcher, err := DefaultClient.OdigosClient.Destinations(namespace).Watch(context.Background(), metav1.ListOptions{})
+	watcher, err := kube.DefaultClient.OdigosClient.Destinations(namespace).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating watcher: %v", err)
 	}
@@ -40,16 +41,16 @@ func handleDestinationWatchEvents(watcher watch.Interface) {
 func handleAddedDestination(event watch.Event) {
 	destination, ok := event.Object.(*v1alpha1.Destination)
 	if !ok {
-		genericErrorMessage("Added")
+		genericErrorMessage(sse.MessageEventAdded, "Destination", "error type assertion")
 	}
 	data := fmt.Sprintf("Destination %s created", destination.Spec.DestinationName)
-	sse.SendMessageToClient(sse.SSEMessage{Event: "Created", Type: "success", Target: destination.Name, Data: data, CRDType: "Destination"})
+	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventAdded, Type: "success", Target: destination.Name, Data: data, CRDType: "Destination"})
 }
 
 func handleModifiedDestination(event watch.Event) {
 	destination, ok := event.Object.(*v1alpha1.Destination)
 	if !ok {
-		genericErrorMessage("Modified")
+		genericErrorMessage(sse.MessageEventModified, "Destination", "error type assertion")
 	}
 	if len(destination.Status.Conditions) == 0 {
 		return
@@ -57,22 +58,18 @@ func handleModifiedDestination(event watch.Event) {
 
 	lastCondition := destination.Status.Conditions[len(destination.Status.Conditions)-1]
 	data := lastCondition.Message
-	conditionType := "success"
+	conditionType := sse.MessageTypeSuccess
 	if lastCondition.Status == "False" {
-		conditionType = "error"
+		conditionType = sse.MessageTypeError
 	}
-	sse.SendMessageToClient(sse.SSEMessage{Event: "Modified", Type: conditionType, Target: destination.Name, Data: data, CRDType: "Destination"})
+	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventModified, Type: conditionType, Target: destination.Name, Data: data, CRDType: "Destination"})
 }
 
 func handleDeletedDestination(event watch.Event) {
 	destination, ok := event.Object.(*v1alpha1.Destination)
 	if !ok {
-		genericErrorMessage("Deleted")
+		genericErrorMessage(sse.MessageEventDeleted, "Destination", "error type assertion")
 	}
 	data := fmt.Sprintf("Destination %s deleted successfully", destination.Spec.DestinationName)
-	sse.SendMessageToClient(sse.SSEMessage{Event: "Deleted", Type: "success", Target: "", Data: data, CRDType: "Destination"})
-}
-
-func genericErrorMessage(event string) {
-	sse.SendMessageToClient(sse.SSEMessage{Event: event, Type: "error", Target: "", Data: "Something went wrong", CRDType: "Destination"})
+	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventDeleted, Type: "success", Target: "", Data: data, CRDType: "Destination"})
 }

@@ -456,7 +456,6 @@ func (in *InstrumentationInstanceStatus) DeepCopyInto(out *InstrumentationInstan
 		*out = new(bool)
 		**out = **in
 	}
-	in.StartTime.DeepCopyInto(&out.StartTime)
 	in.LastStatusTime.DeepCopyInto(&out.LastStatusTime)
 	if in.Components != nil {
 		in, out := &in.Components, &out.Components

@@ -57,6 +57,8 @@ spec:
                         Attributes that identify the component.
                         The combination of (Name, Type, IdentifyingAttributes) must be unique.
                       items:
+                        description: Attribute is a key-value pair that describes
+                          a component or instrumentation
                         properties:
                           key:
                             minLength: 1
@@ -86,6 +88,8 @@ spec:
                         Attributes that do not necessarily identify the component but help describe
                         its characteristics.
                       items:
+                        description: Attribute is a key-value pair that describes
+                          a component or instrumentation
                         properties:
                           key:
                             minLength: 1
@@ -131,6 +135,8 @@ spec:
                   Attributes that do not necessarily identify the SDK but help describe
                   its characteristics.
                 items:
+                  description: Attribute is a key-value pair that describes a component
+                    or instrumentation
                   properties:
                     key:
                       minLength: 1
@@ -148,12 +154,8 @@ spec:
                   Producers of specific condition types may define expected values and meanings for this field,
                   and whether the values are considered a guaranteed API.
                 type: string
-              startTime:
-                format: date-time
-                type: string
             required:
             - lastStatusTime
-            - startTime
             type: object
         type: object
     served: true

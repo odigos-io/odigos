@@ -1,4 +1,4 @@
-package kube
+package watchers
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/endpoints/sse"
+	"github.com/odigos-io/odigos/frontend/kube"
 	commonutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -68,8 +69,8 @@ func (eb *EventBatcher) sendBatch() {
 			}
 		} else {
 			addedMessage := sse.SSEMessage{
-				Event:   "Created",
-				Type:    "success",
+				Event:   sse.MessageEventAdded,
+				Type:    sse.MessageTypeSuccess,
 				Target:  "",
 				Data:    fmt.Sprintf("%d sources added successfully", eb.addedEventCount),
 				CRDType: "InstrumentedApplication",
@@ -87,8 +88,8 @@ func (eb *EventBatcher) sendBatch() {
 			}
 		} else {
 			deletedMessage := sse.SSEMessage{
-				Event:   "Deleted",
-				Type:    "success",
+				Event:   sse.MessageEventDeleted,
+				Type:    sse.MessageTypeSuccess,
 				Target:  "",
 				Data:    fmt.Sprintf("%d sources deleted successfully", eb.deletedEventCount),
 				CRDType: "InstrumentedApplication",
@@ -106,8 +107,8 @@ func (eb *EventBatcher) sendBatch() {
 			}
 		} else {
 			modifiedMessage := sse.SSEMessage{
-				Event:   "Modified",
-				Type:    "success",
+				Event:   sse.MessageEventModified,
+				Type:    sse.MessageTypeSuccess,
 				Target:  "",
 				Data:    fmt.Sprintf("%d sources modified successfully", eb.modifiedEventCount),
 				CRDType: "InstrumentedApplication",
@@ -124,7 +125,7 @@ func (eb *EventBatcher) sendBatch() {
 var batcher = NewEventBatcher(batchDuration)
 
 func StartInstrumentedApplicationWatcher(namespace string) error {
-	watcher, err := DefaultClient.OdigosClient.InstrumentedApplications(namespace).Watch(context.Background(), metav1.ListOptions{})
+	watcher, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(namespace).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating watcher: %v", err)
 	}
@@ -151,15 +152,15 @@ func handleInstrumentedApplicationWatchEvents(watcher watch.Interface) {
 func handleAddedEvent(app *v1alpha1.InstrumentedApplication) {
 	name, kind, err := commonutils.GetWorkloadInfoRuntimeName(app.Name)
 	if err != nil {
-		genericErrorMessage("Added")
+		genericErrorMessage(sse.MessageEventAdded, "InstrumentedApplication", "error getting workload info")
 		return
 	}
 	namespace := app.Namespace
 	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
 	data := fmt.Sprintf("InstrumentedApplication %s created", name)
 	message := sse.SSEMessage{
-		Event:   "Created",
-		Type:    "success",
+		Event:   sse.MessageEventAdded,
+		Type:    sse.MessageTypeSuccess,
 		Target:  target,
 		Data:    data,
 		CRDType: "InstrumentedApplication",
@@ -181,9 +182,9 @@ func handleModifiedEvent(app *v1alpha1.InstrumentedApplication) {
 	data := lastCondition.Message
 	namespace := app.Namespace
 	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
-	conditionType := "success"
+	conditionType := sse.MessageTypeSuccess
 	if lastCondition.Status == "False" {
-		conditionType = "error"
+		conditionType = sse.MessageTypeError
 	}
 
 	message := sse.SSEMessage{
@@ -200,13 +201,13 @@ func handleModifiedEvent(app *v1alpha1.InstrumentedApplication) {
 func handleDeletedEvent(app *v1alpha1.InstrumentedApplication) {
 	name, _, err := commonutils.GetWorkloadInfoRuntimeName(app.Name)
 	if err != nil {
-		genericErrorMessage("Deleted")
+		genericErrorMessage(sse.MessageEventDeleted, "InstrumentedApplication", "error getting workload info")
 		return
 	}
 	data := fmt.Sprintf("Source %s deleted successfully", name)
 	message := sse.SSEMessage{
-		Event:   "Deleted",
-		Type:    "success",
+		Event:   sse.MessageEventDeleted,
+		Type:    sse.MessageTypeSuccess,
 		Target:  "",
 		Data:    data,
 		CRDType: "InstrumentedApplication",

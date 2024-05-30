@@ -94,9 +94,6 @@ type InstrumentationInstanceStatus struct {
 	Reason string `json:"reason,omitempty"`
 	// +required
 	// +kubebuilder:validation:Required
-	StartTime metav1.Time `json:"startTime"`
-	// +required
-	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Type=string
 	// +kubebuilder:validation:Format=date-time
 	LastStatusTime metav1.Time `json:"lastStatusTime"`

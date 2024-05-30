@@ -18,6 +18,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/endpoints/actions"
 	"github.com/odigos-io/odigos/frontend/endpoints/sse"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/kube/watchers"
 	"github.com/odigos-io/odigos/frontend/version"
 
 	"github.com/gin-gonic/gin"
@@ -170,14 +171,19 @@ func main() {
 	}
 
 	// Start watchers
-	err = kube.StartInstrumentedApplicationWatcher("")
+	err = watchers.StartInstrumentedApplicationWatcher("")
 	if err != nil {
 		log.Printf("Error starting InstrumentedApplication watcher: %v", err)
 	}
 
-	err = kube.StartDestinationWatcher(flags.Namespace)
+	err = watchers.StartDestinationWatcher(flags.Namespace)
 	if err != nil {
 		log.Printf("Error starting Destination watcher: %v", err)
+	}
+
+	err = watchers.StartInstrumentationInstanceWatcher("")
+	if err != nil {
+		log.Printf("Error starting InstrumentationInstance watcher: %v", err)
 	}
 
 	r.GET("/events", sse.HandleSSEConnections)

@@ -28,7 +28,6 @@ type InstrumentationInstanceStatusApplyConfiguration struct {
 	Healthy                  *bool                                            `json:"healthy,omitempty"`
 	Message                  *string                                          `json:"message,omitempty"`
 	Reason                   *string                                          `json:"reason,omitempty"`
-	StartTime                *v1.Time                                         `json:"startTime,omitempty"`
 	LastStatusTime           *v1.Time                                         `json:"lastStatusTime,omitempty"`
 	Components               []InstrumentationLibraryStatusApplyConfiguration `json:"components,omitempty"`
 }
@@ -73,14 +72,6 @@ func (b *InstrumentationInstanceStatusApplyConfiguration) WithMessage(value stri
 // If called multiple times, the Reason field is set to the value of the last call.
 func (b *InstrumentationInstanceStatusApplyConfiguration) WithReason(value string) *InstrumentationInstanceStatusApplyConfiguration {
 	b.Reason = &value
-	return b
-}
-
-// WithStartTime sets the StartTime field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the StartTime field is set to the value of the last call.
-func (b *InstrumentationInstanceStatusApplyConfiguration) WithStartTime(value v1.Time) *InstrumentationInstanceStatusApplyConfiguration {
-	b.StartTime = &value
 	return b
 }
 

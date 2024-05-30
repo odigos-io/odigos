@@ -49,14 +49,13 @@ const (
 	LoadedSuccessfully InstrumentationStatusReason = "LoadedSuccessfully"
 )
 
-const ebpfSDKConditionRunning = "ebpfSDKRunning"
-
 type instrumentationStatus struct {
 	Workload common.PodWorkload
 	PodName  types.NamespacedName
 	Healthy  bool
 	Message  string
 	Reason   InstrumentationStatusReason
+	Pid      int
 }
 
 type EbpfDirector[T OtelEbpfSdk] struct {
@@ -140,14 +139,14 @@ func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context, scheme *r
 			}
 
 			instrumentedAppName := workload.GetRuntimeObjectName(status.Workload.Name, status.Workload.Kind)
-			err = inst.PersistInstrumentationInstanceStatus(ctx, &pod, d.client, instrumentedAppName, scheme,
+			err = inst.PersistInstrumentationInstanceStatus(ctx, &pod, d.client, instrumentedAppName, status.Pid, scheme,
 				inst.WithHealthy(&status.Healthy),
 				inst.WithMessage(status.Message),
 				inst.WithReason(string(status.Reason)),
 			)
 
 			if err != nil {
-				log.Logger.Error(err, "error updating status conditions", "workload", status.Workload)
+				log.Logger.Error(err, "error updating instrumentation instance status", "workload", status.Workload)
 			}
 		}
 	}
@@ -187,7 +186,14 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 		case <-loadedCtx.Done():
 			return
 		case <-loadedIndicator:
-			d.instrumentationStatusChan <- instrumentationStatus{Healthy: true, Message: "Successfully loaded eBPF probes to pod: " + pod.String(), Workload: *podWorkload, PodName: pod, Reason: LoadedSuccessfully}
+			d.instrumentationStatusChan <- instrumentationStatus{
+				Healthy:  true,
+				Message:  "Successfully loaded eBPF probes to pod: " + pod.String(),
+				Workload: *podWorkload,
+				Reason:   LoadedSuccessfully,
+				PodName:  pod,
+			    Pid:      pid,
+			}
 		}
 	}()
 
@@ -196,7 +202,14 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 		defer loadedObserverCancel()
 		inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName, pod.Name, loadedIndicator)
 		if err != nil {
-			d.instrumentationStatusChan <- instrumentationStatus{Healthy: false, Message: err.Error(), Workload: *podWorkload, Reason: FailedToInitialize, PodName: pod}
+			d.instrumentationStatusChan <- instrumentationStatus{
+				Healthy: false,
+				Message: err.Error(),
+				Workload: *podWorkload,
+				Reason: FailedToInitialize,
+				PodName: pod,
+				Pid: pid,
+			}
 			return
 		}
 
@@ -219,7 +232,14 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 		log.Logger.V(0).Info("Running ebpf instrumentation", "workload", podWorkload, "pod", pod, "language", d.language)
 
 		if err := inst.Run(context.Background()); err != nil {
-			d.instrumentationStatusChan <- instrumentationStatus{Healthy: false, Message: err.Error(), Workload: *podWorkload, Reason: FailedToLoad, PodName: pod}
+			d.instrumentationStatusChan <- instrumentationStatus{
+				Healthy: false,
+				Message: err.Error(),
+				Workload: *podWorkload,
+				Reason: FailedToLoad,
+				PodName: pod,
+				Pid: pid,
+			}
 		}
 	}()
 
