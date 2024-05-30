@@ -1,12 +1,12 @@
 import { SETUP } from '@/utils/constants';
 import {
-  Metrics,
-  MetricsFocus,
-  Traces,
-  TracesFocus,
-  LogsFocus,
-  Logs,
-} from '@/assets/icons/monitors';
+  LogsFocusIcon,
+  LogsIcon,
+  MetricsFocusIcon,
+  MetricsIcon,
+  TraceFocusIcon,
+  TraceIcon,
+} from '@keyval-dev/design-system';
 
 export type MonitoringOption = {
   title: string;
@@ -19,8 +19,8 @@ export const MONITORING_OPTIONS = [
   {
     id: 1,
     icons: {
-      notFocus: () => <Logs />,
-      focus: () => <LogsFocus />,
+      notFocus: () => <LogsIcon />,
+      focus: () => <LogsFocusIcon />,
     },
     title: SETUP.MONITORS.LOGS,
     type: 'logs',
@@ -29,8 +29,8 @@ export const MONITORING_OPTIONS = [
   {
     id: 2,
     icons: {
-      notFocus: () => <Metrics />,
-      focus: () => <MetricsFocus />,
+      notFocus: () => <MetricsIcon />,
+      focus: () => <MetricsFocusIcon />,
     },
     title: SETUP.MONITORS.METRICS,
     type: 'metrics',
@@ -39,8 +39,8 @@ export const MONITORING_OPTIONS = [
   {
     id: 3,
     icons: {
-      notFocus: () => <Traces />,
-      focus: () => <TracesFocus />,
+      notFocus: () => <TraceIcon />,
+      focus: () => <TraceFocusIcon />,
     },
     title: SETUP.MONITORS.TRACES,
     type: 'traces',
