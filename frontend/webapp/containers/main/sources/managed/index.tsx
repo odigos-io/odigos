@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import theme from '@/styles/palette';
 import { useSources } from '@/hooks';
 import { ManagedSource } from '@/types';
 import { OVERVIEW, ROUTES } from '@/utils';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { EmptyList, ManagedSourcesTable } from '@/components';
 import {
   KeyvalText,
@@ -19,20 +19,50 @@ import {
   SourcesContainer,
 } from './styled';
 
+const POLL_DATA = 'poll';
+const POLL_INTERVAL = 2000; // Interval in milliseconds between polls
+const MAX_ATTEMPTS = 5; // Maximum number of polling attempts
+
 export function ManagedSourcesContainer() {
   const [searchInput, setSearchInput] = useState('');
+  const [pollingAttempts, setPollingAttempts] = useState(0);
 
   const router = useRouter();
+  const useSearch = useSearchParams();
+  const intervalId = useRef<NodeJS.Timer>();
 
   const {
     sources,
     isLoading,
     sortSources,
+    refetchSources,
     filterSourcesByKind,
     deleteSourcesHandler,
     instrumentedNamespaces,
     filterSourcesByNamespace,
   } = useSources();
+
+  useEffect(() => {
+    const pullData = useSearch.get(POLL_DATA);
+    if (pullData) {
+      intervalId.current = setInterval(() => {
+        Promise.all([refetchSources()])
+          .then(() => {})
+          .catch(console.error);
+
+        setPollingAttempts((prev) => prev + 1);
+      }, POLL_INTERVAL);
+
+      return () => clearInterval(intervalId.current);
+    }
+  }, [refetchSources, pollingAttempts, useSearch]);
+
+  useEffect(() => {
+    if (pollingAttempts >= MAX_ATTEMPTS) {
+      clearInterval(intervalId.current);
+      return;
+    }
+  }, [pollingAttempts]);
 
   function handleAddSources() {
     router.push(ROUTES.CREATE_SOURCE);

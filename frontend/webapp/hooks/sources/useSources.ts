@@ -67,7 +67,8 @@ export function useSources() {
   );
 
   useEffect(() => {
-    setSortedSources(sources || []);
+    const data = sources?.sort((a, b) => a.name.localeCompare(b.name));
+    setSortedSources(data || []);
   }, [sources]);
 
   async function upsertSources({ sectionData, onSuccess, onError }) {
