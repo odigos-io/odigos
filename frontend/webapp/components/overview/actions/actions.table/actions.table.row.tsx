@@ -18,7 +18,7 @@ const StyledTr = styled.tr`
 const StyledTd = styled.td<{ isFirstRow?: boolean }>`
   padding: 10px 20px;
   border-top: 1px solid ${theme.colors.blue_grey};
-
+  display: flex;
   ${({ isFirstRow }) =>
     isFirstRow &&
     css`
@@ -28,12 +28,14 @@ const StyledTd = styled.td<{ isFirstRow?: boolean }>`
 
 const StyledMainTd = styled(StyledTd)`
   cursor: pointer;
-  padding: 10px 0px;
+  padding: 10px 20px;
 `;
 
 const ActionIconContainer = styled.div`
   display: flex;
+  align-items: center;
   gap: 8px;
+  margin-left: 10px;
 `;
 
 const ActionDetails = styled.div`
@@ -112,23 +114,14 @@ export function ActionsTableRow({
 
   return (
     <StyledTr key={item.id}>
-      <StyledTd
+      <StyledMainTd
+        onClick={() => onRowClick(item.id)}
         isFirstRow={index === 0}
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'flex-start',
-        }}
       >
         <KeyvalCheckbox
           value={selectedCheckbox.includes(item.id)}
           onChange={() => onSelectedCheckboxChange(item.id)}
         />
-      </StyledTd>
-      <StyledMainTd
-        onClick={() => onRowClick(item.id)}
-        isFirstRow={index === 0}
-      >
         <ActionIconContainer>
           <div>
             <ActionIcon type={item.type} style={{ width: 16, height: 16 }} />

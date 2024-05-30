@@ -15,7 +15,7 @@ export function TapList({ list, gap = 8, tapStyle, onClick = null }: any) {
         tapped={tapped || false}
         icons={icons}
         title={title}
-        style={tapStyle}
+        style={{ ...tapStyle, alignItems: 'center' }}
       >
         {tapped ? icons.focus() : icons.notFocus()}
       </KeyvalTap>
