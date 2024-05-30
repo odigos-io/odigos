@@ -1,8 +1,8 @@
 import React from 'react';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
-import { ACTION_ICONS } from '@/assets';
 import { ActionItemCard } from '@/types';
+import { ActionIcon } from '../action.icon';
 import { KeyvalCard, KeyvalText } from '@/design.system';
 
 interface NewActionCardProps {
@@ -25,12 +25,10 @@ const CardContentWrapper = styled.div`
 `;
 
 export function NewActionCard({ item, onClick }: NewActionCardProps) {
-  const SvgIcon = ACTION_ICONS[item.icon];
-
   return (
     <KeyvalCard>
       <CardContentWrapper onClick={() => onClick({ item })}>
-        <SvgIcon style={{ width: 56, height: 56 }} />
+        <ActionIcon type={item.type} style={{ width: 56, height: 56 }} />
         <KeyvalText size={18} weight={700}>
           {item.title}
         </KeyvalText>

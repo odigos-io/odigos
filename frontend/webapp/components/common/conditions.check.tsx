@@ -1,5 +1,5 @@
 import React from 'react';
-import { GreenCheck, RedError } from '@/assets/icons/app';
+import { GreenCheckIcon, RedErrorIcon } from '@keyval-dev/design-system';
 import styled from 'styled-components';
 import { KeyvalText } from '@/design.system';
 import theme from '@/styles/palette';
@@ -51,7 +51,9 @@ export const ConditionCheck = ({ conditions }) => {
 
   return conditions ? (
     <Container>
-      <StatusIcon>{allHealthy ? <GreenCheck /> : <RedError />}</StatusIcon>
+      <StatusIcon>
+        {allHealthy ? <GreenCheckIcon /> : <RedErrorIcon />}
+      </StatusIcon>
       <Tooltip>
         <KeyvalText
           size={12}

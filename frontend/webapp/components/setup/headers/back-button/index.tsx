@@ -1,10 +1,9 @@
 'use client';
 import React from 'react';
+import { SETUP } from '@/utils';
 import styled from 'styled-components';
-import { SETUP } from '@/utils/constants';
-import { useRouter } from 'next/navigation';
 import { KeyvalText } from '@/design.system';
-import { WhiteArrow } from '@/assets/icons/app';
+import { WhiteArrowIcon } from '@keyval-dev/design-system';
 
 const BackButtonWrapper = styled.div`
   position: absolute;
@@ -26,7 +25,7 @@ interface SetupBackButtonProps {
 export function SetupBackButton({ onBackClick }: SetupBackButtonProps) {
   return (
     <BackButtonWrapper onClick={onBackClick}>
-      <WhiteArrow />
+      <WhiteArrowIcon />
       <KeyvalText size={14} weight={600}>
         {SETUP.BACK}
       </KeyvalText>
