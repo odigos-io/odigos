@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useActions, useNotification } from '@/hooks';
+import { useActions, useNotify } from '@/hooks';
 import theme from '@/styles/palette';
 import { useRouter } from 'next/navigation';
-import { ACTIONS, NOTIFICATION, OVERVIEW, ROUTES } from '@/utils';
+import { ACTIONS, OVERVIEW, ROUTES } from '@/utils';
 import { EmptyList, ActionsTable } from '@/components';
 import {
   KeyvalText,
@@ -22,7 +22,7 @@ export function ManagedActionsContainer() {
   const [searchInput, setSearchInput] = useState('');
 
   const router = useRouter();
-  const { show, Notification } = useNotification();
+  const notify = useNotify();
   const {
     isLoading,
     actions,
@@ -55,11 +55,14 @@ export function ManagedActionsContainer() {
   async function onSelectStatus(ids: string[], disabled: boolean) {
     const res = await toggleActionStatus(ids, disabled);
 
-    show({
-      type: res ? NOTIFICATION.SUCCESS : NOTIFICATION.ERROR,
+    notify({
+      type: res ? 'success' : 'error',
       message: res
         ? OVERVIEW.ACTION_UPDATE_SUCCESS
         : OVERVIEW.ACTION_UPDATE_ERROR,
+      title: res ? 'Success' : 'Error',
+      crdType: 'action',
+      target: '',
     });
   }
 
@@ -67,7 +70,6 @@ export function ManagedActionsContainer() {
 
   return (
     <>
-      <Notification />
       <Container>
         {!actions?.length ? (
           <EmptyList

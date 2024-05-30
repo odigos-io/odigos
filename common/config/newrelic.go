@@ -23,7 +23,7 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		return errors.New("New relic endpoint not specified, gateway will not be configured for New Relic")
 	}
 
-	exporterName := "otlp/newrelic-" + dest.GetName()
+	exporterName := "otlp/newrelic-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s:4317", endpoint),
 		"headers": GenericMap{
@@ -32,21 +32,21 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/newrelic-" + dest.GetName()
+		tracesPipelineName := "traces/newrelic-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/newrelic-" + dest.GetName()
+		metricsPipelineName := "metrics/newrelic-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/newrelic-" + dest.GetName()
+		logsPipelineName := "logs/newrelic-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}

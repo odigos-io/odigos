@@ -27,7 +27,7 @@ func (m *Middleware) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		return errors.New("Middleware target not specified, gateway will not be configured for Middleware")
 	}
 
-	exporterName := "otlp/middleware-" + dest.GetName()
+	exporterName := "otlp/middleware-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": "${MW_TARGET}",
 		"headers": GenericMap{
@@ -36,21 +36,21 @@ func (m *Middleware) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/middleware-" + dest.GetName()
+		tracesPipelineName := "traces/middleware-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/middleware-" + dest.GetName()
+		metricsPipelineName := "metrics/middleware-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/middleware-" + dest.GetName()
+		logsPipelineName := "logs/middleware-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}

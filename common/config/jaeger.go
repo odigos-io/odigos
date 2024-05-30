@@ -38,7 +38,7 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		return err
 	}
 
-	exporterName := "otlp/jaeger-" + dest.GetName()
+	exporterName := "otlp/jaeger-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": grpcEndpoint,
 		"tls": GenericMap{
@@ -46,7 +46,7 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		},
 	}
 
-	pipelineName := "traces/jaeger-" + dest.GetName()
+	pipelineName := "traces/jaeger-" + dest.GetID()
 	currentConfig.Service.Pipelines[pipelineName] = Pipeline{
 		Exporters: []string{exporterName},
 	}

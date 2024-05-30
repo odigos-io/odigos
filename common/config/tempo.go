@@ -33,7 +33,7 @@ func (t *Tempo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		url = strings.TrimPrefix(url, "http://")
 		url = strings.TrimSuffix(url, ":4317")
 
-		tempoExporterName := "otlp/tempo-" + dest.GetName()
+		tempoExporterName := "otlp/tempo-" + dest.GetID()
 		currentConfig.Exporters[tempoExporterName] = GenericMap{
 			"endpoint": fmt.Sprintf("%s:4317", url),
 			"tls": GenericMap{
@@ -41,7 +41,7 @@ func (t *Tempo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 			},
 		}
 
-		tracesPipelineName := "traces/tempo-" + dest.GetName()
+		tracesPipelineName := "traces/tempo-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{tempoExporterName},
 		}

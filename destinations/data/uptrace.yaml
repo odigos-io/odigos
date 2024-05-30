@@ -1,0 +1,30 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: uptrace
+  displayName: Uptrace
+  category: managed
+spec:
+  image: uptrace.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: UPTRACE_DSN
+      displayName: Data Source Name(DSN)
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+    # - name: UPTRACE_ENDPOINT
+    #   displayName: Endpoint
+    #   componentType: input
+    #   componentProps:
+    #     type: text
+    #     required: false
+    #     tooltip: 'Overwrite Uptrace endpoint when self-hosting'
+    #     placeholder: 'https://otlp.uptrace.dev:4317'

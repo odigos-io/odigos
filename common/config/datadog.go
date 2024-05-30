@@ -26,7 +26,7 @@ func (d *Datadog) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 		return errors.New("Datadog site not specified, gateway will not be configured for Datadog")
 	}
 
-	exporterName := "datadog/" + dest.GetName()
+	exporterName := "datadog/" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"hostname": "odigos-gateway",
 		"api": GenericMap{
@@ -36,21 +36,21 @@ func (d *Datadog) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/datadog-" + dest.GetName()
+		tracesPipelineName := "traces/datadog-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/datadog-" + dest.GetName()
+		metricsPipelineName := "metrics/datadog-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/datadog-" + dest.GetName()
+		logsPipelineName := "logs/datadog-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
