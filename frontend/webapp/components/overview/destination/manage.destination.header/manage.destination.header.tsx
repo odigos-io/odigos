@@ -1,8 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
-import { KeyvalImage, KeyvalLink, KeyvalText } from '@/design.system';
+import { KeyvalImage, KeyvalText } from '@/design.system';
 import theme from '@/styles/palette';
-import { Link } from '@/assets/icons/app';
+import { LinkIcon } from '@keyval-dev/design-system';
 
 const ManageDestinationHeaderWrapper = styled.div`
   display: flex;
@@ -46,7 +46,7 @@ export function ManageDestinationHeader({
           <KeyvalText style={{ display: 'flex', gap: 3 }}>
             find out more about {display_name} in{' '}
             <a style={{ color: theme.colors.torquiz_light }}>our docs</a>
-            <Link style={{ marginTop: 2 }} />
+            <LinkIcon style={{ marginTop: 2 }} />
           </KeyvalText>
         </div>
       </TextWrapper>
