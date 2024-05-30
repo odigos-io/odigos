@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
+import { SETUP } from '@/utils';
+import { DestinationType } from '@/types';
 import { styled } from 'styled-components';
-import { Back } from '@/assets/icons/overview';
-import { CreateConnectionForm, QuickHelp } from '@/components/setup';
-import { Conditions, KeyvalText } from '@/design.system';
-import { SETUP } from '@/utils/constants';
-import { ManageDestinationHeader } from '../manage.destination.header/manage.destination.header';
-import { DestinationType } from '@/types/destinations';
 import FormDangerZone from './form.danger.zone';
+import { BackIcon } from '@keyval-dev/design-system';
+import { Conditions, KeyvalText } from '@/design.system';
+import { CreateConnectionForm, QuickHelp } from '@/components/setup';
+import { ManageDestinationHeader } from '../manage.destination.header/manage.destination.header';
 
 interface ManageDestinationProps {
   destinationType: DestinationType;
@@ -53,7 +53,7 @@ export function ManageDestination({
     <>
       {onBackClick && (
         <BackButtonWrapper onClick={onBackClick}>
-          <Back width={14} />
+          <BackIcon size={14} />
           <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
         </BackButtonWrapper>
       )}

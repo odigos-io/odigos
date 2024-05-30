@@ -1,12 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
-import { BlueInfo, GreenCheck, RedError } from '@/assets/icons/app';
-
-interface IconWrapperProps {
-  bgColor: string;
-  borderColor: string;
-  children: React.ReactNode;
-}
+import {
+  BlueInfoIcon,
+  GreenCheckIcon,
+  RedErrorIcon,
+} from '@keyval-dev/design-system';
 
 const IconWrapper = styled.div<{ bgColor: string }>`
   width: 32px;
@@ -31,7 +29,7 @@ const InnerIconWrapper = styled.div<{ borderColor: string }>`
 export const SuccessIcon = () => (
   <IconWrapper bgColor="#3fb94f40">
     <InnerIconWrapper borderColor="#3fb950">
-      <GreenCheck style={{ width: 10, height: 10 }} />
+      <GreenCheckIcon size={10} />
     </InnerIconWrapper>
   </IconWrapper>
 );
@@ -39,9 +37,7 @@ export const SuccessIcon = () => (
 export const ErrorIcon = () => (
   <IconWrapper bgColor="#f8524952">
     <InnerIconWrapper borderColor="#f85249">
-      <RedError
-        style={{ width: 10, height: 10, marginLeft: 2, marginBottom: 2 }}
-      />
+      <RedErrorIcon size={10} style={{ marginLeft: 2, marginBottom: 2 }} />
     </InnerIconWrapper>
   </IconWrapper>
 );
@@ -49,7 +45,7 @@ export const ErrorIcon = () => (
 export const InfoIcon = () => (
   <IconWrapper bgColor="#2196F340">
     <InnerIconWrapper borderColor="#2196F3">
-      <BlueInfo />
+      <BlueInfoIcon size={10} />
     </InnerIconWrapper>
   </IconWrapper>
 );

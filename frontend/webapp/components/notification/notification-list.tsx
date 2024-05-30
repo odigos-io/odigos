@@ -1,10 +1,10 @@
-import React, { use, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, markAsSeen } from '@/store';
 
 import styled from 'styled-components';
 import theme from '@/styles/palette';
-import { Bell } from '@/assets/icons/app';
+import { BellIcon } from '@keyval-dev/design-system';
 import { KeyvalText } from '@/design.system';
 import { useOnClickOutside } from '@/hooks';
 import NotificationListItem from './notification-list-item';
@@ -93,10 +93,9 @@ export const NotificationList: React.FC = () => {
   return notifications.length > 0 ? (
     <div ref={containerRef}>
       <BellIconWrapper>
-        <Bell
-          width={20}
-          height={20}
+        <BellIcon
           style={{ cursor: 'pointer' }}
+          size={20}
           onClick={() => setShowNotifications(!showNotifications)}
         />
         {unseenCount > 0 && (

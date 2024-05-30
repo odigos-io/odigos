@@ -1,11 +1,11 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import theme from '@/styles/palette';
-import { ACTION_ICONS } from '@/assets';
 import { useActionState } from '@/hooks';
 import { useSearchParams } from 'next/navigation';
 import { ACTION, ACTIONS, ACTION_ITEM_DOCS_LINK } from '@/utils';
 import {
+  ActionIcon,
   DeleteAction,
   DynamicActionForm,
   MultiCheckboxComponent,
@@ -65,11 +65,12 @@ export function EditActionContainer(): React.JSX.Element {
         <KeyvalLoader />
       </LoaderWrapper>
     );
-  const ActionIcon = ACTION_ICONS[type];
+
   return (
     <CreateActionWrapper>
       <HeaderText>
-        <ActionIcon style={{ width: 34, height: 34 }} />
+        <ActionIcon style={{ width: 34, height: 34 }} type={type} />
+
         <KeyvalText size={18} weight={700}>
           {ACTIONS[type].TITLE}
         </KeyvalText>

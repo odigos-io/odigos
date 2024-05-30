@@ -7,7 +7,7 @@ import { ACTION, ACTIONS, ACTION_ITEM_DOCS_LINK } from '@/utils';
 import {
   MultiCheckboxComponent,
   DynamicActionForm,
-  ActionsYaml,
+  ActionIcon,
 } from '@/components';
 import {
   KeyvalButton,
@@ -18,7 +18,6 @@ import {
   KeyvalTextArea,
 } from '@/design.system';
 import {
-  ActionYamlWrapper,
   Container,
   CreateActionWrapper,
   CreateButtonWrapper,
@@ -28,7 +27,6 @@ import {
   LoaderWrapper,
   TextareaWrapper,
 } from './styled';
-import { ACTION_ICONS } from '@/assets';
 
 const ACTION_TYPE = 'type';
 
@@ -51,13 +49,11 @@ export function CreateActionContainer(): React.JSX.Element {
       </LoaderWrapper>
     );
 
-  const ActionIcon = ACTION_ICONS[type];
-
   return (
     <Container>
       <CreateActionWrapper>
         <HeaderText>
-          <ActionIcon style={{ width: 34, height: 34 }} />
+          <ActionIcon type={type} style={{ width: 34, height: 34 }} />
           <KeyvalText size={18} weight={700}>
             {ACTIONS[type].TITLE}
           </KeyvalText>

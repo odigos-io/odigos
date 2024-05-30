@@ -3,8 +3,8 @@ import styled from 'styled-components';
 import theme from '@/styles/palette';
 import { Condition } from '@/types';
 import { KeyvalText } from '../text/text';
-import { GreenCheck, RedError } from '@/assets/icons/app';
 import { formatDate } from '@/utils';
+import { GreenCheckIcon, RedErrorIcon } from '@keyval-dev/design-system';
 
 interface ConditionAlertProps {
   conditions: Condition[] | undefined;
@@ -65,7 +65,7 @@ export const Conditions: React.FC<ConditionAlertProps> = ({
   const getSuccessIcon = () => (
     <IconWrapper bgColor="#3fb94f40">
       <InnerIconWrapper borderColor="#3fb950">
-        <GreenCheck style={{ width: 10, height: 10 }} />
+        <GreenCheckIcon style={{ width: 10, height: 10 }} />
       </InnerIconWrapper>
     </IconWrapper>
   );
@@ -73,7 +73,7 @@ export const Conditions: React.FC<ConditionAlertProps> = ({
   const getErrorIcon = () => (
     <IconWrapper bgColor="#f8524952">
       <InnerIconWrapper borderColor="#f85249">
-        <RedError
+        <RedErrorIcon
           style={{ width: 10, height: 10, marginLeft: 2, marginBottom: 2 }}
         />
       </InnerIconWrapper>

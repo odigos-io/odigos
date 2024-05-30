@@ -3,11 +3,13 @@ import { ACTION, MONITORS, OVERVIEW } from '@/utils';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
 import { ActionsSortType } from '@/types';
-import { UnFocusAction } from '@/assets/icons/side.menu';
 import { ActionsGroup, KeyvalCheckbox, KeyvalText } from '@/design.system';
+import { UnFocusActionIcon } from '@keyval-dev/design-system';
 
-const StyledThead = styled.thead`
+const StyledThead = styled.div`
   background-color: ${theme.colors.light_dark};
+  border-top-right-radius: 6px;
+  border-top-left-radius: 6px;
 `;
 
 const StyledTh = styled.th`
@@ -17,7 +19,7 @@ const StyledTh = styled.th`
 `;
 
 const StyledMainTh = styled(StyledTh)`
-  padding: 10px 0px;
+  padding: 10px 20px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -161,14 +163,14 @@ export function ActionsTableHeader({
 
   return (
     <StyledThead>
-      <StyledTh>
+      {/* <StyledTh>
+      </StyledTh> */}
+      <StyledMainTh>
         <KeyvalCheckbox
           value={selectedCheckbox.length === data.length && data.length > 0}
           onChange={() => onSelectedCheckboxChange(SELECT_ALL_CHECKBOX)}
         />
-      </StyledTh>
-      <StyledMainTh>
-        <UnFocusAction style={{ width: 18, height: 18 }} />
+        <UnFocusActionIcon size={18} />
         <KeyvalText size={14} weight={600} color={theme.text.white}>
           {selectedCheckbox.length > 0
             ? `${selectedCheckbox.length} selected`

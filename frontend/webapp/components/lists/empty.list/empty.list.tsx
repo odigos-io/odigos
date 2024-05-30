@@ -1,9 +1,9 @@
-import { Plus } from '@/assets/icons/overview';
-import { Empty } from '@/assets/images';
-import { KeyvalButton, KeyvalText } from '@/design.system';
-import theme from '@/styles/palette';
 import React from 'react';
+import theme from '@/styles/palette';
 import styled from 'styled-components';
+import { Empty } from '@/assets/images';
+import { PlusIcon } from '@keyval-dev/design-system';
+import { KeyvalButton, KeyvalText } from '@/design.system';
 
 interface EmptyListProps {
   title?: string;
@@ -32,7 +32,7 @@ export function EmptyList({ title, btnTitle, btnAction }: EmptyListProps) {
       )}
       {btnAction && (
         <KeyvalButton onClick={btnAction} style={BUTTON_STYLES}>
-          <Plus />
+          <PlusIcon />
           <KeyvalText size={16} weight={700} color={theme.text.dark_button}>
             {btnTitle}
           </KeyvalText>
