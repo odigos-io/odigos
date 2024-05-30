@@ -9,9 +9,7 @@ export function SelectSourcesContainer() {
   const router = useRouter();
 
   function onNewSourceSuccess() {
-    setTimeout(() => {
-      router.push(`${ROUTES.SOURCES}`);
-    }, 1000);
+    router.push(`${ROUTES.SOURCES}?poll=true`);
   }
 
   return (
