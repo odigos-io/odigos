@@ -16,12 +16,12 @@ import (
 	"github.com/gin-contrib/cors"
 
 	"github.com/odigos-io/odigos/frontend/endpoints/actions"
+	"github.com/odigos-io/odigos/frontend/endpoints/sse"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/version"
 
-	"github.com/odigos-io/odigos/frontend/endpoints"
-
 	"github.com/gin-gonic/gin"
+	"github.com/odigos-io/odigos/frontend/endpoints"
 )
 
 const (
@@ -168,6 +168,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error starting server: %s", err)
 	}
+
+	// Start watchers
+	err = kube.StartInstrumentedApplicationWatcher("")
+	if err != nil {
+		log.Printf("Error starting InstrumentedApplication watcher: %v", err)
+	}
+
+	err = kube.StartDestinationWatcher(flags.Namespace)
+	if err != nil {
+		log.Printf("Error starting Destination watcher: %v", err)
+	}
+
+	r.GET("/events", sse.HandleSSEConnections)
 
 	log.Println("Starting Odigos UI...")
 	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)

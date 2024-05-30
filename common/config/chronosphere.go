@@ -31,7 +31,7 @@ func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Conf
 
 	company := c.getCompanyNameFromURL(url)
 
-	chronosphereExporterName := "otlp/chronosphere-" + dest.GetName()
+	chronosphereExporterName := "otlp/chronosphere-" + dest.GetID()
 	currentConfig.Exporters[chronosphereExporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s.chronosphere.io:443", company),
 		"retry_on_failure": GenericMap{
@@ -44,7 +44,7 @@ func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Conf
 	}
 
 	if isTracingEnabled(dest) {
-		tracePipelineName := "traces/chronosphere-" + dest.GetName()
+		tracePipelineName := "traces/chronosphere-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracePipelineName] = Pipeline{
 			Exporters: []string{chronosphereExporterName},
 		}
@@ -52,7 +52,7 @@ func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Conf
 
 	if isMetricsEnabled(dest) {
 		// Set service.instance.id to pod name or node name
-		chronosphereMetricProcessorName := "resource/chornosphere-" + dest.GetName()
+		chronosphereMetricProcessorName := "resource/chornosphere-" + dest.GetID()
 		currentConfig.Processors[chronosphereMetricProcessorName] = GenericMap{
 			"attributes": []GenericMap{
 				{
@@ -73,7 +73,7 @@ func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Conf
 			},
 		}
 
-		metricsPipelineName := "metrics/chronosphere-" + dest.GetName()
+		metricsPipelineName := "metrics/chronosphere-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters:  []string{chronosphereExporterName},
 			Processors: []string{chronosphereMetricProcessorName},

@@ -18,7 +18,7 @@ func (e *Quickwit) DestType() common.DestinationType {
 
 func (e *Quickwit) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
 	if url, exists := dest.GetConfig()[qwUrlKey]; exists {
-		exporterName := "otlp/quickwit-" + dest.GetName()
+		exporterName := "otlp/quickwit-" + dest.GetID()
 
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"endpoint": url,
@@ -28,14 +28,14 @@ func (e *Quickwit) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		}
 
 		if isTracingEnabled(dest) {
-			tracesPipelineName := "traces/quickwit-" + dest.GetName()
+			tracesPipelineName := "traces/quickwit-" + dest.GetID()
 			currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 				Exporters: []string{exporterName},
 			}
 		}
 
 		if isLoggingEnabled(dest) {
-			logsPipelineName := "logs/quickwit-" + dest.GetName()
+			logsPipelineName := "logs/quickwit-" + dest.GetID()
 			currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 				Exporters: []string{exporterName},
 			}

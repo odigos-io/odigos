@@ -4,9 +4,14 @@ import (
 	"context"
 	"sync"
 
+	_ "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
+	runtime_details "github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"k8s.io/apimachinery/pkg/types"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // This interface should be implemented by all ebpf sdks
@@ -18,7 +23,7 @@ type OtelEbpfSdk interface {
 
 // users can use different eBPF otel SDKs by returning them from this function
 type InstrumentationFactory[T OtelEbpfSdk] interface {
-	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload, containerName string, podName string) (T, error)
+	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (T, error)
 }
 
 // Director manages the instrumentation for a specific SDK in a specific language
@@ -32,6 +37,24 @@ type Director interface {
 type podDetails struct {
 	Workload *common.PodWorkload
 	Pids     []int
+}
+
+type InstrumentationStatusReason string
+
+const (
+	FailedToLoad       InstrumentationStatusReason = "FailedToLoad"
+	FailedToInitialize InstrumentationStatusReason = "FailedToInitialize"
+	LoadedSuccessfully InstrumentationStatusReason = "LoadedSuccessfully"
+)
+
+const ebpfSDKConditionRunning = "ebpfSDKRunning"
+
+type instrumentationStatus struct {
+	Workload common.PodWorkload
+	PodName  types.NamespacedName
+	Healthy  bool
+	Message  string
+	Reason   InstrumentationStatusReason
 }
 
 type EbpfDirector[T OtelEbpfSdk] struct {
@@ -56,6 +79,16 @@ type EbpfDirector[T OtelEbpfSdk] struct {
 
 	// this map can be used when we only have the workload, and need to find the pods to derive pids.
 	workloadToPods map[common.PodWorkload]map[types.NamespacedName]struct{}
+
+	// this channel is used to send the status of the instrumentation SDK after it is created and ran.
+	// the status is used to update the status conditions for the instrumentedApplication CR.
+	// The status can be either a failure to initialize the SDK, or a failure to load the eBPF probes or a success which
+	// means the eBPF probes were loaded successfully.
+	// TODO: this channel should probably be buffered, so we don't block the instrumentation goroutine?
+	instrumentationStatusChan chan instrumentationStatus
+
+	// k8s client used to update status conditions for the instrumentedApplication CR
+	client client.Client
 }
 
 type DirectorKey struct {
@@ -65,14 +98,61 @@ type DirectorKey struct {
 
 type DirectorsMap map[DirectorKey]Director
 
-func NewEbpfDirector[T OtelEbpfSdk](language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
-	return &EbpfDirector[T]{
+func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
+	director := &EbpfDirector[T]{
 		language:                     language,
 		instrumentationFactory:       instrumentationFactory,
 		pidsToInstrumentation:        make(map[int]T),
 		pidsAttemptedInstrumentation: make(map[int]struct{}),
 		podsToDetails:                make(map[types.NamespacedName]podDetails),
 		workloadToPods:               make(map[common.PodWorkload]map[types.NamespacedName]struct{}),
+		instrumentationStatusChan:    make(chan instrumentationStatus),
+		client:                       client,
+	}
+
+	go director.observeInstrumentations(ctx)
+
+	return director
+}
+
+func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case status, more := <-d.instrumentationStatusChan:
+			if !more {
+				return
+			}
+
+			if d.client == nil {
+				log.Logger.V(0).Info("Client is nil, cannot update status conditions", "workload", status.Workload)
+				continue
+			}
+
+			runtimeDetails, err := runtime_details.GetRuntimeDetails(ctx, d.client, &status.Workload)
+			if err != nil {
+				log.Logger.Error(err, "error getting runtime details", "workload", status.Workload)
+				continue
+			}
+
+			condStatus := metav1.ConditionTrue
+			if !status.Healthy {
+				condStatus = metav1.ConditionFalse
+			}
+
+			if !status.Healthy {
+				log.Logger.Error(nil, "eBPF instrumentation unhealthy", "reason", status.Reason, "message", status.Message, "workload", status.Workload)
+			}
+
+			// write the status to the CR. Since we are writing the status to the instrumentedApplication CR,
+			// we might overwrite the status of another pod which corresponds to the same workload.
+			// this can cause the status to not represent the full state of the workload, in case some of the pods are healthy and some are not for the same workload.
+			err = conditions.UpdateStatusConditions(ctx, d.client, runtimeDetails, &runtimeDetails.Status.Conditions, condStatus, ebpfSDKConditionRunning, string(status.Reason), status.Message)
+			if err != nil {
+				log.Logger.Error(err, "error updating status conditions", "workload", status.Workload)
+			}
+		}
 	}
 }
 
@@ -103,10 +183,23 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 	}
 	d.workloadToPods[*podWorkload][pod] = struct{}{}
 
+	loadedIndicator := make(chan struct{})
+	loadedCtx, loadedObserverCancel := context.WithCancel(ctx)
 	go func() {
-		inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName, pod.Name)
+		select {
+		case <-loadedCtx.Done():
+			return
+		case <-loadedIndicator:
+			d.instrumentationStatusChan <- instrumentationStatus{Healthy: true, Message: "Successfully loaded eBPF probes to pod: " + pod.String(), Workload: *podWorkload, PodName: pod, Reason: LoadedSuccessfully}
+		}
+	}()
+
+	go func() {
+		// once the instrumentation finished running (either by error or successful exit), we can cancel the 'loaded' observer for this instrumentation
+		defer loadedObserverCancel()
+		inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName, pod.Name, loadedIndicator)
 		if err != nil {
-			log.Logger.Error(err, "instrumentation setup failed", "workload", podWorkload, "pod", pod)
+			d.instrumentationStatusChan <- instrumentationStatus{Healthy: false, Message: err.Error(), Workload: *podWorkload, Reason: FailedToInitialize, PodName: pod}
 			return
 		}
 
@@ -129,7 +222,7 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 		log.Logger.V(0).Info("Running ebpf instrumentation", "workload", podWorkload, "pod", pod, "language", d.language)
 
 		if err := inst.Run(context.Background()); err != nil {
-			log.Logger.Error(err, "instrumentation crashed after running")
+			d.instrumentationStatusChan <- instrumentationStatus{Healthy: false, Message: err.Error(), Workload: *podWorkload, Reason: FailedToLoad, PodName: pod}
 		}
 	}()
 
@@ -180,6 +273,7 @@ func (d *EbpfDirector[T]) Cleanup(pod types.NamespacedName) {
 
 func (d *EbpfDirector[T]) Shutdown() {
 	log.Logger.V(0).Info("Shutting down instrumentation director")
+	close(d.instrumentationStatusChan)
 	for details := range d.podsToDetails {
 		d.Cleanup(details)
 	}

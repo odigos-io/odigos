@@ -13,7 +13,6 @@ spec:
       supported: true
     logs:
       supported: true
-    
   fields:
     - name: OTLP_HTTP_ENDPOINT
       displayName: OTLP http Endpoint

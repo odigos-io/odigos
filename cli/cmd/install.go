@@ -31,6 +31,7 @@ var (
 	versionFlag                string
 	skipWait                   bool
 	telemetryEnabled           bool
+	openshiftEnabled           bool
 	psp                        bool
 	userInputIgnoredNamespaces []string
 	userInputIgnoredContainers []string
@@ -172,6 +173,7 @@ func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
 		OdigosVersion:     versionFlag,
 		ConfigVersion:     1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:  telemetryEnabled,
+		OpenshiftEnabled:  openshiftEnabled,
 		IgnoredNamespaces: fullIgnoredNamespaces,
 		IgnoredContainers: fullIgnoredContainers,
 		Psp:               psp,
@@ -199,6 +201,7 @@ func init() {
 	installCmd.Flags().StringVarP(&odigosOnPremToken, "onprem-token", "", "", "authentication token for odigos enterprise on-premises")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "skip waiting for odigos pods to be ready")
 	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "send general telemetry regarding Odigos usage")
+	installCmd.Flags().BoolVar(&openshiftEnabled, "openshift", false, "configure selinux on openshift nodes")
 	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "", "odiglet container image name")
 	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image name")
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image name")
