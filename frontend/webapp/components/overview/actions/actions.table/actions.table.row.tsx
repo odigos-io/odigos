@@ -2,12 +2,12 @@ import React, { useMemo } from 'react';
 import { ACTIONS } from '@/utils';
 import theme from '@/styles/palette';
 import { ActionData } from '@/types';
-import { ACTION_ICONS } from '@/assets';
 import styled, { css } from 'styled-components';
 import { KeyvalCheckbox, KeyvalText } from '@/design.system';
 import ActionRowDynamicContent from './action.row.dynamic.content';
 import { TapList } from '@/components/setup/destination/tap.list/tap.list';
 import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
+import { ActionIcon } from '../action.icon';
 
 const StyledTr = styled.tr`
   &:hover {
@@ -91,8 +91,6 @@ export function ActionsTableRow({
   onSelectedCheckboxChange: (id: string) => void;
   onRowClick: (id: string) => void;
 }) {
-  const ActionIcon = ACTION_ICONS[item.type];
-
   const monitors = useMemo(() => {
     return Object?.entries(supported_signals).reduce((acc, [key, _]) => {
       const monitor = MONITORING_OPTIONS.find(
@@ -133,7 +131,7 @@ export function ActionsTableRow({
       >
         <ActionIconContainer>
           <div>
-            <ActionIcon style={{ width: 16, height: 16 }} />
+            <ActionIcon type={item.type} style={{ width: 16, height: 16 }} />
           </div>
           <ActionDetails>
             <KeyvalText color={theme.colors.light_grey} size={12}>
