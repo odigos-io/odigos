@@ -57,7 +57,7 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		return errors.New("Invalid marshaller specified, gateway will not be configured for AWS S3")
 	}
 
-	exporterName := "awss3/" + dest.GetName()
+	exporterName := "awss3/" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"s3uploader": GenericMap{
 			"region":       region,
@@ -68,21 +68,21 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/awss3-" + dest.GetName()
+		logsPipelineName := "logs/awss3-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/awss3-" + dest.GetName()
+		metricsPipelineName := "metrics/awss3-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/awss3-" + dest.GetName()
+		tracesPipelineName := "traces/awss3-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}

@@ -29,7 +29,7 @@ func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 			err = errors.Join(err, e)
 		} else {
 			url := fmt.Sprintf("%s/api/v1/write", dest.GetConfig()[opsverseMetricsUrl])
-			rwExporterName := "prometheusremotewrite/opsverse-" + dest.GetName()
+			rwExporterName := "prometheusremotewrite/opsverse-" + dest.GetID()
 			currentConfig.Exporters[rwExporterName] = GenericMap{
 				"endpoint": url,
 				"headers": GenericMap{
@@ -37,7 +37,7 @@ func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 				},
 			}
 
-			metricsPipelineName := "metrics/opsverse-" + dest.GetName()
+			metricsPipelineName := "metrics/opsverse-" + dest.GetID()
 			currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 				Exporters: []string{rwExporterName},
 			}
@@ -53,7 +53,7 @@ func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 			url = strings.TrimPrefix(url, "http://")
 			url = strings.TrimPrefix(url, "https://")
 			url = fmt.Sprintf("%s:443", url)
-			exporterName := "otlp/opsverse-" + dest.GetName()
+			exporterName := "otlp/opsverse-" + dest.GetID()
 			currentConfig.Exporters[exporterName] = GenericMap{
 				"endpoint": url,
 				"headers": GenericMap{
@@ -74,7 +74,7 @@ func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		} else {
 			url := fmt.Sprintf("%s/loki/api/v1/push", dest.GetConfig()[opsverseLogsUrl])
 
-			lokiExporterName := "loki/opsverse-" + dest.GetName()
+			lokiExporterName := "loki/opsverse-" + dest.GetID()
 			currentConfig.Exporters[lokiExporterName] = GenericMap{
 				"endpoint": url,
 				"headers": GenericMap{
@@ -89,7 +89,7 @@ func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 				},
 			}
 
-			logsPipelineName := "logs/opsverse-" + dest.GetName()
+			logsPipelineName := "logs/opsverse-" + dest.GetID()
 			currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 				Exporters: []string{lokiExporterName},
 			}

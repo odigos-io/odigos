@@ -21,7 +21,7 @@ func (a *Axiom) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		// ctrl.Log.V(0).Info("Axiom dataset not specified, using default")
 	}
 
-	axiomExporterName := "otlphttp/axiom-" + dest.GetName()
+	axiomExporterName := "otlphttp/axiom-" + dest.GetID()
 	currentConfig.Exporters[axiomExporterName] = GenericMap{
 		"compression": "gzip",
 		"endpoint":    "https://api.axiom.co",
@@ -32,14 +32,14 @@ func (a *Axiom) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/axiom-" + dest.GetName()
+		tracesPipelineName := "traces/axiom-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{axiomExporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/axiom-" + dest.GetName()
+		logsPipelineName := "logs/axiom-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{axiomExporterName},
 		}

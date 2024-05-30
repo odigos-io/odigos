@@ -7,12 +7,10 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -77,19 +75,4 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 		}
 	}
 	return nil, instrumentedEbpf
-}
-
-func getRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *common.PodWorkload) (*odigosv1.InstrumentedApplication, error) {
-	instrumentedApplicationName := workload.GetRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
-
-	var runtimeDetails odigosv1.InstrumentedApplication
-	err := kubeClient.Get(ctx, client.ObjectKey{
-		Namespace: podWorkload.Namespace,
-		Name:      instrumentedApplicationName,
-	}, &runtimeDetails)
-	if err != nil {
-		return nil, err
-	}
-
-	return &runtimeDetails, nil
 }

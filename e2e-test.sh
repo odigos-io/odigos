@@ -3,7 +3,7 @@
 kind create cluster || { echo "Error: Failed to create Kind cluster"; exit 1; }
 
 # Build CLI
-go build -o odigos-e2e-test cli/main.go
+go build -tags=embed_manifests -o odigos-e2e-test cli/main.go
 
 # Build and Load Odigos Images
 TAG=e2e-test make build-images load-to-kind

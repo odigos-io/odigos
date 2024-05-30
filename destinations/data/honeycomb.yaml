@@ -26,6 +26,6 @@ spec:
       componentType: dropdown
       componentProps:
         values:
-          - api.honeycomb.io 
-          - api.eu1.honeycomb.io 
+          - api.honeycomb.io
+          - api.eu1.honeycomb.io
         required: true

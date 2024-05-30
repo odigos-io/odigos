@@ -43,12 +43,12 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest ExporterConfigurer, currentCo
 	}
 
 	resourceAttributesLabels, exists := dest.GetConfig()[prometheusResourceAttributesLabelsKey]
-	processors, err := promResourceAttributesProcessors(resourceAttributesLabels, exists, dest.GetName())
+	processors, err := promResourceAttributesProcessors(resourceAttributesLabels, exists, dest.GetID())
 	if err != nil {
 		return errors.Join(err, errors.New("failed to parse grafana cloud prometheus resource attributes labels, gateway will not be configured for Prometheus"))
 	}
 
-	authExtensionName := "basicauth/grafana" + dest.GetName()
+	authExtensionName := "basicauth/grafana" + dest.GetID()
 	currentConfig.Extensions[authExtensionName] = GenericMap{
 		"client_auth": GenericMap{
 			"username": prometheusUsername,
@@ -76,7 +76,7 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest ExporterConfigurer, currentCo
 		exporterConf["external_labels"] = labels
 	}
 
-	rwExporterName := "prometheusremotewrite/grafana-" + dest.GetName()
+	rwExporterName := "prometheusremotewrite/grafana-" + dest.GetID()
 	currentConfig.Exporters[rwExporterName] = exporterConf
 
 	processorNames := []string{}
@@ -85,7 +85,7 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest ExporterConfigurer, currentCo
 		processorNames = append(processorNames, k)
 	}
 
-	metricsPipelineName := "metrics/grafana-" + dest.GetName()
+	metricsPipelineName := "metrics/grafana-" + dest.GetID()
 	currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 		Processors: processorNames,

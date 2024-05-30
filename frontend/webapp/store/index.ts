@@ -1,8 +1,9 @@
-import { appReducer } from './slices';
+import { appReducer, notificationReducer } from './slices';
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 
 const rootReducer = combineReducers({
   app: appReducer,
+  notification: notificationReducer,
 });
 
 export const store = configureStore({

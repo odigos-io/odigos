@@ -1,0 +1,39 @@
+---
+title: "Installation"
+sidebarTitle: "Installation"
+---
+
+<Info> Odigos VM Agent is currently available with the Odigos Pro plan. Contact us for more info </Info>
+
+1. After [setting up Odigos repositories](/vmagent/setup/preparation), `odigos` package is available through system's package manager:
+
+<Tabs>
+  <Tab title="APT">
+    ```shell
+    sudo apt update
+    sudo apt install odigos
+    ```
+  </Tab>
+  <Tab title="DNF">
+    ```shell
+    sudo dnf install odigos
+    ```
+  </Tab>
+</Tabs>
+
+2. Add your Odigos Pro license key to the agent configuration file `/etc/odigos-vmagent/service.yaml`:
+
+```shell
+on_prem:
+  token: "<your_license_key>"
+```
+
+3. Configure which systemd services to instrument and where to send telemetry data by editing the agent configuration file `/etc/odigos-vmagent/agent.yaml`. After installation, only `debug` destination is configured. That helps you to validate that Odigos is picking up telemetry on instrumented applications and can be removed once you don't need it. See the [Reference](/vmagent/configuration/reference) for more information.
+
+4. Start the Odigos VM Agent systemd service:
+
+```shell
+sudo systemctl enable --now odigos-vmagent
+```
+
+Odigos VM Agent is now installed on your system and enabled as a systemd service.
