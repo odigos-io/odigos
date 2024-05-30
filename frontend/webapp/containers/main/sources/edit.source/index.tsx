@@ -4,7 +4,6 @@ import theme from '@/styles/palette';
 import { useKeyDown } from '@/hooks';
 import { ManagedSource } from '@/types';
 import { useMutation } from 'react-query';
-import { Back } from '@/assets/icons/overview';
 import { DeleteSource } from '@/components/overview';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { deleteSource, getSource, patchSources } from '@/services';
@@ -14,7 +13,6 @@ import {
   ACTION,
   ROUTES,
   OVERVIEW,
-  NOTIFICATION,
   LANGUAGES_LOGOS,
   getMainContainerLanguage,
 } from '@/utils';
@@ -31,6 +29,7 @@ import {
   KeyvalText,
   Conditions,
 } from '@/design.system';
+import { BackIcon } from '@keyval-dev/design-system';
 
 const NAME = 'name';
 const KIND = 'kind';
@@ -101,7 +100,7 @@ export function EditSourceForm() {
   return (
     <ManageSourcePageContainer>
       <BackButtonWrapper onClick={() => router.back()}>
-        <Back width={14} />
+        <BackIcon size={14} />
         <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
       </BackButtonWrapper>
       {currentSource && <ManageSourceHeader source={currentSource} />}
