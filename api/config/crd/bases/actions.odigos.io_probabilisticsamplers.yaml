@@ -11,14 +11,16 @@ spec:
     kind: ProbabilisticSampler
     listKind: ProbabilisticSamplerList
     plural: probabilisticsamplers
+    shortNames:
+    - ps
     singular: probabilisticsampler
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ProbablisticSampler is the Schema for the probablisticsampler
-          API
+        description: ProbabilisticSampler is the Schema for the ProbabilisticSampler
+          odigos action API
         properties:
           apiVersion:
             description: |-
@@ -38,7 +40,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ProbablisticSamplerSpec defines the desired state of ProbablisticSampler
+            description: ProbabilisticSamplerSpec defines the desired state of ProbabilisticSampler
             properties:
               actionName:
                 type: string
@@ -61,9 +63,13 @@ spec:
             - signals
             type: object
           status:
-            description: ProbablisticSamplerStatus defines the observed state of ProbablisticSampler
+            description: ProbabilisticSamplerStatus defines the observed state of
+              ProbabilisticSampler
             properties:
               conditions:
+                description: |-
+                  Represents the observations of a ProbabilisticSampler's current state.
+                  Known .status.conditions.type are: "Available", "Progressing"
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource.\n---\nThis struct is intended for
@@ -132,6 +138,9 @@ spec:
                   - type
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
             type: object
         type: object
     served: true

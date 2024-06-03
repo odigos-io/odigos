@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ProbablisticSamplerSpec defines the desired state of ProbablisticSampler
+// ProbabilisticSamplerSpec defines the desired state of ProbabilisticSampler action
 type ProbabilisticSamplerSpec struct {
 	ActionName string                       `json:"actionName,omitempty"`
 	Notes      string                       `json:"notes,omitempty"`
@@ -31,16 +31,23 @@ type ProbabilisticSamplerSpec struct {
 	SamplingPercentage string `json:"sampling_percentage"`
 }
 
-// ProbablisticSamplerStatus defines the observed state of ProbablisticSampler
+// ProbabilisticSamplerStatus defines the observed state of ProbabilisticSampler action
 type ProbabilisticSamplerStatus struct {
+	// Represents the observations of a ProbabilisticSampler's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
-// +genclient
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:resource:path=probabilisticsampler,scope=Namespaced,shortName=ps
-// ProbablisticSampler is the Schema for the ProbablisticSampler odigos action API
+//+genclient
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+//+kubebuilder:resource:path=probabilisticsamplers,scope=Namespaced,shortName=ps
+
+// ProbabilisticSampler is the Schema for the ProbabilisticSampler odigos action API
 type ProbabilisticSampler struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -52,7 +59,6 @@ type ProbabilisticSampler struct {
 //+kubebuilder:object:root=true
 
 // ProbabilisticSamplerList contains a list of ProbabilisticSampler
-
 type ProbabilisticSamplerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
