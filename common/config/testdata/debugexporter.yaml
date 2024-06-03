@@ -5,7 +5,7 @@ receivers:
         max_recv_msg_size_mib: 134217728
       http: {}
 exporters:
-  debug: {}
+  debug/d1: {}
 processors:
   batch: {}
   memory_limiter: {}
@@ -30,4 +30,4 @@ service:
       - batch
       - resource/odigos-version
       exporters:
-      - debug
+      - debug/d1
