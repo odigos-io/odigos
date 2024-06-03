@@ -16,6 +16,7 @@ processors:
 extensions:
   health_check: {}
   zpages: {}
+connectors: {}
 service:
   extensions:
   - health_check
