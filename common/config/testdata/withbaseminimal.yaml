@@ -1,0 +1,12 @@
+receivers:
+  otlp:
+    protocols:
+      grpc: {}
+      http: {}
+exporters: {}
+processors:
+  batch: {}
+extensions: {}
+service:
+  extensions: []
+  pipelines: {}

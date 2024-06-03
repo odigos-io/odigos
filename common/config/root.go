@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/goccy/go-yaml"
@@ -31,8 +32,11 @@ type ResourceStatuses struct {
 }
 
 func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, *ResourceStatuses) {
-	currentConfig := getBasicConfig(memoryLimiterConfig)
+	currentConfig, globalProcessors := getBasicConfig(memoryLimiterConfig)
+	return CalculateWithBase(currentConfig, globalProcessors, dests, processors)
+}
 
+func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer) (string, error, *ResourceStatuses) {
 	configers, err := loadConfigers()
 	if err != nil {
 		return "", err, nil
@@ -41,6 +45,17 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 	status := &ResourceStatuses{
 		Destination: make(map[string]error),
 		Processor:   make(map[string]error),
+	}
+
+	for _, p := range globalProcessors {
+		_, exists := currentConfig.Processors[p]
+		if !exists {
+			return "", fmt.Errorf("missing global processor '%s' on config", p), status
+		}
+	}
+
+	if _, exists := currentConfig.Receivers["otlp"]; !exists {
+		return "", fmt.Errorf("missing required receiver 'otlp' on config"), status
 	}
 
 	for _, dest := range dests {
@@ -79,7 +94,7 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 		// basic config common to all pipelines
 		pipeline.Receivers = append([]string{"otlp"}, pipeline.Receivers...)
 		// memory limiter processor should be the first processor in the pipeline
-		pipeline.Processors = append([]string{memoryLimiterProcessorName, "batch", "resource/odigos-version"}, pipeline.Processors...)
+		pipeline.Processors = slices.Concat(globalProcessors, pipeline.Processors)
 		currentConfig.Service.Pipelines[pipelineName] = pipeline
 	}
 
@@ -91,7 +106,7 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 	return string(data), nil, status
 }
 
-func getBasicConfig(memoryLimiterConfig GenericMap) *Config {
+func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 	empty := struct{}{}
 	return &Config{
 		Receivers: GenericMap{
@@ -128,7 +143,7 @@ func getBasicConfig(memoryLimiterConfig GenericMap) *Config {
 			Pipelines:  map[string]Pipeline{},
 			Extensions: []string{"health_check", "zpages"},
 		},
-	}
+	}, []string{memoryLimiterProcessorName, "batch", "resource/odigos-version"}
 }
 
 func loadConfigers() (map[common.DestinationType]Configer, error) {
