@@ -3,8 +3,6 @@ package watchers
 import (
 	"context"
 	"fmt"
-	"sync"
-	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/endpoints/sse"
@@ -14,137 +12,61 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-const (
-	batchDuration = 2 * time.Second // Time to wait before sending a batch of notifications
-	minBatchSize  = 4               // Minimum number of notifications to batch
-)
+var addedEventBatcher *EventBatcher
+var deletedEventBatcher *EventBatcher
 
-type EventBatcher struct {
-	mu                 sync.Mutex
-	addedEventCount    int
-	deletedEventCount  int
-	modifiedEventCount int
-	addedEvents        []sse.SSEMessage
-	deletedEvents      []sse.SSEMessage
-	modifiedEvents     []sse.SSEMessage
-	timer              *time.Timer
-	batchDuration      time.Duration
-}
+func StartInstrumentedApplicationWatcher(ctx context.Context, namespace string) error {
+	addedEventBatcher = NewEventBatcher(
+		EventBatcherConfig{
+			Event: 		sse.MessageEventAdded,
+			CRDType: 	"InstrumentedApplication",
+			SuccessBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("successfully added %d sources", count)
+			},
+			FailureBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("failed to add %d sources", count)
+			},
+		},
+	)
 
-func NewEventBatcher(duration time.Duration) *EventBatcher {
-	return &EventBatcher{
-		batchDuration: duration,
-	}
-}
-
-func (eb *EventBatcher) AddEvent(eventType string, message sse.SSEMessage) {
-	eb.mu.Lock()
-	defer eb.mu.Unlock()
-
-	switch eventType {
-	case "Added":
-		eb.addedEventCount++
-		eb.addedEvents = append(eb.addedEvents, message)
-	case "Deleted":
-		eb.deletedEventCount++
-		eb.deletedEvents = append(eb.deletedEvents, message)
-	case "Modified":
-		eb.modifiedEventCount++
-		eb.modifiedEvents = append(eb.modifiedEvents, message)
-	}
-
-	if eb.timer == nil {
-		eb.timer = time.AfterFunc(eb.batchDuration, eb.sendBatch)
-	}
-}
-
-func (eb *EventBatcher) sendBatch() {
-	eb.mu.Lock()
-	defer eb.mu.Unlock()
-
-	if eb.addedEventCount > 0 {
-		if eb.addedEventCount < minBatchSize {
-			for _, msg := range eb.addedEvents {
-				sse.SendMessageToClient(msg)
-			}
-		} else {
-			addedMessage := sse.SSEMessage{
-				Event:   sse.MessageEventAdded,
-				Type:    sse.MessageTypeSuccess,
-				Target:  "",
-				Data:    fmt.Sprintf("%d sources added successfully", eb.addedEventCount),
-				CRDType: "InstrumentedApplication",
-			}
-			sse.SendMessageToClient(addedMessage)
-		}
-		eb.addedEventCount = 0
-		eb.addedEvents = nil
-	}
-
-	if eb.deletedEventCount > 0 {
-		if eb.deletedEventCount < minBatchSize {
-			for _, msg := range eb.deletedEvents {
-				sse.SendMessageToClient(msg)
-			}
-		} else {
-			deletedMessage := sse.SSEMessage{
-				Event:   sse.MessageEventDeleted,
-				Type:    sse.MessageTypeSuccess,
-				Target:  "",
-				Data:    fmt.Sprintf("%d sources deleted successfully", eb.deletedEventCount),
-				CRDType: "InstrumentedApplication",
-			}
-			sse.SendMessageToClient(deletedMessage)
-		}
-		eb.deletedEventCount = 0
-		eb.deletedEvents = nil
-	}
-
-	if eb.modifiedEventCount > 0 {
-		if eb.modifiedEventCount < minBatchSize {
-			for _, msg := range eb.modifiedEvents {
-				sse.SendMessageToClient(msg)
-			}
-		} else {
-			modifiedMessage := sse.SSEMessage{
-				Event:   sse.MessageEventModified,
-				Type:    sse.MessageTypeSuccess,
-				Target:  "",
-				Data:    fmt.Sprintf("%d sources modified successfully", eb.modifiedEventCount),
-				CRDType: "InstrumentedApplication",
-			}
-			sse.SendMessageToClient(modifiedMessage)
-		}
-		eb.modifiedEventCount = 0
-		eb.modifiedEvents = nil
-	}
-
-	eb.timer = nil
-}
-
-var batcher = NewEventBatcher(batchDuration)
-
-func StartInstrumentedApplicationWatcher(namespace string) error {
+	deletedEventBatcher = NewEventBatcher(
+		EventBatcherConfig{
+			Event: 		sse.MessageEventDeleted,
+			CRDType: 	"InstrumentedApplication",
+			SuccessBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("successfully deleted %d sources", count)
+			},
+			FailureBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("failed to delete %d sources", count)
+			},
+		},
+	)
+			
 	watcher, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(namespace).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating watcher: %v", err)
 	}
 
-	go handleInstrumentedApplicationWatchEvents(watcher)
+	go handleInstrumentedApplicationWatchEvents(ctx, watcher)
 	return nil
 }
 
-func handleInstrumentedApplicationWatchEvents(watcher watch.Interface) {
+func handleInstrumentedApplicationWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
-	for event := range ch {
-		switch event.Type {
-		case watch.Added:
-			handleAddedEvent(event.Object.(*v1alpha1.InstrumentedApplication))
-		// case watch.Modified:
-		// 	handleModifiedEvent(event.Object.(*v1alpha1.InstrumentedApplication))
-		case watch.Deleted:
-			handleDeletedEvent(event.Object.(*v1alpha1.InstrumentedApplication))
-
+	for {
+		select {
+		case <-ctx.Done():
+			addedEventBatcher.Cancel()
+			deletedEventBatcher.Cancel()
+			watcher.Stop()
+			return
+		case event := <-ch:
+			switch event.Type {
+			case watch.Added:
+				handleAddedEvent(event.Object.(*v1alpha1.InstrumentedApplication))
+			case watch.Deleted:
+				handleDeletedEvent(event.Object.(*v1alpha1.InstrumentedApplication))
+			}
 		}
 	}
 }
@@ -158,44 +80,7 @@ func handleAddedEvent(app *v1alpha1.InstrumentedApplication) {
 	namespace := app.Namespace
 	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
 	data := fmt.Sprintf("InstrumentedApplication %s created", name)
-	message := sse.SSEMessage{
-		Event:   sse.MessageEventAdded,
-		Type:    sse.MessageTypeSuccess,
-		Target:  target,
-		Data:    data,
-		CRDType: "InstrumentedApplication",
-	}
-	batcher.AddEvent("Added", message)
-}
-
-func handleModifiedEvent(app *v1alpha1.InstrumentedApplication) {
-	conditions := app.Status.Conditions
-	if len(conditions) == 0 {
-		return
-	}
-	name, kind, err := commonutils.GetWorkloadInfoRuntimeName(app.Name)
-	if err != nil {
-		return
-	}
-
-	lastCondition := conditions[len(conditions)-1]
-	data := lastCondition.Message
-	namespace := app.Namespace
-	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
-	conditionType := sse.MessageTypeSuccess
-	if lastCondition.Status == "False" {
-		conditionType = sse.MessageTypeError
-	}
-
-	message := sse.SSEMessage{
-		Event:   "Modified",
-		Type:    conditionType,
-		Target:  target,
-		Data:    data,
-		CRDType: "InstrumentedApplication",
-	}
-
-	batcher.AddEvent("Modified", message)
+	addedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
 
 func handleDeletedEvent(app *v1alpha1.InstrumentedApplication) {
@@ -205,12 +90,5 @@ func handleDeletedEvent(app *v1alpha1.InstrumentedApplication) {
 		return
 	}
 	data := fmt.Sprintf("Source %s deleted successfully", name)
-	message := sse.SSEMessage{
-		Event:   sse.MessageEventDeleted,
-		Type:    sse.MessageTypeSuccess,
-		Target:  "",
-		Data:    data,
-		CRDType: "InstrumentedApplication",
-	}
-	batcher.AddEvent("Deleted", message)
+	deletedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, "")
 }

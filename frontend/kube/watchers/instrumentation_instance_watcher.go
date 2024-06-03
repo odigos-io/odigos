@@ -3,7 +3,7 @@ package watchers
 import (
 	"context"
 	"fmt"
-	"log"
+	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
@@ -14,28 +14,42 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-func StartInstrumentationInstanceWatcher(namespace string) error {
+var modifiedBatcher *EventBatcher
+
+func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) error {
+	modifiedBatcher = NewEventBatcher(
+		EventBatcherConfig{
+			Event:       sse.MessageEventModified,
+			MessageType: sse.MessageTypeError,
+			Duration:    10 * time.Second,
+			CRDType:    "InstrumentationInstance",
+			FailureBatchMessageFunc: func (batchSize int, crd string) string {
+				return fmt.Sprintf("Failed to instrument %d instances", batchSize)
+			},
+		},
+	)
 	watcher, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(namespace).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating watcher: %v", err)
 	}
 
-	go handleInstrumentationInstanceWatchEvents(watcher)
+	go handleInstrumentationInstanceWatchEvents(ctx, watcher)
 	return nil
 }
 
-func handleInstrumentationInstanceWatchEvents(watcher watch.Interface) {
+func handleInstrumentationInstanceWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
-	for event := range ch {
-		switch event.Type {
-			// We only care about Modified events currently
-			// This Go syntax might be a bit confusing, but it's just a way to ignore the other cases
-		case watch.Deleted:
-		case watch.Added:
-		case watch.Modified:
-			handleModifiedInstrumentationInstance(event)
-		default:
-			log.Printf("unexpected type for object %T go event type %v", event.Object, event.Type)
+	for {
+		select {
+		case <-ctx.Done():
+			modifiedBatcher.Cancel()
+			watcher.Stop()
+			return
+		case event := <-ch:
+			switch event.Type {
+			case watch.Modified:
+				handleModifiedInstrumentationInstance(event)
+			}
 		}
 	}
 }
@@ -76,5 +90,6 @@ func handleModifiedInstrumentationInstance(event watch.Event) {
 	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
 	data := fmt.Sprintf("%s %s", instrumentedInstance.Status.Reason, instrumentedInstance.Status.Message)
 
-	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventModified, Type: sse.MessageTypeError, Target: target, Data: data, CRDType: "InstrumentationInstance"})
+	fmt.Printf("InstrumentationInstance %s modified\n", name)
+	modifiedBatcher.AddEvent(sse.MessageTypeError, data, target)
 }

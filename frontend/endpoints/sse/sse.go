@@ -45,7 +45,7 @@ func HandleSSEConnections(c *gin.Context) {
 	c.Header("Connection", "keep-alive")
 
 	// Create a new channel for this client
-	messageChan := make(chan SSEMessage)
+	messageChan := make(chan SSEMessage, 10)
 	// Register the channel for this client
 	clientsMu.Lock()
 	clients[messageChan] = true
