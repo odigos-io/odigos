@@ -100,6 +100,7 @@
             "pipeline/actions/addclusterinfo",
             "pipeline/actions/deleteattribute",
             "pipeline/actions/rename-attribute",
+            "pipeline/actions/probabilisticsampler",
             "pipeline/actions/crd",
             "pipeline/actions/troubleshooting"
           ]
