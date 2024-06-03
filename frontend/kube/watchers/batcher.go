@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	ErrUnmatchedMsgType = errors.New("message type does not match the one configured for the batcher")
-	DefaultBatchDuration = 2 * time.Second
-	DefaultMinBatchSize  = 4
+	ErrUnmatchedMsgType            = errors.New("message type does not match the one configured for the batcher")
+	DefaultBatchDuration           = 2 * time.Second
+	DefaultMinBatchSize            = 4
 	DefaultFailureBatchMessageFunc = func(batchSize int, crd string) string {
 		return fmt.Sprintf("%s: %d failed", crd, batchSize)
 	}
@@ -22,14 +22,13 @@ var (
 	}
 )
 
-
 type EventBatcher struct {
-	mu                 sync.Mutex
-	batch 			   []sse.SSEMessage
-	timer              *time.Timer
-	stopped            atomic.Bool
-	config 		       EventBatcherConfig
-	stopOnce           sync.Once
+	mu       sync.Mutex
+	batch    []sse.SSEMessage
+	timer    *time.Timer
+	stopped  atomic.Bool
+	config   EventBatcherConfig
+	stopOnce sync.Once
 }
 
 type EventBatcherConfig struct {
