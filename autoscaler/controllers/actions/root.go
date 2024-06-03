@@ -37,5 +37,15 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&v1.ProbabilisticSampler{}).
+		Complete(&ProbabilisticSamplerReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
