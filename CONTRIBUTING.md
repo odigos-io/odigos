@@ -80,7 +80,7 @@ After you have a working odigos setup, you can start making changes to the code 
 ### Run Odigos Cli from code
 
 The code for the odigos cli tool is found in the `cli` directory [here](https://github.com/odigos-io/odigos/tree/main/cli).
-Test your cli code changes by running `go run . -tags=embed_manifests` from the `cli` directory:
+Test your cli code changes by running `go run -tags=embed_manifests .` from the `cli` directory:
 
 ```bash
 go run cli/main.go
