@@ -42,6 +42,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.DeleteAttributeStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OtelAttributeWithValue"):
 		return &actionsv1alpha1.OtelAttributeWithValueApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ProbabilisticSampler"):
+		return &actionsv1alpha1.ProbabilisticSamplerApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ProbabilisticSamplerSpec"):
+		return &actionsv1alpha1.ProbabilisticSamplerSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ProbabilisticSamplerStatus"):
+		return &actionsv1alpha1.ProbabilisticSamplerStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RenameAttribute"):
 		return &actionsv1alpha1.RenameAttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RenameAttributeSpec"):
