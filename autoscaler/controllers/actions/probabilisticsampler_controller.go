@@ -67,7 +67,7 @@ func (r *ProbabilisticSamplerReconciler) Reconcile(ctx context.Context, req ctrl
 
 	processor, err := r.convertToProcessor(action)
 	if err != nil {
-		logger.V(0).Error(nil, err.Error())
+		logger.V(0).Error(err, "failed to convert ProbabilisticSampler to processor")
 		r.ReportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
 		return ctrl.Result{}, nil
 	}
