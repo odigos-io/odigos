@@ -11,7 +11,7 @@ The "Probabilistic Sampler" Odigos Action supports probabilistic sampling based 
 
 - Some vendors charge based on the amount of data ingested. For self hosted destinations, the cost is correlated to the use of cloud resources which grows with the based on the amount of data you process and store. By Reducing traces volumes, you can reduce the amount of data ingested and reduce costs.
 
-#### Usability
+#### Stability
 
 - Performance Trend Analysis - In certain scenarios, users may seek to collect sufficient data to understand performance trends without overwhelming the system with excessive telemetry data. For example, track latency trend.
 - Telemetry Volume Management - When experiencing a sudden influx of telemetry data, probabilistic sampling can temporarily reduce data volume sent to your data destination.
@@ -50,7 +50,7 @@ kubectl apply -f probabilistic-sampler.yaml
 
 The full list of options available for the "ProbabilisticSampler" action are:
 
-- `sampling_percentage` (required): Percentage at which items are sampled; >= 100 samples all items, 0 rejects all items.
+- `sampling_percentage` (required): Percentage at which items are sampled; = 100 samples all items, 0 rejects all items.
 
 - `signals` (required): An array with the signals that the processor will act on (`TRACES`).
 
