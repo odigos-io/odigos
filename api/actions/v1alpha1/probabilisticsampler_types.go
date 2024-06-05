@@ -28,6 +28,7 @@ type ProbabilisticSamplerSpec struct {
 	Disabled   bool                         `json:"disabled,omitempty"`
 	Signals    []common.ObservabilitySignal `json:"signals"`
 
+	// +kubebuilder:validation:Required
 	SamplingPercentage string `json:"sampling_percentage"`
 }
 
