@@ -12,28 +12,34 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-func StartDestinationWatcher(namespace string) error {
+func StartDestinationWatcher(ctx context.Context, namespace string) error {
 	watcher, err := kube.DefaultClient.OdigosClient.Destinations(namespace).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating watcher: %v", err)
 	}
 
-	go handleDestinationWatchEvents(watcher)
+	go handleDestinationWatchEvents(ctx, watcher)
 	return nil
 }
 
-func handleDestinationWatchEvents(watcher watch.Interface) {
+func handleDestinationWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
-	for event := range ch {
-		switch event.Type {
-		case watch.Added:
-			handleAddedDestination(event)
-		case watch.Modified:
-			handleModifiedDestination(event)
-		case watch.Deleted:
-			handleDeletedDestination(event)
-		default:
-			log.Printf("unexpected type: %T", event.Object)
+	for {
+		select {
+		case <-ctx.Done():
+			watcher.Stop()
+			return
+		case event := <-ch:
+			switch event.Type {
+			case watch.Added:
+				handleAddedDestination(event)
+			case watch.Modified:
+				handleModifiedDestination(event)
+			case watch.Deleted:
+				handleDeletedDestination(event)
+			default:
+				log.Printf("unexpected type: %T", event.Object)
+			}
 		}
 	}
 }

@@ -187,7 +187,7 @@ func main() {
 		log.Printf("Error starting InstrumentedApplication watcher: %v", err)
 	}
 
-	err = watchers.StartDestinationWatcher(flags.Namespace)
+	err = watchers.StartDestinationWatcher(ctx, flags.Namespace)
 	if err != nil {
 		log.Printf("Error starting Destination watcher: %v", err)
 	}
@@ -197,7 +197,7 @@ func main() {
 		log.Printf("Error starting InstrumentationInstance watcher: %v", err)
 	}
 
-	r.GET("/events", sse.HandleSSEConnections)
+	r.GET("/api/events", sse.HandleSSEConnections)
 
 	log.Println("Starting Odigos UI...")
 	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
