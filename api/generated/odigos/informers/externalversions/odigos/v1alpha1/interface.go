@@ -27,6 +27,8 @@ type Interface interface {
 	CollectorsGroups() CollectorsGroupInformer
 	// Destinations returns a DestinationInformer.
 	Destinations() DestinationInformer
+	// InstrumentationInstances returns a InstrumentationInstanceInformer.
+	InstrumentationInstances() InstrumentationInstanceInformer
 	// InstrumentedApplications returns a InstrumentedApplicationInformer.
 	InstrumentedApplications() InstrumentedApplicationInformer
 	// OdigosConfigurations returns a OdigosConfigurationInformer.
@@ -54,6 +56,11 @@ func (v *version) CollectorsGroups() CollectorsGroupInformer {
 // Destinations returns a DestinationInformer.
 func (v *version) Destinations() DestinationInformer {
 	return &destinationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// InstrumentationInstances returns a InstrumentationInstanceInformer.
+func (v *version) InstrumentationInstances() InstrumentationInstanceInformer {
+	return &instrumentationInstanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // InstrumentedApplications returns a InstrumentedApplicationInformer.

@@ -54,6 +54,7 @@ const Notification: React.FC<NotificationProps> = ({
           router.push(`${ROUTES.UPDATE_DESTINATION}${target}`);
           break;
         case 'InstrumentedApplication':
+        case 'InstrumentationInstance':
           router.push(`${ROUTES.MANAGE_SOURCE}?${target}`);
           break;
         default:

@@ -29,6 +29,7 @@ type ActionsV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AddClusterInfosGetter
 	DeleteAttributesGetter
+	ProbabilisticSamplersGetter
 	RenameAttributesGetter
 }
 
@@ -43,6 +44,10 @@ func (c *ActionsV1alpha1Client) AddClusterInfos(namespace string) AddClusterInfo
 
 func (c *ActionsV1alpha1Client) DeleteAttributes(namespace string) DeleteAttributeInterface {
 	return newDeleteAttributes(c, namespace)
+}
+
+func (c *ActionsV1alpha1Client) ProbabilisticSamplers(namespace string) ProbabilisticSamplerInterface {
+	return newProbabilisticSamplers(c, namespace)
 }
 
 func (c *ActionsV1alpha1Client) RenameAttributes(namespace string) RenameAttributeInterface {

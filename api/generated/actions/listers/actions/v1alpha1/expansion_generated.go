@@ -33,6 +33,14 @@ type DeleteAttributeListerExpansion interface{}
 // DeleteAttributeNamespaceLister.
 type DeleteAttributeNamespaceListerExpansion interface{}
 
+// ProbabilisticSamplerListerExpansion allows custom methods to be added to
+// ProbabilisticSamplerLister.
+type ProbabilisticSamplerListerExpansion interface{}
+
+// ProbabilisticSamplerNamespaceListerExpansion allows custom methods to be added to
+// ProbabilisticSamplerNamespaceLister.
+type ProbabilisticSamplerNamespaceListerExpansion interface{}
+
 // RenameAttributeListerExpansion allows custom methods to be added to
 // RenameAttributeLister.
 type RenameAttributeListerExpansion interface{}
