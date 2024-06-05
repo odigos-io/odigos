@@ -1,7 +1,7 @@
 import React from 'react';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
-import { Plus } from '@/assets/icons/overview';
+import { PlusIcon } from '@keyval-dev/design-system';
 import { KeyvalText, KeyvalButton } from '@/design.system';
 
 const MenuWrapper = styled.div`
@@ -30,7 +30,7 @@ export function AddItemMenu({
     <MenuWrapper>
       <KeyvalText>{`${length} ${lengthLabel}`}</KeyvalText>
       <KeyvalButton onClick={onClick} style={BUTTON_STYLES}>
-        <Plus />
+        <PlusIcon />
         <KeyvalText size={16} weight={700} color={theme.text.dark_button}>
           {btnLabel}
         </KeyvalText>

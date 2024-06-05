@@ -2,8 +2,8 @@ import React from 'react';
 import { SETUP } from '@/utils';
 import styled from 'styled-components';
 import { KeyvalText } from '@/design.system';
-import { Back } from '@/assets/icons/overview';
 import { NotificationList } from '@/components';
+import { BackIcon } from '@keyval-dev/design-system';
 
 export interface OverviewHeaderProps {
   title?: string;
@@ -43,7 +43,7 @@ export function OverviewHeader({ title, onBackClick }: OverviewHeaderProps) {
       <HeaderTop>
         {onBackClick && (
           <BackButtonWrapper onClick={onBackClick}>
-            <Back width={14} />
+            <BackIcon size={14} />
             <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
           </BackButtonWrapper>
         )}

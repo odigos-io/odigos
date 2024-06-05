@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { OVERVIEW } from '@/utils';
-import { ACTION_ICONS } from '@/assets';
+import { ActionIcon } from '@/components';
 import { styled } from 'styled-components';
 import { DangerZone, KeyvalModal, KeyvalText } from '@/design.system';
 import { ModalPositionX, ModalPositionY } from '@/design.system/modal/types';
@@ -38,7 +38,7 @@ export function DeleteAction({
       },
     },
   };
-  const ActionIcon = ACTION_ICONS[type || ''];
+
   return (
     <>
       <FieldWrapper>
@@ -56,7 +56,7 @@ export function DeleteAction({
           config={modalConfig}
         >
           <br />
-          <ActionIcon style={{ width: 52, height: 52 }} />
+          <ActionIcon style={{ width: 52, height: 52 }} type={type || ''} />
           <br />
           <KeyvalText size={20} weight={600}>
             {`${OVERVIEW.DELETE} ${name}`}
