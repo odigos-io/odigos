@@ -1,14 +1,23 @@
 import { OVERVIEW, ROUTES } from '@/utils/constants';
-import * as ICONS from '../../../assets/icons/side.menu';
 import { MenuItem } from './menu';
+import {
+  FocusActionIcon,
+  FocusDestinationsIcon,
+  FocusOverviewIcon,
+  FocusSourcesIcon,
+  UnFocusActionIcon,
+  UnFocusDestinationsIcon,
+  UnFocusOverviewIcon,
+  UnFocusSourcesIcon,
+} from '@keyval-dev/design-system';
 
 export const MENU_ITEMS: MenuItem[] = [
   {
     id: 1,
     name: OVERVIEW.MENU.OVERVIEW,
     icons: {
-      focus: () => <ICONS.FocusOverview width={24} height={24} />,
-      notFocus: () => <ICONS.UnFocusOverview width={24} height={24} />,
+      focus: () => <FocusOverviewIcon />,
+      notFocus: () => <UnFocusOverviewIcon />,
     },
     navigate: ROUTES.OVERVIEW,
   },
@@ -16,8 +25,8 @@ export const MENU_ITEMS: MenuItem[] = [
     id: 2,
     name: OVERVIEW.MENU.SOURCES,
     icons: {
-      focus: () => <ICONS.FocusSources width={24} height={24} />,
-      notFocus: () => <ICONS.UnFocusSources width={24} height={24} />,
+      focus: () => <FocusSourcesIcon />,
+      notFocus: () => <UnFocusSourcesIcon />,
     },
     navigate: ROUTES.SOURCES,
   },
@@ -25,8 +34,8 @@ export const MENU_ITEMS: MenuItem[] = [
     id: 3,
     name: OVERVIEW.MENU.ACTIONS,
     icons: {
-      focus: () => <ICONS.FocusAction width={24} height={24} />,
-      notFocus: () => <ICONS.UnFocusAction width={24} height={24} />,
+      focus: () => <FocusActionIcon />,
+      notFocus: () => <UnFocusActionIcon />,
     },
     navigate: ROUTES.ACTIONS,
   },
@@ -34,8 +43,8 @@ export const MENU_ITEMS: MenuItem[] = [
     id: 4,
     name: OVERVIEW.MENU.DESTINATIONS,
     icons: {
-      focus: () => <ICONS.FocusDestinations width={24} height={24} />,
-      notFocus: () => <ICONS.UnFocusDestinations width={24} height={24} />,
+      focus: () => <FocusDestinationsIcon />,
+      notFocus: () => <UnFocusDestinationsIcon />,
     },
     navigate: ROUTES.DESTINATIONS,
   },

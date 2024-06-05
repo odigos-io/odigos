@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
-import { Copied, Copy } from '@/assets/icons/app';
+import { CopiedIcon, CopyIcon } from '@keyval-dev/design-system';
 import YamlEditor from '@focus-reactive/react-yaml';
 
 const Container = styled.div`
@@ -77,9 +77,9 @@ export const YMLEditor = ({ data }) => {
       <Container>
         <CopyIconWrapper onClick={handleCopy}>
           {isCopied ? (
-            <Copied style={{ width: 18, height: 18 }} />
+            <CopiedIcon style={{ width: 18, height: 18 }} />
           ) : (
-            <Copy style={{ width: 18, height: 18 }} />
+            <CopyIcon style={{ width: 18, height: 18 }} />
           )}
         </CopyIconWrapper>
 
