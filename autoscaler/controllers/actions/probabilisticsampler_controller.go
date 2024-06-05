@@ -19,6 +19,7 @@ package actions
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -33,8 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var supportedSignals = map[common.ObservabilitySignal]bool{
-	common.TracesObservabilitySignal: true,
+var supportedSignals = map[common.ObservabilitySignal]struct{}{
+	common.TracesObservabilitySignal: {},
 }
 
 type ProbabilisticSamplerReconciler struct {
@@ -54,9 +55,11 @@ func (r *ProbabilisticSamplerReconciler) Reconcile(ctx context.Context, req ctrl
 	}
 
 	for _, signal := range action.Spec.Signals {
-		if !supportedSignals[signal] {
+
+		if _, ok := supportedSignals[signal]; !ok {
 
 			err = fmt.Errorf("unsupported signal: %s", signal)
+			logger.V(0).Error(nil, err.Error())
 			r.ReportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
 			return ctrl.Result{}, nil
 		}
@@ -64,8 +67,9 @@ func (r *ProbabilisticSamplerReconciler) Reconcile(ctx context.Context, req ctrl
 
 	processor, err := r.convertToProcessor(action)
 	if err != nil {
+		logger.V(0).Error(nil, err.Error())
 		r.ReportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 
 	err = r.Patch(ctx, processor, client.Apply, client.FieldOwner(action.Name), client.ForceOwnership)
@@ -125,13 +129,18 @@ type ProbabilisticSamplerConfig struct {
 
 func (r *ProbabilisticSamplerReconciler) convertToProcessor(action *actionv1.ProbabilisticSampler) (*v1.Processor, error) {
 
-	samplingPrecentage, err := strconv.ParseFloat(action.Spec.SamplingPercentage, 32)
+	samplingPercentage, err := strconv.ParseFloat(action.Spec.SamplingPercentage, 32)
 	if err != nil {
 		return nil, err
 	}
 
+	if samplingPercentage < 0 {
+		return nil, errors.New("sampling_precentage cannot be negative")
+	}
+
 	config := ProbabilisticSamplerConfig{
-		Value:    samplingPrecentage,
+		Value: samplingPercentage,
+		// Arbitrary hash seed set to maximize processor creating abstraction for the user.
 		HashSeed: 123,
 	}
 
@@ -164,7 +173,7 @@ func (r *ProbabilisticSamplerReconciler) convertToProcessor(action *actionv1.Pro
 			Notes:           action.Spec.Notes,
 			Signals:         action.Spec.Signals,
 			CollectorRoles:  []v1.CollectorsGroupRole{v1.CollectorsGroupRoleNodeCollector},
-			OrderHint:       1, // it is better to do it as soon as possible, after the batch processor
+			OrderHint:       1,
 			ProcessorConfig: runtime.RawExtension{Raw: configJson},
 		},
 	}
