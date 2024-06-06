@@ -47,10 +47,19 @@ func (e *exporterQueueAndBatchQueue) Decide(ctx context.Context, metrics []Metri
 		if podMetrics.Error != nil {
 			continue
 		}
-		refusedByMemoryLimiter := e.getGaugeValue(podMetrics, processorRefusedSpanMetricName, "processor", "memory_limiter")
+
+		refusedByMemoryLimiter := e.getCounterValue(podMetrics, processorRefusedSpanMetricName, "processor", "memory_limiter")
+		logger.V(5).Info("refused spans by memory limiter", "value", refusedByMemoryLimiter, "pod", podMetrics.PodName)
+
 		queueSizes := e.groupMetricByLabelKey(podMetrics, exporterQueueSizeMetricName, "exporter")
+		logger.V(5).Info("exporter queue sizes", "values", queueSizes, "pod", podMetrics.PodName)
+
 		queueCapacities := e.groupMetricByLabelKey(podMetrics, exporterQueueCapacityMetricName, "exporter")
+		logger.V(5).Info("exporter queue capacities", "values", queueCapacities, "pod", podMetrics.PodName)
+
 		slowExporters := e.countSlowExporters(queueSizes, queueCapacities)
+		logger.V(5).Info("slow exporters", "count", slowExporters, "pod", podMetrics.PodName)
+
 		if refusedByMemoryLimiter > 0 {
 			if slowExporters > 0 {
 				logger.V(0).Info("avoiding scaling up collectors because backends are too slow")
@@ -95,15 +104,15 @@ func (e *exporterQueueAndBatchQueue) isExporterTooSlow(queueSize float64, queueC
 	return queueSize/queueCapacity >= e.queueThreshold
 }
 
-func (e *exporterQueueAndBatchQueue) getGaugeValue(podMetrics MetricFetchResult, name string, labelKey string, labelValue string) float64 {
+func (e *exporterQueueAndBatchQueue) getCounterValue(podMetrics MetricFetchResult, name string, labelKey string, labelValue string) float64 {
 	for metricName, metricFamily := range podMetrics.Metrics {
 		if metricName == name {
 			for _, exporterMetric := range metricFamily.Metric {
-				if exporterMetric.Gauge != nil {
+				if exporterMetric.Counter != nil {
 					for _, labelPair := range exporterMetric.Label {
 						if labelPair.Name != nil && *labelPair.Name == labelKey &&
 							labelPair.Value != nil && *labelPair.Value == labelValue {
-							return exporterMetric.Gauge.GetValue()
+							return exporterMetric.Counter.GetValue()
 						}
 					}
 				}
