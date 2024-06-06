@@ -4,6 +4,7 @@ const LOCALHOST = 'http://localhost:8085/api';
 const BASE_URL = env === 'production' ? '/api' : LOCALHOST;
 
 const API = {
+  EVENTS: `${BASE_URL}/events`,
   CONFIG: `${BASE_URL}/config`,
   NAMESPACES: `${BASE_URL}/namespaces`,
   APPLICATIONS: `${BASE_URL}/applications`,

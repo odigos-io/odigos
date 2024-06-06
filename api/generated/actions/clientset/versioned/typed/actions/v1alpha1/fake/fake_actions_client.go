@@ -35,6 +35,10 @@ func (c *FakeActionsV1alpha1) DeleteAttributes(namespace string) v1alpha1.Delete
 	return &FakeDeleteAttributes{c, namespace}
 }
 
+func (c *FakeActionsV1alpha1) ProbabilisticSamplers(namespace string) v1alpha1.ProbabilisticSamplerInterface {
+	return &FakeProbabilisticSamplers{c, namespace}
+}
+
 func (c *FakeActionsV1alpha1) RenameAttributes(namespace string) v1alpha1.RenameAttributeInterface {
 	return &FakeRenameAttributes{c, namespace}
 }
