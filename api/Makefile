@@ -18,7 +18,7 @@ SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
 .PHONY: all
-all: generate manifests
+all: generate manifests generate-client
 
 ##@ General
 

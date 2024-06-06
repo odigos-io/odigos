@@ -1,13 +1,12 @@
 import { useEffect, useRef } from 'react';
+import { API } from '@/utils';
 import { addNotification, store } from '@/store';
-
-const URL = 'http://localhost:8085/events';
 
 export function useSSE() {
   const eventBuffer = useRef({});
 
   useEffect(() => {
-    const eventSource = new EventSource(URL);
+    const eventSource = new EventSource(API.EVENTS);
 
     eventSource.onmessage = function (event) {
       const data = JSON.parse(event.data);
