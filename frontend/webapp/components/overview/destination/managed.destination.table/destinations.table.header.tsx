@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { MONITORS, OVERVIEW } from '@/utils';
 import { ActionsGroup, KeyvalText } from '@/design.system';
 import { Destination, DestinationsSortType } from '@/types';
-import { UnFocusDestinations } from '@/assets/icons/side.menu';
+import { UnFocusDestinationsIcon } from '@keyval-dev/design-system';
 
 const StyledThead = styled.div`
   background-color: ${theme.colors.light_dark};
@@ -126,7 +126,7 @@ export function DestinationsTableHeader({
   return (
     <StyledThead>
       <StyledMainTh>
-        <UnFocusDestinations style={{ width: 18, height: 18 }} />
+        <UnFocusDestinationsIcon size={18} />
         <KeyvalText size={14} weight={600} color={theme.text.white}>
           {`${data.length} ${OVERVIEW.MENU.DESTINATIONS}`}
         </KeyvalText>

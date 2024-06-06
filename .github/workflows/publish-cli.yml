@@ -98,8 +98,8 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
             https://api.github.com/repos/odigos-io/odigos-charts/dispatches \
-            -d '{"event_type": "create_release_pr", "client_payload": {"tag": "${{ steps.extract_tag.outputs.tag }}"}}'
-  
+            -d '{"event_type": "create_release_pr", "client_payload": {"tag": "${{ steps.set_tag.outputs.tag }}"}}'
+
 
       - uses: ko-build/setup-ko@v0.6
 

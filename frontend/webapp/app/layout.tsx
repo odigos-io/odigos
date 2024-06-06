@@ -1,10 +1,12 @@
 'use client';
 import React from 'react';
-import { ThemeProvider } from 'styled-components';
+import { useSSE } from '@/hooks';
 import theme from '@/styles/palette';
+import { ThemeProvider } from 'styled-components';
+import { NotificationManager } from '@/components';
+import ReduxProvider from '@/store/redux-provider';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ThemeProviderWrapper } from '@keyval-dev/design-system';
-import ReduxProvider from '@/store/redux-provider';
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
@@ -29,6 +31,8 @@ export default function RootLayout({
     },
   });
 
+  useSSE();
+
   return (
     <html lang="en">
       <ReduxProvider>
@@ -37,6 +41,7 @@ export default function RootLayout({
             <ThemeProviderWrapper>
               <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
                 {children}
+                <NotificationManager />
               </body>
             </ThemeProviderWrapper>
           </ThemeProvider>

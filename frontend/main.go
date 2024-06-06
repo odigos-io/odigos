@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"flag"
 	"fmt"
@@ -8,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/destinations"
@@ -16,12 +19,13 @@ import (
 	"github.com/gin-contrib/cors"
 
 	"github.com/odigos-io/odigos/frontend/endpoints/actions"
+	"github.com/odigos-io/odigos/frontend/endpoints/sse"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/kube/watchers"
 	"github.com/odigos-io/odigos/frontend/version"
 
-	"github.com/odigos-io/odigos/frontend/endpoints"
-
 	"github.com/gin-gonic/gin"
+	"github.com/odigos-io/odigos/frontend/endpoints"
 )
 
 const (
@@ -92,7 +96,7 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.GET("/namespaces", func(c *gin.Context) { endpoints.GetNamespaces(c, flags.Namespace) })
 		apis.POST("/namespaces", endpoints.PersistNamespaces)
 
-		apis.GET("/sources", endpoints.GetSources)
+		apis.GET("/sources", func(c *gin.Context) { endpoints.GetSources(c, flags.Namespace) })
 		apis.GET("/sources/namespace/:namespace/kind/:kind/name/:name", endpoints.GetSource)
 		apis.DELETE("/sources/namespace/:namespace/kind/:kind/name/:name", endpoints.DeleteSource)
 		apis.PATCH("/sources/namespace/:namespace/kind/:kind/name/:name", endpoints.PatchSource)
@@ -169,10 +173,42 @@ func main() {
 		log.Fatalf("Error starting server: %s", err)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	defer func() {
+		signal.Stop(ch)
+		cancel()
+	}()
+
+	// Start watchers
+	err = watchers.StartInstrumentedApplicationWatcher(ctx, "")
+	if err != nil {
+		log.Printf("Error starting InstrumentedApplication watcher: %v", err)
+	}
+
+	err = watchers.StartDestinationWatcher(ctx, flags.Namespace)
+	if err != nil {
+		log.Printf("Error starting Destination watcher: %v", err)
+	}
+
+	err = watchers.StartInstrumentationInstanceWatcher(ctx, "")
+	if err != nil {
+		log.Printf("Error starting InstrumentationInstance watcher: %v", err)
+	}
+
+	r.GET("/api/events", sse.HandleSSEConnections)
+
 	log.Println("Starting Odigos UI...")
 	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
-	err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
-	if err != nil {
-		log.Fatalf("Error starting server: %s", err)
-	}
+
+	go func () {
+		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
+		if err != nil {
+			log.Fatalf("Error starting server: %s", err)
+		}
+	} ()
+
+	<- ch
+	log.Println("Shutting down Odigos UI...")
 }

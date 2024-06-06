@@ -1,0 +1,20 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: causely
+  displayName: Causely
+  category: managed
+spec:
+  image: causely.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+  fields:
+    - name: CAUSELY_URL
+      displayName: Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true

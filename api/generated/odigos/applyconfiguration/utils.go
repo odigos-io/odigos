@@ -28,6 +28,8 @@ import (
 func ForKind(kind schema.GroupVersionKind) interface{} {
 	switch kind {
 	// Group=odigos.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithKind("Attribute"):
+		return &odigosv1alpha1.AttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorGatewayConfiguration"):
 		return &odigosv1alpha1.CollectorGatewayConfigurationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroup"):
@@ -46,8 +48,14 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.DestinationStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("EnvVar"):
 		return &odigosv1alpha1.EnvVarApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationInstance"):
+		return &odigosv1alpha1.InstrumentationInstanceApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationInstanceStatus"):
+		return &odigosv1alpha1.InstrumentationInstanceStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryOptions"):
 		return &odigosv1alpha1.InstrumentationLibraryOptionsApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryStatus"):
+		return &odigosv1alpha1.InstrumentationLibraryStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentedApplication"):
 		return &odigosv1alpha1.InstrumentedApplicationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentedApplicationSpec"):

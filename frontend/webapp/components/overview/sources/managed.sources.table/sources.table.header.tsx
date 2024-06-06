@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ACTION, OVERVIEW } from '@/utils';
+import { OVERVIEW } from '@/utils';
 import theme from '@/styles/palette';
 import styled from 'styled-components';
-import { UnFocusSources } from '@/assets/icons/side.menu';
 import {
   ActionsGroup,
   KeyvalCheckbox,
@@ -10,6 +9,7 @@ import {
   KeyvalText,
 } from '@/design.system';
 import { ManagedSource, Namespace } from '@/types';
+import { UnFocusSourcesIcon } from '@keyval-dev/design-system';
 
 enum K8SSourceTypes {
   DEPLOYMENT = 'deployment',
@@ -244,7 +244,7 @@ export function SourcesTableHeader({
           value={selectedCheckbox.length === data.length && data.length > 0}
           onChange={() => onSelectedCheckboxChange(SELECT_ALL_CHECKBOX)}
         />
-        <UnFocusSources style={{ width: 18, height: 18 }} />
+        <UnFocusSourcesIcon size={18} />
         <KeyvalText size={14} weight={600} color={theme.text.white}>
           {`${data.length} ${OVERVIEW.MENU.SOURCES}`}
         </KeyvalText>

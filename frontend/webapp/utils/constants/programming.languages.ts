@@ -27,37 +27,46 @@ export const LANGUAGES_LOGOS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> = {
   [WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS]: `${BASE_URL}default.svg`, // TODO: good icon
 };
 
-export const LANGUAGES_COLORS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> = {
-  [WORKLOAD_PROGRAMMING_LANGUAGES.JAVA]: '#B07219',
-  [WORKLOAD_PROGRAMMING_LANGUAGES.GO]: '#00ADD8',
-  [WORKLOAD_PROGRAMMING_LANGUAGES.JAVASCRIPT]: '#F7DF1E',
-  [WORKLOAD_PROGRAMMING_LANGUAGES.PYTHON]: '#306998',
-  [WORKLOAD_PROGRAMMING_LANGUAGES.DOTNET]: '#512BD4',
-  [WORKLOAD_PROGRAMMING_LANGUAGES.MYSQL]: '#00758F',
-  [WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN]: '#000000',
-  [WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING]: '#000000',
-  [WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS]: '#000000',
-};
+export const LANGUAGES_COLORS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> =
+  {
+    [WORKLOAD_PROGRAMMING_LANGUAGES.JAVA]: '#B07219',
+    [WORKLOAD_PROGRAMMING_LANGUAGES.GO]: '#00ADD8',
+    [WORKLOAD_PROGRAMMING_LANGUAGES.JAVASCRIPT]: '#F7DF1E',
+    [WORKLOAD_PROGRAMMING_LANGUAGES.PYTHON]: '#306998',
+    [WORKLOAD_PROGRAMMING_LANGUAGES.DOTNET]: '#512BD4',
+    [WORKLOAD_PROGRAMMING_LANGUAGES.MYSQL]: '#00758F',
+    [WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN]: '#8b92a6',
+    [WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING]: '#3367d9',
+    [WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS]: '#000000',
+  };
 
-export const getMainContainerLanguage = (languages: Array<{
-  container_name: string;
-  language: string;
-}> | undefined): WORKLOAD_PROGRAMMING_LANGUAGES => {
-  if(!languages) {
+export const getMainContainerLanguage = (
+  languages:
+    | Array<{
+        container_name: string;
+        language: string;
+      }>
+    | undefined
+): WORKLOAD_PROGRAMMING_LANGUAGES => {
+  if (!languages) {
     return WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING;
   }
-  
+
   // we will filter out the ignored languages as we don't want to account them in the main language
-  const notIgnoredLanguages = languages.filter((container) => container.language !== 'ignored');
+  const notIgnoredLanguages = languages?.filter(
+    (container) => container.language !== 'ignored'
+  );
   if (notIgnoredLanguages.length === 0) {
     return WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS;
   } else {
     // find the first container with valid language
-    const mainContainer = languages.find((container) => container.language !== 'default' && container.language !== 'unknown');
+    const mainContainer = languages?.find(
+      (container) =>
+        container.language !== 'default' && container.language !== 'unknown'
+    );
     if (!mainContainer) {
       return languages[0].language as WORKLOAD_PROGRAMMING_LANGUAGES; // no valid language found, return the first one
     }
     return mainContainer.language as WORKLOAD_PROGRAMMING_LANGUAGES;
   }
-}
-
+};

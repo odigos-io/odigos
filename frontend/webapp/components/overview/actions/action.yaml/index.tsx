@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import AddClusterInfoYaml from './add.cluster.info.yaml';
 
 import theme from '@/styles/palette';
-import { Check, Copy, YamlIcon } from '@/assets/icons/app';
+import { CheckIcon, CopyIcon, YamlIconIcon } from '@keyval-dev/design-system';
 
 const CodeBlockWrapper = styled.p`
   display: flex;
@@ -67,7 +67,7 @@ export function ActionsYaml({ data, onChange }: ActionsYamlProps) {
   return (
     <div>
       <TitleWrapper>
-        <YamlIcon style={{ width: 20, height: 20 }} />
+        <YamlIconIcon style={{ width: 20, height: 20 }} />
         <KeyvalText
           weight={600}
         >{`YAML Preview - ${data.type.toLowerCase()}.actions.odigos.io`}</KeyvalText>
@@ -85,9 +85,9 @@ export function ActionsYaml({ data, onChange }: ActionsYamlProps) {
       <div style={{ overflowX: 'hidden' }}>
         <CodeBlockWrapper>
           {copied ? (
-            <Check style={{ width: 18, height: 12 }} />
+            <CheckIcon style={{ width: 18, height: 12 }} />
           ) : (
-            <Copy style={{ width: 18, height: 16 }} />
+            <CopyIcon style={{ width: 18, height: 16 }} />
           )}
           <a style={{ margin: '0 4px' }} onClick={handleCopy}>
             Click here

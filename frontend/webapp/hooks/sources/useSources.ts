@@ -67,7 +67,8 @@ export function useSources() {
   );
 
   useEffect(() => {
-    setSortedSources(sources || []);
+    const data = sources?.sort((a, b) => a.name.localeCompare(b.name));
+    setSortedSources(data || []);
   }, [sources]);
 
   async function upsertSources({ sectionData, onSuccess, onError }) {
@@ -129,7 +130,11 @@ export function useSources() {
         case SourceSortOptions.KIND:
           return a.kind.localeCompare(b.kind);
         case SourceSortOptions.LANGUAGE:
-          return a.languages[0].language.localeCompare(b.languages[0].language);
+          const aLanguage =
+            a.instrumented_application_details?.languages?.[0]?.language || '';
+          const bLanguage =
+            b.instrumented_application_details?.languages?.[0]?.language || '';
+          return aLanguage.localeCompare(bLanguage);
         default:
           return 0;
       }

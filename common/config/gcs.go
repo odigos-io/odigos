@@ -29,7 +29,7 @@ func (g *GoogleCloudStorage) ModifyConfig(dest ExporterConfigurer, currentConfig
 		bucket = defaultGCSBucket
 	}
 
-	exporterName := "googlecloudstorage/" + dest.GetName()
+	exporterName := "googlecloudstorage/" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"pcs": GenericMap{
 			"bucket": bucket,
@@ -37,14 +37,14 @@ func (g *GoogleCloudStorage) ModifyConfig(dest ExporterConfigurer, currentConfig
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/gcs-" + dest.GetName()
+		logsPipelineName := "logs/gcs-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/gcs-" + dest.GetName()
+		tracesPipelineName := "traces/gcs-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}

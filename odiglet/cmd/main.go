@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -11,9 +12,10 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
-	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
@@ -41,11 +43,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	ebpfDirectors, err := initEbpf()
-	if err != nil {
-		log.Logger.Error(err, "Failed to init eBPF director")
-		os.Exit(-1)
-	}
+	ctx := signals.SetupSignalHandler()
 
 	go startDeviceManager(clientset)
 
@@ -55,13 +53,18 @@ func main() {
 		os.Exit(-1)
 	}
 
+	ebpfDirectors, err := initEbpf(ctx, mgr.GetClient(), mgr.GetScheme())
+	if err != nil {
+		log.Logger.Error(err, "Failed to init eBPF director")
+		os.Exit(-1)
+	}
+
 	err = kube.SetupWithManager(mgr, ebpfDirectors)
 	if err != nil {
 		log.Logger.Error(err, "Failed to setup controller-runtime manager")
 		os.Exit(-1)
 	}
 
-	ctx := signals.SetupSignalHandler()
 	err = kube.StartManager(ctx, mgr)
 	if err != nil {
 		log.Logger.Error(err, "Failed to start controller-runtime manager")
@@ -79,24 +82,21 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	otelSdkEbpfCommunity := common.OtelSdk{SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier}
-	otelSdkNativeCommunity := common.OtelSdk{SdkType: common.NativeOtelSdkType, SdkTier: common.CommunityOtelSdkTier}
-
 	otelSdkLsf := map[common.ProgrammingLanguage]map[common.OtelSdk]instrumentation.LangSpecificFunc{
 		common.GoProgrammingLanguage: {
-			otelSdkEbpfCommunity: instrumentlang.Go,
+			common.OtelSdkEbpfCommunity: instrumentlang.Go,
 		},
 		common.JavaProgrammingLanguage: {
-			otelSdkNativeCommunity: instrumentlang.Java,
+			common.OtelSdkNativeCommunity: instrumentlang.Java,
 		},
 		common.PythonProgrammingLanguage: {
-			otelSdkNativeCommunity: instrumentlang.Python,
+			common.OtelSdkNativeCommunity: instrumentlang.Python,
 		},
 		common.JavascriptProgrammingLanguage: {
-			otelSdkNativeCommunity: instrumentlang.NodeJS,
+			common.OtelSdkNativeCommunity: instrumentlang.NodeJS,
 		},
 		common.DotNetProgrammingLanguage: {
-			otelSdkNativeCommunity: instrumentlang.DotNet,
+			common.OtelSdkNativeCommunity: instrumentlang.DotNet,
 		},
 	}
 
@@ -110,12 +110,12 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 	manager.Run()
 }
 
-func initEbpf() (ebpf.DirectorsMap, error) {
+func initEbpf(ctx context.Context, client client.Client, scheme *runtime.Scheme) (ebpf.DirectorsMap, error) {
 	goInstrumentationFactory := ebpf.NewGoInstrumentationFactory()
-	goDirector := ebpf.NewEbpfDirector(common.GoProgrammingLanguage, goInstrumentationFactory)
+	goDirector := ebpf.NewEbpfDirector(ctx, client, scheme, common.GoProgrammingLanguage, goInstrumentationFactory)
 	goDirectorKey := ebpf.DirectorKey{
 		Language: common.GoProgrammingLanguage,
-		OtelSdk:  common.OtelSdk{SdkType: common.EbpfOtelSdkType, SdkTier: common.CommunityOtelSdkTier},
+		OtelSdk:  common.OtelSdkEbpfCommunity,
 	}
 
 	return ebpf.DirectorsMap{

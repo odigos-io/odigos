@@ -28,7 +28,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		return errors.Join(err, errors.New("otlp endpoint invalid, gateway will not be configured for otlp"))
 	}
 
-	genericOtlpExporterName := "otlp/generic-" + dest.GetName()
+	genericOtlpExporterName := "otlp/generic-" + dest.GetID()
 	currentConfig.Exporters[genericOtlpExporterName] = GenericMap{
 		"endpoint": grpcEndpoint,
 		"tls": GenericMap{
@@ -37,21 +37,21 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/generic-" + dest.GetName()
+		tracesPipelineName := "traces/generic-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{genericOtlpExporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/generic-" + dest.GetName()
+		metricsPipelineName := "metrics/generic-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{genericOtlpExporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/generic-" + dest.GetName()
+		logsPipelineName := "logs/generic-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{genericOtlpExporterName},
 		}

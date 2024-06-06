@@ -1,30 +1,30 @@
-
+ORG := keyval
 TAG ?= $(shell odigos version --short)
 
 .PHONY: build-odiglet
 build-odiglet:
-	docker build -t keyval/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile
+	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile
 
 .PHONY: build-autoscaler
 build-autoscaler:
-	docker build -t keyval/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
+	docker build -t $(ORG)/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
 
 .PHONY: reload-autoscaler
 reload-autoscaler: build-autoscaler
-	kind load docker-image keyval/odigos-autoscaler:$(TAG)
+	kind load docker-image $(ORG)/odigos-autoscaler:$(TAG)
 	kubectl rollout restart deployment odigos-autoscaler -n odigos-system
 
 .PHONY: build-instrumentor
 build-instrumentor:
-	docker build -t keyval/odigos-instrumentor:$(TAG) . --build-arg SERVICE_NAME=instrumentor
+	docker build -t $(ORG)/odigos-instrumentor:$(TAG) . --build-arg SERVICE_NAME=instrumentor
 
 .PHONY: build-scheduler
 build-scheduler:
-	docker build -t keyval/odigos-scheduler:$(TAG) . --build-arg SERVICE_NAME=scheduler
+	docker build -t $(ORG)/odigos-scheduler:$(TAG) . --build-arg SERVICE_NAME=scheduler
 
 .PHONY: build-collector
 build-collector:
-	docker build -t keyval/odigos-collector:$(TAG) collector -f collector/Dockerfile
+	docker build -t $(ORG)/odigos-collector:$(TAG) collector -f collector/Dockerfile
 
 .PHONY: build-images
 build-images:
@@ -34,36 +34,56 @@ build-images:
 	make build-instrumentor TAG=$(TAG)
 	make build-collector TAG=$(TAG)
 
+.PHONY: push-odiglet
+push-odiglet:
+	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile
+
+.PHONY: push-autoscaler
+push-autoscaler:
+	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
+
+.PHONY: push-instrumentor
+push-instrumentor:
+	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-instrumentor:$(TAG) . --build-arg SERVICE_NAME=instrumentor
+
+.PHONY: push-scheduler
+push-scheduler:
+	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-scheduler:$(TAG) . --build-arg SERVICE_NAME=scheduler
+
+.PHONY: push-collector
+push-collector:
+	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-collector:$(TAG) collector -f collector/Dockerfile
+
 .PHONY: push-images
 push-images:
-	docker push keyval/odigos-autoscaler:$(TAG)
-	docker push keyval/odigos-scheduler:$(TAG)
-	docker push keyval/odigos-instrumentor:$(TAG)
-	docker push keyval/odigos-odiglet:$(TAG)
-	docker push keyval/odigos-collector:$(TAG)
+	make push-autoscaler TAG=$(TAG)
+	make push-scheduler TAG=$(TAG)
+	make push-odiglet TAG=$(TAG)
+	make push-instrumentor TAG=$(TAG)
+	make push-collector TAG=$(TAG)
 
 .PHONY: load-to-kind-odiglet
 load-to-kind-odiglet:
-	kind load docker-image keyval/odigos-odiglet:$(TAG)
+	kind load docker-image $(ORG)/odigos-odiglet:$(TAG)
 
 .PHONY: load-to-kind-autoscaler
 load-to-kind-autoscaler:
-	kind load docker-image keyval/odigos-autoscaler:$(TAG)
+	kind load docker-image $(ORG)/odigos-autoscaler:$(TAG)
 
 .PHONY: load-to-kind-collector
 load-to-kind-collector:
-	kind load docker-image keyval/odigos-collector:$(TAG)
+	kind load docker-image $(ORG)/odigos-collector:$(TAG)
 
 .PHONY: load-to-kind-instrumentor
 load-to-kind-instrumentor:
-	kind load docker-image keyval/odigos-instrumentor:$(TAG)
+	kind load docker-image $(ORG)/odigos-instrumentor:$(TAG)
 
 .PHONY: load-to-kind
 load-to-kind:
 	make load-to-kind-autoscaler TAG=$(TAG)
-	kind load docker-image keyval/odigos-scheduler:$(TAG)
+	kind load docker-image $(ORG)/odigos-scheduler:$(TAG)
 	make load-to-kind-odiglet TAG=$(TAG)
-	kind load docker-image keyval/odigos-instrumentor:$(TAG)
+	kind load docker-image $(ORG)/odigos-instrumentor:$(TAG)
 	make load-to-kind-collector TAG=$(TAG)
 
 .PHONY: restart-odiglet
@@ -102,8 +122,8 @@ deploy-instrumentor:
 
 .PHONY: debug-odiglet
 debug-odiglet:
-	docker build -t keyval/odigos-odiglet:$(TAG) . -f odiglet/debug.Dockerfile
-	kind load docker-image keyval/odigos-odiglet:$(TAG)
+	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/debug.Dockerfile
+	kind load docker-image $(ORG)/odigos-odiglet:$(TAG)
 	kubectl delete pod -n odigos-system -l app=odiglet
 	kubectl wait --for=condition=ready pod -n odigos-system -l app=odiglet
 	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345

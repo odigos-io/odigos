@@ -1,2 +1,2 @@
 export * from './setup';
-export * from './overview';
+export * from './main';

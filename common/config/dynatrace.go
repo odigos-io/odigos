@@ -35,7 +35,7 @@ func (n *Dynatrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		return errors.New("Dynatrace url is not a valid")
 	}
 
-	exporterName := "otlphttp/dynatrace-" + dest.GetName()
+	exporterName := "otlphttp/dynatrace-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": baseURL + "/api/v2/otlp",
 		"headers": GenericMap{
@@ -44,21 +44,21 @@ func (n *Dynatrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	}
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/dynatrace-" + dest.GetName()
+		tracesPipelineName := "traces/dynatrace-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/dynatrace-" + dest.GetName()
+		metricsPipelineName := "metrics/dynatrace-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/dynatrace-" + dest.GetName()
+		logsPipelineName := "logs/dynatrace-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}

@@ -1,8 +1,8 @@
 import React from 'react';
+import { SETUP } from '@/utils';
+import { NoteIcon } from '@keyval-dev/design-system';
 import { KeyvalText, KeyvalVideo } from '@/design.system';
 import { QuickHelpHeader, QuickHelpVideoWrapper } from './quick.help.styled';
-import { SETUP } from '@/utils/constants';
-import { Note } from '@/assets/icons/app';
 export function QuickHelp({ data }) {
   function renderVideoList() {
     return data?.map((video) => (
@@ -19,7 +19,7 @@ export function QuickHelp({ data }) {
   return (
     <div>
       <QuickHelpHeader>
-        <Note />
+        <NoteIcon />
         <KeyvalText size={18} weight={600}>
           {SETUP.QUICK_HELP}
         </KeyvalText>

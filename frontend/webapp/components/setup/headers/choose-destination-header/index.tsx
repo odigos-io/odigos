@@ -1,8 +1,8 @@
 import React from 'react';
 import { SETUP } from '@/utils';
 import theme from '@/styles/palette';
-import { Connect } from '@/assets/icons/app';
 import { KeyvalText } from '@/design.system';
+import { ConnectIcon } from '@keyval-dev/design-system';
 import {
   HeaderTitleWrapper,
   SetupHeaderWrapper,
@@ -21,7 +21,7 @@ export function ChooseDestinationHeader({
   return (
     <SetupHeaderWrapper>
       <HeaderTitleWrapper>
-        <Connect />
+        <ConnectIcon />
         <KeyvalText>{HEADER.CHOOSE_DESTINATION_TITLE}</KeyvalText>
       </HeaderTitleWrapper>
       <TotalSelectedWrapper>

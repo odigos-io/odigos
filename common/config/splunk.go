@@ -24,13 +24,13 @@ func (s *Splunk) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 	}
 
 	if isTracingEnabled(dest) {
-		exporterName := "sapm/" + dest.GetName()
+		exporterName := "sapm/" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"access_token": "${SPLUNK_ACCESS_TOKEN}",
 			"endpoint":     fmt.Sprintf("https://ingest.%s.signalfx.com/v2/trace", realm),
 		}
 
-		tracesPipelineName := "traces/splunk-" + dest.GetName()
+		tracesPipelineName := "traces/splunk-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}

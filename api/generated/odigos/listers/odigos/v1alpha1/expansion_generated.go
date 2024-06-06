@@ -33,6 +33,14 @@ type DestinationListerExpansion interface{}
 // DestinationNamespaceLister.
 type DestinationNamespaceListerExpansion interface{}
 
+// InstrumentationInstanceListerExpansion allows custom methods to be added to
+// InstrumentationInstanceLister.
+type InstrumentationInstanceListerExpansion interface{}
+
+// InstrumentationInstanceNamespaceListerExpansion allows custom methods to be added to
+// InstrumentationInstanceNamespaceLister.
+type InstrumentationInstanceNamespaceListerExpansion interface{}
+
 // InstrumentedApplicationListerExpansion allows custom methods to be added to
 // InstrumentedApplicationLister.
 type InstrumentedApplicationListerExpansion interface{}

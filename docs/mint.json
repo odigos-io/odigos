@@ -30,6 +30,12 @@
       "url": "https://odigos.io/blog"
     }
   ],
+  "tabs": [
+    {
+    "name": "VM Agent",
+    "url": "vmagent"
+    }
+  ],
   "navigation": [
     {
       "group": "Getting Started",
@@ -94,6 +100,7 @@
             "pipeline/actions/addclusterinfo",
             "pipeline/actions/deleteattribute",
             "pipeline/actions/rename-attribute",
+            "pipeline/actions/probabilisticsampler",
             "pipeline/actions/crd",
             "pipeline/actions/troubleshooting"
           ]
@@ -117,35 +124,43 @@
       ]
     },
     {
-      "group": "Observability Backends",
+      "group": "Destinations",
       "pages": [
-        "backends/awss3",
-        "backends/azureblob",
-        "backends/coralogix",
-        "backends/datadog",
-        "backends/elasticsearch",
-        "backends/gcs",
-        "backends/googlecloud",
-        "backends/grafanacloudloki",
-        "backends/grafanacloudprometheus",
-        "backends/grafanacloudtempo",
-        "backends/honeycomb",
-        "backends/jaeger",
-        "backends/lightstep",
-        "backends/logzio",
-        "backends/loki",
-        "backends/newrelic",
-        "backends/opsverse",
-        "backends/otlp",
-        "backends/otlphttp",
-        "backends/prometheus",
-        "backends/qryn",
-        "backends/quickwit",
-        "backends/sentry",
-        "backends/signoz",
-        "backends/splunk",
-        "backends/sumologic",
-        "backends/tempo"
+        "backends",
+        {
+          "group": "Supported Backends",
+          "pages": [
+            "backends/awss3",
+            "backends/azureblob",
+            "backends/coralogix",
+            "backends/datadog",
+            "backends/elasticsearch",
+            "backends/gcs",
+            "backends/googlecloud",
+            "backends/grafanacloudloki",
+            "backends/grafanacloudprometheus",
+            "backends/grafanacloudtempo",
+            "backends/honeycomb",
+            "backends/jaeger",
+            "backends/lightstep",
+            "backends/logzio",
+            "backends/loki",
+            "backends/newrelic",
+            "backends/opsverse",
+            "backends/otlp",
+            "backends/otlphttp",
+            "backends/prometheus",
+            "backends/qryn",
+            "backends/quickwit",
+            "backends/sentry",
+            "backends/signoz",
+            "backends/splunk",
+            "backends/sumologic",
+            "backends/tempo",
+            "backends/causely"
+          ]
+
+        }
       ]
     },
     {
@@ -164,6 +179,50 @@
         "adding-new-dest",
         "debugging"
       ]
+    },
+    {
+      "group": "VM Agent",
+      "pages": [
+        "vmagent/overview",
+        {
+          "group": "Quickstart",
+          "pages": [
+            "vmagent/setup/preparation",
+            "vmagent/quickstart/introduction",
+            "vmagent/setup/installation",
+            "vmagent/quickstart/building-a-pipeline",
+            "vmagent/quickstart/generating-data"
+          ]
+        },
+        {
+          "group": "Setup",
+          "pages": [
+            "vmagent/setup/preparation",
+            "vmagent/setup/installation",
+            {
+              "group": "Configuration",
+              "pages": [
+                "vmagent/setup/configuration/service",
+                "vmagent/setup/configuration/agent"
+              ]
+            },
+            "vmagent/setup/uninstall"
+          ]
+        },
+        {
+          "group": "Configuration",
+          "pages": [
+            "vmagent/configuration/reference",
+            "vmagent/configuration/updating"
+          ]
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/backends/:slug*",
+      "destination": "/backends"
     }
   ],
   "footerSocials": {
