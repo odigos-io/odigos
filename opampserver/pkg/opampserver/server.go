@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/open-telemetry/opamp-go/server"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // TODO: use zap logger
@@ -17,7 +18,7 @@ func (l *Logger) Errorf(ctx context.Context, format string, v ...interface{}) {
 	println("ERROR: ", format, v)
 }
 
-func StartOpAmpServer() error {
+func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager) error {
 	opampsrv := server.New(&Logger{})
 	err := opampsrv.Start(server.StartSettings{
 		Settings: server.Settings{
