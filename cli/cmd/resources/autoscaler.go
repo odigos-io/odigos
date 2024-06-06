@@ -128,16 +128,6 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments/scale"},
 			},
-			{
-				Verbs: []string{
-					"create",
-					"patch",
-					"update",
-					"delete",
-				},
-				APIGroups: []string{"autoscaling"},
-				Resources: []string{"horizontalpodautoscalers"},
-			},
 		},
 	}
 }

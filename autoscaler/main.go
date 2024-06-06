@@ -93,18 +93,18 @@ func main() {
 		flag.StringVar(&odigosVersion, "version", "", "for development purposes only")
 	}
 
+	opts := ctrlzap.Options{
+		Development: true,
+	}
+	opts.BindFlags(flag.CommandLine)
+	flag.Parse()
+
 	var parsedInterval time.Duration
 	var err error
 	if parsedInterval, err = time.ParseDuration(autoscalerInterval); err != nil {
 		setupLog.Error(err, "unable to parse autoscaler interval, using default value", "interval", defaultAutoscalerInterval)
 		parsedInterval, _ = time.ParseDuration(defaultAutoscalerInterval)
 	}
-
-	opts := ctrlzap.Options{
-		Development: true,
-	}
-	opts.BindFlags(flag.CommandLine)
-	flag.Parse()
 
 	if imagePullSecretsString != "" {
 		imagePullSecrets = strings.Split(imagePullSecretsString, ",")
