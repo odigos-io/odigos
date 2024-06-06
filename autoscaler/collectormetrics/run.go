@@ -17,7 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	dto "github.com/prometheus/client_model/go"
+	prometheus "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -34,7 +34,7 @@ var (
 type MetricFetchResult struct {
 	PodName string
 	Error   error
-	Metrics map[string]*dto.MetricFamily
+	Metrics map[string]*prometheus.MetricFamily
 }
 
 func (a *Autoscaler) Run(ctx context.Context) {
