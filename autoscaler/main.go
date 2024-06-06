@@ -48,6 +48,12 @@ import (
 	//+kubebuilder:scaffold:imports
 )
 
+const (
+	defaultAutoscalerInterval = "15s"
+	defaultMinReplicas        = 1
+	defaultMaxReplicas        = 5
+)
+
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
@@ -66,6 +72,9 @@ func main() {
 	var probeAddr string
 	var imagePullSecretsString string
 	var imagePullSecrets []string
+	var autoscalerInterval string
+	var minReplicas int
+	var maxReplicas int
 	odigosVersion := os.Getenv("ODIGOS_VERSION")
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -76,9 +85,19 @@ func main() {
 	flag.StringVar(&imagePullSecretsString, "image-pull-secrets", "",
 		"The image pull secrets to use for the collectors created by autoscaler")
 	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler")
+	flag.StringVar(&autoscalerInterval, "autoscaler-interval", defaultAutoscalerInterval, "The interval at which the autoscaler should run")
+	flag.IntVar(&minReplicas, "min-replicas", defaultMinReplicas, "The minimum number of replicas for the collectors")
+	flag.IntVar(&maxReplicas, "max-replicas", defaultMaxReplicas, "The maximum number of replicas for the collectors")
 
 	if odigosVersion == "" {
 		flag.StringVar(&odigosVersion, "version", "", "for development purposes only")
+	}
+
+	var parsedInterval time.Duration
+	var err error
+	if parsedInterval, err = time.ParseDuration(autoscalerInterval); err != nil {
+		setupLog.Error(err, "unable to parse autoscaler interval, using default value", "interval", defaultAutoscalerInterval)
+		parsedInterval, _ = time.ParseDuration(defaultAutoscalerInterval)
 	}
 
 	opts := ctrlzap.Options{
@@ -168,10 +187,11 @@ func main() {
 	}
 
 	ctx := ctrl.SetupSignalHandler()
+	setupLog.V(0).Info("Starting gateway autoscaler", "interval", parsedInterval.String(), "minReplicas", minReplicas, "maxReplicas", maxReplicas)
 	gatewayAutoscaler := collectormetrics.NewAutoscaler(mgr.GetClient(),
 		collectormetrics.WithCollectorsGroup(odigosv1.CollectorsGroupRoleClusterGateway),
-		collectormetrics.WithInterval(15*time.Second),
-		collectormetrics.WithScaleRange(1, 5),
+		collectormetrics.WithInterval(parsedInterval),
+		collectormetrics.WithScaleRange(minReplicas, maxReplicas),
 		collectormetrics.WithAlgorithm(collectormetrics.ScaleBasedOnExporterQueueAndBatchQueue))
 	go gatewayAutoscaler.Run(ctx)
 

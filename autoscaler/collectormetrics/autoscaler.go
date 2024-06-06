@@ -18,6 +18,12 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
+const (
+	defaultInterval    = 15 * time.Second
+	defaultMinReplicas = 1
+	defaultMaxReplicas = 5
+)
+
 type AutoscalerOptions struct {
 	interval        time.Duration
 	collectorsGroup odigosv1.CollectorsGroupRole
@@ -64,9 +70,9 @@ type Autoscaler struct {
 func NewAutoscaler(kubeClient client.Client, opts ...AutoscalerOption) *Autoscaler {
 	// Set default options
 	options := AutoscalerOptions{
-		interval:    15 * time.Second,
-		minReplicas: 1,
-		maxReplicas: 5,
+		interval:    defaultInterval,
+		minReplicas: defaultMinReplicas,
+		maxReplicas: defaultMaxReplicas,
 	}
 
 	for _, opt := range opts {
