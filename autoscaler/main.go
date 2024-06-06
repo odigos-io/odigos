@@ -89,6 +89,9 @@ func main() {
 	flag.IntVar(&minReplicas, "min-replicas", defaultMinReplicas, "The minimum number of replicas for the collectors")
 	flag.IntVar(&maxReplicas, "max-replicas", defaultMaxReplicas, "The maximum number of replicas for the collectors")
 
+	// Set flags for autoscaler algorithms
+	collectormetrics.ScaleBasedOnExporterQueueAndBatchQueue.RegisterFlags()
+
 	if odigosVersion == "" {
 		flag.StringVar(&odigosVersion, "version", "", "for development purposes only")
 	}

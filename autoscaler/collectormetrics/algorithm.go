@@ -2,6 +2,7 @@ package collectormetrics
 
 import (
 	"context"
+	"flag"
 
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -10,6 +11,9 @@ const (
 	exporterQueueCapacityMetricName = "otelcol_exporter_queue_capacity"
 	exporterQueueSizeMetricName     = "otelcol_exporter_queue_size"
 	processorRefusedSpanMetricName  = "otelcol_processor_refused_spans"
+
+	queueThresholdFlag    = "algo-queue-threshold"
+	queueThresholdDefault = 0.7
 )
 
 // AutoscalerDecision represents the decision made by the autoscaler algorithm
@@ -22,9 +26,15 @@ type AutoscalerAlgorithm interface {
 	Decide(ctx context.Context, metrics []MetricFetchResult) AutoscalerDecision
 }
 
-type exporterQueueAndBatchQueue struct{}
+type exporterQueueAndBatchQueue struct {
+	queueThreshold float64
+}
 
 var ScaleBasedOnExporterQueueAndBatchQueue = &exporterQueueAndBatchQueue{}
+
+func (e *exporterQueueAndBatchQueue) RegisterFlags() {
+	flag.Float64Var(&e.queueThreshold, queueThresholdFlag, queueThresholdDefault, "Threshold for exporter queue size")
+}
 
 // Decide scales based on the exporter queue and batch queue sizes.
 // If more than 50% of the pods
@@ -82,7 +92,7 @@ func (e *exporterQueueAndBatchQueue) countSlowExporters(queueSizes map[string]fl
 }
 
 func (e *exporterQueueAndBatchQueue) isExporterTooSlow(queueSize float64, queueCapacity float64) bool {
-	return queueSize/queueCapacity >= 0.7
+	return queueSize/queueCapacity >= e.queueThreshold
 }
 
 func (e *exporterQueueAndBatchQueue) getGaugeValue(podMetrics MetricFetchResult, name string, labelKey string, labelValue string) float64 {

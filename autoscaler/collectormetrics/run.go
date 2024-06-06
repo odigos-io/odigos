@@ -23,7 +23,9 @@ import (
 )
 
 const (
-	metricsUrlPattern = "http://%s:8888/metrics"
+	metricsUrlPattern       = "http://%s:8888/metrics"
+	maxTimeout              = 1 * time.Second
+	timeoutIntervalFraction = 10
 )
 
 var (
@@ -52,6 +54,10 @@ func (a *Autoscaler) Run(ctx context.Context) {
 			close(a.notifications)
 			return
 		case <-a.ticker.C:
+			if len(a.podIPs) == 0 {
+				logger.V(0).Info("No collectors found, skipping autoscaling")
+				continue
+			}
 			results := a.getCollectorsMetrics(ctx)
 			decision := a.options.algorithm.Decide(ctx, results)
 			a.executeDecision(ctx, decision, len(results))
@@ -127,7 +133,8 @@ func (a *Autoscaler) updateIPsMap(notification Notification) {
 func (a *Autoscaler) getCollectorsMetrics(ctx context.Context) []MetricFetchResult {
 	logger := log.FromContext(ctx)
 	results := make(chan MetricFetchResult, len(a.podIPs))
-	timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	timeout := min(maxTimeout, a.options.interval/timeoutIntervalFraction)
+	timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	for podName, podIP := range a.podIPs {

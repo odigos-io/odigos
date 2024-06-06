@@ -19,9 +19,10 @@ import (
 )
 
 const (
-	defaultInterval    = 15 * time.Second
-	defaultMinReplicas = 1
-	defaultMaxReplicas = 5
+	defaultInterval      = 15 * time.Second
+	defaultMinReplicas   = 1
+	defaultMaxReplicas   = 5
+	notificationChanSize = 10
 )
 
 type AutoscalerOptions struct {
@@ -83,7 +84,7 @@ func NewAutoscaler(kubeClient client.Client, opts ...AutoscalerOption) *Autoscal
 		kubeClient:    kubeClient,
 		options:       options,
 		ticker:        time.NewTicker(options.interval),
-		notifications: make(chan Notification),
+		notifications: make(chan Notification, notificationChanSize),
 		podIPs:        make(map[string]string),
 	}
 }
