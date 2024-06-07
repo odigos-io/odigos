@@ -11,14 +11,16 @@ type SignalSpecific interface {
 type ExporterConfigurer interface {
 	SignalSpecific
 	GetType() common.DestinationType
-	GetName() string
+	// expected to be unique across all instances of exporters used in collector config, [a-zA-Z0-9-_]+
+	GetID() string
 	GetConfig() map[string]string
 }
 
 type ProcessorConfigurer interface {
 	SignalSpecific
 	GetType() string
-	GetName() string
+	// expected to be unique across all instances of exporters used in collector config, [a-zA-Z0-9-_]+
+	GetID() string
 	GetConfig() (GenericMap, error)
 }
 
@@ -29,6 +31,7 @@ type Config struct {
 	Exporters  GenericMap `json:"exporters"`
 	Processors GenericMap `json:"processors"`
 	Extensions GenericMap `json:"extensions"`
+	Connectors GenericMap `json:"connectors"`
 	Service    Service    `json:"service"`
 }
 

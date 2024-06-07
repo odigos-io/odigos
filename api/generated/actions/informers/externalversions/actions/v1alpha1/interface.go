@@ -27,6 +27,8 @@ type Interface interface {
 	AddClusterInfos() AddClusterInfoInformer
 	// DeleteAttributes returns a DeleteAttributeInformer.
 	DeleteAttributes() DeleteAttributeInformer
+	// ProbabilisticSamplers returns a ProbabilisticSamplerInformer.
+	ProbabilisticSamplers() ProbabilisticSamplerInformer
 	// RenameAttributes returns a RenameAttributeInformer.
 	RenameAttributes() RenameAttributeInformer
 }
@@ -50,6 +52,11 @@ func (v *version) AddClusterInfos() AddClusterInfoInformer {
 // DeleteAttributes returns a DeleteAttributeInformer.
 func (v *version) DeleteAttributes() DeleteAttributeInformer {
 	return &deleteAttributeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// ProbabilisticSamplers returns a ProbabilisticSamplerInformer.
+func (v *version) ProbabilisticSamplers() ProbabilisticSamplerInformer {
+	return &probabilisticSamplerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // RenameAttributes returns a RenameAttributeInformer.

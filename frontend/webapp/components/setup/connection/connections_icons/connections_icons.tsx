@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { KeyvalImage } from '@/design.system';
-import { Connect } from '@/assets/icons/app';
+import { ConnectIcon } from '@keyval-dev/design-system';
 
 const ConnectionsIconsWrapper = styled.div`
   display: flex;
@@ -33,7 +33,7 @@ export function ConnectionsIcons({
 }) {
   return icon ? (
     <ConnectionsIconsWrapper>
-      <Connect />
+      <ConnectIcon />
       <Divider />
       <KeyvalImage
         src={icon}

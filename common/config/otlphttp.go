@@ -44,7 +44,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, basicAuthExtensionName)
 	}
 
-	otlpHttpExporterName := "otlphttp/generic-" + dest.GetName()
+	otlpHttpExporterName := "otlphttp/generic-" + dest.GetID()
 	exporterConf := GenericMap{
 		"endpoint": parsedUrl,
 	}
@@ -56,21 +56,21 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	currentConfig.Exporters[otlpHttpExporterName] = exporterConf
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/otlphttp-" + dest.GetName()
+		tracesPipelineName := "traces/otlphttp-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{otlpHttpExporterName},
 		}
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/otlphttp-" + dest.GetName()
+		metricsPipelineName := "metrics/otlphttp-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{otlpHttpExporterName},
 		}
 	}
 
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/otlphttp-" + dest.GetName()
+		logsPipelineName := "logs/otlphttp-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{otlpHttpExporterName},
 		}
@@ -100,7 +100,7 @@ func applyBasicAuth(dest ExporterConfigurer) (extensionName string, extensionCon
 		return "", nil, nil
 	}
 
-	extensionName = "basicauth/otlphttp-" + dest.GetName()
+	extensionName = "basicauth/otlphttp-" + dest.GetID()
 	extensionConf = &GenericMap{
 		"client_auth": GenericMap{
 			"username": username,

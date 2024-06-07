@@ -18,12 +18,12 @@ func (s *Sentry) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 	}
 
 	if isTracingEnabled(dest) {
-		exporterName := "sentry/" + dest.GetName()
+		exporterName := "sentry/" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"dsn": "${DSN}",
 		}
 
-		tracesPipelineName := "traces/sentry-" + dest.GetName()
+		tracesPipelineName := "traces/sentry-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
