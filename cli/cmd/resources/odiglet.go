@@ -120,6 +120,15 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 			{
 				Verbs: []string{
 					"get",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"deployments/finalizers",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
 					"list",
 					"watch",
 				},
@@ -138,6 +147,15 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 			{
 				Verbs: []string{
 					"get",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"statefulsets/finalizers",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
 					"list",
 					"watch",
 				},
@@ -151,6 +169,15 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				APIGroups: []string{"apps"},
 				Resources: []string{
 					"daemonsets/status",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"daemonsets/finalizers",
 				},
 			},
 			{
@@ -180,6 +207,35 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				},
 				Resources: []string{
 					"instrumentedapplications/status",
+				},
+			},
+			{
+				Verbs: []string{
+					"create",
+					"get",
+					"list",
+					"patch",
+					"update",
+					"watch",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"instrumentationinstances",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"patch",
+					"update",
+				},
+				APIGroups: []string{
+					"odigos.io",
+				},
+				Resources: []string{
+					"instrumentationinstances/status",
 				},
 			},
 			{
@@ -251,13 +307,81 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier) *appsv1.DaemonSet {
+func NewSCCRoleBinding(ns string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "system:openshift:scc:privileged",
+			Namespace: ns,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      "odiglet",
+				Namespace: ns,
+			},
+			{
+				Kind:      "ServiceAccount",
+				Name:      "odigos-data-collection",
+				Namespace: ns,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     "system:openshift:scc:privileged",
+		},
+	}
+}
 
-	odigosProToken := []corev1.EnvVar{}
+func NewSCClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
+	return &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "system:openshift:scc:anyuid:" + ns,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "Group",
+				Name:      "system:serviceaccounts:" + ns,
+				Namespace: ns,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     "system:openshift:scc:anyuid",
+		},
+	}
+}
+
+func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool, goAutoIncludeCodeAttributes bool) *appsv1.DaemonSet {
+
+	dynamicEnv := []corev1.EnvVar{}
 	if odigosTier == common.CloudOdigosTier {
-		odigosProToken = append(odigosProToken, odigospro.CloudTokenAsEnvVar())
+		dynamicEnv = append(dynamicEnv, odigospro.CloudTokenAsEnvVar())
 	} else if odigosTier == common.OnPremOdigosTier {
-		odigosProToken = append(odigosProToken, odigospro.OnPremTokenAsEnvVar())
+		dynamicEnv = append(dynamicEnv, odigospro.OnPremTokenAsEnvVar())
+	}
+
+	if goAutoIncludeCodeAttributes {
+		dynamicEnv = append(dynamicEnv, corev1.EnvVar{
+			Name:  "OTEL_GO_AUTO_INCLUDE_CODE_ATTRIBUTES",
+			Value: "true",
+		})
+	}
+
+	odigosSeLinuxHostVolumes := []corev1.Volume{}
+	odigosSeLinuxHostVolumeMounts := []corev1.VolumeMount{}
+	if openshiftEnabled {
+		odigosSeLinuxHostVolumes = append(odigosSeLinuxHostVolumes, selinuxHostVolumes()...)
+		odigosSeLinuxHostVolumeMounts = append(odigosSeLinuxHostVolumeMounts, selinuxHostVolumeMounts()...)
 	}
 
 	// 50% of the nodes can be unavailable during the update.
@@ -313,7 +437,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							Effect:   corev1.TaintEffectNoSchedule,
 						},
 					},
-					Volumes: []corev1.Volume{
+					Volumes: append([]corev1.Volume{
 						{
 							Name: "run-dir",
 							VolumeSource: corev1.VolumeSource{
@@ -346,7 +470,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								},
 							},
 						},
-					},
+					}, odigosSeLinuxHostVolumes...),
 					Containers: []corev1.Container{
 						{
 							Name:  OdigletContainerName,
@@ -372,7 +496,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 										},
 									},
 								},
-							}, odigosProToken...),
+							}, dynamicEnv...),
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -383,7 +507,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								},
 							},
 							Resources: corev1.ResourceRequirements{},
-							VolumeMounts: []corev1.VolumeMount{
+							VolumeMounts: append([]corev1.VolumeMount{
 								{
 									Name:             "run-dir",
 									MountPath:        "/run",
@@ -403,7 +527,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									Name:      "kernel-debug",
 									MountPath: "/sys/kernel/debug",
 								},
-							},
+							}, odigosSeLinuxHostVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: ptrbool(true),
@@ -424,6 +548,45 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 		},
 	}
 }
+
+// used to inject the host volumes into odigos components for selinux update
+func selinuxHostVolumes() []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: "host",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/",
+				},
+			},
+		},
+		{
+			Name: "selinux",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/etc/selinux",
+				},
+			},
+		},
+	}
+}
+
+// used to inject the host volumemounts into odigos components for selinux update
+func selinuxHostVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      "host",
+			MountPath: "/host",
+			ReadOnly:  true,
+		},
+		{
+			Name:             "selinux",
+			MountPath:        "/host/etc/selinux",
+			MountPropagation: ptrMountPropagationMode("Bidirectional"),
+		},
+	}
+}
+
 func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropagationMode {
 	return &p
 }
@@ -459,7 +622,17 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewOdigletServiceAccount(a.ns),
 		NewOdigletClusterRole(a.config.Psp),
 		NewOdigletClusterRoleBinding(a.ns),
-		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier),
 	}
+
+	// if openshift is enabled, we need to create additional SCC cluster role binding first
+	if a.config.OpenshiftEnabled {
+		resources = append(resources, NewSCCRoleBinding(a.ns))
+		resources = append(resources, NewSCClusterRoleBinding(a.ns))
+	}
+
+	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
+	resources = append(resources,
+		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled, a.config.GoAutoIncludeCodeAttributes))
+
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

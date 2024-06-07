@@ -1,8 +1,8 @@
 import React from 'react';
 import { SETUP } from '@/utils';
 import theme from '@/styles/palette';
-import { Charge, RightArrow } from '@/assets/icons/app';
 import { KeyvalButton, KeyvalText } from '@/design.system';
+import { ChargeIcon, RightArrowIcon } from '@keyval-dev/design-system';
 import {
   HeaderButtonWrapper,
   HeaderTitleWrapper,
@@ -23,7 +23,7 @@ export function ChooseSourcesHeader({
   return (
     <SetupHeaderWrapper>
       <HeaderTitleWrapper>
-        <Charge />
+        <ChargeIcon />
         <KeyvalText>{HEADER.CHOOSE_SOURCE_TITLE}</KeyvalText>
       </HeaderTitleWrapper>
       <HeaderButtonWrapper>
@@ -38,7 +38,7 @@ export function ChooseSourcesHeader({
           <KeyvalText size={20} weight={600} color={theme.text.dark_button}>
             {SETUP.NEXT}
           </KeyvalText>
-          <RightArrow />
+          <RightArrowIcon />
         </KeyvalButton>
       </HeaderButtonWrapper>
     </SetupHeaderWrapper>

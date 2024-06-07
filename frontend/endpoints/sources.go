@@ -1,6 +1,10 @@
 package endpoints
 
 import (
+	"context"
+	"fmt"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
@@ -140,6 +144,12 @@ func GetSource(c *gin.Context) {
 	if err == nil {
 		// valid instrumented application, grab the runtime details
 		ts.IaDetails = k8sInstrumentedAppToThinSource(instrumentedApplication).IaDetails
+		// potentially add a condition for healthy instrumentation instances
+		err = addHealthyInstrumentationInstancesCondition(c, instrumentedApplication, &ts)
+		if err != nil {
+			returnError(c, err)
+			return
+		}
 	}
 
 	c.JSON(200, Source{
@@ -265,6 +275,48 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 		})
 	}
 	return source
+}
+
+func addHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alpha1.InstrumentedApplication, source *ThinSource) error {
+	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, app.Name)
+	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(app.Namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	totalInstances := len(instancesList.Items)
+	if totalInstances == 0 {
+		// no instances so nothing to report
+		return nil
+	}
+
+	healthyInstances := 0
+	latestStatusTime := metav1.NewTime(time.Time{})
+	for _, instance := range instancesList.Items {
+		if instance.Status.Healthy != nil && *instance.Status.Healthy {
+			healthyInstances++
+		}
+		if instance.Status.LastStatusTime.After(latestStatusTime.Time) {
+			latestStatusTime = instance.Status.LastStatusTime
+		}
+	}
+
+	status := metav1.ConditionTrue
+	if healthyInstances < totalInstances {
+		status = metav1.ConditionFalse
+	}
+
+	source.IaDetails.Conditions = append(source.IaDetails.Conditions, metav1.Condition{
+		Type:               "HealthyInstrumentationInstances",
+		Status:             status,
+		LastTransitionTime: latestStatusTime,
+		Message:            fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances),
+	})
+
+	return nil
 }
 
 func getK8sObject(c *gin.Context, ns string, kind string, name string) metav1.Object {

@@ -29,7 +29,7 @@ func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		endpoint = "api.honeycomb.io"
 	}
 
-	exporterName := "otlp/honeycomb-" + dest.GetName()
+	exporterName := "otlp/honeycomb-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s:443", endpoint),
 		"headers": GenericMap{
@@ -37,7 +37,7 @@ func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		},
 	}
 
-	tracePipelineName := "traces/honeycomb-" + dest.GetName()
+	tracePipelineName := "traces/honeycomb-" + dest.GetID()
 	currentConfig.Service.Pipelines[tracePipelineName] = Pipeline{
 		Exporters: []string{exporterName},
 	}

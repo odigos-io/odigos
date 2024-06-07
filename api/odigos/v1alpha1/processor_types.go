@@ -95,7 +95,7 @@ func init() {
 }
 
 /* Implement common.ProcessorConfigurer */
-func (processor Processor) GetName() string {
+func (processor Processor) GetID() string {
 	return processor.Name
 }
 func (processor Processor) GetType() string {

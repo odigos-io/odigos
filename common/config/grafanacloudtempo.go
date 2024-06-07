@@ -37,7 +37,7 @@ func (g *GrafanaCloudTempo) ModifyConfig(dest ExporterConfigurer, currentConfig 
 
 	grpcEndpointUrl := grafanaTempoUrlFromInput(tempoUrl)
 
-	authExtensionName := "basicauth/grafana" + dest.GetName()
+	authExtensionName := "basicauth/grafana" + dest.GetID()
 	currentConfig.Extensions[authExtensionName] = GenericMap{
 		"client_auth": GenericMap{
 			"username": tempoUsername,
@@ -45,7 +45,7 @@ func (g *GrafanaCloudTempo) ModifyConfig(dest ExporterConfigurer, currentConfig 
 		},
 	}
 
-	exporterName := "otlp/grafana-" + dest.GetName()
+	exporterName := "otlp/grafana-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": grpcEndpointUrl,
 		"auth": GenericMap{
@@ -53,7 +53,7 @@ func (g *GrafanaCloudTempo) ModifyConfig(dest ExporterConfigurer, currentConfig 
 		},
 	}
 
-	tracesPipelineName := "traces/grafana-" + dest.GetName()
+	tracesPipelineName := "traces/grafana-" + dest.GetID()
 	currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 		Exporters: []string{exporterName},

@@ -30,27 +30,29 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	url = addProtocol(url)
 	url = strings.TrimSuffix(url, "/api/v1/write")
-	rwExporterName := "prometheusremotewrite/prometheus-" + dest.GetName()
-	spanMetricsProcessorName := "spanmetrics/prometheus-" + dest.GetName()
+	rwExporterName := "prometheusremotewrite/prometheus-" + dest.GetID()
+	spanMetricsConnectorName := "spanmetrics/prometheus-" + dest.GetID()
 	currentConfig.Exporters[rwExporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s/api/v1/write", url),
 	}
 
-	metricsPipelineName := "metrics/prometheus-" + dest.GetName()
+	metricsPipelineName := "metrics/prometheus-" + dest.GetID()
 	currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
+		Receivers: []string{spanMetricsConnectorName},
 		Exporters: []string{rwExporterName},
 	}
 
 	// Send SpanMetrics to prometheus
-	tracesPipelineName := "traces/spanmetrics-" + dest.GetName()
+	tracesPipelineName := "traces/spanmetrics-" + dest.GetID()
 	currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
-		Processors: []string{spanMetricsProcessorName},
-		Exporters:  []string{"logging"},
+		Exporters: []string{spanMetricsConnectorName},
 	}
-	currentConfig.Exporters["logging"] = struct{}{} // Dummy exporter, needed only because pipeline must have an exporter
-	currentConfig.Processors[spanMetricsProcessorName] = GenericMap{
-		"metrics_exporter":          rwExporterName,
-		"latency_histogram_buckets": []string{"100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"},
+	currentConfig.Connectors[spanMetricsConnectorName] = GenericMap{
+		"histogram": GenericMap{
+			"explicit": GenericMap{
+				"buckets": []string{"100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"},
+			},
+		},
 		"dimensions": []GenericMap{
 			{
 				"name":    "http.method",
@@ -60,8 +62,26 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 				"name": "http.status_code",
 			},
 		},
-		"dimensions_cache_size":   1000,
-		"aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+		"exemplars": GenericMap{
+			"enabled": true,
+		},
+		"exclude_dimensions":              []string{"status.code"},
+		"dimensions_cache_size":           1000,
+		"aggregation_temporality":         "AGGREGATION_TEMPORALITY_CUMULATIVE",
+		"metrics_flush_interval":          "15s",
+		"metrics_expiration":              "5m",
+		"resource_metrics_key_attributes": []string{"service.name", "telemetry.sdk.language", "telemetry.sdk.name"},
+		"events": GenericMap{
+			"enabled": true,
+			"dimensions": []GenericMap{
+				{
+					"name": "exception.type",
+				},
+				{
+					"name": "exception.message",
+				},
+			},
+		},
 	}
 
 	return nil
