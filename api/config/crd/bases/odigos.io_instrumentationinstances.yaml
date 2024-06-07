@@ -1,0 +1,164 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: instrumentationinstances.odigos.io
+spec:
+  group: odigos.io
+  names:
+    kind: InstrumentationInstance
+    listKind: InstrumentationInstanceList
+    plural: instrumentationinstances
+    singular: instrumentationinstance
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: InstrumentationInstance is the Schema for the InstrumentationInstances
+          API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            type: object
+          status:
+            description: |-
+              InstrumentationInstanceStatus defines the observed state of InstrumentationInstance
+              If the instrumentation is not active, this CR should be deleted
+            properties:
+              components:
+                items:
+                  description: |-
+                    InstrumentationLibraryStatus defines the observed state of an InstrumentationLibrary.
+                    if a library is not active/disable, it should not be included in the status
+                  properties:
+                    healthy:
+                      type: boolean
+                    identifyingAttributes:
+                      description: |-
+                        Attributes that identify the component.
+                        The combination of (Name, Type, IdentifyingAttributes) must be unique.
+                      items:
+                        description: Attribute is a key-value pair that describes
+                          a component or instrumentation
+                        properties:
+                          key:
+                            minLength: 1
+                            type: string
+                          value:
+                            type: string
+                        required:
+                        - key
+                        - value
+                        type: object
+                      type: array
+                    lastStatusTime:
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the component health.
+                        can be omitted if healthy is true
+                      maxLength: 32768
+                      type: string
+                    name:
+                      description: for example ("net/http", "@opentelemetry/instrumentation-redis")
+                      minLength: 1
+                      type: string
+                    nonIdentifyingAttributes:
+                      description: |-
+                        Attributes that do not necessarily identify the component but help describe
+                        its characteristics.
+                      items:
+                        description: Attribute is a key-value pair that describes
+                          a component or instrumentation
+                        properties:
+                          key:
+                            minLength: 1
+                            type: string
+                          value:
+                            type: string
+                        required:
+                        - key
+                        - value
+                        type: object
+                      type: array
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the SDK status.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                      type: string
+                    type:
+                      enum:
+                      - instrumentation
+                      - sampler
+                      - exporter
+                      type: string
+                  required:
+                  - lastStatusTime
+                  - name
+                  - type
+                  type: object
+                type: array
+              healthy:
+                type: boolean
+              lastStatusTime:
+                format: date-time
+                type: string
+              message:
+                description: |-
+                  message is a human readable message indicating details about the SDK general health.
+                  can be omitted if healthy is true
+                maxLength: 32768
+                type: string
+              nonIdentifyingAttributes:
+                description: |-
+                  Attributes that do not necessarily identify the SDK but help describe
+                  its characteristics.
+                items:
+                  description: Attribute is a key-value pair that describes a component
+                    or instrumentation
+                  properties:
+                    key:
+                      minLength: 1
+                      type: string
+                    value:
+                      type: string
+                  required:
+                  - key
+                  - value
+                  type: object
+                type: array
+              reason:
+                description: |-
+                  reason contains a programmatic identifier indicating the reason for the component status.
+                  Producers of specific condition types may define expected values and meanings for this field,
+                  and whether the values are considered a guaranteed API.
+                type: string
+            required:
+            - lastStatusTime
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

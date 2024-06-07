@@ -56,6 +56,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().AddClusterInfos().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("deleteattributes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().DeleteAttributes().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("probabilisticsamplers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().ProbabilisticSamplers().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("renameattributes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().RenameAttributes().Informer()}, nil
 

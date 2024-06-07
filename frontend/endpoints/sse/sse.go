@@ -8,12 +8,27 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type MessageType string
+
+const (
+	MessageTypeSuccess MessageType = "success"
+	MessageTypeError   MessageType = "error"
+)
+
+type MessageEvent string
+
+const (
+	MessageEventDeleted MessageEvent = "Deleted"
+	MessageEventModified MessageEvent = "Modified"
+	MessageEventAdded    MessageEvent = "Added"
+)
+
 type SSEMessage struct {
-	Type    string `json:"type"`
-	Data    string `json:"data"`
-	Event   string `json:"event"`
-	Target  string `json:"target"`
-	CRDType string `json:"crdType"`
+	Type    MessageType  `json:"type"`
+	Data    string       `json:"data"`
+	Event   MessageEvent `json:"event"`
+	Target  string       `json:"target"`
+	CRDType string       `json:"crdType"`
 }
 
 // This map will hold channels for each client connected to the SSE endpoint
@@ -30,7 +45,7 @@ func HandleSSEConnections(c *gin.Context) {
 	c.Header("Connection", "keep-alive")
 
 	// Create a new channel for this client
-	messageChan := make(chan SSEMessage)
+	messageChan := make(chan SSEMessage, 10)
 	// Register the channel for this client
 	clientsMu.Lock()
 	clients[messageChan] = true
