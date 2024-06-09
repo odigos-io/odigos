@@ -26,6 +26,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager)
 	err := opampsrv.Start(server.StartSettings{
 		Settings: server.Settings{
 			Callbacks: &K8sCrdCallbacks{
+				logger:     logger,
 				kubeclient: mgr.GetClient(),
 			},
 		},

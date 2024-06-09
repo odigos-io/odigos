@@ -19,6 +19,7 @@ const (
 	nodeEnvNodeOptions        = "NODE_OPTIONS"
 	nodeEnvResourceAttributes = "OTEL_RESOURCE_ATTRIBUTES"
 	nodeOdigosOpampServer     = "ODIGOS_OPAMP_SERVER_HOST"
+	nodeOdigosDeviceId        = "ODIGOS_INSTRUMENTATION_DEVICE_ID"
 )
 
 func NodeJS(deviceId string) *v1beta1.ContainerAllocateResponse {
@@ -35,6 +36,7 @@ func NodeJS(deviceId string) *v1beta1.ContainerAllocateResponse {
 			nodeEnvResourceAttributes: "odigos.device=nodejs",
 			nodeEnvNodeOptions:        nodeOptionsVal,
 			nodeOdigosOpampServer:     opampServerHost,
+			nodeOdigosDeviceId:        deviceId,
 		},
 		Mounts: []*v1beta1.Mount{
 			{

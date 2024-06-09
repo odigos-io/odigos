@@ -11,9 +11,16 @@ import {
 } from "@opentelemetry/semantic-conventions";
 
 const opampServerHost = process.env.ODIGOS_OPAMP_SERVER_HOST;
+const instrumentationDeviceId = process.env.ODIGOS_INSTRUMENTATION_DEVICE_ID;
+if (!opampServerHost || !instrumentationDeviceId) {
+  throw new Error(
+    "ODIGOS_OPAMP_SERVER_HOST and ODIGOS_INSTRUMENTATION_DEVICE_ID must be set"
+  );
+}
 
 if (opampServerHost) {
   const opampClient = new OpAMPClientHttp({
+    instrumentationDeviceId: instrumentationDeviceId,
     opAMPServerHost: opampServerHost,
     agentDescriptionIdentifyingAttributes: {
       [SEMRESATTRS_TELEMETRY_SDK_LANGUAGE]: TELEMETRYSDKLANGUAGEVALUES_NODEJS,

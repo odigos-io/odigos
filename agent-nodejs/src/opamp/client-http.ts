@@ -16,7 +16,10 @@ export class OpAMPClientHttp {
     this.instanceUid = new TextEncoder().encode(uuidv7());
     this.httpClient = axios.create({
       baseURL: `http://${this.config.opAMPServerHost}`,
-      headers: { "Content-Type": " application/x-protobuf" },
+      headers: { 
+        "Content-Type": " application/x-protobuf",
+        "Authorization": `DeviceId ${config.instrumentationDeviceId}`,
+       },
     });
   }
 

@@ -217,6 +217,7 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 					"patch",
 					"update",
 					"watch",
+					"delete",
 				},
 				APIGroups: []string{
 					"odigos.io",
