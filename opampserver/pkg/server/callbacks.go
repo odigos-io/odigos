@@ -1,4 +1,4 @@
-package opampserver
+package server
 
 import (
 	"context"

@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-logr/zapr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/opampserver/pkg/opampserver"
+	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -49,7 +49,8 @@ func main() {
 		os.Exit(-1)
 	}
 
-	err = opampserver.StartOpAmpServer(context.Background(), mgr)
+	logger.Info("Starting opamp server")
+	err = server.StartOpAmpServer(context.Background(), logger, mgr)
 	if err != nil {
 		fmt.Println(err)
 	}

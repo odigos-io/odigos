@@ -1,8 +1,9 @@
-package opampserver
+package server
 
 import (
 	"context"
 
+	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/server"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -18,7 +19,9 @@ func (l *Logger) Errorf(ctx context.Context, format string, v ...interface{}) {
 	println("ERROR: ", format, v)
 }
 
-func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager) error {
+func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager) error {
+	listenEndpoint := "0.0.0.0:4320"
+	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
 	opampsrv := server.New(&Logger{})
 	err := opampsrv.Start(server.StartSettings{
 		Settings: server.Settings{
@@ -26,7 +29,7 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager) error {
 				kubeclient: mgr.GetClient(),
 			},
 		},
-		ListenEndpoint: "0.0.0.0:4320",
+		ListenEndpoint: listenEndpoint,
 		TLSConfig:      nil,
 	})
 	if err != nil {
