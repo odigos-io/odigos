@@ -1,0 +1,23 @@
+{
+  "name": "@odigos/opentelemetry-node",
+  "version": "0.0.1",
+  "description": "Odigos distribution of OpenTelemetry for Node.js",
+  "main": "build/src/index.js",
+  "repository": "https://github.com/odigos-io/opentelemetry-node",
+  "author": "Odigos Authors",
+  "license": "Apache-2.0",
+  "scripts": {
+    "compile": "tsc -p ."
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^1.10.0",
+    "@opentelemetry/api": "1.8.0",
+    "@opentelemetry/auto-instrumentations-node": "0.46.1",
+    "@opentelemetry/exporter-trace-otlp-grpc": "0.51.1",
+    "@opentelemetry/sdk-node": "0.51.1",
+    "@opentelemetry/semantic-conventions": "^1.24.1",
+    "axios": "^1.7.2",
+    "typescript": "^5.4.5",
+    "uuidv7": "^1.0.0"
+  }
+}

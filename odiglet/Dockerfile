@@ -3,10 +3,12 @@ WORKDIR /python-instrumentation
 ADD odiglet/agents/python/requirements.txt .
 RUN mkdir workspace && pip install --target workspace -r requirements.txt
 
-FROM node:16 AS nodejs-builder
+FROM node:18 AS nodejs-builder
 WORKDIR /nodejs-instrumentation
-COPY odiglet/agents/nodejs .
-RUN npm install
+COPY agent-nodejs .
+RUN yarn
+RUN yarn compile
+# RUN rm -rf node_modules && yarn --production # Remove dev dependencies
 
 FROM busybox AS dotnet-builder
 WORKDIR /dotnet-instrumentation
@@ -40,7 +42,8 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
-COPY --from=nodejs-builder /nodejs-instrumentation/build/workspace /instrumentations/nodejs
+COPY --from=nodejs-builder /nodejs-instrumentation/build/src /instrumentations/nodejs
+COPY --from=nodejs-builder /nodejs-instrumentation/node_modules /instrumentations/nodejs/node_modules
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet

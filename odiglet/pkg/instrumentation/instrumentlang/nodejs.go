@@ -18,11 +18,13 @@ const (
 	nodeEnvServiceName        = "OTEL_SERVICE_NAME"
 	nodeEnvNodeOptions        = "NODE_OPTIONS"
 	nodeEnvResourceAttributes = "OTEL_RESOURCE_ATTRIBUTES"
+	nodeOdigosOpampServer     = "ODIGOS_OPAMP_SERVER_HOST"
 )
 
 func NodeJS(deviceId string) *v1beta1.ContainerAllocateResponse {
 	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPPort)
 	nodeOptionsVal, _ := envOverwrite.ValToAppend(nodeEnvNodeOptions, common.OtelSdkNativeCommunity)
+	opampServerHost := fmt.Sprintf("%s:%d", env.Current.NodeIP, consts.OpAMPPort)
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
@@ -32,6 +34,7 @@ func NodeJS(deviceId string) *v1beta1.ContainerAllocateResponse {
 			nodeEnvServiceName:        deviceId,
 			nodeEnvResourceAttributes: "odigos.device=nodejs",
 			nodeEnvNodeOptions:        nodeOptionsVal,
+			nodeOdigosOpampServer:     opampServerHost,
 		},
 		Mounts: []*v1beta1.Mount{
 			{

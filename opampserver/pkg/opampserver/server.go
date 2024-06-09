@@ -22,7 +22,9 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager) error {
 	opampsrv := server.New(&Logger{})
 	err := opampsrv.Start(server.StartSettings{
 		Settings: server.Settings{
-			Callbacks: &K8sCrdCallbacks{},
+			Callbacks: &K8sCrdCallbacks{
+				kubeclient: mgr.GetClient(),
+			},
 		},
 		ListenEndpoint: "0.0.0.0:4320",
 		TLSConfig:      nil,
