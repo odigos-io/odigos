@@ -72,7 +72,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing gateway")
 
-	memConfig := getMemoryConfigurations(odigosConfig)
+	memConfig := GetMemoryConfigurations(odigosConfig)
 
 	configData, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme, memConfig)
 	if err != nil {

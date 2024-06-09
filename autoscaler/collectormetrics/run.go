@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/odigos-io/odigos/common/consts"
+	"k8s.io/apimachinery/pkg/types"
+
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
@@ -46,8 +49,14 @@ func (a *Autoscaler) Run(ctx context.Context) {
 	for {
 		select {
 		case notification := <-a.notifications:
-			logger.V(5).Info("Got ip change notification", "notification", notification)
-			a.updateIPsMap(notification)
+			if notification.Reason == OdigosConfigUpdated {
+				if err := a.updateOdigosConfig(ctx); err != nil {
+					logger.Error(err, "Failed to update odigos config")
+				}
+			} else {
+				logger.V(5).Info("Got ip change notification", "notification", notification)
+				a.updateIPsMap(notification)
+			}
 		case <-ctx.Done():
 			logger.V(0).Info("Shutting down autoscaler", "collectorsGroup", a.options.collectorsGroup)
 			a.ticker.Stop()
@@ -58,8 +67,18 @@ func (a *Autoscaler) Run(ctx context.Context) {
 				logger.V(0).Info("No collectors found, skipping autoscaling")
 				continue
 			}
+
+			if a.odigosConfig == nil {
+				// This should not happen, we should get first config update before first tick but just in case
+				err := a.updateOdigosConfig(ctx)
+				if err != nil {
+					logger.Error(err, "Failed to get odigos config")
+					continue
+				}
+			}
+
 			results := a.getCollectorsMetrics(ctx)
-			decision := a.options.algorithm.Decide(ctx, results)
+			decision := a.options.algorithm.Decide(ctx, results, a.odigosConfig)
 			a.executeDecision(ctx, decision, len(results))
 		}
 	}
@@ -185,4 +204,15 @@ func (a *Autoscaler) getCollectorsMetrics(ctx context.Context) []MetricFetchResu
 	}
 
 	return successfulResults
+}
+
+func (a *Autoscaler) updateOdigosConfig(ctx context.Context) error {
+	odigosSystemNamespaceName := env.GetCurrentNamespace()
+	var odigosConfig odigosv1.OdigosConfiguration
+	if err := a.kubeClient.Get(ctx, types.NamespacedName{Namespace: odigosSystemNamespaceName, Name: consts.DefaultOdigosConfigurationName}, &odigosConfig); err != nil {
+		return err
+	}
+
+	a.odigosConfig = &odigosConfig
+	return nil
 }

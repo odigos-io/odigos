@@ -90,7 +90,7 @@ func main() {
 	flag.IntVar(&maxReplicas, "max-replicas", defaultMaxReplicas, "The maximum number of replicas for the collectors")
 
 	// Set flags for autoscaler algorithms
-	collectormetrics.ScaleBasedOnExporterQueueAndBatchQueue.RegisterFlags()
+	collectormetrics.ScaleBasedOnMemoryAndExporterRetries.RegisterFlags()
 
 	if odigosVersion == "" {
 		flag.StringVar(&odigosVersion, "version", "", "for development purposes only")
@@ -174,11 +174,22 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
 		os.Exit(1)
 	}
+
+	ctx := ctrl.SetupSignalHandler()
+	setupLog.V(0).Info("Starting gateway autoscaler", "interval", parsedInterval.String(), "minReplicas", minReplicas, "maxReplicas", maxReplicas)
+	gatewayAutoscaler := collectormetrics.NewAutoscaler(mgr.GetClient(),
+		collectormetrics.WithCollectorsGroup(odigosv1.CollectorsGroupRoleClusterGateway),
+		collectormetrics.WithInterval(parsedInterval),
+		collectormetrics.WithScaleRange(minReplicas, maxReplicas),
+		collectormetrics.WithAlgorithm(collectormetrics.ScaleBasedOnMemoryAndExporterRetries))
+	go gatewayAutoscaler.Run(ctx)
+
 	if err = (&controllers.OdigosConfigReconciler{
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
+		Autoscaler:       gatewayAutoscaler,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OdigosConfig")
 		os.Exit(1)
@@ -188,15 +199,6 @@ func main() {
 		setupLog.Error(err, "unable to create odigos actions controllers")
 		os.Exit(1)
 	}
-
-	ctx := ctrl.SetupSignalHandler()
-	setupLog.V(0).Info("Starting gateway autoscaler", "interval", parsedInterval.String(), "minReplicas", minReplicas, "maxReplicas", maxReplicas)
-	gatewayAutoscaler := collectormetrics.NewAutoscaler(mgr.GetClient(),
-		collectormetrics.WithCollectorsGroup(odigosv1.CollectorsGroupRoleClusterGateway),
-		collectormetrics.WithInterval(parsedInterval),
-		collectormetrics.WithScaleRange(minReplicas, maxReplicas),
-		collectormetrics.WithAlgorithm(collectormetrics.ScaleBasedOnExporterQueueAndBatchQueue))
-	go gatewayAutoscaler.Run(ctx)
 
 	if err = (&controllers.PodsReconciler{
 		Client:     mgr.GetClient(),

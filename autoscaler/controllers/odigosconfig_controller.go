@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/autoscaler/collectormetrics"
+
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,6 +18,7 @@ type OdigosConfigReconciler struct {
 	Scheme           *runtime.Scheme
 	ImagePullSecrets []string
 	OdigosVersion    string
+	Autoscaler       *collectormetrics.Autoscaler
 }
 
 func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -26,6 +29,10 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	r.Autoscaler.Notify() <- collectormetrics.Notification{
+		Reason: collectormetrics.OdigosConfigUpdated,
 	}
 
 	return ctrl.Result{}, nil

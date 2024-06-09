@@ -31,7 +31,7 @@ const (
 )
 
 func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
-	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
+	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *MemoryConfigurations) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
 	desiredDeployment, err := getDesiredDeployment(dests, configData, gateway, scheme, imagePullSecrets, odigosVersion, memConfig)
 	if err != nil {
@@ -89,9 +89,9 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 }
 
 func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
-	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *MemoryConfigurations) (*appsv1.Deployment, error) {
 
-	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", memConfig.memoryRequestMiB))
+	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", memConfig.MemoryRequestMiB))
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -151,7 +151,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 								},
 								{
 									Name:  "GOMEMLIMIT",
-									Value: fmt.Sprintf("%dMiB", memConfig.gomemlimitMiB),
+									Value: fmt.Sprintf("%dMiB", memConfig.GomemlimitMiB),
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{

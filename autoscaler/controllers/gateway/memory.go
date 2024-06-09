@@ -18,14 +18,14 @@ const (
 	defaultGoMemLimitPercentage = 80.0
 )
 
-type memoryConfigurations struct {
-	memoryRequestMiB           int
-	memoryLimiterLimitMiB      int
-	memoryLimiterSpikeLimitMiB int
-	gomemlimitMiB              int
+type MemoryConfigurations struct {
+	MemoryRequestMiB           int
+	MemoryLimiterLimitMiB      int
+	MemoryLimiterSpikeLimitMiB int
+	GomemlimitMiB              int
 }
 
-func getMemoryConfigurations(odigosConfig *odigosv1.OdigosConfiguration) *memoryConfigurations {
+func GetMemoryConfigurations(odigosConfig *odigosv1.OdigosConfiguration) *MemoryConfigurations {
 
 	memoryRequestMiB := defaultRequestMemoryMiB
 	if odigosConfig.Spec.CollectorGateway != nil && odigosConfig.Spec.CollectorGateway.RequestMemoryMiB > 0 {
@@ -48,10 +48,10 @@ func getMemoryConfigurations(odigosConfig *odigosv1.OdigosConfiguration) *memory
 		gomemlimitMiB = odigosConfig.Spec.CollectorGateway.GoMemLimitMib
 	}
 
-	return &memoryConfigurations{
-		memoryRequestMiB:           memoryRequestMiB,
-		memoryLimiterLimitMiB:      memoryLimiterLimitMiB,
-		memoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
-		gomemlimitMiB:              gomemlimitMiB,
+	return &MemoryConfigurations{
+		MemoryRequestMiB:           memoryRequestMiB,
+		MemoryLimiterLimitMiB:      memoryLimiterLimitMiB,
+		MemoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
+		GomemlimitMiB:              gomemlimitMiB,
 	}
 }

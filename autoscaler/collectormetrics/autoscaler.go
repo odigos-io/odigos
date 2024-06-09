@@ -66,6 +66,7 @@ type Autoscaler struct {
 	ticker        *time.Ticker
 	notifications chan Notification
 	podIPs        map[string]string
+	odigosConfig  *odigosv1.OdigosConfiguration
 }
 
 func NewAutoscaler(kubeClient client.Client, opts ...AutoscalerOption) *Autoscaler {
