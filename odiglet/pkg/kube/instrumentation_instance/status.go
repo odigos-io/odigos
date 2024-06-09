@@ -14,10 +14,10 @@ import (
 )
 
 type InstrumentationInstanceConfig struct {
-	healthy *bool
+	healthy                  *bool
 	nonIdentifyingAttributes []odigosv1.Attribute
-	message string
-	reason string
+	message                  string
+	reason                   string
 }
 
 type InstrumentationInstanceOption interface {
@@ -26,7 +26,9 @@ type InstrumentationInstanceOption interface {
 
 type fnOpt func(InstrumentationInstanceConfig) InstrumentationInstanceConfig
 
-func (o fnOpt) applyInstrumentationInstance(c InstrumentationInstanceConfig) InstrumentationInstanceConfig { return o(c) }
+func (o fnOpt) applyInstrumentationInstance(c InstrumentationInstanceConfig) InstrumentationInstanceConfig {
+	return o(c)
+}
 
 func WithHealthy(healthy *bool) InstrumentationInstanceOption {
 	return fnOpt(func(c InstrumentationInstanceConfig) InstrumentationInstanceConfig {
@@ -67,11 +69,11 @@ func newInstrumentationInstanceConfig(options ...InstrumentationInstanceOption) 
 func newInstrumentationInstanceStatus(options ...InstrumentationInstanceOption) *odigosv1.InstrumentationInstanceStatus {
 	c := newInstrumentationInstanceConfig(options...)
 	return &odigosv1.InstrumentationInstanceStatus{
-		Healthy: c.healthy,
+		Healthy:                  c.healthy,
 		NonIdentifyingAttributes: c.nonIdentifyingAttributes,
-		Message: c.message,
-		Reason: c.reason,
-		LastStatusTime: metav1.Now(),
+		Message:                  c.message,
+		Reason:                   c.reason,
+		LastStatusTime:           metav1.Now(),
 	}
 }
 
@@ -80,26 +82,31 @@ func instrumentationInstanceName(owner client.Object, pid int) string {
 }
 
 func PersistInstrumentationInstanceStatus(ctx context.Context, owner client.Object, kubeClient client.Client, instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
-	updatedInstance := &odigosv1.InstrumentationInstance {
-	TypeMeta: metav1.TypeMeta{
-		APIVersion: "odigos.io/v1alpha1",
-		Kind:       "InstrumentationInstance",
-	},
-	ObjectMeta: metav1.ObjectMeta{
-		Name: instrumentationInstanceName(owner, pid),
-		Namespace: owner.GetNamespace(),
-		Labels: map[string]string{
-			consts.InstrumentedAppNameLabel: instrumentedAppName,
+	instrumentationInstanceName := instrumentationInstanceName(owner, pid)
+	updatedInstance := &odigosv1.InstrumentationInstance{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "odigos.io/v1alpha1",
+			Kind:       "InstrumentationInstance",
 		},
-	},}
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      instrumentationInstanceName,
+			Namespace: owner.GetNamespace(),
+			Labels: map[string]string{
+				consts.InstrumentedAppNameLabel: instrumentedAppName,
+			},
+		}}
 
 	err := controllerutil.SetControllerReference(owner, updatedInstance, scheme)
 	if err != nil {
 		return err
 	}
-	
+
 	if err = kubeClient.Create(ctx, updatedInstance); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
+			return err
+		}
+		err := kubeClient.Get(ctx, client.ObjectKeyFromObject(updatedInstance), updatedInstance)
+		if err != nil {
 			return err
 		}
 	}
