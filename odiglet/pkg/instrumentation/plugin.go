@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/devices"
@@ -19,14 +20,26 @@ type plugin struct {
 	idsManager       devices.DeviceManager
 	stopCh           chan struct{}
 	LangSpecificFunc LangSpecificFunc
+	odigosKubeClient *odigosclientset.Clientset
 }
 
 func NewPlugin(maxPods int64, lsf LangSpecificFunc) dpm.PluginInterface {
 	idManager := devices.NewIDManager(maxPods)
+
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		log.Logger.Error(err, "Failed to init Kubernetes API client")
+	}
+	odigosKubeClient, err := odigosclientset.NewForConfig(cfg)
+	if err != nil {
+		log.Logger.Error(err, "Failed to init odigos client")
+	}
+
 	return &plugin{
 		idsManager:       idManager,
 		stopCh:           make(chan struct{}),
 		LangSpecificFunc: lsf,
+		odigosKubeClient: odigosKubeClient,
 	}
 }
 
@@ -76,13 +89,7 @@ func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest)
 
 		deviceId := req.DevicesIDs[0]
 
-		cfg, err := rest.InClusterConfig()
-		if err != nil {
-			log.Logger.Error(err, "Failed to init Kubernetes API client")
-			return nil, err
-		}
-
-		destinations, err := kubeutils.GetDestinations(ctx, cfg, env.GetCurrentNamespace())
+		destinations, err := kubeutils.GetDestinations(ctx, p.odigosKubeClient, env.GetCurrentNamespace())
 		if err != nil {
 			log.Logger.Error(err, "Failed to list destinations")
 			return nil, err

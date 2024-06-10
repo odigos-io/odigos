@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"log"
 
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -12,7 +11,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -38,16 +36,9 @@ func GetRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 	return filteredPods, nil
 }
 
-func GetDestinations(ctx context.Context, cfg *rest.Config, namespace string) (*v1alpha1.DestinationList, error) {
-
-	odigosClient, err := odigosclientset.NewForConfig(cfg)
+func GetDestinations(ctx context.Context, odigosKubeClient *odigosclientset.Clientset, namespace string) (*v1alpha1.DestinationList, error) {
+	destinations, err := odigosKubeClient.OdigosV1alpha1().Destinations(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		log.Printf("Failed to init odigos client: %v", err)
-		return nil, err
-	}
-	destinations, err := odigosClient.OdigosV1alpha1().Destinations(namespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		log.Printf("Failed to list destinations: %v", err)
 		return nil, err
 	}
 
