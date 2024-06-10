@@ -89,7 +89,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	existing := &v1.ConfigMap{}
 	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: KubeObjectName}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(0).Info("Creating gateway config map")
+			logger.V(5).Info("Creating gateway config map")
 			_, err := createConfigMap(desired, ctx, c)
 			if err != nil {
 				logger.Error(err, "Failed to create gateway config map")
@@ -102,7 +102,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		}
 	}
 
-	logger.V(0).Info("Patching gateway config map")
+	logger.V(5).Info("Patching gateway config map")
 	_, err = patchConfigMap(existing, desired, ctx, c)
 	if err != nil {
 		logger.Error(err, "Failed to patch gateway config map")
@@ -123,7 +123,7 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {
 	if reflect.DeepEqual(existing.Data, desired.Data) &&
 		reflect.DeepEqual(existing.ObjectMeta.OwnerReferences, desired.ObjectMeta.OwnerReferences) {
-		log.FromContext(ctx).V(0).Info("Gateway config maps already match")
+		log.FromContext(ctx).V(5).Info("Gateway config maps already match")
 		return existing, nil
 	}
 	updated := existing.DeepCopy()

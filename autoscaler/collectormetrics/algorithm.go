@@ -86,7 +86,7 @@ func (e *memoryAndExporterRetries) Decide(ctx context.Context, metrics []MetricF
 
 	avgMemory := totalMemory / float64(len(metrics))
 	avgMemoryMb := avgMemory / 1024 / 1024
-	logger.V(0).Info("avg memory", "value", avgMemoryMb, "max memory", maxMemory, "min memory", minMemory)
+	logger.V(5).Info("avg memory", "value", avgMemoryMb, "max memory", maxMemory, "min memory", minMemory)
 
 	if avgMemoryMb > maxMemory {
 		currentReplicas++

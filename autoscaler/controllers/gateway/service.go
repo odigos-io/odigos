@@ -62,7 +62,7 @@ func syncService(gateway *odigosv1.CollectorsGroup, ctx context.Context, c clien
 		return nil, err
 	}
 
-	logger.V(0).Info("gateway service synced", "result", result)
+	logger.V(5).Info("gateway service synced", "result", result)
 	return gatewaySvc, nil
 }
 

@@ -78,6 +78,9 @@ func (a *Autoscaler) Run(ctx context.Context) {
 			}
 
 			results := a.getCollectorsMetrics(ctx)
+			if len(results) == 0 {
+				continue
+			}
 			decision := a.options.algorithm.Decide(ctx, results, a.odigosConfig)
 			a.executeDecision(ctx, decision, len(results))
 		}
@@ -103,7 +106,7 @@ func (a *Autoscaler) executeDecision(ctx context.Context, decision AutoscalerDec
 	}
 
 	if newDecision == AutoscalerDecision(currentReplicas) {
-		logger.V(0).Info("No need to scale", "current", currentReplicas)
+		logger.V(5).Info("No need to scale", "current", currentReplicas)
 		return false
 	}
 

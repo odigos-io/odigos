@@ -56,7 +56,7 @@ func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 		}
 	}
 
-	logger.V(0).Info("Patching config map")
+	logger.V(5).Info("Patching config map")
 	_, err = patchConfigMap(ctx, existing, desired, c)
 	if err != nil {
 		logger.Error(err, "failed to patch config map")
@@ -69,7 +69,7 @@ func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 func patchConfigMap(ctx context.Context, existing *v1.ConfigMap, desired *v1.ConfigMap, c client.Client) (*v1.ConfigMap, error) {
 	if reflect.DeepEqual(existing.Data, desired.Data) &&
 		reflect.DeepEqual(existing.ObjectMeta.OwnerReferences, desired.ObjectMeta.OwnerReferences) {
-		log.FromContext(ctx).V(0).Info("Config maps already match")
+		log.FromContext(ctx).V(5).Info("Config maps already match")
 		return existing, nil
 	}
 	updated := existing.DeepCopy()

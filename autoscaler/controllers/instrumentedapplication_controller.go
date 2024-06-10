@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -62,5 +64,6 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 func (r *InstrumentedApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.InstrumentedApplication{}).
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(r)
 }

@@ -19,6 +19,10 @@ package controllers
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/event"
+
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
@@ -82,5 +86,23 @@ func (r *CollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&v1.Service{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.DaemonSet{}).
+		WithEventFilter(predicate.Or[client.Object](predicate.GenerationChangedPredicate{}, collectorGroupChangedStatus())).
 		Complete(r)
+}
+
+func collectorGroupChangedStatus() predicate.TypedPredicate[client.Object] {
+	return predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldCollectorGroup, ok := e.ObjectOld.(*odigosv1.CollectorsGroup)
+			if !ok {
+				return false
+			}
+			newCollectorGroup, ok := e.ObjectNew.(*odigosv1.CollectorsGroup)
+			if !ok {
+				return false
+			}
+
+			return oldCollectorGroup.Status.Ready != newCollectorGroup.Status.Ready
+		},
+	}
 }
