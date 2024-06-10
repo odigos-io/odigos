@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -58,6 +59,7 @@ func (c *K8sCrdCallbacks) OnConnecting(request *http.Request) types.ConnectionRe
 
 	return types.ConnectionResponse{
 		ConnectionCallbacks: &ConnectionCallbacks{
+			logger:                          c.logger,
 			kubeclient:                      c.kubeclient,
 			k8sAttributes:                   k8sAttributes,
 			serverOfferedResourceAttributes: serverOfferedResourceAttributes,
@@ -74,12 +76,14 @@ func (c *K8sCrdCallbacks) OnConnecting(request *http.Request) types.ConnectionRe
 var _ types.ConnectionCallbacks = &ConnectionCallbacks{}
 
 type ConnectionCallbacks struct {
+	logger                          logr.Logger
 	scheme                          *runtime.Scheme // TODO: revisit this, we should not depend on controller runtime
 	kubeclient                      client.Client
 	k8sAttributes                   *deviceid.K8sResourceAttributes
 	serverOfferedResourceAttributes []ResourceAttribute
 	instrumentedAppName             string
 	pod                             *corev1.Pod
+	wasFirstMessageHandled          bool
 }
 
 func (c *ConnectionCallbacks) OnConnected(ctx context.Context, conn types.Connection) {
@@ -88,7 +92,12 @@ func (c *ConnectionCallbacks) OnConnected(ctx context.Context, conn types.Connec
 
 func (c *ConnectionCallbacks) OnMessage(ctx context.Context, conn types.Connection, message *protobufs.AgentToServer) *protobufs.ServerToAgent {
 	c.persistInstrumentationDeviceStatus(ctx, message)
-	return &protobufs.ServerToAgent{}
+
+	response := &protobufs.ServerToAgent{}
+	if !c.wasFirstMessageHandled {
+		c.OnFirstMessage(ctx, conn, message, response)
+	}
+	return response
 }
 
 func (c *ConnectionCallbacks) OnConnectionClose(conn types.Connection) {
@@ -128,8 +137,27 @@ func (c *ConnectionCallbacks) persistInstrumentationDeviceStatus(ctx context.Con
 	return nil
 }
 
-func (c *ConnectionCallbacks) OnFirstMessage(ctx context.Context, conn types.Connection, message *protobufs.AgentToServer) {
-	println("Persisting first message ", c.serverOfferedResourceAttributes)
+func (c *ConnectionCallbacks) OnFirstMessage(ctx context.Context, conn types.Connection, message *protobufs.AgentToServer, response *protobufs.ServerToAgent) {
+
+	resourceAttributeConfig, err := json.Marshal(c.serverOfferedResourceAttributes)
+	if err != nil {
+		c.logger.Error(err, "failed to marshal server offered resource attributes")
+		return
+	}
+
+	cfg := protobufs.AgentRemoteConfig{
+		Config: &protobufs.AgentConfigMap{
+			ConfigMap: map[string]*protobufs.AgentConfigFile{
+				"server-resolved-resource-attributes": {
+					Body:        resourceAttributeConfig,
+					ContentType: "application/json",
+				},
+			},
+		},
+	}
+
+	response.RemoteConfig = &cfg
+	c.wasFirstMessageHandled = true
 }
 
 func getDeviceIdFromHeader(request *http.Request) (string, error) {

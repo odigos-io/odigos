@@ -1,15 +1,20 @@
 import { PartialMessage } from "@bufbuild/protobuf";
 import { AgentDescription, AgentToServer, ServerToAgent } from "./generated/opamp_pb";
-import { OpAMPClientHttpConfig } from "./types";
-import { otelAttributesToKeyValuePairs } from "./utils";
+import { OpAMPClientHttpConfig, ResourceAttributeFromServer } from "./types";
+import { keyValuePairsToOtelAttributes, otelAttributesToKeyValuePairs } from "./utils";
 import { uuidv7 } from "uuidv7";
 import axios, { AxiosInstance } from "axios";
+import { DetectorSync, IResource, Resource, ResourceDetectionConfig } from "@opentelemetry/resources";
+import { Attributes } from "@opentelemetry/api";
 
-export class OpAMPClientHttp {
+export class OpAMPClientHttp implements DetectorSync {
   private config: OpAMPClientHttpConfig;
   private instanceUid: Uint8Array;
   private nextSequenceNum: bigint = BigInt(0);
   private httpClient: AxiosInstance;
+
+  // promise that we can resolve async later on, which the detect function can return
+  private resourcePromiseResolver?: (resourceAttributes: Attributes) => void;
 
   constructor(config: OpAMPClientHttpConfig) {
     this.config = config;
@@ -23,9 +28,24 @@ export class OpAMPClientHttp {
     });
   }
 
+  detect(): IResource {
+    return new Resource({}, new Promise<Attributes>((resolve) => {
+      this.resourcePromiseResolver = resolve;
+    }));
+  }
+
   async start() {
     try {
         const firstServerToAgent = await this.sendFirstAgentToServer();
+
+        const resourceAttributes = JSON.parse(firstServerToAgent.remoteConfig?.config?.configMap['server-resolved-resource-attributes'].body?.toString() || "{}") as Array<ResourceAttributeFromServer>;
+        if (this.resourcePromiseResolver) {
+          console.log('Got resource attributes, resolving detector promise');
+          this.resourcePromiseResolver(keyValuePairsToOtelAttributes(resourceAttributes));
+        }
+
+        console.log("Resource Attributes: ", resourceAttributes);
+
     } catch (error) {
         // TODO: handle
         console.log(error);
@@ -58,7 +78,6 @@ export class OpAMPClientHttp {
     try {
         const res = await this.httpClient.post("/v1/opamp", msgBytes, { responseType: "arraybuffer" });
         const agentToServer = ServerToAgent.fromBinary(res.data);
-        console.log(agentToServer);
         return agentToServer;
     } catch (error) {
         // TODO: handle

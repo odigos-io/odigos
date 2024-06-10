@@ -1,5 +1,6 @@
 import { AttributeValue, Attributes } from "@opentelemetry/api";
 import { AnyValue, KeyValue } from "./generated/anyvalue_pb";
+import { ResourceAttributeFromServer } from "./types";
 
 const attributeValueToAnyValue = (value: AttributeValue | undefined): AnyValue => {
     const anyValue = new AnyValue();
@@ -32,4 +33,17 @@ export const otelAttributesToKeyValuePairs = (attributes?: Attributes): KeyValue
             value: attributeValueToAnyValue(value),
         });
     });
+};
+
+export const keyValuePairsToOtelAttributes = (keyValuePairs?: ResourceAttributeFromServer[]): Attributes => {
+    if (!keyValuePairs) {
+        return {};
+    }
+    return keyValuePairs.reduce((acc, keyValue) => {
+        const value = keyValue.value;
+        if (value) {
+            acc[keyValue.key] = value;
+        }
+        return acc;
+    }, {} as Attributes);
 };

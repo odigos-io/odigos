@@ -25,19 +25,27 @@ if (opampServerHost) {
     agentDescriptionIdentifyingAttributes: {
       [SEMRESATTRS_TELEMETRY_SDK_LANGUAGE]: TELEMETRYSDKLANGUAGEVALUES_NODEJS,
       [SEMRESATTRS_TELEMETRY_SDK_NAME]: "odigos",
-      [SEMRESATTRS_TELEMETRY_SDK_VERSION]: "0.0.1",
+      [SEMRESATTRS_TELEMETRY_SDK_VERSION]: "0.0.1", // TODO: get version from package.json
       [SEMRESATTRS_PROCESS_PID]: process.pid,
     },
     agentDescriptionNonIdentifyingAttributes: {},
   });
 
   opampClient.start();
+
+  const sdk = new NodeSDK({
+    resourceDetectors: [opampClient],
+    instrumentations: [getNodeAutoInstrumentations()],
+    traceExporter: new OTLPTraceExporter(),
+  });
+  sdk.start();
+} else {
+  const sdk = new NodeSDK({
+    autoDetectResources: true,
+    instrumentations: [getNodeAutoInstrumentations()],
+    traceExporter: new OTLPTraceExporter(),
+  });  
+  sdk.start();
 }
 
-const sdk = new NodeSDK({
-  autoDetectResources: true,
-  instrumentations: [getNodeAutoInstrumentations()],
-  traceExporter: new OTLPTraceExporter(),
-});
 
-sdk.start();
