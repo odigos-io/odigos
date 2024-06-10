@@ -49,7 +49,7 @@ COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 FROM registry.fedoraproject.org/fedora-minimal:38
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
-COPY --from=builder /root/go/bin/dlv /root/dlv
+COPY --from=builder /go/bin/dlv /root/dlv
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 
