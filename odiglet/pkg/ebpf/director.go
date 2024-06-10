@@ -192,7 +192,7 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 				Workload: *podWorkload,
 				Reason:   LoadedSuccessfully,
 				PodName:  pod,
-			    Pid:      pid,
+				Pid:      pid,
 			}
 		}
 	}()
@@ -203,12 +203,12 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 		inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName, pod.Name, loadedIndicator)
 		if err != nil {
 			d.instrumentationStatusChan <- instrumentationStatus{
-				Healthy: false,
-				Message: err.Error(),
+				Healthy:  false,
+				Message:  err.Error(),
 				Workload: *podWorkload,
-				Reason: FailedToInitialize,
-				PodName: pod,
-				Pid: pid,
+				Reason:   FailedToInitialize,
+				PodName:  pod,
+				Pid:      pid,
 			}
 			return
 		}
@@ -233,12 +233,12 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 
 		if err := inst.Run(context.Background()); err != nil {
 			d.instrumentationStatusChan <- instrumentationStatus{
-				Healthy: false,
-				Message: err.Error(),
+				Healthy:  false,
+				Message:  err.Error(),
 				Workload: *podWorkload,
-				Reason: FailedToLoad,
-				PodName: pod,
-				Pid: pid,
+				Reason:   FailedToLoad,
+				PodName:  pod,
+				Pid:      pid,
 			}
 		}
 	}()

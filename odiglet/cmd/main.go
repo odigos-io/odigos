@@ -55,7 +55,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	err = server.StartOpAmpServer(ctx, log.Logger, mgr)
+	err = server.StartOpAmpServer(ctx, log.Logger, mgr, clientset)
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -6,8 +6,15 @@ import (
 	"net/http"
 
 	"github.com/go-logr/logr"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_instance"
+	"github.com/odigos-io/odigos/opampserver/pkg/deviceid"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/open-telemetry/opamp-go/server/types"
+	semconv "go.opentelemetry.io/collector/semconv/v1.9.0"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -15,8 +22,10 @@ import (
 var _ types.Callbacks = &K8sCrdCallbacks{}
 
 type K8sCrdCallbacks struct {
-	logger     logr.Logger
-	kubeclient client.Client
+	scheme        *runtime.Scheme
+	logger        logr.Logger
+	deviceIdCache *deviceid.DeviceIdCache
+	kubeclient    client.Client
 }
 
 func (c *K8sCrdCallbacks) OnConnecting(request *http.Request) types.ConnectionResponse {
@@ -28,10 +37,33 @@ func (c *K8sCrdCallbacks) OnConnecting(request *http.Request) types.ConnectionRe
 		}
 	}
 
-	println("OnConnecting", deviceId)
+	k8sAttributes, pod, err := c.deviceIdCache.GetAttributesFromDevice(request.Context(), deviceId)
+	if err != nil {
+		c.logger.Error(err, "failed to get attributes from device", "deviceId", deviceId)
+		return types.ConnectionResponse{
+			Accept:         false,
+			HTTPStatusCode: 404,
+		}
+	}
+	serverOfferedResourceAttributes, err := calculateServerAttributes(k8sAttributes)
+	if err != nil {
+		c.logger.Error(err, "failed to calculate server attributes", "deviceId", deviceId)
+		return types.ConnectionResponse{
+			Accept:         false,
+			HTTPStatusCode: 500,
+		}
+	}
+
+	instrumentedAppName := workload.GetRuntimeObjectName(k8sAttributes.WorkloadName, k8sAttributes.WorkloadKind)
+
 	return types.ConnectionResponse{
 		ConnectionCallbacks: &ConnectionCallbacks{
-			kubeclient: c.kubeclient,
+			kubeclient:                      c.kubeclient,
+			k8sAttributes:                   k8sAttributes,
+			serverOfferedResourceAttributes: serverOfferedResourceAttributes,
+			instrumentedAppName:             instrumentedAppName,
+			pod:                             pod,
+			scheme:                          c.scheme,
 		},
 		Accept:         true,
 		HTTPStatusCode: 200,
@@ -42,7 +74,12 @@ func (c *K8sCrdCallbacks) OnConnecting(request *http.Request) types.ConnectionRe
 var _ types.ConnectionCallbacks = &ConnectionCallbacks{}
 
 type ConnectionCallbacks struct {
-	kubeclient client.Client
+	scheme                          *runtime.Scheme // TODO: revisit this, we should not depend on controller runtime
+	kubeclient                      client.Client
+	k8sAttributes                   *deviceid.K8sResourceAttributes
+	serverOfferedResourceAttributes []ResourceAttribute
+	instrumentedAppName             string
+	pod                             *corev1.Pod
 }
 
 func (c *ConnectionCallbacks) OnConnected(ctx context.Context, conn types.Connection) {
@@ -50,7 +87,7 @@ func (c *ConnectionCallbacks) OnConnected(ctx context.Context, conn types.Connec
 }
 
 func (c *ConnectionCallbacks) OnMessage(ctx context.Context, conn types.Connection, message *protobufs.AgentToServer) *protobufs.ServerToAgent {
-	println("OnMessage", message.String())
+	c.persistInstrumentationDeviceStatus(ctx, message)
 	return &protobufs.ServerToAgent{}
 }
 
@@ -58,16 +95,53 @@ func (c *ConnectionCallbacks) OnConnectionClose(conn types.Connection) {
 	println("OnConnectionClose")
 }
 
+func (c *ConnectionCallbacks) persistInstrumentationDeviceStatus(ctx context.Context, message *protobufs.AgentToServer) error {
+	if message.AgentDescription != nil {
+		var pid int64
+		for _, attr := range message.AgentDescription.IdentifyingAttributes {
+			if attr.Key == string(semconv.AttributeProcessPID) {
+				pid = attr.Value.GetIntValue()
+				break
+			}
+		}
+		if pid == 0 {
+			return fmt.Errorf("missing pid in agent description")
+		}
+
+		identifyingAttributes := make([]odigosv1.Attribute, 0, len(message.AgentDescription.IdentifyingAttributes))
+		for _, attr := range message.AgentDescription.IdentifyingAttributes {
+			identifyingAttributes = append(identifyingAttributes, odigosv1.Attribute{
+				Key:   attr.Key,
+				Value: attr.GetValue().GetStringValue(),
+			})
+		}
+
+		err := instrumentation_instance.PersistInstrumentationInstanceStatus(ctx, c.pod, c.kubeclient, c.instrumentedAppName, int(pid), c.scheme,
+			instrumentation_instance.WithNonIdentifyingAttributes(identifyingAttributes),
+			instrumentation_instance.WithMessage("Agent connected"),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to persist instrumentation instance status: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (c *ConnectionCallbacks) OnFirstMessage(ctx context.Context, conn types.Connection, message *protobufs.AgentToServer) {
+	println("Persisting first message ", c.serverOfferedResourceAttributes)
+}
+
 func getDeviceIdFromHeader(request *http.Request) (string, error) {
 	authorization := request.Header.Get("Authorization")
 	if authorization == "" {
-		return "", fmt.Errorf("Authorization header is missing")
+		return "", fmt.Errorf("authorization header is missing")
 	}
 
 	// make sure the Authorization header is in the format "DeviceId <device-id>"
 	const prefix = "DeviceId "
 	if len(authorization) <= len(prefix) || authorization[:len(prefix)] != prefix {
-		return "", fmt.Errorf("Authorization header is not in the format 'DeviceId <device-id>'")
+		return "", fmt.Errorf("authorization header is not in the format 'DeviceId <device-id>'")
 	}
 
 	return authorization[len(prefix):], nil
