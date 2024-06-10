@@ -21,7 +21,7 @@ const (
 	httpProtobufProtocol               = "http/protobuf"
 )
 
-func Python(deviceId string) *v1beta1.ContainerAllocateResponse {
+func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
 	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort)
 	pythonpathVal, _ := envOverwrite.ValToAppend("PYTHONPATH", common.OtelSdkNativeCommunity)
 

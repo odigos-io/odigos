@@ -2,13 +2,18 @@ package instrumentation
 
 import (
 	"context"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/devices"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
+
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/devices"
+	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
+	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	"k8s.io/client-go/rest"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
-type LangSpecificFunc func(deviceId string) *v1beta1.ContainerAllocateResponse
+type LangSpecificFunc func(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse
 
 type plugin struct {
 	idsManager       devices.DeviceManager
@@ -70,7 +75,26 @@ func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest)
 		}
 
 		deviceId := req.DevicesIDs[0]
-		res.ContainerResponses = append(res.ContainerResponses, p.LangSpecificFunc(deviceId))
+
+		cfg, err := rest.InClusterConfig()
+		if err != nil {
+			log.Logger.Error(err, "Failed to init Kubernetes API client")
+			return nil, err
+		}
+
+		destinations, err := kubeutils.GetDestinations(ctx, cfg, env.GetCurrentNamespace())
+		if err != nil {
+			log.Logger.Error(err, "Failed to list destinations")
+			return nil, err
+		}
+
+		uniqueDestinationSignals := make(map[common.ObservabilitySignal]struct{})
+		for _, destination := range destinations.Items {
+			for _, signal := range destination.Spec.Signals {
+				uniqueDestinationSignals[signal] = struct{}{}
+			}
+		}
+		res.ContainerResponses = append(res.ContainerResponses, p.LangSpecificFunc(deviceId, uniqueDestinationSignals))
 	}
 
 	return res, nil
