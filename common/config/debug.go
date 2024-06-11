@@ -11,7 +11,7 @@ func (s *Debug) DestType() common.DestinationType {
 }
 
 func (s *Debug) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-	exporterName := "debug"
+	exporterName := "debug/" + dest.GetID()
 
 	currentConfig.Exporters[exporterName] = GenericMap{
 	}
