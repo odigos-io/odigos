@@ -229,7 +229,7 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 					"delete",
 				},
 				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"addclusterinfos", "deleteattributes", "renameattributes"},
+				Resources: []string{"addclusterinfos", "deleteattributes", "renameattributes", "probabilisticsamplers"},
 			},
 		},
 	}
