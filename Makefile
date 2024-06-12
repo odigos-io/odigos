@@ -26,12 +26,7 @@ build-ui:
 
 .PHONY: build-images
 build-images:
-	make build-autoscaler TAG=$(TAG)
-	make build-scheduler TAG=$(TAG)
-	make build-odiglet TAG=$(TAG)
-	make build-instrumentor TAG=$(TAG)
-	make build-collector TAG=$(TAG)
-	make build-ui TAG=$(TAG)
+	make -j 6 build-autoscaler build-scheduler build-odiglet build-instrumentor build-collector build-ui TAG=$(TAG)
 
 .PHONY: push-odiglet
 push-odiglet:
