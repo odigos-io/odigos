@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-opentelemetry-collector-0
+  namespace: traces
+status:
+  phase: Running
+  containerStatuses:
+    - name: filecp
+      ready: true
+      restartCount: 0
+    - name: opentelemetry-collector
+      ready: true
+      restartCount: 0
