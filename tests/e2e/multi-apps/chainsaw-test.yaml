@@ -37,6 +37,23 @@ spec:
         file: 04-add-destination.yaml
     - assert:
         file: 04-assert.yaml
+  - name: Validate Trace Data
+    try:
+      # TODO: Add health check to demo applications, we sleep because Spring apps take time to start
+      - sleep:
+          duration: 5s
+      - create:
+          file: 05-generate-traffic.yaml
+      - assert:
+          file: 05-assert.yaml
+          timeout: 20s
+      # We sleep to allow traces to be collected
+      - sleep:
+          duration: 10s
+      - script:
+          content: |
+            kubectl cp -c filecp traces/test-opentelemetry-collector-0:tmp/trace.json ./bats/traces-orig.json
+            bats ./bats/verify.bats
 #      description: sample assert operation
 #    - description: sample error operation
 #      error:

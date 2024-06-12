@@ -1,0 +1,11 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: buybot-job
+  namespace: default
+status:
+  conditions:
+    - status: "True"
+      type: Complete
+  ready: 0
+  succeeded: 1
