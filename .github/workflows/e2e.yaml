@@ -62,9 +62,6 @@ jobs:
       - name: Run E2E Tests
         run: |
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
-      - name: Install Odigos
-        run: |
-          cli/odigos install --version e2e-test
       - name: Install KV Shop
         run: |
           kubectl create ns kvshop
