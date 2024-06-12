@@ -44,6 +44,8 @@ jobs:
           version: v3.9.0
       - name: Setup BATS
         uses: mig4/setup-bats@v1
+      - name: Install chainsaw
+        uses: kyverno/action-install-chainsaw@v0.2.4
       - name: Create Kind Cluster
         uses: helm/kind-action@v1.10.0
         with:
@@ -57,22 +59,12 @@ jobs:
       - name: Build and Load Odigos Images
         run: |
           TAG=e2e-test make build-images load-to-kind
+      - name: Run E2E Tests
+        run: |
+          chainsaw test tests/e2e/${{ matrix.test-scenario }}
       - name: Install Odigos
         run: |
           cli/odigos install --version e2e-test
-      - name: Install Collector - Add Dependencies
-        shell: bash
-        run: |
-          helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-      - uses: actions/checkout@v4
-        with:
-          repository: 'open-telemetry/opentelemetry-helm-charts'
-          path: opentelemetry-helm-charts
-      - name: Install Collector - Helm install
-        run: helm install test -f .github/workflows/e2e/collector-helm-values.yaml opentelemetry-helm-charts/charts/opentelemetry-collector --namespace traces --create-namespace
-      - name: Wait for Collector to be ready
-        run: |
-          kubectl wait --for=condition=Ready --timeout=60s -n traces pod/test-opentelemetry-collector-0
       - name: Install KV Shop
         run: |
           kubectl create ns kvshop

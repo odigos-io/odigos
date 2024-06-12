@@ -1,0 +1,26 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: multi-apps
+spec:
+  description: This e2e test runs a multi-apps scenario
+  steps:
+  - name: Prepare destination
+    try:
+    - apply:
+        file: 00-install-collector.yaml
+    - assert:
+        file: 00-assert.yaml
+#      description: sample assert operation
+#    - description: sample error operation
+#      error:
+#        file: error.yaml
+#    - delete:
+#        ref:
+#          apiVersion: v1
+#          kind: Pod
+#          name: foo
+#      description: sample delete operation
+#    - description: sample script operation
+#      script:
+#        content: echo "test namespace = $NAMESPACE"
