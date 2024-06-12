@@ -22,9 +22,9 @@ jobs:
           - "multi-apps"
         include:
           - kube-version: "1.23"
-            kind-version: "v0.11.1"
+            kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
           - kube-version: "1.30"
-            kind-version: "v0.11.1"
+            kind-image: "kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,7 +47,9 @@ jobs:
       - name: Create Kind Cluster
         uses: helm/kind-action@v1.10.0
         with:
-          cluster_name: kind
+          cluster_name: kind-${{ matrix.kube-version }}
+          node_image: ${{ matrix.kind-image }}
+          version: "v0.23.0"
       - name: Build CLI
         run: |
           cd cli
