@@ -47,7 +47,6 @@ jobs:
       - name: Create Kind Cluster
         uses: helm/kind-action@v1.10.0
         with:
-          cluster_name: kind-${{ matrix.kube-version }}
           node_image: ${{ matrix.kind-image }}
           version: "v0.23.0"
       - name: Build CLI
