@@ -5,9 +5,26 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   kubernetes-test:
     runs-on: large-runner
+    strategy:
+      fail-fast: false
+      matrix:
+        kube-version:
+          - "1.23"
+          - "1.30"
+        test-scenario:
+          - "multi-apps"
+        include:
+          - kube-version: "1.23"
+            kind-version: "v0.11.1"
+          - kube-version: "1.30"
+            kind-version: "v0.11.1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,6 +35,9 @@ jobs:
         with:
           go-version: "~1.22"
           check-latest: true
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
