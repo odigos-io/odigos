@@ -62,9 +62,6 @@ jobs:
       - name: Run E2E Tests
         run: |
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
-      - name: Select kvshop namespace for instrumentation
-        run: |
-          kubectl label namespace kvshop odigos-instrumentation=enabled
       - name: Connect to Jaeger destination
         run: |
           kubectl create -f .github/workflows/e2e/jaeger-dest.yaml

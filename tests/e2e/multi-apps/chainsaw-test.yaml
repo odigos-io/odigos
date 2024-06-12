@@ -22,9 +22,15 @@ spec:
   - name: Install Demo App
     try:
     - apply:
-        file: 02-install-kv-shop.yaml
+        file: 02-install-simple-demo.yaml
     - assert:
         file: 02-assert.yaml
+  - name: Detect Languages
+    try:
+    - apply:
+        file: 03-instrument-ns.yaml
+    - assert:
+        file: 03-assert.yaml
 #      description: sample assert operation
 #    - description: sample error operation
 #      error:

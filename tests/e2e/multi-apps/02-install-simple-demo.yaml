@@ -1,46 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: membership
-  namespace: default
-  labels:
-    app: membership
-spec:
-  selector:
-    matchLabels:
-      app: membership
-  template:
-    metadata:
-      labels:
-        app: membership
-    spec:
-      containers:
-        - name: membership
-          image: keyval/kv-shop-membership:v0.2
-          ports:
-            - containerPort: 8080
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: membership
-  namespace: default
-spec:
-  selector:
-    app: membership
-  ports:
-    - protocol: TCP
-      port: 8080
-      targetPort: 8080
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: coupon
   namespace: default
   labels:
     app: coupon
-    odigos-instrumentation: disabled
 spec:
   selector:
     matchLabels:
@@ -52,18 +16,9 @@ spec:
     spec:
       containers:
         - name: coupon
-          image: keyval/kv-shop-coupon:v0.2
+          image: keyval/odigos-demo-coupon:v0.1
+          imagePullPolicy: Always
           env:
-            - name: NODE_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
-            - name: OTEL_TRACES_EXPORTER
-              value: otlp
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: "http://$(NODE_IP):4318"
-            - name: OTEL_SERVICE_NAME
-              value: coupon
             - name: MEMBERSHIP_SERVICE_URL
               value: "membership:8080"
           ports:
@@ -77,76 +32,6 @@ metadata:
 spec:
   selector:
     app: coupon
-  ports:
-    - protocol: TCP
-      port: 8080
-      targetPort: 8080
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: inventory
-  namespace: default
-  labels:
-    app: inventory
-spec:
-  selector:
-    matchLabels:
-      app: inventory
-  template:
-    metadata:
-      labels:
-        app: inventory
-    spec:
-      containers:
-        - name: inventory
-          image: keyval/kv-shop-inventory:v0.2
-          ports:
-            - containerPort: 8080
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: inventory
-  namespace: default
-spec:
-  selector:
-    app: inventory
-  ports:
-    - protocol: TCP
-      port: 8080
-      targetPort: 8080
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: pricing
-  namespace: default
-  labels:
-    app: pricing
-spec:
-  selector:
-    matchLabels:
-      app: pricing
-  template:
-    metadata:
-      labels:
-        app: pricing
-    spec:
-      containers:
-        - name: pricing
-          image: keyval/kv-shop-pricing:v0.2
-          ports:
-            - containerPort: 8080
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: pricing
-  namespace: default
-spec:
-  selector:
-    app: pricing
   ports:
     - protocol: TCP
       port: 8080
@@ -170,7 +55,10 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: keyval/kv-shop-frontend:v0.2
+          image: keyval/odigos-demo-frontend:v0.1
+          imagePullPolicy: Always
+          securityContext:
+            runAsUser: 1000
           env:
             - name: INVENTORY_SERVICE_HOST
               value: inventory:8080
@@ -189,6 +77,114 @@ metadata:
 spec:
   selector:
     app: frontend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: default
+  labels:
+    app: inventory
+spec:
+  selector:
+    matchLabels:
+      app: inventory
+  template:
+    metadata:
+      labels:
+        app: inventory
+    spec:
+      containers:
+        - name: inventory
+          image: keyval/odigos-demo-inventory:v0.1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: inventory
+  namespace: default
+spec:
+  selector:
+    app: inventory
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: membership
+  namespace: default
+  labels:
+    app: membership
+spec:
+  selector:
+    matchLabels:
+      app: membership
+  template:
+    metadata:
+      labels:
+        app: membership
+    spec:
+      containers:
+        - name: membership
+          image: keyval/odigos-demo-membership:v0.1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: membership
+  namespace: default
+spec:
+  selector:
+    app: membership
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pricing
+  namespace: default
+  labels:
+    app: pricing
+spec:
+  selector:
+    matchLabels:
+      app: pricing
+  template:
+    metadata:
+      labels:
+        app: pricing
+    spec:
+      containers:
+        - name: pricing
+          image: keyval/odigos-demo-pricing:v0.1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: pricing
+  namespace: default
+spec:
+  selector:
+    app: pricing
   ports:
     - protocol: TCP
       port: 8080
