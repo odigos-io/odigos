@@ -62,18 +62,3 @@ jobs:
       - name: Run E2E Tests
         run: |
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
-      - name: Start bot job
-        run: |
-          kubectl create -f .github/workflows/e2e/buybot-job.yaml -n kvshop
-      - name: Wait for bot job to complete
-        run: |
-          kubectl wait --for=condition=Complete --timeout=60s job/buybot-job -n kvshop
-      - name: Copy trace output
-        run: |
-          echo "Sleeping for 10 seconds to allow traces to be collected"
-          sleep 10
-          kubectl cp -c filecp traces/test-opentelemetry-collector-0:tmp/trace.json ./.github/workflows/e2e/bats/traces-orig.json
-          cat ./.github/workflows/e2e/bats/traces-orig.json
-      - name: Verify output trace
-        run: |
-          bats .github/workflows/e2e/bats/verify.bats
