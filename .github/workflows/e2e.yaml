@@ -49,6 +49,7 @@ jobs:
         with:
           node_image: ${{ matrix.kind-image }}
           version: "v0.23.0"
+          cluster_name: kind
       - name: Build CLI
         run: |
           cd cli
