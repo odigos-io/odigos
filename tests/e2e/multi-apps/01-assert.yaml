@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: odigos-system
+  labels:
+    odigos.io/system-object: "true"
+---
