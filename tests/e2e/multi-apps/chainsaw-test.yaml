@@ -15,7 +15,8 @@ spec:
   - name: Install Odigos
     try:
     - script:
-        content: cd ../../.. && cli/odigos install --version e2e-test
+        content: ../../../cli/odigos install --version e2e-test
+        timeout: 60s
     - assert:
         file: 01-assert.yaml
 #      description: sample assert operation
