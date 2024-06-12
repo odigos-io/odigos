@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: membership
+  namespace: default
   labels:
     app: membership
 spec:
@@ -23,6 +24,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: membership
+  namespace: default
 spec:
   selector:
     app: membership
@@ -35,6 +37,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: coupon
+  namespace: default
   labels:
     app: coupon
     odigos-instrumentation: disabled
@@ -70,6 +73,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: coupon
+  namespace: default
 spec:
   selector:
     app: coupon
@@ -82,6 +86,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: inventory
+  namespace: default
   labels:
     app: inventory
 spec:
@@ -103,6 +108,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: inventory
+  namespace: default
 spec:
   selector:
     app: inventory
@@ -115,6 +121,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pricing
+  namespace: default
   labels:
     app: pricing
 spec:
@@ -136,6 +143,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: pricing
+  namespace: default
 spec:
   selector:
     app: pricing
@@ -148,6 +156,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
+  namespace: default
   labels:
     app: frontend
 spec:
@@ -176,6 +185,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: frontend
+  namespace: default
 spec:
   selector:
     app: frontend

@@ -19,6 +19,12 @@ spec:
         timeout: 60s
     - assert:
         file: 01-assert.yaml
+  - name: Install Demo App
+    try:
+    - apply:
+        file: 02-install-kv-shop.yaml
+    - assert:
+        file: 02-assert.yaml
 #      description: sample assert operation
 #    - description: sample error operation
 #      error:

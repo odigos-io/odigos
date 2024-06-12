@@ -62,13 +62,6 @@ jobs:
       - name: Run E2E Tests
         run: |
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
-      - name: Install KV Shop
-        run: |
-          kubectl create ns kvshop
-          kubectl apply -f .github/workflows/e2e/kv-shop.yaml -n kvshop
-      - name: Wait for KV Shop to be ready
-        run: |
-          kubectl wait --for=condition=Ready --timeout=100s -n kvshop pods --all
       - name: Select kvshop namespace for instrumentation
         run: |
           kubectl label namespace kvshop odigos-instrumentation=enabled
