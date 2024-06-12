@@ -4,6 +4,7 @@ metadata:
   name: multi-apps
 spec:
   description: This e2e test runs a multi-apps scenario
+  skipDelete: true
   steps:
   - name: Prepare destination
     try:
@@ -11,6 +12,12 @@ spec:
         file: 00-install-collector.yaml
     - assert:
         file: 00-assert.yaml
+  - name: Install Odigos
+    try:
+    - script:
+        content: cd ../../.. && cli/odigos install --version e2e-test
+    - assert:
+        file: 01-assert.yaml
 #      description: sample assert operation
 #    - description: sample error operation
 #      error:
