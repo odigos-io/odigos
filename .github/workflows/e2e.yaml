@@ -62,26 +62,6 @@ jobs:
       - name: Run E2E Tests
         run: |
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
-      - name: Connect to Jaeger destination
-        run: |
-          kubectl create -f .github/workflows/e2e/jaeger-dest.yaml
-      - name: Wait for Odigos to bring up collectors
-        run: |
-          while [[ $(kubectl get daemonset odigos-data-collection -n odigos-system -o jsonpath='{.status.numberReady}') != 1 ]];
-          do
-          echo "Waiting for odigos-data-collection daemonset to be created" && sleep 3;
-          done
-          while [[ $(kubectl get deployment odigos-gateway -n odigos-system -o jsonpath='{.status.readyReplicas}') != 1 ]];
-          do
-          echo "Waiting for odigos-data-collection deployment to be created" && sleep 3;
-          done
-          while [[ $(kubectl get pods --output=jsonpath='{range .items[*]}{.status.phase}{"\n"}{end}' -n kvshop | grep -v Running | wc -l) != 0 ]];
-          do
-          echo "Waiting for kvshop pods to be running" && sleep 3;
-          done
-          sleep 10
-          kubectl get pods -A
-          kubectl get svc -A
       - name: Start bot job
         run: |
           kubectl create -f .github/workflows/e2e/buybot-job.yaml -n kvshop

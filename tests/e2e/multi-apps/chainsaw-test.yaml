@@ -31,6 +31,12 @@ spec:
         file: 03-instrument-ns.yaml
     - assert:
         file: 03-assert.yaml
+  - name: Add Destination
+    try:
+    - apply:
+        file: 04-add-destination.yaml
+    - assert:
+        file: 04-assert.yaml
 #      description: sample assert operation
 #    - description: sample error operation
 #      error:
