@@ -21,6 +21,19 @@ spec:
         file: 01-assert.yaml
   - name: Install Demo App
     try:
+    - script:
+        timeout: 100s
+        content: |
+          docker pull keyval/odigos-demo-inventory:v0.1
+          docker pull keyval/odigos-demo-membership:v0.1
+          docker pull keyval/odigos-demo-coupon:v0.1
+          docker pull keyval/odigos-demo-inventory:v0.1
+          docker pull keyval/odigos-demo-frontend:v0.2
+          kind load docker-image keyval/odigos-demo-inventory:v0.1
+          kind load docker-image keyval/odigos-demo-membership:v0.1
+          kind load docker-image keyval/odigos-demo-coupon:v0.1
+          kind load docker-image keyval/odigos-demo-inventory:v0.1
+          kind load docker-image keyval/odigos-demo-frontend:v0.2
     - apply:
         file: 02-install-simple-demo.yaml
     - assert:
@@ -39,9 +52,6 @@ spec:
         file: 04-assert.yaml
   - name: Validate Trace Data
     try:
-      # TODO: Add health check to demo applications, we sleep because Spring apps take time to start
-      - sleep:
-          duration: 5s
       - create:
           file: 05-generate-traffic.yaml
       - assert:
