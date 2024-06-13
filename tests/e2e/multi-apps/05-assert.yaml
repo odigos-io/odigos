@@ -7,5 +7,4 @@ status:
   conditions:
     - status: "True"
       type: Complete
-  ready: 0
   succeeded: 1
