@@ -56,6 +56,7 @@ func (c *K8sCrdCallbacks) OnConnecting(request *http.Request) types.ConnectionRe
 	}
 
 	instrumentedAppName := workload.GetRuntimeObjectName(k8sAttributes.WorkloadName, k8sAttributes.WorkloadKind)
+	c.logger.Info("new OpAMP client connected", "deviceId", deviceId, "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", k8sAttributes.OtelServiceName)
 
 	return types.ConnectionResponse{
 		ConnectionCallbacks: &ConnectionCallbacks{
