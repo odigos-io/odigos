@@ -8,6 +8,7 @@ const (
 	AzureBlobDestinationType              DestinationType = "azureblob"
 	CauselyDestinationType                DestinationType = "causely"
 	ChronosphereDestinationType           DestinationType = "chronosphere"
+	ClickhouseDestinationType             DestinationType = "clickhouse"
 	CoralogixDestinationType              DestinationType = "coralogix"
 	DatadogDestinationType                DestinationType = "datadog"
 	DebugDestinationType                  DestinationType = "debug"

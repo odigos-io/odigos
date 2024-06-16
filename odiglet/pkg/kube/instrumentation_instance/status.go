@@ -15,6 +15,7 @@ import (
 
 type InstrumentationInstanceConfig struct {
 	healthy                  *bool
+	identifyingAttributes    []odigosv1.Attribute
 	nonIdentifyingAttributes []odigosv1.Attribute
 	message                  string
 	reason                   string
@@ -33,6 +34,13 @@ func (o fnOpt) applyInstrumentationInstance(c InstrumentationInstanceConfig) Ins
 func WithHealthy(healthy *bool) InstrumentationInstanceOption {
 	return fnOpt(func(c InstrumentationInstanceConfig) InstrumentationInstanceConfig {
 		c.healthy = healthy
+		return c
+	})
+}
+
+func WithIdentifyingAttributes(attributes []odigosv1.Attribute) InstrumentationInstanceOption {
+	return fnOpt(func(c InstrumentationInstanceConfig) InstrumentationInstanceConfig {
+		c.identifyingAttributes = attributes
 		return c
 	})
 }
@@ -70,6 +78,7 @@ func newInstrumentationInstanceStatus(options ...InstrumentationInstanceOption) 
 	c := newInstrumentationInstanceConfig(options...)
 	return &odigosv1.InstrumentationInstanceStatus{
 		Healthy:                  c.healthy,
+		IdentifyingAttributes:    c.identifyingAttributes,
 		NonIdentifyingAttributes: c.nonIdentifyingAttributes,
 		Message:                  c.message,
 		Reason:                   c.reason,

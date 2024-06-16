@@ -3,6 +3,7 @@ package instrumentlang
 import (
 	"fmt"
 
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/consts"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
@@ -28,7 +29,7 @@ const (
 	sharedStore           = "/var/odigos/dotnet/store"
 )
 
-func DotNet(deviceId string) *v1beta1.ContainerAllocateResponse {
+func DotNet(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
 			enableProfilingEnvVar: "1",

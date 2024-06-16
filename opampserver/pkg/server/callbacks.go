@@ -126,7 +126,7 @@ func (c *ConnectionCallbacks) persistInstrumentationDeviceStatus(ctx context.Con
 		}
 
 		err := instrumentation_instance.PersistInstrumentationInstanceStatus(ctx, c.pod, c.kubeclient, c.instrumentedAppName, int(pid), c.scheme,
-			instrumentation_instance.WithNonIdentifyingAttributes(identifyingAttributes),
+			instrumentation_instance.WithIdentifyingAttributes(identifyingAttributes),
 			instrumentation_instance.WithMessage("Agent connected"),
 		)
 		if err != nil {

@@ -1,0 +1,35 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: clickhouse
+  displayName: Clickhouse
+  category: self hosted
+spec:
+  image: clickhouse.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: CLICKHOUSE_ENDPOINT
+      displayName: Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+    - name: CLICKHOUSE_USERNAME
+      displayName: Username
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+    - name: CLICKHOUSE_PASSWORD
+      displayName: Password
+      componentType: input
+      componentProps:
+          type: password
+          required: false
+          secret: true

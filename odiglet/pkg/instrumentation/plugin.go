@@ -2,26 +2,44 @@ package instrumentation
 
 import (
 	"context"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/devices"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
+
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/devices"
+	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
+	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	"k8s.io/client-go/rest"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
-type LangSpecificFunc func(deviceId string) *v1beta1.ContainerAllocateResponse
+type LangSpecificFunc func(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse
 
 type plugin struct {
 	idsManager       devices.DeviceManager
 	stopCh           chan struct{}
 	LangSpecificFunc LangSpecificFunc
+	odigosKubeClient *odigosclientset.Clientset
 }
 
 func NewPlugin(maxPods int64, lsf LangSpecificFunc) dpm.PluginInterface {
 	idManager := devices.NewIDManager(maxPods)
+
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		log.Logger.Error(err, "Failed to init Kubernetes API client")
+	}
+	odigosKubeClient, err := odigosclientset.NewForConfig(cfg)
+	if err != nil {
+		log.Logger.Error(err, "Failed to init odigos client")
+	}
+
 	return &plugin{
 		idsManager:       idManager,
 		stopCh:           make(chan struct{}),
 		LangSpecificFunc: lsf,
+		odigosKubeClient: odigosKubeClient,
 	}
 }
 
@@ -70,7 +88,20 @@ func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest)
 		}
 
 		deviceId := req.DevicesIDs[0]
-		res.ContainerResponses = append(res.ContainerResponses, p.LangSpecificFunc(deviceId))
+
+		destinations, err := kubeutils.GetDestinations(ctx, p.odigosKubeClient, env.GetCurrentNamespace())
+		if err != nil {
+			log.Logger.Error(err, "Failed to list destinations")
+			return nil, err
+		}
+
+		uniqueDestinationSignals := make(map[common.ObservabilitySignal]struct{})
+		for _, destination := range destinations.Items {
+			for _, signal := range destination.Spec.Signals {
+				uniqueDestinationSignals[signal] = struct{}{}
+			}
+		}
+		res.ContainerResponses = append(res.ContainerResponses, p.LangSpecificFunc(deviceId, uniqueDestinationSignals))
 	}
 
 	return res, nil
