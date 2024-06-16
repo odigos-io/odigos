@@ -24,6 +24,7 @@ import (
 // InstrumentationInstanceStatusApplyConfiguration represents an declarative configuration of the InstrumentationInstanceStatus type for use
 // with apply.
 type InstrumentationInstanceStatusApplyConfiguration struct {
+	IdentifyingAttributes    []AttributeApplyConfiguration                    `json:"identifyingAttributes,omitempty"`
 	NonIdentifyingAttributes []AttributeApplyConfiguration                    `json:"nonIdentifyingAttributes,omitempty"`
 	Healthy                  *bool                                            `json:"healthy,omitempty"`
 	Message                  *string                                          `json:"message,omitempty"`
@@ -36,6 +37,19 @@ type InstrumentationInstanceStatusApplyConfiguration struct {
 // apply.
 func InstrumentationInstanceStatus() *InstrumentationInstanceStatusApplyConfiguration {
 	return &InstrumentationInstanceStatusApplyConfiguration{}
+}
+
+// WithIdentifyingAttributes adds the given value to the IdentifyingAttributes field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the IdentifyingAttributes field.
+func (b *InstrumentationInstanceStatusApplyConfiguration) WithIdentifyingAttributes(values ...*AttributeApplyConfiguration) *InstrumentationInstanceStatusApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithIdentifyingAttributes")
+		}
+		b.IdentifyingAttributes = append(b.IdentifyingAttributes, *values[i])
+	}
+	return b
 }
 
 // WithNonIdentifyingAttributes adds the given value to the NonIdentifyingAttributes field in the declarative configuration
