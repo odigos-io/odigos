@@ -86,10 +86,6 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 }
 
 func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request *protobufs.AgentToServer, connectionInfo *ConnectionInfo) (*protobufs.ServerToAgent, error) {
-
-	// persist the agent
-	c.PersistInstrumentationDeviceStatus(ctx, request, connectionInfo)
-
 	return &protobufs.ServerToAgent{}, nil
 }
 
@@ -101,9 +97,10 @@ func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Cont
 	if message.AgentDescription != nil {
 		identifyingAttributes := make([]odigosv1.Attribute, 0, len(message.AgentDescription.IdentifyingAttributes))
 		for _, attr := range message.AgentDescription.IdentifyingAttributes {
+			strValue := ConvertAnyValueToString(attr.GetValue())
 			identifyingAttributes = append(identifyingAttributes, odigosv1.Attribute{
 				Key:   attr.Key,
-				Value: attr.GetValue().GetStringValue(),
+				Value: strValue,
 			})
 		}
 
