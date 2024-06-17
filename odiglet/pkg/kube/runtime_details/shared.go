@@ -85,7 +85,11 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 			}
 			process := processes[0]
 
-			lang := inspectors.DetectLanguage(process)
+			lang, err := inspectors.DetectLanguage(process)
+			if err != nil {
+				log.Logger.V(0).Info("error detecting language", err)
+				lang = common.UnknownProgrammingLanguage
+			}
 			if lang == common.UnknownProgrammingLanguage {
 				log.Logger.V(0).Info("no supported language detected for container in pod", "process", process, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 			}
