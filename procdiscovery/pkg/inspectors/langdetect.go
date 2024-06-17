@@ -34,6 +34,7 @@ var inspectorsList = []inspector{
 
 // DetectLanguage returns the detected language for the process or
 // common.UnknownProgrammingLanguage if the language could not be detected, in which case error == nil
+// if error or language detectors disagree common.UnknownProgrammingLanguage is also returned
 func DetectLanguage(process process.Details) (common.ProgrammingLanguage, error) {
 	detectedLanguage := common.UnknownProgrammingLanguage
 	for _, i := range inspectorsList {
