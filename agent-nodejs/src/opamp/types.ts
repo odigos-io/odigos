@@ -6,7 +6,7 @@ export interface OpAMPClientHttpConfig {
   // This is the unique identifier for the device that is mounted to the container
   instrumentationDeviceId: string;
   opAMPServerHost: string; // the host + (optional) port of the OpAMP server to connect over http://
-  pollingInterval?: number;
+  pollingIntervalMs?: number;
 
   agentDescriptionIdentifyingAttributes?: Attributes;
   agentDescriptionNonIdentifyingAttributes?: Attributes;

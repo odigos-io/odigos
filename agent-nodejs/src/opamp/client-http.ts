@@ -26,6 +26,12 @@ export class OpAMPClientHttp implements DetectorSync {
         "Authorization": `DeviceId ${config.instrumentationDeviceId}`,
        },
     });
+
+    const timer = setInterval(() => {
+      const heartbeatRes = this.sendHeartBeatToServer();
+      console.log("Heartbeat response:", heartbeatRes);
+    }, this.config.pollingIntervalMs || 30000);
+    timer.unref(); // do not keep the process alive just for this timer
   }
 
   detect(): IResource {
@@ -50,6 +56,10 @@ export class OpAMPClientHttp implements DetectorSync {
         // TODO: handle
         console.log(error);
     }
+  }
+
+  private async sendHeartBeatToServer() {
+    return await this.sendAgentToServerMessage({});
   }
 
   private async sendFirstAgentToServer() {
