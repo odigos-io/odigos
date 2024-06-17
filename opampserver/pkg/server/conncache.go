@@ -24,9 +24,11 @@ type ConnectionsCache struct {
 }
 
 type ConnectionInfo struct {
-	DeviceId        string
-	Pod             *corev1.Pod
-	lastMessageTime time.Time
+	DeviceId            string
+	Pod                 *corev1.Pod
+	Pid                 int64
+	InstrumentedAppName string
+	lastMessageTime     time.Time
 }
 
 func NewConnectionsCache() *ConnectionsCache {

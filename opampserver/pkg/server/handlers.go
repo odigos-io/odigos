@@ -6,17 +6,40 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_instance"
 	"github.com/odigos-io/odigos/opampserver/pkg/deviceid"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
+	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ConnectionHandlers struct {
 	deviceIdCache *deviceid.DeviceIdCache
 	logger        logr.Logger
+	kubeclient    client.Client
+	scheme        *runtime.Scheme // TODO: revisit this, we should not depend on controller runtime
 }
 
 func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId string, firstMessage *protobufs.AgentToServer) (*ConnectionInfo, *protobufs.ServerToAgent, error) {
+
+	// first message must contain agent description
+	if firstMessage.AgentDescription == nil {
+		return nil, nil, fmt.Errorf("missing agent description in first message")
+	}
+
+	var pid int64
+	for _, attr := range firstMessage.AgentDescription.IdentifyingAttributes {
+		if attr.Key == string(semconv.ProcessPIDKey) {
+			pid = attr.Value.GetIntValue()
+			break
+		}
+	}
+	if pid == 0 {
+		return nil, nil, fmt.Errorf("missing pid in agent description")
+	}
 
 	k8sAttributes, pod, err := c.deviceIdCache.GetAttributesFromDevice(ctx, deviceId)
 	if err != nil {
@@ -53,8 +76,10 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		RemoteConfig: &serverAttrsRemoteCfg,
 	}
 	connectionInfo := &ConnectionInfo{
-		DeviceId: deviceId,
-		Pod:      pod,
+		DeviceId:            deviceId,
+		Pod:                 pod,
+		Pid:                 pid,
+		InstrumentedAppName: instrumentedAppName,
 	}
 
 	return connectionInfo, opampResponse, nil
@@ -62,10 +87,34 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 
 func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request *protobufs.AgentToServer, connectionInfo *ConnectionInfo) (*protobufs.ServerToAgent, error) {
 
-	fmt.Println("Received message from agent", request.String())
+	// persist the agent
+	c.PersistInstrumentationDeviceStatus(ctx, request, connectionInfo)
+
 	return &protobufs.ServerToAgent{}, nil
 }
 
 func (c *ConnectionHandlers) OnConnectionClosed(ctx context.Context, connectionInfo *ConnectionInfo) {
 	fmt.Println("Connection closed for device", connectionInfo.DeviceId)
+}
+
+func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Context, message *protobufs.AgentToServer, connectionInfo *ConnectionInfo) error {
+	if message.AgentDescription != nil {
+		identifyingAttributes := make([]odigosv1.Attribute, 0, len(message.AgentDescription.IdentifyingAttributes))
+		for _, attr := range message.AgentDescription.IdentifyingAttributes {
+			identifyingAttributes = append(identifyingAttributes, odigosv1.Attribute{
+				Key:   attr.Key,
+				Value: attr.GetValue().GetStringValue(),
+			})
+		}
+
+		err := instrumentation_instance.PersistInstrumentationInstanceStatus(ctx, connectionInfo.Pod, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme,
+			instrumentation_instance.WithIdentifyingAttributes(identifyingAttributes),
+			instrumentation_instance.WithMessage("Agent connected"),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to persist instrumentation instance status: %w", err)
+		}
+	}
+
+	return nil
 }

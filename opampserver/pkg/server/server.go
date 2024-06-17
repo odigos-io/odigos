@@ -45,6 +45,8 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 	handlers := &ConnectionHandlers{
 		logger:        logger,
 		deviceIdCache: deviceidCache,
+		kubeclient:    mgr.GetClient(),
+		scheme:        mgr.GetScheme(),
 	}
 
 	http.HandleFunc("/v1/opamp", func(w http.ResponseWriter, req *http.Request) {
@@ -102,6 +104,12 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+		}
+
+		err = handlers.PersistInstrumentationDeviceStatus(ctx, &opampRequest, connectionInfo)
+		if err != nil {
+			logger.Error(err, "Failed to persist instrumentation device status")
+			// still return the opamp response
 		}
 
 		if opampResponse == nil {
