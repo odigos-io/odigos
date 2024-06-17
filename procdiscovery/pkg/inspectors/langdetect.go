@@ -1,6 +1,8 @@
 package inspectors
 
 import (
+	"fmt"
+
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/dotnet"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/golang"
@@ -15,8 +17,8 @@ type ErrLanguageDetectionConflict struct {
 	languages [2]common.ProgrammingLanguage
 }
 
-func (ErrLanguageDetectionConflict) Error() string {
-	return "language detection conflict"
+func (e ErrLanguageDetectionConflict) Error() string {
+	return fmt.Sprintf("language detection conflict between %v and %v", e.languages[0], e.languages[1])
 }
 
 type inspector interface {
