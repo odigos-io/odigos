@@ -5,7 +5,7 @@ import { keyValuePairsToOtelAttributes, otelAttributesToKeyValuePairs } from "./
 import { uuidv7 } from "uuidv7";
 import axios, { AxiosInstance } from "axios";
 import { DetectorSync, IResource, Resource, ResourceDetectionConfig } from "@opentelemetry/resources";
-import { Attributes } from "@opentelemetry/api";
+import { Attributes, diag } from "@opentelemetry/api";
 
 export class OpAMPClientHttp implements DetectorSync {
   private config: OpAMPClientHttpConfig;
@@ -27,8 +27,8 @@ export class OpAMPClientHttp implements DetectorSync {
        },
     });
 
-    const timer = setInterval(() => {
-      const heartbeatRes = this.sendHeartBeatToServer();
+    const timer = setInterval(async () => {
+      const heartbeatRes = await this.sendHeartBeatToServer();
       console.log("Heartbeat response:", heartbeatRes);
     }, this.config.pollingIntervalMs || 30000);
     timer.unref(); // do not keep the process alive just for this timer
@@ -56,6 +56,13 @@ export class OpAMPClientHttp implements DetectorSync {
         // TODO: handle
         console.log(error);
     }
+  }
+
+  async shutdown() {
+    diag.debug('OpAMP client shutting down');
+    return await this.sendAgentToServerMessage({
+      agentDisconnect: {},
+    })
   }
 
   private async sendHeartBeatToServer() {

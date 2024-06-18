@@ -97,6 +97,12 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 			}
 			connectionCache.AddConnection(deviceId, connectionInfo)
 		} else {
+
+			if opampRequest.AgentDisconnect != nil {
+				handlers.OnConnectionClosed(ctx, connectionInfo)
+				connectionCache.RemoveConnection(deviceId)
+			}
+
 			opampResponse, err = handlers.OnAgentToServerMessage(ctx, &opampRequest, connectionInfo)
 
 			if err != nil {

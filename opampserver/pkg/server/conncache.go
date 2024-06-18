@@ -51,6 +51,12 @@ func (c *ConnectionsCache) AddConnection(deviceId string, conn *ConnectionInfo) 
 	c.liveConnections[deviceId] = conn
 }
 
+func (c *ConnectionsCache) RemoveConnection(deviceId string) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	delete(c.liveConnections, deviceId)
+}
+
 func (c *ConnectionsCache) RecordMessageTime(deviceId string) {
 	c.mux.Lock()
 	defer c.mux.Unlock()

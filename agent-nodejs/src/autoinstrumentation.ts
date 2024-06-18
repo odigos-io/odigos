@@ -9,6 +9,7 @@ import {
   SEMRESATTRS_TELEMETRY_SDK_VERSION,
   SEMRESATTRS_PROCESS_PID,
 } from "@opentelemetry/semantic-conventions";
+import { diag } from "@opentelemetry/api";
 
 const opampServerHost = process.env.ODIGOS_OPAMP_SERVER_HOST;
 const instrumentationDeviceId = process.env.ODIGOS_INSTRUMENTATION_DEVICE_ID;
@@ -39,6 +40,21 @@ if (opampServerHost) {
     traceExporter: new OTLPTraceExporter(),
   });
   sdk.start();
+
+  const shutdown = async () => {
+    try {
+      diag.debug('Shutting down OpenTelemetry SDK and OpAMP client');
+      await Promise.all([sdk.shutdown(), opampClient.shutdown()]);
+      await new Promise(resolve => setTimeout(resolve, 60000));
+    } catch(err) {
+      diag.error('Error shutting down OpenTelemetry SDK and OpAMP client', err);
+    }
+  }
+
+  process.on('SIGTERM', shutdown);  
+  process.on('SIGINT', shutdown);
+  process.on('exit', shutdown);
+
 } else {
   const sdk = new NodeSDK({
     autoDetectResources: true,
