@@ -50,9 +50,8 @@ if (opampServerHost && instrumentationDeviceId) {
 
   const shutdown = async () => {
     try {
-      diag.debug('Shutting down OpenTelemetry SDK and OpAMP client');
+      diag.info('Shutting down OpenTelemetry SDK and OpAMP client');
       await Promise.all([sdk.shutdown(), opampClient.shutdown()]);
-      await new Promise(resolve => setTimeout(resolve, 60000));
     } catch(err) {
       diag.error('Error shutting down OpenTelemetry SDK and OpAMP client', err);
     }

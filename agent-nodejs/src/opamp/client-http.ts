@@ -59,7 +59,7 @@ export class OpAMPClientHttp implements DetectorSync {
   }
 
   async shutdown() {
-    diag.debug('OpAMP client shutting down');
+    diag.info('Sending AgentDisconnect message to OpAMP server');
     return await this.sendAgentToServerMessage({
       agentDisconnect: {},
     })
