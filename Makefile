@@ -1,10 +1,10 @@
 ORG := keyval
 .PHONY: build-odiglet
 build-odiglet:
-	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile
+	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG)
 
 .PHONY: build-autoscaler
-build-autoscaler:
+build-autoscaler:	
 	docker build -t $(ORG)/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
 
 .PHONY: build-instrumentor

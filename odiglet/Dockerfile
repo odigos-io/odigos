@@ -4,8 +4,11 @@ ADD odiglet/agents/python/requirements.txt .
 RUN mkdir workspace && pip install --target workspace -r requirements.txt
 
 FROM node:18 AS nodejs-builder
+ARG ODIGOS_VERSION
 WORKDIR /nodejs-instrumentation
 COPY agent-nodejs .
+# inject the actual version into the agent code
+RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
 RUN yarn
 RUN yarn compile
 # RUN rm -rf node_modules && yarn --production # Remove dev dependencies
