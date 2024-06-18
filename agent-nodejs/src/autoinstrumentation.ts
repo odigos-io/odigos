@@ -5,28 +5,22 @@ import { OpAMPClientHttp } from "./opamp";
 import {
   SEMRESATTRS_TELEMETRY_SDK_LANGUAGE,
   TELEMETRYSDKLANGUAGEVALUES_NODEJS,
-  SEMRESATTRS_TELEMETRY_SDK_NAME,
-  SEMRESATTRS_TELEMETRY_SDK_VERSION,
   SEMRESATTRS_PROCESS_PID,
 } from "@opentelemetry/semantic-conventions";
+import { envDetectorSync, hostDetectorSync, processDetectorSync } from "@opentelemetry/resources";
 import { diag } from "@opentelemetry/api";
 
 const opampServerHost = process.env.ODIGOS_OPAMP_SERVER_HOST;
 const instrumentationDeviceId = process.env.ODIGOS_INSTRUMENTATION_DEVICE_ID;
-if (!opampServerHost || !instrumentationDeviceId) {
-  throw new Error(
-    "ODIGOS_OPAMP_SERVER_HOST and ODIGOS_INSTRUMENTATION_DEVICE_ID must be set"
-  );
-}
 
-if (opampServerHost) {
+if (opampServerHost && instrumentationDeviceId) {
   const opampClient = new OpAMPClientHttp({
     instrumentationDeviceId: instrumentationDeviceId,
     opAMPServerHost: opampServerHost,
     agentDescriptionIdentifyingAttributes: {
       [SEMRESATTRS_TELEMETRY_SDK_LANGUAGE]: TELEMETRYSDKLANGUAGEVALUES_NODEJS,
-      [SEMRESATTRS_TELEMETRY_SDK_NAME]: "odigos",
-      [SEMRESATTRS_TELEMETRY_SDK_VERSION]: "0.0.1", // TODO: get version from package.json
+      // [SEMRESATTRS_TELEMETRY_SDK_NAME]: "odigos", // No need to send this, as the value is always "odigos"
+      // [SEMRESATTRS_TELEMETRY_SDK_VERSION]: "0.0.1", // TODO: fill the correct value here
       [SEMRESATTRS_PROCESS_PID]: process.pid,
     },
     agentDescriptionNonIdentifyingAttributes: {},
@@ -35,7 +29,12 @@ if (opampServerHost) {
   opampClient.start();
 
   const sdk = new NodeSDK({
-    resourceDetectors: [opampClient],
+    resourceDetectors: [
+      envDetectorSync, // env detector reads resource attributes from the environment
+      processDetectorSync, // info about executable, runtime, command, etc
+      hostDetectorSync, // host name, arch, machine id, etc
+      opampClient // attributes from OpAMP server, regarding k8s, service name, etc
+    ],
     instrumentations: [getNodeAutoInstrumentations()],
     traceExporter: new OTLPTraceExporter(),
   });

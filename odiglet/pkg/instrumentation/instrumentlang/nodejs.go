@@ -11,15 +11,12 @@ import (
 )
 
 const (
-	nodeMountPath             = "/var/odigos/nodejs"
-	nodeEnvNodeDebug          = "OTEL_NODEJS_DEBUG"
-	nodeEnvTraceExporter      = "OTEL_TRACES_EXPORTER"
-	nodeEnvEndpoint           = "OTEL_EXPORTER_OTLP_ENDPOINT"
-	nodeEnvServiceName        = "OTEL_SERVICE_NAME"
-	nodeEnvNodeOptions        = "NODE_OPTIONS"
-	nodeEnvResourceAttributes = "OTEL_RESOURCE_ATTRIBUTES"
-	nodeOdigosOpampServer     = "ODIGOS_OPAMP_SERVER_HOST"
-	nodeOdigosDeviceId        = "ODIGOS_INSTRUMENTATION_DEVICE_ID"
+	nodeMountPath         = "/var/odigos/nodejs"
+	nodeEnvEndpoint       = "OTEL_EXPORTER_OTLP_ENDPOINT"
+	nodeEnvServiceName    = "OTEL_SERVICE_NAME"
+	nodeEnvNodeOptions    = "NODE_OPTIONS"
+	nodeOdigosOpampServer = "ODIGOS_OPAMP_SERVER_HOST"
+	nodeOdigosDeviceId    = "ODIGOS_INSTRUMENTATION_DEVICE_ID"
 )
 
 func NodeJS(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
@@ -29,14 +26,11 @@ func NodeJS(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
-			nodeEnvNodeDebug:          "true",
-			nodeEnvTraceExporter:      "otlp",
-			nodeEnvEndpoint:           otlpEndpoint,
-			nodeEnvServiceName:        deviceId,
-			nodeEnvResourceAttributes: "odigos.device=nodejs",
-			nodeEnvNodeOptions:        nodeOptionsVal,
-			nodeOdigosOpampServer:     opampServerHost,
-			nodeOdigosDeviceId:        deviceId,
+			nodeEnvEndpoint:       otlpEndpoint,
+			nodeEnvServiceName:    deviceId, // temporary set the device id as well, so if opamp fails we can fallback to resolve k8s attributes in the collector
+			nodeEnvNodeOptions:    nodeOptionsVal,
+			nodeOdigosOpampServer: opampServerHost,
+			nodeOdigosDeviceId:    deviceId,
 		},
 		Mounts: []*v1beta1.Mount{
 			{
