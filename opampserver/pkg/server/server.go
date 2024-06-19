@@ -95,7 +95,9 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			connectionCache.AddConnection(deviceId, connectionInfo)
+			if connectionInfo != nil {
+				connectionCache.AddConnection(deviceId, connectionInfo)
+			}
 		} else {
 
 			if opampRequest.AgentDisconnect != nil {

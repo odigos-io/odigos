@@ -1,10 +1,18 @@
 import { PartialMessage } from "@bufbuild/protobuf";
-import { AgentDescription, AgentToServer, ServerToAgent } from "./generated/opamp_pb";
+import {
+  AgentDescription,
+  AgentToServer,
+  ServerToAgent,
+  ServerToAgentFlags,
+} from "./generated/opamp_pb";
 import { OpAMPClientHttpConfig, ResourceAttributeFromServer } from "./types";
-import { keyValuePairsToOtelAttributes, otelAttributesToKeyValuePairs } from "./utils";
+import {
+  keyValuePairsToOtelAttributes,
+  otelAttributesToKeyValuePairs,
+} from "./utils";
 import { uuidv7 } from "uuidv7";
 import axios, { AxiosInstance } from "axios";
-import { DetectorSync, IResource, Resource, ResourceDetectionConfig } from "@opentelemetry/resources";
+import { DetectorSync, IResource, Resource } from "@opentelemetry/resources";
 import { Attributes, diag } from "@opentelemetry/api";
 
 export class OpAMPClientHttp implements DetectorSync {
@@ -21,55 +29,70 @@ export class OpAMPClientHttp implements DetectorSync {
     this.instanceUid = new TextEncoder().encode(uuidv7());
     this.httpClient = axios.create({
       baseURL: `http://${this.config.opAMPServerHost}`,
-      headers: { 
+      headers: {
         "Content-Type": " application/x-protobuf",
-        "Authorization": `DeviceId ${config.instrumentationDeviceId}`,
-       },
+        Authorization: `DeviceId ${config.instrumentationDeviceId}`,
+      },
     });
 
     const timer = setInterval(async () => {
-      const heartbeatRes = await this.sendHeartBeatToServer();
+      let heartbeatRes = await this.sendHeartBeatToServer();
+      if (
+        heartbeatRes.flags ||
+        ServerToAgentFlags.ServerToAgentFlags_ReportFullState
+      ) {
+        diag.info("Opamp server requested full state report");
+        heartbeatRes = await this.sendFullState();
+      }
       console.log("Heartbeat response:", heartbeatRes);
     }, this.config.pollingIntervalMs || 30000);
     timer.unref(); // do not keep the process alive just for this timer
   }
 
   detect(): IResource {
-    return new Resource({}, new Promise<Attributes>((resolve) => {
-      this.resourcePromiseResolver = resolve;
-    }));
+    return new Resource(
+      {},
+      new Promise<Attributes>((resolve) => {
+        this.resourcePromiseResolver = resolve;
+      })
+    );
   }
 
   async start() {
     try {
-        const firstServerToAgent = await this.sendFirstAgentToServer();
+      const firstServerToAgent = await this.sendFullState();
 
-        const resourceAttributes = JSON.parse(firstServerToAgent.remoteConfig?.config?.configMap['server-resolved-resource-attributes'].body?.toString() || "{}") as Array<ResourceAttributeFromServer>;
-        if (this.resourcePromiseResolver) {
-          console.log('Got resource attributes, resolving detector promise');
-          this.resourcePromiseResolver(keyValuePairsToOtelAttributes(resourceAttributes));
-        }
+      const resourceAttributes = JSON.parse(
+        firstServerToAgent.remoteConfig?.config?.configMap[
+          "server-resolved-resource-attributes"
+        ].body?.toString() || "{}"
+      ) as Array<ResourceAttributeFromServer>;
+      if (this.resourcePromiseResolver) {
+        console.log("Got resource attributes, resolving detector promise");
+        this.resourcePromiseResolver(
+          keyValuePairsToOtelAttributes(resourceAttributes)
+        );
+      }
 
-        console.log("Resource Attributes: ", resourceAttributes);
-
+      console.log("Resource Attributes: ", resourceAttributes);
     } catch (error) {
-        // TODO: handle
-        console.log(error);
+      // TODO: handle
+      console.log(error);
     }
   }
 
   async shutdown() {
-    diag.info('Sending AgentDisconnect message to OpAMP server');
+    diag.info("Sending AgentDisconnect message to OpAMP server");
     return await this.sendAgentToServerMessage({
       agentDisconnect: {},
-    })
+    });
   }
 
   private async sendHeartBeatToServer() {
     return await this.sendAgentToServerMessage({});
   }
 
-  private async sendFirstAgentToServer() {
+  private async sendFullState() {
     return await this.sendAgentToServerMessage({
       // agent description is only sent in the first AgentToServer message
       agentDescription: new AgentDescription({
@@ -93,12 +116,14 @@ export class OpAMPClientHttp implements DetectorSync {
     });
     const msgBytes = completeMessageToSend.toBinary();
     try {
-        const res = await this.httpClient.post("/v1/opamp", msgBytes, { responseType: "arraybuffer" });
-        const agentToServer = ServerToAgent.fromBinary(res.data);
-        return agentToServer;
+      const res = await this.httpClient.post("/v1/opamp", msgBytes, {
+        responseType: "arraybuffer",
+      });
+      const agentToServer = ServerToAgent.fromBinary(res.data);
+      return agentToServer;
     } catch (error) {
-        // TODO: handle
-        throw error;
+      // TODO: handle
+      throw error;
     }
   }
 }

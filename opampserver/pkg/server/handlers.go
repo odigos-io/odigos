@@ -25,9 +25,15 @@ type ConnectionHandlers struct {
 
 func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId string, firstMessage *protobufs.AgentToServer) (*ConnectionInfo, *protobufs.ServerToAgent, error) {
 
-	// first message must contain agent description
 	if firstMessage.AgentDescription == nil {
-		return nil, nil, fmt.Errorf("missing agent description in first message")
+		// first message must be agent description.
+		// it is, however, possible that the OpAMP server restarted, and the agent is trying to reconnect.
+		// in which case we send back flag and request full status update.
+		c.logger.Info("Agent description is missing in the first OpAMP message, requesting full state update", "deviceId", deviceId)
+		opampResponse := &protobufs.ServerToAgent{
+			Flags: uint64(protobufs.ServerToAgentFlags_ServerToAgentFlags_ReportFullState),
+		}
+		return nil, opampResponse, nil
 	}
 
 	var pid int64

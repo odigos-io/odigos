@@ -10,6 +10,7 @@ import (
 	inst "github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_instance"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -276,7 +277,8 @@ func (d *EbpfDirector[T]) Cleanup(pod types.NamespacedName) {
 		},
 	})
 
-	if err != nil {
+	// the instrumentation instance might already be deleted at this point if the pod was deleted
+	if err != nil && !apierrors.IsNotFound(err) {
 		log.Logger.Error(err, "error deleting instrumentation instance", "pod", pod)
 	}
 
