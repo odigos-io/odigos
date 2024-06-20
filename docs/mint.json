@@ -126,7 +126,7 @@
     {
       "group": "Destinations",
       "pages": [
-        "backends",
+        "backends-overview",
         {
           "group": "Supported Backends",
           "pages": [
