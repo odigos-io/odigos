@@ -69,11 +69,15 @@ var uninstallCmd = &cobra.Command{
 				client, cmd, ns, uninstallRBAC)
 			createKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
 				client, cmd, ns, uninstallSecrets)
-			createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
-				client, cmd, ns, uninstallNamespace)
 
-			// Wait for namespace to be deleted
-			waitForNamespaceDeletion(ctx, client, ns)
+			// The CLI is running in Kubernetes via a Helm chart [pre-delete hook] to clean up Odigos resources.
+			// Deleting the namespace during uninstallation will cause Helm to fail due to the loss of the release state.
+			if !kube.IsRunningInKubernetes() {
+				createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
+					client, cmd, ns, uninstallNamespace)
+
+				waitForNamespaceDeletion(ctx, client, ns)
+			}
 
 		} else {
 			fmt.Println("Odigos is not installed in any namespace. cleaning up any other Odigos resources that might be left in the cluster...")
@@ -235,8 +239,8 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 				} else {
 					// remove the env var
 					patchOperations = append(patchOperations, map[string]interface{}{
-						"op":    "remove",
-						"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d", iContainer, iEnv),
+						"op":   "remove",
+						"path": fmt.Sprintf("/spec/template/spec/containers/%d/env/%d", iContainer, iEnv),
 					})
 				}
 			}
