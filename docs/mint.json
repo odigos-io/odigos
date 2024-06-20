@@ -222,7 +222,7 @@
   "redirects": [
     {
       "source": "/backends/:slug*",
-      "destination": "/backends"
+      "destination": "/backends-overview"
     }
   ],
   "footerSocials": {
