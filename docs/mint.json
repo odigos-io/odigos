@@ -219,12 +219,6 @@
       ]
     }
   ],
-  "redirects": [
-    {
-      "source": "/backends/:slug*",
-      "destination": "/backends-overview"
-    }
-  ],
   "footerSocials": {
     "X": "https://twitter.com/odigosio",
     "github": "https://github.com/odigos-io/odigos",
