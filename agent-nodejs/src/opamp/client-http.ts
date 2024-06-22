@@ -10,14 +10,16 @@ import {
   keyValuePairsToOtelAttributes,
   otelAttributesToKeyValuePairs,
 } from "./utils";
-import { v7 as uuidv7 } from "uuid";
+import { uuidv7 } from "uuidv7";
 import axios, { AxiosInstance } from "axios";
 import { DetectorSync, IResource, Resource } from "@opentelemetry/resources";
 import { Attributes, diag } from "@opentelemetry/api";
+import { SEMRESATTRS_SERVICE_INSTANCE_ID, SEMRESATTRS_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 
 export class OpAMPClientHttp implements DetectorSync {
   private config: OpAMPClientHttpConfig;
-  private instanceUid: Uint8Array;
+  private OpAMPInstanceUidString: string;
+  private OpAMPInstanceUid: Uint8Array;
   private nextSequenceNum: bigint = BigInt(0);
   private httpClient: AxiosInstance;
 
@@ -26,7 +28,10 @@ export class OpAMPClientHttp implements DetectorSync {
 
   constructor(config: OpAMPClientHttpConfig) {
     this.config = config;
-    this.instanceUid = new TextEncoder().encode(uuidv7());
+    this.OpAMPInstanceUidString = uuidv7();
+    this.OpAMPInstanceUid = new TextEncoder().encode(
+      this.OpAMPInstanceUidString
+    );
     this.httpClient = axios.create({
       baseURL: `http://${this.config.opAMPServerHost}`,
       headers: {
@@ -34,19 +39,22 @@ export class OpAMPClientHttp implements DetectorSync {
         Authorization: `DeviceId ${config.instrumentationDeviceId}`,
       },
     });
-
-    const timer = setInterval(async () => {
-      let heartbeatRes = await this.sendHeartBeatToServer();
-      if (
-        heartbeatRes.flags ||
-        ServerToAgentFlags.ServerToAgentFlags_ReportFullState
-      ) {
-        diag.info("Opamp server requested full state report");
-        heartbeatRes = await this.sendFullState();
+    this.httpClient.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        const relevantErrorInfo = {
+          message: error.message,
+          code: error.code,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+        };
+        return Promise.reject(relevantErrorInfo);
       }
-      console.log("Heartbeat response:", heartbeatRes);
-    }, this.config.pollingIntervalMs || 30000);
-    timer.unref(); // do not keep the process alive just for this timer
+    );
   }
 
   detect(): IResource {
@@ -59,26 +67,23 @@ export class OpAMPClientHttp implements DetectorSync {
   }
 
   async start() {
-    try {
-      const firstServerToAgent = await this.sendFullState();
-
-      const resourceAttributes = JSON.parse(
-        firstServerToAgent.remoteConfig?.config?.configMap[
-          "SDK"
-        ].body?.toString() || "{}"
-      ) as { remoteResourceAttributes: ResourceAttributeFromServer[]};
-      if (this.resourcePromiseResolver) {
-        console.log("Got remote resource attributes, resolving detector promise");
-        this.resourcePromiseResolver(
-          keyValuePairsToOtelAttributes(resourceAttributes.remoteResourceAttributes)
-        );
+    await this.sendFirstMessageWithRetry();
+    const timer = setInterval(async () => {
+      let heartbeatRes = await this.sendHeartBeatToServer();
+      if (!heartbeatRes) {
+        return;
       }
 
-      console.log("Resource Attributes: ", resourceAttributes);
-    } catch (error) {
-      // TODO: handle
-      console.log(error);
-    }
+      if (
+        heartbeatRes.flags ||
+        ServerToAgentFlags.ServerToAgentFlags_ReportFullState
+      ) {
+        diag.info("Opamp server requested full state report");
+        heartbeatRes = await this.sendFullState();
+      }
+      console.log("Heartbeat response:", heartbeatRes);
+    }, this.config.pollingIntervalMs || 30000);
+    timer.unref(); // do not keep the process alive just for this timer
   }
 
   async shutdown() {
@@ -88,17 +93,78 @@ export class OpAMPClientHttp implements DetectorSync {
     });
   }
 
+  // the first opamp message is special, as we need to get the remote resource attributes.
+  // this function will attempt to send the first message, and will retry after some interval if it fails.
+  // if no remote resource attributes are received after some grace period, we will continue without them.
+  private async sendFirstMessageWithRetry() {
+    let remainingRetries = 5;
+    const retryIntervalMs = 2000;
+
+    for (let i = 0; i < remainingRetries; i++) {
+      try {
+        const firstServerToAgent = await this.sendFullState();
+
+        const sdkConfig =
+          firstServerToAgent.remoteConfig?.config?.configMap["SDK"];
+        if (!sdkConfig || !sdkConfig.body) {
+          throw new Error(
+            "No SDK config received on first OpAMP message to the server"
+          );
+        }
+
+        const resourceAttributes = JSON.parse(sdkConfig.body.toString()) as {
+          remoteResourceAttributes: ResourceAttributeFromServer[];
+        };
+
+        if (this.resourcePromiseResolver) {
+          diag.info(
+            "Got remote resource attributes, resolving detector promise",
+            resourceAttributes.remoteResourceAttributes
+          );
+          this.resourcePromiseResolver(
+            keyValuePairsToOtelAttributes(
+              [...resourceAttributes.remoteResourceAttributes, { key: SEMRESATTRS_SERVICE_INSTANCE_ID, value: this.OpAMPInstanceUidString }]
+            )
+          );
+          return;
+        }
+      } catch (error) {
+        diag.warn(
+          `Error sending first message to OpAMP server, retrying in ${retryIntervalMs}ms`,
+          error
+        );
+        await new Promise((resolve) => {
+          const timer = setTimeout(resolve, retryIntervalMs);
+          timer.unref(); // do not keep the process alive just for this timer
+        });
+      }
+    }
+
+    // if we got here, it means we run out of retries and did not return from the loop
+    diag.error(
+      `Failed to get remote resource attributes from OpAMP server after retries, continuing without them`
+    );
+    this.resourcePromiseResolver?.({
+      [SEMRESATTRS_SERVICE_NAME]: this.config.instrumentationDeviceId,
+    });
+  }
+
   private async sendHeartBeatToServer() {
-    return await this.sendAgentToServerMessage({});
+    try {
+      return await this.sendAgentToServerMessage({});
+    } catch (error) {
+      diag.warn("Error sending heartbeat to OpAMP server", error);
+    }
   }
 
   private async sendFullState() {
     return await this.sendAgentToServerMessage({
       // agent description is only sent in the first AgentToServer message
       agentDescription: new AgentDescription({
-        identifyingAttributes: otelAttributesToKeyValuePairs(
-          this.config.agentDescriptionIdentifyingAttributes
-        ),
+        identifyingAttributes: otelAttributesToKeyValuePairs({
+          [SEMRESATTRS_SERVICE_INSTANCE_ID]: this.OpAMPInstanceUidString, // always send the instance id
+          ...this.config.agentDescriptionIdentifyingAttributes,
+        }),
         nonIdentifyingAttributes: otelAttributesToKeyValuePairs(
           this.config.agentDescriptionNonIdentifyingAttributes
         ),
@@ -111,7 +177,7 @@ export class OpAMPClientHttp implements DetectorSync {
   ): Promise<ServerToAgent> {
     const completeMessageToSend = new AgentToServer({
       ...message,
-      instanceUid: this.instanceUid,
+      instanceUid: this.OpAMPInstanceUid,
       sequenceNum: this.nextSequenceNum++,
     });
     const msgBytes = completeMessageToSend.toBinary();

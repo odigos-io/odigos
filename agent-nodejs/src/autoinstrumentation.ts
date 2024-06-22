@@ -6,12 +6,12 @@ import {
   SEMRESATTRS_TELEMETRY_SDK_LANGUAGE,
   TELEMETRYSDKLANGUAGEVALUES_NODEJS,
   SEMRESATTRS_PROCESS_PID,
-  SEMRESATTRS_SERVICE_INSTANCE_ID,
 } from "@opentelemetry/semantic-conventions";
 import { Resource, envDetectorSync, hostDetectorSync, processDetectorSync } from "@opentelemetry/resources";
-import { diag } from "@opentelemetry/api";
-import { v4 as uuidv4 } from 'uuid';
+import { DiagConsoleLogger, DiagLogLevel, diag } from "@opentelemetry/api";
 import { VERSION } from "./version";
+
+diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
 // not yet published in '@opentelemetry/semantic-conventions'
 const SEMRESATTRS_TELEMETRY_DISTRO_NAME = 'telemetry.distro.name';
@@ -19,7 +19,6 @@ const SEMRESATTRS_TELEMETRY_DISTRO_VERSION = 'telemetry.distro.version';
 
 const opampServerHost = process.env.ODIGOS_OPAMP_SERVER_HOST;
 const instrumentationDeviceId = process.env.ODIGOS_INSTRUMENTATION_DEVICE_ID;
-const serviceInstanceId = uuidv4();
 
 if (opampServerHost && instrumentationDeviceId) {
   const opampClient = new OpAMPClientHttp({
@@ -28,7 +27,6 @@ if (opampServerHost && instrumentationDeviceId) {
     agentDescriptionIdentifyingAttributes: {
       [SEMRESATTRS_TELEMETRY_SDK_LANGUAGE]: TELEMETRYSDKLANGUAGEVALUES_NODEJS,
       [SEMRESATTRS_TELEMETRY_DISTRO_VERSION]: VERSION,
-      [SEMRESATTRS_SERVICE_INSTANCE_ID]: serviceInstanceId,
       [SEMRESATTRS_PROCESS_PID]: process.pid,
     },
     agentDescriptionNonIdentifyingAttributes: {},
@@ -47,7 +45,6 @@ if (opampServerHost && instrumentationDeviceId) {
     resource: new Resource({
       [SEMRESATTRS_TELEMETRY_DISTRO_NAME]: 'odigos',
       [SEMRESATTRS_TELEMETRY_DISTRO_VERSION]: VERSION,
-      [SEMRESATTRS_SERVICE_INSTANCE_ID]: serviceInstanceId,
     }),
     instrumentations: [getNodeAutoInstrumentations()],
     traceExporter: new OTLPTraceExporter(),
