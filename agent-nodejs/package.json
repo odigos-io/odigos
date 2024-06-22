@@ -13,6 +13,7 @@
     "@bufbuild/protobuf": "^1.10.0",
     "@opentelemetry/api": "1.8.0",
     "@opentelemetry/auto-instrumentations-node": "0.46.1",
+    "@opentelemetry/core": "1.25.0",
     "@opentelemetry/exporter-trace-otlp-grpc": "0.51.1",
     "@opentelemetry/resources": "1.25.0",
     "@opentelemetry/sdk-node": "0.51.1",

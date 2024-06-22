@@ -13,8 +13,12 @@ import {
 import { uuidv7 } from "uuidv7";
 import axios, { AxiosInstance } from "axios";
 import { DetectorSync, IResource, Resource } from "@opentelemetry/resources";
-import { Attributes, diag } from "@opentelemetry/api";
-import { SEMRESATTRS_SERVICE_INSTANCE_ID, SEMRESATTRS_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
+import { Attributes, context, diag } from "@opentelemetry/api";
+import {
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
+  SEMRESATTRS_SERVICE_NAME,
+} from "@opentelemetry/semantic-conventions";
+import { suppressTracing } from "@opentelemetry/core";
 
 export class OpAMPClientHttp implements DetectorSync {
   private config: OpAMPClientHttpConfig;
@@ -122,9 +126,13 @@ export class OpAMPClientHttp implements DetectorSync {
             resourceAttributes.remoteResourceAttributes
           );
           this.resourcePromiseResolver(
-            keyValuePairsToOtelAttributes(
-              [...resourceAttributes.remoteResourceAttributes, { key: SEMRESATTRS_SERVICE_INSTANCE_ID, value: this.OpAMPInstanceUidString }]
-            )
+            keyValuePairsToOtelAttributes([
+              ...resourceAttributes.remoteResourceAttributes,
+              {
+                key: SEMRESATTRS_SERVICE_INSTANCE_ID,
+                value: this.OpAMPInstanceUidString,
+              },
+            ])
           );
           return;
         }
@@ -182,11 +190,13 @@ export class OpAMPClientHttp implements DetectorSync {
     });
     const msgBytes = completeMessageToSend.toBinary();
     try {
-      const res = await this.httpClient.post("/v1/opamp", msgBytes, {
-        responseType: "arraybuffer",
+      return context.with(suppressTracing(context.active()), async () => {
+        const res = await this.httpClient.post("/v1/opamp", msgBytes, {
+          responseType: "arraybuffer",
+        });
+        const agentToServer = ServerToAgent.fromBinary(res.data);
+        return agentToServer;
       });
-      const agentToServer = ServerToAgent.fromBinary(res.data);
-      return agentToServer;
     } catch (error) {
       // TODO: handle
       throw error;
