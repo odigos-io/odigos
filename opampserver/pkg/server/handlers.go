@@ -128,9 +128,11 @@ func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Cont
 			})
 		}
 
+		healthy := true // TODO: populate this field with real health status
 		err := instrumentation_instance.PersistInstrumentationInstanceStatus(ctx, connectionInfo.Pod, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme,
 			instrumentation_instance.WithIdentifyingAttributes(identifyingAttributes),
 			instrumentation_instance.WithMessage("Agent connected"),
+			instrumentation_instance.WithHealthy(&healthy),
 		)
 		if err != nil {
 			return fmt.Errorf("failed to persist instrumentation instance status: %w", err)
