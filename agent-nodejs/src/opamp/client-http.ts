@@ -10,7 +10,7 @@ import {
   keyValuePairsToOtelAttributes,
   otelAttributesToKeyValuePairs,
 } from "./utils";
-import { uuidv7 } from "uuidv7";
+import { v7 as uuidv7 } from "uuid";
 import axios, { AxiosInstance } from "axios";
 import { DetectorSync, IResource, Resource } from "@opentelemetry/resources";
 import { Attributes, diag } from "@opentelemetry/api";

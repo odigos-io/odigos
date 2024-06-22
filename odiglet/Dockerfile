@@ -11,7 +11,7 @@ COPY agent-nodejs .
 RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
 RUN yarn
 RUN yarn compile
-# RUN rm -rf node_modules && yarn --production # Remove dev dependencies
+RUN rm -rf node_modules && yarn --production # Remove dev dependencies
 
 FROM busybox AS dotnet-builder
 WORKDIR /dotnet-instrumentation

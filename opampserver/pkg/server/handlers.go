@@ -94,6 +94,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 }
 
 func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request *protobufs.AgentToServer, connectionInfo *ConnectionInfo) (*protobufs.ServerToAgent, error) {
+	// In the future we should handle different types of messages here which are not the first message.
 	return &protobufs.ServerToAgent{}, nil
 }
 

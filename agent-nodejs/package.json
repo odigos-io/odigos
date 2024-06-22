@@ -18,11 +18,10 @@
     "@opentelemetry/sdk-node": "0.51.1",
     "@opentelemetry/semantic-conventions": "^1.24.1",
     "axios": "^1.7.2",
-    "typescript": "^5.4.5",
-    "uuid": "^10.0.0",
-    "uuidv7": "^1.0.0"
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
-    "@types/uuid": "^10.0.0"
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.5.2"
   }
 }
