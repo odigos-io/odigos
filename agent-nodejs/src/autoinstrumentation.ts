@@ -6,12 +6,14 @@ import {
   SEMRESATTRS_TELEMETRY_SDK_LANGUAGE,
   TELEMETRYSDKLANGUAGEVALUES_NODEJS,
   SEMRESATTRS_PROCESS_PID,
-  SEMRESATTRS_TELEMETRY_SDK_NAME,
-  SEMRESATTRS_TELEMETRY_SDK_VERSION,
 } from "@opentelemetry/semantic-conventions";
 import { Resource, envDetectorSync, hostDetectorSync, processDetectorSync } from "@opentelemetry/resources";
 import { diag } from "@opentelemetry/api";
 import { VERSION } from "./version";
+
+// not yet published in '@opentelemetry/semantic-conventions'
+const SEMRESATTRS_TELEMETRY_DISTRO_NAME = 'telemetry.distro.name';
+const SEMRESATTRS_TELEMETRY_DISTRO_VERSION = 'telemetry.distro.version';
 
 const opampServerHost = process.env.ODIGOS_OPAMP_SERVER_HOST;
 const instrumentationDeviceId = process.env.ODIGOS_INSTRUMENTATION_DEVICE_ID;
@@ -22,8 +24,7 @@ if (opampServerHost && instrumentationDeviceId) {
     opAMPServerHost: opampServerHost,
     agentDescriptionIdentifyingAttributes: {
       [SEMRESATTRS_TELEMETRY_SDK_LANGUAGE]: TELEMETRYSDKLANGUAGEVALUES_NODEJS,
-      // [SEMRESATTRS_TELEMETRY_SDK_NAME]: "odigos", // No need to send this, as the value is always "odigos"
-      [SEMRESATTRS_TELEMETRY_SDK_VERSION]: VERSION,
+      [SEMRESATTRS_TELEMETRY_DISTRO_VERSION]: VERSION,
       [SEMRESATTRS_PROCESS_PID]: process.pid,
     },
     agentDescriptionNonIdentifyingAttributes: {},
@@ -38,10 +39,10 @@ if (opampServerHost && instrumentationDeviceId) {
       hostDetectorSync, // host name, arch, machine id, etc
       opampClient // attributes from OpAMP server, regarding k8s, service name, etc
     ],
+    // record additional data about the odigos distro
     resource: new Resource({
-      [SEMRESATTRS_TELEMETRY_SDK_LANGUAGE]: TELEMETRYSDKLANGUAGEVALUES_NODEJS,
-      [SEMRESATTRS_TELEMETRY_SDK_NAME]: 'odigos',
-      [SEMRESATTRS_TELEMETRY_SDK_VERSION]: VERSION,
+      [SEMRESATTRS_TELEMETRY_DISTRO_NAME]: 'odigos',
+      [SEMRESATTRS_TELEMETRY_DISTRO_VERSION]: VERSION,
     }),
     instrumentations: [getNodeAutoInstrumentations()],
     traceExporter: new OTLPTraceExporter(),
