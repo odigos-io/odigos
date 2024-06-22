@@ -4,9 +4,8 @@ go 1.22.0
 
 require (
 	github.com/go-logr/logr v1.4.2
-	github.com/odigos-io/odigos/api v1.0.70
+	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
-	github.com/odigos-io/odigos/odiglet v1.0.70
 	go.opentelemetry.io/otel v1.27.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.1
@@ -53,6 +52,7 @@ require (
 	github.com/prometheus/procfs v0.15.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.opentelemetry.io/otel/trace v1.27.0 // indirect
+	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/oauth2 v0.20.0 // indirect
@@ -75,4 +75,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace github.com/odigos-io/odigos/k8sutils => ../k8sutils
+replace (
+	github.com/odigos-io/odigos/api => ../api
+	github.com/odigos-io/odigos/k8sutils => ../k8sutils
+)

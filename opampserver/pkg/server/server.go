@@ -30,7 +30,7 @@ func getDeviceIdFromHeader(request *http.Request) (string, error) {
 	return authorization[len(prefix):], nil
 }
 
-func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClient *kubernetes.Clientset) error {
+func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClient *kubernetes.Clientset, nodeName string) error {
 
 	listenEndpoint := "0.0.0.0:4320"
 	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
@@ -47,6 +47,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		deviceIdCache: deviceidCache,
 		kubeclient:    mgr.GetClient(),
 		scheme:        mgr.GetScheme(),
+		nodeName:      nodeName,
 	}
 
 	http.HandleFunc("/v1/opamp", func(w http.ResponseWriter, req *http.Request) {

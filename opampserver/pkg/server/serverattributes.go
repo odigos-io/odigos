@@ -3,7 +3,6 @@ package server
 import (
 	"errors"
 
-	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/opampserver/pkg/deviceid"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
@@ -20,12 +19,12 @@ type ResourceAttribute struct {
 // - pod name
 // - container name
 // - object name and kind (deployment, statefulset, daemonset, pod)
-func calculateServerAttributes(k8sAttributes *deviceid.K8sResourceAttributes) ([]ResourceAttribute, error) {
+func calculateServerAttributes(k8sAttributes *deviceid.K8sResourceAttributes, nodeName string) ([]ResourceAttribute, error) {
 
 	serverOfferResourceAttributes := []ResourceAttribute{
 		{
 			Key:   string(semconv.K8SNodeNameKey),
-			Value: env.Current.NodeName,
+			Value: nodeName,
 		},
 		{
 			Key:   string(semconv.K8SNamespaceNameKey),

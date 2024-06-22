@@ -23,6 +23,7 @@ type ConnectionHandlers struct {
 	logger        logr.Logger
 	kubeclient    client.Client
 	scheme        *runtime.Scheme // TODO: revisit this, we should not depend on controller runtime
+	nodeName      string
 }
 
 func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId string, firstMessage *protobufs.AgentToServer) (*ConnectionInfo, *protobufs.ServerToAgent, error) {
@@ -54,7 +55,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		c.logger.Error(err, "failed to get attributes from device", "deviceId", deviceId)
 		return nil, nil, err
 	}
-	serverOfferedResourceAttributes, err := calculateServerAttributes(k8sAttributes)
+	serverOfferedResourceAttributes, err := calculateServerAttributes(k8sAttributes, c.nodeName)
 	if err != nil {
 		c.logger.Error(err, "failed to calculate server attributes", "deviceId", deviceId)
 		return nil, nil, err
