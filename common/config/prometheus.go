@@ -43,6 +43,9 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	}
 
 	// Send SpanMetrics to prometheus
+	// configure a connector which will convert spans to metrics, this should ideally be configurable,
+	// and available for all metrics destinations
+	// TODO: this should be an action ("SpanMetrics connector")?
 	tracesPipelineName := "traces/spanmetrics-" + dest.GetID()
 	currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 		Exporters: []string{spanMetricsConnectorName},
@@ -53,13 +56,22 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 				"buckets": []string{"100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"},
 			},
 		},
+		// Taking into account changes in the semantic conventions, to support a range of instrumentation libraries
 		"dimensions": []GenericMap{
 			{
-				"name":    "http.method",
-				"default": "GET",
+				"name": "http.method",
+			},
+			{
+				"name": "http.request.method",
 			},
 			{
 				"name": "http.status_code",
+			},
+			{
+				"name": "http.response.status_code",
+			},
+			{
+				"name": "http.route",
 			},
 		},
 		"exemplars": GenericMap{

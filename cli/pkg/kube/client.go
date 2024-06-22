@@ -22,6 +22,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -34,7 +35,8 @@ type Client struct {
 
 func CreateClient(cmd *cobra.Command) (*Client, error) {
 	kc := cmd.Flag("kubeconfig").Value.String()
-	config, err := clientcmd.BuildConfigFromFlags("", kc)
+
+	config, err := getClientConfig(kc)
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +72,28 @@ func CreateClient(cmd *cobra.Command) (*Client, error) {
 func PrintClientErrorAndExit(err error) {
 	fmt.Printf("\033[31mERROR\033[0m Could not connect to Kubernetes cluster\n%s\n", err)
 	os.Exit(-1)
+}
+
+func getClientConfig(kc string) (*rest.Config, error) {
+	var kubeConfig *rest.Config
+	var err error
+
+	if IsRunningInKubernetes() {
+		kubeConfig, err = rest.InClusterConfig()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		kubeConfig, err = clientcmd.BuildConfigFromFlags("", kc)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return kubeConfig, nil
+}
+
+func IsRunningInKubernetes() bool {
+	return os.Getenv("KUBERNETES_SERVICE_HOST") != ""
 }
 
 func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []client.Object) error {
