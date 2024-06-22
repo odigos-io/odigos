@@ -26,7 +26,9 @@ export class OpAMPClientHttp implements DetectorSync {
   private OpAMPInstanceUid: Uint8Array;
   private nextSequenceNum: bigint = BigInt(0);
   private httpClient: AxiosInstance;
-  private logger = diag.createComponentLogger({ namespace: '@odigos/opentelemetry-node/opamp' });
+  private logger = diag.createComponentLogger({
+    namespace: "@odigos/opentelemetry-node/opamp",
+  });
 
   // promise that we can resolve async later on, which the detect function can return
   private resourcePromiseResolver?: (resourceAttributes: Attributes) => void;
@@ -79,9 +81,10 @@ export class OpAMPClientHttp implements DetectorSync {
         return;
       }
 
+      // flags is bitmap, use bitwise OR to check if the flag is set
       if (
-        heartbeatRes.flags ||
-        ServerToAgentFlags.ServerToAgentFlags_ReportFullState
+        Number(heartbeatRes.flags) |
+        Number(ServerToAgentFlags.ServerToAgentFlags_ReportFullState)
       ) {
         this.logger.info("Opamp server requested full state report");
         heartbeatRes = await this.sendFullState();
