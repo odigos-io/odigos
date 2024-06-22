@@ -19,6 +19,10 @@
     "@opentelemetry/semantic-conventions": "^1.24.1",
     "axios": "^1.7.2",
     "typescript": "^5.4.5",
+    "uuid": "^10.0.0",
     "uuidv7": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/uuid": "^10.0.0"
   }
 }
