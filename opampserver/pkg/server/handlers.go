@@ -7,11 +7,13 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_instance"
 	"github.com/odigos-io/odigos/opampserver/pkg/deviceid"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -97,6 +99,21 @@ func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request
 
 func (c *ConnectionHandlers) OnConnectionClosed(ctx context.Context, connectionInfo *ConnectionInfo) {
 	fmt.Println("Connection closed for device", connectionInfo.DeviceId)
+	instrumentationInstanceName := instrumentation_instance.InstrumentationInstanceName(connectionInfo.Pod, int(connectionInfo.Pid))
+	err := c.kubeclient.Delete(ctx, &odigosv1.InstrumentationInstance{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "odigos.io/v1alpha1",
+			Kind:       "InstrumentationInstance",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      instrumentationInstanceName,
+			Namespace: connectionInfo.Pod.GetNamespace(),
+		},
+	})
+
+	if err != nil && !apierrors.IsNotFound(err) {
+		c.logger.Error(err, "failed to delete instrumentation instance", "instrumentationInstanceName", instrumentationInstanceName)
+	}
 }
 
 func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Context, message *protobufs.AgentToServer, connectionInfo *ConnectionInfo) error {
