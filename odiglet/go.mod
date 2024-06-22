@@ -8,8 +8,8 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.6.0
 	github.com/kubevirt/device-plugin-manager v1.19.5
-	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
-	github.com/odigos-io/odigos/common v1.0.48
+	github.com/odigos-io/odigos/api v1.0.70
+	github.com/odigos-io/odigos/common v1.0.70
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/odigos/opampserver v0.0.0
 	github.com/odigos-io/odigos/procdiscovery v0.0.0
@@ -20,10 +20,10 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.27.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.64.0
-	k8s.io/api v0.30.1
-	k8s.io/apimachinery v0.30.1
-	k8s.io/client-go v0.30.1
-	k8s.io/kubelet v0.30.1
+	k8s.io/api v0.30.2
+	k8s.io/apimachinery v0.30.2
+	k8s.io/client-go v0.30.2
+	k8s.io/kubelet v0.30.2
 	sigs.k8s.io/controller-runtime v0.18.4
 )
 
