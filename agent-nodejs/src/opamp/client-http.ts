@@ -26,6 +26,7 @@ export class OpAMPClientHttp implements DetectorSync {
   private OpAMPInstanceUid: Uint8Array;
   private nextSequenceNum: bigint = BigInt(0);
   private httpClient: AxiosInstance;
+  private logger = diag.createComponentLogger({ namespace: '@odigos/opentelemetry-node/opamp' });
 
   // promise that we can resolve async later on, which the detect function can return
   private resourcePromiseResolver?: (resourceAttributes: Attributes) => void;
@@ -82,16 +83,15 @@ export class OpAMPClientHttp implements DetectorSync {
         heartbeatRes.flags ||
         ServerToAgentFlags.ServerToAgentFlags_ReportFullState
       ) {
-        diag.info("Opamp server requested full state report");
+        this.logger.info("Opamp server requested full state report");
         heartbeatRes = await this.sendFullState();
       }
-      console.log("Heartbeat response:", heartbeatRes);
     }, this.config.pollingIntervalMs || 30000);
     timer.unref(); // do not keep the process alive just for this timer
   }
 
   async shutdown() {
-    diag.info("Sending AgentDisconnect message to OpAMP server");
+    this.logger.info("Sending AgentDisconnect message to OpAMP server");
     return await this.sendAgentToServerMessage({
       agentDisconnect: {},
     });
@@ -121,7 +121,7 @@ export class OpAMPClientHttp implements DetectorSync {
         };
 
         if (this.resourcePromiseResolver) {
-          diag.info(
+          this.logger.info(
             "Got remote resource attributes, resolving detector promise",
             resourceAttributes.remoteResourceAttributes
           );
@@ -137,7 +137,7 @@ export class OpAMPClientHttp implements DetectorSync {
           return;
         }
       } catch (error) {
-        diag.warn(
+        this.logger.warn(
           `Error sending first message to OpAMP server, retrying in ${retryIntervalMs}ms`,
           error
         );
@@ -149,7 +149,7 @@ export class OpAMPClientHttp implements DetectorSync {
     }
 
     // if we got here, it means we run out of retries and did not return from the loop
-    diag.error(
+    this.logger.error(
       `Failed to get remote resource attributes from OpAMP server after retries, continuing without them`
     );
     this.resourcePromiseResolver?.({
@@ -161,7 +161,7 @@ export class OpAMPClientHttp implements DetectorSync {
     try {
       return await this.sendAgentToServerMessage({});
     } catch (error) {
-      diag.warn("Error sending heartbeat to OpAMP server", error);
+      this.logger.warn("Error sending heartbeat to OpAMP server", error);
     }
   }
 
