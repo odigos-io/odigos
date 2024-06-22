@@ -64,13 +64,13 @@ export class OpAMPClientHttp implements DetectorSync {
 
       const resourceAttributes = JSON.parse(
         firstServerToAgent.remoteConfig?.config?.configMap[
-          "server-resolved-resource-attributes"
+          "SDK"
         ].body?.toString() || "{}"
-      ) as Array<ResourceAttributeFromServer>;
+      ) as { remoteResourceAttributes: ResourceAttributeFromServer[]};
       if (this.resourcePromiseResolver) {
-        console.log("Got resource attributes, resolving detector promise");
+        console.log("Got remote resource attributes, resolving detector promise");
         this.resourcePromiseResolver(
-          keyValuePairsToOtelAttributes(resourceAttributes)
+          keyValuePairsToOtelAttributes(resourceAttributes.remoteResourceAttributes)
         );
       }
 

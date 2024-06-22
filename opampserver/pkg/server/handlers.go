@@ -63,7 +63,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 	instrumentedAppName := workload.GetRuntimeObjectName(k8sAttributes.WorkloadName, k8sAttributes.WorkloadKind)
 	c.logger.Info("new OpAMP client connected", "deviceId", deviceId, "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", k8sAttributes.OtelServiceName)
 
-	resourceAttributeConfig, err := json.Marshal(serverOfferedResourceAttributes)
+	sdkConfig, err := json.Marshal(RemoteConfigSdk{RemoteResourceAttributes: serverOfferedResourceAttributes})
 	if err != nil {
 		c.logger.Error(err, "failed to marshal server offered resource attributes")
 		return nil, nil, err
@@ -72,8 +72,8 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 	serverAttrsRemoteCfg := protobufs.AgentRemoteConfig{
 		Config: &protobufs.AgentConfigMap{
 			ConfigMap: map[string]*protobufs.AgentConfigFile{
-				"server-resolved-resource-attributes": {
-					Body:        resourceAttributeConfig,
+				string(RemoteConfigSdkConfigSectionName): {
+					Body:        sdkConfig,
 					ContentType: "application/json",
 				},
 			},
