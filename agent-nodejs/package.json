@@ -17,7 +17,7 @@
     "@opentelemetry/exporter-trace-otlp-grpc": "0.51.1",
     "@opentelemetry/resources": "1.25.0",
     "@opentelemetry/sdk-node": "0.51.1",
-    "@opentelemetry/semantic-conventions": "^1.24.1",
+    "@opentelemetry/semantic-conventions": "1.25.0",
     "axios": "^1.7.2",
     "uuidv7": "^1.0.1"
   },
