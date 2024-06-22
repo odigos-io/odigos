@@ -167,7 +167,6 @@ export class OpAMPClientHttp implements DetectorSync {
 
   private async sendFullState() {
     return await this.sendAgentToServerMessage({
-      // agent description is only sent in the first AgentToServer message
       agentDescription: new AgentDescription({
         identifyingAttributes: otelAttributesToKeyValuePairs({
           [SEMRESATTRS_SERVICE_INSTANCE_ID]: this.OpAMPInstanceUidString, // always send the instance id
