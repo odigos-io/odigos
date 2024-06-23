@@ -7,7 +7,6 @@ import (
 	"syscall"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
-	cp "github.com/otiai10/copy"
 )
 
 const (
@@ -36,7 +35,8 @@ func CopyAgentsDirectoryToHost() error {
 		}
 	}
 
-	err = cp.Copy(containerDir, hostDir, cp.Options{})
+	cmd := exec.Command("cp", "-R", containerDir + "/", hostDir + "/")
+	err = cmd.Run()
 	if err != nil {
 		return err
 	}

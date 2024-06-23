@@ -42,7 +42,11 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
 	nameutils "github.com/odigos-io/odigos/autoscaler/utils"
+
 	//+kubebuilder:scaffold:imports
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 var (
@@ -97,6 +101,15 @@ func main() {
 		setupLog.Error(nil, "ODIGOS_VERSION environment variable is not set and version flag is not provided")
 		os.Exit(1)
 	}
+
+	go func() {
+		setupLog.Info("Starting pprof server")
+		if err := http.ListenAndServe(":6060", nil); err != nil {
+			setupLog.Error(err, "Failed to start pprof server")
+			os.Exit(1)
+		}
+	} ()
+
 	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{

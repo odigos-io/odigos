@@ -41,7 +41,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
+
 	//+kubebuilder:scaffold:imports
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 var (
@@ -116,6 +120,14 @@ func main() {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
+
+	go func() {
+		setupLog.Info("Starting pprof server")
+		if err := http.ListenAndServe(:6060); err != nil {
+			setupLog.Error(err, "Failed to start pprof server")
+			os.Exit(1)
+		}
+	} ()
 
 	if !telemetryDisabled {
 		go report.Start(mgr.GetClient())
