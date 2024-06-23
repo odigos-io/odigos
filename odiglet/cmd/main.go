@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
@@ -57,7 +56,7 @@ func main() {
 
 	err = server.StartOpAmpServer(ctx, log.Logger, mgr, clientset, env.Current.NodeName)
 	if err != nil {
-		fmt.Println(err)
+		log.Logger.Error(err, "Failed to start opamp server")
 	}
 
 	ebpfDirectors, err := initEbpf(ctx, mgr.GetClient(), mgr.GetScheme())

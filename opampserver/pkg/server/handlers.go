@@ -100,7 +100,7 @@ func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request
 }
 
 func (c *ConnectionHandlers) OnConnectionClosed(ctx context.Context, connectionInfo *ConnectionInfo) {
-	fmt.Println("Connection closed for device", connectionInfo.DeviceId)
+	c.logger.Info("Connection closed for device", "deviceId", connectionInfo.DeviceId)
 	instrumentationInstanceName := instrumentation_instance.InstrumentationInstanceName(connectionInfo.Pod, int(connectionInfo.Pid))
 	err := c.kubeclient.Delete(ctx, &odigosv1.InstrumentationInstance{
 		TypeMeta: metav1.TypeMeta{
