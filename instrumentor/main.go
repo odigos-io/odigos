@@ -123,7 +123,7 @@ func main() {
 
 	go func() {
 		setupLog.Info("Starting pprof server")
-		if err := http.ListenAndServe(:6060); err != nil {
+		if err := http.ListenAndServe(":6060", nil); err != nil {
 			setupLog.Error(err, "Failed to start pprof server")
 			os.Exit(1)
 		}
