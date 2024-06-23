@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/odigos-io/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
@@ -201,6 +201,12 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 	}
 
 	// read the original env vars (of the manifest) from the annotation
+	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(obj)
+	if err != nil {
+		fmt.Println("Failed to get original env vars from annotation: ", err)
+		manifestEnvOriginal = &envoverwrite.OrigWorkloadEnvValues{}
+	}
+
 	var origManifestEnv map[string]map[string]string
 	if obj.GetAnnotations() != nil {
 		manifestEnvAnnotation, ok := obj.GetAnnotations()[consts.ManifestEnvOriginalValAnnotation]
@@ -225,24 +231,20 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 			}
 		}
 
-		containerOriginalEnv := origManifestEnv[c.Name]
-
-		for iEnv, envVar := range c.Env {
-			if envOverwrite.ShouldRevert(envVar.Name, envVar.Value) {
-				if origVal, ok := containerOriginalEnv[envVar.Name]; ok {
-					// revert the env var to its original value if we have it
-					patchOperations = append(patchOperations, map[string]interface{}{
-						"op":    "replace",
-						"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", iContainer, iEnv),
-						"value": origVal,
-					})
-				} else {
-					// remove the env var
-					patchOperations = append(patchOperations, map[string]interface{}{
-						"op":   "remove",
-						"path": fmt.Sprintf("/spec/template/spec/containers/%d/env/%d", iContainer, iEnv),
-					})
-				}
+		for envName, originalEnvValue := range manifestEnvOriginal.GetContainerStoredEnvs(c.Name) {
+			if origManifestEnv == nil {
+				// originally the value was absent, so we remove it
+				patchOperations = append(patchOperations, map[string]interface{}{
+					"op":   "remove",
+					"path": fmt.Sprintf("/spec/template/spec/containers/%d/env/%d", iContainer, envName),
+				})
+			} else {
+				// revert the env var to its original value
+				patchOperations = append(patchOperations, map[string]interface{}{
+					"op":    "replace",
+					"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", iContainer, envName),
+					"value": *originalEnvValue,
+				})
 			}
 		}
 	}

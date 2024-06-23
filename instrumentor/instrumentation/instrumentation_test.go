@@ -498,7 +498,7 @@ func TestRevert(t *testing.T) {
 	want = string(a)
 	assertAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation, want)
 
-	Revert(podTemplate, deployment)
+	RevertInstrumentationDevices(podTemplate, deployment)
 	// The env var should be reverted to its original value
 	assertContainerWithEnvVar(t, podTemplate, 0, "PYTHONPATH", "/very/important/path")
 
@@ -553,7 +553,7 @@ func TestRevert_ExistingResources(t *testing.T) {
 		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() error = %v", err)
 	}
 
-	Revert(podTemplate, deployment)
+	RevertInstrumentationDevices(podTemplate, deployment)
 
 	if len(podTemplate.Spec.Containers) != 1 {
 		t.Errorf("Revert() expected no change to number of containers")
@@ -610,7 +610,7 @@ func TestRevert_MultipleContainers(t *testing.T) {
 		t.Errorf("ApplyInstrumentationDevicesToPodTemplate() error = %v", err)
 	}
 
-	Revert(podTemplate, deployment)
+	RevertInstrumentationDevices(podTemplate, deployment)
 
 	assertContainerWithInstrumentationDevice(t, podTemplate, 0, "")
 	assertContainerWithInstrumentationDevice(t, podTemplate, 1, "")
@@ -696,7 +696,7 @@ func TestEnvVarAppendMultipleContainers(t *testing.T) {
 	want = string(a)
 	assertAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation, want)
 
-	Revert(podTemplate, deployment)
+	RevertInstrumentationDevices(podTemplate, deployment)
 
 	assertContainerWithEnvVar(t, podTemplate, 0, "PYTHONPATH", "/very/important/path")
 	assertContainerWithEnvVar(t, podTemplate, 1, "NODE_OPTIONS", "--max-old-space-size=8192")
@@ -770,7 +770,7 @@ func TestEnvVarFromRuntimeDetails(t *testing.T) {
 	// The env vars originated from the runtime details should not be stored in the annotation
 	assertNoAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation)
 
-	Revert(podTemplate, deployment)
+	RevertInstrumentationDevices(podTemplate, deployment)
 	// After reverting, the env vars should not be present in the container since they originated from the runtime details
 	// and were not present in the original pod template
 	assertContainerNoEnvVar(t, podTemplate, 0, "PYTHONPATH")
@@ -861,7 +861,7 @@ func TestEnvVarAppendFromSpecAndRuntimeDetails(t *testing.T) {
 	want = string(a)
 	assertAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation, want)
 
-	Revert(podTemplate, deployment)
+	RevertInstrumentationDevices(podTemplate, deployment)
 	// After reverting, make sure we are back to the original state
 	assertContainerWithEnvVar(t, podTemplate, 0, "PYTHONPATH", "/very/important/path/template")
 	assertContainerNoEnvVar(t, podTemplate, 1, "NODE_OPTIONS")
@@ -928,7 +928,7 @@ func TestMoveBetweenSDKsWithUserValue(t *testing.T) {
 	want := userDefinedVal + " " + jsOptionsValNative
 	assertContainerWithEnvVar(t, podTemplate, 0, "NODE_OPTIONS", want)
 
-	Revert(podTemplate, deployment)
+	RevertInstrumentationDevices(podTemplate, deployment)
 	assertNoAnnotation(t, deployment, consts.ManifestEnvOriginalValAnnotation)
 }
 
