@@ -192,6 +192,7 @@ export class OpAMPClientHttp implements DetectorSync {
     });
     const msgBytes = completeMessageToSend.toBinary();
     try {
+      // do not create traces for the opamp http requests
       return context.with(suppressTracing(context.active()), async () => {
         const res = await this.httpClient.post("/v1/opamp", msgBytes, {
           responseType: "arraybuffer",
