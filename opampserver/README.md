@@ -13,7 +13,6 @@ It resides in its own module, but is intended to run as part of odiglet, as a de
 
 ## Development
 
-For development, it is recommended to run the OpAMP server as a standalone process, and not as part of odiglet. This makes it so it can run on MacOS, and reduces the complexity that odiglet brings.
-
-`make dev` will run the server from the source code, watch for changes in the source code, and restart the server when changes are detected. to use it, you need to install [`nodemon`](https://www.npmjs.com/package/nodemon) tool (`npm install -g nodemon`).
-
+Odiglet build process will build the server as a binary, and inject it into the odiglet image.
+You can make changes to the code of `opampserver`, `agent-nodejs` and test it with `make deploy-odiglet` in the repo root.
+Deployments will not restart when odiglet is deployed, so you will need to `kubectl rollout restart deployment {deployment-name}` to see the changes.
