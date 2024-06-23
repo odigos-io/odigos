@@ -14,14 +14,14 @@
     "typescript": "^5.1.6"
   },
   "dependencies": {
-    "@opentelemetry/api": "1.8.0",
-    "@opentelemetry/auto-instrumentations-node": "0.46.0",
-    "@opentelemetry/exporter-trace-otlp-grpc": "0.51.1",
-    "@opentelemetry/resource-detector-alibaba-cloud": "0.28.9",
-    "@opentelemetry/resource-detector-aws": "1.4.2",
-    "@opentelemetry/resource-detector-container": "0.3.9",
-    "@opentelemetry/resource-detector-gcp": "0.29.9",
-    "@opentelemetry/resources": "1.24.1",
-    "@opentelemetry/sdk-node": "0.51.1"
+    "@opentelemetry/api": "1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "0.47.1",
+    "@opentelemetry/exporter-trace-otlp-grpc": "0.52.1",
+    "@opentelemetry/resource-detector-alibaba-cloud": "0.28.10",
+    "@opentelemetry/resource-detector-aws": "1.5.1",
+    "@opentelemetry/resource-detector-container": "0.3.11",
+    "@opentelemetry/resource-detector-gcp": "0.29.10",
+    "@opentelemetry/resources": "1.25.1",
+    "@opentelemetry/sdk-node": "0.52.1"
   }
 }
