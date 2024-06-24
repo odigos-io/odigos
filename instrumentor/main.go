@@ -26,6 +26,7 @@ import (
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentedapplication"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationdevice"
@@ -44,7 +45,6 @@ import (
 
 	//+kubebuilder:scaffold:imports
 
-	"net/http"
 	_ "net/http/pprof"
 )
 
@@ -121,13 +121,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	go func() {
-		setupLog.Info("Starting pprof server")
-		if err := http.ListenAndServe(":6060", nil); err != nil {
-			setupLog.Error(err, "Failed to start pprof server")
-			os.Exit(1)
-		}
-	} ()
+	go common.StartPprofServer(setupLog)
 
 	if !telemetryDisabled {
 		go report.Start(mgr.GetClient())

@@ -18,7 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
-	"net/http"
 	_ "net/http/pprof"
 )
 
@@ -48,13 +47,7 @@ func main() {
 
 	ctx := signals.SetupSignalHandler()
 
-	go func () {
-		log.Logger.V(0).Info("Starting pprof server")
-		if err := http.ListenAndServe(":6060", nil); err != nil {
-			log.Logger.Error(err, "Failed to start pprof server")
-			os.Exit(-1)
-		}
-	} ()
+	go common.StartPprofServer(log.Logger)
 
 	go startDeviceManager(clientset)
 

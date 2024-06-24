@@ -38,6 +38,7 @@ import (
 
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	observabilitycontrolplanev1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
@@ -45,7 +46,6 @@ import (
 
 	//+kubebuilder:scaffold:imports
 
-	"net/http"
 	_ "net/http/pprof"
 )
 
@@ -102,13 +102,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	go func() {
-		setupLog.Info("Starting pprof server")
-		if err := http.ListenAndServe(":6060", nil); err != nil {
-			setupLog.Error(err, "Failed to start pprof server")
-			os.Exit(1)
-		}
-	} ()
+	go common.StartPprofServer(setupLog)
 
 	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
 
