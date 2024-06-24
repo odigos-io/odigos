@@ -3,7 +3,6 @@ package common
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common/consts"
@@ -15,6 +14,6 @@ func StartPprofServer(logger logr.Logger) {
 	logger.Info("Starting pprof server")
 	addr := fmt.Sprintf(":%d", consts.PprofOdigosPort)
 	if err := http.ListenAndServe(addr, nil); err != nil {
-		os.Exit(-1)
+		logger.Error(err, "unable to start pprof server")
 	}
 }
