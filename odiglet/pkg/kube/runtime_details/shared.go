@@ -2,6 +2,7 @@ package runtime_details
 
 import (
 	"context"
+	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -78,25 +79,29 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				log.Logger.V(0).Info("no processes found in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				continue
 			}
-			if len(processes) > 1 {
-				// Currently we don't support multiple processes in the same container, where each one can have a different language
-				// We only take the first process into account, when we'll support multiple processes we'll need to change this.
-				log.Logger.V(0).Info("multiple processes found in pod container, only taking the first one into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
-			}
-			process := processes[0]
 
-			lang, err := inspectors.DetectLanguage(process)
-			if err != nil {
-				log.Logger.V(0).Info("error detecting language", err)
-				lang = common.UnknownProgrammingLanguage
+			var lang common.ProgrammingLanguage
+			var inspectProc *procdiscovery.Details
+			var detectErr error
+
+			for _, proc := range processes {
+				lang, detectErr = inspectors.DetectLanguage(proc)
+				if detectErr == nil && lang != common.UnknownProgrammingLanguage {
+					inspectProc = &proc
+					break
+				}
 			}
-			if lang == common.UnknownProgrammingLanguage {
-				log.Logger.V(0).Info("no supported language detected for container in pod", "process", process, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+
+			if inspectProc == nil {
+				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+				lang = common.UnknownProgrammingLanguage
+			} else if len(processes) > 1 {
+				log.Logger.V(0).Info("multiple processes found in pod container, only taking the first one with detected language into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 			}
 
 			// Convert map to slice for k8s format
-			envs := make([]odigosv1.EnvVar, 0, len(process.Envs))
-			for envName, envValue := range process.Envs {
+			envs := make([]odigosv1.EnvVar, 0, len(inspectProc.Envs))
+			for envName, envValue := range inspectProc.Envs {
 				envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
 			}
 
