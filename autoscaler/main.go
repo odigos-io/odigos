@@ -38,11 +38,15 @@ import (
 
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	observabilitycontrolplanev1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
 	nameutils "github.com/odigos-io/odigos/autoscaler/utils"
+
 	//+kubebuilder:scaffold:imports
+
+	_ "net/http/pprof"
 )
 
 var (
@@ -97,6 +101,9 @@ func main() {
 		setupLog.Error(nil, "ODIGOS_VERSION environment variable is not set and version flag is not provided")
 		os.Exit(1)
 	}
+
+	go common.StartPprofServer(setupLog)
+
 	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
