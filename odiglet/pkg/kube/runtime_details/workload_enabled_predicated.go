@@ -101,16 +101,16 @@ func didReplicasBecomeAvailable(old client.Object, new client.Object) bool {
 
 	switch new.(type) {
 	case *appsv1.Deployment:
-		hadAvailableReplicas := isDeploymentAvailableReplicas(new.(*appsv1.Deployment))
-		hasAvailableReplicas := isDeploymentAvailableReplicas(old.(*appsv1.Deployment))
+		hadAvailableReplicas := isDeploymentAvailableReplicas(old.(*appsv1.Deployment))
+		hasAvailableReplicas := isDeploymentAvailableReplicas(new.(*appsv1.Deployment))
 		return !hadAvailableReplicas && hasAvailableReplicas
 	case *appsv1.DaemonSet:
-		hadAvailableReplicas := isDaemonsetAvailableReplicas(new.(*appsv1.DaemonSet))
-		hasAvailableReplicas := isDaemonsetAvailableReplicas(old.(*appsv1.DaemonSet))
+		hadAvailableReplicas := isDaemonsetAvailableReplicas(old.(*appsv1.DaemonSet))
+		hasAvailableReplicas := isDaemonsetAvailableReplicas(new.(*appsv1.DaemonSet))
 		return !hadAvailableReplicas && hasAvailableReplicas
 	case *appsv1.StatefulSet:
-		hadAvailableReplicas := isStatefulsetAvailableReplicas(new.(*appsv1.StatefulSet))
-		hasAvailableReplicas := isStatefulsetAvailableReplicas(old.(*appsv1.StatefulSet))
+		hadAvailableReplicas := isStatefulsetAvailableReplicas(old.(*appsv1.StatefulSet))
+		hasAvailableReplicas := isStatefulsetAvailableReplicas(new.(*appsv1.StatefulSet))
 		return !hadAvailableReplicas && hasAvailableReplicas
 	}
 
