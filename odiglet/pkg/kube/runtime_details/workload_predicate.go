@@ -1,8 +1,7 @@
 package runtime_details
 
 import (
-	"fmt"
-
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -16,6 +15,7 @@ import (
 // in the k8s eventual consistency model.
 type WorkloadEnabledPredicate struct {
 	predicate.Funcs
+	nsMap *instrumentedNamespaces
 }
 
 func (i *WorkloadEnabledPredicate) Create(e event.CreateEvent) bool {
@@ -34,6 +34,10 @@ func (i *WorkloadEnabledPredicate) Update(e event.UpdateEvent) bool {
 	if e.ObjectNew == nil {
 		return false
 	}
+	// filter our own namespace
+	if e.ObjectNew.GetNamespace() == consts.DefaultOdigosNamespace {
+		return false
+	}
 
 	wOld, err := workload.ObjectToWorkload(e.ObjectOld)
 	if err != nil {
@@ -45,7 +49,6 @@ func (i *WorkloadEnabledPredicate) Update(e event.UpdateEvent) bool {
 		return false
 	}
 
-
 	oldEnabled := workload.IsObjectLabeledForInstrumentation(e.ObjectOld)
 	newEnabled := workload.IsObjectLabeledForInstrumentation(e.ObjectNew)
 	becameEnabled := !oldEnabled && newEnabled
@@ -55,14 +58,14 @@ func (i *WorkloadEnabledPredicate) Update(e event.UpdateEvent) bool {
 
 	// 1. workload became enabled and has available (running) replicas
 	if becameEnabled && newReplicas > 0 {
-		fmt.Printf("workload became enabled: %s/%s\n", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName())
 		return true
 	}
 
-	// 2. replicas became available
+	// 2. replicas became available, and the workload is effectively enabled
 	replicasBecameAvailable := (oldReplicas == 0) && (newReplicas > 0)
-	if replicasBecameAvailable {
-		fmt.Printf("workload replicas became available: %s/%s\n", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName())
+	// the workload is effectively enabled if it's enabled, or if its namespace is enabled
+	effectivelyEnabled := newEnabled || i.nsMap.contains(e.ObjectNew.GetNamespace())
+	if effectivelyEnabled && replicasBecameAvailable {
 		return true
 	}
 

@@ -6,7 +6,7 @@ import (
 
 const (
 	CurrentNamespaceEnvVar         = "CURRENT_NS"
-	DefaultNamespace               = "odigos-system"
+	DefaultOdigosNamespace         = "odigos-system"
 	DefaultOdigosConfigurationName = "odigos-config"
 	OTLPPort                       = 4317
 	OTLPHttpPort                   = 4318
@@ -23,7 +23,7 @@ const (
 	ManifestEnvOriginalValAnnotation = "odigos.io/manifest-env-original-val"
 	// Used to label instrumentation instances by the corresponding
 	// instrumented app for better query performance.
-	InstrumentedAppNameLabel         = "instrumented-app"
+	InstrumentedAppNameLabel = "instrumented-app"
 )
 
 var (
@@ -31,6 +31,6 @@ var (
 )
 
 var (
-	SystemNamespaces  = []string{DefaultNamespace, "kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
+	SystemNamespaces  = []string{DefaultOdigosNamespace, "kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
 	IgnoredContainers = []string{"istio-proxy"}
 )

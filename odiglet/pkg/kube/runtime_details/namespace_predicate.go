@@ -1,9 +1,8 @@
 package runtime_details
 
 import (
-	"fmt"
-
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -23,14 +22,16 @@ func (i *nameSpaceEnabledPredicate) Update(e event.UpdateEvent) bool {
 	if e.ObjectNew == nil {
 		return false
 	}
+	_, ok := e.ObjectNew.(*corev1.Namespace)
+	if !ok {
+		return false
+	}
 
 	oldEnabled := workload.IsObjectLabeledForInstrumentation(e.ObjectOld)
 	newEnabled := workload.IsObjectLabeledForInstrumentation(e.ObjectNew)
-	becameEnabled := !oldEnabled && newEnabled
 
-	fmt.Printf("namespace becameEnabled: %v\n", becameEnabled)
-
-	return becameEnabled
+	// Interested if the namespace has been labelled or unlabelled for instrumentation
+	return oldEnabled != newEnabled
 }
 
 func (i *nameSpaceEnabledPredicate) Delete(e event.DeleteEvent) bool {

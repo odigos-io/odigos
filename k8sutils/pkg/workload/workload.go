@@ -10,9 +10,7 @@ import (
 )
 
 type Workload interface {
-	Name() string
-	Namespace() string
-	Kind() string
+	client.Object
 	AvailableReplicas() int32
 }
 
@@ -22,73 +20,37 @@ var _ Workload = &DaemonSetWorkload{}
 var _ Workload = &StatefulSetWorkload{}
 
 type DeploymentWorkload struct {
-	Dep *v1.Deployment
-}
-
-func (d *DeploymentWorkload) Name() string {
-	return d.Dep.Name
-}
-
-func (d *DeploymentWorkload) Namespace() string {
-	return d.Dep.Namespace
-}
-
-func (d *DeploymentWorkload) Kind() string {
-	return "Deployment"
+	*v1.Deployment
 }
 
 func (d *DeploymentWorkload) AvailableReplicas() int32 {
-	return d.Dep.Status.AvailableReplicas
+	return d.Status.AvailableReplicas
 }
 
 type DaemonSetWorkload struct {
-	Ds *v1.DaemonSet
-}
-
-func (d *DaemonSetWorkload) Name() string {
-	return d.Ds.Name
-}
-
-func (d *DaemonSetWorkload) Namespace() string {
-	return d.Ds.Namespace
-}
-
-func (d *DaemonSetWorkload) Kind() string {
-	return "DaemonSet"
+	*v1.DaemonSet
 }
 
 func (d *DaemonSetWorkload) AvailableReplicas() int32 {
-	return d.Ds.Status.NumberReady
+	return d.Status.NumberReady
 }
 
 type StatefulSetWorkload struct {
-	Ss *v1.StatefulSet
-}
-
-func (s *StatefulSetWorkload) Name() string {
-	return s.Ss.Name
-}
-
-func (s *StatefulSetWorkload) Namespace() string {
-	return s.Ss.Namespace
-}
-
-func (s *StatefulSetWorkload) Kind() string {
-	return "StatefulSet"
+	*v1.StatefulSet
 }
 
 func (s *StatefulSetWorkload) AvailableReplicas() int32 {
-	return s.Ss.Status.ReadyReplicas
+	return s.Status.ReadyReplicas
 }
 
-func ObjectToWorkload(obj any) (Workload, error) {
+func ObjectToWorkload(obj client.Object) (Workload, error) {
 	switch t := obj.(type) {
 	case *v1.Deployment:
-		return &DeploymentWorkload{Dep: t}, nil
+		return &DeploymentWorkload{Deployment: t}, nil
 	case *v1.DaemonSet:
-		return &DaemonSetWorkload{Ds: t}, nil
+		return &DaemonSetWorkload{DaemonSet: t}, nil
 	case *v1.StatefulSet:
-		return &StatefulSetWorkload{Ss: t}, nil
+		return &StatefulSetWorkload{StatefulSet: t}, nil
 	default:
 		return nil, errors.New("unknown kind")
 	}
