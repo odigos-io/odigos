@@ -14,7 +14,7 @@ The "Latency Sampler" Odigos Action can be used to sample based on the duration 
 
 #### System Optimization
 
-- By sampling traces exceeding a certain latency threshold, you can prioritize investigating those traces to pinpoint the root cause of slowdowns. This helps you identify performance bottlenecks and optimize your system for efficiency.
+- By sampling traces that exceed a certain latency threshold, you can pinpoint the root cause of slowdowns and identify performance bottlenecks. This allows you to effectively target the components or services causing issues without being overwhelmed by the volume of trace data, optimizing your system for efficiency.
 
 
 ### Mechanism
@@ -29,7 +29,7 @@ It's support two main senarios:
 
 ### Basic Example
 
-The basic example below shows how to add a sampler with 
+The basic example below shows how to sample all traces with latency greater than 100ms
 
 Create a file named `latency-sampler.yaml` with the following content:
 
@@ -41,8 +41,7 @@ metadata:
   namespace: odigos-system
 spec:
   actionName: "example-latencysampler-action"
-  disabled: true
-  notes: "Example notes of latency sampler"
+  disabled: false
   minimum_latency_threshold: 100
   signals:
   - TRACES  
@@ -58,9 +57,9 @@ kubectl apply -f latency-sampler.yaml
 
 The full list of options available for the "LatencySampler" action are:
 
-- `minimum_latency_threshold` (required): Sample anything great than minimum_latency_threshold
+- `minimum_latency_threshold` (required): Specifies the minimum latency in milliseconds; traces with latency below this threshold are ignored.
 
-- `maximum_latency_threshold` (optional): Specifies the maximum latency in milliseconds; requests exceeding this limit are ignored.
+- `maximum_latency_threshold` (optional): Specifies the maximum latency in milliseconds; traces with latency exceeding this threshold are ignored. If not configured, traces won't be ignored for exceeding an upper boundary, and only the minimum threshold will be active.
 
 - `signals` (required): An array with the signals that the processor will act on (`TRACES`).
 
@@ -76,3 +75,4 @@ The full list of options available for the "LatencySampler" action are:
 - All spans in a trace will be either entirely dropped or entirely sampled.
 - The latency sampler is represented as a policy in a tail-sampling processor.
 - Adding this action causes a 30-second delay in sending the data.
+- Traces with durations exceeding 30 seconds might not be sampled correctly.

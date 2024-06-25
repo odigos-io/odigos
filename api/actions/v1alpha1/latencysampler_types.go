@@ -28,11 +28,11 @@ type LatencySamplerSpec struct {
 	Disabled   bool                         `json:"disabled,omitempty"`
 	Signals    []common.ObservabilitySignal `json:"signals"`
 
-	// The minimum response time (in milliseconds) for a span to be considered for sampling.
+	// Specifies the lower latency threshold in milliseconds; traces with latency equal to or exceeding this value will be considered for sampling.
 	// +kubebuilder:validation:Required
 	MinimumLatencyThreshold int `json:"minimum_latency_threshold"`
 
-	// The maximum response time (in milliseconds) for a span to be considered for sampling.
+	// Specifies the upper latency threshold in milliseconds; traces with latency above this value will not be considered for sampling
 	MaximumLatencyThreshold *int `json:"maximum_latency_threshold,omitempty"`
 }
 

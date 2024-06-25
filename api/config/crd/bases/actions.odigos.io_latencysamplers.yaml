@@ -48,12 +48,14 @@ spec:
               disabled:
                 type: boolean
               maximum_latency_threshold:
-                description: The maximum response time (in milliseconds) for a span
-                  to be considered for sampling.
+                description: Specifies the upper latency threshold in milliseconds;
+                  traces with latency above this value will not be considered for
+                  sampling
                 type: integer
               minimum_latency_threshold:
-                description: The minimum response time (in milliseconds) for a span
-                  to be considered for sampling.
+                description: Specifies the lower latency threshold in milliseconds;
+                  traces with latency equal to or exceeding this value will be considered
+                  for sampling.
                 type: integer
               notes:
                 type: string

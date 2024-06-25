@@ -7,6 +7,8 @@ import (
 type TailSamplingConfig struct {
 	Policies []Policy `json:"policies"`
 }
+
+// Policy representes a tail_sampling processor policy
 type Policy struct {
 	Name       string        `json:"name"`
 	PolicyType string        `json:"type"`

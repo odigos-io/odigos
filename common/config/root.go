@@ -79,7 +79,7 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 		// basic config common to all pipelines
 		pipeline.Receivers = append([]string{"otlp"}, pipeline.Receivers...)
 		// memory limiter processor should be the first processor in the pipeline
-		pipeline.Processors = append([]string{memoryLimiterProcessorName, "batch", "resource/odigos-version"}, pipeline.Processors...)
+		pipeline.Processors = append([]string{memoryLimiterProcessorName, "resource/odigos-version"}, pipeline.Processors...)
 		currentConfig.Service.Pipelines[pipelineName] = pipeline
 	}
 
@@ -107,7 +107,6 @@ func getBasicConfig(memoryLimiterConfig GenericMap) *Config {
 		},
 		Processors: GenericMap{
 			memoryLimiterProcessorName: memoryLimiterConfig,
-			"batch":                    empty,
 			"resource/odigos-version": GenericMap{
 				"attributes": []GenericMap{
 					{

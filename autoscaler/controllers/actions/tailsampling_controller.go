@@ -10,7 +10,7 @@ import (
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sampling "github.com/odigos-io/odigos/autoscaler/controllers/actions/tailsampling"
-	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	commonproc "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -26,6 +26,12 @@ type TailSamplingReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
+
+const (
+	// Processor types
+	tailSamplingProcessorType  = "tail_sampling"
+	probabilisticProcessorType = "probabilistic_sampler"
+)
 
 func (r *TailSamplingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
@@ -46,7 +52,11 @@ func (r *TailSamplingReconciler) syncSamplingProcessors(ctx context.Context, req
 		return err
 	}
 
-	if r.createDedicatedProbabilisticProcessor(desiredActions) {
+	if !r.isRelevantActions(desiredActions) {
+		return r.deleteSamplingProcessorsIfExists(ctx, req.Namespace)
+	}
+
+	if r.isOnlySamplingActionProbablistic(desiredActions) {
 		logger.V(0).Info("Sync dedicated probabilistic sampler processor")
 		return r.syncProbabilisticSamplingProcessor(ctx, desiredActions, req.Namespace)
 	}
@@ -59,10 +69,14 @@ func (r *TailSamplingReconciler) getRelevantActions(ctx context.Context, namespa
 	relevantActions := make(map[reflect.Type][]metav1.Object)
 
 	for actionType, handler := range sampling.TailSamplingSupportedActions {
-		if actions, err := handler.List(r.Client, namespace); err != nil {
+		if actions, err := handler.List(ctx, r.Client, namespace); err != nil {
 			return nil, err
 		} else {
-			relevantActions[actionType] = r.filterActions(ctx, actions, handler)
+
+			filteredActions := r.filterActions(ctx, actions, handler)
+			if len(filteredActions) > 0 {
+				relevantActions[actionType] = r.filterActions(ctx, actions, handler)
+			}
 		}
 	}
 	return relevantActions, nil
@@ -72,11 +86,6 @@ func (r *TailSamplingReconciler) syncProbabilisticSamplingProcessor(ctx context.
 	probType := reflect.TypeOf(&actionv1.ProbabilisticSampler{})
 
 	probabilisticActions := relevantActions[probType]
-
-	if len(probabilisticActions) == 0 {
-		commonconf.DeleteProcessorByType(r.Client, "tail_sampling", namespace)
-		return apierrors.NewNotFound(schema.GroupResource{}, "no enabled probabilisticSampler found")
-	}
 
 	handler := sampling.TailSamplingSupportedActions[probType]
 
@@ -109,7 +118,7 @@ func (r *TailSamplingReconciler) syncProbabilisticSamplingProcessor(ctx context.
 			},
 		},
 		Spec: v1.ProcessorSpec{
-			Type:            "probabilistic_sampler",
+			Type:            probabilisticProcessorType,
 			ProcessorName:   probAction.Spec.ActionName,
 			Disabled:        probAction.Spec.Disabled,
 			Notes:           probAction.Spec.Notes,
@@ -126,7 +135,7 @@ func (r *TailSamplingReconciler) syncProbabilisticSamplingProcessor(ctx context.
 	}
 
 	// Prevents cases where all other tail sampling actions removed except from probabilistic sampler
-	if err := commonconf.DeleteProcessorByType(r.Client, "tail_sampling", namespace); err != nil {
+	if err := commonproc.DeleteProcessorByType(ctx, r.Client, tailSamplingProcessorType, namespace); err != nil {
 		return err
 	}
 
@@ -161,12 +170,6 @@ func (r *TailSamplingReconciler) syncTailSamplingProcessor(ctx context.Context, 
 		}
 	}
 
-	if len(actionsPolicies) == 0 {
-		// delete tail sampling processor if no actions are found
-		commonconf.DeleteProcessorByType(r.Client, "tail_sampling", namespace)
-		return apierrors.NewNotFound(schema.GroupResource{}, "no tail sampling related actions found")
-	}
-
 	conf := sampling.TailSamplingConfig{
 		Policies: actionsPolicies,
 	}
@@ -183,12 +186,12 @@ func (r *TailSamplingReconciler) syncTailSamplingProcessor(ctx context.Context, 
 			OwnerReferences: actionsReferences,
 		},
 		Spec: v1.ProcessorSpec{
-			Type:            "tail_sampling",
-			ProcessorName:   "tail_sampling",
+			Type:            tailSamplingProcessorType,
+			ProcessorName:   tailSamplingProcessorType,
 			Disabled:        false, // In case related actions are disabled, the processor wont be created
 			Signals:         []common.ObservabilitySignal{common.TracesObservabilitySignal},
 			CollectorRoles:  []v1.CollectorsGroupRole{v1.CollectorsGroupRoleClusterGateway},
-			OrderHint:       1,
+			OrderHint:       -25,
 			ProcessorConfig: runtime.RawExtension{Raw: configJson},
 		},
 	}
@@ -198,7 +201,7 @@ func (r *TailSamplingReconciler) syncTailSamplingProcessor(ctx context.Context, 
 	}
 
 	// Delete ProbabilisticSampler processor to avoid cases where probabilistic sampler processor already exists
-	return commonconf.DeleteProcessorByType(r.Client, "probabilistic_sampler", namespace)
+	return commonproc.DeleteProcessorByType(ctx, r.Client, probabilisticProcessorType, namespace)
 }
 
 func (r *TailSamplingReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action metav1.Object, reason, msg string) error {
@@ -245,22 +248,9 @@ func (r *TailSamplingReconciler) ReportReconciledToProcessor(ctx context.Context
 
 // In case tail sampling related actions exists, append it to tail_sampling processor
 // otherwise, create a dedicated probablistic sampler processor
-func (r *TailSamplingReconciler) createDedicatedProbabilisticProcessor(relevantActions map[reflect.Type][]metav1.Object) bool {
-	typesLength := make(map[reflect.Type]int)
-
-	for actionType, actions := range relevantActions {
-		typesLength[actionType] = len(actions)
-	}
-
-	allOthersZero := true
-	for t, count := range typesLength {
-		if t != reflect.TypeOf(&actionv1.ProbabilisticSampler{}) && count != 0 {
-			allOthersZero = false
-			break
-		}
-	}
-
-	return allOthersZero
+func (r *TailSamplingReconciler) isOnlySamplingActionProbablistic(relevantActions map[reflect.Type][]metav1.Object) bool {
+	_, hasProbabilistic := relevantActions[reflect.TypeOf(&actionv1.ProbabilisticSampler{})]
+	return hasProbabilistic && len(relevantActions) == 1
 }
 
 // Report the status of the actions, if there are multiple actions:
@@ -280,24 +270,37 @@ func (r *TailSamplingReconciler) filterActions(ctx context.Context, actions []me
 
 	var filteredActions []metav1.Object
 	for _, action := range actions {
-		actionPassed := true
 
 		// filter disabled actions
 		if handler.IsActionDisabled(action) {
-			actionPassed = false
+			continue
 		}
 		// filter actions with invalid configuration
 		if err := handler.ValidatePolicyConfig(handler.GetPolicyConfig(action)); err != nil {
 			logger.V(0).Error(err, "Failed to validate policy config")
 			r.ReportReconciledToProcessorFailed(context.Background(), action, "FailedToTransformToProcessorReason", err.Error())
-			actionPassed = false
+			continue
 		}
 
-		if actionPassed {
-			filteredActions = append(filteredActions, action)
-		}
+		filteredActions = append(filteredActions, action)
 	}
 	return filteredActions
+}
+
+func (r *TailSamplingReconciler) isRelevantActions(desiredActions map[reflect.Type][]metav1.Object) bool {
+	for _, actions := range desiredActions {
+		if len(actions) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *TailSamplingReconciler) deleteSamplingProcessorsIfExists(ctx context.Context, namespace string) error {
+	if err := commonproc.DeleteProcessorByType(ctx, r.Client, tailSamplingProcessorType, namespace); err != nil {
+		return err
+	}
+	return commonproc.DeleteProcessorByType(ctx, r.Client, probabilisticProcessorType, namespace)
 }
 
 func getConditions(obj metav1.Object) (*[]metav1.Condition, error) {
