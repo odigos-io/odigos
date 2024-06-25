@@ -29,12 +29,6 @@ archives:
       - odigos
     files:
       - none*
-  - id: odigos-ui
-    name_template: "ui_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    builds:
-      - odigos-ui
-    files:
-      - none*
 checksum:
   name_template: "checksums.txt"
 snapshot:
