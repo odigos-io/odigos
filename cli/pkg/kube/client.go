@@ -31,6 +31,7 @@ type Client struct {
 	Dynamic       *dynamic.DynamicClient
 	ApiExtensions apiextensionsclient.Interface
 	OdigosClient  v1alpha1.OdigosV1alpha1Interface
+	Config        *rest.Config
 }
 
 func CreateClient(cmd *cobra.Command) (*Client, error) {
@@ -66,6 +67,7 @@ func CreateClient(cmd *cobra.Command) (*Client, error) {
 		Dynamic:       dynamicClient,
 		ApiExtensions: extendClientset,
 		OdigosClient:  odigosClient,
+		Config:        config,
 	}, nil
 }
 
