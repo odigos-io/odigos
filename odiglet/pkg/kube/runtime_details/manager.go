@@ -9,29 +9,11 @@ import (
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
-	nsMap := newInstrumentedNamespaces()
-
 	err := builder.
-		ControllerManagedBy(mgr).
-		For(&corev1.Namespace{}).
-		WithEventFilter(&nameSpaceEnabledPredicate{}).
-		Owns(&odigosv1.InstrumentedApplication{}).
-		Complete(&NamespacesReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-			nsMap: nsMap,
-		})
-	if err != nil {
-		return err
-	}
-
-	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		Owns(&odigosv1.InstrumentedApplication{}).
-		WithEventFilter(&WorkloadEnabledPredicate{
-			nsMap: nsMap,
-		}).
+		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Complete(&DeploymentsReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -44,9 +26,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		For(&appsv1.StatefulSet{}).
 		Owns(&odigosv1.InstrumentedApplication{}).
-		WithEventFilter(&WorkloadEnabledPredicate{
-			nsMap: nsMap,
-		}).
+		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Complete(&StatefulSetsReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -59,13 +39,24 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		For(&appsv1.DaemonSet{}).
 		Owns(&odigosv1.InstrumentedApplication{}).
-		WithEventFilter(&WorkloadEnabledPredicate{
-			nsMap: nsMap,
-		}).
+		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Complete(&DaemonSetsReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+	ControllerManagedBy(mgr).
+	For(&corev1.Namespace{}).
+	WithEventFilter(&nameSpaceEnabledPredicate{}).
+	Owns(&odigosv1.InstrumentedApplication{}).
+	Complete(&NamespacesReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	})
 	if err != nil {
 		return err
 	}

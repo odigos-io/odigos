@@ -15,7 +15,6 @@ import (
 type NamespacesReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
-	nsMap *instrumentedNamespaces
 }
 
 func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
@@ -28,11 +27,7 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 		return ctrl.Result{}, err
 	}
 
-	if k8sutils.IsObjectLabeledForInstrumentation(&ns) {
-		n.nsMap.add(ns.Name)
-	} else {
-		// The ns has been unlabelled for instrumentation, no need to perform runtime details inspection
-		n.nsMap.remove(ns.Name)
+	if !k8sutils.IsObjectLabeledForInstrumentation(&ns) {
 		return ctrl.Result{}, nil
 	}
 

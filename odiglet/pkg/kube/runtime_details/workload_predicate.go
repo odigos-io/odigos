@@ -15,7 +15,6 @@ import (
 // in the k8s eventual consistency model.
 type WorkloadEnabledPredicate struct {
 	predicate.Funcs
-	nsMap *instrumentedNamespaces
 }
 
 func (i *WorkloadEnabledPredicate) Create(e event.CreateEvent) bool {
@@ -61,11 +60,9 @@ func (i *WorkloadEnabledPredicate) Update(e event.UpdateEvent) bool {
 		return true
 	}
 
-	// 2. replicas became available, and the workload is effectively enabled
+	// 2. replicas became available
 	replicasBecameAvailable := (oldReplicas == 0) && (newReplicas > 0)
-	// the workload is effectively enabled if it's enabled, or if its namespace is enabled
-	effectivelyEnabled := newEnabled || i.nsMap.contains(e.ObjectNew.GetNamespace())
-	if effectivelyEnabled && replicasBecameAvailable {
+	if replicasBecameAvailable {
 		return true
 	}
 

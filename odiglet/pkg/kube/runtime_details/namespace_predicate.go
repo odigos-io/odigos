@@ -30,8 +30,7 @@ func (i *nameSpaceEnabledPredicate) Update(e event.UpdateEvent) bool {
 	oldEnabled := workload.IsObjectLabeledForInstrumentation(e.ObjectOld)
 	newEnabled := workload.IsObjectLabeledForInstrumentation(e.ObjectNew)
 
-	// Interested if the namespace has been labelled or unlabelled for instrumentation
-	return oldEnabled != newEnabled
+	return !oldEnabled && newEnabled
 }
 
 func (i *nameSpaceEnabledPredicate) Delete(e event.DeleteEvent) bool {

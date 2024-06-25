@@ -7,6 +7,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.6.0
 	github.com/kubevirt/device-plugin-manager v1.19.5
+	github.com/moby/sys/mountinfo v0.7.1
 	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/common v1.0.48
 	github.com/odigos-io/odigos/k8sutils v0.0.0
@@ -55,7 +56,6 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
-	github.com/moby/sys/mountinfo v0.7.1
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
