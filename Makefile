@@ -19,6 +19,10 @@ build-scheduler:
 build-collector:
 	docker build -t $(ORG)/odigos-collector:$(TAG) collector -f collector/Dockerfile
 
+.PHONY: build-ui
+build-ui:
+	docker build -t $(ORG)/odigos-ui:$(TAG) . -f frontend/Dockerfile
+
 .PHONY: build-images
 build-images:
 	make build-autoscaler TAG=$(TAG)
@@ -26,6 +30,7 @@ build-images:
 	make build-odiglet TAG=$(TAG)
 	make build-instrumentor TAG=$(TAG)
 	make build-collector TAG=$(TAG)
+	make build-ui TAG=$(TAG)
 
 .PHONY: push-odiglet
 push-odiglet:
@@ -71,6 +76,10 @@ load-to-kind-collector:
 load-to-kind-instrumentor:
 	kind load docker-image $(ORG)/odigos-instrumentor:$(TAG)
 
+.PHONY: load-to-kind-ui
+load-to-kind-ui:
+	kind load docker-image $(ORG)/odigos-ui:$(TAG)
+
 .PHONY: load-to-kind
 load-to-kind:
 	make load-to-kind-autoscaler TAG=$(TAG)
@@ -78,6 +87,7 @@ load-to-kind:
 	make load-to-kind-odiglet TAG=$(TAG)
 	kind load docker-image $(ORG)/odigos-instrumentor:$(TAG)
 	make load-to-kind-collector TAG=$(TAG)
+	make load-to-kind-ui TAG=$(TAG)
 
 .PHONY: restart-odiglet
 restart-odiglet:
