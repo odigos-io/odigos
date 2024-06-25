@@ -85,3 +85,12 @@ func (o *OrigWorkloadEnvValues) SerializeToAnnotation(obj client.Object) error {
 	obj.SetAnnotations(currentAnnotations)
 	return nil
 }
+
+func (o *OrigWorkloadEnvValues) DeleteFromObj(obj client.Object) {
+	currentAnnotations := obj.GetAnnotations()
+	if currentAnnotations == nil {
+		return
+	}
+
+	delete(currentAnnotations, consts.ManifestEnvOriginalValAnnotation)
+}

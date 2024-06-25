@@ -83,3 +83,61 @@ func isReportedNameDeleted(obj client.Object, err error) bool {
 	_, found := obj.GetAnnotations()[consts.OdigosReportedNameAnnotation]
 	return found
 }
+
+func AssertDepContainerEnvRemainEmpty(ctx context.Context, k8sClient client.Client, dep *appsv1.Deployment) {
+	key := client.ObjectKey{Namespace: dep.GetNamespace(), Name: dep.GetName()}
+	Consistently(func() bool {
+		var currentDeployment appsv1.Deployment
+		err := k8sClient.Get(ctx, key, &currentDeployment)
+		if err != nil {
+			return false
+		}
+		for _, container := range currentDeployment.Spec.Template.Spec.Containers {
+			if len(container.Env) > 0 {
+				return false
+			}
+		}
+		return true
+	}, duration, interval).Should(BeTrue())
+}
+
+func AssertDepContainerSingleEnvBecomesEmpty(ctx context.Context, k8sClient client.Client, dep *appsv1.Deployment) {
+	key := client.ObjectKey{Namespace: dep.GetNamespace(), Name: dep.GetName()}
+	Eventually(func() bool {
+		var currentDeployment appsv1.Deployment
+		err := k8sClient.Get(ctx, key, &currentDeployment)
+		if err != nil {
+			return false
+		}
+		for _, container := range currentDeployment.Spec.Template.Spec.Containers {
+			if len(container.Env) > 0 {
+				return false
+			}
+		}
+		return true
+	}, duration, interval).Should(BeTrue())
+}
+
+func AssertDepContainerSingleEnv(ctx context.Context, k8sClient client.Client, dep *appsv1.Deployment, envName string, envValue string) {
+	key := client.ObjectKey{Namespace: dep.GetNamespace(), Name: dep.GetName()}
+	Eventually(func() bool {
+		var currentDeployment appsv1.Deployment
+		err := k8sClient.Get(ctx, key, &currentDeployment)
+		if err != nil {
+			return false
+		}
+		return IsDeploymentSingleContainerSingleEnv(&currentDeployment, envName, envValue)
+	}, duration, interval).Should(BeTrue())
+}
+
+func AssertDepContainerSingleEnvRemainsSame(ctx context.Context, k8sClient client.Client, dep *appsv1.Deployment, envName string, envValue string) {
+	key := client.ObjectKey{Namespace: dep.GetNamespace(), Name: dep.GetName()}
+	Consistently(func() bool {
+		var currentDeployment appsv1.Deployment
+		err := k8sClient.Get(ctx, key, &currentDeployment)
+		if err != nil {
+			return false
+		}
+		return IsDeploymentSingleContainerSingleEnv(&currentDeployment, envName, envValue)
+	}, duration, interval).Should(BeTrue())
+}

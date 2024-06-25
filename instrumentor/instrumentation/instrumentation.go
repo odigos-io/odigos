@@ -11,7 +11,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -20,7 +20,7 @@ var (
 	ErrPatchEnvVars = errors.New("failed to patch env vars")
 )
 
-func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) error {
+func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) error {
 
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
@@ -32,7 +32,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 		return err
 	}
 
-	var modifiedContainers []v1.Container
+	var modifiedContainers []corev1.Container
 	for _, container := range original.Spec.Containers {
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
 		if containerLanguage == nil || *containerLanguage == common.UnknownProgrammingLanguage || *containerLanguage == common.IgnoredProgrammingLanguage {
@@ -48,9 +48,9 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 		instrumentationDeviceName := common.InstrumentationDeviceName(*containerLanguage, otelSdk)
 
 		if container.Resources.Limits == nil {
-			container.Resources.Limits = make(map[v1.ResourceName]resource.Quantity)
+			container.Resources.Limits = make(map[corev1.ResourceName]resource.Quantity)
 		}
-		container.Resources.Limits[v1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
+		container.Resources.Limits[corev1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
 
 		err = patchEnvVarsForContainer(runtimeDetails, &container, targetObj, otelSdk, manifestEnvOriginal)
 		if err != nil {
@@ -67,7 +67,40 @@ func ApplyInstrumentationDevicesToPodTemplate(original *v1.PodTemplateSpec, runt
 	return nil
 }
 
-func RevertInstrumentationDevices(original *v1.PodTemplateSpec) {
+func RevertEnvOverwrites(obj client.Object, podSpec *corev1.PodTemplateSpec) error {
+	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(obj)
+	if err != nil {
+		return err
+	}
+
+	for iContainer, c := range podSpec.Spec.Containers {
+		containerOriginalEnv := manifestEnvOriginal.GetContainerStoredEnvs(c.Name)
+		newContainerEnvs := make([]corev1.EnvVar, 0, len(c.Env))
+		for _, envVar := range c.Env {
+			if origValue, found := containerOriginalEnv[envVar.Name]; found {
+				// revert the env var to its original value
+				if origValue != nil {
+					newContainerEnvs = append(newContainerEnvs, corev1.EnvVar{
+						Name:  envVar.Name,
+						Value: *containerOriginalEnv[envVar.Name],
+					})
+				} else {
+					// if the value is nil, the env var was not set by the user to begin with.
+					// we will simply not append it to the new envs to achieve the same effect.
+				}
+			} else {
+				newContainerEnvs = append(newContainerEnvs, envVar)
+			}
+		}
+		podSpec.Spec.Containers[iContainer].Env = newContainerEnvs
+	}
+
+	manifestEnvOriginal.DeleteFromObj(obj)
+
+	return nil
+}
+
+func RevertInstrumentationDevices(original *corev1.PodTemplateSpec) {
 	for _, container := range original.Spec.Containers {
 		for resourceName := range container.Resources.Limits {
 			if strings.HasPrefix(string(resourceName), common.OdigosResourceNamespace) {
@@ -110,12 +143,12 @@ func getEnvVarsOfContainer(instrumentation *odigosv1.InstrumentedApplication, co
 	return envVars
 }
 
-func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, container *v1.Container, obj client.Object, sdk common.OtelSdk, manifestEnvOriginal *OrigWorkloadEnvValues) error {
+func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, container *corev1.Container, obj client.Object, sdk common.OtelSdk, manifestEnvOriginal *envoverwrite.OrigWorkloadEnvValues) error {
 
 	observedEnvs := getEnvVarsOfContainer(runtimeDetails, container.Name)
 
 	// Step 1: check existing environment on the manifest and update them if needed
-	newEnvs := make([]v1.EnvVar, 0, len(container.Env))
+	newEnvs := make([]corev1.EnvVar, 0, len(container.Env))
 	for _, envVar := range container.Env {
 
 		// extract the observed value for this env var, which might be empty if not currently exists
@@ -131,7 +164,7 @@ func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, 
 			} else { // found, we need to update the env var to it's original value
 				if origValue != nil {
 					// this case reverts back the env var to it's original value
-					newEnvs = append(newEnvs, v1.EnvVar{
+					newEnvs = append(newEnvs, corev1.EnvVar{
 						Name:  envVar.Name,
 						Value: *origValue,
 					})
@@ -144,7 +177,7 @@ func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, 
 			// if it's the first time we patch this env var, save the original value
 			manifestEnvOriginal.InsertOriginalValue(container.Name, envVar.Name, &envVar.Value)
 			// update the env var to it's desired value
-			newEnvs = append(newEnvs, v1.EnvVar{
+			newEnvs = append(newEnvs, corev1.EnvVar{
 				Name:  envVar.Name,
 				Value: *desiredEnvValue,
 			})
@@ -161,7 +194,7 @@ func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, 
 			// store that it was empty to begin with
 			manifestEnvOriginal.InsertOriginalValue(container.Name, envName, nil)
 			// and add this new env var to the manifest
-			newEnvs = append(newEnvs, v1.EnvVar{
+			newEnvs = append(newEnvs, corev1.EnvVar{
 				Name:  envName,
 				Value: *desiredEnvValue,
 			})

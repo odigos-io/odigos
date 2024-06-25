@@ -129,6 +129,10 @@ func uninstrument(logger logr.Logger, ctx context.Context, kubeClient client.Cli
 		}
 
 		instrumentation.RevertInstrumentationDevices(podSpec)
+		err = instrumentation.RevertEnvOverwrites(obj, podSpec)
+		if err != nil {
+			return err
+		}
 		return nil
 	})
 
