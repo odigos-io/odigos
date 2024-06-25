@@ -70,6 +70,9 @@ func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Depl
 						{
 							Name:  UIContainerName,
 							Image: containers.GetImageName(imagePrefix, UIImage, version),
+							Args: []string{
+								"--namespace=$(CURRENT_NS)",
+							},
 							Env: []corev1.EnvVar{
 								{
 									Name: "CURRENT_NS",
