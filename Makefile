@@ -1,11 +1,11 @@
 NAMESPACE := odigos-system
 CONFIGMAP_NAME := odigos-deployment
 
-TAG ?= $(shell odigos version --short)
+TAG ?= $(shell odigos version --cluster)
 ORG := keyval
 
 # Cluster Version
-TAG ?= $(shell kubectl get configmap $(CONFIGMAP_NAME) -n $(NAMESPACE) -o jsonpath='{.data.ODIGOS_VERSION}')
+#TAG ?= $(shell kubectl get configmap $(CONFIGMAP_NAME) -n $(NAMESPACE) -o jsonpath='{.data.ODIGOS_VERSION}')
 
 .PHONY: build-odiglet
 build-odiglet:
