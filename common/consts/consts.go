@@ -10,6 +10,7 @@ const (
 	DefaultOdigosConfigurationName = "odigos-config"
 	OTLPPort                       = 4317
 	OTLPHttpPort                   = 4318
+	PprofOdigosPort                = 6060
 	OdigosInstrumentationLabel     = "odigos-instrumentation"
 	InstrumentationEnabled         = "enabled"
 	InstrumentationDisabled        = "disabled"
