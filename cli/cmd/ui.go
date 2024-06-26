@@ -134,7 +134,7 @@ func forwardPorts(method string, url *url.URL, cfg *rest.Config, stopCh chan str
 
 func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*corev1.Pod, error) {
 	pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("app.kubernetes.io/name=%s", resources.UIAppLabelValue),
+		LabelSelector: fmt.Sprintf("app=%s", resources.UIAppLabelValue),
 	})
 
 	if err != nil {

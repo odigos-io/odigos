@@ -53,13 +53,13 @@ func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Depl
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": UIAppLabelValue,
+					"app": UIAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": UIAppLabelValue,
+						"app": UIAppLabelValue,
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": UIContainerName,
@@ -196,7 +196,7 @@ func NewUIService(ns string) *corev1.Service {
 			Name:      UIServiceName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": UIAppLabelValue,
+				"app": UIAppLabelValue,
 			},
 		},
 		Spec: corev1.ServiceSpec{
