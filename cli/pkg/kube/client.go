@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
+
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +25,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 type Client struct {
@@ -37,7 +38,7 @@ type Client struct {
 func CreateClient(cmd *cobra.Command) (*Client, error) {
 	kc := cmd.Flag("kubeconfig").Value.String()
 
-	config, err := getClientConfig(kc)
+	config, err := k8sutils.GetClientConfig(kc)
 	if err != nil {
 		return nil, err
 	}
@@ -74,28 +75,6 @@ func CreateClient(cmd *cobra.Command) (*Client, error) {
 func PrintClientErrorAndExit(err error) {
 	fmt.Printf("\033[31mERROR\033[0m Could not connect to Kubernetes cluster\n%s\n", err)
 	os.Exit(-1)
-}
-
-func getClientConfig(kc string) (*rest.Config, error) {
-	var kubeConfig *rest.Config
-	var err error
-
-	if IsRunningInKubernetes() {
-		kubeConfig, err = rest.InClusterConfig()
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		kubeConfig, err = clientcmd.BuildConfigFromFlags("", kc)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return kubeConfig, nil
-}
-
-func IsRunningInKubernetes() bool {
-	return os.Getenv("KUBERNETES_SERVICE_HOST") != ""
 }
 
 func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []client.Object) error {

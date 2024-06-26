@@ -86,7 +86,6 @@ func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Depl
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "ui",
-									HostPort:      3000,
 									ContainerPort: 3000,
 								},
 							},
@@ -202,7 +201,7 @@ func NewUIService(ns string) *corev1.Service {
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
-				"app.kubernetes.io/name": UIAppLabelValue,
+				"app": UIAppLabelValue,
 			},
 			Ports: []corev1.ServicePort{
 				{

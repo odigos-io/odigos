@@ -25,14 +25,14 @@ import (
 )
 
 const (
-	defaultPort = "3000"
+	defaultPort = 3000
 )
 
 // uiCmd represents the ui command
 var uiCmd = &cobra.Command{
 	Use:   "ui",
 	Short: "Start the Odigos UI",
-	Long:  `Start the Odigos UI. This will start a web server that will serve the UI`,
+	Long:  `Start the Odigos UI. This command will port-forward the odigos-ui pod to your local machine.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client, err := kube.CreateClient(cmd)
@@ -57,11 +57,15 @@ var uiCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		portForwardWithContext(ctx, uiPod, client)
+		localPort := cmd.Flag("port").Value.String()
+		if err := portForwardWithContext(ctx, uiPod, client, localPort); err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot start port-forward: %s\n", err)
+			os.Exit(1)
+		}
 	},
 }
 
-func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube.Client) error {
+func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube.Client, localPort string) error {
 	stopChannel := make(chan struct{}, 1)
 	readyChannel := make(chan struct{})
 	signals := make(chan os.Signal, 1)
@@ -80,7 +84,7 @@ func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube
 		close(stopChannel)
 	}()
 
-	fmt.Printf("Odigos UI is available at: http://localhost:%s\n\n", defaultPort)
+	fmt.Printf("Odigos UI is available at: http://localhost:%s\n\n", localPort)
 	fmt.Printf("Port-forwarding from %s/%s\n", uiPod.Namespace, uiPod.Name)
 	fmt.Printf("Press Ctrl+C to stop\n")
 
@@ -91,7 +95,7 @@ func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube
 		Name(uiPod.Name).
 		SubResource("portforward")
 
-	return forwardPorts("POST", req.URL(), client.Config, stopChannel, readyChannel)
+	return forwardPorts("POST", req.URL(), client.Config, stopChannel, readyChannel, localPort)
 }
 
 func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dialer, error) {
@@ -111,15 +115,16 @@ func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dia
 	return dialer, nil
 }
 
-func forwardPorts(method string, url *url.URL, cfg *rest.Config, stopCh chan struct{}, readyCh chan struct{}) error {
+func forwardPorts(method string, url *url.URL, cfg *rest.Config, stopCh chan struct{}, readyCh chan struct{}, localPort string) error {
 	dialer, err := createDialer(method, url, cfg)
 	if err != nil {
 		return err
 	}
 
+	port := fmt.Sprintf("%s:%d", localPort, defaultPort)
 	fw, err := portforward.NewOnAddresses(dialer,
 		[]string{"localhost"},
-		[]string{defaultPort}, stopCh, readyCh, nil, os.Stderr)
+		[]string{port}, stopCh, readyCh, nil, os.Stderr)
 
 	if err != nil {
 		return err
@@ -150,4 +155,5 @@ func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*core
 
 func init() {
 	rootCmd.AddCommand(uiCmd)
+	uiCmd.Flags().Int("port", defaultPort, "port to listen on")
 }

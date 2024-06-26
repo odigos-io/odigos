@@ -1,15 +1,12 @@
 package kube
 
 import (
-	"os"
-
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/clientset/versioned/typed/actions/v1alpha1"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 var DefaultClient *Client
@@ -33,30 +30,8 @@ type Client struct {
 	ActionsClient actionsv1alpha1.ActionsV1alpha1Interface
 }
 
-func IsRunningInKubernetes() bool {
-	return os.Getenv("KUBERNETES_SERVICE_HOST") != ""
-}
-
-func getClientConfig(kc string) (*rest.Config, error) {
-	var kubeConfig *rest.Config
-	var err error
-
-	if IsRunningInKubernetes() {
-		kubeConfig, err = rest.InClusterConfig()
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		kubeConfig, err = clientcmd.BuildConfigFromFlags("", kc)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return kubeConfig, nil
-}
-
 func CreateClient(kubeConfig string) (*Client, error) {
-	config, err := getClientConfig(kubeConfig)
+	config, err := k8sutils.GetClientConfig(kubeConfig)
 	if err != nil {
 		return nil, err
 	}

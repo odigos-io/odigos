@@ -89,6 +89,10 @@ load-to-kind:
 	make load-to-kind-collector TAG=$(TAG)
 	make load-to-kind-ui TAG=$(TAG)
 
+.PHONY: restart-ui
+restart-ui:
+	kubectl rollout restart deployment odigos-ui -n odigos-system
+
 .PHONY: restart-odiglet
 restart-odiglet:
 	kubectl rollout restart daemonset odiglet -n odigos-system
@@ -122,6 +126,10 @@ deploy-collector:
 .PHONY: deploy-instrumentor
 deploy-instrumentor:
 	make build-instrumentor TAG=$(TAG) && make load-to-kind-instrumentor TAG=$(TAG) && make restart-instrumentor
+
+.PHONY: deploy-ui
+deploy-ui:
+	make build-ui TAG=$(TAG) && make load-to-kind-ui TAG=$(TAG) && make restart-ui
 
 .PHONY: debug-odiglet
 debug-odiglet:
