@@ -22,33 +22,11 @@ builds:
       - -X github.com/odigos-io/odigos/cli/cmd.OdigosDate={{ .Date }}
     tags:
      - embed_manifests
-  - env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-    dir: ./frontend
-    id: odigos-ui
-    ldflags:
-      - -X github.com/odigos-io/odigos/frontend/version.OdigosVersion={{ .Tag }}
-      - -X github.com/odigos-io/odigos/frontend/version.OdigosCommit={{ .ShortCommit }}
-      - -X github.com/odigos-io/odigos/frontend/version.OdigosDate={{ .Date }}
-    binary: odigos-ui
 archives:
   - id: odigos
     name_template: "cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     builds:
       - odigos
-    files:
-      - none*
-  - id: odigos-ui
-    name_template: "ui_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    builds:
-      - odigos-ui
     files:
       - none*
 checksum:

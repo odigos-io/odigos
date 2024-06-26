@@ -99,6 +99,8 @@ jobs:
             runner: large-runner
           - service: odiglet
             runner: ubuntu-latest
+          - service: ui
+            runner: ubuntu-latest
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
@@ -137,6 +139,7 @@ jobs:
             ${{
               (matrix.service == 'odiglet' && 'odiglet/Dockerfile') ||
               (matrix.service == 'collector' && 'collector/Dockerfile') ||
+              (matrix.service == 'ui' && 'frontend/Dockerfile') ||
               'Dockerfile'
             }}
           context: >-
