@@ -23,7 +23,7 @@ func getEnvVarOrDefault(envKey string, defaultVal string) string {
 }
 
 func GetCurrentNamespace() string {
-	return getEnvVarOrDefault(consts.CurrentNamespaceEnvVar, consts.DefaultNamespace)
+	return getEnvVarOrDefault(consts.CurrentNamespaceEnvVar, consts.DefaultOdigosNamespace)
 }
 
 func GetDefaultKubeConfigPath() string {

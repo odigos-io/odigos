@@ -12,7 +12,7 @@ import (
 
 const (
 	otelResourceAttributesEnvVar  = "OTEL_RESOURCE_ATTRIBUTES"
-	otelResourceAttrPatteern      = "service.name=%s,odigos.device=java"
+	otelResourceAttrPattern       = "service.name=%s,odigos.device=java"
 	javaToolOptionsEnvVar         = "JAVA_TOOL_OPTIONS"
 	javaOptsEnvVar                = "JAVA_OPTS"
 	javaOtlpEndpointEnvVar        = "OTEL_EXPORTER_OTLP_ENDPOINT"
@@ -45,7 +45,7 @@ func Java(deviceId string, uniqueDestinationSignals map[common.ObservabilitySign
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
-			otelResourceAttributesEnvVar:  fmt.Sprintf(otelResourceAttrPatteern, deviceId),
+			otelResourceAttributesEnvVar:  fmt.Sprintf(otelResourceAttrPattern, deviceId),
 			javaToolOptionsEnvVar:         javaToolOptionsVal,
 			javaOptsEnvVar:                javaOptsVal,
 			javaOtlpEndpointEnvVar:        otlpEndpoint,

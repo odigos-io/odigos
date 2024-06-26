@@ -53,7 +53,7 @@ func parseFlags() Flags {
 	flag.IntVar(&flags.Port, "port", defaultPort, "Port to listen on")
 	flag.BoolVar(&flags.Debug, "debug", false, "Enable debug mode")
 	flag.StringVar(&flags.KubeConfig, "kubeconfig", defaultKubeConfig, "Path to kubeconfig file")
-	flag.StringVar(&flags.Namespace, "namespace", consts.DefaultNamespace, "Kubernetes namespace where Odigos is installed")
+	flag.StringVar(&flags.Namespace, "namespace", consts.DefaultOdigosNamespace, "Kubernetes namespace where Odigos is installed")
 	flag.Parse()
 	return flags
 }

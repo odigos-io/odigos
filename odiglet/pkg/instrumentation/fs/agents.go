@@ -1,13 +1,13 @@
 package fs
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"syscall"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
-	cp "github.com/otiai10/copy"
 )
 
 const (
@@ -36,10 +36,12 @@ func CopyAgentsDirectoryToHost() error {
 		}
 	}
 
-	err = cp.Copy(containerDir, hostDir, cp.Options{})
+	cmd := exec.Command("/bin/bash", "-c", "cp -r " + containerDir + "/* "  + hostDir)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
+		return fmt.Errorf("error copying agents directory to host: %v, output %s", err, output)
 	}
+
 
 	// Check if the semanage command exists when running on RHEL/CoreOS
 	_, err = exec.LookPath(filepath.Join(chrootDir, semanagePath))

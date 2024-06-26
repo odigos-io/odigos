@@ -3,6 +3,8 @@ package deleteinstrumentedapplication
 import (
 	"context"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -74,6 +76,11 @@ func isWorkloadInstrumentationEffectiveEnabled(ctx context.Context, kubeClient c
 	err := kubeClient.Get(ctx, client.ObjectKey{Name: obj.GetNamespace()}, &ns)
 	if err != nil {
 		logger := log.FromContext(ctx)
+		if apierrors.IsNotFound(err) {
+			logger.V(1).Info("namespace not found")
+			return false, nil
+		}
+
 		logger.Error(err, "error fetching namespace object")
 		return false, err
 	}
