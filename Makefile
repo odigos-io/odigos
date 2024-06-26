@@ -1,3 +1,4 @@
+TAG ?= $(shell odigos version --short)
 ORG := keyval
 .PHONY: build-odiglet
 build-odiglet:
