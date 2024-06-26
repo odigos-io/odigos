@@ -52,7 +52,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&corev1.Namespace{}).
-		WithEventFilter(&WorkloadEnabledPredicate{}).
+		WithEventFilter(&nameSpaceEnabledPredicate{}).
 		Owns(&odigosv1.InstrumentedApplication{}).
 		Complete(&NamespacesReconciler{
 			Client: mgr.GetClient(),
