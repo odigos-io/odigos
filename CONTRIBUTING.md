@@ -80,16 +80,16 @@ After you have a working odigos setup, you can start making changes to the code 
 ### Run Odigos Cli from code
 
 The code for the odigos cli tool is found in the `cli` directory [here](https://github.com/odigos-io/odigos/tree/main/cli).
-Test your cli code changes by running `go run -tags=embed_manifests .` from the `cli` directory:
+Test your cli code running the following:
 
 ```bash
-go run cli/main.go
+go run -tags=embed_manifests ./cli
 ```
 
 To run `odigos install` cli command from a local source, you will need to supply a version flag to tell odigos which image tags to install:
 
 ```bash
-go run cli/main.go install --version v0.1.81
+go run -tags=embed_manifests ./cli install --version v0.1.81
 # Installing Odigos version v0.1.81 in namespace odigos-system ...
 ```
 
@@ -100,17 +100,27 @@ If you test changes to the `install` command, you will need to `go run cli/main.
 The main steps involved when debugging Odigos locally are:
 
 - Use a Kind kubernetes cluster
+- 2 Options: 
+1. Update all pods in the odigos-system namespace:
 - Build custom images of Odigos and load them into Kind via:
-
 ```bash
-TAG=<CURRENT-ODIGOS-VERSION> make build-images load-to-kind
+make build-images load-to-kind
 ```
 
-- Ensure the TAG matches the Odigos version output from: `odigos version`
 - Restart all pods in the `odigos-system` namespace:
 
 ```bash
 kubectl delete pods --all -n odigos-system
+```
+
+2.Update a specific service: 
+- For your convinience we created for each service a speceific script that rebuilds + load to kind + restart the pod.
+- So you just need to run one of the following commands according to your service and then you can test your changes: 
+```bash
+make deploy-odiglet 
+make deploy-autoscaler 
+make deploy-collector 
+make deploy-instrumentor
 ```
 
 See the [Odigos docs](https://docs.odigos.io/intro) for the full steps on debugging Odigos locally.
@@ -149,7 +159,7 @@ First, you will have to find which version of Odigos you are running. You can do
 Then, run the following command to build Odiglet in debug mode and restart the Odiglet pod:
 
 ```bash
-TAG=<CURRENT-ODIGOS-VERSION> make debug-odiglet
+make debug-odiglet
 ```
 
 Then, you can attach a debugger to the Odiglet pod. For example, if you are using Goland, you can follow the instructions [here](https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#step-3-create-the-remote-run-debug-configuration-on-the-client-computer) to attach to a remote process.
