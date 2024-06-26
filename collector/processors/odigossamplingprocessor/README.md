@@ -18,7 +18,7 @@ This processor samples traces based on the following supported rules:
           "service": "frontend"
 ```
 - threshold: The maximum allowable trace duration in milliseconds. Traces with a duration less than this value will be deleted.
-- endpoint: The specific HTTP route to match for sampling. Only traces with this route will be considered.
+- endpoint: The specific HTTP route prefix to match for sampling. Only traces with routes starting with this prefix will be considered. For example, configuring /buy will also match /buy/product.
 - service: The name of the service for which the rule applies. Only traces from this service will be considered.
 
 

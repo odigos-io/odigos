@@ -2,7 +2,6 @@ package odigossamplingprocessor
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor/internal/sampling"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -25,7 +24,7 @@ func (sp *samplingProcessor) processTraces(ctx context.Context, td ptrace.Traces
 				return td, nil
 			}
 		default:
-			fmt.Printf("Unknown rule details type for rule %s\n", rule.Name)
+			sp.logger.Error("Unknown rule details type", zap.String("rule", rule.Name))
 		}
 	}
 	return td, nil

@@ -6,6 +6,7 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
 type TraceLatencyRule struct {
@@ -38,7 +39,7 @@ func (tlr *TraceLatencyRule) DropTrace(td ptrace.Traces) bool {
 
 	// Check if the service matches
 	for r := 0; r < resources.Len(); r++ {
-		serviceAttr, _ := resources.At(r).Resource().Attributes().Get("service.name")
+		serviceAttr, _ := resources.At(r).Resource().Attributes().Get(string(semconv.ServiceNameKey))
 		if serviceAttr.AsString() == tlr.Service {
 			serviceFound = true
 		}
