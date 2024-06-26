@@ -98,29 +98,19 @@ If you test changes to the `install` command, you will need to `go run cli/main.
 ### How to Develop Odigos Locally
 
 The main steps involved when debugging Odigos locally are:
-
-- Use a Kind kubernetes cluster
-- 2 Options: 
-1. Update all pods in the odigos-system namespace:
-- Build custom images of Odigos and load them into Kind via:
+1. Use a Kind kubernetes cluster.
+2. Choose one of the following options for deploy: 
+- Deploy all pods in the odigos-system namespace: 
 ```bash
-make build-images load-to-kind
+      make deploy
 ```
 
-- Restart all pods in the `odigos-system` namespace:
-
+- Deploy a specific service by running one of the following commands:
 ```bash
-kubectl delete pods --all -n odigos-system
-```
-
-2.Update a specific service: 
-- For your convinience we created for each service a speceific script that rebuilds + load to kind + restart the pod.
-- So you just need to run one of the following commands according to your service and then you can test your changes: 
-```bash
-make deploy-odiglet 
-make deploy-autoscaler 
-make deploy-collector 
-make deploy-instrumentor
+      make deploy-odiglet 
+      make deploy-autoscaler 
+      make deploy-collector 
+      make deploy-instrumentor
 ```
 
 See the [Odigos docs](https://docs.odigos.io/intro) for the full steps on debugging Odigos locally.
