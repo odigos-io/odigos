@@ -1,0 +1,24 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        max_recv_msg_size_mib: 134217728
+      http: {}
+exporters: {}
+processors:
+  batch: {}
+  memory_limiter: {}
+  resource/odigos-version:
+    attributes:
+    - action: upsert
+      key: odigos.version
+      value: ${ODIGOS_VERSION}
+extensions:
+  health_check: {}
+  zpages: {}
+connectors: {}
+service:
+  extensions:
+  - health_check
+  - zpages
+  pipelines: {}

@@ -3,6 +3,8 @@ package runtime_details
 import (
 	"context"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	corev1 "k8s.io/api/core/v1"
@@ -37,6 +39,11 @@ func isNamespaceLabeled(ctx context.Context, obj client.Object, c client.Client)
 	var ns corev1.Namespace
 	err := c.Get(ctx, client.ObjectKey{Name: obj.GetNamespace()}, &ns)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Logger.V(1).Info("namespace object not found", "namespace", obj.GetNamespace())
+			return false
+		}
+
 		log.Logger.Error(err, "error fetching namespace object")
 		return false
 	}

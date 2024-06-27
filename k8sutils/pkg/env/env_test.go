@@ -44,7 +44,7 @@ func TestGetCurrentNamespace_EnvVarExists(t *testing.T) {
 func TestGetCurrentNamespace_EnvVarNotExists(t *testing.T) {
 	os.Unsetenv(consts.CurrentNamespaceEnvVar) // Ensure the environment variable is not set
 
-	expectedNamespace := consts.DefaultNamespace
+	expectedNamespace := consts.DefaultOdigosNamespace
 	got := GetCurrentNamespace()
 	if got != expectedNamespace {
 		t.Errorf("GetCurrentNamespace() = %q, want %q", got, expectedNamespace)

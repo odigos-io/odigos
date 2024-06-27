@@ -101,7 +101,7 @@ jobs:
             -d '{"event_type": "create_release_pr", "client_payload": {"tag": "${{ steps.set_tag.outputs.tag }}"}}'
 
 
-      - uses: ko-build/setup-ko@v0.6
+      - uses: ko-build/setup-ko@v0.7
 
       - name: publish cli image to docker registries
         working-directory: ./cli

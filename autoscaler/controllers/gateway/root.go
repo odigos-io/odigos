@@ -107,7 +107,6 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		err = syncHPA(gateway, ctx, c, scheme, memConfig)
 		if err != nil {
 			logger.Error(err, "Failed to sync HPA")
-			return err
 		}
 	}
 

@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
+
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +24,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/rest"
 )
 
 type Client struct {
@@ -30,11 +32,13 @@ type Client struct {
 	Dynamic       *dynamic.DynamicClient
 	ApiExtensions apiextensionsclient.Interface
 	OdigosClient  v1alpha1.OdigosV1alpha1Interface
+	Config        *rest.Config
 }
 
 func CreateClient(cmd *cobra.Command) (*Client, error) {
 	kc := cmd.Flag("kubeconfig").Value.String()
-	config, err := clientcmd.BuildConfigFromFlags("", kc)
+
+	config, err := k8sutils.GetClientConfig(kc)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +68,7 @@ func CreateClient(cmd *cobra.Command) (*Client, error) {
 		Dynamic:       dynamicClient,
 		ApiExtensions: extendClientset,
 		OdigosClient:  odigosClient,
+		Config:        config,
 	}, nil
 }
 
