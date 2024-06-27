@@ -142,8 +142,7 @@ debug-odiglet:
 	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
 
 .PHONY: deploy
-deploy:
-	make deploy-odiglet && make deploy-autoscaler && make deploy-collector && make deploy-instrumentor
+deploy: deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor
 
 ,PHONY: e2e-test
 e2e-test:
