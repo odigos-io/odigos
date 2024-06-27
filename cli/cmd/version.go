@@ -30,31 +30,48 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print odigos version.",
 	Run: func(cmd *cobra.Command, args []string) {
-		short_flag, _ := cmd.Flags().GetBool(cliFlag)
+		cliFlag, _ := cmd.Flags().GetBool(cliFlag)
+		clusterFlag, _ := cmd.Flags().GetBool(clusterFlag)
 
-		if short_flag {
+		if cliFlag {
 			fmt.Printf("%s\n", OdigosVersion)
-			return
 		}
 
-		client, ns, err := getOdigosKubeClientAndNamespace(cmd)
-		if err == nil {
-			OdigosClusterVersion, _ = GetOdigosVersionInCluster(cmd.Context(), client, ns)
-		}
+		OdigosClusterVersion, err := getOdigosVersionInCluster(cmd, clusterFlag)
 
-		cluster_flag, _ := cmd.Flags().GetBool(clusterFlag)
-
-		if cluster_flag {
+		if clusterFlag && err == nil {
 			fmt.Printf("%s\n", OdigosClusterVersion)
+		}
+
+		if cliFlag || clusterFlag {
 			return
+		}
+
+		if err != nil {
+			fmt.Printf("%s\n", err)
 		}
 
 		fmt.Printf("Odigos Cli Version: version.Info{Version:'%s', GitCommit:'%s', BuildDate:'%s'}\n", OdigosVersion, OdigosCommit, OdigosDate)
 		fmt.Printf("Odigos Version (in cluster): version.Info{Version:'%s'}\n", OdigosClusterVersion)
+
 	},
 }
 
-func GetOdigosVersionInCluster(ctx context.Context, client *kube.Client, ns string) (string, error) {
+func getOdigosVersionInCluster(cmd *cobra.Command, flag bool) (string, error) {
+	client, ns, err := getOdigosKubeClientAndNamespace(cmd)
+	if err != nil {
+		return "", err
+	}
+
+	OdigosClusterVersion, err = getOdigosVersionInClusterFromConfigMap(cmd.Context(), client, ns)
+	if err != nil {
+		return "", err
+	}
+
+	return OdigosClusterVersion, nil
+}
+
+func getOdigosVersionInClusterFromConfigMap(ctx context.Context, client *kube.Client, ns string) (string, error) {
 	cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return "", fmt.Errorf("error detecting Odigos version in the current cluster")
@@ -78,14 +95,13 @@ func getOdigosKubeClientAndNamespace(cmd *cobra.Command) (*kube.Client, string, 
 	ns, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {
 		if resources.IsErrNoOdigosNamespaceFound(err) {
-			fmt.Println("Odigos is NOT yet installed in the current cluster")
+			err = fmt.Errorf("Odigos is NOT yet installed in the current cluster")
 		} else {
-			fmt.Println("Error detecting Odigos version in the current cluster")
+			err = fmt.Errorf("Error detecting Odigos namespace in the current cluster")
 		}
-		return nil, "", err
 	}
 
-	return client, ns, nil
+	return client, ns, err
 }
 
 func init() {
