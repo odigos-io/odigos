@@ -29,7 +29,7 @@ func (tlr *TraceLatencyRule) Validate() error {
 	return nil
 }
 
-func (tlr *TraceLatencyRule) DropTrace(td ptrace.Traces) bool {
+func (tlr *TraceLatencyRule) TraceDropDecision(td ptrace.Traces) bool {
 	var (
 		serviceFound  bool
 		endpointFound bool

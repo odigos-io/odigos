@@ -19,7 +19,7 @@ func (sp *samplingProcessor) processTraces(ctx context.Context, td ptrace.Traces
 		switch rule.RuleDetails.(type) {
 
 		case *sampling.TraceLatencyRule:
-			if rule.RuleDetails.(*sampling.TraceLatencyRule).DropTrace(td) {
+			if rule.RuleDetails.(*sampling.TraceLatencyRule).TraceDropDecision(td) {
 				sp.removeAllSpans(&td)
 				return td, nil
 			}
