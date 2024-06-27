@@ -37,6 +37,8 @@ const StyledTd = styled.td<{ isFirstRow?: boolean }>`
 const StyledMainTd = styled(StyledTd)`
   cursor: pointer;
   padding: 10px 20px;
+  display: flex;
+  gap: 20px;
 `;
 
 const SourceIconContainer = styled.div`
@@ -113,12 +115,12 @@ export function SourcesTableRow({
   return (
     <StyledTr key={item.kind}>
       <StyledMainTd isFirstRow={index === 0}>
-        <SourceIconContainer>
-          <KeyvalCheckbox
-            value={selectedCheckbox.includes(JSON.stringify(item))}
-            onChange={() => onSelectedCheckboxChange(JSON.stringify(item))}
-          />
-          <div onClick={() => onRowClick(item)}>
+        <KeyvalCheckbox
+          value={selectedCheckbox.includes(JSON.stringify(item))}
+          onChange={() => onSelectedCheckboxChange(JSON.stringify(item))}
+        />
+        <SourceIconContainer onClick={() => onRowClick(item)}>
+          <div>
             <KeyvalImage
               src={LANGUAGES_LOGOS[workloadProgrammingLanguage]}
               width={32}
