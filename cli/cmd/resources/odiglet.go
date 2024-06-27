@@ -547,6 +547,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					ServiceAccountName: "odiglet",
 					HostNetwork:        true,
 					HostPID:            true,
+					PriorityClassName:  "system-node-critical",
 				},
 			},
 		},
