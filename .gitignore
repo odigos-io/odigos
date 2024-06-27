@@ -7,3 +7,4 @@ opentelemetry-helm-charts/
 odigos-e2e-test
 .github/workflows/e2e/bats/traces-orig.json
 .github/workflows/e2e/bats/traces.json
+cli/odigos

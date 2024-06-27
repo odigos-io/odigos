@@ -3,11 +3,11 @@ module github.com/odigos-io/odigos/odiglet
 go 1.22.0
 
 require (
-	github.com/fntlnz/mountinfo v1.0.1
 	github.com/go-logr/logr v1.4.2
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.6.0
 	github.com/kubevirt/device-plugin-manager v1.19.5
+	github.com/moby/sys/mountinfo v0.7.1
 	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/common v1.0.48
 	github.com/odigos-io/odigos/k8sutils v0.0.0
