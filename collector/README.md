@@ -10,6 +10,8 @@ The following command downloads the `ocb` tool and builds the collector:
 ```bash
 make genodigoscol
 ```
+**Notes:**
+- Run `make genodigoscol` using the go version specify in odigosotelcol/go.mod toolchain. 
 
 ## Metadata Generation
 
