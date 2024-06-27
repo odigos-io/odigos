@@ -65,7 +65,10 @@ func (tlr *TraceLatencyRule) TraceDropDecision(td ptrace.Traces) bool {
 
 				endpoint, found := span.Attributes().Get("http.route")
 				if found {
-					if tlr.matchEndpoint(endpoint.AsString(), tlr.Endpoint) {
+					serviceName, _ := resources.At(r).Resource().Attributes().Get(string(semconv.ServiceNameKey))
+					isEndpointFoundOnService := serviceName.AsString() == tlr.Service
+
+					if tlr.matchEndpoint(endpoint.AsString(), tlr.Endpoint) && isEndpointFoundOnService {
 						endpointFound = true
 					}
 				}
