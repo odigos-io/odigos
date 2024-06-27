@@ -1,5 +1,6 @@
-TAG ?= $(shell odigos version --short)
+TAG ?= $(shell odigos version --cluster)
 ORG := keyval
+
 .PHONY: build-odiglet
 build-odiglet:
 	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile
@@ -139,6 +140,9 @@ debug-odiglet:
 	kubectl delete pod -n odigos-system -l app.kubernetes.io/name=odiglet
 	kubectl wait --for=condition=ready pod -n odigos-system -l app.kubernetes.io/name=odiglet --timeout=180s
 	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
+
+.PHONY: deploy
+deploy: deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor
 
 ,PHONY: e2e-test
 e2e-test:
