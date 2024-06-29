@@ -113,24 +113,6 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk common.
 	return &mergedEnvValue
 }
 
-func ShouldRevert(envName string, observedValue string) bool {
-	env, ok := EnvValuesMap[envName]
-	if !ok {
-		// We don't care about this environment variable
-		return false
-	}
-
-	// If we find any of the values odigos sets for any SDK in the observed value,
-	// that means that the environment variable is patched by odigos and we need to revert it
-	for _, val := range env.values {
-		if strings.Contains(observedValue, val) && observedValue != val {
-			return true
-		}
-	}
-
-	return false
-}
-
 func ValToAppend(envName string, sdk common.OtelSdk) (string, bool) {
 	env, exists := EnvValuesMap[envName]
 	if !exists {
