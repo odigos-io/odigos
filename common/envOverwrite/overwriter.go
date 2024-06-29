@@ -99,6 +99,7 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk common.
 			} else {
 				// The environment variable is patched by some other odigos sdk.
 				// replace just the odigos part with the new desired value.
+				// this can happen when moving between SDKs.
 				patchedEvnValue := strings.ReplaceAll(observedValue, sdkEnvValue, desiredOdigosPart)
 				return &patchedEvnValue
 			}

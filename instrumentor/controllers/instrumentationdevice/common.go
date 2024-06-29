@@ -72,7 +72,7 @@ func instrument(logger logr.Logger, ctx context.Context, kubeClient client.Clien
 	}
 
 	var odigosConfig odigosv1.OdigosConfiguration
-	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: "odigos-config"}, &odigosConfig)
+	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: consts.OdigosConfigurationName}, &odigosConfig)
 	if err != nil {
 		return err
 	}

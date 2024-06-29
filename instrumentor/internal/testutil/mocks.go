@@ -164,7 +164,7 @@ func NewMockDataCollection() *odigosv1.CollectorsGroup {
 func NewMockOdigosConfig() *odigosv1.OdigosConfiguration {
 	return &odigosv1.OdigosConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-config",
+			Name:      consts.OdigosConfigurationName,
 			Namespace: consts.DefaultNamespace,
 		},
 		Spec: odigosv1.OdigosConfigurationSpec{

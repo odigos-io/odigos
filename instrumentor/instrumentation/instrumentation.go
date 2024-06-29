@@ -67,6 +67,9 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 	return nil
 }
 
+// this function restores a workload manifest env vars to their original values.
+// it is used when the instrumentation is removed from the workload.
+// the original values are read from the annotation which was saved when the instrumentation was applied.
 func RevertEnvOverwrites(obj client.Object, podSpec *corev1.PodTemplateSpec) error {
 	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(obj)
 	if err != nil {
