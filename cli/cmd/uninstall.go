@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"go.uber.org/multierr"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,7 +73,7 @@ var uninstallCmd = &cobra.Command{
 
 			// The CLI is running in Kubernetes via a Helm chart [pre-delete hook] to clean up Odigos resources.
 			// Deleting the namespace during uninstallation will cause Helm to fail due to the loss of the release state.
-			if !kube.IsRunningInKubernetes() {
+			if !k8sutils.IsRunningInKubernetes() {
 				createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
 					client, cmd, ns, uninstallNamespace)
 

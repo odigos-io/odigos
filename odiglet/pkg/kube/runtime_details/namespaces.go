@@ -4,6 +4,8 @@ import (
 	"context"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,8 +20,19 @@ type NamespacesReconciler struct {
 func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
+	var ns corev1.Namespace
+	err := n.Get(ctx, request.NamespacedName, &ns)
+	if err != nil {
+		logger.Error(err, "error fetching namespace object")
+		return ctrl.Result{}, err
+	}
+
+	if !k8sutils.IsObjectLabeledForInstrumentation(&ns) {
+		return ctrl.Result{}, nil
+	}
+
 	var deps appsv1.DeploymentList
-	err := n.Client.List(ctx, &deps, client.InNamespace(request.Name))
+	err = n.Client.List(ctx, &deps, client.InNamespace(request.Name))
 	if client.IgnoreNotFound(err) != nil {
 		logger.Error(err, "error fetching deployments")
 		return ctrl.Result{}, err

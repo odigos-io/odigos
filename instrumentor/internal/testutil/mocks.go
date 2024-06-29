@@ -153,7 +153,7 @@ func NewMockDataCollection() *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "odigos-data-collection",
-			Namespace: consts.DefaultNamespace,
+			Namespace: consts.DefaultOdigosNamespace,
 		},
 		Spec: odigosv1.CollectorsGroupSpec{
 			Role: odigosv1.CollectorsGroupRoleNodeCollector,
@@ -165,7 +165,7 @@ func NewMockOdigosConfig() *odigosv1.OdigosConfiguration {
 	return &odigosv1.OdigosConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      consts.OdigosConfigurationName,
-			Namespace: consts.DefaultNamespace,
+			Namespace: consts.DefaultOdigosNamespace,
 		},
 		Spec: odigosv1.OdigosConfigurationSpec{
 			DefaultSDKs: map[common.ProgrammingLanguage]common.OtelSdk{

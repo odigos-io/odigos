@@ -169,7 +169,7 @@ var _ = Describe("envoverwrite", func() {
 
 			BeforeEach(func() {
 				var odigosConfig odigosv1.OdigosConfiguration
-				Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultNamespace, Name: consts.OdigosConfigurationName}, &odigosConfig)).Should(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultOdigosNamespace, Name: consts.OdigosConfigurationName}, &odigosConfig)).Should(Succeed())
 				odigosConfig.Spec.DefaultSDKs[testProgrammingLanguage] = newSdk
 				Expect(k8sClient.Update(ctx, &odigosConfig)).Should(Succeed())
 			})

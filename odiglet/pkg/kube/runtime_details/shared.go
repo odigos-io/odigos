@@ -3,6 +3,10 @@ package runtime_details
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/odiglet/pkg/process"
+
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -11,7 +15,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
-	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +37,7 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 	}
 
 	odigosConfig := &odigosv1.OdigosConfiguration{}
-	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: "odigos-system", Name: consts.OdigosConfigurationName}, odigosConfig)
+	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: consts.OdigosConfigurationName}, odigosConfig)
 	if err != nil {
 		logger.Error(err, "error fetching odigos configuration")
 		return ctrl.Result{}, err
