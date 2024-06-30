@@ -1,9 +1,9 @@
 'use client';
 import React from 'react';
+import { OVERVIEW, ROUTES } from '@/utils';
 import { useRouter } from 'next/navigation';
-import { OVERVIEW, ROUTES } from '@/utils/constants';
+import { NewSourcesList } from './new.source.list';
 import { OverviewHeader } from '@/components/overview';
-import { NewSourcesList } from './new.source.flow';
 
 export function SelectSourcesContainer() {
   const router = useRouter();
