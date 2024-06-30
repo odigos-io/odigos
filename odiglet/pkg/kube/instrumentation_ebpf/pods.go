@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	runtime_details "github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,7 +27,7 @@ type PodsReconciler struct {
 func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	if request.Namespace == consts.DefaultOdigosNamespace {
+	if request.Namespace == env.GetCurrentNamespace() {
 		return ctrl.Result{}, nil
 	}
 
