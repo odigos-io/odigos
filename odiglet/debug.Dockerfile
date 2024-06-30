@@ -14,19 +14,20 @@ ARG DOTNET_OTEL_VERSION=v0.7.0
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
 
-FROM keyval/odiglet-base:v1.4 as builder
+FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.4 as builder
 WORKDIR /go/src/github.com/odigos-io/odigos
-COPY . .
-WORKDIR ./odiglet/
-RUN --mount=type=cache,target=/go/pkg \
-    go mod download
-# Go does not call go generate on dependencies, so we need to do it manually
+# Copyy local modules required by the build
+COPY api/ api/
+COPY common/ common/
+COPY k8sutils/ k8sutils/
+COPY procdiscovery/ procdiscovery/
+WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
+COPY odiglet/ .
+
+ARG TARGETARCH
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    bash -c 'cd $(go list -m -f "{{.Dir}}" "go.opentelemetry.io/auto") && make generate'
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg \
-    GOOS=linux go build -gcflags "all=-N -l" -o odiglet cmd/main.go
+    GOOS=linux GOARCH=$TARGETARCH make debug-build-odiglet
 
 # Install delve
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
