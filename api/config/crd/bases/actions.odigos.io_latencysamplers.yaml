@@ -47,17 +47,16 @@ spec:
                 type: string
               disabled:
                 type: boolean
-              maximum_latency_threshold:
-                description: Specifies the upper latency threshold in milliseconds;
-                  traces with latency above this value will not be considered for
-                  sampling
-                type: integer
+              endpoint:
+                type: string
               minimum_latency_threshold:
                 description: Specifies the lower latency threshold in milliseconds;
                   traces with latency equal to or exceeding this value will be considered
                   for sampling.
                 type: integer
               notes:
+                type: string
+              service:
                 type: string
               signals:
                 items:
@@ -68,7 +67,9 @@ spec:
                   type: string
                 type: array
             required:
+            - endpoint
             - minimum_latency_threshold
+            - service
             - signals
             type: object
           status:

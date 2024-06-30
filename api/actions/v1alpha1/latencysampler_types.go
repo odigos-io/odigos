@@ -31,9 +31,10 @@ type LatencySamplerSpec struct {
 	// Specifies the lower latency threshold in milliseconds; traces with latency equal to or exceeding this value will be considered for sampling.
 	// +kubebuilder:validation:Required
 	MinimumLatencyThreshold int `json:"minimum_latency_threshold"`
-
-	// Specifies the upper latency threshold in milliseconds; traces with latency above this value will not be considered for sampling
-	MaximumLatencyThreshold *int `json:"maximum_latency_threshold,omitempty"`
+	// +kubebuilder:validation:Required
+	Endpoint string `json:"endpoint"`
+	// +kubebuilder:validation:Required
+	Service string `json:"service"`
 }
 
 // LatencySamplerStatus defines the observed state of LatencySampler action

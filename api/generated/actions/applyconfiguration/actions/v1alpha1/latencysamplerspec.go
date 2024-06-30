@@ -29,7 +29,8 @@ type LatencySamplerSpecApplyConfiguration struct {
 	Disabled                *bool                        `json:"disabled,omitempty"`
 	Signals                 []common.ObservabilitySignal `json:"signals,omitempty"`
 	MinimumLatencyThreshold *int                         `json:"minimum_latency_threshold,omitempty"`
-	MaximumLatencyThreshold *int                         `json:"maximum_latency_threshold,omitempty"`
+	Endpoint                *string                      `json:"endpoint,omitempty"`
+	Service                 *string                      `json:"service,omitempty"`
 }
 
 // LatencySamplerSpecApplyConfiguration constructs an declarative configuration of the LatencySamplerSpec type for use with
@@ -80,10 +81,18 @@ func (b *LatencySamplerSpecApplyConfiguration) WithMinimumLatencyThreshold(value
 	return b
 }
 
-// WithMaximumLatencyThreshold sets the MaximumLatencyThreshold field in the declarative configuration to the given value
+// WithEndpoint sets the Endpoint field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the MaximumLatencyThreshold field is set to the value of the last call.
-func (b *LatencySamplerSpecApplyConfiguration) WithMaximumLatencyThreshold(value int) *LatencySamplerSpecApplyConfiguration {
-	b.MaximumLatencyThreshold = &value
+// If called multiple times, the Endpoint field is set to the value of the last call.
+func (b *LatencySamplerSpecApplyConfiguration) WithEndpoint(value string) *LatencySamplerSpecApplyConfiguration {
+	b.Endpoint = &value
+	return b
+}
+
+// WithService sets the Service field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Service field is set to the value of the last call.
+func (b *LatencySamplerSpecApplyConfiguration) WithService(value string) *LatencySamplerSpecApplyConfiguration {
+	b.Service = &value
 	return b
 }
