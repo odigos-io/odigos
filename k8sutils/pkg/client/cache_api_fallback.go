@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,7 +28,6 @@ func (k *KubernetesClientFromCacheWithAPIFallback) Get(ctx context.Context, key 
 			return err
 		}
 
-		fmt.Printf("Failed to get object from cache, falling back to API server: %v\n", key)
 		err = k.APIServer.Get(ctx, key, obj, opts...)
 		if err != nil {
 			return err
@@ -45,7 +43,6 @@ func (k *KubernetesClientFromCacheWithAPIFallback) List(ctx context.Context, lis
 			return err
 		}
 
-		fmt.Printf("Failed to list objects from cache, falling back to API server: %v\n", list)
 		err = k.APIServer.List(ctx, list, opts...)
 		if err != nil {
 			return err
