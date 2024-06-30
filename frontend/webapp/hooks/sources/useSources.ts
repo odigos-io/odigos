@@ -75,7 +75,8 @@ export function useSources() {
     // Create a set of unique identifiers (name + namespace) for the sources
     const sourceIdentifiersSet = new Set(
       sources?.map(
-        (source: ManagedSource) => `${source.name}:${source.namespace}`
+        (source: ManagedSource) =>
+          `${source.name}:${source.namespace}:${source.kind}`
       )
     );
 
@@ -85,7 +86,7 @@ export function useSources() {
       const { objects, ...rest } = sectionData[key];
       const updatedObjects = objects.map((item) => {
         // Create a unique identifier for the current item
-        const itemIdentifier = `${item.name}:${item.namespace}`;
+        const itemIdentifier = `${item.name}:${key}:${item.kind}`;
         return {
           ...item,
           selected: item?.selected || sourceIdentifiersSet.has(itemIdentifier),
