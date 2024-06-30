@@ -32,6 +32,7 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 		NewSchedulerResourceManager(client, odigosNs, config),
 		NewOdigletResourceManager(client, odigosNs, config, odigosTier),
 		NewAutoScalerResourceManager(client, odigosNs, config),
+		NewUIResourceManager(client, odigosNs, config),
 	}...)
 
 	if odigosTier == common.CloudOdigosTier {
