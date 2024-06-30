@@ -29,7 +29,10 @@ func handleDestinationWatchEvents(ctx context.Context, watcher watch.Interface) 
 		case <-ctx.Done():
 			watcher.Stop()
 			return
-		case event := <-ch:
+		case event, ok := <-ch:
+			if !ok {
+				return
+			}
 			switch event.Type {
 			case watch.Added:
 				handleAddedDestination(event)

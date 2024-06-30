@@ -39,13 +39,16 @@ func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) 
 
 func handleInstrumentationInstanceWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
+	defer modifiedBatcher.Cancel()
 	for {
 		select {
 		case <-ctx.Done():
-			modifiedBatcher.Cancel()
 			watcher.Stop()
 			return
-		case event := <-ch:
+		case event, ok := <-ch:
+			if !ok {
+				return
+			}
 			switch event.Type {
 			case watch.Modified:
 				handleModifiedInstrumentationInstance(event)
