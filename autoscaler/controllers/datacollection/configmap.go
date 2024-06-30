@@ -33,9 +33,9 @@ func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
 
-	// If tail_sampling configured, load balancing exporter should be added to the data collection config
-	tailSamplingExists := commonconf.GetProcessorIfExists(allProcessors, "tail_sampling")
-	setTracesLoadBalancer := tailSamplingExists != nil
+	// If sampling configured, load balancing exporter should be added to the data collection config
+	SamplingExists := commonconf.GetProcessorIfExists(allProcessors, "odigossampling")
+	setTracesLoadBalancer := SamplingExists != nil
 
 	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme, setTracesLoadBalancer)
 	desiredData := desired.Data[configKey]
