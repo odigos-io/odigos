@@ -21,6 +21,19 @@ import (
 	"os"
 	"strings"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
+
+	"k8s.io/apimachinery/pkg/labels"
+
+	appsv1 "k8s.io/api/apps/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 
@@ -105,15 +118,35 @@ func main() {
 	go common.StartPprofServer(setupLog)
 
 	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
+	nsSelector := client.InNamespace(env.GetCurrentNamespace()).AsSelector()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
 		},
+		Cache: cache.Options{
+			DefaultTransform: cache.TransformStripManagedFields(),
+			ByObject: map[client.Object]cache.ByObject{
+				&appsv1.Deployment{}: {
+					Label: labels.Set(gateway.CommonLabels).AsSelector(),
+					Field: nsSelector,
+				},
+				&corev1.Service{}: {
+					Label: labels.Set(gateway.CommonLabels).AsSelector(),
+					Field: nsSelector,
+				},
+				&appsv1.DaemonSet{}: {
+					Field: nsSelector,
+				},
+				&corev1.ConfigMap{}: {
+					Field: nsSelector,
+				},
+			},
+		},
 		HealthProbeBindAddress: probeAddr,
-		LeaderElection:   enableLeaderElection,
-		LeaderElectionID: "f681cfed.odigos.io",
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       "f681cfed.odigos.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -129,6 +162,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Destination")
 		os.Exit(1)
 	}
+
 	if err = (&controllers.ProcessorReconciler{
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),

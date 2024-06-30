@@ -7,11 +7,15 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/go-logr/logr"
+
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -26,6 +30,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/frontend/endpoints"
+
+	_ "net/http/pprof"
 )
 
 const (
@@ -163,6 +169,8 @@ func main() {
 		fmt.Printf("version.Info{Version:'%s', GitCommit:'%s', BuildDate:'%s'}\n", version.OdigosVersion, version.OdigosCommit, version.OdigosDate)
 		return
 	}
+
+	go common.StartPprofServer(logr.FromSlogHandler(slog.Default().Handler()))
 
 	// Load destinations data
 	err := destinations.Load()
