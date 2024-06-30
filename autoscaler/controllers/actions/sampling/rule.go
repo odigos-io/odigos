@@ -1,5 +1,5 @@
 package sampling
 
-type PolicyDetails interface {
+type RuleDetails interface {
 	Validate() error
 }

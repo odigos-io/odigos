@@ -20,10 +20,7 @@ The "Latency Sampler" Odigos Action can be used to sample based on the duration 
 ### Mechanism
 
 The duration is determined by looking at the earliest start time and latest end time of a trace.
-It's support two main senarios:
-
-1. Setting `minimum_latency_threshold` will sample any request with a duration above this threshold.
-2. Setting both `minimum_latency_threshold` and `maximum_latency_threshold` will sample only requests with latency between these two values.
+Configuring minimum_latency_threshold for a specified service and endpoint will sample any request with a duration exceeding this threshold for that particular service and endpoint combination.
 
 - It is recommended to still capture a portion of the traces that were not sampled due to the addition of the Latency Sampler Action. You can achieve this by adding a [Probabilistic Sampler Action](probabilisticsampler). Configure the Probabilistic Sampler with the desired ratio to determine the percentage of these unsampled traces to capture.
 
@@ -42,7 +39,9 @@ metadata:
 spec:
   actionName: "example-latencysampler-action"
   disabled: false
-  minimum_latency_threshold: 100
+  minimum_latency_threshold: 1000
+  endpoint: "/buy"
+  service: "frontend"
   signals:
   - TRACES  
 ```
@@ -59,7 +58,9 @@ The full list of options available for the "LatencySampler" action are:
 
 - `minimum_latency_threshold` (required): Specifies the minimum latency in milliseconds; traces with latency below this threshold are ignored.
 
-- `maximum_latency_threshold` (optional): Specifies the maximum latency in milliseconds; traces with latency exceeding this threshold are ignored. If not configured, traces won't be ignored for exceeding an upper boundary, and only the minimum threshold will be active.
+- `service` (required): The rule applies to a specific service name. Only traces from this service will be considered.
+
+- `endpoint` (required): The specific HTTP route prefix to match for sampling. Only traces with routes beginning with this prefix will be considered. For instance, configuring /buy will also match /buy/product.
 
 - `signals` (required): An array with the signals that the processor will act on (`TRACES`).
 
