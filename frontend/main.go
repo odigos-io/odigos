@@ -137,12 +137,21 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 
 func httpFileServerWith404(fs http.FileSystem) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := fs.Open(r.URL.Path)
+		filePath := r.URL.Path
+
+		// Check if the file exists
+		_, err := fs.Open(filePath)
 		if err != nil {
-			// Serve index.html
-			r.URL.Path = "/"
+			// Try appending .html to the path and check again
+			filePath += ".html"
+			_, err = fs.Open(filePath)
+			if err != nil {
+				// If file does not exist, serve index.html
+				filePath = "/index.html"
+			}
 		}
-		http.FileServer(fs).ServeHTTP(w, r)
+
+		http.ServeFile(w, r, "webapp/out"+filePath)
 	})
 }
 
@@ -202,13 +211,13 @@ func main() {
 	log.Println("Starting Odigos UI...")
 	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
 
-	go func () {
+	go func() {
 		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
 		if err != nil {
 			log.Fatalf("Error starting server: %s", err)
 		}
-	} ()
+	}()
 
-	<- ch
+	<-ch
 	log.Println("Shutting down Odigos UI...")
 }

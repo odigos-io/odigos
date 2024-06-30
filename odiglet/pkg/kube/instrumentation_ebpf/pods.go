@@ -3,12 +3,13 @@ package instrumentation_ebpf
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	runtime_details "github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
-	appsv1 "k8s.io/api/apps/v1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,6 +26,11 @@ type PodsReconciler struct {
 
 func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+
+	if request.Namespace == env.GetCurrentNamespace() {
+		return ctrl.Result{}, nil
+	}
+
 	var pod corev1.Pod
 	err := p.Client.Get(ctx, request.NamespacedName, &pod)
 	if err != nil {
@@ -88,28 +94,19 @@ func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod
 func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*common.PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
 		if owner.Kind == "ReplicaSet" {
-			var rs appsv1.ReplicaSet
-			err := p.Client.Get(ctx, client.ObjectKey{
+			// ReplicaSet name is in the format <deployment-name>-<random-string>
+			hyphenIndex := strings.Index(owner.Name, "-")
+			if hyphenIndex == -1 {
+				// It is possible for a user to define a bare ReplicaSet without a deployment, currently not supporting this
+				return nil, errors.New("replicaset name does not contain a hyphen")
+			}
+			// Extract deployment name from ReplicaSet name
+			deploymentName := owner.Name[:hyphenIndex]
+			return &common.PodWorkload{
+				Name:      deploymentName,
 				Namespace: pod.Namespace,
-				Name:      owner.Name,
-			}, &rs)
-			if err != nil {
-				return nil, err
-			}
-
-			if rs.OwnerReferences == nil {
-				return nil, errors.New("replicaset has no owner reference")
-			}
-
-			for _, rsOwner := range rs.OwnerReferences {
-				if rsOwner.Kind == "Deployment" || rsOwner.Kind == "DaemonSet" || rsOwner.Kind == "StatefulSet" {
-					return &common.PodWorkload{
-						Name:      rsOwner.Name,
-						Namespace: pod.Namespace,
-						Kind:      rsOwner.Kind,
-					}, nil
-				}
-			}
+				Kind:      "Deployment",
+			}, nil
 		} else if owner.Kind == "DaemonSet" || owner.Kind == "Deployment" || owner.Kind == "StatefulSet" {
 			return &common.PodWorkload{
 				Name:      owner.Name,
