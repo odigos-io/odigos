@@ -39,7 +39,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&v1.ProbabilisticSampler{}).
-		Complete(&TailSamplingReconciler{
+		Complete(&ProbabilisticSamplerReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
@@ -48,7 +48,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	}
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&v1.LatencySampler{}).
-		Complete(&TailSamplingReconciler{
+		Complete(&OdigosSamplingReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
