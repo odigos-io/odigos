@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
+	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
-	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -38,8 +38,12 @@ func CreateManager() (ctrl.Manager, error) {
 	return manager.New(config.GetConfigOrDie(), manager.Options{
 		Scheme: scheme,
 		Cache: cache.Options{
+			// ManagedFields are removed to save space. This can save a lot of space and recommended in the cache package.
+			// running `kubectl get .... --show-managed-fields` will show the managed fields.
+			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
 				&corev1.Pod{} :{
+					// only watch and list pods in the current node
 					Field: fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName),
 				},
 			},
