@@ -143,7 +143,7 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 			Pipelines:  map[string]Pipeline{},
 			Extensions: []string{"health_check", "zpages"},
 		},
-	}, []string{memoryLimiterProcessorName, "batch", "resource/odigos-version"}
+	}, []string{memoryLimiterProcessorName, "resource/odigos-version"}
 }
 
 func loadConfigers() (map[common.DestinationType]Configer, error) {
