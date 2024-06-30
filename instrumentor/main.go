@@ -93,7 +93,6 @@ func main() {
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
 
-	// TODO(edenfed): We can use label selector of odigos-instrumented for Deployments, STS, and DS. This will also get reconciles on label removal.
 	instrumentedSelector := labels.Set{consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled}.AsSelector()
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
