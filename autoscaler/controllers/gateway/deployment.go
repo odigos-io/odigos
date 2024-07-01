@@ -97,16 +97,16 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 		ObjectMeta: v1.ObjectMeta{
 			Name:      gateway.Name,
 			Namespace: gateway.Namespace,
-			Labels:    commonLabels,
+			Labels:    CommonLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: intPtr(1),
 			Selector: &v1.LabelSelector{
-				MatchLabels: commonLabels,
+				MatchLabels: CommonLabels,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: v1.ObjectMeta{
-					Labels: commonLabels,
+					Labels: CommonLabels,
 					Annotations: map[string]string{
 						configHashAnnotation: common.Sha256Hash(configData),
 					},

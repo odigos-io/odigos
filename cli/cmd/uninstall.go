@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/odigos-io/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"go.uber.org/multierr"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,7 +73,7 @@ var uninstallCmd = &cobra.Command{
 
 			// The CLI is running in Kubernetes via a Helm chart [pre-delete hook] to clean up Odigos resources.
 			// Deleting the namespace during uninstallation will cause Helm to fail due to the loss of the release state.
-			if !kube.IsRunningInKubernetes() {
+			if !k8sutils.IsRunningInKubernetes() {
 				createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
 					client, cmd, ns, uninstallNamespace)
 
@@ -201,6 +202,12 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 	}
 
 	// read the original env vars (of the manifest) from the annotation
+	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(obj)
+	if err != nil {
+		fmt.Println("Failed to get original env vars from annotation: ", err)
+		manifestEnvOriginal = &envoverwrite.OrigWorkloadEnvValues{}
+	}
+
 	var origManifestEnv map[string]map[string]string
 	if obj.GetAnnotations() != nil {
 		manifestEnvAnnotation, ok := obj.GetAnnotations()[consts.ManifestEnvOriginalValAnnotation]
@@ -225,24 +232,20 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 			}
 		}
 
-		containerOriginalEnv := origManifestEnv[c.Name]
-
-		for iEnv, envVar := range c.Env {
-			if envOverwrite.ShouldRevert(envVar.Name, envVar.Value) {
-				if origVal, ok := containerOriginalEnv[envVar.Name]; ok {
-					// revert the env var to its original value if we have it
-					patchOperations = append(patchOperations, map[string]interface{}{
-						"op":    "replace",
-						"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", iContainer, iEnv),
-						"value": origVal,
-					})
-				} else {
-					// remove the env var
-					patchOperations = append(patchOperations, map[string]interface{}{
-						"op":   "remove",
-						"path": fmt.Sprintf("/spec/template/spec/containers/%d/env/%d", iContainer, iEnv),
-					})
-				}
+		for envName, originalEnvValue := range manifestEnvOriginal.GetContainerStoredEnvs(c.Name) {
+			if origManifestEnv == nil {
+				// originally the value was absent, so we remove it
+				patchOperations = append(patchOperations, map[string]interface{}{
+					"op":   "remove",
+					"path": fmt.Sprintf("/spec/template/spec/containers/%d/env/%d", iContainer, envName),
+				})
+			} else {
+				// revert the env var to its original value
+				patchOperations = append(patchOperations, map[string]interface{}{
+					"op":    "replace",
+					"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", iContainer, envName),
+					"value": *originalEnvValue,
+				})
 			}
 		}
 	}

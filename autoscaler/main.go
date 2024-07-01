@@ -21,6 +21,19 @@ import (
 	"os"
 	"strings"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
+
+	"k8s.io/apimachinery/pkg/labels"
+
+	appsv1 "k8s.io/api/apps/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 
@@ -38,11 +51,15 @@ import (
 
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	observabilitycontrolplanev1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
 	nameutils "github.com/odigos-io/odigos/autoscaler/utils"
+
 	//+kubebuilder:scaffold:imports
+
+	_ "net/http/pprof"
 )
 
 var (
@@ -97,16 +114,39 @@ func main() {
 		setupLog.Error(nil, "ODIGOS_VERSION environment variable is not set and version flag is not provided")
 		os.Exit(1)
 	}
+
+	go common.StartPprofServer(setupLog)
+
 	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
+	nsSelector := client.InNamespace(env.GetCurrentNamespace()).AsSelector()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
 		},
+		Cache: cache.Options{
+			DefaultTransform: cache.TransformStripManagedFields(),
+			ByObject: map[client.Object]cache.ByObject{
+				&appsv1.Deployment{}: {
+					Label: labels.Set(gateway.CommonLabels).AsSelector(),
+					Field: nsSelector,
+				},
+				&corev1.Service{}: {
+					Label: labels.Set(gateway.CommonLabels).AsSelector(),
+					Field: nsSelector,
+				},
+				&appsv1.DaemonSet{}: {
+					Field: nsSelector,
+				},
+				&corev1.ConfigMap{}: {
+					Field: nsSelector,
+				},
+			},
+		},
 		HealthProbeBindAddress: probeAddr,
-		LeaderElection:   enableLeaderElection,
-		LeaderElectionID: "f681cfed.odigos.io",
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       "f681cfed.odigos.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -122,6 +162,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Destination")
 		os.Exit(1)
 	}
+
 	if err = (&controllers.ProcessorReconciler{
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),

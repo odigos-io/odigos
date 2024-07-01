@@ -1,9 +1,8 @@
 package runtime_details
 
 import (
-	"github.com/odigos-io/odigos/common/consts"
-	appsv1 "k8s.io/api/apps/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -19,31 +18,50 @@ type WorkloadEnabledPredicate struct {
 }
 
 func (i *WorkloadEnabledPredicate) Create(e event.CreateEvent) bool {
-	enabled := isInstrumentationEnabled(e.Object)
-	// only handle new workloads if they start with instrumentation enabled
-	return enabled
+	enabled := workload.IsObjectLabeledForInstrumentation(e.Object)
+	w, err := workload.ObjectToWorkload(e.Object)
+	if err != nil {
+		return false
+	}
+	return enabled && w.AvailableReplicas() > 0
 }
 
 func (i *WorkloadEnabledPredicate) Update(e event.UpdateEvent) bool {
-
 	if e.ObjectOld == nil {
 		return false
 	}
 	if e.ObjectNew == nil {
 		return false
 	}
+	// filter our own namespace
+	if e.ObjectNew.GetNamespace() == env.GetCurrentNamespace() {
+		return false
+	}
 
-	// only run runtime inspection if the workload was not instrumented before
-	// and now it is.
-	oldEnabled := isInstrumentationEnabled(e.ObjectOld)
-	newEnabled := isInstrumentationEnabled(e.ObjectNew)
+	wOld, err := workload.ObjectToWorkload(e.ObjectOld)
+	if err != nil {
+		return false
+	}
+
+	wNew, err := workload.ObjectToWorkload(e.ObjectNew)
+	if err != nil {
+		return false
+	}
+
+	oldEnabled := workload.IsObjectLabeledForInstrumentation(e.ObjectOld)
+	newEnabled := workload.IsObjectLabeledForInstrumentation(e.ObjectNew)
 	becameEnabled := !oldEnabled && newEnabled
 
-	if becameEnabled {
+	newReplicas := wNew.AvailableReplicas()
+	oldReplicas := wOld.AvailableReplicas()
+
+	// 1. workload became enabled and has available (running) replicas
+	if becameEnabled && newReplicas > 0 {
 		return true
 	}
 
-	replicasBecameAvailable := didReplicasBecomeAvailable(e.ObjectOld, e.ObjectNew)
+	// 2. replicas became available
+	replicasBecameAvailable := (oldReplicas == 0) && (newReplicas > 0)
 	if replicasBecameAvailable {
 		return true
 	}
@@ -72,47 +90,5 @@ func (i *WorkloadEnabledPredicate) Delete(e event.DeleteEvent) bool {
 
 func (i *WorkloadEnabledPredicate) Generic(e event.GenericEvent) bool {
 	// not sure when exactly this would be called, but we don't need to handle it
-	return false
-}
-
-func isInstrumentationEnabled(obj client.Object) bool {
-	labels := obj.GetLabels()
-	if labels == nil {
-		return false
-	}
-	return labels[consts.OdigosInstrumentationLabel] == consts.InstrumentationEnabled
-}
-
-func isDeploymentAvailableReplicas(dep *appsv1.Deployment) bool {
-	return dep.Status.AvailableReplicas > 0
-}
-
-func isDaemonsetAvailableReplicas(dep *appsv1.DaemonSet) bool {
-	return dep.Status.NumberReady > 0
-}
-
-func isStatefulsetAvailableReplicas(dep *appsv1.StatefulSet) bool {
-	return dep.Status.ReadyReplicas > 0
-}
-
-// language detection relies on the fact that the workload has available replicas.
-// if we did not have available replicas before, and now we do, we need to re-run language detection
-func didReplicasBecomeAvailable(old client.Object, new client.Object) bool {
-
-	switch new.(type) {
-	case *appsv1.Deployment:
-		hadAvailableReplicas := isDeploymentAvailableReplicas(new.(*appsv1.Deployment))
-		hasAvailableReplicas := isDeploymentAvailableReplicas(old.(*appsv1.Deployment))
-		return !hadAvailableReplicas && hasAvailableReplicas
-	case *appsv1.DaemonSet:
-		hadAvailableReplicas := isDaemonsetAvailableReplicas(new.(*appsv1.DaemonSet))
-		hasAvailableReplicas := isDaemonsetAvailableReplicas(old.(*appsv1.DaemonSet))
-		return !hadAvailableReplicas && hasAvailableReplicas
-	case *appsv1.StatefulSet:
-		hadAvailableReplicas := isStatefulsetAvailableReplicas(new.(*appsv1.StatefulSet))
-		hasAvailableReplicas := isStatefulsetAvailableReplicas(old.(*appsv1.StatefulSet))
-		return !hadAvailableReplicas && hasAvailableReplicas
-	}
-
 	return false
 }

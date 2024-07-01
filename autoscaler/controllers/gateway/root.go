@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	commonLabels = map[string]string{
+	CommonLabels = map[string]string{
 		collectorLabel: "true",
 	}
 )
@@ -60,7 +60,7 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 
 	odigosSystemNamespaceName := env.GetCurrentNamespace()
 	var odigosConfig odigosv1.OdigosConfiguration
-	if err := client.Get(ctx, types.NamespacedName{Namespace: odigosSystemNamespaceName, Name: consts.DefaultOdigosConfigurationName}, &odigosConfig); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Namespace: odigosSystemNamespaceName, Name: consts.OdigosConfigurationName}, &odigosConfig); err != nil {
 		logger.Error(err, "failed to get odigos config")
 		return err
 	}

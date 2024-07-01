@@ -477,10 +477,6 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							Name:  OdigletContainerName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Env: append([]corev1.EnvVar{
-								// {
-								// 	Name:  "OTEL_SERVICE_NAME",
-								// 	Value: odigletServiceName,
-								// },
 								{
 									Name: "NODE_NAME",
 									ValueFrom: &corev1.EnvVarSource{
@@ -494,6 +490,14 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "CURRENT_NS",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
 										},
 									},
 								},
@@ -544,6 +548,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					ServiceAccountName: "odiglet",
 					HostNetwork:        true,
 					HostPID:            true,
+					PriorityClassName:  "system-node-critical",
 				},
 			},
 		},

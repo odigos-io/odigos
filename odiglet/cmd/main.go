@@ -18,6 +18,8 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+
+	_ "net/http/pprof"
 )
 
 func main() {
@@ -45,6 +47,8 @@ func main() {
 	}
 
 	ctx := signals.SetupSignalHandler()
+
+	go common.StartPprofServer(log.Logger)
 
 	go startDeviceManager(clientset)
 

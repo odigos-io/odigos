@@ -80,7 +80,7 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		var err error
-		odigosConfig, err = kube.DefaultClient.OdigosClient.OdigosConfigurations(odigosns).Get(ctx, consts.DefaultOdigosConfigurationName, metav1.GetOptions{})
+		odigosConfig, err = kube.DefaultClient.OdigosClient.OdigosConfigurations(odigosns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
 		return err
 	})
 
@@ -164,7 +164,11 @@ func syncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []Pe
 	for _, workload := range workloads {
 		currWorkload := workload
 		g.Go(func() error {
-			return setWorkloadInstrumentationLabel(ctx, nsName, currWorkload.Name, currWorkload.Kind, currWorkload.Selected)
+			// Only label selected sources, ignore the rest
+			if currWorkload.Selected != nil && *currWorkload.Selected {
+				return setWorkloadInstrumentationLabel(ctx, nsName, currWorkload.Name, currWorkload.Kind, currWorkload.Selected)
+			}
+			return nil
 		})
 	}
 	return g.Wait()
