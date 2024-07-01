@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/common/consts"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -37,7 +38,7 @@ func (k *K8sPodInfoResolver) getServiceNameFromAnnotation(ctx context.Context, n
 		return "", false
 	}
 
-	overwrittenName, exists := annotations["odigos.io/reported-name"]
+	overwrittenName, exists := annotations[consts.OdigosReportedNameAnnotation]
 	if !exists {
 		// the is no annotation by user for specific reported service name for this workload
 		// fallback to workload name
@@ -52,11 +53,11 @@ func (k *K8sPodInfoResolver) getWorkloadObject(ctx context.Context, name string,
 	case "Deployment":
 		return k.kubeClient.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
 	case "StatefulSet":
-		return k.kubeClient.AppsV1().StatefulSets(namespace).Get(context.Background(), name, metav1.GetOptions{})
+		return k.kubeClient.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
 	case "DaemonSet":
-		return k.kubeClient.AppsV1().DaemonSets(namespace).Get(context.Background(), name, metav1.GetOptions{})
+		return k.kubeClient.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
 	case "Pod":
-		return k.kubeClient.CoreV1().Pods(namespace).Get(context.Background(), name, metav1.GetOptions{})
+		return k.kubeClient.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 	}
 
 	return nil, errors.New("failed to get workload object for kind: " + kind)

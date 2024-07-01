@@ -6,7 +6,7 @@ RUN mkdir workspace && pip install --target workspace -r requirements.txt
 FROM node:18 AS nodejs-builder
 ARG ODIGOS_VERSION
 WORKDIR /nodejs-instrumentation
-COPY agent-nodejs .
+COPY agents/nodejs .
 # inject the actual version into the agent code
 RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
 RUN yarn

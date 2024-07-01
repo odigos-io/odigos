@@ -43,8 +43,9 @@ export class OpAMPClientHttp implements DetectorSync {
       baseURL: `http://${this.config.opAMPServerHost}`,
       headers: {
         "Content-Type": " application/x-protobuf",
-        Authorization: `DeviceId ${config.instrumentationDeviceId}`,
+        "X-Odigos-DeviceId": config.instrumentationDeviceId,
       },
+      timeout: 5000,
     });
     this.httpClient.interceptors.response.use(
       (response) => response,

@@ -15,24 +15,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func getDeviceIdFromHeader(request *http.Request) (string, error) {
-	authorization := request.Header.Get("Authorization")
-	if authorization == "" {
-		return "", fmt.Errorf("authorization header is missing")
-	}
-
-	// make sure the Authorization header is in the format "DeviceId <device-id>"
-	const prefix = "DeviceId "
-	if len(authorization) <= len(prefix) || authorization[:len(prefix)] != prefix {
-		return "", fmt.Errorf("authorization header is not in the format 'DeviceId <device-id>'")
-	}
-
-	return authorization[len(prefix):], nil
-}
-
 func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClient *kubernetes.Clientset, nodeName string) error {
 
-	listenEndpoint := "0.0.0.0:4320"
+	listenEndpoint := fmt.Sprintf("0.0.0.0:%d", OpAmpServerDefaultPort)
 	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
 
 	deviceidCache, err := deviceid.NewDeviceIdCache(logger, kubeClient)
@@ -50,12 +35,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		nodeName:      nodeName,
 	}
 
-	http.HandleFunc("/v1/opamp", func(w http.ResponseWriter, req *http.Request) {
-		// Check for the correct method, e.g., GET
-		if req.Method != "POST" {
-			http.Error(w, "Method is not supported.", http.StatusMethodNotAllowed)
-			return
-		}
+	http.HandleFunc("POST /v1/opamp", func(w http.ResponseWriter, req *http.Request) {
 
 		// we only support plain http connections.
 		// this check will filter out WS connections if they arrive for any reasons.
@@ -80,9 +60,9 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 			return
 		}
 
-		deviceId, err := getDeviceIdFromHeader(req)
-		if err != nil {
-			logger.Error(err, "Failed to get device id from header")
+		deviceId := req.Header.Get("X-Odigos-DeviceId")
+		if deviceId == "" {
+			logger.Error(err, "X-Odigos-DeviceId header is missing")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -148,8 +128,10 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		}
 	})
 
+	server := &http.Server{Addr: listenEndpoint, Handler: nil}
+
 	go func() {
-		if err := http.ListenAndServe(listenEndpoint, nil); err != nil {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error(err, "Error starting opamp server")
 		}
 	}()
@@ -160,6 +142,9 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		for {
 			select {
 			case <-ctx.Done():
+				if err := server.Shutdown(ctx); err != nil {
+					logger.Error(err, "Failed to shut down the http server for incoming connections")
+				}
 				logger.Info("Shutting down live connections timeout monitor")
 				return
 			case <-ticker.C:
