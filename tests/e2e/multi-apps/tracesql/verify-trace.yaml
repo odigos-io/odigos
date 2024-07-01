@@ -1,0 +1,8 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+quxxery: |
+  SELECT * FROM traces
+  WHERE service = 'odigos-demo-frontend'
+  AND name = 'GET /api/inventory'
+expected:
+  ddd: 3
