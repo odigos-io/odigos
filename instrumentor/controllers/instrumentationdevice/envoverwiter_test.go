@@ -38,6 +38,14 @@ var _ = Describe("envoverwrite", func() {
 		testEnvOdigosValue = sdkEnvVal
 	})
 
+	AfterEach(func() {
+		// restore odigos config to it's original state
+		var odigosConfig odigosv1.OdigosConfiguration
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultOdigosNamespace, Name: consts.OdigosConfigurationName}, &odigosConfig)).Should(Succeed())
+		odigosConfig.Spec.DefaultSDKs[testProgrammingLanguage] = common.OtelSdkNativeCommunity
+		Expect(k8sClient.Update(ctx, &odigosConfig)).Should(Succeed())
+	})
+
 	Describe("User did not set env in manifest or docker image", func() {
 
 		BeforeEach(func() {
@@ -186,6 +194,45 @@ var _ = Describe("envoverwrite", func() {
 				Expect(k8sClient.Delete(ctx, instrumentedApplication)).Should(Succeed())
 				testutil.AssertDepContainerSingleEnv(ctx, k8sClient, deployment, testEnvVar, userEnvValue)
 			})
+		})
+	})
+
+	When("Apply to workload restores the value to it's original state", func() {
+
+		userEnvValue := "/orig_in_manifest"
+		var mergedEnvValue string
+
+		BeforeEach(func() {
+			// the env var is in manifest, thus the deployment should contain it at the start
+			deployment = testutil.SetDeploymentContainerEnv(
+				testutil.SetOdigosInstrumentationEnabled(
+					testutil.NewMockTestDeployment(namespace),
+				),
+				testEnvVar, userEnvValue)
+			Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
+
+			// initial state - should capture the env var from manifest only
+			mergedEnvValue = userEnvValue + ":" + testEnvOdigosValue
+			instrumentedApplication = testutil.SetInstrumentedApplicationContainer(testutil.NewMockInstrumentedApplication(deployment), &testEnvVar, &userEnvValue, testProgrammingLanguage)
+			Expect(k8sClient.Create(ctx, instrumentedApplication)).Should(Succeed())
+			testutil.AssertDepContainerSingleEnv(ctx, k8sClient, deployment, testEnvVar, mergedEnvValue)
+
+			// after instrumentation is applied, now the value in the pod should be the merged value
+			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(instrumentedApplication), instrumentedApplication)).Should(Succeed())
+			instrumentedApplication.Spec.RuntimeDetails[0].EnvVars[0].Value = mergedEnvValue
+			Expect(k8sClient.Update(ctx, instrumentedApplication)).Should(Succeed())
+			testutil.AssertDepContainerSingleEnvRemainsSame(ctx, k8sClient, deployment, testEnvVar, mergedEnvValue)
+		})
+
+		It("Should reapply odigos value to the manifest", func() {
+			// when the deployment is updated, the odigos value should be reapplied
+			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(deployment), deployment)).Should(Succeed())
+			// restore the value to the original state
+			deployment = testutil.SetDeploymentContainerEnv(deployment, testEnvVar, userEnvValue)
+			Expect(k8sClient.Update(ctx, deployment)).Should(Succeed())
+
+			// the odigos value should be reapplied
+			testutil.AssertDepContainerSingleEnv(ctx, k8sClient, deployment, testEnvVar, mergedEnvValue)
 		})
 	})
 
