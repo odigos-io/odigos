@@ -61,7 +61,7 @@ func TestGetPodWorkloadObject(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							Kind: "DaemonSet",
-							Name: "someDaemonSet-1234",
+							Name: "someDaemonSet",
 						},
 					},
 					Namespace: "default",
@@ -80,7 +80,7 @@ func TestGetPodWorkloadObject(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							Kind: "StatefulSet",
-							Name: "someStatefulSet-1234",
+							Name: "someStatefulSet",
 						},
 					},
 					Namespace: "default",
