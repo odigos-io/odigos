@@ -7,11 +7,15 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/go-logr/logr"
+
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -26,6 +30,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/frontend/endpoints"
+
+	_ "net/http/pprof"
 )
 
 const (
@@ -137,21 +143,12 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 
 func httpFileServerWith404(fs http.FileSystem) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		filePath := r.URL.Path
-
-		// Check if the file exists
-		_, err := fs.Open(filePath)
+		_, err := fs.Open(r.URL.Path)
 		if err != nil {
-			// Try appending .html to the path and check again
-			filePath += ".html"
-			_, err = fs.Open(filePath)
-			if err != nil {
-				// If file does not exist, serve index.html
-				filePath = "/index.html"
-			}
+			// Serve index.html
+			r.URL.Path = "/"
 		}
-
-		http.ServeFile(w, r, "webapp/out"+filePath)
+		http.FileServer(fs).ServeHTTP(w, r)
 	})
 }
 
@@ -163,6 +160,8 @@ func main() {
 		fmt.Printf("version.Info{Version:'%s', GitCommit:'%s', BuildDate:'%s'}\n", version.OdigosVersion, version.OdigosCommit, version.OdigosDate)
 		return
 	}
+
+	go common.StartPprofServer(logr.FromSlogHandler(slog.Default().Handler()))
 
 	// Load destinations data
 	err := destinations.Load()

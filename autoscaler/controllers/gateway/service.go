@@ -43,7 +43,7 @@ func syncService(gateway *odigosv1.CollectorsGroup, ctx context.Context, c clien
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gateway.Name,
 			Namespace: gateway.Namespace,
-			Labels:    commonLabels,
+			Labels:    CommonLabels,
 		},
 	}
 
@@ -86,6 +86,6 @@ func updateGatewaySvc(svc *v1.Service) {
 		},
 	}
 
-	svc.Spec.Selector = commonLabels
+	svc.Spec.Selector = CommonLabels
 	svc.Spec.ClusterIP = "None"
 }
