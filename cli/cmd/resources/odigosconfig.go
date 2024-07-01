@@ -7,12 +7,9 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	OdigosConfigName = "odigos-config"
 )
 
 func otelSdkConfigCommunity() (map[common.ProgrammingLanguage]common.OtelSdk, map[common.ProgrammingLanguage][]common.OtelSdk) {
@@ -75,7 +72,7 @@ func NewOdigosConfiguration(ns string, config *odigosv1.OdigosConfigurationSpec)
 			APIVersion: "odigos.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigosConfigName,
+			Name:      consts.OdigosConfigurationName,
 			Namespace: ns,
 		},
 		Spec: *config,

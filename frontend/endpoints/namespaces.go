@@ -80,7 +80,7 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		var err error
-		odigosConfig, err = kube.DefaultClient.OdigosClient.OdigosConfigurations(odigosns).Get(ctx, consts.DefaultOdigosConfigurationName, metav1.GetOptions{})
+		odigosConfig, err = kube.DefaultClient.OdigosClient.OdigosConfigurations(odigosns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
 		return err
 	})
 

@@ -38,7 +38,7 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 	}
 
 	odigosConfig := &odigosv1.OdigosConfiguration{}
-	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: consts.DefaultOdigosConfigurationName}, odigosConfig)
+	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: consts.OdigosConfigurationName}, odigosConfig)
 	if err != nil {
 		logger.Error(err, "error fetching odigos configuration")
 		return ctrl.Result{}, err

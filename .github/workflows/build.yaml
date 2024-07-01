@@ -113,7 +113,7 @@ jobs:
       - name: Test common module
         working-directory: ./common
         run: |
-          go test -v ./...
+          make test
 
   test-procdiscovery:
     runs-on: ubuntu-latest
