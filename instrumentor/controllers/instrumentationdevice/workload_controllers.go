@@ -40,11 +40,11 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	return ctrl.Result{}, err
 }
 
-func reconcileSingleInstrumentedApplicationByName(ctx context.Context, client client.Client, instrumentedAppName string, namespace string) error {
+func reconcileSingleInstrumentedApplicationByName(ctx context.Context, k8sClient client.Client, instrumentedAppName string, namespace string) error {
 	var instrumentedApplication odigosv1.InstrumentedApplication
-	err := client.Get(ctx, types.NamespacedName{Name: instrumentedAppName, Namespace: namespace}, &instrumentedApplication)
+	err := k8sClient.Get(ctx, types.NamespacedName{Name: instrumentedAppName, Namespace: namespace}, &instrumentedApplication)
 	if err != nil {
-		return err
+		return client.IgnoreNotFound(err)
 	}
-	return reconcileSingleInstrumentedApplication(ctx, client, &instrumentedApplication)
+	return reconcileSingleInstrumentedApplication(ctx, k8sClient, &instrumentedApplication)
 }
