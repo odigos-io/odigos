@@ -6,7 +6,6 @@ receivers:
       http: {}
 exporters: {}
 processors:
-  batch: {}
   memory_limiter: {}
   resource/odigos-version:
     attributes:

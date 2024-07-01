@@ -9,7 +9,7 @@ import (
 func ToProcessorConfigurerArray(items []*odigosv1.Processor) []config.ProcessorConfigurer {
 	configurers := make([]config.ProcessorConfigurer, len(items))
 	for i := range items {
-	    configurers[i] = items[i]
+		configurers[i] = items[i]
 	}
 	return configurers
 }
@@ -17,7 +17,7 @@ func ToProcessorConfigurerArray(items []*odigosv1.Processor) []config.ProcessorC
 func ToExporterConfigurerArray(dests *odigosv1.DestinationList) []config.ExporterConfigurer {
 	configurers := make([]config.ExporterConfigurer, len(dests.Items))
 	for i := range dests.Items {
-	    configurers[i] = dests.Items[i]
+		configurers[i] = dests.Items[i]
 	}
 	return configurers
 }

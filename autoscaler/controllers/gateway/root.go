@@ -6,6 +6,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -57,6 +58,8 @@ func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, ima
 		logger.Error(err, "Failed to list processors")
 		return err
 	}
+	// Add the generic batch processor to the list of processors
+	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
 
 	odigosSystemNamespaceName := env.GetCurrentNamespace()
 	var odigosConfig odigosv1.OdigosConfiguration

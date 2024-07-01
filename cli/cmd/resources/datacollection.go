@@ -44,6 +44,7 @@ func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
 				APIGroups: []string{""},
 				Resources: []string{
 					"pods",
+					"endpoints",
 					"nodes/stats",
 					"nodes/proxy",
 				},
