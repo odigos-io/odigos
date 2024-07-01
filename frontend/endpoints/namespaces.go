@@ -164,7 +164,11 @@ func syncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []Pe
 	for _, workload := range workloads {
 		currWorkload := workload
 		g.Go(func() error {
-			return setWorkloadInstrumentationLabel(ctx, nsName, currWorkload.Name, currWorkload.Kind, currWorkload.Selected)
+			// Only label selected sources, ignore the rest
+			if currWorkload.Selected != nil && *currWorkload.Selected {
+				return setWorkloadInstrumentationLabel(ctx, nsName, currWorkload.Name, currWorkload.Kind, currWorkload.Selected)
+			}
+			return nil
 		})
 	}
 	return g.Wait()
