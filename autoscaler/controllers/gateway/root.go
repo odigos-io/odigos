@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	commonLabels = map[string]string{
+	CommonLabels = map[string]string{
 		collectorLabel: "true",
 	}
 )

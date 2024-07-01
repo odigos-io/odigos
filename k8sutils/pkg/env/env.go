@@ -22,6 +22,7 @@ func getEnvVarOrDefault(envKey string, defaultVal string) string {
 	return defaultVal
 }
 
+// GetCurrentNamespace returns the namespace odigos is running in
 func GetCurrentNamespace() string {
 	return getEnvVarOrDefault(consts.CurrentNamespaceEnvVar, consts.DefaultOdigosNamespace)
 }

@@ -53,14 +53,17 @@ func StartInstrumentedApplicationWatcher(ctx context.Context, namespace string) 
 
 func handleInstrumentedApplicationWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
+	defer addedEventBatcher.Cancel()
+	defer deletedEventBatcher.Cancel()
 	for {
 		select {
 		case <-ctx.Done():
-			addedEventBatcher.Cancel()
-			deletedEventBatcher.Cancel()
 			watcher.Stop()
 			return
-		case event := <-ch:
+		case event, ok := <-ch:
+			if !ok {
+				return
+			}
 			switch event.Type {
 			case watch.Added:
 				handleAddedEvent(event.Object.(*v1alpha1.InstrumentedApplication))
