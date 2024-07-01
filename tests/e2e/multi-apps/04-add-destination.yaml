@@ -1,7 +1,7 @@
 apiVersion: odigos.io/v1alpha1
 kind: Destination
 metadata:
-  generateName: odigos.io.dest.jaeger-
+  name: odigos.io.dest.jaeger-123123
   namespace: odigos-system
 spec:
   data:

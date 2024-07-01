@@ -27,12 +27,7 @@ build-ui:
 
 .PHONY: build-images
 build-images:
-	make build-autoscaler TAG=$(TAG)
-	make build-scheduler TAG=$(TAG)
-	make build-odiglet TAG=$(TAG)
-	make build-instrumentor TAG=$(TAG)
-	make build-collector TAG=$(TAG)
-	make build-ui TAG=$(TAG)
+	make -j 6 build-autoscaler build-scheduler build-odiglet build-instrumentor build-collector build-ui TAG=$(TAG)
 
 .PHONY: push-odiglet
 push-odiglet:
@@ -78,18 +73,18 @@ load-to-kind-collector:
 load-to-kind-instrumentor:
 	kind load docker-image $(ORG)/odigos-instrumentor:$(TAG)
 
+.PHONY: load-to-kind-scheduler
+load-to-kind-scheduler:
+	kind load docker-image $(ORG)/odigos-scheduler:$(TAG)
+
 .PHONY: load-to-kind-ui
 load-to-kind-ui:
 	kind load docker-image $(ORG)/odigos-ui:$(TAG)
 
 .PHONY: load-to-kind
 load-to-kind:
-	make load-to-kind-autoscaler TAG=$(TAG)
-	kind load docker-image $(ORG)/odigos-scheduler:$(TAG)
-	make load-to-kind-odiglet TAG=$(TAG)
-	kind load docker-image $(ORG)/odigos-instrumentor:$(TAG)
-	make load-to-kind-collector TAG=$(TAG)
-	make load-to-kind-ui TAG=$(TAG)
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui TAG=$(TAG)
+
 
 .PHONY: restart-ui
 restart-ui:

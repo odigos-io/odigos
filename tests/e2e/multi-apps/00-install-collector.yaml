@@ -1,0 +1,245 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: traces
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-opentelemetry-collector
+  namespace: traces
+  labels:
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/instance: test
+    app.kubernetes.io/version: "0.101.0"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-opentelemetry-collector-statefulset
+  namespace: traces
+  labels:
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/instance: test
+    app.kubernetes.io/version: "0.101.0"
+data:
+  relay: |
+    exporters:
+      debug: {}
+      file/trace:
+        path: /tmp/trace.json
+        rotation: null
+    extensions:
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+    processors:
+      batch: {}
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:14250
+          thrift_compact:
+            endpoint: ${env:MY_POD_IP}:6831
+          thrift_http:
+            endpoint: ${env:MY_POD_IP}:14268
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:4317
+          http:
+            endpoint: ${env:MY_POD_IP}:4318
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: opentelemetry-collector
+            scrape_interval: 10s
+            static_configs:
+            - targets:
+              - ${env:MY_POD_IP}:8888
+      zipkin:
+        endpoint: ${env:MY_POD_IP}:9411
+    service:
+      extensions:
+      - health_check
+      pipelines:
+        logs:
+          exporters:
+          - debug
+          processors:
+          - memory_limiter
+          - batch
+          receivers:
+          - otlp
+        metrics:
+          exporters:
+          - debug
+          processors:
+          - memory_limiter
+          - batch
+          receivers:
+          - otlp
+          - prometheus
+        traces:
+          exporters:
+          - file/trace
+          - debug
+          processors:
+          - memory_limiter
+          - batch
+          receivers:
+          - otlp
+      telemetry:
+        logs:
+          level: debug
+        metrics:
+          address: ${env:MY_POD_IP}:8888
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-opentelemetry-collector
+  namespace: traces
+  labels:
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/instance: test
+    app.kubernetes.io/version: "0.101.0"
+    component: statefulset-collector
+spec:
+  type: ClusterIP
+  ports:
+    - name: jaeger-compact
+      port: 6831
+      targetPort: 6831
+      protocol: UDP
+    - name: jaeger-grpc
+      port: 14250
+      targetPort: 14250
+      protocol: TCP
+    - name: jaeger-thrift
+      port: 14268
+      targetPort: 14268
+      protocol: TCP
+    - name: otlp
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+      appProtocol: grpc
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+    - name: zipkin
+      port: 9411
+      targetPort: 9411
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/instance: test
+    component: statefulset-collector
+  internalTrafficPolicy: Cluster
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: test-opentelemetry-collector
+  namespace: traces
+  labels:
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/instance: test
+    app.kubernetes.io/version: "0.101.0"
+spec:
+  serviceName: test-opentelemetry-collector
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-collector
+      app.kubernetes.io/instance: test
+      component: statefulset-collector
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: 92ded92e31359c2c55e3dcbd82a373be16c9bd1981421608b9fa1ead6e929468
+      labels:
+        app.kubernetes.io/name: opentelemetry-collector
+        app.kubernetes.io/instance: test
+        component: statefulset-collector
+    spec:
+      serviceAccountName: test-opentelemetry-collector
+      securityContext:
+        {}
+      containers:
+        - name: opentelemetry-collector
+          command:
+            - /otelcol-contrib
+          args:
+            - --config=/conf/relay.yaml
+          securityContext:
+            {}
+          image: "otel/opentelemetry-collector-contrib:latest"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: jaeger-compact
+              containerPort: 6831
+              protocol: UDP
+            - name: jaeger-grpc
+              containerPort: 14250
+              protocol: TCP
+            - name: jaeger-thrift
+              containerPort: 14268
+              protocol: TCP
+            - name: otlp
+              containerPort: 4317
+              protocol: TCP
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+            - name: zipkin
+              containerPort: 9411
+              protocol: TCP
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          volumeMounts:
+            - mountPath: /conf
+              name: opentelemetry-collector-configmap
+            - mountPath: /tmp
+              name: filevolume
+        - command:
+          - sh
+          - -c
+          - sleep 36000
+          image: busybox
+          name: filecp
+          volumeMounts:
+          - mountPath: /tmp
+            name: filevolume
+      volumes:
+        - name: opentelemetry-collector-configmap
+          configMap:
+            name: test-opentelemetry-collector-statefulset
+            items:
+              - key: relay
+                path: relay.yaml
+        - emptyDir: {}
+          name: filevolume
+      hostNetwork: false
+      terminationGracePeriodSeconds: 1
