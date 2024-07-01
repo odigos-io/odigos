@@ -6,11 +6,11 @@ build-odiglet: generate
 debug-build-odiglet: generate
 	go build -o odiglet -gcflags "all=-N -l" cmd/main.go
 
+test: generate
+	go test -v ./...
+
 generate:
 	go mod download
 	GO_AUTO_PATH=$$(go list -m -f '{{.Dir}}' "go.opentelemetry.io/auto") && \
 	cd $$GO_AUTO_PATH && \
 	make generate
-
-test:
-	go test -v ./...
