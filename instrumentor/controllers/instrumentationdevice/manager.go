@@ -42,7 +42,9 @@ func (w workloadEnvChangePredicate) Update(e event.UpdateEvent) bool {
 			return true
 		}
 		for j := range oldPodSpec.Spec.Containers[i].Env {
-			if oldPodSpec.Spec.Containers[i].Env[j].Value != newPodSpec.Spec.Containers[i].Env[j].Value {
+			prevEnv := &newPodSpec.Spec.Containers[i].Env[j]
+			newEnv := &oldPodSpec.Spec.Containers[i].Env[j]
+			if prevEnv.Name != newEnv.Name || prevEnv.Value != newEnv.Value {
 				return true
 			}
 		}
