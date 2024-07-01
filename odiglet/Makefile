@@ -11,3 +11,6 @@ generate:
 	GO_AUTO_PATH=$$(go list -m -f '{{.Dir}}' "go.opentelemetry.io/auto") && \
 	cd $$GO_AUTO_PATH && \
 	make generate
+
+test:
+	go test -v ./...
