@@ -21,26 +21,26 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// LatencySamplerSpecApplyConfiguration represents an declarative configuration of the LatencySamplerSpec type for use
+// ErrorSamplerSpecApplyConfiguration represents an declarative configuration of the ErrorSamplerSpec type for use
 // with apply.
-type LatencySamplerSpecApplyConfiguration struct {
-	ActionName       *string                             `json:"actionName,omitempty"`
-	Notes            *string                             `json:"notes,omitempty"`
-	Disabled         *bool                               `json:"disabled,omitempty"`
-	Signals          []common.ObservabilitySignal        `json:"signals,omitempty"`
-	EndpointsFilters []HttpRouteFilterApplyConfiguration `json:"endpoints_filters,omitempty"`
+type ErrorSamplerSpecApplyConfiguration struct {
+	ActionName            *string                      `json:"actionName,omitempty"`
+	Notes                 *string                      `json:"notes,omitempty"`
+	Disabled              *bool                        `json:"disabled,omitempty"`
+	Signals               []common.ObservabilitySignal `json:"signals,omitempty"`
+	FallbackSamplingRatio *float64                     `json:"fallback_sampling_ratio,omitempty"`
 }
 
-// LatencySamplerSpecApplyConfiguration constructs an declarative configuration of the LatencySamplerSpec type for use with
+// ErrorSamplerSpecApplyConfiguration constructs an declarative configuration of the ErrorSamplerSpec type for use with
 // apply.
-func LatencySamplerSpec() *LatencySamplerSpecApplyConfiguration {
-	return &LatencySamplerSpecApplyConfiguration{}
+func ErrorSamplerSpec() *ErrorSamplerSpecApplyConfiguration {
+	return &ErrorSamplerSpecApplyConfiguration{}
 }
 
 // WithActionName sets the ActionName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ActionName field is set to the value of the last call.
-func (b *LatencySamplerSpecApplyConfiguration) WithActionName(value string) *LatencySamplerSpecApplyConfiguration {
+func (b *ErrorSamplerSpecApplyConfiguration) WithActionName(value string) *ErrorSamplerSpecApplyConfiguration {
 	b.ActionName = &value
 	return b
 }
@@ -48,7 +48,7 @@ func (b *LatencySamplerSpecApplyConfiguration) WithActionName(value string) *Lat
 // WithNotes sets the Notes field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Notes field is set to the value of the last call.
-func (b *LatencySamplerSpecApplyConfiguration) WithNotes(value string) *LatencySamplerSpecApplyConfiguration {
+func (b *ErrorSamplerSpecApplyConfiguration) WithNotes(value string) *ErrorSamplerSpecApplyConfiguration {
 	b.Notes = &value
 	return b
 }
@@ -56,7 +56,7 @@ func (b *LatencySamplerSpecApplyConfiguration) WithNotes(value string) *LatencyS
 // WithDisabled sets the Disabled field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Disabled field is set to the value of the last call.
-func (b *LatencySamplerSpecApplyConfiguration) WithDisabled(value bool) *LatencySamplerSpecApplyConfiguration {
+func (b *ErrorSamplerSpecApplyConfiguration) WithDisabled(value bool) *ErrorSamplerSpecApplyConfiguration {
 	b.Disabled = &value
 	return b
 }
@@ -64,22 +64,17 @@ func (b *LatencySamplerSpecApplyConfiguration) WithDisabled(value bool) *Latency
 // WithSignals adds the given value to the Signals field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Signals field.
-func (b *LatencySamplerSpecApplyConfiguration) WithSignals(values ...common.ObservabilitySignal) *LatencySamplerSpecApplyConfiguration {
+func (b *ErrorSamplerSpecApplyConfiguration) WithSignals(values ...common.ObservabilitySignal) *ErrorSamplerSpecApplyConfiguration {
 	for i := range values {
 		b.Signals = append(b.Signals, values[i])
 	}
 	return b
 }
 
-// WithEndpointsFilters adds the given value to the EndpointsFilters field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the EndpointsFilters field.
-func (b *LatencySamplerSpecApplyConfiguration) WithEndpointsFilters(values ...*HttpRouteFilterApplyConfiguration) *LatencySamplerSpecApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithEndpointsFilters")
-		}
-		b.EndpointsFilters = append(b.EndpointsFilters, *values[i])
-	}
+// WithFallbackSamplingRatio sets the FallbackSamplingRatio field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the FallbackSamplingRatio field is set to the value of the last call.
+func (b *ErrorSamplerSpecApplyConfiguration) WithFallbackSamplingRatio(value float64) *ErrorSamplerSpecApplyConfiguration {
+	b.FallbackSamplingRatio = &value
 	return b
 }

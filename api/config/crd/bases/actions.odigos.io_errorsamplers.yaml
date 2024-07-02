@@ -4,22 +4,22 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-  name: latencysamplers.actions.odigos.io
+  name: errorsamplers.actions.odigos.io
 spec:
   group: actions.odigos.io
   names:
-    kind: LatencySampler
-    listKind: LatencySamplerList
-    plural: latencysamplers
+    kind: ErrorSampler
+    listKind: ErrorSamplerList
+    plural: errorsamplers
     shortNames:
-    - ls
-    singular: latencysampler
+    - es
+    singular: errorsampler
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: LatencySampler is the Schema for the LatencySampler odigos action
+        description: ErrorSampler is the Schema for the ErrorSampler odigos action
           API
         properties:
           apiVersion:
@@ -40,41 +40,16 @@ spec:
           metadata:
             type: object
           spec:
-            description: LatencySamplerSpec defines the desired state of LatencySampler
+            description: ErrorSamplerSpec defines the desired state of ErrorSampler
               action
             properties:
               actionName:
                 type: string
               disabled:
                 type: boolean
-              endpoints_filters:
-                description: Specifies the list of endpoint filters to be applied
-                  for sampling
-                items:
-                  properties:
-                    fallback_sampling_ratio:
-                      description: Specifies the fallback sampling ratio to be applied
-                        in case service and endpoint filter match but the latency
-                        threshold is not met.
-                      type: number
-                    http_route:
-                      description: Specifies the http.route to be sampled
-                      type: string
-                    minimum_latency_threshold:
-                      description: Specifies the lower latency threshold in milliseconds;
-                        traces with latency equal to or exceeding this value will
-                        be considered for sampling.
-                      type: integer
-                    service_name:
-                      description: Specifies the service to be sampled
-                      type: string
-                  required:
-                  - fallback_sampling_ratio
-                  - http_route
-                  - minimum_latency_threshold
-                  - service_name
-                  type: object
-                type: array
+              fallback_sampling_ratio:
+                description: Specifies the ratio of non-error traces to be sampled.
+                type: number
               notes:
                 type: string
               signals:
@@ -86,16 +61,16 @@ spec:
                   type: string
                 type: array
             required:
-            - endpoints_filters
+            - fallback_sampling_ratio
             - signals
             type: object
           status:
-            description: LatencySamplerStatus defines the observed state of LatencySampler
+            description: ErrorSamplerStatus defines the observed state of ErrorSampler
               action
             properties:
               conditions:
                 description: |-
-                  Represents the observations of a LatencySampler's current state.
+                  Represents the observations of a ErrorSampler's current state.
                   Known .status.conditions.type are: "Available", "Progressing"
                 items:
                   description: "Condition contains details for one aspect of the current

@@ -21,6 +21,8 @@ type AddClusterInfoExpansion interface{}
 
 type DeleteAttributeExpansion interface{}
 
+type ErrorSamplerExpansion interface{}
+
 type LatencySamplerExpansion interface{}
 
 type ProbabilisticSamplerExpansion interface{}
