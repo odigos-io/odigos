@@ -18,6 +18,7 @@ export interface ManagedSource {
   name: string;
   namespace: string;
   reported_name?: string;
+  number_of_running_instances: number;
   instrumented_application_details: {
     conditions: Array<Condition>;
     languages: Array<{
