@@ -169,8 +169,8 @@ func (r *ProbabilisticSamplerReconciler) convertToProcessor(action *actionv1.Pro
 			Disabled:        action.Spec.Disabled,
 			Notes:           action.Spec.Notes,
 			Signals:         action.Spec.Signals,
-			CollectorRoles:  []v1.CollectorsGroupRole{v1.CollectorsGroupRoleNodeCollector},
-			OrderHint:       1,
+			CollectorRoles:  []v1.CollectorsGroupRole{v1.CollectorsGroupRoleClusterGateway},
+			OrderHint:       -1,
 			ProcessorConfig: runtime.RawExtension{Raw: configJson},
 		},
 	}
