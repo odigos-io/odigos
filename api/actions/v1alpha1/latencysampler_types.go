@@ -28,13 +28,24 @@ type LatencySamplerSpec struct {
 	Disabled   bool                         `json:"disabled,omitempty"`
 	Signals    []common.ObservabilitySignal `json:"signals"`
 
+	// Specifies the list of endpoint filters to be applied for sampling
+	// +kubebuilder:validation:Required
+	EndpointsFilters []HttpRouteFilter `json:"endpoints_filters"`
+}
+
+type HttpRouteFilter struct {
+	// Specifies the http.route to be sampled
+	// +kubebuilder:validation:Required
+	HttpRoute string `json:"http_route"`
+	// Specifies the service to be sampled
+	// +kubebuilder:validation:Required
+	ServiceName string `json:"service_name"`
 	// Specifies the lower latency threshold in milliseconds; traces with latency equal to or exceeding this value will be considered for sampling.
 	// +kubebuilder:validation:Required
 	MinimumLatencyThreshold int `json:"minimum_latency_threshold"`
+	// Specifies the fallback sampling ratio to be applied in case service and endpoint filter match but the latency threshold is not met.
 	// +kubebuilder:validation:Required
-	Endpoint string `json:"endpoint"`
-	// +kubebuilder:validation:Required
-	Service string `json:"service"`
+	FallbackSamplingRatio float64 `json:"fallback_sampling_ratio"`
 }
 
 // LatencySamplerStatus defines the observed state of LatencySampler action

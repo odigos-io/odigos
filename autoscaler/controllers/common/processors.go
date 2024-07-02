@@ -1,7 +1,6 @@
 package common
 
 import (
-	"context"
 	"encoding/json"
 	"sort"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, collectorRole odigosv1.CollectorsGroupRole) []*odigosv1.Processor {
@@ -37,20 +35,7 @@ func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, coll
 	return filteredProcessors
 }
 
-func DeleteProcessorByType(ctx context.Context, c client.Client, processorType string, namespace string) error {
-	var processors odigosv1.ProcessorList
-	if err := c.List(ctx, &processors, client.InNamespace(namespace)); err != nil {
-		return client.IgnoreNotFound(err)
-	}
-
-	if processor := GetProcessorIfExists(&processors, processorType); processor != nil {
-		return c.Delete(ctx, processor)
-	}
-
-	return nil
-}
-
-func GetProcessorIfExists(allProcessors *odigosv1.ProcessorList, processorType string) *odigosv1.Processor {
+func FindFirstProcessorByType(allProcessors *odigosv1.ProcessorList, processorType string) *odigosv1.Processor {
 	for _, processor := range allProcessors.Items {
 		if processor.Spec.Type == processorType {
 			return &processor

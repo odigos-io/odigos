@@ -1,7 +1,9 @@
 package sampling
 
 type SamplingConfig struct {
-	Rules []Rule `json:"rules"`
+	GlobalRules   []Rule `json:"global_rules,omitempty"`
+	ServiceRules  []Rule `json:"service_rules,omitempty"`
+	EndpointRules []Rule `json:"endpoint_rules,omitempty"`
 }
 
 // Rule representes a rule in odigossampling processor rule

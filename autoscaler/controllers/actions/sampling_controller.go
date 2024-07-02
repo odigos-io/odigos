@@ -9,7 +9,6 @@ import (
 	"github.com/go-logr/logr"
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sampling "github.com/odigos-io/odigos/autoscaler/controllers/actions/sampling"
-	commonproc "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -52,7 +51,7 @@ func (r *OdigosSamplingReconciler) syncSamplingProcessors(ctx context.Context, r
 	}
 
 	if !r.isRelevantActions(desiredActions) {
-		return r.deleteSamplingProcessorsIfExists(ctx, req.Namespace)
+		return nil
 	}
 
 	logger.V(0).Info("Sync sampling processor with desired actions")
@@ -79,8 +78,9 @@ func (r *OdigosSamplingReconciler) getRelevantActions(ctx context.Context, names
 
 func (r *OdigosSamplingReconciler) syncOdigosSamplingProcessor(ctx context.Context, relevantActions map[reflect.Type][]metav1.Object, namespace string) error {
 	var (
-		actionsReferences []metav1.OwnerReference
-		actionsRules      []sampling.Rule
+		actionsReferences    []metav1.OwnerReference
+		globalActionsRules   []sampling.Rule
+		endpointActionsRules []sampling.Rule
 	)
 
 	for actionType, actions := range relevantActions {
@@ -89,13 +89,22 @@ func (r *OdigosSamplingReconciler) syncOdigosSamplingProcessor(ctx context.Conte
 
 		for _, action := range actions {
 			actionsReferences = append(actionsReferences, handler.GetActionReference(action))
-			actionsRules = append(actionsRules, handler.GetRuleConfig(action))
+
+			actionScope := handler.GetActionScope(action)
+			if actionScope == "global" {
+				globalActionsRules = append(globalActionsRules, handler.GetRuleConfig(action)...)
+			}
+			if actionScope == "endpoint" {
+				endpointActionsRules = append(endpointActionsRules, handler.GetRuleConfig(action)...)
+			}
+
 			r.ReportReconciledToProcessor(ctx, action)
 		}
 	}
 
 	samplingConf := sampling.SamplingConfig{
-		Rules: actionsRules,
+		EndpointRules: endpointActionsRules,
+		GlobalRules:   globalActionsRules,
 	}
 
 	samplingConfigJson, err := json.Marshal(samplingConf)
@@ -184,7 +193,7 @@ func (r *OdigosSamplingReconciler) filterActions(ctx context.Context, actions []
 		// filter actions with invalid configuration
 		if err := handler.ValidateRuleConfig(handler.GetRuleConfig(action)); err != nil {
 			logger.V(0).Error(err, "Failed to validate rule config")
-			r.ReportReconciledToProcessorFailed(context.Background(), action, "FailedToTransformToProcessorReason", err.Error())
+			r.ReportReconciledToProcessorFailed(ctx, action, "FailedToTransformToProcessorReason", err.Error())
 			continue
 		}
 
@@ -200,13 +209,6 @@ func (r *OdigosSamplingReconciler) isRelevantActions(desiredActions map[reflect.
 		}
 	}
 	return false
-}
-
-func (r *OdigosSamplingReconciler) deleteSamplingProcessorsIfExists(ctx context.Context, namespace string) error {
-	if err := commonproc.DeleteProcessorByType(ctx, r.Client, GroupByTraceType, namespace); err != nil {
-		return err
-	}
-	return commonproc.DeleteProcessorByType(ctx, r.Client, SamplingProcessorType, namespace)
 }
 
 func getConditions(obj metav1.Object) (*[]metav1.Condition, error) {

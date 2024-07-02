@@ -13,9 +13,10 @@ import (
 type LatencySamplerHandler struct{}
 
 type LatencyConfig struct {
-	ThresholdMs int    `json:"threshold"`
-	Endpoint    string `json:"endpoint"`
-	Service     string `json:"service"`
+	ThresholdMs           int     `json:"threshold"`
+	HttpRoute             string  `json:"http_route"`
+	ServiceName           string  `json:"service_name"`
+	FallbackSamplingRatio float64 `json:"fallback_sampling_ratio"`
 }
 
 func (h *LatencySamplerHandler) List(ctx context.Context, c client.Client, namespace string) ([]metav1.Object, error) {
@@ -35,23 +36,36 @@ func (h *LatencySamplerHandler) IsActionDisabled(action metav1.Object) bool {
 	return action.(*actionv1.LatencySampler).Spec.Disabled
 }
 
-func (h *LatencySamplerHandler) ValidateRuleConfig(config Rule) error {
-	return config.Details.Validate()
+func (h *LatencySamplerHandler) ValidateRuleConfig(config []Rule) error {
+	for _, rule := range config {
+		if err := rule.Details.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (h *LatencySamplerHandler) GetRuleConfig(action metav1.Object) Rule {
-	a := action.(*actionv1.LatencySampler)
-	latencyDetails := &LatencyConfig{
-		ThresholdMs: a.Spec.MinimumLatencyThreshold,
-		Endpoint:    a.Spec.Endpoint,
-		Service:     a.Spec.Service,
+func (h *LatencySamplerHandler) GetRuleConfig(action metav1.Object) []Rule {
+	latencysampler := action.(*actionv1.LatencySampler)
+	actionRules := []Rule{}
+
+	for _, config := range latencysampler.Spec.EndpointsFilters {
+		latencyDetails := &LatencyConfig{
+			ThresholdMs:           config.MinimumLatencyThreshold,
+			HttpRoute:             config.HttpRoute,
+			ServiceName:           config.ServiceName,
+			FallbackSamplingRatio: config.FallbackSamplingRatio,
+		}
+
+		actionRules = append(actionRules, Rule{
+			Name:     fmt.Sprintf("latency-%s-%s", latencyDetails.ServiceName, latencyDetails.HttpRoute),
+			RuleType: "http_latency",
+			Details:  latencyDetails,
+		})
 	}
 
-	return Rule{
-		Name:     fmt.Sprintf("latency-%s-%s", latencyDetails.Service, latencyDetails.Endpoint),
-		RuleType: "http_latency",
-		Details:  latencyDetails,
-	}
+	return actionRules
+
 }
 
 func (h *LatencySamplerHandler) GetActionReference(action metav1.Object) metav1.OwnerReference {
@@ -59,10 +73,22 @@ func (h *LatencySamplerHandler) GetActionReference(action metav1.Object) metav1.
 	return metav1.OwnerReference{APIVersion: a.APIVersion, Kind: a.Kind, Name: a.Name, UID: a.UID}
 }
 
+func (h *LatencySamplerHandler) GetActionScope(action metav1.Object) string {
+	return "endpoint"
+}
+
 func (lc *LatencyConfig) Validate() error {
 	if lc.ThresholdMs < 0 {
 		return errors.New("minimum latency threshold must be positive")
 	}
-
+	if lc.FallbackSamplingRatio < 0 || lc.FallbackSamplingRatio > 100 {
+		return errors.New("fallback_sampling_ratio must be between 0 and 100")
+	}
+	if lc.HttpRoute == "" {
+		return errors.New("http_route cannot be empty")
+	}
+	if lc.ServiceName == "" {
+		return errors.New("service_name cannot be empty")
+	}
 	return nil
 }
