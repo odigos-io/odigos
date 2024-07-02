@@ -95,7 +95,7 @@ func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.P
 	for _, owner := range pod.OwnerReferences {
 		if owner.Kind == "ReplicaSet" {
 			// ReplicaSet name is in the format <deployment-name>-<random-string>
-			hyphenIndex := strings.Index(owner.Name, "-")
+			hyphenIndex := strings.LastIndex(owner.Name, "-")
 			if hyphenIndex == -1 {
 				// It is possible for a user to define a bare ReplicaSet without a deployment, currently not supporting this
 				return nil, errors.New("replicaset name does not contain a hyphen")

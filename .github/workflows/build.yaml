@@ -50,7 +50,7 @@ jobs:
         run: |
           make test
 
-  build-odiglet:
+  build-and-test-odiglet:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,6 +63,13 @@ jobs:
           context: .
           push: false
           tags: odiglet:pr-${{ github.event.number }}
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev
+      - name: run tests
+        working-directory: ./odiglet
+        run: |
+          make test
   build-frontend:
     runs-on: ubuntu-latest
     steps:
