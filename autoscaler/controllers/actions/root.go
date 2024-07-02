@@ -56,5 +56,15 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&v1.ErrorSampler{}).
+		Complete(&OdigosSamplingReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
