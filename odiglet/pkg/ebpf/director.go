@@ -6,10 +6,11 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	inst "github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	inst "github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_instance"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -192,7 +193,7 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 				Workload: *podWorkload,
 				Reason:   LoadedSuccessfully,
 				PodName:  pod,
-			    Pid:      pid,
+				Pid:      pid,
 			}
 		}
 	}()
@@ -203,12 +204,12 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 		inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName, pod.Name, loadedIndicator)
 		if err != nil {
 			d.instrumentationStatusChan <- instrumentationStatus{
-				Healthy: false,
-				Message: err.Error(),
+				Healthy:  false,
+				Message:  err.Error(),
 				Workload: *podWorkload,
-				Reason: FailedToInitialize,
-				PodName: pod,
-				Pid: pid,
+				Reason:   FailedToInitialize,
+				PodName:  pod,
+				Pid:      pid,
 			}
 			return
 		}
@@ -233,12 +234,12 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 
 		if err := inst.Run(context.Background()); err != nil {
 			d.instrumentationStatusChan <- instrumentationStatus{
-				Healthy: false,
-				Message: err.Error(),
+				Healthy:  false,
+				Message:  err.Error(),
 				Workload: *podWorkload,
-				Reason: FailedToLoad,
-				PodName: pod,
-				Pid: pid,
+				Reason:   FailedToLoad,
+				PodName:  pod,
+				Pid:      pid,
 			}
 		}
 	}()
@@ -276,7 +277,8 @@ func (d *EbpfDirector[T]) Cleanup(pod types.NamespacedName) {
 		},
 	})
 
-	if err != nil {
+	// the instrumentation instance might already be deleted at this point if the pod was deleted
+	if err != nil && !apierrors.IsNotFound(err) {
 		log.Logger.Error(err, "error deleting instrumentation instance", "pod", pod)
 	}
 
