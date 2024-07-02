@@ -16,7 +16,7 @@ func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap
 			errs[processor.GetID()] = fmt.Errorf("failed to convert processor %q to collector config: %w", processor.GetID(), err)
 			continue
 		}
-		if processorKey == "" || processorsConfig == nil && processor.GetType() != "batch" {
+		if processorKey == "" || processorsConfig == nil {
 			continue
 		}
 		cfg[processorKey] = processorsConfig
