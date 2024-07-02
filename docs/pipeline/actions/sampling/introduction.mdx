@@ -1,0 +1,37 @@
+---
+title: "Sampling Actions Introduction"
+sidebarTitle: "Introduction"
+---
+
+Sampling Actions allow you to configure various types of sampling methods before exporting them to your Odigos Destinations.
+
+
+### Actions Scope Categories
+
+
+Odigos Sampling actions are divided into three main categories, each representing the action's scope. The action scope defines the range that the sampler covers. The categories are:
+
+1. **Global Actions**: These actions sample all data without specificity. All traces flowing through Odigos will be sampled regardless of their source. For example, ErrorSampler.
+2. **Service Actions**: These sample actions are applied only to traces coming from a specified service.
+3. **Endpoint Actions**: These sample actions are applied to traces coming from a specific service and a specific endpoint. For example, LatencySampler.
+
+### Relation Between Actions
+
+When multiple sampling actions are configured, the most specific rule applies. For example:
+
+- If two rules are configured: an Endpoint action for `Service: Frontend, Endpoint: /buy` with a latency threshold of 1 second and a fallback of 50%, and a Global ErrorSampler with a fallback of 20%:
+
+  1. Traces from `Frontend /buy` below 1 second latency will fall under the Endpoint action's fallback and retain 50% of these traces.
+  2. Traces from `Frontend /buy` above 1 second latency will always be retained.
+  3. Error traces will always be sampled due to the Global ErrorSampler.
+  4. Any other non-error traces that are not from `Frontend /buy` will be sampled at 20%. 
+
+Each rule ensures you get the specified sampling behavior for your conditions.
+
+### Actions
+
+Odigos comes with a set of sampling actions that you can use out of the box:
+
+- [Probabilistic Sampler](/pipeline/actions/sampling/probabilisticsampler): Add a random sample of your data based on a specified probability.
+- [Error Sampler](/pipeline/actions/sampling/errorsampler): Sample traces with status code ERROR.
+- [Latency Sampler](/pipeline/actions/sampling/latencysampler): Sample based on the duration of a trace.
