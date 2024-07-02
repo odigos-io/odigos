@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -55,6 +56,11 @@ func main() {
 	if err != nil {
 		log.Logger.Error(err, "Failed to create controller-runtime manager")
 		os.Exit(-1)
+	}
+
+	err = server.StartOpAmpServer(ctx, log.Logger, mgr, clientset, env.Current.NodeName)
+	if err != nil {
+		log.Logger.Error(err, "Failed to start opamp server")
 	}
 
 	ebpfDirectors, err := initEbpf(ctx, mgr.GetClient(), mgr.GetScheme())

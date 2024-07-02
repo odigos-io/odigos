@@ -72,7 +72,7 @@ updates:
         patterns:
           - "go.opentelemetry.io*"
   - package-ecosystem: npm
-    directory: /odiglet/agents/nodejs
+    directory: /agents/nodejs
     schedule:
       day: sunday
       interval: weekly

@@ -5,6 +5,7 @@ go 1.22.0
 require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/go-logr/logr v1.4.1
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v1.0.63
 	github.com/odigos-io/odigos/destinations v0.0.0-20240223090638-df3328a088bc
@@ -24,7 +25,6 @@ require (
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect

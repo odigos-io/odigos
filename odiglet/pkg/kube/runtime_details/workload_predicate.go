@@ -1,7 +1,7 @@
 package runtime_details
 
 import (
-	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -34,7 +34,7 @@ func (i *WorkloadEnabledPredicate) Update(e event.UpdateEvent) bool {
 		return false
 	}
 	// filter our own namespace
-	if e.ObjectNew.GetNamespace() == consts.DefaultOdigosNamespace {
+	if e.ObjectNew.GetNamespace() == env.GetCurrentNamespace() {
 		return false
 	}
 

@@ -7,11 +7,15 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/go-logr/logr"
+
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -26,6 +30,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/frontend/endpoints"
+
+	_ "net/http/pprof"
 )
 
 const (
@@ -155,6 +161,8 @@ func main() {
 		return
 	}
 
+	go common.StartPprofServer(logr.FromSlogHandler(slog.Default().Handler()))
+
 	// Load destinations data
 	err := destinations.Load()
 	if err != nil {
@@ -202,13 +210,13 @@ func main() {
 	log.Println("Starting Odigos UI...")
 	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
 
-	go func () {
+	go func() {
 		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
 		if err != nil {
 			log.Fatalf("Error starting server: %s", err)
 		}
-	} ()
+	}()
 
-	<- ch
+	<-ch
 	log.Println("Shutting down Odigos UI...")
 }

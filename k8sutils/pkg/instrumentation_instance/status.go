@@ -86,18 +86,19 @@ func newInstrumentationInstanceStatus(options ...InstrumentationInstanceOption) 
 	}
 }
 
-func instrumentationInstanceName(owner client.Object, pid int) string {
+func InstrumentationInstanceName(owner client.Object, pid int) string {
 	return fmt.Sprintf("%s-%d", owner.GetName(), pid)
 }
 
 func PersistInstrumentationInstanceStatus(ctx context.Context, owner client.Object, kubeClient client.Client, instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
+	instrumentationInstanceName := InstrumentationInstanceName(owner, pid)
 	updatedInstance := &odigosv1.InstrumentationInstance{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "odigos.io/v1alpha1",
 			Kind:       "InstrumentationInstance",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instrumentationInstanceName(owner, pid),
+			Name:      instrumentationInstanceName,
 			Namespace: owner.GetNamespace(),
 			Labels: map[string]string{
 				consts.InstrumentedAppNameLabel: instrumentedAppName,
@@ -111,6 +112,10 @@ func PersistInstrumentationInstanceStatus(ctx context.Context, owner client.Obje
 
 	if err = kubeClient.Create(ctx, updatedInstance); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
+			return err
+		}
+		err := kubeClient.Get(ctx, client.ObjectKeyFromObject(updatedInstance), updatedInstance)
+		if err != nil {
 			return err
 		}
 	}
