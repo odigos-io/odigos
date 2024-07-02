@@ -10,13 +10,15 @@ import (
 )
 
 type Config struct {
-	Rules []Rule `mapstructure:"rules"`
+	GlobalRules   []Rule `mapstructure:"global_rules,omitempty"`
+	ServiceRules  []Rule `mapstructure:"service_rules,omitempty"`
+	EndpointRules []Rule `mapstructure:"endpoint_rules,omitempty"`
 }
 
 var _ component.Config = (*Config)(nil)
 
 func (cfg *Config) Validate() error {
-	for _, rule := range cfg.Rules {
+	for _, rule := range cfg.EndpointRules { // TODO, validate all rules [Global/Service]
 		if err := rule.Validate(); err != nil {
 			return err
 		}
@@ -43,7 +45,16 @@ func (r *Rule) Validate() error {
 
 	switch r.Type {
 	case "http_latency":
-		var details sampling.TraceLatencyRule
+		var details sampling.HttpRouteLatencyRule
+		if err := mapstructure.Decode(r.RuleDetails, &details); err != nil {
+			return err
+		}
+		if err := details.Validate(); err != nil {
+			return err
+		}
+		r.RuleDetails = &details
+	case "error":
+		var details sampling.ErrorRule
 		if err := mapstructure.Decode(r.RuleDetails, &details); err != nil {
 			return err
 		}
