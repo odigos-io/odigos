@@ -38,7 +38,7 @@ func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, mem
 }
 
 func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer) (string, error, *ResourceStatuses) {
-	configers, err := loadConfigers()
+	configers, err := LoadConfigers()
 	if err != nil {
 		return "", err, nil
 	}
@@ -147,7 +147,7 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 	}, []string{memoryLimiterProcessorName, "batch", "resource/odigos-version"}
 }
 
-func loadConfigers() (map[common.DestinationType]Configer, error) {
+func LoadConfigers() (map[common.DestinationType]Configer, error) {
 	configers := map[common.DestinationType]Configer{}
 	for _, configer := range availableConfigers {
 		if _, exists := configers[configer.DestType()]; exists {
