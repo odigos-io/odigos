@@ -35,6 +35,14 @@ func (c *FakeActionsV1alpha1) DeleteAttributes(namespace string) v1alpha1.Delete
 	return &FakeDeleteAttributes{c, namespace}
 }
 
+func (c *FakeActionsV1alpha1) ErrorSamplers(namespace string) v1alpha1.ErrorSamplerInterface {
+	return &FakeErrorSamplers{c, namespace}
+}
+
+func (c *FakeActionsV1alpha1) LatencySamplers(namespace string) v1alpha1.LatencySamplerInterface {
+	return &FakeLatencySamplers{c, namespace}
+}
+
 func (c *FakeActionsV1alpha1) ProbabilisticSamplers(namespace string) v1alpha1.ProbabilisticSamplerInterface {
 	return &FakeProbabilisticSamplers{c, namespace}
 }
