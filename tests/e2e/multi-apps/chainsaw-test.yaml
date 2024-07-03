@@ -8,8 +8,10 @@ spec:
   steps:
   - name: Prepare destination
     try:
-    - apply:
-        file: 00-install-collector.yaml
+    - script:
+        content: |
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm install e2e-tests grafana/tempo -n traces --create-namespace
     - assert:
         file: 00-assert.yaml
   - name: Install Odigos
@@ -50,7 +52,7 @@ spec:
         file: 04-add-destination.yaml
     - assert:
         file: 04-assert.yaml
-  - name: Validate Trace Data
+  - name: Generate Traffic
     try:
       - create:
           file: 05-generate-traffic.yaml
@@ -60,20 +62,8 @@ spec:
       # We sleep to allow traces to be collected
       - sleep:
           duration: 10s
-      - script:
-          content: |
-            kubectl cp -c filecp traces/test-opentelemetry-collector-0:tmp/trace.json ./bats/traces-orig.json
-            bats ./bats/verify.bats
-#      description: sample assert operation
-#    - description: sample error operation
-#      error:
-#        file: error.yaml
-#    - delete:
-#        ref:
-#          apiVersion: v1
-#          kind: Pod
-#          name: foo
-#      description: sample delete operation
-#    - description: sample script operation
-#      script:
-#        content: echo "test namespace = $NAMESPACE"
+  - name: Verify Trace - Context Propagation
+    try:
+    - script:
+        content: |
+          ../../common/traceql_runner.sh tracesql/context-propagation.yaml

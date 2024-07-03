@@ -3,23 +3,11 @@
 # Ensure the script fails if any command fails
 set -e
 
-# Function to perform the port-forward
-function start_port_forward() {
-  kubectl port-forward svc/e2e-tests-tempo 3100:3100 &
-  PORT_FORWARD_PID=$!
-}
-
-# Function to stop the port-forward
-function stop_port_forward() {
-  kill $PORT_FORWARD_PID
-}
-
 # Function to verify the YAML schema
 function verify_yaml_schema() {
   local file=$1
   local query=$(yq e '.query' "$file")
   local expected_count=$(yq e '.expected.count' "$file")
-  echo "query is $query and expected_count is $expected_count"
 
   if [ -z "$query" ] || [ "$expected_count" == "null" ] || [ -z "$expected_count" ]; then
     echo "Invalid YAML schema in file: $file"
@@ -27,35 +15,61 @@ function verify_yaml_schema() {
   fi
 }
 
+function urlencode() (
+  local length="${#1}"
+  for (( i = 0; i < length; i++ )); do
+    local c="${1:i:1}"
+    case $c in
+      [a-zA-Z0-9.~_-]) printf "$c" ;;
+      *) printf '%%%02X' "'$c" ;;
+    esac
+  done
+)
+
 # Function to process a YAML file
 function process_yaml_file() {
+  local dest_namespace="traces"
+  local dest_service="e2e-tests-tempo"
+  local dest_port="tempo-prom-metrics"
+
   local file=$1
-  query=$(yq e -o=json '.query' "$file")
+  file_name=$(basename "$file")
+  echo "Running test $file_name"
+  query=$(yq '.query' "$file")
+  encoded_query=$(urlencode "$query")
   expected_count=$(yq e '.expected.count' "$file")
-
-  # Perform the HTTP request
-  response=$(curl -s -X POST "http://localhost:3100/api/traces" -H "Content-Type: application/json" -d "$query")
-
-  # Extract the actual count from the response (adjust this based on the actual structure of your response)
-  actual_count=$(echo $response | jq '.data | length')
-
-  # Compare the actual count with the expected count
-  if [ "$actual_count" -ne "$expected_count" ]; then
-    echo "Test failed for $file: expected $expected_count but got $actual_count"
+  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search\?q=$encoded_query)
+  num_of_traces=$(echo $response | jq '.traces | length')
+  # if num_of_traces not equal to expected_count
+  if [ "$num_of_traces" -ne "$expected_count" ]; then
+    echo "Test FAILED: expected $expected_count got $num_of_traces"
     return 1
   else
-    echo "Test passed for $file"
+    echo "Test PASSED"
   fi
+#  # Perform the HTTP request
+#  response=$(curl -G -s "http://localhost:3100/api/search")
+#  echo "$response"
+#  # Extract the actual count from the response (adjust this based on the actual structure of your response)
+#  actual_count=$(echo $response | jq '.data | length')
+#
+#  # Compare the actual count with the expected count
+#  if [ "$actual_count" -ne "$expected_count" ]; then
+#    echo "Test failed for $file: expected $expected_count but got $actual_count"
+#    return 1
+#  else
+#    echo "Test passed for $file"
+#  fi
 }
 
 # Check if the first argument is provided
 if [ -z "$1" ]; then
-  echo "Usage: $0 <directory>"
+  echo "Usage: $0 <traceql-test-file>"
   exit 1
 fi
 
-# Directory containing the YAML files
-DIRECTORY=$1
+# Test file path
+TEST_FILE=$1
 
 # Check if yq is installed
 if ! command -v yq &> /dev/null; then
@@ -63,17 +77,5 @@ if ! command -v yq &> /dev/null; then
   exit 1
 fi
 
-# Start port-forwarding
-start_port_forward
-
-# Trap to ensure the port-forward is stopped on script exit
-trap stop_port_forward EXIT
-
-# Process each YAML file in the directory
-for file in "$DIRECTORY"/*.yaml; do
-  echo "Processing $file"
-  verify_yaml_schema $file
-  process_yaml_file $file
-done
-
-echo "All tests passed."
+verify_yaml_schema $TEST_FILE
+process_yaml_file $TEST_FILE
