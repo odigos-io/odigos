@@ -1,0 +1,7 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: This test checks that the first span of /buy trace persisted in the destination.
+query: |
+  { resource.service.name = "frontend" && span.http.request.method = "POST" && span.http.route = "/buy" && span:kind = server }
+expected:
+  count: 1
