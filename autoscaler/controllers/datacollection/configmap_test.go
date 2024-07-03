@@ -149,7 +149,7 @@ func TestGetConfigMapData(t *testing.T) {
 				},
 			},
 		},
-	)
+		false)
 
 	assert.Equal(t, err, nil)
 	assert.Equal(t, want, got)

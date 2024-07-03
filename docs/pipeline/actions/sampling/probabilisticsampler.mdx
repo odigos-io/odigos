@@ -63,5 +63,6 @@ The full list of options available for the "ProbabilisticSampler" action are:
 ### Notes
 
 - Currently supports only traces.
-- The action will arbitrarily filter out traces regardless of their properties, potentially dropping important traces.
+- The action will arbitrarily filter out traces regardless of their properties, potentially dropping important traces, even if they were sampled by other samplers.
 - All spans in a trace will be either entirely dropped or entirely sampled.
+- The action will be positioned after all other sampling actions,
