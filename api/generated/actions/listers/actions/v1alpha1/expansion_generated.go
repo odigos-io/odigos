@@ -33,21 +33,13 @@ type DeleteAttributeListerExpansion interface{}
 // DeleteAttributeNamespaceLister.
 type DeleteAttributeNamespaceListerExpansion interface{}
 
-// ErrorSamplerListerExpansion allows custom methods to be added to
-// ErrorSamplerLister.
-type ErrorSamplerListerExpansion interface{}
+// PiiMaskingListerExpansion allows custom methods to be added to
+// PiiMaskingLister.
+type PiiMaskingListerExpansion interface{}
 
-// ErrorSamplerNamespaceListerExpansion allows custom methods to be added to
-// ErrorSamplerNamespaceLister.
-type ErrorSamplerNamespaceListerExpansion interface{}
-
-// LatencySamplerListerExpansion allows custom methods to be added to
-// LatencySamplerLister.
-type LatencySamplerListerExpansion interface{}
-
-// LatencySamplerNamespaceListerExpansion allows custom methods to be added to
-// LatencySamplerNamespaceLister.
-type LatencySamplerNamespaceListerExpansion interface{}
+// PiiMaskingNamespaceListerExpansion allows custom methods to be added to
+// PiiMaskingNamespaceLister.
+type PiiMaskingNamespaceListerExpansion interface{}
 
 // ProbabilisticSamplerListerExpansion allows custom methods to be added to
 // ProbabilisticSamplerLister.

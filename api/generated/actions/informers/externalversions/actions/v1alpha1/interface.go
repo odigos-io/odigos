@@ -27,6 +27,8 @@ type Interface interface {
 	AddClusterInfos() AddClusterInfoInformer
 	// DeleteAttributes returns a DeleteAttributeInformer.
 	DeleteAttributes() DeleteAttributeInformer
+	// PiiMaskings returns a PiiMaskingInformer.
+	PiiMaskings() PiiMaskingInformer
 	// ErrorSamplers returns a ErrorSamplerInformer.
 	ErrorSamplers() ErrorSamplerInformer
 	// LatencySamplers returns a LatencySamplerInformer.
@@ -56,6 +58,11 @@ func (v *version) AddClusterInfos() AddClusterInfoInformer {
 // DeleteAttributes returns a DeleteAttributeInformer.
 func (v *version) DeleteAttributes() DeleteAttributeInformer {
 	return &deleteAttributeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// PiiMaskings returns a PiiMaskingInformer.
+func (v *version) PiiMaskings() PiiMaskingInformer {
+	return &piiMaskingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // ErrorSamplers returns a ErrorSamplerInformer.

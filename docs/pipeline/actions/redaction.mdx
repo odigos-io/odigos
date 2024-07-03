@@ -1,0 +1,62 @@
+---
+title: "Redaction"
+sidebarTitle: "Redaction"
+---
+
+The "Redaction" Odigos Action masks span attribute values that match a blocked value list.
+
+### Use Cases
+
+- Prevent sensitive fields from accidentally leaking into traces
+- Ensure compliance with legal, privacy, or security requirements
+
+
+### Mechanism
+
+This action receives a list of all the attributes you want to redact.
+
+### Basic Example
+
+The basic example below shows how to add a redaction attributes with
+
+Create a file named `redaction.yaml` with the following content:
+
+```yaml
+apiVersion: actions.odigos.io/v1alpha1
+kind: Redaction
+metadata:
+  name: example-redaction
+  namespace: odigos-system
+spec:
+  actionName: "redaction-attributes"
+  blocked_values:
+        - "4[0-9]{12}(?:[0-9]{3})?" ## Visa credit card number
+        - "(5[1-5][0-9]{14})"       ## MasterCard number
+  signals:
+    - TRACES
+```
+
+Apply the action to the cluster:
+
+```bash
+kubectl apply -f redaction.yaml
+```
+
+### Full Action Options
+
+The full list of options available for the "Redaction" action are:
+
+- `blocked_values` (required): Which values of attribute do you want to redact, it is written as regex. Example - "4[0-9]{12}(?:[0-9]{3})?" is a regex for Visa credit card number.
+
+- `signals` (required): An array with the signals that the processor will act on (`TRACES`).
+
+- `actionName` (optional): Allows you to attach a meaningful name to the action for convenience. Odigos does not use or assume any meaning from this field.
+
+- `notes` (optional): A free-form text field that allows you to attach notes to the action for convenience. Odigos does not use or assume any meaning from this field.
+
+- `disabled` (optional): A boolean field that allows you to disable the action. When set to `true`, the action will not be executed. The default value is `false`.
+
+### Notes
+
+- Currently supports only traces.
+- All Attributes in the trace will be masked.

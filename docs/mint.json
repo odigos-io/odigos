@@ -115,6 +115,7 @@
                 "pipeline/actions/attributes/rename-attribute"
               ]
             },
+            "pipeline/actions/redaction",
             "pipeline/actions/crd",
             "pipeline/actions/troubleshooting"
           ]
