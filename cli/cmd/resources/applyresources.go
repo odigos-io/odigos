@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/log"
+	"github.com/odigos-io/odigos/common/consts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -41,5 +42,5 @@ func DeleteOldOdigosSystemObjects(ctx context.Context, client *kube.Client, ns s
 }
 
 func GetCurrentConfig(ctx context.Context, client *kube.Client, ns string) (*v1alpha1.OdigosConfiguration, error) {
-	return client.OdigosClient.OdigosConfigurations(ns).Get(ctx, OdigosConfigName, metav1.GetOptions{})
+	return client.OdigosClient.OdigosConfigurations(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
 }

@@ -28,9 +28,7 @@ const IMAGE_STYLE: React.CSSProperties = {
 };
 
 export function ManageSourceHeader({ source }: { source: ManagedSource }) {
-  const mainLanguage = getMainContainerLanguage(
-    source?.instrumented_application_details?.languages || undefined
-  );
+  const mainLanguage = getMainContainerLanguage(source);
   const imageUrl = LANGUAGES_LOGOS[mainLanguage];
   return (
     <ManageSourceHeaderWrapper>

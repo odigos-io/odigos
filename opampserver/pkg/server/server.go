@@ -1,0 +1,161 @@
+package server
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+
+	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/opampserver/pkg/deviceid"
+	"github.com/odigos-io/odigos/opampserver/protobufs"
+	"google.golang.org/protobuf/proto"
+	"k8s.io/client-go/kubernetes"
+	ctrl "sigs.k8s.io/controller-runtime"
+)
+
+func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClient *kubernetes.Clientset, nodeName string) error {
+
+	listenEndpoint := fmt.Sprintf("0.0.0.0:%d", OpAmpServerDefaultPort)
+	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
+
+	deviceidCache, err := deviceid.NewDeviceIdCache(logger, kubeClient)
+	if err != nil {
+		return err
+	}
+
+	connectionCache := NewConnectionsCache()
+
+	handlers := &ConnectionHandlers{
+		logger:        logger,
+		deviceIdCache: deviceidCache,
+		kubeclient:    mgr.GetClient(),
+		scheme:        mgr.GetScheme(),
+		nodeName:      nodeName,
+	}
+
+	http.HandleFunc("POST /v1/opamp", func(w http.ResponseWriter, req *http.Request) {
+
+		// we only support plain http connections.
+		// this check will filter out WS connections if they arrive for any reasons.
+		if req.Header.Get("Content-Type") != "application/x-protobuf" {
+			http.Error(w, "Content-Type header is not application/x-protobuf", http.StatusBadRequest)
+			return
+		}
+
+		bytes, err := io.ReadAll(req.Body)
+		if err != nil {
+			http.Error(w, "Failed to read request body", http.StatusBadRequest)
+			return
+		}
+		// assume the data is not compressed, which is not relevant and not supported in odigos
+
+		// Decode the message as a Protobuf message.
+		var opampRequest protobufs.AgentToServer
+		err = proto.Unmarshal(bytes, &opampRequest)
+		if err != nil {
+			logger.Error(err, "Cannot decode opamp message from HTTP Body")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		deviceId := req.Header.Get("X-Odigos-DeviceId")
+		if deviceId == "" {
+			logger.Error(err, "X-Odigos-DeviceId header is missing")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		var opampResponse *protobufs.ServerToAgent
+		connectionInfo, exists := connectionCache.GetConnection(deviceId)
+		if !exists {
+			connectionInfo, opampResponse, err = handlers.OnNewConnection(ctx, deviceId, &opampRequest)
+			if err != nil {
+				logger.Error(err, "Failed to process new connection")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			if connectionInfo != nil {
+				connectionCache.AddConnection(deviceId, connectionInfo)
+			}
+		} else {
+
+			if opampRequest.AgentDisconnect != nil {
+				handlers.OnConnectionClosed(ctx, connectionInfo)
+				connectionCache.RemoveConnection(deviceId)
+			}
+
+			opampResponse, err = handlers.OnAgentToServerMessage(ctx, &opampRequest, connectionInfo)
+
+			if err != nil {
+				logger.Error(err, "Failed to process opamp message")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+
+		err = handlers.PersistInstrumentationDeviceStatus(ctx, &opampRequest, connectionInfo)
+		if err != nil {
+			logger.Error(err, "Failed to persist instrumentation device status")
+			// still return the opamp response
+		}
+
+		if opampResponse == nil {
+			logger.Error(err, "No response from opamp handler")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// keep record in memory of last message time, to detect stale connections
+		connectionCache.RecordMessageTime(deviceId)
+
+		opampResponse.InstanceUid = opampRequest.InstanceUid
+
+		// Marshal the response.
+		bytes, err = proto.Marshal(opampResponse)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Send the response.
+		w.Header().Set("Content-Type", "application/x-protobuf")
+		_, err = w.Write(bytes)
+
+		if err != nil {
+			logger.Error(err, "Failed to write response")
+		}
+	})
+
+	server := &http.Server{Addr: listenEndpoint, Handler: nil}
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Error(err, "Error starting opamp server")
+		}
+	}()
+
+	go func() {
+		ticker := time.NewTicker(HeartbeatInterval)
+		defer ticker.Stop() // Clean up when done
+		for {
+			select {
+			case <-ctx.Done():
+				if err := server.Shutdown(ctx); err != nil {
+					logger.Error(err, "Failed to shut down the http server for incoming connections")
+				}
+				logger.Info("Shutting down live connections timeout monitor")
+				return
+			case <-ticker.C:
+				// Clean up stale connections
+				deadConnections := connectionCache.CleanupStaleConnections()
+				for _, conn := range deadConnections {
+					handlers.OnConnectionClosed(ctx, &conn)
+				}
+			}
+		}
+	}()
+
+	return nil
+}
