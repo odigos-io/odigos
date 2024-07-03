@@ -74,6 +74,7 @@ spec:
     catch:
     - podLogs:
         name: odiglet
+        namespace: odigos-system
   - name: Verify Trace - Context Propagation
     try:
     - script:
@@ -82,3 +83,4 @@ spec:
     catch:
     - podLogs:
         name: odiglet
+        namespace: odigos-system
