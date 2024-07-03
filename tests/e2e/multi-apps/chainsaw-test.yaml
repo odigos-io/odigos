@@ -68,5 +68,5 @@ spec:
         content: |
           ../../common/traceql_runner.sh tracesql/context-propagation.yaml
     catch:
-      podLogs:
-        namespace: odigos-system
+    - podLogs:
+        name: odiglet
