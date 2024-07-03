@@ -28,3 +28,12 @@ func GetClientConfig(kc string) (*rest.Config, error) {
 func IsRunningInKubernetes() bool {
 	return os.Getenv("KUBERNETES_SERVICE_HOST") != ""
 }
+
+func GetCurrentContext(kc string) string {
+	config, err := clientcmd.LoadFromFile(kc)
+	if err != nil {
+		return ""
+	}
+
+	return config.CurrentContext
+}
