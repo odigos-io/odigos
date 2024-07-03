@@ -38,7 +38,6 @@ metadata:
   namespace: odigos-system
 spec:
   actionName: "example-latencysampler-action"
-  disabled: false
   endpoints_filters:
   -   minimum_latency_threshold: 1000
       fallback_sampling_ratio: 20
@@ -64,7 +63,7 @@ The full list of options available for the "LatencySampler" action are:
 
   - `service_name` (required): The rule applies to a specific service name. Only traces originating from this service's root span will be considered.
 
-  - `http_route` (required): The specific HTTP path prefix to match for sampling. Only traces with paths beginning with this prefix will be considered. For instance, configuring /buy will also match /buy/product.
+  - `http_route` (required): The specific HTTP route prefix to match for sampling. Only traces with routes beginning with this prefix will be considered. For instance, configuring `/buy` will also match `/buy/product`.
 
   - `fallback_sampling_ratio` (required): specifies the percentage of traces that meet the service/http_route filter but fall below the threshold that you still want to retain. For example, if a rule is set for service A and http_route B with a minimum latency threshold of 1 second, you might still want to keep some traces below this threshold. Setting the ratio to 20% ensures that 20% of these traces will be retained.
 

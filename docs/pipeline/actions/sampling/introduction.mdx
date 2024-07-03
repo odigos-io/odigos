@@ -2,8 +2,11 @@
 title: "Sampling Actions Introduction"
 sidebarTitle: "Introduction"
 ---
+> **Note:**
+> This feature is in beta. It may be subject to changes and improvements based on user feedback.
 
-Sampling Actions allow you to configure various types of sampling methods before exporting them to your Odigos Destinations.
+
+Sampling Actions allow you to configure various types of sampling methods before exporting traces to your Odigos Destinations.
 
 
 ### Actions Scope Categories
@@ -21,9 +24,9 @@ When multiple sampling actions are configured, the most specific rule applies. F
 
 - If two rules are configured: an Endpoint action for `Service: Frontend, Endpoint: /buy` with a latency threshold of 1 second and a fallback of 50%, and a Global ErrorSampler with a fallback of 20%:
 
-  1. Traces from `Frontend /buy` below 1 second latency will fall under the Endpoint action's fallback and retain 50% of these traces.
-  2. Traces from `Frontend /buy` above 1 second latency will always be retained.
-  3. Error traces will always be sampled due to the Global ErrorSampler.
+  1. Error traces will always be sampled due to the Global ErrorSampler, regardless of any Service or Endpoint rule.
+  2. Traces from `Frontend /buy` below 1 second latency will fall under the Endpoint action's fallback and retain 50% of these traces.
+  3. Traces from `Frontend /buy` above 1 second latency will always be retained.
   4. Any other non-error traces that are not from `Frontend /buy` will be sampled at 20%. 
 
 Each rule ensures you get the specified sampling behavior for your conditions.
