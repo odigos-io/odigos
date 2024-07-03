@@ -59,9 +59,21 @@ spec:
       - assert:
           file: 05-assert.yaml
           timeout: 20s
-      # We sleep to allow traces to be collected
-      - sleep:
-          duration: 10s
+  - name: Wait for traces
+    try:
+    - script:
+        timeout: 60s
+        content: |
+          while true; do
+            ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
+            if [ $? -eq 0 ]; then
+              break
+            fi
+            sleep 3
+          done
+    catch:
+    - podLogs:
+        name: odiglet
   - name: Verify Trace - Context Propagation
     try:
     - script:
