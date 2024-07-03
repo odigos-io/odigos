@@ -72,17 +72,26 @@ export function useSources() {
   }, [sources]);
 
   async function upsertSources({ sectionData, onSuccess, onError }) {
-    const sourceNamesSet = new Set(
-      sources?.map((source: ManagedSource) => source.name)
+    // Create a set of unique identifiers (name + namespace) for the sources
+    const sourceIdentifiersSet = new Set(
+      sources?.map(
+        (source: ManagedSource) =>
+          `${source.name}:${source.namespace}:${source.kind}`
+      )
     );
+
     const updatedSectionData: SelectedSources = {};
 
     for (const key in sectionData) {
       const { objects, ...rest } = sectionData[key];
-      const updatedObjects = objects.map((item) => ({
-        ...item,
-        selected: item?.selected || sourceNamesSet.has(item.name),
-      }));
+      const updatedObjects = objects.map((item) => {
+        // Create a unique identifier for the current item
+        const itemIdentifier = `${item.name}:${key}:${item.kind}`;
+        return {
+          ...item,
+          selected: item?.selected || sourceIdentifiersSet.has(itemIdentifier),
+        };
+      });
 
       updatedSectionData[key] = {
         ...rest,

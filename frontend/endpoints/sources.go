@@ -28,7 +28,8 @@ type InstrumentedApplicationDetails struct {
 // this object contains only part of the source fields. It is used to display the sources in the frontend
 type ThinSource struct {
 	SourceID
-	IaDetails *InstrumentedApplicationDetails `json:"instrumented_application_details"`
+	NumberOfRunningInstances int                             `json:"number_of_running_instances"`
+	IaDetails                *InstrumentedApplicationDetails `json:"instrumented_application_details"`
 }
 
 type SourceID struct {
@@ -88,7 +89,8 @@ func GetSources(c *gin.Context, odigosns string) {
 		if item.nsItem.InstrumentationEffective {
 			id := SourceID{Namespace: item.namespace, Kind: string(item.nsItem.Kind), Name: item.nsItem.Name}
 			effectiveInstrumentedSources[id] = ThinSource{
-				SourceID: id,
+				NumberOfRunningInstances: item.nsItem.Instances,
+				SourceID:                 id,
 			}
 		}
 	}
@@ -119,7 +121,7 @@ func GetSource(c *gin.Context) {
 	name := c.Param("name")
 	k8sObjectName := workload.GetRuntimeObjectName(name, kind)
 
-	owner := getK8sObject(c, ns, kind, name)
+	owner, numberOfRunningInstances := getWorkloadObject(c, ns, kind, name)
 	if owner == nil {
 		c.JSON(500, gin.H{
 			"message": "could not find owner of instrumented application",
@@ -138,6 +140,7 @@ func GetSource(c *gin.Context) {
 			Kind:      kind,
 			Name:      name,
 		},
+		NumberOfRunningInstances: numberOfRunningInstances,
 	}
 
 	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(c, k8sObjectName, metav1.GetOptions{})
@@ -319,28 +322,28 @@ func addHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alp
 	return nil
 }
 
-func getK8sObject(c *gin.Context, ns string, kind string, name string) metav1.Object {
+func getWorkloadObject(c *gin.Context, ns string, kind string, name string) (metav1.Object, int) {
 	switch kind {
 	case "Deployment":
 		deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(c, name, metav1.GetOptions{})
 		if err != nil {
-			return nil
+			return nil, 0
 		}
-		return deployment
+		return deployment, int(deployment.Status.AvailableReplicas)
 	case "StatefulSet":
 		statefulSet, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(c, name, metav1.GetOptions{})
 		if err != nil {
-			return nil
+			return nil, 0
 		}
-		return statefulSet
+		return statefulSet, int(statefulSet.Status.ReadyReplicas)
 	case "DaemonSet":
 		daemonSet, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(c, name, metav1.GetOptions{})
 		if err != nil {
-			return nil
+			return nil, 0
 		}
-		return daemonSet
+		return daemonSet, int(daemonSet.Status.NumberReady)
 	default:
-		return nil
+		return nil, 0
 	}
 }
 

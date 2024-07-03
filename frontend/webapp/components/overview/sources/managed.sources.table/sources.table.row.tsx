@@ -105,9 +105,7 @@ export function SourcesTableRow({
   onSelectedCheckboxChange: (id: string) => void;
   onRowClick: (source: ManagedSource) => void;
 }) {
-  const workloadProgrammingLanguage = getMainContainerLanguage(
-    item?.instrumented_application_details?.languages || undefined
-  );
+  const workloadProgrammingLanguage = getMainContainerLanguage(item);
 
   const containerName =
     item?.instrumented_application_details?.languages?.[0].container_name || '';

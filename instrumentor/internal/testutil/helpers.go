@@ -1,7 +1,11 @@
 package testutil
 
 import (
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -27,4 +31,37 @@ func SetReportedNameAnnotation[W client.Object](obj W, reportedName string) W {
 	copy := obj.DeepCopyObject().(W)
 	copy.SetAnnotations(map[string]string{consts.OdigosReportedNameAnnotation: reportedName})
 	return copy
+}
+
+func SetInstrumentedApplicationContainer(obj *odigosv1.InstrumentedApplication, envName *string, envValue *string, language common.ProgrammingLanguage) *odigosv1.InstrumentedApplication {
+	copy := obj.DeepCopy()
+	copy.Spec.RuntimeDetails[0] = odigosv1.RuntimeDetailsByContainer{
+		ContainerName: copy.Spec.RuntimeDetails[0].ContainerName,
+		Language:      language,
+	}
+
+	if envName != nil && envValue != nil {
+		copy.Spec.RuntimeDetails[0].EnvVars = []odigosv1.EnvVar{{Name: *envName, Value: *envValue}}
+	}
+
+	return copy
+}
+
+func SetDeploymentContainerEnv(obj *appsv1.Deployment, envName string, envValue string) *appsv1.Deployment {
+	copy := obj.DeepCopy()
+	envVar := corev1.EnvVar{Name: envName, Value: envValue}
+	if len(copy.Spec.Template.Spec.Containers[0].Env) == 0 {
+		copy.Spec.Template.Spec.Containers[0].Env = append(copy.Spec.Template.Spec.Containers[0].Env, envVar)
+	} else {
+		copy.Spec.Template.Spec.Containers[0].Env[0] = envVar
+	}
+
+	return copy
+}
+
+func IsDeploymentSingleContainerSingleEnv(obj *appsv1.Deployment, envName string, envValue string) bool {
+	return len(obj.Spec.Template.Spec.Containers) == 1 &&
+		len(obj.Spec.Template.Spec.Containers[0].Env) == 1 &&
+		obj.Spec.Template.Spec.Containers[0].Env[0].Name == envName &&
+		obj.Spec.Template.Spec.Containers[0].Env[0].Value == envValue
 }

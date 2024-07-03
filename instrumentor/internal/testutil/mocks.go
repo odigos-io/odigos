@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -21,6 +22,14 @@ const (
 	mockDaemonSetName   = "test-daemonset"
 	mockStatefulSetName = "test-statefulset"
 )
+
+func NewOdigosSystemNamespace() *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "odigos-system",
+		},
+	}
+}
 
 func NewMockNamespace() *corev1.Namespace {
 	name := generateUUIDNamespace(mockNamespaceBase)
@@ -135,6 +144,33 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
 					ContainerName: "test",
 					Language:      common.GoProgrammingLanguage,
 				},
+			},
+		},
+	}
+}
+
+func NewMockDataCollection() *odigosv1.CollectorsGroup {
+	return &odigosv1.CollectorsGroup{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-data-collection",
+			Namespace: consts.DefaultOdigosNamespace,
+		},
+		Spec: odigosv1.CollectorsGroupSpec{
+			Role: odigosv1.CollectorsGroupRoleNodeCollector,
+		},
+	}
+}
+
+func NewMockOdigosConfig() *odigosv1.OdigosConfiguration {
+	return &odigosv1.OdigosConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.OdigosConfigurationName,
+			Namespace: consts.DefaultOdigosNamespace,
+		},
+		Spec: odigosv1.OdigosConfigurationSpec{
+			DefaultSDKs: map[common.ProgrammingLanguage]common.OtelSdk{
+				common.PythonProgrammingLanguage: common.OtelSdkNativeCommunity,
+				common.GoProgrammingLanguage:     common.OtelSdkNativeCommunity,
 			},
 		},
 	}

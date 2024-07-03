@@ -20,6 +20,15 @@ import (
 	"flag"
 	"os"
 
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/odigos-io/odigos/common/consts"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/labels"
+
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/go-logr/zapr"
@@ -84,6 +93,7 @@ func main() {
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
 
+	instrumentedSelector := labels.Set{consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled}.AsSelector()
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -92,6 +102,23 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "201bdfa0.odigos.io",
+		Cache: cache.Options{
+			DefaultTransform: cache.TransformStripManagedFields(),
+			ByObject: map[client.Object]cache.ByObject{
+				&appsv1.Deployment{}: {
+					Label: instrumentedSelector,
+				},
+				&appsv1.StatefulSet{}: {
+					Label: instrumentedSelector,
+				},
+				&appsv1.DaemonSet{}: {
+					Label: instrumentedSelector,
+				},
+				&corev1.Namespace{}: {
+					Label: instrumentedSelector,
+				},
+			},
+		},
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
