@@ -29,11 +29,32 @@ func IsRunningInKubernetes() bool {
 	return os.Getenv("KUBERNETES_SERVICE_HOST") != ""
 }
 
-func GetCurrentContext(kc string) string {
+type ClusterDetails struct {
+	CurrentContext string
+	ClusterName    string
+	ServerEndpoint string
+}
+
+func GetCurrentClusterDetails(kc string) ClusterDetails {
 	config, err := clientcmd.LoadFromFile(kc)
 	if err != nil {
-		return ""
+		return ClusterDetails{}
 	}
 
-	return config.CurrentContext
+	ctx := config.CurrentContext
+	cluster := ""
+	if val, ok := config.Contexts[ctx]; ok {
+		cluster = val.Cluster
+	}
+
+	server := ""
+	if val, ok := config.Clusters[cluster]; ok {
+		server = val.Server
+	}
+
+	return ClusterDetails{
+		CurrentContext: ctx,
+		ClusterName:    cluster,
+		ServerEndpoint: server,
+	}
 }

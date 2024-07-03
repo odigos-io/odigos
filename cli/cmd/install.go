@@ -88,8 +88,12 @@ This command will install k8s components that will auto-instrument your applicat
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
 		kc := cmd.Flag("kubeconfig").Value.String()
-		kubeKind, kubeVersion := autodetect.KubernetesClusterProduct(kc, client)
+		kubeKind, kubeVersion := autodetect.KubernetesClusterProduct(ctx, kc, client)
 		if kubeKind != autodetect.KindUnknown {
+			autodetect.CurrentKubernetesVersion = autodetect.KubernetesVersion{
+				Kind:    kubeKind,
+				Version: kubeVersion,
+			}
 			fmt.Printf("Detected Kubernetes: %s version %s\n", kubeKind, kubeVersion)
 		} else {
 			fmt.Println("Unknown Kubernetes cluster detected, proceeding with installation")

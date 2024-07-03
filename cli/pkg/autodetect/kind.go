@@ -1,6 +1,7 @@
 package autodetect
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -9,7 +10,14 @@ import (
 
 type Kind string
 
-var availableDetectors = []Detector{&gkeDetector{}}
+var availableDetectors = []Detector{&kindDetector{}, &eksDetector{}, &gkeDetector{}, &minikubeDetector{}, &k3sDetector{}, &openshiftDetector{}, &aksDetector{}}
+
+type KubernetesVersion struct {
+	Kind    Kind
+	Version string
+}
+
+var CurrentKubernetesVersion KubernetesVersion
 
 const (
 	KindUnknown   Kind = "Unknown"
@@ -18,27 +26,23 @@ const (
 	KindEKS       Kind = "EKS"
 	KindGKE       Kind = "GKE"
 	KindAKS       Kind = "AKS"
-	KindDocker    Kind = "Docker"
 	KindK3s       Kind = "k3s"
 	KindOpenShift Kind = "Openshift"
 )
 
 // DetectionArguments are the arguments passed to the Detect function
 type DetectionArguments struct {
-	// CurrentContext is the current kubectl context
-	CurrentContext string
-	// ServerVersion is the Kubernetes server version - this is used by multiple detectors
+	k8sutils.ClusterDetails
 	ServerVersion string
-	// KubeClient is a Kubernetes client
-	KubeClient *kube.Client
+	KubeClient    *kube.Client
 }
 
 type Detector interface {
-	Detect(args DetectionArguments) (Kind, error)
+	Detect(ctx context.Context, args DetectionArguments) (Kind, error)
 }
 
-func KubernetesClusterProduct(kc string, client *kube.Client) (Kind, string) {
-	currentCtx := k8sutils.GetCurrentContext(kc)
+func KubernetesClusterProduct(ctx context.Context, kc string, client *kube.Client) (Kind, string) {
+	details := k8sutils.GetCurrentClusterDetails(kc)
 	serverVersion, err := client.Discovery().ServerVersion()
 	kubeVersion := fmt.Sprintf("%s.%s", serverVersion.Major, serverVersion.Minor)
 	gitServerVersion := ""
@@ -47,13 +51,13 @@ func KubernetesClusterProduct(kc string, client *kube.Client) (Kind, string) {
 	}
 
 	args := DetectionArguments{
-		CurrentContext: currentCtx,
+		ClusterDetails: details,
 		ServerVersion:  gitServerVersion,
 		KubeClient:     client,
 	}
 
 	for _, detector := range availableDetectors {
-		kind, err := detector.Detect(args)
+		kind, err := detector.Detect(ctx, args)
 		if err != nil {
 			continue
 		}
