@@ -29,7 +29,7 @@ func (sp *samplingProcessor) processTraces(ctx context.Context, td ptrace.Traces
 				globalUnsatisfiedRatio = max(globalUnsatisfiedRatio, r.FallbackSamplingRatio)
 			}
 		default:
-			sp.logger.Error("Unknown rule details type", zap.String("rule", rule.Name))
+			sp.logger.Error("Unknown global rule details type", zap.String("rule", rule.Name))
 		}
 	}
 
@@ -48,7 +48,7 @@ func (sp *samplingProcessor) processTraces(ctx context.Context, td ptrace.Traces
 				}
 			}
 		default:
-			sp.logger.Error("Unknown rule details type", zap.String("rule", rule.Name))
+			sp.logger.Error("Unknown endpoint rule details type", zap.String("rule", rule.Name))
 		}
 	}
 
