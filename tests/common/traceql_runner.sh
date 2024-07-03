@@ -43,6 +43,7 @@ function process_yaml_file() {
   # if num_of_traces not equal to expected_count
   if [ "$num_of_traces" -ne "$expected_count" ]; then
     echo "Test FAILED: expected $expected_count got $num_of_traces"
+    echo "$response" | jq
     return 1
   else
     echo "Test PASSED"
