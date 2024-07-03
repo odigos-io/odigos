@@ -1,12 +1,12 @@
 apiVersion: odigos.io/v1alpha1
 kind: Destination
 metadata:
-  name: odigos.io.dest.jaeger-123123
+  name: odigos.io.dest.tempo-123123
   namespace: odigos-system
 spec:
   data:
-    JAEGER_URL: test-opentelemetry-collector.traces:4317
-  destinationName: collector
+    TEMPO_URL: e2e-tests-tempo.traces:4317
+  destinationName: e2e-tests
   signals:
     - TRACES
-  type: jaeger
+  type: tempo
