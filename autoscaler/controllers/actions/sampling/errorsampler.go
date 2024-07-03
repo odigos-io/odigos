@@ -45,7 +45,7 @@ func (h *ErrorSamplerHandler) GetRuleConfig(action metav1.Object) []Rule {
 	return []Rule{
 		{
 			Name:     "error-rule",
-			RuleType: "error",
+			RuleType: ErrorRule,
 			Details:  errorDetails,
 		},
 	}

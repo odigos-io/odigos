@@ -9,6 +9,13 @@ type SamplingConfig struct {
 // Rule representes a rule in odigossampling processor rule
 type Rule struct {
 	Name     string      `json:"name"`
-	RuleType string      `json:"type"`
+	RuleType RuleType    `json:"type"`
 	Details  RuleDetails `json:"rule_details"`
 }
+
+type RuleType string
+
+const (
+	LatencyRule RuleType = "http_latency"
+	ErrorRule   RuleType = "error"
+)

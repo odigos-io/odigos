@@ -59,7 +59,7 @@ func (h *LatencySamplerHandler) GetRuleConfig(action metav1.Object) []Rule {
 
 		actionRules = append(actionRules, Rule{
 			Name:     fmt.Sprintf("latency-%s-%s", latencyDetails.ServiceName, latencyDetails.HttpRoute),
-			RuleType: "http_latency",
+			RuleType: LatencyRule,
 			Details:  latencyDetails,
 		})
 	}
