@@ -47,16 +47,18 @@ spec:
                 type: boolean
               notes:
                 type: string
-              sensitiveDataTypes:
+              piiCategoryConfigurations:
                 items:
                   properties:
                     mask:
                       type: boolean
-                    sensitiveDataType:
+                    piiCategory:
+                      enum:
+                      - CREDIT_CARD
                       type: string
                   required:
                   - mask
-                  - sensitiveDataType
+                  - piiCategory
                   type: object
                 type: array
               signals:
@@ -68,7 +70,7 @@ spec:
                   type: string
                 type: array
             required:
-            - sensitiveDataTypes
+            - piiCategoryConfigurations
             - signals
             type: object
           status:

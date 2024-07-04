@@ -56,6 +56,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.LatencySamplerStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OtelAttributeWithValue"):
 		return &actionsv1alpha1.OtelAttributeWithValueApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("PiiCategoryConfiguration"):
+		return &actionsv1alpha1.PiiCategoryConfigurationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("PiiMasking"):
 		return &actionsv1alpha1.PiiMaskingApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("PiiMaskingSpec"):
@@ -74,8 +76,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.RenameAttributeSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RenameAttributeStatus"):
 		return &actionsv1alpha1.RenameAttributeStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("SensitiveDataTypes"):
-		return &actionsv1alpha1.SensitiveDataTypesApplyConfiguration{}
 
 	}
 	return nil

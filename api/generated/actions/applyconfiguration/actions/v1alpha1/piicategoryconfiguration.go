@@ -21,31 +21,31 @@ import (
 	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 )
 
-// SensitiveDataTypesApplyConfiguration represents an declarative configuration of the SensitiveDataTypes type for use
+// PiiCategoryConfigurationApplyConfiguration represents an declarative configuration of the PiiCategoryConfiguration type for use
 // with apply.
-type SensitiveDataTypesApplyConfiguration struct {
-	Mask              *bool                       `json:"mask,omitempty"`
-	SensitiveDataType *v1alpha1.SensitiveDataType `json:"sensitiveDataType,omitempty"`
+type PiiCategoryConfigurationApplyConfiguration struct {
+	Mask        *bool                 `json:"mask,omitempty"`
+	PiiCategory *v1alpha1.PiiCategory `json:"piiCategory,omitempty"`
 }
 
-// SensitiveDataTypesApplyConfiguration constructs an declarative configuration of the SensitiveDataTypes type for use with
+// PiiCategoryConfigurationApplyConfiguration constructs an declarative configuration of the PiiCategoryConfiguration type for use with
 // apply.
-func SensitiveDataTypes() *SensitiveDataTypesApplyConfiguration {
-	return &SensitiveDataTypesApplyConfiguration{}
+func PiiCategoryConfiguration() *PiiCategoryConfigurationApplyConfiguration {
+	return &PiiCategoryConfigurationApplyConfiguration{}
 }
 
 // WithMask sets the Mask field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Mask field is set to the value of the last call.
-func (b *SensitiveDataTypesApplyConfiguration) WithMask(value bool) *SensitiveDataTypesApplyConfiguration {
+func (b *PiiCategoryConfigurationApplyConfiguration) WithMask(value bool) *PiiCategoryConfigurationApplyConfiguration {
 	b.Mask = &value
 	return b
 }
 
-// WithSensitiveDataType sets the SensitiveDataType field in the declarative configuration to the given value
+// WithPiiCategory sets the PiiCategory field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the SensitiveDataType field is set to the value of the last call.
-func (b *SensitiveDataTypesApplyConfiguration) WithSensitiveDataType(value v1alpha1.SensitiveDataType) *SensitiveDataTypesApplyConfiguration {
-	b.SensitiveDataType = &value
+// If called multiple times, the PiiCategory field is set to the value of the last call.
+func (b *PiiCategoryConfigurationApplyConfiguration) WithPiiCategory(value v1alpha1.PiiCategory) *PiiCategoryConfigurationApplyConfiguration {
+	b.PiiCategory = &value
 	return b
 }

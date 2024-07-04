@@ -27,12 +27,12 @@ type Interface interface {
 	AddClusterInfos() AddClusterInfoInformer
 	// DeleteAttributes returns a DeleteAttributeInformer.
 	DeleteAttributes() DeleteAttributeInformer
-	// PiiMaskings returns a PiiMaskingInformer.
-	PiiMaskings() PiiMaskingInformer
 	// ErrorSamplers returns a ErrorSamplerInformer.
 	ErrorSamplers() ErrorSamplerInformer
 	// LatencySamplers returns a LatencySamplerInformer.
 	LatencySamplers() LatencySamplerInformer
+	// PiiMaskings returns a PiiMaskingInformer.
+	PiiMaskings() PiiMaskingInformer
 	// ProbabilisticSamplers returns a ProbabilisticSamplerInformer.
 	ProbabilisticSamplers() ProbabilisticSamplerInformer
 	// RenameAttributes returns a RenameAttributeInformer.
@@ -60,11 +60,6 @@ func (v *version) DeleteAttributes() DeleteAttributeInformer {
 	return &deleteAttributeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// PiiMaskings returns a PiiMaskingInformer.
-func (v *version) PiiMaskings() PiiMaskingInformer {
-	return &piiMaskingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
 // ErrorSamplers returns a ErrorSamplerInformer.
 func (v *version) ErrorSamplers() ErrorSamplerInformer {
 	return &errorSamplerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
@@ -73,6 +68,11 @@ func (v *version) ErrorSamplers() ErrorSamplerInformer {
 // LatencySamplers returns a LatencySamplerInformer.
 func (v *version) LatencySamplers() LatencySamplerInformer {
 	return &latencySamplerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// PiiMaskings returns a PiiMaskingInformer.
+func (v *version) PiiMaskings() PiiMaskingInformer {
+	return &piiMaskingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // ProbabilisticSamplers returns a ProbabilisticSamplerInformer.

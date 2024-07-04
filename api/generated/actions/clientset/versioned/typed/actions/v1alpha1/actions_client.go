@@ -29,9 +29,9 @@ type ActionsV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AddClusterInfosGetter
 	DeleteAttributesGetter
-	PiiMaskingsGetter
 	ErrorSamplersGetter
 	LatencySamplersGetter
+	PiiMaskingsGetter
 	ProbabilisticSamplersGetter
 	RenameAttributesGetter
 }
@@ -49,16 +49,16 @@ func (c *ActionsV1alpha1Client) DeleteAttributes(namespace string) DeleteAttribu
 	return newDeleteAttributes(c, namespace)
 }
 
-func (c *ActionsV1alpha1Client) PiiMaskings(namespace string) PiiMaskingInterface {
-	return newPiiMaskings(c, namespace)
-}
-
 func (c *ActionsV1alpha1Client) ErrorSamplers(namespace string) ErrorSamplerInterface {
 	return newErrorSamplers(c, namespace)
 }
 
 func (c *ActionsV1alpha1Client) LatencySamplers(namespace string) LatencySamplerInterface {
 	return newLatencySamplers(c, namespace)
+}
+
+func (c *ActionsV1alpha1Client) PiiMaskings(namespace string) PiiMaskingInterface {
+	return newPiiMaskings(c, namespace)
 }
 
 func (c *ActionsV1alpha1Client) ProbabilisticSamplers(namespace string) ProbabilisticSamplerInterface {

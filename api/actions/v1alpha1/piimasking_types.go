@@ -21,15 +21,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type SensitiveDataType string
+// +kubebuilder:validation:Enum=CREDIT_CARD
+type PiiCategory string
 
 const (
-	CreditCardMasking SensitiveDataType = "CREDIT_CARD"
+	CreditCardMasking PiiCategory = "CREDIT_CARD"
 )
 
-type SensitiveDataTypes struct {
-	Mask              bool              `json:"mask"`
-	SensitiveDataType SensitiveDataType `json:"sensitiveDataType"`
+type PiiCategoryConfiguration struct {
+	Mask        bool        `json:"mask"`
+	PiiCategory PiiCategory `json:"piiCategory"`
 }
 
 // PiiMaskingSpec defines the desired state of PiiMasking action
@@ -39,7 +40,7 @@ type PiiMaskingSpec struct {
 	Disabled   bool                         `json:"disabled,omitempty"`
 	Signals    []common.ObservabilitySignal `json:"signals"`
 
-	SensitiveDataTypes []SensitiveDataTypes `json:"sensitiveDataTypes"`
+	PiiCategoryConfigurations []PiiCategoryConfiguration `json:"piiCategoryConfigurations"`
 }
 
 // PiiMaskingStatus defines the observed state of PiiMasking action

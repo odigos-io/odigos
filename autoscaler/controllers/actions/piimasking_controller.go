@@ -42,7 +42,7 @@ type PiiMaskingReconciler struct {
 
 func (r *PiiMaskingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling AddClusterInfo action")
+	logger.V(0).Info("Reconciling PiiMasking action")
 
 	action := &actionv1.PiiMasking{}
 	err := r.Get(ctx, req.NamespacedName, action)
@@ -124,18 +124,18 @@ type PiiMaskingConfig struct {
 
 func (r *PiiMaskingReconciler) convertToProcessor(action *actionv1.PiiMasking) (*v1.Processor, error) {
 
-	sensitiveDataTypes := action.Spec.SensitiveDataTypes
-	if !sensitiveDataTypeFieldsExist(sensitiveDataTypes) {
-		return nil, fmt.Errorf("none of the attributes are configured to be masked, no need for this processor")
+	piiCategoryConfiguration := action.Spec.PiiCategoryConfigurations
+	if !piiCategoryExists(piiCategoryConfiguration) {
+		return nil, fmt.Errorf("none of the pii categories are configured to be masked, no need for this processor")
 	}
 
-	// Allow all attributes to be traced. If configured to false it masks all the attributes
+	// Allow all attributes to be traced. If set to false it removes all attributes not in allowed_keys which is all attributes
 	config := PiiMaskingConfig{
 		AllowAllKeys: true,
 	}
 
-	for _, attr := range sensitiveDataTypes {
-		switch attr.SensitiveDataType {
+	for _, attr := range piiCategoryConfiguration {
+		switch attr.PiiCategory {
 		case actionv1.CreditCardMasking:
 			config.BlockedValues = append(config.BlockedValues, []string{
 				"4[0-9]{12}(?:[0-9]{3})?", // Visa credit card number
@@ -182,7 +182,7 @@ func (r *PiiMaskingReconciler) convertToProcessor(action *actionv1.PiiMasking) (
 
 }
 
-func sensitiveDataTypeFieldsExist(attributes []actionv1.SensitiveDataTypes) bool {
+func piiCategoryExists(attributes []actionv1.PiiCategoryConfiguration) bool {
 	for _, attr := range attributes {
 		if attr.Mask {
 			return true

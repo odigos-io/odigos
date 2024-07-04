@@ -24,11 +24,11 @@ import (
 // PiiMaskingSpecApplyConfiguration represents an declarative configuration of the PiiMaskingSpec type for use
 // with apply.
 type PiiMaskingSpecApplyConfiguration struct {
-	ActionName         *string                                `json:"actionName,omitempty"`
-	Notes              *string                                `json:"notes,omitempty"`
-	Disabled           *bool                                  `json:"disabled,omitempty"`
-	Signals            []common.ObservabilitySignal           `json:"signals,omitempty"`
-	SensitiveDataTypes []SensitiveDataTypesApplyConfiguration `json:"sensitiveDataTypes,omitempty"`
+	ActionName                *string                                      `json:"actionName,omitempty"`
+	Notes                     *string                                      `json:"notes,omitempty"`
+	Disabled                  *bool                                        `json:"disabled,omitempty"`
+	Signals                   []common.ObservabilitySignal                 `json:"signals,omitempty"`
+	PiiCategoryConfigurations []PiiCategoryConfigurationApplyConfiguration `json:"piiCategoryConfigurations,omitempty"`
 }
 
 // PiiMaskingSpecApplyConfiguration constructs an declarative configuration of the PiiMaskingSpec type for use with
@@ -71,15 +71,15 @@ func (b *PiiMaskingSpecApplyConfiguration) WithSignals(values ...common.Observab
 	return b
 }
 
-// WithSensitiveDataTypes adds the given value to the SensitiveDataTypes field in the declarative configuration
+// WithPiiCategoryConfigurations adds the given value to the PiiCategoryConfigurations field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the SensitiveDataTypes field.
-func (b *PiiMaskingSpecApplyConfiguration) WithSensitiveDataTypes(values ...*SensitiveDataTypesApplyConfiguration) *PiiMaskingSpecApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the PiiCategoryConfigurations field.
+func (b *PiiMaskingSpecApplyConfiguration) WithPiiCategoryConfigurations(values ...*PiiCategoryConfigurationApplyConfiguration) *PiiMaskingSpecApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithSensitiveDataTypes")
+			panic("nil value passed to WithPiiCategoryConfigurations")
 		}
-		b.SensitiveDataTypes = append(b.SensitiveDataTypes, *values[i])
+		b.PiiCategoryConfigurations = append(b.PiiCategoryConfigurations, *values[i])
 	}
 	return b
 }

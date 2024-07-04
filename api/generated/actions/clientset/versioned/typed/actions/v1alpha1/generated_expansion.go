@@ -21,11 +21,11 @@ type AddClusterInfoExpansion interface{}
 
 type DeleteAttributeExpansion interface{}
 
-type PiiMaskingExpansion interface{}
-
 type ErrorSamplerExpansion interface{}
 
 type LatencySamplerExpansion interface{}
+
+type PiiMaskingExpansion interface{}
 
 type ProbabilisticSamplerExpansion interface{}
 
