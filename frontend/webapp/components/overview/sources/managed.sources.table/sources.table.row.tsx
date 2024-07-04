@@ -6,6 +6,7 @@ import styled, { css } from 'styled-components';
 import {
   KeyvalCheckbox,
   KeyvalImage,
+  KeyvalLoader,
   KeyvalTag,
   KeyvalText,
 } from '@/design.system';
@@ -110,6 +111,33 @@ export function SourcesTableRow({
   const containerName =
     item?.instrumented_application_details?.languages?.[0].container_name || '';
 
+  function getLanguageStatus() {
+    if (workloadProgrammingLanguage === 'processing') {
+      return (
+        <>
+          <KeyvalLoader width={6} height={6} />
+          <KeyvalText color={theme.text.light_grey} size={14}>
+            {'detecting language'}
+          </KeyvalText>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <StatusIndicator
+          color={
+            LANGUAGES_COLORS[workloadProgrammingLanguage] ||
+            theme.text.light_grey
+          }
+        />
+        <KeyvalText color={theme.text.light_grey} size={14}>
+          {workloadProgrammingLanguage}
+        </KeyvalText>
+      </>
+    );
+  }
+
   return (
     <StyledTr key={item.kind}>
       <StyledMainTd isFirstRow={index === 0}>
@@ -141,17 +169,7 @@ export function SourcesTableRow({
               </KeyvalText>
             </NameContainer>
             <FooterContainer>
-              <FooterItemWrapper>
-                <StatusIndicator
-                  color={
-                    LANGUAGES_COLORS[workloadProgrammingLanguage] ||
-                    theme.text.light_grey
-                  }
-                />
-                <KeyvalText color={theme.text.light_grey} size={14}>
-                  {workloadProgrammingLanguage}
-                </KeyvalText>
-              </FooterItemWrapper>
+              <FooterItemWrapper>{getLanguageStatus()}</FooterItemWrapper>
               <FooterItemWrapper>
                 <Namespace style={{ width: 16, height: 16 }} />
                 <KeyvalText color={theme.text.light_grey} size={14}>
