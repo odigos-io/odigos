@@ -38,7 +38,11 @@ function process_yaml_file() {
   query=$(yq '.query' "$file")
   encoded_query=$(urlencode "$query")
   expected_count=$(yq e '.expected.count' "$file")
-  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search\?q=$encoded_query)
+  current_epoch=$(date +%s)
+  one_hour=3600
+  start_epoch=$(($current_epoch - one_hour))
+  end_epoch=$(($current_epoch + one_hour))
+  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search\?end=$end_epoch\&start=$start_epoch\&q=$encoded_query)
   num_of_traces=$(echo $response | jq '.traces | length')
   # if num_of_traces not equal to expected_count
   if [ "$num_of_traces" -ne "$expected_count" ]; then
