@@ -250,9 +250,13 @@ func TestConnectionForDestination(c *gin.Context, odigosns string) {
 		return
 	}
 
-	err = testconnection.TestOTLPConnection(c, request)
-	if err != nil {
-		returnError(c, err)
+	res := testconnection.TestConnection(c, request)
+	if !res.Succeeded {
+		c.JSON(res.StatusCode, gin.H{
+			"type":    res.DestinationType,
+			"message": res.Message,
+			"reason":  res.Reason,
+		})
 		return
 	}
 
