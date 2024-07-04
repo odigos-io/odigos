@@ -33,7 +33,11 @@ func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
 
-	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme)
+	// If sampling configured, load balancing exporter should be added to the data collection config
+	SamplingExists := commonconf.FindFirstProcessorByType(allProcessors, "odigossampling")
+	setTracesLoadBalancer := SamplingExists != nil
+
+	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme, setTracesLoadBalancer)
 	desiredData := desired.Data[configKey]
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
@@ -92,8 +96,8 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 }
 
 func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
-	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme) (*v1.ConfigMap, error) {
-	cmData, err := getConfigMapData(apps, dests, processors)
+	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool) (*v1.ConfigMap, error) {
+	cmData, err := getConfigMapData(apps, dests, processors, setTracesLoadBalancer)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +123,9 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 	return &desired, nil
 }
 
-func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor) (string, error) {
+func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
+	setTracesLoadBalancer bool) (string, error) {
+
 	empty := struct{}{}
 
 	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(commonconf.ToProcessorConfigurerArray(processors))
@@ -139,6 +145,24 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	}
 	processorsCfg["resourcedetection"] = config.GenericMap{"detectors": []string{"ec2", "gcp", "azure"}}
 
+	exporters := config.GenericMap{
+		"otlp/gateway": config.GenericMap{
+			"endpoint": fmt.Sprintf("dns:///odigos-gateway.%s:4317", env.GetCurrentNamespace()),
+			"tls": config.GenericMap{
+				"insecure": true,
+			},
+		},
+	}
+	tracesPipelineExporter := []string{"otlp/gateway"}
+
+	if setTracesLoadBalancer {
+		exporters["loadbalancing"] = config.GenericMap{
+			"protocol": config.GenericMap{"otlp": config.GenericMap{"tls": config.GenericMap{"insecure": true}}},
+			"resolver": config.GenericMap{"k8s": config.GenericMap{"service": fmt.Sprintf("odigos-gateway.%s", env.GetCurrentNamespace())}},
+		}
+		tracesPipelineExporter = []string{"loadbalancing"}
+	}
+
 	cfg := config.Config{
 		Receivers: config.GenericMap{
 			"zipkin": empty,
@@ -149,14 +173,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 				},
 			},
 		},
-		Exporters: config.GenericMap{
-			"otlp/gateway": config.GenericMap{
-				"endpoint": fmt.Sprintf("dns:///odigos-gateway.%s:4317", env.GetCurrentNamespace()),
-				"tls": config.GenericMap{
-					"insecure": true,
-				},
-			},
-		},
+		Exporters:  exporters,
 		Processors: processorsCfg,
 		Extensions: config.GenericMap{
 			"health_check": empty,
@@ -318,7 +335,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
 			Receivers:  []string{"otlp", "zipkin"},
 			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, tracesProcessors...),
-			Exporters:  []string{"otlp/gateway"},
+			Exporters:  tracesPipelineExporter,
 		}
 	}
 

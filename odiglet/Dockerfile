@@ -3,10 +3,15 @@ WORKDIR /python-instrumentation
 ADD odiglet/agents/python/requirements.txt .
 RUN mkdir workspace && pip install --target workspace -r requirements.txt
 
-FROM node:16 AS nodejs-builder
+FROM node:18 AS nodejs-builder
+ARG ODIGOS_VERSION
 WORKDIR /nodejs-instrumentation
-COPY odiglet/agents/nodejs .
-RUN npm install
+COPY agents/nodejs .
+# inject the actual version into the agent code
+RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
+RUN yarn
+RUN yarn compile
+RUN rm -rf node_modules && yarn --production # Remove dev dependencies
 
 FROM busybox AS dotnet-builder
 WORKDIR /dotnet-instrumentation
@@ -21,6 +26,7 @@ COPY api/ api/
 COPY common/ common/
 COPY k8sutils/ k8sutils/
 COPY procdiscovery/ procdiscovery/
+COPY opampserver/ opampserver/
 WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
 COPY odiglet/ .
 
@@ -40,7 +46,8 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
-COPY --from=nodejs-builder /nodejs-instrumentation/build/workspace /instrumentations/nodejs
+COPY --from=nodejs-builder /nodejs-instrumentation/build/src /instrumentations/nodejs
+COPY --from=nodejs-builder /nodejs-instrumentation/node_modules /instrumentations/nodejs/node_modules
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
