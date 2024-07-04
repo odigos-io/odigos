@@ -3,6 +3,10 @@ package resources
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+
+	"github.com/odigos-io/odigos/cli/pkg/autodetect"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -362,6 +366,33 @@ func NewSCClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
+func NewResourceQuota(ns string) *corev1.ResourceQuota {
+	return &corev1.ResourceQuota{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ResourceQuota",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-quota",
+			Namespace: ns,
+		},
+		Spec: corev1.ResourceQuotaSpec{
+			Hard: corev1.ResourceList{
+				"pods": resource.MustParse("10k"),
+			},
+			ScopeSelector: &corev1.ScopeSelector{
+				MatchExpressions: []corev1.ScopedResourceSelectorRequirement{
+					{
+						ScopeName: corev1.ResourceQuotaScopePriorityClass,
+						Operator:  corev1.ScopeSelectorOpIn,
+						Values:    []string{"system-node-critical"},
+					},
+				},
+			},
+		},
+	}
+}
+
 func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool, goAutoIncludeCodeAttributes bool) *appsv1.DaemonSet {
 
 	dynamicEnv := []corev1.EnvVar{}
@@ -380,7 +411,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 
 	odigosSeLinuxHostVolumes := []corev1.Volume{}
 	odigosSeLinuxHostVolumeMounts := []corev1.VolumeMount{}
-	if openshiftEnabled {
+	if openshiftEnabled || autodetect.CurrentKubernetesVersion.Kind == autodetect.KindOpenShift {
 		odigosSeLinuxHostVolumes = append(odigosSeLinuxHostVolumes, selinuxHostVolumes()...)
 		odigosSeLinuxHostVolumeMounts = append(odigosSeLinuxHostVolumeMounts, selinuxHostVolumeMounts()...)
 	}
@@ -631,9 +662,14 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	}
 
 	// if openshift is enabled, we need to create additional SCC cluster role binding first
-	if a.config.OpenshiftEnabled {
+	if a.config.OpenshiftEnabled || autodetect.CurrentKubernetesVersion.Kind == autodetect.KindOpenShift {
 		resources = append(resources, NewSCCRoleBinding(a.ns))
 		resources = append(resources, NewSCClusterRoleBinding(a.ns))
+	}
+
+	// if gke, create resource quota
+	if autodetect.CurrentKubernetesVersion.Kind == autodetect.KindGKE {
+		resources = append(resources, NewResourceQuota(a.ns))
 	}
 
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
