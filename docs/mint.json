@@ -97,10 +97,24 @@
           "group": "Actions",
           "pages": [
             "pipeline/actions/introduction",
-            "pipeline/actions/addclusterinfo",
-            "pipeline/actions/deleteattribute",
-            "pipeline/actions/rename-attribute",
-            "pipeline/actions/probabilisticsampler",
+            {
+              "group": "Sampling",
+              "pages": [
+                "pipeline/actions/sampling/introduction",
+                "pipeline/actions/sampling/probabilisticsampler",
+                "pipeline/actions/sampling/latencysampler",
+                "pipeline/actions/sampling/errorsampler"
+              ]
+            },
+            {
+              "group": "Attributes",
+              "pages": [
+                "pipeline/actions/attributes/introduction",
+                "pipeline/actions/attributes/addclusterinfo",
+                "pipeline/actions/attributes/deleteattribute",
+                "pipeline/actions/attributes/rename-attribute"
+              ]
+            },
             "pipeline/actions/crd",
             "pipeline/actions/troubleshooting"
           ]

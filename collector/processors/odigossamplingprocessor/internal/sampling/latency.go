@@ -9,30 +9,31 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-type TraceLatencyRule struct {
-	Endpoint  string `mapstructure:"endpoint"`
-	Threshold int    `mapstructure:"threshold"`
-	Service   string `mapstructure:"service"`
+type HttpRouteLatencyRule struct {
+	HttpRoute             string  `mapstructure:"http_route"`
+	Threshold             int     `mapstructure:"threshold"`
+	ServiceName           string  `mapstructure:"service_name"`
+	FallbackSamplingRatio float64 `mapstructure:"fallback_sampling_ratio"`
 }
 
-func (tlr *TraceLatencyRule) Validate() error {
+func (tlr *HttpRouteLatencyRule) Validate() error {
 	switch {
 	case tlr.Threshold <= 0:
 		return errors.New("threshold must be a positive integer")
-	case tlr.Service == "":
+	case tlr.ServiceName == "":
 		return errors.New("service cannot be empty")
-	case tlr.Endpoint == "":
+	case tlr.HttpRoute == "":
 		return errors.New("endpoint cannot be empty")
-	case !strings.HasPrefix(tlr.Endpoint, "/"):
+	case !strings.HasPrefix(tlr.HttpRoute, "/"):
 		return errors.New("endpoint must start with '/'")
 	}
 	return nil
 }
 
-func (tlr *TraceLatencyRule) TraceDropDecision(td ptrace.Traces) bool {
+func (tlr *HttpRouteLatencyRule) KeepTraceDecision(td ptrace.Traces) (filterMatch bool, conditionMatch bool) {
 	var (
-		serviceFound  bool
-		endpointFound bool
+		serviceFound  = false
+		endpointFound = false
 	)
 
 	resources := td.ResourceSpans()
@@ -40,12 +41,12 @@ func (tlr *TraceLatencyRule) TraceDropDecision(td ptrace.Traces) bool {
 	// Check if the service matches
 	for r := 0; r < resources.Len(); r++ {
 		serviceAttr, _ := resources.At(r).Resource().Attributes().Get(string(semconv.ServiceNameKey))
-		if serviceAttr.AsString() == tlr.Service {
+		if serviceAttr.AsString() == tlr.ServiceName {
 			serviceFound = true
 		}
 	}
 	if !serviceFound {
-		return false
+		return false, true
 	}
 
 	var minStart pcommon.Timestamp
@@ -66,9 +67,9 @@ func (tlr *TraceLatencyRule) TraceDropDecision(td ptrace.Traces) bool {
 				endpoint, found := span.Attributes().Get("http.route")
 				if found {
 					serviceName, _ := resources.At(r).Resource().Attributes().Get(string(semconv.ServiceNameKey))
-					isEndpointFoundOnService := serviceName.AsString() == tlr.Service
+					isEndpointFoundOnService := serviceName.AsString() == tlr.ServiceName
 
-					if tlr.matchEndpoint(endpoint.AsString(), tlr.Endpoint) && isEndpointFoundOnService {
+					if tlr.matchEndpoint(endpoint.AsString(), tlr.HttpRoute) && isEndpointFoundOnService {
 						endpointFound = true
 					}
 				}
@@ -86,9 +87,9 @@ func (tlr *TraceLatencyRule) TraceDropDecision(td ptrace.Traces) bool {
 		}
 	}
 	duration := maxEnd.AsTime().Sub(minStart.AsTime())
-	return endpointFound && duration.Milliseconds() < int64(tlr.Threshold)
+	return endpointFound, duration.Milliseconds() > int64(tlr.Threshold)
 }
 
-func (tlr *TraceLatencyRule) matchEndpoint(rootSpanEndpoint string, samplerEndpoint string) bool {
+func (tlr *HttpRouteLatencyRule) matchEndpoint(rootSpanEndpoint string, samplerEndpoint string) bool {
 	return strings.HasPrefix(rootSpanEndpoint, samplerEndpoint)
 }
