@@ -7,7 +7,6 @@ receivers:
 exporters:
   debug/d1: {}
 processors:
-  batch: {}
   memory_limiter: {}
   resource/odigos-version:
     attributes:
@@ -28,7 +27,6 @@ service:
       - otlp
       processors:
       - memory_limiter
-      - batch
       - resource/odigos-version
       exporters:
       - debug/d1

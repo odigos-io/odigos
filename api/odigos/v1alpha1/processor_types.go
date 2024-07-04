@@ -111,4 +111,5 @@ func (processor Processor) GetConfig() (config.GenericMap, error) {
 }
 func (processor Processor) GetSignals() []common.ObservabilitySignal {
 	return processor.Spec.Signals
+
 }

@@ -20,7 +20,9 @@ func NewFactory() processor.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		Rules: []Rule{},
+		GlobalRules:   []Rule{},
+		ServiceRules:  []Rule{},
+		EndpointRules: []Rule{},
 	}
 }
 

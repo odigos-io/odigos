@@ -128,6 +128,59 @@ func NewUIServiceAccount(ns string) *corev1.ServiceAccount {
 	}
 }
 
+func NewUIRole(ns string) *rbacv1.Role {
+	return &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Role",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-ui",
+			Namespace: ns,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs: []string{
+					"create",
+					"delete",
+					"get",
+					"update",
+					"watch",
+				},
+				APIGroups: []string{""},
+				Resources: []string{
+					"secrets",
+				},
+			},
+		},
+	}
+}
+
+func NewUIRoleBinding(ns string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-ui",
+			Namespace: ns,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      UIServiceAccountName,
+				Namespace: ns,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "Role",
+			Name:     "odigos-ui",
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+}
+
 func NewUIClusterRole() *rbacv1.ClusterRole {
 	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
@@ -216,6 +269,8 @@ func NewUIService(ns string) *corev1.Service {
 func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []client.Object{
 		NewUIServiceAccount(u.ns),
+		NewUIRole(u.ns),
+		NewUIRoleBinding(u.ns),
 		NewUIClusterRole(),
 		NewUIClusterRoleBinding(u.ns),
 		NewUIDeployment(u.ns, u.config.OdigosVersion, u.config.ImagePrefix),
