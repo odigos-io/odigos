@@ -54,7 +54,8 @@
             "mode": "debug",
             "program": "${workspaceFolder}/cli",
             "cwd": "${workspaceFolder}/cli",
-            "args": ["uninstall", "--yes"]
+            "args": ["uninstall", "--yes"],
+            "buildFlags": "-tags=embed_manifests"
         }
     ]
 }
