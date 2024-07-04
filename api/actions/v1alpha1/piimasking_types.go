@@ -29,8 +29,8 @@ const (
 )
 
 type PiiCategoryConfiguration struct {
-	Mask        bool        `json:"mask"`
-	PiiCategory PiiCategory `json:"piiCategory"`
+	Mask     bool        `json:"mask"`
+	Category PiiCategory `json:"category"`
 }
 
 // PiiMaskingSpec defines the desired state of PiiMasking action

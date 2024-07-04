@@ -50,15 +50,15 @@ spec:
               piiCategoryConfigurations:
                 items:
                   properties:
-                    mask:
-                      type: boolean
-                    piiCategory:
+                    category:
                       enum:
                       - CREDIT_CARD
                       type: string
+                    mask:
+                      type: boolean
                   required:
+                  - category
                   - mask
-                  - piiCategory
                   type: object
                 type: array
               signals:

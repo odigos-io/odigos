@@ -24,8 +24,8 @@ import (
 // PiiCategoryConfigurationApplyConfiguration represents an declarative configuration of the PiiCategoryConfiguration type for use
 // with apply.
 type PiiCategoryConfigurationApplyConfiguration struct {
-	Mask        *bool                 `json:"mask,omitempty"`
-	PiiCategory *v1alpha1.PiiCategory `json:"piiCategory,omitempty"`
+	Mask     *bool                 `json:"mask,omitempty"`
+	Category *v1alpha1.PiiCategory `json:"category,omitempty"`
 }
 
 // PiiCategoryConfigurationApplyConfiguration constructs an declarative configuration of the PiiCategoryConfiguration type for use with
@@ -42,10 +42,10 @@ func (b *PiiCategoryConfigurationApplyConfiguration) WithMask(value bool) *PiiCa
 	return b
 }
 
-// WithPiiCategory sets the PiiCategory field in the declarative configuration to the given value
+// WithCategory sets the Category field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the PiiCategory field is set to the value of the last call.
-func (b *PiiCategoryConfigurationApplyConfiguration) WithPiiCategory(value v1alpha1.PiiCategory) *PiiCategoryConfigurationApplyConfiguration {
-	b.PiiCategory = &value
+// If called multiple times, the Category field is set to the value of the last call.
+func (b *PiiCategoryConfigurationApplyConfiguration) WithCategory(value v1alpha1.PiiCategory) *PiiCategoryConfigurationApplyConfiguration {
+	b.Category = &value
 	return b
 }

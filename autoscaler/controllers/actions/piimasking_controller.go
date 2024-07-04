@@ -135,7 +135,7 @@ func (r *PiiMaskingReconciler) convertToProcessor(action *actionv1.PiiMasking) (
 	}
 
 	for _, attr := range piiCategoryConfiguration {
-		switch attr.PiiCategory {
+		switch attr.Category {
 		case actionv1.CreditCardMasking:
 			config.BlockedValues = append(config.BlockedValues, []string{
 				"4[0-9]{12}(?:[0-9]{3})?", // Visa credit card number
