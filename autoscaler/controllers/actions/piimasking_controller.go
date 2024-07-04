@@ -117,7 +117,7 @@ func (r *PiiMaskingReconciler) ReportReconciledToProcessor(ctx context.Context, 
 	return nil
 }
 
-type piiMaskingConfig struct {
+type PiiMaskingConfig struct {
 	AllowAllKeys  bool     `json:"allow_all_keys"`
 	BlockedValues []string `json:"blocked_values"`
 }
@@ -130,7 +130,7 @@ func (r *PiiMaskingReconciler) convertToProcessor(action *actionv1.PiiMasking) (
 	}
 
 	// Allow all attributes to be traced. If configured to false it masks all the attributes
-	config := piiMaskingConfig{
+	config := PiiMaskingConfig{
 		AllowAllKeys: true,
 	}
 
