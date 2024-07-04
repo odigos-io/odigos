@@ -366,7 +366,7 @@ func NewSCClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewRResourceQuota(ns string) *corev1.ResourceQuota {
+func NewResourceQuota(ns string) *corev1.ResourceQuota {
 	return &corev1.ResourceQuota{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ResourceQuota",
