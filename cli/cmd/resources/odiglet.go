@@ -669,7 +669,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	// if gke, create resource quota
 	if autodetect.CurrentKubernetesVersion.Kind == autodetect.KindGKE {
-		resources = append(resources, NewRResourceQuota(a.ns))
+		resources = append(resources, NewResourceQuota(a.ns))
 	}
 
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
