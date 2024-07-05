@@ -1,15 +1,18 @@
-name: Verify helm chart synced
+name: PR Check
 
 on:
   pull_request:
     types: [opened, edited, synchronize]
+
 permissions:
   contents: read
   pull-requests: write
   issues: write
+
 jobs:
   check-pr:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -19,17 +22,98 @@ jobs:
         with:
           node-version: '14'
 
-      - name: Install dependencies
-        run: npm install
-        working-directory: .github/scripts/helm-sync
-
-      - name: Run PR check script
+      - name: Check PR for chart sync
         id: pr-check
-        run: node .github/scripts/helm-sync/check-chart-synced.js
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const syncDirectories = "${{ env.SYNC_DIRECTORIES }}".split(',').map(dir => dir.trim());
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.payload.pull_request.number;
+            const labelName = 'require-chart-sync';
+            const bypassLabel = 'skip-chart-sync';
+            const chartsRepo = 'odigos-charts';
+            
+            // Get the labels on the PR
+            const { data: prLabels } = await github.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number: pull_number
+            });
+            
+            // Skip check if bypass label is present
+            if (prLabels.some(label => label.name === bypassLabel)) {
+              console.log(`Bypass label '${bypassLabel}' found. Skipping check.`);
+              return { needSync: 'false' };
+            }
+            
+            // Get list of files changed in the PR
+            const { data: files } = await github.pulls.listFiles({
+              owner,
+              repo,
+              pull_number
+            });
+            
+            // Check if any file in the specified directories is changed
+            const configFilesChanged = files.some(file => 
+              syncDirectories.some(dir => file.filename.startsWith(dir))
+            );
+            
+            if (!configFilesChanged) {
+              console.log("No changes in specified directories. Exiting.");
+              return { needSync: 'false' };
+            }
+            
+            // Get the comments in the PR
+            const { data: comments } = await github.issues.listComments({
+              owner,
+              repo,
+              issue_number: pull_number
+            });
+            
+            // Check if any comment contains a reference to Odigos-charts repository
+            const referenceFoundInComments = comments.some(comment => /Odigos-charts/.test(comment.body));
+            
+            // Check if PR description references a PR from Odigos-charts repository
+            const prDescription = context.payload.pull_request.body;
+            const referenceFoundInDescription = prDescription && prDescription.includes(`github.com/${owner}/${chartsRepo}/pull/`);
+            
+            if (!referenceFoundInComments && !referenceFoundInDescription) {
+              // If no reference found, create a comment and block the PR
+              await github.issues.createComment({
+                owner,
+                repo,
+                issue_number: pull_number,
+                body: "**This PR includes changes in directories that requires helm chart changes.** Please ensure that changes are synced with the [odigos-charts](https://github.com/odigos-charts) repository."
+              });
+            
+              // Add a label to block the PR
+              await github.issues.addLabels({
+                owner,
+                repo,
+                issue_number: pull_number,
+                labels: [labelName]
+              });
+            
+              return { needSync: 'true' };
+            } else {
+              // Remove the label if it exists and the check passes
+              if (prLabels.some(label => label.name === labelName)) {
+                await github.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  name: labelName
+                });
+              }
+            
+              console.log("Reference to Odigos-charts found. PR can proceed.");
+              return { needSync: 'false' };
+            }
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SYNC_DIRECTORIES: "api/config/,cli/cmd/resources/"
+          SYNC_DIRECTORIES: "api/config/,another/dir/"
 
       - name: Fail check if necessary
-        if: steps.pr-check.outputs.need_sync == 'true'
+        if: steps.pr-check.outputs.needSync == 'true'
         run: exit 1
