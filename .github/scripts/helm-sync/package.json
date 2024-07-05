@@ -1,0 +1,15 @@
+{
+  "name": "pr-check-script",
+  "version": "1.0.0",
+  "description": "Script to check PR for chart sync",
+  "main": "pr-check.js",
+  "dependencies": {
+    "@octokit/rest": "^18.0.12",
+    "@actions/github": "^5.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

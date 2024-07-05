@@ -16,9 +16,13 @@ jobs:
         with:
           node-version: '14'
 
+      - name: Install dependencies
+        run: npm install
+        working-directory: .github/scripts/helm-sync
+
       - name: Run PR check script
         id: pr-check
-        run: node .github/scripts/check-chart-synced.js
+        run: node .github/scripts/helm-sync/check-chart-synced.js
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SYNC_DIRECTORIES: "api/config/,cli/cmd/resources/"
