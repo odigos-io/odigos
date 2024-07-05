@@ -70,11 +70,21 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, err
 	}
 
+	instrumentationLibrariesConfig, err := json.Marshal([]RemoteConfigInstrumentationLibrary{{Name: "@opentelemetry/instrumentation-express", Enabled: true}})
+	if err != nil {
+		c.logger.Error(err, "failed to marshal instrumentation libraries config")
+		return nil, nil, err
+	}
+
 	serverAttrsRemoteCfg := protobufs.AgentRemoteConfig{
 		Config: &protobufs.AgentConfigMap{
 			ConfigMap: map[string]*protobufs.AgentConfigFile{
 				string(RemoteConfigSdkConfigSectionName): {
 					Body:        sdkConfig,
+					ContentType: "application/json",
+				},
+				string(RemoteConfigInstrumentationLibrariesConfigSectionName): {
+					Body:        instrumentationLibrariesConfig,
 					ContentType: "application/json",
 				},
 			},

@@ -6,12 +6,16 @@ RUN mkdir workspace && pip install --target workspace -r requirements.txt
 FROM node:18 AS nodejs-builder
 ARG ODIGOS_VERSION
 WORKDIR /nodejs-instrumentation
+COPY agents/nodejs/package.json agents/nodejs/yarn.lock ./
+# prepare the production node_modules content in a separate directory
+RUN yarn --production --frozen-lockfile
+RUN mv node_modules ./prod_node_modules
+# install all dependencies including dev so we can yarn compile
+RUN yarn --frozen-lockfile
 COPY agents/nodejs .
 # inject the actual version into the agent code
 RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
-RUN yarn
 RUN yarn compile
-RUN rm -rf node_modules && yarn --production # Remove dev dependencies
 
 FROM busybox AS dotnet-builder
 WORKDIR /dotnet-instrumentation
@@ -47,7 +51,7 @@ COPY --from=python-builder /python-instrumentation/workspace /instrumentations/p
 
 # NodeJS
 COPY --from=nodejs-builder /nodejs-instrumentation/build/src /instrumentations/nodejs
-COPY --from=nodejs-builder /nodejs-instrumentation/node_modules /instrumentations/nodejs/node_modules
+COPY --from=nodejs-builder /nodejs-instrumentation/prod_node_modules /instrumentations/nodejs/node_modules
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet

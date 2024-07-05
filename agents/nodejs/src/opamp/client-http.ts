@@ -5,7 +5,11 @@ import {
   ServerToAgent,
   ServerToAgentFlags,
 } from "./generated/opamp_pb";
-import { OpAMPClientHttpConfig, ResourceAttributeFromServer } from "./types";
+import {
+  InstrumentationLibraryConfiguration,
+  OpAMPClientHttpConfig,
+  ResourceAttributeFromServer,
+} from "./types";
 import {
   keyValuePairsToOtelAttributes,
   otelAttributesToKeyValuePairs,
@@ -111,35 +115,9 @@ export class OpAMPClientHttp implements DetectorSync {
     for (let i = 0; i < remainingRetries; i++) {
       try {
         const firstServerToAgent = await this.sendFullState();
-
-        const sdkConfig =
-          firstServerToAgent.remoteConfig?.config?.configMap["SDK"];
-        if (!sdkConfig || !sdkConfig.body) {
-          throw new Error(
-            "No SDK config received on first OpAMP message to the server"
-          );
-        }
-
-        const resourceAttributes = JSON.parse(sdkConfig.body.toString()) as {
-          remoteResourceAttributes: ResourceAttributeFromServer[];
-        };
-
-        if (this.resourcePromiseResolver) {
-          this.logger.info(
-            "Got remote resource attributes, resolving detector promise",
-            resourceAttributes.remoteResourceAttributes
-          );
-          this.resourcePromiseResolver(
-            keyValuePairsToOtelAttributes([
-              ...resourceAttributes.remoteResourceAttributes,
-              {
-                key: SEMRESATTRS_SERVICE_INSTANCE_ID,
-                value: this.OpAMPInstanceUidString,
-              },
-            ])
-          );
-          return;
-        }
+        this.handleFirstMessageResponse(firstServerToAgent);
+        this.handleRemoteConfigInResponse(firstServerToAgent);
+        return;
       } catch (error) {
         this.logger.warn(
           `Error sending first message to OpAMP server, retrying in ${retryIntervalMs}ms`,
@@ -159,6 +137,64 @@ export class OpAMPClientHttp implements DetectorSync {
     this.resourcePromiseResolver?.({
       [SEMRESATTRS_SERVICE_NAME]: this.config.instrumentationDeviceId,
     });
+  }
+
+  private handleFirstMessageResponse(serverToAgentMessage: ServerToAgent) {
+    const sdkConfig =
+      serverToAgentMessage.remoteConfig?.config?.configMap["SDK"];
+    if (!sdkConfig || !sdkConfig.body) {
+      throw new Error(
+        "No SDK config received on first OpAMP message to the server"
+      );
+    }
+
+    const resourceAttributes = JSON.parse(sdkConfig.body.toString()) as {
+      remoteResourceAttributes: ResourceAttributeFromServer[];
+    };
+
+    this.logger.info(
+      "Got remote resource attributes",
+      resourceAttributes.remoteResourceAttributes
+    );
+
+    const remoteResource = new Resource(
+      keyValuePairsToOtelAttributes([
+        ...resourceAttributes.remoteResourceAttributes,
+        {
+          key: SEMRESATTRS_SERVICE_INSTANCE_ID,
+          value: this.OpAMPInstanceUidString,
+        },
+      ])
+    );
+    this.config.onRemoteResource?.(remoteResource);
+  }
+
+  private handleRemoteConfigInResponse(serverToAgentMessage: ServerToAgent) {
+
+    const remoteConfig = serverToAgentMessage.remoteConfig;
+    if (!remoteConfig) {
+      return;
+    }
+
+    const instrumentationLibrariesConfig =
+      remoteConfig.config?.configMap["InstrumentationLibraries"];
+    if (
+      !instrumentationLibrariesConfig ||
+      !instrumentationLibrariesConfig.body
+    ) {
+      return;
+    }
+
+    const instrumentationLibrariesConfigBody =
+      instrumentationLibrariesConfig.body.toString();
+    try {
+      const configs = JSON.parse(
+        instrumentationLibrariesConfigBody
+      ) as InstrumentationLibraryConfiguration[];
+      this.config.onNewInstrumentationLibrariesConfiguration?.(configs);
+    } catch (error) {
+      this.logger.warn("Error handling instrumentation libraries remote config", error);
+    }
   }
 
   private async sendHeartBeatToServer() {

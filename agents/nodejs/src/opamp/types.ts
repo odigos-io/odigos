@@ -1,4 +1,5 @@
 import { Attributes } from "@opentelemetry/api";
+import { Resource } from "@opentelemetry/resources";
 
 export interface OpAMPClientHttpConfig {
   // instrumentedDeviceId, as allocated by the kubelet,
@@ -10,9 +11,17 @@ export interface OpAMPClientHttpConfig {
 
   agentDescriptionIdentifyingAttributes?: Attributes;
   agentDescriptionNonIdentifyingAttributes?: Attributes;
+
+  onRemoteResource?: (remoteResource: Resource) => void;
+  onNewInstrumentationLibrariesConfiguration?: (configs: InstrumentationLibraryConfiguration[]) => void;
 }
 
 export interface ResourceAttributeFromServer {
   key: string;
   value: string;
+}
+
+export interface InstrumentationLibraryConfiguration {
+  name: string;
+  enabled: boolean;
 }
