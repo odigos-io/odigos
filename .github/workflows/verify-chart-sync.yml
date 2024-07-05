@@ -3,12 +3,12 @@ name: Verify helm chart synced
 on:
   pull_request:
     types: [opened, edited, synchronize]
+permissions:
+  pull-requests: write
+  issues: write
 jobs:
   check-pr:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      issues: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
