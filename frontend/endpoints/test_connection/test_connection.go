@@ -19,7 +19,7 @@ import (
 var (
 	configres         map[common.DestinationType]config.Configer
 	connectionTesters = []ExporterConnectionTester{
-		NewOTLPTester(), // "otlp/" prefix
+		NewOTLPTester(),     // "otlp/" prefix
 		NewOTLPHTTPTester(), // "otlphttp/" prefix
 	}
 )
@@ -50,8 +50,12 @@ type TestConnectionResult struct {
 }
 
 type ExporterConnectionTester interface {
+	// Factory returns the exporter factory for the exporter type.
+	// This is used to create the exporter instance for testing the connection.
 	Factory() exporter.Factory
-	ModifyConfig(component.Config) component.Config
+	// ModifyConfigForConnectionTest modifies the exporter configuration for testing the connection.
+	// Since the default configuration may have batching, retries, etc. which may not be suitable for testing the connection.
+	ModifyConfigForConnectionTest(component.Config) component.Config
 }
 
 func getConnectionTester(exporterID string) ExporterConnectionTester {
@@ -111,7 +115,7 @@ func TestConnection(ctx context.Context, dest config.ExporterConfigurer) TestCon
 	// before testing the connection, replace placeholders (if exists) in the config with actual values
 	replacePlaceholders(exporterRawConfig, dest.GetConfig())
 	defaultConfig := connectionTester.Factory().CreateDefaultConfig()
-	connectionTester.ModifyConfig(defaultConfig)
+	connectionTester.ModifyConfigForConnectionTest(defaultConfig)
 
 	// convert the user provided fields to a collector config
 	exportersConf := confmap.NewFromStringMap(exporterRawConfig)
@@ -126,6 +130,7 @@ func TestConnection(ctx context.Context, dest config.ExporterConfigurer) TestCon
 	}
 
 	if validator, ok := defaultConfig.(component.ConfigValidator); ok {
+		// if the component has a Validate method, call it to validate the configuration
 		err = validator.Validate()
 		if err != nil {
 			return TestConnectionResult{Succeeded: false, Message: err.Error(), Reason: InvalidConfig, DestinationType: destType, StatusCode: http.StatusInternalServerError}

@@ -8,19 +8,21 @@ import (
 )
 
 func TestReplacePlaceholders(t *testing.T) {
-	gmap := config.GenericMap{
-		"key1": "${MY_KEY1}",
-		"key2": 123,
-		"key3": config.GenericMap{
-			"nestedKey1": "${MY_KEY2}",
-			"nestedKey2": "someValue",
-		},
-	}
-
 	// Fields map with replacements
 	fields := map[string]string{
 		"MY_KEY1": "MY_VALUE1",
 		"MY_KEY2": "MY_VALUE2",
+	}
+
+	gmap := config.GenericMap{
+		"key1": "${MY_KEY1}",
+		"key2": 123,
+		"key3": config.GenericMap{
+			"nestedKey1": "${MY_KEY2}", // replaced with MY_VALUE2
+			"nestedKey2": "someValue",  // no replacement
+			"nestedKey3": "${MY_KEY3}", // no replacement
+			"nestedKey4": "some prefix: ${MY_KEY2}", // replaced with "some prefix: MY_VALUE2"
+		},
 	}
 
 	replacePlaceholders(gmap, fields)
@@ -28,6 +30,8 @@ func TestReplacePlaceholders(t *testing.T) {
 	assert.Equal(t, config.GenericMap{
 		"nestedKey1": "MY_VALUE2",
 		"nestedKey2": "someValue",
+		"nestedKey3": "${MY_KEY3}",
+		"nestedKey4": "some prefix: MY_VALUE2",
 	}, gmap["key3"])
 	assert.Equal(t, 123, gmap["key2"])
 

@@ -2,6 +2,7 @@ package testconnection
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/odigos-io/odigos/common/config"
 )
@@ -24,7 +25,10 @@ func replacePlaceholders(gmap config.GenericMap, fields map[string]string) {
 					// match[0] is the entire match (${KEY}), match[1] is the key (KEY)
 					extractedKey := match[1]
 					if replacement, ok := fields[extractedKey]; ok {
-						gmap[key] = replacement
+						// Replace only the ${KEY} part in the original string
+						v = strings.Replace(v, match[0], replacement, -1)
+						// Update the map with the new value
+						gmap[key] = v
 					}
 				}
 			}

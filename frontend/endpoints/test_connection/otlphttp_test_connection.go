@@ -22,7 +22,7 @@ func (t *otlphttpExporterConnectionTester) Factory() exporter.Factory {
 	return t.f
 }
 
-func (t *otlphttpExporterConnectionTester) ModifyConfig(cfg component.Config) component.Config {
+func (t *otlphttpExporterConnectionTester) ModifyConfigForConnectionTest(cfg component.Config) component.Config {
 	otlpConf, ok := cfg.(*otlphttpexporter.Config)
 	if !ok {
 		return nil
