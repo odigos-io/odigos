@@ -55,7 +55,8 @@ async function checkPR() {
         const referenceFoundInComments = comments.some(comment => /odigos-charts/.test(comment.body));
 
         // Check if PR description references a PR from Odigos-charts repository
-        const referenceFoundInDescription = context.payload.pull_request.body.includes(`github.com/${owner}/${chartsRepo}/pull/`);
+        const prDescription = context.payload.pull_request.body;
+        const referenceFoundInDescription = prDescription && prDescription.includes(`github.com/${owner}/${chartsRepo}/pull/`);
 
         if (!referenceFoundInComments && !referenceFoundInDescription) {
             // If no reference found, create a comment and block the PR
