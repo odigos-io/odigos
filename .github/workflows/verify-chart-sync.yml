@@ -1,0 +1,28 @@
+name: Verify helm chart synced
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+jobs:
+  check-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Run PR check script
+        id: pr-check
+        run: node .github/scripts/check-chart-synced.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SYNC_DIRECTORIES: "api/config/,cli/cmd/resources/"
+
+      - name: Fail check if necessary
+        if: steps.pr-check.outputs.need_sync == 'true'
+        run: exit 1
