@@ -109,8 +109,55 @@ spec:
                   - optionKey
                   type: object
                 type: array
+              sdkConfigs:
+                description: |-
+                  Configuration for the OpenTelemetry SDKs that this workload should use.
+                  The SDKs are identified by the programming language they are written in.
+                  TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
+                items:
+                  properties:
+                    instrumentationLibraryConfigs:
+                      description: configurations for the instrumentation libraries
+                        the the SDK should use
+                      items:
+                        properties:
+                          enabled:
+                            description: |-
+                              Whether the instrumentation library is enabled
+                              When disabled, it is expected that the instrumentation library does not produce any telemetry.
+                              It is expected that the enabled flag can be toggled at runtime and instrumentation library should
+                              start/stop producing telemetry based on the flag without requiring a restart.
+                              nil value means the default value should be used (enabled, but might be refined in the future).
+                            type: boolean
+                          instrumentationLibraryName:
+                            description: |-
+                              The name of the instrumentation library
+                              - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
+                            type: string
+                        required:
+                        - instrumentationLibraryName
+                        type: object
+                      type: array
+                    language:
+                      description: The language of the SDK being configured
+                      enum:
+                      - java
+                      - python
+                      - go
+                      - dotnet
+                      - javascript
+                      - mysql
+                      - unknown
+                      - ignored
+                      type: string
+                  required:
+                  - instrumentationLibraryConfigs
+                  - language
+                  type: object
+                type: array
             required:
             - config
+            - sdkConfigs
             type: object
         type: object
     served: true

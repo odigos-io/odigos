@@ -1,10 +1,8 @@
-package server
+package connection
 
 import (
 	"sync"
 	"time"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -21,14 +19,6 @@ type ConnectionsCache struct {
 
 	// map from device id to connection information
 	liveConnections map[string]*ConnectionInfo
-}
-
-type ConnectionInfo struct {
-	DeviceId            string
-	Pod                 *corev1.Pod
-	Pid                 int64
-	InstrumentedAppName string
-	lastMessageTime     time.Time
 }
 
 func NewConnectionsCache() *ConnectionsCache {

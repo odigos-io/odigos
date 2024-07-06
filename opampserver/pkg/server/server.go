@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/deviceid"
+	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
 	"k8s.io/client-go/kubernetes"
@@ -25,14 +27,16 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		return err
 	}
 
-	connectionCache := NewConnectionsCache()
+	connectionCache := connection.NewConnectionsCache()
+
+	sdkConfig := sdkconfig.NewSdkConfigManager(logger, mgr, nodeName)
 
 	handlers := &ConnectionHandlers{
 		logger:        logger,
 		deviceIdCache: deviceidCache,
+		sdkConfig:     sdkConfig,
 		kubeclient:    mgr.GetClient(),
 		scheme:        mgr.GetScheme(),
-		nodeName:      nodeName,
 	}
 
 	http.HandleFunc("POST /v1/opamp", func(w http.ResponseWriter, req *http.Request) {
@@ -137,7 +141,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 	}()
 
 	go func() {
-		ticker := time.NewTicker(HeartbeatInterval)
+		ticker := time.NewTicker(connection.HeartbeatInterval)
 		defer ticker.Stop() // Clean up when done
 		for {
 			select {

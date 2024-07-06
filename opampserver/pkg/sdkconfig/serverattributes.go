@@ -1,4 +1,4 @@
-package server
+package sdkconfig
 
 import (
 	"errors"
@@ -6,11 +6,6 @@ import (
 	"github.com/odigos-io/odigos/opampserver/pkg/deviceid"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
-
-type ResourceAttribute struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
 
 // the server resolved 6 resource attribute for the agent which it cannot discover itself:
 // - node name

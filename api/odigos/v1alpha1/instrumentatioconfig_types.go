@@ -23,6 +23,33 @@ type InstrumentationConfigSpec struct {
 	// the config is a list to allow for multiple config options and values to be applied.
 	// the list is processed in order, and the first matching config is applied.
 	Config []WorkloadInstrumentationConfig `json:"config"`
+
+	// Configuration for the OpenTelemetry SDKs that this workload should use.
+	// The SDKs are identified by the programming language they are written in.
+	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
+	SdkConfigs []SdkConfig `json:"sdkConfigs"`
+}
+
+type SdkConfig struct {
+
+	// The language of the SDK being configured
+	Language common.ProgrammingLanguage `json:"language"`
+
+	// configurations for the instrumentation libraries the the SDK should use
+	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs"`
+}
+
+type InstrumentationLibraryConfig struct {
+	// The name of the instrumentation library
+	// - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
+	InstrumentationLibraryName string `json:"instrumentationLibraryName"`
+
+	// Whether the instrumentation library is enabled
+	// When disabled, it is expected that the instrumentation library does not produce any telemetry.
+	// It is expected that the enabled flag can be toggled at runtime and instrumentation library should
+	// start/stop producing telemetry based on the flag without requiring a restart.
+	// nil value means the default value should be used (enabled, but might be refined in the future).
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // WorkloadInstrumentationConfig defined a single config option to apply

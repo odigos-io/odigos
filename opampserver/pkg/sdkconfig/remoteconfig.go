@@ -1,4 +1,4 @@
-package server
+package sdkconfig
 
 type ConfigSectionName string
 
@@ -7,6 +7,11 @@ const (
 	RemoteConfigSdkConfigSectionName                      ConfigSectionName = "SDK"
 	RemoteConfigInstrumentationLibrariesConfigSectionName ConfigSectionName = "InstrumentationLibraries"
 )
+
+type ResourceAttribute struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
 
 type RemoteConfigSdk struct {
 	RemoteResourceAttributes []ResourceAttribute `json:"remoteResourceAttributes"`
