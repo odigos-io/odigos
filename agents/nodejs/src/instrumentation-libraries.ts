@@ -2,6 +2,8 @@ import { Instrumentation } from "@opentelemetry/instrumentation";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { ProxyTracerProvider, TracerProvider, diag } from "@opentelemetry/api";
 import { InstrumentationLibraryConfiguration } from "./opamp";
+import { PackageStatus } from "./opamp/generated/opamp_pb";
+import { PartialMessage } from "@bufbuild/protobuf";
 
 type OdigosInstrumentation = {
   otelInstrumentation: Instrumentation;
@@ -14,6 +16,8 @@ export class InstrumentationLibraries {
   private noopTracerProvider: TracerProvider;
   private tracerProvider: TracerProvider;
 
+  private packageStatusCallback?: (status: PackageStatus[]) => void;
+
   private logger = diag.createComponentLogger({
     namespace: "@odigos/opentelemetry-node/instrumentation-libraries",
   });
@@ -21,7 +25,7 @@ export class InstrumentationLibraries {
   constructor() {
     this.instrumentations = getNodeAutoInstrumentations();
 
-    // trick to get the noop tracer provider
+    // trick to get the noop tracer provider which is not exported from @openetelemetry/api
     this.noopTracerProvider = new ProxyTracerProvider().getDelegate();
     this.tracerProvider = this.noopTracerProvider; // starts as noop, and overridden later on
 
@@ -40,6 +44,15 @@ export class InstrumentationLibraries {
     );
   }
 
+  public getPackageStatuses(): PartialMessage<PackageStatus>[] {
+    return this.instrumentations.map((instrumentation) => {
+      return {
+        name: instrumentation.instrumentationName,
+        agentHasVersion: instrumentation.instrumentationVersion,
+      };
+    });
+  }
+
   public setTracerProvider(tracerProvider: TracerProvider) {
     this.tracerProvider = tracerProvider;
   }
@@ -54,7 +67,7 @@ export class InstrumentationLibraries {
         continue;
       }
 
-      this.logger.info('applying new config:', {instrumentationName: instrumentationLibraryConfig.name, enabled: instrumentationLibraryConfig.enabled} );
+      this.logger.info('applying new instrumentation library config:', {instrumentationName: instrumentationLibraryConfig.name, enabled: instrumentationLibraryConfig.enabled} );
       if (instrumentationLibraryConfig.enabled) {
         odigosInstrumentation.otelInstrumentation.setTracerProvider(
           this.tracerProvider

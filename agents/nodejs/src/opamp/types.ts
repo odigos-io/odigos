@@ -1,5 +1,7 @@
 import { Attributes } from "@opentelemetry/api";
 import { Resource } from "@opentelemetry/resources";
+import { PackageStatus } from "./generated/opamp_pb";
+import { PartialMessage } from "@bufbuild/protobuf";
 
 export interface OpAMPClientHttpConfig {
   // instrumentedDeviceId, as allocated by the kubelet,
@@ -11,6 +13,8 @@ export interface OpAMPClientHttpConfig {
 
   agentDescriptionIdentifyingAttributes?: Attributes;
   agentDescriptionNonIdentifyingAttributes?: Attributes;
+
+  initialPackageStatues: PartialMessage<PackageStatus>[];
 
   onRemoteResource?: (remoteResource: Resource) => void;
   onNewInstrumentationLibrariesConfiguration?: (configs: InstrumentationLibraryConfiguration[]) => void;

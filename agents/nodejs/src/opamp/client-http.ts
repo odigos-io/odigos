@@ -23,6 +23,7 @@ import {
   SEMRESATTRS_SERVICE_NAME,
 } from "@opentelemetry/semantic-conventions";
 import { suppressTracing } from "@opentelemetry/core";
+import { PackageStatuses } from "./generated/opamp_pb";
 
 export class OpAMPClientHttp implements DetectorSync {
   private config: OpAMPClientHttpConfig;
@@ -215,6 +216,9 @@ export class OpAMPClientHttp implements DetectorSync {
         nonIdentifyingAttributes: otelAttributesToKeyValuePairs(
           this.config.agentDescriptionNonIdentifyingAttributes
         ),
+      }),
+      packageStatuses: new PackageStatuses({
+        packages: Object.fromEntries(this.config.initialPackageStatues.map((pkg) => [pkg.name, pkg])),
       }),
     });
   }

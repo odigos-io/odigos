@@ -109,6 +109,7 @@ if (!opampServerHost || !instrumentationDeviceId) {
       tracerProvider.addSpanProcessor(spanProcessor);
       instrumentationLibraries.setTracerProvider(tracerProvider);
     },
+    initialPackageStatues: instrumentationLibraries.getPackageStatuses(),
   });
 
   opampClient.start();

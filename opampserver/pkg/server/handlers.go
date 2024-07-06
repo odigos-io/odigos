@@ -50,6 +50,18 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, fmt.Errorf("missing pid in agent description")
 	}
 
+	instrumentationLibrariesConfig := make([]RemoteConfigInstrumentationLibrary, 0)
+	if firstMessage.PackageStatuses != nil {
+		for _, status := range firstMessage.PackageStatuses.Packages {
+			if status.Name != "@opentelemetry/instrumentation-net" {
+				instrumentationLibrariesConfig = append(instrumentationLibrariesConfig, RemoteConfigInstrumentationLibrary{
+					Name:    status.Name,
+					Enabled: true,
+				})
+			}
+		}
+	}
+
 	k8sAttributes, pod, err := c.deviceIdCache.GetAttributesFromDevice(ctx, deviceId)
 	if err != nil {
 		c.logger.Error(err, "failed to get attributes from device", "deviceId", deviceId)
@@ -70,7 +82,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, err
 	}
 
-	instrumentationLibrariesConfig, err := json.Marshal([]RemoteConfigInstrumentationLibrary{{Name: "@opentelemetry/instrumentation-express", Enabled: true}})
+	instrumentationLibrariesConfigBytes, err := json.Marshal(instrumentationLibrariesConfig)
 	if err != nil {
 		c.logger.Error(err, "failed to marshal instrumentation libraries config")
 		return nil, nil, err
@@ -84,7 +96,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 					ContentType: "application/json",
 				},
 				string(RemoteConfigInstrumentationLibrariesConfigSectionName): {
-					Body:        instrumentationLibrariesConfig,
+					Body:        instrumentationLibrariesConfigBytes,
 					ContentType: "application/json",
 				},
 			},
