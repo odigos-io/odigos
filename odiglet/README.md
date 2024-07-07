@@ -7,3 +7,5 @@ Assuming a setup with an active kind cluster with Odigos installed:
 In addition, it will port-forward the debugger port for remote debug.
 2. Using vscode launch the `Remote Odiglet` configuration.
 3. Debug the code.
+
+Odiglet defaults to use the environment variable `OTEL_LOG_LEVEL` with value of `info`. When debugging or developing it is useful to increase the log level to `debug` for instrumentations. Note that this value only controls the log level for the instrumentations Odiglet invokes directly (eBPF) and does not apply for the k8s controllers or 3rd party agents.
