@@ -59,7 +59,7 @@ kubectl apply -f piimasking.yaml
 
 The full list of options available for the "PiiMasking" action are:
 
-- `piiCategoryConfigurations` (required): An array of dictionaries where each dictionary has two keys: `mask` and `category`. `category` is the PII Category you want to mask and `mask` is a boolean value to mask the category or not.
+- `piiCategoryConfigurations` (required): An array of dictionaries where each dictionary has two keys: `mask` and `category`. `category` is the PII Category you want to mask and `mask` is a boolean value that indicates if to mask or not.
 
 - `signals` (required): An array with the signals that the processor will act on (`TRACES`).
 
