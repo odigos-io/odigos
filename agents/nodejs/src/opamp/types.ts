@@ -25,7 +25,11 @@ export interface ResourceAttributeFromServer {
   value: string;
 }
 
+export interface InstrumentationLibraryTracesConfiguration {
+  disabled?: boolean;
+}
+
 export interface InstrumentationLibraryConfiguration {
   name: string;
-  enabled: boolean;
+  traces: InstrumentationLibraryTracesConfiguration;
 }

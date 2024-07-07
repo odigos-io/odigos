@@ -63,16 +63,20 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, k8sAttributes *dev
 			}
 		}
 
-		enabled := true // enabled by default, unless explicitly disabled
+		tracesDisabled := false // enabled by default, unless explicitly disabled
 		if instrumentationLibCrdConfig != nil {
 			// if we found config, use it
-			if instrumentationLibCrdConfig.Enabled != nil {
-				enabled = *instrumentationLibCrdConfig.Enabled
+			if instrumentationLibCrdConfig.TraceConfig != nil {
+				if instrumentationLibCrdConfig.TraceConfig.Disabled != nil {
+					tracesDisabled = *instrumentationLibCrdConfig.TraceConfig.Disabled
+				}
 			}
 		}
 		instrumentationLibrariesConfig = append(instrumentationLibrariesConfig, RemoteConfigInstrumentationLibrary{
-			Name:    instrumentationLibraryName,
-			Enabled: enabled,
+			Name: instrumentationLibraryName,
+			Traces: RemoteConfigInstrumentationLibraryTraces{
+				Disabled: tracesDisabled,
+			},
 		})
 	}
 

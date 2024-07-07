@@ -18,6 +18,10 @@ type RemoteConfigSdk struct {
 }
 
 type RemoteConfigInstrumentationLibrary struct {
-	Name    string `json:"name"`
-	Enabled bool   `json:"enabled"`
+	Name   string                                   `json:"name"`
+	Traces RemoteConfigInstrumentationLibraryTraces `json:"traces"`
+}
+
+type RemoteConfigInstrumentationLibraryTraces struct {
+	Disabled bool `json:"disabled,omitempty"`
 }

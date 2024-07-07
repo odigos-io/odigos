@@ -44,12 +44,16 @@ type InstrumentationLibraryConfig struct {
 	// - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
 	InstrumentationLibraryName string `json:"instrumentationLibraryName"`
 
-	// Whether the instrumentation library is enabled
-	// When disabled, it is expected that the instrumentation library does not produce any telemetry.
-	// It is expected that the enabled flag can be toggled at runtime and instrumentation library should
-	// start/stop producing telemetry based on the flag without requiring a restart.
-	// nil value means the default value should be used (enabled, but might be refined in the future).
-	Enabled *bool `json:"enabled,omitempty"`
+	TraceConfig *InstrumentationLibraryConfigTraces `json:"traceConfig,omitempty"`
+}
+
+type InstrumentationLibraryConfigTraces struct {
+	// Whether the instrumentation library is enabled to record traces.
+	// When disabled, it is expected that the instrumentation library does not produce any spans.
+	// It is expected that the disabled flag can be toggled at runtime and instrumentation library should
+	// start/stop producing spans based on the flag without requiring a restart.
+	// nil value means the default value should be used (enabled).
+	Disabled *bool `json:"disabled,omitempty"`
 }
 
 // WorkloadInstrumentationConfig defined a single config option to apply

@@ -63,18 +63,23 @@ export class InstrumentationLibraries {
         instrumentationLibraryConfig.name
       );
       if (!odigosInstrumentation) {
-        this.logger.error('remote config instrumentation name not found:', instrumentationLibraryConfig.name);
+        this.logger.error(
+          "remote config instrumentation name not found:",
+          instrumentationLibraryConfig.name
+        );
         continue;
       }
 
-      this.logger.info('applying new instrumentation library config:', {instrumentationName: instrumentationLibraryConfig.name, enabled: instrumentationLibraryConfig.enabled} );
-      if (instrumentationLibraryConfig.enabled) {
+      this.logger.info("applying new instrumentation library config:", {
+        instrumentationLibraryConfig,
+      });
+      if (instrumentationLibraryConfig.traces?.disabled) {
         odigosInstrumentation.otelInstrumentation.setTracerProvider(
-          this.tracerProvider
+          this.noopTracerProvider
         );
       } else {
         odigosInstrumentation.otelInstrumentation.setTracerProvider(
-          this.noopTracerProvider
+          this.tracerProvider
         );
       }
     }

@@ -121,19 +121,22 @@ spec:
                         the the SDK should use
                       items:
                         properties:
-                          enabled:
-                            description: |-
-                              Whether the instrumentation library is enabled
-                              When disabled, it is expected that the instrumentation library does not produce any telemetry.
-                              It is expected that the enabled flag can be toggled at runtime and instrumentation library should
-                              start/stop producing telemetry based on the flag without requiring a restart.
-                              nil value means the default value should be used (enabled, but might be refined in the future).
-                            type: boolean
                           instrumentationLibraryName:
                             description: |-
                               The name of the instrumentation library
                               - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
                             type: string
+                          traceConfig:
+                            properties:
+                              disabled:
+                                description: |-
+                                  Whether the instrumentation library is enabled to record traces.
+                                  When disabled, it is expected that the instrumentation library does not produce any spans.
+                                  It is expected that the disabled flag can be toggled at runtime and instrumentation library should
+                                  start/stop producing spans based on the flag without requiring a restart.
+                                  nil value means the default value should be used (enabled).
+                                type: boolean
+                            type: object
                         required:
                         - instrumentationLibraryName
                         type: object
