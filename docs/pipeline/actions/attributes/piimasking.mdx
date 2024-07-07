@@ -21,16 +21,13 @@ The "PII Masking" Odigos Action can be used to mask PII data from span attribute
 
 ### Mechanism
 
-This action receives a list of all the PII Categories to mask from the traces.
-The category of the PII data to be masked is associated with a regex expression that will be applied to all span attribute, replacing any matches with `****`.
-
+This action processes a list of PII categories to be masked from the traces. Each PII category is linked to a regex expression that will be applied to all span attribute values. Any portion of the span attribute values that match the regex expression will be replaced with `****`, while the rest of the attribute value will remain unchanged.
 
 
 ### Basic Example
 
 The basic example below shows how to configure the Pii Masking action to mask Visa and Master cards from span attribute values.
 
-```yaml
 
 Create a file named `piimasking.yaml` with the following content:
 
@@ -71,6 +68,17 @@ The full list of options available for the "PiiMasking" action are:
 
 ### Notes
 
-- This action will mask span attribute values by replacing only the problematic portions with `****`, leaving the rest of the value unchanged.
+- This action masks span attribute values by replacing only the sensitive portions with `****`, while leaving the rest of the value intact.
+- The regex expressions used for masking are predefined for each PII category and cannot be configured.
+- Currently, only trace signals are supported.
+- All span attribute values in every span will be examined and masked accordingly.
+
+
+
+
+
+
+
+- The regex expressions used for masking are predefined for each PII category and cannot be configured.
 - Currently, supports only trace signals.
 - All span attribute values in all spans will be checked and masked.
