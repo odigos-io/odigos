@@ -109,7 +109,7 @@ func TestConnection(ctx context.Context, dest config.ExporterConfigurer) TestCon
 	}
 
 	if !foundTester {
-		return TestConnectionResult{Succeeded: false, Message: "no supported exporter found in config", Reason: UnsupportedExporterType, DestinationType: destType, StatusCode: http.StatusInternalServerError}
+		return TestConnectionResult{Succeeded: false, Message: "no supported exporter found in config", Reason: UnsupportedExporterType, DestinationType: destType, StatusCode: http.StatusNotFound}
 	}
 
 	// before testing the connection, replace placeholders (if exists) in the config with actual values
