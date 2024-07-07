@@ -3,12 +3,12 @@ opentelemetry-distro==0.44b0
 # injected auto-instrumentation, where it has a strict dependency on the OS / Python version the artifact is built for.
 opentelemetry-exporter-otlp-proto-http==1.23.0
 
-opentelemetry-propagator-b3==1.23.0
-opentelemetry-propagator-jaeger==1.23.0
+opentelemetry-propagator-b3==1.24.0
+opentelemetry-propagator-jaeger==1.24.0
 opentelemetry-propagator-aws-xray==1.0.1
 
 opentelemetry-instrumentation==0.44b0
-opentelemetry-propagator-ot-trace==0.44b0
+opentelemetry-propagator-ot-trace==0.45b0
 
 # Copied in from https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/instrumentation
 # except for aws-lambda
