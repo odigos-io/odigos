@@ -16,8 +16,8 @@ import {
 } from "./utils";
 import { uuidv7 } from "uuidv7";
 import axios, { AxiosInstance } from "axios";
-import { DetectorSync, IResource, Resource } from "@opentelemetry/resources";
-import { Attributes, context, diag } from "@opentelemetry/api";
+import { Resource } from "@opentelemetry/resources";
+import { context, diag } from "@opentelemetry/api";
 import {
   SEMRESATTRS_SERVICE_INSTANCE_ID,
   SEMRESATTRS_SERVICE_NAME,
@@ -25,7 +25,7 @@ import {
 import { suppressTracing } from "@opentelemetry/core";
 import { PackageStatuses } from "./generated/opamp_pb";
 
-export class OpAMPClientHttp implements DetectorSync {
+export class OpAMPClientHttp {
   private config: OpAMPClientHttpConfig;
   private OpAMPInstanceUidString: string;
   private OpAMPInstanceUid: Uint8Array;
@@ -34,9 +34,6 @@ export class OpAMPClientHttp implements DetectorSync {
   private logger = diag.createComponentLogger({
     namespace: "@odigos/opentelemetry-node/opamp",
   });
-
-  // promise that we can resolve async later on, which the detect function can return
-  private resourcePromiseResolver?: (resourceAttributes: Attributes) => void;
 
   constructor(config: OpAMPClientHttpConfig) {
     this.config = config;
@@ -67,15 +64,6 @@ export class OpAMPClientHttp implements DetectorSync {
         };
         return Promise.reject(relevantErrorInfo);
       }
-    );
-  }
-
-  detect(): IResource {
-    return new Resource(
-      {},
-      new Promise<Attributes>((resolve) => {
-        this.resourcePromiseResolver = resolve;
-      })
     );
   }
 
@@ -132,12 +120,14 @@ export class OpAMPClientHttp implements DetectorSync {
     }
 
     // if we got here, it means we run out of retries and did not return from the loop
+    // at this point we have no remote resource attributes, so we set the service name to the instrumentation device id
+    // which is the best we can do without the remote resource attributes
     this.logger.error(
       `Failed to get remote resource attributes from OpAMP server after retries, continuing without them`
     );
-    this.resourcePromiseResolver?.({
+    this.config.onRemoteResource?.(new Resource({
       [SEMRESATTRS_SERVICE_NAME]: this.config.instrumentationDeviceId,
-    });
+    }));
   }
 
   private handleFirstMessageResponse(serverToAgentMessage: ServerToAgent) {
