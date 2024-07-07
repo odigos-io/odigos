@@ -55,7 +55,7 @@ func (r *PiiMaskingReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		if _, ok := piiMaskingSupportedSignals[signal]; !ok {
 
 			err = fmt.Errorf("unsupported signal: %s", signal)
-			logger.V(0).Error(nil, err.Error())
+			logger.V(0).Error(nil, "PiiMasking action invalid configration")
 			r.ReportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
 			return ctrl.Result{}, nil
 		}
