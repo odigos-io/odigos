@@ -37,6 +37,7 @@ func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context
 
 	inst, err := auto.NewInstrumentation(
 		ctx,
+		auto.WithEnv(), // for OTEL_LOG_LEVEL
 		auto.WithPID(pid),
 		auto.WithResourceAttributes(utils.GetResourceAttributes(podWorkload, podName)...),
 		auto.WithServiceName(serviceName),
