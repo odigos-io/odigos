@@ -14,7 +14,7 @@ require (
 	github.com/odigos-io/odigos/opampserver v0.0.0
 	github.com/odigos-io/odigos/procdiscovery v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
-	go.opentelemetry.io/auto v0.13.0-alpha.0.20240615124104-22d9af3d1a11
+	go.opentelemetry.io/auto v0.13.0-alpha.0.20240705154812-28b663b26905
 	go.opentelemetry.io/otel v1.27.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.27.0
 	go.uber.org/zap v1.27.0
