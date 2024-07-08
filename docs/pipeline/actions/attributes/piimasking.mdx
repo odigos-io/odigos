@@ -19,12 +19,12 @@ The "PII Masking" Odigos Action can be used to mask PII data from span attribute
 
 ### Mechanism
 
-This action processes a list of PII categories to be masked from the traces. Each PII category is linked to a regex expression that will be applied to all span attribute values. Any portion of the span attribute values that match the regex expression will be replaced with `****`, while the rest of the attribute value will remain unchanged.
+This action processes a list of PII categories to be masked from the traces. Each PII category is linked to a regex that will be applied to all span attribute values. Any portion of the span attribute values that match the regex will be replaced with `****`, while the rest of the attribute value will remain unchanged.
 
 
 ### Basic Example
 
-The basic example below shows how to configure the Pii Masking action to mask Visa and Master cards from span attribute values.
+The basic example below shows how to configure the Pii Masking action to mask Visa and MasterCard credit card numbers from span attribute values.
 
 
 Create a file named `piimasking.yaml` with the following content:
@@ -56,7 +56,7 @@ The full list of options available for the "PiiMasking" action are:
 - `piiCategories` (required): An array of strings representing the PII Category you want to mask.
 
    The available PII categories are:
-    - `CREDIT_CARD`
+  - `CREDIT_CARD` - mask Visa and MasterCard credit card numbers
 
     <Note> Can't find the PII category you need? Please Contact us and we will add it for you </Note>
 
@@ -71,6 +71,6 @@ The full list of options available for the "PiiMasking" action are:
 ### Notes
 
 - This action masks span attribute values by replacing only the sensitive portions with `****`, while leaving the rest of the value intact.
-- The regex expressions used for masking are predefined for each PII category and cannot be configured.
+- The regex used for masking are predefined for each PII category and cannot be configured.
 - Currently, only trace signals are supported.
 - All span attribute values in every span will be examined and masked accordingly.
