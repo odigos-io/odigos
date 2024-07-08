@@ -53,11 +53,12 @@ kubectl apply -f piimasking.yaml
 
 The full list of options available for the "PiiMasking" action are:
 
-- `piiCategories` (required): An array of strings representing the PII Category you want to mask. 
+- `piiCategories` (required): An array of strings representing the PII Category you want to mask.
+
    The available PII categories are:
     - `CREDIT_CARD`
 
-    The `CUSTOM` category allows you to define your own regex expression to mask a specific PII category. The `ALL` category masks all the PII categories. The `NONE` category does not mask any PII category.
+    <Note> Can't find the PII category you need? Please Contact us and we will add it for you </Note>
 
 - `signals` (required): An array with the signals that the processor will act on (`TRACES`).
 
