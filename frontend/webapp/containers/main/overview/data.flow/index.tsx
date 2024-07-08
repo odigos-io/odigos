@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import { ROUTES } from '@/utils';
 import { OverviewDataFlowWrapper } from './styled';
+import { ROUTES, getMainContainerLanguage } from '@/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { KeyvalDataFlow, KeyvalLoader } from '@/design.system';
 import { useActions, useDestinations, useSources } from '@/hooks';
@@ -49,10 +49,18 @@ export function DataFlowContainer() {
     const mapSources = sources
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((source) => {
-        const languages =
+        let languages =
           source?.instrumented_application_details?.languages || [];
+
+        languages.map((language) => {
+          if (language.language === 'ignored') {
+            language.language = getMainContainerLanguage(source);
+          }
+        });
+
         const conditions =
           source?.instrumented_application_details?.conditions || [];
+
         return {
           ...source,
           conditions,

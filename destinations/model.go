@@ -29,6 +29,7 @@ type Spec struct {
 		}
 	}
 	Fields []Field `yaml:"fields"`
+	TestConnectionSupported bool `yaml:"testConnectionSupported"`
 }
 
 type Field struct {

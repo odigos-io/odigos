@@ -28,3 +28,33 @@ func GetClientConfig(kc string) (*rest.Config, error) {
 func IsRunningInKubernetes() bool {
 	return os.Getenv("KUBERNETES_SERVICE_HOST") != ""
 }
+
+type ClusterDetails struct {
+	CurrentContext string
+	ClusterName    string
+	ServerEndpoint string
+}
+
+func GetCurrentClusterDetails(kc string) ClusterDetails {
+	config, err := clientcmd.LoadFromFile(kc)
+	if err != nil {
+		return ClusterDetails{}
+	}
+
+	ctx := config.CurrentContext
+	cluster := ""
+	if val, ok := config.Contexts[ctx]; ok {
+		cluster = val.Cluster
+	}
+
+	server := ""
+	if val, ok := config.Clusters[cluster]; ok {
+		server = val.Server
+	}
+
+	return ClusterDetails{
+		CurrentContext: ctx,
+		ClusterName:    cluster,
+		ServerEndpoint: server,
+	}
+}

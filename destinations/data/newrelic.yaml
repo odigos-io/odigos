@@ -29,3 +29,4 @@ spec:
           - https://otlp.nr-data.net
           - https://otlp.eu01.nr-data.net
         required: true
+  testConnectionSupported: true

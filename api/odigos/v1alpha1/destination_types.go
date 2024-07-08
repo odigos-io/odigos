@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -62,6 +63,8 @@ type DestinationList struct {
 func init() {
 	SchemeBuilder.Register(&Destination{}, &DestinationList{})
 }
+
+var _ config.ExporterConfigurer = &Destination{}
 
 /* Implement common.ExporterConfigurer */
 func (dest Destination) GetID() string {

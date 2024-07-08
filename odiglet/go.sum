@@ -311,8 +311,8 @@ github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9dec
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2/go.mod h1:yxeiOL68Rb0Xd1ddK5vPZ/oVn4vY4Ynel7k9FzqtOIw=
-go.opentelemetry.io/auto v0.13.0-alpha.0.20240615124104-22d9af3d1a11 h1:H2w8qlDoZELdWskPATWM/yKQ3aLSokS2PxhoDP6DcPw=
-go.opentelemetry.io/auto v0.13.0-alpha.0.20240615124104-22d9af3d1a11/go.mod h1:7lDId8pdd0bm8odWRLh8xdA01d7oRtLMxwLCZAuibtc=
+go.opentelemetry.io/auto v0.13.0-alpha.0.20240705154812-28b663b26905 h1:jkn+mjs7Cpfzj/bjs8M9Ums2bxoABgq9ZtFI4aeL9M4=
+go.opentelemetry.io/auto v0.13.0-alpha.0.20240705154812-28b663b26905/go.mod h1:7lDId8pdd0bm8odWRLh8xdA01d7oRtLMxwLCZAuibtc=
 go.opentelemetry.io/collector/pdata v1.7.0 h1:/WNsBbE6KM3TTPUb9v/5B7IDqnDkgf8GyFhVJJqu7II=
 go.opentelemetry.io/collector/pdata v1.7.0/go.mod h1:ehCBBA5GoFrMZkwyZAKGY/lAVSgZf6rzUt3p9mddmPU=
 go.opentelemetry.io/contrib/bridges/prometheus v0.52.0 h1:NNkEjNcUXeNcxDTNLyyAmFHefByhj8YU1AojgcPqbfs=
