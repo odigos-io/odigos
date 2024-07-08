@@ -22,8 +22,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -78,9 +77,5 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 func (r *CollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.CollectorsGroup{}).
-		Owns(&v1.ConfigMap{}).
-		Owns(&v1.Service{}).
-		Owns(&appsv1.Deployment{}).
-		Owns(&appsv1.DaemonSet{}).
 		Complete(r)
 }

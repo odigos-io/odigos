@@ -33,7 +33,16 @@ const (
 func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
 	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
-	desiredDeployment, err := getDesiredDeployment(dests, configData, gateway, scheme, imagePullSecrets, odigosVersion, memConfig)
+
+	secretsVersionHash, err := destinationsSecretsVersionsHash(ctx, c, dests)
+	if err != nil {
+		logger.Error(err, "Failed to get secrets hash")
+		return nil, err
+	}
+
+	// Calculate the hash of the config data and the secrets version hash, this is used to make sure the gateway will restart when the config changes
+	configDataHash := common.Sha256Hash(fmt.Sprintf("%s-%s", configData, secretsVersionHash))
+	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, memConfig)
 	if err != nil {
 		logger.Error(err, "Failed to get desired deployment")
 		return nil, err
@@ -88,7 +97,7 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 	return existing, nil
 }
 
-func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
+func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string,
 	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
 
 	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", memConfig.memoryRequestMiB))
@@ -108,7 +117,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 				ObjectMeta: v1.ObjectMeta{
 					Labels: CommonLabels,
 					Annotations: map[string]string{
-						configHashAnnotation: common.Sha256Hash(configData),
+						configHashAnnotation: configDataHash,
 					},
 				},
 				Spec: corev1.PodSpec{

@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	k8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type GetDestinationTypesResponse struct {
@@ -226,6 +228,12 @@ func CreateNewDestination(c *gin.Context, odigosns string) {
 		return
 	}
 
+	err = addDestinationOwnerReferenceToSecret(c, odigosns, dest)
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
 	resp := k8sDestinationToEndpointFormat(*dest, secretFields)
 	c.JSON(201, resp)
 }
@@ -316,6 +324,12 @@ func UpdateExistingDestination(c *gin.Context, odigosns string) {
 			return
 		}
 		dest.Spec.SecretRef = secretRef
+		// add owner reference to the secret
+		err = addDestinationOwnerReferenceToSecret(c, odigosns, dest)
+		if err != nil {
+			returnError(c, err)
+			return
+		}
 	} else if destUpdateHasSecrets && destCurrentlyHasSecrets {
 		// update the secret in case it is modified
 		secret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Get(c, dest.Spec.SecretRef.Name, metav1.GetOptions{})
@@ -373,35 +387,17 @@ func UpdateExistingDestination(c *gin.Context, odigosns string) {
 
 func DeleteDestination(c *gin.Context, odigosns string) {
 	destId := c.Param("id")
-	currentDest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Get(c, destId, metav1.GetOptions{})
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message": "cannot find destination with id '" + destId + "'",
-		})
-		return
-	}
 
 	// delete the destination
 	errDest := kube.DefaultClient.OdigosClient.Destinations(odigosns).Delete(c, destId, metav1.DeleteOptions{})
-
-	// delete the secret if we have one
-	var errSecret error
-	if currentDest.Spec.SecretRef != nil && currentDest.Spec.SecretRef.Name != "" {
-		secretName := currentDest.Spec.SecretRef.Name
-		errSecret = kube.DefaultClient.CoreV1().Secrets(odigosns).Delete(c, secretName, metav1.DeleteOptions{})
-	}
+	// the secret (if exits) will be deleted by the owner reference
 
 	if errDest != nil {
 		returnError(c, errDest)
 		return
 	}
 
-	if errSecret != nil {
-		returnError(c, errDest)
-		return
-	}
-
-	c.Status(204)
+	c.Status(http.StatusNoContent)
 }
 
 func k8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields map[string]string) Destination {
@@ -602,4 +598,35 @@ func createDestinationSecret(ctx context.Context, destType common.DestinationTyp
 	return &k8s.LocalObjectReference{
 		Name: newSecret.Name,
 	}, nil
+}
+
+func addDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, dest *v1alpha1.Destination) error {
+	destOwnerRef := metav1.OwnerReference{
+		APIVersion:         "odigos.io/v1alpha1",
+		Kind:               "Destination",
+		Name:               dest.Name,
+		UID:                dest.UID,
+	}
+
+	secretPatch :=  []struct{
+		Op   string `json:"op"`
+		Path string `json:"path"`
+		Value []metav1.OwnerReference `json:"value"`
+	} {{
+		Op: "add",
+		Path: "/metadata/ownerReferences",
+		Value: []metav1.OwnerReference{destOwnerRef},
+		},
+	}
+
+	secretPatchBytes, err := json.Marshal(secretPatch)
+	if err != nil {
+		return err
+	}
+
+	_, err = kube.DefaultClient.CoreV1().Secrets(odigosns).Patch(ctx, dest.Spec.SecretRef.Name, types.JSONPatchType, secretPatchBytes, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }
