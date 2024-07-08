@@ -31,6 +31,7 @@ type ActionsV1alpha1Interface interface {
 	DeleteAttributesGetter
 	ErrorSamplersGetter
 	LatencySamplersGetter
+	PiiMaskingsGetter
 	ProbabilisticSamplersGetter
 	RenameAttributesGetter
 }
@@ -54,6 +55,10 @@ func (c *ActionsV1alpha1Client) ErrorSamplers(namespace string) ErrorSamplerInte
 
 func (c *ActionsV1alpha1Client) LatencySamplers(namespace string) LatencySamplerInterface {
 	return newLatencySamplers(c, namespace)
+}
+
+func (c *ActionsV1alpha1Client) PiiMaskings(namespace string) PiiMaskingInterface {
+	return newPiiMaskings(c, namespace)
 }
 
 func (c *ActionsV1alpha1Client) ProbabilisticSamplers(namespace string) ProbabilisticSamplerInterface {

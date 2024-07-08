@@ -1,9 +1,12 @@
 /*
 Copyright 2022.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,10 +19,7 @@ package actions
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"strconv"
-
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -31,21 +31,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var supportedSignals = map[common.ObservabilitySignal]struct{}{
+var piiMaskingSupportedSignals = map[common.ObservabilitySignal]struct{}{
 	common.TracesObservabilitySignal: {},
 }
 
-type ProbabilisticSamplerReconciler struct {
+type PiiMaskingReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *ProbabilisticSamplerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
+func (r *PiiMaskingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling ProbabilisticSampler action")
+	logger.V(0).Info("Reconciling PiiMasking action")
 
-	action := &actionv1.ProbabilisticSampler{}
+	action := &actionv1.PiiMasking{}
 	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -53,10 +52,10 @@ func (r *ProbabilisticSamplerReconciler) Reconcile(ctx context.Context, req ctrl
 
 	for _, signal := range action.Spec.Signals {
 
-		if _, ok := supportedSignals[signal]; !ok {
+		if _, ok := piiMaskingSupportedSignals[signal]; !ok {
 
 			err = fmt.Errorf("unsupported signal: %s", signal)
-			logger.V(0).Error(err, err.Error())
+			logger.V(0).Error(err, "PiiMasking action invalid configration")
 			r.ReportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
 			return ctrl.Result{}, nil
 		}
@@ -64,9 +63,8 @@ func (r *ProbabilisticSamplerReconciler) Reconcile(ctx context.Context, req ctrl
 
 	processor, err := r.convertToProcessor(action)
 	if err != nil {
-		logger.V(0).Error(err, "failed to convert ProbabilisticSampler to processor")
 		r.ReportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 
 	err = r.Patch(ctx, processor, client.Apply, client.FieldOwner(action.Name), client.ForceOwnership)
@@ -83,7 +81,7 @@ func (r *ProbabilisticSamplerReconciler) Reconcile(ctx context.Context, req ctrl
 	return ctrl.Result{}, nil
 }
 
-func (r *ProbabilisticSamplerReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.ProbabilisticSampler, reason string, msg string) error {
+func (r *PiiMaskingReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.PiiMasking, reason string, msg string) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               ActionTransformedToProcessorType,
 		Status:             metav1.ConditionFalse,
@@ -101,7 +99,7 @@ func (r *ProbabilisticSamplerReconciler) ReportReconciledToProcessorFailed(ctx c
 	return nil
 }
 
-func (r *ProbabilisticSamplerReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.ProbabilisticSampler) error {
+func (r *PiiMaskingReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.PiiMasking) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               ActionTransformedToProcessorType,
 		Status:             metav1.ConditionTrue,
@@ -119,26 +117,31 @@ func (r *ProbabilisticSamplerReconciler) ReportReconciledToProcessor(ctx context
 	return nil
 }
 
-type ProbabilisticSamplerConfig struct {
-	Value    float64 `json:"sampling_percentage"`
-	HashSeed int     `json:"hash_seed"`
+type PiiMaskingConfig struct {
+	AllowAllKeys  bool     `json:"allow_all_keys"`
+	BlockedValues []string `json:"blocked_values"`
 }
 
-func (r *ProbabilisticSamplerReconciler) convertToProcessor(action *actionv1.ProbabilisticSampler) (*v1.Processor, error) {
+func (r *PiiMaskingReconciler) convertToProcessor(action *actionv1.PiiMasking) (*v1.Processor, error) {
 
-	samplingPercentage, err := strconv.ParseFloat(action.Spec.SamplingPercentage, 32)
-	if err != nil {
-		return nil, err
+	PiiCategories := action.Spec.PiiCategories
+	if len(PiiCategories) == 0 {
+		return nil, fmt.Errorf("no PII categories are configured, so this processor is not needed")
 	}
 
-	if samplingPercentage < 0 {
-		return nil, errors.New("sampling_precentage cannot be negative")
+	// Allow all attributes to be traced. If set to false it removes all attributes not in allowed_keys which is all attributes
+	config := PiiMaskingConfig{
+		AllowAllKeys: true,
 	}
 
-	config := ProbabilisticSamplerConfig{
-		Value: samplingPercentage,
-		// Arbitrary hash seed set to maximize processor creating abstraction for the user.
-		HashSeed: 123,
+	for _, piiCategory := range PiiCategories {
+		switch piiCategory {
+		case actionv1.CreditCardMasking:
+			config.BlockedValues = append(config.BlockedValues, []string{
+				"4[0-9]{12}(?:[0-9]{3})?", // Visa credit card number
+				"(5[1-5][0-9]{14})",       // MasterCard number
+			}...)
+		}
 	}
 
 	configJson, err := json.Marshal(config)
@@ -164,16 +167,17 @@ func (r *ProbabilisticSamplerReconciler) convertToProcessor(action *actionv1.Pro
 			},
 		},
 		Spec: v1.ProcessorSpec{
-			Type:            "probabilistic_sampler",
+			Type:            "redaction",
 			ProcessorName:   action.Spec.ActionName,
 			Disabled:        action.Spec.Disabled,
 			Notes:           action.Spec.Notes,
 			Signals:         action.Spec.Signals,
-			CollectorRoles:  []v1.CollectorsGroupRole{v1.CollectorsGroupRoleNodeCollector},
-			OrderHint:       1,
+			CollectorRoles:  []v1.CollectorsGroupRole{v1.CollectorsGroupRoleClusterGateway},
+			OrderHint:       1, // it is better to do it as soon as possible, after the batch processor
 			ProcessorConfig: runtime.RawExtension{Raw: configJson},
 		},
 	}
 
 	return &processor, nil
+
 }
