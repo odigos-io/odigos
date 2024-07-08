@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import theme from '@/styles/palette';
-import { useKeyDown } from '@/hooks';
+import { useCheckConnection, useKeyDown } from '@/hooks';
 import { Field } from '@/types/destinations';
 import { renderFields } from './dynamic.fields';
 import {
@@ -25,6 +25,7 @@ import {
 
 interface CreateConnectionFormProps {
   fields: Field[];
+  checkConnectionEnabled?: boolean;
   onSubmit: (formData: DestinationBody) => void;
   supportedSignals: {
     [key: string]: {
@@ -80,6 +81,8 @@ export function CreateConnectionForm({
     destinationNameValue || ''
   );
 
+  const { checkDestinationConnection, isLoading } = useCheckConnection();
+
   useEffect(() => {
     setInitialDynamicFields();
   }, [fields]);
@@ -123,7 +126,7 @@ export function CreateConnectionForm({
         }));
 
     setSelectedMonitors(
-      data.filter(({ id }) => supportedSignals[id]?.supported)
+      data.filter(({ id }) => supportedSignals?.[id]?.supported)
     );
   }
 
@@ -185,6 +188,24 @@ export function CreateConnectionForm({
     onSubmit(body);
   }
 
+  function handleCheckDestinationConnection() {
+    const signals = selectedMonitors.reduce(
+      (acc, { id, checked }) => ({ ...acc, [id]: checked }),
+      {}
+    );
+
+    const stringifyFields = stringifyNonStringValues(dynamicFields);
+    const fields = cleanObjectEmptyStringsValues(stringifyFields);
+
+    const body = {
+      name: destinationName,
+      signals,
+      fields,
+      type: 'azureblob',
+    };
+    checkDestinationConnection(body);
+  }
+
   return (
     <>
       <KeyvalText size={18} weight={600}>
@@ -217,6 +238,15 @@ export function CreateConnectionForm({
       </FieldWrapper>
       {renderFields(fields, dynamicFields, handleDynamicFieldChange)}
       <CreateDestinationButtonWrapper>
+        <KeyvalButton
+          variant="secondary"
+          disabled={isCreateButtonDisabled}
+          onClick={handleCheckDestinationConnection}
+        >
+          <KeyvalText color={theme.text.secondary} size={14} weight={600}>
+            {'Check Connection'}
+          </KeyvalText>
+        </KeyvalButton>
         <KeyvalButton disabled={isCreateButtonDisabled} onClick={onCreateClick}>
           <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
             {dynamicFieldsValues
