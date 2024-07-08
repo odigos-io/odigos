@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { SETUP } from '@/utils';
 import { DestinationType } from '@/types';
 import { styled } from 'styled-components';
 import FormDangerZone from './form.danger.zone';
 import { BackIcon } from '@keyval-dev/design-system';
 import { Conditions, KeyvalText } from '@/design.system';
-import { CreateConnectionForm, QuickHelp } from '@/components/setup';
+import { CreateConnectionForm } from '@/components/setup';
 import { ManageDestinationHeader } from '../manage.destination.header/manage.destination.header';
 
 interface ManageDestinationProps {
@@ -37,18 +37,6 @@ export function ManageDestination({
   onSubmit,
   onDelete,
 }: ManageDestinationProps) {
-  const videoList = useMemo(
-    () =>
-      destinationType?.fields
-        ?.filter((field) => field?.video_url)
-        ?.map((field) => ({
-          name: field.display_name,
-          src: field.video_url,
-          thumbnail_url: field.thumbnail_url,
-        })),
-    [destinationType]
-  );
-
   return (
     <>
       {onBackClick && (
@@ -65,7 +53,7 @@ export function ManageDestination({
             destinationNameValue={selectedDestination?.name}
             dynamicFieldsValues={selectedDestination?.fields}
             checkboxValues={selectedDestination?.signals}
-            supportedSignals={selectedDestination?.supported_signals}
+            destination={selectedDestination}
             onSubmit={(data) => onSubmit(data)}
           />
           {onDelete && (
@@ -74,7 +62,6 @@ export function ManageDestination({
         </div>
         <>
           <Conditions conditions={selectedDestination?.conditions} />
-          {videoList?.length > 0 && <QuickHelp data={videoList} />}
         </>
       </CreateConnectionWrapper>
     </>

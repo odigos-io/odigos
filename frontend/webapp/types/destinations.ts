@@ -27,6 +27,7 @@ export interface SelectedDestination {
   display_name: string;
   image_url: string;
   supported_signals: SupportedSignals;
+  test_connection_supported: boolean;
 }
 
 export interface Destination {
