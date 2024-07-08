@@ -126,7 +126,7 @@ func (r *PiiMaskingReconciler) convertToProcessor(action *actionv1.PiiMasking) (
 
 	PiiCategories := action.Spec.PiiCategories
 	if len(PiiCategories) == 0 {
-		return nil, fmt.Errorf("No PII categories are configured, so this processor is not needed")
+		return nil, fmt.Errorf("no PII categories are configured, so this processor is not needed")
 	}
 
 	// Allow all attributes to be traced. If set to false it removes all attributes not in allowed_keys which is all attributes
