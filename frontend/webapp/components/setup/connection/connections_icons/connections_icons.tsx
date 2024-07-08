@@ -33,7 +33,7 @@ export function ConnectionsIcons({
 }) {
   return icon ? (
     <ConnectionsIconsWrapper>
-      <ConnectIcon />
+      <ConnectIcon size={48} />
       <Divider />
       <KeyvalImage
         src={icon}

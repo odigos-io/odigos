@@ -1,16 +1,22 @@
-import { useMutation, useQuery } from 'react-query';
+import { AxiosError } from 'axios';
+import { useMutation } from 'react-query';
 import { checkConnection } from '@/services';
 
 export function useCheckConnection() {
   const { mutateAsync, isLoading } = useMutation(checkConnection);
 
-  const checkDestinationConnection = async (body) => {
-    console.log('checkDestinationConnection', body);
-
-    await mutateAsync(body, {
-      onSuccess: (res) => console.log({ res }),
-      onError: (error) => console.log({ error }),
-    });
+  const checkDestinationConnection = async (body, callback) => {
+    try {
+      await mutateAsync(body, {
+        onSuccess: (res) =>
+          callback({
+            enabled: true,
+            message: res.message,
+          }),
+        onError: (error: AxiosError) =>
+          callback({ enabled: false, message: error.message }),
+      });
+    } catch (error) {}
   };
 
   return {
