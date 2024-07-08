@@ -25,6 +25,8 @@ type ErrorSamplerExpansion interface{}
 
 type LatencySamplerExpansion interface{}
 
+type PiiMaskingExpansion interface{}
+
 type ProbabilisticSamplerExpansion interface{}
 
 type RenameAttributeExpansion interface{}

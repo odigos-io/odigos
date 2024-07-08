@@ -31,6 +31,8 @@ type Interface interface {
 	ErrorSamplers() ErrorSamplerInformer
 	// LatencySamplers returns a LatencySamplerInformer.
 	LatencySamplers() LatencySamplerInformer
+	// PiiMaskings returns a PiiMaskingInformer.
+	PiiMaskings() PiiMaskingInformer
 	// ProbabilisticSamplers returns a ProbabilisticSamplerInformer.
 	ProbabilisticSamplers() ProbabilisticSamplerInformer
 	// RenameAttributes returns a RenameAttributeInformer.
@@ -66,6 +68,11 @@ func (v *version) ErrorSamplers() ErrorSamplerInformer {
 // LatencySamplers returns a LatencySamplerInformer.
 func (v *version) LatencySamplers() LatencySamplerInformer {
 	return &latencySamplerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// PiiMaskings returns a PiiMaskingInformer.
+func (v *version) PiiMaskings() PiiMaskingInformer {
+	return &piiMaskingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // ProbabilisticSamplers returns a ProbabilisticSamplerInformer.
