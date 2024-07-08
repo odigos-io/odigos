@@ -14,7 +14,10 @@ export function useCheckConnection() {
             message: res.message,
           }),
         onError: (error: AxiosError) =>
-          callback({ enabled: false, message: error.message }),
+          callback({
+            enabled: false,
+            message: 'Please check your input and try again.',
+          }),
       });
     } catch (error) {}
   };
