@@ -112,10 +112,10 @@
                 "pipeline/actions/attributes/introduction",
                 "pipeline/actions/attributes/addclusterinfo",
                 "pipeline/actions/attributes/deleteattribute",
-                "pipeline/actions/attributes/rename-attribute"
+                "pipeline/actions/attributes/rename-attribute",
+                "pipeline/actions/attributes/piimasking"
               ]
             },
-            "pipeline/actions/piimasking",
             "pipeline/actions/crd",
             "pipeline/actions/troubleshooting"
           ]
