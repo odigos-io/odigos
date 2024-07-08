@@ -147,8 +147,10 @@
           "pages": [
             "backends/awss3",
             "backends/azureblob",
+            "backends/causely",
             "backends/coralogix",
             "backends/datadog",
+            "backends/dynatrace",
             "backends/elasticsearch",
             "backends/gcs",
             "backends/googlecloud",
@@ -171,8 +173,7 @@
             "backends/signoz",
             "backends/splunk",
             "backends/sumologic",
-            "backends/tempo",
-            "backends/causely"
+            "backends/tempo"
           ]
 
         }
