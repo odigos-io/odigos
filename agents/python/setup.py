@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="odigos-python-configurator",
     version="0.1.0",
-    description="My custom OpenTelemetry configurator",
+    description="Odigos Configurator for Python OpenTelemetry Auto-Instrumentation",
     author="Tamir David",
     author_email="tamir@odigos.io",
     packages=find_packages(include=["configurator", "configurator.*"]),

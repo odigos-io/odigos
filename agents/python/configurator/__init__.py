@@ -22,9 +22,6 @@ def _initialize_components(auto_instrumentation_version):
         "telemetry.distro.version": VERSION,
     }
 
-    if auto_instrumentation_version:
-        auto_resource[sdk_config.ResourceAttributes.TELEMETRY_AUTO_VERSION] = auto_instrumentation_version
-
     resource = Resource.create(auto_resource) \
         .merge(OTELResourceDetector().detect()) \
         .merge(ProcessResourceDetector().detect())
