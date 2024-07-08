@@ -28,11 +28,6 @@ const (
 	CreditCardMasking PiiCategory = "CREDIT_CARD"
 )
 
-type PiiCategoryConfiguration struct {
-	Mask     bool        `json:"mask"`
-	Category PiiCategory `json:"category"`
-}
-
 // PiiMaskingSpec defines the desired state of PiiMasking action
 type PiiMaskingSpec struct {
 	ActionName string                       `json:"actionName,omitempty"`
@@ -40,7 +35,7 @@ type PiiMaskingSpec struct {
 	Disabled   bool                         `json:"disabled,omitempty"`
 	Signals    []common.ObservabilitySignal `json:"signals"`
 
-	PiiCategoryConfigurations []PiiCategoryConfiguration `json:"piiCategoryConfigurations"`
+	PiiCategories []PiiCategory `json:"piiCategories"`
 }
 
 // PiiMaskingStatus defines the observed state of PiiMasking action

@@ -124,9 +124,9 @@ type PiiMaskingConfig struct {
 
 func (r *PiiMaskingReconciler) convertToProcessor(action *actionv1.PiiMasking) (*v1.Processor, error) {
 
-	piiCategoryConfiguration := action.Spec.PiiCategoryConfigurations
-	if !piiCategoryExists(piiCategoryConfiguration) {
-		return nil, fmt.Errorf("none of the pii categories are configured to be masked, no need for this processor")
+	PiiCategories := action.Spec.PiiCategories
+	if len(PiiCategories) == 0 {
+		return nil, fmt.Errorf("No PII categories are configured, so this processor is not needed")
 	}
 
 	// Allow all attributes to be traced. If set to false it removes all attributes not in allowed_keys which is all attributes
@@ -134,8 +134,8 @@ func (r *PiiMaskingReconciler) convertToProcessor(action *actionv1.PiiMasking) (
 		AllowAllKeys: true,
 	}
 
-	for _, attr := range piiCategoryConfiguration {
-		switch attr.Category {
+	for _, piiCategory := range PiiCategories {
+		switch piiCategory {
 		case actionv1.CreditCardMasking:
 			config.BlockedValues = append(config.BlockedValues, []string{
 				"4[0-9]{12}(?:[0-9]{3})?", // Visa credit card number
@@ -180,13 +180,4 @@ func (r *PiiMaskingReconciler) convertToProcessor(action *actionv1.PiiMasking) (
 
 	return &processor, nil
 
-}
-
-func piiCategoryExists(attributes []actionv1.PiiCategoryConfiguration) bool {
-	for _, attr := range attributes {
-		if attr.Mask {
-			return true
-		}
-	}
-	return false
 }

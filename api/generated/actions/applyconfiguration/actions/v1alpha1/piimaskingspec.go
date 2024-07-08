@@ -18,17 +18,18 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	common "github.com/odigos-io/odigos/common"
 )
 
 // PiiMaskingSpecApplyConfiguration represents an declarative configuration of the PiiMaskingSpec type for use
 // with apply.
 type PiiMaskingSpecApplyConfiguration struct {
-	ActionName                *string                                      `json:"actionName,omitempty"`
-	Notes                     *string                                      `json:"notes,omitempty"`
-	Disabled                  *bool                                        `json:"disabled,omitempty"`
-	Signals                   []common.ObservabilitySignal                 `json:"signals,omitempty"`
-	PiiCategoryConfigurations []PiiCategoryConfigurationApplyConfiguration `json:"piiCategoryConfigurations,omitempty"`
+	ActionName    *string                      `json:"actionName,omitempty"`
+	Notes         *string                      `json:"notes,omitempty"`
+	Disabled      *bool                        `json:"disabled,omitempty"`
+	Signals       []common.ObservabilitySignal `json:"signals,omitempty"`
+	PiiCategories []v1alpha1.PiiCategory       `json:"piiCategories,omitempty"`
 }
 
 // PiiMaskingSpecApplyConfiguration constructs an declarative configuration of the PiiMaskingSpec type for use with
@@ -71,15 +72,12 @@ func (b *PiiMaskingSpecApplyConfiguration) WithSignals(values ...common.Observab
 	return b
 }
 
-// WithPiiCategoryConfigurations adds the given value to the PiiCategoryConfigurations field in the declarative configuration
+// WithPiiCategories adds the given value to the PiiCategories field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the PiiCategoryConfigurations field.
-func (b *PiiMaskingSpecApplyConfiguration) WithPiiCategoryConfigurations(values ...*PiiCategoryConfigurationApplyConfiguration) *PiiMaskingSpecApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the PiiCategories field.
+func (b *PiiMaskingSpecApplyConfiguration) WithPiiCategories(values ...v1alpha1.PiiCategory) *PiiMaskingSpecApplyConfiguration {
 	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithPiiCategoryConfigurations")
-		}
-		b.PiiCategoryConfigurations = append(b.PiiCategoryConfigurations, *values[i])
+		b.PiiCategories = append(b.PiiCategories, values[i])
 	}
 	return b
 }

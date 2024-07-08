@@ -47,19 +47,11 @@ spec:
                 type: boolean
               notes:
                 type: string
-              piiCategoryConfigurations:
+              piiCategories:
                 items:
-                  properties:
-                    category:
-                      enum:
-                      - CREDIT_CARD
-                      type: string
-                    mask:
-                      type: boolean
-                  required:
-                  - category
-                  - mask
-                  type: object
+                  enum:
+                  - CREDIT_CARD
+                  type: string
                 type: array
               signals:
                 items:
@@ -70,7 +62,7 @@ spec:
                   type: string
                 type: array
             required:
-            - piiCategoryConfigurations
+            - piiCategories
             - signals
             type: object
           status:
