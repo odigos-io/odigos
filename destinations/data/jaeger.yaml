@@ -20,3 +20,4 @@ spec:
       componentProps:
         type: text
         required: true
+  testConnectionSupported: true

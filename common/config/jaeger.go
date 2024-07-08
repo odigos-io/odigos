@@ -18,6 +18,9 @@ const (
 
 type Jaeger struct{}
 
+// compile time checks
+var _ Configer = (*Jaeger)(nil)
+
 func (j *Jaeger) DestType() common.DestinationType {
 	return common.JaegerDestinationType
 }

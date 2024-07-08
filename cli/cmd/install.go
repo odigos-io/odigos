@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/odigos-io/odigos/cli/pkg/autodetect"
+
 	"github.com/odigos-io/odigos/cli/pkg/labels"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -85,8 +87,20 @@ This command will install k8s components that will auto-instrument your applicat
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
+		kc := cmd.Flag("kubeconfig").Value.String()
+		kubeKind, kubeVersion := autodetect.KubernetesClusterProduct(ctx, kc, client)
+		if kubeKind != autodetect.KindUnknown {
+			autodetect.CurrentKubernetesVersion = autodetect.KubernetesVersion{
+				Kind:    kubeKind,
+				Version: kubeVersion,
+			}
+			fmt.Printf("Detected Kubernetes: %s version %s\n", kubeKind, kubeVersion)
+		} else {
+			fmt.Println("Unknown Kubernetes cluster detected, proceeding with installation")
+		}
+
 		// namespace is created on "install" and is not managed by resource manager
-		createKubeResourceWithLogging(ctx, fmt.Sprintf("Creating namespace %s", ns),
+		createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
 
 		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config)
