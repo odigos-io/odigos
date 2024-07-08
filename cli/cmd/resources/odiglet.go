@@ -532,6 +532,10 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 										},
 									},
 								},
+								{
+									Name: "OTEL_LOG_LEVEL",
+									Value: "info",
+								},
 							}, dynamicEnv...),
 							EnvFrom: []corev1.EnvFromSource{
 								{
