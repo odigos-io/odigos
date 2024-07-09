@@ -28,10 +28,11 @@ type DestinationsCategory struct {
 }
 
 type DestinationTypesCategoryItem struct {
-	Type             common.DestinationType `json:"type"`
-	DisplayName      string                 `json:"display_name"`
-	ImageUrl         string                 `json:"image_url"`
-	SupportedSignals SupportedSignals       `json:"supported_signals"`
+	Type                    common.DestinationType `json:"type"`
+	DisplayName             string                 `json:"display_name"`
+	ImageUrl                string                 `json:"image_url"`
+	SupportedSignals        SupportedSignals       `json:"supported_signals"`
+	TestConnectionSupported bool                   `json:"test_connection_supported"`
 }
 
 type SupportedSignals struct {
@@ -566,9 +567,10 @@ func getDestinationSecretFields(c *gin.Context, odigosns string, dest *v1alpha1.
 
 func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) DestinationTypesCategoryItem {
 	return DestinationTypesCategoryItem{
-		Type:        destConfig.Metadata.Type,
-		DisplayName: destConfig.Metadata.DisplayName,
-		ImageUrl:    GetImageURL(destConfig.Spec.Image),
+		Type:                    destConfig.Metadata.Type,
+		DisplayName:             destConfig.Metadata.DisplayName,
+		ImageUrl:                GetImageURL(destConfig.Spec.Image),
+		TestConnectionSupported: destConfig.Spec.TestConnectionSupported,
 		SupportedSignals: SupportedSignals{
 			Traces: ObservabilitySignalSupport{
 				Supported: destConfig.Spec.Signals.Traces.Supported,

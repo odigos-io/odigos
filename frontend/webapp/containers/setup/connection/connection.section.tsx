@@ -1,11 +1,10 @@
-import React, { useLayoutEffect, useMemo, useState } from 'react';
+import React from 'react';
 import { useConnect } from '@/hooks';
 import { useQuery } from 'react-query';
 import { QUERIES } from '@/utils/constants';
 import { getDestination } from '@/services';
 import { KeyvalLoader } from '@/design.system';
-import { useSearchParams } from 'next/navigation';
-import { CreateConnectionForm, QuickHelp } from '@/components/setup';
+import { CreateConnectionForm } from '@/components/setup';
 import {
   LoaderWrapper,
   CreateConnectionContainer,
@@ -13,7 +12,7 @@ import {
 
 export interface DestinationBody {
   name: string;
-  type?: string;
+  type: string;
   signals: {
     [key: string]: boolean;
   };
@@ -22,11 +21,8 @@ export interface DestinationBody {
   };
 }
 
-export function ConnectionSection({ supportedSignals }) {
-  const [type, setType] = useState<string>('');
-
+export function ConnectionSection({ destination, type }) {
   const { connect } = useConnect();
-  const searchParams = useSearchParams();
 
   const { isLoading, data } = useQuery(
     [QUERIES.API_DESTINATION_TYPE],
@@ -36,27 +32,8 @@ export function ConnectionSection({ supportedSignals }) {
     }
   );
 
-  useLayoutEffect(onPageLoad, []);
-
-  function onPageLoad() {
-    const search = searchParams.get('type');
-    search && setType(search);
-  }
-
-  const videoList = useMemo(
-    () =>
-      data?.fields
-        ?.filter((field) => field?.video_url)
-        ?.map((field) => ({
-          name: field.display_name,
-          src: field.video_url,
-          thumbnail_url: field.thumbnail_url,
-        })),
-    [data]
-  );
-
   function createDestination(formData: DestinationBody) {
-    connect({ type, ...formData });
+    connect({ ...formData });
   }
 
   if (isLoading)
@@ -70,12 +47,11 @@ export function ConnectionSection({ supportedSignals }) {
     <CreateConnectionContainer>
       {data?.fields && (
         <CreateConnectionForm
-          fields={data?.fields}
+          fields={data.fields}
           onSubmit={createDestination}
-          supportedSignals={supportedSignals}
+          destination={destination}
         />
       )}
-      {videoList?.length > 0 && <QuickHelp data={videoList} />}
     </CreateConnectionContainer>
   );
 }

@@ -43,6 +43,10 @@ func (c *FakeActionsV1alpha1) LatencySamplers(namespace string) v1alpha1.Latency
 	return &FakeLatencySamplers{c, namespace}
 }
 
+func (c *FakeActionsV1alpha1) PiiMaskings(namespace string) v1alpha1.PiiMaskingInterface {
+	return &FakePiiMaskings{c, namespace}
+}
+
 func (c *FakeActionsV1alpha1) ProbabilisticSamplers(namespace string) v1alpha1.ProbabilisticSamplerInterface {
 	return &FakeProbabilisticSamplers{c, namespace}
 }

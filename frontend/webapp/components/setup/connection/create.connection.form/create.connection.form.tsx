@@ -1,8 +1,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import theme from '@/styles/palette';
-import { useKeyDown } from '@/hooks';
-import { Field } from '@/types/destinations';
+import { useCheckConnection, useKeyDown } from '@/hooks';
+import { Field, SelectedDestination } from '@/types';
 import { renderFields } from './dynamic.fields';
 import {
   cleanObjectEmptyStringsValues,
@@ -14,6 +14,7 @@ import {
   KeyvalButton,
   KeyvalCheckbox,
   KeyvalInput,
+  KeyvalLoader,
   KeyvalText,
 } from '@/design.system';
 import {
@@ -25,12 +26,8 @@ import {
 
 interface CreateConnectionFormProps {
   fields: Field[];
+  destination: SelectedDestination;
   onSubmit: (formData: DestinationBody) => void;
-  supportedSignals: {
-    [key: string]: {
-      supported: boolean;
-    };
-  };
   dynamicFieldsValues?: {
     [key: string]: any;
   };
@@ -66,19 +63,25 @@ const sanitizeDynamicFields = (
 export function CreateConnectionForm({
   fields,
   onSubmit,
-  supportedSignals,
+  destination,
   dynamicFieldsValues,
   destinationNameValue,
   checkboxValues,
 }: CreateConnectionFormProps) {
   const [selectedMonitors, setSelectedMonitors] = useState(MONITORS);
   const [isCreateButtonDisabled, setIsCreateButtonDisabled] = useState(true);
+  const [isConnectionTested, setIsConnectionTested] = useState({
+    enabled: null,
+    message: '',
+  });
   const [dynamicFields, setDynamicFields] = useState(
     sanitizeDynamicFields(fields, dynamicFieldsValues)
   );
   const [destinationName, setDestinationName] = useState<string>(
     destinationNameValue || ''
   );
+
+  const { checkDestinationConnection, isLoading } = useCheckConnection();
 
   useEffect(() => {
     setInitialDynamicFields();
@@ -90,7 +93,7 @@ export function CreateConnectionForm({
 
   useEffect(() => {
     filterSupportedMonitors();
-  }, [supportedSignals]);
+  }, [destination]);
 
   useKeyDown('Enter', handleKeyPress);
 
@@ -123,7 +126,7 @@ export function CreateConnectionForm({
         }));
 
     setSelectedMonitors(
-      data.filter(({ id }) => supportedSignals[id]?.supported)
+      data.filter(({ id }) => destination?.supported_signals?.[id]?.supported)
     );
   }
 
@@ -151,6 +154,10 @@ export function CreateConnectionForm({
   };
 
   function handleDynamicFieldChange(name: string, value: string) {
+    if (isConnectionTested.enabled !== null) {
+      setIsConnectionTested({ enabled: null, message: '' });
+    }
+
     setDynamicFields((prevFields) => ({ ...prevFields, [name]: value }));
   }
 
@@ -181,8 +188,29 @@ export function CreateConnectionForm({
       name: destinationName,
       signals,
       fields,
+      type: destination.type,
     };
     onSubmit(body);
+  }
+
+  async function handleCheckDestinationConnection() {
+    const signals = selectedMonitors.reduce(
+      (acc, { id, checked }) => ({ ...acc, [id]: checked }),
+      {}
+    );
+
+    const stringifyFields = stringifyNonStringValues(dynamicFields);
+    const fields = cleanObjectEmptyStringsValues(stringifyFields);
+
+    const body = {
+      name: destinationName,
+      signals,
+      fields,
+      type: destination.type,
+    };
+    try {
+      checkDestinationConnection(body, setIsConnectionTested);
+    } catch (error) {}
   }
 
   return (
@@ -217,7 +245,35 @@ export function CreateConnectionForm({
       </FieldWrapper>
       {renderFields(fields, dynamicFields, handleDynamicFieldChange)}
       <CreateDestinationButtonWrapper>
-        <KeyvalButton disabled={isCreateButtonDisabled} onClick={onCreateClick}>
+        {destination?.test_connection_supported && (
+          <KeyvalButton
+            variant="secondary"
+            disabled={isCreateButtonDisabled}
+            onClick={handleCheckDestinationConnection}
+          >
+            {isLoading ? (
+              <KeyvalLoader width={9} height={9} />
+            ) : isConnectionTested.enabled === null ? (
+              <KeyvalText color={theme.text.secondary} size={14} weight={600}>
+                {'Check Connection'}
+              </KeyvalText>
+            ) : isConnectionTested.enabled ? (
+              <KeyvalText color={theme.colors.success} size={14} weight={600}>
+                {'Connection Successful'}
+              </KeyvalText>
+            ) : (
+              <KeyvalText color={theme.colors.error} size={14} weight={600}>
+                {isConnectionTested.message}
+              </KeyvalText>
+            )}
+          </KeyvalButton>
+        )}
+        <KeyvalButton
+          disabled={
+            isCreateButtonDisabled || isConnectionTested.enabled === false
+          }
+          onClick={onCreateClick}
+        >
           <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
             {dynamicFieldsValues
               ? SETUP.UPDATE_DESTINATION
