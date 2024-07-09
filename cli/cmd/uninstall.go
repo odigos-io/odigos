@@ -87,7 +87,7 @@ var uninstallCmd = &cobra.Command{
 		l := log.Print("Rolling back odigos changes to pods")
 		err = rollbackPodChanges(ctx, client)
 		if err != nil {
-			l.Error(err)
+			l.Warn(err.Error())
 		} else {
 			l.Success()
 		}
@@ -95,7 +95,7 @@ var uninstallCmd = &cobra.Command{
 		l = log.Print("Rolling back odigos changes to namespaces")
 		err = rollbackNamespaceChanges(ctx, client)
 		if err != nil {
-			l.Error(err)
+			l.Warn(err.Error())
 		} else {
 			l.Success()
 		}
