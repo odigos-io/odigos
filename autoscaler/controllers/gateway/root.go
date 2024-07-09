@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	kubeObjectName = "odigos-gateway"
 	collectorLabel = "odigos.io/collector"
 )
 
@@ -97,7 +96,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	dep, err := syncDeployment(dests, gateway, configData, ctx, c, scheme, imagePullSecrets, odigosVersion, memConfig)
+	_, err = syncDeployment(dests, gateway, configData, ctx, c, scheme, imagePullSecrets, odigosVersion, memConfig)
 	if err != nil {
 		logger.Error(err, "Failed to sync deployment")
 		return err
@@ -107,17 +106,6 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		err = syncHPA(gateway, ctx, c, scheme, memConfig)
 		if err != nil {
 			logger.Error(err, "Failed to sync HPA")
-		}
-	}
-
-	isReady := dep.Status.ReadyReplicas > 0
-	if !gateway.Status.Ready && isReady {
-		err := c.Status().Patch(ctx, gateway, client.RawPatch(
-			types.MergePatchType,
-			[]byte(`{"status": { "ready": true }}`),
-		))
-		if err != nil {
-			return err
 		}
 	}
 

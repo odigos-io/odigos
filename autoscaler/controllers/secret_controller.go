@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,10 +34,6 @@ func (i *secretPredicate) Update(e event.UpdateEvent) bool {
 	newSecret, newOk := e.ObjectNew.(*corev1.Secret)
 
 	if !oldOk || !newOk {
-		return false
-	}
-
-	if newSecret.Namespace != env.GetCurrentNamespace() {
 		return false
 	}
 

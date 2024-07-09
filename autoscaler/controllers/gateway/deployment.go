@@ -7,6 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/odigos-io/odigos/autoscaler/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
@@ -104,7 +105,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      gateway.Name,
+			Name:      consts.OdigosClusterCollectorDeploymentName,
 			Namespace: gateway.Namespace,
 			Labels:    CommonLabels,
 		},
