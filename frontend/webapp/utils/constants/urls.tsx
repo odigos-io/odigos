@@ -10,6 +10,7 @@ const API = {
   APPLICATIONS: `${BASE_URL}/applications`,
   DESTINATION_TYPE: `${BASE_URL}/destination-types`,
   DESTINATIONS: `${BASE_URL}/destinations`,
+  CHECK_CONNECTION: `${BASE_URL}/destinations/testConnection`,
   SOURCES: `${BASE_URL}/sources`,
   SET_ACTION: (type: string) => `${BASE_URL}/actions/types/${type}`,
   PUT_ACTION: (type: string, id: string) =>

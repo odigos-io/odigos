@@ -19,6 +19,8 @@ export const FieldWrapper = styled.div`
 
 export const CreateDestinationButtonWrapper = styled.div`
   margin-top: 48px;
-  height: 36px;
+  gap: 16px;
   width: 362px;
+  display: flex;
+  flex-direction: column;
 `;

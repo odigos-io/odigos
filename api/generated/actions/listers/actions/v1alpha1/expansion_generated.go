@@ -49,6 +49,14 @@ type LatencySamplerListerExpansion interface{}
 // LatencySamplerNamespaceLister.
 type LatencySamplerNamespaceListerExpansion interface{}
 
+// PiiMaskingListerExpansion allows custom methods to be added to
+// PiiMaskingLister.
+type PiiMaskingListerExpansion interface{}
+
+// PiiMaskingNamespaceListerExpansion allows custom methods to be added to
+// PiiMaskingNamespaceLister.
+type PiiMaskingNamespaceListerExpansion interface{}
+
 // ProbabilisticSamplerListerExpansion allows custom methods to be added to
 // ProbabilisticSamplerLister.
 type ProbabilisticSamplerListerExpansion interface{}

@@ -13,7 +13,7 @@ import (
 const (
 	envOtelTracesExporter              = "OTEL_TRACES_EXPORTER"
 	envOtelMetricsExporter             = "OTEL_METRICS_EXPORTER"
-	envValOtelHttpExporter             = "otlp"
+	envOtelLogsExporter                = "OTEL_LOGS_EXPORTER"
 	envLogCorrelation                  = "OTEL_PYTHON_LOG_CORRELATION"
 	envPythonPath                      = "PYTHONPATH"
 	envOtelExporterOTLPTracesProtocol  = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
@@ -23,7 +23,21 @@ const (
 
 func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
 	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort)
-	pythonpathVal, _ := envOverwrite.ValToAppend("PYTHONPATH", common.OtelSdkNativeCommunity)
+	pythonpathVal, _ := envOverwrite.ValToAppend(envPythonPath, common.OtelSdkNativeCommunity)
+
+	logsExporter := "none"
+	metricsExporter := "none"
+	tracesExporter := "none"
+
+	if _, ok := uniqueDestinationSignals[common.LogsObservabilitySignal]; ok {
+		logsExporter = "otlp"
+	}
+	if _, ok := uniqueDestinationSignals[common.MetricsObservabilitySignal]; ok {
+		metricsExporter = "otlp"
+	}
+	if _, ok := uniqueDestinationSignals[common.TracesObservabilitySignal]; ok {
+		tracesExporter = "otlp"
+	}
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
@@ -31,8 +45,9 @@ func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 			envPythonPath:                      pythonpathVal,
 			"OTEL_EXPORTER_OTLP_ENDPOINT":      otlpEndpoint,
 			"OTEL_RESOURCE_ATTRIBUTES":         fmt.Sprintf("service.name=%s,odigos.device=python", deviceId),
-			envOtelTracesExporter:              envValOtelHttpExporter,
-			envOtelMetricsExporter:             envValOtelHttpExporter,
+			envOtelTracesExporter:              tracesExporter,
+			envOtelMetricsExporter:             metricsExporter,
+			envOtelLogsExporter:                logsExporter,
 			envOtelExporterOTLPTracesProtocol:  httpProtobufProtocol,
 			envOtelExporterOTLPMetricsProtocol: httpProtobufProtocol,
 		},
