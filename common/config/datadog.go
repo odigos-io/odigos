@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 )
 
 const (
@@ -29,7 +28,7 @@ func (d *Datadog) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 
 	exporterName := "datadog/" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
-		"hostname": consts.OdigosClusterCollectorDeploymentName,
+		"hostname": "odigos-gateway",
 		"api": GenericMap{
 			"key":  "${DATADOG_API_KEY}",
 			"site": site,
