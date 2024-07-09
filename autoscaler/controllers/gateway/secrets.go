@@ -3,7 +3,6 @@ package gateway
 import (
 	"context"
 	"crypto/sha256"
-	"fmt"
 	"slices"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
