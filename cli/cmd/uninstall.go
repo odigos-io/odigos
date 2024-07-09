@@ -87,7 +87,7 @@ var uninstallCmd = &cobra.Command{
 		l := log.Print("Rolling back odigos changes to pods")
 		err = rollbackPodChanges(ctx, client)
 		if err != nil {
-			l.Error(err)
+			l.Warn(err.Error())
 		} else {
 			l.Success()
 		}
@@ -95,7 +95,7 @@ var uninstallCmd = &cobra.Command{
 		l = log.Print("Rolling back odigos changes to namespaces")
 		err = rollbackNamespaceChanges(ctx, client)
 		if err != nil {
-			l.Error(err)
+			l.Warn(err.Error())
 		} else {
 			l.Success()
 		}
@@ -233,17 +233,29 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 		}
 
 		for envName, originalEnvValue := range manifestEnvOriginal.GetContainerStoredEnvs(c.Name) {
-			if origManifestEnv == nil {
+			// find the index of the env var in the env array:
+			iEnv := -1
+			for i, env := range c.Env {
+				if env.Name == envName {
+					iEnv = i
+					break
+				}
+			}
+			if iEnv == -1 {
+				return nil, fmt.Errorf("env var %s not found in container %s", envName, c.Name)
+			}
+
+			if originalEnvValue == nil {
 				// originally the value was absent, so we remove it
 				patchOperations = append(patchOperations, map[string]interface{}{
 					"op":   "remove",
-					"path": fmt.Sprintf("/spec/template/spec/containers/%d/env/%d", iContainer, envName),
+					"path": fmt.Sprintf("/spec/template/spec/containers/%d/env/%d", iContainer, iEnv),
 				})
 			} else {
 				// revert the env var to its original value
 				patchOperations = append(patchOperations, map[string]interface{}{
 					"op":    "replace",
-					"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", iContainer, envName),
+					"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", iContainer, iEnv),
 					"value": *originalEnvValue,
 				})
 			}

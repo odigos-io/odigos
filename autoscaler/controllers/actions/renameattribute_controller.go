@@ -114,12 +114,12 @@ func (r *RenameAttributeReconciler) convertToProcessor(action *actionv1.RenameAt
 	}
 
 	// Every rename produces 2 OTTL statement
-	ottlStatements := make([]string, 2 * len(action.Spec.Renames))
+	ottlStatements := make([]string, 2*len(action.Spec.Renames))
 	i := 0
 	for from, to := range action.Spec.Renames {
 		ottlStatements[i] = fmt.Sprintf("set(attributes[\"%s\"], attributes[\"%s\"])", to, from)
-		ottlStatements[i + 1] = fmt.Sprintf("delete_key(attributes, \"%s\")", from)
-		i += 2;
+		ottlStatements[i+1] = fmt.Sprintf("delete_key(attributes, \"%s\")", from)
+		i += 2
 	}
 
 	for _, signal := range action.Spec.Signals {
@@ -208,7 +208,7 @@ func (r *RenameAttributeReconciler) convertToProcessor(action *actionv1.RenameAt
 			Notes:           action.Spec.Notes,
 			Signals:         action.Spec.Signals,
 			CollectorRoles:  []v1.CollectorsGroupRole{v1.CollectorsGroupRoleClusterGateway},
-			OrderHint:       0,
+			OrderHint:       -50,
 			ProcessorConfig: runtime.RawExtension{Raw: configJson},
 		},
 	}

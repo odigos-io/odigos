@@ -8,7 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/destinations"
+	testconnection "github.com/odigos-io/odigos/frontend/endpoints/test_connection"
 	"github.com/odigos-io/odigos/frontend/kube"
 	k8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,10 +26,11 @@ type DestinationsCategory struct {
 }
 
 type DestinationTypesCategoryItem struct {
-	Type             common.DestinationType `json:"type"`
-	DisplayName      string                 `json:"display_name"`
-	ImageUrl         string                 `json:"image_url"`
-	SupportedSignals SupportedSignals       `json:"supported_signals"`
+	Type                    common.DestinationType `json:"type"`
+	DisplayName             string                 `json:"display_name"`
+	ImageUrl                string                 `json:"image_url"`
+	SupportedSignals        SupportedSignals       `json:"supported_signals"`
+	TestConnectionSupported bool                   `json:"test_connection_supported"`
 }
 
 type SupportedSignals struct {
@@ -54,6 +57,21 @@ type Destination struct {
 	Fields          map[string]string            `json:"fields"`
 	DestinationType DestinationTypesCategoryItem `json:"destination_type"`
 	Conditions      []metav1.Condition           `json:"conditions,omitempty"`
+}
+
+var _ config.ExporterConfigurer = &Destination{}
+
+func (dest Destination) GetID() string {
+	return dest.Name
+}
+func (dest Destination) GetType() common.DestinationType {
+	return dest.Type
+}
+func (dest Destination) GetConfig() map[string]string {
+	return dest.Fields
+}
+func (dest Destination) GetSignals() []common.ObservabilitySignal {
+	return exportedSignalsObjectToSlice(dest.ExportedSignals)
 }
 
 func GetDestinationTypes(c *gin.Context) {
@@ -153,7 +171,6 @@ func GetDestinationById(c *gin.Context, odigosns string) {
 }
 
 func CreateNewDestination(c *gin.Context, odigosns string) {
-
 	request := Destination{}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		returnError(c, err)
@@ -212,6 +229,39 @@ func CreateNewDestination(c *gin.Context, odigosns string) {
 
 	resp := k8sDestinationToEndpointFormat(*dest, secretFields)
 	c.JSON(201, resp)
+}
+
+func TestConnectionForDestination(c *gin.Context, odigosns string) {
+	request := Destination{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		returnError(c, err)
+		return
+	}
+
+	destType := request.Type
+
+	destConfig, err := getDestinationTypeConfig(destType)
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	if !destConfig.Spec.TestConnectionSupported {
+		returnError(c, fmt.Errorf("destination type %s does not support test connection", request.Type))
+		return
+	}
+
+	res := testconnection.TestConnection(c, request)
+	if !res.Succeeded {
+		c.JSON(res.StatusCode, gin.H{
+			"type":    res.DestinationType,
+			"message": res.Message,
+			"reason":  res.Reason,
+		})
+		return
+	}
+
+	c.Status(200)
 }
 
 func UpdateExistingDestination(c *gin.Context, odigosns string) {
@@ -521,9 +571,10 @@ func getDestinationSecretFields(c *gin.Context, odigosns string, dest *v1alpha1.
 
 func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) DestinationTypesCategoryItem {
 	return DestinationTypesCategoryItem{
-		Type:        destConfig.Metadata.Type,
-		DisplayName: destConfig.Metadata.DisplayName,
-		ImageUrl:    GetImageURL(destConfig.Spec.Image),
+		Type:                    destConfig.Metadata.Type,
+		DisplayName:             destConfig.Metadata.DisplayName,
+		ImageUrl:                GetImageURL(destConfig.Spec.Image),
+		TestConnectionSupported: destConfig.Spec.TestConnectionSupported,
 		SupportedSignals: SupportedSignals{
 			Traces: ObservabilitySignalSupport{
 				Supported: destConfig.Spec.Signals.Traces.Supported,

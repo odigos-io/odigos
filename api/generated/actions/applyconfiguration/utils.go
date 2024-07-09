@@ -40,8 +40,28 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.DeleteAttributeSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DeleteAttributeStatus"):
 		return &actionsv1alpha1.DeleteAttributeStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ErrorSampler"):
+		return &actionsv1alpha1.ErrorSamplerApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ErrorSamplerSpec"):
+		return &actionsv1alpha1.ErrorSamplerSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ErrorSamplerStatus"):
+		return &actionsv1alpha1.ErrorSamplerStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("HttpRouteFilter"):
+		return &actionsv1alpha1.HttpRouteFilterApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("LatencySampler"):
+		return &actionsv1alpha1.LatencySamplerApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("LatencySamplerSpec"):
+		return &actionsv1alpha1.LatencySamplerSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("LatencySamplerStatus"):
+		return &actionsv1alpha1.LatencySamplerStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OtelAttributeWithValue"):
 		return &actionsv1alpha1.OtelAttributeWithValueApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("PiiMasking"):
+		return &actionsv1alpha1.PiiMaskingApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("PiiMaskingSpec"):
+		return &actionsv1alpha1.PiiMaskingSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("PiiMaskingStatus"):
+		return &actionsv1alpha1.PiiMaskingStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ProbabilisticSampler"):
 		return &actionsv1alpha1.ProbabilisticSamplerApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ProbabilisticSamplerSpec"):
