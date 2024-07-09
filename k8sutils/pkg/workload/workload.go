@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/odigos-io/odigos/common/consts"
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -56,7 +56,6 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 	}
 }
 
-
 // runtime name is a way to store workload specific CRs with odigos
 // and give the k8s object a name which is unique and can be used to extract the workload name and kind
 func GetRuntimeObjectName(name string, kind string) string {
@@ -103,4 +102,17 @@ func IsObjectLabeledForInstrumentation(obj client.Object) bool {
 	}
 
 	return val == consts.InstrumentationEnabled
+}
+
+func GetWorkloadKind(w client.Object) string {
+	switch w.(type) {
+	case *v1.Deployment:
+		return "Deployment"
+	case *v1.DaemonSet:
+		return "Daemonset"
+	case *v1.StatefulSet:
+		return "Statefulset"
+	default:
+		return "Unknown"
+	}
 }
