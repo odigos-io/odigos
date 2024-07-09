@@ -20,6 +20,7 @@ jobs:
           - "1.30"
         test-scenario:
           - "multi-apps"
+          - "helm-chart"
         include:
           - kube-version: "1.23"
             kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
@@ -42,8 +43,6 @@ jobs:
         uses: azure/setup-helm@v4
         with:
           version: v3.9.0
-      - name: Setup BATS
-        uses: mig4/setup-bats@v1
       - name: Install chainsaw
         uses: kyverno/action-install-chainsaw@v0.2.4
       - name: Create Kind Cluster
