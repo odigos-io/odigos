@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/autoscaler/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -28,7 +29,6 @@ const (
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
-	dataCollectionSA     = "odigos-data-collection"
 	odigletDaemonSetName = "odiglet"
 )
 
@@ -111,7 +111,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      datacollection.Name,
+			Name:      consts.OdigosNodeCollectorDaemonSetName,
 			Namespace: datacollection.Namespace,
 			Labels:    commonLabels,
 		},
@@ -137,7 +137,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 					NodeSelector:       odigletDaemonsetPodSpec.NodeSelector,
 					Affinity:           odigletDaemonsetPodSpec.Affinity,
 					Tolerations:        odigletDaemonsetPodSpec.Tolerations,
-					ServiceAccountName: dataCollectionSA,
+					ServiceAccountName: consts.OdigosNodeCollectorDaemonSetName,
 					Volumes: []corev1.Volume{
 						{
 							Name: configKey,

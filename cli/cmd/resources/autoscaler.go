@@ -129,6 +129,15 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				APIGroups: []string{"autoscaling"},
 				Resources: []string{"horizontalpodautoscalers"},
 			},
+			{
+				Verbs: []string{
+					"list",
+					"watch",
+					"get",
+				},
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+			},
 		},
 	}
 }

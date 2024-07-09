@@ -142,6 +142,9 @@ func main() {
 				&corev1.ConfigMap{}: {
 					Field: nsSelector,
 				},
+				&corev1.Secret{}: {
+					Field: nsSelector,
+				},
 			},
 		},
 		HealthProbeBindAddress: probeAddr,
@@ -197,6 +200,27 @@ func main() {
 		OdigosVersion:    odigosVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OdigosConfig")
+		os.Exit(1)
+	}
+	if err = (&controllers.SecretReconciler{
+		Client:           mgr.GetClient(),
+		Scheme:           mgr.GetScheme(),
+		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Secret")
+		os.Exit(1)
+	}
+	if err = (&controllers.GatewayDeploymentReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
+		os.Exit(1)
+	}
+	if err = (&controllers.DataCollectionDaemonSetReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DaemonSet")
 		os.Exit(1)
 	}
 

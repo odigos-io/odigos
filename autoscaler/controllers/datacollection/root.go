@@ -4,9 +4,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -65,27 +63,12 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 		return err
 	}
 
-	ds, err := syncDaemonSet(instApps, dests, dataCollection, configData, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	_, err = syncDaemonSet(instApps, dests, dataCollection, configData, ctx, c, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
 		logger.Error(err, "Failed to sync daemon set")
 		return err
 	}
 
-	isNowReady := calcDataCollectionReadyStatus(ds)
-	if !dataCollection.Status.Ready && isNowReady {
-		if err := c.Status().Patch(ctx, dataCollection, client.RawPatch(
-			types.MergePatchType,
-			[]byte(`{"status": { "ready": true }}`),
-		)); err != nil {
-			logger.Error(err, "Failed to update data collection status")
-			return err
-		}
-	}
-
 	return nil
 }
 
-// Data collection is ready if at least 50% of the pods are ready
-func calcDataCollectionReadyStatus(ds *appsv1.DaemonSet) bool {
-	return ds.Status.DesiredNumberScheduled > 0 && float64(ds.Status.NumberReady) >= float64(ds.Status.DesiredNumberScheduled)/float64(2)
-}
