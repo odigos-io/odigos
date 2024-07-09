@@ -13,6 +13,7 @@ import {
 const SEARCH_PARAM_TYPE = 'type';
 
 export function ConnectDestinationContainer() {
+  const [type, setType] = useState<string>('');
   const [selectedDestination, setSelectedDestination] =
     useState<SelectedDestination>();
 
@@ -26,6 +27,7 @@ export function ConnectDestinationContainer() {
 
   function getCurrentDestination() {
     const type = searchParams.get(SEARCH_PARAM_TYPE);
+    setType(type as string);
     if (destinationsTypes) {
       const data = getCurrentDestinationByType(type as string);
       setSelectedDestination(data);
@@ -46,9 +48,7 @@ export function ConnectDestinationContainer() {
   return (
     <KeyvalCard type={'secondary'} header={{ body: cardHeaderBody }}>
       <SetupBackButton onBackClick={() => router.back()} />
-      <ConnectionSection
-        supportedSignals={selectedDestination?.supported_signals}
-      />
+      <ConnectionSection type={type} destination={selectedDestination} />
     </KeyvalCard>
   );
 }
