@@ -8,25 +8,10 @@ from retry import retry
 from opamp import opamp_pb2, anyvalue_pb2, utils
 
 
-def setup_logger():
-    # Create a dedicated logger for the OpAMPHTTPClient
-    opamp_logger = logging.getLogger('OpAMPHTTPClient')
-    opamp_logger.setLevel(logging.DEBUG)
-
-    # Add a console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    console_handler.setFormatter(formatter)
-    opamp_logger.addHandler(console_handler)
-
-    # Comment the following line to enable the logger
-    opamp_logger.disabled = True
-    
-    return opamp_logger
-
 # Setup the logger
-opamp_logger = setup_logger()
+opamp_logger = logging.getLogger(__name__)
+opamp_logger.setLevel(logging.DEBUG)
+opamp_logger.disabled = True # Comment this line to enable the logger
 
 
 class OpAMPHTTPClient:
@@ -61,14 +46,17 @@ class OpAMPHTTPClient:
         while self.running:
             try:
                 server_to_agent = self.send_heartbeat()
-                ## TODO: Add logic for processing the server_to_agent messages
                 
+                if server_to_agent.flags == opamp_pb2.ServerToAgentFlags_ReportFullState:
+                    opamp_logger.debug("Received request to report full state")
+                    self.send_full_state()
+
             except requests.RequestException as e:
                 opamp_logger.error(f"Error fetching data: {e}")
             time.sleep(30)  # Poll messages every 30 seconds
             
     def send_heartbeat(self):
-        opamp_logger.debug("Sending heartbeat to OpAMP server...")        
+        opamp_logger.debug("Sending heartbeat to OpAMP server...") 
         try:
             return self.send_agent_to_server_message(opamp_pb2.AgentToServer())
         except requests.RequestException as e:
@@ -111,7 +99,7 @@ class OpAMPHTTPClient:
             response = requests.post(self.server_url, data=message_bytes, headers=headers)
             response.raise_for_status()
         except requests.ConnectionError as e:
-            opamp_logger.error(f"Error sending message to OpAMP server: {e}") ## TODO: remove this log
+            opamp_logger.error(f"Error sending message to OpAMP server: {e}")
             return opamp_pb2.ServerToAgent()
         
         server_to_agent = opamp_pb2.ServerToAgent()
