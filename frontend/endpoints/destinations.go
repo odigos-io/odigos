@@ -229,10 +229,12 @@ func CreateNewDestination(c *gin.Context, odigosns string) {
 		return
 	}
 
-	err = addDestinationOwnerReferenceToSecret(c, odigosns, dest)
-	if err != nil {
-		returnError(c, err)
-		return
+	if dest.Spec.SecretRef != nil {
+		err = addDestinationOwnerReferenceToSecret(c, odigosns, dest)
+		if err != nil {
+			returnError(c, err)
+			return
+		}
 	}
 
 	resp := k8sDestinationToEndpointFormat(*dest, secretFields)
@@ -604,21 +606,21 @@ func createDestinationSecret(ctx context.Context, destType common.DestinationTyp
 
 func addDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, dest *v1alpha1.Destination) error {
 	destOwnerRef := metav1.OwnerReference{
-		APIVersion:         "odigos.io/v1alpha1",
-		Kind:               "Destination",
-		Name:               dest.Name,
-		UID:                dest.UID,
+		APIVersion: "odigos.io/v1alpha1",
+		Kind:       "Destination",
+		Name:       dest.Name,
+		UID:        dest.UID,
 	}
 
-	secretPatch :=  []struct{
-		Op   string `json:"op"`
-		Path string `json:"path"`
+	secretPatch := []struct {
+		Op    string                  `json:"op"`
+		Path  string                  `json:"path"`
 		Value []metav1.OwnerReference `json:"value"`
-	} {{
-		Op: "add",
-		Path: "/metadata/ownerReferences",
+	}{{
+		Op:    "add",
+		Path:  "/metadata/ownerReferences",
 		Value: []metav1.OwnerReference{destOwnerRef},
-		},
+	},
 	}
 
 	secretPatchBytes, err := json.Marshal(secretPatch)
