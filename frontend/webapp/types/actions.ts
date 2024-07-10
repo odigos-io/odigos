@@ -3,6 +3,7 @@ export enum ActionsType {
   DELETE_ATTRIBUTES = 'DeleteAttribute',
   RENAME_ATTRIBUTES = 'RenameAttribute',
   ERROR_SAMPLER = 'ErrorSampler',
+  PROBABILISTIC_SAMPLER = 'ProbabilisticSampler',
 }
 
 export enum ActionsSortType {

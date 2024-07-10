@@ -4,7 +4,7 @@ import { ActionsType } from '@/types';
 import { AddClusterInfoForm } from '../add.cluster.info';
 import { DeleteAttributesForm } from '../delete.attribute';
 import { RenameAttributesForm } from '../rename.attributes';
-import { ErrorSamplerForm } from '../samplers';
+import { ErrorSamplerForm, ProbabilisticSamplerForm } from '../samplers';
 
 interface DynamicActionFormProps {
   type: string | undefined;
@@ -27,6 +27,8 @@ export function DynamicActionForm({
         return <RenameAttributesForm data={data} onChange={onChange} />;
       case ActionsType.ERROR_SAMPLER:
         return <ErrorSamplerForm data={data} onChange={onChange} />;
+      case ActionsType.PROBABILISTIC_SAMPLER:
+        return <ProbabilisticSamplerForm data={data} onChange={onChange} />;
       default:
         return <div></div>;
     }

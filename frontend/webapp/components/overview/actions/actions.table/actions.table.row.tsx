@@ -33,7 +33,6 @@ const StyledMainTd = styled(StyledTd)`
 
 const ActionIconContainer = styled.div`
   display: flex;
-  align-items: center;
   gap: 8px;
   margin-left: 10px;
   width: 100%;
@@ -121,7 +120,7 @@ export function ActionsTableRow({
           onChange={() => onSelectedCheckboxChange(item.id)}
         />
         <ActionIconContainer onClick={() => onRowClick(item.id)}>
-          <div>
+          <div style={{ height: 16 }}>
             <ActionIcon type={item.type} style={{ width: 16, height: 16 }} />
           </div>
           <ActionDetails>

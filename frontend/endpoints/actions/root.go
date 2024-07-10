@@ -82,7 +82,30 @@ func GetActions(c *gin.Context, odigosns string) {
 
 	lsActions, err := kube.DefaultClient.ActionsClient.LatencySamplers(odigosns).List(c, metav1.ListOptions{})
 
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
 	for _, action := range lsActions.Items {
+		response = append(response, IcaInstanceResponse{
+			Id:   action.Name,
+			Type: action.Kind,
+			Spec: action.Spec,
+		})
+	}
+
+	psActions, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(odigosns).List(c, metav1.ListOptions{})
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	for _, action := range psActions.Items {
 		response = append(response, IcaInstanceResponse{
 			Id:   action.Name,
 			Type: action.Kind,

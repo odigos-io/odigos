@@ -124,7 +124,10 @@ export function useActionState() {
   }
 
   function getSupportedSignals(type: string, signals: Monitor[]) {
-    if (type === ActionsType.ERROR_SAMPLER) {
+    if (
+      type === ActionsType.ERROR_SAMPLER ||
+      type === ActionsType.PROBABILISTIC_SAMPLER
+    ) {
       return signals.filter((signal) => signal.label === 'Traces');
     }
 

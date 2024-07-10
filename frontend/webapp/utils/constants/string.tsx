@@ -158,6 +158,10 @@ export const ACTIONS = {
     TITLE: 'Error Sampler',
     DESCRIPTION: `The “Error Sampler” Odigos Action is a Global Action that supports error sampling by filtering out non-error traces.`,
   },
+  ProbabilisticSampler: {
+    TITLE: 'Probabilistic Sampler',
+    DESCRIPTION: `The “Probabilistic Sampler” Odigos Action is a Global Action that supports probabilistic sampling by filtering out traces based on a sampling ratio.`,
+  },
   SEARCH_ACTION: 'Search Action',
 };
 

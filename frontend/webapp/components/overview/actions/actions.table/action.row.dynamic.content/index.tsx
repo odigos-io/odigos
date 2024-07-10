@@ -36,6 +36,12 @@ export default function ActionRowDynamicContent({
             {`${item?.spec?.fallback_sampling_ratio}% sampling ratio`}s
           </KeyvalText>
         );
+      case ActionsType.PROBABILISTIC_SAMPLER:
+        return (
+          <KeyvalText color={theme.text.grey} size={14} weight={400}>
+            {`${item?.spec?.sampling_percentage}% sampling ratio`}
+          </KeyvalText>
+        );
       default:
         return <div>{item.type}</div>;
     }

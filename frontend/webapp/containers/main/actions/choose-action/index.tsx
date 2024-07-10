@@ -40,6 +40,13 @@ const ITEMS = [
     type: ActionsType.ERROR_SAMPLER,
     icon: ActionsType.ERROR_SAMPLER,
   },
+  {
+    id: 'probabilistic-sampler',
+    title: 'Probabilistic Sampler',
+    description: 'Sample traces based on percentage.',
+    type: ActionsType.PROBABILISTIC_SAMPLER,
+    icon: ActionsType.PROBABILISTIC_SAMPLER,
+  },
 ];
 
 export function ChooseActionContainer(): React.JSX.Element {
