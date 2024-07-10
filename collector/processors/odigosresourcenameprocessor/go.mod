@@ -3,11 +3,11 @@ module github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processo
 go 1.20
 
 require (
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig v0.94.0
-	go.opentelemetry.io/collector/component v0.94.0
-	go.opentelemetry.io/collector/consumer v0.94.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig v0.103.0
+	go.opentelemetry.io/collector/component v0.103.0
+	go.opentelemetry.io/collector/consumer v0.103.0
 	go.opentelemetry.io/collector/pdata v1.1.0
-	go.opentelemetry.io/collector/processor v0.94.0
+	go.opentelemetry.io/collector/processor v0.103.0
 	go.opentelemetry.io/otel v1.23.0
 	go.uber.org/zap v1.26.0
 	google.golang.org/grpc v1.61.0
