@@ -19,11 +19,14 @@ const (
 	envOtelExporterOTLPTracesProtocol  = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
 	envOtelExporterOTLPMetricsProtocol = "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL"
 	httpProtobufProtocol               = "http/protobuf"
+	pythonOdigosOpampServer            = "ODIGOS_OPAMP_SERVER_HOST"
+	pythonOdigosDeviceId               = "ODIGOS_INSTRUMENTATION_DEVICE_ID"
 )
 
 func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
 	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort)
 	pythonpathVal, _ := envOverwrite.ValToAppend(envPythonPath, common.OtelSdkNativeCommunity)
+	opampServerHost := fmt.Sprintf("%s:%d", env.Current.NodeIP, consts.OpAMPPort)
 
 	logsExporter := "none"
 	metricsExporter := "none"
@@ -41,10 +44,11 @@ func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
+			pythonOdigosDeviceId:               deviceId,
+			pythonOdigosOpampServer:            opampServerHost,
 			envLogCorrelation:                  "true",
 			envPythonPath:                      pythonpathVal,
 			"OTEL_EXPORTER_OTLP_ENDPOINT":      otlpEndpoint,
-			"OTEL_RESOURCE_ATTRIBUTES":         fmt.Sprintf("service.name=%s,odigos.device=python", deviceId),
 			envOtelTracesExporter:              tracesExporter,
 			envOtelMetricsExporter:             metricsExporter,
 			envOtelLogsExporter:                logsExporter,

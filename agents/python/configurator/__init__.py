@@ -1,16 +1,19 @@
 # my_otel_configurator/__init__.py
 import opentelemetry.sdk._configuration as sdk_config
+import threading
 import os
+import signal
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.resources import ProcessResourceDetector, OTELResourceDetector
 from .version import VERSION
+from opamp.http_client import OpAMPHTTPClient
 
 
 class OdigosPythonConfigurator(sdk_config._BaseConfigurator):
     def _configure(self, **kwargs):
-        _initialize_components(kwargs.get("auto_instrumentation_version"))
+        _initialize_components()
 
-def _initialize_components(auto_instrumentation_version):
+def _initialize_components():
     trace_exporters, metric_exporters, log_exporters = sdk_config._import_exporters(
         sdk_config._get_exporter_names("traces"),
         sdk_config._get_exporter_names("metrics"),
@@ -21,6 +24,13 @@ def _initialize_components(auto_instrumentation_version):
         "telemetry.distro.name": "odigos",
         "telemetry.distro.version": VERSION,
     }
+    
+    resource_attributes_event = threading.Event()
+    client = start_opamp_client(resource_attributes_event)
+    resource_attributes_event.wait(timeout=30) # Wait for the resource attributes to be received for 30 seconds
+    
+    received_value = client.resource_attributes
+    auto_resource.update(received_value)
 
     resource = Resource.create(auto_resource) \
         .merge(OTELResourceDetector().detect()) \
@@ -29,6 +39,7 @@ def _initialize_components(auto_instrumentation_version):
     initialize_traces_if_enabled(trace_exporters, resource)
     initialize_metrics_if_enabled(metric_exporters, resource)
     initialize_logging_if_enabled(log_exporters, resource)
+
 
 def initialize_traces_if_enabled(trace_exporters, resource):
     traces_enabled = os.getenv(sdk_config.OTEL_TRACES_EXPORTER, "none").strip().lower()
@@ -46,3 +57,19 @@ def initialize_logging_if_enabled(log_exporters, resource):
     logging_enabled = os.getenv(sdk_config.OTEL_LOGS_EXPORTER, "none").strip().lower()
     if logging_enabled != "none":
         sdk_config._init_logging(log_exporters, resource)
+        
+        
+def start_opamp_client(event):
+    client = OpAMPHTTPClient(event)
+    client_thread = threading.Thread(target=client.run)
+    client_thread.daemon = True
+    client_thread.start()
+    
+    def handle_sigterm(signum, frame):
+        client.stop()
+        client_thread.join()  # Wait for the thread to finish
+
+    # Register the SIGTERM handler
+    signal.signal(signal.SIGTERM, handle_sigterm)
+    
+    return client
