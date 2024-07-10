@@ -38,7 +38,7 @@ const ITEMS = [
     title: 'Error Sampler',
     description: 'Sample errors based on percentage.',
     type: ActionsType.ERROR_SAMPLER,
-    icon: ActionsType.RENAME_ATTRIBUTES,
+    icon: ActionsType.ERROR_SAMPLER,
   },
 ];
 
