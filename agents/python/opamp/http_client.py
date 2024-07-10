@@ -20,7 +20,7 @@ def setup_logger():
     console_handler.setFormatter(formatter)
     opamp_logger.addHandler(console_handler)
 
-    # Comment the following line to disable the logger
+    # Comment the following line to enable the logger
     opamp_logger.disabled = True
     
     return opamp_logger
