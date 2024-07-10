@@ -10,6 +10,8 @@ interface InputProps {
   required?: boolean;
   placeholder?: string;
   tooltip?: string;
+  min?: number;
+  max?: number;
 }
 
 export function KeyvalInput(props: InputProps): JSX.Element {

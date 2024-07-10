@@ -36,6 +36,13 @@ export function ProbabilisticSamplerForm({
           onChange={(value) => handleOnChange(value)}
           type="number"
           tooltip="Percentage at which items are sampled; = 100 samples all items, 0 rejects all items"
+          min={0}
+          max={100}
+          error={
+            +data?.sampling_percentage > 100
+              ? 'Value must be less than 100'
+              : ''
+          }
         />
       </FormWrapper>
     </>

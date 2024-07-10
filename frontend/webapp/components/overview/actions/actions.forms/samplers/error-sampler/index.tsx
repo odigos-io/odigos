@@ -34,6 +34,13 @@ export function ErrorSamplerForm({
           onChange={(value) => handleOnChange(+value)}
           type="number"
           tooltip="Specifies the ratio of non-error traces you still want to retain"
+          min={0}
+          max={100}
+          error={
+            data?.fallback_sampling_ratio > 100
+              ? 'Value must be less than 100'
+              : ''
+          }
         />
       </FormWrapper>
     </>

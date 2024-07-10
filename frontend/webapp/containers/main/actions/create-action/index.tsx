@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect } from 'react';
 import theme from '@/styles/palette';
-import { Monitor, useActionState } from '@/hooks';
+import { useActionState } from '@/hooks';
 import { useSearchParams } from 'next/navigation';
 import { ACTION, ACTIONS, ACTION_ITEM_DOCS_LINK } from '@/utils';
 import {
@@ -27,7 +27,6 @@ import {
   LoaderWrapper,
   TextareaWrapper,
 } from './styled';
-import { ActionsType } from '@/types';
 
 const ACTION_TYPE = 'type';
 
