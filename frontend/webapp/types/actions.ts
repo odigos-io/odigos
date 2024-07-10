@@ -2,6 +2,7 @@ export enum ActionsType {
   ADD_CLUSTER_INFO = 'AddClusterInfo',
   DELETE_ATTRIBUTES = 'DeleteAttribute',
   RENAME_ATTRIBUTES = 'RenameAttribute',
+  ERROR_SAMPLER = 'ErrorSampler',
 }
 
 export enum ActionsSortType {

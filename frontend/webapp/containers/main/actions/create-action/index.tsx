@@ -98,9 +98,6 @@ export function CreateActionContainer(): React.JSX.Element {
             onChange={(e) => onChangeActionState('actionNote', e.target.value)}
           />
         </TextareaWrapper>
-        {/* <div className="action-yaml-column ">
-          <ActionsYaml data={actionState} onChange={onChangeActionState} />
-        </div> */}
         <CreateButtonWrapper>
           <KeyvalButton onClick={upsertAction} disabled={!actionData}>
             <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
@@ -109,9 +106,6 @@ export function CreateActionContainer(): React.JSX.Element {
           </KeyvalButton>
         </CreateButtonWrapper>
       </CreateActionWrapper>
-      {/* <ActionYamlWrapper className="action-yaml-row">
-        <ActionsYaml data={actionState} onChange={onChangeActionState} />
-      </ActionYamlWrapper> */}
     </Container>
   );
 }

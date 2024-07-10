@@ -33,6 +33,13 @@ const ITEMS = [
     type: ActionsType.RENAME_ATTRIBUTES,
     icon: ActionsType.RENAME_ATTRIBUTES,
   },
+  {
+    id: 'error-sampler',
+    title: 'Error Sampler',
+    description: 'Sample errors based on percentage.',
+    type: ActionsType.ERROR_SAMPLER,
+    icon: ActionsType.RENAME_ATTRIBUTES,
+  },
 ];
 
 export function ChooseActionContainer(): React.JSX.Element {
