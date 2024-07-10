@@ -195,6 +195,10 @@ function getActionDataByType(action: ActionData | undefined) {
       return {
         fallback_sampling_ratio: action.spec.fallback_sampling_ratio,
       };
+    case ActionsType.PROBABILISTIC_SAMPLER:
+      return {
+        sampling_percentage: action.spec.sampling_percentage,
+      };
     default:
       return {};
   }

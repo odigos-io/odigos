@@ -19,6 +19,8 @@ export function ProbabilisticSamplerForm({
   data,
   onChange,
 }: ProbabilisticSamplerProps): React.JSX.Element {
+  console.log({ data });
+
   function handleOnChange(sampling_percentage: string): void {
     onChange(ACTION_DATA_KEY, {
       sampling_percentage,
@@ -30,7 +32,7 @@ export function ProbabilisticSamplerForm({
       <FormWrapper>
         <KeyvalInput
           label="Fallback Sampling Ratio"
-          value={data?.sampling_percentage?.toString()}
+          value={data?.sampling_percentage}
           onChange={(value) => handleOnChange(value)}
           type="number"
           tooltip="Percentage at which items are sampled; = 100 samples all items, 0 rejects all items"

@@ -30,7 +30,6 @@ import {
   SwitchWrapper,
   FormFieldsWrapper,
 } from './styled';
-import { ActionsType } from '@/types';
 
 const ACTION_ID = 'id';
 
