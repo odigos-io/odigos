@@ -56,7 +56,7 @@ func (r *ProbabilisticSamplerReconciler) Reconcile(ctx context.Context, req ctrl
 		if _, ok := supportedSignals[signal]; !ok {
 
 			err = fmt.Errorf("unsupported signal: %s", signal)
-			logger.V(0).Error(nil, err.Error())
+			logger.V(0).Error(err, err.Error())
 			r.ReportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
 			return ctrl.Result{}, nil
 		}

@@ -7,6 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/odigos-io/odigos/autoscaler/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
@@ -33,7 +34,16 @@ const (
 func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
 	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
-	desiredDeployment, err := getDesiredDeployment(dests, configData, gateway, scheme, imagePullSecrets, odigosVersion, memConfig)
+
+	secretsVersionHash, err := destinationsSecretsVersionsHash(ctx, c, dests)
+	if err != nil {
+		logger.Error(err, "Failed to get secrets hash")
+		return nil, err
+	}
+
+	// Calculate the hash of the config data and the secrets version hash, this is used to make sure the gateway will restart when the config changes
+	configDataHash := common.Sha256Hash(fmt.Sprintf("%s-%s", configData, secretsVersionHash))
+	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, memConfig)
 	if err != nil {
 		logger.Error(err, "Failed to get desired deployment")
 		return nil, err
@@ -88,14 +98,14 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 	return existing, nil
 }
 
-func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
+func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string,
 	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
 
 	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", memConfig.memoryRequestMiB))
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      gateway.Name,
+			Name:      consts.OdigosClusterCollectorDeploymentName,
 			Namespace: gateway.Namespace,
 			Labels:    CommonLabels,
 		},
@@ -108,7 +118,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configData string,
 				ObjectMeta: v1.ObjectMeta{
 					Labels: CommonLabels,
 					Annotations: map[string]string{
-						configHashAnnotation: common.Sha256Hash(configData),
+						configHashAnnotation: configDataHash,
 					},
 				},
 				Spec: corev1.PodSpec{
