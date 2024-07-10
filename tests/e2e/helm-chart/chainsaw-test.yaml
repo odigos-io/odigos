@@ -17,10 +17,12 @@ spec:
   - name: Install Odigos
     try:
     - script:
+        # TODO(edenfed): Use the latest version of the chart
         content: |
-          git clone https://github.com/odigos-io/odigos-charts.git /tmp/odigos-charts
+          git clone https://github.com/odigos-io/odigos-charts.git /tmp/odigos-charts -b align-with-cli
           cd /tmp/odigos-charts/charts && helm install odigos ./odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test
           kubectl label namespace odigos-test-ns odigos.io/system-object="true"
+          rm -rf /tmp/odigos-charts
         timeout: 60s
   - name: Verify Odigos Installation
     try:
