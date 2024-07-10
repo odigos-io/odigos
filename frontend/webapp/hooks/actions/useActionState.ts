@@ -179,6 +179,10 @@ function getActionDataByType(action: ActionData | undefined) {
       return {
         renames: action.spec.renames,
       };
+    case ActionsType.ERROR_SAMPLER:
+      return {
+        fallback_sampling_ratio: action.spec.fallback_sampling_ratio,
+      };
     default:
       return {};
   }

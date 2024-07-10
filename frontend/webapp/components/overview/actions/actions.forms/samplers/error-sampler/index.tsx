@@ -30,7 +30,7 @@ export function ErrorSamplerForm({
       <FormWrapper>
         <KeyvalInput
           label="Fallback Sampling Ratio"
-          value={data?.fallback_sampling_ratio.toString()}
+          value={data?.fallback_sampling_ratio?.toString()}
           placeholder="0"
           onChange={(value) => handleOnChange(+value)}
           type="number"
