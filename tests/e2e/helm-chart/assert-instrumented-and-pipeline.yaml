@@ -2,7 +2,7 @@ apiVersion: odigos.io/v1alpha1
 kind: CollectorsGroup
 metadata:
   name: odigos-data-collection
-  namespace: odigos-system
+  namespace: odigos-test-ns
 spec:
   role: NODE_COLLECTOR
 status:
@@ -12,7 +12,7 @@ apiVersion: odigos.io/v1alpha1
 kind: CollectorsGroup
 metadata:
   name: odigos-gateway
-  namespace: odigos-system
+  namespace: odigos-test-ns
 spec:
   role: CLUSTER_GATEWAY
 status:
@@ -24,7 +24,7 @@ metadata:
   labels:
     odigos.io/collector: "true"
   name: odigos-gateway
-  namespace: odigos-system
+  namespace: odigos-test-ns
   ownerReferences:
     - apiVersion: odigos.io/v1alpha1
       blockOwnerDeletion: true
@@ -74,7 +74,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: odigos-gateway
-  namespace: odigos-system
+  namespace: odigos-test-ns
   ownerReferences:
     - apiVersion: odigos.io/v1alpha1
       blockOwnerDeletion: true
@@ -87,7 +87,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: odigos-data-collection
-  namespace: odigos-system
+  namespace: odigos-test-ns
   ownerReferences:
     - apiVersion: odigos.io/v1alpha1
       blockOwnerDeletion: true
@@ -102,7 +102,7 @@ metadata:
   labels:
     odigos.io/data-collection: "true"
   name: odigos-data-collection
-  namespace: odigos-system
+  namespace: odigos-test-ns
   ownerReferences:
     - apiVersion: odigos.io/v1alpha1
       blockOwnerDeletion: true
