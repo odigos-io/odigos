@@ -64,5 +64,21 @@ func GetActions(c *gin.Context, odigosns string) {
 		})
 	}
 
+	esActions, err := kube.DefaultClient.ActionsClient.ErrorSamplers(odigosns).List(c, metav1.ListOptions{})
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	for _, action := range esActions.Items {
+		response = append(response, IcaInstanceResponse{
+			Id:   action.Name,
+			Type: action.Kind,
+			Spec: action.Spec,
+		})
+	}
+
 	c.JSON(200, response)
 }
