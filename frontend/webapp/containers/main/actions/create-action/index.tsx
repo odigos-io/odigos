@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect } from 'react';
 import theme from '@/styles/palette';
-import { useActionState } from '@/hooks';
+import { Monitor, useActionState } from '@/hooks';
 import { useSearchParams } from 'next/navigation';
 import { ACTION, ACTIONS, ACTION_ITEM_DOCS_LINK } from '@/utils';
 import {
@@ -27,6 +27,7 @@ import {
   LoaderWrapper,
   TextareaWrapper,
 } from './styled';
+import { ActionsType } from '@/types';
 
 const ACTION_TYPE = 'type';
 
@@ -73,7 +74,7 @@ export function CreateActionContainer(): React.JSX.Element {
         </DescriptionWrapper>
         <MultiCheckboxComponent
           title={ACTIONS.MONITORS_TITLE}
-          checkboxes={selectedMonitors}
+          checkboxes={getSupportedSignals(type, selectedMonitors)}
           onSelectionChange={(newMonitors) =>
             onChangeActionState('selectedMonitors', newMonitors)
           }
@@ -108,4 +109,12 @@ export function CreateActionContainer(): React.JSX.Element {
       </CreateActionWrapper>
     </Container>
   );
+}
+
+function getSupportedSignals(type: string, signals: Monitor[]) {
+  if (type === ActionsType.ERROR_SAMPLER) {
+    return signals.filter((signal) => signal.label === 'Traces');
+  }
+
+  return signals;
 }

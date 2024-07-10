@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { putAction, setAction, deleteAction } from '@/services';
 import { ActionData, ActionItem, ActionState, ActionsType } from '@/types';
 
-interface Monitor {
+export interface Monitor {
   id: string;
   label: string;
   checked: boolean;

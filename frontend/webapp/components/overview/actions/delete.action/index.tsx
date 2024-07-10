@@ -59,7 +59,7 @@ export function DeleteAction({
           <ActionIcon style={{ width: 52, height: 52 }} type={type || ''} />
           <br />
           <KeyvalText size={20} weight={600}>
-            {`${OVERVIEW.DELETE} ${name}`}
+            {`${OVERVIEW.DELETE} ${name} Action`}
           </KeyvalText>
         </KeyvalModal>
       )}
