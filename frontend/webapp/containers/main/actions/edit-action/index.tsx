@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect } from 'react';
 import theme from '@/styles/palette';
-import { useActionState } from '@/hooks';
+import { Monitor, useActionState } from '@/hooks';
 import { useSearchParams } from 'next/navigation';
 import { ACTION, ACTIONS, ACTION_ITEM_DOCS_LINK } from '@/utils';
 import {
@@ -30,6 +30,7 @@ import {
   SwitchWrapper,
   FormFieldsWrapper,
 } from './styled';
+import { ActionsType } from '@/types';
 
 const ACTION_ID = 'id';
 
@@ -40,6 +41,7 @@ export function EditActionContainer(): React.JSX.Element {
     upsertAction,
     buildActionData,
     onDeleteAction,
+    getSupportedSignals,
   } = useActionState();
 
   const {
@@ -100,7 +102,7 @@ export function EditActionContainer(): React.JSX.Element {
       <FormFieldsWrapper disabled={disabled}>
         <MultiCheckboxComponent
           title={ACTIONS.MONITORS_TITLE}
-          checkboxes={selectedMonitors}
+          checkboxes={getSupportedSignals(type, selectedMonitors)}
           onSelectionChange={(newMonitors) =>
             onChangeActionState('selectedMonitors', newMonitors)
           }

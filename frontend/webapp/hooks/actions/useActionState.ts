@@ -84,7 +84,7 @@ export function useActionState() {
       type,
     } = actionState;
 
-    const signals = selectedMonitors
+    const signals = getSupportedSignals(type, selectedMonitors)
       .filter((monitor) => monitor.checked)
       .map((monitor) => monitor.label.toUpperCase());
 
@@ -123,12 +123,21 @@ export function useActionState() {
     } catch (error) {}
   }
 
+  function getSupportedSignals(type: string, signals: Monitor[]) {
+    if (type === ActionsType.ERROR_SAMPLER) {
+      return signals.filter((signal) => signal.label === 'Traces');
+    }
+
+    return signals;
+  }
+
   return {
     actionState,
-    onChangeActionState,
     upsertAction,
-    buildActionData,
     onDeleteAction,
+    buildActionData,
+    getSupportedSignals,
+    onChangeActionState,
   };
 }
 

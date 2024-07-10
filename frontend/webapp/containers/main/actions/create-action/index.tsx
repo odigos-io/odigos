@@ -32,7 +32,12 @@ import { ActionsType } from '@/types';
 const ACTION_TYPE = 'type';
 
 export function CreateActionContainer(): React.JSX.Element {
-  const { actionState, onChangeActionState, upsertAction } = useActionState();
+  const {
+    actionState,
+    onChangeActionState,
+    upsertAction,
+    getSupportedSignals,
+  } = useActionState();
   const { actionName, actionNote, actionData, selectedMonitors, type } =
     actionState;
 
@@ -109,12 +114,4 @@ export function CreateActionContainer(): React.JSX.Element {
       </CreateActionWrapper>
     </Container>
   );
-}
-
-function getSupportedSignals(type: string, signals: Monitor[]) {
-  if (type === ActionsType.ERROR_SAMPLER) {
-    return signals.filter((signal) => signal.label === 'Traces');
-  }
-
-  return signals;
 }
