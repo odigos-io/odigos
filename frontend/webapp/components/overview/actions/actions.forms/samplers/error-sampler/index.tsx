@@ -31,10 +31,9 @@ export function ErrorSamplerForm({
         <KeyvalInput
           label="Fallback Sampling Ratio"
           value={data?.fallback_sampling_ratio?.toString()}
-          placeholder="0"
           onChange={(value) => handleOnChange(+value)}
           type="number"
-          tooltip="The percentage of errors to sample."
+          tooltip="Specifies the ratio of non-error traces you still want to retain"
         />
       </FormWrapper>
     </>
