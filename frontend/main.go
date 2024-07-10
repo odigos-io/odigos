@@ -143,6 +143,11 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.POST("/actions/types/ErrorSampler", func(c *gin.Context) { actions.CreateErrorSampler(c, flags.Namespace) })
 		apis.PUT("/actions/types/ErrorSampler/:id", func(c *gin.Context) { actions.UpdateErrorSampler(c, flags.Namespace, c.Param("id")) })
 		apis.DELETE("/actions/types/ErrorSampler/:id", func(c *gin.Context) { actions.DeleteErrorSampler(c, flags.Namespace, c.Param("id")) })
+		// LatencySampler
+		apis.GET("/actions/types/LatencySampler/:id", func(c *gin.Context) { actions.GetLatencySampler(c, flags.Namespace, c.Param("id")) })
+		apis.POST("/actions/types/LatencySampler", func(c *gin.Context) { actions.CreateLatencySampler(c, flags.Namespace) })
+		apis.PUT("/actions/types/LatencySampler/:id", func(c *gin.Context) { actions.UpdateLatencySampler(c, flags.Namespace, c.Param("id")) })
+		apis.DELETE("/actions/types/LatencySampler/:id", func(c *gin.Context) { actions.DeleteLatencySampler(c, flags.Namespace, c.Param("id")) })
 	}
 
 	return r, nil
