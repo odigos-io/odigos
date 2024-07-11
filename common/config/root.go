@@ -7,6 +7,8 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
 const (
@@ -84,6 +86,9 @@ func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests [
 	}
 
 	for pipelineName, pipeline := range currentConfig.Service.Pipelines {
+		if strings.Contains(pipelineName, "otelcol") {
+			continue
+		}
 		if strings.HasPrefix(pipelineName, "traces/") {
 			pipeline.Processors = append(tracesProcessors, pipeline.Processors...)
 		} else if strings.HasPrefix(pipelineName, "metrics/") {
@@ -120,6 +125,21 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 					"http": empty,
 				},
 			},
+			"prometheus": GenericMap{
+				"config": GenericMap{
+					"scrape_configs": []GenericMap{
+						{
+							"job_name": "otelcol",
+							"scrape_interval": "10s",
+							"static_configs": []GenericMap{
+								{
+									"targets": []string{"127.0.0.1:8888"},
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 		Processors: GenericMap{
 			memoryLimiterProcessorName: memoryLimiterConfig,
@@ -137,11 +157,31 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 			"health_check": empty,
 			"zpages":       empty,
 		},
-		Exporters:  map[string]interface{}{},
+		Exporters:  map[string]interface{}{
+			"debug": GenericMap{
+				"verbosity": "detailed",
+			},
+			"otlp/ui": GenericMap{
+				"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), consts.OTLPPort),
+				"tls": GenericMap{
+					"insecure": true,
+				},
+			},
+		},
 		Connectors: map[string]interface{}{},
 		Service: Service{
-			Pipelines:  map[string]Pipeline{},
+			Pipelines:  map[string]Pipeline{
+				"metrics/otelcol": {
+					Receivers: []string{"prometheus"},
+					Exporters: []string{"debug", "otlp/ui"},
+				},
+			},
 			Extensions: []string{"health_check", "zpages"},
+			Telemetry: Telemetry{
+				Metrics: GenericMap{
+					"address": "0.0.0.0:8888",
+				},
+			},
 		},
 	}, []string{memoryLimiterProcessorName, "resource/odigos-version"}
 }
