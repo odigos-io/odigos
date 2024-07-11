@@ -2,16 +2,20 @@ package endpoints
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/destinations"
+	testconnection "github.com/odigos-io/odigos/frontend/endpoints/test_connection"
 	"github.com/odigos-io/odigos/frontend/kube"
 	k8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type GetDestinationTypesResponse struct {
@@ -24,10 +28,11 @@ type DestinationsCategory struct {
 }
 
 type DestinationTypesCategoryItem struct {
-	Type             common.DestinationType `json:"type"`
-	DisplayName      string                 `json:"display_name"`
-	ImageUrl         string                 `json:"image_url"`
-	SupportedSignals SupportedSignals       `json:"supported_signals"`
+	Type                    common.DestinationType `json:"type"`
+	DisplayName             string                 `json:"display_name"`
+	ImageUrl                string                 `json:"image_url"`
+	SupportedSignals        SupportedSignals       `json:"supported_signals"`
+	TestConnectionSupported bool                   `json:"test_connection_supported"`
 }
 
 type SupportedSignals struct {
@@ -54,6 +59,21 @@ type Destination struct {
 	Fields          map[string]string            `json:"fields"`
 	DestinationType DestinationTypesCategoryItem `json:"destination_type"`
 	Conditions      []metav1.Condition           `json:"conditions,omitempty"`
+}
+
+var _ config.ExporterConfigurer = &Destination{}
+
+func (dest Destination) GetID() string {
+	return dest.Name
+}
+func (dest Destination) GetType() common.DestinationType {
+	return dest.Type
+}
+func (dest Destination) GetConfig() map[string]string {
+	return dest.Fields
+}
+func (dest Destination) GetSignals() []common.ObservabilitySignal {
+	return exportedSignalsObjectToSlice(dest.ExportedSignals)
 }
 
 func GetDestinationTypes(c *gin.Context) {
@@ -153,7 +173,6 @@ func GetDestinationById(c *gin.Context, odigosns string) {
 }
 
 func CreateNewDestination(c *gin.Context, odigosns string) {
-
 	request := Destination{}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		returnError(c, err)
@@ -210,8 +229,49 @@ func CreateNewDestination(c *gin.Context, odigosns string) {
 		return
 	}
 
+	if dest.Spec.SecretRef != nil {
+		err = addDestinationOwnerReferenceToSecret(c, odigosns, dest)
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+	}
+
 	resp := k8sDestinationToEndpointFormat(*dest, secretFields)
 	c.JSON(201, resp)
+}
+
+func TestConnectionForDestination(c *gin.Context, odigosns string) {
+	request := Destination{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		returnError(c, err)
+		return
+	}
+
+	destType := request.Type
+
+	destConfig, err := getDestinationTypeConfig(destType)
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	if !destConfig.Spec.TestConnectionSupported {
+		returnError(c, fmt.Errorf("destination type %s does not support test connection", request.Type))
+		return
+	}
+
+	res := testconnection.TestConnection(c, request)
+	if !res.Succeeded {
+		c.JSON(res.StatusCode, gin.H{
+			"type":    res.DestinationType,
+			"message": res.Message,
+			"reason":  res.Reason,
+		})
+		return
+	}
+
+	c.Status(200)
 }
 
 func UpdateExistingDestination(c *gin.Context, odigosns string) {
@@ -267,6 +327,12 @@ func UpdateExistingDestination(c *gin.Context, odigosns string) {
 			return
 		}
 		dest.Spec.SecretRef = secretRef
+		// add owner reference to the secret
+		err = addDestinationOwnerReferenceToSecret(c, odigosns, dest)
+		if err != nil {
+			returnError(c, err)
+			return
+		}
 	} else if destUpdateHasSecrets && destCurrentlyHasSecrets {
 		// update the secret in case it is modified
 		secret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Get(c, dest.Spec.SecretRef.Name, metav1.GetOptions{})
@@ -324,35 +390,17 @@ func UpdateExistingDestination(c *gin.Context, odigosns string) {
 
 func DeleteDestination(c *gin.Context, odigosns string) {
 	destId := c.Param("id")
-	currentDest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Get(c, destId, metav1.GetOptions{})
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message": "cannot find destination with id '" + destId + "'",
-		})
-		return
-	}
 
 	// delete the destination
 	errDest := kube.DefaultClient.OdigosClient.Destinations(odigosns).Delete(c, destId, metav1.DeleteOptions{})
-
-	// delete the secret if we have one
-	var errSecret error
-	if currentDest.Spec.SecretRef != nil && currentDest.Spec.SecretRef.Name != "" {
-		secretName := currentDest.Spec.SecretRef.Name
-		errSecret = kube.DefaultClient.CoreV1().Secrets(odigosns).Delete(c, secretName, metav1.DeleteOptions{})
-	}
+	// the secret (if exits) will be deleted by the owner reference
 
 	if errDest != nil {
 		returnError(c, errDest)
 		return
 	}
 
-	if errSecret != nil {
-		returnError(c, errDest)
-		return
-	}
-
-	c.Status(204)
+	c.Status(http.StatusNoContent)
 }
 
 func k8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields map[string]string) Destination {
@@ -521,9 +569,10 @@ func getDestinationSecretFields(c *gin.Context, odigosns string, dest *v1alpha1.
 
 func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) DestinationTypesCategoryItem {
 	return DestinationTypesCategoryItem{
-		Type:        destConfig.Metadata.Type,
-		DisplayName: destConfig.Metadata.DisplayName,
-		ImageUrl:    GetImageURL(destConfig.Spec.Image),
+		Type:                    destConfig.Metadata.Type,
+		DisplayName:             destConfig.Metadata.DisplayName,
+		ImageUrl:                GetImageURL(destConfig.Spec.Image),
+		TestConnectionSupported: destConfig.Spec.TestConnectionSupported,
 		SupportedSignals: SupportedSignals{
 			Traces: ObservabilitySignalSupport{
 				Supported: destConfig.Spec.Signals.Traces.Supported,
@@ -553,4 +602,35 @@ func createDestinationSecret(ctx context.Context, destType common.DestinationTyp
 	return &k8s.LocalObjectReference{
 		Name: newSecret.Name,
 	}, nil
+}
+
+func addDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, dest *v1alpha1.Destination) error {
+	destOwnerRef := metav1.OwnerReference{
+		APIVersion: "odigos.io/v1alpha1",
+		Kind:       "Destination",
+		Name:       dest.Name,
+		UID:        dest.UID,
+	}
+
+	secretPatch := []struct {
+		Op    string                  `json:"op"`
+		Path  string                  `json:"path"`
+		Value []metav1.OwnerReference `json:"value"`
+	}{{
+		Op:    "add",
+		Path:  "/metadata/ownerReferences",
+		Value: []metav1.OwnerReference{destOwnerRef},
+	},
+	}
+
+	secretPatchBytes, err := json.Marshal(secretPatch)
+	if err != nil {
+		return err
+	}
+
+	_, err = kube.DefaultClient.CoreV1().Secrets(odigosns).Patch(ctx, dest.Spec.SecretRef.Name, types.JSONPatchType, secretPatchBytes, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }

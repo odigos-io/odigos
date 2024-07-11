@@ -97,8 +97,8 @@ if (!opampServerHost || !instrumentationDeviceId) {
       [SEMRESATTRS_PROCESS_PID]: process.pid,
     },
     agentDescriptionNonIdentifyingAttributes: {},
-    onNewInstrumentationLibrariesConfiguration: (configs) =>
-      instrumentationLibraries.applyNewConfig(configs),
+    onNewInstrumentationLibrariesConfiguration: (configs, librariesDefaultEnable) =>
+      instrumentationLibraries.applyNewConfig(configs, librariesDefaultEnable),
     onRemoteResource: (remoteResource: Resource) => {
       const resource = staticResource
         .merge(detectorsResource)

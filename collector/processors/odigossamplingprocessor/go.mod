@@ -5,11 +5,11 @@ go 1.20
 require (
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
 	github.com/stretchr/testify v1.8.4
-	go.opentelemetry.io/collector/component v0.94.0
-	go.opentelemetry.io/collector/confmap v0.94.0
-	go.opentelemetry.io/collector/consumer v0.94.0
+	go.opentelemetry.io/collector/component v0.103.0
+	go.opentelemetry.io/collector/confmap v0.103.0
+	go.opentelemetry.io/collector/consumer v0.103.0
 	go.opentelemetry.io/collector/pdata v1.1.0
-	go.opentelemetry.io/collector/processor v0.94.0
+	go.opentelemetry.io/collector/processor v0.103.0
 	go.opentelemetry.io/otel v1.23.0
 	go.opentelemetry.io/otel/metric v1.23.0
 	go.opentelemetry.io/otel/trace v1.23.0

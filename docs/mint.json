@@ -112,7 +112,8 @@
                 "pipeline/actions/attributes/introduction",
                 "pipeline/actions/attributes/addclusterinfo",
                 "pipeline/actions/attributes/deleteattribute",
-                "pipeline/actions/attributes/rename-attribute"
+                "pipeline/actions/attributes/rename-attribute",
+                "pipeline/actions/attributes/piimasking"
               ]
             },
             "pipeline/actions/crd",
@@ -146,8 +147,10 @@
           "pages": [
             "backends/awss3",
             "backends/azureblob",
+            "backends/causely",
             "backends/coralogix",
             "backends/datadog",
+            "backends/dynatrace",
             "backends/elasticsearch",
             "backends/gcs",
             "backends/googlecloud",
@@ -170,8 +173,7 @@
             "backends/signoz",
             "backends/splunk",
             "backends/sumologic",
-            "backends/tempo",
-            "backends/causely"
+            "backends/tempo"
           ]
 
         }

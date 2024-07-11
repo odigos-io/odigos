@@ -3,7 +3,9 @@ import { ActionsType } from '@/types';
 import {
   AddClusterInfoIcon,
   DeleteAttributeIcon,
+  ErrorSamplerIcon,
   RenameAttributeIcon,
+  ProbabilisticSamplerIcon,
 } from '@keyval-dev/design-system';
 
 export function ActionIcon({ type, ...props }) {
@@ -14,6 +16,10 @@ export function ActionIcon({ type, ...props }) {
       return <RenameAttributeIcon {...props} />;
     case ActionsType.DELETE_ATTRIBUTES:
       return <DeleteAttributeIcon {...props} />;
+    case ActionsType.ERROR_SAMPLER:
+      return <ErrorSamplerIcon {...props} />;
+    case ActionsType.PROBABILISTIC_SAMPLER:
+      return <ProbabilisticSamplerIcon {...props} />;
     default:
       return null;
   }

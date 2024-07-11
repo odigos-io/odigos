@@ -129,6 +129,15 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				APIGroups: []string{"autoscaling"},
 				Resources: []string{"horizontalpodautoscalers"},
 			},
+			{
+				Verbs: []string{
+					"list",
+					"watch",
+					"get",
+				},
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+			},
 		},
 	}
 }
@@ -308,7 +317,7 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 					"list",
 				},
 				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"addclusterinfos", "deleteattributes", "renameattributes", "probabilisticsamplers", "latencysamplers", "errorsamplers"},
+				Resources: []string{"addclusterinfos", "deleteattributes", "renameattributes", "probabilisticsamplers", "piimaskings", "latencysamplers", "errorsamplers"},
 			},
 			{
 				Verbs: []string{
@@ -317,7 +326,7 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 					"update",
 				},
 				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"addclusterinfos/status", "deleteattributes/status", "renameattributes/status", "probabilisticsamplers/status", "latencysamplers/status", "errorsamplers/status"},
+				Resources: []string{"addclusterinfos/status", "deleteattributes/status", "renameattributes/status", "probabilisticsamplers/status", "piimaskings/status", "latencysamplers/status", "errorsamplers/status"},
 			},
 			{
 				Verbs: []string{

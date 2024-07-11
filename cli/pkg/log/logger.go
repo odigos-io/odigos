@@ -28,6 +28,11 @@ func Print(text string) *logLine {
 	return line
 }
 
+func (l *logLine) Warn(warn string) {
+	l.addSpaces()
+	fmt.Printf("\033[33m!\tWARN\033[0m %s\n", warn)
+}
+
 func (l *logLine) Success() {
 	l.addSpaces()
 	fmt.Println("\033[32m✔\033[0m")

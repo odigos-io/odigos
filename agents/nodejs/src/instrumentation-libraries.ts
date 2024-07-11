@@ -9,6 +9,15 @@ type OdigosInstrumentation = {
   otelInstrumentation: Instrumentation;
 };
 
+const calculateLibraryEnabled = (remoteConfigDisabledOption: boolean | undefined, librariesDefaultEnable: boolean): boolean => {
+  if (remoteConfigDisabledOption !== undefined) {
+    return !remoteConfigDisabledOption;
+  } else {
+    // if there is no remote config to enable/disable this library, use the default
+    return librariesDefaultEnable;
+  }
+}
+
 export class InstrumentationLibraries {
   private instrumentations: Instrumentation[];
   private instrumentationLibraries: OdigosInstrumentation[];
@@ -53,7 +62,7 @@ export class InstrumentationLibraries {
     this.tracerProvider = tracerProvider;
   }
 
-  public applyNewConfig(configs: InstrumentationLibraryConfiguration[]) {
+  public applyNewConfig(configs: InstrumentationLibraryConfiguration[], librariesDefaultEnable: boolean) {
 
     // make the configs into a map by library name so it's quicker to find the right one
     const configsMap = new Map<string, InstrumentationLibraryConfiguration>(
@@ -61,15 +70,9 @@ export class InstrumentationLibraries {
     );
 
     for(const odigosInstrumentation of this.instrumentationLibraries) {
-
-      // use the default tracer provider unless we find a config for this library
-      let tracerProvider = this.tracerProvider;
-
       const config = configsMap.get(odigosInstrumentation.otelInstrumentation.instrumentationName);
-      if (config?.traces?.disabled) {
-        // if config for this library exists and is disabled, use the noop tracer provider
-        tracerProvider = this.noopTracerProvider;
-      }
+      const enabled = calculateLibraryEnabled(config?.traces?.disabled, librariesDefaultEnable);
+      const tracerProvider = enabled ? this.tracerProvider : this.noopTracerProvider;
       odigosInstrumentation.otelInstrumentation.setTracerProvider(tracerProvider);
     }
   }

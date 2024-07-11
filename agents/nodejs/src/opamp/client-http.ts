@@ -186,13 +186,15 @@ export class OpAMPClientHttp {
       return;
     }
 
+    const librariesDefaultEnable = true; // in the future, pass it from remote config
+
     const instrumentationLibrariesConfigBody =
       instrumentationLibrariesConfig.body.toString();
     try {
       const configs = JSON.parse(
         instrumentationLibrariesConfigBody
       ) as InstrumentationLibraryConfiguration[];
-      this.config.onNewInstrumentationLibrariesConfiguration?.(configs);
+      this.config.onNewInstrumentationLibrariesConfiguration?.(configs, librariesDefaultEnable);
     } catch (error) {
       this.remoteConfigStatus = new RemoteConfigStatus({
         lastRemoteConfigHash: remoteConfig.configHash,

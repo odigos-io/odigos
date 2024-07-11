@@ -17,7 +17,7 @@ export interface OpAMPClientHttpConfig {
   initialPackageStatues: PartialMessage<PackageStatus>[];
 
   onRemoteResource?: (remoteResource: Resource) => void;
-  onNewInstrumentationLibrariesConfiguration?: (configs: InstrumentationLibraryConfiguration[]) => void;
+  onNewInstrumentationLibrariesConfiguration?: (configs: InstrumentationLibraryConfiguration[], librariesDefaultEnable: boolean) => void;
 }
 
 export interface ResourceAttributeFromServer {

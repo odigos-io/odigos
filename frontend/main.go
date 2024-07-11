@@ -114,6 +114,7 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.GET("/destinations", func(c *gin.Context) { endpoints.GetDestinations(c, flags.Namespace) })
 		apis.GET("/destinations/:id", func(c *gin.Context) { endpoints.GetDestinationById(c, flags.Namespace) })
 		apis.POST("/destinations", func(c *gin.Context) { endpoints.CreateNewDestination(c, flags.Namespace) })
+		apis.POST("/destinations/testConnection", func(c *gin.Context) { endpoints.TestConnectionForDestination(c, flags.Namespace) })
 		apis.PUT("/destinations/:id", func(c *gin.Context) { endpoints.UpdateExistingDestination(c, flags.Namespace) })
 		apis.DELETE("/destinations/:id", func(c *gin.Context) { endpoints.DeleteDestination(c, flags.Namespace) })
 
@@ -136,6 +137,23 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.POST("/actions/types/RenameAttribute", func(c *gin.Context) { actions.CreateRenameAttribute(c, flags.Namespace) })
 		apis.PUT("/actions/types/RenameAttribute/:id", func(c *gin.Context) { actions.UpdateRenameAttribute(c, flags.Namespace, c.Param("id")) })
 		apis.DELETE("/actions/types/RenameAttribute/:id", func(c *gin.Context) { actions.DeleteRenameAttribute(c, flags.Namespace, c.Param("id")) })
+
+		// ErrorSampler
+		apis.GET("/actions/types/ErrorSampler/:id", func(c *gin.Context) { actions.GetErrorSampler(c, flags.Namespace, c.Param("id")) })
+		apis.POST("/actions/types/ErrorSampler", func(c *gin.Context) { actions.CreateErrorSampler(c, flags.Namespace) })
+		apis.PUT("/actions/types/ErrorSampler/:id", func(c *gin.Context) { actions.UpdateErrorSampler(c, flags.Namespace, c.Param("id")) })
+		apis.DELETE("/actions/types/ErrorSampler/:id", func(c *gin.Context) { actions.DeleteErrorSampler(c, flags.Namespace, c.Param("id")) })
+		// LatencySampler
+		apis.GET("/actions/types/LatencySampler/:id", func(c *gin.Context) { actions.GetLatencySampler(c, flags.Namespace, c.Param("id")) })
+		apis.POST("/actions/types/LatencySampler", func(c *gin.Context) { actions.CreateLatencySampler(c, flags.Namespace) })
+		apis.PUT("/actions/types/LatencySampler/:id", func(c *gin.Context) { actions.UpdateLatencySampler(c, flags.Namespace, c.Param("id")) })
+		apis.DELETE("/actions/types/LatencySampler/:id", func(c *gin.Context) { actions.DeleteLatencySampler(c, flags.Namespace, c.Param("id")) })
+
+		//ProbabilisticSampler
+		apis.GET("/actions/types/ProbabilisticSampler/:id", func(c *gin.Context) { actions.GetProbabilisticSampler(c, flags.Namespace, c.Param("id")) })
+		apis.POST("/actions/types/ProbabilisticSampler", func(c *gin.Context) { actions.CreateProbabilisticSampler(c, flags.Namespace) })
+		apis.PUT("/actions/types/ProbabilisticSampler/:id", func(c *gin.Context) { actions.UpdateProbabilisticSampler(c, flags.Namespace, c.Param("id")) })
+		apis.DELETE("/actions/types/ProbabilisticSampler/:id", func(c *gin.Context) { actions.DeleteProbabilisticSampler(c, flags.Namespace, c.Param("id")) })
 	}
 
 	return r, nil

@@ -11,7 +11,7 @@ CURRENT_ARCH := $(shell go env GOARCH)
 GOBIN := $(shell go env GOPATH)/bin
 
 # Define the tool version
-BUILDER_VERSION = 0.100.0
+BUILDER_VERSION = 0.103.1
 
 # Define the URL format for the tool executable
 BUILDER_URL = https://github.com/open-telemetry/opentelemetry-collector/releases/download/cmd%2Fbuilder%2Fv$(BUILDER_VERSION)/ocb_$(BUILDER_VERSION)_$(CURRENT_OS)_$(CURRENT_ARCH)
