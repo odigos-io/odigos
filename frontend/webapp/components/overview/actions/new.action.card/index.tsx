@@ -28,7 +28,7 @@ export function NewActionCard({ item, onClick }: NewActionCardProps) {
   return (
     <KeyvalCard>
       <CardContentWrapper onClick={() => onClick({ item })}>
-        <ActionIcon type={item.type} style={{ width: 56, height: 56 }} />
+        <ActionIcon type={item.type} style={{ width: 32, height: 32 }} />
         <KeyvalText size={18} weight={700}>
           {item.title}
         </KeyvalText>

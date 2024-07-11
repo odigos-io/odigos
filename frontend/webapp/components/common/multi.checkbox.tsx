@@ -1,5 +1,5 @@
 import { KeyvalCheckbox, KeyvalText } from '@/design.system';
-import React, { useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 interface CheckboxItem {
@@ -27,6 +27,10 @@ export const MultiCheckboxComponent: React.FC<MultiCheckboxProps> = ({
   const [isCheckboxDisabled, setIsCheckboxDisabled] = useState<boolean>(false);
   const [selectedMonitors, setSelectedMonitors] =
     useState<CheckboxItem[]>(checkboxes);
+
+  useEffect(() => {
+    checkboxes.length === 1 && setIsCheckboxDisabled(true);
+  }, [checkboxes]);
 
   const handleCheckboxChange = (id: string) => {
     // Calculate the number of currently checked checkboxes

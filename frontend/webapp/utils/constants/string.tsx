@@ -154,6 +154,14 @@ export const ACTIONS = {
     TITLE: 'Rename Attribute',
     DESCRIPTION: `The “Rename Attribute” Odigos Action can be used to rename attributes from telemetry signals originated from the k8s cluster where the Odigos is running.`,
   },
+  ErrorSampler: {
+    TITLE: 'Error Sampler',
+    DESCRIPTION: `The “Error Sampler” Odigos Action is a Global Action that supports error sampling by filtering out non-error traces.`,
+  },
+  ProbabilisticSampler: {
+    TITLE: 'Probabilistic Sampler',
+    DESCRIPTION: `The “Probabilistic Sampler” Odigos Action is a Global Action that supports probabilistic sampling by filtering out traces based on a sampling ratio.`,
+  },
   SEARCH_ACTION: 'Search Action',
 };
 
