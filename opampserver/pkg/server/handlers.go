@@ -1,11 +1,13 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
@@ -55,42 +57,57 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, fmt.Errorf("missing package statuses in first agent to server message")
 	}
 
-	instrumentationLibraryNames := make([]string, 0, len(firstMessage.PackageStatuses.Packages))
-	for _, status := range firstMessage.PackageStatuses.Packages {
-		instrumentationLibraryNames = append(instrumentationLibraryNames, status.Name)
-	}
-
 	k8sAttributes, pod, err := c.deviceIdCache.GetAttributesFromDevice(ctx, deviceId)
 	if err != nil {
 		c.logger.Error(err, "failed to get attributes from device", "deviceId", deviceId)
 		return nil, nil, err
 	}
 
-	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, k8sAttributes, instrumentationLibraryNames)
+	podWorkload := common.PodWorkload{
+		Namespace: pod.GetNamespace(),
+		Kind:      k8sAttributes.WorkloadKind,
+		Name:      k8sAttributes.WorkloadName,
+	}
+
+	instrumentedAppName := workload.GetRuntimeObjectName(k8sAttributes.WorkloadName, k8sAttributes.WorkloadKind)
+
+	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, k8sAttributes)
 	if err != nil {
 		c.logger.Error(err, "failed to get full config", "k8sAttributes", k8sAttributes)
 		return nil, nil, err
 	}
 
-	instrumentedAppName := workload.GetRuntimeObjectName(k8sAttributes.WorkloadName, k8sAttributes.WorkloadKind)
 	c.logger.Info("new OpAMP client connected", "deviceId", deviceId, "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", k8sAttributes.OtelServiceName)
 
-	opampResponse := &protobufs.ServerToAgent{
-		RemoteConfig: fullRemoteConfig,
-	}
 	connectionInfo := &connection.ConnectionInfo{
 		DeviceId:            deviceId,
+		Workload:            podWorkload,
 		Pod:                 pod,
 		Pid:                 pid,
 		InstrumentedAppName: instrumentedAppName,
+		AgentRemoteConfig:   fullRemoteConfig,
+	}
+
+	opampResponse := &protobufs.ServerToAgent{
+		RemoteConfig: fullRemoteConfig,
 	}
 
 	return connectionInfo, opampResponse, nil
 }
 
 func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request *protobufs.AgentToServer, connectionInfo *connection.ConnectionInfo) (*protobufs.ServerToAgent, error) {
-	// In the future we should handle different types of messages here which are not the first message.
-	return &protobufs.ServerToAgent{}, nil
+	response := protobufs.ServerToAgent{}
+
+	// If the remote config changed, send the new config to the agent on the response
+	if request.RemoteConfigStatus == nil {
+		return nil, fmt.Errorf("missing remote config status in agent to server message")
+	}
+	if !bytes.Equal(request.RemoteConfigStatus.LastRemoteConfigHash, connectionInfo.AgentRemoteConfig.ConfigHash) {
+		c.logger.Info("Remote config changed, sending new config to agent", "workload", connectionInfo.Workload)
+		response.RemoteConfig = connectionInfo.AgentRemoteConfig
+	}
+
+	return &response, nil
 }
 
 func (c *ConnectionHandlers) OnConnectionClosed(ctx context.Context, connectionInfo *connection.ConnectionInfo) {

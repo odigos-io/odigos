@@ -29,7 +29,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 
 	connectionCache := connection.NewConnectionsCache()
 
-	sdkConfig := sdkconfig.NewSdkConfigManager(logger, mgr, nodeName)
+	sdkConfig := sdkconfig.NewSdkConfigManager(logger, mgr, connectionCache, nodeName)
 
 	handlers := &ConnectionHandlers{
 		logger:        logger,

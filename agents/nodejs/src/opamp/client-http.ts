@@ -2,6 +2,8 @@ import { PartialMessage } from "@bufbuild/protobuf";
 import {
   AgentDescription,
   AgentToServer,
+  RemoteConfigStatus,
+  RemoteConfigStatuses,
   ServerToAgent,
   ServerToAgentFlags,
 } from "./generated/opamp_pb";
@@ -34,6 +36,7 @@ export class OpAMPClientHttp {
   private logger = diag.createComponentLogger({
     namespace: "@odigos/opentelemetry-node/opamp",
   });
+  private remoteConfigStatus: RemoteConfigStatus | undefined;
 
   constructor(config: OpAMPClientHttpConfig) {
     this.config = config;
@@ -167,12 +170,19 @@ export class OpAMPClientHttp {
       return;
     }
 
+    this.logger.info("Got new remote config from OpAMP server");
+
     const instrumentationLibrariesConfig =
       remoteConfig.config?.configMap["InstrumentationLibraries"];
     if (
       !instrumentationLibrariesConfig ||
       !instrumentationLibrariesConfig.body
     ) {
+      this.remoteConfigStatus = new RemoteConfigStatus({
+        lastRemoteConfigHash: remoteConfig.configHash,
+        status: RemoteConfigStatuses.RemoteConfigStatuses_FAILED,
+        errorMessage: 'missing instrumentation libraries remote config',
+      });
       return;
     }
 
@@ -184,8 +194,19 @@ export class OpAMPClientHttp {
       ) as InstrumentationLibraryConfiguration[];
       this.config.onNewInstrumentationLibrariesConfiguration?.(configs);
     } catch (error) {
+      this.remoteConfigStatus = new RemoteConfigStatus({
+        lastRemoteConfigHash: remoteConfig.configHash,
+        status: RemoteConfigStatuses.RemoteConfigStatuses_FAILED,
+        errorMessage: 'error parsing instrumentation libraries remote config',
+      });
+
       this.logger.warn("Error handling instrumentation libraries remote config", error);
     }
+
+    this.remoteConfigStatus = new RemoteConfigStatus({
+      lastRemoteConfigHash: remoteConfig.configHash,
+      status: RemoteConfigStatuses.RemoteConfigStatuses_APPLIED,
+    });
   }
 
   private async sendHeartBeatToServer() {
@@ -220,6 +241,7 @@ export class OpAMPClientHttp {
       ...message,
       instanceUid: this.OpAMPInstanceUid,
       sequenceNum: this.nextSequenceNum++,
+      remoteConfigStatus: this.remoteConfigStatus,
     });
     const msgBytes = completeMessageToSend.toBinary();
     try {
@@ -228,8 +250,9 @@ export class OpAMPClientHttp {
         const res = await this.httpClient.post("/v1/opamp", msgBytes, {
           responseType: "arraybuffer",
         });
-        const agentToServer = ServerToAgent.fromBinary(res.data);
-        return agentToServer;
+        const serverToAgent = ServerToAgent.fromBinary(res.data);
+        this.handleRemoteConfigInResponse(serverToAgent);
+        return serverToAgent;
       });
     } catch (error) {
       // TODO: handle

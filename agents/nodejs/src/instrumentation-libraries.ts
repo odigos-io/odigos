@@ -11,12 +11,10 @@ type OdigosInstrumentation = {
 
 export class InstrumentationLibraries {
   private instrumentations: Instrumentation[];
-  private instrumentationLibraries: Map<string, OdigosInstrumentation>;
+  private instrumentationLibraries: OdigosInstrumentation[];
 
   private noopTracerProvider: TracerProvider;
   private tracerProvider: TracerProvider;
-
-  private packageStatusCallback?: (status: PackageStatus[]) => void;
 
   private logger = diag.createComponentLogger({
     namespace: "@odigos/opentelemetry-node/instrumentation-libraries",
@@ -29,19 +27,17 @@ export class InstrumentationLibraries {
     this.noopTracerProvider = new ProxyTracerProvider().getDelegate();
     this.tracerProvider = this.noopTracerProvider; // starts as noop, and overridden later on
 
-    this.instrumentationLibraries = new Map(
+    this.instrumentationLibraries =
       this.instrumentations.map((otelInstrumentation) => {
         // start all instrumentations with a noop tracer provider
         otelInstrumentation.setTracerProvider(this.noopTracerProvider);
 
-        const { instrumentationName } = otelInstrumentation;
         const odigosInstrumentation = {
           otelInstrumentation,
         };
 
-        return [instrumentationName, odigosInstrumentation];
-      })
-    );
+        return odigosInstrumentation;
+      });
   }
 
   public getPackageStatuses(): PartialMessage<PackageStatus>[] {
@@ -58,30 +54,23 @@ export class InstrumentationLibraries {
   }
 
   public applyNewConfig(configs: InstrumentationLibraryConfiguration[]) {
-    for (const instrumentationLibraryConfig of configs) {
-      const odigosInstrumentation = this.instrumentationLibraries.get(
-        instrumentationLibraryConfig.name
-      );
-      if (!odigosInstrumentation) {
-        this.logger.error(
-          "remote config instrumentation name not found:",
-          instrumentationLibraryConfig.name
-        );
-        continue;
-      }
 
-      this.logger.info("applying new instrumentation library config:", {
-        instrumentationLibraryConfig,
-      });
-      if (instrumentationLibraryConfig.traces?.disabled) {
-        odigosInstrumentation.otelInstrumentation.setTracerProvider(
-          this.noopTracerProvider
-        );
-      } else {
-        odigosInstrumentation.otelInstrumentation.setTracerProvider(
-          this.tracerProvider
-        );
+    // make the configs into a map by library name so it's quicker to find the right one
+    const configsMap = new Map<string, InstrumentationLibraryConfiguration>(
+      configs.map((config) => [config.name, config])
+    );
+
+    for(const odigosInstrumentation of this.instrumentationLibraries) {
+
+      // use the default tracer provider unless we find a config for this library
+      let tracerProvider = this.tracerProvider;
+
+      const config = configsMap.get(odigosInstrumentation.otelInstrumentation.instrumentationName);
+      if (config?.traces?.disabled) {
+        // if config for this library exists and is disabled, use the noop tracer provider
+        tracerProvider = this.noopTracerProvider;
       }
+      odigosInstrumentation.otelInstrumentation.setTracerProvider(tracerProvider);
     }
   }
 }
