@@ -2,7 +2,6 @@ package sdkconfig
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -70,7 +69,7 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttr
 		return nil, err
 	}
 
-	instrumentationLibrariesConfigBytes, err := json.Marshal(instrumentationLibrariesRemoteConfig)
+	opampRemoteConfigInstrumentationLibraries, instrumentationLibrariesSectionName, err := configsections.InstrumentationLibrariesRemoteConfigToOpamp(instrumentationLibrariesRemoteConfig)
 	if err != nil {
 		m.logger.Error(err, "failed to marshal instrumentation libraries config")
 		return nil, err
@@ -78,11 +77,8 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttr
 
 	agentConfigMap := protobufs.AgentConfigMap{
 		ConfigMap: map[string]*protobufs.AgentConfigFile{
-			sdkSectionName: opampRemoteConfigSdk,
-			string(configsections.RemoteConfigInstrumentationLibrariesConfigSectionName): {
-				Body:        instrumentationLibrariesConfigBytes,
-				ContentType: "application/json",
-			},
+			sdkSectionName:                      opampRemoteConfigSdk,
+			instrumentationLibrariesSectionName: opampRemoteConfigInstrumentationLibraries,
 		},
 	}
 	configHash := connection.CalcRemoteConfigHash(&agentConfigMap)

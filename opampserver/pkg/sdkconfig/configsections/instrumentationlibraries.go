@@ -2,8 +2,11 @@ package configsections
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/opampserver/protobufs"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -38,4 +41,18 @@ func CalcInstrumentationLibrariesRemoteConfig(ctx context.Context, kubeClient cl
 	}
 
 	return instrumentationLibrariesConfig, nil
+}
+
+func InstrumentationLibrariesRemoteConfigToOpamp(remoteConfigInstrumentationLibraries []RemoteConfigInstrumentationLibrary) (*protobufs.AgentConfigFile, string, error) {
+
+	remoteConfigSdkBytes, err := json.Marshal(remoteConfigInstrumentationLibraries)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to marshal instrumentation libraries remote config: %w", err)
+	}
+
+	sdkConfigContent := protobufs.AgentConfigFile{
+		Body:        remoteConfigSdkBytes,
+		ContentType: "application/json",
+	}
+	return &sdkConfigContent, string(RemoteConfigInstrumentationLibrariesConfigSectionName), nil
 }

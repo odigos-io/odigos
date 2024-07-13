@@ -2,7 +2,6 @@ package sdkconfig
 
 import (
 	"context"
-	"encoding/json"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -49,17 +48,14 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	instrumentationLibrariesConfigBytes, err := json.Marshal(instrumentationLibrariesConfig)
+	opampRemoteConfigInstrumentationLibraries, instrumentationLibrariesSectionName, err := configsections.InstrumentationLibrariesRemoteConfigToOpamp(instrumentationLibrariesConfig)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	updatedConfigMapEntries := protobufs.AgentConfigMap{
 		ConfigMap: map[string]*protobufs.AgentConfigFile{
-			string(configsections.RemoteConfigInstrumentationLibrariesConfigSectionName): {
-				Body:        instrumentationLibrariesConfigBytes,
-				ContentType: "application/json",
-			},
+			instrumentationLibrariesSectionName: opampRemoteConfigInstrumentationLibraries,
 		},
 	}
 

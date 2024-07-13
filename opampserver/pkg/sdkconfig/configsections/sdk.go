@@ -25,7 +25,7 @@ func SdkRemoteConfigToOpamp(remoteConfigSdk *RemoteConfigSdk) (*protobufs.AgentC
 
 	remoteConfigSdkBytes, err := json.Marshal(remoteConfigSdk)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to marshal server offered resource attributes: %w", err)
+		return nil, "", fmt.Errorf("failed to marshal server sdk remote config: %w", err)
 	}
 
 	sdkConfigContent := protobufs.AgentConfigFile{
