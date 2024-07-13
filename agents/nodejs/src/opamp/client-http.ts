@@ -173,7 +173,11 @@ export class OpAMPClientHttp {
         remoteConfigOpampMessage,
         this.opampInstanceUidString
       );
-      this.logger.info("Got remote configuration from OpAMP server", remoteConfig.sdk.remoteResource.attributes, { traceSignal: remoteConfig.sdk.traceSignal});
+      this.logger.info(
+        "Got remote configuration from OpAMP server",
+        remoteConfig.sdk.remoteResource.attributes,
+        { traceSignal: remoteConfig.sdk.traceSignal }
+      );
       this.config.onNewRemoteConfig(remoteConfig);
       this.remoteConfigStatus = new RemoteConfigStatus({
         lastRemoteConfigHash: remoteConfigOpampMessage.configHash,
@@ -232,14 +236,18 @@ export class OpAMPClientHttp {
     const msgBytes = completeMessageToSend.toBinary();
     try {
       // do not create traces for the opamp http requests
-      return context.with(suppressTracing(context.active()), async () => {
-        const res = await this.httpClient.post("/v1/opamp", msgBytes, {
-          responseType: "arraybuffer",
-        });
-        const serverToAgent = ServerToAgent.fromBinary(res.data);
-        this.handleRemoteConfigInResponse(serverToAgent);
-        return serverToAgent;
-      });
+      const serverToAgent = await context.with(
+        suppressTracing(context.active()),
+        async () => {
+          const res = await this.httpClient.post("/v1/opamp", msgBytes, {
+            responseType: "arraybuffer",
+          });
+          const serverToAgent = ServerToAgent.fromBinary(res.data);
+          return serverToAgent;
+        }
+      );
+      this.handleRemoteConfigInResponse(serverToAgent);
+      return serverToAgent;
     } catch (error) {
       // TODO: handle
       throw error;

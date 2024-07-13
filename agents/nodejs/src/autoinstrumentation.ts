@@ -1,6 +1,6 @@
 import { diag, DiagConsoleLogger, DiagLogLevel } from "@opentelemetry/api";
 // For development, uncomment the following line to see debug logs
-diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-grpc";
 import {
@@ -82,6 +82,7 @@ if (!opampServerHost || !instrumentationDeviceId) {
 
   // instrumentation libraries
   const instrumentationLibraries = new InstrumentationLibraries();
+  const localResource = staticResource.merge(detectorsResource);
 
   const opampClient = new OpAMPClientHttp({
     instrumentationDeviceId: instrumentationDeviceId,
@@ -93,8 +94,7 @@ if (!opampServerHost || !instrumentationDeviceId) {
     },
     agentDescriptionNonIdentifyingAttributes: {},
     onNewRemoteConfig: (remoteConfig: RemoteConfig) => {
-      const resource = staticResource
-        .merge(detectorsResource)
+      const resource = localResource
         .merge(remoteConfig.sdk.remoteResource);
 
       // tracer provider

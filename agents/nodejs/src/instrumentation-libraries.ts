@@ -1,6 +1,6 @@
 import { Instrumentation } from "@opentelemetry/instrumentation";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
-import { ProxyTracerProvider, TracerProvider, diag } from "@opentelemetry/api";
+import { ProxyTracerProvider, TracerProvider, diag, trace } from "@opentelemetry/api";
 import {
   InstrumentationLibraryConfiguration,
   TraceSignalGeneralConfig,
@@ -76,9 +76,12 @@ export class InstrumentationLibraries {
     enabledTracerProvider: TracerProvider
   ) {
     // it will happen when the pipeline is not setup to receive spans
-    // const globalTracerProvider = traceSignal.enabled
-    //   ? enabledTracerProvider
-    //   : this.noopTracerProvider;
+    const globalTracerProvider = traceSignal.enabled
+      ? enabledTracerProvider
+      : this.noopTracerProvider;
+    // set global tracer provider to record traces from 3rd party instrumented libraries
+    // or application manual instrumentation
+    trace.setGlobalTracerProvider(globalTracerProvider);
 
     // make the configs into a map by library name so it's quicker to find the right one
     const configsMap = new Map<string, InstrumentationLibraryConfiguration>(
