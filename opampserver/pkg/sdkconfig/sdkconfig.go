@@ -46,11 +46,18 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, k8sAttributes *dev
 		return nil, err
 	}
 
+	// query which signals are enabled in the current destinations list
+	tracesEnabled, _, err := calcEnabledSignals(ctx, m.mgr.GetClient())
+	if err != nil {
+		m.logger.Error(err, "failed to calculate enabled signals")
+		return nil, err
+	}
+
 	remoteConfigSdk := RemoteConfigSdk{
 		RemoteResourceAttributes: serverOfferedResourceAttributes,
 		TraceSignal: TraceSignalGeneralConfig{
-			Enabled:             true,
-			DefaultEnabledValue: true,
+			Enabled:             tracesEnabled,
+			DefaultEnabledValue: true, // TODO: read from instrumentation config CRD with fallback
 		},
 	}
 

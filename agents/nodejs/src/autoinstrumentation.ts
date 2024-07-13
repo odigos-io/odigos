@@ -1,3 +1,7 @@
+import { diag, DiagConsoleLogger, DiagLogLevel } from "@opentelemetry/api";
+// For development, uncomment the following line to see debug logs
+diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-grpc";
 import {
   CompositePropagator,
@@ -21,13 +25,7 @@ import {
   AsyncHooksContextManager,
   AsyncLocalStorageContextManager,
 } from "@opentelemetry/context-async-hooks";
-import {
-  DiagConsoleLogger,
-  DiagLogLevel,
-  context,
-  diag,
-  propagation,
-} from "@opentelemetry/api";
+import { context, propagation } from "@opentelemetry/api";
 import { VERSION } from "./version";
 import { InstrumentationLibraries } from "./instrumentation-libraries";
 import {
@@ -35,9 +33,6 @@ import {
   NodeTracerProvider,
 } from "@opentelemetry/sdk-trace-node";
 import * as semver from "semver";
-
-// For development, uncomment the following line to see debug logs
-diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
 // not yet published in '@opentelemetry/semantic-conventions'
 const SEMRESATTRS_TELEMETRY_DISTRO_NAME = "telemetry.distro.name";
@@ -107,7 +102,11 @@ if (!opampServerHost || !instrumentationDeviceId) {
         resource,
       });
       tracerProvider.addSpanProcessor(spanProcessor);
-      instrumentationLibraries.onNewRemoteConfig(remoteConfig.instrumentationLibraries, remoteConfig.sdk.traceSignal, tracerProvider);
+      instrumentationLibraries.onNewRemoteConfig(
+        remoteConfig.instrumentationLibraries,
+        remoteConfig.sdk.traceSignal,
+        tracerProvider
+      );
     },
     initialPackageStatues: instrumentationLibraries.getPackageStatuses(),
   });
