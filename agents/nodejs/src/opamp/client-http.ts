@@ -48,6 +48,8 @@ export class OpAMPClientHttp {
       },
       timeout: 5000,
     });
+
+    // avoid printing to noisy axios logs to the diag logger
     this.httpClient.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -65,6 +67,7 @@ export class OpAMPClientHttp {
       }
     );
 
+    // on any issue connection to opamp server, this will be the default remote config which will be applied
     this.defaultRemoteConfig = {
       sdk: {
         remoteResource: new Resource({
@@ -72,8 +75,8 @@ export class OpAMPClientHttp {
           [SEMRESATTRS_SERVICE_INSTANCE_ID]: this.opampInstanceUidString,
         }),
         traceSignal: {
-          enabled: false,
-          defaultEnabledValue: false,
+          enabled: true,
+          defaultEnabledValue: true,
         },
       },
       instrumentationLibraries: [],
@@ -88,9 +91,9 @@ export class OpAMPClientHttp {
         return;
       }
 
-      // flags is bitmap, use bitwise OR to check if the flag is set
+      // flags is bitmap, use bitwise AND to check if the flag is set
       if (
-        Number(heartbeatRes.flags) |
+        Number(heartbeatRes.flags) &
         Number(ServerToAgentFlags.ServerToAgentFlags_ReportFullState)
       ) {
         this.logger.info("Opamp server requested full state report");
@@ -118,7 +121,6 @@ export class OpAMPClientHttp {
       try {
         const firstServerToAgent = await this.sendFullState();
         this.handleFirstMessageResponse(firstServerToAgent);
-        this.handleRemoteConfigInResponse(firstServerToAgent);
         return;
       } catch (error) {
         this.logger.warn(
@@ -156,20 +158,8 @@ export class OpAMPClientHttp {
       );
     }
 
-    try {
-      const remoteConfig = extractRemoteConfigFromResponse(
-        remoteConfigOpampMessage,
-        this.opampInstanceUidString
-      );
-      this.logger.info("Got remote configuration on first opamp message");
-      this.config.onNewRemoteConfig?.(remoteConfig);
-    } catch (error) {
-      this.logger.error(
-        "Error extracting remote config from OpAMP message",
-        error
-      );
-      return;
-    }
+    // the configs should have already been processed. Simply log the message and continue
+    this.logger.info("Got remote configuration on first opamp message");
   }
 
   private handleRemoteConfigInResponse(serverToAgentMessage: ServerToAgent) {
@@ -178,13 +168,12 @@ export class OpAMPClientHttp {
       return;
     }
 
-    this.logger.info("Got new remote config from OpAMP server");
-
     try {
       const remoteConfig = extractRemoteConfigFromResponse(
         remoteConfigOpampMessage,
         this.opampInstanceUidString
       );
+      this.logger.info("Got remote configuration from OpAMP server", remoteConfig.sdk.remoteResource.attributes, { traceSignal: remoteConfig.sdk.traceSignal});
       this.config.onNewRemoteConfig(remoteConfig);
       this.remoteConfigStatus = new RemoteConfigStatus({
         lastRemoteConfigHash: remoteConfigOpampMessage.configHash,
