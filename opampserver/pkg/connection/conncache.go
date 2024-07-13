@@ -111,3 +111,34 @@ func (c *ConnectionsCache) UpdateWorkloadRemoteConfigByKeys(workload common.PodW
 		}
 	}
 }
+
+// how to use this function:
+// it allows you to update remote config keys which will be sent to the agent on next heartbeat.
+// should be used to update general odigos pipeline configs that are shared by all connections.
+// for example: updating the enabled signals configuration.
+// pass it a callback, that will be called for each connection, and should return the new config entries for that connection.
+// entries that are not specified in the returned map will retain their previous value.
+// each key should be updated entirely when specified, partial updates are not supported.
+// the callback should be fast and not block, as it will be called for each connection with the lock held.
+func (c *ConnectionsCache) UpdateAllConnectionConfigs(connConfigEvaluator func(connInfo *ConnectionInfo) *protobufs.AgentConfigMap) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	for _, conn := range c.liveConnections {
+		newConfigEntries := connConfigEvaluator(conn)
+		if newConfigEntries == nil {
+			continue
+		}
+
+		// merge the new config entries into the existing remote config
+		// copy the old remote config to avoid it being accessed concurrently
+		newRemoteConfigMap := proto.Clone(conn.AgentRemoteConfig.Config).(*protobufs.AgentConfigMap)
+		for key, value := range newConfigEntries.ConfigMap {
+			newRemoteConfigMap.ConfigMap[key] = value
+		}
+		conn.AgentRemoteConfig = &protobufs.AgentRemoteConfig{
+			Config:     newRemoteConfigMap,
+			ConfigHash: CalcRemoteConfigHash(newRemoteConfigMap),
+		}
+	}
+}

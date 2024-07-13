@@ -1,4 +1,6 @@
-package sdkconfig
+package configsections
+
+import "github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 
 type ConfigSectionName string
 
@@ -7,11 +9,6 @@ const (
 	RemoteConfigSdkConfigSectionName                      ConfigSectionName = "SDK"
 	RemoteConfigInstrumentationLibrariesConfigSectionName ConfigSectionName = "InstrumentationLibraries"
 )
-
-type ResourceAttribute struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
 
 type TraceSignalGeneralConfig struct {
 
@@ -28,7 +25,7 @@ type TraceSignalGeneralConfig struct {
 }
 
 type RemoteConfigSdk struct {
-	RemoteResourceAttributes []ResourceAttribute `json:"remoteResourceAttributes"`
+	RemoteResourceAttributes []configresolvers.ResourceAttribute `json:"remoteResourceAttributes"`
 
 	// general configuration for trace signals in the SDK level.
 	TraceSignal TraceSignalGeneralConfig `json:"traceSignal"`

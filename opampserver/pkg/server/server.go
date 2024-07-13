@@ -29,7 +29,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 
 	connectionCache := connection.NewConnectionsCache()
 
-	sdkConfig := sdkconfig.NewSdkConfigManager(logger, mgr, connectionCache, nodeName)
+	sdkConfig := sdkconfig.NewSdkConfigManager(logger, mgr, connectionCache)
 
 	handlers := &ConnectionHandlers{
 		logger:        logger,
@@ -37,6 +37,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		sdkConfig:     sdkConfig,
 		kubeclient:    mgr.GetClient(),
 		scheme:        mgr.GetScheme(),
+		nodeName:      nodeName,
 	}
 
 	http.HandleFunc("POST /v1/opamp", func(w http.ResponseWriter, req *http.Request) {

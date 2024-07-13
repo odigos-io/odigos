@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
+	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -44,7 +45,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		Name:      workloadName,
 	}
 
-	instrumentationLibrariesConfig, err := calcInstrumentationLibrariesRemoteConfig(ctx, i.Client, req.Name, req.Namespace)
+	instrumentationLibrariesConfig, err := configsections.CalcInstrumentationLibrariesRemoteConfig(ctx, i.Client, req.Name, req.Namespace)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -55,7 +56,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 
 	updatedConfigMapEntries := protobufs.AgentConfigMap{
 		ConfigMap: map[string]*protobufs.AgentConfigFile{
-			string(RemoteConfigInstrumentationLibrariesConfigSectionName): {
+			string(configsections.RemoteConfigInstrumentationLibrariesConfigSectionName): {
 				Body:        instrumentationLibrariesConfigBytes,
 				ContentType: "application/json",
 			},

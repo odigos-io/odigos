@@ -1,4 +1,4 @@
-package sdkconfig
+package configsections
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func calcInstrumentationLibrariesRemoteConfig(ctx context.Context, kubeClient client.Client, configObjectName string, ns string) ([]RemoteConfigInstrumentationLibrary, error) {
+func CalcInstrumentationLibrariesRemoteConfig(ctx context.Context, kubeClient client.Client, configObjectName string, ns string) ([]RemoteConfigInstrumentationLibrary, error) {
 
 	instrumentationSdkConfig := &v1alpha1.InstrumentationConfig{}
 	err := kubeClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: configObjectName}, instrumentationSdkConfig)

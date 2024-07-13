@@ -3,27 +3,28 @@ package sdkconfig
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
-	"github.com/odigos-io/odigos/opampserver/pkg/deviceid"
+	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
+	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type SdkConfigManager struct {
-	logger   logr.Logger
-	mgr      ctrl.Manager
-	nodeName string
+	logger logr.Logger
+	mgr    ctrl.Manager
 }
 
-func NewSdkConfigManager(logger logr.Logger, mgr ctrl.Manager, connectionCache *connection.ConnectionsCache, nodeName string) *SdkConfigManager {
+func NewSdkConfigManager(logger logr.Logger, mgr ctrl.Manager, connectionCache *connection.ConnectionsCache) *SdkConfigManager {
 
 	sdkConfigManager := &SdkConfigManager{
-		logger:   logger,
-		mgr:      mgr,
-		nodeName: nodeName,
+		logger: logger,
+		mgr:    mgr,
 	}
 
 	// setup the controller to watch for changes in the instrumentation configs CRD
@@ -35,46 +36,41 @@ func NewSdkConfigManager(logger logr.Logger, mgr ctrl.Manager, connectionCache *
 		logger.Error(err, "unable to create controller for opamp server sdk config", "controller", "InstrumentationConfig")
 	}
 
+	// setup the controller to watch for changes in the destinations CRD to recalculate enabled signals
+	if err := (&DestinationReconciler{
+		Client:          mgr.GetClient(),
+		Scheme:          mgr.GetScheme(),
+		ConnectionCache: connectionCache,
+	}).SetupWithManager(mgr); err != nil {
+		logger.Error(err, "unable to create controller for opamp server sdk config", "controller", "Destination")
+	}
+
 	return sdkConfigManager
 }
 
-func (m *SdkConfigManager) GetFullConfig(ctx context.Context, k8sAttributes *deviceid.K8sResourceAttributes) (*protobufs.AgentRemoteConfig, error) {
-
-	serverOfferedResourceAttributes, err := calculateServerAttributes(k8sAttributes, m.nodeName)
-	if err != nil {
-		m.logger.Error(err, "failed to calculate server attributes", "k8sAttributes", k8sAttributes)
-		return nil, err
-	}
+func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttributes []configresolvers.ResourceAttribute, podWorkload *common.PodWorkload) (*protobufs.AgentRemoteConfig, error) {
 
 	// query which signals are enabled in the current destinations list
-	tracesEnabled, _, err := calcEnabledSignals(ctx, m.mgr.GetClient())
+	tracesEnabled, _, err := configresolvers.CalcEnabledSignals(ctx, m.mgr.GetClient())
 	if err != nil {
-		m.logger.Error(err, "failed to calculate enabled signals")
-		return nil, err
+		return nil, fmt.Errorf("failed to calculate enabled signals: %w", err)
 	}
 
-	remoteConfigSdk := RemoteConfigSdk{
-		RemoteResourceAttributes: serverOfferedResourceAttributes,
-		TraceSignal: TraceSignalGeneralConfig{
-			Enabled:             tracesEnabled,
-			DefaultEnabledValue: true, // TODO: read from instrumentation config CRD with fallback
-		},
-	}
-
-	remoteConfigSdkBytes, err := json.Marshal(remoteConfigSdk)
+	sdkRemoteConfig := configsections.CalcSdkRemoteConfig(remoteResourceAttributes, tracesEnabled)
+	opampRemoteConfigSdk, sdkSectionName, err := configsections.SdkRemoteConfigToOpamp(sdkRemoteConfig)
 	if err != nil {
 		m.logger.Error(err, "failed to marshal server offered resource attributes")
 		return nil, err
 	}
 
-	configObjectName := workload.GetRuntimeObjectName(k8sAttributes.WorkloadName, k8sAttributes.WorkloadKind)
-	instrumentationLibrariesConfig, err := calcInstrumentationLibrariesRemoteConfig(ctx, m.mgr.GetClient(), configObjectName, k8sAttributes.Namespace)
+	configObjectName := workload.GetRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
+	instrumentationLibrariesRemoteConfig, err := configsections.CalcInstrumentationLibrariesRemoteConfig(ctx, m.mgr.GetClient(), configObjectName, podWorkload.Namespace)
 	if err != nil {
-		m.logger.Error(err, "failed to calculate instrumentation libraries config", "k8sAttributes", k8sAttributes)
+		m.logger.Error(err, "failed to calculate instrumentation libraries config", "k8sAttributes", remoteResourceAttributes)
 		return nil, err
 	}
 
-	instrumentationLibrariesConfigBytes, err := json.Marshal(instrumentationLibrariesConfig)
+	instrumentationLibrariesConfigBytes, err := json.Marshal(instrumentationLibrariesRemoteConfig)
 	if err != nil {
 		m.logger.Error(err, "failed to marshal instrumentation libraries config")
 		return nil, err
@@ -82,11 +78,8 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, k8sAttributes *dev
 
 	agentConfigMap := protobufs.AgentConfigMap{
 		ConfigMap: map[string]*protobufs.AgentConfigFile{
-			string(RemoteConfigSdkConfigSectionName): {
-				Body:        remoteConfigSdkBytes,
-				ContentType: "application/json",
-			},
-			string(RemoteConfigInstrumentationLibrariesConfigSectionName): {
+			sdkSectionName: opampRemoteConfigSdk,
+			string(configsections.RemoteConfigInstrumentationLibrariesConfigSectionName): {
 				Body:        instrumentationLibrariesConfigBytes,
 				ContentType: "application/json",
 			},

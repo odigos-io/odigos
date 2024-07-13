@@ -1,4 +1,4 @@
-package sdkconfig
+package configresolvers
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func calcEnabledSignals(ctx context.Context, kubeClient client.Client) (tracesEnabled bool, metricsEnabled bool, err error) {
+func CalcEnabledSignals(ctx context.Context, kubeClient client.Client) (tracesEnabled bool, metricsEnabled bool, err error) {
 
 	// TODO: consider storing this info in collectors group, so it accurately reflects the current state of the node collector
 	destinations := &v1alpha1.DestinationList{}

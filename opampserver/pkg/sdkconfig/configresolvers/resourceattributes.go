@@ -1,4 +1,4 @@
-package sdkconfig
+package configresolvers
 
 import (
 	"errors"
@@ -7,6 +7,11 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
+type ResourceAttribute struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 // the server resolved 6 resource attribute for the agent which it cannot discover itself:
 // - node name
 // - namespace
@@ -14,7 +19,7 @@ import (
 // - pod name
 // - container name
 // - object name and kind (deployment, statefulset, daemonset, pod)
-func calculateServerAttributes(k8sAttributes *deviceid.K8sResourceAttributes, nodeName string) ([]ResourceAttribute, error) {
+func CalculateServerAttributes(k8sAttributes *deviceid.K8sResourceAttributes, nodeName string) ([]ResourceAttribute, error) {
 
 	serverOfferResourceAttributes := []ResourceAttribute{
 		{

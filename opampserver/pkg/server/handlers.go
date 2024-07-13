@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/deviceid"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig"
+	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,6 +28,7 @@ type ConnectionHandlers struct {
 	logger        logr.Logger
 	kubeclient    client.Client
 	scheme        *runtime.Scheme // TODO: revisit this, we should not depend on controller runtime
+	nodeName      string
 }
 
 func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId string, firstMessage *protobufs.AgentToServer) (*connection.ConnectionInfo, *protobufs.ServerToAgent, error) {
@@ -70,8 +72,13 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 	}
 
 	instrumentedAppName := workload.GetRuntimeObjectName(k8sAttributes.WorkloadName, k8sAttributes.WorkloadKind)
+	remoteResourceAttributes, err := configresolvers.CalculateServerAttributes(k8sAttributes, c.nodeName)
+	if err != nil {
+		c.logger.Error(err, "failed to calculate server attributes", "k8sAttributes", k8sAttributes)
+		return nil, nil, err
+	}
 
-	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, k8sAttributes)
+	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, remoteResourceAttributes, &podWorkload)
 	if err != nil {
 		c.logger.Error(err, "failed to get full config", "k8sAttributes", k8sAttributes)
 		return nil, nil, err
@@ -80,12 +87,13 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 	c.logger.Info("new OpAMP client connected", "deviceId", deviceId, "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", k8sAttributes.OtelServiceName)
 
 	connectionInfo := &connection.ConnectionInfo{
-		DeviceId:            deviceId,
-		Workload:            podWorkload,
-		Pod:                 pod,
-		Pid:                 pid,
-		InstrumentedAppName: instrumentedAppName,
-		AgentRemoteConfig:   fullRemoteConfig,
+		DeviceId:                 deviceId,
+		Workload:                 podWorkload,
+		Pod:                      pod,
+		Pid:                      pid,
+		InstrumentedAppName:      instrumentedAppName,
+		AgentRemoteConfig:        fullRemoteConfig,
+		RemoteResourceAttributes: remoteResourceAttributes,
 	}
 
 	opampResponse := &protobufs.ServerToAgent{
