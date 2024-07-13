@@ -24,6 +24,7 @@ type InstrumentationConfigReconciler struct {
 func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	instrumentationConfig := &odigosv1.InstrumentationConfig{}
 	err := i.Get(ctx, req.NamespacedName, instrumentationConfig)
+
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			instrumentationConfig = nil
@@ -61,7 +62,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		},
 	}
 
-	i.ConnectionCache.UpdateRemoteConfig(podWorkload, &updatedConfigMapEntries)
+	i.ConnectionCache.UpdateWorkloadRemoteConfigByKeys(podWorkload, &updatedConfigMapEntries)
 
 	return ctrl.Result{}, nil
 }

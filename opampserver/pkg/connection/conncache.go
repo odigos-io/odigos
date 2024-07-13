@@ -89,7 +89,8 @@ func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
 	return deadConnectionInfos
 }
 
-func (c *ConnectionsCache) UpdateRemoteConfig(workload common.PodWorkload, newConfigEntries *protobufs.AgentConfigMap) {
+// allow to completely overwrite the remote config for a set of keys for a given workload
+func (c *ConnectionsCache) UpdateWorkloadRemoteConfigByKeys(workload common.PodWorkload, newConfigEntries *protobufs.AgentConfigMap) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 

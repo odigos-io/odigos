@@ -7,15 +7,8 @@ import {
   ServerToAgent,
   ServerToAgentFlags,
 } from "./generated/opamp_pb";
-import {
-  InstrumentationLibraryConfiguration,
-  OpAMPClientHttpConfig,
-  ResourceAttributeFromServer,
-} from "./types";
-import {
-  keyValuePairsToOtelAttributes,
-  otelAttributesToKeyValuePairs,
-} from "./utils";
+import { OpAMPClientHttpConfig, RemoteConfig } from "./types";
+import { otelAttributesToKeyValuePairs } from "./utils";
 import { uuidv7 } from "uuidv7";
 import axios, { AxiosInstance } from "axios";
 import { Resource } from "@opentelemetry/resources";
@@ -26,23 +19,26 @@ import {
 } from "@opentelemetry/semantic-conventions";
 import { suppressTracing } from "@opentelemetry/core";
 import { PackageStatuses } from "./generated/opamp_pb";
+import { extractRemoteConfigFromResponse } from "./remote-config";
 
 export class OpAMPClientHttp {
   private config: OpAMPClientHttpConfig;
-  private OpAMPInstanceUidString: string;
-  private OpAMPInstanceUid: Uint8Array;
+  private opampInstanceUidString: string;
+  private OpAMPInstanceUidBytes: Uint8Array;
   private nextSequenceNum: bigint = BigInt(0);
   private httpClient: AxiosInstance;
   private logger = diag.createComponentLogger({
     namespace: "@odigos/opentelemetry-node/opamp",
   });
   private remoteConfigStatus: RemoteConfigStatus | undefined;
+  // the remote config to use when we failed to get data from the server
+  private defaultRemoteConfig: RemoteConfig;
 
   constructor(config: OpAMPClientHttpConfig) {
     this.config = config;
-    this.OpAMPInstanceUidString = uuidv7();
-    this.OpAMPInstanceUid = new TextEncoder().encode(
-      this.OpAMPInstanceUidString
+    this.opampInstanceUidString = uuidv7();
+    this.OpAMPInstanceUidBytes = new TextEncoder().encode(
+      this.opampInstanceUidString
     );
     this.httpClient = axios.create({
       baseURL: `http://${this.config.opAMPServerHost}`,
@@ -68,6 +64,20 @@ export class OpAMPClientHttp {
         return Promise.reject(relevantErrorInfo);
       }
     );
+
+    this.defaultRemoteConfig = {
+      sdk: {
+        remoteResource: new Resource({
+          [SEMRESATTRS_SERVICE_NAME]: this.config.instrumentationDeviceId,
+          [SEMRESATTRS_SERVICE_INSTANCE_ID]: this.opampInstanceUidString,
+        }),
+        traceSignal: {
+          enabled: false,
+          defaultEnabledValue: false,
+        },
+      },
+      instrumentationLibraries: [],
+    };
   }
 
   async start() {
@@ -128,87 +138,70 @@ export class OpAMPClientHttp {
     this.logger.error(
       `Failed to get remote resource attributes from OpAMP server after retries, continuing without them`
     );
-    this.config.onRemoteResource?.(new Resource({
-      [SEMRESATTRS_SERVICE_NAME]: this.config.instrumentationDeviceId,
-    }));
+    try {
+      this.config.onNewRemoteConfig(this.defaultRemoteConfig);
+    } catch (error) {
+      this.logger.error(
+        "Error handling default remote config on startup",
+        error
+      );
+    }
   }
 
   private handleFirstMessageResponse(serverToAgentMessage: ServerToAgent) {
-    const sdkConfig =
-      serverToAgentMessage.remoteConfig?.config?.configMap["SDK"];
-    if (!sdkConfig || !sdkConfig.body) {
+    const remoteConfigOpampMessage = serverToAgentMessage.remoteConfig;
+    if (!remoteConfigOpampMessage) {
       throw new Error(
-        "No SDK config received on first OpAMP message to the server"
+        "No remote config received on first OpAMP message to the server"
       );
     }
 
-    const resourceAttributes = JSON.parse(sdkConfig.body.toString()) as {
-      remoteResourceAttributes: ResourceAttributeFromServer[];
-    };
-
-    this.logger.info(
-      "Got remote resource attributes",
-      resourceAttributes.remoteResourceAttributes
-    );
-
-    const remoteResource = new Resource(
-      keyValuePairsToOtelAttributes([
-        ...resourceAttributes.remoteResourceAttributes,
-        {
-          key: SEMRESATTRS_SERVICE_INSTANCE_ID,
-          value: this.OpAMPInstanceUidString,
-        },
-      ])
-    );
-    this.config.onRemoteResource?.(remoteResource);
+    try {
+      const remoteConfig = extractRemoteConfigFromResponse(
+        remoteConfigOpampMessage,
+        this.opampInstanceUidString
+      );
+      this.logger.info("Got remote configuration on first opamp message");
+      this.config.onNewRemoteConfig?.(remoteConfig);
+    } catch (error) {
+      this.logger.error(
+        "Error extracting remote config from OpAMP message",
+        error
+      );
+      return;
+    }
   }
 
   private handleRemoteConfigInResponse(serverToAgentMessage: ServerToAgent) {
-
-    const remoteConfig = serverToAgentMessage.remoteConfig;
-    if (!remoteConfig) {
+    const remoteConfigOpampMessage = serverToAgentMessage.remoteConfig;
+    if (!remoteConfigOpampMessage) {
       return;
     }
 
     this.logger.info("Got new remote config from OpAMP server");
 
-    const instrumentationLibrariesConfig =
-      remoteConfig.config?.configMap["InstrumentationLibraries"];
-    if (
-      !instrumentationLibrariesConfig ||
-      !instrumentationLibrariesConfig.body
-    ) {
-      this.remoteConfigStatus = new RemoteConfigStatus({
-        lastRemoteConfigHash: remoteConfig.configHash,
-        status: RemoteConfigStatuses.RemoteConfigStatuses_FAILED,
-        errorMessage: 'missing instrumentation libraries remote config',
-      });
-      return;
-    }
-
-    const librariesDefaultEnable = true; // in the future, pass it from remote config
-
-    const instrumentationLibrariesConfigBody =
-      instrumentationLibrariesConfig.body.toString();
     try {
-      const configs = JSON.parse(
-        instrumentationLibrariesConfigBody
-      ) as InstrumentationLibraryConfiguration[];
-      this.config.onNewInstrumentationLibrariesConfiguration?.(configs, librariesDefaultEnable);
+      const remoteConfig = extractRemoteConfigFromResponse(
+        remoteConfigOpampMessage,
+        this.opampInstanceUidString
+      );
+      this.config.onNewRemoteConfig(remoteConfig);
+      this.remoteConfigStatus = new RemoteConfigStatus({
+        lastRemoteConfigHash: remoteConfigOpampMessage.configHash,
+        status: RemoteConfigStatuses.RemoteConfigStatuses_APPLIED,
+      });
     } catch (error) {
       this.remoteConfigStatus = new RemoteConfigStatus({
-        lastRemoteConfigHash: remoteConfig.configHash,
+        lastRemoteConfigHash: remoteConfigOpampMessage.configHash,
         status: RemoteConfigStatuses.RemoteConfigStatuses_FAILED,
-        errorMessage: 'error parsing instrumentation libraries remote config',
+        errorMessage: "missing instrumentation libraries remote config",
       });
-
-      this.logger.warn("Error handling instrumentation libraries remote config", error);
+      this.logger.warn(
+        "Error extracting remote config from OpAMP message",
+        error
+      );
+      return;
     }
-
-    this.remoteConfigStatus = new RemoteConfigStatus({
-      lastRemoteConfigHash: remoteConfig.configHash,
-      status: RemoteConfigStatuses.RemoteConfigStatuses_APPLIED,
-    });
   }
 
   private async sendHeartBeatToServer() {
@@ -223,7 +216,7 @@ export class OpAMPClientHttp {
     return await this.sendAgentToServerMessage({
       agentDescription: new AgentDescription({
         identifyingAttributes: otelAttributesToKeyValuePairs({
-          [SEMRESATTRS_SERVICE_INSTANCE_ID]: this.OpAMPInstanceUidString, // always send the instance id
+          [SEMRESATTRS_SERVICE_INSTANCE_ID]: this.opampInstanceUidString, // always send the instance id
           ...this.config.agentDescriptionIdentifyingAttributes,
         }),
         nonIdentifyingAttributes: otelAttributesToKeyValuePairs(
@@ -231,7 +224,9 @@ export class OpAMPClientHttp {
         ),
       }),
       packageStatuses: new PackageStatuses({
-        packages: Object.fromEntries(this.config.initialPackageStatues.map((pkg) => [pkg.name, pkg])),
+        packages: Object.fromEntries(
+          this.config.initialPackageStatues.map((pkg) => [pkg.name, pkg])
+        ),
       }),
     });
   }
@@ -241,7 +236,7 @@ export class OpAMPClientHttp {
   ): Promise<ServerToAgent> {
     const completeMessageToSend = new AgentToServer({
       ...message,
-      instanceUid: this.OpAMPInstanceUid,
+      instanceUid: this.OpAMPInstanceUidBytes,
       sequenceNum: this.nextSequenceNum++,
       remoteConfigStatus: this.remoteConfigStatus,
     });

@@ -4,7 +4,7 @@ import {
   W3CBaggagePropagator,
   W3CTraceContextPropagator,
 } from "@opentelemetry/core";
-import { OpAMPClientHttp } from "./opamp";
+import { OpAMPClientHttp, RemoteConfig } from "./opamp";
 import {
   SEMRESATTRS_TELEMETRY_SDK_LANGUAGE,
   TELEMETRYSDKLANGUAGEVALUES_NODEJS,
@@ -97,17 +97,17 @@ if (!opampServerHost || !instrumentationDeviceId) {
       [SEMRESATTRS_PROCESS_PID]: process.pid,
     },
     agentDescriptionNonIdentifyingAttributes: {},
-    onNewInstrumentationLibrariesConfiguration: (configs, librariesDefaultEnable) =>
-      instrumentationLibraries.applyNewConfig(configs, librariesDefaultEnable),
-    onRemoteResource: (remoteResource: Resource) => {
+    onNewRemoteConfig: (remoteConfig: RemoteConfig) => {
       const resource = staticResource
         .merge(detectorsResource)
-        .merge(remoteResource);
+        .merge(remoteConfig.sdk.remoteResource);
+
+      // tracer provider
       const tracerProvider = new NodeTracerProvider({
         resource,
       });
       tracerProvider.addSpanProcessor(spanProcessor);
-      instrumentationLibraries.setTracerProvider(tracerProvider);
+      instrumentationLibraries.onNewRemoteConfig(remoteConfig.instrumentationLibraries, remoteConfig.sdk.traceSignal, tracerProvider);
     },
     initialPackageStatues: instrumentationLibraries.getPackageStatuses(),
   });

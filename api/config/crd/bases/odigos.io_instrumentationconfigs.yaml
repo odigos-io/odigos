@@ -128,13 +128,12 @@ spec:
                             type: string
                           traceConfig:
                             properties:
-                              disabled:
+                              enabled:
                                 description: |-
                                   Whether the instrumentation library is enabled to record traces.
-                                  When disabled, it is expected that the instrumentation library does not produce any spans.
-                                  It is expected that the disabled flag can be toggled at runtime and instrumentation library should
-                                  start/stop producing spans based on the flag without requiring a restart.
-                                  nil value means the default value should be used (enabled).
+                                  When false, it is expected that the instrumentation library does not produce any spans regardless of any other configuration.
+                                  When true, the instrumentation library should produce spans according to the other configuration options.
+                                  If not specified, the default value for this signal should be used (whether to enable libraries by default or not).
                                 type: boolean
                             type: object
                         required:

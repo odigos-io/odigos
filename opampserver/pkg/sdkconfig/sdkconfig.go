@@ -46,7 +46,15 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, k8sAttributes *dev
 		return nil, err
 	}
 
-	remoteConfigSdkBytes, err := json.Marshal(RemoteConfigSdk{RemoteResourceAttributes: serverOfferedResourceAttributes})
+	remoteConfigSdk := RemoteConfigSdk{
+		RemoteResourceAttributes: serverOfferedResourceAttributes,
+		TraceSignal: TraceSignalGeneralConfig{
+			Enabled:             true,
+			DefaultEnabledValue: true,
+		},
+	}
+
+	remoteConfigSdkBytes, err := json.Marshal(remoteConfigSdk)
 	if err != nil {
 		m.logger.Error(err, "failed to marshal server offered resource attributes")
 		return nil, err

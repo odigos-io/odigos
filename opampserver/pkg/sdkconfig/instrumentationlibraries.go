@@ -21,17 +21,17 @@ func calcInstrumentationLibrariesRemoteConfig(ctx context.Context, kubeClient cl
 	for _, sdkConfig := range instrumentationSdkConfig.Spec.SdkConfigs {
 		for _, instrumentationConfig := range sdkConfig.InstrumentationLibraryConfigs {
 
-			tracesDisabled := false
+			var tracesEnabled *bool
 			if instrumentationConfig.TraceConfig != nil {
-				if instrumentationConfig.TraceConfig.Disabled != nil {
-					tracesDisabled = *instrumentationConfig.TraceConfig.Disabled
+				if instrumentationConfig.TraceConfig.Enabled != nil {
+					tracesEnabled = instrumentationConfig.TraceConfig.Enabled
 				}
 			}
 
 			instrumentationLibrariesConfig = append(instrumentationLibrariesConfig, RemoteConfigInstrumentationLibrary{
 				Name: instrumentationConfig.InstrumentationLibraryName,
 				Traces: RemoteConfigInstrumentationLibraryTraces{
-					Disabled: tracesDisabled,
+					Enabled: tracesEnabled,
 				},
 			})
 		}

@@ -16,20 +16,34 @@ export interface OpAMPClientHttpConfig {
 
   initialPackageStatues: PartialMessage<PackageStatus>[];
 
-  onRemoteResource?: (remoteResource: Resource) => void;
-  onNewInstrumentationLibrariesConfiguration?: (configs: InstrumentationLibraryConfiguration[], librariesDefaultEnable: boolean) => void;
+  onNewRemoteConfig: (remoteConfig: RemoteConfig) => void;
 }
 
-export interface ResourceAttributeFromServer {
-  key: string;
-  value: string;
+// Sdk Remote Configuration
+
+export interface TraceSignalGeneralConfig {
+  enabled: boolean; // if enabled is false, the pipeline is not configured to receive spans
+  defaultEnabledValue: boolean;
 }
 
+export interface SdkConfiguration {
+  remoteResource: Resource; // parse resource object
+  traceSignal: TraceSignalGeneralConfig;
+}
+
+// InstrumentationLibrary Remote Configuration
 export interface InstrumentationLibraryTracesConfiguration {
-  disabled?: boolean;
+  // if the value is set, use it, otherwise use the default value from the trace signal in the sdk level
+  enabled?: boolean;
 }
-
 export interface InstrumentationLibraryConfiguration {
   name: string;
   traces: InstrumentationLibraryTracesConfiguration;
 }
+
+// All remote config fields
+
+export type RemoteConfig = {
+  sdk: SdkConfiguration;
+  instrumentationLibraries: InstrumentationLibraryConfiguration[];
+};
