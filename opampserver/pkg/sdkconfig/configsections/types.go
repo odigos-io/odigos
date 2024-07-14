@@ -4,7 +4,6 @@ import "github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 
 type ConfigSectionName string
 
-// This interface is the message sent to opamp client to configure aspects of the SDK
 const (
 	RemoteConfigSdkConfigSectionName                      ConfigSectionName = "SDK"
 	RemoteConfigInstrumentationLibrariesConfigSectionName ConfigSectionName = "InstrumentationLibraries"
