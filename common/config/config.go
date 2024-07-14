@@ -37,6 +37,7 @@ type Config struct {
 
 type Telemetry struct {
 	Metrics GenericMap `json:"metrics"`
+	Resource map[string]*string `json:"resource"`
 }
 
 type Service struct {

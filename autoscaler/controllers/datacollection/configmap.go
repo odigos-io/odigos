@@ -7,6 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 
 	"github.com/ghodss/yaml"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -20,6 +21,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 const (
@@ -144,10 +147,29 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 		}},
 	}
 	processorsCfg["resourcedetection"] = config.GenericMap{"detectors": []string{"ec2", "gcp", "azure"}}
+	processorsCfg["odigostrafficmetrics"] = config.GenericMap{
+		"res_attributes_keys": []string{
+			string(semconv.ServiceNameKey),
+			string(semconv.K8SNamespaceNameKey),
+			string(semconv.K8SDeploymentNameKey),
+			string(semconv.K8SStatefulSetNameKey),
+			string(semconv.K8SDaemonSetNameKey),
+		},
+	}
 
 	exporters := config.GenericMap{
 		"otlp/gateway": config.GenericMap{
 			"endpoint": fmt.Sprintf("dns:///odigos-gateway.%s:4317", env.GetCurrentNamespace()),
+			"tls": config.GenericMap{
+				"insecure": true,
+			},
+		},
+		// TODO: remove debug exporter
+		"debug": config.GenericMap{
+			"verbosity": "detailed",
+		},
+		"otlp/ui": config.GenericMap{
+			"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), consts.OTLPPort),
 			"tls": config.GenericMap{
 				"insecure": true,
 			},
@@ -172,6 +194,21 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 					"http": empty,
 				},
 			},
+			"prometheus": config.GenericMap{
+				"config": config.GenericMap{
+					"scrape_configs": []config.GenericMap{
+						{
+							"job_name": "otelcol",
+							"scrape_interval": "10s",
+							"static_configs": []config.GenericMap{
+								{
+									"targets": []string{"127.0.0.1:8888"},
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 		Exporters:  exporters,
 		Processors: processorsCfg,
@@ -180,8 +217,23 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 			"zpages":       empty,
 		},
 		Service: config.Service{
-			Pipelines:  map[string]config.Pipeline{},
+			Pipelines:  map[string]config.Pipeline{
+				"metrics/otelcol": {
+					Receivers: []string{"prometheus"},
+					Exporters: []string{"debug", "otlp/ui"},
+				},
+			},
 			Extensions: []string{"health_check", "zpages"},
+			Telemetry: config.Telemetry{
+				Metrics: config.GenericMap{
+					"address": "0.0.0.0:8888",
+				},
+				Resource: map[string]*string{
+					// The collector add "otelcol" as a service name, so we need to remove it
+					// to avoid duplication, since we are interested in the instrumented services
+					string(semconv.ServiceNameKey): nil,
+				},
+			},
 		},
 	}
 
@@ -326,7 +378,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
-			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, logsProcessors...),
+			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, logsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -334,7 +386,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
 			Receivers:  []string{"otlp", "zipkin"},
-			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, tracesProcessors...),
+			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, tracesProcessors...),
 			Exporters:  tracesPipelineExporter,
 		}
 	}
@@ -349,7 +401,7 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 
 		cfg.Service.Pipelines["metrics"] = config.Pipeline{
 			Receivers:  []string{"otlp", "kubeletstats"},
-			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, metricsProcessors...),
+			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, metricsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}

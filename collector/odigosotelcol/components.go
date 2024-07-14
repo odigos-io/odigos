@@ -88,6 +88,7 @@ import (
 	tailsamplingprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor"
 	transformprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	remotetapprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor"
+	odigostrafficmetrics "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics"
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
 	zipkinreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver"
 	filelogreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"
@@ -195,6 +196,7 @@ func components() (otelcol.Factories, error) {
 		tailsamplingprocessor.NewFactory(),
 		transformprocessor.NewFactory(),
 		remotetapprocessor.NewFactory(),
+		odigostrafficmetrics.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
