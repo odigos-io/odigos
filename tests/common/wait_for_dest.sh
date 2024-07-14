@@ -13,6 +13,9 @@ function wait_for_ready() {
     echo "Tempo is not ready yet. Retrying in 2 seconds..."
     sleep 2
     wait_for_ready
+  else
+    echo "Tempo is ready"
+    sleep 2
   fi
 }
 
