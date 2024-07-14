@@ -97,7 +97,14 @@ export class OpAMPClientHttp {
         Number(ServerToAgentFlags.ServerToAgentFlags_ReportFullState)
       ) {
         this.logger.info("Opamp server requested full state report");
-        heartbeatRes = await this.sendFullState();
+        try {
+          await this.sendFullState();
+        } catch (error) {
+          this.logger.warn(
+            "Error sending full state to OpAMP server on heartbeat response",
+            error
+          );
+        }
       }
     }, this.config.pollingIntervalMs || 30000);
     timer.unref(); // do not keep the process alive just for this timer
@@ -105,9 +112,13 @@ export class OpAMPClientHttp {
 
   async shutdown() {
     this.logger.info("Sending AgentDisconnect message to OpAMP server");
-    return await this.sendAgentToServerMessage({
-      agentDisconnect: {},
-    });
+    try {
+      await this.sendAgentToServerMessage({
+        agentDisconnect: {},
+      });
+    } catch (error) {
+      this.logger.error("Error sending AgentDisconnect message to OpAMP server");
+    }
   }
 
   // the first opamp message is special, as we need to get the remote resource attributes.
