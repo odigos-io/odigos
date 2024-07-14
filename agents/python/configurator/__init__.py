@@ -29,15 +29,17 @@ def _initialize_components():
     resource_attributes_event.wait(timeout=30)  # Wait for the resource attributes to be received for 30 seconds
 
     received_value = client.resource_attributes
-    auto_resource.update(received_value)
+    
+    if received_value:
+        auto_resource.update(received_value)
 
-    resource = Resource.create(auto_resource) \
-        .merge(OTELResourceDetector().detect()) \
-        .merge(ProcessResourceDetector().detect())
+        resource = Resource.create(auto_resource) \
+            .merge(OTELResourceDetector().detect()) \
+            .merge(ProcessResourceDetector().detect())
 
-    initialize_traces_if_enabled(trace_exporters, resource)
-    initialize_metrics_if_enabled(metric_exporters, resource)
-    initialize_logging_if_enabled(log_exporters, resource)
+        initialize_traces_if_enabled(trace_exporters, resource)
+        initialize_metrics_if_enabled(metric_exporters, resource)
+        initialize_logging_if_enabled(log_exporters, resource)
 
 
 def initialize_traces_if_enabled(trace_exporters, resource):
@@ -61,16 +63,10 @@ def initialize_logging_if_enabled(log_exporters, resource):
 def start_opamp_client(event):
     condition = threading.Condition(threading.Lock())
     client = OpAMPHTTPClient(event, condition)
-    client_thread = threading.Thread(target=client.run, name="OpAMPClientThread", daemon=True)
-    client_thread.start()
+    client.start()
     
     def shutdown():
-        client.stop()
-        
-        with client.condition:
-            client.condition.notify_all()
-        
-        client_thread.join()
+        client.shutdown()
 
     # Ensure that the shutdown function is called on program exit
     atexit.register(shutdown)

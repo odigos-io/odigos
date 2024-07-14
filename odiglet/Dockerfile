@@ -2,9 +2,8 @@ FROM python:3.11 AS python-builder
 ARG ODIGOS_VERSION
 WORKDIR /python-instrumentation
 COPY ../agents/python ./agents/python
-RUN mkdir workspace && pip install --target workspace -r ./agents/python/requirements.txt
 RUN echo "VERSION = \"$ODIGOS_VERSION\";" > ./agents/python/configurator/version.py
-RUN pip install ./agents/python/  --target workspace
+RUN mkdir workspace && pip install ./agents/python/  --target workspace
 
 FROM node:18 AS nodejs-builder
 ARG ODIGOS_VERSION

@@ -9,6 +9,16 @@ def parse_first_message_to_resource_attributes(first_message_server_to_agent: op
         logger.error("SDK not found in config map, returning empty resource attributes")
         return {}
     
-    remote_resource_attributes = json.loads(config_map["SDK"].body)
+    try:
+        sdk_config = json.loads(config_map["SDK"].body)
+    except json.JSONDecodeError as e:
+        logger.error(f"Error decoding SDK config: {e}")
+        return {}
     
-    return {item['key']: item['value'] for item in remote_resource_attributes.get('remoteResourceAttributes', [])}
+    remote_resource_attributes = sdk_config.get('remoteResourceAttributes', [])
+    
+    if not remote_resource_attributes:
+        logger.error('missing "remoteResourceAttributes" section in OpAMP server remote config on first server to agent message')
+        return {}
+    
+    return {item['key']: item['value'] for item in remote_resource_attributes}
