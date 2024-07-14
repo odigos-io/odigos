@@ -42,6 +42,12 @@ export default function ActionRowDynamicContent({
             {`${item?.spec?.sampling_percentage}% sampling ratio`}
           </KeyvalText>
         );
+      case ActionsType.LATENCY_SAMPLER:
+        return (
+          <KeyvalText color={theme.text.grey} size={14} weight={400}>
+            {`${item?.spec?.endpoints_filters.length} endpoints`}
+          </KeyvalText>
+        );
       default:
         return <div>{item.type}</div>;
     }
