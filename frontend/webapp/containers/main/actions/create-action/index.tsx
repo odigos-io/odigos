@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import theme from '@/styles/palette';
 import { useActionState } from '@/hooks';
 import { useSearchParams } from 'next/navigation';
@@ -31,6 +31,8 @@ import {
 const ACTION_TYPE = 'type';
 
 export function CreateActionContainer(): React.JSX.Element {
+  const [isFormValid, setIsFormValid] = useState(false);
+
   const {
     actionState,
     onChangeActionState,
@@ -94,6 +96,7 @@ export function CreateActionContainer(): React.JSX.Element {
           type={type}
           data={actionData}
           onChange={onChangeActionState}
+          setIsFormValid={setIsFormValid}
         />
         <TextareaWrapper>
           <KeyvalTextArea
@@ -104,7 +107,7 @@ export function CreateActionContainer(): React.JSX.Element {
           />
         </TextareaWrapper>
         <CreateButtonWrapper>
-          <KeyvalButton onClick={upsertAction} disabled={!actionData}>
+          <KeyvalButton onClick={upsertAction} disabled={!isFormValid}>
             <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
               {ACTIONS.CREATE_ACTION}
             </KeyvalText>

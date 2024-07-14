@@ -27,7 +27,7 @@ const TableHeader = styled.th`
 
 const TableCell = styled.td`
   width: 220px;
-  padding-bottom: 8px;
+  padding-bottom: 24px;
 `;
 
 interface HttpRouteFilter {
@@ -35,6 +35,12 @@ interface HttpRouteFilter {
   minimum_latency_threshold?: number;
   http_route?: string;
   service_name?: string;
+  errors?: {
+    fallback_sampling_ratio?: string;
+    minimum_latency_threshold?: string;
+    http_route?: string;
+    service_name?: string;
+  };
 }
 
 interface LatencySampler {
@@ -44,6 +50,7 @@ interface LatencySampler {
 interface LatencySamplerFormProps {
   data: LatencySampler;
   onChange: (key: string, value: LatencySampler | null) => void;
+  setIsFormValid?: (value: boolean) => void;
 }
 
 const ACTION_DATA_KEY = 'actionData';
@@ -51,6 +58,7 @@ const ACTION_DATA_KEY = 'actionData';
 export function LatencySamplerForm({
   data,
   onChange,
+  setIsFormValid = () => {},
 }: LatencySamplerFormProps): React.JSX.Element {
   const { sources } = useSources();
   const [filters, setFilters] = useState<HttpRouteFilter[]>(
@@ -61,12 +69,10 @@ export function LatencySamplerForm({
     if (filters.length === 0) {
       setFilters([{}]);
     }
+    checkFormValidity(filters);
   }, [filters]);
 
   const memoizedSources = React.useMemo(() => {
-    console.log({ sources });
-    console.log({ data });
-
     let instrumentsSources = sources;
     if (data) {
       instrumentsSources = sources.filter((source) => {
@@ -88,6 +94,49 @@ export function LatencySamplerForm({
     );
     setFilters(updatedFilters);
     onChange(ACTION_DATA_KEY, { endpoints_filters: updatedFilters });
+    checkFormValidity(updatedFilters);
+  }
+
+  function handleOnBlur(index: number, key: string, value: any): void {
+    const updatedFilters = filters.map((filter, i) => {
+      if (i === index) {
+        const errors = { ...filter.errors };
+        switch (key) {
+          case 'http_route':
+            if (!value) {
+              errors[key] = 'Route is required';
+            } else if (!value.startsWith('/')) {
+              errors[key] = 'Route must start with /';
+            } else {
+              delete errors[key];
+            }
+            break;
+          case 'minimum_latency_threshold':
+            if (isNaN(value)) {
+              errors[key] = 'Minimum latency threshold must be a number';
+            } else if (value < 0) {
+              errors[key] = 'Minimum latency threshold must be greater than 0';
+            } else {
+              delete errors[key];
+            }
+            break;
+          case 'fallback_sampling_ratio':
+            if (value < 0 || value > 100) {
+              errors[key] = 'Fallback sampling ratio must be between 0 and 100';
+            } else {
+              delete errors[key];
+            }
+            break;
+          default:
+            break;
+        }
+        return { ...filter, errors };
+      }
+      return filter;
+    });
+    setFilters(updatedFilters);
+    onChange(ACTION_DATA_KEY, { endpoints_filters: updatedFilters });
+    checkFormValidity(updatedFilters);
   }
 
   function handleAddFilter(): void {
@@ -98,6 +147,22 @@ export function LatencySamplerForm({
     const updatedFilters = filters.filter((_, i) => i !== index);
     setFilters(updatedFilters);
     onChange(ACTION_DATA_KEY, { endpoints_filters: updatedFilters });
+    checkFormValidity(updatedFilters);
+  }
+
+  function checkFormValidity(filters: HttpRouteFilter[]) {
+    const isValid = filters.every((filter) => {
+      return (
+        filter.service_name &&
+        filter.http_route &&
+        !filter.errors?.http_route &&
+        filter.minimum_latency_threshold !== undefined &&
+        !filter.errors?.minimum_latency_threshold &&
+        filter.fallback_sampling_ratio !== undefined &&
+        !filter.errors?.fallback_sampling_ratio
+      );
+    });
+    setIsFormValid(isValid);
   }
 
   function getDropdownValue(serviceName: string): {
@@ -153,6 +218,10 @@ export function LatencySamplerForm({
                   onChange={(value) =>
                     handleOnChange(index, 'http_route', value)
                   }
+                  onBlur={() =>
+                    handleOnBlur(index, 'http_route', filter.http_route)
+                  }
+                  error={filter.errors?.http_route}
                   placeholder="e.g. /api/v1/users"
                   type="text"
                 />
@@ -164,9 +233,17 @@ export function LatencySamplerForm({
                   onChange={(value) =>
                     handleOnChange(index, 'minimum_latency_threshold', +value)
                   }
+                  onBlur={() =>
+                    handleOnBlur(
+                      index,
+                      'minimum_latency_threshold',
+                      filter.minimum_latency_threshold
+                    )
+                  }
                   placeholder="e.g. 1000"
                   type="number"
                   min={0}
+                  error={filter.errors?.minimum_latency_threshold}
                 />
               </TableCell>
               <TableCell>
@@ -176,10 +253,18 @@ export function LatencySamplerForm({
                   onChange={(value) =>
                     handleOnChange(index, 'fallback_sampling_ratio', +value)
                   }
+                  onBlur={() =>
+                    handleOnBlur(
+                      index,
+                      'fallback_sampling_ratio',
+                      filter.fallback_sampling_ratio
+                    )
+                  }
                   placeholder="e.g. 20"
                   type="number"
                   min={0}
                   max={100}
+                  error={filter.errors?.fallback_sampling_ratio}
                 />
               </TableCell>
               <TableCell>
@@ -188,7 +273,7 @@ export function LatencySamplerForm({
                     value="remove"
                     fontSize={12}
                     onClick={() => handleRemoveFilter(index)}
-                  ></KeyvalLink>
+                  />
                 )}
               </TableCell>
             </tr>

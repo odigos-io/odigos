@@ -14,12 +14,14 @@ interface DynamicActionFormProps {
   type: string | undefined;
   data: any;
   onChange: (key: string, value: any) => void;
+  setIsFormValid?: (isValid: boolean) => void;
 }
 
 export function DynamicActionForm({
   type,
   data,
   onChange,
+  setIsFormValid,
 }: DynamicActionFormProps): React.JSX.Element {
   function renderCurrentAction() {
     switch (type) {
@@ -34,7 +36,13 @@ export function DynamicActionForm({
       case ActionsType.PROBABILISTIC_SAMPLER:
         return <ProbabilisticSamplerForm data={data} onChange={onChange} />;
       case ActionsType.LATENCY_SAMPLER:
-        return <LatencySamplerForm data={data} onChange={onChange} />;
+        return (
+          <LatencySamplerForm
+            data={data}
+            onChange={onChange}
+            setIsFormValid={setIsFormValid}
+          />
+        );
       default:
         return <div></div>;
     }
