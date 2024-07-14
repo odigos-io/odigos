@@ -56,7 +56,8 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 	}
 
 	if firstMessage.PackageStatuses == nil {
-		return nil, nil, fmt.Errorf("missing package statuses in first agent to server message")
+		// this might come from an older agent which not yet supports package statuses
+		c.logger.Info("missing package statuses in first agent to server message", "deviceId", deviceId)
 	}
 
 	k8sAttributes, pod, err := c.deviceIdCache.GetAttributesFromDevice(ctx, deviceId)
@@ -108,11 +109,13 @@ func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request
 
 	// If the remote config changed, send the new config to the agent on the response
 	if request.RemoteConfigStatus == nil {
-		return nil, fmt.Errorf("missing remote config status in agent to server message")
-	}
-	if !bytes.Equal(request.RemoteConfigStatus.LastRemoteConfigHash, connectionInfo.AgentRemoteConfig.ConfigHash) {
-		c.logger.Info("Remote config changed, sending new config to agent", "workload", connectionInfo.Workload)
-		response.RemoteConfig = connectionInfo.AgentRemoteConfig
+		// this is to support older agents which do not send remote config status
+		c.logger.Info("missing remote config status in agent to server message", "workload", connectionInfo.Workload)
+	} else {
+		if !bytes.Equal(request.RemoteConfigStatus.LastRemoteConfigHash, connectionInfo.AgentRemoteConfig.ConfigHash) {
+			c.logger.Info("Remote config changed, sending new config to agent", "workload", connectionInfo.Workload)
+			response.RemoteConfig = connectionInfo.AgentRemoteConfig
+		}
 	}
 
 	return &response, nil
