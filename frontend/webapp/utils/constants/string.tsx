@@ -162,8 +162,8 @@ export const ACTIONS = {
     TITLE: 'Probabilistic Sampler',
     DESCRIPTION: `The “Probabilistic Sampler” Odigos Action supports probabilistic sampling based on a configured sampling percentage applied to the TraceID.`,
   },
-  LatencyAction: {
-    TITLE: 'Latency Action',
+  LatencySampler: {
+    TITLE: 'Latency Sampler',
     DESCRIPTION: `The “Latency Sampler” Odigos Action is an Endpoint Action that samples traces based on their duration for a specific service and endpoint (HTTP route) filter.`,
   },
   SEARCH_ACTION: 'Search Action',
