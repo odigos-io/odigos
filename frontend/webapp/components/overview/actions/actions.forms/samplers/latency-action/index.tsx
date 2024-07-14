@@ -9,6 +9,7 @@ import {
   KeyvalText,
 } from '@/design.system';
 import theme from '@/styles/palette';
+import { Tooltip } from '@keyval-dev/design-system';
 
 const FormWrapper = styled.div`
   width: fit-content;
@@ -62,10 +63,6 @@ export function LatencySamplerForm({
     }
   }, [filters]);
 
-  useEffect(() => {
-    console.log({ data });
-  }, [data]);
-
   const memoizedSources = React.useMemo(() => {
     return sources.map((source, index) => ({
       id: index,
@@ -115,10 +112,12 @@ export function LatencySamplerForm({
               <KeyvalText size={12}>Http Route</KeyvalText>
             </TableHeader>
             <TableHeader>
-              <KeyvalText size={12}>Minimum Latency Threshold</KeyvalText>
+              <KeyvalText size={12}>Minimum Latency Threshold (ms)</KeyvalText>
             </TableHeader>
             <TableHeader>
-              <KeyvalText size={12}>Fallback Sampling Ratio</KeyvalText>
+              <Tooltip text="allows you to retain a specified percentage of traces that fall below the threshold">
+                <KeyvalText size={12}>Fallback Sampling Ratio </KeyvalText>
+              </Tooltip>
             </TableHeader>
             <TableHeader></TableHeader>
           </tr>
@@ -143,7 +142,7 @@ export function LatencySamplerForm({
                   onChange={(value) =>
                     handleOnChange(index, 'http_route', value)
                   }
-                  placeholder='e.g. "/api/v1/users"'
+                  placeholder="e.g. /api/v1/users"
                   type="text"
                 />
               </TableCell>
