@@ -64,11 +64,23 @@ export function LatencySamplerForm({
   }, [filters]);
 
   const memoizedSources = React.useMemo(() => {
-    return sources.map((source, index) => ({
+    console.log({ sources });
+    console.log({ data });
+
+    let instrumentsSources = sources;
+    if (data) {
+      instrumentsSources = sources.filter((source) => {
+        return data.endpoints_filters.every(
+          (filter) => filter.service_name !== source.name
+        );
+      });
+    }
+
+    return instrumentsSources.map((source, index) => ({
       id: index,
       label: source.name,
     }));
-  }, [sources]);
+  }, [sources, data]);
 
   function handleOnChange(index: number, key: string, value: any): void {
     const updatedFilters = filters.map((filter, i) =>
@@ -92,12 +104,11 @@ export function LatencySamplerForm({
     id: number;
     label: string;
   } {
-    return (
-      memoizedSources.find((source) => source.label === serviceName) || {
-        id: 0,
-        label: '',
-      }
-    );
+    const source = sources.find((source) => source.name === serviceName);
+    return {
+      id: 0,
+      label: source?.name || '',
+    };
   }
 
   return (
@@ -187,6 +198,7 @@ export function LatencySamplerForm({
       <KeyvalButton
         onClick={handleAddFilter}
         style={{ height: 32, width: 140, marginTop: 8 }}
+        disabled={filters.length >= sources.length}
       >
         <KeyvalText size={14} weight={600} color={theme.text.dark_button}>
           {'+ Add Filter'}
