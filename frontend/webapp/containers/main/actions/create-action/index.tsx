@@ -78,6 +78,13 @@ export function CreateActionContainer(): React.JSX.Element {
             }
           />
         </DescriptionWrapper>
+        <div
+          style={{
+            width: '100%',
+            height: 1,
+            backgroundColor: theme.colors.blue_grey,
+          }}
+        />
         <MultiCheckboxComponent
           title={ACTIONS.MONITORS_TITLE}
           checkboxes={getSupportedSignals(type, selectedMonitors)}

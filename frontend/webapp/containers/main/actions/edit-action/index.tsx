@@ -99,8 +99,15 @@ export function EditActionContainer(): React.JSX.Element {
             )
           }
         />
+        <div
+          style={{
+            width: '100%',
+            height: 1,
+            marginTop: 16,
+            backgroundColor: theme.colors.blue_grey,
+          }}
+        />
       </DescriptionWrapper>
-
       <FormFieldsWrapper disabled={disabled}>
         <MultiCheckboxComponent
           title={ACTIONS.MONITORS_TITLE}

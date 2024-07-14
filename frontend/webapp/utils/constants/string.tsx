@@ -135,7 +135,7 @@ export const PARAMS = {
 
 //odigos actions
 export const ACTIONS = {
-  MONITORS_TITLE: 'This action monitors',
+  MONITORS_TITLE: 'Monitors',
   ACTION_NAME: 'Action Name',
   ACTION_NOTE: 'Note',
   NOTE_PLACEHOLDER: 'Add a note to describe the use case of this action',
