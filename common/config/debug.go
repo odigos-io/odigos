@@ -6,6 +6,10 @@ import (
 
 type Debug struct{}
 
+const (
+	VERBOSITY = "verbosity"
+)
+
 func (s *Debug) DestType() common.DestinationType {
 	return common.DebugDestinationType
 }
@@ -13,7 +17,14 @@ func (s *Debug) DestType() common.DestinationType {
 func (s *Debug) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
 	exporterName := "debug/" + dest.GetID()
 
+	verbosity, exists := dest.GetConfig()[VERBOSITY]
+	if !exists {
+		// Default verbosity
+		verbosity = "basic"
+	}
+
 	currentConfig.Exporters[exporterName] = GenericMap{
+		VERBOSITY: verbosity,
 	}
 
 	if isTracingEnabled(dest) {
