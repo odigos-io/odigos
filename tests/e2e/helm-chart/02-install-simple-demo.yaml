@@ -19,7 +19,7 @@ spec:
           image: keyval/odigos-demo-coupon:v0.1
           imagePullPolicy: IfNotPresent
           env:
-            - name: MEMBERSHIP_SERVICE_URL
+            - name: MEMBERSHIP_SERVICE_HOST
               value: "membership:8080"
           ports:
             - containerPort: 8080
