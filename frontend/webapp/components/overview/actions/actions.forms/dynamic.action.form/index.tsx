@@ -4,7 +4,11 @@ import { ActionsType } from '@/types';
 import { AddClusterInfoForm } from '../add.cluster.info';
 import { DeleteAttributesForm } from '../delete.attribute';
 import { RenameAttributesForm } from '../rename.attributes';
-import { ErrorSamplerForm, ProbabilisticSamplerForm } from '../samplers';
+import {
+  ErrorSamplerForm,
+  LatencySamplerForm,
+  ProbabilisticSamplerForm,
+} from '../samplers';
 
 interface DynamicActionFormProps {
   type: string | undefined;
@@ -29,6 +33,8 @@ export function DynamicActionForm({
         return <ErrorSamplerForm data={data} onChange={onChange} />;
       case ActionsType.PROBABILISTIC_SAMPLER:
         return <ProbabilisticSamplerForm data={data} onChange={onChange} />;
+      case ActionsType.LATENCY_SAMPLER:
+        return <LatencySamplerForm data={data} onChange={onChange} />;
       default:
         return <div></div>;
     }

@@ -21,7 +21,7 @@ export function ActionIcon({ type, ...props }) {
       return <ErrorSamplerIcon {...props} />;
     case ActionsType.PROBABILISTIC_SAMPLER:
       return <ProbabilisticSamplerIcon {...props} />;
-    case ActionsType.LATENCY_ACTION:
+    case ActionsType.LATENCY_SAMPLER:
       return <LatencySamplerIcon {...props} />;
     default:
       return null;

@@ -51,8 +51,8 @@ const ITEMS = [
     id: 'latency-action',
     title: 'Latency Action',
     description: 'Add latency to your traces.',
-    type: ActionsType.LATENCY_ACTION,
-    icon: ActionsType.LATENCY_ACTION,
+    type: ActionsType.LATENCY_SAMPLER,
+    icon: ActionsType.LATENCY_SAMPLER,
   },
 ];
 
