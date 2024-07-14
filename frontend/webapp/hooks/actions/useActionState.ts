@@ -106,7 +106,6 @@ export function useActionState() {
         await updateAction(action);
       } else {
         delete action.disabled;
-        console.log({ action });
         await createAction(action);
       }
       callback && onSuccess();
