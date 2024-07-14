@@ -16,13 +16,14 @@ const FormWrapper = styled.div`
 `;
 
 const Table = styled.table`
+  margin-top: 8px;
   width: 100%;
   border-collapse: collapse;
 `;
 
 const TableHeader = styled.th`
   text-align: left;
-  padding: 8px;
+  padding-bottom: 4px;
 `;
 
 const TableCell = styled.td`
@@ -178,6 +179,9 @@ export function LatencySamplerForm({
 
   return (
     <FormWrapper>
+      <KeyvalText size={14} weight={600}>
+        {'Endpoints Filters'}
+      </KeyvalText>
       <Table>
         <thead>
           <tr>
