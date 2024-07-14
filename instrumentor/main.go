@@ -20,6 +20,8 @@ import (
 	"flag"
 	"os"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/odigos-io/odigos/common/consts"
@@ -93,7 +95,6 @@ func main() {
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
 
-	instrumentedSelector := labels.Set{consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled}.AsSelector()
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -104,18 +105,59 @@ func main() {
 		LeaderElectionID:       "201bdfa0.odigos.io",
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
+			// Store minimum amount of data for every object type.
+			// Currently, instrumentor only need the labels and the .spec.template.spec field of the workloads.
 			ByObject: map[client.Object]cache.ByObject{
 				&appsv1.Deployment{}: {
-					Label: instrumentedSelector,
+					Transform: func(obj interface{}) (interface{}, error) {
+						deployment := obj.(*appsv1.Deployment)
+						newDep := &appsv1.Deployment{
+							TypeMeta: deployment.TypeMeta,
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      deployment.Name,
+								Namespace: deployment.Namespace,
+								Labels:    deployment.Labels,
+							},
+						}
+
+						newDep.Spec.Template.Spec = deployment.Spec.Template.Spec
+						return newDep, nil
+					},
 				},
 				&appsv1.StatefulSet{}: {
-					Label: instrumentedSelector,
+					Transform: func(obj interface{}) (interface{}, error) {
+						ss := obj.(*appsv1.StatefulSet)
+						newSs := &appsv1.StatefulSet{
+							TypeMeta: ss.TypeMeta,
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      ss.Name,
+								Namespace: ss.Namespace,
+								Labels:    ss.Labels,
+							},
+						}
+
+						newSs.Spec.Template.Spec = ss.Spec.Template.Spec
+						return newSs, nil
+					},
 				},
 				&appsv1.DaemonSet{}: {
-					Label: instrumentedSelector,
+					Transform: func(obj interface{}) (interface{}, error) {
+						ds := obj.(*appsv1.DaemonSet)
+						newDs := &appsv1.DaemonSet{
+							TypeMeta: ds.TypeMeta,
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      ds.Name,
+								Namespace: ds.Namespace,
+								Labels:    ds.Labels,
+							},
+						}
+
+						newDs.Spec.Template.Spec = ds.Spec.Template.Spec
+						return newDs, nil
+					},
 				},
 				&corev1.Namespace{}: {
-					Label: instrumentedSelector,
+					Label: labels.Set{consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled}.AsSelector(),
 				},
 			},
 		},
