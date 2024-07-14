@@ -34,7 +34,7 @@ func CreatePiiMasking(c *gin.Context, odigosns string) {
 		})
 		return
 	}
-	action.GenerateName = "ls-"
+	action.GenerateName = "pi-"
 	generatedAction, err := kube.DefaultClient.ActionsClient.PiiMaskings(odigosns).Create(c, &action, metav1.CreateOptions{})
 	if err != nil {
 		c.JSON(500, gin.H{

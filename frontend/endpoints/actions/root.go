@@ -113,7 +113,7 @@ func GetActions(c *gin.Context, odigosns string) {
 		})
 	}
 
-	pmsActions, err := kube.DefaultClient.ActionsClient.PiiMaskings(odigosns).List(c, metav1.ListOptions{})
+	piActions, err := kube.DefaultClient.ActionsClient.PiiMaskings(odigosns).List(c, metav1.ListOptions{})
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": err.Error(),
@@ -121,7 +121,7 @@ func GetActions(c *gin.Context, odigosns string) {
 		return
 	}
 
-	for _, action := range pmsActions.Items {
+	for _, action := range piActions.Items {
 		response = append(response, IcaInstanceResponse{
 			Id:   action.Name,
 			Type: action.Kind,
