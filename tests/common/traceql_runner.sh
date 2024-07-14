@@ -52,19 +52,6 @@ function process_yaml_file() {
   else
     echo "Test PASSED"
   fi
-#  # Perform the HTTP request
-#  response=$(curl -G -s "http://localhost:3100/api/search")
-#  echo "$response"
-#  # Extract the actual count from the response (adjust this based on the actual structure of your response)
-#  actual_count=$(echo $response | jq '.data | length')
-#
-#  # Compare the actual count with the expected count
-#  if [ "$actual_count" -ne "$expected_count" ]; then
-#    echo "Test failed for $file: expected $expected_count but got $actual_count"
-#    return 1
-#  else
-#    echo "Test passed for $file"
-#  fi
 }
 
 # Check if the first argument is provided
