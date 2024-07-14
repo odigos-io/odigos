@@ -10,7 +10,9 @@ import {
 } from '@/design.system';
 import theme from '@/styles/palette';
 
-const FormWrapper = styled.div``;
+const FormWrapper = styled.div`
+  width: fit-content;
+`;
 
 const Table = styled.table`
   width: 100%;
@@ -60,6 +62,10 @@ export function LatencySamplerForm({
     }
   }, [filters]);
 
+  useEffect(() => {
+    console.log({ data });
+  }, [data]);
+
   const memoizedSources = React.useMemo(() => {
     return sources.map((source, index) => ({
       id: index,
@@ -83,6 +89,18 @@ export function LatencySamplerForm({
     const updatedFilters = filters.filter((_, i) => i !== index);
     setFilters(updatedFilters);
     onChange(ACTION_DATA_KEY, { endpoints_filters: updatedFilters });
+  }
+
+  function getDropdownValue(serviceName: string): {
+    id: number;
+    label: string;
+  } {
+    return (
+      memoizedSources.find((source) => source.label === serviceName) || {
+        id: 0,
+        label: '',
+      }
+    );
   }
 
   return (
@@ -112,7 +130,7 @@ export function LatencySamplerForm({
                 <KeyvalDropDown
                   width={198}
                   data={memoizedSources}
-                  label=""
+                  value={getDropdownValue(filter.service_name || '')}
                   onChange={(value) =>
                     handleOnChange(index, 'service_name', value.label)
                   }

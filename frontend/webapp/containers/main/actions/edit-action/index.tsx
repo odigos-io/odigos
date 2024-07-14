@@ -98,6 +98,7 @@ export function EditActionContainer(): React.JSX.Element {
           }
         />
       </DescriptionWrapper>
+
       <FormFieldsWrapper disabled={disabled}>
         <MultiCheckboxComponent
           title={ACTIONS.MONITORS_TITLE}

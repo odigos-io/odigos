@@ -201,6 +201,10 @@ function getActionDataByType(action: ActionData | undefined) {
       return {
         sampling_percentage: action.spec.sampling_percentage,
       };
+    case ActionsType.LATENCY_SAMPLER:
+      return {
+        endpoints_filters: action.spec.endpoints_filters,
+      };
     default:
       return {};
   }
