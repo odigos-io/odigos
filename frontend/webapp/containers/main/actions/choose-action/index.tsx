@@ -47,6 +47,13 @@ const ITEMS = [
     type: ActionsType.PROBABILISTIC_SAMPLER,
     icon: ActionsType.PROBABILISTIC_SAMPLER,
   },
+  {
+    id: 'latency-action',
+    title: 'Latency Action',
+    description: 'Add latency to your traces.',
+    type: ActionsType.LATENCY_ACTION,
+    icon: ActionsType.LATENCY_ACTION,
+  },
 ];
 
 export function ChooseActionContainer(): React.JSX.Element {
