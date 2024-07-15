@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	"github.com/ghodss/yaml"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -173,6 +174,9 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 			"tls": config.GenericMap{
 				"insecure": true,
 			},
+			"headers": config.GenericMap{
+				k8sconsts.OdigosPodNameHeaderKey: "${POD_NAME}",
+			},
 		},
 	}
 	tracesPipelineExporter := []string{"otlp/gateway"}
@@ -205,6 +209,13 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 									"targets": []string{"127.0.0.1:8888"},
 								},
 							},
+							"metric_relabel_configs": []config.GenericMap{
+								{
+									"source_labels": []string{"__name__"},
+									"regex": ".*odigos.*",
+									"action": "keep",
+								},
+							},
 						},
 					},
 				},
@@ -230,8 +241,10 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 				},
 				Resource: map[string]*string{
 					// The collector add "otelcol" as a service name, so we need to remove it
-					// to avoid duplication, since we are interested in the instrumented services
-					string(semconv.ServiceNameKey): nil,
+					// to avoid duplication, since we are interested in the instrumented services.
+					string(semconv.ServiceNameKey):    nil,
+					// The collector adds its own version as a service version, which is not needed currently.
+					string(semconv.ServiceVersionKey): nil,
 				},
 			},
 		},

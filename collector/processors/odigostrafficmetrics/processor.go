@@ -28,7 +28,7 @@ func newThroughputMeasurementProcessor(logger *zap.Logger, mp metric.MeterProvid
 
 	logSize, err := meter.Int64Counter(
 		processorhelper.BuildCustomMetricName(metadata.Type.String(), "log_data_size"),
-		metric.WithDescription("Size of the log package passed to the processor"),
+		metric.WithDescription("Total size of log data passed to the processor"),
 		metric.WithUnit("By"),
 	)
 	if err != nil {
@@ -37,7 +37,7 @@ func newThroughputMeasurementProcessor(logger *zap.Logger, mp metric.MeterProvid
 
 	metricSize, err := meter.Int64Counter(
 		processorhelper.BuildCustomMetricName(metadata.Type.String(), "metric_data_size"),
-		metric.WithDescription("Size of the metric package passed to the processor"),
+		metric.WithDescription("Total size of metric data passed to the processor"),
 		metric.WithUnit("By"),
 	)
 	if err != nil {
@@ -46,7 +46,7 @@ func newThroughputMeasurementProcessor(logger *zap.Logger, mp metric.MeterProvid
 
 	traceSize, err := meter.Int64Counter(
 		processorhelper.BuildCustomMetricName(metadata.Type.String(), "trace_data_size"),
-		metric.WithDescription("Size of the trace package passed to the processor"),
+		metric.WithDescription("Total size of trace data passed to the processor"),
 		metric.WithUnit("By"),
 	)
 	if err != nil {

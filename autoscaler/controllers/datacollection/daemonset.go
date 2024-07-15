@@ -215,6 +215,14 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 										},
 									},
 								},
+								{
+									Name: "POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
 							},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{

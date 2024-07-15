@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 )
 
 const (
@@ -165,6 +166,9 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 				"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), consts.OTLPPort),
 				"tls": GenericMap{
 					"insecure": true,
+				},
+				"headers": GenericMap{
+					k8sconsts.OdigosPodNameHeaderKey: "${POD_NAME}",
 				},
 			},
 		},
