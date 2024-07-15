@@ -1,0 +1,6 @@
+dependencies:
+- name: odigos
+  repository: https://odigos-io.github.io/odigos-charts/
+  version: 0.3.30
+digest: sha256:d295c2d86383e003d286e0698f4749496b2698ee0688c82c63c8541d284f308d
+generated: "2024-07-10T18:14:49.117230102+03:00"

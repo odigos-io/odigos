@@ -22,3 +22,8 @@ version: 0.1.0
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "1.16.0"
+
+dependencies:
+  - name: odigos
+    version: 0.3.30
+    repository: https://odigos-io.github.io/odigos-charts/
