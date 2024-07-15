@@ -126,7 +126,8 @@ export function useActionState() {
   function getSupportedSignals(type: string, signals: Monitor[]) {
     if (
       type === ActionsType.ERROR_SAMPLER ||
-      type === ActionsType.PROBABILISTIC_SAMPLER
+      type === ActionsType.PROBABILISTIC_SAMPLER ||
+      type === ActionsType.LATENCY_SAMPLER
     ) {
       return signals.filter((signal) => signal.label === 'Traces');
     }
@@ -198,6 +199,10 @@ function getActionDataByType(action: ActionData | undefined) {
     case ActionsType.PROBABILISTIC_SAMPLER:
       return {
         sampling_percentage: action.spec.sampling_percentage,
+      };
+    case ActionsType.LATENCY_SAMPLER:
+      return {
+        endpoints_filters: action.spec.endpoints_filters,
       };
     default:
       return {};
