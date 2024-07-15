@@ -5,7 +5,8 @@ receivers:
         max_recv_msg_size_mib: 134217728
       http: {}
 exporters:
-  debug/d1: {}
+  debug/d1:
+    verbosity: basic
 processors:
   memory_limiter: {}
   resource/odigos-version:

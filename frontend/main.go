@@ -154,6 +154,12 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.POST("/actions/types/ProbabilisticSampler", func(c *gin.Context) { actions.CreateProbabilisticSampler(c, flags.Namespace) })
 		apis.PUT("/actions/types/ProbabilisticSampler/:id", func(c *gin.Context) { actions.UpdateProbabilisticSampler(c, flags.Namespace, c.Param("id")) })
 		apis.DELETE("/actions/types/ProbabilisticSampler/:id", func(c *gin.Context) { actions.DeleteProbabilisticSampler(c, flags.Namespace, c.Param("id")) })
+
+		// PiiMasking
+		apis.GET("/actions/types/PiiMasking/:id", func(c *gin.Context) { actions.GetPiiMasking(c, flags.Namespace, c.Param("id")) })
+		apis.POST("/actions/types/PiiMasking", func(c *gin.Context) { actions.CreatePiiMasking(c, flags.Namespace) })
+		apis.PUT("/actions/types/PiiMasking/:id", func(c *gin.Context) { actions.UpdatePiiMasking(c, flags.Namespace, c.Param("id")) })
+		apis.DELETE("/actions/types/PiiMasking/:id", func(c *gin.Context) { actions.DeletePiiMasking(c, flags.Namespace, c.Param("id")) })
 	}
 
 	return r, nil

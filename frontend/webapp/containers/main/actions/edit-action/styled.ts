@@ -8,6 +8,7 @@ export const CreateActionWrapper = styled.div`
   padding: 24px;
   box-sizing: border-box;
   max-height: 93%;
+  width: 100%;
   overflow-y: auto;
 
   @media screen and (max-height: 450px) {
@@ -46,8 +47,8 @@ export const CreateButtonWrapper = styled.div`
 `;
 
 export const DescriptionWrapper = styled.div`
-  width: 50vw;
-  max-width: 600px;
+  width: 80vw;
+  max-width: 1050px;
   margin-bottom: 16px;
   display: flex;
   flex-direction: column;
