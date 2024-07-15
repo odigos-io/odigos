@@ -3,11 +3,10 @@ package instrumentation
 import (
 	"context"
 
+	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
-	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -61,10 +60,10 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf
 		}
 	}
 
-	err = fs.CopyAgentsDirectoryToHost()
-	if err != nil {
-		return nil, err
-	}
+	//err = fs.CopyAgentsDirectoryToHost()
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	return &lister{
 		plugins: availablePlugins,

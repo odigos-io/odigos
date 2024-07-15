@@ -109,8 +109,8 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 
 	// TODO(edenfed): Already exists - request recalculating language detection
 	// Recalculation happens in three cases:
-	// 1. Workload restarted / spec changed
-	// 2. Instrumentation config changed
+	// 1. Workload spec changed / rolling restart (scaled to zero and then back to one)
+	// 2. Odigos config changed
 	// 3. Namespace labeled for instrumentation
 	return nil
 }
