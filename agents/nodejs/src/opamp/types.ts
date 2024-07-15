@@ -1,4 +1,7 @@
 import { Attributes } from "@opentelemetry/api";
+import { Resource } from "@opentelemetry/resources";
+import { PackageStatus } from "./generated/opamp_pb";
+import { PartialMessage } from "@bufbuild/protobuf";
 
 export interface OpAMPClientHttpConfig {
   // instrumentedDeviceId, as allocated by the kubelet,
@@ -10,9 +13,37 @@ export interface OpAMPClientHttpConfig {
 
   agentDescriptionIdentifyingAttributes?: Attributes;
   agentDescriptionNonIdentifyingAttributes?: Attributes;
+
+  initialPackageStatues: PartialMessage<PackageStatus>[];
+
+  onNewRemoteConfig: (remoteConfig: RemoteConfig) => void;
 }
 
-export interface ResourceAttributeFromServer {
-  key: string;
-  value: string;
+// Sdk Remote Configuration
+
+export interface TraceSignalGeneralConfig {
+  enabled: boolean; // if enabled is false, the pipeline is not configured to receive spans
+  defaultEnabledValue: boolean;
 }
+
+export interface SdkConfiguration {
+  remoteResource: Resource; // parse resource object
+  traceSignal: TraceSignalGeneralConfig;
+}
+
+// InstrumentationLibrary Remote Configuration
+export interface InstrumentationLibraryTracesConfiguration {
+  // if the value is set, use it, otherwise use the default value from the trace signal in the sdk level
+  enabled?: boolean;
+}
+export interface InstrumentationLibraryConfiguration {
+  name: string;
+  traces: InstrumentationLibraryTracesConfiguration;
+}
+
+// All remote config fields
+
+export type RemoteConfig = {
+  sdk: SdkConfiguration;
+  instrumentationLibraries: InstrumentationLibraryConfiguration[];
+};

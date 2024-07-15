@@ -109,8 +109,57 @@ spec:
                   - optionKey
                   type: object
                 type: array
+              sdkConfigs:
+                description: |-
+                  Configuration for the OpenTelemetry SDKs that this workload should use.
+                  The SDKs are identified by the programming language they are written in.
+                  TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
+                items:
+                  properties:
+                    instrumentationLibraryConfigs:
+                      description: configurations for the instrumentation libraries
+                        the the SDK should use
+                      items:
+                        properties:
+                          instrumentationLibraryName:
+                            description: |-
+                              The name of the instrumentation library
+                              - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
+                            type: string
+                          traceConfig:
+                            properties:
+                              enabled:
+                                description: |-
+                                  Whether the instrumentation library is enabled to record traces.
+                                  When false, it is expected that the instrumentation library does not produce any spans regardless of any other configuration.
+                                  When true, the instrumentation library should produce spans according to the other configuration options.
+                                  If not specified, the default value for this signal should be used (whether to enable libraries by default or not).
+                                type: boolean
+                            type: object
+                        required:
+                        - instrumentationLibraryName
+                        type: object
+                      type: array
+                    language:
+                      description: The language of the SDK being configured
+                      enum:
+                      - java
+                      - python
+                      - go
+                      - dotnet
+                      - javascript
+                      - mysql
+                      - unknown
+                      - ignored
+                      type: string
+                  required:
+                  - instrumentationLibraryConfigs
+                  - language
+                  type: object
+                type: array
             required:
             - config
+            - sdkConfigs
             type: object
         type: object
     served: true
