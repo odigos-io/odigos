@@ -2,8 +2,8 @@ name: Release Charts
 
 on:
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
     # paths:
     #   - 'helm/odigos/Chart.yaml'
 
@@ -25,6 +25,10 @@ jobs:
         uses: azure/setup-helm@v4.2.0
         with:
           version: v3.4.0
+
+      - name: Add repos
+        run: |
+          helm repo add odigos https://odigos-io.github.io/odigos-charts
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
