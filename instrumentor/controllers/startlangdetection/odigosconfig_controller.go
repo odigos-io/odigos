@@ -1,7 +1,9 @@
-package runtime_details
+package startlangdetection
 
 import (
 	"context"
+
+	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,7 +18,6 @@ type OdigosConfigReconciler struct {
 }
 
 func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Odigos Configuration changed, recalculating instrumentated application for potential changes of ignored container list")
 
@@ -28,10 +29,11 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	for _, dep := range deps.Items {
-		if isWorkloadInstrumentationEffectiveEnabled(ctx, r.Client, &dep) {
-			_, err = inspectRuntimesOfRunningPods(ctx, &logger, dep.Spec.Selector.MatchLabels, r.Client, r.Scheme, &dep)
+		if !utils.IsInstrumentationDisabledExplicitly(&dep) {
+			req := ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}
+			_, err = reconcileWorkload(ctx, r.Client, &appsv1.Deployment{}, "Deployment", req, r.Scheme)
 			if err != nil {
-				logger.Error(err, "error inspecting runtimes of running pods", "deployment", dep.Name, "namespace", dep.Namespace)
+				logger.Error(err, "error requesting runtime details from odiglets", "name", dep.Name, "namespace", dep.Namespace)
 			}
 		}
 	}
@@ -44,10 +46,11 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	for _, st := range sts.Items {
-		if isWorkloadInstrumentationEffectiveEnabled(ctx, r.Client, &st) {
-			_, err = inspectRuntimesOfRunningPods(ctx, &logger, st.Spec.Selector.MatchLabels, r.Client, r.Scheme, &st)
+		if !utils.IsInstrumentationDisabledExplicitly(&st) {
+			req := ctrl.Request{NamespacedName: client.ObjectKey{Name: st.Name, Namespace: st.Namespace}}
+			_, err = reconcileWorkload(ctx, r.Client, &appsv1.StatefulSet{}, "StatefulSet", req, r.Scheme)
 			if err != nil {
-				logger.Error(err, "error inspecting runtimes of running pods", "statefulset", st.Name, "namespace", st.Namespace)
+				logger.Error(err, "error requesting runtime details from odiglets", "name", st.Name, "namespace", st.Namespace)
 			}
 		}
 	}
@@ -60,10 +63,11 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	for _, ds := range dss.Items {
-		if isWorkloadInstrumentationEffectiveEnabled(ctx, r.Client, &ds) {
-			_, err = inspectRuntimesOfRunningPods(ctx, &logger, ds.Spec.Selector.MatchLabels, r.Client, r.Scheme, &ds)
+		if !utils.IsInstrumentationDisabledExplicitly(&ds) {
+			req := ctrl.Request{NamespacedName: client.ObjectKey{Name: ds.Name, Namespace: ds.Namespace}}
+			_, err = reconcileWorkload(ctx, r.Client, &appsv1.DaemonSet{}, "DaemonSet", req, r.Scheme)
 			if err != nil {
-				logger.Error(err, "error inspecting runtimes of running pods", "daemonset", ds.Name, "namespace", ds.Namespace)
+				logger.Error(err, "error requesting runtime details from odiglets", "name", ds.Name, "namespace", ds.Namespace)
 			}
 		}
 	}

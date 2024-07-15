@@ -107,10 +107,10 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 		return err
 	}
 
-	// Already exists - recalculating language detection
-	// TODO(edenfed): Recalculate language detection on spec change -  we should add a field to instrumentation config
-	// that specifies the generation of the workload. This way we can compare the generation of the workload with the generation
-	// of the instrumentation config and if they are different we can recalculate the language detection.
-	logger.V(0).Info("Workload restarted, recalculating language detection", "name", instConfigName, "namespace", namespace)
+	// TODO(edenfed): Already exists - request recalculating language detection
+	// Recalculation happens in three cases:
+	// 1. Workload restarted / spec changed
+	// 2. Instrumentation config changed
+	// 3. Namespace labeled for instrumentation
 	return nil
 }

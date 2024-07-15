@@ -56,6 +56,16 @@ func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient clien
 		return client.IgnoreNotFound(err)
 	}
 
+	err = kubeClient.Delete(ctx, &odigosv1.InstrumentationConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      instrumentedApplicationName,
+		},
+	})
+	if err != nil {
+		return client.IgnoreNotFound(err)
+	}
+
 	logger := log.FromContext(ctx)
 	logger.V(1).Info("instrumented application deleted", "namespace", ns, "name", name, "kind", kind)
 	return nil

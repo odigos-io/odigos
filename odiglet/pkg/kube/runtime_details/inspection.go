@@ -2,6 +2,7 @@ package runtime_details
 
 import (
 	"context"
+
 	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/process"

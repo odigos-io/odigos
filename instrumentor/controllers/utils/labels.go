@@ -39,3 +39,15 @@ func IsInstrumentationLabelEnabled(workloadObject client.Object) bool {
 	labels := workloadObject.GetLabels()
 	return labels[consts.OdigosInstrumentationLabel] == consts.InstrumentationEnabled
 }
+
+func IsInstrumentationDisabledExplicitly(obj client.Object) bool {
+	labels := obj.GetLabels()
+	if labels != nil {
+		val, exists := labels[consts.OdigosInstrumentationLabel]
+		if exists && val == consts.InstrumentationDisabled {
+			return true
+		}
+	}
+
+	return false
+}
