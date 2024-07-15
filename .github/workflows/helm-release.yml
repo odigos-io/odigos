@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'helm/odigos/Chart.yaml'
+    # paths:
+    #   - 'helm/odigos/Chart.yaml'
 
 jobs:
   release:
