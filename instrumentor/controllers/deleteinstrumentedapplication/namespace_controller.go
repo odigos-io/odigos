@@ -22,8 +22,6 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -42,20 +40,17 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	var ns corev1.Namespace
 	err := r.Get(ctx, client.ObjectKey{Name: req.Name}, &ns)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-
+	if client.IgnoreNotFound(err) != nil {
 		logger.Error(err, "error fetching namespace object")
 		return ctrl.Result{}, err
 	}
 
 	// If namespace is labeled, skip
-	if utils.IsInstrumentationLabelEnabled(&ns) {
+	if err == nil && utils.IsInstrumentationLabelEnabled(&ns) {
 		return ctrl.Result{}, nil
 	}
 
+	// Because of cache settings in the controller, when namespace is unlabelled, it is appearing as not found
 	var deps appsv1.DeploymentList
 	err = r.Client.List(ctx, &deps, client.InNamespace(req.Name))
 	if client.IgnoreNotFound(err) != nil {

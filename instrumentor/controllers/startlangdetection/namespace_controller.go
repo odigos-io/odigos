@@ -3,6 +3,8 @@ package startlangdetection
 import (
 	"context"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -21,11 +23,12 @@ type NamespacesReconciler struct {
 
 func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Namespace labeled for instrumentation, recalculating runtime details of relevant workloads")
-
 	var ns corev1.Namespace
 	err := n.Get(ctx, request.NamespacedName, &ns)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		logger.Error(err, "error fetching namespace object")
 		return ctrl.Result{}, err
 	}
@@ -34,6 +37,7 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
+	logger.V(0).Info("Namespace labeled for instrumentation, recalculating runtime details of relevant workloads")
 	var deps appsv1.DeploymentList
 	err = n.Client.List(ctx, &deps, client.InNamespace(request.Name))
 	if client.IgnoreNotFound(err) != nil {

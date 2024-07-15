@@ -98,7 +98,7 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 				logger.Error(err, "Failed to create instrumentation config", "name", instConfigName, "namespace", namespace)
 				return err
 			} else {
-				logger.V(0).Info("Workload is labeled for instrumentation and running, requested language detection from odiglets", "name", instConfigName, "namespace", namespace)
+				logger.V(0).Info("Requested language detection from odiglets", "name", instConfigName, "namespace", namespace)
 				return nil
 			}
 		}
