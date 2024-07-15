@@ -38,10 +38,10 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		// it is, however, possible that the OpAMP server restarted, and the agent is trying to reconnect.
 		// in which case we send back flag and request full status update.
 		c.logger.Info("Agent description is missing in the first OpAMP message, requesting full state update", "deviceId", deviceId)
-		opampResponse := &protobufs.ServerToAgent{
+		serverToAgent := &protobufs.ServerToAgent{
 			Flags: uint64(protobufs.ServerToAgentFlags_ServerToAgentFlags_ReportFullState),
 		}
-		return nil, opampResponse, nil
+		return nil, serverToAgent, nil
 	}
 
 	var pid int64
@@ -79,7 +79,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, err
 	}
 
-	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, remoteResourceAttributes, &podWorkload)
+	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, remoteResourceAttributes, &podWorkload, instrumentedAppName)
 	if err != nil {
 		c.logger.Error(err, "failed to get full config", "k8sAttributes", k8sAttributes)
 		return nil, nil, err
@@ -97,11 +97,11 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		RemoteResourceAttributes: remoteResourceAttributes,
 	}
 
-	opampResponse := &protobufs.ServerToAgent{
+	serverToAgent := &protobufs.ServerToAgent{
 		RemoteConfig: fullRemoteConfig,
 	}
 
-	return connectionInfo, opampResponse, nil
+	return connectionInfo, serverToAgent, nil
 }
 
 func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request *protobufs.AgentToServer, connectionInfo *connection.ConnectionInfo) (*protobufs.ServerToAgent, error) {

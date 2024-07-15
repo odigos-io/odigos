@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
@@ -47,7 +46,7 @@ func NewSdkConfigManager(logger logr.Logger, mgr ctrl.Manager, connectionCache *
 	return sdkConfigManager
 }
 
-func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttributes []configresolvers.ResourceAttribute, podWorkload *common.PodWorkload) (*protobufs.AgentRemoteConfig, error) {
+func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttributes []configresolvers.ResourceAttribute, podWorkload *common.PodWorkload, instrumentedAppName string) (*protobufs.AgentRemoteConfig, error) {
 
 	// query which signals are enabled in the current destinations list
 	tracesEnabled, _, err := configresolvers.CalcEnabledSignals(ctx, m.mgr.GetClient())
@@ -62,8 +61,7 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttr
 		return nil, err
 	}
 
-	configObjectName := workload.GetRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
-	instrumentationLibrariesRemoteConfig, err := configsections.CalcInstrumentationLibrariesRemoteConfig(ctx, m.mgr.GetClient(), configObjectName, podWorkload.Namespace)
+	instrumentationLibrariesRemoteConfig, err := configsections.CalcInstrumentationLibrariesRemoteConfig(ctx, m.mgr.GetClient(), instrumentedAppName, podWorkload.Namespace)
 	if err != nil {
 		m.logger.Error(err, "failed to calculate instrumentation libraries config", "k8sAttributes", remoteResourceAttributes)
 		return nil, err
