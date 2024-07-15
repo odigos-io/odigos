@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import theme from '@/styles/palette';
 import { useActionState } from '@/hooks';
 import { useSearchParams } from 'next/navigation';
@@ -31,7 +31,14 @@ import {
 const ACTION_TYPE = 'type';
 
 export function CreateActionContainer(): React.JSX.Element {
-  const { actionState, onChangeActionState, upsertAction } = useActionState();
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  const {
+    actionState,
+    onChangeActionState,
+    upsertAction,
+    getSupportedSignals,
+  } = useActionState();
   const { actionName, actionNote, actionData, selectedMonitors, type } =
     actionState;
 
@@ -71,9 +78,16 @@ export function CreateActionContainer(): React.JSX.Element {
             }
           />
         </DescriptionWrapper>
+        <div
+          style={{
+            width: '100%',
+            height: 1,
+            backgroundColor: theme.colors.blue_grey,
+          }}
+        />
         <MultiCheckboxComponent
           title={ACTIONS.MONITORS_TITLE}
-          checkboxes={selectedMonitors}
+          checkboxes={getSupportedSignals(type, selectedMonitors)}
           onSelectionChange={(newMonitors) =>
             onChangeActionState('selectedMonitors', newMonitors)
           }
@@ -89,6 +103,7 @@ export function CreateActionContainer(): React.JSX.Element {
           type={type}
           data={actionData}
           onChange={onChangeActionState}
+          setIsFormValid={setIsFormValid}
         />
         <TextareaWrapper>
           <KeyvalTextArea
@@ -98,20 +113,14 @@ export function CreateActionContainer(): React.JSX.Element {
             onChange={(e) => onChangeActionState('actionNote', e.target.value)}
           />
         </TextareaWrapper>
-        {/* <div className="action-yaml-column ">
-          <ActionsYaml data={actionState} onChange={onChangeActionState} />
-        </div> */}
         <CreateButtonWrapper>
-          <KeyvalButton onClick={upsertAction} disabled={!actionData}>
+          <KeyvalButton onClick={upsertAction} disabled={!isFormValid}>
             <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
               {ACTIONS.CREATE_ACTION}
             </KeyvalText>
           </KeyvalButton>
         </CreateButtonWrapper>
       </CreateActionWrapper>
-      {/* <ActionYamlWrapper className="action-yaml-row">
-        <ActionsYaml data={actionState} onChange={onChangeActionState} />
-      </ActionYamlWrapper> */}
     </Container>
   );
 }

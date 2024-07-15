@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/config"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,9 +72,9 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		}
 	}
 
-	desired := &v1.ConfigMap{
+	desiredCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      gateway.Name,
+			Name:      consts.OdigosClusterCollectorConfigMapName,
 			Namespace: gateway.Namespace,
 		},
 		Data: map[string]string{
@@ -81,16 +82,16 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		},
 	}
 
-	if err := ctrl.SetControllerReference(gateway, desired, scheme); err != nil {
+	if err := ctrl.SetControllerReference(gateway, desiredCM, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference")
 		return "", err
 	}
 
 	existing := &v1.ConfigMap{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: kubeObjectName}, existing); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: consts.OdigosClusterCollectorConfigMapName}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(0).Info("Creating gateway config map")
-			_, err := createConfigMap(desired, ctx, c)
+			_, err := createConfigMap(desiredCM, ctx, c)
 			if err != nil {
 				logger.Error(err, "Failed to create gateway config map")
 				return "", err
@@ -103,7 +104,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	}
 
 	logger.V(0).Info("Patching gateway config map")
-	_, err = patchConfigMap(existing, desired, ctx, c)
+	_, err = patchConfigMap(existing, desiredCM, ctx, c)
 	if err != nil {
 		logger.Error(err, "Failed to patch gateway config map")
 		return "", err

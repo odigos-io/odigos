@@ -8,6 +8,11 @@ interface InputProps {
   error?: string;
   style?: React.CSSProperties;
   required?: boolean;
+  placeholder?: string;
+  tooltip?: string;
+  min?: number;
+  max?: number;
+  onBlur?: () => void;
 }
 
 export function KeyvalInput(props: InputProps): JSX.Element {

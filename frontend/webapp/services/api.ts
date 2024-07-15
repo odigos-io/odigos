@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios';
 
 export async function get(url: string) {
   const { data, status } = await axios.get(url);
@@ -7,8 +7,13 @@ export async function get(url: string) {
   }
 }
 
-export function post(url: string, body: any) {
-  axios.post(url, body);
+export async function post(url: string, body: any) {
+  try {
+    const response = await axios.post(url, body);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 }
 
 export function put(url: string, body: any) {

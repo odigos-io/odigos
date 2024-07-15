@@ -33,9 +33,9 @@ const StyledMainTd = styled(StyledTd)`
 
 const ActionIconContainer = styled.div`
   display: flex;
-  align-items: center;
   gap: 8px;
   margin-left: 10px;
+  width: 100%;
 `;
 
 const ActionDetails = styled.div`
@@ -114,16 +114,13 @@ export function ActionsTableRow({
 
   return (
     <StyledTr key={item.id}>
-      <StyledMainTd
-        onClick={() => onRowClick(item.id)}
-        isFirstRow={index === 0}
-      >
+      <StyledMainTd isFirstRow={index === 0}>
         <KeyvalCheckbox
           value={selectedCheckbox.includes(item.id)}
           onChange={() => onSelectedCheckboxChange(item.id)}
         />
-        <ActionIconContainer>
-          <div>
+        <ActionIconContainer onClick={() => onRowClick(item.id)}>
+          <div style={{ height: 16 }}>
             <ActionIcon type={item.type} style={{ width: 16, height: 16 }} />
           </div>
           <ActionDetails>

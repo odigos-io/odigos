@@ -1,5 +1,5 @@
-import { API } from "@/utils/constants";
-import { get, post, put, httpDelete } from "./api";
+import { API } from '@/utils/constants';
+import { get, post, put, httpDelete } from './api';
 
 export async function getDestinationsTypes() {
   return await get(API.DESTINATION_TYPE);
@@ -23,4 +23,8 @@ export async function updateDestination(body: any, id: string) {
 
 export async function deleteDestination(id: string) {
   return await httpDelete(`${API.DESTINATIONS}/${id}`);
+}
+
+export async function checkConnection(body: any) {
+  return post(API.CHECK_CONNECTION, body);
 }

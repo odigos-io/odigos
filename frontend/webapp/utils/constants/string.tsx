@@ -135,7 +135,7 @@ export const PARAMS = {
 
 //odigos actions
 export const ACTIONS = {
-  MONITORS_TITLE: 'This action monitors',
+  MONITORS_TITLE: 'Monitors',
   ACTION_NAME: 'Action Name',
   ACTION_NOTE: 'Note',
   NOTE_PLACEHOLDER: 'Add a note to describe the use case of this action',
@@ -153,6 +153,18 @@ export const ACTIONS = {
   RenameAttribute: {
     TITLE: 'Rename Attribute',
     DESCRIPTION: `The “Rename Attribute” Odigos Action can be used to rename attributes from telemetry signals originated from the k8s cluster where the Odigos is running.`,
+  },
+  ErrorSampler: {
+    TITLE: 'Error Sampler',
+    DESCRIPTION: `The “Error Sampler” Odigos Action is a Global Action that supports error sampling by filtering out non-error traces.`,
+  },
+  ProbabilisticSampler: {
+    TITLE: 'Probabilistic Sampler',
+    DESCRIPTION: `The “Probabilistic Sampler” Odigos Action supports probabilistic sampling based on a configured sampling percentage applied to the TraceID.`,
+  },
+  LatencySampler: {
+    TITLE: 'Latency Sampler',
+    DESCRIPTION: `The “Latency Sampler” Odigos Action is an Endpoint Action that samples traces based on their duration for a specific service and endpoint (HTTP route) filter.`,
   },
   SEARCH_ACTION: 'Search Action',
 };

@@ -7,6 +7,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -152,7 +153,7 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
 func NewMockDataCollection() *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-data-collection",
+			Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
 			Namespace: consts.DefaultOdigosNamespace,
 		},
 		Spec: odigosv1.CollectorsGroupSpec{

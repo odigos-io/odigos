@@ -34,7 +34,7 @@ func CreateProbabilisticSampler(c *gin.Context, odigosns string) {
 		})
 		return
 	}
-	action.GenerateName = "da-"
+	action.GenerateName = "ps-"
 	generatedAction, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(odigosns).Create(c, &action, metav1.CreateOptions{})
 	if err != nil {
 		c.JSON(500, gin.H{

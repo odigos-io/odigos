@@ -142,10 +142,10 @@ func NewUIRole(ns string) *rbacv1.Role {
 			{
 				Verbs: []string{
 					"create",
-					"delete",
 					"get",
 					"update",
 					"watch",
+					"patch",
 				},
 				APIGroups: []string{""},
 				Resources: []string{
