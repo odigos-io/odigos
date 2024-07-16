@@ -37,17 +37,43 @@ var (
 	}
 )
 
-func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace string) (*corev1.PodSpec, error) {
-	odigletDaemonset := &appsv1.DaemonSet{}
-
-	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: odigletDaemonSetName}, odigletDaemonset); err != nil {
-		return nil, err
-	}
-
-	return &odigletDaemonset.Spec.Template.Spec, nil
+type DelayManager struct {
+	mu         sync.Mutex
+	inProgress bool
 }
 
-func syncDaemonSet(dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup, ctx context.Context,
+// RunSyncDaemonSetWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
+func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int, dests *odigosv1.DestinationList, collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string) {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
+	// Skip new calls if the function is already in progress
+	if dm.inProgress {
+		return
+	}
+
+	dm.inProgress = true
+
+	// Finish the function execution after the delay
+	time.AfterFunc(delay, func() {
+		dm.mu.Lock()
+		defer dm.mu.Unlock()
+		defer dm.finishProgress()
+
+		for i := 0; i < retries; i++ {
+			_, err := syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version)
+			if err == nil {
+				return
+			}
+		}
+	})
+}
+
+func (dm *DelayManager) finishProgress() {
+	dm.inProgress = false
+}
+
+func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup,
 	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
 
@@ -96,6 +122,16 @@ func syncDaemonSet(dests *odigosv1.DestinationList, datacollection *odigosv1.Col
 	}
 
 	return updated, nil
+}
+
+func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace string) (*corev1.PodSpec, error) {
+	odigletDaemonset := &appsv1.DaemonSet{}
+
+	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: odigletDaemonSetName}, odigletDaemonset); err != nil {
+		return nil, err
+	}
+
+	return &odigletDaemonset.Spec.Template.Spec, nil
 }
 
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string,
@@ -265,6 +301,10 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 	return desiredDs, nil
 }
 
+func boolPtr(b bool) *bool {
+	return &b
+}
+
 func patchDaemonSet(existing *appsv1.DaemonSet, desired *appsv1.DaemonSet, ctx context.Context, c client.Client) (*appsv1.DaemonSet, error) {
 	updated := existing.DeepCopy()
 	if updated.Annotations == nil {
@@ -289,40 +329,4 @@ func patchDaemonSet(existing *appsv1.DaemonSet, desired *appsv1.DaemonSet, ctx c
 	}
 
 	return updated, nil
-}
-
-func boolPtr(b bool) *bool {
-	return &b
-}
-
-type DelayManager struct {
-	mu         sync.Mutex
-	inProgress bool
-}
-
-// runFunctionWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
-func (dm *DelayManager) runFunctionWithDelayAndSkipNewCalls(delay time.Duration, fn func(args ...interface{}) (*appsv1.DaemonSet, error), fnArgs ...interface{}) {
-	dm.mu.Lock()
-	defer dm.mu.Unlock()
-
-	if dm.inProgress {
-		return
-	}
-
-	dm.inProgress = true
-
-	time.AfterFunc(delay, func() {
-		dm.mu.Lock()
-		defer dm.mu.Unlock()
-
-		for i := 0; i < PATCH_DAEMONSET_RETRY; i++ {
-			_, err := fn(fnArgs...)
-			if err == nil {
-				dm.inProgress = false
-				return
-			}
-		}
-
-		dm.inProgress = false
-	})
 }

@@ -2,7 +2,6 @@ package datacollection
 
 import (
 	"context"
-	appsv1 "k8s.io/api/apps/v1"
 	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -14,8 +13,8 @@ import (
 var dm = &DelayManager{}
 
 const (
-	DAEMONSET_PATCH_DELAY = 20 * time.Second
-	PATCH_DAEMONSET_RETRY = 3
+	DAEMONSET_SYNC_DELAY = 20 * time.Second
+	syncDaemonsetRetry   = 3
 )
 
 func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
@@ -72,11 +71,7 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 		return err
 	}
 
-	syncDaemonSetFunction := func(args ...interface{}) (*appsv1.DaemonSet, error) {
-		return syncDaemonSet(dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
-	}
-	dm.runFunctionWithDelayAndSkipNewCalls(DAEMONSET_PATCH_DELAY, syncDaemonSetFunction,
-		dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(DAEMONSET_SYNC_DELAY, syncDaemonsetRetry, dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
 
 	return nil
 }
