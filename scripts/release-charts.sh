@@ -17,6 +17,7 @@ helm repo add odigos https://odigos-io.github.io/odigos-charts || true
 git worktree add $TMPDIR gh-pages -f
 
 # Update index with new packages
+sed -i -E 's/v0.0.0/v'"${TAG}"'/' helm/odigos/Chart.yaml
 helm package helm/* -d $TMPDIR
 cd $TMPDIR
 helm repo index . --merge index.yaml --url https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/
