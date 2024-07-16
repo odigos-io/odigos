@@ -47,19 +47,32 @@ type trafficMetrics struct {
 	lastUpdate time.Time
 }
 
+func (tm *trafficMetrics) TotalDataSent() int64 {
+	return tm.tracesDataSent + tm.logsDataSent + tm.metricsDataSent
+}
+
+func (tm *trafficMetrics) TotalThroughput() int64 {
+	return tm.tracesThroughput + tm.logsThroughput + tm.metricsThroughput
+}
+
+func (tm *trafficMetrics) String() string {
+	return fmt.Sprintf("tracesDataSent: %d, logsDataSent: %d, metricsDataSent: %d, tracesThroughput: %d, logsThroughput: %d, metricsThroughput: %d, lastUpdate: %s",
+		tm.tracesDataSent, tm.logsDataSent, tm.metricsDataSent, tm.tracesThroughput, tm.logsThroughput, tm.metricsThroughput, tm.lastUpdate.String())
+}
+
 type sourceMetrics struct {
 	// nodeCollectorsTraffic is a map of node collector IDs to their respective traffic metrics
 	// Each node collector reports the traffic metrics with source identifying attributes
 	nodeCollectorsTraffic map[string]*trafficMetrics
+	// mutex to protect the nodeCollectorsTraffic map, used when a node collector is added or deleted
+	mu sync.Mutex
 }
 
-type odigosMetricsConsumer struct {
+type OdigosMetricsConsumer struct {
 	sourcesMetrics map[common.SourceID]*sourceMetrics
     sourcesMu sync.Mutex
+	nodeCollectorDeletedChan chan string
 }
-
-// singleton instance of odigosMetricsConsumer
-var odigosMetrics *odigosMetricsConsumer
 
 var (
 	ServiceNameKey        = strings.ReplaceAll(string(semconv.ServiceNameKey), ".", "_")
@@ -69,13 +82,11 @@ var (
 	K8SDaemonSetNameKey   = strings.ReplaceAll(string(semconv.K8SDaemonSetNameKey), ".", "_")
 )
 
-func (c *odigosMetricsConsumer) Capabilities() consumer.Capabilities {
+func (c *OdigosMetricsConsumer) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: false}
 }
 
-// newSourceMetric creates a new sourceMetrics object with initial traffic metrics based on the data point received
-// The sourceMetrics map initialized with the node collector ID and the traffic metrics
-func newSourceMetric(dp pmetric.NumberDataPoint, metricName string, nodeCollectorID string) *sourceMetrics {
+func newTrafficMetrics(metricName string, dp pmetric.NumberDataPoint) *trafficMetrics {
 	tm := &trafficMetrics{
 		lastUpdate: dp.Timestamp().AsTime(),
 	}
@@ -89,6 +100,14 @@ func newSourceMetric(dp pmetric.NumberDataPoint, metricName string, nodeCollecto
 		tm.logsDataSent = int64(dp.DoubleValue())
 	}
 
+	return tm
+}
+
+// newSourceMetric creates a new sourceMetrics object with initial traffic metrics based on the data point received
+// The sourceMetrics map initialized with the node collector ID and the traffic metrics
+func newSourceMetric(dp pmetric.NumberDataPoint, metricName string, nodeCollectorID string) *sourceMetrics {
+	tm := newTrafficMetrics(metricName, dp)
+
 	sm := &sourceMetrics{
 		nodeCollectorsTraffic: map[string]*trafficMetrics{
 			nodeCollectorID: tm,
@@ -98,34 +117,48 @@ func newSourceMetric(dp pmetric.NumberDataPoint, metricName string, nodeCollecto
 	return sm
 }
 
-func (c *odigosMetricsConsumer) updateSourceMetrics(dp pmetric.NumberDataPoint, metricName string, nodeCollectorID string) {
+func (c *OdigosMetricsConsumer) runNotificationsLoop(ctx context.Context) {
+	for {
+		select {
+		case nodeCollectorID, ok := <-c.nodeCollectorDeletedChan:
+			if !ok {
+				return
+			}
+			for _, sm := range c.sourcesMetrics {
+				sm.mu.Lock()
+				delete(sm.nodeCollectorsTraffic, nodeCollectorID)
+				sm.mu.Unlock()
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (c *OdigosMetricsConsumer) updateSourceMetrics(dp pmetric.NumberDataPoint, metricName string, nodeCollectorID string) {
 	sID, err := metricAttributesToSourceID(dp.Attributes())
 	if err != nil {
 		fmt.Printf("failed to get source ID: %v\n", err)
 		return
 	}
 
-	defer func () {
-		sm, ok := GetSourceTrafficMetrics(sID)
-		if ok {
-			fmt.Printf("######## source metrics: %v\n", sm)
-		}
-    } ()
-
 	c.sourcesMu.Lock()
 	defer c.sourcesMu.Unlock()
 	currentVal, ok := c.sourcesMetrics[sID]
 	if !ok {
+		// first time we receive data for this source, create an entry for it with hte given nodeCollectorID
 		c.sourcesMetrics[sID] = newSourceMetric(dp, metricName, nodeCollectorID)
 		return
 	}
 
-	// TODO: check this commented code which is used when a new node collector is discovered for an existing source
-	// _, ok = currentVal.nodeCollectorsTraffic[nodeCollectorID]
-	// if !ok {
-	// 	currentVal.nodeCollectorsTraffic[nodeCollectorID] = &trafficMetrics{}
-	// 	return
-	// }
+	currentVal.mu.Lock()
+	defer currentVal.mu.Unlock()
+
+	if _, ok = currentVal.nodeCollectorsTraffic[nodeCollectorID]; !ok {
+		// first time we receive data for this source and from this node collector
+		currentVal.nodeCollectorsTraffic[nodeCollectorID] = newTrafficMetrics(metricName, dp)
+		return
+	}
 
 	// From this point on, we are updating the existing source metrics
 	var dataSentPtr, throughputPtr *int64
@@ -158,15 +191,16 @@ func (c *odigosMetricsConsumer) updateSourceMetrics(dp pmetric.NumberDataPoint, 
 	timeDiff := newTime.Sub(oldTime).Seconds()
 
 	var throughput int64
+	// calculate throughput only if the new value is greater than the old value and the time difference is positive
+	// otherwise, the throughput is set to 0
 	if newVal > oldVal && timeDiff > 0 {
-		// calculate throughput only if the new value is greater than the old value
 		throughput = (newVal - oldVal) / int64(timeDiff)
 	}
 
 	*throughputPtr = throughput
 }
 
-func (c *odigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.Metrics) error {
+func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.Metrics) error {
 	grpcMD, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return errNoMetadata
@@ -190,7 +224,7 @@ func (c *odigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 	return nil
 }
 
-func (c *odigosMetricsConsumer) handleNodeCollectorMetrics(senderPod string, md pmetric.Metrics) {
+func (c *OdigosMetricsConsumer) handleNodeCollectorMetrics(senderPod string, md pmetric.Metrics) {
 	rm := md.ResourceMetrics()
 	for i := 0; i < rm.Len(); i++ {
 		smSlice := rm.At(i).ScopeMetrics()
@@ -239,9 +273,27 @@ func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
 	}, nil
 }
 
-// SetupOTLPReceiver sets up an OTLP receiver to receive metrics from Collectors.
-// It should only be called once.
-func SetupOTLPReceiver(ctx context.Context) {
+func NewOdigosMetrics() *OdigosMetricsConsumer {
+	return &OdigosMetricsConsumer{
+		sourcesMetrics:           make(map[common.SourceID]*sourceMetrics),
+		nodeCollectorDeletedChan: make(chan string),
+	}
+}
+
+// Run starts the OTLP receiver and the notifications loop for receiving and processing the metrics from different Odigos collectors
+func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
+	// launch the notifications loop
+	go c.runNotificationsLoop(ctx)
+
+	// setup a watcher for node collectors deletion detection
+	nodeCollectorsWatch, err := newNodeCollectorWatcher(ctx, odigosNS)
+	if err != nil {
+		panic(fmt.Sprintf("error creating watcher for node collectors: %v", err))
+	}
+	defer nodeCollectorsWatch.Stop()
+	go runNodeCollectorWatcher(ctx, nodeCollectorsWatch, c.nodeCollectorDeletedChan)
+
+	// setup the OTLP receiver
 	f := otlpreceiver.NewFactory()
 
 	cfg, ok := f.CreateDefaultConfig().(*otlpreceiver.Config)
@@ -251,11 +303,7 @@ func SetupOTLPReceiver(ctx context.Context) {
 
 	cfg.GRPC.NetAddr.Endpoint = fmt.Sprintf("0.0.0.0:%d", consts.OTLPPort)
 
-	odigosMetrics = &odigosMetricsConsumer{
-		sourcesMetrics: make(map[common.SourceID]*sourceMetrics),
-	}
-
-	r, err := f.CreateMetricsReceiver(ctx, receivertest.NewNopSettings(), cfg, odigosMetrics)
+	r, err := f.CreateMetricsReceiver(ctx, receivertest.NewNopSettings(), cfg, c)
 	if err != nil {
 		panic("failed to create receiver")
 	}
@@ -265,17 +313,16 @@ func SetupOTLPReceiver(ctx context.Context) {
 
 	fmt.Print("OTLP Receiver is running\n")
 	<-ctx.Done()
-
 }
 
-func GetSourceTrafficMetrics(sID common.SourceID) (trafficMetrics, bool) {
-	odigosMetrics.sourcesMu.Lock()
-	defer odigosMetrics.sourcesMu.Unlock()
-
-	sm, ok := odigosMetrics.sourcesMetrics[sID]
+func (c *OdigosMetricsConsumer) GetSourceTrafficMetrics(sID common.SourceID) (trafficMetrics, bool) {
+	sm, ok := c.sourcesMetrics[sID]
 	if !ok {
 		return trafficMetrics{}, false
 	}
+
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
 
 	resultMetrics := trafficMetrics{}
 	// sum the traffic metrics from all the node collectors

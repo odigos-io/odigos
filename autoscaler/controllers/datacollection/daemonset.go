@@ -23,7 +23,6 @@ import (
 )
 
 const (
-	collectorLabel       = "odigos.io/data-collection"
 	containerName        = "data-collection"
 	containerImage       = "keyval/odigos-collector"
 	containerCommand     = "/odigosotelcol"
@@ -34,7 +33,7 @@ const (
 
 var (
 	commonLabels = map[string]string{
-		collectorLabel: "true",
+		consts.OdigosNodeCollectorLabel: "true",
 	}
 )
 
