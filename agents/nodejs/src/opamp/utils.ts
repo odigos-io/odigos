@@ -1,6 +1,6 @@
 import { AttributeValue, Attributes } from "@opentelemetry/api";
 import { AnyValue, KeyValue } from "./generated/anyvalue_pb";
-import { ResourceAttributeFromServer } from "./types";
+import { ResourceAttributeFromServer } from "./opamp-types";
 
 const attributeValueToAnyValue = (value: AttributeValue | undefined): AnyValue => {
     const anyValue = new AnyValue();

@@ -2,42 +2,43 @@ import { PartialMessage } from "@bufbuild/protobuf";
 import {
   AgentDescription,
   AgentToServer,
+  RemoteConfigStatus,
+  RemoteConfigStatuses,
   ServerToAgent,
   ServerToAgentFlags,
 } from "./generated/opamp_pb";
-import { OpAMPClientHttpConfig, ResourceAttributeFromServer } from "./types";
-import {
-  keyValuePairsToOtelAttributes,
-  otelAttributesToKeyValuePairs,
-} from "./utils";
+import { OpAMPClientHttpConfig, RemoteConfig } from "./types";
+import { otelAttributesToKeyValuePairs } from "./utils";
 import { uuidv7 } from "uuidv7";
 import axios, { AxiosInstance } from "axios";
-import { DetectorSync, IResource, Resource } from "@opentelemetry/resources";
-import { Attributes, context, diag } from "@opentelemetry/api";
+import { Resource } from "@opentelemetry/resources";
+import { context, diag } from "@opentelemetry/api";
 import {
   SEMRESATTRS_SERVICE_INSTANCE_ID,
   SEMRESATTRS_SERVICE_NAME,
 } from "@opentelemetry/semantic-conventions";
 import { suppressTracing } from "@opentelemetry/core";
+import { PackageStatuses } from "./generated/opamp_pb";
+import { extractRemoteConfigFromResponse } from "./remote-config";
 
-export class OpAMPClientHttp implements DetectorSync {
+export class OpAMPClientHttp {
   private config: OpAMPClientHttpConfig;
-  private OpAMPInstanceUidString: string;
-  private OpAMPInstanceUid: Uint8Array;
+  private opampInstanceUidString: string;
+  private OpAMPInstanceUidBytes: Uint8Array;
   private nextSequenceNum: bigint = BigInt(0);
   private httpClient: AxiosInstance;
   private logger = diag.createComponentLogger({
     namespace: "@odigos/opentelemetry-node/opamp",
   });
-
-  // promise that we can resolve async later on, which the detect function can return
-  private resourcePromiseResolver?: (resourceAttributes: Attributes) => void;
+  private remoteConfigStatus: RemoteConfigStatus | undefined;
+  // the remote config to use when we failed to get data from the server
+  private defaultRemoteConfig: RemoteConfig;
 
   constructor(config: OpAMPClientHttpConfig) {
     this.config = config;
-    this.OpAMPInstanceUidString = uuidv7();
-    this.OpAMPInstanceUid = new TextEncoder().encode(
-      this.OpAMPInstanceUidString
+    this.opampInstanceUidString = uuidv7();
+    this.OpAMPInstanceUidBytes = new TextEncoder().encode(
+      this.opampInstanceUidString
     );
     this.httpClient = axios.create({
       baseURL: `http://${this.config.opAMPServerHost}`,
@@ -47,6 +48,8 @@ export class OpAMPClientHttp implements DetectorSync {
       },
       timeout: 5000,
     });
+
+    // avoid printing to noisy axios logs to the diag logger
     this.httpClient.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -63,15 +66,21 @@ export class OpAMPClientHttp implements DetectorSync {
         return Promise.reject(relevantErrorInfo);
       }
     );
-  }
 
-  detect(): IResource {
-    return new Resource(
-      {},
-      new Promise<Attributes>((resolve) => {
-        this.resourcePromiseResolver = resolve;
-      })
-    );
+    // on any issue connection to opamp server, this will be the default remote config which will be applied
+    this.defaultRemoteConfig = {
+      sdk: {
+        remoteResource: new Resource({
+          [SEMRESATTRS_SERVICE_NAME]: this.config.instrumentationDeviceId,
+          [SEMRESATTRS_SERVICE_INSTANCE_ID]: this.opampInstanceUidString,
+        }),
+        traceSignal: {
+          enabled: true,
+          defaultEnabledValue: true,
+        },
+      },
+      instrumentationLibraries: [],
+    };
   }
 
   async start() {
@@ -82,13 +91,20 @@ export class OpAMPClientHttp implements DetectorSync {
         return;
       }
 
-      // flags is bitmap, use bitwise OR to check if the flag is set
+      // flags is bitmap, use bitwise AND to check if the flag is set
       if (
-        Number(heartbeatRes.flags) |
+        Number(heartbeatRes.flags) &
         Number(ServerToAgentFlags.ServerToAgentFlags_ReportFullState)
       ) {
         this.logger.info("Opamp server requested full state report");
-        heartbeatRes = await this.sendFullState();
+        try {
+          await this.sendFullState();
+        } catch (error) {
+          this.logger.warn(
+            "Error sending full state to OpAMP server on heartbeat response",
+            error
+          );
+        }
       }
     }, this.config.pollingIntervalMs || 30000);
     timer.unref(); // do not keep the process alive just for this timer
@@ -96,9 +112,13 @@ export class OpAMPClientHttp implements DetectorSync {
 
   async shutdown() {
     this.logger.info("Sending AgentDisconnect message to OpAMP server");
-    return await this.sendAgentToServerMessage({
-      agentDisconnect: {},
-    });
+    try {
+      await this.sendAgentToServerMessage({
+        agentDisconnect: {},
+      });
+    } catch (error) {
+      this.logger.error("Error sending AgentDisconnect message to OpAMP server");
+    }
   }
 
   // the first opamp message is special, as we need to get the remote resource attributes.
@@ -111,35 +131,8 @@ export class OpAMPClientHttp implements DetectorSync {
     for (let i = 0; i < remainingRetries; i++) {
       try {
         const firstServerToAgent = await this.sendFullState();
-
-        const sdkConfig =
-          firstServerToAgent.remoteConfig?.config?.configMap["SDK"];
-        if (!sdkConfig || !sdkConfig.body) {
-          throw new Error(
-            "No SDK config received on first OpAMP message to the server"
-          );
-        }
-
-        const resourceAttributes = JSON.parse(sdkConfig.body.toString()) as {
-          remoteResourceAttributes: ResourceAttributeFromServer[];
-        };
-
-        if (this.resourcePromiseResolver) {
-          this.logger.info(
-            "Got remote resource attributes, resolving detector promise",
-            resourceAttributes.remoteResourceAttributes
-          );
-          this.resourcePromiseResolver(
-            keyValuePairsToOtelAttributes([
-              ...resourceAttributes.remoteResourceAttributes,
-              {
-                key: SEMRESATTRS_SERVICE_INSTANCE_ID,
-                value: this.OpAMPInstanceUidString,
-              },
-            ])
-          );
-          return;
-        }
+        this.handleFirstMessageResponse(firstServerToAgent);
+        return;
       } catch (error) {
         this.logger.warn(
           `Error sending first message to OpAMP server, retrying in ${retryIntervalMs}ms`,
@@ -153,12 +146,66 @@ export class OpAMPClientHttp implements DetectorSync {
     }
 
     // if we got here, it means we run out of retries and did not return from the loop
+    // at this point we have no remote resource attributes, so we set the service name to the instrumentation device id
+    // which is the best we can do without the remote resource attributes
     this.logger.error(
       `Failed to get remote resource attributes from OpAMP server after retries, continuing without them`
     );
-    this.resourcePromiseResolver?.({
-      [SEMRESATTRS_SERVICE_NAME]: this.config.instrumentationDeviceId,
-    });
+    try {
+      this.config.onNewRemoteConfig(this.defaultRemoteConfig);
+    } catch (error) {
+      this.logger.error(
+        "Error handling default remote config on startup",
+        error
+      );
+    }
+  }
+
+  private handleFirstMessageResponse(serverToAgentMessage: ServerToAgent) {
+    const remoteConfigOpampMessage = serverToAgentMessage.remoteConfig;
+    if (!remoteConfigOpampMessage) {
+      throw new Error(
+        "No remote config received on first OpAMP message to the server"
+      );
+    }
+
+    // the configs should have already been processed. Simply log the message and continue
+    this.logger.info("Got remote configuration on first opamp message");
+  }
+
+  private handleRemoteConfigInResponse(serverToAgentMessage: ServerToAgent) {
+    const remoteConfigOpampMessage = serverToAgentMessage.remoteConfig;
+    if (!remoteConfigOpampMessage) {
+      return;
+    }
+
+    try {
+      const remoteConfig = extractRemoteConfigFromResponse(
+        remoteConfigOpampMessage,
+        this.opampInstanceUidString
+      );
+      this.logger.info(
+        "Got remote configuration from OpAMP server",
+        remoteConfig.sdk.remoteResource.attributes,
+        { traceSignal: remoteConfig.sdk.traceSignal }
+      );
+      this.config.onNewRemoteConfig(remoteConfig);
+      this.remoteConfigStatus = new RemoteConfigStatus({
+        lastRemoteConfigHash: remoteConfigOpampMessage.configHash,
+        status: RemoteConfigStatuses.RemoteConfigStatuses_APPLIED,
+      });
+    } catch (error) {
+      this.remoteConfigStatus = new RemoteConfigStatus({
+        lastRemoteConfigHash: remoteConfigOpampMessage.configHash,
+        status: RemoteConfigStatuses.RemoteConfigStatuses_FAILED,
+        errorMessage: "missing instrumentation libraries remote config",
+      });
+      this.logger.warn(
+        "Error extracting remote config from OpAMP message",
+        error
+      );
+      return;
+    }
   }
 
   private async sendHeartBeatToServer() {
@@ -173,11 +220,16 @@ export class OpAMPClientHttp implements DetectorSync {
     return await this.sendAgentToServerMessage({
       agentDescription: new AgentDescription({
         identifyingAttributes: otelAttributesToKeyValuePairs({
-          [SEMRESATTRS_SERVICE_INSTANCE_ID]: this.OpAMPInstanceUidString, // always send the instance id
+          [SEMRESATTRS_SERVICE_INSTANCE_ID]: this.opampInstanceUidString, // always send the instance id
           ...this.config.agentDescriptionIdentifyingAttributes,
         }),
         nonIdentifyingAttributes: otelAttributesToKeyValuePairs(
           this.config.agentDescriptionNonIdentifyingAttributes
+        ),
+      }),
+      packageStatuses: new PackageStatuses({
+        packages: Object.fromEntries(
+          this.config.initialPackageStatues.map((pkg) => [pkg.name, pkg])
         ),
       }),
     });
@@ -188,19 +240,25 @@ export class OpAMPClientHttp implements DetectorSync {
   ): Promise<ServerToAgent> {
     const completeMessageToSend = new AgentToServer({
       ...message,
-      instanceUid: this.OpAMPInstanceUid,
+      instanceUid: this.OpAMPInstanceUidBytes,
       sequenceNum: this.nextSequenceNum++,
+      remoteConfigStatus: this.remoteConfigStatus,
     });
     const msgBytes = completeMessageToSend.toBinary();
     try {
       // do not create traces for the opamp http requests
-      return context.with(suppressTracing(context.active()), async () => {
-        const res = await this.httpClient.post("/v1/opamp", msgBytes, {
-          responseType: "arraybuffer",
-        });
-        const agentToServer = ServerToAgent.fromBinary(res.data);
-        return agentToServer;
-      });
+      const serverToAgent = await context.with(
+        suppressTracing(context.active()),
+        async () => {
+          const res = await this.httpClient.post("/v1/opamp", msgBytes, {
+            responseType: "arraybuffer",
+          });
+          const serverToAgent = ServerToAgent.fromBinary(res.data);
+          return serverToAgent;
+        }
+      );
+      this.handleRemoteConfigInResponse(serverToAgent);
+      return serverToAgent;
     } catch (error) {
       // TODO: handle
       throw error;

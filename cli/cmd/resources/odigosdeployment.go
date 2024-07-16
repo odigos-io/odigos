@@ -112,10 +112,6 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 	}
 
 	excludedCRDs := []string{}
-	if a.odigosTier == common.CommunityOdigosTier {
-		excludedCRDs = append(excludedCRDs, "odigos.io_instrumentationconfigs.yaml")
-	}
-
 	availableCrds, err := api.GetCRDs(excludedCRDs)
 	if err != nil {
 		return err

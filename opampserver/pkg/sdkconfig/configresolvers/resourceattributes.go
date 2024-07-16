@@ -1,4 +1,4 @@
-package server
+package configresolvers
 
 import (
 	"errors"
@@ -19,7 +19,7 @@ type ResourceAttribute struct {
 // - pod name
 // - container name
 // - object name and kind (deployment, statefulset, daemonset, pod)
-func calculateServerAttributes(k8sAttributes *deviceid.K8sResourceAttributes, nodeName string) ([]ResourceAttribute, error) {
+func CalculateServerAttributes(k8sAttributes *deviceid.K8sResourceAttributes, nodeName string) ([]ResourceAttribute, error) {
 
 	serverOfferResourceAttributes := []ResourceAttribute{
 		{
