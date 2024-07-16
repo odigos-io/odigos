@@ -25,9 +25,9 @@ spec:
         command:
           - /app
         {{- if .Values.imagePrefix }}
-        image: "{{ .Values.imagePrefix }}/{{ .Values.scheduler.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.imagePrefix }}/{{ .Values.scheduler.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         {{- else }}
-        image: "{{ .Values.scheduler.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.scheduler.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         {{- end }}
         env:
           - name: OTEL_SERVICE_NAME

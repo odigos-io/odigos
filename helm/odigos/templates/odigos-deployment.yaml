@@ -4,4 +4,4 @@ metadata:
   name: odigos-deployment
   namespace: {{ .Release.Namespace }}
 data:
-  ODIGOS_VERSION: {{ .Values.image.tag }}
+  ODIGOS_VERSION: {{ .Values.image.tag | default .Chart.AppVersion }}
