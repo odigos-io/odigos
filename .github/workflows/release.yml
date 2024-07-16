@@ -18,9 +18,8 @@ env:
   DOCKERHUB_ORG: "keyval"
 
 jobs:
-  release:
-    runs-on:
-      labels: ubuntu-latest
+  release-cli:
+    runs-on: ubuntu-latest
     steps:
 
       - name: Determine Tag Value
@@ -128,3 +127,25 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos CLI", "tag":"${{ steps.set_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+  release-helm:
+    needs: [release-cli]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "bot@odigos.io"
+          git config --global user.name "Odigos Release Bot"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4.2.0
+        with:
+          version: v3.15.2
+
+      - name: Release Helm charts
+        run: sh ./scripts/release-charts.sh
