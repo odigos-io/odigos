@@ -304,10 +304,8 @@ type DelayManager struct {
 func (dm *DelayManager) runFunctionWithDelayAndSkipNewCalls(delay time.Duration, fn func(args ...interface{}) (*appsv1.DaemonSet, error), fnArgs ...interface{}) {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
-	logger := log.FromContext(fnArgs[2].(context.Context))
 
 	if dm.inProgress {
-		logger.Info("Function execution in progress. Skipping...")
 		return
 	}
 
@@ -317,7 +315,6 @@ func (dm *DelayManager) runFunctionWithDelayAndSkipNewCalls(delay time.Duration,
 		dm.mu.Lock()
 		defer dm.mu.Unlock()
 
-		logger.Info("Sync DaemonSet function execution started...")
 		for i := 0; i < PATCH_DAEMONSET_RETRY; i++ {
 			_, err := fn(fnArgs...)
 			if err == nil {
