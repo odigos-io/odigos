@@ -2,6 +2,7 @@
 
 # Setup
 TMPDIR="$(mktemp -d)"
+CHARTDIR="helm/odigos"
 
 if [ -z "$TAG" ]; then
 	echo "TAG required"
@@ -13,23 +14,35 @@ if [ -z "$GITHUB_REPOSITORY" ]; then
 	exit 1
 fi
 
-helm repo add odigos https://odigos-io.github.io/odigos-charts || true
+if [[ $(git diff -- $CHARTDIR | wc -c) -ne 0 ]]; then
+	echo "Helm chart dirty. Aborting."
+	exit 1
+fi
+
+# Ignore errors because it will mostly always error locally
+helm repo add odigos https://odigos-io.github.io/odigos-charts 2> /dev/null || true
 git worktree add $TMPDIR gh-pages -f
 
 # Update index with new packages
-sed -i -E 's/v0.0.0/v'"${TAG}"'/' helm/odigos/Chart.yaml
+sed -i -E 's/v0.0.0/v'"${TAG}"'/' $CHARTDIR/Chart.yaml
 helm package helm/* -d $TMPDIR
-cd $TMPDIR
+pushd $TMPDIR
 helm repo index . --merge index.yaml --url https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/
 
+# The check avoids pushing the same tag twice and only pushes if there's a new entry in the index
 if [[ $(git diff -G apiVersion | wc -c) -ne 0 ]]; then
 	# Upload new packages
 	gh release upload -R $GITHUB_REPOSITORY $TAG $TMPDIR/*.tgz
 
 	git add index.yaml
 	git commit -m "update index" && git push
+	popd
+	git fetch
 else
 	echo "No significant changes"
+	popd
 fi
 
-git worktree remove $TMPDIR || echo " -> Failed to clean up temp worktree"
+# Roll back chart version changes
+git checkout $CHARTDIR
+git worktree remove $TMPDIR -f || echo " -> Failed to clean up temp worktree"
