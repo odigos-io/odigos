@@ -3,20 +3,17 @@ package datacollection
 import (
 	"context"
 	"fmt"
-
-	"github.com/odigos-io/odigos/autoscaler/utils"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
-
-	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
-	"k8s.io/apimachinery/pkg/util/intstr"
-
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
+	"github.com/odigos-io/odigos/autoscaler/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -48,7 +45,7 @@ func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace 
 	return &odigletDaemonset.Spec.Template.Spec, nil
 }
 
-func syncDaemonSet(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup, configData string, ctx context.Context,
+func syncDaemonSet(dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
 
@@ -58,7 +55,13 @@ func syncDaemonSet(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 		return nil, err
 	}
 
-	desiredDs, err := getDesiredDaemonSet(datacollection, configData, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
+	configMap := &corev1.ConfigMap{}
+	if err := c.Get(ctx, client.ObjectKey{Namespace: datacollection.Namespace, Name: datacollection.Name}, configMap); err != nil {
+		logger.Error(err, "Failed to get Config Map data")
+		return nil, err
+	}
+
+	desiredDs, err := getDesiredDaemonSet(datacollection, configMap.String(), scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -92,6 +95,56 @@ func syncDaemonSet(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 
 	return updated, nil
 }
+
+/*
+	func shouldRestartDaemonSet(ctx context.Context, c client.Client, daemonset *appsv1.DaemonSet, namespace string) {
+		time.AfterFunc(10*time.Second, func() {
+			deleteDaemonSetPods(ctx, c, daemonset, namespace)
+		})
+	}
+
+	func deleteDaemonSetPods(ctx context.Context, c client.Client, daemonset *appsv1.DaemonSet, namespace string) {
+		logger := log.FromContext(ctx)
+
+		// Delete all Pods to restart the DaemonSet in order to apply the new configuration
+		var podList corev1.PodList
+		labelSelector := client.MatchingLabels(daemonset.Spec.Selector.MatchLabels)
+		if err := c.List(context.TODO(), &podList, client.InNamespace(namespace), labelSelector); err != nil {
+			logger.Error(err, "Failed to list pods")
+			return
+		}
+
+		for _, pod := range podList.Items {
+			if err := c.Delete(ctx, &pod); err != nil {
+				logger.Error(err, "Failed to delete data collection pod")
+				return
+			}
+		}
+
+		pod := podList.Items[0]
+		if err := c.Delete(ctx, &pod); err != nil {
+			logger.Error(err, "Failed to delete data collection pod")
+			return
+		}
+
+		logger.Info("Deleted all pods: %s successfully", pod.Name)
+	}
+
+	func shouldRestart(configData string, appsItems []odigosv1.InstrumentedApplication) bool {
+		var config config.Config
+		if err := yaml.Unmarshal([]byte(configData), &config); err == nil {
+			if fileLog := config.Receivers["filelog"]; fileLog != nil {
+				if includeList := fileLog.(map[string]interface{})["include"]; includeList != nil {
+					if len(includeList.([]interface{})) != len(appsItems) {
+						return false
+					}
+				}
+			}
+		}
+
+		return true
+	}
+*/
 
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string,
 	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,

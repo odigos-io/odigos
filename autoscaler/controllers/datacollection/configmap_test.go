@@ -125,7 +125,7 @@ func TestGetConfigMapData(t *testing.T) {
 		*NewMockInstrumentedApplicationWoOwner(NewMockTestDeployment(ns2)),
 	}
 
-	got, err := getConfigMapData(
+	got, err := calculateConfigMapData(
 		&v1alpha1.InstrumentedApplicationList{
 			Items: items,
 		},

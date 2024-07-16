@@ -2,11 +2,21 @@ package datacollection
 
 import (
 	"context"
+	appsv1 "k8s.io/api/apps/v1"
+	"sync"
+	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+var dm = &DelayManager{}
+
+const (
+	DAEMONSET_PATCH_DELAY = 20 * time.Second
+	PATCH_DAEMONSET_RETRY = 3
 )
 
 func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
@@ -57,18 +67,51 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
-	configData, err := syncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme)
+	_, err := syncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
 	}
 
-	_, err = syncDaemonSet(instApps, dests, dataCollection, configData, ctx, c, scheme, imagePullSecrets, odigosVersion)
-	if err != nil {
-		logger.Error(err, "Failed to sync daemon set")
-		return err
+	syncDaemonSetFunction := func(args ...interface{}) (*appsv1.DaemonSet, error) {
+		return syncDaemonSet(dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
 	}
+	dm.runFunctionWithDelayAndSkipNewCalls(DAEMONSET_PATCH_DELAY, syncDaemonSetFunction,
+		dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
 
 	return nil
 }
 
+type DelayManager struct {
+	mu         sync.Mutex
+	inProgress bool
+}
+
+// runFunctionWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
+func (dm *DelayManager) runFunctionWithDelayAndSkipNewCalls(delay time.Duration, fn func(args ...interface{}) (*appsv1.DaemonSet, error), fnArgs ...interface{}) {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+	logger := log.FromContext(fnArgs[2].(context.Context))
+	if dm.inProgress {
+		logger.Info("Function execution in progress. Skipping...")
+		return
+	}
+
+	dm.inProgress = true
+
+	time.AfterFunc(delay, func() {
+		dm.mu.Lock()
+		defer dm.mu.Unlock()
+
+		logger.Info("Sync DaemonSet function execution started...")
+		for i := 0; i < PATCH_DAEMONSET_RETRY; i++ {
+			_, err := fn(fnArgs...)
+			if err == nil {
+				dm.inProgress = false
+				return
+			}
+		}
+
+		dm.inProgress = false
+	})
+}
