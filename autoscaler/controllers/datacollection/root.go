@@ -3,7 +3,6 @@ package datacollection
 import (
 	"context"
 	appsv1 "k8s.io/api/apps/v1"
-	"sync"
 	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -80,38 +79,4 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 		dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
 
 	return nil
-}
-
-type DelayManager struct {
-	mu         sync.Mutex
-	inProgress bool
-}
-
-// runFunctionWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
-func (dm *DelayManager) runFunctionWithDelayAndSkipNewCalls(delay time.Duration, fn func(args ...interface{}) (*appsv1.DaemonSet, error), fnArgs ...interface{}) {
-	dm.mu.Lock()
-	defer dm.mu.Unlock()
-	logger := log.FromContext(fnArgs[2].(context.Context))
-	if dm.inProgress {
-		logger.Info("Function execution in progress. Skipping...")
-		return
-	}
-
-	dm.inProgress = true
-
-	time.AfterFunc(delay, func() {
-		dm.mu.Lock()
-		defer dm.mu.Unlock()
-
-		logger.Info("Sync DaemonSet function execution started...")
-		for i := 0; i < PATCH_DAEMONSET_RETRY; i++ {
-			_, err := fn(fnArgs...)
-			if err == nil {
-				dm.inProgress = false
-				return
-			}
-		}
-
-		dm.inProgress = false
-	})
 }
