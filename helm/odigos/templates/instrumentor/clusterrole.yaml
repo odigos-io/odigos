@@ -1,0 +1,76 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: odigos-instrumentor
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - deployments
+      - statefulsets
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets/finalizers
+      - deployments/finalizers
+      - statefulsets/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets/status
+      - deployments/status
+      - statefulsets/status
+    verbs:
+      - get
+  - apiGroups:
+      - odigos.io
+    resources:
+      - collectorsgroups
+      - instrumentedapplications
+      - odigosconfigurations
+      - destinations
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - collectorsgroups/finalizers
+      - instrumentedapplications/finalizers
+      - destinations/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - odigos.io
+    resources:
+      - collectorsgroups/status
+      - instrumentedapplications/status
+      - destinations/status
+    verbs:
+      - get
+      - patch
+      - update

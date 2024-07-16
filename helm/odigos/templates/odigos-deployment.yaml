@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-deployment
+  namespace: {{ .Release.Namespace }}
+data:
+  ODIGOS_VERSION: {{ .Values.image.tag }}

@@ -1,0 +1,63 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: instrumentationconfigs.odigos.io
+spec:
+  group: odigos.io
+  names:
+    kind: InstrumentationConfig
+    listKind: InstrumentationConfigList
+    plural: instrumentationconfigs
+    singular: instrumentationconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        description: InstrumentationConfig is the Schema for the instrumentationconfig API
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            type: object
+            description: Config for the OpenTelemetry SDKs that should be applied to a workload. The workload is identified by the owner reference
+            properties:
+              config:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    instrumentationLibraries:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          instrumentationLibraryName:
+                            type: string
+                          language:
+                            type: string
+                    optionKey:
+                      type: string
+                    spanKind:
+                      type: string
+                      enum:
+                      - client
+                      - server
+                      - producer
+                      - consumer
+                      - internal
+                    optionValueBoolean:
+                      type: boolean
+                required:
+                - config
+          status:
+            type: object
+    subresources:
+      status: {}

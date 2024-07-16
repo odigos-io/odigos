@@ -1,0 +1,49 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: odigos-ui
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - statefulsets
+      - daemonsets
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - "*"
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - create
+      - delete
+      - update
+  - apiGroups:
+      - actions.odigos.io
+    resources:
+      - "*"
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - create
+      - delete
+      - update

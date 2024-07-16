@@ -1,0 +1,110 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: processors.odigos.io
+spec:
+  group: odigos.io
+  names:
+    kind: Processor
+    listKind: ProcessorList
+    plural: processors
+    singular: processor
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Processor is the Schema for an Opentelemetry Collector Processor
+          that is added to Odigos pipeline
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ProcessorSpec defines the an OpenTelemetry Collector processor
+              in odigos telemetry pipeline
+            properties:
+              collectorRoles:
+                description: control which collector roles in odigos pipeline this
+                  processor is attached to.
+                items:
+                  enum:
+                  - CLUSTER_GATEWAY
+                  - NODE_COLLECTOR
+                  type: string
+                type: array
+              disabled:
+                description: disable is a flag to enable or disable the processor.
+                  if the processor is disabled, it will not be included in the collector
+                  configuration yaml. this allows the user to keep the processor configuration
+                  in the CR, but disable it temporarily.
+                type: boolean
+              notes:
+                description: user can attach notes to the processor, to document its
+                  purpose, usage, etc.
+                type: string
+              orderHint:
+                description: control the order of processors. a processor with lower
+                  order hint value will be placed before other processors with higher
+                  value. if 2 processors have the same value, the order is arbitrary.
+                  if the value is missing (or 0) the processor can be placed anywhere
+                  in the pipeline
+                type: integer
+              processorConfig:
+                description: this it the configuration of the opentelemetry collector
+                  processor component with the type specified in 'type'.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              processorName:
+                description: this name is solely for the user convenience, to attach
+                  a meaningful name to the processor. odigos must not assume any semantics
+                  from this name. odigos cannot assume this name is unique, not empty,
+                  exclude spaces or dots, limited in length, etc.
+                type: string
+              signals:
+                description: signals can be used to control which observability signals
+                  are processed by the processor.
+                items:
+                  enum:
+                  - LOGS
+                  - TRACES
+                  - METRICS
+                  type: string
+                type: array
+              type:
+                description: type of the processor (batch, attributes, etc). this
+                  field is only the type, not it's instance name in the collector
+                  configuration yaml
+                type: string
+            required:
+            - collectorRoles
+            - processorConfig
+            - signals
+            - type
+            type: object
+          status:
+            description: ProcessorStatus defines the observed state of the processor
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
