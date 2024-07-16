@@ -13,8 +13,8 @@ import (
 var dm = &DelayManager{}
 
 const (
-	DAEMONSET_SYNC_DELAY = 20 * time.Second
-	syncDaemonsetRetry   = 3
+	daemonSetSyncDelay = 20 * time.Second
+	syncDaemonsetRetry = 3
 )
 
 func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
@@ -71,7 +71,7 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 		return err
 	}
 
-	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(DAEMONSET_SYNC_DELAY, syncDaemonsetRetry, dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(daemonSetSyncDelay, syncDaemonsetRetry, dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
 
 	return nil
 }
