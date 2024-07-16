@@ -198,7 +198,7 @@ export class OpAMPClientHttp {
       this.remoteConfigStatus = new RemoteConfigStatus({
         lastRemoteConfigHash: remoteConfigOpampMessage.configHash,
         status: RemoteConfigStatuses.RemoteConfigStatuses_FAILED,
-        errorMessage: "missing instrumentation libraries remote config",
+        errorMessage: "failed to apply the new remote config",
       });
       this.logger.warn(
         "Error extracting remote config from OpAMP message",
