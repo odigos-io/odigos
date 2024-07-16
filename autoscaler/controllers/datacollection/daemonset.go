@@ -96,56 +96,6 @@ func syncDaemonSet(dests *odigosv1.DestinationList, datacollection *odigosv1.Col
 	return updated, nil
 }
 
-/*
-	func shouldRestartDaemonSet(ctx context.Context, c client.Client, daemonset *appsv1.DaemonSet, namespace string) {
-		time.AfterFunc(10*time.Second, func() {
-			deleteDaemonSetPods(ctx, c, daemonset, namespace)
-		})
-	}
-
-	func deleteDaemonSetPods(ctx context.Context, c client.Client, daemonset *appsv1.DaemonSet, namespace string) {
-		logger := log.FromContext(ctx)
-
-		// Delete all Pods to restart the DaemonSet in order to apply the new configuration
-		var podList corev1.PodList
-		labelSelector := client.MatchingLabels(daemonset.Spec.Selector.MatchLabels)
-		if err := c.List(context.TODO(), &podList, client.InNamespace(namespace), labelSelector); err != nil {
-			logger.Error(err, "Failed to list pods")
-			return
-		}
-
-		for _, pod := range podList.Items {
-			if err := c.Delete(ctx, &pod); err != nil {
-				logger.Error(err, "Failed to delete data collection pod")
-				return
-			}
-		}
-
-		pod := podList.Items[0]
-		if err := c.Delete(ctx, &pod); err != nil {
-			logger.Error(err, "Failed to delete data collection pod")
-			return
-		}
-
-		logger.Info("Deleted all pods: %s successfully", pod.Name)
-	}
-
-	func shouldRestart(configData string, appsItems []odigosv1.InstrumentedApplication) bool {
-		var config config.Config
-		if err := yaml.Unmarshal([]byte(configData), &config); err == nil {
-			if fileLog := config.Receivers["filelog"]; fileLog != nil {
-				if includeList := fileLog.(map[string]interface{})["include"]; includeList != nil {
-					if len(includeList.([]interface{})) != len(appsItems) {
-						return false
-					}
-				}
-			}
-		}
-
-		return true
-	}
-*/
-
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string,
 	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
 	odigletDaemonsetPodSpec *corev1.PodSpec,
