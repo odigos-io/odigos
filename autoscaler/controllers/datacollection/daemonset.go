@@ -83,7 +83,7 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		return nil, err
 	}
 
-	configMap, err := getConfigMap(ctx, c, datacollection)
+	configMap, err := getConfigMap(ctx, c)
 	if err != nil {
 		logger.Error(err, "Failed to get Config Map data")
 		return nil, err

@@ -3,6 +3,7 @@ package datacollection
 import (
 	"context"
 	"fmt"
+	"github.com/odigos-io/odigos/common/consts"
 	"reflect"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
@@ -12,6 +13,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/config"
+	constsK8s "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -277,9 +279,9 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 	return string(data), nil
 }
 
-func getConfigMap(ctx context.Context, c client.Client, collectorGroup *odigosv1.CollectorsGroup) (*v1.ConfigMap, error) {
+func getConfigMap(ctx context.Context, c client.Client) (*v1.ConfigMap, error) {
 	configMap := &v1.ConfigMap{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: collectorGroup.Namespace, Name: collectorGroup.Name}, configMap); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Namespace: consts.DefaultOdigosNamespace, Name: constsK8s.OdigosNodeCollectorConfigMapName}, configMap); err != nil {
 		return nil, err
 	}
 
