@@ -305,6 +305,7 @@ func (dm *DelayManager) runFunctionWithDelayAndSkipNewCalls(delay time.Duration,
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 	logger := log.FromContext(fnArgs[2].(context.Context))
+
 	if dm.inProgress {
 		logger.Info("Function execution in progress. Skipping...")
 		return
