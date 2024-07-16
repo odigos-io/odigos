@@ -81,6 +81,19 @@
       ]
     },
     {
+      "group": "Instrumentations",
+      "pages": [
+        "instrumentations/overview",
+        {
+          "group": "Node.js",
+          "pages": [
+            "instrumentations/nodejs/nodejs",
+            "instrumentations/nodejs/enrichment"
+          ]
+        }
+      ]
+    },
+    {
       "group": "Odigos Pipeline",
       "pages": [
         "pipeline/overview",
