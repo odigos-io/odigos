@@ -9,6 +9,7 @@ import {
   LatencySamplerForm,
   ProbabilisticSamplerForm,
 } from '../samplers';
+import { PiiMaskingForm } from '../pii-masking';
 
 interface DynamicActionFormProps {
   type: string | undefined;
@@ -38,6 +39,14 @@ export function DynamicActionForm({
       case ActionsType.LATENCY_SAMPLER:
         return (
           <LatencySamplerForm
+            data={data}
+            onChange={onChange}
+            setIsFormValid={setIsFormValid}
+          />
+        );
+      case ActionsType.PII_MASKING:
+        return (
+          <PiiMaskingForm
             data={data}
             onChange={onChange}
             setIsFormValid={setIsFormValid}
