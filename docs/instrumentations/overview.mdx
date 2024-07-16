@@ -3,14 +3,15 @@ title: "Instrumentations Overview"
 sidebarTitle: "Overview"
 ---
 
-Instrumentations in Odigos is where your observability signals - traces, metrics, and logs - are generated.
+Instrumentations in Odigos is the code that is used to record observability signals from your services.
+Odigos will automatically apply instrumentation to your selected workloads to collect traces, metrics, and logs without any code changes.
 
-## Supported Languages
+## Supported Runtimes
 
 Odigos offers automatic instrumentations in k8s for the following languages:
 
 - Go
-- Java
-- [Node.js](/instrumentations/nodejs/nodejs)
-- Python
+- Java versions >= 17
+- [Node.js](/instrumentations/nodejs/nodejs) versions >= 14
+- Python versions >= 3.8
 - .NET
