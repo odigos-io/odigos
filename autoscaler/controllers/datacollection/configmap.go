@@ -276,3 +276,12 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 
 	return string(data), nil
 }
+
+func getConfigMap(ctx context.Context, c client.Client, collectorGroup *odigosv1.CollectorsGroup) (*v1.ConfigMap, error) {
+	configMap := &v1.ConfigMap{}
+	if err := c.Get(ctx, client.ObjectKey{Namespace: collectorGroup.Namespace, Name: collectorGroup.Name}, configMap); err != nil {
+		return nil, err
+	}
+
+	return configMap, nil
+}
