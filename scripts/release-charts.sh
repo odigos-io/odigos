@@ -24,7 +24,7 @@ helm repo add odigos https://odigos-io.github.io/odigos-charts 2> /dev/null || t
 git worktree add $TMPDIR gh-pages -f
 
 # Update index with new packages
-sed -i -E 's/v0.0.0/v'"${TAG}"'/' $CHARTDIR/Chart.yaml
+sed -i -E 's/v0.0.0/'"${TAG}"'/' $CHARTDIR/Chart.yaml
 helm package helm/* -d $TMPDIR
 pushd $TMPDIR
 helm repo index . --merge index.yaml --url https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/
@@ -32,10 +32,11 @@ helm repo index . --merge index.yaml --url https://github.com/$GITHUB_REPOSITORY
 # The check avoids pushing the same tag twice and only pushes if there's a new entry in the index
 if [[ $(git diff -G apiVersion | wc -c) -ne 0 ]]; then
 	# Upload new packages
+	rename 'odigos' 'helm-chart-odigos' *.tgz
 	gh release upload -R $GITHUB_REPOSITORY $TAG $TMPDIR/*.tgz
 
 	git add index.yaml
-	git commit -m "update index" && git push
+	git commit -m "update index with $TAG" && git push
 	popd
 	git fetch
 else
