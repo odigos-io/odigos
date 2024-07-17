@@ -5,4 +5,5 @@ const (
 	OdigosClusterCollectorConfigMapName  = OdigosClusterCollectorDeploymentName
 	OdigosClusterCollectorServiceName    = OdigosClusterCollectorDeploymentName
 	OdigosNodeCollectorDaemonSetName     = "odigos-data-collection"
+	OdigosNodeCollectorConfigMapName     = OdigosNodeCollectorDaemonSetName
 )
