@@ -32,7 +32,7 @@ helm repo index . --merge index.yaml --url https://github.com/$GITHUB_REPOSITORY
 # The check avoids pushing the same tag twice and only pushes if there's a new entry in the index
 if [[ $(git diff -G apiVersion | wc -c) -ne 0 ]]; then
 	# Upload new packages
-	rename 'odigos' 'helm-chart-odigos' *.tgz
+	rename 'odigos' 'test-helm-assets-odigos' *.tgz
 	gh release upload -R $GITHUB_REPOSITORY $TAG $TMPDIR/*.tgz
 
 	git add index.yaml

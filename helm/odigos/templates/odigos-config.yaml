@@ -1,3 +1,5 @@
+# THIS RESOURCE STILL LIVES IN odigos-io/odigos-charts repo
+# ADDED HERE FOR TESTING WORKFLOWS
 apiVersion: odigos.io/v1alpha1
 kind: OdigosConfiguration
 metadata:
