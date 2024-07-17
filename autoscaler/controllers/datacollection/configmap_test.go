@@ -112,7 +112,7 @@ func openTestData(t *testing.T, path string) string {
 	return string(want)
 }
 
-func TestGetConfigMapData(t *testing.T) {
+func TestCalculateConfigMapData(t *testing.T) {
 	want := openTestData(t, "testdata/logs_included.yaml")
 
 	ns := NewMockNamespace("default")
@@ -125,7 +125,7 @@ func TestGetConfigMapData(t *testing.T) {
 		*NewMockInstrumentedApplicationWoOwner(NewMockTestDeployment(ns2)),
 	}
 
-	got, err := getConfigMapData(
+	got, err := calculateConfigMapData(
 		&v1alpha1.InstrumentedApplicationList{
 			Items: items,
 		},
