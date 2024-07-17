@@ -2,6 +2,7 @@ package datacollection
 
 import (
 	"context"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -13,7 +14,6 @@ import (
 var dm = &DelayManager{}
 
 const (
-	daemonSetSyncDelay = 5 * time.Second
 	syncDaemonsetRetry = 3
 )
 
@@ -71,7 +71,7 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 		return err
 	}
 
-	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(daemonSetSyncDelay, syncDaemonsetRetry, dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
 
 	return nil
 }
