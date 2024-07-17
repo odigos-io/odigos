@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
 	appsv1 "k8s.io/api/apps/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +47,18 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 	}
 
 	workload, labels, err := getWorkloadAndLabelsfromOwner(ctx, i.Client, instConfig.Namespace, instConfig.OwnerReferences[0])
-	return inspectRuntimesOfRunningPods(ctx, &logger, labels, i.Client, i.Scheme, workload)
+	err = inspectRuntimesOfRunningPods(ctx, &logger, labels, i.Client, i.Scheme, workload)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Patch RuntimeDetailsInvalidated to false after runtime details have been recalculated
+	_, err = controllerutil.CreateOrPatch(ctx, i.Client, &instConfig, func() error {
+		instConfig.Spec.RuntimeDetailsInvalidated = false
+		return nil
+	})
+
+	return reconcile.Result{}, err
 }
 
 func getWorkloadAndLabelsfromOwner(ctx context.Context, k8sClient client.Client, ns string, ownerReference metav1.OwnerReference) (client.Object, map[string]string, error) {

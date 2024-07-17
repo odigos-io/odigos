@@ -21,43 +21,42 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labels map[string]string,
-	kubeClient client.Client, scheme *runtime.Scheme, object client.Object) (ctrl.Result, error) {
+	kubeClient client.Client, scheme *runtime.Scheme, object client.Object) error {
 	pods, err := kubeutils.GetRunningPods(ctx, labels, object.GetNamespace(), kubeClient)
 	if err != nil {
 		logger.Error(err, "error fetching running pods")
-		return ctrl.Result{}, err
+		return err
 	}
 
 	if len(pods) == 0 {
-		return ctrl.Result{}, nil
+		return nil
 	}
 
 	odigosConfig := &odigosv1.OdigosConfiguration{}
 	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: consts.OdigosConfigurationName}, odigosConfig)
 	if err != nil {
 		logger.Error(err, "error fetching odigos configuration")
-		return ctrl.Result{}, err
+		return err
 	}
 
 	runtimeResults, err := runtimeInspection(pods, odigosConfig.Spec.IgnoredContainers)
 	if err != nil {
 		logger.Error(err, "error inspecting pods")
-		return ctrl.Result{}, err
+		return err
 	}
 
 	err = persistRuntimeResults(ctx, runtimeResults, object, kubeClient, scheme)
 	if err != nil {
 		logger.Error(err, "error persisting runtime results")
-		return ctrl.Result{}, err
+		return err
 	}
 
-	return ctrl.Result{}, nil
+	return nil
 }
 
 func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv1.RuntimeDetailsByContainer, error) {

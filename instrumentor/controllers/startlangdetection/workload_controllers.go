@@ -3,6 +3,8 @@ package startlangdetection
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
@@ -85,6 +87,7 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 				},
 				Spec: odigosv1.InstrumentationConfigSpec{
 					Config:                    []odigosv1.WorkloadInstrumentationConfig{},
+					SdkConfigs:                []odigosv1.SdkConfig{},
 					RuntimeDetailsInvalidated: true,
 				},
 			}
@@ -108,10 +111,14 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 		return err
 	}
 
-	// TODO(edenfed): Already exists - request recalculating language detection
+	// Already exists - request recalculating language detection
 	// Recalculation happens in three cases:
 	// 1. Workload spec changed / rolling restart (scaled to zero and then back to one)
 	// 2. Odigos config changed
-	// 3. Namespace labeled for instrumentation
-	return nil
+	logger.V(0).Info("Requested recalculation of runtime details from odiglets", "name", instConfigName, "namespace", namespace)
+	_, err = controllerutil.CreateOrPatch(ctx, k8sClient, &instConfig, func() error {
+		instConfig.Spec.RuntimeDetailsInvalidated = true
+		return nil
+	})
+	return err
 }
