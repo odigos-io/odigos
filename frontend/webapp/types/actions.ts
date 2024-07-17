@@ -5,6 +5,7 @@ export enum ActionsType {
   ERROR_SAMPLER = 'ErrorSampler',
   PROBABILISTIC_SAMPLER = 'ProbabilisticSampler',
   LATENCY_SAMPLER = 'LatencySampler',
+  PII_MASKING = 'PiiMasking',
 }
 
 export enum ActionsSortType {

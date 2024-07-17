@@ -166,6 +166,10 @@ export const ACTIONS = {
     TITLE: 'Latency Sampler',
     DESCRIPTION: `The “Latency Sampler” Odigos Action is an Endpoint Action that samples traces based on their duration for a specific service and endpoint (HTTP route) filter.`,
   },
+  PiiMasking: {
+    TITLE: 'PII Masking',
+    DESCRIPTION: `The “PII Masking” Odigos Action is an Endpoint Action that masks PII (Personally Identifiable Information) attributes from telemetry signals.`,
+  },
   SEARCH_ACTION: 'Search Action',
 };
 
