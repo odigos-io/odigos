@@ -55,11 +55,6 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, fmt.Errorf("missing pid in agent description")
 	}
 
-	if firstMessage.PackageStatuses == nil {
-		// this might come from an older agent which not yet supports package statuses
-		c.logger.Info("missing package statuses in first agent to server message", "deviceId", deviceId)
-	}
-
 	k8sAttributes, pod, err := c.deviceIdCache.GetAttributesFromDevice(ctx, deviceId)
 	if err != nil {
 		c.logger.Error(err, "failed to get attributes from device", "deviceId", deviceId)
