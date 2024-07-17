@@ -59,13 +59,15 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 		dm.mu.Lock()
 		defer dm.mu.Unlock()
 		defer dm.finishProgress()
+		var err error
 
 		for i := 0; i < retries; i++ {
-			_, err := syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version)
+			_, err = syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version)
 			if err == nil {
 				return
 			}
 		}
+		log.FromContext(ctx).Error(err, "Failed to sync DaemonSet")
 	})
 }
 
@@ -83,7 +85,7 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		return nil, err
 	}
 
-	configMap, err := getConfigMap(ctx, c)
+	configMap, err := getConfigMap(ctx, c, datacollection.Namespace)
 	if err != nil {
 		logger.Error(err, "Failed to get Config Map data")
 		return nil, err

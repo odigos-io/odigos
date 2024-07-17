@@ -3,7 +3,6 @@ package datacollection
 import (
 	"context"
 	"fmt"
-	"github.com/odigos-io/odigos/common/consts"
 	"reflect"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
@@ -279,9 +278,9 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 	return string(data), nil
 }
 
-func getConfigMap(ctx context.Context, c client.Client) (*v1.ConfigMap, error) {
+func getConfigMap(ctx context.Context, c client.Client, namespace string) (*v1.ConfigMap, error) {
 	configMap := &v1.ConfigMap{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: consts.DefaultOdigosNamespace, Name: constsK8s.OdigosNodeCollectorConfigMapName}, configMap); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: constsK8s.OdigosNodeCollectorConfigMapName}, configMap); err != nil {
 		return nil, err
 	}
 
