@@ -33,6 +33,7 @@ class OpAMPHTTPClient:
         self.event = event
         self.next_sequence_num = 0
         self.instance_uid = uuid7().__str__()
+        self.remote_config_status = None
 
     def start(self):
         self.client_thread = threading.Thread(target=self.run, name="OpAMPClientThread", daemon=True)
@@ -52,9 +53,10 @@ class OpAMPHTTPClient:
     def send_first_message_with_retry(self) -> None:
         max_retries = 5
         delay = 2
-        for attempt in range(1, max_retries + 1):        
-            first_message_server_to_agent = self.send_full_state()
+        for attempt in range(1, max_retries + 1):
             try:
+                first_message_server_to_agent = self.send_full_state()
+                self.update_remote_config_status(first_message_server_to_agent)
                 self.resource_attributes = utils.parse_first_message_to_resource_attributes(first_message_server_to_agent, opamp_logger)
                 break
             except Exception as e:
@@ -68,18 +70,24 @@ class OpAMPHTTPClient:
             with self.condition:
                 try:
                     server_to_agent = self.send_heartbeat()
+                    if self.update_remote_config_status(server_to_agent):
+                        opamp_logger.info("Remote config updated, applying changes...")
+                        # TODO: implement changes based on the remote config
+
                     if server_to_agent.flags & opamp_pb2.ServerToAgentFlags_ReportFullState:
                         opamp_logger.info("Received request to report full state")
-                        self.send_full_state()
+                        server_to_agent = self.send_full_state()
+                        self.update_remote_config_status(server_to_agent)
 
                 except requests.RequestException as e:
                     opamp_logger.error(f"Error fetching data: {e}")
                 self.condition.wait(30)
-            
-    def send_heartbeat(self):
+
+    def send_heartbeat(self) -> opamp_pb2.ServerToAgent:
         opamp_logger.debug("Sending heartbeat to OpAMP server...") 
         try:
-            return self.send_agent_to_server_message(opamp_pb2.AgentToServer())
+            agent_to_server = opamp_pb2.AgentToServer(remote_config_status=self.remote_config_status)
+            return self.send_agent_to_server_message(agent_to_server)
         except requests.RequestException as e:
             opamp_logger.error(f"Error sending heartbeat to OpAMP server: {e}")
 
@@ -107,9 +115,13 @@ class OpAMPHTTPClient:
         )
         return self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description))
     
-    def send_agent_to_server_message(self, message: opamp_pb2.AgentToServer) -> opamp_pb2.ServerToAgent:
+    def send_agent_to_server_message(self, message: opamp_pb2.AgentToServer) -> opamp_pb2.ServerToAgent: 
+        
         message.instance_uid = self.instance_uid.encode('utf-8')
-        message.sequence_num = self.next_sequence_num
+        message.sequence_num = self.next_sequence_num    
+        if self.remote_config_status:
+            message.remote_config_status.CopyFrom(self.remote_config_status)
+    
         self.next_sequence_num += 1
         message_bytes = message.SerializeToString()
         
@@ -163,3 +175,12 @@ class OpAMPHTTPClient:
         self.client_thread.join()
         
         self.send_agent_to_server_message(disconnect_message)
+        
+    def update_remote_config_status(self, server_to_agent: opamp_pb2.ServerToAgent) -> bool:
+        if server_to_agent.HasField("remote_config"):
+            remote_config_hash = server_to_agent.remote_config.config_hash
+            remote_config_status = opamp_pb2.RemoteConfigStatus(last_remote_config_hash=remote_config_hash)
+            self.remote_config_status = remote_config_status
+            return True
+        
+        return False        
