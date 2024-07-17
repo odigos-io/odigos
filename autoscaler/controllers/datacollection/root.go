@@ -13,7 +13,7 @@ import (
 var dm = &DelayManager{}
 
 const (
-	daemonSetSyncDelay = 20 * time.Second
+	daemonSetSyncDelay = 5 * time.Second
 	syncDaemonsetRetry = 3
 )
 
