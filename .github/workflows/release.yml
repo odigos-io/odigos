@@ -22,12 +22,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Determine Tag Value
-        id: set_tag
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
           elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_OUTPUT
+            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
           else
             echo "Unknown event type"
             exit 1
@@ -36,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ steps.set_tag.outputs.tag }}
+          ref: ${{ env.TAG }}
 
       - name: Set env
         id: vars
@@ -49,12 +48,12 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Starting Odigos CLI release", "tag":"${{ steps.set_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Starting Odigos CLI release", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Verify Components Image Ready
         run: |
           declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet")
-          TAG_TO_CHECK=${{ steps.set_tag.outputs.tag }}
+          TAG_TO_CHECK=${{ env.TAG }}
 
           for REPO in "${REPOS[@]}"; do
             echo "Checking tag $TAG_TO_CHECK in $REPO..."
@@ -96,7 +95,7 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
             https://api.github.com/repos/odigos-io/odigos-charts/dispatches \
-            -d '{"event_type": "create_release_pr", "client_payload": {"tag": "${{ steps.set_tag.outputs.tag }}"}}'
+            -d '{"event_type": "create_release_pr", "client_payload": {"tag": "${{ env.TAG }}"}}'
 
       - uses: ko-build/setup-ko@v0.7
 
@@ -105,17 +104,17 @@ jobs:
         env:
           KO_DOCKER_REPO: ${{ env.DOCKERHUB_ORG }}/odigos-cli
           KO_CONFIG_PATH: ./.ko.yaml
-          VERSION: ${{ steps.set_tag.outputs.tag }}
+          VERSION: ${{ env.TAG }}
           SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
           DATE: ${{ steps.vars.outputs.date }}
         run: |
-          ko build --bare --tags latest --tags ${{ steps.set_tag.outputs.tag }} --platform=all .
+          ko build --bare --tags latest --tags ${{ env.TAG }} --platform=all .
 
       - name: Notify Slack End
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos CLI released successfully. new version is ready", "tag":"${{ steps.set_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos CLI released successfully. new version is ready", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack on Failure
         if: failure()
@@ -124,12 +123,23 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos CLI", "tag":"${{ steps.set_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos CLI", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   release-helm:
     needs: [release-cli]
     runs-on: ubuntu-latest
     steps:
+      - name: Determine Tag Value
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
+          else
+            echo "Unknown event type"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
