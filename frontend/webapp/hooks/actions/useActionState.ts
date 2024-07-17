@@ -127,7 +127,8 @@ export function useActionState() {
     if (
       type === ActionsType.ERROR_SAMPLER ||
       type === ActionsType.PROBABILISTIC_SAMPLER ||
-      type === ActionsType.LATENCY_SAMPLER
+      type === ActionsType.LATENCY_SAMPLER ||
+      type === ActionsType.PII_MASKING
     ) {
       return signals.filter((signal) => signal.label === 'Traces');
     }
