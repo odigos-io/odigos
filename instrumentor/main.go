@@ -20,6 +20,8 @@ import (
 	"flag"
 	"os"
 
+	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -117,7 +119,9 @@ func main() {
 								Name:      deployment.Name,
 								Namespace: deployment.Namespace,
 								Labels:    deployment.Labels,
+								UID:       deployment.UID,
 							},
+							Status: deployment.Status,
 						}
 
 						newDep.Spec.Template.Spec = deployment.Spec.Template.Spec
@@ -133,7 +137,9 @@ func main() {
 								Name:      ss.Name,
 								Namespace: ss.Namespace,
 								Labels:    ss.Labels,
+								UID:       ss.UID,
 							},
+							Status: ss.Status,
 						}
 
 						newSs.Spec.Template.Spec = ss.Spec.Template.Spec
@@ -149,7 +155,9 @@ func main() {
 								Name:      ds.Name,
 								Namespace: ds.Namespace,
 								Labels:    ds.Labels,
+								UID:       ds.UID,
 							},
+							Status: ds.Status,
 						}
 
 						newDs.Spec.Template.Spec = ds.Spec.Template.Spec
@@ -174,6 +182,12 @@ func main() {
 	}
 
 	err = deleteinstrumentedapplication.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller")
+		os.Exit(1)
+	}
+
+	err = startlangdetection.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller")
 		os.Exit(1)
