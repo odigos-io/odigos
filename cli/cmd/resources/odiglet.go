@@ -592,6 +592,11 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									ReadOnly:  true,
 								},
 								{
+									Name:      "odigos",
+									MountPath: "/var/odigos",
+									ReadOnly:  true,
+								},
+								{
 									Name:      "kernel-debug",
 									MountPath: "/sys/kernel/debug",
 								},
