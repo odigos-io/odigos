@@ -5,7 +5,6 @@
     "dark": "/logo/dark.svg"
   },
   "favicon": "/logo/icon.svg",
-
   "colors": {
     "primary": "#30638E",
     "light": "#C0E0DE",
@@ -16,7 +15,7 @@
     },
     "background": {
       "light": "#F5F5F5",
-      "dark": "#242023"
+      "dark": "#151515"
     }
   },
   "topbarCtaButton": {
