@@ -1,9 +1,21 @@
 TAG ?= $(shell odigos version --cluster)
+ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 ORG := keyval
 
 .PHONY: build-odiglet
 build-odiglet:
 	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG)
+
+.PHONY: verify-nodejs-agent
+verify-nodejs-agent:
+	@if [ ! -f ../opentelemetry-node/package.json ]; then \
+		echo "Error: To build odiglet agents from source, first clone the agents code locally"; \
+		exit 1; \
+	fi
+
+.PHONY: build-odiglet-with-agents
+build-odiglet-with-agents:
+	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-native-community-src=../opentelemetry-node
 
 .PHONY: build-autoscaler
 build-autoscaler:	
@@ -117,6 +129,12 @@ restart-collector:
 deploy-odiglet:
 	make build-odiglet TAG=$(TAG) && make load-to-kind-odiglet TAG=$(TAG) && make restart-odiglet
 
+# Use this target to deploy odiglet with local clones of the agents.
+# To work, the agents must be cloned in the same directory as the odigos (e.g. in '../opentelemetry-node')
+# There you can make code changes to the agents and deploy them with the odiglet.
+.PHONY: deploy-odiglet-with-agents
+deploy-odiglet-with-agents: verify-nodejs-agent build-odiglet-with-agents load-to-kind-odiglet restart-odiglet
+
 .PHONY: deploy-autoscaler
 deploy-autoscaler:
 	make build-autoscaler TAG=$(TAG) && make load-to-kind-autoscaler TAG=$(TAG) && make restart-autoscaler
@@ -164,3 +182,10 @@ check-clean-work-tree:
 		echo 'Working tree is not clean, did you forget to run "make go-mod-tidy"?'; \
 		exit 1; \
 	fi
+
+# installs odigos from the local source, with local changes to api and cli directorie reflected in the odigos deployment
+.PHONY: cli-install
+cli-install:
+	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
+	go run -tags=embed_manifests ./cli install --version $(ODIGOS_CLI_VERSION)
+
