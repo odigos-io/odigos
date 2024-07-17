@@ -479,10 +479,18 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							},
 						},
 						{
-							Name: "var-dir",
+							Name: "pod-resources",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var",
+									Path: "/var/lib/kubelet/pod-resources",
+								},
+							},
+						},
+						{
+							Name: "device-plugins-dir",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/var/lib/kubelet/device-plugins",
 								},
 							},
 						},
@@ -503,6 +511,26 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							},
 						},
 					}, odigosSeLinuxHostVolumes...),
+					InitContainers: []corev1.Container{
+						{
+							Name:  "init",
+							Image: containers.GetImageName(imagePrefix, imageName, version),
+							Command: []string{
+								"/root/odiglet",
+							},
+							Args: []string{
+								"init",
+							},
+							Resources: corev1.ResourceRequirements{},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "odigos",
+									MountPath: "/var/odigos",
+								},
+							},
+							ImagePullPolicy: "IfNotPresent",
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Name:  OdigletContainerName,
@@ -533,7 +561,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									},
 								},
 								{
-									Name: "OTEL_LOG_LEVEL",
+									Name:  "OTEL_LOG_LEVEL",
 									Value: "info",
 								},
 							}, dynamicEnv...),
@@ -549,19 +577,17 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							Resources: corev1.ResourceRequirements{},
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
-									Name:             "run-dir",
-									MountPath:        "/run",
-									MountPropagation: ptrMountPropagationMode("Bidirectional"),
+									Name:      "run-dir",
+									MountPath: "/run",
 								},
 								{
-									Name:             "var-dir",
-									MountPath:        "/var",
-									MountPropagation: ptrMountPropagationMode("Bidirectional"),
+									Name:      "device-plugins-dir",
+									MountPath: "/var/lib/kubelet/device-plugins",
 								},
 								{
-									Name:             "odigos",
-									MountPath:        "/var/odigos",
-									MountPropagation: ptrMountPropagationMode("Bidirectional"),
+									Name:      "pod-resources",
+									MountPath: "/var/lib/kubelet/pod-resources",
+									ReadOnly:  true,
 								},
 								{
 									Name:      "kernel-debug",

@@ -1,7 +1,6 @@
 package fs
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,12 +35,11 @@ func CopyAgentsDirectoryToHost() error {
 		}
 	}
 
-	cmd := exec.Command("/bin/bash", "-c", "cp -r " + containerDir + "/* "  + hostDir)
-	output, err := cmd.CombinedOutput()
+	err = copyDirectories(containerDir, hostDir)
 	if err != nil {
-		return fmt.Errorf("error copying agents directory to host: %v, output %s", err, output)
+		log.Logger.Error(err, "Error copying instrumentation directory to host")
+		return err
 	}
-
 
 	// Check if the semanage command exists when running on RHEL/CoreOS
 	_, err = exec.LookPath(filepath.Join(chrootDir, semanagePath))

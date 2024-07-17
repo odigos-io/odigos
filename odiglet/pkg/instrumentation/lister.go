@@ -60,11 +60,6 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf
 		}
 	}
 
-	//err = fs.CopyAgentsDirectoryToHost()
-	//if err != nil {
-	//	return nil, err
-	//}
-
 	return &lister{
 		plugins: availablePlugins,
 	}, nil
