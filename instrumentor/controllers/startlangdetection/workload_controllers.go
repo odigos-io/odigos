@@ -84,7 +84,8 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 					Namespace: namespace,
 				},
 				Spec: odigosv1.InstrumentationConfigSpec{
-					Config: []odigosv1.WorkloadInstrumentationConfig{},
+					Config:                    []odigosv1.WorkloadInstrumentationConfig{},
+					RuntimeDetailsInvalidated: true,
 				},
 			}
 

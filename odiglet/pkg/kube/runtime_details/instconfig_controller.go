@@ -35,6 +35,11 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		return reconcile.Result{}, nil
 	}
 
+	// This reconciler is only interested in InstrumentationConfig objects that have their RuntimeDetailsInvalidated field set to true
+	if !instConfig.Spec.RuntimeDetailsInvalidated {
+		return reconcile.Result{}, nil
+	}
+
 	if len(instConfig.OwnerReferences) != 1 {
 		return reconcile.Result{}, fmt.Errorf("InstrumentationConfig %s/%s has %d owner references, expected 1", instConfig.Namespace, instConfig.Name, len(instConfig.OwnerReferences))
 	}

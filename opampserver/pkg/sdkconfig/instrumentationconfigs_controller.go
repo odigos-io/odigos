@@ -33,6 +33,11 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
+	if instrumentationConfig.Spec.RuntimeDetailsInvalidated {
+		// This reconciler is only interested in InstrumentationConfig objects that have their RuntimeDetailsInvalidated field set to false
+		return ctrl.Result{}, nil
+	}
+
 	workloadName, workloadKind, err := workload.GetWorkloadInfoRuntimeName(req.Name)
 	if err != nil {
 		return ctrl.Result{}, err
