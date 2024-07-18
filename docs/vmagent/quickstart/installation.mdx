@@ -1,0 +1,37 @@
+---
+title: "Installation"
+sidebarTitle: "Installation"
+---
+
+<Info> Odigos VM Agent is currently available with the Odigos Pro plan. Contact us for more info </Info>
+
+1. After [setting up Odigos repositories](/vmagent/quickstart/preparation), `odigos` package is available through system's package manager:
+
+<Tabs>
+  <Tab title="APT">
+    ```shell
+    sudo apt update
+    sudo apt install odigos
+    ```
+  </Tab>
+  <Tab title="DNF">
+    ```shell
+    sudo dnf install odigos
+    ```
+  </Tab>
+</Tabs>
+
+2. Add your Odigos Pro license key to the agent configuration file `/etc/odigos-vmagent/service.yaml`:
+
+```shell
+on_prem:
+  token: "<your_license_key>"
+```
+
+3. Start the Odigos VM Agent systemd service:
+
+```shell
+sudo systemctl enable --now odigos-vmagent
+```
+
+Odigos VM Agent is now installed on your system and enabled as a systemd service.
