@@ -2,6 +2,7 @@ package runtime_details
 
 import (
 	"context"
+	"errors"
 
 	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
 
@@ -25,6 +26,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+var errNoPodsFound = errors.New("no pods found")
+
+func ignoreNoPodsFoundError(err error) error {
+	if err.Error() == errNoPodsFound.Error() {
+		return nil
+	}
+	return err
+}
+
 func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labels map[string]string,
 	kubeClient client.Client, scheme *runtime.Scheme, object client.Object) error {
 	pods, err := kubeutils.GetRunningPods(ctx, labels, object.GetNamespace(), kubeClient)
@@ -34,7 +44,7 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 	}
 
 	if len(pods) == 0 {
-		return nil
+		return errNoPodsFound
 	}
 
 	odigosConfig := &odigosv1.OdigosConfiguration{}

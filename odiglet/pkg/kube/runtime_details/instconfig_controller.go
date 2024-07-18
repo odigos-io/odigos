@@ -49,7 +49,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 	workload, labels, err := getWorkloadAndLabelsfromOwner(ctx, i.Client, instConfig.Namespace, instConfig.OwnerReferences[0])
 	err = inspectRuntimesOfRunningPods(ctx, &logger, labels, i.Client, i.Scheme, workload)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, ignoreNoPodsFoundError(err)
 	}
 
 	// Patch RuntimeDetailsInvalidated to false after runtime details have been recalculated
