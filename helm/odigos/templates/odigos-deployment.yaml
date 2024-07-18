@@ -1,0 +1,9 @@
+# THIS RESOURCE STILL LIVES IN odigos-io/odigos-charts repo
+# ADDED HERE FOR TESTING WORKFLOWS
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-deployment
+  namespace: {{ .Release.Namespace }}
+data:
+  ODIGOS_VERSION: {{ .Values.image.tag | default .Chart.AppVersion }}

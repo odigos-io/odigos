@@ -3,23 +3,22 @@ package datacollection
 import (
 	"context"
 	"fmt"
-
-	"github.com/odigos-io/odigos/autoscaler/utils"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
-
-	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
-	"k8s.io/apimachinery/pkg/util/intstr"
-
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
+	"github.com/odigos-io/odigos/autoscaler/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sync"
+	"time"
 )
 
 const (
@@ -38,17 +37,45 @@ var (
 	}
 )
 
-func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace string) (*corev1.PodSpec, error) {
-	odigletDaemonset := &appsv1.DaemonSet{}
-
-	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: odigletDaemonSetName}, odigletDaemonset); err != nil {
-		return nil, err
-	}
-
-	return &odigletDaemonset.Spec.Template.Spec, nil
+type DelayManager struct {
+	mu         sync.Mutex
+	inProgress bool
 }
 
-func syncDaemonSet(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup, configData string, ctx context.Context,
+// RunSyncDaemonSetWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
+func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int, dests *odigosv1.DestinationList, collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string) {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
+	// Skip new calls if the function is already in progress
+	if dm.inProgress {
+		return
+	}
+
+	dm.inProgress = true
+
+	// Finish the function execution after the delay
+	time.AfterFunc(delay, func() {
+		dm.mu.Lock()
+		defer dm.mu.Unlock()
+		defer dm.finishProgress()
+		var err error
+
+		for i := 0; i < retries; i++ {
+			_, err = syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version)
+			if err == nil {
+				return
+			}
+		}
+		log.FromContext(ctx).Error(err, "Failed to sync DaemonSet")
+	})
+}
+
+func (dm *DelayManager) finishProgress() {
+	dm.inProgress = false
+}
+
+func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup,
 	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
 
@@ -58,7 +85,13 @@ func syncDaemonSet(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 		return nil, err
 	}
 
-	desiredDs, err := getDesiredDaemonSet(datacollection, configData, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
+	configMap, err := getConfigMap(ctx, c, datacollection.Namespace)
+	if err != nil {
+		logger.Error(err, "Failed to get Config Map data")
+		return nil, err
+	}
+
+	desiredDs, err := getDesiredDaemonSet(datacollection, configMap.String(), scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -91,6 +124,16 @@ func syncDaemonSet(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 	}
 
 	return updated, nil
+}
+
+func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace string) (*corev1.PodSpec, error) {
+	odigletDaemonset := &appsv1.DaemonSet{}
+
+	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: odigletDaemonSetName}, odigletDaemonset); err != nil {
+		return nil, err
+	}
+
+	return &odigletDaemonset.Spec.Template.Spec, nil
 }
 
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string,
@@ -260,6 +303,10 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 	return desiredDs, nil
 }
 
+func boolPtr(b bool) *bool {
+	return &b
+}
+
 func patchDaemonSet(existing *appsv1.DaemonSet, desired *appsv1.DaemonSet, ctx context.Context, c client.Client) (*appsv1.DaemonSet, error) {
 	updated := existing.DeepCopy()
 	if updated.Annotations == nil {
@@ -284,8 +331,4 @@ func patchDaemonSet(existing *appsv1.DaemonSet, desired *appsv1.DaemonSet, ctx c
 	}
 
 	return updated, nil
-}
-
-func boolPtr(b bool) *bool {
-	return &b
 }

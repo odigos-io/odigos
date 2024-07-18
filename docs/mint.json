@@ -4,7 +4,7 @@
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/logo/icon.svg",
   "colors": {
     "primary": "#30638E",
     "light": "#C0E0DE",
@@ -12,6 +12,10 @@
     "anchors": {
       "from": "#264F71",
       "to": "#476987"
+    },
+    "background": {
+      "light": "#F5F5F5",
+      "dark": "#151515"
     }
   },
   "topbarCtaButton": {
@@ -32,8 +36,8 @@
   ],
   "tabs": [
     {
-    "name": "VM Agent",
-    "url": "vmagent"
+      "name": "VM Agent",
+      "url": "vmagent"
     }
   ],
   "navigation": [
@@ -57,10 +61,7 @@
           "pages": [
             {
               "group": "Installation",
-              "pages": [
-                "setup/installation",
-                "setup/installation-options"
-              ]
+              "pages": ["setup/installation", "setup/installation-options"]
             },
             "setup/upgrade",
             "setup/uninstall"
@@ -175,7 +176,6 @@
             "backends/sumologic",
             "backends/tempo"
           ]
-
         }
       ]
     },
@@ -191,10 +191,7 @@
     },
     {
       "group": "Contibution Guidelines",
-      "pages": [
-        "adding-new-dest",
-        "debugging"
-      ]
+      "pages": ["adding-new-dest", "debugging"]
     },
     {
       "group": "VM Agent",
