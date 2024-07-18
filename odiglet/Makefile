@@ -1,7 +1,7 @@
 .PHONY: build-odiglet generate
 
 build-odiglet: generate
-	go build -o odiglet cmd/main.go
+	CGO_ENABLED=0 go build -o odiglet cmd/main.go
 
 debug-build-odiglet: generate
 	go build -o odiglet -gcflags "all=-N -l" cmd/main.go
