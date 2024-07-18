@@ -85,6 +85,13 @@
       "pages": [
         "instrumentations/overview",
         {
+          "group": "Go",
+          "pages": [
+            "instrumentations/golang/golang",
+            "instrumentations/golang/enrichment"
+          ]
+        },
+        {
           "group": "Node.js",
           "pages": [
             "instrumentations/nodejs/nodejs",
