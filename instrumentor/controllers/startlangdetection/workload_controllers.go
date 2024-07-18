@@ -46,8 +46,8 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	return reconcileWorkload(ctx, r.Client, &appsv1.StatefulSet{}, "StatefulSet", req, r.Scheme)
 }
 
-func reconcileWorkload(ctx context.Context, k8sClient client.Client, obj client.Object, objString string, req ctrl.Request, scheme *runtime.Scheme) (ctrl.Result, error) {
-	instConfigName := workload.GetRuntimeObjectName(req.Name, objString)
+func reconcileWorkload(ctx context.Context, k8sClient client.Client, obj client.Object, objKind string, req ctrl.Request, scheme *runtime.Scheme) (ctrl.Result, error) {
+	instConfigName := workload.GetRuntimeObjectName(req.Name, objKind)
 	err := getWorkloadObject(ctx, k8sClient, req, obj)
 	if err != nil {
 		// Deleted objects should be filtered in the event filter
