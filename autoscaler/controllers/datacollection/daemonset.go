@@ -91,7 +91,7 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		return nil, err
 	}
 
-	desiredDs, err := getDesiredDaemonSet(datacollection, configMap.String(), scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
+	desiredDs, err := getDesiredDaemonSet(datacollection, configMap, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -102,10 +102,9 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 	}
 
 	existing := &appsv1.DaemonSet{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: datacollection.Namespace, Name: datacollection.Name}, existing); err != nil {
+	if err = c.Get(ctx, client.ObjectKey{Namespace: datacollection.Namespace, Name: datacollection.Name}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Info("Creating DaemonSet")
-			if err := c.Create(ctx, desiredDs); err != nil {
+			if err = createDaemonSet(ctx, c, desiredDs); err != nil {
 				logger.Error(err, "Failed to create DaemonSet")
 				return nil, err
 			}
@@ -126,6 +125,11 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 	return updated, nil
 }
 
+func createDaemonSet(ctx context.Context, c client.Client, ds *appsv1.DaemonSet) error {
+	log.FromContext(ctx).Info("Creating DaemonSet")
+	return c.Create(ctx, ds)
+}
+
 func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace string) (*corev1.PodSpec, error) {
 	odigletDaemonset := &appsv1.DaemonSet{}
 
@@ -136,10 +140,7 @@ func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace 
 	return &odigletDaemonset.Spec.Template.Spec, nil
 }
 
-func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string,
-	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
-	odigletDaemonsetPodSpec *corev1.PodSpec,
-) (*appsv1.DaemonSet, error) {
+func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configMap *corev1.ConfigMap, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigletDaemonsetPodSpec *corev1.PodSpec) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
 
 	// 50% of the nodes can be unavailable during the update.
@@ -151,6 +152,8 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 	// maxSurge is the number of pods that can be created above the desired number of pods.
 	// we do not want more then 1 datacollection pod on the same node as they need to bind to oltp ports.
 	maxSurge := intstr.FromInt(0)
+
+	configData := configMap.String()
 
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
