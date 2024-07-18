@@ -26,11 +26,7 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 	var ns corev1.Namespace
 	err := n.Get(ctx, request.NamespacedName, &ns)
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-		logger.Error(err, "error fetching namespace object")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if !k8sutils.IsObjectLabeledForInstrumentation(&ns) {
