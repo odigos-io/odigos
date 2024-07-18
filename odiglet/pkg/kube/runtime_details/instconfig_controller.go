@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
 
@@ -53,16 +52,15 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 	}
 
 	// Patch RuntimeDetailsInvalidated to false after runtime details have been recalculated
-	_, err = controllerutil.CreateOrPatch(ctx, i.Client, &instConfig, func() error {
-		instConfig.Spec.RuntimeDetailsInvalidated = false
-		return nil
-	})
-
+	updated := instConfig.DeepCopy()
+	updated.Spec.RuntimeDetailsInvalidated = false
+	patch := client.MergeFrom(&instConfig)
+	err = i.Patch(ctx, updated, patch)
 	return reconcile.Result{}, err
 }
 
 func getWorkloadAndLabelsfromOwner(ctx context.Context, k8sClient client.Client, ns string, ownerReference metav1.OwnerReference) (client.Object, map[string]string, error) {
-	workloadName, workloadKind, err := getWorkloadNameFromOwnerReference(ownerReference)
+	workloadName, workloadKind, err := utils.GetWorkloadNameFromOwnerReference(ownerReference)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -94,22 +92,4 @@ func getWorkloadAndLabelsfromOwner(ctx context.Context, k8sClient client.Client,
 	}
 
 	return nil, nil, errors.New("workload kind not supported")
-}
-
-func getWorkloadNameFromOwnerReference(ownerReference metav1.OwnerReference) (string, string, error) {
-	name := ownerReference.Name
-	kind := ownerReference.Kind
-	if kind == "ReplicaSet" {
-		// ReplicaSet name is in the format <deployment-name>-<random-string>
-		hyphenIndex := strings.LastIndex(name, "-")
-		if hyphenIndex == -1 {
-			// It is possible for a user to define a bare ReplicaSet without a deployment, currently not supporting this
-			return "", "", errors.New("replicaset name does not contain a hyphen")
-		}
-		// Extract deployment name from ReplicaSet name
-		return name[:hyphenIndex], kind, nil
-	} else if kind == "DaemonSet" || kind == "Deployment" || kind == "StatefulSet" {
-		return name, kind, nil
-	}
-	return "", "", fmt.Errorf("kind %s not supported", kind)
 }

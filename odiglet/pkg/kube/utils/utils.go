@@ -2,6 +2,9 @@ package utils
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -61,4 +64,22 @@ func GetResourceAttributes(workload *common.PodWorkload, podName string) []attri
 	}
 
 	return attrs
+}
+
+func GetWorkloadNameFromOwnerReference(ownerReference metav1.OwnerReference) (string, string, error) {
+	name := ownerReference.Name
+	kind := ownerReference.Kind
+	if kind == "ReplicaSet" {
+		// ReplicaSet name is in the format <deployment-name>-<random-string>
+		hyphenIndex := strings.LastIndex(name, "-")
+		if hyphenIndex == -1 {
+			// It is possible for a user to define a bare ReplicaSet without a deployment, currently not supporting this
+			return "", "", errors.New("replicaset name does not contain a hyphen")
+		}
+		// Extract deployment name from ReplicaSet name
+		return name[:hyphenIndex], "Deployment", nil
+	} else if kind == "DaemonSet" || kind == "Deployment" || kind == "StatefulSet" {
+		return name, kind, nil
+	}
+	return "", "", fmt.Errorf("kind %s not supported", kind)
 }
