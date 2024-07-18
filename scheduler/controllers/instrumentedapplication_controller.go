@@ -6,7 +6,7 @@ import (
 	"github.com/odigos-io/odigos/common/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/scheduler/controllers/collectorgroups"
+	nodeCollectorGroupUtil "github.com/odigos-io/odigos/scheduler/controllers/collectorgroups"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -63,8 +63,8 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 		}
 	}
 
-	if collectorgroups.ShouldCreateNodeCollectorGroup(clusterCollectorGroup.Status.Ready, dataCollectionExists, numberOfInstrumentedApps) {
-		err = utils.CreateCollectorGroup(ctx, r.Client, collectorgroups.NewNodeCollectorGroup())
+	if nodeCollectorGroupUtil.ShouldCreateNodeCollectorGroup(clusterCollectorGroup.Status.Ready, dataCollectionExists, numberOfInstrumentedApps) {
+		err = utils.CreateCollectorGroup(ctx, r.Client, nodeCollectorGroupUtil.NewNodeCollectorGroup())
 		if err != nil {
 			logger.Error(err, "failed to create data collection collector group")
 			return ctrl.Result{}, err
