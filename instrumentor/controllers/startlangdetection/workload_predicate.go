@@ -1,4 +1,4 @@
-package runtime_details
+package startlangdetection
 
 import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -60,7 +60,8 @@ func (i *WorkloadEnabledPredicate) Update(e event.UpdateEvent) bool {
 		return true
 	}
 
-	// 2. replicas became available
+	// 2. replicas became available - we don't check the label because it can be on the namespace-level and not on the workload
+	// Reonciler will check the label itself.
 	replicasBecameAvailable := (oldReplicas == 0) && (newReplicas > 0)
 	if replicasBecameAvailable {
 		return true
