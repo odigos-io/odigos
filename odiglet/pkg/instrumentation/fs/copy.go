@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 
@@ -18,6 +19,12 @@ const (
 	// 32 KB buffer for I/O operations
 	bufferSize = 32 * 1024
 )
+
+// getNumberOfWorkers returns the number of workers to use for copying files.
+// It returns the minimum of maxWorkers and the number of CPUs divided by 4.
+func getNumberOfWorkers() int {
+	return min(maxWorkers, max(1, runtime.NumCPU()/4))
+}
 
 func copyDirectories(srcDir string, destDir string) error {
 	start := time.Now()
@@ -33,11 +40,12 @@ func copyDirectories(srcDir string, destDir string) error {
 	}
 
 	// Create a buffered channel to control concurrency
-	fileChan := make(chan string, maxWorkers)
+	numWorkers := getNumberOfWorkers()
+	fileChan := make(chan string, numWorkers)
 	var wg sync.WaitGroup
 
 	// Start worker goroutines
-	for i := 0; i < maxWorkers; i++ {
+	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go worker(fileChan, srcDir, destDir, &wg)
 	}

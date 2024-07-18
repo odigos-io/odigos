@@ -3,7 +3,7 @@ package startlangdetection
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,7 +29,7 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	for _, dep := range deps.Items {
-		if !utils.IsInstrumentationDisabledExplicitly(&dep) {
+		if !workload.IsInstrumentationDisabledExplicitly(&dep) {
 			req := ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}
 			_, err = reconcileWorkload(ctx, r.Client, &appsv1.Deployment{}, "Deployment", req, r.Scheme)
 			if err != nil {
@@ -46,7 +46,7 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	for _, st := range sts.Items {
-		if !utils.IsInstrumentationDisabledExplicitly(&st) {
+		if !workload.IsInstrumentationDisabledExplicitly(&st) {
 			req := ctrl.Request{NamespacedName: client.ObjectKey{Name: st.Name, Namespace: st.Namespace}}
 			_, err = reconcileWorkload(ctx, r.Client, &appsv1.StatefulSet{}, "StatefulSet", req, r.Scheme)
 			if err != nil {
@@ -63,7 +63,7 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	for _, ds := range dss.Items {
-		if !utils.IsInstrumentationDisabledExplicitly(&ds) {
+		if !workload.IsInstrumentationDisabledExplicitly(&ds) {
 			req := ctrl.Request{NamespacedName: client.ObjectKey{Name: ds.Name, Namespace: ds.Namespace}}
 			_, err = reconcileWorkload(ctx, r.Client, &appsv1.DaemonSet{}, "DaemonSet", req, r.Scheme)
 			if err != nil {

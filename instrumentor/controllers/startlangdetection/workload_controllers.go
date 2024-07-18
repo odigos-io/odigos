@@ -8,8 +8,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
-
 	appsv1 "k8s.io/api/apps/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -56,7 +54,7 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, obj client.
 		return ctrl.Result{}, err
 	}
 
-	instrumented, err := utils.IsWorkloadInstrumentationEffectiveEnabled(ctx, k8sClient, obj)
+	instrumented, err := workload.IsWorkloadInstrumentationEffectiveEnabled(ctx, k8sClient, obj)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

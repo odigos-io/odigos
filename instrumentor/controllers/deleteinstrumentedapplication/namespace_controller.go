@@ -19,7 +19,7 @@ package deleteinstrumentedapplication
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -46,7 +46,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// If namespace is labeled, skip
-	if err == nil && utils.IsInstrumentationLabelEnabled(&ns) {
+	if err == nil && workload.IsObjectLabeledForInstrumentation(&ns) {
 		return ctrl.Result{}, nil
 	}
 
@@ -59,7 +59,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	for _, dep := range deps.Items {
-		if !utils.IsInstrumentationLabelEnabled(&dep) {
+		if !workload.IsObjectLabeledForInstrumentation(&dep) {
 			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, &dep); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
@@ -80,7 +80,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	for _, s := range ss.Items {
-		if !utils.IsInstrumentationLabelEnabled(&s) {
+		if !workload.IsObjectLabeledForInstrumentation(&s) {
 			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, &s); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
@@ -101,7 +101,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	for _, d := range ds.Items {
-		if !utils.IsInstrumentationLabelEnabled(&d) {
+		if !workload.IsObjectLabeledForInstrumentation(&d) {
 			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, &d); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err

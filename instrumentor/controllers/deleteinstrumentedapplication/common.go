@@ -3,8 +3,6 @@ package deleteinstrumentedapplication
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
-
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -16,7 +14,7 @@ import (
 
 func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
 	logger := log.FromContext(ctx)
-	instEffectiveEnabled, err := utils.IsWorkloadInstrumentationEffectiveEnabled(ctx, kubeClient, workloadObject)
+	instEffectiveEnabled, err := workload.IsWorkloadInstrumentationEffectiveEnabled(ctx, kubeClient, workloadObject)
 	if err != nil {
 		logger.Error(err, "error checking if instrumentation is effective")
 		return err
@@ -46,24 +44,25 @@ func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient clien
 	kind := workload.GetWorkloadKind(workloadObject)
 	instrumentedApplicationName := workload.GetRuntimeObjectName(name, kind)
 
-	err := kubeClient.Delete(ctx, &odigosv1.InstrumentedApplication{
+	instAppErr := kubeClient.Delete(ctx, &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      instrumentedApplicationName,
 		},
 	})
-	if err != nil {
-		return client.IgnoreNotFound(err)
+
+	instConfigErr := kubeClient.Delete(ctx, &odigosv1.InstrumentationConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      instrumentedApplicationName,
+		},
+	})
+	if instAppErr != nil {
+		return client.IgnoreNotFound(instAppErr)
 	}
 
-	err = kubeClient.Delete(ctx, &odigosv1.InstrumentationConfig{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      instrumentedApplicationName,
-		},
-	})
-	if err != nil {
-		return client.IgnoreNotFound(err)
+	if instConfigErr != nil {
+		return client.IgnoreNotFound(instConfigErr)
 	}
 
 	logger := log.FromContext(ctx)
