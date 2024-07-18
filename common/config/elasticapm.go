@@ -10,7 +10,6 @@ import (
 
 const (
 	elasticApmServerEndpoint = "ELASTIC_APM_SERVER_ENDPOINT"
-	elasticApmServerToken    = "${ELASTIC_APM_SECRET_TOKEN}"
 )
 
 type ElasticAPM struct{}
@@ -69,10 +68,6 @@ func (e *ElasticAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 func (e *ElasticAPM) requiredVarsExists(dest ExporterConfigurer) bool {
 	if _, ok := dest.GetConfig()[elasticApmServerEndpoint]; !ok {
-		return false
-	}
-
-	if _, ok := dest.GetConfig()[elasticApmServerToken]; !ok {
 		return false
 	}
 
