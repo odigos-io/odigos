@@ -200,9 +200,9 @@
         {
           "group": "Quickstart",
           "pages": [
-            "vmagent/setup/preparation",
+            "vmagent/quickstart/preparation",
             "vmagent/quickstart/introduction",
-            "vmagent/setup/installation",
+            "vmagent/quickstart/installation",
             "vmagent/quickstart/building-a-pipeline",
             "vmagent/quickstart/generating-data"
           ]
