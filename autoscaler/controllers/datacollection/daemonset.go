@@ -90,8 +90,9 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		logger.Error(err, "Failed to get Config Map data")
 		return nil, err
 	}
+	configData := configMap.String()
 
-	desiredDs, err := getDesiredDaemonSet(datacollection, configMap, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
+	desiredDs, err := getDesiredDaemonSet(datacollection, configData, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -140,7 +141,7 @@ func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace 
 	return &odigletDaemonset.Spec.Template.Spec, nil
 }
 
-func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configMap *corev1.ConfigMap, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigletDaemonsetPodSpec *corev1.PodSpec) (*appsv1.DaemonSet, error) {
+func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigletDaemonsetPodSpec *corev1.PodSpec) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
 
 	// 50% of the nodes can be unavailable during the update.
@@ -152,8 +153,6 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configMap *co
 	// maxSurge is the number of pods that can be created above the desired number of pods.
 	// we do not want more then 1 datacollection pod on the same node as they need to bind to oltp ports.
 	maxSurge := intstr.FromInt(0)
-
-	configData := configMap.String()
 
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
