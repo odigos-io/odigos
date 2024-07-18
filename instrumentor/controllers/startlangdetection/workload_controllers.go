@@ -3,7 +3,8 @@ package startlangdetection
 import (
 	"context"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -11,8 +12,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -76,49 +75,33 @@ func getWorkloadObject(ctx context.Context, k8sClient client.Client, req ctrl.Re
 
 func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme) error {
 	logger := log.FromContext(ctx)
-	var instConfig odigosv1.InstrumentationConfig
-	err := k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: namespace}, &instConfig)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			instConfig = odigosv1.InstrumentationConfig{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      instConfigName,
-					Namespace: namespace,
-				},
-				Spec: odigosv1.InstrumentationConfigSpec{
-					Config:                    []odigosv1.WorkloadInstrumentationConfig{},
-					SdkConfigs:                []odigosv1.SdkConfig{},
-					RuntimeDetailsInvalidated: true,
-				},
-			}
+	instConfig := &odigosv1.InstrumentationConfig{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "odigos.io/v1alpha1",
+			Kind:       "InstrumentationConfig",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      instConfigName,
+			Namespace: namespace,
+		},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			RuntimeDetailsInvalidated: true,
+		},
+	}
 
-			if err = ctrl.SetControllerReference(obj, &instConfig, scheme); err != nil {
-				logger.Error(err, "Failed to set controller reference", "name", instConfigName, "namespace", namespace)
-				return err
-			}
-
-			err = k8sClient.Create(ctx, &instConfig)
-			if err != nil {
-				logger.Error(err, "Failed to create instrumentation config", "name", instConfigName, "namespace", namespace)
-				return err
-			} else {
-				logger.V(0).Info("Requested language detection from odiglets", "name", instConfigName, "namespace", namespace)
-				return nil
-			}
-		}
-
-		logger.Error(err, "Failed to get instrumentation config", "name", instConfigName, "namespace", namespace)
+	if err := ctrl.SetControllerReference(obj, instConfig, scheme); err != nil {
+		logger.Error(err, "Failed to set controller reference", "name", instConfigName, "namespace", namespace)
 		return err
 	}
 
-	// Already exists - request recalculating language detection
-	// Recalculation happens in three cases:
-	// 1. Workload spec changed / rolling restart (scaled to zero and then back to one)
-	// 2. Odigos config changed
-	logger.V(0).Info("Requested recalculation of runtime details from odiglets", "name", instConfigName, "namespace", namespace)
-	_, err = controllerutil.CreateOrPatch(ctx, k8sClient, &instConfig, func() error {
-		instConfig.Spec.RuntimeDetailsInvalidated = true
-		return nil
-	})
-	return err
+	instConfigBytes, _ := yaml.Marshal(instConfig)
+
+	force := true
+	patchOptions := client.PatchOptions{
+		FieldManager: "instrumentor",
+		Force:        &force,
+	}
+
+	logger.V(0).Info("Requested calculation of runtime details from odiglets", "name", instConfigName, "namespace", namespace)
+	return k8sClient.Patch(ctx, instConfig, client.RawPatch(types.ApplyPatchType, instConfigBytes), &patchOptions)
 }
