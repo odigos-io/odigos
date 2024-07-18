@@ -5,8 +5,6 @@ import (
 
 	"github.com/odigos-io/odigos/common/consts"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
