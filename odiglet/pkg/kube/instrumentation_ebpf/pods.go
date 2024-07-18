@@ -3,6 +3,8 @@ package instrumentation_ebpf
 import (
 	"context"
 
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
@@ -22,10 +24,27 @@ type PodsReconciler struct {
 	Directors ebpf.DirectorsMap
 }
 
+func (p *PodsReconciler) isNamespaceIgnored(ctx context.Context, ns string) bool {
+	var odigosConfig odigosv1.OdigosConfiguration
+	err := p.Client.Get(ctx, client.ObjectKey{Name: "odigos-config", Namespace: env.GetCurrentNamespace()}, &odigosConfig)
+	if err != nil {
+		return false
+	}
+
+	ignoredNamespaces := odigosConfig.Spec.IgnoredNamespaces
+	for _, ignoredNamespace := range ignoredNamespaces {
+		if ignoredNamespace == ns {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	if request.Namespace == env.GetCurrentNamespace() {
+	if request.Namespace == env.GetCurrentNamespace() || p.isNamespaceIgnored(ctx, request.Namespace) {
 		return ctrl.Result{}, nil
 	}
 
