@@ -21,17 +21,17 @@ func GetCollectorGroup(ctx context.Context, c client.Client, namespace string, c
 }
 
 func DeleteCollectorGroup(ctx context.Context, c client.Client, namespace string, collectorGroupName string) error {
-	logger := log.FromContext(ctx)
-	logger.Info("Deleting collector group", "collectorGroupName", collectorGroupName)
+	logger := log.FromContext(ctx).WithValues("collectorGroupName", collectorGroupName)
+	logger.Info("Deleting collector group")
 
 	collectorGroup, err := GetCollectorGroup(ctx, c, namespace, collectorGroupName)
 	if errors.IsNotFound(err) {
-		logger.V(3).Info("collector group doesn't exist, nothing to delete", "collectorGroupName", collectorGroupName)
+		logger.V(3).Info("collector group doesn't exist, nothing to delete")
 		return nil
 	}
 
 	if err = c.Delete(ctx, collectorGroup, &client.DeleteOptions{}); err != nil {
-		logger.Error(err, "Failed to delete collector", "collectorGroupName", collectorGroupName)
+		logger.Error(err, "Failed to delete collector")
 		return err
 	}
 
