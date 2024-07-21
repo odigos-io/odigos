@@ -273,3 +273,47 @@ status:
       restartCount: 0
       started: true
   phase: Running
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-coupon
+status:
+  healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: nodejs
+    - key: telemetry.distro.version
+      value: e2e-test
+    - key: process.pid
+      (value != null): true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-inventory
+status:
+  healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: process.pid
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: python
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-membership
+status:
+  healthy: true
+  reason: LoadedSuccessfully

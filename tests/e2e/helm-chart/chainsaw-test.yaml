@@ -75,10 +75,6 @@ spec:
         file: 04-add-destination.yaml
     - assert:
         file: assert-instrumented-and-pipeline.yaml
-  - name: Wait for apps to stabilize
-    try:
-    - sleep:
-        duration: 5s
   - name: Generate Traffic
     try:
       - create:
