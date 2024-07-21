@@ -1,0 +1,97 @@
+image:
+  tag: ""
+imagePullSecrets: []
+
+# namespaces not to show in odigos ui
+ignoredNamespaces:
+  - odigos-system
+  - kube-system
+  - local-path-storage
+  - istio-system
+  - linkerd
+  - kube-node-lease
+
+ignoredContainers:
+  - istio-proxy
+
+collectorGateway:
+  # the memory request for the cluster gateway collector deployment.
+  # it will be embedded in the deployment as a resource request
+  # of the form "memory: <value>Mi".
+  # default value is 500Mi
+  requestMemoryMiB: 500
+  # sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
+  # it is the hard limit after which a force garbage collection will be performed.
+  # if not set, it will be 50Mi below the memory request.
+  memoryLimiterLimitMiB: 450
+  # sets the "spike_limit_mib" parameter in the memory limiter configuration for the collector gateway.
+  # note that this is not the processor soft limit, but the diff in MiB between the hard limit and the soft limit.
+  # if not specified, this value will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
+  memoryLimiterSpikeLimitMiB: 90
+  # the GOMEMLIMIT environment variable value for the collector gateway deployment.
+  # this is when go runtime will start garbage collection.
+  # if not specified, it will be set to 80% of the hard limit of the memory limiter.
+  goMemLimitMiB: 340
+
+autoscaler:
+  image:
+    repository: keyval/odigos-autoscaler
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: {}
+
+scheduler:
+  image:
+    repository: keyval/odigos-scheduler
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: {}
+
+ui:
+  image:
+    repository: keyval/odigos-ui
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: {}
+
+instrumentor:
+  deleteLangDetectionPods: true
+  image:
+    repository: keyval/odigos-instrumentor
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: {}
+
+odiglet:
+  image:
+    repository: keyval/odigos-odiglet
+    enterpriseRepository: keyval/odigos-enterprise-odiglet
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations:
+    - effect: NoSchedule
+      key: node.kubernetes.io/os
+      operator: Equal
+      value: windows
+  affinity: {}
+
+cli:
+  image:
+    repository: keyval/odigos-cli
+
+# Pod Security Policy
+psp:
+  enabled: false
+
+telemetry:
+  enabled: true
+
+openshift:
+  enabled: false
+
+gke:
+  enabled: false
