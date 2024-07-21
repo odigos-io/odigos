@@ -116,10 +116,11 @@ func main() {
 						newDep := &appsv1.Deployment{
 							TypeMeta: deployment.TypeMeta,
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      deployment.Name,
-								Namespace: deployment.Namespace,
-								Labels:    deployment.Labels,
-								UID:       deployment.UID,
+								Name:        deployment.Name,
+								Namespace:   deployment.Namespace,
+								Labels:      deployment.Labels,
+								Annotations: deployment.Annotations,
+								UID:         deployment.UID,
 							},
 							Status: deployment.Status,
 						}
@@ -134,10 +135,11 @@ func main() {
 						newSs := &appsv1.StatefulSet{
 							TypeMeta: ss.TypeMeta,
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      ss.Name,
-								Namespace: ss.Namespace,
-								Labels:    ss.Labels,
-								UID:       ss.UID,
+								Name:        ss.Name,
+								Namespace:   ss.Namespace,
+								Labels:      ss.Labels,
+								Annotations: ss.Annotations,
+								UID:         ss.UID,
 							},
 							Status: ss.Status,
 						}
@@ -152,10 +154,11 @@ func main() {
 						newDs := &appsv1.DaemonSet{
 							TypeMeta: ds.TypeMeta,
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      ds.Name,
-								Namespace: ds.Namespace,
-								Labels:    ds.Labels,
-								UID:       ds.UID,
+								Name:        ds.Name,
+								Namespace:   ds.Namespace,
+								Labels:      ds.Labels,
+								Annotations: ds.Annotations,
+								UID:         ds.UID,
 							},
 							Status: ds.Status,
 						}

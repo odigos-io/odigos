@@ -46,6 +46,10 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 	}
 
 	workload, labels, err := getWorkloadAndLabelsfromOwner(ctx, i.Client, instConfig.Namespace, instConfig.OwnerReferences[0])
+	if err != nil {
+		logger.Error(err, "Failed to get workload and labels from owner")
+		return reconcile.Result{}, err
+	}
 	err = inspectRuntimesOfRunningPods(ctx, &logger, labels, i.Client, i.Scheme, workload)
 	if err != nil {
 		return reconcile.Result{}, ignoreNoPodsFoundError(err)
