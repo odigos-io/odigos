@@ -101,7 +101,7 @@ load-to-kind-scheduler:
 .PHONY: load-to-kind
 load-to-kind:
 	make load-to-kind-autoscaler TAG=$(TAG)
-	kind load docker-image $(ORG)/odigos-scheduler:$(TAG)
+	make load-to-kind-scheduler TAG=$(TAG)
 	make load-to-kind-odiglet TAG=$(TAG)
 	kind load docker-image $(ORG)/odigos-instrumentor:$(TAG)
 	make load-to-kind-collector TAG=$(TAG)
