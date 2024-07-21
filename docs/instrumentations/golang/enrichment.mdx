@@ -3,8 +3,18 @@ title: "Enriching Go OpenTelemetry Data"
 sidebarTitle: "Enrichment"
 ---
 
-Odigos will automatically instrument your Go services and record spans from common modules.
-To enrich your traces with additional spans for your custom business logic operations, use the OpenTelemetry API.
+Odigos will automatically instrument your Go services and record semantic spans from popular modules.
+Many users find the automatic instrumentation data sufficient for their needs. However, if there is anything specific to your application that you want to record, you can enrich the data by adding custom spans to your code.
+
+This is sometimes referred to as "manual instrumentation"
+
+## Use Case
+
+Examples of custom spans you might want to add to your code include:
+
+- Spans for the execution of some potentially heavy or slow computation in you service.
+- Tracing for internal or third party libraries for which you don't have automatic or integrated instrumentation.
+- Spans to describe some logical operations in your business logic that are meaningful in your domain.
 
 ## Required dependencies
 
@@ -15,10 +25,21 @@ go get go.opentelemetry.io/otel \
   go.opentelemetry.io/otel/trace
 ```
 
-## Creating Spans
+## Spans
 
-To create a span, you need to create a `Tracer` and use it to start a new span.
-The following example demonstrates how to create a span using the OpenTelemetry Go API.
+Spans are the OpenTelemetry representation of operations in the execution of your code. You should record a span if you think the operation is meaningful and that observing it will help you understand the behavior of your system and operate it.
+
+A span includes a name, start and end time, and key-value attributes for detailed information about the execution.
+
+## Tracer
+
+In OpenTelemetry, spans are created using the `Tracer` object which you can acquire from the OpenTelemetry API.
+
+Each tracer is associated with a name and optional version. 
+These name and version are recorded as "instrumentation scope" into all spans created by this tracer.
+Humans viewing the trace and data processors downstream can use this information to understand the origin of each span.
+
+It is best practice to use the go module and package name for the tracer name.
 
 ```go
 package main
@@ -28,13 +49,87 @@ import (
     "go.opentelemetry.io/otel"
 )
 
-var tracer = otel.Tracer("trace-example")
+var tracer = otel.Tracer("github.com/<yourusername>/<reponame>/<packagename>")
+```
 
+## Creating Spans
+
+```go
 func my_function(ctx context.Context) {
-    _, span := tracer.Start(ctx, "my_function")
-    // Do some work
-    defer span.End()
+    ctx, span := tracer.Start(ctx, "my_function") // Span start time is set here
+    defer span.End() // Span end time is set here
+    // Do some work, use ctx if needed when calling next functions
 }
 ```
 
+Important notes:
 
+- It is important to always `End` a span, otherwise it will not show up in your trace. We recommend to defer the `End` method of the span to ensure that the span is always ended even when there are multiple return paths from the function.
+- Make sure to propagate and use a valid context object when calling `tracer.Start` (as oppose to `context.Background()`). The context is used to make the new span a child of the active span, so it shows up in the right trace.
+- When calling downstream functions, ensure to pass the context object returned from tracer.Start() to make any spans created within these function a child of the current span. This maintains the hierarchical relationship between spans and provides a clear trace of the request flow.
+- Assign meaningful names to spans, such as "my_function" in the example, to clearly describe the operation they represent. This descriptive naming will be displayed when examining a trace in the trace viewer, helping anyone looking at the trace to easily understand the span's purpose and context.
+- Avoid including dynamic, high cardinality data (such as IDs) in the span name, as this can lead to performance issues and make the trace harder to read. Instead, use a static, descriptive name for the span and record any dynamic information into span attributes. This approach ensures better performance and readability of the trace.
+
+### Recording Span Attributes
+
+Span attributes are key-value pairs that record additional information about an operation, which can be useful for debugging, performance analysis, or troubleshooting
+
+Examples:
+
+- User ID, organization ID, Account ID or other identifiers.
+- Inputs - the relevant parameters or configuration that influenced the operation.
+- Outputs - the result of the operation.
+- Entities - the entities or resources that the operation interacted with.
+
+Attribute names are lowercased strings in the form `my_application.my_attribute`, example: `my_service.user_id`.
+Read more [here](https://opentelemetry.io/docs/specs/semconv/general/attribute-naming/)
+
+To record attributes, use the `SetAttributes` method on the span object.
+
+```go
+import (
+    "context"
+    "go.opentelemetry.io/otel/attribute"
+)
+    
+
+func my_function(ctx context.Context, userId string) {
+    _, span := tracer.Start(ctx, "my_function")
+    defer span.End()
+	span.SetAttributes(attribute.String("my_service.user_id", userId))
+    // Do some work
+}
+```
+
+Important Notes:
+
+- Be caution when recording data, if you might include PII (personally identifiable information) or data you don't want to expose in your traces.
+- Each attribute has a cost in terms of performance and processing, so record what is useful and avoid what is not.
+- Use static names for attributes (no ids or dynamic content in keys), and namespace them properly (`scope.attribute_name`) to give more context to downstream consumers.
+- Prefer to use namespaces and attribute names that are part of the [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/) to make your data more interoperable and easier to understand by others.
+
+### Recording Errors
+
+Span contains a status field that is used to mark it as an error, so it's easy to spot in viewers, sample, and alert on errors in your traces.
+
+If the operation you are tracing fails, you can mark the span status as error, and additionally record the error information into the span:
+
+```go
+import (
+    "context"
+    "go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+)
+
+func my_function(ctx context.Context, userId string) {
+    _, span := tracer.Start(ctx, "my_function")
+    defer span.End()
+    err := doSomeWork()
+    if err != nil {
+    	span.SetStatus(codes.Error, "Operation failed")
+	    span.RecordError(err)
+    }
+}
+
+```
