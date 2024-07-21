@@ -9,16 +9,11 @@ spec:
   - name: Prepare destination
     try:
     - script:
-        timeout: 300s
         content: |
           helm repo add grafana https://grafana.github.io/helm-charts
-          helm install e2e-tests grafana/tempo-distributed -n traces --create-namespace \
-          --set traces.otlp.grpc.enabled=true --set distributor.config.log_received_spans.enabled=true \
-          --set ingester.config.replication_factor=1 --set ingester.config.trace_idle_period=100m \
-          --set ingester.replicas=1 \
-          --wait
-#    - assert:
-#        file: assert-tempo-running.yaml
+          helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4
+    - assert:
+        file: assert-tempo-running.yaml
   - name: Wait for destination to be ready
     try:
       - script:

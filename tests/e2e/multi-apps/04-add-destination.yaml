@@ -5,7 +5,7 @@ metadata:
   namespace: odigos-system
 spec:
   data:
-    TEMPO_URL: e2e-tests-tempo-distributor.traces:4317
+    TEMPO_URL: e2e-tests-tempo.traces:4317
   destinationName: e2e-tests
   signals:
     - TRACES

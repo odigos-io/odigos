@@ -29,8 +29,8 @@ function urlencode() (
 # Function to process a YAML file
 function process_yaml_file() {
   local dest_namespace="traces"
-  local dest_service="e2e-tests-tempo-query-frontend"
-  local dest_port="http-metrics"
+  local dest_service="e2e-tests-tempo"
+  local dest_port="tempo-prom-metrics"
 
   local file=$1
   file_name=$(basename "$file")
