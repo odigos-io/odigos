@@ -112,6 +112,10 @@ func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.P
 	for _, owner := range pod.OwnerReferences {
 		name, kind, err := kubeutils.GetWorkloadNameFromOwnerReference(owner)
 		if err != nil {
+			if kubeutils.IsErrorKindNotSupported(err) {
+				return nil, nil
+			}
+
 			return nil, err
 		}
 

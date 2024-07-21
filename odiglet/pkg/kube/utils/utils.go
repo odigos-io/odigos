@@ -3,7 +3,6 @@ package utils
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
@@ -16,6 +15,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var errKindNotSupported = errors.New("kind not supported")
+
+func IsErrorKindNotSupported(err error) bool {
+	return err == errKindNotSupported
+}
 
 func IsPodInCurrentNode(pod *corev1.Pod) bool {
 	return pod.Spec.NodeName == env.Current.NodeName
@@ -81,5 +86,5 @@ func GetWorkloadNameFromOwnerReference(ownerReference metav1.OwnerReference) (st
 	} else if kind == "DaemonSet" || kind == "Deployment" || kind == "StatefulSet" {
 		return name, kind, nil
 	}
-	return "", "", fmt.Errorf("kind %s not supported", kind)
+	return "", "", errKindNotSupported
 }
