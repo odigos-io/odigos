@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/spf13/cobra"
 	appsv1 "k8s.io/api/apps/v1"
@@ -263,6 +264,14 @@ func printInstrumentedApplicationInfo(instrumentedApplication *odigosv1.Instrume
 			if isUnknown {
 				fmt.Println("      Troubleshooting: http://localhost:3000/architecture/troubleshooting#4-language-not-detected")
 			}
+
+			// calculate env vars for this container
+			if container.EnvVars != nil && len(container.EnvVars) > 0 {
+				fmt.Println("      Relevant Environment Variables:")
+				for _, envVar := range container.EnvVars {
+					fmt.Println("        -", envVar.Name, ":", envVar.Value)
+				}
+			}
 		}
 	}
 	if !statusAsExpected {
@@ -270,16 +279,26 @@ func printInstrumentedApplicationInfo(instrumentedApplication *odigosv1.Instrume
 	}
 }
 
-func printAppliedInstrumentationDeviceInfo(instrumentedApplication *odigosv1.InstrumentedApplication, podTemplate *corev1.PodTemplateSpec, instrumented bool) map[string][]string {
+func printAppliedInstrumentationDeviceInfo(workloadObj *unstructured.Unstructured, instrumentedApplication *odigosv1.InstrumentedApplication, podTemplate *corev1.PodTemplateSpec, instrumented bool) map[string][]string {
 	appliedInstrumentationDeviceStatusMessage := "Unknown"
+	if !instrumented {
+		// if the workload is not instrumented, the instrumentation device expected
+		appliedInstrumentationDeviceStatusMessage = "No instrumentation devices expected"
+	}
 	if instrumentedApplication != nil && instrumentedApplication.Status.Conditions != nil {
 		for _, condition := range instrumentedApplication.Status.Conditions {
 			if condition.Type == "AppliedInstrumentationDevice" { // TODO: share this constant with instrumentor
-				appliedInstrumentationDeviceStatusMessage = wrapTextSuccessOfFailure(condition.Message, condition.Status == metav1.ConditionTrue)
+				if condition.ObservedGeneration == instrumentedApplication.GetGeneration() {
+					appliedInstrumentationDeviceStatusMessage = wrapTextSuccessOfFailure(condition.Message, condition.Status == metav1.ConditionTrue)
+				} else {
+					appliedInstrumentationDeviceStatusMessage = "Not yet reconciled"
+				}
 				break
 			}
 		}
 	}
+	// get original env vars:
+	origWorkloadEnvValues, _ := envoverwrite.NewOrigWorkloadEnvValues(workloadObj.GetAnnotations())
 	fmt.Println("")
 	fmt.Println("Instrumentation Device:")
 	fmt.Println("  Status:", appliedInstrumentationDeviceStatusMessage)
@@ -307,6 +326,15 @@ func printAppliedInstrumentationDeviceInfo(instrumentedApplication *odigosv1.Ins
 			}
 		}
 		containerNameToExpectedDevices[container.Name] = odigosDevices
+
+		// override environment variables
+		originalContainerEnvs := origWorkloadEnvValues.GetContainerStoredEnvs(container.Name)
+		if originalContainerEnvs != nil && len(originalContainerEnvs) > 0 {
+			fmt.Println("    Original Environment Variables:")
+			for _, envVarOriginalValue := range container.Env {
+				fmt.Println("    - ", envVarOriginalValue.Name, ":", envVarOriginalValue.Value)
+			}
+		}
 	}
 
 	return containerNameToExpectedDevices
@@ -441,7 +469,7 @@ var describeCmd = &cobra.Command{
 		instrumented := printWorkloadManifestInfo(workloadObj, namespace)
 		printInstrumentationConfigInfo(instrumentationConfig, instrumented)
 		printInstrumentedApplicationInfo(instrumentedApplication, instrumented)
-		containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(instrumentedApplication, podTemplate, instrumented)
+		containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(workloadObj, instrumentedApplication, podTemplate, instrumented)
 		printPodsInfo(pods, instrumentationInstances, containerNameToExpectedDevices)
 	},
 }
