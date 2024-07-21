@@ -1,0 +1,67 @@
+---
+title: "Troubleshooting Sources"
+sidebarTitle: "Troubleshooting Sources"
+---
+
+If you selected a workload to auto instrument and you do not see any data, use the checklist below to troubleshoot the issue. 
+It is recommended to use the `odigos describe` command to get detailed information in one command.
+
+### 1. Odigos Instrumentation Label
+
+Ensure that the workload has the `odigos-instrumentation` label set and equals to `enabled`, or that the label is missing and the namespace is labeled accordingly.
+
+The label is either set by the UI when used, manually integrated into the manifest, or set by the user using the `kubectl`, `helm` or similar tools.
+
+### 2. Odigos Instrumentation Config
+
+Ensure that the `instrumentationconfig.odigos.io` object exists for the workload.
+
+- `name`: concatenated from the lowercase workload kind and name. for example: `deployment-myservice`.
+- `namespace`: the namespace of the workload.
+
+Example:
+
+```bash
+kubectl get instrumentationconfigs.odigos.io deployment-myservice -n default -o yaml
+```
+
+The object creating might take few seconds after the label is set.
+If the object is missing, check the `odigos-instrumentor` logs in the `odigos-system` namespace for any errors.
+
+### 3. Odigos Instrumented Application
+
+Check that `instrumentedapplication.odigos.io` object exists for the workload.
+
+- `name`: concatenated from the lowercase workload kind and name. for example: `deployment-myservice`.
+- `namespace`: the namespace of the workload.
+
+Example:
+
+```bash
+kubectl get instrumentedapplications.odigos.io deployment-myservice -n default -o yaml
+```
+
+Verify that the `instrumentedapplication.odigos.io` contains the containers and programming language.
+If the object is missing, check the `odiglet` logs in the `odigos-system` namespace on a node that runs a pod of the workload.
+
+
+### 4. Odigos Instrumentation Devices
+
+Ensure that the pod spec for the workload contains the instrumentation devices under the `resource.limits` section for the relevant containers.
+
+```bash
+kubectl get deployment myservice -o jsonpath='{.spec.template.spec.containers[*].resources.limits}'
+```
+
+If the instrumentation devices are missing, check the `odigos-instrumentor` logs in the `odigos-system` namespace for any errors.
+
+### 5. Verify Pods Restarted
+
+Ensure that the pods of the workload have been restarted after the instrumentation devices were added to the pod spec.
+
+```bash
+kubectl get pods -l app=myservice
+```
+
+If the pods have not been restarted, or if they fail to start, or are stuck in a crash loop, check the pod logs for any errors.
+
