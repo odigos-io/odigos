@@ -1,0 +1,137 @@
+# THIS RESOURCE STILL LIVES IN odigos-io/odigos-charts repo
+# ADDED HERE FOR TESTING WORKFLOWS
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: odigosconfigurations.odigos.io
+spec:
+  group: odigos.io
+  names:
+    kind: OdigosConfiguration
+    listKind: OdigosConfigurationList
+    plural: odigosconfigurations
+    singular: odigosconfiguration
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: OdigosConfiguration is the Schema for the odigos configuration
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OdigosConfigurationSpec defines the desired state of OdigosConfiguration
+            properties:
+              autoscalerImage:
+                type: string
+              collectorGateway:
+                properties:
+                  goMemLimitMiB:
+                    description: the GOMEMLIMIT environment variable value for the
+                      collector gateway deployment. this is when go runtime will start
+                      garbage collection. if not set, it will be set to 80% of the
+                      hard limit of the memory limiter.
+                    type: integer
+                  memoryLimiterLimitMiB:
+                    description: this parameter sets the "limit_mib" parameter in
+                      the memory limiter configuration for the collector gateway.
+                      it is the hard limit after which a force garbage collection
+                      will be performed. if not set, it will be 50Mi below the memory
+                      request.
+                    type: integer
+                  memoryLimiterSpikeLimitMiB:
+                    description: this parameter sets the "spike_limit_mib" parameter
+                      in the memory limiter configuration for the collector gateway.
+                      note that this is not the processor soft limit, but the diff
+                      in Mib between the hard limit and the soft limit. if not set,
+                      this will be set to 20% of the hard limit (so the soft limit
+                      will be 80% of the hard limit).
+                    type: integer
+                  requestMemoryMiB:
+                    description: 'RequestMemoryMiB is the memory request for the cluster
+                      gateway collector deployment. it will be embedded in the deployment
+                      as a resource request of the form "memory: <value>Mi" default
+                      value is 500Mi'
+                    type: integer
+                type: object
+              configVersion:
+                type: integer
+              defaultSDKs:
+                additionalProperties:
+                  properties:
+                    sdkTier:
+                      type: string
+                    sdkType:
+                      description: 'Odigos supports two types of OpenTelemetry SDKs:
+                        native and ebpf.'
+                      type: string
+                  required:
+                  - sdkTier
+                  - sdkType
+                  type: object
+                type: object
+              ignoredContainers:
+                items:
+                  type: string
+                type: array
+              ignoredNamespaces:
+                items:
+                  type: string
+                type: array
+              imagePrefix:
+                type: string
+              instrumentorImage:
+                type: string
+              odigletImage:
+                type: string
+              odigosVersion:
+                type: string
+              openshiftEnabled:
+                type: boolean
+              psp:
+                type: boolean
+              supportedSDKs:
+                additionalProperties:
+                  items:
+                    properties:
+                      sdkTier:
+                        type: string
+                      sdkType:
+                        description: 'Odigos supports two types of OpenTelemetry SDKs:
+                          native and ebpf.'
+                        type: string
+                    required:
+                    - sdkTier
+                    - sdkType
+                    type: object
+                  type: array
+                type: object
+              telemetryEnabled:
+                type: boolean
+            required:
+            - configVersion
+            - odigosVersion
+            type: object
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -137,6 +137,7 @@ jobs:
             echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
           else
             echo "Unknown event type"
+            echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
             exit 1
           fi
 
@@ -156,4 +157,6 @@ jobs:
           version: v3.15.2
 
       - name: Release Helm charts
-        run: sh ./scripts/release-charts.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash ./scripts/release-charts.sh
