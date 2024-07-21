@@ -12,6 +12,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/config"
+	constsK8s "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -38,11 +39,11 @@ func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 	setTracesLoadBalancer := SamplingExists != nil
 
 	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme, setTracesLoadBalancer)
-	desiredData := desired.Data[configKey]
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return "", err
 	}
+	desiredData := desired.Data[configKey]
 
 	existing := &v1.ConfigMap{}
 	if err := c.Get(ctx, client.ObjectKey{Namespace: datacollection.Namespace, Name: datacollection.Name}, existing); err != nil {
@@ -97,7 +98,7 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 
 func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
 	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool) (*v1.ConfigMap, error) {
-	cmData, err := getConfigMapData(apps, dests, processors, setTracesLoadBalancer)
+	cmData, err := calculateConfigMapData(apps, dests, processors, setTracesLoadBalancer)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +124,7 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 	return &desired, nil
 }
 
-func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
+func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
 	setTracesLoadBalancer bool) (string, error) {
 
 	empty := struct{}{}
@@ -233,93 +234,8 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 			"include_file_name": false,
 			"operators": []config.GenericMap{
 				{
-					"type": "router",
-					"id":   "get-format",
-					"routes": []config.GenericMap{
-						{
-							"output": "parser-docker",
-							"expr":   `body matches "^\\{"`,
-						},
-						{
-							"output": "parser-crio",
-							"expr":   `body matches "^[^ Z]+ "`,
-						},
-						{
-							"output": "parser-containerd",
-							"expr":   `body matches "^[^ Z]+Z"`,
-						},
-					},
-				},
-				{
-					"type":   "regex_parser",
-					"id":     "parser-crio",
-					"regex":  `^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$`,
-					"output": "extract_metadata_from_filepath",
-					"timestamp": config.GenericMap{
-						"parse_from":  "attributes.time",
-						"layout_type": "gotime",
-						"layout":      "2006-01-02T15:04:05.999999999Z07:00",
-					},
-				},
-				{
-					"type":   "regex_parser",
-					"id":     "parser-containerd",
-					"regex":  `^(?P<time>[^ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$`,
-					"output": "extract_metadata_from_filepath",
-					"timestamp": config.GenericMap{
-						"parse_from": "attributes.time",
-						"layout":     "%Y-%m-%dT%H:%M:%S.%LZ",
-					},
-				},
-				{
-					"type":   "json_parser",
-					"id":     "parser-docker",
-					"output": "extract_metadata_from_filepath",
-					"timestamp": config.GenericMap{
-						"parse_from": "attributes.time",
-						"layout":     "%Y-%m-%dT%H:%M:%S.%LZ",
-					},
-				},
-				{
-					"type": "move",
-					"from": "attributes.log",
-					"to":   "body",
-				},
-				{
-					"type":       "regex_parser",
-					"id":         "extract_metadata_from_filepath",
-					"regex":      `^.*\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\-]{36})\/(?P<container_name>[^\._]+)\/(?P<restart_count>\d+)\.log$`,
-					"parse_from": `attributes["log.file.path"]`,
-				},
-				{
-					"type": "move",
-					"from": "attributes.stream",
-					"to":   `attributes["log.iostream"]`,
-				},
-				{
-					"type": "move",
-					"from": "attributes.container_name",
-					"to":   `attributes["k8s.container.name"]`,
-				},
-				{
-					"type": "move",
-					"from": "attributes.namespace",
-					"to":   `attributes["k8s.namespace.name"]`,
-				},
-				{
-					"type": "move",
-					"from": "attributes.pod_name",
-					"to":   `attributes["k8s.pod.name"]`,
-				},
-				{
-					"type": "move",
-					"from": "attributes.restart_count",
-					"to":   `attributes["k8s.container.restart_count"]`,
-				},
-				{
-					"type": "move",
-					"from": "attributes.uid",
-					"to":   `attributes["k8s.pod.uid"]`,
+					"id":   "container-parser",
+					"type": "container",
 				},
 			},
 		}
@@ -360,4 +276,13 @@ func getConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv
 	}
 
 	return string(data), nil
+}
+
+func getConfigMap(ctx context.Context, c client.Client, namespace string) (*v1.ConfigMap, error) {
+	configMap := &v1.ConfigMap{}
+	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: constsK8s.OdigosNodeCollectorConfigMapName}, configMap); err != nil {
+		return nil, err
+	}
+
+	return configMap, nil
 }

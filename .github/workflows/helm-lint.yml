@@ -1,0 +1,17 @@
+name: Lint Charts
+
+on:
+  pull_request:
+    paths:
+      - helm/**
+
+jobs:
+  lint-charts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+      - name: Lint Charts
+        run: helm lint helm/*

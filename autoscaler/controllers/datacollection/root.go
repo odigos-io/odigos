@@ -2,11 +2,19 @@ package datacollection
 
 import (
 	"context"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+var dm = &DelayManager{}
+
+const (
+	syncDaemonsetRetry = 3
 )
 
 func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
@@ -57,18 +65,13 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
-	configData, err := syncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme)
+	_, err := syncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
 	}
 
-	_, err = syncDaemonSet(instApps, dests, dataCollection, configData, ctx, c, scheme, imagePullSecrets, odigosVersion)
-	if err != nil {
-		logger.Error(err, "Failed to sync daemon set")
-		return err
-	}
+	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
 
 	return nil
 }
-

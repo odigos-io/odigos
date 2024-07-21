@@ -6,6 +6,8 @@ import {
   ErrorSamplerIcon,
   RenameAttributeIcon,
   ProbabilisticSamplerIcon,
+  LatencySamplerIcon,
+  PiiMaskingIcon,
 } from '@keyval-dev/design-system';
 
 export function ActionIcon({ type, ...props }) {
@@ -20,6 +22,10 @@ export function ActionIcon({ type, ...props }) {
       return <ErrorSamplerIcon {...props} />;
     case ActionsType.PROBABILISTIC_SAMPLER:
       return <ProbabilisticSamplerIcon {...props} />;
+    case ActionsType.LATENCY_SAMPLER:
+      return <LatencySamplerIcon {...props} />;
+    case ActionsType.PII_MASKING:
+      return <PiiMaskingIcon {...props} />;
     default:
       return null;
   }

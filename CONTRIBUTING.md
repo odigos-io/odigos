@@ -85,31 +85,45 @@ Test your cli code changes by running the following:
 go run -tags=embed_manifests ./cli
 ```
 
-To run `odigos install` cli command from a local source, you will need to supply a version flag to tell odigos which image tags to install:
+To run `odigos install` cli command from a local source, use the make command from repo root:
 
 ```bash
-go run -tags=embed_manifests ./cli install --version v0.1.81
+make cli-install
 # Installing Odigos version v0.1.81 in namespace odigos-system ...
 ```
 
-If you test changes to the `install` command, you will need to `go run cli/main.go uninstall` first before you can run install again.
+If you test changes to the `install` command, you will need to `odigos uninstall` first before you can run install again.
 
 ### How to Develop Odigos Locally
 
 The main steps involved when debugging Odigos locally are:
+
 1. Use a Kind kubernetes cluster.
 2. Choose one of the following options for deploy: 
+
 - Deploy all pods in the odigos-system namespace: 
+
 ```bash
-      make deploy
+make deploy
 ```
 
 - Deploy a specific service by running one of the following commands:
+
 ```bash
-      make deploy-odiglet 
-      make deploy-autoscaler 
-      make deploy-collector 
-      make deploy-instrumentor
+make deploy-odiglet 
+make deploy-autoscaler 
+make deploy-collector 
+make deploy-instrumentor
+```
+
+- Deploy odiglet and build instrumentation agents from source code:
+
+First - make sure you clone the [nodejs agent](https://github.com/odigos-io/opentelemetry-node) repos in the same directory as the odigos repo. e.g. `../opentelemetry-node` should exist alongside the odigos repo in your local filesystem.
+
+To deploy odiglet with agents from this source directory:
+
+```bash
+make deploy-odiglet-with-agents
 ```
 
 See the [Odigos docs](https://docs.odigos.io/intro) for the full steps on debugging Odigos locally.

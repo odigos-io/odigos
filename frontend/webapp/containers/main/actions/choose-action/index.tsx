@@ -47,6 +47,20 @@ const ITEMS = [
     type: ActionsType.PROBABILISTIC_SAMPLER,
     icon: ActionsType.PROBABILISTIC_SAMPLER,
   },
+  {
+    id: 'latency-action',
+    title: 'Latency Action',
+    description: 'Add latency to your traces.',
+    type: ActionsType.LATENCY_SAMPLER,
+    icon: ActionsType.LATENCY_SAMPLER,
+  },
+  {
+    id: 'pii-masking',
+    title: 'PII Masking',
+    description: 'Mask PII data in your traces.',
+    type: ActionsType.PII_MASKING,
+    icon: ActionsType.PII_MASKING,
+  },
 ];
 
 export function ChooseActionContainer(): React.JSX.Element {

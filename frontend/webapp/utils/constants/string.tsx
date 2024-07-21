@@ -135,7 +135,7 @@ export const PARAMS = {
 
 //odigos actions
 export const ACTIONS = {
-  MONITORS_TITLE: 'This action monitors',
+  MONITORS_TITLE: 'Monitors',
   ACTION_NAME: 'Action Name',
   ACTION_NOTE: 'Note',
   NOTE_PLACEHOLDER: 'Add a note to describe the use case of this action',
@@ -160,7 +160,15 @@ export const ACTIONS = {
   },
   ProbabilisticSampler: {
     TITLE: 'Probabilistic Sampler',
-    DESCRIPTION: `The “Probabilistic Sampler” Odigos Action is a Global Action that supports probabilistic sampling by filtering out traces based on a sampling ratio.`,
+    DESCRIPTION: `The “Probabilistic Sampler” Odigos Action supports probabilistic sampling based on a configured sampling percentage applied to the TraceID.`,
+  },
+  LatencySampler: {
+    TITLE: 'Latency Sampler',
+    DESCRIPTION: `The “Latency Sampler” Odigos Action is an Endpoint Action that samples traces based on their duration for a specific service and endpoint (HTTP route) filter.`,
+  },
+  PiiMasking: {
+    TITLE: 'PII Masking',
+    DESCRIPTION: `The “PII Masking” Odigos Action is an Endpoint Action that masks PII (Personally Identifiable Information) attributes from telemetry signals.`,
   },
   SEARCH_ACTION: 'Search Action',
 };

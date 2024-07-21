@@ -19,10 +19,43 @@ type InstrumentationConfig struct {
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
 // The workload is identified by the owner reference
 type InstrumentationConfigSpec struct {
+	// true when the runtime details are invalidated and should be recalculated
+	RuntimeDetailsInvalidated bool `json:"runtimeDetailsInvalidated,omitempty"`
+
 	// config for this workload.
 	// the config is a list to allow for multiple config options and values to be applied.
 	// the list is processed in order, and the first matching config is applied.
-	Config []WorkloadInstrumentationConfig `json:"config"`
+	Config []WorkloadInstrumentationConfig `json:"config,omitempty"`
+
+	// Configuration for the OpenTelemetry SDKs that this workload should use.
+	// The SDKs are identified by the programming language they are written in.
+	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
+	SdkConfigs []SdkConfig `json:"sdkConfigs,omitempty"`
+}
+
+type SdkConfig struct {
+
+	// The language of the SDK being configured
+	Language common.ProgrammingLanguage `json:"language"`
+
+	// configurations for the instrumentation libraries the the SDK should use
+	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs"`
+}
+
+type InstrumentationLibraryConfig struct {
+	// The name of the instrumentation library
+	// - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
+	InstrumentationLibraryName string `json:"instrumentationLibraryName"`
+
+	TraceConfig *InstrumentationLibraryConfigTraces `json:"traceConfig,omitempty"`
+}
+
+type InstrumentationLibraryConfigTraces struct {
+	// Whether the instrumentation library is enabled to record traces.
+	// When false, it is expected that the instrumentation library does not produce any spans regardless of any other configuration.
+	// When true, the instrumentation library should produce spans according to the other configuration options.
+	// If not specified, the default value for this signal should be used (whether to enable libraries by default or not).
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // WorkloadInstrumentationConfig defined a single config option to apply
