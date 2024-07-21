@@ -1,18 +1,40 @@
-# my_otel_configurator/__init__.py
-import opentelemetry.sdk._configuration as sdk_config
 import threading
 import atexit
+import logging
 import os
+import sys
+import opentelemetry.sdk._configuration as sdk_config
+from opentelemetry.instrumentation.distro import BaseDistro
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.resources import ProcessResourceDetector, OTELResourceDetector
+
+import importlib.metadata as md
+
+from .lib_handling import reorder_python_path, reload_distro_modules
 from .version import VERSION
 from opamp.http_client import OpAMPHTTPClient
+from pkg_resources import EntryPoint
+from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 
-class OdigosPythonConfigurator(sdk_config._BaseConfigurator):
+
+distro_logger = logging.getLogger(__name__)
+distro_logger.setLevel(logging.DEBUG)
+
+class OdigosPythonDistro(BaseDistro):
     def _configure(self, **kwargs):
         _initialize_components()
-
-def _initialize_components():
+    
+    def load_instrumentor(  
+        self, entry_point: EntryPoint, **kwargs
+    ):
+        try:
+            instrumentor: BaseInstrumentor = entry_point.load()
+            instrumentor().instrument(**kwargs)
+        except Exception as e:
+            distro_logger.error(f'Error loading instrumentor [{entry_point}]: {e}')
+        
+        
+def _initialize_components():    
     trace_exporters, metric_exporters, log_exporters = sdk_config._import_exporters(
         sdk_config._get_exporter_names("traces"),
         sdk_config._get_exporter_names("metrics"),
@@ -41,6 +63,13 @@ def _initialize_components():
         initialize_metrics_if_enabled(metric_exporters, resource)
         initialize_logging_if_enabled(log_exporters, resource)
 
+
+    # Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
+    # This is necessary because the user application's dependencies may be incompatible with those used by the agent.
+    
+    reorder_python_path()
+    # Reload distro modules to ensure the new path is used.
+    reload_distro_modules()
 
 def initialize_traces_if_enabled(trace_exporters, resource):
     traces_enabled = os.getenv(sdk_config.OTEL_TRACES_EXPORTER, "none").strip().lower()
