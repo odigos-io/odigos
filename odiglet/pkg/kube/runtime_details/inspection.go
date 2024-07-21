@@ -109,7 +109,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 			if inspectProc == nil {
 				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				lang = common.UnknownProgrammingLanguage
-			} else if len(inspectProc.Envs) > 0 {
+			} else {
 				if len(processes) > 1 {
 					log.Logger.V(0).Info("multiple processes found in pod container, only taking the first one with detected language into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				}
