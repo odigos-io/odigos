@@ -15,6 +15,7 @@ spec:
           helm install e2e-tests grafana/tempo-distributed -n traces --create-namespace \
           --set traces.otlp.grpc.enabled=true --set distributor.config.log_received_spans.enabled=true \
           --set ingester.config.replication_factor=1 --set ingester.config.trace_idle_period=100m \
+          --set ingester.replicas=1 \
           --wait
 #    - assert:
 #        file: assert-tempo-running.yaml
