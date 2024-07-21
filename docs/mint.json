@@ -68,6 +68,13 @@
           ]
         },
         {
+          "group": "Architecture",
+          "pages": [
+            "architecture/sources",
+            "architecture/troubleshooting"
+          ]
+        },
+        {
           "group": "CLI Reference",
           "pages": [
             "cli/odigos",

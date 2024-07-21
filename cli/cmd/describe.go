@@ -14,6 +14,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -21,6 +22,22 @@ import (
 var (
 	describeNamespaceFlag string
 )
+
+func wrapTextInRed(text string) string {
+	return "\033[31m" + text + "\033[0m"
+}
+
+func wrapTextInGreen(text string) string {
+	return "\033[32m" + text + "\033[0m"
+}
+
+func wrapTextSuccessOfFailure(text string, success bool) string {
+	if success {
+		return wrapTextInGreen(text)
+	} else {
+		return wrapTextInRed(text)
+	}
+}
 
 func cmdKindToK8sGVR(kind string) (schema.GroupVersionResource, error) {
 	kind = strings.ToLower(kind)
@@ -37,7 +54,7 @@ func cmdKindToK8sGVR(kind string) (schema.GroupVersionResource, error) {
 	return schema.GroupVersionResource{}, fmt.Errorf("unsupported kind: %s", kind)
 }
 
-func extractPodTemplate(obj *unstructured.Unstructured) (*v1.PodTemplateSpec, error) {
+func extractPodInfo(obj *unstructured.Unstructured) (*v1.PodTemplateSpec, string, error) {
 	gvk := obj.GroupVersionKind()
 
 	switch gvk.Kind {
@@ -45,37 +62,37 @@ func extractPodTemplate(obj *unstructured.Unstructured) (*v1.PodTemplateSpec, er
 		var deployment appsv1.Deployment
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &deployment)
 		if err != nil {
-			return nil, fmt.Errorf("failed to cast to Deployment: %v", err)
+			return nil, "", fmt.Errorf("failed to cast to Deployment: %v", err)
 		}
-		return &deployment.Spec.Template, nil
+		return &deployment.Spec.Template, metav1.FormatLabelSelector(deployment.Spec.Selector), nil
 
 	case "StatefulSet":
 		var statefulSet appsv1.StatefulSet
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &statefulSet)
 		if err != nil {
-			return nil, fmt.Errorf("failed to cast to StatefulSet: %v", err)
+			return nil, "", fmt.Errorf("failed to cast to StatefulSet: %v", err)
 		}
-		return &statefulSet.Spec.Template, nil
+		return &statefulSet.Spec.Template, metav1.FormatLabelSelector(statefulSet.Spec.Selector), nil
 
 	case "DaemonSet":
 		var daemonSet appsv1.DaemonSet
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &daemonSet)
 		if err != nil {
-			return nil, fmt.Errorf("failed to cast to DaemonSet: %v", err)
+			return nil, "", fmt.Errorf("failed to cast to DaemonSet: %v", err)
 		}
-		return &daemonSet.Spec.Template, nil
+		return &daemonSet.Spec.Template, metav1.FormatLabelSelector(daemonSet.Spec.Selector), nil
 
 	default:
-		return nil, fmt.Errorf("unsupported kind: %s", gvk.Kind)
+		return nil, "", fmt.Errorf("unsupported kind: %s", gvk.Kind)
 	}
 }
 
 func getInstrumentationLabelTexts(workload *unstructured.Unstructured, ns *v1.Namespace) (workloadText, nsText, decisionText string, instrumented bool) {
-	odigosLabel, workloadFound := workload.GetLabels()[consts.OdigosInstrumentationLabel]
+	workloadLabel, workloadFound := workload.GetLabels()[consts.OdigosInstrumentationLabel]
 	nsLabel, nsFound := ns.GetLabels()[consts.OdigosInstrumentationLabel]
 
 	if workloadFound {
-		workloadText = consts.OdigosInstrumentationLabel + "=" + odigosLabel
+		workloadText = consts.OdigosInstrumentationLabel + "=" + workloadLabel
 	} else {
 		workloadText = consts.OdigosInstrumentationLabel + " label not set"
 	}
@@ -87,21 +104,21 @@ func getInstrumentationLabelTexts(workload *unstructured.Unstructured, ns *v1.Na
 	}
 
 	if workloadFound {
-		instrumented = odigosLabel == consts.InstrumentationEnabled
+		instrumented = workloadLabel == consts.InstrumentationEnabled
 		if instrumented {
-			decisionText = "Workload is instrumented because the " + workload.GetKind() + " contains the '" + consts.OdigosInstrumentationLabel + "' label with value '" + consts.InstrumentationEnabled + "'"
+			decisionText = "Workload is instrumented because the " + workload.GetKind() + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
 		} else {
-			decisionText = "Workload is not instrumented because the " + workload.GetKind() + " contains the '" + consts.OdigosInstrumentationLabel + "' label with value '" + odigosLabel + "'"
+			decisionText = "Workload is NOT instrumented because the " + workload.GetKind() + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
 		}
 	} else {
 		instrumented = nsText == consts.InstrumentationEnabled
 		if instrumented {
-			decisionText = workload.GetKind() + " is instrumented because the it's namespace " + consts.OdigosInstrumentationLabel + " is set to " + consts.InstrumentationEnabled
+			decisionText = "Workload is instrumented because the " + workload.GetKind() + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
 		} else {
 			if nsFound {
-				decisionText = workload.GetKind() + " is not instrumented because the it's namespace " + consts.OdigosInstrumentationLabel + " is set to " + nsLabel
+				decisionText = "Workload is NOT instrumented because the " + workload.GetKind() + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
 			} else {
-				decisionText = workload.GetKind() + " is not instrumented because neither the workload nor the namespace has the " + consts.OdigosInstrumentationLabel + " label set"
+				decisionText = "Workload is NOT instrumented because neither the workload nor the namespace has the '" + consts.OdigosInstrumentationLabel + "' label set"
 			}
 		}
 	}
@@ -155,10 +172,14 @@ var describeCmd = &cobra.Command{
 		fmt.Println("")
 		fmt.Println("Labels:")
 		workloadText, nsText, decisionText, instrumented := getInstrumentationLabelTexts(workloadObj, namespace)
-		fmt.Println("Workload: " + workloadText)
-		fmt.Println("Namespace: " + nsText)
-		fmt.Println("Instrumented: ", instrumented)
-		fmt.Println("Decision: " + decisionText)
+		if instrumented {
+			fmt.Println("  Instrumented: ", wrapTextInGreen("true"))
+		} else {
+			fmt.Println("  Instrumented: ", wrapTextInRed("false"))
+		}
+		fmt.Println("  Workload: " + workloadText)
+		fmt.Println("  Namespace: " + nsText)
+		fmt.Println("  Decision: " + decisionText)
 
 		runtimeObjectName := workload.GetRuntimeObjectName(workloadObj.GetName(), workloadObj.GetKind())
 		instrumentationConfig, err := client.OdigosClient.InstrumentationConfigs(ns).Get(ctx, runtimeObjectName, metav1.GetOptions{})
@@ -166,12 +187,15 @@ var describeCmd = &cobra.Command{
 			fmt.Printf("Error: %v\n", err)
 			return
 		}
+		instrumentationConfigNotFound := apierrors.IsNotFound(err)
+		statusAsExpected := instrumentationConfigNotFound == !instrumented
 		fmt.Println("")
 		fmt.Println("Instrumentation Config:")
-		if apierrors.IsNotFound(err) {
-			fmt.Println("Not yet created")
+		if instrumentationConfigNotFound {
+			fmt.Println(wrapTextSuccessOfFailure("  Not yet created", statusAsExpected))
 		} else {
-			fmt.Println("Created at " + instrumentationConfig.GetCreationTimestamp().String())
+			createAtText := "  Created at " + instrumentationConfig.GetCreationTimestamp().String()
+			fmt.Println(wrapTextSuccessOfFailure(createAtText, statusAsExpected))
 		}
 
 		instrumentedApplication, err := client.OdigosClient.InstrumentedApplications(ns).Get(ctx, runtimeObjectName, metav1.GetOptions{})
@@ -179,28 +203,47 @@ var describeCmd = &cobra.Command{
 			fmt.Printf("Error: %v\n", err)
 			return
 		}
+		instrumentedApplicationNotFound := apierrors.IsNotFound(err)
+		statusAsExpected = instrumentedApplicationNotFound == !instrumented
 		fmt.Println("")
 		fmt.Println("Runtime inspection details:")
-		if apierrors.IsNotFound(err) {
-			fmt.Println("Not yet created")
+		if instrumentedApplicationNotFound {
+			fmt.Println(wrapTextSuccessOfFailure("Not yet created", statusAsExpected))
 		} else {
-			fmt.Println("Created at " + instrumentedApplication.GetCreationTimestamp().String())
-			fmt.Println("Detected Containers:")
+			createdAtText := "  Created at " + instrumentedApplication.GetCreationTimestamp().String()
+			fmt.Println(wrapTextSuccessOfFailure(createdAtText, statusAsExpected))
+			fmt.Println("  Detected Containers:")
 			for _, container := range instrumentedApplication.Spec.RuntimeDetails {
 				fmt.Println("    - Container Name:", container.ContainerName)
-				fmt.Println("      Language:      ", container.Language)
+				colorfulLanguage := string(container.Language)
+				if container.Language == common.UnknownProgrammingLanguage {
+					colorfulLanguage = wrapTextInRed(string(container.Language))
+				} else if container.Language != common.IgnoredProgrammingLanguage {
+					colorfulLanguage = wrapTextInGreen(string(container.Language))
+				}
+				fmt.Println("      Language:      ", colorfulLanguage)
 			}
 		}
 
-		podTemplate, err := extractPodTemplate(workloadObj)
+		podTemplate, podLabelSelector, err := extractPodInfo(workloadObj)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			return
 		}
+		appliedInstrumentationDeviceStatusMessage := "Unknown"
+		if instrumentedApplication != nil && instrumentedApplication.Status.Conditions != nil {
+			for _, condition := range instrumentedApplication.Status.Conditions {
+				if condition.Type == "AppliedInstrumentationDevice" { // TODO: share this constant with instrumentor
+					appliedInstrumentationDeviceStatusMessage = wrapTextSuccessOfFailure(condition.Message, condition.Status == metav1.ConditionTrue)
+					break
+				}
+			}
+		}
 		fmt.Println("")
 		fmt.Println("Instrumentation Device:")
+		fmt.Println("  Applied to Pod Template:", appliedInstrumentationDeviceStatusMessage)
 		for _, container := range podTemplate.Spec.Containers {
-			fmt.Println("    - Container Name:", container.Name)
+			fmt.Println("  - Container Name:", container.Name)
 			odigosDevices := make([]string, 0)
 			for resourceName := range container.Resources.Limits {
 				deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
@@ -209,9 +252,76 @@ var describeCmd = &cobra.Command{
 				}
 			}
 			if len(odigosDevices) == 0 {
-				fmt.Println("      No instrumentation devices")
+				fmt.Println("    No instrumentation devices")
 			} else {
-				fmt.Println("      Instrumentation Devices:", strings.Join(odigosDevices, ", "))
+				fmt.Println("    Instrumentation Devices:", wrapTextInGreen(strings.Join(odigosDevices, ", ")))
+			}
+		}
+
+		instrumentedAppSelector := labels.SelectorFromSet(labels.Set{
+			"instrumented-app": runtimeObjectName,
+		})
+		instrumentationInstances, err := client.OdigosClient.InstrumentationInstances(ns).List(ctx, metav1.ListOptions{LabelSelector: instrumentedAppSelector.String()})
+
+		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{LabelSelector: podLabelSelector})
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+		podsStatuses := make(map[v1.PodPhase]int)
+		for _, pod := range pods.Items {
+			podsStatuses[pod.Status.Phase]++
+		}
+		podPhasesTexts := make([]string, 0)
+		for phase, count := range podsStatuses {
+			podPhasesTexts = append(podPhasesTexts, fmt.Sprintf("%s %d", phase, count))
+		}
+		podPhasesText := strings.Join(podPhasesTexts, ", ")
+		fmt.Println("")
+		fmt.Printf("Pods (Total %d, %s):\n", len(pods.Items), podPhasesText)
+		for _, pod := range pods.Items {
+			fmt.Println("")
+			fmt.Println("  Pod Name:", pod.GetName())
+			fmt.Println("  Pod Phase:", pod.Status.Phase)
+			fmt.Println("  Pod Node Name:", pod.Spec.NodeName)
+			fmt.Println("  Containers:")
+			for _, container := range pod.Spec.Containers {
+				instrumentationDevices := make([]string, 0)
+				fmt.Println("  - Container Name:", container.Name)
+				for resourceName := range container.Resources.Limits {
+					deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
+					if found {
+						instrumentationDevices = append(instrumentationDevices, deviceName)
+					}
+				}
+				if len(instrumentationDevices) == 0 {
+					fmt.Println("    No instrumentation devices")
+				} else {
+					fmt.Println("    Instrumentation Devices:", strings.Join(instrumentationDevices, ", "))
+				}
+
+				// find the instrumentation instances for this pod
+				for _, instance := range instrumentationInstances.Items {
+					if len(instance.OwnerReferences) != 1 || instance.OwnerReferences[0].Kind != "Pod" {
+						continue
+					}
+					if instance.OwnerReferences[0].Name != pod.GetName() {
+						continue
+					}
+					fmt.Println("    Instrumentation Instances:")
+					healthy := "unknown"
+					if instance.Status.Healthy != nil {
+						if *instance.Status.Healthy {
+							healthy = wrapTextInGreen("true")
+						} else {
+							healthy = wrapTextInRed("false")
+						}
+					}
+					fmt.Println("    - Healthy:", healthy)
+					if instance.Status.Message != "" {
+						fmt.Println("      Message:", instance.Status.Message)
+					}
+				}
 			}
 		}
 	},
