@@ -320,17 +320,22 @@ func printPodContainerInstrumentationInstancesInfo(instances []*odigosv1.Instrum
 
 	fmt.Println("    Instrumentation Instances:")
 	for _, instance := range instances {
-		healthy := "unknown"
+		unhealthy := false
+		healthyText := "unknown"
 		if instance.Status.Healthy != nil {
 			if *instance.Status.Healthy {
-				healthy = wrapTextInGreen("true")
+				healthyText = wrapTextInGreen("true")
 			} else {
-				healthy = wrapTextInRed("false")
+				healthyText = wrapTextInRed("false")
+				unhealthy = true
 			}
 		}
-		fmt.Println("    - Healthy:", healthy)
+		fmt.Println("    - Healthy:", healthyText)
 		if instance.Status.Message != "" {
 			fmt.Println("      Message:", instance.Status.Message)
+		}
+		if unhealthy {
+			fmt.Println("      Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#7-instrumentation-instance-unhealthy")
 		}
 	}
 }
@@ -346,11 +351,21 @@ func printPodContainerInfo(pod *corev1.Pod, container *corev1.Container, instrum
 	}
 	expectedDevices, foundExpectedDevices := containerNameToExpectedDevices[container.Name]
 	if len(instrumentationDevices) == 0 {
-		fmt.Println(wrapTextSuccessOfFailure("    No instrumentation devices", !foundExpectedDevices || len(expectedDevices) == 0))
+		isMatch := !foundExpectedDevices || len(expectedDevices) == 0
+		fmt.Println(wrapTextSuccessOfFailure("    No instrumentation devices", isMatch))
+		if !isMatch {
+			fmt.Println("      Expected Devices:", strings.Join(expectedDevices, ", "))
+			fmt.Println("      Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#6-pods-instrumentation-devices-not-matching-manifest")
+		}
 	} else {
 		actualDevicesText := strings.Join(instrumentationDevices, ", ")
 		expectedDevicesText := strings.Join(expectedDevices, ", ")
-		fmt.Println("    Instrumentation Devices:", wrapTextSuccessOfFailure(actualDevicesText, foundExpectedDevices && actualDevicesText == expectedDevicesText))
+		isMatch := actualDevicesText == expectedDevicesText
+		fmt.Println("    Instrumentation Devices:", wrapTextSuccessOfFailure(actualDevicesText, isMatch))
+		if !isMatch {
+			fmt.Println("      Expected Devices:", expectedDevicesText)
+			fmt.Println("      Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#6-pods-instrumentation-devices-not-matching-manifest")
+		}
 	}
 
 	// find the instrumentation instances for this pod
