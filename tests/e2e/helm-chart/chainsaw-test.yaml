@@ -24,9 +24,9 @@ spec:
     - script:
         # TODO(edenfed): Use the latest version of the chart
         content: |
-          git clone https://github.com/odigos-io/odigos-charts.git /tmp/odigos-charts -b align-with-cli && cd /tmp/odigos-charts/charts
+          git clone https://github.com/odigos-io/odigos-charts.git /tmp/odigos-charts -b align-with-cli
           # Retry 3 times to avoid flakiness
-          while ! helm install odigos ./odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test --atomic; do
+          while ! helm upgrade --install odigos /tmp/odigos-charts/charts/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test; do
             echo "Failed to install Odigos, retrying..."
             sleep 1
           done
