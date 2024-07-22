@@ -5,7 +5,7 @@ FROM python:3.11 AS python-builder
 ARG ODIGOS_VERSION
 WORKDIR /python-instrumentation
 COPY ../agents/python ./agents/python
-RUN echo "VERSION = \"$ODIGOS_VERSION\";" > ./agents/python/distro/version.py
+RUN echo "VERSION = \"$ODIGOS_VERSION\";" > ./agents/python/configurator/version.py
 RUN mkdir workspace && pip install ./agents/python/  --target workspace
 
 ######### Node.js Native Community Agent #########
