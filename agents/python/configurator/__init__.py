@@ -2,36 +2,17 @@ import threading
 import atexit
 import logging
 import os
-import sys
 import opentelemetry.sdk._configuration as sdk_config
-from opentelemetry.instrumentation.distro import BaseDistro
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.resources import ProcessResourceDetector, OTELResourceDetector
-
-import importlib.metadata as md
-
 from .lib_handling import reorder_python_path, reload_distro_modules
 from .version import VERSION
 from opamp.http_client import OpAMPHTTPClient
-from pkg_resources import EntryPoint
-from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 
-
-distro_logger = logging.getLogger(__name__)
-distro_logger.setLevel(logging.DEBUG)
-
-class OdigosPythonDistro(BaseDistro):
+class OdigosPythonConfigurator(sdk_config._BaseConfigurator):
+    
     def _configure(self, **kwargs):
         _initialize_components()
-    
-    def load_instrumentor(  
-        self, entry_point: EntryPoint, **kwargs
-    ):
-        try:
-            instrumentor: BaseInstrumentor = entry_point.load()
-            instrumentor().instrument(**kwargs)
-        except Exception as e:
-            distro_logger.error(f'Error loading instrumentor [{entry_point}]: {e}')
         
         
 def _initialize_components():    
@@ -66,7 +47,6 @@ def _initialize_components():
 
     # Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
     # This is necessary because the user application's dependencies may be incompatible with those used by the agent.
-    
     reorder_python_path()
     # Reload distro modules to ensure the new path is used.
     reload_distro_modules()

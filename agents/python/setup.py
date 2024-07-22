@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="odigos-python-distro",
+    name="odigos-python-configurator",
     version="0.1.0",
-    description="Odigos Distro for Python OpenTelemetry Auto-Instrumentation",
+    description="Odigos Configurator for Python OpenTelemetry Auto-Instrumentation",
     author="Tamir David",
     author_email="tamir@odigos.io",
-    packages=find_packages(include=["distro", "distro.*", "opamp", "opamp.*"]),
+    packages=find_packages(include=["configurator", "configurator.*", "opamp", "opamp.*"]),
     install_requires=[
         "requests~=2.7",
         'protobuf>=3.19, <5.0',
@@ -62,8 +62,8 @@ setup(
     ],
     python_requires=">=3.8",
     entry_points={
-        'opentelemetry_distro': [
-            'distro = distro:OdigosPythonDistro'
+        'opentelemetry_configurator': [
+            'odigos-python-configurator = configurator:OdigosPythonConfigurator'
         ],
     },
 )

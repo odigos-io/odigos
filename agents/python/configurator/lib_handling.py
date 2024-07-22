@@ -11,6 +11,8 @@ def reorder_python_path():
     
     
 def reload_distro_modules() -> None:
+    # Reload distro modules, as they may have been imported before the path was reordered.
+    # Add any new distro modules to this list.
     needed_modules = [
         'google.protobuf',
         'requests',
