@@ -1,10 +1,21 @@
 TAG ?= $(shell odigos version --cluster)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 ORG := keyval
+DOCKER_CMD := docker build
+
+.PHONY: set-docker-args
+set-docker-args:
+ifeq ($(DOCKER_USE_CACHE), true)
+	BRANCH_NAME := $(shell git rev-parse --abbrev-ref HEAD)
+	$(eval DOCKER_CMD := docker buildx build --cache-to type=registry,mode=max,ref=ghcr.io/odigos-io/odigos/${IMAGE_NAME}:cache-${BRANCH_NAME} --cache-from ghcr.io/odigos-io/odigos/${IMAGE_NAME}:cache-${BRANCH_NAME})
+else
+	$(eval DOCKER_CMD := docker build)
+endif
 
 .PHONY: build-odiglet
-build-odiglet:
-	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG)
+build-odiglet: IMAGE_NAME=odiglet
+build-odiglet: set-docker-args
+	$(DOCKER_CMD) -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG)
 
 .PHONY: verify-nodejs-agent
 verify-nodejs-agent:
@@ -18,16 +29,19 @@ build-odiglet-with-agents:
 	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-native-community-src=../opentelemetry-node
 
 .PHONY: build-autoscaler
-build-autoscaler:	
-	docker build -t $(ORG)/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
+build-autoscaler: IMAGE_NAME=autoscaler
+build-autoscaler: set-docker-args
+	$(DOCKER_CMD) -t $(ORG)/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
 
 .PHONY: build-instrumentor
-build-instrumentor:
-	docker build -t $(ORG)/odigos-instrumentor:$(TAG) . --build-arg SERVICE_NAME=instrumentor
+build-instrumentor: IMAGE_NAME=instrumentor
+build-instrumentor: set-docker-args
+	$(DOCKER_CMD) -t $(ORG)/odigos-instrumentor:$(TAG) . --build-arg SERVICE_NAME=instrumentor
 
 .PHONY: build-scheduler
-build-scheduler:
-	docker build -t $(ORG)/odigos-scheduler:$(TAG) . --build-arg SERVICE_NAME=scheduler
+build-scheduler: IMAGE_NAME=scheduler
+build-scheduler: set-docker-args
+	$(DOCKER_CMD) -t $(ORG)/odigos-scheduler:$(TAG) . --build-arg SERVICE_NAME=scheduler
 
 .PHONY: build-collector
 build-collector:

@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  packages: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -57,7 +60,7 @@ jobs:
           go build -tags=embed_manifests -o odigos
       - name: Build and Load Odigos Images
         run: |
-          TAG=e2e-test make build-images load-to-kind
+          TAG=e2e-test DOCKER_USE_CACHE=true make build-images load-to-kind
       - name: Run E2E Tests
         run: |
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
