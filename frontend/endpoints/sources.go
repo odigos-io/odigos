@@ -48,6 +48,73 @@ type PatchSourceRequest struct {
 	ReportedName *string `json:"reported_name"`
 }
 
+func GetActualSources(ctx context.Context, odigosns string) []ThinSource {
+
+	effectiveInstrumentedSources := map[SourceID]ThinSource{}
+
+	var (
+		items                    []GetApplicationItem
+		instrumentedApplications *v1alpha1.InstrumentedApplicationList
+	)
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		relevantNamespaces, err := getRelevantNameSpaces(ctx, odigosns)
+		if err != nil {
+			return err
+		}
+		nsInstrumentedMap := map[string]*bool{}
+		for _, ns := range relevantNamespaces {
+			nsInstrumentedMap[ns.Name] = isObjectLabeledForInstrumentation(ns.ObjectMeta)
+		}
+		// get all the applications in all the namespaces,
+		// passing an empty string here is more efficient compared to iterating over the namespaces
+		// since it will make a single request per workload type to the k8s api server
+		items, err = getApplicationsInNamespace(ctx, "", nsInstrumentedMap)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		instrumentedApplications, err = kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(ctx, metav1.ListOptions{})
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil
+	}
+
+	for _, item := range items {
+		if item.nsItem.InstrumentationEffective {
+			id := SourceID{Namespace: item.namespace, Kind: string(item.nsItem.Kind), Name: item.nsItem.Name}
+			effectiveInstrumentedSources[id] = ThinSource{
+				NumberOfRunningInstances: item.nsItem.Instances,
+				SourceID:                 id,
+			}
+		}
+	}
+
+	sourcesResult := []ThinSource{}
+	// go over the instrumented applications and update the languages of the effective sources.
+	// Not all effective sources necessarily have a corresponding instrumented application,
+	// it may take some time for the instrumented application to be created. In that case the languages
+	// slice will be empty.
+	for _, app := range instrumentedApplications.Items {
+		thinSource := k8sInstrumentedAppToThinSource(&app)
+		if source, ok := effectiveInstrumentedSources[thinSource.SourceID]; ok {
+			source.IaDetails = thinSource.IaDetails
+			effectiveInstrumentedSources[thinSource.SourceID] = source
+		}
+	}
+
+	for _, source := range effectiveInstrumentedSources {
+		sourcesResult = append(sourcesResult, source)
+	}
+
+	return sourcesResult
+
+}
+
 func GetSources(c *gin.Context, odigosns string) {
 	ctx := c.Request.Context()
 	effectiveInstrumentedSources := map[SourceID]ThinSource{}

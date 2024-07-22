@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/frontend/endpoints"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 )
 
@@ -73,12 +74,19 @@ func (r *mutationResolver) DeleteActualAction(ctx context.Context, cpID string, 
 
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context, cpID string) (*model.ComputePlatform, error) {
-	panic(fmt.Errorf("not implemented: ComputePlatform - computePlatform"))
+	k8sActualSources := endpoints.GetActualSources(ctx, "odigos-system")
+	res := make([]*model.K8sActualSource, len(k8sActualSources))
+	for i, source := range k8sActualSources {
+		res[i] = k8sActualSourceToGql(&source)
+	}
+
+	return &model.ComputePlatform{
+		K8sActualSources: res,
+	}, nil
 }
 
 // ComputePlatforms is the resolver for the computePlatforms field.
 func (r *queryResolver) ComputePlatforms(ctx context.Context) ([]*model.ComputePlatform, error) {
-
 	return []*model.ComputePlatform{
 		{
 			ID: "1",

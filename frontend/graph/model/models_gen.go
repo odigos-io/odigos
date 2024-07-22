@@ -37,6 +37,14 @@ type ComputePlatform struct {
 	ActualActions       []*ActualAction       `json:"actualActions"`
 }
 
+type Condition struct {
+	Type               string          `json:"type"`
+	Status             ConditionStatus `json:"status"`
+	LastTransitionTime *string         `json:"lastTransitionTime,omitempty"`
+	Reason             *string         `json:"reason,omitempty"`
+	Message            *string         `json:"message,omitempty"`
+}
+
 type DesiredActionInput struct {
 	Kind    string       `json:"kind"`
 	Name    *string      `json:"name,omitempty"`
@@ -96,6 +104,11 @@ type DestinationTypeField struct {
 	InitialValue   *string `json:"initialValue,omitempty"`
 }
 
+type InstrumentedApplicationDetails struct {
+	Languages  []*SourceLanguage `json:"languages,omitempty"`
+	Conditions []*Condition      `json:"conditions,omitempty"`
+}
+
 type K8sActualNamespace struct {
 	Name             string             `json:"name"`
 	AutoInstrumented *bool              `json:"autoInstrumented,omitempty"`
@@ -103,14 +116,15 @@ type K8sActualNamespace struct {
 }
 
 type K8sActualSource struct {
-	Namespace                  string          `json:"namespace"`
-	Kind                       K8sResourceKind `json:"kind"`
-	Name                       string          `json:"name"`
-	ServiceName                *string         `json:"serviceName,omitempty"`
-	AutoInstrumented           *bool           `json:"autoInstrumented,omitempty"`
-	CreationTimestamp          *string         `json:"creationTimestamp,omitempty"`
-	NumberOfInstances          *int            `json:"numberOfInstances,omitempty"`
-	HasInstrumentedApplication bool            `json:"hasInstrumentedApplication"`
+	Namespace                      string                          `json:"namespace"`
+	Kind                           K8sResourceKind                 `json:"kind"`
+	Name                           string                          `json:"name"`
+	ServiceName                    *string                         `json:"serviceName,omitempty"`
+	AutoInstrumented               *bool                           `json:"autoInstrumented,omitempty"`
+	CreationTimestamp              *string                         `json:"creationTimestamp,omitempty"`
+	NumberOfInstances              *int                            `json:"numberOfInstances,omitempty"`
+	HasInstrumentedApplication     bool                            `json:"hasInstrumentedApplication"`
+	InstrumentedApplicationDetails *InstrumentedApplicationDetails `json:"instrumentedApplicationDetails,omitempty"`
 }
 
 type K8sActualSourceRuntimeInfo struct {
@@ -145,6 +159,11 @@ type Mutation struct {
 }
 
 type Query struct {
+}
+
+type SourceLanguage struct {
+	ContainerName string `json:"containerName"`
+	Language      string `json:"language"`
 }
 
 type WorkloadInput struct {
@@ -191,6 +210,49 @@ func (e *ComputePlatformType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ComputePlatformType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ConditionStatus string
+
+const (
+	ConditionStatusTrue    ConditionStatus = "True"
+	ConditionStatusFalse   ConditionStatus = "False"
+	ConditionStatusUnknown ConditionStatus = "Unknown"
+)
+
+var AllConditionStatus = []ConditionStatus{
+	ConditionStatusTrue,
+	ConditionStatusFalse,
+	ConditionStatusUnknown,
+}
+
+func (e ConditionStatus) IsValid() bool {
+	switch e {
+	case ConditionStatusTrue, ConditionStatusFalse, ConditionStatusUnknown:
+		return true
+	}
+	return false
+}
+
+func (e ConditionStatus) String() string {
+	return string(e)
+}
+
+func (e *ConditionStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ConditionStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ConditionStatus", str)
+	}
+	return nil
+}
+
+func (e ConditionStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

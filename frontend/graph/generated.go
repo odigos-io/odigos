@@ -76,6 +76,14 @@ type ComplexityRoot struct {
 		Name                func(childComplexity int) int
 	}
 
+	Condition struct {
+		LastTransitionTime func(childComplexity int) int
+		Message            func(childComplexity int) int
+		Reason             func(childComplexity int) int
+		Status             func(childComplexity int) int
+		Type               func(childComplexity int) int
+	}
+
 	DesiredDestination struct {
 		ComputePlatforms func(childComplexity int) int
 		ExportSignals    func(childComplexity int) int
@@ -115,6 +123,11 @@ type ComplexityRoot struct {
 		VideoURL       func(childComplexity int) int
 	}
 
+	InstrumentedApplicationDetails struct {
+		Conditions func(childComplexity int) int
+		Languages  func(childComplexity int) int
+	}
+
 	K8sActualNamespace struct {
 		AutoInstrumented func(childComplexity int) int
 		K8sActualSources func(childComplexity int) int
@@ -122,14 +135,15 @@ type ComplexityRoot struct {
 	}
 
 	K8sActualSource struct {
-		AutoInstrumented           func(childComplexity int) int
-		CreationTimestamp          func(childComplexity int) int
-		HasInstrumentedApplication func(childComplexity int) int
-		Kind                       func(childComplexity int) int
-		Name                       func(childComplexity int) int
-		Namespace                  func(childComplexity int) int
-		NumberOfInstances          func(childComplexity int) int
-		ServiceName                func(childComplexity int) int
+		AutoInstrumented               func(childComplexity int) int
+		CreationTimestamp              func(childComplexity int) int
+		HasInstrumentedApplication     func(childComplexity int) int
+		InstrumentedApplicationDetails func(childComplexity int) int
+		Kind                           func(childComplexity int) int
+		Name                           func(childComplexity int) int
+		Namespace                      func(childComplexity int) int
+		NumberOfInstances              func(childComplexity int) int
+		ServiceName                    func(childComplexity int) int
 	}
 
 	K8sActualSourceRuntimeInfo struct {
@@ -161,6 +175,11 @@ type ComplexityRoot struct {
 		ComputePlatforms          func(childComplexity int) int
 		DesiredDestinations       func(childComplexity int) int
 		DestinationTypeCategories func(childComplexity int) int
+	}
+
+	SourceLanguage struct {
+		ContainerName func(childComplexity int) int
+		Language      func(childComplexity int) int
 	}
 }
 
@@ -349,6 +368,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ComputePlatform.Name(childComplexity), true
 
+	case "Condition.lastTransitionTime":
+		if e.complexity.Condition.LastTransitionTime == nil {
+			break
+		}
+
+		return e.complexity.Condition.LastTransitionTime(childComplexity), true
+
+	case "Condition.message":
+		if e.complexity.Condition.Message == nil {
+			break
+		}
+
+		return e.complexity.Condition.Message(childComplexity), true
+
+	case "Condition.reason":
+		if e.complexity.Condition.Reason == nil {
+			break
+		}
+
+		return e.complexity.Condition.Reason(childComplexity), true
+
+	case "Condition.status":
+		if e.complexity.Condition.Status == nil {
+			break
+		}
+
+		return e.complexity.Condition.Status(childComplexity), true
+
+	case "Condition.type":
+		if e.complexity.Condition.Type == nil {
+			break
+		}
+
+		return e.complexity.Condition.Type(childComplexity), true
+
 	case "DesiredDestination.computePlatforms":
 		if e.complexity.DesiredDestination.ComputePlatforms == nil {
 			break
@@ -517,6 +571,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DestinationTypeField.VideoURL(childComplexity), true
 
+	case "InstrumentedApplicationDetails.conditions":
+		if e.complexity.InstrumentedApplicationDetails.Conditions == nil {
+			break
+		}
+
+		return e.complexity.InstrumentedApplicationDetails.Conditions(childComplexity), true
+
+	case "InstrumentedApplicationDetails.languages":
+		if e.complexity.InstrumentedApplicationDetails.Languages == nil {
+			break
+		}
+
+		return e.complexity.InstrumentedApplicationDetails.Languages(childComplexity), true
+
 	case "K8sActualNamespace.autoInstrumented":
 		if e.complexity.K8sActualNamespace.AutoInstrumented == nil {
 			break
@@ -558,6 +626,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sActualSource.HasInstrumentedApplication(childComplexity), true
+
+	case "K8sActualSource.instrumentedApplicationDetails":
+		if e.complexity.K8sActualSource.InstrumentedApplicationDetails == nil {
+			break
+		}
+
+		return e.complexity.K8sActualSource.InstrumentedApplicationDetails(childComplexity), true
 
 	case "K8sActualSource.kind":
 		if e.complexity.K8sActualSource.Kind == nil {
@@ -791,6 +866,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.DestinationTypeCategories(childComplexity), true
+
+	case "SourceLanguage.containerName":
+		if e.complexity.SourceLanguage.ContainerName == nil {
+			break
+		}
+
+		return e.complexity.SourceLanguage.ContainerName(childComplexity), true
+
+	case "SourceLanguage.language":
+		if e.complexity.SourceLanguage.Language == nil {
+			break
+		}
+
+		return e.complexity.SourceLanguage.Language(childComplexity), true
 
 	}
 	return 0, false
@@ -2160,6 +2249,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_k8sActualSources(_ cont
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 			case "hasInstrumentedApplication":
 				return ec.fieldContext_K8sActualSource_hasInstrumentedApplication(ctx, field)
+			case "instrumentedApplicationDetails":
+				return ec.fieldContext_K8sActualSource_instrumentedApplicationDetails(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -2278,6 +2369,217 @@ func (ec *executionContext) fieldContext_ComputePlatform_actualActions(_ context
 				return ec.fieldContext_ActualAction_details(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ActualAction", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Condition_type(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Condition_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Condition_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Condition",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Condition_status(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Condition_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ConditionStatus)
+	fc.Result = res
+	return ec.marshalNConditionStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Condition_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Condition",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ConditionStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Condition_lastTransitionTime(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Condition_lastTransitionTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastTransitionTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Condition_lastTransitionTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Condition",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Condition_reason(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Condition_reason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Condition_reason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Condition",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Condition_message(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Condition_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Condition_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Condition",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3397,6 +3699,106 @@ func (ec *executionContext) fieldContext_DestinationTypeField_initialValue(_ con
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentedApplicationDetails_languages(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentedApplicationDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentedApplicationDetails_languages(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Languages, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.SourceLanguage)
+	fc.Result = res
+	return ec.marshalOSourceLanguage2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceLanguageᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentedApplicationDetails_languages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentedApplicationDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "containerName":
+				return ec.fieldContext_SourceLanguage_containerName(ctx, field)
+			case "language":
+				return ec.fieldContext_SourceLanguage_language(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SourceLanguage", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentedApplicationDetails_conditions(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentedApplicationDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentedApplicationDetails_conditions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Conditions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Condition)
+	fc.Result = res
+	return ec.marshalOCondition2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConditionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentedApplicationDetails_conditions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentedApplicationDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "type":
+				return ec.fieldContext_Condition_type(ctx, field)
+			case "status":
+				return ec.fieldContext_Condition_status(ctx, field)
+			case "lastTransitionTime":
+				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
+			case "reason":
+				return ec.fieldContext_Condition_reason(ctx, field)
+			case "message":
+				return ec.fieldContext_Condition_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sActualNamespace_name(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualNamespace) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sActualNamespace_name(ctx, field)
 	if err != nil {
@@ -3537,6 +3939,8 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(_ c
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 			case "hasInstrumentedApplication":
 				return ec.fieldContext_K8sActualSource_hasInstrumentedApplication(ctx, field)
+			case "instrumentedApplicationDetails":
+				return ec.fieldContext_K8sActualSource_instrumentedApplicationDetails(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -3879,6 +4283,53 @@ func (ec *executionContext) fieldContext_K8sActualSource_hasInstrumentedApplicat
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sActualSource_instrumentedApplicationDetails(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sActualSource_instrumentedApplicationDetails(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InstrumentedApplicationDetails, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.InstrumentedApplicationDetails)
+	fc.Result = res
+	return ec.marshalOInstrumentedApplicationDetails2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentedApplicationDetails(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sActualSource_instrumentedApplicationDetails(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sActualSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "languages":
+				return ec.fieldContext_InstrumentedApplicationDetails_languages(ctx, field)
+			case "conditions":
+				return ec.fieldContext_InstrumentedApplicationDetails_conditions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InstrumentedApplicationDetails", field.Name)
 		},
 	}
 	return fc, nil
@@ -5062,6 +5513,94 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SourceLanguage_containerName(ctx context.Context, field graphql.CollectedField, obj *model.SourceLanguage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceLanguage_containerName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContainerName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceLanguage_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceLanguage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SourceLanguage_language(ctx context.Context, field graphql.CollectedField, obj *model.SourceLanguage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceLanguage_language(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Language, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceLanguage_language(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceLanguage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7345,6 +7884,56 @@ func (ec *executionContext) _ComputePlatform(ctx context.Context, sel ast.Select
 	return out
 }
 
+var conditionImplementors = []string{"Condition"}
+
+func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet, obj *model.Condition) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, conditionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Condition")
+		case "type":
+			out.Values[i] = ec._Condition_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._Condition_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastTransitionTime":
+			out.Values[i] = ec._Condition_lastTransitionTime(ctx, field, obj)
+		case "reason":
+			out.Values[i] = ec._Condition_reason(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._Condition_message(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var desiredDestinationImplementors = []string{"DesiredDestination"}
 
 func (ec *executionContext) _DesiredDestination(ctx context.Context, sel ast.SelectionSet, obj *model.DesiredDestination) graphql.Marshaler {
@@ -7623,6 +8212,44 @@ func (ec *executionContext) _DestinationTypeField(ctx context.Context, sel ast.S
 	return out
 }
 
+var instrumentedApplicationDetailsImplementors = []string{"InstrumentedApplicationDetails"}
+
+func (ec *executionContext) _InstrumentedApplicationDetails(ctx context.Context, sel ast.SelectionSet, obj *model.InstrumentedApplicationDetails) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, instrumentedApplicationDetailsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InstrumentedApplicationDetails")
+		case "languages":
+			out.Values[i] = ec._InstrumentedApplicationDetails_languages(ctx, field, obj)
+		case "conditions":
+			out.Values[i] = ec._InstrumentedApplicationDetails_conditions(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var k8sActualNamespaceImplementors = []string{"K8sActualNamespace"}
 
 func (ec *executionContext) _K8sActualNamespace(ctx context.Context, sel ast.SelectionSet, obj *model.K8sActualNamespace) graphql.Marshaler {
@@ -7708,6 +8335,8 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "instrumentedApplicationDetails":
+			out.Values[i] = ec._K8sActualSource_instrumentedApplicationDetails(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8040,6 +8669,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var sourceLanguageImplementors = []string{"SourceLanguage"}
+
+func (ec *executionContext) _SourceLanguage(ctx context.Context, sel ast.SelectionSet, obj *model.SourceLanguage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sourceLanguageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SourceLanguage")
+		case "containerName":
+			out.Values[i] = ec._SourceLanguage_containerName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "language":
+			out.Values[i] = ec._SourceLanguage_language(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8544,6 +9217,26 @@ func (ec *executionContext) marshalNComputePlatformType2githubᚗcomᚋodigosᚑ
 	return v
 }
 
+func (ec *executionContext) marshalNCondition2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCondition(ctx context.Context, sel ast.SelectionSet, v *model.Condition) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Condition(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNConditionStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConditionStatus(ctx context.Context, v interface{}) (model.ConditionStatus, error) {
+	var res model.ConditionStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNConditionStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConditionStatus(ctx context.Context, sel ast.SelectionSet, v model.ConditionStatus) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNDesiredActionInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredActionInput(ctx context.Context, v interface{}) (model.DesiredActionInput, error) {
 	res, err := ec.unmarshalInputDesiredActionInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -8948,6 +9641,16 @@ func (ec *executionContext) marshalNSignalType2ᚕgithubᚗcomᚋodigosᚑioᚋo
 	return ret
 }
 
+func (ec *executionContext) marshalNSourceLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceLanguage(ctx context.Context, sel ast.SelectionSet, v *model.SourceLanguage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SourceLanguage(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -9304,6 +10007,53 @@ func (ec *executionContext) marshalOComputePlatform2ᚖgithubᚗcomᚋodigosᚑi
 	return ec._ComputePlatform(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOCondition2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Condition) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCondition2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCondition(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalODesiredDestination2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredDestination(ctx context.Context, sel ast.SelectionSet, v []*model.DesiredDestination) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -9407,6 +10157,13 @@ func (ec *executionContext) marshalODestinationTypeCategory2ᚖgithubᚗcomᚋod
 	return ec._DestinationTypeCategory(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOInstrumentedApplicationDetails2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentedApplicationDetails(ctx context.Context, sel ast.SelectionSet, v *model.InstrumentedApplicationDetails) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._InstrumentedApplicationDetails(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
 	if v == nil {
 		return nil, nil
@@ -9442,6 +10199,53 @@ func (ec *executionContext) marshalOK8sActualSourceRuntimeInfoContainer2ᚖgithu
 		return graphql.Null
 	}
 	return ec._K8sActualSourceRuntimeInfoContainer(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSourceLanguage2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceLanguageᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SourceLanguage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSourceLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceLanguage(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

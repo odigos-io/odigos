@@ -9,6 +9,12 @@ enum K8sResourceKind {
   StatefulSet
 }
 
+enum ConditionStatus {
+  True
+  False
+  Unknown
+}
+
 enum ProgrammingLanguage {
   Unspecified
   Java
@@ -30,6 +36,24 @@ enum SpanKind {
   Client
   Producer
   Consumer
+}
+
+type SourceLanguage {
+  containerName: String!
+  language: String!
+}
+
+type InstrumentedApplicationDetails {
+  languages: [SourceLanguage!]
+  conditions: [Condition!]
+}
+
+type Condition {
+  type: String!
+  status: ConditionStatus!
+  lastTransitionTime: String
+  reason: String
+  message: String
 }
 
 type K8sActualNamespace {
@@ -57,6 +81,7 @@ type K8sActualSource {
   # Odigos records an array of runtime infos.
   # currently we only keep the first one assuming it is the user's app.
   hasInstrumentedApplication: Boolean!
+  instrumentedApplicationDetails: InstrumentedApplicationDetails
 }
 type K8sActualSourceRuntimeInfo {
   mainContainer: K8sActualSourceRuntimeInfoContainer
