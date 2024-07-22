@@ -1,12 +1,13 @@
 TAG ?= $(shell odigos version --cluster)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
+# Use GITHUB_REF if set else use git branch
+BRANCH_NAME ?= $(shell git rev-parse --abbrev-ref HEAD)
 ORG := keyval
 DOCKER_CMD := docker build
 
 .PHONY: set-docker-args
 set-docker-args:
 ifeq ($(DOCKER_USE_CACHE), true)
-	BRANCH_NAME := $(shell git rev-parse --abbrev-ref HEAD)
 	$(eval DOCKER_CMD := docker buildx build --cache-to type=registry,mode=max,ref=ghcr.io/odigos-io/odigos/${IMAGE_NAME}:cache-${BRANCH_NAME} --cache-from type=registry,ref=ghcr.io/odigos-io/odigos/${IMAGE_NAME}:cache-${BRANCH_NAME})
 else
 	$(eval DOCKER_CMD := docker build)
