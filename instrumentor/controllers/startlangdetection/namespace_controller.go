@@ -1,11 +1,13 @@
-package runtime_details
+package startlangdetection
 
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/common/consts"
+
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,18 +21,17 @@ type NamespacesReconciler struct {
 
 func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-
 	var ns corev1.Namespace
 	err := n.Get(ctx, request.NamespacedName, &ns)
 	if err != nil {
-		logger.Error(err, "error fetching namespace object")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if !k8sutils.IsObjectLabeledForInstrumentation(&ns) {
 		return ctrl.Result{}, nil
 	}
 
+	logger.V(0).Info("Namespace labeled for instrumentation, recalculating runtime details of relevant workloads")
 	var deps appsv1.DeploymentList
 	err = n.Client.List(ctx, &deps, client.InNamespace(request.Name))
 	if client.IgnoreNotFound(err) != nil {
@@ -39,10 +40,11 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 	}
 
 	for _, dep := range deps.Items {
-		if !isInstrumentationDisabledExplicitly(&dep) {
-			_, err = inspectRuntimesOfRunningPods(ctx, &logger, dep.Spec.Selector.MatchLabels, n.Client, n.Scheme, &dep)
+		if _, exists := dep.Labels[consts.OdigosInstrumentationLabel]; !exists {
+			req := ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}
+			_, err = reconcileWorkload(ctx, n.Client, &appsv1.Deployment{}, "Deployment", req, n.Scheme)
 			if err != nil {
-				logger.Error(err, "error inspecting runtimes of running pods", "deployment", dep.Name, "namespace", dep.Namespace)
+				logger.Error(err, "error requesting runtime details from odiglets", "name", dep.Name, "namespace", dep.Namespace)
 			}
 		}
 	}
@@ -55,10 +57,11 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 	}
 
 	for _, st := range sts.Items {
-		if !isInstrumentationDisabledExplicitly(&st) {
-			_, err = inspectRuntimesOfRunningPods(ctx, &logger, st.Spec.Selector.MatchLabels, n.Client, n.Scheme, &st)
+		if _, exists := st.Labels[consts.OdigosInstrumentationLabel]; !exists {
+			req := ctrl.Request{NamespacedName: client.ObjectKey{Name: st.Name, Namespace: st.Namespace}}
+			_, err = reconcileWorkload(ctx, n.Client, &appsv1.StatefulSet{}, "StatefulSet", req, n.Scheme)
 			if err != nil {
-				logger.Error(err, "error inspecting runtimes of running pods", "statefulset", st.Name, "namespace", st.Namespace)
+				logger.Error(err, "error requesting runtime details from odiglets", "name", st.Name, "namespace", st.Namespace)
 			}
 		}
 	}
@@ -71,10 +74,11 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 	}
 
 	for _, ds := range dss.Items {
-		if !isInstrumentationDisabledExplicitly(&ds) {
-			_, err = inspectRuntimesOfRunningPods(ctx, &logger, ds.Spec.Selector.MatchLabels, n.Client, n.Scheme, &ds)
+		if _, exists := ds.Labels[consts.OdigosInstrumentationLabel]; !exists {
+			req := ctrl.Request{NamespacedName: client.ObjectKey{Name: ds.Name, Namespace: ds.Namespace}}
+			_, err = reconcileWorkload(ctx, n.Client, &appsv1.DaemonSet{}, "DaemonSet", req, n.Scheme)
 			if err != nil {
-				logger.Error(err, "error inspecting runtimes of running pods", "daemonset", ds.Name, "namespace", ds.Namespace)
+				logger.Error(err, "error requesting runtime details from odiglets", "name", ds.Name, "namespace", ds.Namespace)
 			}
 		}
 	}

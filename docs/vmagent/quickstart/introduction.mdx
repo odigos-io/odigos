@@ -9,7 +9,7 @@ We are going to deploy the application on a virtual machine and use Jaeger as th
 
 ## Deploying the target application
 
-We are going to install a subset of Odigos [demo application](https://github.com/odigos-io/simple-demo) that consists of 1 microservices written in Go.
+We are going to install Odigos [demo application](https://github.com/odigos-io/simple-demo) that consists of 5 microservices written in Java, Go, Python, Node.js and .NET
 
 <Frame>
     <img src="/images/demo_architecture.png" alt="Architecture of demo application" />
@@ -21,12 +21,12 @@ We are going to install a subset of Odigos [demo application](https://github.com
   <Tab title="APT">
   ```shell
   sudo apt update
-  sudo apt install membership
+  sudo apt install odigos-demo-frontend
   ```
   </Tab>
   <Tab title="DNF">
   ```shell
-  sudo dnf install membership
+  sudo dnf install odigos-demo-frontend
   ```
   </Tab>
 </Tabs>
@@ -34,12 +34,14 @@ We are going to install a subset of Odigos [demo application](https://github.com
 2. Check that the application is running:
 
 ```shell
-sudo systemctl status membership
+sudo systemctl status odigos-demo-frontend
 ```
+
+The service should show up in `active (running)` state.
 
 ## Deploying Jaeger
 
-This Jaeger setup is just for demonstration purposes. In a production environment, you would deploy Jaeger or any other backend in a more robust way.
+This Jaeger setup is intended for demonstration purposes only. In a production environment, you should deploy Jaeger or any other backend solution in a more reliable and scalable manner.
 
 Install Jaeger using the following commands:
 
@@ -50,16 +52,16 @@ Examples for jaeger `v1.0.57`:
 <Tabs>
   <Tab title="amd64">
   ```bash
-wget https://github.com/jaegertracing/jaeger/releases/download/v1.57.0/jaeger-1.57.0-linux-amd64.tar.gz
-tar -xvf jaeger-1.57.0-linux-amd64.tar.gz
-cd jaeger-1.57.0-linux-amd64
+wget https://github.com/jaegertracing/jaeger/releases/download/v1.59.0/jaeger-1.59.0-linux-amd64.tar.gz
+tar -xvf jaeger-1.59.0-linux-amd64.tar.gz
+cd jaeger-1.59.0-linux-amd64
   ```
   </Tab>
   <Tab title="arm64">
   ```bash
-wget https://github.com/jaegertracing/jaeger/releases/download/v1.57.0/jaeger-1.57.0-linux-arm64.tar.gz
-tar -xvf jaeger-1.57.0-linux-arm64.tar.gz
-cd jaeger-1.57.0-linux-arm64
+wget https://github.com/jaegertracing/jaeger/releases/download/v1.59.0/jaeger-1.59.0-linux-arm64.tar.gz
+tar -xvf jaeger-1.59.0-linux-arm64.tar.gz
+cd jaeger-1.59.0-linux-arm64
   ```
   </Tab>
 </Tabs>
