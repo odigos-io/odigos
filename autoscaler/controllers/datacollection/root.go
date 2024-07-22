@@ -2,13 +2,12 @@ package datacollection
 
 import (
 	"context"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"time"
-
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"time"
 )
 
 var dm = &DelayManager{}
@@ -19,6 +18,18 @@ const (
 
 func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
+
+	var instApps odigosv1.InstrumentedApplicationList
+	if err := c.List(ctx, &instApps); err != nil {
+		logger.Error(err, "Failed to list instrumented apps")
+		return err
+	}
+
+	if len(instApps.Items) == 0 {
+		logger.V(3).Info("No instrumented apps")
+		return nil
+	}
+
 	var collectorGroups odigosv1.CollectorsGroupList
 	if err := c.List(ctx, &collectorGroups); err != nil {
 		logger.Error(err, "Failed to list collectors groups")
@@ -36,12 +47,6 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 	if dataCollectionCollectorGroup == nil {
 		logger.V(3).Info("Data collection collector group doesn't exist, nothing to sync")
 		return nil
-	}
-
-	var instApps odigosv1.InstrumentedApplicationList
-	if err := c.List(ctx, &instApps); err != nil {
-		logger.Error(err, "Failed to list instrumented apps")
-		return err
 	}
 
 	var dests odigosv1.DestinationList
@@ -65,7 +70,7 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
-	_, err := syncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme)
+	_, err := SyncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err

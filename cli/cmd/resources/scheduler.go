@@ -154,6 +154,15 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 					"destinations/status",
 				},
 			},
+			{
+				Verbs: []string{
+					"list",
+					"get",
+					"watch",
+				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentedapplications"},
+			},
 		},
 	}
 }
