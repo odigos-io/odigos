@@ -16,8 +16,7 @@ type OrigWorkloadEnvValues struct {
 	modifiedSinceCreated bool
 }
 
-func NewOrigWorkloadEnvValues(workloadObj client.Object) (*OrigWorkloadEnvValues, error) {
-	workloadAnnotations := workloadObj.GetAnnotations()
+func NewOrigWorkloadEnvValues(workloadAnnotations map[string]string) (*OrigWorkloadEnvValues, error) {
 	manifestValues := make(map[string]envOverwrite.OriginalEnv)
 	if workloadAnnotations != nil {
 		if currentEnvAnnotation, ok := workloadAnnotations[consts.ManifestEnvOriginalValAnnotation]; ok {

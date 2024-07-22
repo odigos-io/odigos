@@ -85,13 +85,13 @@ load-to-kind-collector:
 load-to-kind-instrumentor:
 	kind load docker-image $(ORG)/odigos-instrumentor:$(TAG)
 
-.PHONY: load-to-kind-scheduler
-load-to-kind-scheduler:
-	kind load docker-image $(ORG)/odigos-scheduler:$(TAG)
-
 .PHONY: load-to-kind-ui
 load-to-kind-ui:
 	kind load docker-image $(ORG)/odigos-ui:$(TAG)
+
+.PHONY: load-to-kind-scheduler
+load-to-kind-scheduler:
+	kind load docker-image $(ORG)/odigos-scheduler:$(TAG)
 
 .PHONY: load-to-kind
 load-to-kind:
@@ -113,6 +113,11 @@ restart-autoscaler:
 .PHONY: restart-instrumentor
 restart-instrumentor:
 	kubectl rollout restart deployment odigos-instrumentor -n odigos-system
+
+.PHONY: restart-scheduler
+restart-scheduler:
+	kubectl rollout restart deployment odigos-scheduler -n odigos-system
+
 
 .PHONY: restart-collector
 restart-collector:
@@ -146,6 +151,11 @@ deploy-instrumentor:
 deploy-ui:
 	make build-ui TAG=$(TAG) && make load-to-kind-ui TAG=$(TAG) && make restart-ui
 
+.PHONY: deploy-scheduler
+deploy-scheduler:
+	make build-scheduler TAG=$(TAG) && make load-to-kind-scheduler TAG=$(TAG) && make restart-scheduler
+
+
 .PHONY: debug-odiglet
 debug-odiglet:
 	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/debug.Dockerfile
@@ -155,7 +165,7 @@ debug-odiglet:
 	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
 
 .PHONY: deploy
-deploy: deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor
+deploy: deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor deploy-scheduler
 
 ,PHONY: e2e-test
 e2e-test:
