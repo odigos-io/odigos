@@ -1,9 +1,9 @@
 name: build
 
 on:
-  pull_request:
-    branches:
-      - main
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize]
 
 permissions:
   packages: write
