@@ -1,6 +1,5 @@
 import threading
 import atexit
-import logging
 import os
 import opentelemetry.sdk._configuration as sdk_config
 from opentelemetry.sdk.resources import Resource
