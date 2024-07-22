@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   kubernetes-test:
-    runs-on: large-runner
+    runs-on: buildjet-8vcpu-ubuntu-2204
     strategy:
       fail-fast: false
       matrix:
