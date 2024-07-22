@@ -82,6 +82,26 @@
       ]
     },
     {
+      "group": "Instrumentations",
+      "pages": [
+        "instrumentations/overview",
+        {
+          "group": "Go",
+          "pages": [
+            "instrumentations/golang/golang",
+            "instrumentations/golang/enrichment"
+          ]
+        },
+        {
+          "group": "Node.js",
+          "pages": [
+            "instrumentations/nodejs/nodejs",
+            "instrumentations/nodejs/enrichment"
+          ]
+        }
+      ]
+    },
+    {
       "group": "Odigos Pipeline",
       "pages": [
         "pipeline/overview",
