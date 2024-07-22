@@ -2,13 +2,13 @@
 
 # Setup
 TMPDIR="$(mktemp -d)"
-CHARTDIRS=("helm/odigos" "helm/odigos-crds")
+CHARTDIRS=("helm/odigos")
 
 prefix () {
 	echo "${@:1}"
 	echo "${@:2}"
 	for i in "${@:2}"; do
-		echo "renaming $i to $1$i"
+		echo "Renaming $i to $1$i"
 		mv "$i" "$1$i"
 	done
 }
@@ -35,7 +35,7 @@ git worktree add $TMPDIR gh-pages -f
 # Update index with new packages
 for chart in "${CHARTDIRS[@]}"
 do
-	echo before $chart/Chart.yaml
+	echo "Updating $chart/Chart.yaml with version ${TAG#v}"
 	sed -i -E 's/0.0.0/'"${TAG#v}"'/' $chart/Chart.yaml
 done
 helm package ${CHARTDIRS[*]} -d $TMPDIR
