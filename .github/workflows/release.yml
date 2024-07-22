@@ -1,4 +1,4 @@
-name: Release Odigos CLI
+name: Release Odigos
 
 on:
   workflow_dispatch:
