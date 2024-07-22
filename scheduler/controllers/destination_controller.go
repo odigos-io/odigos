@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/scheduler/controllers/collectorgroups"
@@ -57,7 +58,7 @@ func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		if len(collectorGroups.Items) == 0 {
 			logger.V(0).Info("destinations found, but no collectors groups found, creating gateway")
-			err = r.Create(ctx, collectorgroups.NewGateway(req.Namespace))
+			err = utils.CreateCollectorGroup(ctx, r.Client, collectorgroups.NewClusterCollectorGroup(req.Namespace))
 			if err != nil {
 				logger.Error(err, "failed to create gateway")
 				return ctrl.Result{}, err

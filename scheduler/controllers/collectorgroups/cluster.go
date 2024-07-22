@@ -6,10 +6,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewGateway(namespace string) *odigosv1.CollectorsGroup {
+func NewClusterCollectorGroup(namespace string) *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OdigosClusterCollectorDeploymentName,
+			Name:      consts.OdigosClusterCollectorCollectorGroupName,
 			Namespace: namespace,
 		},
 		Spec: odigosv1.CollectorsGroupSpec{
