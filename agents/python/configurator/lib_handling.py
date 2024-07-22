@@ -34,10 +34,3 @@ def reload_distro_modules() -> None:
         if module_name in sys.modules:
             module = sys.modules[module_name]
             importlib.reload(module)
-            
-
-def get_module_version(module_name: str):
-    try:
-        return md.version(module_name)
-    except md.PackageNotFoundError:
-        return 'unknown'
