@@ -79,6 +79,7 @@ spec:
       - script:
           timeout: 60s
           content: |
+            #!/bin/bash
             while true; do
               # Apply the job
               kubectl apply -f 05-generate-traffic.yaml
