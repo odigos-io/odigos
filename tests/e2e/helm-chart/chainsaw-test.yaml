@@ -76,28 +76,29 @@ spec:
         file: assert-instrumented-and-pipeline.yaml
   - name: Generate Traffic
     try:
-      - create:
-          file: 05-generate-traffic.yaml
-      - assert:
-          file: assert-traffic-job-running.yaml
-          timeout: 20s
-  - name: Wait for traces
-    try:
-    - script:
-        timeout: 60s
-        content: |
-          while true; do
-            ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
-            if [ $? -eq 0 ]; then
-              break
-            fi
-            sleep 3
-            ../../common/flush_traces.sh
-          done
-    catch:
-    - podLogs:
-        name: frontend
-        namespace: default
+      - script:
+          timeout: 60s
+          content: |
+            while true; do
+              # Apply the job
+              kubectl apply -f 05-generate-traffic.yaml
+            
+              # Wait for the job to complete
+              job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+              kubectl wait --for=condition=complete job/$job_name
+            
+              # Delete the job
+              kubectl delete -f 05-generate-traffic.yaml
+            
+              # Run the wait-for-trace script
+              ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
+              if [[ $? -eq 0 ]]; then
+                break
+              else
+                sleep 3
+                ../../common/flush_traces.sh
+              fi
+            done
   - name: Verify Trace - Context Propagation
     try:
     - script:
