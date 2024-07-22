@@ -70,13 +70,10 @@ func k8sActualSourceToGql(k8sSource *endpoints.ThinSource) *gqlmodel.K8sActualSo
 		}
 	}
 
-	serviceName := "test-service-name"
-
 	return &gqlmodel.K8sActualSource{
 		Namespace:                      k8sSource.Namespace,
 		Kind:                           k8sKindToGql(k8sSource.Kind),
 		Name:                           k8sSource.Name,
-		ServiceName:                    &serviceName,
 		NumberOfInstances:              &k8sSource.NumberOfRunningInstances,
 		InstrumentedApplicationDetails: gqlIaDetails,
 	}
