@@ -1,0 +1,66 @@
+---
+title: "Enriching Node.js Signals"
+sidebarTitle: "Enrichment"
+---
+
+## Required dependencies
+
+Add the following npm packages to your service by running:
+
+```bash
+npm install @opentelemetry/api@1.8.0
+```
+
+<Warning>
+Odigos agent implements OpenTelemetry API version 1.8.0. Any version greater than 1.8.0 may not be compatible with Odigos agent and fail to produce data.
+
+Please do not use caret range ~~`@opentelemetry/api@^1.8.0`~~ for this dependency in your package.json to avoid pulling in incompatible version.
+</Warning>
+
+## Creating Spans
+
+To enhance your traces with spans for your custom business logic operations, you need to create a span in your code and wrap the operation you want to observe.
+
+The `tracer` object is the entry point for the OpenTelemetry API.
+
+You can create a `tracer` object using the `getTracer` method from the `@opentelemetry/api` package.
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+const opentelemetry = require('@opentelemetry/api');
+
+const tracer = opentelemetry.trace.getTracer(
+  'instrumentation-scope-name',
+  'instrumentation-scope-version',
+);
+
+function my_function() {
+  const span = tracer.startSpan('my_function');
+  // Your code here
+  span.end();
+}
+```
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import opentelemetry from '@opentelemetry/api';
+
+const tracer = opentelemetry.trace.getTracer(
+  'instrumentation-scope-name',
+  'instrumentation-scope-version',
+);
+
+function my_function() {
+  const span = tracer.startSpan('my_function');
+  // Your code here
+  span.end();
+}
+```
+</Tab>
+</Tabs>
+
+Make sure to replace `instrumentation-scope-name` and `instrumentation-scope-version` with the name and version of your instrumented file.
+
+
+
