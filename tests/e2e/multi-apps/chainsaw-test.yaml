@@ -64,11 +64,6 @@ spec:
       - assert:
           file: assert-traffic-job-running.yaml
           timeout: 20s
-  - name: Flush destination
-    try:
-      - script:
-          content: |
-            ../../common/flush_traces.sh
   - name: Wait for traces
     try:
     - script:
@@ -80,6 +75,7 @@ spec:
               break
             fi
             sleep 3
+            ../../common/flush_traces.sh
           done
     catch:
     - podLogs:

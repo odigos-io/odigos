@@ -22,9 +22,8 @@ spec:
   - name: Install Odigos
     try:
     - script:
-        # TODO(edenfed): Use the latest version of the chart
         content: |
-          git clone https://github.com/odigos-io/odigos-charts.git /tmp/odigos-charts -b align-with-cli
+          git clone https://github.com/odigos-io/odigos-charts.git /tmp/odigos-charts
           # Retry 3 times to avoid flakiness
           while ! helm upgrade --install odigos /tmp/odigos-charts/charts/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test; do
             echo "Failed to install Odigos, retrying..."
@@ -82,11 +81,6 @@ spec:
       - assert:
           file: assert-traffic-job-running.yaml
           timeout: 20s
-  - name: Flush destination
-    try:
-      - script:
-          content: |
-            ../../common/flush_traces.sh
   - name: Wait for traces
     try:
     - script:
@@ -98,6 +92,7 @@ spec:
               break
             fi
             sleep 3
+            ../../common/flush_traces.sh
           done
     catch:
     - podLogs:
