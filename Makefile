@@ -7,7 +7,7 @@ DOCKER_CMD := docker build
 set-docker-args:
 ifeq ($(DOCKER_USE_CACHE), true)
 	BRANCH_NAME := $(shell git rev-parse --abbrev-ref HEAD)
-	$(eval DOCKER_CMD := docker buildx build --cache-to type=registry,mode=max,ref=ghcr.io/odigos-io/odigos/${IMAGE_NAME}:cache-${BRANCH_NAME} --cache-from ghcr.io/odigos-io/odigos/${IMAGE_NAME}:cache-${BRANCH_NAME})
+	$(eval DOCKER_CMD := docker buildx build --cache-to type=registry,mode=max,ref=ghcr.io/odigos-io/odigos/${IMAGE_NAME}:cache-${BRANCH_NAME} --cache-from type=registry,ref=ghcr.io/odigos-io/odigos/${IMAGE_NAME}:cache-${BRANCH_NAME})
 else
 	$(eval DOCKER_CMD := docker build)
 endif
