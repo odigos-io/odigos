@@ -62,7 +62,6 @@ spec:
     - script:
         timeout: 60s
         content: |
-          #!/bin/bash
           while true; do
             # Apply the job
             kubectl apply -f 05-generate-traffic.yaml
@@ -76,7 +75,7 @@ spec:
             
             # Run the wait-for-trace script
             ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
-            if [[ $? -eq 0 ]]; then
+            if [ $? -eq 0 ]; then
               break
             else
               sleep 3
