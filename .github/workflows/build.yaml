@@ -27,7 +27,8 @@ jobs:
           push: true
           tags: ghcr.io/odigos-io/odigos/autoscaler:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=autoscaler
-          cache-to: type=inline,mode=max,
+          cache-to: type=inline,mode=max
+          cache-from: type=registry,ref=ghcr.io/odigos-io/odigos/autoscaler:pr-${{ github.event.number }}
   build-scheduler:
     runs-on: ubuntu-latest
     steps:
