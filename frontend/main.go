@@ -32,6 +32,10 @@ import (
 	"github.com/odigos-io/odigos/frontend/endpoints"
 
 	_ "net/http/pprof"
+
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/odigos-io/odigos/frontend/graph"
 )
 
 const (
@@ -161,6 +165,13 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.PUT("/actions/types/PiiMasking/:id", func(c *gin.Context) { actions.UpdatePiiMasking(c, flags.Namespace, c.Param("id")) })
 		apis.DELETE("/actions/types/PiiMasking/:id", func(c *gin.Context) { actions.DeletePiiMasking(c, flags.Namespace, c.Param("id")) })
 	}
+
+	// GraphQL handlers
+	gqlHandler := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+	r.POST("/graphql", func(c *gin.Context) {
+		gqlHandler.ServeHTTP(c.Writer, c.Request)
+	})
+	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
 
 	return r, nil
 }
