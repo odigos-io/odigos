@@ -4,6 +4,8 @@
 set -e
 
 # function to verify tempo is ready
+# This is needed due to bug in tempo - It reports Ready before it is actually ready
+# So we manually hit the health check endpoint to verify it is ready
 function wait_for_ready() {
   local dest_namespace="traces"
   local dest_service="e2e-tests-tempo"
