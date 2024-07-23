@@ -11,7 +11,8 @@ spec:
     - script:
         content: |
           helm repo add grafana https://grafana.github.io/helm-charts
-          helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4
+          helm repo update
+          helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 --version 1.10.1
     - assert:
         file: assert-tempo-running.yaml
   - name: Wait for destination to be ready
