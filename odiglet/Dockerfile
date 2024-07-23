@@ -58,7 +58,7 @@ ARG DOTNET_OTEL_VERSION=v0.7.0
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
 
-FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.4 as builder
+FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.5 as builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
