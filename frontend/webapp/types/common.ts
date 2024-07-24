@@ -17,3 +17,9 @@ export interface Notification {
   crdType?: string;
   type: 'success' | 'error' | 'info';
 }
+
+export type Config = {
+  config: {
+    installation: string;
+  };
+};
