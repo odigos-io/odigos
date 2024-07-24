@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -177,32 +179,47 @@ func syncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []Pe
 // returns a map, where the key is a namespace name and the value is the
 // number of apps in this namespace (not necessarily instrumented)
 func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
-
-	deps, err := kube.DefaultClient.AppsV1().Deployments("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	ss, err := kube.DefaultClient.AppsV1().StatefulSets("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	ds, err := kube.DefaultClient.AppsV1().DaemonSets("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
 	namespaceToAppsCount := make(map[string]int)
-	for _, dep := range deps.Items {
-		namespaceToAppsCount[dep.Namespace]++
-	}
-	for _, st := range ss.Items {
-		namespaceToAppsCount[st.Namespace]++
-	}
-	for _, d := range ds.Items {
-		namespaceToAppsCount[d.Namespace]++
+
+	resourceTypes := []string{"deployments", "statefulsets", "daemonsets"}
+
+	for _, resourceType := range resourceTypes {
+		err := countResourceMetadata(ctx, namespaceToAppsCount,
+			kube.DefaultClient.MetadataClient.Resource(schema.GroupVersionResource{
+				Group:    "apps",
+				Version:  "v1",
+				Resource: resourceType,
+			}).List)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return namespaceToAppsCount, nil
+}
+
+func countResourceMetadata(ctx context.Context, counts map[string]int, listFunc func(context.Context, metav1.ListOptions) (*metav1.PartialObjectMetadataList, error)) error {
+	const chunkSize = 500
+	var continueToken string
+
+	for {
+		list, err := listFunc(ctx, metav1.ListOptions{
+			Limit:    chunkSize,
+			Continue: continueToken,
+		})
+		if err != nil {
+			return err
+		}
+
+		for _, item := range list.Items {
+			counts[item.Namespace]++
+		}
+
+		continueToken = list.Continue
+		if continueToken == "" {
+			break
+		}
+	}
+
+	return nil
 }
