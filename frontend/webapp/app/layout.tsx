@@ -7,6 +7,7 @@ import { NotificationManager } from '@/components';
 import ReduxProvider from '@/store/redux-provider';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ThemeProviderWrapper } from '@keyval-dev/design-system';
+import { ApolloWrapper } from '@/lib';
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
@@ -36,16 +37,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <ReduxProvider>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider theme={theme}>
-            <ThemeProviderWrapper>
-              <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
-                {children}
-                <NotificationManager />
-              </body>
-            </ThemeProviderWrapper>
-          </ThemeProvider>
-        </QueryClientProvider>
+        <ApolloWrapper>
+          <QueryClientProvider client={queryClient}>
+            <ThemeProvider theme={theme}>
+              <ThemeProviderWrapper>
+                <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
+                  {children}
+                  <NotificationManager />
+                </body>
+              </ThemeProviderWrapper>
+            </ThemeProvider>
+          </QueryClientProvider>
+        </ApolloWrapper>
       </ReduxProvider>
     </html>
   );

@@ -6,8 +6,10 @@ import { ROUTES, CONFIG, QUERIES } from '@/utils';
 import { Loader } from '@keyval-dev/design-system';
 import { getDestinations, getConfig } from '@/services';
 import { addNotification, store } from '@/store';
+
 export default function App() {
   const router = useRouter();
+
   const { data, isLoading: isConfigLoading } = useQuery(
     [QUERIES.API_CONFIG],
     getConfig
