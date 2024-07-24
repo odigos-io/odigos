@@ -1,0 +1,88 @@
+---
+title: "Python Automatic Instrumentation"
+sidebarTitle: "Python"
+---
+
+## Supported Versions
+
+Odigos uses the official [opentelemetry-python-instrumentation](https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/instrumentation) OpenTelemetry Auto Instrumentation, thus it supports the same Python versions as this project.
+
+- In the enterprise version, Odigos leverages eBPF to enhance performance in the Python instrumentation process.
+
+- Odigos supports Python 3.8 and higher.
+
+
+## Traces
+
+Odigos will automatically instrument your Python services to record and collect spans for distributed tracing, by utilizing the OpenTelemetry Python official auto Instrumentation Libraries.
+
+## Instrumentation Libraries
+
+The following Python modules will be auto instrumented by Odigos:
+
+### Database Clients, ORMs, and Data Access Libraries
+- [`opentelemetry-instrumentation-aiopg`](https://pypi.org/project/aiopg/) versions `aiopg >= 0.13.0, < 2.0.0`
+- [`opentelemetry-instrumentation-dbapi`](https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/dbapi/dbapi.html) 
+- [`opentelemetry-instrumentation-mysql`](https://pypi.org/project/mysql-connector-python/) version `mysql-connector-python ~= 8.0`
+- [`opentelemetry-instrumentation-mysqlclient`](https://pypi.org/project/mysqlclient/) version `mysqlclient < 3`
+- [`opentelemetry-instrumentation-psycopg`](https://pypi.org/project/psycopg/) versions `psycopg >= 3.1.0`
+- [`opentelemetry-instrumentation-psycopg2`](https://pypi.org/project/psycopg2/) versions `psycopg2 >= 2.7.3.1`
+- [`opentelemetry-instrumentation-pymemcache`](https://pypi.org/project/pymemcache/) versions `pymemcache >= 1.3.5, < 5`
+- [`opentelemetry-instrumentation-pymongo`](https://pypi.org/project/pymongo/) versions `pymongo >= 3.1, < 5.0`
+- [`opentelemetry-instrumentation-pymysql`](https://pypi.org/project/PyMySQL/) versions `pymysql < 2`
+- [`opentelemetry-instrumentation-redis`](https://pypi.org/project/redis/) versions `redis >= 2.6`
+- [`opentelemetry-instrumentation-sqlalchemy`](https://pypi.org/project/SQLAlchemy/)
+- [`opentelemetry-instrumentation-sqlite3`](https://docs.python.org/3/library/sqlite3.html)
+- [`opentelemetry-instrumentation-tortoiseorm`](https://pypi.org/project/tortoise-orm/) versions `tortoise-orm >= 0.17.0, pydantic >= 1.10.2`
+
+### HTTP Frameworks
+- [`opentelemetry-instrumentation-asgi`](https://pypi.org/project/asgiref/) versions `asgiref ~= 3.0`
+- [`opentelemetry-instrumentation-django`](https://pypi.org/project/Django/) versions `django >= 1.10`
+- [`opentelemetry-instrumentation-fastapi`](https://pypi.org/project/fastapi/) versions `fastapi ~= 0.58, fastapi-slim ~= 0.111.0`
+- [`opentelemetry-instrumentation-flask`](https://pypi.org/project/Flask/) versions `flask >= 1.0`
+- [`opentelemetry-instrumentation-pyramid`](https://pypi.org/project/pyramid/) versions `pyramid >= 1.7`
+- [`opentelemetry-instrumentation-starlette`](https://pypi.org/project/starlette/) versions `starlette ~= 0.13.0`
+
+### HTTP Clients
+- [`opentelemetry-instrumentation-aiohttp-client`](https://pypi.org/project/aiohttp/) versions `aiohttp ~= 3.0`
+- [`opentelemetry-instrumentation-httpx`](https://pypi.org/project/httpx/) versions `httpx >= 0.18.0`
+- [`opentelemetry-instrumentation-requests`](https://pypi.org/project/requests/) versions `requests ~= 2.0`
+- [`opentelemetry-instrumentation-urllib`](https://docs.python.org/3/library/urllib.html)
+- [`opentelemetry-instrumentation-urllib3`](https://pypi.org/project/urllib3/) versions `urllib3 >= 1.0.0, < 3.0.0`
+
+### Messaging Systems Clients
+- [`opentelemetry-instrumentation-aio-pika`](https://pypi.org/project/aio-pika/) versions `aio_pika >= 7.2.0, < 10.0.0`
+- [`opentelemetry-instrumentation-celery`](https://pypi.org/project/celery/) versions `celery >= 4.0, < 6.0`
+- [`opentelemetry-instrumentation-confluent-kafka`](https://pypi.org/project/confluent-kafka/) versions `confluent-kafka >= 1.8.2, <= 2.4.0`
+- [`opentelemetry-instrumentation-kafka-python`](https://pypi.org/project/kafka-python/) versions `kafka-python >= 2.0`
+- [`opentelemetry-instrumentation-pika`](https://pypi.org/project/pika/) versions `pika >= 0.12.0`
+- [`opentelemetry-instrumentation-remoulade`](https://pypi.org/project/remoulade/) versions `remoulade >= 0.50`
+
+### RPC (Remote Procedure Call)
+- [`opentelemetry-instrumentation-grpc`](https://pypi.org/project/grpcio/) versions `grpcio ~= 1.27`
+
+### Web Servers
+- [`opentelemetry-instrumentation-aiohttp-server`](https://pypi.org/project/aiohttp/) versions `aiohttp ~= 3.0`
+- [`opentelemetry-instrumentation-wsgi`](https://docs.python.org/3/library/wsgiref.html)
+
+### Cloud Services and SDKs
+- `opentelemetry-instrumentation-aws-lambda`
+- [`opentelemetry-instrumentation-boto`](https://pypi.org/project/boto/) versions `boto~=2.0`
+- [`opentelemetry-instrumentation-boto3sqs`](https://pypi.org/project/boto3/) versions `boto3 ~= 1.0`
+- [`opentelemetry-instrumentation-botocore`](https://pypi.org/project/botocore/) versions `botocore ~= 1.0`
+
+### Data Processing and Storage
+- [`opentelemetry-instrumentation-cassandra`](https://pypi.org/project/cassandra-driver/) versions `cassandra-driver ~= 3.25, scylla-driver ~= 3.25`
+- [`opentelemetry-instrumentation-elasticsearch`](https://pypi.org/project/elasticsearch/) versions `elasticsearch >= 6.0`
+
+### Framework and Library Utilities
+- [`opentelemetry-instrumentation-falcon`](https://pypi.org/project/falcon/) versions `falcon >= 1.4.1, < 3.1.2`
+- [`opentelemetry-instrumentation-jinja2`](https://pypi.org/project/Jinja2/) versions `jinja2 >= 2.7, < 4.0`
+- [`opentelemetry-instrumentation-tornado`](https://pypi.org/project/tornado/) versions `tornado >= 5.1.1`
+
+### Other
+- [`opentelemetry-instrumentation-asyncio`](https://pypi.org/project/asyncio/)
+- [`opentelemetry-instrumentation-asyncpg`](https://pypi.org/project/asyncpg/) versions `asyncpg >= 0.12.0`
+- [`opentelemetry-instrumentation-logging`](https://docs.python.org/3/library/logging.html)
+- [`opentelemetry-instrumentation-system-metrics`](https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/system_metrics/system_metrics.html)
+- [`opentelemetry-instrumentation-threading`](https://docs.python.org/3/library/threading.html)
