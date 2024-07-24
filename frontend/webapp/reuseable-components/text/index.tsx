@@ -7,6 +7,7 @@ interface TextProps {
   size?: number;
   weight?: number;
   align?: 'left' | 'center' | 'right';
+  family?: 'primary' | 'secondary';
 }
 
 const TextWrapper = styled.span<{
@@ -14,13 +15,22 @@ const TextWrapper = styled.span<{
   size: number;
   weight: number;
   align: 'left' | 'center' | 'right';
+  family?: 'primary' | 'secondary';
 }>`
   color: ${({ color, theme }) =>
     color || console.log({ theme }) || theme.colors.text};
   font-size: ${({ size }) => size}px;
   font-weight: ${({ weight }) => weight};
   text-align: ${({ align }) => align};
-  font-family: ${({ theme }) => theme.font_family.primary};
+  font-family: ${({ theme, family }) => {
+    if (family === 'primary') {
+      return theme.font_family.primary;
+    }
+    if (family === 'secondary') {
+      return theme.font_family.secondary;
+    }
+    return theme.font_family.primary;
+  }};
 `;
 
 const Text: React.FC<TextProps> = ({
@@ -29,9 +39,16 @@ const Text: React.FC<TextProps> = ({
   size = 16,
   weight = 400,
   align = 'left',
+  family = 'primary',
 }) => {
   return (
-    <TextWrapper color={color} size={size} weight={weight} align={align}>
+    <TextWrapper
+      family={family}
+      color={color}
+      size={size}
+      weight={weight}
+      align={align}
+    >
       {children}
     </TextWrapper>
   );
