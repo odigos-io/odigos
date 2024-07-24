@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"golang.org/x/sync/errgroup"
@@ -184,42 +186,21 @@ func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
 	resourceTypes := []string{"deployments", "statefulsets", "daemonsets"}
 
 	for _, resourceType := range resourceTypes {
-		err := countResourceMetadata(ctx, namespaceToAppsCount,
-			kube.DefaultClient.MetadataClient.Resource(schema.GroupVersionResource{
-				Group:    "apps",
-				Version:  "v1",
-				Resource: resourceType,
-			}).List)
+		err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.MetadataClient.Resource(schema.GroupVersionResource{
+			Group:    "apps",
+			Version:  "v1",
+			Resource: resourceType,
+		}).List, ctx, metav1.ListOptions{}, func(list *metav1.PartialObjectMetadataList) error {
+			for _, item := range list.Items {
+				namespaceToAppsCount[item.Namespace]++
+			}
+			return nil
+		})
+
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to count %s: %w", resourceType, err)
 		}
 	}
 
 	return namespaceToAppsCount, nil
-}
-
-func countResourceMetadata(ctx context.Context, counts map[string]int, listFunc func(context.Context, metav1.ListOptions) (*metav1.PartialObjectMetadataList, error)) error {
-	const chunkSize = 500
-	var continueToken string
-
-	for {
-		list, err := listFunc(ctx, metav1.ListOptions{
-			Limit:    chunkSize,
-			Continue: continueToken,
-		})
-		if err != nil {
-			return err
-		}
-
-		for _, item := range list.Items {
-			counts[item.Namespace]++
-		}
-
-		continueToken = list.Continue
-		if continueToken == "" {
-			break
-		}
-	}
-
-	return nil
 }
