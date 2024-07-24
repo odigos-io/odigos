@@ -18,6 +18,10 @@ const SideMenuWrapper = styled.div`
   top: 144px;
 `;
 
+const HeaderWrapper = styled.div`
+  width: 100vw;
+`;
+
 const MainContent = styled.div`
   display: flex;
   max-width: 1440px;
@@ -34,9 +38,9 @@ export default function SetupLayout({
 }) {
   return (
     <LayoutContainer>
-      <div style={{ width: '100vw' }}>
+      <HeaderWrapper>
         <SetupHeader />
-      </div>
+      </HeaderWrapper>
       <SideMenuWrapper>
         <SideMenu />
       </SideMenuWrapper>
