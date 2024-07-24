@@ -86,6 +86,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		DeviceId:                 deviceId,
 		Workload:                 podWorkload,
 		Pod:                      pod,
+		ContainerName:            k8sAttributes.ContainerName,
 		Pid:                      pid,
 		InstrumentedAppName:      instrumentedAppName,
 		AgentRemoteConfig:        fullRemoteConfig,
@@ -147,7 +148,7 @@ func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Cont
 		}
 
 		healthy := true // TODO: populate this field with real health status
-		err := instrumentation_instance.PersistInstrumentationInstanceStatus(ctx, connectionInfo.Pod, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme,
+		err := instrumentation_instance.PersistInstrumentationInstanceStatus(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme,
 			instrumentation_instance.WithIdentifyingAttributes(identifyingAttributes),
 			instrumentation_instance.WithMessage("Agent connected"),
 			instrumentation_instance.WithHealthy(&healthy),

@@ -405,6 +405,9 @@ func printPodContainerInfo(pod *corev1.Pod, container *corev1.Container, instrum
 		if instance.OwnerReferences[0].Name != pod.GetName() {
 			continue
 		}
+		if instance.Spec.ContainerName != container.Name {
+			continue
+		}
 		thisPodInstrumentationInstances = append(thisPodInstrumentationInstances, &instance)
 	}
 	printPodContainerInstrumentationInstancesInfo(thisPodInstrumentationInstances)
