@@ -112,7 +112,6 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.PATCH("/sources/namespace/:namespace/kind/:kind/name/:name", endpoints.PatchSource)
 
 		apis.GET("/applications/:namespace", endpoints.GetApplicationsInNamespace)
-		apis.GET("/config", endpoints.GetConfig)
 		apis.GET("/destination-types", endpoints.GetDestinationTypes)
 		apis.GET("/destination-types/:type", endpoints.GetDestinationTypeDetails)
 		apis.GET("/destinations", func(c *gin.Context) { endpoints.GetDestinations(c, flags.Namespace) })

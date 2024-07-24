@@ -38,6 +38,12 @@ enum SpanKind {
   Consumer
 }
 
+enum InstallationStatus {
+  NEW
+  APPS_SELECTED
+  FINISHED
+}
+
 type SourceLanguage {
   containerName: String!
   language: String!
@@ -59,7 +65,6 @@ type Condition {
 type K8sActualNamespace {
   name: String!
   autoInstrumented: Boolean
-
   k8sActualSources: [K8sActualSource]!
 }
 
@@ -101,71 +106,6 @@ input K8sSourceId {
   name: String!
 }
 
-type DestinationSpecField {
-  name: String!
-  value: String!
-}
-type ActualDestination {
-  id: ID!
-  name: String!
-  type: DestinationType!
-  exportedSignals: [SignalType!]!
-  fields: [DestinationSpecField!]!
-}
-type DesiredDestination {
-  id: ID!
-  name: String!
-  type: DestinationType!
-  exportSignals: [SignalType!]!
-  fields: [DestinationSpecField!]!
-
-  # compute platforms that include this destination
-  computePlatforms: [ComputePlatform!]!
-}
-input DesiredDestinationFieldInput {
-  name: String!
-  value: String!
-}
-input DesiredDestinationInput {
-  name: String!
-  exportSignals: [SignalType!]!
-  fields: [DesiredDestinationFieldInput!]!
-}
-
-type DestinationTypeField {
-  name: String!
-  displayName: String!
-  videoURL: String
-  thumbnailURL: String
-  componentType: String!
-  # componentProps is JSON stringified data as text
-  componentProps: String!
-  secret: Boolean!
-  initialValue: String
-}
-type DestinationType {
-  # category is currently "managed" or "self hosted"
-  category: String!
-  # the name of the destination type (prometheus, jaeger, etc)
-  name: String!
-  # same destination type "name", but used for display (for example can contain spaces)
-  displayName: String!
-
-  # name of an image file to be used for this destination type
-  # the image themselves are stored [here](https://s3.console.aws.amazon.com/s3/buckets/odigos-destinations)
-  image: String
-
-  # the signals that this destination type supports
-  supportedSignals: [SignalType!]!
-
-  fields: [DestinationTypeField!]!
-}
-type DestinationTypeCategory {
-  # the name of the category
-  name: String!
-  destinationTypes: [DestinationType]!
-}
-
 type ComputePlatform {
   id: ID!
   name: String
@@ -181,84 +121,20 @@ type ComputePlatform {
   k8sActualSources: [K8sActualSource]!
 
   # destinations that are applied to this compute platform
-  actualDestinations: [ActualDestination]!
-  actualActions: [ActualAction]!
 }
 
-# Define the input type for Workload
-input WorkloadInput {
-  kind: K8sResourceKind!
-  name: String!
-  namespace: String!
-}
-
-input DesiredActionInput {
-  kind: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: String!
-}
-
-type ActualAction {
-  id: ID!
-  kind: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: String!
+type GetConfigResponse {
+  installation: InstallationStatus!
 }
 
 type Query {
   computePlatform(cpId: ID!): ComputePlatform
-  destinationTypeCategories: [DestinationTypeCategory]
-  desiredDestinations: [DesiredDestination]
+  config: GetConfigResponse
 }
 
 type Mutation {
-  # desired namespace mutations
-  applyDesiredNamespace(
+  createK8sDesiredNamespace(
     cpId: ID!
-    nsId: K8sNamespaceId!
-    ns: K8sDesiredNamespaceInput!
-  ): Boolean!
-  deleteDesiredNamespace(cpId: ID!, nsId: K8sNamespaceId!): Boolean!
-
-  #k8s desired source mutations
-  applyDesiredSource(
-    cpId: ID!
-    sourceId: K8sSourceId!
-    source: K8sDesiredSourceInput!
-  ): Boolean!
-  deleteDesiredSource(cpId: ID!, sourceId: K8sSourceId!): Boolean!
-
-  # desired destination mutations
-  createDesiredDestination(
-    destinationType: String!
-    destination: DesiredDestinationInput!
-  ): DesiredDestination!
-  updateDesiredDestination(
-    destinationId: ID!
-    destination: DesiredDestinationInput!
-  ): DesiredDestination!
-  deleteDesiredDestination(destinationId: ID!): Boolean!
-  applyDesiredDestinationToComputePlatform(
-    cpId: ID!
-    destinationId: ID!
-  ): Boolean!
-  removeDesiredDestinationFromComputePlatform(
-    cpId: ID!
-    destinationId: ID!
-  ): Boolean!
-
-  # actions mutations
-  createDesiredAction(cpId: ID!, action: DesiredActionInput!): Boolean!
-  updateDesiredAction(
-    cpId: ID!
-    actionId: String!
-    action: DesiredActionInput!
-  ): Boolean!
-  deleteActualAction(cpId: ID!, actionId: String!, kind: String!): Boolean!
+    namespace: K8sDesiredNamespaceInput!
+  ): K8sActualNamespace
 }

@@ -8,24 +8,6 @@ import (
 	"strconv"
 )
 
-type ActualAction struct {
-	ID      string       `json:"id"`
-	Kind    string       `json:"kind"`
-	Name    *string      `json:"name,omitempty"`
-	Notes   *string      `json:"notes,omitempty"`
-	Disable bool         `json:"disable"`
-	Signals []SignalType `json:"signals"`
-	Details string       `json:"details"`
-}
-
-type ActualDestination struct {
-	ID              string                  `json:"id"`
-	Name            string                  `json:"name"`
-	Type            *DestinationType        `json:"type"`
-	ExportedSignals []SignalType            `json:"exportedSignals"`
-	Fields          []*DestinationSpecField `json:"fields"`
-}
-
 type ComputePlatform struct {
 	ID                  string                `json:"id"`
 	Name                *string               `json:"name,omitempty"`
@@ -34,8 +16,6 @@ type ComputePlatform struct {
 	K8sActualNamespaces []*K8sActualNamespace `json:"k8sActualNamespaces"`
 	K8sActualSource     *K8sActualSource      `json:"k8sActualSource,omitempty"`
 	K8sActualSources    []*K8sActualSource    `json:"k8sActualSources"`
-	ActualDestinations  []*ActualDestination  `json:"actualDestinations"`
-	ActualActions       []*ActualAction       `json:"actualActions"`
 }
 
 type Condition struct {
@@ -46,63 +26,8 @@ type Condition struct {
 	Message            *string         `json:"message,omitempty"`
 }
 
-type DesiredActionInput struct {
-	Kind    string       `json:"kind"`
-	Name    *string      `json:"name,omitempty"`
-	Notes   *string      `json:"notes,omitempty"`
-	Disable bool         `json:"disable"`
-	Signals []SignalType `json:"signals"`
-	Details string       `json:"details"`
-}
-
-type DesiredDestination struct {
-	ID               string                  `json:"id"`
-	Name             string                  `json:"name"`
-	Type             *DestinationType        `json:"type"`
-	ExportSignals    []SignalType            `json:"exportSignals"`
-	Fields           []*DestinationSpecField `json:"fields"`
-	ComputePlatforms []*ComputePlatform      `json:"computePlatforms"`
-}
-
-type DesiredDestinationFieldInput struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
-type DesiredDestinationInput struct {
-	Name          string                          `json:"name"`
-	ExportSignals []SignalType                    `json:"exportSignals"`
-	Fields        []*DesiredDestinationFieldInput `json:"fields"`
-}
-
-type DestinationSpecField struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
-type DestinationType struct {
-	Category         string                  `json:"category"`
-	Name             string                  `json:"name"`
-	DisplayName      string                  `json:"displayName"`
-	Image            *string                 `json:"image,omitempty"`
-	SupportedSignals []SignalType            `json:"supportedSignals"`
-	Fields           []*DestinationTypeField `json:"fields"`
-}
-
-type DestinationTypeCategory struct {
-	Name             string             `json:"name"`
-	DestinationTypes []*DestinationType `json:"destinationTypes"`
-}
-
-type DestinationTypeField struct {
-	Name           string  `json:"name"`
-	DisplayName    string  `json:"displayName"`
-	VideoURL       *string `json:"videoURL,omitempty"`
-	ThumbnailURL   *string `json:"thumbnailURL,omitempty"`
-	ComponentType  string  `json:"componentType"`
-	ComponentProps string  `json:"componentProps"`
-	Secret         bool    `json:"secret"`
-	InitialValue   *string `json:"initialValue,omitempty"`
+type GetConfigResponse struct {
+	Installation InstallationStatus `json:"installation"`
 }
 
 type InstrumentedApplicationDetails struct {
@@ -165,12 +90,6 @@ type Query struct {
 type SourceLanguage struct {
 	ContainerName string `json:"containerName"`
 	Language      string `json:"language"`
-}
-
-type WorkloadInput struct {
-	Kind      K8sResourceKind `json:"kind"`
-	Name      string          `json:"name"`
-	Namespace string          `json:"namespace"`
 }
 
 type ComputePlatformType string
@@ -254,6 +173,49 @@ func (e *ConditionStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ConditionStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InstallationStatus string
+
+const (
+	InstallationStatusNew          InstallationStatus = "NEW"
+	InstallationStatusAppsSelected InstallationStatus = "APPS_SELECTED"
+	InstallationStatusFinished     InstallationStatus = "FINISHED"
+)
+
+var AllInstallationStatus = []InstallationStatus{
+	InstallationStatusNew,
+	InstallationStatusAppsSelected,
+	InstallationStatusFinished,
+}
+
+func (e InstallationStatus) IsValid() bool {
+	switch e {
+	case InstallationStatusNew, InstallationStatusAppsSelected, InstallationStatusFinished:
+		return true
+	}
+	return false
+}
+
+func (e InstallationStatus) String() string {
+	return string(e)
+}
+
+func (e *InstallationStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InstallationStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InstallationStatus", str)
+	}
+	return nil
+}
+
+func (e InstallationStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
