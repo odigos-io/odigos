@@ -6,3 +6,4 @@ export { ConnectionsIcons } from './connection/connections_icons/connections_ico
 export { CreateConnectionForm } from './connection/create.connection.form/create.connection.form';
 export { QuickHelp } from './connection/quick.help/quick.help';
 export * from './headers';
+export * from './menu';
