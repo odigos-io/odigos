@@ -1,4 +1,5 @@
-import { Text } from '@/reuseable-components';
+import { Button, Text } from '@/reuseable-components';
+import theme from '@/styles/theme';
 import Image from 'next/image';
 import React from 'react';
 import styled from 'styled-components';
@@ -20,6 +21,12 @@ const HeaderContainer = styled.div`
 
 const Title = styled(Text)``;
 
+const HeaderButton = styled(Button)`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
 const Logo = styled.div`
   display: flex;
   align-items: center;
@@ -28,23 +35,8 @@ const Logo = styled.div`
 
 const NavigationButtons = styled.div`
   display: flex;
+  gap: 8px;
   align-items: center;
-`;
-
-const Button = styled.button`
-  background-color: #333;
-  border: none;
-  color: #fff;
-  padding: 5px 10px;
-  margin: 0 5px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-size: 1em;
-
-  &:hover {
-    background-color: #444;
-  }
 `;
 
 export const SetupHeader: React.FC<SetupHeaderProps> = ({ onBack, onNext }) => {
@@ -60,8 +52,28 @@ export const SetupHeader: React.FC<SetupHeaderProps> = ({ onBack, onNext }) => {
       </Logo>
       <Title>START WITH ODIGOS</Title>
       <NavigationButtons>
-        <Button onClick={onBack}>BACK</Button>
-        <Button onClick={onNext}>NEXT</Button>
+        <HeaderButton variant="secondary" onClick={onBack}>
+          <Image
+            src="/icons/common/arrow-white.svg"
+            alt="back"
+            width={8}
+            height={12}
+          />
+          <Text color={theme.colors.secondary} size={14}>
+            BACK
+          </Text>
+        </HeaderButton>
+        <HeaderButton variant="primary" onClick={onNext}>
+          <Text color={theme.colors.dark_grey} size={14}>
+            NEXT
+          </Text>
+          <Image
+            src="/icons/common/arrow-black.svg"
+            alt="next"
+            width={8}
+            height={12}
+          />
+        </HeaderButton>
       </NavigationButtons>
     </HeaderContainer>
   );
