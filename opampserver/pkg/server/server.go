@@ -65,6 +65,13 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 			return
 		}
 
+		instanceUid := string(agentToServer.InstanceUid)
+		if instanceUid == "" {
+			logger.Error(err, "InstanceUid is missing")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		deviceId := req.Header.Get("X-Odigos-DeviceId")
 		if deviceId == "" {
 			logger.Error(err, "X-Odigos-DeviceId header is missing")
@@ -73,7 +80,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		}
 
 		var serverToAgent *protobufs.ServerToAgent
-		connectionInfo, exists := connectionCache.GetConnection(deviceId)
+		connectionInfo, exists := connectionCache.GetConnection(instanceUid)
 		if !exists {
 			connectionInfo, serverToAgent, err = handlers.OnNewConnection(ctx, deviceId, &agentToServer)
 			if err != nil {
@@ -82,13 +89,13 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				return
 			}
 			if connectionInfo != nil {
-				connectionCache.AddConnection(deviceId, connectionInfo)
+				connectionCache.AddConnection(instanceUid, connectionInfo)
 			}
 		} else {
 
 			if agentToServer.AgentDisconnect != nil {
 				handlers.OnConnectionClosed(ctx, connectionInfo)
-				connectionCache.RemoveConnection(deviceId)
+				connectionCache.RemoveConnection(instanceUid)
 			}
 
 			serverToAgent, err = handlers.OnAgentToServerMessage(ctx, &agentToServer, connectionInfo)
@@ -113,7 +120,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		}
 
 		// keep record in memory of last message time, to detect stale connections
-		connectionCache.RecordMessageTime(deviceId)
+		connectionCache.RecordMessageTime(instanceUid)
 
 		serverToAgent.InstanceUid = agentToServer.InstanceUid
 
