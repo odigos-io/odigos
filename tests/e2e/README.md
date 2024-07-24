@@ -3,22 +3,36 @@ In addition to unit tests, Odigos has a suite of end-to-end tests that are run o
 These tests are installing multiple microservices, instrument with Odigos, generate traffic, and validate the results.
 
 ## Tools
-- [KinD](https://kind.sigs.k8s.io/) - Kubernetes in Docker is a tool for running local Kubernetes clusters using Docker container “nodes”.
+- [Kubernetes In Docker (KinD)](https://kind.sigs.k8s.io/) - a tool for running local Kubernetes clusters using Docker container “nodes”.
 - [Chainsaw](https://kyverno.github.io/chainsaw/) - To orchestrate the different Kubernetes actions.
 - [Tempo](https://github.com/grafana/tempo) - Distributed tracing backend. Chosen due to its query language that allows for easy querying of traces.
 
 ## Running e2e locally
 To run the end-to-end tests you need to have the following:
 - kubectl configured to a fresh Kubernetes cluster. For local development, you can use KinD but also managed clusters like EKS should work.
+- yq and jq installed. You can install it via:
+```bash
+brew install yq
+brew install jq
+```
 - Odigos cli compiled at `cli` folder. Compile via:
 ```bash
-cd cli && go build -tags=embed_manifests -o odigos
+go build -tags=embed_manifests -o ./cli/odigos ./cli
 ```
 - Odigos images tagged with `e2e-test` preloaded to the cluster. If you are using KinD you can run:
 ```bash
 TAG=e2e-test make build-images load-to-kind 
 ```
-- Chainsaw binary, can be installed via: `brew install kyverno/chainsaw/chainsaw`
+- Chainsaw binary, installed via one of the following methods:
+  - Hombrew:
+  ```bash
+  brew tap kyverno/chainsaw https://github.com/kyverno/chainsaw
+  brew install kyverno/chainsaw/chainsaw
+  ```
+  - Go:
+  ```bash
+  go install github.com/kyverno/chainsaw@latest
+  ```
 
 To run specific scenarios, for example `multi-apps` run from Odigos root directory:
 ```bash

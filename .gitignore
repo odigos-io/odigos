@@ -4,6 +4,3 @@ node_modules
 .DS_Store
 go.work.sum
 cli/odigos
-tests/e2e/multi-apps/bats/traces.json
-tests/e2e/multi-apps/bats/traces-orig.json
-opentelemetry-helm-charts/
