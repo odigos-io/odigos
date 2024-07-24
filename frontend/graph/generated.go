@@ -39,6 +39,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	ComputePlatform() ComputePlatformResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 }
@@ -72,6 +73,7 @@ type ComplexityRoot struct {
 		ID                  func(childComplexity int) int
 		K8sActualNamespace  func(childComplexity int, name string) int
 		K8sActualNamespaces func(childComplexity int) int
+		K8sActualSource     func(childComplexity int, name *string, namespace *string, kind *string) int
 		K8sActualSources    func(childComplexity int) int
 		Name                func(childComplexity int) int
 	}
@@ -172,7 +174,6 @@ type ComplexityRoot struct {
 
 	Query struct {
 		ComputePlatform           func(childComplexity int, cpID string) int
-		ComputePlatforms          func(childComplexity int) int
 		DesiredDestinations       func(childComplexity int) int
 		DestinationTypeCategories func(childComplexity int) int
 	}
@@ -183,6 +184,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type ComputePlatformResolver interface {
+	K8sActualSource(ctx context.Context, obj *model.ComputePlatform, name *string, namespace *string, kind *string) (*model.K8sActualSource, error)
+}
 type MutationResolver interface {
 	ApplyDesiredNamespace(ctx context.Context, cpID string, nsID model.K8sNamespaceID, ns model.K8sDesiredNamespaceInput) (bool, error)
 	DeleteDesiredNamespace(ctx context.Context, cpID string, nsID model.K8sNamespaceID) (bool, error)
@@ -199,7 +203,6 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context, cpID string) (*model.ComputePlatform, error)
-	ComputePlatforms(ctx context.Context) ([]*model.ComputePlatform, error)
 	DestinationTypeCategories(ctx context.Context) ([]*model.DestinationTypeCategory, error)
 	DesiredDestinations(ctx context.Context) ([]*model.DesiredDestination, error)
 }
@@ -353,6 +356,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ComputePlatform.K8sActualNamespaces(childComplexity), true
+
+	case "ComputePlatform.k8sActualSource":
+		if e.complexity.ComputePlatform.K8sActualSource == nil {
+			break
+		}
+
+		args, err := ec.field_ComputePlatform_k8sActualSource_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ComputePlatform.K8sActualSource(childComplexity, args["name"].(*string), args["namespace"].(*string), args["kind"].(*string)), true
 
 	case "ComputePlatform.k8sActualSources":
 		if e.complexity.ComputePlatform.K8sActualSources == nil {
@@ -846,13 +861,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ComputePlatform(childComplexity, args["cpId"].(string)), true
 
-	case "Query.computePlatforms":
-		if e.complexity.Query.ComputePlatforms == nil {
-			break
-		}
-
-		return e.complexity.Query.ComputePlatforms(childComplexity), true
-
 	case "Query.desiredDestinations":
 		if e.complexity.Query.DesiredDestinations == nil {
 			break
@@ -1025,6 +1033,39 @@ func (ec *executionContext) field_ComputePlatform_k8sActualNamespace_args(ctx co
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_ComputePlatform_k8sActualSource_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["namespace"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["namespace"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["kind"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["kind"] = arg2
 	return args, nil
 }
 
@@ -2194,6 +2235,78 @@ func (ec *executionContext) fieldContext_ComputePlatform_k8sActualNamespaces(_ c
 	return fc, nil
 }
 
+func (ec *executionContext) _ComputePlatform_k8sActualSource(ctx context.Context, field graphql.CollectedField, obj *model.ComputePlatform) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ComputePlatform_k8sActualSource(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ComputePlatform().K8sActualSource(rctx, obj, fc.Args["name"].(*string), fc.Args["namespace"].(*string), fc.Args["kind"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sActualSource)
+	fc.Result = res
+	return ec.marshalOK8sActualSource2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sActualSource(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ComputePlatform_k8sActualSource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ComputePlatform",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "namespace":
+				return ec.fieldContext_K8sActualSource_namespace(ctx, field)
+			case "kind":
+				return ec.fieldContext_K8sActualSource_kind(ctx, field)
+			case "name":
+				return ec.fieldContext_K8sActualSource_name(ctx, field)
+			case "serviceName":
+				return ec.fieldContext_K8sActualSource_serviceName(ctx, field)
+			case "autoInstrumented":
+				return ec.fieldContext_K8sActualSource_autoInstrumented(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_K8sActualSource_creationTimestamp(ctx, field)
+			case "numberOfInstances":
+				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
+			case "hasInstrumentedApplication":
+				return ec.fieldContext_K8sActualSource_hasInstrumentedApplication(ctx, field)
+			case "instrumentedApplicationDetails":
+				return ec.fieldContext_K8sActualSource_instrumentedApplicationDetails(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_ComputePlatform_k8sActualSource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ComputePlatform_k8sActualSources(ctx context.Context, field graphql.CollectedField, obj *model.ComputePlatform) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ComputePlatform_k8sActualSources(ctx, field)
 	if err != nil {
@@ -2874,6 +2987,8 @@ func (ec *executionContext) fieldContext_DesiredDestination_computePlatforms(_ c
 				return ec.fieldContext_ComputePlatform_k8sActualNamespace(ctx, field)
 			case "k8sActualNamespaces":
 				return ec.fieldContext_ComputePlatform_k8sActualNamespaces(ctx, field)
+			case "k8sActualSource":
+				return ec.fieldContext_ComputePlatform_k8sActualSource(ctx, field)
 			case "k8sActualSources":
 				return ec.fieldContext_ComputePlatform_k8sActualSources(ctx, field)
 			case "actualDestinations":
@@ -5204,6 +5319,8 @@ func (ec *executionContext) fieldContext_Query_computePlatform(ctx context.Conte
 				return ec.fieldContext_ComputePlatform_k8sActualNamespace(ctx, field)
 			case "k8sActualNamespaces":
 				return ec.fieldContext_ComputePlatform_k8sActualNamespaces(ctx, field)
+			case "k8sActualSource":
+				return ec.fieldContext_ComputePlatform_k8sActualSource(ctx, field)
 			case "k8sActualSources":
 				return ec.fieldContext_ComputePlatform_k8sActualSources(ctx, field)
 			case "actualDestinations":
@@ -5224,65 +5341,6 @@ func (ec *executionContext) fieldContext_Query_computePlatform(ctx context.Conte
 	if fc.Args, err = ec.field_Query_computePlatform_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_computePlatforms(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_computePlatforms(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ComputePlatforms(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.ComputePlatform)
-	fc.Result = res
-	return ec.marshalOComputePlatform2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComputePlatform(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_computePlatforms(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_ComputePlatform_id(ctx, field)
-			case "name":
-				return ec.fieldContext_ComputePlatform_name(ctx, field)
-			case "computePlatformType":
-				return ec.fieldContext_ComputePlatform_computePlatformType(ctx, field)
-			case "k8sActualNamespace":
-				return ec.fieldContext_ComputePlatform_k8sActualNamespace(ctx, field)
-			case "k8sActualNamespaces":
-				return ec.fieldContext_ComputePlatform_k8sActualNamespaces(ctx, field)
-			case "k8sActualSources":
-				return ec.fieldContext_ComputePlatform_k8sActualSources(ctx, field)
-			case "actualDestinations":
-				return ec.fieldContext_ComputePlatform_actualDestinations(ctx, field)
-			case "actualActions":
-				return ec.fieldContext_ComputePlatform_actualActions(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ComputePlatform", field.Name)
-		},
 	}
 	return fc, nil
 }
@@ -7830,36 +7888,69 @@ func (ec *executionContext) _ComputePlatform(ctx context.Context, sel ast.Select
 		case "id":
 			out.Values[i] = ec._ComputePlatform_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._ComputePlatform_name(ctx, field, obj)
 		case "computePlatformType":
 			out.Values[i] = ec._ComputePlatform_computePlatformType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "k8sActualNamespace":
 			out.Values[i] = ec._ComputePlatform_k8sActualNamespace(ctx, field, obj)
 		case "k8sActualNamespaces":
 			out.Values[i] = ec._ComputePlatform_k8sActualNamespaces(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "k8sActualSource":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ComputePlatform_k8sActualSource(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "k8sActualSources":
 			out.Values[i] = ec._ComputePlatform_k8sActualSources(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "actualDestinations":
 			out.Values[i] = ec._ComputePlatform_actualDestinations(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "actualActions":
 			out.Values[i] = ec._ComputePlatform_actualActions(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -8595,25 +8686,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_computePlatform(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "computePlatforms":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_computePlatforms(ctx, field)
 				return res
 			}
 
@@ -9957,47 +10029,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
-}
-
-func (ec *executionContext) marshalOComputePlatform2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComputePlatform(ctx context.Context, sel ast.SelectionSet, v []*model.ComputePlatform) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOComputePlatform2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComputePlatform(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
 }
 
 func (ec *executionContext) marshalOComputePlatform2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComputePlatform(ctx context.Context, sel ast.SelectionSet, v *model.ComputePlatform) graphql.Marshaler {

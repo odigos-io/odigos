@@ -173,6 +173,11 @@ type ComputePlatform {
 
   k8sActualNamespace(name: String!): K8sActualNamespace
   k8sActualNamespaces: [K8sActualNamespace]!
+  k8sActualSource(
+    name: String
+    namespace: String
+    kind: String
+  ): K8sActualSource
   k8sActualSources: [K8sActualSource]!
 
   # destinations that are applied to this compute platform
@@ -208,7 +213,6 @@ type ActualAction {
 
 type Query {
   computePlatform(cpId: ID!): ComputePlatform
-  computePlatforms: [ComputePlatform]
   destinationTypeCategories: [DestinationTypeCategory]
   desiredDestinations: [DesiredDestination]
 }

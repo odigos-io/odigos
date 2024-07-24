@@ -12,6 +12,20 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 )
 
+// K8sActualSource is the resolver for the k8sActualSource field.
+func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *model.ComputePlatform, name *string, namespace *string, kind *string) (*model.K8sActualSource, error) {
+	source, err := endpoints.GetActualSource(ctx, *namespace, *kind, *name)
+	if err != nil {
+		return nil, err
+	}
+	if source == nil {
+		return nil, nil
+	}
+	k8sActualSource := k8sSourceToGql(source)
+
+	return k8sActualSource, nil
+}
+
 // ApplyDesiredNamespace is the resolver for the applyDesiredNamespace field.
 func (r *mutationResolver) ApplyDesiredNamespace(ctx context.Context, cpID string, nsID model.K8sNamespaceID, ns model.K8sDesiredNamespaceInput) (bool, error) {
 	panic(fmt.Errorf("not implemented: ApplyDesiredNamespace - applyDesiredNamespace"))
@@ -77,20 +91,12 @@ func (r *queryResolver) ComputePlatform(ctx context.Context, cpID string) (*mode
 	k8sActualSources := endpoints.GetActualSources(ctx, "odigos-system")
 	res := make([]*model.K8sActualSource, len(k8sActualSources))
 	for i, source := range k8sActualSources {
-		res[i] = k8sActualSourceToGql(&source)
+		res[i] = k8sThinSourceToGql(&source)
 	}
 
 	return &model.ComputePlatform{
 		K8sActualSources: res,
 	}, nil
-}
-
-// ComputePlatforms is the resolver for the computePlatforms field.
-func (r *queryResolver) ComputePlatforms(ctx context.Context) ([]*model.ComputePlatform, error) {
-	return []*model.ComputePlatform{
-		{
-			ID: "1",
-		}}, nil
 }
 
 // DestinationTypeCategories is the resolver for the destinationTypeCategories field.
@@ -103,11 +109,32 @@ func (r *queryResolver) DesiredDestinations(ctx context.Context) ([]*model.Desir
 	panic(fmt.Errorf("not implemented: DesiredDestinations - desiredDestinations"))
 }
 
+// ComputePlatform returns ComputePlatformResolver implementation.
+func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type computePlatformResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
+	// thinSource, err := endpoints.GetActualSource(ctx, *namespace, *kind, *name)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// k8sActualSource := k8sSourceToGql(thinSource)
+
+	// return k8sActualSources, nil
+	return obj.K8sActualSources, nil
+}

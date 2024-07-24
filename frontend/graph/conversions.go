@@ -41,7 +41,7 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	return &str
 }
 
-func k8sActualSourceToGql(k8sSource *endpoints.ThinSource) *gqlmodel.K8sActualSource {
+func k8sThinSourceToGql(k8sSource *endpoints.ThinSource) *gqlmodel.K8sActualSource {
 
 	hasInstrumentedApplication := k8sSource.IaDetails != nil
 
@@ -76,5 +76,17 @@ func k8sActualSourceToGql(k8sSource *endpoints.ThinSource) *gqlmodel.K8sActualSo
 		Name:                           k8sSource.Name,
 		NumberOfInstances:              &k8sSource.NumberOfRunningInstances,
 		InstrumentedApplicationDetails: gqlIaDetails,
+	}
+}
+
+func k8sSourceToGql(k8sSource *endpoints.Source) *gqlmodel.K8sActualSource {
+	baseSource := k8sThinSourceToGql(&k8sSource.ThinSource)
+	return &gqlmodel.K8sActualSource{
+		Namespace:                      baseSource.Namespace,
+		Kind:                           baseSource.Kind,
+		Name:                           baseSource.Name,
+		NumberOfInstances:              baseSource.NumberOfInstances,
+		InstrumentedApplicationDetails: baseSource.InstrumentedApplicationDetails,
+		ServiceName:                    &k8sSource.ReportedName,
 	}
 }

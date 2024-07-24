@@ -32,6 +32,7 @@ type ComputePlatform struct {
 	ComputePlatformType ComputePlatformType   `json:"computePlatformType"`
 	K8sActualNamespace  *K8sActualNamespace   `json:"k8sActualNamespace,omitempty"`
 	K8sActualNamespaces []*K8sActualNamespace `json:"k8sActualNamespaces"`
+	K8sActualSource     *K8sActualSource      `json:"k8sActualSource,omitempty"`
 	K8sActualSources    []*K8sActualSource    `json:"k8sActualSources"`
 	ActualDestinations  []*ActualDestination  `json:"actualDestinations"`
 	ActualActions       []*ActualAction       `json:"actualActions"`
