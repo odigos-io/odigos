@@ -133,6 +133,7 @@ const HeaderWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-bottom: 4px;
 `;
 
 const Input: React.FC<InputProps> = ({
@@ -146,14 +147,21 @@ const Input: React.FC<InputProps> = ({
 }) => {
   return (
     <Container>
-      <Tooltip text={tooltip || 'sddfsdf'}>
-        <HeaderWrapper>
-          <Title>{title}</Title>
-          {tooltip && (
-            <Image src="/icons/common/info.svg" alt="" width={16} height={16} />
-          )}
-        </HeaderWrapper>
-      </Tooltip>
+      {title && (
+        <Tooltip text={tooltip || ''}>
+          <HeaderWrapper>
+            <Title>{title}</Title>
+            {tooltip && (
+              <Image
+                src="/icons/common/info.svg"
+                alt=""
+                width={16}
+                height={16}
+              />
+            )}
+          </HeaderWrapper>
+        </Tooltip>
+      )}
 
       <InputWrapper
         isDisabled={props.disabled}

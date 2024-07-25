@@ -45,22 +45,30 @@ const TooltipText = styled.div`
   }
 `;
 
-const TooltipWrapper = styled.div`
+const TooltipWrapper = styled.div<{ hasText: boolean }>`
   &:hover ${TooltipText} {
-    visibility: visible;
-    opacity: 1;
-    z-index: 999;
+    ${({ hasText }) =>
+      hasText &&
+      `
+      visibility: visible;
+      opacity: 1;
+      z-index: 999;
+    `}
   }
 `;
 
 const Tooltip: React.FC<TooltipProps> = ({ text, children }) => {
+  const hasText = !!text;
+
   return (
     <TooltipContainer>
-      <TooltipWrapper>
+      <TooltipWrapper hasText={hasText}>
         {children}
-        <TooltipText>
-          <Text>{text}</Text>
-        </TooltipText>
+        {hasText && (
+          <TooltipText>
+            <Text>{text}</Text>
+          </TooltipText>
+        )}
       </TooltipWrapper>
     </TooltipContainer>
   );

@@ -51,9 +51,6 @@ export default function ChooseSourcesPage() {
       <Input
         placeholder="Search for sources"
         icon={'/icons/common/search.svg'}
-        errorMessage={'error?.message'}
-        title={'sdfds'}
-        tooltip={'sdfdsf'}
       />
     </div>
   );
