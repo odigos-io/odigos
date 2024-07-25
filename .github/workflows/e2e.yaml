@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   kubernetes-test:
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: odigos-amd64-4cpu-16mem
     strategy:
       fail-fast: false
       matrix:
