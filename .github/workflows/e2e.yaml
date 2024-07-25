@@ -65,3 +65,7 @@ jobs:
       - name: Run E2E Tests
         run: |
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
+        env:
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
+
