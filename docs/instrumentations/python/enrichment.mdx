@@ -35,11 +35,9 @@ Important Notes:
 
 1. **Always End a span**:
     Ensure that every span is ended to appear in your trace. Defer the End method of the span to guarantee that the span is always ended, even with multiple return paths in the function.
-2. **Propagate and use a valid context object**:
-    When calling tracer.Start, use a valid context object instead of context.Background(). This makes the new span a child of the active span, ensuring it appears correctly in the trace.
-3. **Assign meaningful names to spans**:
+2. **Assign meaningful names to spans**:
     Use descriptive names for spans, (such as the function name) to clearly describe the operations they represent. This helps anyone examining the trace to easily understand the span's purpose and context.
-4. **Avoid dynamic, high cardinality data in span names**:
+3. **Avoid dynamic, high cardinality data in span names**:
     Do not include dynamic data such as IDs in the span name, as this can cause performance issues and make the trace harder to read. Instead, use static, descriptive names for spans and record dynamic information in span attributes. This ensures better performance and readability of the trace.
 
 
