@@ -105,7 +105,14 @@
             "instrumentations/nodejs/nodejs",
             "instrumentations/nodejs/enrichment"
           ]
-        }
+        },
+        {
+          "group": "Python",
+          "pages": [
+            "instrumentations/python/python",
+            "instrumentations/python/enrichment"
+          ]
+        }        
       ]
     },
     {
