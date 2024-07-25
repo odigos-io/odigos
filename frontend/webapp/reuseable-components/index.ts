@@ -5,3 +5,4 @@ export * from './input';
 export * from './tooltip';
 export * from './dropdown';
 export * from './divider';
+export * from './counter';

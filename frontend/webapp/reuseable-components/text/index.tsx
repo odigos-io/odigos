@@ -39,7 +39,7 @@ const Text: React.FC<TextProps> = ({
   children,
   color,
   size = 16,
-  weight = 400,
+  weight = 300,
   align = 'left',
   family = 'primary',
   opacity = 1,

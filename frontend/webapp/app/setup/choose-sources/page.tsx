@@ -2,7 +2,13 @@
 import React, { useState } from 'react';
 
 import { useSuspenseQuery, gql } from '@apollo/client';
-import { Dropdown, Input, SectionTitle } from '@/reuseable-components';
+import {
+  Counter,
+  Divider,
+  Dropdown,
+  Input,
+  SectionTitle,
+} from '@/reuseable-components';
 
 const GET_COMPUTE_PLATFORM = gql`
   query GetComputePlatform($cpId: ID!) {
@@ -56,7 +62,7 @@ export default function ChooseSourcesPage() {
         title="Choose sources"
         description="Apps will be automatically instrumented, and data will be sent to the relevant APM's destinations."
       />
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
         <Input
           placeholder="Search for sources"
           icon={'/icons/common/search.svg'}
@@ -66,9 +72,11 @@ export default function ChooseSourcesPage() {
           options={options}
           selectedOption={selectedOption}
           onSelect={setSelectedOption}
-          // title="Select Type"
-          tooltip="Choose a type from the dropdown"
         />
+      </div>
+      <Divider thickness={1} margin="24px 0 16px" />
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Counter value={0} title="Selected apps" />
       </div>
     </div>
   );
