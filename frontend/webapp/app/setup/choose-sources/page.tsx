@@ -2,6 +2,7 @@
 import React from 'react';
 
 import { useSuspenseQuery, gql } from '@apollo/client';
+import { Input, SectionTitle } from '@/reuseable-components';
 
 const GET_COMPUTE_PLATFORM = gql`
   query GetComputePlatform($cpId: ID!) {
@@ -41,5 +42,19 @@ export default function ChooseSourcesPage() {
     variables: { cpId: '1' },
   });
 
-  return <></>;
+  return (
+    <div style={{ width: 800 }}>
+      <SectionTitle
+        title="Choose sources"
+        description="Apps will be automatically instrumented, and data will be sent to the relevant APM's destinations."
+      />
+      <Input
+        placeholder="Search for sources"
+        icon={'/icons/common/search.svg'}
+        errorMessage={'error?.message'}
+        title={'sdfds'}
+        tooltip={'sdfdsf'}
+      />
+    </div>
+  );
 }

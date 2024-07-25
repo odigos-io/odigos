@@ -18,8 +18,8 @@ const text = {
 };
 
 const font_family = {
-  primary: 'Kode Mono, sans-serif',
-  secondary: 'Inter, sans-serif',
+  primary: 'Inter, sans-serif',
+  secondary: 'Kode Mono, sans-serif',
 };
 
 // Define the theme interface
