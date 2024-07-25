@@ -3,11 +3,13 @@ import React, { useState } from 'react';
 
 import { useSuspenseQuery, gql } from '@apollo/client';
 import {
+  Checkbox,
   Counter,
   Divider,
   Dropdown,
   Input,
   SectionTitle,
+  Toggle,
 } from '@/reuseable-components';
 
 const GET_COMPUTE_PLATFORM = gql`
@@ -56,8 +58,12 @@ export default function ChooseSourcesPage() {
     'Managed',
   ];
 
+  const handleCheckboxChange = (value: boolean) => {
+    console.log('Checkbox is now', value);
+  };
+
   return (
-    <div style={{ width: '40vw' }}>
+    <div style={{ width: 756 }}>
       <SectionTitle
         title="Choose sources"
         description="Apps will be automatically instrumented, and data will be sent to the relevant APM's destinations."
@@ -75,9 +81,26 @@ export default function ChooseSourcesPage() {
         />
       </div>
       <Divider thickness={1} margin="24px 0 16px" />
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <Counter value={0} title="Selected apps" />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Toggle title="Auto-instrument all apps" />
+          <Toggle title="Show selected only" />
+        </div>
+        <Checkbox
+          title="Future apps"
+          tooltip="Automatically instrument all future apps"
+          initialValue={false}
+          onChange={handleCheckboxChange}
+        />
       </div>
+      <Divider thickness={1} margin="24px 0 16px" />
     </div>
   );
 }
