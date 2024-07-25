@@ -6,6 +6,7 @@ const colors = {
   secondary: '#F9F9F9',
   dark_grey: '#151515',
   text: '#F9F9F9',
+  border: 'rgba(249, 249, 249, 0.08)',
 };
 
 const text = {

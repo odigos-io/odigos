@@ -1,8 +1,8 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 
 import { useSuspenseQuery, gql } from '@apollo/client';
-import { Input, SectionTitle } from '@/reuseable-components';
+import { Dropdown, Input, SectionTitle } from '@/reuseable-components';
 
 const GET_COMPUTE_PLATFORM = gql`
   query GetComputePlatform($cpId: ID!) {
@@ -42,16 +42,34 @@ export default function ChooseSourcesPage() {
     variables: { cpId: '1' },
   });
 
+  const [selectedOption, setSelectedOption] = useState('All types');
+  const options = [
+    'All types',
+    'Existing destinations',
+    'Self hosted',
+    'Managed',
+  ];
+
   return (
-    <div style={{ width: 800 }}>
+    <div style={{ width: '40vw' }}>
       <SectionTitle
         title="Choose sources"
         description="Apps will be automatically instrumented, and data will be sent to the relevant APM's destinations."
       />
-      <Input
-        placeholder="Search for sources"
-        icon={'/icons/common/search.svg'}
-      />
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Input
+          placeholder="Search for sources"
+          icon={'/icons/common/search.svg'}
+        />
+
+        <Dropdown
+          options={options}
+          selectedOption={selectedOption}
+          onSelect={setSelectedOption}
+          // title="Select Type"
+          tooltip="Choose a type from the dropdown"
+        />
+      </div>
     </div>
   );
 }

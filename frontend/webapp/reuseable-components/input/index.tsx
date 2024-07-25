@@ -30,7 +30,7 @@ const InputWrapper = styled.div<{
   align-items: center;
   height: 36px;
   gap: 12px;
-  padding: 0 12px;
+
   transition: border-color 0.3s;
   border-radius: 32px;
   border: 1px solid rgba(249, 249, 249, 0.24);
@@ -89,6 +89,7 @@ const StyledInput = styled.input`
 const IconWrapper = styled.div`
   display: flex;
   align-items: center;
+  margin-left: 12px;
 `;
 
 const Button = styled.button`

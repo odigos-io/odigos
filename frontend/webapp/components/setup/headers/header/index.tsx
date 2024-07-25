@@ -50,7 +50,7 @@ export const SetupHeader: React.FC<SetupHeaderProps> = ({ onBack, onNext }) => {
           height={20}
         />
       </Logo>
-      <Title>START WITH ODIGOS</Title>
+      <Title family={'secondary'}>START WITH ODIGOS</Title>
       <NavigationButtons>
         <HeaderButton variant="secondary" onClick={onBack}>
           <Image
