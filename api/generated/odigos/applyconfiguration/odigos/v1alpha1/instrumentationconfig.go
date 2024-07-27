@@ -23,22 +23,21 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// InstrumentationInstanceApplyConfiguration represents an declarative configuration of the InstrumentationInstance type for use
+// InstrumentationConfigApplyConfiguration represents an declarative configuration of the InstrumentationConfig type for use
 // with apply.
-type InstrumentationInstanceApplyConfiguration struct {
+type InstrumentationConfigApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                             *InstrumentationInstanceSpecApplyConfiguration   `json:"spec,omitempty"`
-	Status                           *InstrumentationInstanceStatusApplyConfiguration `json:"status,omitempty"`
+	Spec                             *InstrumentationConfigSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
-// InstrumentationInstance constructs an declarative configuration of the InstrumentationInstance type for use with
+// InstrumentationConfig constructs an declarative configuration of the InstrumentationConfig type for use with
 // apply.
-func InstrumentationInstance(name, namespace string) *InstrumentationInstanceApplyConfiguration {
-	b := &InstrumentationInstanceApplyConfiguration{}
+func InstrumentationConfig(name, namespace string) *InstrumentationConfigApplyConfiguration {
+	b := &InstrumentationConfigApplyConfiguration{}
 	b.WithName(name)
 	b.WithNamespace(namespace)
-	b.WithKind("InstrumentationInstance")
+	b.WithKind("InstrumentationConfig")
 	b.WithAPIVersion("odigos.io/v1alpha1")
 	return b
 }
@@ -46,7 +45,7 @@ func InstrumentationInstance(name, namespace string) *InstrumentationInstanceApp
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Kind field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithKind(value string) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithKind(value string) *InstrumentationConfigApplyConfiguration {
 	b.Kind = &value
 	return b
 }
@@ -54,7 +53,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithKind(value string) *Inst
 // WithAPIVersion sets the APIVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the APIVersion field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithAPIVersion(value string) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithAPIVersion(value string) *InstrumentationConfigApplyConfiguration {
 	b.APIVersion = &value
 	return b
 }
@@ -62,7 +61,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithAPIVersion(value string)
 // WithName sets the Name field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Name field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithName(value string) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithName(value string) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.Name = &value
 	return b
@@ -71,7 +70,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithName(value string) *Inst
 // WithGenerateName sets the GenerateName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the GenerateName field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithGenerateName(value string) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithGenerateName(value string) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.GenerateName = &value
 	return b
@@ -80,7 +79,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithGenerateName(value strin
 // WithNamespace sets the Namespace field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Namespace field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithNamespace(value string) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithNamespace(value string) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.Namespace = &value
 	return b
@@ -89,7 +88,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithNamespace(value string) 
 // WithUID sets the UID field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the UID field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithUID(value types.UID) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithUID(value types.UID) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.UID = &value
 	return b
@@ -98,7 +97,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithUID(value types.UID) *In
 // WithResourceVersion sets the ResourceVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ResourceVersion field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithResourceVersion(value string) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithResourceVersion(value string) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ResourceVersion = &value
 	return b
@@ -107,7 +106,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithResourceVersion(value st
 // WithGeneration sets the Generation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Generation field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithGeneration(value int64) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithGeneration(value int64) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.Generation = &value
 	return b
@@ -116,7 +115,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithGeneration(value int64) 
 // WithCreationTimestamp sets the CreationTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CreationTimestamp field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithCreationTimestamp(value metav1.Time) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithCreationTimestamp(value metav1.Time) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.CreationTimestamp = &value
 	return b
@@ -125,7 +124,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithCreationTimestamp(value 
 // WithDeletionTimestamp sets the DeletionTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionTimestamp field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.DeletionTimestamp = &value
 	return b
@@ -134,7 +133,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithDeletionTimestamp(value 
 // WithDeletionGracePeriodSeconds sets the DeletionGracePeriodSeconds field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionGracePeriodSeconds field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.DeletionGracePeriodSeconds = &value
 	return b
@@ -144,7 +143,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithDeletionGracePeriodSecon
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Labels field,
 // overwriting an existing map entries in Labels field with the same key.
-func (b *InstrumentationInstanceApplyConfiguration) WithLabels(entries map[string]string) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithLabels(entries map[string]string) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.Labels == nil && len(entries) > 0 {
 		b.Labels = make(map[string]string, len(entries))
@@ -159,7 +158,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithLabels(entries map[strin
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Annotations field,
 // overwriting an existing map entries in Annotations field with the same key.
-func (b *InstrumentationInstanceApplyConfiguration) WithAnnotations(entries map[string]string) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithAnnotations(entries map[string]string) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.Annotations == nil && len(entries) > 0 {
 		b.Annotations = make(map[string]string, len(entries))
@@ -173,7 +172,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithAnnotations(entries map[
 // WithOwnerReferences adds the given value to the OwnerReferences field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the OwnerReferences field.
-func (b *InstrumentationInstanceApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		if values[i] == nil {
@@ -187,7 +186,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithOwnerReferences(values .
 // WithFinalizers adds the given value to the Finalizers field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Finalizers field.
-func (b *InstrumentationInstanceApplyConfiguration) WithFinalizers(values ...string) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithFinalizers(values ...string) *InstrumentationConfigApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		b.Finalizers = append(b.Finalizers, values[i])
@@ -195,7 +194,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithFinalizers(values ...str
 	return b
 }
 
-func (b *InstrumentationInstanceApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
+func (b *InstrumentationConfigApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
 	if b.ObjectMetaApplyConfiguration == nil {
 		b.ObjectMetaApplyConfiguration = &v1.ObjectMetaApplyConfiguration{}
 	}
@@ -204,15 +203,7 @@ func (b *InstrumentationInstanceApplyConfiguration) ensureObjectMetaApplyConfigu
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithSpec(value *InstrumentationInstanceSpecApplyConfiguration) *InstrumentationInstanceApplyConfiguration {
+func (b *InstrumentationConfigApplyConfiguration) WithSpec(value *InstrumentationConfigSpecApplyConfiguration) *InstrumentationConfigApplyConfiguration {
 	b.Spec = value
-	return b
-}
-
-// WithStatus sets the Status field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Status field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithStatus(value *InstrumentationInstanceStatusApplyConfiguration) *InstrumentationInstanceApplyConfiguration {
-	b.Status = value
 	return b
 }
