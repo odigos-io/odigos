@@ -11,16 +11,6 @@ concurrency:
 
 jobs:
   kubernetes-test:
-    needs:
-      - build-autoscaler
-      - build-scheduler
-      - build-and-test-instrumentor
-      - build-and-test-odiglet
-      - build-frontend
-      - build-cli
-      - test-k8sutils
-      - test-common
-      - test-procdiscovery
     runs-on: warp-ubuntu-latest-x64-8x-spot
     strategy:
       fail-fast: false
