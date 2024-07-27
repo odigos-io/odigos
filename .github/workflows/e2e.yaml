@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   kubernetes-test:
-    runs-on: odigos-amd64-4cpu-16mem
+    runs-on: warp-ubuntu-latest-x64-8x-spot
     strategy:
       fail-fast: false
       matrix:
