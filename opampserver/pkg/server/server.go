@@ -165,7 +165,10 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				// Clean up stale connections
 				deadConnections := connectionCache.CleanupStaleConnections()
 				for _, conn := range deadConnections {
-					handlers.OnConnectionClosed(ctx, &conn)
+					err := handlers.OnConnectionNoHeartbeat(ctx, &conn)
+					if err != nil {
+						logger.Error(err, "Failed to process connection with no heartbeat")
+					}
 				}
 			}
 		}

@@ -118,6 +118,21 @@ func (c *ConnectionHandlers) OnConnectionClosed(ctx context.Context, connectionI
 	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
 }
 
+func (c *ConnectionHandlers) OnConnectionNoHeartbeat(ctx context.Context, connectionInfo *connection.ConnectionInfo) error {
+	healthy := false
+	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
+	err := instrumentation_instance.PersistInstrumentationInstanceStatus(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme,
+		instrumentation_instance.WithHealthy(&healthy),
+		instrumentation_instance.WithMessage("connection timeout"),
+		instrumentation_instance.WithReason(common.AgentHealthStatusNoHeartbeat),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to persist instrumentation instance health status on connection timedout: %w", err)
+	}
+
+	return nil
+}
+
 func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Context, message *protobufs.AgentToServer, connectionInfo *connection.ConnectionInfo) error {
 
 	dynamicOptions := make([]instrumentation_instance.InstrumentationInstanceOption, 0)
