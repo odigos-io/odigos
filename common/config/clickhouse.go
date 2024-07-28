@@ -11,6 +11,7 @@ import (
 const (
 	clickhouseEndpoint     = "CLICKHOUSE_ENDPOINT"
 	clickhouseUsername     = "CLICKHOUSE_USERNAME"
+	clickhousePassword     = "${CLICKHOUSE_PASSWORD}"
 	clickhouseCreateSchema = "CLICKHOUSE_CREATE_SCHEME"
 	clickhouseDatabaseName = "CLICKHOUSE_DATABASE_NAME"
 	clickhouseTracesTable  = "CLICKHOUSE_TRACES_TABLE"
@@ -51,7 +52,7 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	}
 	if userExists {
 		exporterConfig["username"] = username
-		exporterConfig["password"] = "${CLICKHOUSE_PASSWORD}"
+		exporterConfig["password"] = clickhousePassword
 	}
 
 	createSchema, exists := dest.GetConfig()[clickhouseCreateSchema]
@@ -65,22 +66,19 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	exporterConfig["database"] = dbName
 
 	tracesTable, exists := dest.GetConfig()[clickhouseTracesTable]
-	if !exists {
-		return errors.New("clickhouse traces table not specified, gateway will not be configured for Clickhouse")
+	if exists {
+		exporterConfig["traces_table_name"] = tracesTable
 	}
-	exporterConfig["traces_table_name"] = tracesTable
 
 	metricsTable, exists := dest.GetConfig()[clickhouseMetricsTable]
-	if !exists {
-		return errors.New("clickhouse metrics table not specified, gateway will not be configured for Clickhouse")
+	if exists {
+		exporterConfig["metrics_table_name"] = metricsTable
 	}
-	exporterConfig["metrics_table_name"] = metricsTable
 
 	logsTable, exists := dest.GetConfig()[clickhouseLogsTable]
-	if !exists {
-		return errors.New("clickhouse logs table not specified, gateway will not be configured for Clickhouse")
+	if exists {
+		exporterConfig["logs_table_name"] = logsTable
 	}
-	exporterConfig["logs_table_name"] = logsTable
 
 	currentConfig.Exporters[exporterName] = exporterConfig
 	if isTracingEnabled(dest) {
