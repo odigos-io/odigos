@@ -27,7 +27,13 @@ export function DynamicActionForm({
   function renderCurrentAction() {
     switch (type) {
       case ActionsType.ADD_CLUSTER_INFO:
-        return <AddClusterInfoForm data={data} onChange={onChange} />;
+        return (
+          <AddClusterInfoForm
+            data={data}
+            onChange={onChange}
+            setIsFormValid={setIsFormValid}
+          />
+        );
       case ActionsType.DELETE_ATTRIBUTES:
         return <DeleteAttributesForm data={data} onChange={onChange} />;
       case ActionsType.RENAME_ATTRIBUTES:
