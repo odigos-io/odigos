@@ -51,9 +51,21 @@ export function DynamicActionForm({
           />
         );
       case ActionsType.ERROR_SAMPLER:
-        return <ErrorSamplerForm data={data} onChange={onChange} />;
+        return (
+          <ErrorSamplerForm
+            data={data}
+            onChange={onChange}
+            setIsFormValid={setIsFormValid}
+          />
+        );
       case ActionsType.PROBABILISTIC_SAMPLER:
-        return <ProbabilisticSamplerForm data={data} onChange={onChange} />;
+        return (
+          <ProbabilisticSamplerForm
+            data={data}
+            onChange={onChange}
+            setIsFormValid={setIsFormValid}
+          />
+        );
       case ActionsType.LATENCY_SAMPLER:
         return (
           <LatencySamplerForm

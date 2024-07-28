@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { KeyvalInput } from '@/design.system';
 
@@ -13,16 +13,33 @@ interface ErrorSampler {
 interface ErrorSamplerFormProps {
   data: ErrorSampler;
   onChange: (key: string, value: ErrorSampler | null) => void;
+  setIsFormValid?: (value: boolean) => void;
 }
+
 const ACTION_DATA_KEY = 'actionData';
+
 export function ErrorSamplerForm({
   data,
   onChange,
+  setIsFormValid = () => {},
 }: ErrorSamplerFormProps): React.JSX.Element {
+  useEffect(() => {
+    validateForm();
+  }, [data?.fallback_sampling_ratio]);
+
   function handleOnChange(fallback_sampling_ratio: number): void {
     onChange(ACTION_DATA_KEY, {
       fallback_sampling_ratio,
     });
+  }
+
+  function validateForm() {
+    const isValid =
+      !isNaN(data?.fallback_sampling_ratio) &&
+      data?.fallback_sampling_ratio >= 0 &&
+      data?.fallback_sampling_ratio <= 100;
+
+    setIsFormValid(isValid);
   }
 
   return (
