@@ -39,8 +39,12 @@ func (r *queryResolver) ComputePlatform(ctx context.Context, cpID string) (*mode
 		res[i] = k8sThinSourceToGql(&source)
 	}
 
+	name := "odigos-system"
+
 	return &model.ComputePlatform{
-		K8sActualSources: res,
+		K8sActualSources:    res,
+		Name:                &name,
+		ComputePlatformType: model.ComputePlatformTypeK8s,
 	}, nil
 }
 

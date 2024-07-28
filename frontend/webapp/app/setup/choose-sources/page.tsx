@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { useSuspenseQuery, gql } from '@apollo/client';
 import {
@@ -49,6 +49,10 @@ export default function ChooseSourcesPage() {
   const { error, data } = useSuspenseQuery(GET_COMPUTE_PLATFORM, {
     variables: { cpId: '1' },
   });
+
+  useEffect(() => {
+    console.log(data);
+  }, [data]);
 
   const [selectedOption, setSelectedOption] = useState('All types');
   const options = [
