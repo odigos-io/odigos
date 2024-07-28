@@ -40,11 +40,28 @@ func (r *queryResolver) ComputePlatform(ctx context.Context, cpID string) (*mode
 	}
 
 	name := "odigos-system"
+	namespacesResponse := endpoints.GetK8SNamespaces(ctx, name)
+
+	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
+
+	for i, namespace := range namespacesResponse.Namespaces {
+		namespaceActualSources := endpoints.GetApplicationsInK8SNamespace(ctx, namespace.Name)
+		namespaceSources := make([]*model.K8sActualSource, len(namespaceActualSources))
+		for j, source := range namespaceActualSources {
+			namespaceSources[j] = k8sApplicationItemToGql(&source)
+		}
+
+		K8sActualNamespaces[i] = &model.K8sActualNamespace{
+			Name:             namespace.Name,
+			K8sActualSources: namespaceSources,
+		}
+	}
 
 	return &model.ComputePlatform{
 		K8sActualSources:    res,
 		Name:                &name,
 		ComputePlatformType: model.ComputePlatformTypeK8s,
+		K8sActualNamespaces: K8sActualNamespaces,
 	}, nil
 }
 

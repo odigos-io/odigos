@@ -60,11 +60,11 @@ const DropdownListContainer = styled.div`
   flex-direction: column;
   gap: 8px;
   padding: 8px;
-  background-color: rgba(249, 249, 249, 0.08);
+  background-color: #242424;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 32px;
   margin-top: 4px;
-  z-index: 10;
+  z-index: 999;
 `;
 
 const SearchInputContainer = styled.div`

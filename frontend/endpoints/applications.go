@@ -75,6 +75,28 @@ func GetApplicationsInNamespace(c *gin.Context) {
 	})
 }
 
+func GetApplicationsInK8SNamespace(ctx context.Context, ns string) []GetApplicationItemInNamespace {
+
+	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	if err != nil {
+
+		return nil
+	}
+
+	items, err := getApplicationsInNamespace(ctx, namespace.Name, map[string]*bool{namespace.Name: isObjectLabeledForInstrumentation(namespace.ObjectMeta)})
+	if err != nil {
+
+		return nil
+	}
+
+	apps := make([]GetApplicationItemInNamespace, len(items))
+	for i, item := range items {
+		apps[i] = item.nsItem
+	}
+
+	return apps
+}
+
 // getApplicationsInNamespace returns all applications in the namespace and their instrumentation status.
 // nsName can be an empty string to get applications in all namespaces.
 // nsInstrumentedMap is a map of namespace name to a boolean pointer indicating if the namespace is instrumented.
