@@ -3,8 +3,4 @@ dist/
 node_modules
 .DS_Store
 go.work.sum
-opentelemetry-helm-charts/
-odigos-e2e-test
-.github/workflows/e2e/bats/traces-orig.json
-.github/workflows/e2e/bats/traces.json
 cli/odigos
