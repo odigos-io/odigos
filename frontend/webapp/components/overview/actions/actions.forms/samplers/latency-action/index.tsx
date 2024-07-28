@@ -74,20 +74,11 @@ export function LatencySamplerForm({
   }, [filters]);
 
   const memoizedSources = React.useMemo(() => {
-    let instrumentsSources = sources;
-    if (data) {
-      instrumentsSources = sources.filter((source) => {
-        return data.endpoints_filters.every(
-          (filter) => filter.service_name !== source.name
-        );
-      });
-    }
-
-    return instrumentsSources.map((source, index) => ({
+    return sources?.map((source, index) => ({
       id: index,
       label: source.name,
     }));
-  }, [sources, data]);
+  }, [sources]);
 
   function handleOnChange(index: number, key: string, value: any): void {
     const updatedFilters = filters.map((filter, i) =>
