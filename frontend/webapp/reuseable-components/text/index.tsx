@@ -11,7 +11,7 @@ interface TextProps {
   opacity?: number;
 }
 
-const TextWrapper = styled.span<{
+const TextWrapper = styled.div<{
   color?: string;
   size: number;
   weight: number;

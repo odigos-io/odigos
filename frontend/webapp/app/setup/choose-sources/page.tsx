@@ -11,6 +11,7 @@ import {
   SectionTitle,
   Toggle,
 } from '@/reuseable-components';
+import { SourcesList } from '@/containers/setup/sources/sources-list';
 
 const GET_COMPUTE_PLATFORM = gql`
   query GetComputePlatform($cpId: ID!) {
@@ -18,37 +19,43 @@ const GET_COMPUTE_PLATFORM = gql`
       id
       name
       computePlatformType
-      k8sActualSources {
-        namespace
-        kind
+      k8sActualNamespaces {
         name
-        serviceName
-        autoInstrumented
-        creationTimestamp
-        numberOfInstances
-        hasInstrumentedApplication
-        instrumentedApplicationDetails {
-          languages {
-            containerName
-            language
-          }
-          conditions {
-            type
-            status
-            lastTransitionTime
-            reason
-            message
-          }
+        k8sActualSources {
+          name
+          kind
+          numberOfInstances
         }
       }
     }
   }
 `;
 
+type ComputePlatformData = {
+  id: string;
+  name: string;
+  computePlatformType: string;
+  k8sActualNamespaces: {
+    name: string;
+    k8sActualSources: {
+      name: string;
+      kind: string;
+      numberOfInstances: number;
+    }[];
+  }[];
+};
+
+type ComputePlatform = {
+  computePlatform: ComputePlatformData;
+};
+
 export default function ChooseSourcesPage() {
-  const { error, data } = useSuspenseQuery(GET_COMPUTE_PLATFORM, {
-    variables: { cpId: '1' },
-  });
+  const { error, data } = useSuspenseQuery<ComputePlatform>(
+    GET_COMPUTE_PLATFORM,
+    {
+      variables: { cpId: '1' },
+    }
+  );
 
   useEffect(() => {
     console.log(data);
@@ -104,7 +111,12 @@ export default function ChooseSourcesPage() {
           onChange={handleCheckboxChange}
         />
       </div>
-      <Divider thickness={1} margin="24px 0 16px" />
+      <Divider thickness={1} margin="16px 0 24px" />
+      <SourcesList
+        items={
+          data?.computePlatform?.k8sActualNamespaces[0].k8sActualSources || []
+        }
+      />
     </div>
   );
 }
