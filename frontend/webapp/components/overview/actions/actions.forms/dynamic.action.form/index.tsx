@@ -35,7 +35,13 @@ export function DynamicActionForm({
           />
         );
       case ActionsType.DELETE_ATTRIBUTES:
-        return <DeleteAttributesForm data={data} onChange={onChange} />;
+        return (
+          <DeleteAttributesForm
+            data={data}
+            onChange={onChange}
+            setIsFormValid={setIsFormValid}
+          />
+        );
       case ActionsType.RENAME_ATTRIBUTES:
         return <RenameAttributesForm data={data} onChange={onChange} />;
       case ActionsType.ERROR_SAMPLER:
