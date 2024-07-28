@@ -43,7 +43,13 @@ export function DynamicActionForm({
           />
         );
       case ActionsType.RENAME_ATTRIBUTES:
-        return <RenameAttributesForm data={data} onChange={onChange} />;
+        return (
+          <RenameAttributesForm
+            data={data}
+            onChange={onChange}
+            setIsFormValid={setIsFormValid}
+          />
+        );
       case ActionsType.ERROR_SAMPLER:
         return <ErrorSamplerForm data={data} onChange={onChange} />;
       case ActionsType.PROBABILISTIC_SAMPLER:
