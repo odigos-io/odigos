@@ -123,7 +123,7 @@ func (c *ConnectionHandlers) OnConnectionNoHeartbeat(ctx context.Context, connec
 	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
 	err := instrumentation_instance.PersistInstrumentationInstanceStatus(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme,
 		instrumentation_instance.WithHealthy(&healthy),
-		instrumentation_instance.WithMessage("connection timeout"),
+		instrumentation_instance.WithMessage(fmt.Sprintf("OpAMP server did not receive heartbeat from the agent, last message time: %s", connectionInfo.LastMessageTime.Format("2006-01-02 15:04:05 MST"))),
 		instrumentation_instance.WithReason(common.AgentHealthStatusNoHeartbeat),
 	)
 	if err != nil {

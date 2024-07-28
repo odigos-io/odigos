@@ -13,4 +13,9 @@ const (
 
 	// AgentHealthStatusNoHeartbeat is when the server did not receive a 3 heartbeats from the agent, thus it is considered unhealthy
 	AgentHealthStatusNoHeartbeat = "NoHeartbeat"
+
+	// AgentHealthStatusProcessTerminated is when the agent process is terminated.
+	// The termination can be due to normal shutdown (e.g. event loop run out of work)
+	// due to explicit termination (e.g. code calls exit(), or OS signal), or due to an error (e.g. unhandled exception)
+	AgentHealthProcessTerminated = "ProcessTerminated"
 )
