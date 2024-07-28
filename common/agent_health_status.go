@@ -7,6 +7,10 @@ const (
 	// It started the OpenTelemetry SDK with no errors, processed any configuration and is ready to receive data.
 	AgentHealthStatusHealthy AgentHealthStatus = "Healthy"
 
+	// AgentHealthStatusStarting represents that the agent is starting and there is still no health status available.
+	// Once the agent finishes starting, it should report an either healthy or unhealthy status depending on the result.
+	AgentHealthStatusStarting AgentHealthStatus = "Starting"
+
 	// AgentHealthStatusUnsupportedRuntimeVersion represents that the agent is running on an unsupported runtime version
 	// For example: Otel sdk supports node.js >= 14 and workload is running with node.js 12
 	AgentHealthStatusUnsupportedRuntimeVersion = "UnsupportedRuntimeVersion"
