@@ -15,8 +15,13 @@ type samplingProcessor struct {
 }
 
 func (sp *samplingProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
+	globalUnsatisfiedRatioSet := false
 	globalUnsatisfiedRatio := 0.0
+
+	serviceUnsatisfiedRatioSet := false
 	serviceUnsatisfiedRatio := 0.0
+
+	EndpointUnsatisfiedRatioSet := false
 	EndpointUnsatisfiedRatio := 0.0
 
 	// Evaluate global rules first
@@ -27,6 +32,7 @@ func (sp *samplingProcessor) processTraces(ctx context.Context, td ptrace.Traces
 				return td, nil
 			} else {
 				globalUnsatisfiedRatio = max(globalUnsatisfiedRatio, r.FallbackSamplingRatio)
+				globalUnsatisfiedRatioSet = true
 			}
 		default:
 			sp.logger.Error("Unknown global rule details type", zap.String("rule", rule.Name))
@@ -45,6 +51,7 @@ func (sp *samplingProcessor) processTraces(ctx context.Context, td ptrace.Traces
 					return td, nil
 				} else {
 					EndpointUnsatisfiedRatio = max(EndpointUnsatisfiedRatio, r.FallbackSamplingRatio)
+					EndpointUnsatisfiedRatioSet = true
 				}
 			}
 		default:
@@ -54,13 +61,13 @@ func (sp *samplingProcessor) processTraces(ctx context.Context, td ptrace.Traces
 
 	var finalUnsatisfiedRatio float64
 	// Evaluate against the most specific unsatisfied ratio
-	if EndpointUnsatisfiedRatio > 0.0 {
+	if EndpointUnsatisfiedRatioSet {
 		finalUnsatisfiedRatio = EndpointUnsatisfiedRatio
 	} else {
-		if serviceUnsatisfiedRatio > 0.0 {
+		if serviceUnsatisfiedRatioSet {
 			finalUnsatisfiedRatio = serviceUnsatisfiedRatio
 		} else {
-			if globalUnsatisfiedRatio > 0.0 {
+			if globalUnsatisfiedRatioSet {
 				finalUnsatisfiedRatio = globalUnsatisfiedRatio
 			} else {
 				// None of the rules matched, trace is sampled by default
@@ -77,8 +84,6 @@ func (sp *samplingProcessor) processTraces(ctx context.Context, td ptrace.Traces
 	sp.removeAllSpans(&td)
 	return td, nil
 }
-
-////
 
 func max(a, b float64) float64 {
 	if a > b {
