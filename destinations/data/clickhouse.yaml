@@ -29,7 +29,44 @@ spec:
     - name: CLICKHOUSE_PASSWORD
       displayName: Password
       componentType: input
+      secret: true
       componentProps:
           type: password
           required: false
-          secret: true
+    - name: CLICKHOUSE_CREATE_SCHEME
+      displayName: Create Scheme
+      componentType: dropdown
+      componentProps:
+        values:
+          - Create
+          - Skip
+        required: true
+      initialValue: Create
+    - name: CLICKHOUSE_DATABASE_NAME
+      displayName: Database Name
+      componentType: input
+      componentProps:
+          type: text
+          required: true
+      initialValue: otel
+    - name: CLICKHOUSE_TRACES_TABLE
+      displayName: Traces Table
+      componentType: input
+      componentProps:
+          type: text
+          required: true
+      initialValue: otel_traces
+    - name: CLICKHOUSE_METRICS_TABLE
+      displayName: Metrics Table
+      componentType: input
+      componentProps:
+          type: text
+          required: true
+      initialValue: otel_metrics
+    - name: CLICKHOUSE_LOGS_TABLE
+      displayName: Logs Table
+      componentType: input
+      componentProps:
+          type: text
+          required: true
+      initialValue: otel_logs

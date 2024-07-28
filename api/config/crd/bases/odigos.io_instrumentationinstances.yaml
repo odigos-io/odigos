@@ -38,6 +38,14 @@ spec:
           metadata:
             type: object
           spec:
+            properties:
+              containerName:
+                description: |-
+                  stores the name of the container in the pod where the SDK is running.
+                  The pod details can be found as the owner reference on the CR.
+                type: string
+            required:
+            - containerName
             type: object
           status:
             description: |-
