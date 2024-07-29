@@ -1,6 +1,8 @@
 package gateway
 
-import odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+import (
+	"github.com/odigos-io/odigos/common"
+)
 
 const (
 	defaultRequestMemoryMiB = 500
@@ -25,27 +27,26 @@ type memoryConfigurations struct {
 	gomemlimitMiB              int
 }
 
-func getMemoryConfigurations(odigosConfig *odigosv1.OdigosConfiguration) *memoryConfigurations {
-
+func getMemoryConfigurations(odigosConfig *common.OdigosConfiguration) *memoryConfigurations {
 	memoryRequestMiB := defaultRequestMemoryMiB
-	if odigosConfig.Spec.CollectorGateway != nil && odigosConfig.Spec.CollectorGateway.RequestMemoryMiB > 0 {
-		memoryRequestMiB = odigosConfig.Spec.CollectorGateway.RequestMemoryMiB
+	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.RequestMemoryMiB > 0 {
+		memoryRequestMiB = odigosConfig.CollectorGateway.RequestMemoryMiB
 	}
 
 	// the memory limiter hard limit is set as 50 MiB less than the memory request
 	memoryLimiterLimitMiB := memoryRequestMiB - defaultMemoryLimiterLimitDiffMib
-	if odigosConfig.Spec.CollectorGateway != nil && odigosConfig.Spec.CollectorGateway.MemoryLimiterLimitMiB > 0 {
-		memoryLimiterLimitMiB = odigosConfig.Spec.CollectorGateway.MemoryLimiterLimitMiB
+	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.MemoryLimiterLimitMiB > 0 {
+		memoryLimiterLimitMiB = odigosConfig.CollectorGateway.MemoryLimiterLimitMiB
 	}
 
 	memoryLimiterSpikeLimitMiB := memoryLimiterLimitMiB * defaultMemoryLimiterSpikePercentage / 100.0
-	if odigosConfig.Spec.CollectorGateway != nil && odigosConfig.Spec.CollectorGateway.MemoryLimiterSpikeLimitMiB > 0 {
-		memoryLimiterSpikeLimitMiB = odigosConfig.Spec.CollectorGateway.MemoryLimiterSpikeLimitMiB
+	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.MemoryLimiterSpikeLimitMiB > 0 {
+		memoryLimiterSpikeLimitMiB = odigosConfig.CollectorGateway.MemoryLimiterSpikeLimitMiB
 	}
 
 	gomemlimitMiB := int(memoryLimiterLimitMiB * defaultGoMemLimitPercentage / 100.0)
-	if odigosConfig.Spec.CollectorGateway != nil && odigosConfig.Spec.CollectorGateway.GoMemLimitMib != 0 {
-		gomemlimitMiB = odigosConfig.Spec.CollectorGateway.GoMemLimitMib
+	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.GoMemLimitMib != 0 {
+		gomemlimitMiB = odigosConfig.CollectorGateway.GoMemLimitMib
 	}
 
 	return &memoryConfigurations{

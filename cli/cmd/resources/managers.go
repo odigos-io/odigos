@@ -1,7 +1,6 @@
 package resources
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -11,7 +10,7 @@ import (
 // set apiKey to nil for no-op.
 // set to empty string for "no api key" (non odigos cloud mode).
 // set to a valid api key for odigos cloud mode.
-func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier common.OdigosTier, proTierToken *string, config *odigosv1.OdigosConfigurationSpec) []resourcemanager.ResourceManager {
+func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier common.OdigosTier, proTierToken *string, config *common.OdigosConfiguration) []resourcemanager.ResourceManager {
 
 	// Note - the order of resource managers is important.
 	// If resource B depends on resource A, then B must be installed after A.

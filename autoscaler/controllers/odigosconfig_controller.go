@@ -3,8 +3,8 @@ package controllers
 import (
 	"context"
 
-	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,7 +33,8 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *OdigosConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// TODO: Clean up noise from too broad of a definition here
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.OdigosConfiguration{}).
+		For(&v1.ConfigMap{}).
 		Complete(r)
 }

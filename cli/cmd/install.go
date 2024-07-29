@@ -12,7 +12,6 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
@@ -83,7 +82,7 @@ This command will install k8s components that will auto-instrument your applicat
 			odigosProToken = odigosOnPremToken
 		}
 
-		config := createOdigosConfigSpec()
+		config := createOdigosConfig()
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
@@ -178,12 +177,11 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	return nil
 }
 
-func createOdigosConfigSpec() odigosv1.OdigosConfigurationSpec {
-
+func createOdigosConfig() common.OdigosConfiguration {
 	fullIgnoredNamespaces := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredNamespaces, consts.SystemNamespaces)
 	fullIgnoredContainers := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredContainers, consts.IgnoredContainers)
 
-	return odigosv1.OdigosConfigurationSpec{
+	return common.OdigosConfiguration{
 		OdigosVersion:     versionFlag,
 		ConfigVersion:     1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:  telemetryEnabled,
