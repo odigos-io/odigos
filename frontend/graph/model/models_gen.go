@@ -9,7 +9,6 @@ import (
 )
 
 type ComputePlatform struct {
-	ID                  string                `json:"id"`
 	Name                *string               `json:"name,omitempty"`
 	ComputePlatformType ComputePlatformType   `json:"computePlatformType"`
 	K8sActualNamespace  *K8sActualNamespace   `json:"k8sActualNamespace,omitempty"`

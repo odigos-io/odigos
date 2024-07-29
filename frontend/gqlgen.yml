@@ -39,5 +39,7 @@ models:
 
   ComputePlatform:
     fields:
+      k8sActualNamespace:
+        resolver: true
       k8sActualSource:
         resolver: true

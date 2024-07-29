@@ -50,7 +50,6 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	ComputePlatform struct {
 		ComputePlatformType func(childComplexity int) int
-		ID                  func(childComplexity int) int
 		K8sActualNamespace  func(childComplexity int, name string) int
 		K8sActualNamespaces func(childComplexity int) int
 		K8sActualSource     func(childComplexity int, name *string, namespace *string, kind *string) int
@@ -107,7 +106,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		ComputePlatform func(childComplexity int, cpID string) int
+		ComputePlatform func(childComplexity int) int
 		Config          func(childComplexity int) int
 	}
 
@@ -118,13 +117,15 @@ type ComplexityRoot struct {
 }
 
 type ComputePlatformResolver interface {
+	K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error)
+
 	K8sActualSource(ctx context.Context, obj *model.ComputePlatform, name *string, namespace *string, kind *string) (*model.K8sActualSource, error)
 }
 type MutationResolver interface {
 	CreateK8sDesiredNamespace(ctx context.Context, cpID string, namespace model.K8sDesiredNamespaceInput) (*model.K8sActualNamespace, error)
 }
 type QueryResolver interface {
-	ComputePlatform(ctx context.Context, cpID string) (*model.ComputePlatform, error)
+	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
 	Config(ctx context.Context) (*model.GetConfigResponse, error)
 }
 
@@ -153,13 +154,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ComputePlatform.ComputePlatformType(childComplexity), true
-
-	case "ComputePlatform.id":
-		if e.complexity.ComputePlatform.ID == nil {
-			break
-		}
-
-		return e.complexity.ComputePlatform.ID(childComplexity), true
 
 	case "ComputePlatform.k8sActualNamespace":
 		if e.complexity.ComputePlatform.K8sActualNamespace == nil {
@@ -384,12 +378,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_computePlatform_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.ComputePlatform(childComplexity, args["cpId"].(string)), true
+		return e.complexity.Query.ComputePlatform(childComplexity), true
 
 	case "Query.config":
 		if e.complexity.Query.Config == nil {
@@ -627,21 +616,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_computePlatform_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["cpId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cpId"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["cpId"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -679,50 +653,6 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
-
-func (ec *executionContext) _ComputePlatform_id(ctx context.Context, field graphql.CollectedField, obj *model.ComputePlatform) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ComputePlatform_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ComputePlatform_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ComputePlatform",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
 
 func (ec *executionContext) _ComputePlatform_name(ctx context.Context, field graphql.CollectedField, obj *model.ComputePlatform) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ComputePlatform_name(ctx, field)
@@ -823,7 +753,7 @@ func (ec *executionContext) _ComputePlatform_k8sActualNamespace(ctx context.Cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.K8sActualNamespace, nil
+		return ec.resolvers.ComputePlatform().K8sActualNamespace(rctx, obj, fc.Args["name"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -841,8 +771,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_k8sActualNamespace(ctx 
 	fc = &graphql.FieldContext{
 		Object:     "ComputePlatform",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "name":
@@ -2157,7 +2087,7 @@ func (ec *executionContext) _Query_computePlatform(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ComputePlatform(rctx, fc.Args["cpId"].(string))
+		return ec.resolvers.Query().ComputePlatform(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2171,7 +2101,7 @@ func (ec *executionContext) _Query_computePlatform(ctx context.Context, field gr
 	return ec.marshalOComputePlatform2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComputePlatform(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_computePlatform(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_computePlatform(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -2179,8 +2109,6 @@ func (ec *executionContext) fieldContext_Query_computePlatform(ctx context.Conte
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_ComputePlatform_id(ctx, field)
 			case "name":
 				return ec.fieldContext_ComputePlatform_name(ctx, field)
 			case "computePlatformType":
@@ -2196,17 +2124,6 @@ func (ec *executionContext) fieldContext_Query_computePlatform(ctx context.Conte
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ComputePlatform", field.Name)
 		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_computePlatform_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }
@@ -4394,11 +4311,6 @@ func (ec *executionContext) _ComputePlatform(ctx context.Context, sel ast.Select
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ComputePlatform")
-		case "id":
-			out.Values[i] = ec._ComputePlatform_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
 		case "name":
 			out.Values[i] = ec._ComputePlatform_name(ctx, field, obj)
 		case "computePlatformType":
@@ -4407,7 +4319,38 @@ func (ec *executionContext) _ComputePlatform(ctx context.Context, sel ast.Select
 				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "k8sActualNamespace":
-			out.Values[i] = ec._ComputePlatform_k8sActualNamespace(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ComputePlatform_k8sActualNamespace(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "k8sActualNamespaces":
 			out.Values[i] = ec._ComputePlatform_k8sActualNamespaces(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

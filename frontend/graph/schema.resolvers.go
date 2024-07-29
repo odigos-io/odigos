@@ -13,6 +13,20 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 )
 
+// K8sActualNamespace is the resolver for the k8sActualNamespace field.
+func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
+	namespaceActualSources := services.GetApplicationsInK8SNamespace(ctx, name)
+	namespaceSources := make([]*model.K8sActualSource, len(namespaceActualSources))
+	for i, source := range namespaceActualSources {
+		namespaceSources[i] = k8sApplicationItemToGql(&source)
+	}
+
+	return &model.K8sActualNamespace{
+		Name:             name,
+		K8sActualSources: namespaceSources,
+	}, nil
+}
+
 // K8sActualSource is the resolver for the k8sActualSource field.
 func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *model.ComputePlatform, name *string, namespace *string, kind *string) (*model.K8sActualSource, error) {
 	source, err := services.GetActualSource(ctx, *namespace, *kind, *name)
@@ -33,7 +47,7 @@ func (r *mutationResolver) CreateK8sDesiredNamespace(ctx context.Context, cpID s
 }
 
 // ComputePlatform is the resolver for the computePlatform field.
-func (r *queryResolver) ComputePlatform(ctx context.Context, cpID string) (*model.ComputePlatform, error) {
+func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
 	k8sActualSources := services.GetActualSources(ctx, "odigos-system")
 	res := make([]*model.K8sActualSource, len(k8sActualSources))
 	for i, source := range k8sActualSources {

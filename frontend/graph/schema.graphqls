@@ -107,7 +107,6 @@ input K8sSourceId {
 }
 
 type ComputePlatform {
-  id: ID!
   name: String
   computePlatformType: ComputePlatformType!
   k8sActualNamespace(name: String!): K8sActualNamespace
@@ -127,7 +126,7 @@ type GetConfigResponse {
 }
 
 type Query {
-  computePlatform(cpId: ID!): ComputePlatform
+  computePlatform: ComputePlatform
   config: GetConfigResponse
 }
 
