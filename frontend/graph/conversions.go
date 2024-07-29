@@ -3,8 +3,8 @@ package graph
 import (
 	"time"
 
-	"github.com/odigos-io/odigos/frontend/endpoints"
 	gqlmodel "github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/services"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -41,7 +41,7 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	return &str
 }
 
-func k8sThinSourceToGql(k8sSource *endpoints.ThinSource) *gqlmodel.K8sActualSource {
+func k8sThinSourceToGql(k8sSource *services.ThinSource) *gqlmodel.K8sActualSource {
 
 	hasInstrumentedApplication := k8sSource.IaDetails != nil
 
@@ -79,7 +79,7 @@ func k8sThinSourceToGql(k8sSource *endpoints.ThinSource) *gqlmodel.K8sActualSour
 	}
 }
 
-func k8sSourceToGql(k8sSource *endpoints.Source) *gqlmodel.K8sActualSource {
+func k8sSourceToGql(k8sSource *services.Source) *gqlmodel.K8sActualSource {
 	baseSource := k8sThinSourceToGql(&k8sSource.ThinSource)
 	return &gqlmodel.K8sActualSource{
 		Namespace:                      baseSource.Namespace,
@@ -91,7 +91,7 @@ func k8sSourceToGql(k8sSource *endpoints.Source) *gqlmodel.K8sActualSource {
 	}
 }
 
-func k8sApplicationItemToGql(appItem *endpoints.GetApplicationItemInNamespace) *gqlmodel.K8sActualSource {
+func k8sApplicationItemToGql(appItem *services.GetApplicationItemInNamespace) *gqlmodel.K8sActualSource {
 
 	stringKind := string(appItem.Kind)
 

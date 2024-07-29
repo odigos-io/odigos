@@ -1,14 +1,12 @@
-package endpoints
+package services
 
 import (
 	"context"
-	"net/http"
 
 	appsv1 "k8s.io/api/apps/v1"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 
-	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,24 +43,18 @@ type GetApplicationItem struct {
 	nsItem    GetApplicationItemInNamespace
 }
 
-func GetApplicationsInNamespace(c *gin.Context) {
-	var request GetApplicationsInNamespaceRequest
-	if err := c.ShouldBindUri(&request); err != nil {
-		returnError(c, err)
-		return
-	}
+func GetApplicationsInK8SNamespace(ctx context.Context, ns string) []GetApplicationItemInNamespace {
 
-	ctx := c.Request.Context()
-	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, request.Namespace, metav1.GetOptions{})
+	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
-		returnError(c, err)
-		return
+
+		return nil
 	}
 
 	items, err := getApplicationsInNamespace(ctx, namespace.Name, map[string]*bool{namespace.Name: isObjectLabeledForInstrumentation(namespace.ObjectMeta)})
 	if err != nil {
-		returnError(c, err)
-		return
+
+		return nil
 	}
 
 	apps := make([]GetApplicationItemInNamespace, len(items))
@@ -70,9 +62,7 @@ func GetApplicationsInNamespace(c *gin.Context) {
 		apps[i] = item.nsItem
 	}
 
-	c.JSON(http.StatusOK, GetApplicationsInNamespaceResponse{
-		Applications: apps,
-	})
+	return apps
 }
 
 // getApplicationsInNamespace returns all applications in the namespace and their instrumentation status.
