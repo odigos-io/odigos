@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/collector/processor/processortest"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	"go.uber.org/zap"
 )
 
 func generateTraceData(serviceName, spanName string, resAttrs map[string]any) ptrace.Traces {
@@ -43,8 +43,11 @@ func TestProcessor_Traces(t *testing.T) {
 	)
 	defer metricProvider.Shutdown(context.Background())
 
-	tmp, err := newThroughputMeasurementProcessor(zap.NewNop(), metricProvider, &Config{
+	set := processortest.NewNopSettings()
+
+	tmp, err := newThroughputMeasurementProcessor(set, metricProvider, &Config{
 		ResourceAttributesKeys: []string{"service.name", "key1"},
+		SamplingRatio: 		     1,
 	})
 	require.NoError(t, err)
 
@@ -64,6 +67,7 @@ func TestProcessor_Traces(t *testing.T) {
 	require.NoError(t, metricsReader.Collect(context.Background(), &rm))
 
 	var firstTraceSize int64
+	require.Greater(t, len(rm.ScopeMetrics), 0)
 
 	for _, sm := range rm.ScopeMetrics {
 		for _, metric := range sm.Metrics {

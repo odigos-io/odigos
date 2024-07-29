@@ -150,6 +150,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 	}
 	processorsCfg["resourcedetection"] = config.GenericMap{"detectors": []string{"ec2", "gcp", "azure"}}
 	processorsCfg["odigostrafficmetrics"] = config.GenericMap{
+		// adding the following resource attributes to the metrics allows to aggregate the metrics by source.
 		"res_attributes_keys": []string{
 			string(semconv.ServiceNameKey),
 			string(semconv.K8SNamespaceNameKey),
@@ -213,7 +214,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 							"metric_relabel_configs": []config.GenericMap{
 								{
 									"source_labels": []string{"__name__"},
-									"regex": ".*odigos.*",
+									"regex": "(.*odigos.*|^otelcol_processor_accepted.*)",
 									"action": "keep",
 								},
 							},

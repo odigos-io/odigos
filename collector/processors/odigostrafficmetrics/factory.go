@@ -27,7 +27,9 @@ func NewFactory() processor.Factory {
 }
 
 func createDefaultConfig() component.Config {
-	return &Config{}
+	return &Config{
+		SamplingRatio: 1.0,
+	}
 }
 
 func createTracesProcessor(
@@ -37,7 +39,7 @@ func createTracesProcessor(
 	nextConsumer consumer.Traces,
 ) (processor.Traces, error) {
 	oCfg := cfg.(*Config)
-	tmp, err := newThroughputMeasurementProcessor(set.Logger, set.TelemetrySettings.MeterProvider, oCfg)
+	tmp, err := newThroughputMeasurementProcessor(set, set.TelemetrySettings.MeterProvider, oCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +54,7 @@ func createLogsProcessor(
 	nextConsumer consumer.Logs,
 ) (processor.Logs, error) {
 	oCfg := cfg.(*Config)
-	tmp, err := newThroughputMeasurementProcessor(set.Logger, set.TelemetrySettings.MeterProvider, oCfg)
+	tmp, err := newThroughputMeasurementProcessor(set, set.TelemetrySettings.MeterProvider, oCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +69,7 @@ func createMetricsProcessor(
 	nextConsumer consumer.Metrics,
 ) (processor.Metrics, error) {
 	oCfg := cfg.(*Config)
-	tmp, err := newThroughputMeasurementProcessor(set.Logger, set.TelemetrySettings.MeterProvider, oCfg)
+	tmp, err := newThroughputMeasurementProcessor(set, set.TelemetrySettings.MeterProvider, oCfg)
 	if err != nil {
 		return nil, err
 	}
