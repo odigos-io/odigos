@@ -5,11 +5,13 @@ import { Tooltip } from '../tooltip';
 import Image from 'next/image';
 import { Text } from '../text';
 import { Divider } from '../divider';
+import { DropdownOption } from '@/types';
+import { useOnClickOutside } from '@/hooks';
 
 interface DropdownProps {
-  options: string[];
-  selectedOption: string;
-  onSelect: (option: string) => void;
+  options: DropdownOption[];
+  selectedOption: DropdownOption | undefined;
+  onSelect: (option: DropdownOption) => void;
   title?: string;
   tooltip?: string;
 }
@@ -112,11 +114,13 @@ const Dropdown: React.FC<DropdownProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  useOnClickOutside(dropdownRef, () => setIsOpen(false));
+
   const filteredOptions = options.filter((option) =>
-    option.toLowerCase().includes(searchTerm.toLowerCase())
+    option.value.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSelect = (option: string) => {
+  const handleSelect = (option: DropdownOption) => {
     onSelect(option);
     setIsOpen(false);
   };
@@ -139,7 +143,7 @@ const Dropdown: React.FC<DropdownProps> = ({
         </Tooltip>
       )}
       <DropdownHeader isOpen={isOpen} onClick={() => setIsOpen(!isOpen)}>
-        <Text size={14}>{selectedOption}</Text>
+        <Text size={14}>{selectedOption?.value}</Text>
 
         <OpenDropdownIcon
           src="/icons/common/extend-arrow.svg"
@@ -162,13 +166,13 @@ const Dropdown: React.FC<DropdownProps> = ({
           </SearchInputContainer>
           {filteredOptions.map((option) => (
             <DropdownItem
-              key={option}
-              isSelected={option === selectedOption}
+              key={option.id}
+              isSelected={option.id === selectedOption?.id}
               onClick={() => handleSelect(option)}
             >
-              <Text size={14}>{option}</Text>
+              <Text size={14}>{option.value}</Text>
 
-              {option === selectedOption && (
+              {option.id === selectedOption?.id && (
                 <Image
                   src="/icons/common/check.svg"
                   alt=""

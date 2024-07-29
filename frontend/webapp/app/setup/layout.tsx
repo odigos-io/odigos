@@ -30,6 +30,11 @@ const MainContent = styled.div`
   align-items: center;
 `;
 
+const ContentWrapper = styled.div`
+  width: 640px;
+  padding-top: 64px;
+`;
+
 export default function SetupLayout({
   children,
 }: {
@@ -43,7 +48,9 @@ export default function SetupLayout({
       <SideMenuWrapper>
         <SideMenu />
       </SideMenuWrapper>
-      <MainContent>{children}</MainContent>
+      <MainContent>
+        <ContentWrapper>{children}</ContentWrapper>
+      </MainContent>
     </LayoutContainer>
   );
 }
