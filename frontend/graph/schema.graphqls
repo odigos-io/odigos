@@ -110,7 +110,6 @@ type ComputePlatform {
   id: ID!
   name: String
   computePlatformType: ComputePlatformType!
-
   k8sActualNamespace(name: String!): K8sActualNamespace
   k8sActualNamespaces: [K8sActualNamespace]!
   k8sActualSource(

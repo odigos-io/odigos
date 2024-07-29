@@ -26,9 +26,13 @@ const MainContent = styled.div`
   display: flex;
   max-width: 1440px;
   width: 100%;
-  background-color: ${({ theme }) => theme.colors.secondary};
   flex-direction: column;
   align-items: center;
+`;
+
+const ContentWrapper = styled.div`
+  width: 640px;
+  padding-top: 64px;
 `;
 
 export default function SetupLayout({
@@ -45,9 +49,7 @@ export default function SetupLayout({
         <SideMenu />
       </SideMenuWrapper>
       <MainContent>
-        <SideMenu />
-
-        {children}
+        <ContentWrapper>{children}</ContentWrapper>
       </MainContent>
     </LayoutContainer>
   );

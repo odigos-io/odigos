@@ -90,3 +90,14 @@ func k8sSourceToGql(k8sSource *endpoints.Source) *gqlmodel.K8sActualSource {
 		ServiceName:                    &k8sSource.ReportedName,
 	}
 }
+
+func k8sApplicationItemToGql(appItem *endpoints.GetApplicationItemInNamespace) *gqlmodel.K8sActualSource {
+
+	stringKind := string(appItem.Kind)
+
+	return &gqlmodel.K8sActualSource{
+		Kind:              k8sKindToGql(stringKind),
+		Name:              appItem.Name,
+		NumberOfInstances: &appItem.Instances,
+	}
+}

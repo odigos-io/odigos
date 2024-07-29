@@ -108,9 +108,9 @@ const SideMenu: React.FC = () => {
             )}
           </IconWrapper>
           <StepContent>
-            <StepTitle>{step.title}</StepTitle>
+            <StepTitle family={'secondary'}>{step.title}</StepTitle>
             {step.subtitle && (
-              <StepSubtitle size={10} weight={300} family={'secondary'}>
+              <StepSubtitle size={10} weight={300}>
                 {step.subtitle}
               </StepSubtitle>
             )}

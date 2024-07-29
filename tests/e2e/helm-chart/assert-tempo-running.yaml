@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: e2e-tests-tempo-0
+  namespace: traces
+status:
+  phase: Running
+  containerStatuses:
+    - name: tempo
+      ready: true
+      restartCount: 0

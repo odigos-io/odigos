@@ -23,3 +23,8 @@ export type Config = {
     installation: string;
   };
 };
+
+export interface DropdownOption {
+  id: string;
+  value: string;
+}

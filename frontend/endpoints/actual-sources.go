@@ -14,7 +14,14 @@ import (
 )
 
 func GetActualSources(ctx context.Context, odigosns string) []ThinSource {
+	return getSourcesForNamespace(ctx, odigosns)
+}
 
+func GetNamespaceActualSources(ctx context.Context, namespace string) []ThinSource {
+	return getSourcesForNamespace(ctx, namespace)
+}
+
+func getSourcesForNamespace(ctx context.Context, namespace string) []ThinSource {
 	effectiveInstrumentedSources := map[SourceID]ThinSource{}
 
 	var (
@@ -24,7 +31,7 @@ func GetActualSources(ctx context.Context, odigosns string) []ThinSource {
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
-		relevantNamespaces, err := getRelevantNameSpaces(ctx, odigosns)
+		relevantNamespaces, err := getRelevantNameSpaces(ctx, namespace)
 		if err != nil {
 			return err
 		}
@@ -32,9 +39,6 @@ func GetActualSources(ctx context.Context, odigosns string) []ThinSource {
 		for _, ns := range relevantNamespaces {
 			nsInstrumentedMap[ns.Name] = isObjectLabeledForInstrumentation(ns.ObjectMeta)
 		}
-		// get all the applications in all the namespaces,
-		// passing an empty string here is more efficient compared to iterating over the namespaces
-		// since it will make a single request per workload type to the k8s api server
 		items, err = getApplicationsInNamespace(ctx, "", nsInstrumentedMap)
 		return err
 	})
@@ -60,10 +64,6 @@ func GetActualSources(ctx context.Context, odigosns string) []ThinSource {
 	}
 
 	sourcesResult := []ThinSource{}
-	// go over the instrumented applications and update the languages of the effective sources.
-	// Not all effective sources necessarily have a corresponding instrumented application,
-	// it may take some time for the instrumented application to be created. In that case the languages
-	// slice will be empty.
 	for _, app := range instrumentedApplications.Items {
 		thinSource := k8sInstrumentedAppToThinSource(&app)
 		if source, ok := effectiveInstrumentedSources[thinSource.SourceID]; ok {
@@ -77,13 +77,10 @@ func GetActualSources(ctx context.Context, odigosns string) []ThinSource {
 	}
 
 	return sourcesResult
-
 }
 
 func GetActualSource(ctx context.Context, ns string, kind string, name string) (*Source, error) {
-
 	k8sObjectName := workload.GetRuntimeObjectName(name, kind)
-
 	owner, numberOfRunningInstances := getWorkload(ctx, ns, kind, name)
 	if owner == nil {
 		return nil, fmt.Errorf("owner not found")
@@ -105,9 +102,7 @@ func GetActualSource(ctx context.Context, ns string, kind string, name string) (
 
 	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(ctx, k8sObjectName, metav1.GetOptions{})
 	if err == nil {
-		// valid instrumented application, grab the runtime details
 		ts.IaDetails = k8sInstrumentedAppToThinSource(instrumentedApplication).IaDetails
-		// potentially add a condition for healthy instrumentation instances
 		err = addHealthyInstrumentationInstancesCondition(ctx, instrumentedApplication, &ts)
 		if err != nil {
 			return nil, err
