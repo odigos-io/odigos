@@ -81,8 +81,6 @@ type ComplexityRoot struct {
 	}
 
 	K8sActualSource struct {
-		AutoInstrumented               func(childComplexity int) int
-		CreationTimestamp              func(childComplexity int) int
 		HasInstrumentedApplication     func(childComplexity int) int
 		InstrumentedApplicationDetails func(childComplexity int) int
 		Kind                           func(childComplexity int) int
@@ -90,15 +88,6 @@ type ComplexityRoot struct {
 		Namespace                      func(childComplexity int) int
 		NumberOfInstances              func(childComplexity int) int
 		ServiceName                    func(childComplexity int) int
-	}
-
-	K8sActualSourceRuntimeInfo struct {
-		MainContainer func(childComplexity int) int
-	}
-
-	K8sActualSourceRuntimeInfoContainer struct {
-		ContainerName func(childComplexity int) int
-		Language      func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -277,20 +266,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sActualNamespace.Name(childComplexity), true
 
-	case "K8sActualSource.autoInstrumented":
-		if e.complexity.K8sActualSource.AutoInstrumented == nil {
-			break
-		}
-
-		return e.complexity.K8sActualSource.AutoInstrumented(childComplexity), true
-
-	case "K8sActualSource.creationTimestamp":
-		if e.complexity.K8sActualSource.CreationTimestamp == nil {
-			break
-		}
-
-		return e.complexity.K8sActualSource.CreationTimestamp(childComplexity), true
-
 	case "K8sActualSource.hasInstrumentedApplication":
 		if e.complexity.K8sActualSource.HasInstrumentedApplication == nil {
 			break
@@ -339,27 +314,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sActualSource.ServiceName(childComplexity), true
-
-	case "K8sActualSourceRuntimeInfo.mainContainer":
-		if e.complexity.K8sActualSourceRuntimeInfo.MainContainer == nil {
-			break
-		}
-
-		return e.complexity.K8sActualSourceRuntimeInfo.MainContainer(childComplexity), true
-
-	case "K8sActualSourceRuntimeInfoContainer.containerName":
-		if e.complexity.K8sActualSourceRuntimeInfoContainer.ContainerName == nil {
-			break
-		}
-
-		return e.complexity.K8sActualSourceRuntimeInfoContainer.ContainerName(childComplexity), true
-
-	case "K8sActualSourceRuntimeInfoContainer.language":
-		if e.complexity.K8sActualSourceRuntimeInfoContainer.Language == nil {
-			break
-		}
-
-		return e.complexity.K8sActualSourceRuntimeInfoContainer.Language(childComplexity), true
 
 	case "Mutation.createK8sDesiredNamespace":
 		if e.complexity.Mutation.CreateK8sDesiredNamespace == nil {
@@ -895,10 +849,6 @@ func (ec *executionContext) fieldContext_ComputePlatform_k8sActualSource(ctx con
 				return ec.fieldContext_K8sActualSource_name(ctx, field)
 			case "serviceName":
 				return ec.fieldContext_K8sActualSource_serviceName(ctx, field)
-			case "autoInstrumented":
-				return ec.fieldContext_K8sActualSource_autoInstrumented(ctx, field)
-			case "creationTimestamp":
-				return ec.fieldContext_K8sActualSource_creationTimestamp(ctx, field)
 			case "numberOfInstances":
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 			case "hasInstrumentedApplication":
@@ -970,10 +920,6 @@ func (ec *executionContext) fieldContext_ComputePlatform_k8sActualSources(_ cont
 				return ec.fieldContext_K8sActualSource_name(ctx, field)
 			case "serviceName":
 				return ec.fieldContext_K8sActualSource_serviceName(ctx, field)
-			case "autoInstrumented":
-				return ec.fieldContext_K8sActualSource_autoInstrumented(ctx, field)
-			case "creationTimestamp":
-				return ec.fieldContext_K8sActualSource_creationTimestamp(ctx, field)
 			case "numberOfInstances":
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 			case "hasInstrumentedApplication":
@@ -1474,10 +1420,6 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(_ c
 				return ec.fieldContext_K8sActualSource_name(ctx, field)
 			case "serviceName":
 				return ec.fieldContext_K8sActualSource_serviceName(ctx, field)
-			case "autoInstrumented":
-				return ec.fieldContext_K8sActualSource_autoInstrumented(ctx, field)
-			case "creationTimestamp":
-				return ec.fieldContext_K8sActualSource_creationTimestamp(ctx, field)
 			case "numberOfInstances":
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 			case "hasInstrumentedApplication":
@@ -1664,88 +1606,6 @@ func (ec *executionContext) fieldContext_K8sActualSource_serviceName(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sActualSource_autoInstrumented(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sActualSource_autoInstrumented(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AutoInstrumented, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_K8sActualSource_autoInstrumented(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "K8sActualSource",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _K8sActualSource_creationTimestamp(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sActualSource_creationTimestamp(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreationTimestamp, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_K8sActualSource_creationTimestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "K8sActualSource",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _K8sActualSource_numberOfInstances(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 	if err != nil {
@@ -1873,141 +1733,6 @@ func (ec *executionContext) fieldContext_K8sActualSource_instrumentedApplication
 				return ec.fieldContext_InstrumentedApplicationDetails_conditions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentedApplicationDetails", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _K8sActualSourceRuntimeInfo_mainContainer(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSourceRuntimeInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sActualSourceRuntimeInfo_mainContainer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MainContainer, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.K8sActualSourceRuntimeInfoContainer)
-	fc.Result = res
-	return ec.marshalOK8sActualSourceRuntimeInfoContainer2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sActualSourceRuntimeInfoContainer(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_K8sActualSourceRuntimeInfo_mainContainer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "K8sActualSourceRuntimeInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "containerName":
-				return ec.fieldContext_K8sActualSourceRuntimeInfoContainer_containerName(ctx, field)
-			case "language":
-				return ec.fieldContext_K8sActualSourceRuntimeInfoContainer_language(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type K8sActualSourceRuntimeInfoContainer", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _K8sActualSourceRuntimeInfoContainer_containerName(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSourceRuntimeInfoContainer) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sActualSourceRuntimeInfoContainer_containerName(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ContainerName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_K8sActualSourceRuntimeInfoContainer_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "K8sActualSourceRuntimeInfoContainer",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _K8sActualSourceRuntimeInfoContainer_language(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSourceRuntimeInfoContainer) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sActualSourceRuntimeInfoContainer_language(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Language, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.ProgrammingLanguage)
-	fc.Result = res
-	return ec.marshalNProgrammingLanguage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguage(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_K8sActualSourceRuntimeInfoContainer_language(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "K8sActualSourceRuntimeInfoContainer",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ProgrammingLanguage does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4618,10 +4343,6 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			}
 		case "serviceName":
 			out.Values[i] = ec._K8sActualSource_serviceName(ctx, field, obj)
-		case "autoInstrumented":
-			out.Values[i] = ec._K8sActualSource_autoInstrumented(ctx, field, obj)
-		case "creationTimestamp":
-			out.Values[i] = ec._K8sActualSource_creationTimestamp(ctx, field, obj)
 		case "numberOfInstances":
 			out.Values[i] = ec._K8sActualSource_numberOfInstances(ctx, field, obj)
 		case "hasInstrumentedApplication":
@@ -4631,86 +4352,6 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			}
 		case "instrumentedApplicationDetails":
 			out.Values[i] = ec._K8sActualSource_instrumentedApplicationDetails(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var k8sActualSourceRuntimeInfoImplementors = []string{"K8sActualSourceRuntimeInfo"}
-
-func (ec *executionContext) _K8sActualSourceRuntimeInfo(ctx context.Context, sel ast.SelectionSet, obj *model.K8sActualSourceRuntimeInfo) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, k8sActualSourceRuntimeInfoImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("K8sActualSourceRuntimeInfo")
-		case "mainContainer":
-			out.Values[i] = ec._K8sActualSourceRuntimeInfo_mainContainer(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var k8sActualSourceRuntimeInfoContainerImplementors = []string{"K8sActualSourceRuntimeInfoContainer"}
-
-func (ec *executionContext) _K8sActualSourceRuntimeInfoContainer(ctx context.Context, sel ast.SelectionSet, obj *model.K8sActualSourceRuntimeInfoContainer) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, k8sActualSourceRuntimeInfoContainerImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("K8sActualSourceRuntimeInfoContainer")
-		case "containerName":
-			out.Values[i] = ec._K8sActualSourceRuntimeInfoContainer_containerName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "language":
-			out.Values[i] = ec._K8sActualSourceRuntimeInfoContainer_language(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5399,16 +5040,6 @@ func (ec *executionContext) marshalNK8sResourceKind2githubᚗcomᚋodigosᚑio�
 	return v
 }
 
-func (ec *executionContext) unmarshalNProgrammingLanguage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguage(ctx context.Context, v interface{}) (model.ProgrammingLanguage, error) {
-	var res model.ProgrammingLanguage
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNProgrammingLanguage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguage(ctx context.Context, sel ast.SelectionSet, v model.ProgrammingLanguage) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) marshalNSourceLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceLanguage(ctx context.Context, sel ast.SelectionSet, v *model.SourceLanguage) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -5809,13 +5440,6 @@ func (ec *executionContext) marshalOK8sActualSource2ᚖgithubᚗcomᚋodigosᚑi
 		return graphql.Null
 	}
 	return ec._K8sActualSource(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOK8sActualSourceRuntimeInfoContainer2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sActualSourceRuntimeInfoContainer(ctx context.Context, sel ast.SelectionSet, v *model.K8sActualSourceRuntimeInfoContainer) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._K8sActualSourceRuntimeInfoContainer(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOSourceLanguage2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceLanguageᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SourceLanguage) graphql.Marshaler {

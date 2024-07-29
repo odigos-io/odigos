@@ -80,20 +80,11 @@ type K8sActualSource {
   kind: K8sResourceKind!
   name: String!
   serviceName: String
-  autoInstrumented: Boolean
-  creationTimestamp: String
   numberOfInstances: Int
   # Odigos records an array of runtime infos.
   # currently we only keep the first one assuming it is the user's app.
   hasInstrumentedApplication: Boolean!
   instrumentedApplicationDetails: InstrumentedApplicationDetails
-}
-type K8sActualSourceRuntimeInfo {
-  mainContainer: K8sActualSourceRuntimeInfoContainer
-}
-type K8sActualSourceRuntimeInfoContainer {
-  containerName: String!
-  language: ProgrammingLanguage!
 }
 
 input K8sDesiredSourceInput {

@@ -45,20 +45,9 @@ type K8sActualSource struct {
 	Kind                           K8sResourceKind                 `json:"kind"`
 	Name                           string                          `json:"name"`
 	ServiceName                    *string                         `json:"serviceName,omitempty"`
-	AutoInstrumented               *bool                           `json:"autoInstrumented,omitempty"`
-	CreationTimestamp              *string                         `json:"creationTimestamp,omitempty"`
 	NumberOfInstances              *int                            `json:"numberOfInstances,omitempty"`
 	HasInstrumentedApplication     bool                            `json:"hasInstrumentedApplication"`
 	InstrumentedApplicationDetails *InstrumentedApplicationDetails `json:"instrumentedApplicationDetails,omitempty"`
-}
-
-type K8sActualSourceRuntimeInfo struct {
-	MainContainer *K8sActualSourceRuntimeInfoContainer `json:"mainContainer,omitempty"`
-}
-
-type K8sActualSourceRuntimeInfoContainer struct {
-	ContainerName string              `json:"containerName"`
-	Language      ProgrammingLanguage `json:"language"`
 }
 
 type K8sDesiredNamespaceInput struct {
