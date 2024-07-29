@@ -18,7 +18,7 @@ build-odiglet-with-agents:
 	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-native-community-src=../opentelemetry-node
 
 .PHONY: build-autoscaler
-build-autoscaler:	
+build-autoscaler:
 	docker build -t $(ORG)/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
 
 .PHONY: build-instrumentor
@@ -39,12 +39,7 @@ build-ui:
 
 .PHONY: build-images
 build-images:
-	make build-autoscaler TAG=$(TAG)
-	make build-scheduler TAG=$(TAG)
-	make build-odiglet TAG=$(TAG)
-	make build-instrumentor TAG=$(TAG)
-	make build-collector TAG=$(TAG)
-	make build-ui TAG=$(TAG)
+	make -j 3 build-autoscaler build-scheduler build-odiglet build-instrumentor build-collector build-ui TAG=$(TAG)
 
 .PHONY: push-odiglet
 push-odiglet:
@@ -100,13 +95,8 @@ load-to-kind-scheduler:
 
 .PHONY: load-to-kind
 load-to-kind:
-	make load-to-kind-autoscaler TAG=$(TAG)
-	make load-to-kind-scheduler TAG=$(TAG)
-	make load-to-kind-odiglet TAG=$(TAG)
-	kind load docker-image $(ORG)/odigos-instrumentor:$(TAG)
-	make load-to-kind-collector TAG=$(TAG)
-	make load-to-kind-ui TAG=$(TAG)
-	make load-to-kind-scheduler TAG=$(TAG)
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui TAG=$(TAG)
+
 
 .PHONY: restart-ui
 restart-ui:
