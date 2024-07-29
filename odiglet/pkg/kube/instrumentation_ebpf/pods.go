@@ -3,7 +3,8 @@ package instrumentation_ebpf
 import (
 	"context"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
+	"gopkg.in/yaml.v3"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -11,6 +12,7 @@ import (
 	runtime_details "github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,13 +27,18 @@ type PodsReconciler struct {
 }
 
 func (p *PodsReconciler) isNamespaceIgnored(ctx context.Context, ns string) bool {
-	var odigosConfig odigosv1.OdigosConfiguration
-	err := p.Client.Get(ctx, client.ObjectKey{Name: "odigos-config", Namespace: env.GetCurrentNamespace()}, &odigosConfig)
+	var configMap v1.ConfigMap
+	var odigosConfig common.OdigosConfiguration
+
+	err := p.Client.Get(ctx, client.ObjectKey{Name: consts.OdigosConfigurationName, Namespace: env.GetCurrentNamespace()}, &configMap)
 	if err != nil {
 		return false
 	}
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), odigosConfig); err != nil {
+		return false
+	}
 
-	ignoredNamespaces := odigosConfig.Spec.IgnoredNamespaces
+	ignoredNamespaces := odigosConfig.IgnoredNamespaces
 	for _, ignoredNamespace := range ignoredNamespaces {
 		if ignoredNamespace == ns {
 			return true

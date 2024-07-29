@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -254,11 +253,11 @@ func int64Ptr(n int64) *int64 {
 type ownTelemetryResourceManager struct {
 	client     *kube.Client
 	ns         string
-	config     *odigosv1.OdigosConfigurationSpec
+	config     *common.OdigosConfiguration
 	odigosTier common.OdigosTier
 }
 
-func NewOwnTelemetryResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
+func NewOwnTelemetryResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
 	return &ownTelemetryResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
 }
 
