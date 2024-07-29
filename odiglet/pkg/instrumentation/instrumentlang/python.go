@@ -18,6 +18,7 @@ const (
 	envPythonPath                      = "PYTHONPATH"
 	envOtelExporterOTLPTracesProtocol  = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
 	envOtelExporterOTLPMetricsProtocol = "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL"
+	envOtelExporterOTLPLogsProtocol    = "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL"
 	httpProtobufProtocol               = "http/protobuf"
 	pythonOdigosOpampServer            = "ODIGOS_OPAMP_SERVER_HOST"
 	pythonOdigosDeviceId               = "ODIGOS_INSTRUMENTATION_DEVICE_ID"
@@ -54,6 +55,7 @@ func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 			envOtelLogsExporter:                logsExporter,
 			envOtelExporterOTLPTracesProtocol:  httpProtobufProtocol,
 			envOtelExporterOTLPMetricsProtocol: httpProtobufProtocol,
+			envOtelExporterOTLPLogsProtocol:    httpProtobufProtocol,
 		},
 		Mounts: []*v1beta1.Mount{
 			{
