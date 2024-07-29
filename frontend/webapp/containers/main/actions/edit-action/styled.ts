@@ -8,6 +8,7 @@ export const CreateActionWrapper = styled.div`
   padding: 24px;
   box-sizing: border-box;
   max-height: 93%;
+  width: 100%;
   overflow-y: auto;
 
   @media screen and (max-height: 450px) {
@@ -24,12 +25,18 @@ export const FormFieldsWrapper = styled.div<{ disabled: boolean }>`
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
 `;
 
-export const SwitchWrapper = styled.div<{ disabled: boolean }>`
+export const SwitchWrapper = styled.div<{
+  disabled: boolean;
+  isValid: boolean;
+}>`
   p {
     color: ${({ disabled }) =>
       disabled ? theme.colors.orange_brown : theme.colors.success};
     font-weight: 600;
   }
+
+  opacity: ${({ isValid }) => (!isValid ? 0.3 : 1)};
+  pointer-events: ${({ isValid }) => (!isValid ? 'none' : 'auto')};
 `;
 
 export const KeyvalInputWrapper = styled.div`
@@ -46,8 +53,8 @@ export const CreateButtonWrapper = styled.div`
 `;
 
 export const DescriptionWrapper = styled.div`
-  width: 50vw;
-  max-width: 600px;
+  width: 80vw;
+  max-width: 1050px;
   margin-bottom: 16px;
   display: flex;
   flex-direction: column;

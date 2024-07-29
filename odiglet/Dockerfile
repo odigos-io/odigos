@@ -1,20 +1,56 @@
+
+######### python Native Community Agent #########
+
 FROM python:3.11 AS python-builder
 ARG ODIGOS_VERSION
 WORKDIR /python-instrumentation
 COPY ../agents/python ./agents/python
-RUN mkdir workspace && pip install --target workspace -r ./agents/python/requirements.txt
 RUN echo "VERSION = \"$ODIGOS_VERSION\";" > ./agents/python/configurator/version.py
-RUN pip install ./agents/python/  --target workspace
+RUN mkdir workspace && pip install ./agents/python/  --target workspace
 
-FROM node:18 AS nodejs-builder
+######### Node.js Native Community Agent #########
+#
+# The Node.js agent is built in multiple stages so it can be built with either upstream
+# @odigos/opentelemetry-node or with a local clone to test changes during development.
+# The implemntation is based on the following blog post:
+# https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
+
+# The first build stage 'nodejs-agent-native-community-clone' clones the agent sources from github main branch.
+FROM alpine AS nodejs-agent-native-community-clone
+RUN apk add git
+WORKDIR /src
+ARG NODEJS_AGENT_VERSION=main
+RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentelemetry-node && git checkout $NODEJS_AGENT_VERSION
+
+# The second build stage 'nodejs-agent-native-community-src' prepares the actual code we are going to compile and embed in odiglet.
+# By default, it uses the previous 'nodejs-agent-native-community-src' stage, but one can override it by setting the 
+# --build-context nodejs-agent-native-community-src=../opentelemetry-node flag in the docker build command.
+# This allows us to nobe the agent sources and test changes during development.
+# The output of this stage is the resolved source code to be used in the next stage.
+FROM scratch AS nodejs-agent-native-community-src
+COPY --from=nodejs-agent-native-community-clone /src/opentelemetry-node /
+
+# The third build stage 'nodejs-agent-native-community-builder' compiles the agent sources and prepares the final output.
+# it COPY from the previous 'nodejs-agent-native-community-src' stage, so it can be used with either the upstream or local sources.
+# The output of this stage is the compiled agent code in:
+#    - package source code in '/nodejs-instrumentation/build/src' directory.
+#    - all required dependencies in '/nodejs-instrumentation/prod_node_modules' directory.
+# These artifacts are later copied into the odiglet final image to be mounted into auto-instrumented pods at runtime.
+FROM node:18 AS nodejs-agent-native-community-builder
 ARG ODIGOS_VERSION
 WORKDIR /nodejs-instrumentation
-COPY agents/nodejs .
+COPY --from=nodejs-agent-native-community-src /package.json /yarn.lock ./
+# prepare the production node_modules content in a separate directory
+RUN yarn --production --frozen-lockfile
+RUN mv node_modules ./prod_node_modules
+# install all dependencies including dev so we can yarn compile
+RUN yarn --frozen-lockfile
+COPY --from=nodejs-agent-native-community-src / ./
 # inject the actual version into the agent code
 RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
-RUN yarn
 RUN yarn compile
-RUN rm -rf node_modules && yarn --production # Remove dev dependencies
+
+
 
 FROM busybox AS dotnet-builder
 WORKDIR /dotnet-instrumentation
@@ -22,9 +58,9 @@ ARG DOTNET_OTEL_VERSION=v0.7.0
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
 
-FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.4 as builder
+FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.4 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
-# Copyy local modules required by the build
+# Copy local modules required by the build
 COPY api/ api/
 COPY common/ common/
 COPY k8sutils/ k8sutils/
@@ -49,8 +85,8 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
-COPY --from=nodejs-builder /nodejs-instrumentation/build/src /instrumentations/nodejs
-COPY --from=nodejs-builder /nodejs-instrumentation/node_modules /instrumentations/nodejs/node_modules
+COPY --from=nodejs-agent-native-community-builder /nodejs-instrumentation/build/src /instrumentations/nodejs
+COPY --from=nodejs-agent-native-community-builder /nodejs-instrumentation/prod_node_modules /instrumentations/nodejs/node_modules
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet

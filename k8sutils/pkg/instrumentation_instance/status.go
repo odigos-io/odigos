@@ -90,7 +90,7 @@ func InstrumentationInstanceName(owner client.Object, pid int) string {
 	return fmt.Sprintf("%s-%d", owner.GetName(), pid)
 }
 
-func PersistInstrumentationInstanceStatus(ctx context.Context, owner client.Object, kubeClient client.Client, instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
+func PersistInstrumentationInstanceStatus(ctx context.Context, owner client.Object, containerName string, kubeClient client.Client, instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
 	instrumentationInstanceName := InstrumentationInstanceName(owner, pid)
 	updatedInstance := &odigosv1.InstrumentationInstance{
 		TypeMeta: metav1.TypeMeta{
@@ -103,7 +103,11 @@ func PersistInstrumentationInstanceStatus(ctx context.Context, owner client.Obje
 			Labels: map[string]string{
 				consts.InstrumentedAppNameLabel: instrumentedAppName,
 			},
-		}}
+		},
+		Spec: odigosv1.InstrumentationInstanceSpec{
+			ContainerName: containerName,
+		},
+	}
 
 	err := controllerutil.SetControllerReference(owner, updatedInstance, scheme)
 	if err != nil {

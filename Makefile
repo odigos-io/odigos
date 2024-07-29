@@ -1,12 +1,24 @@
 TAG ?= $(shell odigos version --cluster)
+ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 ORG := keyval
 
 .PHONY: build-odiglet
 build-odiglet:
 	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG)
 
+.PHONY: verify-nodejs-agent
+verify-nodejs-agent:
+	@if [ ! -f ../opentelemetry-node/package.json ]; then \
+		echo "Error: To build odiglet agents from source, first clone the agents code locally"; \
+		exit 1; \
+	fi
+
+.PHONY: build-odiglet-with-agents
+build-odiglet-with-agents:
+	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-native-community-src=../opentelemetry-node
+
 .PHONY: build-autoscaler
-build-autoscaler:	
+build-autoscaler:
 	docker build -t $(ORG)/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
 
 .PHONY: build-instrumentor
@@ -27,12 +39,7 @@ build-ui:
 
 .PHONY: build-images
 build-images:
-	make build-autoscaler TAG=$(TAG)
-	make build-scheduler TAG=$(TAG)
-	make build-odiglet TAG=$(TAG)
-	make build-instrumentor TAG=$(TAG)
-	make build-collector TAG=$(TAG)
-	make build-ui TAG=$(TAG)
+	make -j 3 build-autoscaler build-scheduler build-odiglet build-instrumentor build-collector build-ui TAG=$(TAG)
 
 .PHONY: push-odiglet
 push-odiglet:
@@ -82,14 +89,14 @@ load-to-kind-instrumentor:
 load-to-kind-ui:
 	kind load docker-image $(ORG)/odigos-ui:$(TAG)
 
+.PHONY: load-to-kind-scheduler
+load-to-kind-scheduler:
+	kind load docker-image $(ORG)/odigos-scheduler:$(TAG)
+
 .PHONY: load-to-kind
 load-to-kind:
-	make load-to-kind-autoscaler TAG=$(TAG)
-	kind load docker-image $(ORG)/odigos-scheduler:$(TAG)
-	make load-to-kind-odiglet TAG=$(TAG)
-	kind load docker-image $(ORG)/odigos-instrumentor:$(TAG)
-	make load-to-kind-collector TAG=$(TAG)
-	make load-to-kind-ui TAG=$(TAG)
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui TAG=$(TAG)
+
 
 .PHONY: restart-ui
 restart-ui:
@@ -107,6 +114,11 @@ restart-autoscaler:
 restart-instrumentor:
 	kubectl rollout restart deployment odigos-instrumentor -n odigos-system
 
+.PHONY: restart-scheduler
+restart-scheduler:
+	kubectl rollout restart deployment odigos-scheduler -n odigos-system
+
+
 .PHONY: restart-collector
 restart-collector:
 	kubectl rollout restart deployment odigos-gateway -n odigos-system
@@ -116,6 +128,12 @@ restart-collector:
 .PHONY: deploy-odiglet
 deploy-odiglet:
 	make build-odiglet TAG=$(TAG) && make load-to-kind-odiglet TAG=$(TAG) && make restart-odiglet
+
+# Use this target to deploy odiglet with local clones of the agents.
+# To work, the agents must be cloned in the same directory as the odigos (e.g. in '../opentelemetry-node')
+# There you can make code changes to the agents and deploy them with the odiglet.
+.PHONY: deploy-odiglet-with-agents
+deploy-odiglet-with-agents: verify-nodejs-agent build-odiglet-with-agents load-to-kind-odiglet restart-odiglet
 
 .PHONY: deploy-autoscaler
 deploy-autoscaler:
@@ -133,6 +151,11 @@ deploy-instrumentor:
 deploy-ui:
 	make build-ui TAG=$(TAG) && make load-to-kind-ui TAG=$(TAG) && make restart-ui
 
+.PHONY: deploy-scheduler
+deploy-scheduler:
+	make build-scheduler TAG=$(TAG) && make load-to-kind-scheduler TAG=$(TAG) && make restart-scheduler
+
+
 .PHONY: debug-odiglet
 debug-odiglet:
 	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/debug.Dockerfile
@@ -142,7 +165,7 @@ debug-odiglet:
 	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
 
 .PHONY: deploy
-deploy: deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor
+deploy: deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor deploy-scheduler
 
 ,PHONY: e2e-test
 e2e-test:
@@ -164,3 +187,10 @@ check-clean-work-tree:
 		echo 'Working tree is not clean, did you forget to run "make go-mod-tidy"?'; \
 		exit 1; \
 	fi
+
+# installs odigos from the local source, with local changes to api and cli directorie reflected in the odigos deployment
+.PHONY: cli-install
+cli-install:
+	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
+	go run -tags=embed_manifests ./cli install --version $(ODIGOS_CLI_VERSION)
+

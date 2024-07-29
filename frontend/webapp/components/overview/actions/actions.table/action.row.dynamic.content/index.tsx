@@ -30,6 +30,34 @@ export default function ActionRowDynamicContent({
             {`${Object.keys(item?.spec?.renames).length} renamed attributes`}
           </KeyvalText>
         );
+      case ActionsType.ERROR_SAMPLER:
+        return (
+          <KeyvalText color={theme.text.grey} size={14} weight={400}>
+            {`${item?.spec?.fallback_sampling_ratio}% sampling ratio`}s
+          </KeyvalText>
+        );
+      case ActionsType.PROBABILISTIC_SAMPLER:
+        return (
+          <KeyvalText color={theme.text.grey} size={14} weight={400}>
+            {`${item?.spec?.sampling_percentage}% sampling ratio`}
+          </KeyvalText>
+        );
+      case ActionsType.LATENCY_SAMPLER:
+        return (
+          <KeyvalText color={theme.text.grey} size={14} weight={400}>
+            {`${item?.spec?.endpoints_filters.length} endpoints`}
+          </KeyvalText>
+        );
+      case ActionsType.PII_MASKING:
+        return (
+          <KeyvalText color={theme.text.grey} size={14} weight={400}>
+            {`${
+              item?.spec?.piiCategories.length === 1
+                ? '1 category'
+                : `${item?.spec?.piiCategories.length} categories`
+            }`}
+          </KeyvalText>
+        );
       default:
         return <div>{item.type}</div>;
     }

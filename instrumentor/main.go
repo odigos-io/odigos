@@ -20,6 +20,10 @@ import (
 	"flag"
 	"os"
 
+	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/odigos-io/odigos/common/consts"
@@ -93,7 +97,6 @@ func main() {
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
 
-	instrumentedSelector := labels.Set{consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled}.AsSelector()
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -104,18 +107,68 @@ func main() {
 		LeaderElectionID:       "201bdfa0.odigos.io",
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
+			// Store minimum amount of data for every object type.
+			// Currently, instrumentor only need the labels and the .spec.template.spec field of the workloads.
 			ByObject: map[client.Object]cache.ByObject{
 				&appsv1.Deployment{}: {
-					Label: instrumentedSelector,
+					Transform: func(obj interface{}) (interface{}, error) {
+						deployment := obj.(*appsv1.Deployment)
+						newDep := &appsv1.Deployment{
+							TypeMeta: deployment.TypeMeta,
+							ObjectMeta: metav1.ObjectMeta{
+								Name:        deployment.Name,
+								Namespace:   deployment.Namespace,
+								Labels:      deployment.Labels,
+								Annotations: deployment.Annotations,
+								UID:         deployment.UID,
+							},
+							Status: deployment.Status,
+						}
+
+						newDep.Spec.Template.Spec = deployment.Spec.Template.Spec
+						return newDep, nil
+					},
 				},
 				&appsv1.StatefulSet{}: {
-					Label: instrumentedSelector,
+					Transform: func(obj interface{}) (interface{}, error) {
+						ss := obj.(*appsv1.StatefulSet)
+						newSs := &appsv1.StatefulSet{
+							TypeMeta: ss.TypeMeta,
+							ObjectMeta: metav1.ObjectMeta{
+								Name:        ss.Name,
+								Namespace:   ss.Namespace,
+								Labels:      ss.Labels,
+								Annotations: ss.Annotations,
+								UID:         ss.UID,
+							},
+							Status: ss.Status,
+						}
+
+						newSs.Spec.Template.Spec = ss.Spec.Template.Spec
+						return newSs, nil
+					},
 				},
 				&appsv1.DaemonSet{}: {
-					Label: instrumentedSelector,
+					Transform: func(obj interface{}) (interface{}, error) {
+						ds := obj.(*appsv1.DaemonSet)
+						newDs := &appsv1.DaemonSet{
+							TypeMeta: ds.TypeMeta,
+							ObjectMeta: metav1.ObjectMeta{
+								Name:        ds.Name,
+								Namespace:   ds.Namespace,
+								Labels:      ds.Labels,
+								Annotations: ds.Annotations,
+								UID:         ds.UID,
+							},
+							Status: ds.Status,
+						}
+
+						newDs.Spec.Template.Spec = ds.Spec.Template.Spec
+						return newDs, nil
+					},
 				},
 				&corev1.Namespace{}: {
-					Label: instrumentedSelector,
+					Label: labels.Set{consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled}.AsSelector(),
 				},
 			},
 		},
@@ -132,6 +185,12 @@ func main() {
 	}
 
 	err = deleteinstrumentedapplication.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller")
+		os.Exit(1)
+	}
+
+	err = startlangdetection.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller")
 		os.Exit(1)

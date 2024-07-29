@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { putAction, setAction, deleteAction } from '@/services';
 import { ActionData, ActionItem, ActionState, ActionsType } from '@/types';
 
-interface Monitor {
+export interface Monitor {
   id: string;
   label: string;
   checked: boolean;
@@ -84,7 +84,7 @@ export function useActionState() {
       type,
     } = actionState;
 
-    const signals = selectedMonitors
+    const signals = getSupportedSignals(type, selectedMonitors)
       .filter((monitor) => monitor.checked)
       .map((monitor) => monitor.label.toUpperCase());
 
@@ -123,12 +123,26 @@ export function useActionState() {
     } catch (error) {}
   }
 
+  function getSupportedSignals(type: string, signals: Monitor[]) {
+    if (
+      type === ActionsType.ERROR_SAMPLER ||
+      type === ActionsType.PROBABILISTIC_SAMPLER ||
+      type === ActionsType.LATENCY_SAMPLER ||
+      type === ActionsType.PII_MASKING
+    ) {
+      return signals.filter((signal) => signal.label === 'Traces');
+    }
+
+    return signals;
+  }
+
   return {
     actionState,
-    onChangeActionState,
     upsertAction,
-    buildActionData,
     onDeleteAction,
+    buildActionData,
+    getSupportedSignals,
+    onChangeActionState,
   };
 }
 
@@ -178,6 +192,18 @@ function getActionDataByType(action: ActionData | undefined) {
     case ActionsType.RENAME_ATTRIBUTES:
       return {
         renames: action.spec.renames,
+      };
+    case ActionsType.ERROR_SAMPLER:
+      return {
+        fallback_sampling_ratio: action.spec.fallback_sampling_ratio,
+      };
+    case ActionsType.PROBABILISTIC_SAMPLER:
+      return {
+        sampling_percentage: action.spec.sampling_percentage,
+      };
+    case ActionsType.LATENCY_SAMPLER:
+      return {
+        endpoints_filters: action.spec.endpoints_filters,
       };
     default:
       return {};

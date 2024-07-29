@@ -71,15 +71,6 @@ updates:
       otel-dependencies:
         patterns:
           - "go.opentelemetry.io*"
-  - package-ecosystem: npm
-    directory: /agents/nodejs
-    schedule:
-      day: sunday
-      interval: weekly
-    groups:
-      otel-dependencies:
-        patterns:
-          - "@opentelemetry*"
   - package-ecosystem: pip
     directory: /odiglet/agents/python
     schedule:

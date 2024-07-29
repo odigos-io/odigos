@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/deviceid"
+	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
 	"k8s.io/client-go/kubernetes"
@@ -25,11 +27,14 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		return err
 	}
 
-	connectionCache := NewConnectionsCache()
+	connectionCache := connection.NewConnectionsCache()
+
+	sdkConfig := sdkconfig.NewSdkConfigManager(logger, mgr, connectionCache)
 
 	handlers := &ConnectionHandlers{
 		logger:        logger,
 		deviceIdCache: deviceidCache,
+		sdkConfig:     sdkConfig,
 		kubeclient:    mgr.GetClient(),
 		scheme:        mgr.GetScheme(),
 		nodeName:      nodeName,
@@ -52,10 +57,17 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		// assume the data is not compressed, which is not relevant and not supported in odigos
 
 		// Decode the message as a Protobuf message.
-		var opampRequest protobufs.AgentToServer
-		err = proto.Unmarshal(bytes, &opampRequest)
+		var agentToServer protobufs.AgentToServer
+		err = proto.Unmarshal(bytes, &agentToServer)
 		if err != nil {
 			logger.Error(err, "Cannot decode opamp message from HTTP Body")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		instanceUid := string(agentToServer.InstanceUid)
+		if instanceUid == "" {
+			logger.Error(err, "InstanceUid is missing")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -67,26 +79,26 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 			return
 		}
 
-		var opampResponse *protobufs.ServerToAgent
-		connectionInfo, exists := connectionCache.GetConnection(deviceId)
+		var serverToAgent *protobufs.ServerToAgent
+		connectionInfo, exists := connectionCache.GetConnection(instanceUid)
 		if !exists {
-			connectionInfo, opampResponse, err = handlers.OnNewConnection(ctx, deviceId, &opampRequest)
+			connectionInfo, serverToAgent, err = handlers.OnNewConnection(ctx, deviceId, &agentToServer)
 			if err != nil {
 				logger.Error(err, "Failed to process new connection")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			if connectionInfo != nil {
-				connectionCache.AddConnection(deviceId, connectionInfo)
+				connectionCache.AddConnection(instanceUid, connectionInfo)
 			}
 		} else {
 
-			if opampRequest.AgentDisconnect != nil {
+			if agentToServer.AgentDisconnect != nil {
 				handlers.OnConnectionClosed(ctx, connectionInfo)
-				connectionCache.RemoveConnection(deviceId)
+				connectionCache.RemoveConnection(instanceUid)
 			}
 
-			opampResponse, err = handlers.OnAgentToServerMessage(ctx, &opampRequest, connectionInfo)
+			serverToAgent, err = handlers.OnAgentToServerMessage(ctx, &agentToServer, connectionInfo)
 
 			if err != nil {
 				logger.Error(err, "Failed to process opamp message")
@@ -95,25 +107,25 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 			}
 		}
 
-		err = handlers.PersistInstrumentationDeviceStatus(ctx, &opampRequest, connectionInfo)
+		err = handlers.PersistInstrumentationDeviceStatus(ctx, &agentToServer, connectionInfo)
 		if err != nil {
 			logger.Error(err, "Failed to persist instrumentation device status")
 			// still return the opamp response
 		}
 
-		if opampResponse == nil {
+		if serverToAgent == nil {
 			logger.Error(err, "No response from opamp handler")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		// keep record in memory of last message time, to detect stale connections
-		connectionCache.RecordMessageTime(deviceId)
+		connectionCache.RecordMessageTime(instanceUid)
 
-		opampResponse.InstanceUid = opampRequest.InstanceUid
+		serverToAgent.InstanceUid = agentToServer.InstanceUid
 
 		// Marshal the response.
-		bytes, err = proto.Marshal(opampResponse)
+		bytes, err = proto.Marshal(serverToAgent)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -137,7 +149,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 	}()
 
 	go func() {
-		ticker := time.NewTicker(HeartbeatInterval)
+		ticker := time.NewTicker(connection.HeartbeatInterval)
 		defer ticker.Stop() // Clean up when done
 		for {
 			select {
