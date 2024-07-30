@@ -55,8 +55,17 @@ RUN yarn compile
 FROM busybox AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.7.0
-ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
-RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
+
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        echo "arm64" > /tmp/arch_suffix; \
+    else \
+        echo "x64" > /tmp/arch_suffix; \
+    fi
+
+RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
+    wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    unzip opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip
 
 FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.4 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
@@ -77,11 +86,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 WORKDIR /instrumentations
 
 # Java
-<<<<<<< HEAD
 ARG JAVA_OTEL_VERSION=v2.6.0
-=======
-ARG JAVA_OTEL_VERSION=v2.0.0
->>>>>>> 32a5499d (Update Java instrumentation to  v2.0.0 and .NET instrumentation to v1.2.0)
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
