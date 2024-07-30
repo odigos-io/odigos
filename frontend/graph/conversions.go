@@ -3,8 +3,8 @@ package graph
 import (
 	"time"
 
-	"github.com/odigos-io/odigos/frontend/endpoints"
 	gqlmodel "github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/services"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -41,19 +41,19 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	return &str
 }
 
-func k8sThinSourceToGql(k8sSource *endpoints.ThinSource) *gqlmodel.K8sActualSource {
+func k8sThinSourceToGql(k8sSource *services.ThinSource) *gqlmodel.K8sActualSource {
 
 	hasInstrumentedApplication := k8sSource.IaDetails != nil
 
 	var gqlIaDetails *gqlmodel.InstrumentedApplicationDetails
 	if hasInstrumentedApplication {
 		gqlIaDetails = &gqlmodel.InstrumentedApplicationDetails{
-			Languages:  make([]*gqlmodel.SourceLanguage, len(k8sSource.IaDetails.Languages)),
+			Containers: make([]*gqlmodel.SourceContainerRuntimeDetails, len(k8sSource.IaDetails.Languages)),
 			Conditions: make([]*gqlmodel.Condition, len(k8sSource.IaDetails.Conditions)),
 		}
 
 		for i, lang := range k8sSource.IaDetails.Languages {
-			gqlIaDetails.Languages[i] = &gqlmodel.SourceLanguage{
+			gqlIaDetails.Containers[i] = &gqlmodel.SourceContainerRuntimeDetails{
 				ContainerName: lang.ContainerName,
 				Language:      lang.Language,
 			}
@@ -79,7 +79,7 @@ func k8sThinSourceToGql(k8sSource *endpoints.ThinSource) *gqlmodel.K8sActualSour
 	}
 }
 
-func k8sSourceToGql(k8sSource *endpoints.Source) *gqlmodel.K8sActualSource {
+func k8sSourceToGql(k8sSource *services.Source) *gqlmodel.K8sActualSource {
 	baseSource := k8sThinSourceToGql(&k8sSource.ThinSource)
 	return &gqlmodel.K8sActualSource{
 		Namespace:                      baseSource.Namespace,
@@ -88,16 +88,5 @@ func k8sSourceToGql(k8sSource *endpoints.Source) *gqlmodel.K8sActualSource {
 		NumberOfInstances:              baseSource.NumberOfInstances,
 		InstrumentedApplicationDetails: baseSource.InstrumentedApplicationDetails,
 		ServiceName:                    &k8sSource.ReportedName,
-	}
-}
-
-func k8sApplicationItemToGql(appItem *endpoints.GetApplicationItemInNamespace) *gqlmodel.K8sActualSource {
-
-	stringKind := string(appItem.Kind)
-
-	return &gqlmodel.K8sActualSource{
-		Kind:              k8sKindToGql(stringKind),
-		Name:              appItem.Name,
-		NumberOfInstances: &appItem.Instances,
 	}
 }

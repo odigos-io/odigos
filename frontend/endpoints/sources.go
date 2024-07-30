@@ -86,13 +86,7 @@ func GetSources(c *gin.Context, odigosns string) {
 	}
 
 	for _, item := range items {
-		if item.nsItem.InstrumentationEffective {
-			id := SourceID{Namespace: item.namespace, Kind: string(item.nsItem.Kind), Name: item.nsItem.Name}
-			effectiveInstrumentedSources[id] = ThinSource{
-				NumberOfRunningInstances: item.nsItem.Instances,
-				SourceID:                 id,
-			}
-		}
+		println(item.nsItem.Name)
 	}
 
 	sourcesResult := []ThinSource{}

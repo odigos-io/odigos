@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useComputePlatform } from '@/hooks';
+import { useComputePlatform, useNamespace } from '@/hooks';
 import { SourcesList } from './choose-sources-list';
 import { SectionTitle, Divider } from '@/reuseable-components';
 import { DropdownOption, K8sActualNamespace, K8sActualSource } from '@/types';
@@ -20,11 +20,19 @@ export function ChooseSourcesContainer() {
   const [selectedItems, setSelectedItems] = useState<K8sActualSource[]>([]);
   const [namespacesList, setNamespacesList] = useState<DropdownOption[]>([]);
 
+  const [sourcesList, setSourcesList] = useState<K8sActualSource[]>([]);
+
   const { error, data } = useComputePlatform();
+  const { data: namespacesData } = useNamespace(selectedOption?.value);
 
   useEffect(() => {
     data && buildNamespacesList();
   }, [data, error]);
+
+  useEffect(() => {
+    console.log({ namespacesData });
+    namespacesData && setSourcesList(namespacesData.k8sActualSources || []);
+  }, [namespacesData]);
 
   useEffect(() => {
     selectAllCheckbox ? selectAllSources() : unselectAllSources();
@@ -51,11 +59,7 @@ export function ChooseSourcesContainer() {
   }
 
   function selectAllSources() {
-    const allSources =
-      data?.computePlatform?.k8sActualNamespaces.flatMap(
-        (namespace) => namespace.k8sActualSources
-      ) || [];
-    setSelectedItems(allSources);
+    setSelectedItems(sourcesList);
   }
 
   function unselectAllSources() {
@@ -63,8 +67,7 @@ export function ChooseSourcesContainer() {
   }
 
   function getVisibleSources() {
-    const allSources =
-      data?.computePlatform?.k8sActualNamespaces[0].k8sActualSources || [];
+    const allSources = sourcesList || [];
     const filteredSources = searchFilter
       ? filterSources(allSources)
       : allSources;

@@ -1,16 +1,24 @@
 import { gql } from '@apollo/client';
 
 export const GET_COMPUTE_PLATFORM = gql`
-  query GetComputePlatform($cpId: ID!) {
-    computePlatform(cpId: $cpId) {
-      id
+  query GetComputePlatform {
+    computePlatform {
       name
-      computePlatformType
       k8sActualNamespaces {
         name
+      }
+    }
+  }
+`;
+
+export const GET_NAMESPACES = gql`
+  query GetK8sActualNamespace($namespaceName: String!) {
+    computePlatform {
+      k8sActualNamespace(name: $namespaceName) {
+        name
         k8sActualSources {
-          name
           kind
+          name
           numberOfInstances
         }
       }

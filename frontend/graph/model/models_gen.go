@@ -9,7 +9,6 @@ import (
 )
 
 type ComputePlatform struct {
-	ID                  string                `json:"id"`
 	Name                *string               `json:"name,omitempty"`
 	ComputePlatformType ComputePlatformType   `json:"computePlatformType"`
 	K8sActualNamespace  *K8sActualNamespace   `json:"k8sActualNamespace,omitempty"`
@@ -31,14 +30,14 @@ type GetConfigResponse struct {
 }
 
 type InstrumentedApplicationDetails struct {
-	Languages  []*SourceLanguage `json:"languages,omitempty"`
-	Conditions []*Condition      `json:"conditions,omitempty"`
+	Containers []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
+	Conditions []*Condition                     `json:"conditions,omitempty"`
 }
 
 type K8sActualNamespace struct {
-	Name             string             `json:"name"`
-	AutoInstrumented *bool              `json:"autoInstrumented,omitempty"`
-	K8sActualSources []*K8sActualSource `json:"k8sActualSources"`
+	Name                        string             `json:"name"`
+	InstrumentationLabelEnabled *bool              `json:"instrumentationLabelEnabled,omitempty"`
+	K8sActualSources            []*K8sActualSource `json:"k8sActualSources"`
 }
 
 type K8sActualSource struct {
@@ -46,20 +45,10 @@ type K8sActualSource struct {
 	Kind                           K8sResourceKind                 `json:"kind"`
 	Name                           string                          `json:"name"`
 	ServiceName                    *string                         `json:"serviceName,omitempty"`
-	AutoInstrumented               *bool                           `json:"autoInstrumented,omitempty"`
-	CreationTimestamp              *string                         `json:"creationTimestamp,omitempty"`
 	NumberOfInstances              *int                            `json:"numberOfInstances,omitempty"`
-	HasInstrumentedApplication     bool                            `json:"hasInstrumentedApplication"`
+	AutoInstrumented               bool                            `json:"autoInstrumented"`
+	AutoInstrumentedDecision       string                          `json:"autoInstrumentedDecision"`
 	InstrumentedApplicationDetails *InstrumentedApplicationDetails `json:"instrumentedApplicationDetails,omitempty"`
-}
-
-type K8sActualSourceRuntimeInfo struct {
-	MainContainer *K8sActualSourceRuntimeInfoContainer `json:"mainContainer,omitempty"`
-}
-
-type K8sActualSourceRuntimeInfoContainer struct {
-	ContainerName string              `json:"containerName"`
-	Language      ProgrammingLanguage `json:"language"`
 }
 
 type K8sDesiredNamespaceInput struct {
@@ -87,7 +76,7 @@ type Mutation struct {
 type Query struct {
 }
 
-type SourceLanguage struct {
+type SourceContainerRuntimeDetails struct {
 	ContainerName string `json:"containerName"`
 	Language      string `json:"language"`
 }

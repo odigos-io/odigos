@@ -44,13 +44,13 @@ enum InstallationStatus {
   FINISHED
 }
 
-type SourceLanguage {
+type SourceContainerRuntimeDetails {
   containerName: String!
   language: String!
 }
 
 type InstrumentedApplicationDetails {
-  languages: [SourceLanguage!]
+  containers: [SourceContainerRuntimeDetails!]
   conditions: [Condition!]
 }
 
@@ -64,8 +64,14 @@ type Condition {
 
 type K8sActualNamespace {
   name: String!
-  autoInstrumented: Boolean
-  k8sActualSources: [K8sActualSource]!
+  instrumentationLabelEnabled: Boolean
+
+  # 1. if instrumentationLabeled = true, then only return sources that are labeled for instrumentation
+  # which means workload label is set to enabled, or workload label missing and ns label is set to enabled
+  # 2. if instrumentationLabeled = false, then return all sources which are not labeled for instrumentation.
+  # which means workload label is set to disabled, or workload label missing and ns label is not set to enabled
+  # 3. if instrumentationLabeled is not provided, then return all sources
+  k8sActualSources(instrumentationLabeled: Boolean): [K8sActualSource]!
 }
 
 input K8sDesiredNamespaceInput {
@@ -80,20 +86,10 @@ type K8sActualSource {
   kind: K8sResourceKind!
   name: String!
   serviceName: String
-  autoInstrumented: Boolean
-  creationTimestamp: String
   numberOfInstances: Int
-  # Odigos records an array of runtime infos.
-  # currently we only keep the first one assuming it is the user's app.
-  hasInstrumentedApplication: Boolean!
+  autoInstrumented: Boolean!
+  autoInstrumentedDecision: String!
   instrumentedApplicationDetails: InstrumentedApplicationDetails
-}
-type K8sActualSourceRuntimeInfo {
-  mainContainer: K8sActualSourceRuntimeInfoContainer
-}
-type K8sActualSourceRuntimeInfoContainer {
-  containerName: String!
-  language: ProgrammingLanguage!
 }
 
 input K8sDesiredSourceInput {
@@ -107,7 +103,6 @@ input K8sSourceId {
 }
 
 type ComputePlatform {
-  id: ID!
   name: String
   computePlatformType: ComputePlatformType!
   k8sActualNamespace(name: String!): K8sActualNamespace
@@ -127,7 +122,7 @@ type GetConfigResponse {
 }
 
 type Query {
-  computePlatform(cpId: ID!): ComputePlatform
+  computePlatform: ComputePlatform
   config: GetConfigResponse
 }
 
