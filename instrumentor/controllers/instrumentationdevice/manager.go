@@ -4,6 +4,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -86,7 +87,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		For(&odigosv1.OdigosConfiguration{}).
+		For(&corev1.ConfigMap{}).
 		WithEventFilter(&utils.OnlyUpdatesPredicate{}).
 		Complete(&OdigosConfigReconciler{
 			Client: mgr.GetClient(),
