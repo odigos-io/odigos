@@ -103,6 +103,15 @@ spec:
         name: odiglet
         namespace: odigos-system
   - name: Verify Trace - Span Attributes
+    try:
+      - script:
+          timeout: 60s
+          content: |
+            ../../common/traceql_runner.sh tracesql/span-attributes.yaml
+    catch:
+      - podLogs:
+          name: odiglet
+          namespace: odigos-system
 
   - name: Start Odigos UI in background
     try:
@@ -115,12 +124,7 @@ spec:
     try:
       - script:
           timeout: 60s
-          content: |
-            ../../common/traceql_runner.sh tracesql/span-attributes.yaml
-    catch:
-      - podLogs:
-          name: odiglet
-          namespace: odigos-system
+          content: |  
             ../../common/ui-tests/run_cypress_tests.sh
 
   - name: Stop Odigos UI
