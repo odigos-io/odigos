@@ -17,16 +17,8 @@ type Config struct {
 
 var _ component.ConfigValidator = (*Config)(nil)
 
-var (
-	errEmptyKeys       = errors.New("resource_attributes_keys must not be empty")
-)
-
 // Validate checks if the processor configuration is valid
 func (c Config) Validate() error {
-	if len(c.ResourceAttributesKeys) == 0 {
-		return errEmptyKeys
-	}
-
 	if c.SamplingRatio < 0 || c.SamplingRatio > 1 {
 		return errors.New("sampling_ratio must be between 0.0 and 1.0")
 	}

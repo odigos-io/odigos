@@ -140,8 +140,9 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 		apis.DELETE("/actions/types/RenameAttribute/:id", func(c *gin.Context) { actions.DeleteRenameAttribute(c, flags.Namespace, c.Param("id")) })
 
 		// Metrics
-		apis.GET("/metrics/namespace/:namespace/kind/:kind/name/:name", func(c *gin.Context) { endpoints.GetMetrics(c, odigosMetrics) })
-	
+		apis.GET("/metrics/namespace/:namespace/kind/:kind/name/:name", func(c *gin.Context) { endpoints.GetSourceMetrics(c, odigosMetrics) })
+		apis.GET("/metrics/destinations/:id", func(c *gin.Context) { endpoints.GetDestinationMetrics(c, odigosMetrics) })
+
 		// ErrorSampler
 		apis.GET("/actions/types/ErrorSampler/:id", func(c *gin.Context) { actions.GetErrorSampler(c, flags.Namespace, c.Param("id")) })
 		apis.POST("/actions/types/ErrorSampler", func(c *gin.Context) { actions.CreateErrorSampler(c, flags.Namespace) })
@@ -235,7 +236,6 @@ func main() {
 	if err != nil {
 		log.Printf("Error starting InstrumentationInstance watcher: %v", err)
 	}
-
 
 	r.GET("/api/events", sse.HandleSSEConnections)
 

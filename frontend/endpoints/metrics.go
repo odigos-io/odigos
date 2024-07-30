@@ -11,11 +11,11 @@ import (
 
 type sourceMetricsResponse struct {
 	common.SourceID
-	TotalDataSent int64   `json:"totalDataSent"`
-	Throughput    int64   `json:"throughput"`
+	TotalDataSent int64 `json:"totalDataSent"`
+	Throughput    int64 `json:"throughput"`
 }
 
-func GetMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer) {
+func GetSourceMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer) {
 	ns := c.Param("namespace")
 	kind := c.Param("kind")
 	name := c.Param("name")
@@ -33,7 +33,31 @@ func GetMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer) {
 
 	c.JSON(http.StatusOK,
 		sourceMetricsResponse{
-			SourceID:     sID,
+			SourceID:      sID,
+			TotalDataSent: metric.TotalDataSent(),
+			Throughput:    metric.TotalThroughput(),
+		},
+	)
+}
+
+type destinationMetricsResponse struct {
+	ID string `json:"id"`
+	TotalDataSent int64 `json:"totalDataSent"`
+	Throughput    int64 `json:"throughput"`
+}
+
+func GetDestinationMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer) {
+	destId := c.Param("id")
+
+	metric, ok := m.GetDestinationTrafficMetrics(destId)
+	if !ok {
+		returnError(c, fmt.Errorf("destination not found %v", destId))
+		return
+	}
+
+	c.JSON(http.StatusOK,
+		destinationMetricsResponse{
+			ID: 		   destId,
 			TotalDataSent: metric.TotalDataSent(),
 			Throughput:    metric.TotalThroughput(),
 		},

@@ -36,11 +36,11 @@ type ResourceStatuses struct {
 }
 
 func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, *ResourceStatuses) {
-	currentConfig, globalProcessors := getBasicConfig(memoryLimiterConfig)
-	return CalculateWithBase(currentConfig, globalProcessors, dests, processors)
+	currentConfig, prefixProcessors, suffixProcessors := getBasicConfig(memoryLimiterConfig)
+	return CalculateWithBase(currentConfig, prefixProcessors, suffixProcessors, dests, processors)
 }
 
-func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer) (string, error, *ResourceStatuses) {
+func CalculateWithBase(currentConfig *Config, prefixProcessors []string, suffixProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer) (string, error, *ResourceStatuses) {
 	configers, err := LoadConfigers()
 	if err != nil {
 		return "", err, nil
@@ -51,10 +51,17 @@ func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests [
 		Processor:   make(map[string]error),
 	}
 
-	for _, p := range globalProcessors {
+	for _, p := range prefixProcessors {
 		_, exists := currentConfig.Processors[p]
 		if !exists {
-			return "", fmt.Errorf("missing global processor '%s' on config", p), status
+			return "", fmt.Errorf("missing prefix processor '%s' on config", p), status
+		}
+	}
+
+	for _, s := range suffixProcessors {
+		_, exists := currentConfig.Processors[s]
+		if !exists {
+			return "", fmt.Errorf("missing suffix processor '%s' on config", s), status
 		}
 	}
 
@@ -101,7 +108,8 @@ func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests [
 		// basic config common to all pipelines
 		pipeline.Receivers = append([]string{"otlp"}, pipeline.Receivers...)
 		// memory limiter processor should be the first processor in the pipeline
-		pipeline.Processors = slices.Concat(globalProcessors, pipeline.Processors)
+		// odigostrafficmetrics processor should be the last processor in the pipeline
+		pipeline.Processors = slices.Concat(prefixProcessors, pipeline.Processors, suffixProcessors)
 		currentConfig.Service.Pipelines[pipelineName] = pipeline
 	}
 
@@ -113,7 +121,10 @@ func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests [
 	return string(data), nil, status
 }
 
-func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
+// getBasicConfig returns a basic configuration for the cluster collector.
+// It includes the basic receivers, processors, exporters, extensions, and service configuration.
+// In addition it returns prefix and suffix processors that should be added to beginning and end of each pipeline.
+func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string, []string) {
 	empty := struct{}{}
 	return &Config{
 		Receivers: GenericMap{
@@ -137,6 +148,13 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 									"targets": []string{"127.0.0.1:8888"},
 								},
 							},
+							"metric_relabel_configs": []GenericMap{
+								{
+									"source_labels": []string{"__name__"},
+									"regex": "(.*odigos.*|^otelcol_processor_accepted.*|^otelcol_exporter_sent.*)",
+									"action": "keep",
+								},
+							},
 						},
 					},
 				},
@@ -153,6 +171,10 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 					},
 				},
 			},
+			// odigostrafficmetrics processor should be the last processor in the pipeline
+			// as it helps to calculate the size of the data being exported.
+			// In case of performance impact caused by this processor, we should modify this config to reduce the sampling ratio.
+			"odigostrafficmetrics": empty,
 		},
 		Extensions: GenericMap{
 			"health_check": empty,
@@ -187,7 +209,8 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 				},
 			},
 		},
-	}, []string{memoryLimiterProcessorName, "resource/odigos-version"}
+	},
+	[]string{memoryLimiterProcessorName, "resource/odigos-version"}, []string{"odigostrafficmetrics"}
 }
 
 func LoadConfigers() (map[common.DestinationType]Configer, error) {
