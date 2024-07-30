@@ -70,3 +70,9 @@ export interface SelectedSources {
     future_selected: boolean;
   };
 }
+
+export type K8sActualSource = {
+  name: string;
+  kind: string;
+  numberOfInstances: number;
+};

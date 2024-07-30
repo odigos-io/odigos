@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,17 +22,17 @@ type GetConfigResponse struct {
 	Installation InstallationStatus `json:"installation"`
 }
 
-func GetConfig(c *gin.Context) {
+func GetConfig(c context.Context) GetConfigResponse {
 	var response GetConfigResponse
-	if !isSomethingLabeled(c.Request.Context()) {
+	if !isSomethingLabeled(c) {
 		response.Installation = NewInstallation
-	} else if !isDestinationChosen(c.Request.Context()) {
+	} else if !isDestinationChosen(c) {
 		response.Installation = AppsSelected
 	} else {
 		response.Installation = Finished
 	}
 
-	c.JSON(http.StatusOK, response)
+	return response
 }
 
 func isDestinationChosen(ctx context.Context) bool {

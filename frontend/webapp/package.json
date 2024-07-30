@@ -10,6 +10,8 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
+    "@apollo/client": "^3.11.0-rc.2",
+    "@apollo/experimental-nextjs-app-support": "^0.11.2",
     "@focus-reactive/react-yaml": "^1.1.2",
     "@keyval-dev/design-system": "^2.0.2",
     "@next/font": "^13.4.7",
@@ -22,6 +24,7 @@
     "axios": "^1.4.0",
     "eslint": "8.42.0",
     "eslint-config-next": "13.4.5",
+    "graphql": "^16.9.0",
     "next": "13.5.4",
     "postcss": "^8.4.26",
     "prop-types": "^15.8.1",

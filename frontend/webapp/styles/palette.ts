@@ -2,8 +2,11 @@ import { DefaultTheme } from 'styled-components';
 
 // Define your color palette
 const colors = {
-  primary: '#07111A',
-  secondary: '#0EE6F3',
+  primary: '#111',
+  secondary: '#F9F9F9',
+  dark_grey: '#151515',
+  text: '#F9F9F9',
+
   torquiz_light: '#96F2FF',
   dark: '#07111A',
   light_dark: '#132330',
@@ -26,7 +29,7 @@ const text = {
 };
 
 const font_family = {
-  primary: 'Inter, sans-serif',
+  primary: 'Kode Mono, sans-serif',
 };
 
 // Define the theme interface
