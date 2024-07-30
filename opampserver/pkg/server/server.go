@@ -79,6 +79,8 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 			return
 		}
 
+		isAgentDisconnect := agentToServer.AgentDisconnect != nil
+
 		var serverToAgent *protobufs.ServerToAgent
 		connectionInfo, exists := connectionCache.GetConnection(instanceUid)
 		if !exists {
@@ -92,14 +94,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				connectionCache.AddConnection(instanceUid, connectionInfo)
 			}
 		} else {
-
-			if agentToServer.AgentDisconnect != nil {
-				handlers.OnConnectionClosed(ctx, connectionInfo)
-				connectionCache.RemoveConnection(instanceUid)
-			}
-
 			serverToAgent, err = handlers.OnAgentToServerMessage(ctx, &agentToServer, connectionInfo)
-
 			if err != nil {
 				logger.Error(err, "Failed to process opamp message")
 				w.WriteHeader(http.StatusInternalServerError)
@@ -107,7 +102,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 			}
 		}
 
-		err = handlers.PersistInstrumentationDeviceStatus(ctx, &agentToServer, connectionInfo)
+		err = handlers.UpdateInstrumentationInstanceStatus(ctx, &agentToServer, connectionInfo)
 		if err != nil {
 			logger.Error(err, "Failed to persist instrumentation device status")
 			// still return the opamp response
@@ -119,8 +114,15 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 			return
 		}
 
-		// keep record in memory of last message time, to detect stale connections
-		connectionCache.RecordMessageTime(instanceUid)
+		if isAgentDisconnect {
+			logger.Info("Agent disconnected", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
+			// if agent disconnects, remove the connection from the cache
+			// as it is not expected to send additional messages
+			connectionCache.RemoveConnection(instanceUid)
+		} else {
+			// keep record in memory of last message time, to detect stale connections
+			connectionCache.RecordMessageTime(instanceUid)
+		}
 
 		serverToAgent.InstanceUid = agentToServer.InstanceUid
 
@@ -163,7 +165,10 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				// Clean up stale connections
 				deadConnections := connectionCache.CleanupStaleConnections()
 				for _, conn := range deadConnections {
-					handlers.OnConnectionClosed(ctx, &conn)
+					err := handlers.OnConnectionNoHeartbeat(ctx, &conn)
+					if err != nil {
+						logger.Error(err, "Failed to process connection with no heartbeat")
+					}
 				}
 			}
 		}
