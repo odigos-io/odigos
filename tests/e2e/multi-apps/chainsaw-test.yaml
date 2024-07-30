@@ -67,14 +67,14 @@ spec:
           while true; do
             # Apply the job
             kubectl apply -f 05-generate-traffic.yaml
-
+            
             # Wait for the job to complete
             job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
             kubectl wait --for=condition=complete job/$job_name
-
+            
             # Delete the job
             kubectl delete -f 05-generate-traffic.yaml
-
+            
             # Run the wait-for-trace script
             ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
             if [ $? -eq 0 ]; then
@@ -102,6 +102,7 @@ spec:
     - podLogs:
         name: odiglet
         namespace: odigos-system
+  - name: Verify Trace - Span Attributes
 
   - name: Start Odigos UI in background
     try:
@@ -115,6 +116,11 @@ spec:
       - script:
           timeout: 60s
           content: |
+            ../../common/traceql_runner.sh tracesql/span-attributes.yaml
+    catch:
+      - podLogs:
+          name: odiglet
+          namespace: odigos-system
             ../../common/ui-tests/run_cypress_tests.sh
 
   - name: Stop Odigos UI

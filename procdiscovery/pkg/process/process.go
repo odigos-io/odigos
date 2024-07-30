@@ -125,7 +125,7 @@ func getRelevantEnvVars(pid int) map[string]string {
 
 		str = strings.TrimRight(str, "\x00")
 
-		envParts := strings.Split(str, "=")
+		envParts := strings.SplitN(str, "=", 2)
 		if len(envParts) != 2 {
 			continue
 		}
