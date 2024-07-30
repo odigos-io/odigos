@@ -331,8 +331,12 @@ func printAppliedInstrumentationDeviceInfo(workloadObj *unstructured.Unstructure
 		originalContainerEnvs := origWorkloadEnvValues.GetContainerStoredEnvs(container.Name)
 		if originalContainerEnvs != nil && len(originalContainerEnvs) > 0 {
 			fmt.Println("    Original Environment Variables:")
-			for _, envVarOriginalValue := range container.Env {
-				fmt.Println("    - ", envVarOriginalValue.Name, ":", envVarOriginalValue.Value)
+			for envName, envVarOriginalValue := range originalContainerEnvs {
+				if envVarOriginalValue == nil {
+					fmt.Println("    - " + envName + "=null (not set in manifest)")
+				} else {
+					fmt.Println("    - " + envName + "=" + *envVarOriginalValue)
+				}
 			}
 		}
 	}
