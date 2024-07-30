@@ -59,12 +59,22 @@ export const SetupHeader: React.FC<SetupHeaderProps> = ({ onBack, onNext }) => {
             width={8}
             height={12}
           />
-          <Text color={theme.colors.secondary} size={14}>
+          <Text
+            color={theme.colors.secondary}
+            size={14}
+            decoration={'underline'}
+            family="secondary"
+          >
             BACK
           </Text>
         </HeaderButton>
         <HeaderButton variant="primary" onClick={onNext}>
-          <Text color={theme.colors.dark_grey} size={14}>
+          <Text
+            decoration={'underline'}
+            color={theme.colors.dark_grey}
+            size={14}
+            family="secondary"
+          >
             NEXT
           </Text>
           <Image

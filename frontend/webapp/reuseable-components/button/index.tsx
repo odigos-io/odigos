@@ -26,7 +26,8 @@ const variantStyles = {
     border: 1px solid rgba(249, 249, 249, 0.24);
     border-radius: 32px;
     &:hover {
-      background: #151515bc;
+      border: 1px solid rgba(249, 249, 249, 0.32);
+      background: rgba(249, 249, 249, 0.04);
     }
     &:active {
       background: #1515158d;

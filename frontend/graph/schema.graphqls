@@ -65,18 +65,13 @@ type Condition {
 type K8sActualNamespace {
   name: String!
   instrumentationLabelEnabled: Boolean
-
-  # 1. if instrumentationLabeled = true, then only return sources that are labeled for instrumentation
-  # which means workload label is set to enabled, or workload label missing and ns label is set to enabled
-  # 2. if instrumentationLabeled = false, then return all sources which are not labeled for instrumentation.
-  # which means workload label is set to disabled, or workload label missing and ns label is not set to enabled
-  # 3. if instrumentationLabeled is not provided, then return all sources
   k8sActualSources(instrumentationLabeled: Boolean): [K8sActualSource]!
 }
 
 input K8sDesiredNamespaceInput {
   autoInstrument: Boolean
 }
+
 input K8sNamespaceId {
   name: String!
 }
@@ -96,6 +91,7 @@ input K8sDesiredSourceInput {
   serviceName: String
   autoInstrument: Boolean
 }
+
 input K8sSourceId {
   namespace: String!
   kind: K8sResourceKind!
@@ -113,8 +109,49 @@ type ComputePlatform {
     kind: String
   ): K8sActualSource
   k8sActualSources: [K8sActualSource]!
+}
 
-  # destinations that are applied to this compute platform
+type SupportedSignals {
+  traces: ObservabilitySignalSupport!
+  metrics: ObservabilitySignalSupport!
+  logs: ObservabilitySignalSupport!
+}
+
+type ObservabilitySignalSupport {
+  supported: Boolean!
+}
+
+type DestinationTypesCategoryItem {
+  type: String!
+  displayName: String!
+  imageUrl: String!
+  supportedSignals: SupportedSignals!
+  testConnectionSupported: Boolean!
+}
+
+type DestinationsCategory {
+  name: String!
+  items: [DestinationTypesCategoryItem!]!
+}
+
+type GetDestinationTypesResponse {
+  categories: [DestinationsCategory!]!
+}
+
+type ExportedSignals {
+  traces: Boolean!
+  metrics: Boolean!
+  logs: Boolean!
+}
+
+type Destination {
+  id: ID!
+  name: String!
+  type: String!
+  exportedSignals: ExportedSignals!
+  fields: [String!]!
+  destinationType: DestinationTypesCategoryItem!
+  conditions: [Condition!]
 }
 
 type GetConfigResponse {
@@ -124,6 +161,7 @@ type GetConfigResponse {
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
+  destinationTypes: GetDestinationTypesResponse
 }
 
 type Mutation {
