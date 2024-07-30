@@ -23,10 +23,6 @@ var (
 	describeNamespaceFlag string
 )
 
-const (
-	nsCtxKey = "namespace"
-)
-
 type K8sSourceObject struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	Kind              string
@@ -105,7 +101,6 @@ func getRelevantResources(ctx context.Context, client *kube.Client, workloadObj 
 			err = nil
 			instrumentationConfig = nil
 		} else {
-			fmt.Println("1")
 			return
 		}
 	}
@@ -117,7 +112,6 @@ func getRelevantResources(ctx context.Context, client *kube.Client, workloadObj 
 			err = nil
 			instrumentedApplication = nil
 		} else {
-			fmt.Println("2")
 			return
 		}
 	}
@@ -128,7 +122,6 @@ func getRelevantResources(ctx context.Context, client *kube.Client, workloadObj 
 	instrumentationInstances, err = client.OdigosClient.InstrumentationInstances(ns).List(ctx, metav1.ListOptions{LabelSelector: instrumentedAppSelector.String()})
 	if err != nil {
 		// if no instrumentation instances are found, it should not error, so any error is returned
-		fmt.Println(instrumentedAppSelector.String())
 		return
 	}
 
