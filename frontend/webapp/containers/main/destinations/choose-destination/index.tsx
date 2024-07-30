@@ -3,6 +3,8 @@ import { Button, SectionTitle, Text } from '@/reuseable-components';
 import styled from 'styled-components';
 import Image from 'next/image';
 import theme from '@/styles/theme';
+import { useQuery } from '@apollo/client';
+import { GET_DESTINATION_TYPE } from '@/graphql';
 
 const AddDestinationButtonWrapper = styled.div`
   width: 100%;
@@ -18,6 +20,15 @@ const AddDestinationButton = styled(Button)`
 `;
 
 export function ChooseDestinationContainer() {
+  const { data, loading, error } = useQuery(GET_DESTINATION_TYPE);
+
+  useEffect(() => {
+    if (error) {
+      console.error('Error fetching destination types', error);
+    }
+    console.log({ data });
+  }, [data, error]);
+
   return (
     <>
       <SectionTitle
