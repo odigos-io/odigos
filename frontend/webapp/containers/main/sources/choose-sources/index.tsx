@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { useComputePlatform, useNamespace } from '@/hooks';
 import { SourcesList } from './choose-sources-list';
+import { useComputePlatform, useNamespace } from '@/hooks';
 import { SectionTitle, Divider } from '@/reuseable-components';
 import { DropdownOption, K8sActualNamespace, K8sActualSource } from '@/types';
 import { SearchAndDropdown, TogglesAndCheckboxes } from './choose-sources-menu';
 import {
-  SearchDropdownHandlers,
   SearchDropdownState,
-  ToggleCheckboxHandlers,
   ToggleCheckboxState,
+  SearchDropdownHandlers,
+  ToggleCheckboxHandlers,
 } from './choose-sources-menu/type';
 
 export function ChooseSourcesContainer() {
@@ -30,12 +30,11 @@ export function ChooseSourcesContainer() {
   }, [data, error]);
 
   useEffect(() => {
-    console.log({ namespacesData });
     namespacesData && setSourcesList(namespacesData.k8sActualSources || []);
   }, [namespacesData]);
 
   useEffect(() => {
-    selectAllCheckbox ? selectAllSources() : unselectAllSources();
+    selectAllCheckbox && selectAllSources();
   }, [selectAllCheckbox]);
 
   function buildNamespacesList() {
@@ -62,8 +61,25 @@ export function ChooseSourcesContainer() {
     setSelectedItems(sourcesList);
   }
 
-  function unselectAllSources() {
-    setSelectedItems([]);
+  function handleSelectItem(item: K8sActualSource) {
+    if (selectedItems.includes(item)) {
+      const updatedSelectedItems = selectedItems.filter(
+        (selectedItem) => selectedItem !== item
+      );
+      setSelectedItems(updatedSelectedItems);
+      if (
+        selectAllCheckbox &&
+        updatedSelectedItems.length !== sourcesList.length
+      ) {
+        setSelectAllCheckbox(false);
+      }
+    } else {
+      const updatedSelectedItems = [...selectedItems, item];
+      setSelectedItems(updatedSelectedItems);
+      if (updatedSelectedItems.length === sourcesList.length) {
+        setSelectAllCheckbox(true);
+      }
+    }
   }
 
   function getVisibleSources() {
@@ -119,7 +135,7 @@ export function ChooseSourcesContainer() {
       <Divider thickness={1} margin="16px 0 24px" />
       <SourcesList
         selectedItems={selectedItems}
-        setSelectedItems={setSelectedItems}
+        setSelectedItems={handleSelectItem}
         items={getVisibleSources()}
       />
     </>

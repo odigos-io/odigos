@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import styled, { css } from 'styled-components';
 import { Tooltip } from '../tooltip';
@@ -53,6 +53,10 @@ const Toggle: React.FC<ToggleProps> = ({
   disabled,
 }) => {
   const [isActive, setIsActive] = useState(initialValue);
+
+  useEffect(() => {
+    setIsActive(initialValue);
+  }, [initialValue]);
 
   const handleToggle = () => {
     if (!disabled) {
