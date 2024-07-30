@@ -1,7 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { GET_NAMESPACES } from '@/graphql';
 import { ComputePlatform, K8sActualNamespace } from '@/types';
-import { useEffect } from 'react';
 
 type UseNamespaceHook = {
   data?: K8sActualNamespace;
@@ -15,12 +14,8 @@ export const useNamespace = (
   const { data, loading, error } = useQuery<ComputePlatform>(GET_NAMESPACES, {
     skip: !namespaceName,
     variables: { namespaceName },
+    fetchPolicy: 'cache-first',
   });
-
-  useEffect(() => {
-    console.log({ data });
-    console.log({ error });
-  }, [data, error]);
 
   return {
     data: data?.computePlatform.k8sActualNamespace,

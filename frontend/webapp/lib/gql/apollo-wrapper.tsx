@@ -27,6 +27,9 @@ function makeClient() {
 
   return new ApolloClient({
     cache: new InMemoryCache(),
+    devtools: {
+      enabled: true,
+    },
     link:
       typeof window === 'undefined'
         ? ApolloLink.from([

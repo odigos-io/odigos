@@ -75,7 +75,7 @@ interface K8sActualSource {
 interface SourcesListProps {
   items: K8sActualSource[];
   selectedItems: K8sActualSource[];
-  setSelectedItems: React.Dispatch<React.SetStateAction<K8sActualSource[]>>;
+  setSelectedItems: (item: K8sActualSource) => void;
 }
 
 const SourcesList: React.FC<SourcesListProps> = ({
@@ -83,21 +83,13 @@ const SourcesList: React.FC<SourcesListProps> = ({
   selectedItems,
   setSelectedItems,
 }) => {
-  const handleItemClick = (item: K8sActualSource) => {
-    setSelectedItems((prevSelectedItems) =>
-      prevSelectedItems.includes(item)
-        ? prevSelectedItems.filter((selectedItem) => selectedItem !== item)
-        : [...prevSelectedItems, item]
-    );
-  };
-
   return (
     <Container>
       {items.map((item) => (
         <ListItem
           key={item.name}
           selected={selectedItems.includes(item)}
-          onClick={() => handleItemClick(item)}
+          onClick={() => setSelectedItems(item)}
         >
           <ListItemContent>
             <SourceIconWrapper>
