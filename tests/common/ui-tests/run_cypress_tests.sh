@@ -2,7 +2,7 @@
 
 echo "Running Cypress tests"
 cd ../../../frontend/webapp || exit
-npx cypress run --record --key "$CYPRESS_RECORD_KEY"
+npx cypress run
 
 status_cypress=$?
 if [ $status_cypress -ne 0 ]; then
