@@ -3,8 +3,8 @@ package gateway
 import (
 	"context"
 
-	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
+	"sigs.k8s.io/yaml"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
@@ -56,7 +56,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 		return err
 	}
 	var odigosConfig common.OdigosConfiguration
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), odigosConfig); err != nil {
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
 		logger.Error(err, "failed to parse odigos config from configmap")
 		return err
 	}

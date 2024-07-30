@@ -10,8 +10,8 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func ApplyResourceManagers(ctx context.Context, client *kube.Client, resourceManagers []resourcemanager.ResourceManager, prefixForLogging string) error {
@@ -48,7 +48,7 @@ func GetCurrentConfig(ctx context.Context, client *kube.Client, ns string) (*com
 		return nil, err
 	}
 	var odigosConfig common.OdigosConfiguration
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), odigosConfig); err != nil {
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
 		return nil, err
 	}
 	return &odigosConfig, nil

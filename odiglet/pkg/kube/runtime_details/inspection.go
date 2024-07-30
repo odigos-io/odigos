@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 
@@ -56,7 +56,7 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 		logger.Error(err, "error fetching odigos configuration")
 		return err
 	}
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), odigosConfig); err != nil {
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
 		logger.Error(err, "error parsing odigos configuration")
 		return err
 	}
