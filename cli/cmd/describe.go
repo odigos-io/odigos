@@ -147,7 +147,6 @@ func getRelevantResources(ctx context.Context, client *kube.Client, workloadObj 
 }
 
 func printWorkloadManifestInfo(workloadObj *K8sSourceObject, namespace *corev1.Namespace) bool {
-	fmt.Println("Showing details for Workload")
 	fmt.Println("Name: ", workloadObj.GetName())
 	fmt.Println("Kind: ", workloadObj.Kind)
 	fmt.Println("Namespace: ", workloadObj.GetNamespace())
