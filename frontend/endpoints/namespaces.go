@@ -7,7 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -89,7 +89,7 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace
 		if err != nil {
 			return err
 		}
-		if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), odigosConfig); err != nil {
+		if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
 			return err
 		}
 		return err

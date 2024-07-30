@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos/common/consts"
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -34,7 +34,7 @@ func (p *PodsReconciler) isNamespaceIgnored(ctx context.Context, ns string) bool
 	if err != nil {
 		return false
 	}
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), odigosConfig); err != nil {
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
 		return false
 	}
 
