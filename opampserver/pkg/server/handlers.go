@@ -120,11 +120,10 @@ func (c *ConnectionHandlers) OnConnectionClosed(ctx context.Context, connectionI
 
 func (c *ConnectionHandlers) OnConnectionNoHeartbeat(ctx context.Context, connectionInfo *connection.ConnectionInfo) error {
 	healthy := false
+	message := fmt.Sprintf("OpAMP server did not receive heartbeat from the agent, last message time: %s", connectionInfo.LastMessageTime.Format("2006-01-02 15:04:05 MST"))
 	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
 	err := instrumentation_instance.PersistInstrumentationInstanceStatus(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme,
-		instrumentation_instance.WithHealthy(&healthy),
-		instrumentation_instance.WithMessage(fmt.Sprintf("OpAMP server did not receive heartbeat from the agent, last message time: %s", connectionInfo.LastMessageTime.Format("2006-01-02 15:04:05 MST"))),
-		instrumentation_instance.WithReason(common.AgentHealthStatusNoHeartbeat),
+		instrumentation_instance.WithHealthy(&healthy, common.AgentHealthStatusNoHeartbeat, &message),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to persist instrumentation instance health status on connection timedout: %w", err)
@@ -146,7 +145,7 @@ func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Cont
 				Value: strValue,
 			})
 		}
-		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithIdentifyingAttributes(identifyingAttributes))
+		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithAttributes(identifyingAttributes, []odigosv1.Attribute{}))
 	}
 
 	isAgentDisconnect := message.AgentDisconnect != nil
@@ -168,16 +167,7 @@ func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Cont
 	if hasHealth {
 		// always record healthy status into the CRD, to reflect the current state
 		healthy := message.Health.Healthy
-		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithHealthy(&healthy))
-
-		// if there is a last error, record it as message
-		// last error is user facing free text and can be used for troubleshooting. not intended for automatic processing
-		// If it's an empty text, record this as well to clear the message
-		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithMessage(message.Health.LastError))
-
-		// Status is an enum value, it is responsibility of the agent to set it correctly
-		// The allowed values can be fount in `AgentHealthStatus` in common module under `agent_health_status`
-		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithReason(message.Health.Status))
+		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithHealthy(&healthy, message.Health.Status, &message.Health.LastError))
 	}
 
 	if len(dynamicOptions) > 0 {
