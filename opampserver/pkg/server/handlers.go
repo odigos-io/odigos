@@ -122,7 +122,7 @@ func (c *ConnectionHandlers) OnConnectionNoHeartbeat(ctx context.Context, connec
 	healthy := false
 	message := fmt.Sprintf("OpAMP server did not receive heartbeat from the agent, last message time: %s", connectionInfo.LastMessageTime.Format("2006-01-02 15:04:05 MST"))
 	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
-	err := instrumentation_instance.PersistInstrumentationInstanceStatus(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme,
+	err := instrumentation_instance.UpdateInstrumentationInstanceStatus(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme,
 		instrumentation_instance.WithHealthy(&healthy, common.AgentHealthStatusNoHeartbeat, &message),
 	)
 	if err != nil {
@@ -132,21 +132,7 @@ func (c *ConnectionHandlers) OnConnectionNoHeartbeat(ctx context.Context, connec
 	return nil
 }
 
-func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Context, message *protobufs.AgentToServer, connectionInfo *connection.ConnectionInfo) error {
-
-	dynamicOptions := make([]instrumentation_instance.InstrumentationInstanceOption, 0)
-
-	if message.AgentDescription != nil {
-		identifyingAttributes := make([]odigosv1.Attribute, 0, len(message.AgentDescription.IdentifyingAttributes))
-		for _, attr := range message.AgentDescription.IdentifyingAttributes {
-			strValue := ConvertAnyValueToString(attr.GetValue())
-			identifyingAttributes = append(identifyingAttributes, odigosv1.Attribute{
-				Key:   attr.Key,
-				Value: strValue,
-			})
-		}
-		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithAttributes(identifyingAttributes, []odigosv1.Attribute{}))
-	}
+func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Context, message *protobufs.AgentToServer, connectionInfo *connection.ConnectionInfo) error {
 
 	isAgentDisconnect := message.AgentDisconnect != nil
 	hasHealth := message.Health != nil
@@ -163,6 +149,20 @@ func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Cont
 		}
 	}
 
+	dynamicOptions := make([]instrumentation_instance.InstrumentationInstanceOption, 0)
+
+	if message.AgentDescription != nil {
+		identifyingAttributes := make([]odigosv1.Attribute, 0, len(message.AgentDescription.IdentifyingAttributes))
+		for _, attr := range message.AgentDescription.IdentifyingAttributes {
+			strValue := ConvertAnyValueToString(attr.GetValue())
+			identifyingAttributes = append(identifyingAttributes, odigosv1.Attribute{
+				Key:   attr.Key,
+				Value: strValue,
+			})
+		}
+		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithAttributes(identifyingAttributes, []odigosv1.Attribute{}))
+	}
+
 	// agent is only expected to send health status when it changes, so if found - persist it to CRD as new status
 	if hasHealth {
 		// always record healthy status into the CRD, to reflect the current state
@@ -171,7 +171,7 @@ func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Cont
 	}
 
 	if len(dynamicOptions) > 0 {
-		err := instrumentation_instance.PersistInstrumentationInstanceStatus(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme, dynamicOptions...)
+		err := instrumentation_instance.UpdateInstrumentationInstanceStatus(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme, dynamicOptions...)
 		if err != nil {
 			return fmt.Errorf("failed to persist instrumentation instance status: %w", err)
 		}

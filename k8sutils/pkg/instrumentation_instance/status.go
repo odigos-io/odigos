@@ -17,15 +17,15 @@ type InstrumentationInstanceOption interface {
 	applyInstrumentationInstance(odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus
 }
 
-type fnOpt func(odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus
+type updateInstrumentationInstanceStatusOpt func(odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus
 
-func (o fnOpt) applyInstrumentationInstance(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
+func (o updateInstrumentationInstanceStatusOpt) applyInstrumentationInstance(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
 	return o(s)
 }
 
 // set Healthy and related fields in InstrumentationInstanceStatus
 func WithHealthy(healthy *bool, reason string, message *string) InstrumentationInstanceOption {
-	return fnOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
+	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
 		s.Healthy = healthy
 		s.Reason = reason
 		if message != nil {
@@ -38,7 +38,7 @@ func WithHealthy(healthy *bool, reason string, message *string) InstrumentationI
 }
 
 func WithAttributes(identifying []odigosv1.Attribute, nonIdentifying []odigosv1.Attribute) InstrumentationInstanceOption {
-	return fnOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
+	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
 		s.IdentifyingAttributes = identifying
 		s.NonIdentifyingAttributes = nonIdentifying
 		return s
@@ -57,7 +57,7 @@ func InstrumentationInstanceName(owner client.Object, pid int) string {
 	return fmt.Sprintf("%s-%d", owner.GetName(), pid)
 }
 
-func PersistInstrumentationInstanceStatus(ctx context.Context, owner client.Object, containerName string, kubeClient client.Client, instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
+func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Object, containerName string, kubeClient client.Client, instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
 	instrumentationInstanceName := InstrumentationInstanceName(owner, pid)
 	updatedInstance := &odigosv1.InstrumentationInstance{
 		TypeMeta: metav1.TypeMeta{
