@@ -366,6 +366,9 @@ func printPodContainerInstrumentationInstancesInfo(instances []*odigosv1.Instrum
 		if instance.Status.Message != "" {
 			fmt.Println("      Message:", instance.Status.Message)
 		}
+		if instance.Status.Reason != "" {
+			fmt.Println("      Reason:", instance.Status.Reason)
+		}
 		if unhealthy {
 			fmt.Println("      Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#7-instrumentation-instance-unhealthy")
 		}
