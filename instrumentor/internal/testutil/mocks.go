@@ -172,8 +172,6 @@ func NewMockOdigosConfig() *v1.ConfigMap {
 		},
 	})
 
-	// TODO: REMOVE
-	fmt.Printf("Config: %v\n", config)
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      consts.OdigosConfigurationName,
