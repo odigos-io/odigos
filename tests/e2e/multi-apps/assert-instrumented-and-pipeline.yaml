@@ -287,11 +287,11 @@ status:
       (value != null): true
     - key: telemetry.sdk.language
       value: nodejs
+    - key: process.runtime.version
+      (value != null): true
     - key: telemetry.distro.version
       value: e2e-test
     - key: process.pid
-      (value != null): true
-    - key: process.runtime.version
       (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
