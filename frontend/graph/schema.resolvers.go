@@ -10,20 +10,36 @@ import (
 
 	"github.com/odigos-io/odigos/frontend/endpoints"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
 func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
-	namespaceActualSources := services.GetApplicationsInK8SNamespace(ctx, name)
-	namespaceSources := make([]*model.K8sActualSource, len(namespaceActualSources))
-	for i, source := range namespaceActualSources {
-		namespaceSources[i] = k8sApplicationItemToGql(&source)
+	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, name, nil)
+	if err != nil {
+		return nil, err
 	}
 
+	// Convert namespaceActualSources to []*model.K8sActualSource
+	namespaceActualSourcesPointers := make([]*model.K8sActualSource, len(namespaceActualSources))
+	for i, source := range namespaceActualSources {
+		namespaceActualSourcesPointers[i] = &source
+	}
+
+	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
+
 	return &model.K8sActualNamespace{
-		Name:             name,
-		K8sActualSources: namespaceSources,
+		Name:                        name,
+		InstrumentationLabelEnabled: nsInstrumented,
+		K8sActualSources:            namespaceActualSourcesPointers,
 	}, nil
 }
 
@@ -41,6 +57,11 @@ func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *mode
 	return k8sActualSource, nil
 }
 
+// K8sActualSources is the resolver for the k8sActualSources field.
+func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, ns *model.K8sActualNamespace, instrumentationLabeled *bool) ([]*model.K8sActualSource, error) {
+	return ns.K8sActualSources, nil
+}
+
 // CreateK8sDesiredNamespace is the resolver for the createK8sDesiredNamespace field.
 func (r *mutationResolver) CreateK8sDesiredNamespace(ctx context.Context, cpID string, namespace model.K8sDesiredNamespaceInput) (*model.K8sActualNamespace, error) {
 	panic(fmt.Errorf("not implemented: CreateK8sDesiredNamespace - createK8sDesiredNamespace"))
@@ -48,35 +69,9 @@ func (r *mutationResolver) CreateK8sDesiredNamespace(ctx context.Context, cpID s
 
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
-	k8sActualSources := services.GetActualSources(ctx, "odigos-system")
-	res := make([]*model.K8sActualSource, len(k8sActualSources))
-	for i, source := range k8sActualSources {
-		res[i] = k8sThinSourceToGql(&source)
-	}
-
-	name := "odigos-system"
-	namespacesResponse := services.GetK8SNamespaces(ctx, name)
-
-	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
-
-	for i, namespace := range namespacesResponse.Namespaces {
-		namespaceActualSources := services.GetApplicationsInK8SNamespace(ctx, namespace.Name)
-		namespaceSources := make([]*model.K8sActualSource, len(namespaceActualSources))
-		for j, source := range namespaceActualSources {
-			namespaceSources[j] = k8sApplicationItemToGql(&source)
-		}
-
-		K8sActualNamespaces[i] = &model.K8sActualNamespace{
-			Name:             namespace.Name,
-			K8sActualSources: namespaceSources,
-		}
-	}
 
 	return &model.ComputePlatform{
-		K8sActualSources:    res,
-		Name:                &name,
 		ComputePlatformType: model.ComputePlatformTypeK8s,
-		K8sActualNamespaces: K8sActualNamespaces,
 	}, nil
 }
 
@@ -94,6 +89,11 @@ func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, e
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 
+// K8sActualNamespace returns K8sActualNamespaceResolver implementation.
+func (r *Resolver) K8sActualNamespace() K8sActualNamespaceResolver {
+	return &k8sActualNamespaceResolver{r}
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
@@ -101,5 +101,6 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type computePlatformResolver struct{ *Resolver }
+type k8sActualNamespaceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

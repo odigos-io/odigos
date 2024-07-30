@@ -119,37 +119,6 @@ type PersistNamespaceObject struct {
 	Selected *bool        `json:"selected,omitempty"`
 }
 
-func getJsonMergePatchForInstrumentationLabel(enabled *bool) []byte {
-	labelJsonMergePatchValue := "null"
-	if enabled != nil {
-		if *enabled {
-			labelJsonMergePatchValue = fmt.Sprintf("\"%s\"", consts.InstrumentationEnabled)
-		} else {
-			labelJsonMergePatchValue = fmt.Sprintf("\"%s\"", consts.InstrumentationDisabled)
-		}
-	}
-
-	jsonMergePatchContent := fmt.Sprintf(`{"metadata":{"labels":{"%s":%s}}}`, consts.OdigosInstrumentationLabel, labelJsonMergePatchValue)
-	return []byte(jsonMergePatchContent)
-}
-
-func syncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []PersistNamespaceObject) error {
-	g, ctx := errgroup.WithContext(ctx)
-	g.SetLimit(kube.K8sClientDefaultBurst)
-
-	for _, workload := range workloads {
-		currWorkload := workload
-		g.Go(func() error {
-			// Only label selected sources, ignore the rest
-			if currWorkload.Selected != nil && *currWorkload.Selected {
-				return setWorkloadInstrumentationLabel(ctx, nsName, currWorkload.Name, currWorkload.Kind, currWorkload.Selected)
-			}
-			return nil
-		})
-	}
-	return g.Wait()
-}
-
 // returns a map, where the key is a namespace name and the value is the
 // number of apps in this namespace (not necessarily instrumented)
 func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {

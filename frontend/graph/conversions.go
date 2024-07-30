@@ -48,12 +48,12 @@ func k8sThinSourceToGql(k8sSource *services.ThinSource) *gqlmodel.K8sActualSourc
 	var gqlIaDetails *gqlmodel.InstrumentedApplicationDetails
 	if hasInstrumentedApplication {
 		gqlIaDetails = &gqlmodel.InstrumentedApplicationDetails{
-			Languages:  make([]*gqlmodel.SourceLanguage, len(k8sSource.IaDetails.Languages)),
+			Containers: make([]*gqlmodel.SourceContainerRuntimeDetails, len(k8sSource.IaDetails.Languages)),
 			Conditions: make([]*gqlmodel.Condition, len(k8sSource.IaDetails.Conditions)),
 		}
 
 		for i, lang := range k8sSource.IaDetails.Languages {
-			gqlIaDetails.Languages[i] = &gqlmodel.SourceLanguage{
+			gqlIaDetails.Containers[i] = &gqlmodel.SourceContainerRuntimeDetails{
 				ContainerName: lang.ContainerName,
 				Language:      lang.Language,
 			}
@@ -88,16 +88,5 @@ func k8sSourceToGql(k8sSource *services.Source) *gqlmodel.K8sActualSource {
 		NumberOfInstances:              baseSource.NumberOfInstances,
 		InstrumentedApplicationDetails: baseSource.InstrumentedApplicationDetails,
 		ServiceName:                    &k8sSource.ReportedName,
-	}
-}
-
-func k8sApplicationItemToGql(appItem *services.GetApplicationItemInNamespace) *gqlmodel.K8sActualSource {
-
-	stringKind := string(appItem.Kind)
-
-	return &gqlmodel.K8sActualSource{
-		Kind:              k8sKindToGql(stringKind),
-		Name:              appItem.Name,
-		NumberOfInstances: &appItem.Instances,
 	}
 }

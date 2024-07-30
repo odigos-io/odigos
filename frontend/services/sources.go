@@ -10,8 +10,24 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	appsv1 "k8s.io/api/apps/v1"
+
+	"github.com/odigos-io/odigos/frontend/graph/model"
+
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+
+	"golang.org/x/sync/errgroup"
+	corev1 "k8s.io/api/core/v1"
+)
+
+type WorkloadKind string
+
+const (
+	WorkloadKindDeployment  WorkloadKind = "Deployment"
+	WorkloadKindStatefulSet WorkloadKind = "StatefulSet"
+	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
 )
 
 type SourceLanguage struct {
@@ -44,72 +60,6 @@ type ThinSource struct {
 	SourceID
 	NumberOfRunningInstances int                             `json:"number_of_running_instances"`
 	IaDetails                *InstrumentedApplicationDetails `json:"instrumented_application_details"`
-}
-
-func GetActualSources(ctx context.Context, odigosns string) []ThinSource {
-	return getSourcesForNamespace(ctx, odigosns)
-}
-
-func GetNamespaceActualSources(ctx context.Context, namespace string) []ThinSource {
-	return getSourcesForNamespace(ctx, namespace)
-}
-
-func getSourcesForNamespace(ctx context.Context, namespace string) []ThinSource {
-	effectiveInstrumentedSources := map[SourceID]ThinSource{}
-
-	var (
-		items                    []GetApplicationItem
-		instrumentedApplications *v1alpha1.InstrumentedApplicationList
-	)
-
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		relevantNamespaces, err := getRelevantNameSpaces(ctx, namespace)
-		if err != nil {
-			return err
-		}
-		nsInstrumentedMap := map[string]*bool{}
-		for _, ns := range relevantNamespaces {
-			nsInstrumentedMap[ns.Name] = isObjectLabeledForInstrumentation(ns.ObjectMeta)
-		}
-		items, err = getApplicationsInNamespace(ctx, "", nsInstrumentedMap)
-		return err
-	})
-
-	g.Go(func() error {
-		var err error
-		instrumentedApplications, err = kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(ctx, metav1.ListOptions{})
-		return err
-	})
-
-	if err := g.Wait(); err != nil {
-		return nil
-	}
-
-	for _, item := range items {
-		if item.nsItem.InstrumentationEffective {
-			id := SourceID{Namespace: item.namespace, Kind: string(item.nsItem.Kind), Name: item.nsItem.Name}
-			effectiveInstrumentedSources[id] = ThinSource{
-				NumberOfRunningInstances: item.nsItem.Instances,
-				SourceID:                 id,
-			}
-		}
-	}
-
-	sourcesResult := []ThinSource{}
-	for _, app := range instrumentedApplications.Items {
-		thinSource := k8sInstrumentedAppToThinSource(&app)
-		if source, ok := effectiveInstrumentedSources[thinSource.SourceID]; ok {
-			source.IaDetails = thinSource.IaDetails
-			effectiveInstrumentedSources[thinSource.SourceID] = source
-		}
-	}
-
-	for _, source := range effectiveInstrumentedSources {
-		sourcesResult = append(sourcesResult, source)
-	}
-
-	return sourcesResult
 }
 
 func GetActualSource(ctx context.Context, ns string, kind string, name string) (*Source, error) {
@@ -240,4 +190,147 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 		})
 	}
 	return source
+}
+
+func GetWorkloadsInNamespace(ctx context.Context, nsName string, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+
+	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, nsName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	g, ctx := errgroup.WithContext(ctx)
+	var (
+		deps []model.K8sActualSource
+		ss   []model.K8sActualSource
+		dss  []model.K8sActualSource
+	)
+
+	g.Go(func() error {
+		var err error
+		deps, err = getDeployments(ctx, *namespace, instrumentationLabeled)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		ss, err = getStatefulSets(ctx, *namespace, instrumentationLabeled)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		dss, err = getDaemonSets(ctx, *namespace, instrumentationLabeled)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	items := make([]model.K8sActualSource, len(deps)+len(ss)+len(dss))
+	copy(items, deps)
+	copy(items[len(deps):], ss)
+	copy(items[len(deps)+len(ss):], dss)
+
+	return items, nil
+}
+
+func getDeployments(ctx context.Context, namespace corev1.Namespace, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+	var response []model.K8sActualSource
+	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().Deployments(namespace.Name).List, ctx, metav1.ListOptions{}, func(deps *appsv1.DeploymentList) error {
+		for _, dep := range deps.Items {
+			_, _, decisionText, autoInstrumented := workload.GetInstrumentationLabelTexts(dep.GetLabels(), string(WorkloadKindDeployment), namespace.GetLabels())
+			if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
+				continue
+			}
+			numberOfInstances := int(dep.Status.ReadyReplicas)
+			response = append(response, model.K8sActualSource{
+				Namespace:                      dep.Namespace,
+				Name:                           dep.Name,
+				Kind:                           k8sKindToGql(string(WorkloadKindDeployment)),
+				NumberOfInstances:              &numberOfInstances,
+				AutoInstrumented:               autoInstrumented,
+				AutoInstrumentedDecision:       decisionText,
+				InstrumentedApplicationDetails: nil, // TODO: fill this
+			})
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func getDaemonSets(ctx context.Context, namespace corev1.Namespace, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+	var response []model.K8sActualSource
+	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().DaemonSets(namespace.Name).List, ctx, metav1.ListOptions{}, func(dss *appsv1.DaemonSetList) error {
+		for _, ds := range dss.Items {
+			_, _, decisionText, autoInstrumented := workload.GetInstrumentationLabelTexts(ds.GetLabels(), string(WorkloadKindDaemonSet), namespace.GetLabels())
+			if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
+				continue
+			}
+			numberOfInstances := int(ds.Status.NumberReady)
+			response = append(response, model.K8sActualSource{
+				Namespace:                      ds.Namespace,
+				Name:                           ds.Name,
+				Kind:                           k8sKindToGql(string(WorkloadKindDaemonSet)),
+				NumberOfInstances:              &numberOfInstances,
+				AutoInstrumented:               autoInstrumented,
+				AutoInstrumentedDecision:       decisionText,
+				InstrumentedApplicationDetails: nil, // TODO: fill this
+			})
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func getStatefulSets(ctx context.Context, namespace corev1.Namespace, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+	var response []model.K8sActualSource
+	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().StatefulSets(namespace.Name).List, ctx, metav1.ListOptions{}, func(sss *appsv1.StatefulSetList) error {
+		for _, ss := range sss.Items {
+			_, _, decisionText, autoInstrumented := workload.GetInstrumentationLabelTexts(ss.GetLabels(), string(WorkloadKindStatefulSet), namespace.GetLabels())
+			if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
+				continue
+			}
+			numberOfInstances := int(ss.Status.ReadyReplicas)
+			response = append(response, model.K8sActualSource{
+				Namespace:                      ss.Namespace,
+				Name:                           ss.Name,
+				Kind:                           k8sKindToGql(string(WorkloadKindStatefulSet)),
+				NumberOfInstances:              &numberOfInstances,
+				AutoInstrumented:               autoInstrumented,
+				AutoInstrumentedDecision:       decisionText,
+				InstrumentedApplicationDetails: nil, // TODO: fill this
+			})
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func k8sKindToGql(k8sResourceKind string) model.K8sResourceKind {
+	switch k8sResourceKind {
+	case "Deployment":
+		return model.K8sResourceKindDeployment
+	case "StatefulSet":
+		return model.K8sResourceKindStatefulSet
+	case "DaemonSet":
+		return model.K8sResourceKindDaemonSet
+	}
+	return ""
 }

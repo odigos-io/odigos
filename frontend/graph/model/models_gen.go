@@ -30,14 +30,14 @@ type GetConfigResponse struct {
 }
 
 type InstrumentedApplicationDetails struct {
-	Languages  []*SourceLanguage `json:"languages,omitempty"`
-	Conditions []*Condition      `json:"conditions,omitempty"`
+	Containers []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
+	Conditions []*Condition                     `json:"conditions,omitempty"`
 }
 
 type K8sActualNamespace struct {
-	Name             string             `json:"name"`
-	AutoInstrumented *bool              `json:"autoInstrumented,omitempty"`
-	K8sActualSources []*K8sActualSource `json:"k8sActualSources"`
+	Name                        string             `json:"name"`
+	InstrumentationLabelEnabled *bool              `json:"instrumentationLabelEnabled,omitempty"`
+	K8sActualSources            []*K8sActualSource `json:"k8sActualSources"`
 }
 
 type K8sActualSource struct {
@@ -46,7 +46,8 @@ type K8sActualSource struct {
 	Name                           string                          `json:"name"`
 	ServiceName                    *string                         `json:"serviceName,omitempty"`
 	NumberOfInstances              *int                            `json:"numberOfInstances,omitempty"`
-	HasInstrumentedApplication     bool                            `json:"hasInstrumentedApplication"`
+	AutoInstrumented               bool                            `json:"autoInstrumented"`
+	AutoInstrumentedDecision       string                          `json:"autoInstrumentedDecision"`
 	InstrumentedApplicationDetails *InstrumentedApplicationDetails `json:"instrumentedApplicationDetails,omitempty"`
 }
 
@@ -75,7 +76,7 @@ type Mutation struct {
 type Query struct {
 }
 
-type SourceLanguage struct {
+type SourceContainerRuntimeDetails struct {
 	ContainerName string `json:"containerName"`
 	Language      string `json:"language"`
 }

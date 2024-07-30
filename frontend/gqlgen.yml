@@ -43,3 +43,7 @@ models:
         resolver: true
       k8sActualSource:
         resolver: true
+  K8sActualNamespace:
+    fields:
+      k8sActualSources:
+        resolver: true
