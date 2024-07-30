@@ -291,6 +291,8 @@ status:
       value: e2e-test
     - key: process.pid
       (value != null): true
+    - key: process.runtime.version
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
