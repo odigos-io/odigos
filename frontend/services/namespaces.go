@@ -29,7 +29,11 @@ type GetNamespaceItem struct {
 	TotalApps int    `json:"totalApps"`
 }
 
-func GetK8SNamespaces(ctx context.Context, odigosns string) GetNamespacesResponse {
+const (
+	OdigosSystemNamespace = "odigos-system"
+)
+
+func GetK8SNamespaces(ctx context.Context) GetNamespacesResponse {
 
 	var (
 		relevantNameSpaces []v1.Namespace
@@ -39,7 +43,7 @@ func GetK8SNamespaces(ctx context.Context, odigosns string) GetNamespacesRespons
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		var err error
-		relevantNameSpaces, err = getRelevantNameSpaces(ctx, odigosns)
+		relevantNameSpaces, err = getRelevantNameSpaces(ctx, OdigosSystemNamespace)
 		return err
 	})
 

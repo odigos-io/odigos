@@ -69,9 +69,18 @@ func (r *mutationResolver) CreateK8sDesiredNamespace(ctx context.Context, cpID s
 
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
+	namespacesResponse := services.GetK8SNamespaces(ctx)
+
+	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
+	for i, namespace := range namespacesResponse.Namespaces {
+		K8sActualNamespaces[i] = &model.K8sActualNamespace{
+			Name: namespace.Name,
+		}
+	}
 
 	return &model.ComputePlatform{
 		ComputePlatformType: model.ComputePlatformTypeK8s,
+		K8sActualNamespaces: K8sActualNamespaces,
 	}, nil
 }
 
