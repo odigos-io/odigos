@@ -14,7 +14,24 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
+
+func GetOdigosConfig(configMap *corev1.ConfigMap, odigosConfig *common.OdigosConfiguration) error {
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
+		return err
+	}
+	return nil
+}
+
+func SetOdigosConfig(configMap *corev1.ConfigMap, odigosConfig *common.OdigosConfiguration) error {
+	data, err := yaml.Marshal(odigosConfig)
+	if err != nil {
+		return err
+	}
+	configMap.Data[consts.OdigosConfigurationFileName] = string(data)
+	return nil
+}
 
 var _ = Describe("envoverwrite", func() {
 	ctx := context.Background()
@@ -40,10 +57,13 @@ var _ = Describe("envoverwrite", func() {
 
 	AfterEach(func() {
 		// restore odigos config to it's original state
-		var odigosConfig odigosv1.OdigosConfiguration
-		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultOdigosNamespace, Name: consts.OdigosConfigurationName}, &odigosConfig)).Should(Succeed())
-		odigosConfig.Spec.DefaultSDKs[testProgrammingLanguage] = common.OtelSdkNativeCommunity
-		Expect(k8sClient.Update(ctx, &odigosConfig)).Should(Succeed())
+		var cm corev1.ConfigMap
+		var odigosConfig common.OdigosConfiguration
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultOdigosNamespace, Name: consts.OdigosConfigurationName}, &cm)).Should(Succeed())
+		GetOdigosConfig(&cm, &odigosConfig)
+		odigosConfig.DefaultSDKs[testProgrammingLanguage] = common.OtelSdkNativeCommunity
+		SetOdigosConfig(&cm, &odigosConfig)
+		Expect(k8sClient.Update(ctx, &cm)).Should(Succeed())
 	})
 
 	Describe("User did not set env in manifest or docker image", func() {
@@ -55,7 +75,6 @@ var _ = Describe("envoverwrite", func() {
 		})
 
 		It("should not add env vars to deployment", func() {
-
 			// initial state - no env varas in manifest or dockerfile
 			// and odigos haven't yet injected it's env, so the deployment should have no env vars
 			instrumentedApplication = testutil.NewMockInstrumentedApplication(deployment)
@@ -125,7 +144,6 @@ var _ = Describe("envoverwrite", func() {
 		})
 
 		It("Should update the manifest with merged value, and revet when uninstrumenting", func() {
-
 			// initial state - should capture the env var from manifest only
 			instrumentedApplication = testutil.SetInstrumentedApplicationContainer(testutil.NewMockInstrumentedApplication(deployment), &testEnvVar, &userEnvValue, testProgrammingLanguage)
 			Expect(k8sClient.Create(ctx, instrumentedApplication)).Should(Succeed())
@@ -172,14 +190,16 @@ var _ = Describe("envoverwrite", func() {
 		})
 
 		When("Default SDK changes to another SDK", func() {
-
 			newSdk := common.OtelSdkEbpfEnterprise
 
 			BeforeEach(func() {
-				var odigosConfig odigosv1.OdigosConfiguration
-				Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultOdigosNamespace, Name: consts.OdigosConfigurationName}, &odigosConfig)).Should(Succeed())
-				odigosConfig.Spec.DefaultSDKs[testProgrammingLanguage] = newSdk
-				Expect(k8sClient.Update(ctx, &odigosConfig)).Should(Succeed())
+				var cm corev1.ConfigMap
+				var odigosConfig common.OdigosConfiguration
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultOdigosNamespace, Name: consts.OdigosConfigurationName}, &cm)).Should(Succeed())
+				GetOdigosConfig(&cm, &odigosConfig)
+				odigosConfig.DefaultSDKs[testProgrammingLanguage] = newSdk
+				SetOdigosConfig(&cm, &odigosConfig)
+				Expect(k8sClient.Update(ctx, &cm)).Should(Succeed())
 			})
 
 			It("Should update the manifest with new odigos env value", func() {
