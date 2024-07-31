@@ -15,13 +15,18 @@ func (j *JaegerDestinationFinder) findPotentialServices(services []k8s.Service) 
 	var potentialServices []k8s.Service
 	for _, service := range services {
 		for _, port := range service.Spec.Ports {
-			if port.Port == JaegerGrpcOtlpPort && strings.Contains(service.Name, string(common.JaegerDestinationType)) {
+			if isJaegerService(port.Port, service.Name) {
 				potentialServices = append(potentialServices, service)
+				break
 			}
 		}
 	}
 
 	return potentialServices
+}
+
+func isJaegerService(portNumber int32, name string) bool {
+	return portNumber == JaegerGrpcOtlpPort && strings.Contains(name, string(common.JaegerDestinationType))
 }
 
 func (j *JaegerDestinationFinder) fetchDestinationDetails(services []k8s.Service) []DestinationDetails {
