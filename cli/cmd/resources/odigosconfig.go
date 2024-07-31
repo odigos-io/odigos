@@ -72,6 +72,10 @@ func NewOdigosConfiguration(ns string, config *common.OdigosConfiguration) (clie
 		return nil, err
 	}
 	return &v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      consts.OdigosConfigurationName,
 			Namespace: ns,
