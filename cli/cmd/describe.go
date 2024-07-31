@@ -446,7 +446,7 @@ var describeSourceDeploymentCmd = &cobra.Command{
 			PodTemplateSpec: &deployment.Spec.Template,
 			LabelSelector:   deployment.Spec.Selector,
 		}
-		printDescribeSource(cmd.Context(), client, workloadObj)
+		printDescribeSource(ctx, client, workloadObj)
 	},
 }
 
