@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/odigos-io/odigos/frontend/endpoints/destination_recognition"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -90,6 +92,12 @@ func GetDestinationTypes(c *gin.Context) {
 			Items: items,
 		})
 	}
+
+	potentialDestinations, err := findPotentialDestinations(c)
+	if err != nil {
+		return
+	}
+	fmt.Printf("Potential destinations: %v\n", potentialDestinations)
 
 	c.JSON(200, resp)
 }
@@ -633,4 +641,18 @@ func addDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, 
 		return err
 	}
 	return nil
+}
+
+func findPotentialDestinations(ctx *gin.Context) ([]destination_recognition.DestinationDetails, error) {
+	relevantNamespaces, err := getRelevantNameSpaces(ctx, env.GetCurrentNamespace())
+	if err != nil {
+		return nil, err
+	}
+
+	destinationDetails, err := destination_recognition.GetAllPotentialDestinationDetails(ctx, relevantNamespaces)
+	if err != nil {
+		return nil, err
+	}
+
+	return destinationDetails, nil
 }
