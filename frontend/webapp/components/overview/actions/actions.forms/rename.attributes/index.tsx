@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { KeyValuePair } from '@/design.system';
 import { KeyValue } from '@keyval-dev/design-system';
+
 const FormWrapper = styled.div`
   width: 375px;
 `;
@@ -12,10 +13,12 @@ interface RenameAttributes {
   };
 }
 
-interface DeleteAttributesProps {
+interface RenameAttributesProps {
   data: RenameAttributes;
   onChange: (key: string, value: RenameAttributes) => void;
+  setIsFormValid?: (value: boolean) => void;
 }
+
 const DEFAULT_KEY_VALUE_PAIR = [
   {
     id: 0,
@@ -25,15 +28,21 @@ const DEFAULT_KEY_VALUE_PAIR = [
 ];
 
 const ACTION_DATA_KEY = 'actionData';
+
 export function RenameAttributesForm({
   data,
   onChange,
-}: DeleteAttributesProps): React.JSX.Element {
+  setIsFormValid = () => {},
+}: RenameAttributesProps): React.JSX.Element {
   const [keyValuePairs, setKeyValuePairs] = React.useState<KeyValue[]>([]);
 
   useEffect(() => {
     buildKeyValuePairs();
   }, [data]);
+
+  useEffect(() => {
+    validateForm();
+  }, [keyValuePairs]);
 
   function handleKeyValuesChange(keyValues: KeyValue[]): void {
     const renames: {
@@ -44,6 +53,7 @@ export function RenameAttributesForm({
     });
 
     onChange(ACTION_DATA_KEY, { renames });
+    setKeyValuePairs(keyValues); // Update state with new key-value pairs
   }
 
   function buildKeyValuePairs() {
@@ -59,6 +69,13 @@ export function RenameAttributesForm({
     }));
 
     setKeyValuePairs(values || DEFAULT_KEY_VALUE_PAIR);
+  }
+
+  function validateForm() {
+    const isValid = keyValuePairs.every(
+      (pair) => pair.key.trim() !== '' && pair.value.trim() !== ''
+    );
+    setIsFormValid(isValid);
   }
 
   return (

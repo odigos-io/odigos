@@ -68,6 +68,13 @@
           ]
         },
         {
+          "group": "Architecture",
+          "pages": [
+            "architecture/sources",
+            "architecture/troubleshooting"
+          ]
+        },
+        {
           "group": "CLI Reference",
           "pages": [
             "cli/odigos",
@@ -79,6 +86,33 @@
             "cli/odigos_version"
           ]
         }
+      ]
+    },
+    {
+      "group": "Instrumentations",
+      "pages": [
+        "instrumentations/overview",
+        {
+          "group": "Go",
+          "pages": [
+            "instrumentations/golang/golang",
+            "instrumentations/golang/enrichment"
+          ]
+        },
+        {
+          "group": "Node.js",
+          "pages": [
+            "instrumentations/nodejs/nodejs",
+            "instrumentations/nodejs/enrichment"
+          ]
+        },
+        {
+          "group": "Python",
+          "pages": [
+            "instrumentations/python/python",
+            "instrumentations/python/enrichment"
+          ]
+        }        
       ]
     },
     {
