@@ -38,17 +38,11 @@ func (d *DestinationFinder) fetchDestinationDetails(service k8s.Service) Destina
 func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namespace) ([]DestinationDetails, error) {
 	helmManagedServices := getAllHelmManagedServices(ctx, namespaces)
 
-	var destinationFinder DestinationFinder
+	var destinationFinder *DestinationFinder
 	var destinationDetails []DestinationDetails
 	for _, service := range helmManagedServices {
 		for _, destinationType := range SupportedDestinationType {
-			switch destinationType {
-			case JaegerDestinationType:
-				destinationFinder = DestinationFinder{
-					destinationFinder: &JaegerDestinationFinder{},
-				}
-			}
-
+			destinationFinder = getDestinationFinder(destinationType)
 			if destinationFinder.isPotentialService(service) {
 				destinationDetails = append(destinationDetails, destinationFinder.fetchDestinationDetails(service))
 				break
@@ -57,4 +51,15 @@ func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namesp
 	}
 
 	return destinationDetails, nil
+}
+
+func getDestinationFinder(destinationType DestinationType) *DestinationFinder {
+	switch destinationType {
+	case JaegerDestinationType:
+		return &DestinationFinder{
+			destinationFinder: &JaegerDestinationFinder{},
+		}
+	}
+
+	return nil
 }
