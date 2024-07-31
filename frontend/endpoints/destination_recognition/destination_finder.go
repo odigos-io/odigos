@@ -36,7 +36,7 @@ func (d *DestinationFinder) fetchDestinationDetails(services []k8s.Service) []De
 }
 
 func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namespace) ([]DestinationDetails, error) {
-	helmManagedServices := findHelmManagedServices(ctx, namespaces)
+	helmManagedServices := getAllHelmManagedServices(ctx, namespaces)
 
 	var destinationFinder DestinationFinder
 	for _, destinationType := range SupportedDestinationType {
