@@ -19,37 +19,42 @@ type DestinationDetails struct {
 }
 
 type IDestinationFinder interface {
-	findPotentialServices([]k8s.Service) []k8s.Service
-	fetchDestinationDetails([]k8s.Service) []DestinationDetails
+	isPotentialService(k8s.Service) bool
+	fetchDestinationDetails(service k8s.Service) DestinationDetails
 }
 
 type DestinationFinder struct {
 	destinationFinder IDestinationFinder
 }
 
-func (d *DestinationFinder) findPotentialServices(services []k8s.Service) []k8s.Service {
-	return d.destinationFinder.findPotentialServices(services)
+func (d *DestinationFinder) isPotentialService(service k8s.Service) bool {
+	return d.destinationFinder.isPotentialService(service)
 }
 
-func (d *DestinationFinder) fetchDestinationDetails(services []k8s.Service) []DestinationDetails {
-	return d.destinationFinder.fetchDestinationDetails(services)
+func (d *DestinationFinder) fetchDestinationDetails(service k8s.Service) DestinationDetails {
+	return d.destinationFinder.fetchDestinationDetails(service)
 }
 
 func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namespace) ([]DestinationDetails, error) {
 	helmManagedServices := getAllHelmManagedServices(ctx, namespaces)
 
 	var destinationFinder DestinationFinder
-	for _, destinationType := range SupportedDestinationType {
-		switch destinationType {
-		case JaegerDestinationType:
-			destinationFinder = DestinationFinder{
-				destinationFinder: &JaegerDestinationFinder{},
+	var destinationDetails []DestinationDetails
+	for _, service := range helmManagedServices {
+		for _, destinationType := range SupportedDestinationType {
+			switch destinationType {
+			case JaegerDestinationType:
+				destinationFinder = DestinationFinder{
+					destinationFinder: &JaegerDestinationFinder{},
+				}
+			}
+
+			if destinationFinder.isPotentialService(service) {
+				destinationDetails = append(destinationDetails, destinationFinder.fetchDestinationDetails(service))
+				break
 			}
 		}
 	}
-
-	potentialServices := destinationFinder.findPotentialServices(helmManagedServices)
-	destinationDetails := destinationFinder.fetchDestinationDetails(potentialServices)
 
 	return destinationDetails, nil
 }

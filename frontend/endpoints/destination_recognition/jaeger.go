@@ -10,34 +10,26 @@ import (
 type JaegerDestinationFinder struct{}
 
 const JaegerGrpcOtlpPort int32 = 4317
+const JaegerGrpcUrlFormat = "%s.%s:%d"
 
-func (j *JaegerDestinationFinder) findPotentialServices(services []k8s.Service) []k8s.Service {
-	var potentialServices []k8s.Service
-	for _, service := range services {
-		for _, port := range service.Spec.Ports {
-			if isJaegerService(port.Port, service.Name) {
-				potentialServices = append(potentialServices, service)
-				break
-			}
+func (j *JaegerDestinationFinder) isPotentialService(service k8s.Service) bool {
+	for _, port := range service.Spec.Ports {
+		if isJaegerService(port.Port, service.Name) {
+			return true
 		}
 	}
 
-	return potentialServices
+	return false
 }
 
 func isJaegerService(portNumber int32, name string) bool {
 	return portNumber == JaegerGrpcOtlpPort && strings.Contains(name, string(common.JaegerDestinationType))
 }
 
-func (j *JaegerDestinationFinder) fetchDestinationDetails(services []k8s.Service) []DestinationDetails {
-	var destinationDetails []DestinationDetails
-	for _, service := range services {
-		urlString := fmt.Sprintf("url: %s.%s:%d", service.Name, service.Namespace, JaegerGrpcOtlpPort)
-		destinationDetails = append(destinationDetails, DestinationDetails{
-			Name:      string(common.JaegerDestinationType),
-			UrlString: urlString,
-		})
+func (j *JaegerDestinationFinder) fetchDestinationDetails(service k8s.Service) DestinationDetails {
+	urlString := fmt.Sprintf(JaegerGrpcUrlFormat, service.Name, service.Namespace, JaegerGrpcOtlpPort)
+	return DestinationDetails{
+		Name:      string(common.JaegerDestinationType),
+		UrlString: urlString,
 	}
-
-	return destinationDetails
 }
