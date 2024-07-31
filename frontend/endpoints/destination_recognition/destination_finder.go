@@ -20,7 +20,7 @@ type DestinationDetails struct {
 
 type IDestinationFinder interface {
 	isPotentialService(k8s.Service) bool
-	fetchDestinationDetails(service k8s.Service) DestinationDetails
+	fetchDestinationDetails(k8s.Service) DestinationDetails
 }
 
 type DestinationFinder struct {
