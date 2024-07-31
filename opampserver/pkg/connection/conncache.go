@@ -69,7 +69,7 @@ func (c *ConnectionsCache) RecordMessageTime(instanceUid string) {
 	if !ok {
 		return
 	}
-	conn.lastMessageTime = time.Now()
+	conn.LastMessageTime = time.Now()
 	c.liveConnections[instanceUid] = conn
 }
 
@@ -80,7 +80,7 @@ func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
 	deadConnectionInfos := make([]ConnectionInfo, 0)
 
 	for deviceId, conn := range c.liveConnections {
-		if time.Since(conn.lastMessageTime) > connectionStaleTime {
+		if time.Since(conn.LastMessageTime) > connectionStaleTime {
 			delete(c.liveConnections, deviceId)
 			deadConnectionInfos = append(deadConnectionInfos, *conn)
 		}

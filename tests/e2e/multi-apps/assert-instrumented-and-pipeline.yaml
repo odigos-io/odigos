@@ -287,6 +287,8 @@ status:
       (value != null): true
     - key: telemetry.sdk.language
       value: nodejs
+    - key: process.runtime.version
+      (value != null): true
     - key: telemetry.distro.version
       value: e2e-test
     - key: process.pid
@@ -299,7 +301,7 @@ metadata:
   labels:
     instrumented-app: deployment-inventory
 status:
-  healthy: true
+  healthy: null
   identifyingAttributes:
     - key: service.instance.id
       (value != null): true
