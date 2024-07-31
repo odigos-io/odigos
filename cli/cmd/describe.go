@@ -24,10 +24,10 @@ var (
 )
 
 type K8sSourceObject struct {
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Kind              string
-	PodTemplateSpec   *v1.PodTemplateSpec
-	LabelSelector     *metav1.LabelSelector
+	metav1.ObjectMeta
+	Kind            string
+	PodTemplateSpec *v1.PodTemplateSpec
+	LabelSelector   *metav1.LabelSelector
 }
 
 func wrapTextInRed(text string) string {
