@@ -36,7 +36,10 @@ func (d *DestinationFinder) fetchDestinationDetails(service k8s.Service) Destina
 }
 
 func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namespace) ([]DestinationDetails, error) {
-	helmManagedServices := getAllHelmManagedServices(ctx, namespaces)
+	helmManagedServices, err := getAllHelmManagedServices(ctx, namespaces)
+	if err != nil {
+		return nil, err
+	}
 
 	var destinationFinder *DestinationFinder
 	var destinationDetails []DestinationDetails
