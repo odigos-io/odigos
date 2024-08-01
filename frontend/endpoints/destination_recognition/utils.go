@@ -30,7 +30,7 @@ func getAllHelmManagedServices(ctx *gin.Context, namespaces []v1.Namespace) ([]v
 	return helmManagedServices, nil
 }
 
-// isHelmManagedService checks if a Pod was created by Helm
+// isHelmManagedService checks if a Service was created by Helm
 func isHelmManagedService(service v1.Service) bool {
 	annotations := service.GetAnnotations()
 	labels := service.GetLabels()
