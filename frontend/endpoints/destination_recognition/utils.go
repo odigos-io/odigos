@@ -4,13 +4,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"k8s.io/api/core/v1"
-	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func getAllHelmManagedServices(ctx *gin.Context, namespaces []v1.Namespace) []v1.Service {
 	var helmManagedServices []v1.Service
 	for _, ns := range namespaces {
-		services, _ := kube.DefaultClient.CoreV1().Services(ns.Name).List(ctx, v12.ListOptions{})
+		services, _ := kube.DefaultClient.CoreV1().Services(ns.Name).List(ctx, metav1.ListOptions{})
 
 		for _, service := range services.Items {
 			if isHelmManagedService(service) {
