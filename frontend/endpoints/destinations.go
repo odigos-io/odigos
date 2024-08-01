@@ -93,13 +93,6 @@ func GetDestinationTypes(c *gin.Context) {
 		})
 	}
 
-	//TODO - remove before merge
-	//potentialDestinations, err := findPotentialDestinations(c)
-	//if err != nil {
-	//	return
-	//}
-	//fmt.Printf("Potential destinations: %v\n", potentialDestinations)
-
 	c.JSON(200, resp)
 }
 
