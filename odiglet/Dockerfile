@@ -67,7 +67,7 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip
 
-FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.4 AS builder
+FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.5 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
