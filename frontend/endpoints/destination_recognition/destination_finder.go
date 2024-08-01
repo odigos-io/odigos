@@ -8,10 +8,11 @@ import (
 type DestinationType string
 
 const (
-	JaegerDestinationType DestinationType = "jaeger"
+	JaegerDestinationType        DestinationType = "jaeger"
+	ElasticSearchDestinationType DestinationType = "elasticsearch"
 )
 
-var SupportedDestinationType = []DestinationType{JaegerDestinationType}
+var SupportedDestinationType = []DestinationType{JaegerDestinationType, ElasticSearchDestinationType}
 
 type DestinationDetails struct {
 	Name      string `json:"name"`
@@ -61,6 +62,10 @@ func getDestinationFinder(destinationType DestinationType) *DestinationFinder {
 	case JaegerDestinationType:
 		return &DestinationFinder{
 			destinationFinder: &JaegerDestinationFinder{},
+		}
+	case ElasticSearchDestinationType:
+		return &DestinationFinder{
+			destinationFinder: &ElasticSearchDestinationFinder{},
 		}
 	}
 
