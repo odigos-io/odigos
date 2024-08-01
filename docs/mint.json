@@ -79,6 +79,7 @@
           "pages": [
             "cli/odigos",
             "cli/odigos_cloud",
+            "cli/odigos_describe",
             "cli/odigos_install",
             "cli/odigos_ui",
             "cli/odigos_uninstall",
@@ -105,7 +106,14 @@
             "instrumentations/nodejs/nodejs",
             "instrumentations/nodejs/enrichment"
           ]
-        }
+        },
+        {
+          "group": "Python",
+          "pages": [
+            "instrumentations/python/python",
+            "instrumentations/python/enrichment"
+          ]
+        }        
       ]
     },
     {
