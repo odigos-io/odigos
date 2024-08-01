@@ -29,13 +29,18 @@ type singleDestinationMetrics struct {
 	mu sync.Mutex
 }
 
+type averageSizeCalculator struct {
+	// number of spans/metrics/logs recorded in the last update
+	acceptedSpans, acceptedMetrics, acceptedLogs int64
+	// total size of spans/metrics/logs recorded in the last update
+	spansDataSize, metricsDataSize, logsDataSize int64
+	avgSpanSize, avgMetricSize, avgLogSize    float64
+}
+
 type destinationsMetrics struct {
 	destinations   map[string]*singleDestinationMetrics
 	destinationsMu sync.Mutex
-
-	avgSpanSize   float64
-	avgMetricSize float64
-	avgLogSize    float64
+	avgCalculator averageSizeCalculator
 }
 
 func newDestinationsMetrics() destinationsMetrics {
@@ -67,11 +72,11 @@ func (dm *destinationsMetrics) newDestinationTrafficMetrics(metricName string, s
 
 	switch metricName {
 	case exporterSentSpansMetricName:
-		tm.tracesDataSent = int64(sentDp.DoubleValue() * dm.avgSpanSize)
+		tm.tracesDataSent = int64(sentDp.DoubleValue() * dm.avgCalculator.avgSpanSize)
 	case exporterSentMetricsMetricName:
-		tm.metricsDataSent = int64(sentDp.DoubleValue() * dm.avgMetricSize)
+		tm.metricsDataSent = int64(sentDp.DoubleValue() * dm.avgCalculator.avgMetricSize)
 	case exporterSentLogsMetricName:
-		tm.logsDataSent = int64(sentDp.DoubleValue() * dm.avgLogSize)
+		tm.logsDataSent = int64(sentDp.DoubleValue() * dm.avgCalculator.avgLogSize)
 	}
 
 	return tm
@@ -125,15 +130,15 @@ func (dm *destinationsMetrics) updateDestinationMetricsByExporter(dp pmetric.Num
 	case exporterSentSpansMetricName:
 		dataSentPtr = &currentVal.clusterCollectorsTraffic[clusterCollectorID].tracesDataSent
 		throughputPtr = &currentVal.clusterCollectorsTraffic[clusterCollectorID].tracesThroughput
-		newDataSent = int64(dp.DoubleValue() * dm.avgSpanSize)
+		newDataSent = int64(dp.DoubleValue() * dm.avgCalculator.avgSpanSize)
 	case exporterSentMetricsMetricName:
 		dataSentPtr = &currentVal.clusterCollectorsTraffic[clusterCollectorID].metricsDataSent
 		throughputPtr = &currentVal.clusterCollectorsTraffic[clusterCollectorID].metricsThroughput
-		newDataSent = int64(dp.DoubleValue() * dm.avgMetricSize)
+		newDataSent = int64(dp.DoubleValue() * dm.avgCalculator.avgMetricSize)
 	case exporterSentLogsMetricName:
 		dataSentPtr = &currentVal.clusterCollectorsTraffic[clusterCollectorID].logsDataSent
 		throughputPtr = &currentVal.clusterCollectorsTraffic[clusterCollectorID].logsThroughput
-		newDataSent = int64(dp.DoubleValue() * dm.avgLogSize)
+		newDataSent = int64(dp.DoubleValue() * dm.avgCalculator.avgLogSize)
 	}
 
 	newTime := dp.Timestamp().AsTime()
@@ -165,7 +170,9 @@ func (dm *destinationsMetrics) updateDestinationMetricsByExporter(dp pmetric.Num
 
 func (dm *destinationsMetrics) updateAverageEstimates(md pmetric.Metrics) {
 	var (
+		// number of spans/metrics/logs recorded in this snapshot
 		acceptedSpans, acceptedMetrics, acceptedLogs int64
+		// total size of spans/metrics/logs recorded in this snapshot
 		spansDataSize, metricsDataSize, logsDataSize int64
 	)
 
@@ -210,16 +217,26 @@ func (dm *destinationsMetrics) updateAverageEstimates(md pmetric.Metrics) {
 		}
 	}
 
-	if acceptedSpans != 0 {
-		dm.avgSpanSize = float64(spansDataSize / acceptedSpans)
-		fmt.Printf("Updating average span size. spanDataSize: %d, acceptedSpans: %d, avgSpanSize: %f\n", spansDataSize, acceptedSpans, dm.avgSpanSize)
+	// calculate the average size of spans/metrics/logs
+	// by taking the data size difference between the last two updates and dividing it by the number of spans/metrics/logs accepted in the same period
+
+	if acceptedSpans > dm.avgCalculator.acceptedSpans {
+		dm.avgCalculator.avgSpanSize = float64(spansDataSize - dm.avgCalculator.spansDataSize) / float64(acceptedSpans - dm.avgCalculator.acceptedSpans)
 	}
-	if acceptedMetrics != 0 {
-		dm.avgMetricSize = float64(metricsDataSize / acceptedMetrics)
+	dm.avgCalculator.spansDataSize = spansDataSize
+	dm.avgCalculator.acceptedSpans = acceptedSpans
+
+	if acceptedMetrics > dm.avgCalculator.acceptedMetrics {
+		dm.avgCalculator.avgMetricSize = float64(metricsDataSize - dm.avgCalculator.metricsDataSize) / float64(acceptedMetrics - dm.avgCalculator.acceptedMetrics)
 	}
-	if acceptedLogs != 0 {
-		dm.avgLogSize = float64(logsDataSize / acceptedLogs)
+	dm.avgCalculator.metricsDataSize = metricsDataSize
+	dm.avgCalculator.acceptedMetrics = acceptedMetrics
+
+	if acceptedLogs > dm.avgCalculator.acceptedLogs {
+		dm.avgCalculator.avgLogSize = float64(logsDataSize - dm.avgCalculator.logsDataSize) / float64(acceptedLogs - dm.avgCalculator.acceptedLogs)
 	}
+	dm.avgCalculator.logsDataSize = logsDataSize
+	dm.avgCalculator.acceptedLogs = acceptedLogs
 }
 
 func (dm *destinationsMetrics) handleClusterCollectorMetrics(senderPod string, md pmetric.Metrics) {
