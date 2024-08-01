@@ -52,7 +52,7 @@ RUN yarn compile
 
 
 
-FROM busybox AS dotnet-builder
+FROM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.7.0
 ARG TARGETARCH
