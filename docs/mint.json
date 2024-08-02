@@ -103,7 +103,8 @@
           "group": "Node.js",
           "pages": [
             "instrumentations/nodejs/nodejs",
-            "instrumentations/nodejs/enrichment"
+            "instrumentations/nodejs/enrichment",
+            "instrumentations/nodejs/ebpf"
           ]
         },
         {
@@ -111,6 +112,12 @@
           "pages": [
             "instrumentations/python/python",
             "instrumentations/python/enrichment"
+          ]
+        },
+        {
+          "group": "Java",
+          "pages": [
+            "instrumentations/java/ebpf"
           ]
         }        
       ]
