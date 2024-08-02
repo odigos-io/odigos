@@ -8,13 +8,22 @@ WORKDIR /nodejs-instrumentation
 COPY odiglet/agents/nodejs .
 RUN npm install
 
-FROM busybox AS dotnet-builder
+FROM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
-ARG DOTNET_OTEL_VERSION=v0.7.0
-ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
-RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
+ARG DOTNET_OTEL_VERSION=v1.7.0
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        echo "arm64" > /tmp/arch_suffix; \
+    else \
+        echo "x64" > /tmp/arch_suffix; \
+    fi
 
-FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.4 as builder
+RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
+    wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
+    unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
+    rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip
+
+FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.5 as builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copyy local modules required by the build
 COPY api/ api/
@@ -35,7 +44,7 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 WORKDIR /instrumentations
 
 # Java
-ARG JAVA_OTEL_VERSION=v2.3.0
+ARG JAVA_OTEL_VERSION=v2.6.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 

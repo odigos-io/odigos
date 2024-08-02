@@ -79,6 +79,7 @@
           "pages": [
             "cli/odigos",
             "cli/odigos_cloud",
+            "cli/odigos_describe",
             "cli/odigos_install",
             "cli/odigos_ui",
             "cli/odigos_uninstall",
