@@ -15,6 +15,7 @@ jobs:
       - name: Build Autoscaler Image
         uses: docker/build-push-action@v6
         with:
+          platforms: linux/amd64,linux/arm64
           push: false
           tags: autoscaler:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=autoscaler
@@ -27,6 +28,7 @@ jobs:
       - name: Build Scheduler Image
         uses: docker/build-push-action@v6
         with:
+          platforms: linux/amd64,linux/arm64
           push: false
           tags: scheduler:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=scheduler
@@ -42,6 +44,7 @@ jobs:
       - name: Build Instrumentor Image
         uses: docker/build-push-action@v6
         with:
+          platforms: linux/amd64,linux/arm64
           push: false
           tags: instrumentor:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=instrumentor
@@ -59,6 +62,7 @@ jobs:
       - name: Build Odiglet Image
         uses: docker/build-push-action@v6
         with:
+          platforms: linux/amd64,linux/arm64
           file: odiglet/Dockerfile
           context: .
           push: false
@@ -79,6 +83,7 @@ jobs:
       - name: Build Frontend Image
         uses: docker/build-push-action@v6
         with:
+          platforms: linux/amd64,linux/arm64
           file: frontend/Dockerfile
           context: .
           push: false
