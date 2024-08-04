@@ -1,7 +1,7 @@
-import { NavigationButtons, Text } from '@/reuseable-components';
 import Image from 'next/image';
 import React from 'react';
 import styled from 'styled-components';
+import { NavigationButtons, Text } from '@/reuseable-components';
 
 interface SetupHeaderProps {
   onBack: () => void;
