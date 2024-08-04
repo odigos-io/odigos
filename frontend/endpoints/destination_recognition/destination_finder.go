@@ -2,7 +2,10 @@ package destination_recognition
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	k8s "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type DestinationType string
@@ -37,21 +40,28 @@ func (d *DestinationFinder) fetchDestinationDetails(service k8s.Service) Destina
 }
 
 func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namespace) ([]DestinationDetails, error) {
-	helmManagedServices, err := getAllHelmManagedServices(ctx, namespaces)
-	if err != nil {
-		return nil, err
-	}
-
 	var destinationFinder *DestinationFinder
 	var destinationDetails []DestinationDetails
-	for _, service := range helmManagedServices {
-		for _, destinationType := range SupportedDestinationType {
-			destinationFinder = getDestinationFinder(destinationType)
-			if destinationFinder.isPotentialService(service) {
-				destinationDetails = append(destinationDetails, destinationFinder.fetchDestinationDetails(service))
-				break
-			}
-		}
+	var err error
+
+	for _, ns := range namespaces {
+		err = client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.CoreV1().Services(ns.Name).List,
+			ctx, metav1.ListOptions{}, func(services *k8s.ServiceList) error {
+				for _, service := range services.Items {
+					for _, destinationType := range SupportedDestinationType {
+						destinationFinder = getDestinationFinder(destinationType)
+						if destinationFinder.isPotentialService(service) {
+							destinationDetails = append(destinationDetails, destinationFinder.fetchDestinationDetails(service))
+							break
+						}
+					}
+				}
+				return nil
+			})
+	}
+
+	if err != nil {
+		return nil, err
 	}
 
 	return destinationDetails, nil
