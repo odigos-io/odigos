@@ -154,6 +154,8 @@ func GetDestinations(c *gin.Context, odigosns string) {
 		resp = append(resp, endpointDest)
 	}
 
+	PotentialDestinations(c, odigosns)
+
 	c.JSON(200, resp)
 }
 
@@ -637,16 +639,26 @@ func addDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, 
 	return nil
 }
 
-func findPotentialDestinations(ctx *gin.Context) ([]destination_recognition.DestinationDetails, error) {
-	relevantNamespaces, err := getRelevantNameSpaces(ctx, env.GetCurrentNamespace())
+func PotentialDestinations(c *gin.Context, odigosns string) {
+	relevantNamespaces, err := getRelevantNameSpaces(c, env.GetCurrentNamespace())
 	if err != nil {
-		return nil, err
+		returnError(c, err)
+		return
 	}
 
-	destinationDetails, err := destination_recognition.GetAllPotentialDestinationDetails(ctx, relevantNamespaces)
+	// Existing Destinations
+	existingDestination, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).List(c, metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		returnError(c, err)
+		return
 	}
 
-	return destinationDetails, nil
+	destinationsDetails, err := destination_recognition.GetAllPotentialDestinationDetails(c, relevantNamespaces, existingDestination)
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
+	fmt.Printf("Potential Destinations: %v", destinationsDetails)
+	//c.JSON(200, destinationsDetails)
 }

@@ -28,8 +28,9 @@ func isJaegerService(portNumber int32, name string) bool {
 
 func (j *JaegerDestinationFinder) fetchDestinationDetails(service k8s.Service) DestinationDetails {
 	urlString := fmt.Sprintf(JaegerGrpcUrlFormat, service.Name, service.Namespace, JaegerGrpcOtlpPort)
+
 	return DestinationDetails{
-		Name:      string(common.JaegerDestinationType),
+		Type:      common.JaegerDestinationType,
 		UrlString: urlString,
 	}
 }

@@ -13,7 +13,7 @@ var (
 )
 
 const (
-	jaegerUrlKey = "JAEGER_URL"
+	JaegerUrlKey = "JAEGER_URL"
 )
 
 type Jaeger struct{}
@@ -31,7 +31,7 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		return ErrorJaegerTracingDisabled
 	}
 
-	url, urlExist := dest.GetConfig()[jaegerUrlKey]
+	url, urlExist := dest.GetConfig()[JaegerUrlKey]
 	if !urlExist {
 		return ErrorJaegerMissingURL
 	}
