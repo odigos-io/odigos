@@ -7,6 +7,7 @@ const colors = {
   dark_grey: '#151515',
   text: '#F9F9F9',
   border: 'rgba(249, 249, 249, 0.08)',
+  translucent_bg: 'rgba(249, 249, 249, 0.04)',
 };
 
 const text = {

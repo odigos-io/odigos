@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Button, SectionTitle, Text } from '@/reuseable-components';
+import {
+  Button,
+  Modal,
+  NavigationButtons,
+  SectionTitle,
+  Text,
+} from '@/reuseable-components';
 import styled from 'styled-components';
 import Image from 'next/image';
 import theme from '@/styles/theme';
@@ -21,6 +27,14 @@ const AddDestinationButton = styled(Button)`
 
 export function ChooseDestinationContainer() {
   const { data, loading, error } = useQuery(GET_DESTINATION_TYPE);
+  const [isModalOpen, setModalOpen] = useState(false);
+
+  const handleOpenModal = () => setModalOpen(true);
+  const handleCloseModal = () => setModalOpen(false);
+  const handleSubmit = () => {
+    console.log('Action submitted');
+    setModalOpen(false);
+  };
 
   useEffect(() => {
     if (error) {
@@ -36,7 +50,10 @@ export function ChooseDestinationContainer() {
         description="Add backend destinations where collected data will be sent and configure their settings."
       />
       <AddDestinationButtonWrapper>
-        <AddDestinationButton variant="secondary">
+        <AddDestinationButton
+          variant="secondary"
+          onClick={() => handleOpenModal()}
+        >
           <Image
             src="/icons/common/plus.svg"
             alt="back"
@@ -52,6 +69,33 @@ export function ChooseDestinationContainer() {
             ADD DESTINATION
           </Text>
         </AddDestinationButton>
+        <Modal
+          isOpen={isModalOpen}
+          actionComponent={
+            <NavigationButtons
+              buttons={[
+                // {
+                //   label: 'BACK',
+                //   iconSrc: '/icons/common/arrow-white.svg',
+                //   onClick: () => {},
+                //   variant: 'secondary',
+                // },
+                {
+                  label: 'NEXT',
+                  iconSrc: '/icons/common/arrow-black.svg',
+                  onClick: () => {},
+                  variant: 'primary',
+                },
+              ]}
+            />
+          }
+          header={{
+            title: 'Modal Title',
+          }}
+          onClose={handleCloseModal}
+        >
+          <p>This is the modal content.</p>
+        </Modal>
       </AddDestinationButtonWrapper>
     </>
   );
