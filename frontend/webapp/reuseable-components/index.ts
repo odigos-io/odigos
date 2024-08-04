@@ -8,3 +8,5 @@ export * from './divider';
 export * from './counter';
 export * from './toggle';
 export * from './checkbox';
+export * from './modal';
+export * from './navigation-buttons';
