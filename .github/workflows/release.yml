@@ -117,7 +117,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos CLI released successfully. new version is ready", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack on Failure
-        if: failure()
+        if: ${{ failure() || cancelled() }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}
