@@ -9,19 +9,16 @@ import (
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-const (
-	collectorLabel = "odigos.io/collector"
-)
-
 var (
 	CommonLabels = map[string]string{
-		collectorLabel: "true",
+		k8sconsts.OdigosClusterCollectorLabel: "true",
 	}
 )
 

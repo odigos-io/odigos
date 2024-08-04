@@ -11,6 +11,8 @@ const (
 	OdigosPodNameHeaderKey = "odigos-pod-name"
 	// Label used to identify the Odigos pod which is acting as a node collector.
 	OdigosNodeCollectorLabel  = "odigos.io/data-collection"
+	// Label used to identify the Odigos pod which is acting as a cluster collector.
+	OdigosClusterCollectorLabel = "odigos.io/gateway"
 	OdigosClusterCollectorCollectorGroupName = OdigosClusterCollectorDeploymentName
 
 	OdigosNodeCollectorConfigMapName      = OdigosNodeCollectorDaemonSetName

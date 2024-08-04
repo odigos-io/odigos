@@ -2,7 +2,6 @@ package collectormetrics
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 
 	"github.com/odigos-io/odigos/frontend/endpoints/common"
@@ -46,7 +45,6 @@ func newSourceMetric(dp pmetric.NumberDataPoint, metricName string, nodeCollecto
 func (sm *sourcesMetrics) updateSourceMetrics(dp pmetric.NumberDataPoint, metricName string, nodeCollectorID string) {
 	sID, err := metricAttributesToSourceID(dp.Attributes())
 	if err != nil {
-		fmt.Printf("failed to get source ID: %v\n", err)
 		return
 	}
 

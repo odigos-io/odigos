@@ -2,6 +2,7 @@ package collectormetrics
 
 import (
 	"context"
+	"sync"
 
 	"github.com/odigos-io/odigos/frontend/kube"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
@@ -10,11 +11,41 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-func newNodeCollectorWatcher(ctx context.Context, odigosNS string) (watch.Interface, error) {
+type collectorWatcher struct {
+	odigosNS string
+	nodeCollectorDeleted chan string
+	clusterCollectorDeleted chan string
+}
+
+func startCollectorWatcher(ctx context.Context, cw *collectorWatcher, wg *sync.WaitGroup) error {
+	nodeWatcher, err := newCollectorWatcher(ctx, cw.odigosNS, k8sconsts.OdigosNodeCollectorLabel)
+	if err != nil {
+		return err
+	}
+	clusterWatcher, err := newCollectorWatcher(ctx, cw.odigosNS, k8sconsts.OdigosClusterCollectorLabel)
+	if err != nil {
+		return err
+	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		runNodeCollectorWatcher(ctx, nodeWatcher, cw.nodeCollectorDeleted)
+	}()
+
+	wg.Add(1)
+	go func(){
+		defer wg.Done()
+		runNodeCollectorWatcher(ctx, clusterWatcher, cw.clusterCollectorDeleted)
+	} ()
+	return nil
+}
+
+func newCollectorWatcher(ctx context.Context, odigosNS string, matchLabel string) (watch.Interface, error) {
 	return kube.DefaultClient.CoreV1().Pods(odigosNS).Watch(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				k8sconsts.OdigosNodeCollectorLabel: "true",
+				matchLabel: "true",
 			},
 		}),
 	})

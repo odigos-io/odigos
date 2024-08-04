@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/odigos-io/odigos/common/consts"
@@ -59,9 +60,10 @@ func (tm *trafficMetrics) String() string {
 }
 
 type OdigosMetricsConsumer struct {
-	sources                  sourcesMetrics
-	destinations 		     destinationsMetrics
-	nodeCollectorDeletedChan chan string
+	sources                     sourcesMetrics
+	destinations                destinationsMetrics
+	nodeCollectorDeletedChan    chan string
+	clusterCollectorDeletedChan chan string
 }
 
 var (
@@ -101,6 +103,13 @@ func (c *OdigosMetricsConsumer) runNotificationsLoop(ctx context.Context) {
 				return
 			}
 			c.sources.removeNodeCollector(nodeCollectorID)
+			fmt.Printf("Removed node collector %s\n", nodeCollectorID)
+		case clusterCollectorID, ok := <-c.clusterCollectorDeletedChan:
+			if !ok {
+				return
+			}
+			c.destinations.removeClusterCollector(clusterCollectorID)
+			fmt.Printf("Removed cluster collector %s\n", clusterCollectorID)
 		case <-ctx.Done():
 			return
 		}
@@ -139,24 +148,32 @@ func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 
 func NewOdigosMetrics() *OdigosMetricsConsumer {
 	return &OdigosMetricsConsumer{
-		sources:                  newSourcesMetrics(),
-		destinations: 		      newDestinationsMetrics(),
-		nodeCollectorDeletedChan: make(chan string),
+		sources:                     newSourcesMetrics(),
+		destinations:                newDestinationsMetrics(),
+		nodeCollectorDeletedChan:    make(chan string),
+		clusterCollectorDeletedChan: make(chan string),
 	}
 }
 
 // Run starts the OTLP receiver and the notifications loop for receiving and processing the metrics from different Odigos collectors
 func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
+	var closeWg sync.WaitGroup
 	// launch the notifications loop
-	go c.runNotificationsLoop(ctx)
+	closeWg.Add(1)
+	go func () {
+		defer closeWg.Done()
+		c.runNotificationsLoop(ctx)
+	}()
 
 	// setup a watcher for node collectors deletion detection
-	nodeCollectorsWatch, err := newNodeCollectorWatcher(ctx, odigosNS)
+	err := startCollectorWatcher(ctx, &collectorWatcher{
+		odigosNS:                odigosNS,
+		nodeCollectorDeleted:    c.nodeCollectorDeletedChan,
+		clusterCollectorDeleted: c.clusterCollectorDeletedChan,
+	}, &closeWg)
 	if err != nil {
-		panic(fmt.Sprintf("error creating watcher for node collectors: %v", err))
+		panic("failed to start collector watcher")
 	}
-	defer nodeCollectorsWatch.Stop()
-	go runNodeCollectorWatcher(ctx, nodeCollectorsWatch, c.nodeCollectorDeletedChan)
 
 	// setup the OTLP receiver
 	f := otlpreceiver.NewFactory()
@@ -178,6 +195,7 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 
 	fmt.Print("OTLP Receiver is running\n")
 	<-ctx.Done()
+	closeWg.Wait()
 }
 
 func (c *OdigosMetricsConsumer) GetSourceTrafficMetrics(sID common.SourceID) (trafficMetrics, bool) {
