@@ -2,20 +2,14 @@ package destination_recognition
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	k8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type DestinationType string
-
-const (
-	JaegerDestinationType        DestinationType = "jaeger"
-	ElasticSearchDestinationType DestinationType = "elasticsearch"
-)
-
-var SupportedDestinationType = []DestinationType{JaegerDestinationType, ElasticSearchDestinationType}
+var SupportedDestinationType = []common.DestinationType{common.JaegerDestinationType, common.ElasticsearchDestinationType}
 
 type DestinationDetails struct {
 	Name      string `json:"name"`
@@ -67,13 +61,13 @@ func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namesp
 	return destinationDetails, nil
 }
 
-func getDestinationFinder(destinationType DestinationType) *DestinationFinder {
+func getDestinationFinder(destinationType common.DestinationType) *DestinationFinder {
 	switch destinationType {
-	case JaegerDestinationType:
+	case common.JaegerDestinationType:
 		return &DestinationFinder{
 			destinationFinder: &JaegerDestinationFinder{},
 		}
-	case ElasticSearchDestinationType:
+	case common.ElasticsearchDestinationType:
 		return &DestinationFinder{
 			destinationFinder: &ElasticSearchDestinationFinder{},
 		}
