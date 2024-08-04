@@ -62,9 +62,7 @@ const HeaderActionsWrapper = styled.div`
   gap: 8px;
 `;
 
-const ModalContent = styled.div`
-  padding: 1rem;
-`;
+const ModalContent = styled.div``;
 
 const ModalTitleContainer = styled.div`
   position: absolute;
