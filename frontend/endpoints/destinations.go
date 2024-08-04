@@ -154,8 +154,6 @@ func GetDestinations(c *gin.Context, odigosns string) {
 		resp = append(resp, endpointDest)
 	}
 
-	PotentialDestinations(c, odigosns)
-
 	c.JSON(200, resp)
 }
 
@@ -653,12 +651,12 @@ func PotentialDestinations(c *gin.Context, odigosns string) {
 		return
 	}
 
-	destinationsDetails, err := destination_recognition.GetAllPotentialDestinationDetails(c, relevantNamespaces, existingDestination)
+	var resp []destination_recognition.DestinationDetails
+	resp, err = destination_recognition.GetAllPotentialDestinationDetails(c, relevantNamespaces, existingDestination)
 	if err != nil {
 		returnError(c, err)
 		return
 	}
 
-	fmt.Printf("Potential Destinations: %v", destinationsDetails)
-	//c.JSON(200, destinationsDetails)
+	return
 }

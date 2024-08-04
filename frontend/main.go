@@ -113,7 +113,6 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.GET("/destination-types/:type", endpoints.GetDestinationTypeDetails)
 		apis.GET("/destinations", func(c *gin.Context) { endpoints.GetDestinations(c, flags.Namespace) })
 		apis.GET("/destinations/:id", func(c *gin.Context) { endpoints.GetDestinationById(c, flags.Namespace) })
-		apis.GET("/destinations-potential", func(c *gin.Context) { endpoints.PotentialDestinations(c, flags.Namespace) })
 		apis.POST("/destinations", func(c *gin.Context) { endpoints.CreateNewDestination(c, flags.Namespace) })
 		apis.POST("/destinations/testConnection", func(c *gin.Context) { endpoints.TestConnectionForDestination(c, flags.Namespace) })
 		apis.PUT("/destinations/:id", func(c *gin.Context) { endpoints.UpdateExistingDestination(c, flags.Namespace) })
