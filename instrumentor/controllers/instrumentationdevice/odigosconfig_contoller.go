@@ -30,10 +30,11 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
+	isNodeCollectorReady := isDataCollectionReady(ctx, r.Client)
 	logger.Info("reconciling all instrumented applications on odigos config change", "numInstrumentedApplications", len(instrumentedApplications.Items))
 
 	for _, instrumentedApplication := range instrumentedApplications.Items {
-		err = reconcileSingleInstrumentedApplication(ctx, r.Client, &instrumentedApplication)
+		err = reconcileSingleWorkload(ctx, r.Client, &instrumentedApplication, isNodeCollectorReady)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
