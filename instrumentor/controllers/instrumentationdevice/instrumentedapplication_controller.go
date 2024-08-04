@@ -51,7 +51,7 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 			logger.Error(err, "error parsing workload info from runtime object name")
 			return ctrl.Result{}, err
 		}
-		err = removeInstrumentationDeviceFromWorkload(ctx, r.Client, req.Namespace, workloadKind, workloadName, UnInstrumentReasonNoRuntimeDetails)
+		err = removeInstrumentationDeviceFromWorkload(ctx, r.Client, req.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonNoRuntimeDetails)
 		if err != nil {
 			logger.Error(err, "error removing instrumentation")
 			return ctrl.Result{}, err
@@ -61,6 +61,6 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	}
 
 	isNodeCollectorReady := isDataCollectionReady(ctx, r.Client)
-	err = reconcileAndPersistWorkload(ctx, r.Client, &runtimeDetails, isNodeCollectorReady)
+	err = reconcileSingleWorkload(ctx, r.Client, &runtimeDetails, isNodeCollectorReady)
 	return ctrl.Result{}, err
 }

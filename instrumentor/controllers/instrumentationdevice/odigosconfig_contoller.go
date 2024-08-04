@@ -34,7 +34,7 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	logger.Info("reconciling all instrumented applications on odigos config change", "numInstrumentedApplications", len(instrumentedApplications.Items))
 
 	for _, instrumentedApplication := range instrumentedApplications.Items {
-		err = reconcileAndPersistWorkload(ctx, r.Client, &instrumentedApplication, isNodeCollectorReady)
+		err = reconcileSingleWorkload(ctx, r.Client, &instrumentedApplication, isNodeCollectorReady)
 		if err != nil {
 			return ctrl.Result{}, err
 		}

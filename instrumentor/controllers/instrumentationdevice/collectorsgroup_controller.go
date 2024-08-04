@@ -41,7 +41,7 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	for _, runtimeDetails := range instApps.Items {
-		err := reconcileAndPersistWorkload(ctx, r.Client, &runtimeDetails, isDataCollectionReady)
+		err := reconcileSingleWorkload(ctx, r.Client, &runtimeDetails, isDataCollectionReady)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
