@@ -83,7 +83,7 @@ const ModalTitle = styled(Text)`
 
 const CancelText = styled(Text)`
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 14px;
   font-family: ${({ theme }) => theme.font_family.secondary};
   text-decoration: underline;

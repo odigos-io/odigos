@@ -13,19 +13,22 @@ const TagContainer = styled.div<{ isSelected: boolean; isDisabled: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-radius: 16px;
   background-color: ${({ theme, isSelected }) =>
-    isSelected ? theme.colors.dark_grey : theme.colors.translucent_bg};
+    isSelected ? theme.colors.primary : theme.colors.translucent_bg};
   cursor: ${({ isDisabled }) => (isDisabled ? 'not-allowed' : 'pointer')};
   opacity: ${({ isDisabled }) => (isDisabled ? 0.5 : 1)};
-  transition: background-color 0.2s ease-in-out, 0.2s ease-in-out;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 
   ${({ isDisabled, theme }) =>
     !isDisabled &&
     css`
       &:hover {
-        background-color: ${theme.colors.dark_grey};
+        background-color: ${theme.colors.secondary};
+        div {
+          color: ${theme.colors.primary};
+        }
       }
     `}
 `;

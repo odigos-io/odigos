@@ -33,11 +33,10 @@ const Step = styled.div<{ state: 'finish' | 'active' | 'disabled' }>`
 `;
 
 const IconWrapper = styled.div<{ state: 'finish' | 'active' | 'disabled' }>`
-  margin-right: 10px;
   border-radius: 32px;
   width: 24px;
   height: 24px;
-  border: 1px solid #f9f9f9;
+  border: 1px solid ${({ theme }) => theme.colors.secondary};
   display: flex;
   justify-content: center;
   align-items: center;

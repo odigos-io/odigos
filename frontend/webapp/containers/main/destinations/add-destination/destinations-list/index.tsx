@@ -16,7 +16,7 @@ const Container = styled.div`
   overflow-y: auto;
 `;
 
-const ListItem = styled.div<{ selected: boolean }>`
+const ListItem = styled.div<{}>`
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -26,11 +26,13 @@ const ListItem = styled.div<{ selected: boolean }>`
   border-radius: 16px;
 
   cursor: pointer;
-  background: ${({ selected }) =>
-    selected ? 'rgba(68, 74, 217, 0.24)' : 'rgba(249, 249, 249, 0.04)'};
+  background: rgba(249, 249, 249, 0.04);
 
   &:hover {
     background: rgba(68, 74, 217, 0.24);
+  }
+  &:last-child {
+    margin-bottom: 32px;
   }
 `;
 
@@ -73,19 +75,13 @@ const TextWrapper = styled.div`
   justify-content: space-between;
 `;
 
-const SelectedTextWrapper = styled.div`
-  margin-right: 24px;
-`;
-
 interface DestinationsListProps {
   items: DestinationTypeItem[];
-  selectedItems: DestinationTypeItem[];
   setSelectedItems: (item: DestinationTypeItem) => void;
 }
 
 const DestinationsList: React.FC<DestinationsListProps> = ({
   items,
-  selectedItems,
   setSelectedItems,
 }) => {
   function renderSupportedSignals(item: DestinationTypeItem) {
@@ -102,15 +98,11 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
       </>
     ));
   }
-  renderSupportedSignals(items[0]);
+
   return (
     <Container>
       {items.map((item) => (
-        <ListItem
-          key={item.displayName}
-          selected={selectedItems.includes(item)}
-          onClick={() => setSelectedItems(item)}
-        >
+        <ListItem key={item.displayName} onClick={() => setSelectedItems(item)}>
           <ListItemContent>
             <DestinationIconWrapper>
               <Image
@@ -121,17 +113,10 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
               />
             </DestinationIconWrapper>
             <TextWrapper>
-              <Text>{item.displayName}</Text>
+              <Text size={14}>{item.displayName}</Text>
               <SignalsWrapper>{renderSupportedSignals(item)}</SignalsWrapper>
             </TextWrapper>
           </ListItemContent>
-          {selectedItems.includes(item) && (
-            <SelectedTextWrapper>
-              <Text size={12} family="secondary">
-                SELECTED
-              </Text>
-            </SelectedTextWrapper>
-          )}
         </ListItem>
       ))}
     </Container>
