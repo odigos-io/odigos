@@ -637,26 +637,22 @@ func addDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, 
 	return nil
 }
 
-func PotentialDestinations(c *gin.Context, odigosns string) {
+func potentialDestinations(c *gin.Context, odigosns string) []destination_recognition.DestinationDetails {
 	relevantNamespaces, err := getRelevantNameSpaces(c, env.GetCurrentNamespace())
 	if err != nil {
-		returnError(c, err)
-		return
+		return nil
 	}
 
 	// Existing Destinations
 	existingDestination, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).List(c, metav1.ListOptions{})
 	if err != nil {
-		returnError(c, err)
-		return
+		return nil
 	}
 
-	var resp []destination_recognition.DestinationDetails
-	resp, err = destination_recognition.GetAllPotentialDestinationDetails(c, relevantNamespaces, existingDestination)
+	destinationDetails, err := destination_recognition.GetAllPotentialDestinationDetails(c, relevantNamespaces, existingDestination)
 	if err != nil {
-		returnError(c, err)
-		return
+		return nil
 	}
 
-	return
+	return destinationDetails
 }
