@@ -75,8 +75,7 @@ const StyledInput = styled.input`
     font-family: ${({ theme }) => theme.font_family.primary};
     opacity: 0.4;
     font-size: 14px;
-    font-style: normal;
-    font-weight: 400;
+    font-weight: 300;
     line-height: 22px; /* 157.143% */
   }
 

@@ -61,14 +61,13 @@ const StepContent = styled.div`
 `;
 
 const StepTitle = styled(Text)`
-  font-size: 16px;
-  font-weight: bold;
+  font-weight: 500;
 `;
 
 const StepSubtitle = styled(Text)``;
 
-const SideMenu: React.FC = () => {
-  const steps: StepProps[] = [
+const SideMenu: React.FC<{ data?: StepProps[] }> = ({ data }) => {
+  const steps: StepProps[] = data || [
     {
       title: 'INSTALLATION',
       subtitle: 'Success',
