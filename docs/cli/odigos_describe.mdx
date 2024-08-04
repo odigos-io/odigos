@@ -1,0 +1,98 @@
+---
+title: "odigos describe"
+sidebarTitle: "odigos describe"
+---
+
+Show details of a specific odigos entity
+
+## Synopsis
+
+This command can be used for troubleshooting and observing odigos state for it's various entities.
+It is similar to `kubectl describe` but for odigos entities.
+
+- odigos source of kind deployment:
+
+```bash
+odigos describe source deployment <name> [flags]
+```
+
+- odigos source of kind statefulset:
+
+```bash
+odigos describe source statefulset <name> [flags]
+```
+
+- odigos source of kind daemonset:
+
+```bash
+odigos describe source daemonset <name> [flags]
+```
+
+
+## Examples
+
+```
+    # Describe a source of kind deployment and name myservice in the default namespace
+    odigos describe source deployment myservice -n default
+```
+
+Output:
+
+```
+Name:  myservice
+Kind:  deployment
+Namespace:  default
+
+Labels:
+  Instrumented:  true
+  Workload: odigos-instrumentation=enabled
+  Namespace: odigos-instrumentation=enabled
+  Decision: Workload is instrumented because the deployment contains the label 'odigos-instrumentation=enabled'
+  Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#1-odigos-instrumentation-label
+
+Instrumentation Config:
+  Created at 2024-07-30 19:00:40 +0300 IDT
+
+Runtime inspection details:
+  Created at 2024-07-30 19:00:40 +0300 IDT
+  Detected Containers:
+    - Container Name: myservice
+      Language:       javascript
+      Relevant Environment Variables:
+        - NODE_OPTIONS : --require /var/odigos/nodejs/autoinstrumentation.js
+
+Instrumentation Device:
+  Status: Successfully applied instrumentation device to pod template
+  - Container Name: myservice
+    Instrumentation Devices: javascript-native-community
+
+Pods (Total 1, Running 1):
+
+  Pod Name: myservice-ffd68d8c-qqmxl
+  Pod Phase: Running
+  Pod Node Name: kind-control-plane
+  Containers:
+  - Container Name: myservice
+    Instrumentation Devices: javascript-native-community
+    Instrumentation Instances:
+    - Healthy: true
+      Reason: Healthy    
+```
+
+## Options
+
+```
+    -n, --namespace          namespace of the source being described (default "default")
+```
+
+
+## Options inherited from parent commands
+
+```
+        --kubeconfig string   (optional) absolute path to the kubeconfig file
+```
+
+## SEE ALSO
+
+* [odigos](/cli/odigos)	- odigos CLI
+* [odigos version](/cli/odigos_version) - print version information

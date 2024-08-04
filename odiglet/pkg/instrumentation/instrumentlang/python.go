@@ -32,9 +32,6 @@ func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 	metricsExporter := "none"
 	tracesExporter := "none"
 
-	if _, ok := uniqueDestinationSignals[common.LogsObservabilitySignal]; ok {
-		logsExporter = "otlp"
-	}
 	if _, ok := uniqueDestinationSignals[common.MetricsObservabilitySignal]; ok {
 		metricsExporter = "otlp"
 	}
@@ -44,13 +41,15 @@ func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
-			pythonOdigosDeviceId:               deviceId,
-			pythonOdigosOpampServer:            opampServerHost,
-			envLogCorrelation:                  "true",
-			envPythonPath:                      pythonpathVal,
-			"OTEL_EXPORTER_OTLP_ENDPOINT":      otlpEndpoint,
-			envOtelTracesExporter:              tracesExporter,
-			envOtelMetricsExporter:             metricsExporter,
+			pythonOdigosDeviceId:          deviceId,
+			pythonOdigosOpampServer:       opampServerHost,
+			envLogCorrelation:             "true",
+			envPythonPath:                 pythonpathVal,
+			"OTEL_EXPORTER_OTLP_ENDPOINT": otlpEndpoint,
+			envOtelTracesExporter:         tracesExporter,
+			envOtelMetricsExporter:        metricsExporter,
+			// Log exporter is currently set to "none" due to the data collection method, which collects logs from the file system.
+			// In the future, this will be changed to "otlp" to send logs directly from the agent to the gateway.
 			envOtelLogsExporter:                logsExporter,
 			envOtelExporterOTLPTracesProtocol:  httpProtobufProtocol,
 			envOtelExporterOTLPMetricsProtocol: httpProtobufProtocol,
