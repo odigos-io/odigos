@@ -74,18 +74,12 @@ export function ChooseDestinationContainer() {
           actionComponent={
             <NavigationButtons
               buttons={[
-                {
-                  label: 'BACK',
-                  iconSrc: '/icons/common/arrow-white.svg',
-                  onClick: () => {},
-                  variant: 'secondary',
-                },
-                {
-                  label: 'NEXT',
-                  iconSrc: '/icons/common/arrow-black.svg',
-                  onClick: () => {},
-                  variant: 'primary',
-                },
+                // {
+                //   label: 'BACK',
+                //   iconSrc: '/icons/common/arrow-white.svg',
+                //   onClick: () => {},
+                //   variant: 'secondary',
+                // },
                 {
                   label: 'NEXT',
                   iconSrc: '/icons/common/arrow-black.svg',

@@ -66,9 +66,21 @@ const ModalContent = styled.div`
   padding: 1rem;
 `;
 
+const ModalTitleContainer = styled.div`
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  pointer-events: none;
+`;
+
 const ModalTitle = styled(Text)`
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: 400;
+  pointer-events: auto; /* Allow interaction with the title */
 `;
 
 const CancelText = styled(Text)`
@@ -79,15 +91,6 @@ const CancelText = styled(Text)`
   text-decoration: underline;
   cursor: pointer;
 `;
-
-const ModalFooter = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  padding: 1rem;
-  border-top: 1px solid #eaeaea;
-`;
-
-const ModalButton = styled(Button)``;
 
 const Modal: React.FC<ModalProps> = ({
   isOpen,
@@ -111,7 +114,9 @@ const Modal: React.FC<ModalProps> = ({
             />
             <CancelText>{'Cancel'}</CancelText>
           </ModalCloseButton>
-          <ModalTitle family={'secondary'}>{header.title}</ModalTitle>
+          <ModalTitleContainer>
+            <ModalTitle family={'secondary'}>{header.title}</ModalTitle>
+          </ModalTitleContainer>
           <HeaderActionsWrapper>{actionComponent}</HeaderActionsWrapper>
         </ModalHeader>
         <ModalContent>{children}</ModalContent>
