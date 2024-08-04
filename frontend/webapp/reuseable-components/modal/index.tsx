@@ -79,8 +79,8 @@ const ModalTitleContainer = styled.div`
 
 const ModalTitle = styled(Text)`
   text-transform: uppercase;
-  font-weight: 400;
-  pointer-events: auto; /* Allow interaction with the title */
+  font-family: ${({ theme }) => theme.font_family.secondary};
+  pointer-events: auto;
 `;
 
 const CancelText = styled(Text)`
@@ -115,7 +115,7 @@ const Modal: React.FC<ModalProps> = ({
             <CancelText>{'Cancel'}</CancelText>
           </ModalCloseButton>
           <ModalTitleContainer>
-            <ModalTitle family={'secondary'}>{header.title}</ModalTitle>
+            <ModalTitle>{header.title}</ModalTitle>
           </ModalTitleContainer>
           <HeaderActionsWrapper>{actionComponent}</HeaderActionsWrapper>
         </ModalHeader>
