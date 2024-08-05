@@ -3,6 +3,9 @@ package datacollection
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
@@ -17,8 +20,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sync"
-	"time"
 )
 
 const (
@@ -91,7 +92,8 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		return nil, err
 	}
 
-	desiredDs, err := getDesiredDaemonSet(datacollection, configMap.String(), scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
+	otelcolConfigContent := configMap.Data[consts.OdigosNodeCollectorConfigMapKey]
+	desiredDs, err := getDesiredDaemonSet(datacollection, otelcolConfigContent, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -183,7 +185,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 					ServiceAccountName: consts.OdigosNodeCollectorDaemonSetName,
 					Volumes: []corev1.Volume{
 						{
-							Name: configKey,
+							Name: consts.OdigosNodeCollectorConfigMapKey,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
@@ -191,8 +193,8 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 									},
 									Items: []corev1.KeyToPath{
 										{
-											Key:  configKey,
-											Path: fmt.Sprintf("%s.yaml", configKey),
+											Key:  consts.OdigosNodeCollectorConfigMapKey,
+											Path: fmt.Sprintf("%s.yaml", consts.OdigosNodeCollectorConfigMapKey),
 										},
 									},
 								},
@@ -227,10 +229,10 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 						{
 							Name:    containerName,
 							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, configKey)},
+							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, consts.OdigosNodeCollectorConfigMapKey)},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      configKey,
+									Name:      consts.OdigosNodeCollectorConfigMapKey,
 									MountPath: confDir,
 								},
 								{

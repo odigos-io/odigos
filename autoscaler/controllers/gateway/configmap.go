@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	configKey                 = "collector-conf"
 	destinationConfiguredType = "DestinationConfigured"
 )
 
@@ -78,7 +77,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 			Namespace: gateway.Namespace,
 		},
 		Data: map[string]string{
-			configKey: desiredData,
+			consts.OdigosClusterCollectorConfigMapKey: desiredData,
 		},
 	}
 

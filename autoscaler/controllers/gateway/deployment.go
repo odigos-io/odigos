@@ -124,7 +124,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: configKey,
+							Name: consts.OdigosClusterCollectorConfigMapKey,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
@@ -132,8 +132,8 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 									},
 									Items: []corev1.KeyToPath{
 										{
-											Key:  configKey,
-											Path: fmt.Sprintf("%s.yaml", configKey),
+											Key:  consts.OdigosClusterCollectorConfigMapKey,
+											Path: fmt.Sprintf("%s.yaml", consts.OdigosClusterCollectorConfigMapKey),
 										},
 									},
 								},
@@ -144,7 +144,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 						{
 							Name:    containerName,
 							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, configKey)},
+							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, consts.OdigosClusterCollectorConfigMapKey)},
 							EnvFrom: getSecretsFromDests(dests),
 							// Add the ODIGOS_VERSION environment variable from the ConfigMap
 							Env: []corev1.EnvVar{
@@ -169,7 +169,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      configKey,
+									Name:      consts.OdigosClusterCollectorConfigMapKey,
 									MountPath: confDir,
 								},
 							},
