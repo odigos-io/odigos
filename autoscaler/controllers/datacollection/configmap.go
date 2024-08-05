@@ -12,6 +12,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	constsK8s "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "k8s.io/api/core/v1"
@@ -21,10 +22,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-)
-
-const (
-	configKey = "conf"
 )
 
 func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
@@ -43,7 +40,7 @@ func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 		logger.Error(err, "failed to get desired config map")
 		return "", err
 	}
-	desiredData := desired.Data[configKey]
+	desiredData := desired.Data[consts.OdigosNodeCollectorConfigMapKey]
 
 	existing := &v1.ConfigMap{}
 	if err := c.Get(ctx, client.ObjectKey{Namespace: datacollection.Namespace, Name: datacollection.Name}, existing); err != nil {
@@ -109,7 +106,7 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 			Namespace: datacollection.Namespace,
 		},
 		Data: map[string]string{
-			configKey: cmData,
+			consts.OdigosNodeCollectorConfigMapKey: cmData,
 		},
 	}
 
