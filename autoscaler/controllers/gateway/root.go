@@ -6,6 +6,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/consts"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
@@ -68,7 +69,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 
 	memConfig := getMemoryConfigurations(odigosConfig)
 
-	configData, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme, memConfig)
+	configData, signals, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme, memConfig)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
@@ -89,6 +90,12 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 	_, err = syncDeployment(dests, gateway, configData, ctx, c, scheme, imagePullSecrets, odigosVersion, memConfig)
 	if err != nil {
 		logger.Error(err, "Failed to sync deployment")
+		return err
+	}
+
+	err = common.UpdateCollectorGroupReceivedSignals(ctx, c, gateway, signals)
+	if err != nil {
+		logger.Error(err, "Failed to update collector group received signals")
 		return err
 	}
 
