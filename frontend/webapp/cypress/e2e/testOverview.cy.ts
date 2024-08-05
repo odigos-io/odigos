@@ -5,6 +5,8 @@ describe('Overview Page Tests', () => {
     })
 
     it('Test Sources exists correctly', () => {
+        cy.visit('localhost:3000')
+
         cy.get('[data-id="namespace-0"]').should('have.text', 'defaultcoupon')
         cy.get('[data-id="namespace-1"]').should('have.text', 'defaultfrontend')
         cy.get('[data-id="namespace-2"]').should('have.text', 'defaultinventory')
@@ -13,6 +15,8 @@ describe('Overview Page Tests', () => {
     })
 
     it('Check Destination exist correctly', () => {
+        cy.visit('localhost:3000')
+
         cy.get('[data-id="destination-0"]').should('have.text', 'e2e-testsTempo')
     })
 
