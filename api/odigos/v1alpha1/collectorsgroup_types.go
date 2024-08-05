@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,6 +38,12 @@ type CollectorsGroupSpec struct {
 // CollectorsGroupStatus defines the observed state of Collector
 type CollectorsGroupStatus struct {
 	Ready bool `json:"ready,omitempty"`
+
+	// Received Signals are the signals (trace, metrics, logs) that the collector has setup
+	// receivers for.
+	// it can be used by upstream components to determine which signals should be recorded and exported
+	// to the pipeline.
+	ReceivedSignals []common.ObservabilitySignal `json:"receivedSignals,omitempty"`
 }
 
 //+genclient
