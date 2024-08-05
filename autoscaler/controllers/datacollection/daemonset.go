@@ -185,7 +185,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 					ServiceAccountName: consts.OdigosNodeCollectorDaemonSetName,
 					Volumes: []corev1.Volume{
 						{
-							Name: configKey,
+							Name: consts.OdigosNodeCollectorConfigMapKey,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
@@ -193,8 +193,8 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 									},
 									Items: []corev1.KeyToPath{
 										{
-											Key:  configKey,
-											Path: fmt.Sprintf("%s.yaml", configKey),
+											Key:  consts.OdigosNodeCollectorConfigMapKey,
+											Path: fmt.Sprintf("%s.yaml", consts.OdigosNodeCollectorConfigMapKey),
 										},
 									},
 								},
@@ -229,10 +229,10 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 						{
 							Name:    containerName,
 							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, configKey)},
+							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, consts.OdigosNodeCollectorConfigMapKey)},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      configKey,
+									Name:      consts.OdigosNodeCollectorConfigMapKey,
 									MountPath: confDir,
 								},
 								{
