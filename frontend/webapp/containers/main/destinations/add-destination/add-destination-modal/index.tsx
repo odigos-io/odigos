@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, NavigationButtons } from '@/reuseable-components';
-import { ChooseDestinationModalBody } from '../choose-destination-modal-body';
-import { DestinationTypeItem } from '@/types';
-import { ConnectDestinationModalBody } from '../connect-destination-modal-body';
-import { GET_DESTINATION_TYPE } from '@/graphql';
 import { useQuery } from '@apollo/client';
+import { DestinationTypeItem } from '@/types';
+import { GET_DESTINATION_TYPE } from '@/graphql';
+import { Modal, NavigationButtons } from '@/reuseable-components';
+import { ConnectDestinationModalBody } from '../connect-destination-modal-body';
+import { ChooseDestinationModalBody } from '../choose-destination-modal-body';
 
 interface AddDestinationModalProps {
   isModalOpen: boolean;
@@ -79,7 +79,7 @@ export function AddDestinationModal({
 
   function renderModalBody() {
     return selectedItem ? (
-      <ConnectDestinationModalBody />
+      <ConnectDestinationModalBody destination={selectedItem} />
     ) : (
       <ChooseDestinationModalBody
         data={destinationTypeList}

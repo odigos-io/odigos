@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-
 import styled from 'styled-components';
 import { AddDestinationButton } from '@/components';
 import { SectionTitle } from '@/reuseable-components';

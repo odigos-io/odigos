@@ -1,5 +1,5 @@
 import React from 'react';
-import { StepProps } from '@/types';
+import { DestinationTypeItem, StepProps } from '@/types';
 import { SideMenu } from '@/components';
 import { Divider, SectionTitle } from '@/reuseable-components';
 import { Body, Container, SideMenuWrapper } from '../styled';
@@ -16,9 +16,14 @@ const SIDE_MENU_DATA: StepProps[] = [
   },
 ];
 
-interface ConnectDestinationModalBodyProps {}
+interface ConnectDestinationModalBodyProps {
+  destination: DestinationTypeItem | undefined;
+}
 
-export function ConnectDestinationModalBody({}: ConnectDestinationModalBodyProps) {
+export function ConnectDestinationModalBody({
+  destination,
+}: ConnectDestinationModalBodyProps) {
+  console.log({ destination });
   return (
     <Container>
       <SideMenuWrapper>
