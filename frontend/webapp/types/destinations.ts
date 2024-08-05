@@ -5,6 +5,23 @@ export enum DestinationsSortType {
   TYPE = 'type',
 }
 
+export interface DestinationTypeItem {
+  displayName: string;
+  imageUrl: string;
+  category: 'managed' | 'self-hosted';
+  supportedSignals: {
+    logs: {
+      supported: boolean;
+    };
+    metrics: {
+      supported: boolean;
+    };
+    traces: {
+      supported: boolean;
+    };
+  };
+}
+
 export interface DestinationType {
   fields: any;
   display_name: string;

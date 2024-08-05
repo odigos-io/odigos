@@ -28,3 +28,10 @@ export interface DropdownOption {
   id: string;
   value: string;
 }
+
+export interface StepProps {
+  title: string;
+  subtitle?: string;
+  state: 'finish' | 'active' | 'disabled';
+  stepNumber: number;
+}

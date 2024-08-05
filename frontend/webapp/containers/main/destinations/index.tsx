@@ -1,2 +1,2 @@
 export * from './managed';
-export * from './choose-destination';
+export * from './add-destination';

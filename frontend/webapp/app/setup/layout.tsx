@@ -43,7 +43,14 @@ export default function SetupLayout({
   return (
     <LayoutContainer>
       <HeaderWrapper>
-        <SetupHeader />
+        <SetupHeader
+          onBack={function (): void {
+            throw new Error('Function not implemented.');
+          }}
+          onNext={function (): void {
+            throw new Error('Function not implemented.');
+          }}
+        />
       </HeaderWrapper>
       <SideMenuWrapper>
         <SideMenu />

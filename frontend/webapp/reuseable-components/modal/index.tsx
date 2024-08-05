@@ -62,9 +62,7 @@ const HeaderActionsWrapper = styled.div`
   gap: 8px;
 `;
 
-const ModalContent = styled.div`
-  padding: 1rem;
-`;
+const ModalContent = styled.div``;
 
 const ModalTitleContainer = styled.div`
   position: absolute;
@@ -85,7 +83,7 @@ const ModalTitle = styled(Text)`
 
 const CancelText = styled(Text)`
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 14px;
   font-family: ${({ theme }) => theme.font_family.secondary};
   text-decoration: underline;

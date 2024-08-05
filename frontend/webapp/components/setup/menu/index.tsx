@@ -1,14 +1,8 @@
 import { Text } from '@/reuseable-components';
+import { StepProps } from '@/types';
 import Image from 'next/image';
 import React from 'react';
 import styled, { css } from 'styled-components';
-
-interface StepProps {
-  title: string;
-  subtitle?: string;
-  state: 'finish' | 'active' | 'disabled';
-  stepNumber: number;
-}
 
 const Container = styled.div`
   display: flex;
@@ -33,11 +27,10 @@ const Step = styled.div<{ state: 'finish' | 'active' | 'disabled' }>`
 `;
 
 const IconWrapper = styled.div<{ state: 'finish' | 'active' | 'disabled' }>`
-  margin-right: 10px;
   border-radius: 32px;
   width: 24px;
   height: 24px;
-  border: 1px solid #f9f9f9;
+  border: 1px solid ${({ theme }) => theme.colors.secondary};
   display: flex;
   justify-content: center;
   align-items: center;
@@ -61,14 +54,13 @@ const StepContent = styled.div`
 `;
 
 const StepTitle = styled(Text)`
-  font-size: 16px;
-  font-weight: bold;
+  font-weight: 500;
 `;
 
 const StepSubtitle = styled(Text)``;
 
-const SideMenu: React.FC = () => {
-  const steps: StepProps[] = [
+const SideMenu: React.FC<{ data?: StepProps[] }> = ({ data }) => {
+  const steps: StepProps[] = data || [
     {
       title: 'INSTALLATION',
       subtitle: 'Success',

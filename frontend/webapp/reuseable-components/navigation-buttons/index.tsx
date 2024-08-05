@@ -43,12 +43,7 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
     button: NavigationButtonProps;
     index: number;
   }) {
-    return (
-      buttons.length > 0 &&
-      buttons[0].label === 'BACK' &&
-      button.iconSrc &&
-      index === 0
-    );
+    return buttons.length > 0 && button.iconSrc && index === 0;
   }
   return (
     <ButtonsContainer>
