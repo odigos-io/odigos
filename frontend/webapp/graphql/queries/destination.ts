@@ -6,6 +6,8 @@ export const GET_DESTINATION_TYPE = gql`
       categories {
         name
         items {
+          type
+          testConnectionSupported
           displayName
           imageUrl
           supportedSignals {
@@ -20,6 +22,22 @@ export const GET_DESTINATION_TYPE = gql`
             }
           }
         }
+      }
+    }
+  }
+`;
+
+export const GET_DESTINATION_TYPE_DETAILS = gql`
+  query GetDestinationTypeDetails($type: String!) {
+    destinationTypeDetails(type: $type) {
+      fields {
+        name
+        displayName
+        componentType
+        componentProperties
+        videoUrl
+        thumbnailURL
+        initialValue
       }
     }
   }

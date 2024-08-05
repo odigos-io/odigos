@@ -74,11 +74,6 @@ func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destina
 	panic(fmt.Errorf("not implemented: Conditions - conditions"))
 }
 
-// Type is the resolver for the type field.
-func (r *destinationTypesCategoryItemResolver) Type(ctx context.Context, obj *model.DestinationTypesCategoryItem) (string, error) {
-	panic(fmt.Errorf("not implemented: Type - type"))
-}
-
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace, instrumentationLabeled *bool) ([]*model.K8sActualSource, error) {
 	return obj.K8sActualSources, nil
@@ -158,11 +153,6 @@ func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePl
 // Destination returns DestinationResolver implementation.
 func (r *Resolver) Destination() DestinationResolver { return &destinationResolver{r} }
 
-// DestinationTypesCategoryItem returns DestinationTypesCategoryItemResolver implementation.
-func (r *Resolver) DestinationTypesCategoryItem() DestinationTypesCategoryItemResolver {
-	return &destinationTypesCategoryItemResolver{r}
-}
-
 // K8sActualNamespace returns K8sActualNamespaceResolver implementation.
 func (r *Resolver) K8sActualNamespace() K8sActualNamespaceResolver {
 	return &k8sActualNamespaceResolver{r}
@@ -176,7 +166,6 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type computePlatformResolver struct{ *Resolver }
 type destinationResolver struct{ *Resolver }
-type destinationTypesCategoryItemResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

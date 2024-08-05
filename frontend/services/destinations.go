@@ -31,7 +31,7 @@ func GetDestinationTypes() model.GetDestinationTypesResponse {
 func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) model.DestinationTypesCategoryItem {
 
 	return model.DestinationTypesCategoryItem{
-		Type:                    common.DestinationType(destConfig.Metadata.Type),
+		Type:                    string(destConfig.Metadata.Type),
 		DisplayName:             destConfig.Metadata.DisplayName,
 		ImageUrl:                GetImageURL(destConfig.Spec.Image),
 		TestConnectionSupported: destConfig.Spec.TestConnectionSupported,

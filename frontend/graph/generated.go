@@ -41,7 +41,6 @@ type Config struct {
 type ResolverRoot interface {
 	ComputePlatform() ComputePlatformResolver
 	Destination() DestinationResolver
-	DestinationTypesCategoryItem() DestinationTypesCategoryItemResolver
 	K8sActualNamespace() K8sActualNamespaceResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
@@ -179,9 +178,6 @@ type DestinationResolver interface {
 	Fields(ctx context.Context, obj *model.Destination) ([]string, error)
 
 	Conditions(ctx context.Context, obj *model.Destination) ([]*model.Condition, error)
-}
-type DestinationTypesCategoryItemResolver interface {
-	Type(ctx context.Context, obj *model.DestinationTypesCategoryItem) (string, error)
 }
 type K8sActualNamespaceResolver interface {
 	K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace, instrumentationLabeled *bool) ([]*model.K8sActualSource, error)
@@ -1848,7 +1844,7 @@ func (ec *executionContext) _DestinationTypesCategoryItem_type(ctx context.Conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DestinationTypesCategoryItem().Type(rctx, obj)
+		return obj.Type, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1869,8 +1865,8 @@ func (ec *executionContext) fieldContext_DestinationTypesCategoryItem_type(_ con
 	fc = &graphql.FieldContext{
 		Object:     "DestinationTypesCategoryItem",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -6268,60 +6264,29 @@ func (ec *executionContext) _DestinationTypesCategoryItem(ctx context.Context, s
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DestinationTypesCategoryItem")
 		case "type":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DestinationTypesCategoryItem_type(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._DestinationTypesCategoryItem_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "displayName":
 			out.Values[i] = ec._DestinationTypesCategoryItem_displayName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "imageUrl":
 			out.Values[i] = ec._DestinationTypesCategoryItem_imageUrl(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "supportedSignals":
 			out.Values[i] = ec._DestinationTypesCategoryItem_supportedSignals(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "testConnectionSupported":
 			out.Values[i] = ec._DestinationTypesCategoryItem_testConnectionSupported(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

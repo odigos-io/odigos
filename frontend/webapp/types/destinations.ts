@@ -9,6 +9,8 @@ export interface DestinationTypeItem {
   displayName: string;
   imageUrl: string;
   category: 'managed' | 'self-hosted';
+  type: string;
+  testConnectionSupported: boolean;
   supportedSignals: {
     logs: {
       supported: boolean;

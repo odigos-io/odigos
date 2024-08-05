@@ -11,6 +11,10 @@ interface AddDestinationModalProps {
   handleCloseModal: () => void;
 }
 
+interface DestinationCategory {
+  name: string;
+  items: DestinationTypeItem[];
+}
 function ModalActionComponent({
   onNext,
   onBack,
@@ -60,12 +64,14 @@ export function AddDestinationModal({
   function buildDestinationTypeList() {
     const destinationTypes = data?.destinationTypes?.categories || [];
     const destinationTypeList: DestinationTypeItem[] = destinationTypes.reduce(
-      (acc: DestinationTypeItem[], category: any) => {
-        const items = category.items.map((item: any) => ({
+      (acc: DestinationTypeItem[], category: DestinationCategory) => {
+        const items = category.items.map((item: DestinationTypeItem) => ({
           category: category.name,
           displayName: item.displayName,
           imageUrl: item.imageUrl,
           supportedSignals: item.supportedSignals,
+          testConnectionSupported: item.testConnectionSupported,
+          type: item.type,
         }));
         return [...acc, ...items];
       },
@@ -73,6 +79,7 @@ export function AddDestinationModal({
     );
     setDestinationTypeList(destinationTypeList);
   }
+
   function handleNextStep(item: DestinationTypeItem) {
     setSelectedItem(item);
   }
