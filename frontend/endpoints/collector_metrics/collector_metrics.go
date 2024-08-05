@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -60,10 +61,9 @@ func (tm *trafficMetrics) String() string {
 }
 
 type OdigosMetricsConsumer struct {
-	sources                     sourcesMetrics
-	destinations                destinationsMetrics
-	nodeCollectorDeletedChan    chan string
-	clusterCollectorDeletedChan chan string
+	sources      sourcesMetrics
+	destinations destinationsMetrics
+	deletedChan  chan deleteNotification
 }
 
 var (
@@ -98,18 +98,20 @@ func newTrafficMetrics(metricName string, dp pmetric.NumberDataPoint) *trafficMe
 func (c *OdigosMetricsConsumer) runNotificationsLoop(ctx context.Context) {
 	for {
 		select {
-		case nodeCollectorID, ok := <-c.nodeCollectorDeletedChan:
+		case n, ok := <-c.deletedChan:
 			if !ok {
 				return
 			}
-			c.sources.removeNodeCollector(nodeCollectorID)
-			fmt.Printf("Removed node collector %s\n", nodeCollectorID)
-		case clusterCollectorID, ok := <-c.clusterCollectorDeletedChan:
-			if !ok {
-				return
+			switch n.notificationType {
+			case nodeCollector:
+				c.sources.removeNodeCollector(n.object)
+			case clusterCollector:
+				c.destinations.removeClusterCollector(n.object)
+			case destination:
+				c.destinations.removeDestination(n.object)
+			case source:
+				c.sources.removeSource(n.sourceID)
 			}
-			c.destinations.removeClusterCollector(clusterCollectorID)
-			fmt.Printf("Removed cluster collector %s\n", clusterCollectorID)
 		case <-ctx.Done():
 			return
 		}
@@ -122,6 +124,7 @@ func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 		return errNoMetadata
 	}
 
+	// extract the sender pod name from the metadata
 	senderPods, ok := grpcMD[k8sconsts.OdigosPodNameHeaderKey]
 	if !ok {
 		return errUnKnownSender
@@ -138,7 +141,6 @@ func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 	}
 
 	if strings.HasPrefix(senderPod, k8sconsts.OdigosClusterCollectorDeploymentName) {
-		fmt.Printf("Handling cluster collector metrics from %s\n", senderPod)
 		c.destinations.handleClusterCollectorMetrics(senderPod, md)
 		return nil
 	}
@@ -148,10 +150,9 @@ func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 
 func NewOdigosMetrics() *OdigosMetricsConsumer {
 	return &OdigosMetricsConsumer{
-		sources:                     newSourcesMetrics(),
-		destinations:                newDestinationsMetrics(),
-		nodeCollectorDeletedChan:    make(chan string),
-		clusterCollectorDeletedChan: make(chan string),
+		sources:      newSourcesMetrics(),
+		destinations: newDestinationsMetrics(),
+		deletedChan:  make(chan deleteNotification),
 	}
 }
 
@@ -160,20 +161,22 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 	var closeWg sync.WaitGroup
 	// launch the notifications loop
 	closeWg.Add(1)
-	go func () {
+	go func() {
 		defer closeWg.Done()
 		c.runNotificationsLoop(ctx)
 	}()
 
-	// setup a watcher for node collectors deletion detection
-	err := startCollectorWatcher(ctx, &collectorWatcher{
-		odigosNS:                odigosNS,
-		nodeCollectorDeleted:    c.nodeCollectorDeletedChan,
-		clusterCollectorDeleted: c.clusterCollectorDeletedChan,
-	}, &closeWg)
-	if err != nil {
-		panic("failed to start collector watcher")
-	}
+	// run a watcher for collectors deletion detection
+	closeWg.Add(1)
+	go func() {
+		defer closeWg.Done()
+		err := runDeleteWatcher(ctx, &deleteWatcher{
+			odigosNS:            odigosNS,
+			deleteNotifications: c.deletedChan})
+		if err != nil {
+			log.Printf("Collector metrics: Error running delete watcher: %v\n", err)
+		}
+	}()
 
 	// setup the OTLP receiver
 	f := otlpreceiver.NewFactory()
@@ -198,10 +201,18 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 	closeWg.Wait()
 }
 
-func (c *OdigosMetricsConsumer) GetSourceTrafficMetrics(sID common.SourceID) (trafficMetrics, bool) {
-	return c.sources.getSourceTrafficMetrics(sID)
+func (c *OdigosMetricsConsumer) GetSingleSourceMetrics(sID common.SourceID) (trafficMetrics, bool) {
+	return c.sources.metricsByID(sID)
 }
 
-func (c *OdigosMetricsConsumer) GetDestinationTrafficMetrics(dID string) (trafficMetrics, bool) {
-	return c.destinations.getDestinationTrafficMetrics(dID)
+func (c *OdigosMetricsConsumer) GetSingleDestinationMetrics(dID string) (trafficMetrics, bool) {
+	return c.destinations.metricsByID(dID)
+}
+
+func (c *OdigosMetricsConsumer) GetSourcesMetrics() map[common.SourceID]trafficMetrics {
+	return c.sources.sourcesMetrics()
+}
+
+func (c *OdigosMetricsConsumer) GetDestinationsMetrics() map[string]trafficMetrics {
+	return c.destinations.metrics()
 }

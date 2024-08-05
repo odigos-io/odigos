@@ -9,13 +9,13 @@ import (
 	"github.com/odigos-io/odigos/frontend/endpoints/common"
 )
 
-type sourceMetricsResponse struct {
+type singleSourceMetricsResponse struct {
 	common.SourceID
 	TotalDataSent int64 `json:"totalDataSent"`
 	Throughput    int64 `json:"throughput"`
 }
 
-func GetSourceMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer) {
+func GetSingleSourceMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer) {
 	ns := c.Param("namespace")
 	kind := c.Param("kind")
 	name := c.Param("name")
@@ -25,14 +25,14 @@ func GetSourceMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer)
 		Kind:      kind,
 		Name:      name,
 	}
-	metric, ok := m.GetSourceTrafficMetrics(sID)
+	metric, ok := m.GetSingleSourceMetrics(sID)
 	if !ok {
 		returnError(c, fmt.Errorf("source not found %v", sID))
 		return
 	}
 
 	c.JSON(http.StatusOK,
-		sourceMetricsResponse{
+		singleSourceMetricsResponse{
 			SourceID:      sID,
 			TotalDataSent: metric.TotalDataSent(),
 			Throughput:    metric.TotalThroughput(),
@@ -40,26 +40,97 @@ func GetSourceMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer)
 	)
 }
 
-type destinationMetricsResponse struct {
-	ID string `json:"id"`
-	TotalDataSent int64 `json:"totalDataSent"`
-	Throughput    int64 `json:"throughput"`
+type sourcesMetricsResponse struct {
+	Sources []singleSourceMetricsResponse `json:"sources"`
 }
 
-func GetDestinationMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer) {
+func GetSourcesMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer) {
+	metrics := m.GetSourcesMetrics()
+
+	var sources []singleSourceMetricsResponse
+	for sID, metric := range metrics {
+		sources = append(sources, singleSourceMetricsResponse{
+			SourceID:      sID,
+			TotalDataSent: metric.TotalDataSent(),
+			Throughput:    metric.TotalThroughput(),
+		})
+	}
+
+	c.JSON(http.StatusOK, sourcesMetricsResponse{Sources: sources})
+}
+
+type singleDestinationMetricsResponse struct {
+	ID            string `json:"id"`
+	TotalDataSent int64  `json:"totalDataSent"`
+	Throughput    int64  `json:"throughput"`
+}
+
+func GetSingleDestinationMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer) {
 	destId := c.Param("id")
 
-	metric, ok := m.GetDestinationTrafficMetrics(destId)
+	metric, ok := m.GetSingleDestinationMetrics(destId)
 	if !ok {
 		returnError(c, fmt.Errorf("destination not found %v", destId))
 		return
 	}
 
 	c.JSON(http.StatusOK,
-		destinationMetricsResponse{
-			ID: 		   destId,
+		singleDestinationMetricsResponse{
+			ID:            destId,
 			TotalDataSent: metric.TotalDataSent(),
 			Throughput:    metric.TotalThroughput(),
 		},
 	)
+}
+
+type destinationsMetricsResponse struct {
+	Destinations []singleDestinationMetricsResponse `json:"destinations"`
+}
+
+func GetDestinationsMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer) {
+	metrics := m.GetDestinationsMetrics()
+
+	var destinations []singleDestinationMetricsResponse
+	for destId, metric := range metrics {
+		destinations = append(destinations, singleDestinationMetricsResponse{
+			ID:            destId,
+			TotalDataSent: metric.TotalDataSent(),
+			Throughput:    metric.TotalThroughput(),
+		})
+	}
+
+	c.JSON(http.StatusOK, destinationsMetricsResponse{Destinations: destinations})
+}
+
+type overviewMetricsResponse struct {
+	sourcesMetricsResponse
+	destinationsMetricsResponse
+}
+
+func GetOverviewMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsConsumer) {
+	sources := m.GetSourcesMetrics()
+	destinations := m.GetDestinationsMetrics()
+
+	var sourcesResp []singleSourceMetricsResponse
+	for sID, metric := range sources {
+		sourcesResp = append(sourcesResp, singleSourceMetricsResponse{
+			SourceID:      sID,
+			TotalDataSent: metric.TotalDataSent(),
+			Throughput:    metric.TotalThroughput(),
+		})
+	}
+
+	var destinationsResp []singleDestinationMetricsResponse
+	for destId, metric := range destinations {
+		destinationsResp = append(destinationsResp, singleDestinationMetricsResponse{
+			ID:            destId,
+			TotalDataSent: metric.TotalDataSent(),
+			Throughput:    metric.TotalThroughput(),
+		})
+	}
+
+	c.JSON(http.StatusOK, overviewMetricsResponse{
+		sourcesMetricsResponse{Sources: sourcesResp},
+		destinationsMetricsResponse{Destinations: destinationsResp},
+	})
 }

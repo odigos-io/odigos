@@ -19,7 +19,7 @@ type singleSourceMetrics struct {
 
 type sourcesMetrics struct {
 	sourcesMap map[common.SourceID]*singleSourceMetrics
-	sourcesMu      sync.Mutex
+	sourcesMu  sync.Mutex
 }
 
 func newSourcesMetrics() sourcesMetrics {
@@ -134,18 +134,28 @@ func (sourceMetrics *sourcesMetrics) removeNodeCollector(nodeCollectorID string)
 	}
 }
 
-func (sourceMetrics *sourcesMetrics) getSourceTrafficMetrics(sID common.SourceID) (trafficMetrics, bool) {
+func (sourceMetrics *sourcesMetrics) removeSource(sID common.SourceID) {
+	sourceMetrics.sourcesMu.Lock()
+	delete(sourceMetrics.sourcesMap, sID)
+	sourceMetrics.sourcesMu.Unlock()
+}
+
+func (sourceMetrics *sourcesMetrics) metricsByID(sID common.SourceID) (trafficMetrics, bool) {
 	sm, ok := sourceMetrics.sourcesMap[sID]
 	if !ok {
 		return trafficMetrics{}, false
 	}
 
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
+	return sm.metrics(), true
+}
+
+func (ssm *singleSourceMetrics) metrics() trafficMetrics {
+	ssm.mu.Lock()
+	defer ssm.mu.Unlock()
 
 	resultMetrics := trafficMetrics{}
 	// sum the traffic metrics from all the node collectors
-	for _, tm := range sm.nodeCollectorsTraffic {
+	for _, tm := range ssm.nodeCollectorsTraffic {
 		resultMetrics.tracesDataSent += tm.tracesDataSent
 		resultMetrics.logsDataSent += tm.logsDataSent
 		resultMetrics.metricsDataSent += tm.metricsDataSent
@@ -160,9 +170,20 @@ func (sourceMetrics *sourcesMetrics) getSourceTrafficMetrics(sID common.SourceID
 		}
 	}
 
-	return resultMetrics, true
+	return resultMetrics
 }
 
+func (sourcesMetrics *sourcesMetrics) sourcesMetrics() map[common.SourceID]trafficMetrics {
+	sourcesMetrics.sourcesMu.Lock()
+	defer sourcesMetrics.sourcesMu.Unlock()
+
+	result := make(map[common.SourceID]trafficMetrics)
+	for sID, ssm := range sourcesMetrics.sourcesMap {
+		result[sID] = ssm.metrics()
+	}
+
+	return result
+}
 
 func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
 	name, ok := attrs.Get(ServiceNameKey)

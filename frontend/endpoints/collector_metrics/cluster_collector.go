@@ -49,7 +49,7 @@ type averageSizeCalculator struct {
 
 	lastInterval struct {
 		// calculated average size of spans/metrics/logs in the last interval
-		avgSpanSize, avgMetricSize, avgLogSize    float64
+		avgSpanSize, avgMetricSize, avgLogSize float64
 	}
 }
 
@@ -71,21 +71,21 @@ func (asc *averageSizeCalculator) update(acceptedSpans, acceptedMetrics, accepte
 	acceptedMetricsInInterval := acceptedMetrics - asc.acceptedMetrics
 	acceptedLogsInInterval := acceptedLogs - asc.acceptedLogs
 	if acceptedSpans > asc.acceptedSpans {
-		avgSpanSizeInInterval = float64(spansDataSize - asc.spansDataSize) / float64(acceptedSpanInInterval)
+		avgSpanSizeInInterval = float64(spansDataSize-asc.spansDataSize) / float64(acceptedSpanInInterval)
 	}
 	asc.lastInterval.avgSpanSize = avgSpanSizeInInterval
 	asc.spansDataSize = spansDataSize
 	asc.acceptedSpans = acceptedSpans
 
 	if acceptedMetrics > asc.acceptedMetrics {
-		avgMetricSizeInInterval = float64(metricsDataSize - asc.metricsDataSize) / float64(acceptedMetricsInInterval)
+		avgMetricSizeInInterval = float64(metricsDataSize-asc.metricsDataSize) / float64(acceptedMetricsInInterval)
 	}
 	asc.lastInterval.avgMetricSize = avgMetricSizeInInterval
 	asc.metricsDataSize = metricsDataSize
 	asc.acceptedMetrics = acceptedMetrics
 
 	if acceptedLogs > asc.acceptedLogs {
-		avgLogSizeInInterval = float64(logsDataSize - asc.logsDataSize) / float64(acceptedLogsInInterval)
+		avgLogSizeInInterval = float64(logsDataSize-asc.logsDataSize) / float64(acceptedLogsInInterval)
 	}
 	asc.lastInterval.avgLogSize = avgLogSizeInInterval
 	asc.logsDataSize = logsDataSize
@@ -94,7 +94,7 @@ func (asc *averageSizeCalculator) update(acceptedSpans, acceptedMetrics, accepte
 
 func newDestinationsMetrics() destinationsMetrics {
 	return destinationsMetrics{
-		destinations: make(map[string]*singleDestinationMetrics),
+		destinations:  make(map[string]*singleDestinationMetrics),
 		avgCalculator: &averageSizeCalculator{},
 	}
 }
@@ -105,6 +105,12 @@ func (dm *destinationsMetrics) removeClusterCollector(clusterCollectorID string)
 		delete(d.clusterCollectorsTraffic, clusterCollectorID)
 		d.mu.Unlock()
 	}
+}
+
+func (dm *destinationsMetrics) removeDestination(dID string) {
+	dm.destinationsMu.Lock()
+	delete(dm.destinations, dID)
+	dm.destinationsMu.Unlock()
 }
 
 func metricAttributesToDestinationID(attrs pcommon.Map) string {
@@ -195,7 +201,7 @@ func (dm *destinationsMetrics) updateDestinationMetricsByExporter(dp pmetric.Num
 	var throughputPtr *int64
 	var dataSentInInterval int64
 	dtm := currentVal.clusterCollectorsTraffic[clusterCollectorID]
-	
+
 	// the metric data in 'dp' represent the number of spans/metrics/logs sent by the exporter
 	// we use the average size of spans/metrics/logs to calculate the total data sent
 	switch metricName {
@@ -317,12 +323,16 @@ func (dm *destinationsMetrics) handleClusterCollectorMetrics(senderPod string, m
 	}
 }
 
-func (dm *destinationsMetrics) getDestinationTrafficMetrics(dID string) (trafficMetrics, bool) {
+func (dm *destinationsMetrics) metricsByID(dID string) (trafficMetrics, bool) {
 	sdm, ok := dm.destinations[dID]
 	if !ok {
 		return trafficMetrics{}, false
 	}
 
+	return sdm.metrics(), true
+}
+
+func (sdm *singleDestinationMetrics) metrics() trafficMetrics {
 	sdm.mu.Lock()
 	defer sdm.mu.Unlock()
 
@@ -343,5 +353,17 @@ func (dm *destinationsMetrics) getDestinationTrafficMetrics(dID string) (traffic
 		}
 	}
 
-	return resultMetrics, true
+	return resultMetrics
+}
+
+func (dm *destinationsMetrics) metrics() map[string]trafficMetrics {
+	dm.destinationsMu.Lock()
+	defer dm.destinationsMu.Unlock()
+
+	result := make(map[string]trafficMetrics, len(dm.destinations))
+	for dID, sdm := range dm.destinations {
+		result[dID] = sdm.metrics()
+	}
+
+	return result
 }

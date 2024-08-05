@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/go-logr/logr"
@@ -140,8 +141,11 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 		apis.DELETE("/actions/types/RenameAttribute/:id", func(c *gin.Context) { actions.DeleteRenameAttribute(c, flags.Namespace, c.Param("id")) })
 
 		// Metrics
-		apis.GET("/metrics/namespace/:namespace/kind/:kind/name/:name", func(c *gin.Context) { endpoints.GetSourceMetrics(c, odigosMetrics) })
-		apis.GET("/metrics/destinations/:id", func(c *gin.Context) { endpoints.GetDestinationMetrics(c, odigosMetrics) })
+		apis.GET("/metrics/namespace/:namespace/kind/:kind/name/:name", func(c *gin.Context) { endpoints.GetSingleSourceMetrics(c, odigosMetrics) })
+		apis.GET("/metrics/destinations/:id", func(c *gin.Context) { endpoints.GetSingleDestinationMetrics(c, odigosMetrics) })
+		apis.GET("/metrics/sources", func(c *gin.Context) { endpoints.GetSourcesMetrics(c, odigosMetrics) })
+		apis.GET("/metrics/destinations", func(c *gin.Context) { endpoints.GetDestinationsMetrics(c, odigosMetrics) })
+		apis.GET("/metrics/overview", func(c *gin.Context) { endpoints.GetOverviewMetrics(c, odigosMetrics) })
 
 		// ErrorSampler
 		apis.GET("/actions/types/ErrorSampler/:id", func(c *gin.Context) { actions.GetErrorSampler(c, flags.Namespace, c.Param("id")) })
@@ -213,7 +217,12 @@ func main() {
 	}()
 
 	odigosMetrics := collectormetrics.NewOdigosMetrics()
-	go odigosMetrics.Run(ctx, flags.Namespace)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		odigosMetrics.Run(ctx, flags.Namespace)
+	}()
 
 	// Start server
 	r, err := startHTTPServer(&flags, odigosMetrics)
@@ -251,4 +260,6 @@ func main() {
 
 	<-ch
 	log.Println("Shutting down Odigos UI...")
+	cancel()
+	wg.Wait()
 }
