@@ -1,14 +1,8 @@
 import { Text } from '@/reuseable-components';
+import { StepProps } from '@/types';
 import Image from 'next/image';
 import React from 'react';
 import styled, { css } from 'styled-components';
-
-interface StepProps {
-  title: string;
-  subtitle?: string;
-  state: 'finish' | 'active' | 'disabled';
-  stepNumber: number;
-}
 
 const Container = styled.div`
   display: flex;
