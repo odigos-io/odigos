@@ -25,8 +25,22 @@ type Condition struct {
 	Message            *string         `json:"message,omitempty"`
 }
 
+type Field struct {
+	Name                string  `json:"name"`
+	DisplayName         string  `json:"displayName"`
+	ComponentType       string  `json:"componentType"`
+	ComponentProperties string  `json:"componentProperties"`
+	VideoURL            *string `json:"videoUrl,omitempty"`
+	ThumbnailURL        *string `json:"thumbnailURL,omitempty"`
+	InitialValue        *string `json:"initialValue,omitempty"`
+}
+
 type GetConfigResponse struct {
 	Installation InstallationStatus `json:"installation"`
+}
+
+type GetDestinationDetailsResponse struct {
+	Fields []*Field `json:"fields"`
 }
 
 type InstrumentedApplicationDetails struct {

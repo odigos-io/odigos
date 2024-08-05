@@ -6,8 +6,10 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/endpoints"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
@@ -117,11 +119,37 @@ func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, e
 
 // DestinationTypes is the resolver for the destinationTypes field.
 func (r *queryResolver) DestinationTypes(ctx context.Context) (*model.GetDestinationTypesResponse, error) {
-
 	destTypes := services.GetDestinationTypes()
 
 	return &destTypes, nil
+}
 
+// DestinationTypeDetails is the resolver for the destinationTypeDetails field.
+func (r *queryResolver) DestinationTypeDetails(ctx context.Context, typeArg string) (*model.GetDestinationDetailsResponse, error) {
+	destType := common.DestinationType(typeArg)
+	destTypeConfig, err := services.GetDestinationTypeConfig(destType)
+	if err != nil {
+		return nil, fmt.Errorf("destination type %s not found", destType)
+	}
+
+	var resp model.GetDestinationDetailsResponse
+	for _, field := range destTypeConfig.Spec.Fields {
+		componentPropsJSON, err := json.Marshal(field.ComponentProps)
+		if err != nil {
+			return nil, fmt.Errorf("error marshalling component properties: %v", err)
+		}
+
+		resp.Fields = append(resp.Fields, &model.Field{
+			Name:                field.Name,
+			DisplayName:         field.DisplayName,
+			ComponentType:       field.ComponentType,
+			ComponentProperties: string(componentPropsJSON),
+			InitialValue:        &field.InitialValue,
+		})
+
+	}
+
+	return &resp, nil
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.
