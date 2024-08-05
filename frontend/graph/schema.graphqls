@@ -158,10 +158,25 @@ type GetConfigResponse {
   installation: InstallationStatus!
 }
 
+type Field {
+  name: String!
+  displayName: String!
+  componentType: String!
+  componentProperties: String! # Using String to store JSON data as a string
+  videoUrl: String
+  thumbnailURL: String
+  initialValue: String
+}
+
+type GetDestinationDetailsResponse {
+  fields: [Field!]!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
   destinationTypes: GetDestinationTypesResponse
+  destinationTypeDetails(type: String!): GetDestinationDetailsResponse
 }
 
 type Mutation {

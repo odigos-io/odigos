@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -46,4 +48,14 @@ func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) mo
 		},
 	}
 
+}
+
+func GetDestinationTypeConfig(destType common.DestinationType) (*destinations.Destination, error) {
+	for _, dest := range destinations.Get() {
+		if dest.Metadata.Type == destType {
+			return &dest, nil
+		}
+	}
+
+	return nil, fmt.Errorf("destination type %s not found", destType)
 }
