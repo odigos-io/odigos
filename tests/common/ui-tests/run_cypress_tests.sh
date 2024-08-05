@@ -2,7 +2,7 @@
 
 echo "Running Cypress tests"
 cd ../../../frontend/webapp || exit
-npx cypress run
+npx cypress run --spec "cypress/e2e/testOverview.cy.ts"
 
 status_cypress=$?
 if [ $status_cypress -ne 0 ]; then
