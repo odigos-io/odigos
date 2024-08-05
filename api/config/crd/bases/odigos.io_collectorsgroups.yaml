@@ -54,12 +54,11 @@ spec:
             properties:
               ready:
                 type: boolean
-              receivedSignals:
+              receiverSignals:
                 description: |-
-                  Received Signals are the signals (trace, metrics, logs) that the collector has setup
-                  receivers for.
-                  it can be used by upstream components to determine which signals should be recorded and exported
-                  to the pipeline.
+                  Receiver Signals are the signals (trace, metrics, logs) that the collector has setup
+                  an otlp receiver for, thus it can accept data from an upstream component.
+                  this is used to determine if a workload should export each signal or not.
                 items:
                   enum:
                   - LOGS

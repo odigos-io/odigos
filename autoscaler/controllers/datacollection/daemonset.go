@@ -130,7 +130,7 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		return nil, err
 	}
 
-	err = common.UpdateCollectorGroupReceivedSignals(ctx, c, datacollection, signals)
+	err = common.UpdateCollectorGroupReceiverSignals(ctx, c, datacollection, signals)
 	if err != nil {
 		logger.Error(err, "Failed to update collector group received signals")
 		return nil, err

@@ -39,11 +39,10 @@ type CollectorsGroupSpec struct {
 type CollectorsGroupStatus struct {
 	Ready bool `json:"ready,omitempty"`
 
-	// Received Signals are the signals (trace, metrics, logs) that the collector has setup
-	// receivers for.
-	// it can be used by upstream components to determine which signals should be recorded and exported
-	// to the pipeline.
-	ReceivedSignals []common.ObservabilitySignal `json:"receivedSignals,omitempty"`
+	// Receiver Signals are the signals (trace, metrics, logs) that the collector has setup
+	// an otlp receiver for, thus it can accept data from an upstream component.
+	// this is used to determine if a workload should export each signal or not.
+	ReceiverSignals []common.ObservabilitySignal `json:"receiverSignals,omitempty"`
 }
 
 //+genclient

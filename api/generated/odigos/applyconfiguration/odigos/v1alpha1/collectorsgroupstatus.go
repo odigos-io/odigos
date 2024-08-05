@@ -25,7 +25,7 @@ import (
 // with apply.
 type CollectorsGroupStatusApplyConfiguration struct {
 	Ready           *bool                        `json:"ready,omitempty"`
-	ReceivedSignals []common.ObservabilitySignal `json:"receivedSignals,omitempty"`
+	ReceiverSignals []common.ObservabilitySignal `json:"receiverSignals,omitempty"`
 }
 
 // CollectorsGroupStatusApplyConfiguration constructs an declarative configuration of the CollectorsGroupStatus type for use with
@@ -42,12 +42,12 @@ func (b *CollectorsGroupStatusApplyConfiguration) WithReady(value bool) *Collect
 	return b
 }
 
-// WithReceivedSignals adds the given value to the ReceivedSignals field in the declarative configuration
+// WithReceiverSignals adds the given value to the ReceiverSignals field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the ReceivedSignals field.
-func (b *CollectorsGroupStatusApplyConfiguration) WithReceivedSignals(values ...common.ObservabilitySignal) *CollectorsGroupStatusApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the ReceiverSignals field.
+func (b *CollectorsGroupStatusApplyConfiguration) WithReceiverSignals(values ...common.ObservabilitySignal) *CollectorsGroupStatusApplyConfiguration {
 	for i := range values {
-		b.ReceivedSignals = append(b.ReceivedSignals, values[i])
+		b.ReceiverSignals = append(b.ReceiverSignals, values[i])
 	}
 	return b
 }
