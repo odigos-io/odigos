@@ -3,6 +3,7 @@ package destination_recognition
 import (
 	"fmt"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
 	k8s "k8s.io/api/core/v1"
 	"strings"
 )
@@ -33,4 +34,8 @@ func (j *JaegerDestinationFinder) fetchDestinationDetails(service k8s.Service) D
 		Type:      common.JaegerDestinationType,
 		UrlString: urlString,
 	}
+}
+
+func (j *JaegerDestinationFinder) getServiceURL() string {
+	return config.JaegerUrlKey
 }

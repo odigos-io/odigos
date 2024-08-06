@@ -3,6 +3,7 @@ package destination_recognition
 import (
 	"fmt"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
 	k8s "k8s.io/api/core/v1"
 	"strings"
 )
@@ -33,4 +34,8 @@ func (j *ElasticSearchDestinationFinder) fetchDestinationDetails(service k8s.Ser
 		Type:      common.ElasticsearchDestinationType,
 		UrlString: urlString,
 	}
+}
+
+func (j *ElasticSearchDestinationFinder) getServiceURL() string {
+	return config.ElasticsearchUrlKey
 }
