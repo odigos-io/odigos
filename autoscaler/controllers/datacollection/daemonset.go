@@ -93,6 +93,11 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 	}
 
 	otelcolConfigContent := configMap.Data[consts.OdigosNodeCollectorConfigMapKey]
+	signals, err := getSignalsFromOtelcolConfig(otelcolConfigContent)
+	if err != nil {
+		logger.Error(err, "Failed to get signals from otelcol config")
+		return nil, err
+	}
 	desiredDs, err := getDesiredDaemonSet(datacollection, otelcolConfigContent, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
@@ -122,6 +127,12 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 	updated, err := patchDaemonSet(existing, desiredDs, ctx, c)
 	if err != nil {
 		logger.Error(err, "Failed to patch DaemonSet")
+		return nil, err
+	}
+
+	err = common.UpdateCollectorGroupReceiverSignals(ctx, c, datacollection, signals)
+	if err != nil {
+		logger.Error(err, "Failed to update node collectors group received signals")
 		return nil, err
 	}
 

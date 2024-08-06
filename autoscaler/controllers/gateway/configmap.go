@@ -6,6 +6,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
+	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
@@ -22,7 +23,7 @@ const (
 	destinationConfiguredType = "DestinationConfigured"
 )
 
-func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) (string, error) {
+func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) (string, []odigoscommon.ObservabilitySignal, error) {
 	logger := log.FromContext(ctx)
 
 	memoryLimiterConfiguration := config.GenericMap{
@@ -33,14 +34,14 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
-	desiredData, err, status := config.Calculate(
+	desiredData, err, status, signals := config.Calculate(
 		common.ToExporterConfigurerArray(dests),
 		common.ToProcessorConfigurerArray(processors),
 		memoryLimiterConfiguration,
 	)
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
-		return "", err
+		return "", nil, err
 	}
 
 	for destName, destErr := range status.Destination {
@@ -83,7 +84,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 
 	if err := ctrl.SetControllerReference(gateway, desiredCM, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference")
-		return "", err
+		return "", nil, err
 	}
 
 	existing := &v1.ConfigMap{}
@@ -93,12 +94,12 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 			_, err := createConfigMap(desiredCM, ctx, c)
 			if err != nil {
 				logger.Error(err, "Failed to create gateway config map")
-				return "", err
+				return "", nil, err
 			}
-			return desiredData, nil
+			return desiredData, signals, nil
 		} else {
 			logger.Error(err, "Failed to get gateway config map")
-			return "", err
+			return "", nil, err
 		}
 	}
 
@@ -106,10 +107,10 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	_, err = patchConfigMap(existing, desiredCM, ctx, c)
 	if err != nil {
 		logger.Error(err, "Failed to patch gateway config map")
-		return "", err
+		return "", nil, err
 	}
 
-	return desiredData, nil
+	return desiredData, signals, nil
 }
 
 func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {
