@@ -1,8 +1,5 @@
 #!/bin/bash
 
-echo "Running Cypress tests"
-cd ../../../frontend/webapp || exit
-
 run_cypress_test() {
   local spec=$1
   npx cypress run --spec "$spec"
@@ -17,6 +14,9 @@ run_cypress_test() {
     exit $status
   fi
 }
+
+echo "Running Cypress tests"
+cd ../../../frontend/webapp || exit
 
 if [ "$1" = "include-onboarding-flow" ]; then
   run_cypress_test "cypress/e2e/onboarding-flow.cy.ts"

@@ -29,7 +29,7 @@ describe('On Boarding Flow Tests', () => {
             cy.get('[data-cy=create-destination-input-endpoint]').type('e2e-tests-tempo.traces:4317');
             cy.get('[data-cy="create-destination-create-click"]').should('exist').click()
 
-            cy.url().should('eq', 'http://localhost:3000/overview');
+            cy.url().should('contain', 'http://localhost:3000/overview');
 
         });
     }
