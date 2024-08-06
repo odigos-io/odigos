@@ -23,15 +23,15 @@ spec:
         - name: init
           {{- if .Values.imagePrefix }}
           {{- if .Values.onPremToken }}
-          image: "{{ .Values.imagePrefix }}/{{ .Values.odiglet.image.enterpriseRepository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.imagePrefix }}/{{ .Values.odiglet.image.enterpriseRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           {{- else }}
-          image: "{{ .Values.imagePrefix }}/{{ .Values.odiglet.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.imagePrefix }}/{{ .Values.odiglet.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           {{- end }}
           {{- else }}
           {{- if .Values.onPremToken }}
-          image: "{{ .Values.odiglet.image.enterpriseRepository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.odiglet.image.enterpriseRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           {{- else }}
-          image: "{{ .Values.odiglet.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.odiglet.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           {{- end }}
           {{- end }}
           imagePullPolicy: IfNotPresent
@@ -46,15 +46,15 @@ spec:
         - name: odiglet
           {{- if .Values.imagePrefix }}
           {{- if .Values.onPremToken }}
-          image: "{{ .Values.imagePrefix }}/{{ .Values.odiglet.image.enterpriseRepository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.imagePrefix }}/{{ .Values.odiglet.image.enterpriseRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           {{- else }}
-          image: "{{ .Values.imagePrefix }}/{{ .Values.odiglet.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.imagePrefix }}/{{ .Values.odiglet.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           {{- end }}
           {{- else }}
           {{- if .Values.onPremToken }}
-          image: "{{ .Values.odiglet.image.enterpriseRepository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.odiglet.image.enterpriseRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           {{- else }}
-          image: "{{ .Values.odiglet.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.odiglet.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           {{- end }}
           {{- end }}
           env:

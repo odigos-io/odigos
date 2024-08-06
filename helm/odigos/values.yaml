@@ -1,5 +1,5 @@
 image:
-  tag: "v1.0.89"
+  tag: ""
 imagePullSecrets: []
 
 # namespaces not to show in odigos ui
@@ -16,12 +16,12 @@ ignoredContainers:
 
 collectorGateway:
   # the memory request for the cluster gateway collector deployment.
-  # it will be embedded in the deployment as a resource request 
+  # it will be embedded in the deployment as a resource request
   # of the form "memory: <value>Mi".
   # default value is 500Mi
   requestMemoryMiB: 500
   # sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
-  # it is the hard limit after which a force garbage collection will be performed. 
+  # it is the hard limit after which a force garbage collection will be performed.
   # if not set, it will be 50Mi below the memory request.
   memoryLimiterLimitMiB: 450
   # sets the "spike_limit_mib" parameter in the memory limiter configuration for the collector gateway.

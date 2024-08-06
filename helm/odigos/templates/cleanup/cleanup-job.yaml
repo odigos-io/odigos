@@ -7,7 +7,7 @@ metadata:
     "helm.sh/hook": pre-delete
     "helm.sh/hook-delete-policy": hook-succeeded
 spec:
-  ttlSecondsAfterFinished: 30 
+  ttlSecondsAfterFinished: 30
   activeDeadlineSeconds: 240
   backoffLimit: 0
   template:
@@ -16,9 +16,9 @@ spec:
       containers:
       - name: cleanup
         {{- if .Values.imagePrefix }}
-        image: "{{ .Values.imagePrefix }}/{{ .Values.cli.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.imagePrefix }}/{{ .Values.cli.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         {{- else }}
-        image: "{{ .Values.cli.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.cli.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         {{- end }}
         args: ["uninstall", "--yes"]
       restartPolicy: Never

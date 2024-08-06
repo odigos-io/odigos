@@ -25,9 +25,9 @@ spec:
     {{- with .Values.collectorGateway.goMemLimitMiB }}
     goMemLimitMiB: {{ . }}
     {{- end }}
-  {{- end }}  
+  {{- end }}
   instrumentorImage: {{ .Values.instrumentor.image.repository }}
-  odigosVersion: {{ .Values.image.tag }}
+  odigosVersion: {{ .Values.image.tag | default .Chart.AppVersion }}
   telemetryEnabled: {{ .Values.telemetry.enabled }}
   openshiftEnabled: {{ .Values.openshift.enabled }}
   psp: {{ .Values.psp.enabled }}
@@ -68,7 +68,7 @@ spec:
       - sdkTier: enterprise
         sdkType: ebpf
       - sdkTier: enterprise
-        sdkType: native  
+        sdkType: native
     javascript:
       - sdkTier: community
         sdkType: native
