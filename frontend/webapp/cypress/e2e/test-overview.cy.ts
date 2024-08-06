@@ -5,7 +5,7 @@ describe('Overview Page Tests', () => {
     });
 
     it('should overview page redirect correctly', () => {
-        cy.url().should('contain', '/overview');
+        cy.url().should('contain', `${Cypress.config('baseUrl')}/overview`);
     })
 
     it('should Sources exists', () => {

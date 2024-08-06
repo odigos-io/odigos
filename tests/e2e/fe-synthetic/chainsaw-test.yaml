@@ -67,3 +67,13 @@ spec:
             timeout: 60s
             content: |
               ../../common/ui-tests/stop_ui_and_clean.sh
+    - name: Yaml Files assertion
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              ../../common/assert-multiple-yaml-files.sh
+          catch:
+            - podLogs:
+                name: odiglet
+                namespace: odigos-system

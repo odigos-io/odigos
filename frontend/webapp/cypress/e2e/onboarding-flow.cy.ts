@@ -5,7 +5,7 @@ describe('On Boarding Flow Tests', () => {
         });
 
         it('Source page redirects correctly', () => {
-            cy.url().should('eq', '/choose-sources');
+            cy.url().should('eq', `${Cypress.config('baseUrl')}/choose-sources`);
         })
 
         it('Run on the onboarding flow', () => {
@@ -20,16 +20,16 @@ describe('On Boarding Flow Tests', () => {
             cy.get('[data-cy="choose-source-next-click"]').should('exist').click()
 
             // Select Tempo
-            cy.url().should('eq', '/choose-destination');
+            cy.url().should('eq', `${Cypress.config('baseUrl')}/choose-destination`);
             cy.get('[data-cy="choose-destination-Tempo"]').should('exist').click()
 
             // Fill Destination Form
-            cy.url().should('eq', '/connect-destination?type=tempo');
+            cy.url().should('eq', `${Cypress.config('baseUrl')}/connect-destination?type=tempo`);
             cy.get('[data-cy=create-destination-input-name]').type('e2e-tests');
             cy.get('[data-cy=create-destination-input-TEMPO_URL]').type('e2e-tests-tempo.traces:4317');
             cy.get('[data-cy="create-destination-create-click"]').should('exist').click()
 
-            cy.url().should('contain', '/overview');
+            cy.url().should('contain', `${Cypress.config('baseUrl')}/overview`);
 
         });
     }
