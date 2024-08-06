@@ -42,6 +42,7 @@ type CollectorsGroupStatus struct {
 	// Receiver Signals are the signals (trace, metrics, logs) that the collector has setup
 	// an otlp receiver for, thus it can accept data from an upstream component.
 	// this is used to determine if a workload should export each signal or not.
+	// this list is calculated based on the odigos destinations that were configured
 	ReceiverSignals []common.ObservabilitySignal `json:"receiverSignals,omitempty"`
 }
 

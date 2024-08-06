@@ -95,7 +95,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 
 	err = common.UpdateCollectorGroupReceiverSignals(ctx, c, gateway, signals)
 	if err != nil {
-		logger.Error(err, "Failed to update collector group received signals")
+		logger.Error(err, "Failed to update cluster collectors group received signals")
 		return err
 	}
 
