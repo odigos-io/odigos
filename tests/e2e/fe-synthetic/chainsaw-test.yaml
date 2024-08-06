@@ -1,7 +1,7 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: multi-apps
+  name: fe-synthetic
 spec:
   description: This e2e test runs a multi-apps scenario
   skipDelete: true
