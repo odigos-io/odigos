@@ -35,15 +35,15 @@ type ResourceStatuses struct {
 	Processor   map[string]error
 }
 
-func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, *ResourceStatuses) {
+func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig, prefixProcessors, suffixProcessors := getBasicConfig(memoryLimiterConfig)
 	return CalculateWithBase(currentConfig, prefixProcessors, suffixProcessors, dests, processors)
 }
 
-func CalculateWithBase(currentConfig *Config, prefixProcessors []string, suffixProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer) (string, error, *ResourceStatuses) {
+func CalculateWithBase(currentConfig *Config, prefixProcessors []string, suffixProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := LoadConfigers()
 	if err != nil {
-		return "", err, nil
+		return "", err, nil, nil
 	}
 
 	status := &ResourceStatuses{
@@ -54,19 +54,19 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, suffixP
 	for _, p := range prefixProcessors {
 		_, exists := currentConfig.Processors[p]
 		if !exists {
-			return "", fmt.Errorf("missing prefix processor '%s' on config", p), status
+			return "", fmt.Errorf("missing prefix processor '%s' on config", p), status, nil
 		}
 	}
 
 	for _, s := range suffixProcessors {
 		_, exists := currentConfig.Processors[s]
 		if !exists {
-			return "", fmt.Errorf("missing suffix processor '%s' on config", s), status
+			return "", fmt.Errorf("missing suffix processor '%s' on config", s), status, nil
 		}
 	}
 
 	if _, exists := currentConfig.Receivers["otlp"]; !exists {
-		return "", fmt.Errorf("missing required receiver 'otlp' on config"), status
+		return "", fmt.Errorf("missing required receiver 'otlp' on config"), status, nil
 	}
 
 	for _, dest := range dests {
@@ -93,16 +93,23 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, suffixP
 		currentConfig.Processors[processorKey] = processorCfg
 	}
 
+	tracesEnabled := false
+	metricsEnabled := false
+	logsEnabled := false
+
 	for pipelineName, pipeline := range currentConfig.Service.Pipelines {
 		if strings.Contains(pipelineName, "otelcol") {
 			continue
 		}
 		if strings.HasPrefix(pipelineName, "traces/") {
 			pipeline.Processors = append(tracesProcessors, pipeline.Processors...)
+			tracesEnabled = true
 		} else if strings.HasPrefix(pipelineName, "metrics/") {
 			pipeline.Processors = append(metricsProcessors, pipeline.Processors...)
+			metricsEnabled = true
 		} else if strings.HasPrefix(pipelineName, "logs/") {
 			pipeline.Processors = append(logsProcessors, pipeline.Processors...)
+			logsEnabled = true
 		}
 
 		// basic config common to all pipelines
@@ -115,10 +122,21 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, suffixP
 
 	data, err := yaml.Marshal(currentConfig)
 	if err != nil {
-		return "", err, status
+		return "", err, status, nil
 	}
 
-	return string(data), nil, status
+	signals := []common.ObservabilitySignal{}
+	if tracesEnabled {
+		signals = append(signals, common.TracesObservabilitySignal)
+	}
+	if metricsEnabled {
+		signals = append(signals, common.MetricsObservabilitySignal)
+	}
+	if logsEnabled {
+		signals = append(signals, common.LogsObservabilitySignal)
+	}
+
+	return string(data), nil, status, signals
 }
 
 // getBasicConfig returns a basic configuration for the cluster collector.

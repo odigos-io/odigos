@@ -11,3 +11,6 @@ connectors: {}
 service:
   extensions: []
   pipelines: {}
+  telemetry:
+    metrics: {}
+    resource: {}

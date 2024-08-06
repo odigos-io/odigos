@@ -40,7 +40,7 @@ func openTestData(t *testing.T, path string) string {
 func TestCalculateMinimal(t *testing.T) {
 	want := openTestData(t, "testdata/minimal.yaml")
 
-	config, err, statuses := config.Calculate(
+	config, err, statuses, signals := config.Calculate(
 		make([]config.ExporterConfigurer, 0),
 		make([]config.ProcessorConfigurer, 0),
 		make(config.GenericMap),
@@ -49,12 +49,13 @@ func TestCalculateMinimal(t *testing.T) {
 	assert.Equal(t, config, want)
 	assert.Equal(t, len(statuses.Destination), 0)
 	assert.Equal(t, len(statuses.Processor), 0)
+	assert.Equal(t, len(signals), 0)
 }
 
 func TestCalculate(t *testing.T) {
 	want := openTestData(t, "testdata/debugexporter.yaml")
 
-	config, err, statuses := config.Calculate(
+	config, err, statuses, signals := config.Calculate(
 		[]config.ExporterConfigurer{
 			DummyDestination{
 				ID: "d1",
@@ -67,12 +68,14 @@ func TestCalculate(t *testing.T) {
 	assert.Equal(t, config, want)
 	assert.Equal(t, len(statuses.Destination), 1)
 	assert.Equal(t, len(statuses.Processor), 0)
+	assert.Equal(t, len(signals), 1)
+	assert.Equal(t, signals[0], common.LogsObservabilitySignal)
 }
 
 func TestCalculateWithBaseMinimal(t *testing.T) {
 	want := openTestData(t, "testdata/withbaseminimal.yaml")
 
-	config, err, statuses := config.CalculateWithBase(
+	config, err, statuses, signals := config.CalculateWithBase(
 		&config.Config{
 			Receivers: config.GenericMap{
 				"otlp": config.GenericMap{
@@ -93,6 +96,7 @@ func TestCalculateWithBaseMinimal(t *testing.T) {
 			},
 		},
 		[]string{"batch"},
+		[]string{},
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
 	)
@@ -100,10 +104,11 @@ func TestCalculateWithBaseMinimal(t *testing.T) {
 	assert.Equal(t, config, want)
 	assert.Equal(t, len(statuses.Destination), 0)
 	assert.Equal(t, len(statuses.Processor), 0)
+	assert.Equal(t, len(signals), 0)
 }
 
 func TestCalculateWithBaseMissingProcessor(t *testing.T) {
-	_, err, statuses := config.CalculateWithBase(
+	_, err, statuses, signals := config.CalculateWithBase(
 		&config.Config{
 			Receivers: config.GenericMap{
 				"otlp": config.GenericMap{
@@ -124,16 +129,18 @@ func TestCalculateWithBaseMissingProcessor(t *testing.T) {
 			},
 		},
 		[]string{"missing"},
+		[]string{"missing"},
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
 	)
 	assert.Contains(t, err.Error(), "'missing'")
 	assert.Equal(t, len(statuses.Destination), 0)
 	assert.Equal(t, len(statuses.Processor), 0)
+	assert.Equal(t, len(signals), 0)
 }
 
 func TestCalculateWithBaseNoOTLP(t *testing.T) {
-	_, err, statuses := config.CalculateWithBase(
+	_, err, statuses, signals := config.CalculateWithBase(
 		&config.Config{
 			Receivers:  config.GenericMap{},
 			Processors: config.GenericMap{},
@@ -145,10 +152,12 @@ func TestCalculateWithBaseNoOTLP(t *testing.T) {
 			},
 		},
 		[]string{},
+		[]string{},
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
 	)
 	assert.Contains(t, err.Error(), "required receiver")
 	assert.Equal(t, len(statuses.Destination), 0)
 	assert.Equal(t, len(statuses.Processor), 0)
+	assert.Equal(t, len(signals), 0)
 }
