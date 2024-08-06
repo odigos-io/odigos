@@ -8,6 +8,7 @@ run_cypress_test() {
   if [ $status -ne 0 ]; then
     echo "Cypress tests failed"
     # Stop the background process
+    cd ../../tests/e2e/fe-synthetic || exit
     kill "$(cat odigos-ui.pid)"
     rm odigos-ui.pid
     rm ../../odigos-ui.log
