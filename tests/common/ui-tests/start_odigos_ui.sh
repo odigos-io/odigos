@@ -4,8 +4,7 @@
 set -e
 
 echo "Running odigos UI setup"
-cd ../../../frontend/webapp
-yarn dev > ../../odigos-ui.log 2>&1 &
+../../../cli/odigos ui > ../../odigos-ui.log 2>&1 &
 
 # Capture the process ID
 echo $! > odigos-ui.pid
