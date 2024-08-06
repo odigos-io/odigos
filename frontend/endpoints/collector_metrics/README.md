@@ -31,6 +31,6 @@ These metrics record the number of spans/metric/logs sent to each exporter (dest
 
 ## UI server collector metrics package
 This package has 2 main jobs:
-- An OTLP receiver which receives the metrics from the different collectors. Once a batch of metrics is received, we first need to identify the sending collector, this is done using a gRPC header which we inject in each collector, which identifies the sender pod.
+- An OTLP receiver which receives the metrics from the different collectors.
 - Saving an in-memory snapshot of the sources and destinations metrics which the frontend can query. The snapshot is saved as a mapping between a source/destination id to an internal map. The internal mapping is between node-collector/cluster-collector to the last snapshot. Maintaining this mapping requires a notification system to delete collector, source and destination entries once they are removed. For that we set k8s watchers for deletion of these components.
 

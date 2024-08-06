@@ -10,7 +10,6 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	"github.com/ghodss/yaml"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -157,6 +156,13 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			string(semconv.K8SDaemonSetNameKey),
 		},
 	}
+	processorsCfg["resource/pod-name"] = config.GenericMap{
+		"attributes": []config.GenericMap{{
+			"key":    "k8s.pod.name",
+			"value":  "${POD_NAME}",
+			"action": "upsert",
+		}},
+	}
 
 	exporters := config.GenericMap{
 		"otlp/gateway": config.GenericMap{
@@ -170,9 +176,9 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			"tls": config.GenericMap{
 				"insecure": true,
 			},
-			"headers": config.GenericMap{
-				k8sconsts.OdigosPodNameHeaderKey: "${POD_NAME}",
-			},
+		},
+		"debug": config.GenericMap{
+			"verbosity": "detailed",
 		},
 	}
 	tracesPipelineExporter := []string{"otlp/gateway"}
@@ -227,7 +233,8 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			Pipelines:  map[string]config.Pipeline{
 				"metrics/otelcol": {
 					Receivers: []string{"prometheus"},
-					Exporters: []string{"otlp/ui"},
+					Processors: []string{"resource/pod-name"},
+					Exporters: []string{"debug", "otlp/ui"},
 				},
 			},
 			Extensions: []string{"health_check", "zpages"},

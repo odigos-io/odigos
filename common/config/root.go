@@ -7,9 +7,6 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 )
 
 const (
@@ -35,12 +32,12 @@ type ResourceStatuses struct {
 	Processor   map[string]error
 }
 
-func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
-	currentConfig, prefixProcessors, suffixProcessors := getBasicConfig(memoryLimiterConfig)
-	return CalculateWithBase(currentConfig, prefixProcessors, suffixProcessors, dests, processors)
+func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap, applySelfTelemetry func(c *Config) error) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
+	currentConfig, prefixProcessors := getBasicConfig(memoryLimiterConfig)
+	return CalculateWithBase(currentConfig, prefixProcessors, dests, processors, applySelfTelemetry)
 }
 
-func CalculateWithBase(currentConfig *Config, prefixProcessors []string, suffixProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
+func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer, applySelfTelemetry func(c *Config) error) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := LoadConfigers()
 	if err != nil {
 		return "", err, nil, nil
@@ -55,13 +52,6 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, suffixP
 		_, exists := currentConfig.Processors[p]
 		if !exists {
 			return "", fmt.Errorf("missing prefix processor '%s' on config", p), status, nil
-		}
-	}
-
-	for _, s := range suffixProcessors {
-		_, exists := currentConfig.Processors[s]
-		if !exists {
-			return "", fmt.Errorf("missing suffix processor '%s' on config", s), status, nil
 		}
 	}
 
@@ -116,8 +106,18 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, suffixP
 		pipeline.Receivers = append([]string{"otlp"}, pipeline.Receivers...)
 		// memory limiter processor should be the first processor in the pipeline
 		// odigostrafficmetrics processor should be the last processor in the pipeline
-		pipeline.Processors = slices.Concat(prefixProcessors, pipeline.Processors, suffixProcessors)
+		pipeline.Processors = slices.Concat(prefixProcessors, pipeline.Processors)
 		currentConfig.Service.Pipelines[pipelineName] = pipeline
+	}
+
+	// Apply self telemetry to the configuration
+	// It is important to apply this after the main pipelines are created, since this operation will add a metrics pipeline
+	// which is responsible for collecting metrics about the collector itself.
+	if applySelfTelemetry != nil {
+		err := applySelfTelemetry(currentConfig)
+		if err != nil {
+			return "", err, status, nil
+		}
 	}
 
 	data, err := yaml.Marshal(currentConfig)
@@ -141,8 +141,8 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, suffixP
 
 // getBasicConfig returns a basic configuration for the cluster collector.
 // It includes the basic receivers, processors, exporters, extensions, and service configuration.
-// In addition it returns prefix and suffix processors that should be added to beginning and end of each pipeline.
-func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string, []string) {
+// In addition it returns prefix processors that should be added to beginning of each pipeline.
+func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 	empty := struct{}{}
 	return &Config{
 		Receivers: GenericMap{
@@ -153,28 +153,6 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string, []string
 						"max_recv_msg_size_mib": 128 * 1024 * 1024,
 					},
 					"http": empty,
-				},
-			},
-			"prometheus": GenericMap{
-				"config": GenericMap{
-					"scrape_configs": []GenericMap{
-						{
-							"job_name": "otelcol",
-							"scrape_interval": "10s",
-							"static_configs": []GenericMap{
-								{
-									"targets": []string{"127.0.0.1:8888"},
-								},
-							},
-							"metric_relabel_configs": []GenericMap{
-								{
-									"source_labels": []string{"__name__"},
-									"regex": "(.*odigos.*|^otelcol_processor_accepted.*|^otelcol_exporter_sent.*)",
-									"action": "keep",
-								},
-							},
-						},
-					},
 				},
 			},
 		},
@@ -189,43 +167,19 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string, []string
 					},
 				},
 			},
-			// odigostrafficmetrics processor should be the last processor in the pipeline
-			// as it helps to calculate the size of the data being exported.
-			// In case of performance impact caused by this processor, we should modify this config to reduce the sampling ratio.
-			"odigostrafficmetrics": empty,
 		},
 		Extensions: GenericMap{
 			"health_check": empty,
 			"zpages":       empty,
 		},
-		Exporters:  map[string]interface{}{
-			"otlp/ui": GenericMap{
-				"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), consts.OTLPPort),
-				"tls": GenericMap{
-					"insecure": true,
-				},
-				"headers": GenericMap{
-					k8sconsts.OdigosPodNameHeaderKey: "${POD_NAME}",
-				},
-			},
-		},
+		Exporters:  map[string]interface{}{},
 		Connectors: map[string]interface{}{},
 		Service: Service{
-			Pipelines:  map[string]Pipeline{
-				"metrics/otelcol": {
-					Receivers: []string{"prometheus"},
-					Exporters: []string{"otlp/ui"},
-				},
-			},
+			Pipelines:  map[string]Pipeline{},
 			Extensions: []string{"health_check", "zpages"},
-			Telemetry: Telemetry{
-				Metrics: GenericMap{
-					"address": "0.0.0.0:8888",
-				},
-			},
 		},
 	},
-	[]string{memoryLimiterProcessorName, "resource/odigos-version"}, []string{"odigostrafficmetrics"}
+	[]string{memoryLimiterProcessorName, "resource/odigos-version"}
 }
 
 func LoadConfigers() (map[common.DestinationType]Configer, error) {

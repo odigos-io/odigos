@@ -4,29 +4,9 @@ receivers:
       grpc:
         max_recv_msg_size_mib: 134217728
       http: {}
-  prometheus:
-    config:
-      scrape_configs:
-      - job_name: otelcol
-        metric_relabel_configs:
-        - action: keep
-          regex: (.*odigos.*|^otelcol_processor_accepted.*|^otelcol_exporter_sent.*)
-          source_labels:
-          - __name__
-        scrape_interval: 10s
-        static_configs:
-        - targets:
-          - 127.0.0.1:8888
-exporters:
-  otlp/ui:
-    endpoint: ui.odigos-system:4317
-    headers:
-      odigos-pod-name: ${POD_NAME}
-    tls:
-      insecure: true
+exporters: {}
 processors:
   memory_limiter: {}
-  odigostrafficmetrics: {}
   resource/odigos-version:
     attributes:
     - action: upsert
@@ -40,14 +20,4 @@ service:
   extensions:
   - health_check
   - zpages
-  pipelines:
-    metrics/otelcol:
-      receivers:
-      - prometheus
-      processors: []
-      exporters:
-      - otlp/ui
-  telemetry:
-    metrics:
-      address: 0.0.0.0:8888
-    resource: {}
+  pipelines: {}

@@ -18,8 +18,6 @@ import (
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 	"go.opentelemetry.io/collector/receiver/receivertest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-
-	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -29,7 +27,7 @@ const (
 )
 
 var (
-	errNoMetadata    = errors.New("no metadata found in context")
+	errNoSenderPod    = errors.New("no sender pod found in the resource attributes")
 	errUnKnownSender = errors.New("unknown OTLP sender")
 )
 
@@ -118,23 +116,21 @@ func (c *OdigosMetricsConsumer) runNotificationsLoop(ctx context.Context) {
 	}
 }
 
+func senderPodFromResource(md pmetric.Metrics) (string, error) {
+	v, ok := md.ResourceMetrics().At(0).Resource().Attributes().Get(string(semconv.K8SPodNameKey))
+	if !ok {
+		return "", errNoSenderPod
+	}
+
+	return v.Str(), nil
+}
+
 func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.Metrics) error {
-	grpcMD, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return errNoMetadata
+	senderPod, err := senderPodFromResource(md)
+	if err != nil {
+		return err
 	}
-
-	// extract the sender pod name from the metadata
-	senderPods, ok := grpcMD[k8sconsts.OdigosPodNameHeaderKey]
-	if !ok {
-		return errUnKnownSender
-	}
-
-	if len(senderPods) != 1 {
-		return errUnKnownSender
-	}
-
-	senderPod := senderPods[0]
+	
 	if strings.HasPrefix(senderPod, k8sconsts.OdigosNodeCollectorDaemonSetName) {
 		c.sources.handleNodeCollectorMetrics(senderPod, md)
 		return nil
@@ -145,7 +141,7 @@ func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 		return nil
 	}
 
-	return nil
+	return errUnKnownSender
 }
 
 func NewOdigosMetrics() *OdigosMetricsConsumer {

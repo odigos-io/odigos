@@ -44,6 +44,7 @@ func TestCalculateMinimal(t *testing.T) {
 		make([]config.ExporterConfigurer, 0),
 		make([]config.ProcessorConfigurer, 0),
 		make(config.GenericMap),
+		nil,
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, config, want)
@@ -63,6 +64,7 @@ func TestCalculate(t *testing.T) {
 		},
 		make([]config.ProcessorConfigurer, 0),
 		make(config.GenericMap),
+		nil,
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, config, want)
@@ -96,9 +98,9 @@ func TestCalculateWithBaseMinimal(t *testing.T) {
 			},
 		},
 		[]string{"batch"},
-		[]string{},
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
+		nil,
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, config, want)
@@ -129,9 +131,9 @@ func TestCalculateWithBaseMissingProcessor(t *testing.T) {
 			},
 		},
 		[]string{"missing"},
-		[]string{"missing"},
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
+		nil,
 	)
 	assert.Contains(t, err.Error(), "'missing'")
 	assert.Equal(t, len(statuses.Destination), 0)
@@ -152,9 +154,9 @@ func TestCalculateWithBaseNoOTLP(t *testing.T) {
 			},
 		},
 		[]string{},
-		[]string{},
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
+		nil,
 	)
 	assert.Contains(t, err.Error(), "required receiver")
 	assert.Equal(t, len(statuses.Destination), 0)

@@ -43,7 +43,7 @@ type Telemetry struct {
 type Service struct {
 	Extensions []string            `json:"extensions"`
 	Pipelines  map[string]Pipeline `json:"pipelines"`
-	Telemetry Telemetry            `json:"telemetry"`
+	Telemetry Telemetry            `json:"telemetry,omitempty"`
 }
 
 type Pipeline struct {
