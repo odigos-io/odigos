@@ -8,6 +8,7 @@ import (
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
+	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
@@ -75,7 +76,8 @@ func main() {
 		os.Exit(-1)
 	}
 
-	err = server.StartOpAmpServer(ctx, log.Logger, mgr, clientset, env.Current.NodeName)
+	odigosNs := k8senv.GetCurrentNamespace()
+	err = server.StartOpAmpServer(ctx, log.Logger, mgr, clientset, env.Current.NodeName, odigosNs)
 	if err != nil {
 		log.Logger.Error(err, "Failed to start opamp server")
 	}
