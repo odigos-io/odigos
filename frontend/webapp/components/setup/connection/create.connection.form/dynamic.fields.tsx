@@ -26,7 +26,7 @@ export function renderFields(
         return (
           <FieldWrapper key={name}>
             <KeyvalInput
-                data-cy={'create-destination-input-endpoint'}
+                data-cy={'create-destination-input-'+ name}
               label={display_name}
               value={dynamicFields[name]}
               onChange={(value) => onChange(name, value)}

@@ -1,11 +1,11 @@
 describe('On Boarding Flow Tests', () => {
 
         beforeEach(() => {
-            cy.visit('localhost:3000')
+            cy.visit('/')
         });
 
         it('Source page redirects correctly', () => {
-            cy.url().should('eq', 'http://localhost:3000/choose-sources');
+            cy.url().should('eq', '/choose-sources');
         })
 
         it('Run on the onboarding flow', () => {
@@ -20,16 +20,16 @@ describe('On Boarding Flow Tests', () => {
             cy.get('[data-cy="choose-source-next-click"]').should('exist').click()
 
             // Select Tempo
-            cy.url().should('eq', 'http://localhost:3000/choose-destination');
+            cy.url().should('eq', '/choose-destination');
             cy.get('[data-cy="choose-destination-Tempo"]').should('exist').click()
 
             // Fill Destination Form
-            cy.url().should('eq', 'http://localhost:3000/connect-destination?type=tempo');
+            cy.url().should('eq', '/connect-destination?type=tempo');
             cy.get('[data-cy=create-destination-input-name]').type('e2e-tests');
-            cy.get('[data-cy=create-destination-input-endpoint]').type('e2e-tests-tempo.traces:4317');
+            cy.get('[data-cy=create-destination-input-TEMPO_URL]').type('e2e-tests-tempo.traces:4317');
             cy.get('[data-cy="create-destination-create-click"]').should('exist').click()
 
-            cy.url().should('contain', 'http://localhost:3000/overview');
+            cy.url().should('contain', '/overview');
 
         });
     }

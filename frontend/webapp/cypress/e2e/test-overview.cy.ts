@@ -5,7 +5,7 @@ describe('Overview Page Tests', () => {
     });
 
     it('should overview page redirect correctly', () => {
-        cy.url().should('contain', 'http://localhost:3000/overview');
+        cy.url().should('contain', '/overview');
     })
 
     it('should Sources exists', () => {
