@@ -3,7 +3,7 @@ kind: Test
 metadata:
   name: fe-synthetic
 spec:
-  description: This e2e test runs a multi-apps scenario
+  description: This e2e test runs a fe-synthetic scenario
   skipDelete: true
   steps:
     - name: Prepare destination
@@ -16,11 +16,13 @@ spec:
               helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 --version 1.10.1
         - assert:
             file: assert-tempo-running.yaml
+
     - name: Wait for destination to be ready
       try:
         - script:
             timeout: 60s
             content: ../../common/wait_for_dest.sh
+
     - name: Install Odigos
       try:
         - script:
@@ -28,6 +30,7 @@ spec:
             timeout: 60s
         - assert:
             file: assert-odigos-installed.yaml
+
     - name: Install Demo App
       try:
         - script:
@@ -47,6 +50,7 @@ spec:
             file: 02-install-simple-demo.yaml
         - assert:
             file: assert-apps-installed.yaml
+
     - name: Start Odigos UI in background
       try:
         - script:
@@ -54,7 +58,7 @@ spec:
             content: |
               ../../common/ui-tests/start_odigos_ui.sh
 
-    - name: Run Cypress tests should pass
+    - name: Run Cypress tests
       try:
         - script:
             timeout: 60s
@@ -67,13 +71,13 @@ spec:
             timeout: 60s
             content: |
               ../../common/ui-tests/stop_ui_and_clean.sh
-    - name: Yaml Files assertion
+
+    - name: Assert Instrumented Apps
       try:
-        - script:
-            timeout: 60s
-            content: |
-              ../../common/assert-multiple-yaml-files.sh
-          catch:
-            - podLogs:
-                name: odiglet
-                namespace: odigos-system
+        - assert:
+            file: assert-runtime-detected.yaml
+
+    - name: Assert Destination
+      try:
+        - assert:
+            file: assert-instrumented-and-pipeline.yaml
