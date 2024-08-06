@@ -29,6 +29,15 @@ const Description = styled(Text)``;
 
 const ActionButton = styled(Button)``;
 
+const ActionButtonText = styled(Text)`
+  font-family: ${({ theme }) => theme.font_family.secondary};
+  font-weight: 500;
+  text-decoration: underline;
+  text-transform: uppercase;
+  font-size: 14px;
+  line-height: 157.143%;
+`;
+
 const SectionTitle: React.FC<SectionTitleProps> = ({
   title,
   description,
@@ -47,7 +56,7 @@ const SectionTitle: React.FC<SectionTitleProps> = ({
       </TitleContainer>
       {buttonText && onButtonClick && (
         <ActionButton variant={'secondary'} onClick={onButtonClick}>
-          <Text size={14}>{buttonText}</Text>
+          <ActionButtonText size={14}>{buttonText}</ActionButtonText>
         </ActionButton>
       )}
     </Container>

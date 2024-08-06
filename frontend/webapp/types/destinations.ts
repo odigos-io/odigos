@@ -24,6 +24,23 @@ export interface DestinationTypeItem {
   };
 }
 
+export interface DestinationDetailsField {
+  name: string;
+  displayName: string;
+  componentType: string;
+  componentProperties: string;
+  videoUrl: string | null;
+  thumbnailURL: string | null;
+  initialValue: string;
+  __typename: string;
+}
+
+export interface DestinationDetailsResponse {
+  destinationTypeDetails: {
+    fields: DestinationDetailsField[];
+  };
+}
+
 export interface DestinationType {
   fields: any;
   display_name: string;

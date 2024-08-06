@@ -24,18 +24,16 @@ const CheckboxWrapper = styled.div<{ isChecked: boolean; disabled?: boolean }>`
   width: 18px;
   height: 18px;
   border-radius: 6px;
-  border: 1px dashed rgba(249, 249, 249, 0.4);
+  border: ${({ isChecked }) =>
+    isChecked
+      ? '1px dashed transparent'
+      : '1px dashed rgba(249, 249, 249, 0.4)'};
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: ${({ isChecked, theme }) =>
-    isChecked ? theme.colors.primary : 'transparent'};
+    isChecked ? theme.colors.majestic_blue : 'transparent'};
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
-`;
-
-const Title = styled.span`
-  font-size: 16px;
-  color: #fff;
 `;
 
 const Checkbox: React.FC<CheckboxProps> = ({

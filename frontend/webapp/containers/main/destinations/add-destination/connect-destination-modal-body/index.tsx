@@ -1,10 +1,20 @@
-import React, { useEffect } from 'react';
-import { DestinationTypeItem, StepProps } from '@/types';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  DestinationDetailsResponse,
+  DestinationTypeItem,
+  StepProps,
+} from '@/types';
 import { SideMenu } from '@/components';
-import { Divider, SectionTitle } from '@/reuseable-components';
+import {
+  CheckboxList,
+  Divider,
+  Input,
+  SectionTitle,
+} from '@/reuseable-components';
 import { Body, Container, SideMenuWrapper } from '../styled';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { useQuery } from '@apollo/client';
+import styled from 'styled-components';
 const SIDE_MENU_DATA: StepProps[] = [
   {
     title: 'DESTINATIONS',
@@ -18,6 +28,12 @@ const SIDE_MENU_DATA: StepProps[] = [
   },
 ];
 
+const FormContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+`;
+
 interface ConnectDestinationModalBodyProps {
   destination: DestinationTypeItem | undefined;
 }
@@ -25,14 +41,39 @@ interface ConnectDestinationModalBodyProps {
 export function ConnectDestinationModalBody({
   destination,
 }: ConnectDestinationModalBodyProps) {
-  const { data } = useQuery(GET_DESTINATION_TYPE_DETAILS, {
-    variables: { type: destination?.type },
-    skip: !destination,
-  });
+  const { data } = useQuery<DestinationDetailsResponse>(
+    GET_DESTINATION_TYPE_DETAILS,
+    {
+      variables: { type: destination?.type },
+      skip: !destination,
+    }
+  );
+
+  const monitors = useMemo(() => {
+    if (!destination) return [];
+
+    const { logs, metrics, traces } = destination.supportedSignals;
+    return [
+      logs.supported && {
+        id: 'logs',
+        title: 'Logs',
+      },
+      metrics.supported && {
+        id: 'metrics',
+        title: 'Metrics',
+      },
+      traces.supported && {
+        id: 'traces',
+        title: 'Traces',
+      },
+    ].filter(Boolean);
+  }, [destination]);
 
   useEffect(() => {
-    data && console.log({ data });
+    data && console.log({ destination, data });
   }, [data]);
+
+  if (!destination) return null;
 
   return (
     <Container>
@@ -48,6 +89,16 @@ export function ConnectDestinationModalBody({
           onButtonClick={() => {}}
         />
         <Divider margin="0 0 24px 0" />
+        <FormContainer>
+          <CheckboxList
+            monitors={monitors as []}
+            title="This connection will monitor:"
+          />
+          <Input
+            title="Destination name"
+            placeholder="Enter destination name"
+          />
+        </FormContainer>
       </Body>
     </Container>
   );
