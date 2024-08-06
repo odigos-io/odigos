@@ -25,14 +25,12 @@ spec:
     try:
     - script:
         content: |
-          git clone https://github.com/odigos-io/odigos-charts.git /tmp/odigos-charts
           # Retry to avoid flakiness (due to CRD race conditions in helm). Timeout after 60s.
-          while ! helm upgrade --install odigos /tmp/odigos-charts/charts/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test; do
+          while ! helm upgrade --install odigos helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test; do
             echo "Failed to install Odigos, retrying..."
             sleep 1
           done
           kubectl label namespace odigos-test-ns odigos.io/system-object="true"
-          rm -rf /tmp/odigos-charts
         timeout: 60s
   - name: Verify Odigos Installation
     try:
