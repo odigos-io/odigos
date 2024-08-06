@@ -167,10 +167,6 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 				"insecure": true,
 			},
 		},
-		// TODO: remove debug exporter
-		"debug": config.GenericMap{
-			"verbosity": "detailed",
-		},
 		"otlp/ui": config.GenericMap{
 			"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), consts.OTLPPort),
 			"tls": config.GenericMap{
@@ -233,7 +229,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			Pipelines:  map[string]config.Pipeline{
 				"metrics/otelcol": {
 					Receivers: []string{"prometheus"},
-					Exporters: []string{"debug", "otlp/ui"},
+					Exporters: []string{"otlp/ui"},
 				},
 			},
 			Extensions: []string{"health_check", "zpages"},

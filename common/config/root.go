@@ -181,9 +181,6 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string, []string
 			"zpages":       empty,
 		},
 		Exporters:  map[string]interface{}{
-			"debug": GenericMap{
-				"verbosity": "detailed",
-			},
 			"otlp/ui": GenericMap{
 				"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), consts.OTLPPort),
 				"tls": GenericMap{
@@ -199,7 +196,7 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string, []string
 			Pipelines:  map[string]Pipeline{
 				"metrics/otelcol": {
 					Receivers: []string{"prometheus"},
-					Exporters: []string{"debug", "otlp/ui"},
+					Exporters: []string{"otlp/ui"},
 				},
 			},
 			Extensions: []string{"health_check", "zpages"},
