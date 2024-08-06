@@ -1,8 +1,7 @@
 apiVersion: v2
 name: odigos
-description: Odigos distribution for Kubernetes
+description: Odigos Helm Chart for Kubernetes
 type: application
-# 0.0.0 will be replaced by the git tag version on release
-version: "0.0.0"
-appVersion: "0.0.0"
+version: 0.3.41
+appVersion: "v1.0.89"
 icon: https://d2q89wckrml3k4.cloudfront.net/logo.png

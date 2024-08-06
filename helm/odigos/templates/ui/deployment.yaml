@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-ui
+  name: odigos-ui
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: odigos-ui
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: ui
+      labels:
+        app: odigos-ui
+    spec:
+      containers:
+      - name: ui
+        {{- if .Values.imagePrefix }}
+        image: "{{ .Values.imagePrefix }}/{{ .Values.ui.image.repository }}:{{ .Values.image.tag }}"
+        {{- else }}
+        image: "{{ .Values.ui.image.repository }}:{{ .Values.image.tag }}"
+        {{- end }}
+        args:
+          - --namespace=$(CURRENT_NS)
+        env:
+          - name: CURRENT_NS
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        ports:
+          - containerPort: 3000
+            name: ui
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: odigos-ui
+      terminationGracePeriodSeconds: 10
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 6 }}
+{{- end }}
+{{- with .Values.ui }}
+  {{- if .nodeSelector }}
+      nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}
+  {{- end }}
+  {{- if .tolerations }}
+      tolerations: {{ toYaml .tolerations | nindent 8 }}
+  {{- end }}
+  {{- if .affinity }}
+      affinity: {{ toYaml .affinity | nindent 8 }}
+  {{- end }}
+{{- end }}

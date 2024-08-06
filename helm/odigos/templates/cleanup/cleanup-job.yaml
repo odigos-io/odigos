@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cleanup-job
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  ttlSecondsAfterFinished: 30 
+  activeDeadlineSeconds: 240
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: cleanup-sa
+      containers:
+      - name: cleanup
+        {{- if .Values.imagePrefix }}
+        image: "{{ .Values.imagePrefix }}/{{ .Values.cli.image.repository }}:{{ .Values.image.tag }}"
+        {{- else }}
+        image: "{{ .Values.cli.image.repository }}:{{ .Values.image.tag }}"
+        {{- end }}
+        args: ["uninstall", "--yes"]
+      restartPolicy: Never

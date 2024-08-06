@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-autoscaler
+  name: odigos-autoscaler
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-autoscaler
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        app.kubernetes.io/name: odigos-autoscaler
+    spec:
+      containers:
+      - args:
+          - --health-probe-bind-address=:8081
+          - --metrics-bind-address=127.0.0.1:8080
+          - --leader-elect
+          {{ if .Values.imagePrefix }}
+          - --image-prefix={{ .Values.imagePrefix }}
+          {{ end }}
+        command:
+          - /app
+        {{- if .Values.imagePrefix }}
+        image: "{{ .Values.imagePrefix }}/{{ .Values.autoscaler.image.repository }}:{{ .Values.image.tag }}"
+        {{- else }}
+        image: "{{ .Values.autoscaler.image.repository }}:{{ .Values.image.tag }}"
+        {{- end }}
+        env:
+          - name: OTEL_SERVICE_NAME
+            value: auto-scaler
+          - name: CURRENT_NS
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        envFrom:
+          - configMapRef:
+              name: odigos-own-telemetry-otel-config
+              optional: true
+          - configMapRef:
+              name: odigos-deployment
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: odigos-autoscaler
+      terminationGracePeriodSeconds: 10
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 6 }}
+{{- end }}
+{{- with .Values.autoscaler }}
+  {{- if .nodeSelector }}
+      nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}
+  {{- end }}
+  {{- if .tolerations }}
+      tolerations: {{ toYaml .tolerations | nindent 8 }}
+  {{- end }}
+  {{- if .affinity }}
+      affinity: {{ toYaml .affinity | nindent 8 }}
+  {{- end }}
+{{- end }}

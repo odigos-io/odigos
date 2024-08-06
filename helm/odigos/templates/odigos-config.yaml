@@ -1,5 +1,3 @@
-# THIS RESOURCE STILL LIVES IN odigos-io/odigos-charts repo
-# ADDED HERE FOR TESTING WORKFLOWS
 apiVersion: odigos.io/v1alpha1
 kind: OdigosConfiguration
 metadata:
@@ -29,7 +27,7 @@ spec:
     {{- end }}
   {{- end }}  
   instrumentorImage: {{ .Values.instrumentor.image.repository }}
-  odigosVersion: {{ .Values.image.tag | default .Chart.AppVersion }}
+  odigosVersion: {{ .Values.image.tag }}
   telemetryEnabled: {{ .Values.telemetry.enabled }}
   openshiftEnabled: {{ .Values.openshift.enabled }}
   psp: {{ .Values.psp.enabled }}
