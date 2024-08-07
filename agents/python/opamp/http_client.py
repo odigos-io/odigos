@@ -223,7 +223,7 @@ class OpAMPHTTPClient:
     def shutdown(self):
         self.running = False
         opamp_logger.info("Sending agent disconnect message to OpAMP server...")
-        agent_health = self.get_agent_health(component_health=False, last_error="Component shutting down", status=AgentHealthStatus.TERMINATED.value)
+        agent_health = self.get_agent_health(component_health=False, last_error="Python runtime is exiting", status=AgentHealthStatus.TERMINATED.value)
         disconnect_message = opamp_pb2.AgentToServer(agent_disconnect=opamp_pb2.AgentDisconnect(), health=agent_health)
         
         with self.condition:
