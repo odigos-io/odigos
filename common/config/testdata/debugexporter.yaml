@@ -2,6 +2,7 @@ receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: 0.0.0.0:4317
         max_recv_msg_size_mib: 134217728
       http: {}
 exporters:
@@ -15,7 +16,8 @@ processors:
       key: odigos.version
       value: ${ODIGOS_VERSION}
 extensions:
-  health_check: {}
+  health_check:
+    endpoint: 0.0.0.0:13133
   zpages: {}
 connectors: {}
 service:
