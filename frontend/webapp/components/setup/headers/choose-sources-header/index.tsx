@@ -34,7 +34,7 @@ export function ChooseSourcesHeader({
           </TotalSelectedWrapper>
         )}
 
-        <KeyvalButton onClick={onNextClick} style={{ gap: 10, width: 120 }}>
+        <KeyvalButton data-cy={'choose-source-next-click'} onClick={onNextClick} style={{ gap: 10, width: 120 }}>
           <KeyvalText size={20} weight={600} color={theme.text.dark_button}>
             {SETUP.NEXT}
           </KeyvalText>

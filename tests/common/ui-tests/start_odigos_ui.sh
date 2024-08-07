@@ -4,8 +4,7 @@
 set -e
 
 echo "Running odigos UI setup"
-cd ../../../frontend/webapp
-yarn dev > ../../odigos-ui.log 2>&1 &
+../../../cli/odigos ui > ../../odigos-ui.log 2>&1 &
 
 # Capture the process ID
 echo $! > odigos-ui.pid
@@ -17,7 +16,6 @@ then
   echo "Odigos UI started successfully"
 else
   echo "Failed to start Odigos UI"
-  # I want to print the log file to the console
   cat ../../odigos-ui.log
   exit 1
 fi

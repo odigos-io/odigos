@@ -32,15 +32,15 @@ type ResourceStatuses struct {
 	Processor   map[string]error
 }
 
-func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, *ResourceStatuses) {
+func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig, globalProcessors := getBasicConfig(memoryLimiterConfig)
 	return CalculateWithBase(currentConfig, globalProcessors, dests, processors)
 }
 
-func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer) (string, error, *ResourceStatuses) {
+func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := LoadConfigers()
 	if err != nil {
-		return "", err, nil
+		return "", err, nil, nil
 	}
 
 	status := &ResourceStatuses{
@@ -51,12 +51,12 @@ func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests [
 	for _, p := range globalProcessors {
 		_, exists := currentConfig.Processors[p]
 		if !exists {
-			return "", fmt.Errorf("missing global processor '%s' on config", p), status
+			return "", fmt.Errorf("missing global processor '%s' on config", p), status, nil
 		}
 	}
 
 	if _, exists := currentConfig.Receivers["otlp"]; !exists {
-		return "", fmt.Errorf("missing required receiver 'otlp' on config"), status
+		return "", fmt.Errorf("missing required receiver 'otlp' on config"), status, nil
 	}
 
 	for _, dest := range dests {
@@ -83,13 +83,20 @@ func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests [
 		currentConfig.Processors[processorKey] = processorCfg
 	}
 
+	tracesEnabled := false
+	metricsEnabled := false
+	logsEnabled := false
+
 	for pipelineName, pipeline := range currentConfig.Service.Pipelines {
 		if strings.HasPrefix(pipelineName, "traces/") {
 			pipeline.Processors = append(tracesProcessors, pipeline.Processors...)
+			tracesEnabled = true
 		} else if strings.HasPrefix(pipelineName, "metrics/") {
 			pipeline.Processors = append(metricsProcessors, pipeline.Processors...)
+			metricsEnabled = true
 		} else if strings.HasPrefix(pipelineName, "logs/") {
 			pipeline.Processors = append(logsProcessors, pipeline.Processors...)
+			logsEnabled = true
 		}
 
 		// basic config common to all pipelines
@@ -101,10 +108,21 @@ func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests [
 
 	data, err := yaml.Marshal(currentConfig)
 	if err != nil {
-		return "", err, status
+		return "", err, status, nil
 	}
 
-	return string(data), nil, status
+	signals := []common.ObservabilitySignal{}
+	if tracesEnabled {
+		signals = append(signals, common.TracesObservabilitySignal)
+	}
+	if metricsEnabled {
+		signals = append(signals, common.MetricsObservabilitySignal)
+	}
+	if logsEnabled {
+		signals = append(signals, common.LogsObservabilitySignal)
+	}
+
+	return string(data), nil, status, signals
 }
 
 func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
+	"strings"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/common"
@@ -12,6 +14,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	constsK8s "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "k8s.io/api/core/v1"
@@ -21,10 +24,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-)
-
-const (
-	configKey = "conf"
 )
 
 func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
@@ -43,7 +42,7 @@ func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 		logger.Error(err, "failed to get desired config map")
 		return "", err
 	}
-	desiredData := desired.Data[configKey]
+	desiredData := desired.Data[consts.OdigosNodeCollectorConfigMapKey]
 
 	existing := &v1.ConfigMap{}
 	if err := c.Get(ctx, client.ObjectKey{Namespace: datacollection.Namespace, Name: datacollection.Name}, existing); err != nil {
@@ -109,7 +108,7 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 			Namespace: datacollection.Namespace,
 		},
 		Data: map[string]string{
-			configKey: cmData,
+			consts.OdigosNodeCollectorConfigMapKey: cmData,
 		},
 	}
 
@@ -285,4 +284,43 @@ func getConfigMap(ctx context.Context, c client.Client, namespace string) (*v1.C
 	}
 
 	return configMap, nil
+}
+
+func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]common.ObservabilitySignal, error) {
+	config := config.Config{}
+	err := yaml.Unmarshal([]byte(otelcolConfigContent), &config)
+	if err != nil {
+		return nil, err
+	}
+
+	tracesEnabled := false
+	metricsEnabled := false
+	logsEnabled := false
+	for pipelineName, pipeline := range config.Service.Pipelines {
+		// only consider pipelines with `otlp` receiver
+		// which are the ones that can actually receive data
+		if !slices.Contains(pipeline.Receivers, "otlp") {
+			continue
+		}
+		if strings.HasPrefix(pipelineName, "traces") {
+			tracesEnabled = true
+		} else if strings.HasPrefix(pipelineName, "metrics") {
+			metricsEnabled = true
+		} else if strings.HasPrefix(pipelineName, "logs") {
+			logsEnabled = true
+		}
+	}
+
+	signals := []common.ObservabilitySignal{}
+	if tracesEnabled {
+		signals = append(signals, common.TracesObservabilitySignal)
+	}
+	if metricsEnabled {
+		signals = append(signals, common.MetricsObservabilitySignal)
+	}
+	if logsEnabled {
+		signals = append(signals, common.LogsObservabilitySignal)
+	}
+
+	return signals, nil
 }
