@@ -85,4 +85,5 @@ spec:
     - name: Assert Action CRD
       try:
         - assert:
+            timeout: 60s
             file: assert-action-added.yaml
