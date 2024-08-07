@@ -25,6 +25,19 @@ type Condition struct {
 	Message            *string         `json:"message,omitempty"`
 }
 
+type DestinationInput struct {
+	Name            string                `json:"name"`
+	Type            string                `json:"type"`
+	ExportedSignals *ExportedSignalsInput `json:"exportedSignals"`
+	Fields          []*FieldInput         `json:"fields"`
+}
+
+type ExportedSignalsInput struct {
+	Traces  bool `json:"traces"`
+	Metrics bool `json:"metrics"`
+	Logs    bool `json:"logs"`
+}
+
 type Field struct {
 	Name                string  `json:"name"`
 	DisplayName         string  `json:"displayName"`
@@ -33,6 +46,11 @@ type Field struct {
 	VideoURL            *string `json:"videoUrl,omitempty"`
 	ThumbnailURL        *string `json:"thumbnailURL,omitempty"`
 	InitialValue        *string `json:"initialValue,omitempty"`
+}
+
+type FieldInput struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type GetConfigResponse struct {

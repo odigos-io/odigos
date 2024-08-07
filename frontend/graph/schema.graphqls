@@ -172,6 +172,24 @@ type GetDestinationDetailsResponse {
   fields: [Field!]!
 }
 
+input DestinationInput {
+  name: String!
+  type: String!
+  exportedSignals: ExportedSignalsInput!
+  fields: [FieldInput!]!
+}
+
+input FieldInput {
+  key: String!
+  value: String!
+}
+
+input ExportedSignalsInput {
+  traces: Boolean!
+  metrics: Boolean!
+  logs: Boolean!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -180,8 +198,5 @@ type Query {
 }
 
 type Mutation {
-  createK8sDesiredNamespace(
-    cpId: ID!
-    namespace: K8sDesiredNamespaceInput!
-  ): K8sActualNamespace
+  createNewDestination(destination: DestinationInput!): Destination!
 }
