@@ -10,11 +10,11 @@ type GetDestinationTypesResponse struct {
 }
 
 type DestinationTypesCategoryItem struct {
-	Type                    common.DestinationType `json:"type"`
-	DisplayName             string                 `json:"display_name"`
-	ImageUrl                string                 `json:"image_url"`
-	SupportedSignals        SupportedSignals       `json:"supported_signals"`
-	TestConnectionSupported bool                   `json:"test_connection_supported"`
+	Type                    string           `json:"type"`
+	DisplayName             string           `json:"display_name"`
+	ImageUrl                string           `json:"image_url"`
+	SupportedSignals        SupportedSignals `json:"supported_signals"`
+	TestConnectionSupported bool             `json:"test_connection_supported"`
 }
 
 type SupportedSignals struct {

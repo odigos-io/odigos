@@ -11,3 +11,4 @@ export * from './checkbox';
 export * from './modal';
 export * from './navigation-buttons';
 export * from './tag';
+export * from './checkbox-list';

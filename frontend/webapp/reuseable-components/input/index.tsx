@@ -62,14 +62,16 @@ const InputWrapper = styled.div<{
   }
 `;
 
-const StyledInput = styled.input`
+const StyledInput = styled.input<{ hasIcon?: string }>`
   flex: 1;
   border: none;
   outline: none;
   background: none;
   color: ${({ theme }) => theme.colors.text};
   font-size: 14px;
-
+  padding-left: ${({ hasIcon }) => (hasIcon ? '0' : '16px')};
+  font-family: ${({ theme }) => theme.font_family.primary};
+  font-weight: 300;
   &::placeholder {
     color: ${({ theme }) => theme.colors.text};
     font-family: ${({ theme }) => theme.font_family.primary};
@@ -124,8 +126,9 @@ const ErrorMessage = styled(Text)`
 `;
 
 const Title = styled(Text)`
-  font-size: 16px;
-  font-weight: bold;
+  font-size: 14px;
+  opacity: 0.8;
+  line-height: 22px;
   margin-bottom: 4px;
 `;
 
@@ -173,7 +176,7 @@ const Input: React.FC<InputProps> = ({
             <Image src={icon} alt="" width={14} height={14} />
           </IconWrapper>
         )}
-        <StyledInput {...props} />
+        <StyledInput hasIcon={icon} {...props} />
         {buttonLabel && onButtonClick && (
           <Button onClick={onButtonClick} disabled={props.disabled}>
             {buttonLabel}

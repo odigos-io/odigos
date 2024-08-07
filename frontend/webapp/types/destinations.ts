@@ -9,6 +9,8 @@ export interface DestinationTypeItem {
   displayName: string;
   imageUrl: string;
   category: 'managed' | 'self-hosted';
+  type: string;
+  testConnectionSupported: boolean;
   supportedSignals: {
     logs: {
       supported: boolean;
@@ -19,6 +21,30 @@ export interface DestinationTypeItem {
     traces: {
       supported: boolean;
     };
+  };
+}
+
+export interface DestinationDetailsField {
+  name: string;
+  displayName: string;
+  componentType: string;
+  componentProperties: string;
+  videoUrl: string | null;
+  thumbnailURL: string | null;
+  initialValue: string;
+  __typename: string;
+}
+
+export type DynamicField = {
+  name: string;
+  componentType: 'input' | 'dropdown' | 'multi_input' | 'textarea';
+  title: string;
+  [key: string]: any;
+};
+
+export interface DestinationDetailsResponse {
+  destinationTypeDetails: {
+    fields: DestinationDetailsField[];
   };
 }
 
