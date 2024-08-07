@@ -26,7 +26,9 @@ const ButtonsContainer = styled.div`
 const StyledButton = styled(Button)`
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  min-width: 91.6px;
 `;
 
 const ButtonText = styled(Text)`
@@ -43,7 +45,7 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
     button: NavigationButtonProps;
     index: number;
   }) {
-    return buttons.length > 0 && button.iconSrc && index === 0;
+    return buttons.length > 1 && button.iconSrc && index === 0;
   }
   return (
     <ButtonsContainer>
@@ -52,7 +54,7 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
           key={index}
           variant={button.variant || 'secondary'}
           onClick={button.onClick}
-          disabled={button.disabled}
+          isDisabled={button.disabled}
         >
           {renderBackButton({ button, index }) && (
             <Image

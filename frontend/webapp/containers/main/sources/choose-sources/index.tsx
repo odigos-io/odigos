@@ -10,7 +10,18 @@ import {
   SearchDropdownHandlers,
   ToggleCheckboxHandlers,
 } from './choose-sources-menu/type';
+import { SetupHeader } from '@/components';
+import styled from 'styled-components';
+import { useRouter } from 'next/navigation';
 
+const ContentWrapper = styled.div`
+  width: 640px;
+  padding-top: 64px;
+`;
+
+const HeaderWrapper = styled.div`
+  width: 100vw;
+`;
 export function ChooseSourcesContainer() {
   const [searchFilter, setSearchFilter] = useState('');
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
@@ -19,9 +30,9 @@ export function ChooseSourcesContainer() {
   const [selectedOption, setSelectedOption] = useState<DropdownOption>();
   const [selectedItems, setSelectedItems] = useState<K8sActualSource[]>([]);
   const [namespacesList, setNamespacesList] = useState<DropdownOption[]>([]);
-
   const [sourcesList, setSourcesList] = useState<K8sActualSource[]>([]);
 
+  const router = useRouter();
   const { error, data } = useComputePlatform();
   const { data: namespacesData } = useNamespace(selectedOption?.value);
 
@@ -118,26 +129,41 @@ export function ChooseSourcesContainer() {
 
   return (
     <>
-      <SectionTitle
-        title="Choose sources"
-        description="Apps will be automatically instrumented, and data will be sent to the relevant APM's destinations."
-      />
-      <SearchAndDropdown
-        state={searchDropdownState}
-        handlers={searchDropdownHandlers}
-        dropdownOptions={namespacesList}
-      />
-      <Divider thickness={1} margin="16px 0" />
-      <TogglesAndCheckboxes
-        state={toggleCheckboxState}
-        handlers={toggleCheckboxHandlers}
-      />
-      <Divider thickness={1} margin="16px 0 24px" />
-      <SourcesList
-        selectedItems={selectedItems}
-        setSelectedItems={handleSelectItem}
-        items={getVisibleSources()}
-      />
+      <HeaderWrapper>
+        <SetupHeader
+          navigationButtons={[
+            {
+              label: 'NEXT',
+              iconSrc: '/icons/common/arrow-black.svg',
+              onClick: () => router.push('/setup/choose-destination'),
+              variant: 'primary',
+              disabled: selectedItems.length === 0,
+            },
+          ]}
+        />
+      </HeaderWrapper>
+      <ContentWrapper>
+        <SectionTitle
+          title="Choose sources"
+          description="Apps will be automatically instrumented, and data will be sent to the relevant APM's destinations."
+        />
+        <SearchAndDropdown
+          state={searchDropdownState}
+          handlers={searchDropdownHandlers}
+          dropdownOptions={namespacesList}
+        />
+        <Divider thickness={1} margin="16px 0" />
+        <TogglesAndCheckboxes
+          state={toggleCheckboxState}
+          handlers={toggleCheckboxHandlers}
+        />
+        <Divider thickness={1} margin="16px 0 24px" />
+        <SourcesList
+          selectedItems={selectedItems}
+          setSelectedItems={handleSelectItem}
+          items={getVisibleSources()}
+        />
+      </ContentWrapper>
     </>
   );
 }

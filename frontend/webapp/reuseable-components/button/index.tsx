@@ -57,8 +57,7 @@ const StyledButton = styled.button<ButtonProps>`
   ${({ isDisabled }) =>
     isDisabled &&
     css`
-      background-color: #eaeaea;
-      color: #888;
+      opacity: 0.5;
       cursor: not-allowed;
       &:hover,
       &:active {
@@ -74,7 +73,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   return (
-    <StyledButton variant={variant} disabled={isDisabled} {...props}>
+    <StyledButton variant={variant} isDisabled={isDisabled} {...props}>
       {children}
     </StyledButton>
   );
