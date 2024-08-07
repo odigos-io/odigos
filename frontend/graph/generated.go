@@ -141,7 +141,9 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateK8sDesiredNamespace func(childComplexity int, cpID string, namespace model.K8sDesiredNamespaceInput) int
+		CreateNewDestination func(childComplexity int, destination model.DestinationInput) int
+		PersistK8sNamespace  func(childComplexity int, namespace model.PersistNamespaceItemInput) int
+		PersistK8sSources    func(childComplexity int, namespace string, sources []*model.PersistNamespaceSourceInput) int
 	}
 
 	ObservabilitySignalSupport struct {
@@ -183,7 +185,9 @@ type K8sActualNamespaceResolver interface {
 	K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace, instrumentationLabeled *bool) ([]*model.K8sActualSource, error)
 }
 type MutationResolver interface {
-	CreateK8sDesiredNamespace(ctx context.Context, cpID string, namespace model.K8sDesiredNamespaceInput) (*model.K8sActualNamespace, error)
+	CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error)
+	PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error)
+	PersistK8sSources(ctx context.Context, namespace string, sources []*model.PersistNamespaceSourceInput) (bool, error)
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
@@ -583,17 +587,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sActualSource.ServiceName(childComplexity), true
 
-	case "Mutation.createK8sDesiredNamespace":
-		if e.complexity.Mutation.CreateK8sDesiredNamespace == nil {
+	case "Mutation.createNewDestination":
+		if e.complexity.Mutation.CreateNewDestination == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_createK8sDesiredNamespace_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_createNewDestination_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateK8sDesiredNamespace(childComplexity, args["cpId"].(string), args["namespace"].(model.K8sDesiredNamespaceInput)), true
+		return e.complexity.Mutation.CreateNewDestination(childComplexity, args["destination"].(model.DestinationInput)), true
+
+	case "Mutation.persistK8sNamespace":
+		if e.complexity.Mutation.PersistK8sNamespace == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_persistK8sNamespace_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PersistK8sNamespace(childComplexity, args["namespace"].(model.PersistNamespaceItemInput)), true
+
+	case "Mutation.persistK8sSources":
+		if e.complexity.Mutation.PersistK8sSources == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_persistK8sSources_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PersistK8sSources(childComplexity, args["namespace"].(string), args["sources"].([]*model.PersistNamespaceSourceInput)), true
 
 	case "ObservabilitySignalSupport.supported":
 		if e.complexity.ObservabilitySignalSupport.Supported == nil {
@@ -678,10 +706,15 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputDestinationInput,
+		ec.unmarshalInputExportedSignalsInput,
+		ec.unmarshalInputFieldInput,
 		ec.unmarshalInputK8sDesiredNamespaceInput,
 		ec.unmarshalInputK8sDesiredSourceInput,
 		ec.unmarshalInputK8sNamespaceId,
 		ec.unmarshalInputK8sSourceId,
+		ec.unmarshalInputPersistNamespaceItemInput,
+		ec.unmarshalInputPersistNamespaceSourceInput,
 	)
 	first := true
 
@@ -861,27 +894,57 @@ func (ec *executionContext) field_K8sActualNamespace_k8sActualSources_args(ctx c
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createK8sDesiredNamespace_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_createNewDestination_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.DestinationInput
+	if tmp, ok := rawArgs["destination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("destination"))
+		arg0, err = ec.unmarshalNDestinationInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDestinationInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["destination"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_persistK8sNamespace_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.PersistNamespaceItemInput
+	if tmp, ok := rawArgs["namespace"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+		arg0, err = ec.unmarshalNPersistNamespaceItemInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPersistNamespaceItemInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["namespace"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_persistK8sSources_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["cpId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cpId"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["cpId"] = arg0
-	var arg1 model.K8sDesiredNamespaceInput
 	if tmp, ok := rawArgs["namespace"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
-		arg1, err = ec.unmarshalNK8sDesiredNamespaceInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sDesiredNamespaceInput(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["namespace"] = arg1
+	args["namespace"] = arg0
+	var arg1 []*model.PersistNamespaceSourceInput
+	if tmp, ok := rawArgs["sources"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sources"))
+		arg1, err = ec.unmarshalNPersistNamespaceSourceInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPersistNamespaceSourceInputᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sources"] = arg1
 	return args, nil
 }
 
@@ -3350,8 +3413,8 @@ func (ec *executionContext) fieldContext_K8sActualSource_instrumentedApplication
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_createK8sDesiredNamespace(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_createK8sDesiredNamespace(ctx, field)
+func (ec *executionContext) _Mutation_createNewDestination(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createNewDestination(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3364,21 +3427,24 @@ func (ec *executionContext) _Mutation_createK8sDesiredNamespace(ctx context.Cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateK8sDesiredNamespace(rctx, fc.Args["cpId"].(string), fc.Args["namespace"].(model.K8sDesiredNamespaceInput))
+		return ec.resolvers.Mutation().CreateNewDestination(rctx, fc.Args["destination"].(model.DestinationInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.K8sActualNamespace)
+	res := resTmp.(*model.Destination)
 	fc.Result = res
-	return ec.marshalOK8sActualNamespace2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sActualNamespace(ctx, field.Selections, res)
+	return ec.marshalNDestination2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDestination(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_createK8sDesiredNamespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_createNewDestination(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -3386,14 +3452,22 @@ func (ec *executionContext) fieldContext_Mutation_createK8sDesiredNamespace(ctx 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Destination_id(ctx, field)
 			case "name":
-				return ec.fieldContext_K8sActualNamespace_name(ctx, field)
-			case "instrumentationLabelEnabled":
-				return ec.fieldContext_K8sActualNamespace_instrumentationLabelEnabled(ctx, field)
-			case "k8sActualSources":
-				return ec.fieldContext_K8sActualNamespace_k8sActualSources(ctx, field)
+				return ec.fieldContext_Destination_name(ctx, field)
+			case "type":
+				return ec.fieldContext_Destination_type(ctx, field)
+			case "exportedSignals":
+				return ec.fieldContext_Destination_exportedSignals(ctx, field)
+			case "fields":
+				return ec.fieldContext_Destination_fields(ctx, field)
+			case "destinationType":
+				return ec.fieldContext_Destination_destinationType(ctx, field)
+			case "conditions":
+				return ec.fieldContext_Destination_conditions(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type K8sActualNamespace", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Destination", field.Name)
 		},
 	}
 	defer func() {
@@ -3403,7 +3477,117 @@ func (ec *executionContext) fieldContext_Mutation_createK8sDesiredNamespace(ctx 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_createK8sDesiredNamespace_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_createNewDestination_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_persistK8sNamespace(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_persistK8sNamespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PersistK8sNamespace(rctx, fc.Args["namespace"].(model.PersistNamespaceItemInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_persistK8sNamespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_persistK8sNamespace_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_persistK8sSources(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_persistK8sSources(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PersistK8sSources(rctx, fc.Args["namespace"].(string), fc.Args["sources"].([]*model.PersistNamespaceSourceInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_persistK8sSources(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_persistK8sSources_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5789,6 +5973,129 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(_ context.Context
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputDestinationInput(ctx context.Context, obj interface{}) (model.DestinationInput, error) {
+	var it model.DestinationInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "type", "exportedSignals", "fields"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		case "exportedSignals":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("exportedSignals"))
+			data, err := ec.unmarshalNExportedSignalsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExportedSignalsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExportedSignals = data
+		case "fields":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fields"))
+			data, err := ec.unmarshalNFieldInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐFieldInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Fields = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputExportedSignalsInput(ctx context.Context, obj interface{}) (model.ExportedSignalsInput, error) {
+	var it model.ExportedSignalsInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"traces", "metrics", "logs"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "traces":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traces"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Traces = data
+		case "metrics":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metrics"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Metrics = data
+		case "logs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("logs"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Logs = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputFieldInput(ctx context.Context, obj interface{}) (model.FieldInput, error) {
+	var it model.FieldInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"key", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "key":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Key = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputK8sDesiredNamespaceInput(ctx context.Context, obj interface{}) (model.K8sDesiredNamespaceInput, error) {
 	var it model.K8sDesiredNamespaceInput
 	asMap := map[string]interface{}{}
@@ -5912,6 +6219,81 @@ func (ec *executionContext) unmarshalInputK8sSourceId(ctx context.Context, obj i
 				return it, err
 			}
 			it.Name = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPersistNamespaceItemInput(ctx context.Context, obj interface{}) (model.PersistNamespaceItemInput, error) {
+	var it model.PersistNamespaceItemInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "futureSelected"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "futureSelected":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("futureSelected"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FutureSelected = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPersistNamespaceSourceInput(ctx context.Context, obj interface{}) (model.PersistNamespaceSourceInput, error) {
+	var it model.PersistNamespaceSourceInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "kind", "selected"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "kind":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+			data, err := ec.unmarshalNK8sResourceKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Kind = data
+		case "selected":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("selected"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Selected = data
 		}
 	}
 
@@ -6780,10 +7162,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "createK8sDesiredNamespace":
+		case "createNewDestination":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_createK8sDesiredNamespace(ctx, field)
+				return ec._Mutation_createNewDestination(ctx, field)
 			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "persistK8sNamespace":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_persistK8sNamespace(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "persistK8sSources":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_persistK8sSources(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7436,6 +7835,25 @@ func (ec *executionContext) marshalNConditionStatus2githubᚗcomᚋodigosᚑio�
 	return v
 }
 
+func (ec *executionContext) marshalNDestination2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDestination(ctx context.Context, sel ast.SelectionSet, v model.Destination) graphql.Marshaler {
+	return ec._Destination(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDestination2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDestination(ctx context.Context, sel ast.SelectionSet, v *model.Destination) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Destination(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNDestinationInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDestinationInput(ctx context.Context, v interface{}) (model.DestinationInput, error) {
+	res, err := ec.unmarshalInputDestinationInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNDestinationTypesCategoryItem2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDestinationTypesCategoryItem(ctx context.Context, sel ast.SelectionSet, v model.DestinationTypesCategoryItem) graphql.Marshaler {
 	return ec._DestinationTypesCategoryItem(ctx, sel, &v)
 }
@@ -7536,6 +7954,11 @@ func (ec *executionContext) marshalNExportedSignals2githubᚗcomᚋodigosᚑio�
 	return ec._ExportedSignals(ctx, sel, &v)
 }
 
+func (ec *executionContext) unmarshalNExportedSignalsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExportedSignalsInput(ctx context.Context, v interface{}) (*model.ExportedSignalsInput, error) {
+	res, err := ec.unmarshalInputExportedSignalsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNField2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐFieldᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Field) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -7588,6 +8011,28 @@ func (ec *executionContext) marshalNField2ᚖgithubᚗcomᚋodigosᚑioᚋodigos
 		return graphql.Null
 	}
 	return ec._Field(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFieldInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐFieldInputᚄ(ctx context.Context, v interface{}) ([]*model.FieldInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.FieldInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNFieldInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐFieldInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNFieldInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐFieldInput(ctx context.Context, v interface{}) (*model.FieldInput, error) {
+	res, err := ec.unmarshalInputFieldInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
@@ -7691,11 +8136,6 @@ func (ec *executionContext) marshalNK8sActualSource2ᚕᚖgithubᚗcomᚋodigos�
 	return ret
 }
 
-func (ec *executionContext) unmarshalNK8sDesiredNamespaceInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sDesiredNamespaceInput(ctx context.Context, v interface{}) (model.K8sDesiredNamespaceInput, error) {
-	res, err := ec.unmarshalInputK8sDesiredNamespaceInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalNK8sResourceKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx context.Context, v interface{}) (model.K8sResourceKind, error) {
 	var res model.K8sResourceKind
 	err := res.UnmarshalGQL(v)
@@ -7708,6 +8148,33 @@ func (ec *executionContext) marshalNK8sResourceKind2githubᚗcomᚋodigosᚑio�
 
 func (ec *executionContext) marshalNObservabilitySignalSupport2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐObservabilitySignalSupport(ctx context.Context, sel ast.SelectionSet, v model.ObservabilitySignalSupport) graphql.Marshaler {
 	return ec._ObservabilitySignalSupport(ctx, sel, &v)
+}
+
+func (ec *executionContext) unmarshalNPersistNamespaceItemInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPersistNamespaceItemInput(ctx context.Context, v interface{}) (model.PersistNamespaceItemInput, error) {
+	res, err := ec.unmarshalInputPersistNamespaceItemInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNPersistNamespaceSourceInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPersistNamespaceSourceInputᚄ(ctx context.Context, v interface{}) ([]*model.PersistNamespaceSourceInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.PersistNamespaceSourceInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNPersistNamespaceSourceInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPersistNamespaceSourceInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNPersistNamespaceSourceInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPersistNamespaceSourceInput(ctx context.Context, v interface{}) (*model.PersistNamespaceSourceInput, error) {
+	res, err := ec.unmarshalInputPersistNamespaceSourceInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNSourceContainerRuntimeDetails2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerRuntimeDetails(ctx context.Context, sel ast.SelectionSet, v *model.SourceContainerRuntimeDetails) graphql.Marshaler {

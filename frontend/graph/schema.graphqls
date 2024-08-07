@@ -172,6 +172,35 @@ type GetDestinationDetailsResponse {
   fields: [Field!]!
 }
 
+input DestinationInput {
+  name: String!
+  type: String!
+  exportedSignals: ExportedSignalsInput!
+  fields: [FieldInput!]!
+}
+
+input FieldInput {
+  key: String!
+  value: String!
+}
+
+input ExportedSignalsInput {
+  traces: Boolean!
+  metrics: Boolean!
+  logs: Boolean!
+}
+
+input PersistNamespaceItemInput {
+  name: String!
+  futureSelected: Boolean
+}
+
+input PersistNamespaceSourceInput {
+  name: String!
+  kind: K8sResourceKind!
+  selected: Boolean
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -180,8 +209,10 @@ type Query {
 }
 
 type Mutation {
-  createK8sDesiredNamespace(
-    cpId: ID!
-    namespace: K8sDesiredNamespaceInput!
-  ): K8sActualNamespace
+  createNewDestination(destination: DestinationInput!): Destination!
+  persistK8sNamespace(namespace: PersistNamespaceItemInput!): Boolean!
+  persistK8sSources(
+    namespace: String!
+    sources: [PersistNamespaceSourceInput!]!
+  ): Boolean!
 }

@@ -9,13 +9,16 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/endpoints"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
@@ -79,9 +82,105 @@ func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *
 	return obj.K8sActualSources, nil
 }
 
-// CreateK8sDesiredNamespace is the resolver for the createK8sDesiredNamespace field.
-func (r *mutationResolver) CreateK8sDesiredNamespace(ctx context.Context, cpID string, namespace model.K8sDesiredNamespaceInput) (*model.K8sActualNamespace, error) {
-	panic(fmt.Errorf("not implemented: CreateK8sDesiredNamespace - createK8sDesiredNamespace"))
+// CreateNewDestination is the resolver for the createNewDestination field.
+func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error) {
+	odigosns := consts.DefaultOdigosNamespace
+
+	destType := common.DestinationType(destination.Type)
+	destName := destination.Name
+
+	destTypeConfig, err := services.GetDestinationTypeConfig(destType)
+	if err != nil {
+		return nil, fmt.Errorf("destination type %s not found", destType)
+	}
+
+	// Convert fields to map[string]string
+	fieldsMap := make(map[string]string)
+	for _, field := range destination.Fields {
+		fieldsMap[field.Key] = field.Value
+	}
+
+	errors := services.VerifyDestinationDataScheme(destType, destTypeConfig, fieldsMap)
+	if len(errors) > 0 {
+		return nil, fmt.Errorf("invalid destination data scheme: %v", errors)
+	}
+
+	dataField, secretFields := services.TransformFieldsToDataAndSecrets(destTypeConfig, fieldsMap)
+	generateNamePrefix := "odigos.io.dest." + string(destType) + "-"
+
+	k8sDestination := v1alpha1.Destination{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: generateNamePrefix,
+		},
+		Spec: v1alpha1.DestinationSpec{
+			Type:            destType,
+			DestinationName: destName,
+			Data:            dataField,
+			Signals:         services.ExportedSignalsObjectToSlice(destination.ExportedSignals),
+		},
+	}
+
+	createSecret := len(secretFields) > 0
+	if createSecret {
+		secretRef, err := services.CreateDestinationSecret(ctx, destType, secretFields, odigosns)
+		if err != nil {
+			return nil, err
+		}
+		k8sDestination.Spec.SecretRef = secretRef
+	}
+
+	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
+	if err != nil {
+		if createSecret {
+			kube.DefaultClient.CoreV1().Secrets(odigosns).Delete(ctx, destName, metav1.DeleteOptions{})
+		}
+		return nil, err
+	}
+
+	if dest.Spec.SecretRef != nil {
+		err = services.AddDestinationOwnerReferenceToSecret(ctx, odigosns, dest)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	secretFieldsMap, err := services.GetDestinationSecretFields(ctx, odigosns, dest)
+	if err != nil {
+		return nil, err
+	}
+
+	endpointDest := services.K8sDestinationToEndpointFormat(*dest, secretFieldsMap)
+	return &endpointDest, nil
+}
+
+// PersistK8sNamespace is the resolver for the persistK8sNamespace field.
+func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error) {
+	jsonMergePayload := services.GetJsonMergePatchForInstrumentationLabel(namespace.FutureSelected)
+	_, err := kube.DefaultClient.CoreV1().Namespaces().Patch(ctx, namespace.Name, types.MergePatchType, jsonMergePayload, metav1.PatchOptions{})
+	if err != nil {
+		return false, fmt.Errorf("failed to patch namespace: %v", err)
+	}
+
+	return true, nil
+}
+
+// PersistK8sSources is the resolver for the persistK8sSources field.
+func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace string, sources []*model.PersistNamespaceSourceInput) (bool, error) {
+	var persistObjects []model.PersistNamespaceSourceInput
+	for _, source := range sources {
+		persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
+			Name:     source.Name,
+			Kind:     source.Kind,
+			Selected: source.Selected,
+		})
+	}
+
+	err := services.SyncWorkloadsInNamespace(ctx, namespace, persistObjects)
+	if err != nil {
+		return false, fmt.Errorf("failed to sync workloads: %v", err)
+	}
+
+	return true, nil
 }
 
 // ComputePlatform is the resolver for the computePlatform field.

@@ -92,10 +92,10 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
     );
 
     return supportedSignalsList.map((signal, index) => (
-      <>
+      <SignalsWrapper key={index}>
         <SignalText>{signal}</SignalText>
         {index < supportedSignalsList.length - 1 && <SignalText>·</SignalText>}
-      </>
+      </SignalsWrapper>
     ));
   }
 

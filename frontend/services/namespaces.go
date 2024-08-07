@@ -14,6 +14,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
 
+	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -148,4 +149,35 @@ func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
 	}
 
 	return namespaceToAppsCount, nil
+}
+
+func GetJsonMergePatchForInstrumentationLabel(enabled *bool) []byte {
+	labelJsonMergePatchValue := "null"
+	if enabled != nil {
+		if *enabled {
+			labelJsonMergePatchValue = fmt.Sprintf("\"%s\"", consts.InstrumentationEnabled)
+		} else {
+			labelJsonMergePatchValue = fmt.Sprintf("\"%s\"", consts.InstrumentationDisabled)
+		}
+	}
+
+	jsonMergePatchContent := fmt.Sprintf(`{"metadata":{"labels":{"%s":%s}}}`, consts.OdigosInstrumentationLabel, labelJsonMergePatchValue)
+	return []byte(jsonMergePatchContent)
+}
+
+func SyncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []model.PersistNamespaceSourceInput) error {
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(kube.K8sClientDefaultBurst)
+
+	for _, workload := range workloads {
+		currWorkload := workload
+		g.Go(func() error {
+			// Only label selected sources, ignore the rest
+			if currWorkload.Selected != nil && *currWorkload.Selected {
+				return setWorkloadInstrumentationLabel(ctx, nsName, currWorkload.Name, WorkloadKind(currWorkload.Kind.String()), currWorkload.Selected)
+			}
+			return nil
+		})
+	}
+	return g.Wait()
 }
