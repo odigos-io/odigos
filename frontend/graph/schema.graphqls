@@ -190,6 +190,17 @@ input ExportedSignalsInput {
   logs: Boolean!
 }
 
+input PersistNamespaceItemInput {
+  name: String!
+  futureSelected: Boolean
+}
+
+input PersistNamespaceSourceInput {
+  name: String!
+  kind: K8sResourceKind!
+  selected: Boolean
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -199,4 +210,9 @@ type Query {
 
 type Mutation {
   createNewDestination(destination: DestinationInput!): Destination!
+  persistK8sNamespace(namespace: PersistNamespaceItemInput!): Boolean!
+  persistK8sSources(
+    namespace: String!
+    sources: [PersistNamespaceSourceInput!]!
+  ): Boolean!
 }

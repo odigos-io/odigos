@@ -18,6 +18,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
@@ -81,6 +82,7 @@ func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *
 	return obj.K8sActualSources, nil
 }
 
+// CreateNewDestination is the resolver for the createNewDestination field.
 func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error) {
 	odigosns := consts.DefaultOdigosNamespace
 
@@ -149,6 +151,36 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 	endpointDest := services.K8sDestinationToEndpointFormat(*dest, secretFieldsMap)
 	return &endpointDest, nil
+}
+
+// PersistK8sNamespace is the resolver for the persistK8sNamespace field.
+func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error) {
+	jsonMergePayload := services.GetJsonMergePatchForInstrumentationLabel(namespace.FutureSelected)
+	_, err := kube.DefaultClient.CoreV1().Namespaces().Patch(ctx, namespace.Name, types.MergePatchType, jsonMergePayload, metav1.PatchOptions{})
+	if err != nil {
+		return false, fmt.Errorf("failed to patch namespace: %v", err)
+	}
+
+	return true, nil
+}
+
+// PersistK8sSources is the resolver for the persistK8sSources field.
+func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace string, sources []*model.PersistNamespaceSourceInput) (bool, error) {
+	var persistObjects []model.PersistNamespaceSourceInput
+	for _, source := range sources {
+		persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
+			Name:     source.Name,
+			Kind:     source.Kind,
+			Selected: source.Selected,
+		})
+	}
+
+	err := services.SyncWorkloadsInNamespace(ctx, namespace, persistObjects)
+	if err != nil {
+		return false, fmt.Errorf("failed to sync workloads: %v", err)
+	}
+
+	return true, nil
 }
 
 // ComputePlatform is the resolver for the computePlatform field.

@@ -105,6 +105,17 @@ type K8sSourceID struct {
 type Mutation struct {
 }
 
+type PersistNamespaceItemInput struct {
+	Name           string `json:"name"`
+	FutureSelected *bool  `json:"futureSelected,omitempty"`
+}
+
+type PersistNamespaceSourceInput struct {
+	Name     string          `json:"name"`
+	Kind     K8sResourceKind `json:"kind"`
+	Selected *bool           `json:"selected,omitempty"`
+}
+
 type Query struct {
 }
 
