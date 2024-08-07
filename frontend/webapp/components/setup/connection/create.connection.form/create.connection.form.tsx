@@ -237,6 +237,7 @@ export function CreateConnectionForm({
       )}
       <FieldWrapper>
         <KeyvalInput
+          data-cy={'create-destination-input-name'}
           label={SETUP.DESTINATION_NAME}
           value={destinationName}
           onChange={setDestinationName}
@@ -269,6 +270,7 @@ export function CreateConnectionForm({
           </KeyvalButton>
         )}
         <KeyvalButton
+            data-cy={'create-destination-create-click'}
           disabled={
             isCreateButtonDisabled || isConnectionTested.enabled === false
           }

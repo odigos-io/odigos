@@ -16,7 +16,6 @@ then
   echo "Odigos UI started successfully"
 else
   echo "Failed to start Odigos UI"
-  # I want to print the log file to the console
   cat ../../odigos-ui.log
   exit 1
 fi
