@@ -1,12 +1,17 @@
 import threading
 import atexit
+import sys
 import os
 import opentelemetry.sdk._configuration as sdk_config
+
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.resources import ProcessResourceDetector, OTELResourceDetector
 from .lib_handling import reorder_python_path, reload_distro_modules
 from .version import VERSION
 from opamp.http_client import OpAMPHTTPClient
+
+
+MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
 
 class OdigosPythonConfigurator(sdk_config._BaseConfigurator):
     
@@ -71,7 +76,10 @@ def initialize_logging_if_enabled(log_exporters, resource):
 def start_opamp_client(event):
     condition = threading.Condition(threading.Lock())
     client = OpAMPHTTPClient(event, condition)
-    client.start()
+    
+    python_version_supported = is_supported_python_version()
+    
+    client.start(python_version_supported)
     
     def shutdown():
         client.shutdown()
@@ -80,3 +88,12 @@ def start_opamp_client(event):
     atexit.register(shutdown)
 
     return client
+
+
+def is_supported_python_version():
+    current_version = sys.version_info
+    min_version = MINIMUM_PYTHON_SUPPORTED_VERSION
+    
+    if current_version >= min_version:
+        return True
+    return False
