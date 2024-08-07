@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
+	"strings"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/common"
@@ -282,4 +284,43 @@ func getConfigMap(ctx context.Context, c client.Client, namespace string) (*v1.C
 	}
 
 	return configMap, nil
+}
+
+func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]common.ObservabilitySignal, error) {
+	config := config.Config{}
+	err := yaml.Unmarshal([]byte(otelcolConfigContent), &config)
+	if err != nil {
+		return nil, err
+	}
+
+	tracesEnabled := false
+	metricsEnabled := false
+	logsEnabled := false
+	for pipelineName, pipeline := range config.Service.Pipelines {
+		// only consider pipelines with `otlp` receiver
+		// which are the ones that can actually receive data
+		if !slices.Contains(pipeline.Receivers, "otlp") {
+			continue
+		}
+		if strings.HasPrefix(pipelineName, "traces") {
+			tracesEnabled = true
+		} else if strings.HasPrefix(pipelineName, "metrics") {
+			metricsEnabled = true
+		} else if strings.HasPrefix(pipelineName, "logs") {
+			logsEnabled = true
+		}
+	}
+
+	signals := []common.ObservabilitySignal{}
+	if tracesEnabled {
+		signals = append(signals, common.TracesObservabilitySignal)
+	}
+	if metricsEnabled {
+		signals = append(signals, common.MetricsObservabilitySignal)
+	}
+	if logsEnabled {
+		signals = append(signals, common.LogsObservabilitySignal)
+	}
+
+	return signals, nil
 }
