@@ -94,7 +94,7 @@ export function CreateActionContainer(): React.JSX.Element {
         />
         <KeyvalInputWrapper>
           <KeyvalInput
-            data-cy="create-action-input-name"
+            data-cy={'create-action-input-name'}
             label={ACTIONS.ACTION_NAME}
             value={actionName}
             onChange={(name) => onChangeActionState('actionName', name)}

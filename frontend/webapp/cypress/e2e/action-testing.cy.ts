@@ -1,6 +1,9 @@
 describe('Action Addition Testing', () => {
     it('Add an Action', () => {
-        cy.visit('/actions')
+        cy.visit('/')
+        cy.get('[data-cy="menu-Actions"]').should('exist').click()
+        cy.url().should('eq', `${Cypress.config('baseUrl')}/actions`);
+
         cy.get('[data-cy="add-action-button"]').should('exist').click()
 
         cy.url().should('eq', `${Cypress.config('baseUrl')}/choose-action`);
