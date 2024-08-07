@@ -1,4 +1,4 @@
-FROM golang:1.22.5-bookworm as builder
+FROM golang:1.22.5-bookworm AS builder
 
 # fury is our registry for linux packages
 RUN echo "deb [trusted=yes] https://apt.fury.io/cli/ * *" > /etc/apt/sources.list.d/fury-cli.list
