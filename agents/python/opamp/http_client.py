@@ -39,8 +39,12 @@ class OpAMPHTTPClient:
 
     def start(self, python_version_supported: bool = None):
         if not python_version_supported:
-            opamp_logger.warning("Python version not supported, sending disconnect message to OpAMP server...")
-            self.send_first_message_disconnected()
+            
+            python_version = f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
+            error_message = f"Opentelemetry SDK require Python in version 3.8 or higher [{python_version} is not supported]"
+            
+            opamp_logger.warning(f"{error_message}, sending disconnect message to OpAMP server...")
+            self.send_unsupported_version_disconnect_message(error_message=error_message)
             self.event.set()
             return
         
@@ -58,7 +62,7 @@ class OpAMPHTTPClient:
         
         self.worker()
         
-    def send_first_message_disconnected(self) -> None:
+    def send_unsupported_version_disconnect_message(self, error_message: str) -> None:
         first_disconnect_message = opamp_pb2.AgentToServer()
         
         agent_description = self.get_agent_description()
@@ -68,9 +72,7 @@ class OpAMPHTTPClient:
         agent_disconnect = self.get_agent_disconnect()
         first_disconnect_message.agent_disconnect.CopyFrom(agent_disconnect)
     
-        python_version = f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
-        agent_health = self.get_agent_health(component_health=False, last_error=f"Opentelemetry SDK require Python in version 3.8 or higher, [{python_version}] not supported",
-                                       status=AgentHealthStatus.UNSUPPORTED_RUNTIME_VERSION.value)
+        agent_health = self.get_agent_health(component_health=False, last_error=error_message, status=AgentHealthStatus.UNSUPPORTED_RUNTIME_VERSION.value)
         first_disconnect_message.health.CopyFrom(agent_health)
         
         self.send_agent_to_server_message(first_disconnect_message)
@@ -81,7 +83,7 @@ class OpAMPHTTPClient:
         for attempt in range(1, max_retries + 1):
             try:
                 # Send first message to OpAMP server, Health is false as the component is not initialized
-                agent_health = self.get_agent_health(component_health=False, last_error="Component not initialized", status=AgentHealthStatus.STARTING.value)
+                agent_health = self.get_agent_health(component_health=False, last_error="Python OpenTelemetry agent is starting", status=AgentHealthStatus.STARTING.value)
                 agent_description = self.get_agent_description()
                 first_message_server_to_agent = self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health))
                 
