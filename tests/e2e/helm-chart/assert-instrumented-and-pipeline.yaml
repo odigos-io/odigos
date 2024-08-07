@@ -301,7 +301,7 @@ metadata:
   labels:
     instrumented-app: deployment-inventory
 status:
-  healthy: null
+  healthy: true
   identifyingAttributes:
     - key: service.instance.id
       (value != null): true

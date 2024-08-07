@@ -101,11 +101,12 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				return
 			}
 		}
-
-		err = handlers.UpdateInstrumentationInstanceStatus(ctx, &agentToServer, connectionInfo)
-		if err != nil {
-			logger.Error(err, "Failed to persist instrumentation device status")
-			// still return the opamp response
+		if connectionInfo != nil {
+			err = handlers.UpdateInstrumentationInstanceStatus(ctx, &agentToServer, connectionInfo)
+			if err != nil {
+				logger.Error(err, "Failed to persist instrumentation device status")
+				// still return the opamp response
+			}
 		}
 
 		if serverToAgent == nil {
