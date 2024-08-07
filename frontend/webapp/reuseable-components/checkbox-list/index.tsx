@@ -12,6 +12,8 @@ interface Monitor {
 interface CheckboxListProps {
   monitors: Monitor[];
   title?: string;
+  checkedState?: boolean[];
+  setCheckedState: (checkedState: boolean[]) => void;
 }
 
 const ListContainer = styled.div`
@@ -23,9 +25,12 @@ const TextWrapper = styled.div`
   margin-bottom: 14px;
 `;
 
-const CheckboxList: React.FC<CheckboxListProps> = ({ monitors, title }) => {
-  const [checkedState, setCheckedState] = useState<boolean[]>([]);
-
+const CheckboxList: React.FC<CheckboxListProps> = ({
+  monitors,
+  title,
+  checkedState = [],
+  setCheckedState,
+}) => {
   useEffect(() => {
     // Initialize the checked state with all true if no initial values provided
     setCheckedState(Array(monitors.length).fill(true));

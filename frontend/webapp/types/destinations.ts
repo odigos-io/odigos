@@ -35,6 +35,13 @@ export interface DestinationDetailsField {
   __typename: string;
 }
 
+export type DynamicField = {
+  name: string;
+  componentType: 'input' | 'dropdown' | 'multi_input' | 'textarea';
+  title: string;
+  [key: string]: any;
+};
+
 export interface DestinationDetailsResponse {
   destinationTypeDetails: {
     fields: DestinationDetailsField[];
