@@ -23,24 +23,8 @@ type IDestinationFinder interface {
 	getServiceURL() string
 }
 
-type DestinationFinder struct {
-	destinationFinder IDestinationFinder
-}
-
-func (d *DestinationFinder) isPotentialService(service k8s.Service) bool {
-	return d.destinationFinder.isPotentialService(service)
-}
-
-func (d *DestinationFinder) fetchDestinationDetails(service k8s.Service) DestinationDetails {
-	return d.destinationFinder.fetchDestinationDetails(service)
-}
-
-func (d *DestinationFinder) getServiceURL() string {
-	return d.destinationFinder.getServiceURL()
-}
-
 func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namespace, dests *odigosv1.DestinationList) ([]DestinationDetails, error) {
-	var destinationFinder *DestinationFinder
+	var destinationFinder IDestinationFinder
 	var destinationDetails []DestinationDetails
 	var err error
 
@@ -72,22 +56,18 @@ func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namesp
 	return destinationDetails, nil
 }
 
-func getDestinationFinder(destinationType common.DestinationType) *DestinationFinder {
+func getDestinationFinder(destinationType common.DestinationType) IDestinationFinder {
 	switch destinationType {
 	case common.JaegerDestinationType:
-		return &DestinationFinder{
-			destinationFinder: &JaegerDestinationFinder{},
-		}
+		return &JaegerDestinationFinder{}
 	case common.ElasticsearchDestinationType:
-		return &DestinationFinder{
-			destinationFinder: &ElasticSearchDestinationFinder{},
-		}
+		return &ElasticSearchDestinationFinder{}
 	}
 
 	return nil
 }
 
-func destinationExist(dests *odigosv1.DestinationList, potentialDestination DestinationDetails, destinationFinder *DestinationFinder) bool {
+func destinationExist(dests *odigosv1.DestinationList, potentialDestination DestinationDetails, destinationFinder IDestinationFinder) bool {
 	for _, dest := range dests.Items {
 		if dest.Spec.Type == potentialDestination.Type && dest.GetConfig()[destinationFinder.getServiceURL()] == potentialDestination.UrlString {
 			return true
