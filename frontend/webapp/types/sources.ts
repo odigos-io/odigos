@@ -75,4 +75,5 @@ export type K8sActualSource = {
   name: string;
   kind: string;
   numberOfInstances: number;
+  selected?: boolean;
 };

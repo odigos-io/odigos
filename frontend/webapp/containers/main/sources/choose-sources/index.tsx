@@ -13,6 +13,8 @@ import {
 import { SetupHeader } from '@/components';
 import styled from 'styled-components';
 import { useRouter } from 'next/navigation';
+import { setSources } from '@/store';
+import { useDispatch } from 'react-redux';
 
 const ContentWrapper = styled.div`
   width: 640px;
@@ -26,13 +28,19 @@ export function ChooseSourcesContainer() {
   const [searchFilter, setSearchFilter] = useState('');
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
   const [selectAllCheckbox, setSelectAllCheckbox] = useState(false);
-  const [futureAppsCheckbox, setFutureAppsCheckbox] = useState(false);
+  const [futureAppsCheckbox, setFutureAppsCheckbox] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [selectedOption, setSelectedOption] = useState<DropdownOption>();
-  const [selectedItems, setSelectedItems] = useState<K8sActualSource[]>([]);
+  const [selectedItems, setSelectedItems] = useState<{
+    [key: string]: K8sActualSource[];
+  }>({});
   const [namespacesList, setNamespacesList] = useState<DropdownOption[]>([]);
   const [sourcesList, setSourcesList] = useState<K8sActualSource[]>([]);
 
   const router = useRouter();
+  const dispatch = useDispatch();
+
   const { error, data } = useComputePlatform();
   const { data: namespacesData } = useNamespace(selectedOption?.value);
 
@@ -69,26 +77,40 @@ export function ChooseSourcesContainer() {
   }
 
   function selectAllSources() {
-    setSelectedItems(sourcesList);
+    if (selectedOption) {
+      setSelectedItems({
+        ...selectedItems,
+        [selectedOption.value]: sourcesList,
+      });
+    }
   }
 
   function handleSelectItem(item: K8sActualSource) {
-    if (selectedItems.includes(item)) {
-      const updatedSelectedItems = selectedItems.filter(
-        (selectedItem) => selectedItem !== item
-      );
-      setSelectedItems(updatedSelectedItems);
-      if (
-        selectAllCheckbox &&
-        updatedSelectedItems.length !== sourcesList.length
-      ) {
-        setSelectAllCheckbox(false);
-      }
-    } else {
-      const updatedSelectedItems = [...selectedItems, item];
-      setSelectedItems(updatedSelectedItems);
-      if (updatedSelectedItems.length === sourcesList.length) {
-        setSelectAllCheckbox(true);
+    if (selectedOption) {
+      const currentSelectedItems = selectedItems[selectedOption.value] || [];
+      if (currentSelectedItems.includes(item)) {
+        const updatedSelectedItems = currentSelectedItems.filter(
+          (selectedItem) => selectedItem !== item
+        );
+        setSelectedItems({
+          ...selectedItems,
+          [selectedOption.value]: updatedSelectedItems,
+        });
+        if (
+          selectAllCheckbox &&
+          updatedSelectedItems.length !== sourcesList.length
+        ) {
+          setSelectAllCheckbox(false);
+        }
+      } else {
+        const updatedSelectedItems = [...currentSelectedItems, item];
+        setSelectedItems({
+          ...selectedItems,
+          [selectedOption.value]: updatedSelectedItems,
+        });
+        if (updatedSelectedItems.length === sourcesList.length) {
+          setSelectAllCheckbox(true);
+        }
       }
     }
   }
@@ -100,21 +122,40 @@ export function ChooseSourcesContainer() {
       : allSources;
 
     return showSelectedOnly
-      ? filteredSources.filter((source) => selectedItems.includes(source))
+      ? filteredSources.filter((source) =>
+          selectedOption
+            ? (selectedItems[selectedOption.value] || []).includes(source)
+            : false
+        )
       : filteredSources;
   }
 
+  function onNextClick() {
+    if (selectedOption) {
+      dispatch(setSources(selectedItems[selectedOption.value] || []));
+    }
+    router.push('/setup/choose-destination');
+  }
+
   const toggleCheckboxState: ToggleCheckboxState = {
-    selectedAppsCount: selectedItems.length,
+    selectedAppsCount: selectedOption
+      ? (selectedItems[selectedOption.value] || []).length
+      : 0,
     selectAllCheckbox,
     showSelectedOnly,
-    futureAppsCheckbox,
+    futureAppsCheckbox:
+      futureAppsCheckbox[selectedOption?.value || ''] || false,
   };
 
   const toggleCheckboxHandlers: ToggleCheckboxHandlers = {
     setSelectAllCheckbox,
     setShowSelectedOnly,
-    setFutureAppsCheckbox,
+    setFutureAppsCheckbox: (value: boolean) => {
+      setFutureAppsCheckbox({
+        ...futureAppsCheckbox,
+        [selectedOption?.value || '']: value,
+      });
+    },
   };
 
   const searchDropdownState: SearchDropdownState = {
@@ -135,9 +176,11 @@ export function ChooseSourcesContainer() {
             {
               label: 'NEXT',
               iconSrc: '/icons/common/arrow-black.svg',
-              onClick: () => router.push('/setup/choose-destination'),
+              onClick: () => onNextClick(),
               variant: 'primary',
-              disabled: selectedItems.length === 0,
+              disabled:
+                !selectedOption ||
+                (selectedItems[selectedOption.value] || []).length === 0,
             },
           ]}
         />
@@ -159,7 +202,9 @@ export function ChooseSourcesContainer() {
         />
         <Divider thickness={1} margin="16px 0 24px" />
         <SourcesList
-          selectedItems={selectedItems}
+          selectedItems={
+            selectedOption ? selectedItems[selectedOption.value] || [] : []
+          }
           setSelectedItems={handleSelectItem}
           items={getVisibleSources()}
         />
