@@ -25,8 +25,8 @@ fi
 
 run_cypress_test "cypress/e2e/test-overview.cy.ts"
 
-if [ "$1" = "action-addition" ]; then
-  run_cypress_test "cypress/e2e/onboarding-flow.cy.ts"
+if [ "$2" = "action-addition" ]; then
+  run_cypress_test "cypress/e2e/action-testing.cy.ts"
 fi
 
 echo "Cypress tests passed"
