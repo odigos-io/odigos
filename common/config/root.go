@@ -134,6 +134,7 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 					"grpc": GenericMap{
 						// setting it to a large value to avoid dropping batches.
 						"max_recv_msg_size_mib": 128 * 1024 * 1024,
+						"endpoint": "0.0.0.0:4317",
 					},
 					"http": empty,
 				},
@@ -152,7 +153,9 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 			},
 		},
 		Extensions: GenericMap{
-			"health_check": empty,
+			"health_check": GenericMap{
+				"endpoint": "0.0.0.0:13133",
+			},
 			"zpages":       empty,
 		},
 		Exporters:  map[string]interface{}{},

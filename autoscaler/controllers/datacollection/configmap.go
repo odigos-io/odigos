@@ -168,15 +168,21 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			"zipkin": empty,
 			"otlp": config.GenericMap{
 				"protocols": config.GenericMap{
-					"grpc": empty,
-					"http": empty,
+					"grpc": config.GenericMap{
+						"endpoint": "0.0.0.0:4317",
+					},
+					"http": config.GenericMap{
+						"endpoint": "0.0.0.0:4318",
+					},
 				},
 			},
 		},
 		Exporters:  exporters,
 		Processors: processorsCfg,
 		Extensions: config.GenericMap{
-			"health_check": empty,
+			"health_check": config.GenericMap{
+				"endpoint": "0.0.0.0:13133",
+			},
 			"zpages":       empty,
 		},
 		Service: config.Service{
