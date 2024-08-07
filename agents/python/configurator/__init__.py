@@ -91,9 +91,4 @@ def start_opamp_client(event):
 
 
 def is_supported_python_version():
-    current_version = sys.version_info
-    min_version = MINIMUM_PYTHON_SUPPORTED_VERSION
-    
-    if current_version >= min_version:
-        return True
-    return False
+    return sys.version_info >= MINIMUM_PYTHON_SUPPORTED_VERSION

@@ -15,7 +15,7 @@ from opentelemetry.context import (
 )
 
 from opamp import opamp_pb2, anyvalue_pb2, utils
-
+from opamp.health_status import AgentHealthStatus
 
 # Setup the logger
 opamp_logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class OpAMPHTTPClient:
     
         python_version = f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
         agent_health = self.get_agent_health(component_health=False, last_error=f"Opentelemetry SDK require Python in version 3.8 or higher, [{python_version}] not supported",
-                                       status="UnsupportedRuntimeVersion")
+                                       status=AgentHealthStatus.UNSUPPORTED_RUNTIME_VERSION.value)
         first_disconnect_message.health.CopyFrom(agent_health)
         
         self.send_agent_to_server_message(first_disconnect_message)
@@ -81,7 +81,7 @@ class OpAMPHTTPClient:
         for attempt in range(1, max_retries + 1):
             try:
                 # Send first message to OpAMP server, Health is false as the component is not initialized
-                agent_health = self.get_agent_health(component_health=False, last_error="Component not initialized", status="Starting")
+                agent_health = self.get_agent_health(component_health=False, last_error="Component not initialized", status=AgentHealthStatus.STARTING.value)
                 agent_description = self.get_agent_description()
                 first_message_server_to_agent = self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health))
                 
@@ -90,7 +90,7 @@ class OpAMPHTTPClient:
                 
                 # Send healthy message to OpAMP server
                 opamp_logger.info("Reporting healthy to OpAMP server...")
-                agent_health = self.get_agent_health(component_health=True, status="Healthy")
+                agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
                 self.send_agent_to_server_message(opamp_pb2.AgentToServer(health=agent_health))
                 
                 break
@@ -113,7 +113,7 @@ class OpAMPHTTPClient:
                         opamp_logger.info("Received request to report full state")
                         
                         agent_description = self.get_agent_description()
-                        agent_health = self.get_agent_health(component_health=True, status="Healthy")
+                        agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
                         agent_to_server = opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health)
                         
                         server_to_agent = self.send_agent_to_server_message(agent_to_server)
@@ -221,7 +221,7 @@ class OpAMPHTTPClient:
     def shutdown(self):
         self.running = False
         opamp_logger.info("Sending agent disconnect message to OpAMP server...")
-        agent_health = self.get_agent_health(component_health=False, last_error="Component shutting down", status="ProcessTerminated")
+        agent_health = self.get_agent_health(component_health=False, last_error="Component shutting down", status=AgentHealthStatus.TERMINATED.value)
         disconnect_message = opamp_pb2.AgentToServer(agent_disconnect=opamp_pb2.AgentDisconnect(), health=agent_health)
         
         with self.condition:
