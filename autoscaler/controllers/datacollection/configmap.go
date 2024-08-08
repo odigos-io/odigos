@@ -165,23 +165,27 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 
 	cfg := config.Config{
 		Receivers: config.GenericMap{
-			"zipkin": empty,
 			"otlp": config.GenericMap{
 				"protocols": config.GenericMap{
-					"grpc": empty,
-					"http": empty,
+					"grpc": config.GenericMap{
+						"endpoint": "0.0.0.0:4317",
+					},
+					"http": config.GenericMap{
+						"endpoint": "0.0.0.0:4318",
+					},
 				},
 			},
 		},
 		Exporters:  exporters,
 		Processors: processorsCfg,
 		Extensions: config.GenericMap{
-			"health_check": empty,
-			"zpages":       empty,
+			"health_check": config.GenericMap{
+				"endpoint": "0.0.0.0:13133",
+			},
 		},
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{},
-			Extensions: []string{"health_check", "zpages"},
+			Extensions: []string{"health_check"},
 		},
 	}
 
@@ -248,7 +252,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
-			Receivers:  []string{"otlp", "zipkin"},
+			Receivers:  []string{"otlp"},
 			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, tracesProcessors...),
 			Exporters:  tracesPipelineExporter,
 		}

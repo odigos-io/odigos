@@ -137,7 +137,7 @@ func TestConnection(ctx context.Context, dest config.ExporterConfigurer) TestCon
 		}
 	}
 
-	exporter, err := connectionTester.Factory().CreateTracesExporter(ctx, exportertest.NewNopCreateSettings(), defaultConfig)
+	exporter, err := connectionTester.Factory().CreateTracesExporter(ctx, exportertest.NewNopSettings(), defaultConfig)
 	if err != nil {
 		return TestConnectionResult{Succeeded: false, Message: err.Error(), Reason: InvalidConfig, DestinationType: destType, StatusCode: http.StatusInternalServerError}
 	}
