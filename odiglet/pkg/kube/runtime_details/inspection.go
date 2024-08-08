@@ -122,10 +122,10 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 			}
 
 			resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
-				ContainerName: container.Name,
-				Language:      programLanguageDetails.Language,
-				Version:       programLanguageDetails.Version,
-				EnvVars:       envs,
+				ContainerName:  container.Name,
+				Language:       programLanguageDetails.Language,
+				RuntimeVersion: programLanguageDetails.RuntimeVersion,
+				EnvVars:        envs,
 			}
 		}
 	}

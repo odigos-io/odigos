@@ -41,10 +41,10 @@ type EnvVar struct {
 
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
-	ContainerName string                     `json:"containerName"`
-	Language      common.ProgrammingLanguage `json:"language"`
-	Version       string                     `json:"version,omitempty"`
-	EnvVars       []EnvVar                   `json:"envVars,omitempty"`
+	ContainerName  string                     `json:"containerName"`
+	Language       common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
+	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

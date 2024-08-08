@@ -24,10 +24,10 @@ import (
 // RuntimeDetailsByContainerApplyConfiguration represents an declarative configuration of the RuntimeDetailsByContainer type for use
 // with apply.
 type RuntimeDetailsByContainerApplyConfiguration struct {
-	ContainerName *string                     `json:"containerName,omitempty"`
-	Language      *common.ProgrammingLanguage `json:"language,omitempty"`
-	Version       *string                     `json:"version,omitempty"`
-	EnvVars       []EnvVarApplyConfiguration  `json:"envVars,omitempty"`
+	ContainerName  *string                     `json:"containerName,omitempty"`
+	Language       *common.ProgrammingLanguage `json:"language,omitempty"`
+	RuntimeVersion *string                     `json:"runtimeVersion,omitempty"`
+	EnvVars        []EnvVarApplyConfiguration  `json:"envVars,omitempty"`
 }
 
 // RuntimeDetailsByContainerApplyConfiguration constructs an declarative configuration of the RuntimeDetailsByContainer type for use with
@@ -52,11 +52,11 @@ func (b *RuntimeDetailsByContainerApplyConfiguration) WithLanguage(value common.
 	return b
 }
 
-// WithVersion sets the Version field in the declarative configuration to the given value
+// WithRuntimeVersion sets the RuntimeVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Version field is set to the value of the last call.
-func (b *RuntimeDetailsByContainerApplyConfiguration) WithVersion(value string) *RuntimeDetailsByContainerApplyConfiguration {
-	b.Version = &value
+// If called multiple times, the RuntimeVersion field is set to the value of the last call.
+func (b *RuntimeDetailsByContainerApplyConfiguration) WithRuntimeVersion(value string) *RuntimeDetailsByContainerApplyConfiguration {
+	b.RuntimeVersion = &value
 	return b
 }
 
