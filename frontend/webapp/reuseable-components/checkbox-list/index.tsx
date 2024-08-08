@@ -2,6 +2,7 @@ import React from 'react';
 import { Text } from '../text';
 import styled from 'styled-components';
 import { Checkbox } from '../checkbox';
+import { ExportedSignals } from '@/types';
 
 interface Monitor {
   id: string;
@@ -12,7 +13,7 @@ interface Monitor {
 interface CheckboxListProps {
   monitors: Monitor[];
   title?: string;
-  exportedSignals: { [key: string]: boolean };
+  exportedSignals: ExportedSignals;
   handleSignalChange: (signal: string, value: boolean) => void;
 }
 

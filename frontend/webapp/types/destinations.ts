@@ -48,6 +48,19 @@ export interface DestinationDetailsResponse {
   };
 }
 
+export interface ExportedSignals {
+  logs: boolean;
+  metrics: boolean;
+  traces: boolean;
+}
+
+export interface DestinationInput {
+  name: string;
+  type: string;
+  exportedSignals: ExportedSignals;
+  fields: { key: string; value: any }[];
+}
+
 export interface DestinationType {
   fields: any;
   display_name: string;

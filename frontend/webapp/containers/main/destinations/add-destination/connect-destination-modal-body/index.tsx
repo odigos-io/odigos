@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   DestinationDetailsResponse,
+  DestinationInput,
   DestinationTypeItem,
   DynamicField,
+  ExportedSignals,
   StepProps,
 } from '@/types';
 import { SideMenu } from '@/components';
@@ -55,11 +57,16 @@ export function ConnectDestinationModalBody({
       skip: !destination,
     }
   );
-  const [exportedSignals, setExportedSignals] = useState({});
+  const [exportedSignals, setExportedSignals] = useState<ExportedSignals>({
+    logs: false,
+    metrics: false,
+    traces: false,
+  });
   const [destinationName, setDestinationName] = useState<string>('');
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
   const [formData, setFormData] = useState<Record<string, any>>({});
-  const { buildFormDynamicFields } = useConnectDestinationForm();
+  const { buildFormDynamicFields, createNewDestination } =
+    useConnectDestinationForm();
 
   const monitors = useMemo(() => {
     if (!destination) return [];
@@ -100,12 +107,14 @@ export function ConnectDestinationModalBody({
       value,
     }));
 
-    const body = {
+    const body: DestinationInput = {
       name: destinationName,
-      type: destination?.type,
+      type: destination?.type || '',
       exportedSignals,
       fields,
     };
+
+    createNewDestination(body);
 
     console.log({ body });
   }
