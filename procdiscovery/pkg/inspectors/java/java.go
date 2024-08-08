@@ -11,12 +11,12 @@ type JavaInspector struct{}
 
 const processName = "java"
 
-func (j *JavaInspector) Inspect(process *process.Details) (common.ProgramLanguageDetails, bool) {
+func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgramLanguageDetails, bool) {
 	var programLanguageDetails common.ProgramLanguageDetails
 
-	if strings.Contains(process.ExeName, processName) || strings.Contains(process.CmdLine, processName) {
+	if strings.Contains(proc.ExeName, processName) || strings.Contains(proc.CmdLine, processName) {
 		programLanguageDetails.Language = common.JavaProgrammingLanguage
-		if value, exists := process.Environments.DetailedEnvs[process.PythonVersionConst]; exists {
+		if value, exists := proc.Environments.DetailedEnvs[process.JavaVersionConst]; exists {
 			programLanguageDetails.RuntimeVersion = value
 		}
 		return programLanguageDetails, true
