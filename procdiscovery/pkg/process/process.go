@@ -3,12 +3,12 @@ package process
 import (
 	"bufio"
 	"fmt"
-	"github.com/odigos-io/odigos/common/envs"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	"io"
 	"os"
 	"strings"
 
-	"github.com/odigos-io/odigos/common/envs/envOverwrite"
+	"github.com/odigos-io/odigos/common/envOverwrite"
 )
 
 type Details struct {
@@ -142,8 +142,10 @@ func getRelevantEnvVars(pid int) *ProcessEnvs {
 			overWriteEnvsResult[envParts[0]] = envParts[1]
 		}
 
-		if _, ok := envs.EnvDetailsSeparatorMap[envParts[0]]; ok {
-			detailedEnvsResult[envParts[0]] = envParts[1]
+		for _, env := range inspectors.EnvDetailsSeparatorMap {
+			if env == envParts[0] {
+				detailedEnvsResult[envParts[0]] = envParts[1]
+			}
 		}
 	}
 
