@@ -93,7 +93,6 @@ receivers:
     protocols:
       grpc: {}
       http: {}
-  zipkin: {}
 service:
   extensions:
   - health_check
