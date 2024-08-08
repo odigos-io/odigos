@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import styled from 'styled-components';
+import { useDispatch } from 'react-redux';
+import { K8sActualSource } from '@/types';
+import { SetupHeader } from '@/components';
+import { useRouter } from 'next/navigation';
 import { SourcesList } from './choose-sources-list';
-import { useComputePlatform, useNamespace } from '@/hooks';
 import { SectionTitle, Divider } from '@/reuseable-components';
-import { DropdownOption, K8sActualNamespace, K8sActualSource } from '@/types';
+import { setNamespaceFutureSelectAppsList, setSources } from '@/store';
+import { useConnectSourcesList, useConnectSourcesMenuState } from '@/hooks';
 import { SearchAndDropdown, TogglesAndCheckboxes } from './choose-sources-menu';
 import {
   SearchDropdownState,
@@ -10,14 +15,9 @@ import {
   SearchDropdownHandlers,
   ToggleCheckboxHandlers,
 } from './choose-sources-menu/type';
-import { SetupHeader } from '@/components';
-import styled from 'styled-components';
-import { useRouter } from 'next/navigation';
-import { setSources } from '@/store';
-import { useDispatch } from 'react-redux';
 
 const ContentWrapper = styled.div`
-  width: 640px;
+  width: 660px;
   padding-top: 64px;
 `;
 
@@ -25,147 +25,76 @@ const HeaderWrapper = styled.div`
   width: 100vw;
 `;
 export function ChooseSourcesContainer() {
-  const [searchFilter, setSearchFilter] = useState('');
-  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
-  const [selectAllCheckbox, setSelectAllCheckbox] = useState(false);
-  const [futureAppsCheckbox, setFutureAppsCheckbox] = useState<{
-    [key: string]: boolean;
-  }>({});
-  const [selectedOption, setSelectedOption] = useState<DropdownOption>();
-  const [selectedItems, setSelectedItems] = useState<{
-    [key: string]: K8sActualSource[];
-  }>({});
-  const [namespacesList, setNamespacesList] = useState<DropdownOption[]>([]);
   const [sourcesList, setSourcesList] = useState<K8sActualSource[]>([]);
+
+  const { stateMenu, stateHandlers } = useConnectSourcesMenuState({
+    sourcesList,
+  });
+  const { namespacesList } = useConnectSourcesList({
+    stateMenu,
+    sourcesList,
+    setSourcesList,
+  });
 
   const router = useRouter();
   const dispatch = useDispatch();
 
-  const { error, data } = useComputePlatform();
-  const { data: namespacesData } = useNamespace(selectedOption?.value);
-
-  useEffect(() => {
-    data && buildNamespacesList();
-  }, [data, error]);
-
-  useEffect(() => {
-    namespacesData && setSourcesList(namespacesData.k8sActualSources || []);
-  }, [namespacesData]);
-
-  useEffect(() => {
-    selectAllCheckbox && selectAllSources();
-  }, [selectAllCheckbox]);
-
-  function buildNamespacesList() {
-    const namespaces = data?.computePlatform?.k8sActualNamespaces || [];
-    const namespacesList = namespaces.map((namespace: K8sActualNamespace) => ({
-      id: namespace.name,
-      value: namespace.name,
-    }));
-
-    setSelectedOption(namespacesList[0]);
-    setNamespacesList(namespacesList);
-  }
-
-  function filterSources(sources: K8sActualSource[]) {
-    return sources.filter((source: K8sActualSource) => {
-      return (
-        searchFilter === '' ||
-        source.name.toLowerCase().includes(searchFilter.toLowerCase())
-      );
-    });
-  }
-
-  function selectAllSources() {
-    if (selectedOption) {
-      setSelectedItems({
-        ...selectedItems,
-        [selectedOption.value]: sourcesList,
-      });
-    }
-  }
-
-  function handleSelectItem(item: K8sActualSource) {
-    if (selectedOption) {
-      const currentSelectedItems = selectedItems[selectedOption.value] || [];
-      if (currentSelectedItems.includes(item)) {
-        const updatedSelectedItems = currentSelectedItems.filter(
-          (selectedItem) => selectedItem !== item
-        );
-        setSelectedItems({
-          ...selectedItems,
-          [selectedOption.value]: updatedSelectedItems,
-        });
-        if (
-          selectAllCheckbox &&
-          updatedSelectedItems.length !== sourcesList.length
-        ) {
-          setSelectAllCheckbox(false);
-        }
-      } else {
-        const updatedSelectedItems = [...currentSelectedItems, item];
-        setSelectedItems({
-          ...selectedItems,
-          [selectedOption.value]: updatedSelectedItems,
-        });
-        if (updatedSelectedItems.length === sourcesList.length) {
-          setSelectAllCheckbox(true);
-        }
-      }
-    }
-  }
-
   function getVisibleSources() {
     const allSources = sourcesList || [];
-    const filteredSources = searchFilter
-      ? filterSources(allSources)
+    const filteredSources = stateMenu.searchFilter
+      ? stateHandlers.filterSources(allSources)
       : allSources;
 
-    return showSelectedOnly
+    return stateMenu.showSelectedOnly
       ? filteredSources.filter((source) =>
-          selectedOption
-            ? (selectedItems[selectedOption.value] || []).includes(source)
+          stateMenu.selectedOption
+            ? (
+                stateMenu.selectedItems[stateMenu.selectedOption.value] || []
+              ).find((selectedItem) => selectedItem.name === source.name)
             : false
         )
       : filteredSources;
   }
 
   function onNextClick() {
+    const { selectedOption, selectedItems, futureAppsCheckbox } = stateMenu;
     if (selectedOption) {
-      dispatch(setSources(selectedItems[selectedOption.value] || []));
+      dispatch(setSources(selectedItems));
+      dispatch(setNamespaceFutureSelectAppsList(futureAppsCheckbox));
     }
     router.push('/setup/choose-destination');
   }
 
   const toggleCheckboxState: ToggleCheckboxState = {
-    selectedAppsCount: selectedOption
-      ? (selectedItems[selectedOption.value] || []).length
+    selectedAppsCount: stateMenu.selectedOption
+      ? (stateMenu.selectedItems[stateMenu.selectedOption.value] || []).length
       : 0,
-    selectAllCheckbox,
-    showSelectedOnly,
+    selectAllCheckbox: stateMenu.selectAllCheckbox,
+    showSelectedOnly: stateMenu.showSelectedOnly,
     futureAppsCheckbox:
-      futureAppsCheckbox[selectedOption?.value || ''] || false,
+      stateMenu.futureAppsCheckbox[stateMenu.selectedOption?.value || ''] ||
+      false,
   };
 
   const toggleCheckboxHandlers: ToggleCheckboxHandlers = {
-    setSelectAllCheckbox,
-    setShowSelectedOnly,
+    setSelectAllCheckbox: stateMenu.setSelectAllCheckbox,
+    setShowSelectedOnly: stateMenu.setShowSelectedOnly,
     setFutureAppsCheckbox: (value: boolean) => {
-      setFutureAppsCheckbox({
-        ...futureAppsCheckbox,
-        [selectedOption?.value || '']: value,
+      stateMenu.setFutureAppsCheckbox({
+        ...stateMenu.futureAppsCheckbox,
+        [stateMenu.selectedOption?.value || '']: value,
       });
     },
   };
 
   const searchDropdownState: SearchDropdownState = {
-    selectedOption,
-    searchFilter,
+    selectedOption: stateMenu.selectedOption,
+    searchFilter: stateMenu.searchFilter,
   };
 
   const searchDropdownHandlers: SearchDropdownHandlers = {
-    setSelectedOption,
-    setSearchFilter,
+    setSelectedOption: stateMenu.setSelectedOption,
+    setSearchFilter: stateMenu.setSearchFilter,
   };
 
   return (
@@ -179,8 +108,10 @@ export function ChooseSourcesContainer() {
               onClick: () => onNextClick(),
               variant: 'primary',
               disabled:
-                !selectedOption ||
-                (selectedItems[selectedOption.value] || []).length === 0,
+                !stateMenu.selectedOption ||
+                Object.keys(stateMenu.selectedItems).every(
+                  (value) => stateMenu.selectedItems[value].length === 0
+                ),
             },
           ]}
         />
@@ -203,9 +134,11 @@ export function ChooseSourcesContainer() {
         <Divider thickness={1} margin="16px 0 24px" />
         <SourcesList
           selectedItems={
-            selectedOption ? selectedItems[selectedOption.value] || [] : []
+            stateMenu.selectedOption
+              ? stateMenu.selectedItems[stateMenu.selectedOption.value] || []
+              : []
           }
-          setSelectedItems={handleSelectItem}
+          setSelectedItems={stateHandlers.handleSelectItem}
           items={getVisibleSources()}
         />
       </ContentWrapper>

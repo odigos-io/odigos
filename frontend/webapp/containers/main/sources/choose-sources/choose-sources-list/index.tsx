@@ -109,7 +109,7 @@ const SourcesList: React.FC<SourcesListProps> = ({
               </Text>
             </TextWrapper>
           </ListItemContent>
-          {selectedItems.includes(item) && (
+          {isItemSelected(item) && (
             <SelectedTextWrapper>
               <Text size={12} family="secondary">
                 SELECTED

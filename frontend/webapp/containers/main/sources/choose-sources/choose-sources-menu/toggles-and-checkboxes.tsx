@@ -11,6 +11,7 @@ const Container = styled.div`
 
 const ToggleWrapper = styled.div`
   display: flex;
+  align-items: center;
   gap: 32px;
 `;
 
@@ -46,13 +47,13 @@ const TogglesAndCheckboxes: React.FC<ToggleCheckboxProps> = ({
           initialValue={showSelectedOnly}
           onChange={setShowSelectedOnly}
         />
+        <Checkbox
+          title="Future apps"
+          tooltip="Automatically instrument all future apps"
+          initialValue={futureAppsCheckbox}
+          onChange={setFutureAppsCheckbox}
+        />
       </ToggleWrapper>
-      <Checkbox
-        title="Future apps"
-        tooltip="Automatically instrument all future apps"
-        initialValue={futureAppsCheckbox}
-        onChange={setFutureAppsCheckbox}
-      />
     </Container>
   );
 };
