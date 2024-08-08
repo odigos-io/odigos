@@ -22,7 +22,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    odigos.io/collector: "true"
+    odigos.io/gateway: "true"
   name: odigos-gateway
   namespace: odigos-system
   ownerReferences:
@@ -35,11 +35,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      odigos.io/collector: "true"
+      odigos.io/gateway: "true"
   template:
     metadata:
       labels:
-        odigos.io/collector: "true"
+        odigos.io/gateway: "true"
     spec:
       containers:
         - env:
