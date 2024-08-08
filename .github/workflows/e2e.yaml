@@ -45,7 +45,7 @@ jobs:
         with:
           version: v3.9.0
       - name: Install chainsaw
-        uses: kyverno/action-install-chainsaw@v0.2.4
+        uses: kyverno/action-install-chainsaw@v0.2.8
       - name: Create Kind Cluster
         uses: helm/kind-action@v1.10.0
         with:
