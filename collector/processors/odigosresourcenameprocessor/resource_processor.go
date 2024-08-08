@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/zap"
 )
 
@@ -62,9 +62,9 @@ func (rp *resourceProcessor) processAttributes(ctx context.Context, logger *zap.
 			case "Deployment":
 				attrs.PutStr(string(semconv.K8SDeploymentNameKey), resourceAttributes.WorkloadName)
 			case "StatefulSet":
-				attrs.PutStr(string(semconv.K8SStatefulsetNameKey), resourceAttributes.WorkloadName)
+				attrs.PutStr(string(semconv.K8SStatefulSetNameKey), resourceAttributes.WorkloadName)
 			case "DaemonSet":
-				attrs.PutStr(string(semconv.K8SDaemonsetNameKey), resourceAttributes.WorkloadName)
+				attrs.PutStr(string(semconv.K8SDaemonSetNameKey), resourceAttributes.WorkloadName)
 			}
 		}
 		if resourceAttributes.PodName != "" {

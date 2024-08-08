@@ -160,6 +160,14 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 									},
 								},
 								{
+									Name: "POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
 									Name:  "GOMEMLIMIT",
 									Value: fmt.Sprintf("%dMiB", memConfig.gomemlimitMiB),
 								},

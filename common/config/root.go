@@ -32,12 +32,12 @@ type ResourceStatuses struct {
 	Processor   map[string]error
 }
 
-func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
-	currentConfig, globalProcessors := getBasicConfig(memoryLimiterConfig)
-	return CalculateWithBase(currentConfig, globalProcessors, dests, processors)
+func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap, applySelfTelemetry func(c *Config) error) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
+	currentConfig, prefixProcessors := getBasicConfig(memoryLimiterConfig)
+	return CalculateWithBase(currentConfig, prefixProcessors, dests, processors, applySelfTelemetry)
 }
 
-func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
+func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer, applySelfTelemetry func(c *Config) error) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := LoadConfigers()
 	if err != nil {
 		return "", err, nil, nil
@@ -48,10 +48,10 @@ func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests [
 		Processor:   make(map[string]error),
 	}
 
-	for _, p := range globalProcessors {
+	for _, p := range prefixProcessors {
 		_, exists := currentConfig.Processors[p]
 		if !exists {
-			return "", fmt.Errorf("missing global processor '%s' on config", p), status, nil
+			return "", fmt.Errorf("missing prefix processor '%s' on config", p), status, nil
 		}
 	}
 
@@ -88,6 +88,9 @@ func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests [
 	logsEnabled := false
 
 	for pipelineName, pipeline := range currentConfig.Service.Pipelines {
+		if strings.Contains(pipelineName, "otelcol") {
+			continue
+		}
 		if strings.HasPrefix(pipelineName, "traces/") {
 			pipeline.Processors = append(tracesProcessors, pipeline.Processors...)
 			tracesEnabled = true
@@ -102,8 +105,19 @@ func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests [
 		// basic config common to all pipelines
 		pipeline.Receivers = append([]string{"otlp"}, pipeline.Receivers...)
 		// memory limiter processor should be the first processor in the pipeline
-		pipeline.Processors = slices.Concat(globalProcessors, pipeline.Processors)
+		// odigostrafficmetrics processor should be the last processor in the pipeline
+		pipeline.Processors = slices.Concat(prefixProcessors, pipeline.Processors)
 		currentConfig.Service.Pipelines[pipelineName] = pipeline
+	}
+
+	// Apply self telemetry to the configuration
+	// It is important to apply this after the main pipelines are created, since this operation will add a metrics pipeline
+	// which is responsible for collecting metrics about the collector itself.
+	if applySelfTelemetry != nil {
+		err := applySelfTelemetry(currentConfig)
+		if err != nil {
+			return "", err, status, nil
+		}
 	}
 
 	data, err := yaml.Marshal(currentConfig)
@@ -125,6 +139,9 @@ func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests [
 	return string(data), nil, status, signals
 }
 
+// getBasicConfig returns a basic configuration for the cluster collector.
+// It includes the basic receivers, processors, exporters, extensions, and service configuration.
+// In addition it returns prefix processors that should be added to beginning of each pipeline.
 func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 	return &Config{
 		Receivers: GenericMap{
@@ -165,7 +182,8 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 			Pipelines:  map[string]Pipeline{},
 			Extensions: []string{"health_check"},
 		},
-	}, []string{memoryLimiterProcessorName, "resource/odigos-version"}
+	},
+	[]string{memoryLimiterProcessorName, "resource/odigos-version"}
 }
 
 func LoadConfigers() (map[common.DestinationType]Configer, error) {
