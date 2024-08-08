@@ -40,7 +40,7 @@ do
 done
 helm package ${CHARTDIRS[*]} -d $TMPDIR
 pushd $TMPDIR
-prefix 'test-helm-assets-' *.tgz
+prefix 'helm-chart-' *.tgz
 helm repo index . --merge index.yaml --url https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/
 git diff -G apiVersion
 
