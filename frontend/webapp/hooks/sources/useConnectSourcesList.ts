@@ -2,11 +2,7 @@ import { DropdownOption, K8sActualNamespace, K8sActualSource } from '@/types';
 import { useEffect, useState } from 'react';
 import { useComputePlatform, useNamespace } from '../compute-platform';
 
-export const useConnectSourcesList = ({
-  stateMenu,
-  sourcesList,
-  setSourcesList,
-}) => {
+export const useConnectSourcesList = ({ stateMenu, setSourcesList }) => {
   const [namespacesList, setNamespacesList] = useState<DropdownOption[]>([]);
 
   const { error, data } = useComputePlatform();

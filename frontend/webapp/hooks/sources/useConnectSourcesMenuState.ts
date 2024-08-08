@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DropdownOption, K8sActualSource } from '@/types';
+import { useSelector } from 'react-redux';
 
 export const useConnectSourcesMenuState = ({ sourcesList }) => {
   const [searchFilter, setSearchFilter] = useState('');
@@ -9,10 +10,19 @@ export const useConnectSourcesMenuState = ({ sourcesList }) => {
   const [futureAppsCheckbox, setFutureAppsCheckbox] = useState<{
     [key: string]: boolean;
   }>({});
-
   const [selectedItems, setSelectedItems] = useState<{
     [key: string]: K8sActualSource[];
   }>({});
+
+  const { sources, namespaceFutureSelectAppsList } = useSelector(
+    ({ app }) => app
+  );
+
+  useEffect(() => {
+    sources && setSelectedItems(sources);
+    namespaceFutureSelectAppsList &&
+      setFutureAppsCheckbox(namespaceFutureSelectAppsList);
+  }, [namespaceFutureSelectAppsList, sources]);
 
   useEffect(() => {
     selectAllCheckbox && selectAllSources();

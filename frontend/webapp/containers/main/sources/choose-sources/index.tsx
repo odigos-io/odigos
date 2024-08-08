@@ -32,7 +32,6 @@ export function ChooseSourcesContainer() {
   });
   const { namespacesList } = useConnectSourcesList({
     stateMenu,
-    sourcesList,
     setSourcesList,
   });
 
@@ -126,12 +125,12 @@ export function ChooseSourcesContainer() {
           handlers={searchDropdownHandlers}
           dropdownOptions={namespacesList}
         />
-        <Divider thickness={1} margin="16px 0" />
+        <Divider margin="16px 0" />
         <TogglesAndCheckboxes
           state={toggleCheckboxState}
           handlers={toggleCheckboxHandlers}
         />
-        <Divider thickness={1} margin="16px 0 24px" />
+        <Divider margin="16px 0 24px" />
         <SourcesList
           selectedItems={
             stateMenu.selectedOption
