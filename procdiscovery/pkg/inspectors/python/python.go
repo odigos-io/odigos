@@ -1,7 +1,6 @@
 package python
 
 import (
-	"github.com/odigos-io/odigos/common/envs"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -16,8 +15,8 @@ func (p *PythonInspector) Inspect(process *process.Details) (common.ProgramLangu
 	var programLanguageDetails common.ProgramLanguageDetails
 	if strings.Contains(process.ExeName, pythonProcessName) || strings.Contains(process.CmdLine, pythonProcessName) {
 		programLanguageDetails.Language = common.PythonProgrammingLanguage
-		if value, exists := process.Environments.DetailedEnvs[envs.PythonVersionConst]; exists {
-			programLanguageDetails.Version = value
+		if value, exists := process.Environments.DetailedEnvs[process.JavaVersionConst]; exists {
+			programLanguageDetails.RuntimeVersion = value
 		}
 
 		return programLanguageDetails, true

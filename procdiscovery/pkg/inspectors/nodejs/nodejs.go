@@ -1,7 +1,6 @@
 package nodejs
 
 import (
-	"github.com/odigos-io/odigos/common/envs"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -17,8 +16,8 @@ func (n *NodejsInspector) Inspect(process *process.Details) (common.ProgramLangu
 
 	if strings.Contains(process.ExeName, nodeProcessName) || strings.Contains(process.CmdLine, nodeProcessName) {
 		programLanguageDetails.Language = common.JavascriptProgrammingLanguage
-		if value, exists := process.Environments.DetailedEnvs[envs.NodeVersionConst]; exists {
-			programLanguageDetails.Version = value
+		if value, exists := process.Environments.DetailedEnvs[process.NodeVersionConst]; exists {
+			programLanguageDetails.RuntimeVersion = value
 		}
 
 		return programLanguageDetails, true
