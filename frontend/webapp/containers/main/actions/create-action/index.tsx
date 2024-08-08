@@ -94,6 +94,7 @@ export function CreateActionContainer(): React.JSX.Element {
         />
         <KeyvalInputWrapper>
           <KeyvalInput
+            data-cy={'create-action-input-name'}
             label={ACTIONS.ACTION_NAME}
             value={actionName}
             onChange={(name) => onChangeActionState('actionName', name)}
@@ -114,7 +115,7 @@ export function CreateActionContainer(): React.JSX.Element {
           />
         </TextareaWrapper>
         <CreateButtonWrapper>
-          <KeyvalButton onClick={upsertAction} disabled={!isFormValid}>
+          <KeyvalButton data-cy={'create-action-onclick'} onClick={upsertAction} disabled={!isFormValid}>
             <KeyvalText weight={600} color={theme.text.dark_button} size={14}>
               {ACTIONS.CREATE_ACTION}
             </KeyvalText>
