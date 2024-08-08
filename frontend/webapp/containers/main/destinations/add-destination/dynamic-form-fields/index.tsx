@@ -17,7 +17,7 @@ export function DynamicConnectDestinationFormFields({
           <Input
             key={field.name}
             {...field}
-            onChange={(value) => onChange(field.name, value)}
+            onChange={(e) => onChange(field.name, e.target.value)}
           />
         );
 

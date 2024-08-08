@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { Text } from '../text';
 import styled from 'styled-components';
 import { Checkbox } from '../checkbox';
-import { Text } from '../text';
 
 interface Monitor {
   id: string;
@@ -12,8 +12,8 @@ interface Monitor {
 interface CheckboxListProps {
   monitors: Monitor[];
   title?: string;
-  checkedState?: boolean[];
-  setCheckedState: (checkedState: boolean[]) => void;
+  exportedSignals: { [key: string]: boolean };
+  handleSignalChange: (signal: string, value: boolean) => void;
 }
 
 const ListContainer = styled.div`
@@ -28,25 +28,19 @@ const TextWrapper = styled.div`
 const CheckboxList: React.FC<CheckboxListProps> = ({
   monitors,
   title,
-  checkedState = [],
-  setCheckedState,
+  exportedSignals,
+  handleSignalChange,
 }) => {
-  useEffect(() => {
-    // Initialize the checked state with all true if no initial values provided
-    setCheckedState(Array(monitors.length).fill(true));
-  }, [monitors.length]);
+  function isItemDisabled(item: Monitor) {
+    const selectedItems = Object.values(exportedSignals).filter(
+      (value) => value
+    );
 
-  const handleCheckboxChange = (index: number, value: boolean) => {
-    const newCheckedState = [...checkedState];
-    newCheckedState[index] = value;
-
-    // Ensure at least one checkbox remains checked
-    if (newCheckedState.filter((checked) => checked).length === 0) {
-      return;
-    }
-
-    setCheckedState(newCheckedState);
-  };
+    return (
+      monitors.length === 1 ||
+      (selectedItems.length === 1 && exportedSignals[item.id])
+    );
+  }
 
   return (
     <div>
@@ -58,16 +52,13 @@ const CheckboxList: React.FC<CheckboxListProps> = ({
         </TextWrapper>
       )}
       <ListContainer>
-        {monitors.map((monitor, index) => (
+        {monitors.map((monitor) => (
           <Checkbox
             key={monitor.id}
             title={monitor.title}
-            initialValue={checkedState[index]}
-            onChange={(value) => handleCheckboxChange(index, value)}
-            disabled={
-              checkedState.filter((checked) => checked).length === 1 &&
-              checkedState[index]
-            }
+            initialValue={exportedSignals[monitor.id]}
+            onChange={(value) => handleSignalChange(monitor.id, value)}
+            disabled={isItemDisabled(monitor)}
           />
         ))}
       </ListContainer>

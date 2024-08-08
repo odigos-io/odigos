@@ -19,6 +19,7 @@ import { useQuery } from '@apollo/client';
 import styled from 'styled-components';
 import { DynamicConnectDestinationFormFields } from '../dynamic-form-fields';
 import { useConnectDestinationForm } from '@/hooks';
+
 const SIDE_MENU_DATA: StepProps[] = [
   {
     title: 'DESTINATIONS',
@@ -54,7 +55,7 @@ export function ConnectDestinationModalBody({
       skip: !destination,
     }
   );
-  const [checkedState, setCheckedState] = useState<boolean[]>([]);
+  const [exportedSignals, setExportedSignals] = useState({});
   const [destinationName, setDestinationName] = useState<string>('');
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -64,32 +65,23 @@ export function ConnectDestinationModalBody({
     if (!destination) return [];
 
     const { logs, metrics, traces } = destination.supportedSignals;
+
+    setExportedSignals({
+      logs: logs.supported,
+      metrics: metrics.supported,
+      traces: traces.supported,
+    });
+
     return [
-      logs.supported && {
-        id: 'logs',
-        title: 'Logs',
-      },
-      metrics.supported && {
-        id: 'metrics',
-        title: 'Metrics',
-      },
-      traces.supported && {
-        id: 'traces',
-        title: 'Traces',
-      },
+      logs.supported && { id: 'logs', title: 'Logs' },
+      metrics.supported && { id: 'metrics', title: 'Metrics' },
+      traces.supported && { id: 'traces', title: 'Traces' },
     ].filter(Boolean);
   }, [destination]);
 
   useEffect(() => {
-    data && console.log({ destination, data });
-
     if (data) {
       const df = buildFormDynamicFields(data.destinationTypeDetails.fields);
-      console.log(
-        'is missing fileds',
-        df.length !== data.destinationTypeDetails.fields.length
-      );
-      console.log({ df });
       setDynamicFields(df);
     }
   }, [data]);
@@ -98,8 +90,24 @@ export function ConnectDestinationModalBody({
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
+  function handleSignalChange(signal: string, value: boolean) {
+    setExportedSignals((prev) => ({ ...prev, [signal]: value }));
+  }
+
   function handleSubmit() {
-    console.log({ formData });
+    const fields = Object.entries(formData).map(([name, value]) => ({
+      key: name,
+      value,
+    }));
+
+    const body = {
+      name: destinationName,
+      type: destination?.type,
+      exportedSignals,
+      fields,
+    };
+
+    console.log({ body });
   }
 
   if (!destination) return null;
@@ -120,10 +128,10 @@ export function ConnectDestinationModalBody({
         <Divider margin="24px 0" />
         <FormContainer>
           <CheckboxList
-            checkedState={checkedState}
-            setCheckedState={setCheckedState}
             monitors={monitors as []}
             title="This connection will monitor:"
+            exportedSignals={exportedSignals}
+            handleSignalChange={handleSignalChange}
           />
           <Input
             title="Destination name"
