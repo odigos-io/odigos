@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { AddDestinationButton, SetupHeader } from '@/components';
+import { useRouter } from 'next/navigation';
 import { SectionTitle } from '@/reuseable-components';
 import { AddDestinationModal } from './add-destination-modal';
-import { useRouter } from 'next/navigation';
+import { AddDestinationButton, SetupHeader } from '@/components';
 
 const AddDestinationButtonWrapper = styled.div`
   width: 100%;
@@ -39,7 +39,6 @@ export function ChooseDestinationContainer() {
             },
             {
               label: 'DONE',
-              // iconSrc: '/icons/common/arrow-black.svg',
               onClick: () => console.log('Next button clicked'),
               variant: 'primary',
             },

@@ -15,7 +15,7 @@ interface FilterComponentProps {
 const InputAndDropdownContainer = styled.div`
   display: flex;
   gap: 12px;
-  width: 438px;
+  width: 370px;
 `;
 
 const FilterContainer = styled.div`
@@ -25,7 +25,7 @@ const FilterContainer = styled.div`
 `;
 
 const DROPDOWN_OPTIONS = [
-  { value: 'All', id: 'all' },
+  { value: 'All types', id: 'all' },
   { value: 'Managed', id: 'managed' },
   { value: 'Self-hosted', id: 'self hosted' },
 ];
