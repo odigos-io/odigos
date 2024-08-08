@@ -6,7 +6,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/common/envs/envOverwrite"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

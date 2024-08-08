@@ -3,19 +3,25 @@ package process
 import (
 	"bufio"
 	"fmt"
+	"github.com/odigos-io/odigos/common/envs"
 	"io"
 	"os"
 	"strings"
 
-	"github.com/odigos-io/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/common/envs/envOverwrite"
 )
 
 type Details struct {
-	ProcessID int
-	ExeName   string
-	CmdLine   string
+	ProcessID    int
+	ExeName      string
+	CmdLine      string
+	Environments *Envs
+}
+
+type Envs struct {
+	DetailedEnvs map[string]string
 	// Envs only contains the environment variables that we are interested in
-	Envs map[string]string
+	OverwriteEnvs map[string]string
 }
 
 // Find all processes in the system.
@@ -60,10 +66,10 @@ func GetPidDetails(pid int) Details {
 	envVars := getRelevantEnvVars(pid)
 
 	return Details{
-		ProcessID: pid,
-		ExeName:   exeName,
-		CmdLine:   cmdLine,
-		Envs:      envVars,
+		ProcessID:    pid,
+		ExeName:      exeName,
+		CmdLine:      cmdLine,
+		Environments: envVars,
 	}
 }
 
@@ -95,7 +101,7 @@ func getCommandLine(pid int) string {
 	}
 }
 
-func getRelevantEnvVars(pid int) map[string]string {
+func getRelevantEnvVars(pid int) *Envs {
 	envFileName := fmt.Sprintf("/proc/%d/environ", pid)
 	fileContent, err := os.ReadFile(envFileName)
 	if err != nil {
@@ -105,13 +111,15 @@ func getRelevantEnvVars(pid int) map[string]string {
 	}
 
 	r := bufio.NewReader(strings.NewReader(string(fileContent)))
-	result := make(map[string]string)
 
 	// We only care about the environment variables that we might overwrite
-	relevantEnvVars := make(map[string]interface{})
+	relevantOverwriteEnvVars := make(map[string]interface{})
 	for k := range envOverwrite.EnvValuesMap {
-		relevantEnvVars[k] = nil
+		relevantOverwriteEnvVars[k] = nil
 	}
+
+	overWriteEnvsResult := make(map[string]string)
+	detailedEnvsResult := make(map[string]string)
 
 	for {
 		// The entries are  separated  by
@@ -130,10 +138,19 @@ func getRelevantEnvVars(pid int) map[string]string {
 			continue
 		}
 
-		if _, ok := relevantEnvVars[envParts[0]]; ok {
-			result[envParts[0]] = envParts[1]
+		if _, ok := relevantOverwriteEnvVars[envParts[0]]; ok {
+			overWriteEnvsResult[envParts[0]] = envParts[1]
+		}
+
+		if _, ok := envs.EnvValuesMap[envParts[0]]; ok {
+			detailedEnvsResult[envParts[0]] = envParts[1]
 		}
 	}
 
-	return result
+	envs := &Envs{
+		OverwriteEnvs: overWriteEnvsResult,
+		DetailedEnvs:  detailedEnvsResult,
+	}
+
+	return envs
 }

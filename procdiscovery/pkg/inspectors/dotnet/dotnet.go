@@ -16,14 +16,16 @@ const (
 	dotnet = "DOTNET"
 )
 
-func (d *DotnetInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
+func (d *DotnetInspector) Inspect(p *process.Details) (common.ProgramLanguageDetails, bool) {
+	var programLanguageDetails common.ProgramLanguageDetails
 	data, err := os.ReadFile(fmt.Sprintf("/proc/%d/environ", p.ProcessID))
 	if err == nil {
 		environ := string(data)
 		if strings.Contains(environ, aspnet) || strings.Contains(environ, dotnet) {
-			return common.DotNetProgrammingLanguage, true
+			programLanguageDetails.Language = common.DotNetProgrammingLanguage
+			return programLanguageDetails, true
 		}
 	}
 
-	return "", false
+	return programLanguageDetails, false
 }

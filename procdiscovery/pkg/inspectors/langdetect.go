@@ -22,7 +22,7 @@ func (e ErrLanguageDetectionConflict) Error() string {
 }
 
 type inspector interface {
-	Inspect(process *process.Details) (common.ProgrammingLanguage, bool)
+	Inspect(process *process.Details) (common.ProgramLanguageDetails, bool)
 }
 
 var inspectorsList = []inspector{
@@ -37,23 +37,28 @@ var inspectorsList = []inspector{
 // DetectLanguage returns the detected language for the process or
 // common.UnknownProgrammingLanguage if the language could not be detected, in which case error == nil
 // if error or language detectors disagree common.UnknownProgrammingLanguage is also returned
-func DetectLanguage(process process.Details) (common.ProgrammingLanguage, error) {
-	detectedLanguage := common.UnknownProgrammingLanguage
+func DetectLanguage(process process.Details) (common.ProgramLanguageDetails, error) {
+	detectedProgramLanguageDetails := common.ProgramLanguageDetails{
+		Language: common.UnknownProgrammingLanguage,
+	}
+
 	for _, i := range inspectorsList {
-		language, detected := i.Inspect(&process)
+		languageDetails, detected := i.Inspect(&process)
 		if detected {
-			if detectedLanguage == common.UnknownProgrammingLanguage {
-				detectedLanguage = language
+			if detectedProgramLanguageDetails.Language == common.UnknownProgrammingLanguage {
+				detectedProgramLanguageDetails = languageDetails
 				continue
 			}
-			return common.UnknownProgrammingLanguage, ErrLanguageDetectionConflict{
-				languages: [2]common.ProgrammingLanguage{
-					detectedLanguage,
-					language,
-				},
-			}
+			return common.ProgramLanguageDetails{
+					Language: common.UnknownProgrammingLanguage,
+				}, ErrLanguageDetectionConflict{
+					languages: [2]common.ProgrammingLanguage{
+						detectedProgramLanguageDetails.Language,
+						languageDetails.Language,
+					},
+				}
 		}
 	}
 
-	return detectedLanguage, nil
+	return detectedProgramLanguageDetails, nil
 }

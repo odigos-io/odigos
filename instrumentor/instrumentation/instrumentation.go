@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/odigos-io/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/common/envs/envOverwrite"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"

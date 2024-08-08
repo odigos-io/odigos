@@ -10,12 +10,14 @@ import (
 
 type GolangInspector struct{}
 
-func (g *GolangInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
+func (g *GolangInspector) Inspect(p *process.Details) (common.ProgramLanguageDetails, bool) {
+	var programLanguageDetails common.ProgramLanguageDetails
 	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
 	_, err := buildinfo.ReadFile(file)
 	if err != nil {
-		return "", false
+		return programLanguageDetails, false
 	}
+	programLanguageDetails.Language = common.GoProgrammingLanguage
 
-	return common.GoProgrammingLanguage, true
+	return programLanguageDetails, true
 }

@@ -1,6 +1,7 @@
 package nodejs
 
 import (
+	"github.com/odigos-io/odigos/common/envs"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -11,10 +12,17 @@ type NodejsInspector struct{}
 
 const nodeProcessName = "node"
 
-func (n *NodejsInspector) Inspect(process *process.Details) (common.ProgrammingLanguage, bool) {
+func (n *NodejsInspector) Inspect(process *process.Details) (common.ProgramLanguageDetails, bool) {
+	var programLanguageDetails common.ProgramLanguageDetails
+
 	if strings.Contains(process.ExeName, nodeProcessName) || strings.Contains(process.CmdLine, nodeProcessName) {
-		return common.JavascriptProgrammingLanguage, true
+		programLanguageDetails.Language = common.JavascriptProgrammingLanguage
+		if value, exists := process.Environments.DetailedEnvs[envs.NodeVersionConst]; exists {
+			programLanguageDetails.Version = value
+		}
+
+		return programLanguageDetails, true
 	}
 
-	return "", false
+	return programLanguageDetails, false
 }

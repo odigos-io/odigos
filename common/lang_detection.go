@@ -1,5 +1,10 @@
 package common
 
+type ProgramLanguageDetails struct {
+	Language ProgrammingLanguage
+	Version  string
+}
+
 // +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;mysql;unknown;ignored
 type ProgrammingLanguage string
 
