@@ -142,7 +142,7 @@ func getRelevantEnvVars(pid int) *Envs {
 			overWriteEnvsResult[envParts[0]] = envParts[1]
 		}
 
-		if _, ok := envs.EnvValuesMap[envParts[0]]; ok {
+		if _, ok := envs.EnvDetailsSeparatorMap[envParts[0]]; ok {
 			detailedEnvsResult[envParts[0]] = envParts[1]
 		}
 	}
