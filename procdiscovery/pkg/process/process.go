@@ -15,12 +15,12 @@ type Details struct {
 	ProcessID    int
 	ExeName      string
 	CmdLine      string
-	Environments *Envs
+	Environments *ProcessEnvs
 }
 
-type Envs struct {
+type ProcessEnvs struct {
 	DetailedEnvs map[string]string
-	// Envs only contains the environment variables that we are interested in
+	// OverwriteEnvs only contains the environment variables that we are interested in
 	OverwriteEnvs map[string]string
 }
 
@@ -101,7 +101,7 @@ func getCommandLine(pid int) string {
 	}
 }
 
-func getRelevantEnvVars(pid int) *Envs {
+func getRelevantEnvVars(pid int) *ProcessEnvs {
 	envFileName := fmt.Sprintf("/proc/%d/environ", pid)
 	fileContent, err := os.ReadFile(envFileName)
 	if err != nil {
@@ -147,7 +147,7 @@ func getRelevantEnvVars(pid int) *Envs {
 		}
 	}
 
-	envs := &Envs{
+	envs := &ProcessEnvs{
 		OverwriteEnvs: overWriteEnvsResult,
 		DetailedEnvs:  detailedEnvsResult,
 	}
