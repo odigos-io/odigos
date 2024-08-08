@@ -22,7 +22,7 @@ type ABSExporter struct {
 }
 
 func NewAzureBlobExporter(config *Config,
-	params exporter.CreateSettings) (*ABSExporter, error) {
+	params exporter.Settings) (*ABSExporter, error) {
 
 	if config == nil {
 		return nil, errors.New("azure blob exporter config is nil")

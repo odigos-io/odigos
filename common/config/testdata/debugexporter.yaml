@@ -2,8 +2,10 @@ receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: 0.0.0.0:4317
         max_recv_msg_size_mib: 134217728
-      http: {}
+      http:
+        endpoint: 0.0.0.0:4318
 exporters:
   debug/d1:
     verbosity: basic
@@ -15,13 +17,12 @@ processors:
       key: odigos.version
       value: ${ODIGOS_VERSION}
 extensions:
-  health_check: {}
-  zpages: {}
+  health_check:
+    endpoint: 0.0.0.0:13133
 connectors: {}
 service:
   extensions:
   - health_check
-  - zpages
   pipelines:
     logs/debug-d1:
       receivers:
