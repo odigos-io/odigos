@@ -28,7 +28,14 @@ func getNumberOfWorkers() int {
 
 func copyDirectories(srcDir string, destDir string) error {
 	start := time.Now()
-	files, err := getFiles(srcDir)
+
+	hostContainCFiles := HostContainCFiles(destDir)
+	keepCFiles := !ShouldRecreateAllCFiles()
+
+	// If the host directory contains C files and we want to keep them, we don't copy C files
+	DontCopyCFiles := hostContainCFiles && keepCFiles
+
+	files, err := getFiles(srcDir, DontCopyCFiles)
 	if err != nil {
 		return err
 	}
@@ -76,13 +83,20 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
-func getFiles(dir string) ([]string, error) {
+func getFiles(dir string, DontCopyCFiles bool) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
+			if DontCopyCFiles {
+				switch ext := filepath.Ext(path); ext {
+				// filter out C files
+				case ".so", ".node", ".node.d", ".a":
+					return nil
+				}
+			}
 			files = append(files, path)
 		}
 		return nil
@@ -126,4 +140,22 @@ func copyFile(src, dst string, buf []byte) error {
 	}
 
 	return nil
+}
+
+func HostContainCFiles(dir string) bool {
+	var hostContainCFiles bool
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		switch ext := filepath.Ext(info.Name()); ext {
+		case ".so", ".node", "node.d", ".a", ".o":
+			hostContainCFiles = true
+			return filepath.SkipDir
+		}
+		return nil
+	})
+
+	return hostContainCFiles
 }
