@@ -126,7 +126,6 @@ func CalculateWithBase(currentConfig *Config, globalProcessors []string, dests [
 }
 
 func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
-	empty := struct{}{}
 	return &Config{
 		Receivers: GenericMap{
 			"otlp": GenericMap{
@@ -136,7 +135,10 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 						"max_recv_msg_size_mib": 128 * 1024 * 1024,
 						"endpoint": "0.0.0.0:4317",
 					},
-					"http": empty,
+					// Node collectors send in gRPC, so this is probably not needed
+					"http": GenericMap{
+						"endpoint": "0.0.0.0:4318",
+					},
 				},
 			},
 		},
@@ -156,13 +158,12 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 			"health_check": GenericMap{
 				"endpoint": "0.0.0.0:13133",
 			},
-			"zpages":       empty,
 		},
 		Exporters:  map[string]interface{}{},
 		Connectors: map[string]interface{}{},
 		Service: Service{
 			Pipelines:  map[string]Pipeline{},
-			Extensions: []string{"health_check", "zpages"},
+			Extensions: []string{"health_check"},
 		},
 	}, []string{memoryLimiterProcessorName, "resource/odigos-version"}
 }

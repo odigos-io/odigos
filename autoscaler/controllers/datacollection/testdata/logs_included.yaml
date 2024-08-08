@@ -5,7 +5,6 @@ exporters:
       insecure: true
 extensions:
   health_check: {}
-  zpages: {}
 processors:
   batch: {}
   odigosresourcename: {}
@@ -96,7 +95,6 @@ receivers:
 service:
   extensions:
   - health_check
-  - zpages
   pipelines:
     logs:
       exporters:

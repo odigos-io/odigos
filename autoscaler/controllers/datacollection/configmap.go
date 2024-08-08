@@ -182,11 +182,10 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			"health_check": config.GenericMap{
 				"endpoint": "0.0.0.0:13133",
 			},
-			"zpages":       empty,
 		},
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{},
-			Extensions: []string{"health_check", "zpages"},
+			Extensions: []string{"health_check"},
 		},
 	}
 

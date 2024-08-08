@@ -4,7 +4,8 @@ receivers:
       grpc:
         endpoint: 0.0.0.0:4317
         max_recv_msg_size_mib: 134217728
-      http: {}
+      http:
+        endpoint: 0.0.0.0:4318
 exporters: {}
 processors:
   memory_limiter: {}
@@ -16,10 +17,8 @@ processors:
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
-  zpages: {}
 connectors: {}
 service:
   extensions:
   - health_check
-  - zpages
   pipelines: {}
