@@ -35,6 +35,7 @@ const SIDE_MENU_DATA: StepProps[] = [
 const FormContainer = styled.div`
   display: flex;
   width: 100%;
+  max-width: 500px;
   flex-direction: column;
   gap: 24px;
 `;
