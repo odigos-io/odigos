@@ -26,7 +26,8 @@ spec:
     - script:
         content: |
           # Retry to avoid flakiness (due to CRD race conditions in helm). Timeout after 60s.
-          while ! helm upgrade --install odigos $GITHUB_WORKSPACE/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test; do
+          # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
+          while ! helm upgrade --install odigos ../../../helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test; do
             echo "Failed to install Odigos, retrying..."
             sleep 1
           done
