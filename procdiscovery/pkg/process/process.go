@@ -3,13 +3,19 @@ package process
 import (
 	"bufio"
 	"fmt"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	"io"
 	"os"
 	"strings"
 
 	"github.com/odigos-io/odigos/common/envOverwrite"
 )
+
+const NodeVersionConst = "NODE_VERSION"
+const PythonVersionConst = "PYTHON_VERSION"
+const JavaVersionConst = "JAVA_VERSION"
+
+// envDetailsSeparatorMap is a map of environment variables and their separators
+var envDetailsSeparatorMap = []string{NodeVersionConst, PythonVersionConst, JavaVersionConst}
 
 type Details struct {
 	ProcessID    int
@@ -142,7 +148,7 @@ func getRelevantEnvVars(pid int) *ProcessEnvs {
 			overWriteEnvsResult[envParts[0]] = envParts[1]
 		}
 
-		for _, env := range inspectors.EnvDetailsSeparatorMap {
+		for _, env := range envDetailsSeparatorMap {
 			if env == envParts[0] {
 				detailedEnvsResult[envParts[0]] = envParts[1]
 			}
