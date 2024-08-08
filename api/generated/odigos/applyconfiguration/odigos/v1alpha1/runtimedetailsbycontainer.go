@@ -26,6 +26,7 @@ import (
 type RuntimeDetailsByContainerApplyConfiguration struct {
 	ContainerName *string                     `json:"containerName,omitempty"`
 	Language      *common.ProgrammingLanguage `json:"language,omitempty"`
+	Version       *string                     `json:"version,omitempty"`
 	EnvVars       []EnvVarApplyConfiguration  `json:"envVars,omitempty"`
 }
 
@@ -48,6 +49,14 @@ func (b *RuntimeDetailsByContainerApplyConfiguration) WithContainerName(value st
 // If called multiple times, the Language field is set to the value of the last call.
 func (b *RuntimeDetailsByContainerApplyConfiguration) WithLanguage(value common.ProgrammingLanguage) *RuntimeDetailsByContainerApplyConfiguration {
 	b.Language = &value
+	return b
+}
+
+// WithVersion sets the Version field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Version field is set to the value of the last call.
+func (b *RuntimeDetailsByContainerApplyConfiguration) WithVersion(value string) *RuntimeDetailsByContainerApplyConfiguration {
+	b.Version = &value
 	return b
 }
 
