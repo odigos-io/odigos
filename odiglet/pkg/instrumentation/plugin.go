@@ -6,10 +6,11 @@ import (
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	"github.com/odigos-io/odigos/common"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/devices"
-	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
@@ -81,6 +82,18 @@ func (p *plugin) GetPreferredAllocation(ctx context.Context, request *v1beta1.Pr
 func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest) (*v1beta1.AllocateResponse, error) {
 	res := &v1beta1.AllocateResponse{}
 
+	odigosNs := env.GetCurrentNamespace()
+	nodeCollectorGroup, err := p.odigosKubeClient.OdigosV1alpha1().CollectorsGroups(odigosNs).Get(ctx, k8sconsts.OdigosNodeCollectorCollectorGroupName, metav1.GetOptions{})
+	if err != nil {
+		log.Logger.Error(err, "Failed to get node collector group")
+		return nil, err
+	}
+
+	enabledSignals := make(map[common.ObservabilitySignal]struct{})
+	for _, signal := range nodeCollectorGroup.Status.ReceiverSignals {
+		enabledSignals[signal] = struct{}{}
+	}
+
 	for _, req := range request.ContainerRequests {
 		if len(req.DevicesIDs) != 1 {
 			log.Logger.V(0).Info("got  instrumentation device not equal to 1, skipping", "devices", req.DevicesIDs)
@@ -88,20 +101,7 @@ func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest)
 		}
 
 		deviceId := req.DevicesIDs[0]
-
-		destinations, err := kubeutils.GetDestinations(ctx, p.odigosKubeClient, env.GetCurrentNamespace())
-		if err != nil {
-			log.Logger.Error(err, "Failed to list destinations")
-			return nil, err
-		}
-
-		uniqueDestinationSignals := make(map[common.ObservabilitySignal]struct{})
-		for _, destination := range destinations.Items {
-			for _, signal := range destination.Spec.Signals {
-				uniqueDestinationSignals[signal] = struct{}{}
-			}
-		}
-		res.ContainerResponses = append(res.ContainerResponses, p.LangSpecificFunc(deviceId, uniqueDestinationSignals))
+		res.ContainerResponses = append(res.ContainerResponses, p.LangSpecificFunc(deviceId, enabledSignals))
 	}
 
 	return res, nil

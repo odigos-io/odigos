@@ -5,8 +5,6 @@ import (
 	"errors"
 	"strings"
 
-	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"go.opentelemetry.io/otel/attribute"
@@ -42,15 +40,6 @@ func GetRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 	}
 
 	return filteredPods, nil
-}
-
-func GetDestinations(ctx context.Context, odigosKubeClient *odigosclientset.Clientset, namespace string) (*v1alpha1.DestinationList, error) {
-	destinations, err := odigosKubeClient.OdigosV1alpha1().Destinations(namespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	return destinations, nil
 }
 
 func GetResourceAttributes(workload *common.PodWorkload, podName string) []attribute.KeyValue {
