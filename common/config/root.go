@@ -143,7 +143,6 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests [
 // It includes the basic receivers, processors, exporters, extensions, and service configuration.
 // In addition it returns prefix processors that should be added to beginning of each pipeline.
 func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
-	empty := struct{}{}
 	return &Config{
 		Receivers: GenericMap{
 			"otlp": GenericMap{
@@ -151,8 +150,12 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 					"grpc": GenericMap{
 						// setting it to a large value to avoid dropping batches.
 						"max_recv_msg_size_mib": 128 * 1024 * 1024,
+						"endpoint": "0.0.0.0:4317",
 					},
-					"http": empty,
+					// Node collectors send in gRPC, so this is probably not needed
+					"http": GenericMap{
+						"endpoint": "0.0.0.0:4318",
+					},
 				},
 			},
 		},
@@ -169,14 +172,15 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 			},
 		},
 		Extensions: GenericMap{
-			"health_check": empty,
-			"zpages":       empty,
+			"health_check": GenericMap{
+				"endpoint": "0.0.0.0:13133",
+			},
 		},
 		Exporters:  map[string]interface{}{},
 		Connectors: map[string]interface{}{},
 		Service: Service{
 			Pipelines:  map[string]Pipeline{},
-			Extensions: []string{"health_check", "zpages"},
+			Extensions: []string{"health_check"},
 		},
 	},
 	[]string{memoryLimiterProcessorName, "resource/odigos-version"}

@@ -21,9 +21,9 @@ import (
 )
 
 const (
-	traceSizeMetricName  = "otelcol_processor_odigostrafficmetrics_trace_data_size"
-	metricSizeMetricName = "otelcol_processor_odigostrafficmetrics_metric_data_size"
-	logSizeMetricName    = "otelcol_processor_odigostrafficmetrics_log_data_size"
+	traceSizeMetricName  = "processor_odigostrafficmetrics_trace_data_size"
+	metricSizeMetricName = "processor_odigostrafficmetrics_metric_data_size"
+	logSizeMetricName    = "processor_odigostrafficmetrics_log_data_size"
 )
 
 var (
@@ -162,7 +162,7 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 		c.runNotificationsLoop(ctx)
 	}()
 
-	// run a watcher for collectors deletion detection
+	// run a watcher for deletion detection
 	closeWg.Add(1)
 	go func() {
 		defer closeWg.Done()
@@ -192,7 +192,7 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 	r.Start(ctx, componenttest.NewNopHost())
 	defer r.Shutdown(ctx)
 
-	fmt.Print("OTLP Receiver is running\n")
+	log.Println("OTLP receiver is running")
 	<-ctx.Done()
 	closeWg.Wait()
 }

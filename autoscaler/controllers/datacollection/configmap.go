@@ -177,9 +177,6 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 				"insecure": true,
 			},
 		},
-		"debug": config.GenericMap{
-			"verbosity": "detailed",
-		},
 	}
 	tracesPipelineExporter := []string{"otlp/gateway"}
 
@@ -193,11 +190,14 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 
 	cfg := config.Config{
 		Receivers: config.GenericMap{
-			"zipkin": empty,
 			"otlp": config.GenericMap{
 				"protocols": config.GenericMap{
-					"grpc": empty,
-					"http": empty,
+					"grpc": config.GenericMap{
+						"endpoint": "0.0.0.0:4317",
+					},
+					"http": config.GenericMap{
+						"endpoint": "0.0.0.0:4318",
+					},
 				},
 			},
 			"prometheus": config.GenericMap{
@@ -226,18 +226,19 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 		Exporters:  exporters,
 		Processors: processorsCfg,
 		Extensions: config.GenericMap{
-			"health_check": empty,
-			"zpages":       empty,
+			"health_check": config.GenericMap{
+				"endpoint": "0.0.0.0:13133",
+			},
 		},
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{
 				"metrics/otelcol": {
 					Receivers: []string{"prometheus"},
 					Processors: []string{"resource/pod-name"},
-					Exporters: []string{"debug", "otlp/ui"},
+					Exporters: []string{"otlp/ui"},
 				},
 			},
-			Extensions: []string{"health_check", "zpages"},
+			Extensions: []string{"health_check"},
 			Telemetry: config.Telemetry{
 				Metrics: config.GenericMap{
 					"address": "0.0.0.0:8888",
@@ -316,7 +317,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
-			Receivers:  []string{"otlp", "zipkin"},
+			Receivers:  []string{"otlp"},
 			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, tracesProcessors...),
 			Exporters:  tracesPipelineExporter,
 		}
