@@ -97,18 +97,18 @@ and apply any required migrations and adaptations.`,
 		}
 
 		// update the config on upgrade
-		config.Spec.OdigosVersion = versionFlag
-		config.Spec.ConfigVersion += 1
+		config.OdigosVersion = versionFlag
+		config.ConfigVersion += 1
 
 		// make sure the current system namespaces is in the ignored in config
-		config.Spec.IgnoredNamespaces = utils.MergeDefaultIgnoreWithUserInput(config.Spec.IgnoredNamespaces, consts.SystemNamespaces)
+		config.IgnoredNamespaces = utils.MergeDefaultIgnoreWithUserInput(config.IgnoredNamespaces, consts.SystemNamespaces)
 
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
 			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
 			os.Exit(1)
 		}
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, &config.Spec)
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")

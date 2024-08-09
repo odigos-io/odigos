@@ -40,7 +40,7 @@ changelog:
       - "^docs:"
       - "^test:"
 brews:
-  - tap:
+  - repository:
       owner: keyval-dev
       name: homebrew-odigos-cli
       token: "{{ .Env.HOMEBREW_GITHUB_API_TOKEN }}"

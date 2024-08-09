@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos/api"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
@@ -95,11 +94,11 @@ func NewLeaderElectionRole(ns string) *rbacv1.Role {
 type odigosDeploymentResourceManager struct {
 	client     *kube.Client
 	ns         string
-	config     *odigosv1.OdigosConfigurationSpec
+	config     *common.OdigosConfiguration
 	odigosTier common.OdigosTier
 }
 
-func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
+func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
 	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
 }
 

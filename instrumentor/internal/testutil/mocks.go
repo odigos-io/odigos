@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -11,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -162,17 +164,25 @@ func NewMockDataCollection() *odigosv1.CollectorsGroup {
 	}
 }
 
-func NewMockOdigosConfig() *odigosv1.OdigosConfiguration {
-	return &odigosv1.OdigosConfiguration{
+func NewMockOdigosConfig() *v1.ConfigMap {
+	config, _ := json.Marshal(common.OdigosConfiguration{
+		DefaultSDKs: map[common.ProgrammingLanguage]common.OtelSdk{
+			common.PythonProgrammingLanguage: common.OtelSdkNativeCommunity,
+			common.GoProgrammingLanguage:     common.OtelSdkNativeCommunity,
+		},
+	})
+
+	return &v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      consts.OdigosConfigurationName,
 			Namespace: consts.DefaultOdigosNamespace,
 		},
-		Spec: odigosv1.OdigosConfigurationSpec{
-			DefaultSDKs: map[common.ProgrammingLanguage]common.OtelSdk{
-				common.PythonProgrammingLanguage: common.OtelSdkNativeCommunity,
-				common.GoProgrammingLanguage:     common.OtelSdkNativeCommunity,
-			},
+		Data: map[string]string{
+			consts.OdigosConfigurationFileName: string(config),
 		},
 	}
 }

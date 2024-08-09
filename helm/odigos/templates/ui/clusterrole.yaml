@@ -13,6 +13,18 @@ rules:
       - watch
       - patch
   - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - create
+      - delete
+      - update
+  - apiGroups:
       - apps
     resources:
       - deployments

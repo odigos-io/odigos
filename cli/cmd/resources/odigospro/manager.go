@@ -3,7 +3,6 @@ package odigospro
 import (
 	"context"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
@@ -14,7 +13,7 @@ import (
 type odigosCloudResourceManager struct {
 	client       *kube.Client
 	ns           string
-	config       *odigosv1.OdigosConfigurationSpec
+	config       *common.OdigosConfiguration
 	odigosTier   common.OdigosTier
 	proTierToken *string
 }
@@ -23,7 +22,7 @@ type odigosCloudResourceManager struct {
 // 1. odigos tier is community - the resource manager should not be installed.
 // 2. User has provided a cloud api key or onprem token - the resource manager should be initialized with the pro tier token.
 // 3. User wishes to update resources but leave the token as is - proTierToken should be nil.
-func NewOdigosProResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, odigosTier common.OdigosTier, proTierToken *string) resourcemanager.ResourceManager {
+func NewOdigosProResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, proTierToken *string) resourcemanager.ResourceManager {
 	return &odigosCloudResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, proTierToken: proTierToken}
 }
 

@@ -3,10 +3,10 @@ package resources
 import (
 	"context"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -50,93 +50,44 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
 				APIGroups: []string{""},
 				Resources: []string{"services"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"patch",
-					"update",
-					"delete",
-				},
 				APIGroups: []string{"autoscaling"},
 				Resources: []string{"horizontalpodautoscalers"},
+				Verbs:     []string{"create", "patch", "update", "delete"},
 			},
 			{
-				Verbs: []string{
-					"list",
-					"watch",
-					"get",
-				},
 				APIGroups: []string{""},
 				Resources: []string{"secrets"},
+				Verbs:     []string{"list", "watch", "get"},
 			},
 		},
 	}
@@ -177,165 +128,88 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
 				APIGroups: []string{""},
 				Resources: []string{"services"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentedapplications"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentedapplications/finalizers"},
+				Verbs:     []string{"update"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentedapplications/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			}, {
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups/finalizers"},
+				Verbs:     []string{"update"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"destinations"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-					"patch",
-					"create",
-					"update",
-				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"processors"},
+				Verbs:     []string{"get", "list", "watch", "patch", "create", "update"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"destinations/finalizers"},
+				Verbs:     []string{"update"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"destinations/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
 			{
-				Verbs: []string{
-					"watch",
-					"get",
-					"list",
-				},
 				APIGroups: []string{"actions.odigos.io"},
 				Resources: []string{"addclusterinfos", "deleteattributes", "renameattributes", "probabilisticsamplers", "piimaskings", "latencysamplers", "errorsamplers"},
+				Verbs:     []string{"watch", "get", "list"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
 				APIGroups: []string{"actions.odigos.io"},
 				Resources: []string{"addclusterinfos/status", "deleteattributes/status", "renameattributes/status", "probabilisticsamplers/status", "piimaskings/status", "latencysamplers/status", "errorsamplers/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"odigosconfigurations"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 		},
 	}
@@ -513,10 +387,10 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 type autoScalerResourceManager struct {
 	client *kube.Client
 	ns     string
-	config *odigosv1.OdigosConfigurationSpec
+	config *common.OdigosConfiguration
 }
 
-func NewAutoScalerResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) resourcemanager.ResourceManager {
+func NewAutoScalerResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration) resourcemanager.ResourceManager {
 	return &autoScalerResourceManager{client: client, ns: ns, config: config}
 }
 

@@ -10,6 +10,7 @@ generate:
 	go mod download
 	GO_AUTO_PATH=$$(go list -m -f '{{.Dir}}' "go.opentelemetry.io/auto") && \
 	cd $$GO_AUTO_PATH && \
+	chmod -R +w $$GO_AUTO_PATH && \
 	make generate
 
 test:
