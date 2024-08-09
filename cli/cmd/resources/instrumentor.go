@@ -72,295 +72,119 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				Verbs: []string{
-					"list",
-					"watch",
-					"get",
-				},
 				APIGroups: []string{""},
-				Resources: []string{
-					"nodes",
-				},
+				Resources: []string{"nodes"},
+				Verbs:     []string{"list", "watch", "get"},
 			},
 			{
-				Verbs: []string{
-					"list",
-					"watch",
-					"get",
-				},
 				APIGroups: []string{""},
-				Resources: []string{
-					"namespaces",
-				},
+				Resources: []string{"namespaces"},
+				Verbs:     []string{"list", "watch", "get"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"daemonsets",
-				},
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"daemonsets/finalizers",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets"},
+				Verbs:     []string{"create", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"daemonsets/status",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets/finalizers"},
+				Verbs:     []string{"update"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"deployments",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets/status"},
+				Verbs:     []string{"get"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"deployments/finalizers",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments"},
+				Verbs:     []string{"create", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"deployments/status",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments/finalizers"},
+				Verbs:     []string{"update"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"statefulsets",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments/status"},
+				Verbs:     []string{"get"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"statefulsets/finalizers",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"statefulsets"},
+				Verbs:     []string{"create", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"statefulsets/status",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"statefulsets/finalizers"},
+				Verbs:     []string{"update"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"collectorsgroups",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"statefulsets/status"},
+				Verbs:     []string{"get"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"collectorsgroups/finalizers",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"collectorsgroups/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications",
-				},
-			},
-			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications/finalizers",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"odigosconfigurations",
-				},
-			},
-			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"destinations",
-				},
-			},
-			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"destinations/finalizers",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"destinations/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{
-					"instrumentationconfigs",
-				},
+				Resources: []string{"collectorsgroups"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/finalizers"},
+				Verbs:     []string{"update"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/status"},
+				Verbs:     []string{"get", "patch", "update"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentedapplications"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentedapplications/finalizers"},
+				Verbs:     []string{"update"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentedapplications/status"},
+				Verbs:     []string{"get", "patch", "update"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"odigosconfigurations"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations/finalizers"},
+				Verbs:     []string{"update"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations/status"},
+				Verbs:     []string{"get", "patch", "update"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationconfigs"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 		},
 	}
