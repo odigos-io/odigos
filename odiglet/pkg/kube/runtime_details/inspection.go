@@ -113,11 +113,13 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				if len(processes) > 1 {
 					log.Logger.V(0).Info("multiple processes found in pod container, only taking the first one with detected language into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				}
-				// Convert map to slice for k8s format
-				envs = make([]odigosv1.EnvVar, 0, len(inspectProc.Environments.OverwriteEnvs))
-				for envName, envValue := range inspectProc.Environments.OverwriteEnvs {
 
-					envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
+				// Convert map to slice for k8s format
+				if inspectProc.Environments != nil {
+					envs = make([]odigosv1.EnvVar, 0, len(inspectProc.Environments.DetailedEnvs))
+					for envName, envValue := range inspectProc.Environments.OverwriteEnvs {
+						envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
+					}
 				}
 			}
 

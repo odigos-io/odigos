@@ -26,7 +26,7 @@ type Details struct {
 
 type ProcessEnvs struct {
 	DetailedEnvs map[string]string
-	// OverwriteEnvs only contains the environment variables that we are interested in
+	// OverwriteEnvs only contains environment variables that Odigos is using for auto-instrumentation and may need to be overwritten
 	OverwriteEnvs map[string]string
 }
 
