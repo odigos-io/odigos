@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,11 +30,11 @@ func getNumberOfWorkers() int {
 func copyDirectories(srcDir string, destDir string) error {
 	start := time.Now()
 
-	hostContainCFiles := HostContainCFiles(destDir)
+	hostContainEbpfDir := HostContainsEbpfDir(destDir)
 	keepCFiles := !ShouldRecreateAllCFiles()
 
 	// If the host directory contains C files and we want to keep them, we don't copy C files
-	DontCopyCFiles := hostContainCFiles && keepCFiles
+	DontCopyCFiles := hostContainEbpfDir && keepCFiles
 
 	files, err := getFiles(srcDir, DontCopyCFiles)
 	if err != nil {
@@ -140,6 +141,21 @@ func copyFile(src, dst string, buf []byte) error {
 	}
 
 	return nil
+}
+
+func HostContainsEbpfDir(dir string) bool {
+	found := false
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || found {
+			return err
+		}
+		if info.IsDir() && strings.Contains(info.Name(), "ebpf") {
+			found = true
+			return filepath.SkipDir // Stop searching further
+		}
+		return nil
+	})
+	return found
 }
 
 func HostContainCFiles(dir string) bool {
