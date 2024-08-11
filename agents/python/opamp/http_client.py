@@ -68,15 +68,15 @@ class OpAMPHTTPClient:
             self.event.set()
     
     def send_agent_failure_disconnect_message(self, error_message: str) -> None:
-        first_disconnect_message = opamp_pb2.AgentToServer()
+        agent_failure_message = opamp_pb2.AgentToServer()
         
         agent_disconnect = self.get_agent_disconnect()
-        first_disconnect_message.agent_disconnect.CopyFrom(agent_disconnect)
+        agent_failure_message.agent_disconnect.CopyFrom(agent_disconnect)
     
         agent_health = self.get_agent_health(component_health=False, last_error=error_message, status=AgentHealthStatus.AGENT_FAILURE.value)
-        first_disconnect_message.health.CopyFrom(agent_health)
+        agent_failure_message.health.CopyFrom(agent_health)
         
-        self.send_agent_to_server_message(first_disconnect_message)
+        self.send_agent_to_server_message(agent_failure_message)
     
     def send_unsupported_version_disconnect_message(self, error_message: str) -> None:
         first_disconnect_message = opamp_pb2.AgentToServer()
