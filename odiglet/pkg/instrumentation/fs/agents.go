@@ -18,21 +18,15 @@ const (
 )
 
 func CopyAgentsDirectoryToHost() error {
-
 	// remove the current content of /var/odigos
 	// as we want a fresh copy of instrumentation agents with no files leftover from previous odigos versions.
 	// we cannot remove /var/odigos itself: "unlinkat /var/odigos: device or resource busy"
 	// so we will just remove it's content
-	entries, err := os.ReadDir(hostDir)
+	// We kept the .so/.node files to avoid removing the instrumentations that are already loaded in the process memory
+	err := removeFilesInDir(hostDir)
 	if err != nil {
+		log.Logger.Error(err, "Error removing instrumentation directory from host")
 		return err
-	}
-	for _, entry := range entries {
-		entryPath := filepath.Join(hostDir, entry.Name())
-		err := os.RemoveAll(entryPath)
-		if err != nil {
-			return err
-		}
 	}
 
 	err = copyDirectories(containerDir, hostDir)
@@ -66,4 +60,9 @@ func CopyAgentsDirectoryToHost() error {
 	}
 
 	return nil
+}
+
+func ShouldRecreateAllCFiles() bool {
+	value, exists := os.LookupEnv("RECREATE_ALL_C_FILES")
+	return exists && value == "true"
 }
