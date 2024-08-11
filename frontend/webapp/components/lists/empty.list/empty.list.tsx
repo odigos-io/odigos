@@ -31,7 +31,7 @@ export function EmptyList({ title, btnTitle, btnAction }: EmptyListProps) {
         </>
       )}
       {btnAction && (
-        <KeyvalButton onClick={btnAction} style={BUTTON_STYLES}>
+        <KeyvalButton data-cy={'add-action-button'} onClick={btnAction} style={BUTTON_STYLES}>
           <PlusIcon />
           <KeyvalText size={16} weight={700} color={theme.text.dark_button}>
             {btnTitle}

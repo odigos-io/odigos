@@ -40,6 +40,7 @@ export function DynamicActionForm({
     <>
       {FormComponent ? (
         <FormComponent
+
           data={data}
           onChange={onChange}
           setIsFormValid={setIsFormValid}
