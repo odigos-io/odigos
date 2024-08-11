@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 )
@@ -27,9 +28,12 @@ func removeFilesInDir(hostDir string) error {
 		}
 
 		if !shouldRecreateCFiles {
-			switch ext := filepath.Ext(info.Name()); ext {
-			case ".so", ".node", "node.d", ".a":
-				return nil
+			// filter out C files in ebpf directories
+			if strings.Contains(filepath.Dir(path), "ebpf") {
+				switch ext := filepath.Ext(info.Name()); ext {
+				case ".so", ".node", "node.d", ".a":
+					return nil
+				}
 			}
 		}
 

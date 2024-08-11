@@ -33,7 +33,7 @@ func copyDirectories(srcDir string, destDir string) error {
 	hostContainEbpfDir := HostContainsEbpfDir(destDir)
 	shouldRecreateCFiles := ShouldRecreateAllCFiles()
 
-	// If the host directory contains C files and we want to keep them, we don't copy C files
+	// If the host directory NOT contains ebpf directories OR we should recreate C files, we copy all files
 	CopyCFiles := !hostContainEbpfDir || shouldRecreateCFiles
 	log.Logger.V(0).Info("Copying instrumentation files to host", "srcDir", srcDir, "destDir", destDir, "CopyCFiles", CopyCFiles)
 
@@ -92,14 +92,17 @@ func getFiles(dir string, CopyCFiles bool) ([]string, error) {
 			return err
 		}
 		if !d.IsDir() {
+
 			if !CopyCFiles {
-				switch ext := filepath.Ext(path); ext {
-				// filter out C files
-				case ".so", ".node", ".node.d", ".a":
-					log.Logger.Info("Skipping copying file: ", path)
-					return nil
+				// filter out C files in ebpf directories
+				if strings.Contains(filepath.Dir(path), "ebpf") {
+					switch ext := filepath.Ext(path); ext {
+					case ".so", ".node", ".node.d", ".a":
+						return nil
+					}
 				}
 			}
+
 			files = append(files, path)
 		}
 		return nil
@@ -153,27 +156,9 @@ func HostContainsEbpfDir(dir string) bool {
 		}
 		if info.IsDir() && strings.Contains(info.Name(), "ebpf") {
 			found = true
-			return filepath.SkipDir // Stop searching further
-		}
-		return nil
-	})
-	return found
-}
-
-func HostContainCFiles(dir string) bool {
-	var hostContainCFiles bool
-	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		switch ext := filepath.Ext(info.Name()); ext {
-		case ".so", ".node", "node.d", ".a", ".o":
-			hostContainCFiles = true
 			return filepath.SkipDir
 		}
 		return nil
 	})
-
-	return hostContainCFiles
+	return found
 }
