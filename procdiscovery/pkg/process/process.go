@@ -14,8 +14,8 @@ const NodeVersionConst = "NODE_VERSION"
 const PythonVersionConst = "PYTHON_VERSION"
 const JavaVersionConst = "JAVA_VERSION"
 
-// envDetailsSeparatorMap is a map of environment variables and their separators
-var envDetailsSeparatorMap = []string{NodeVersionConst, PythonVersionConst, JavaVersionConst}
+// envDetailsMap is a map of environment variables and their separators
+var envDetailsMap = map[string]struct{}{NodeVersionConst: {}, PythonVersionConst: {}, JavaVersionConst: {}}
 
 type Details struct {
 	ProcessID    int
@@ -148,11 +148,10 @@ func getRelevantEnvVars(pid int) *ProcessEnvs {
 			overWriteEnvsResult[envParts[0]] = envParts[1]
 		}
 
-		for _, env := range envDetailsSeparatorMap {
-			if env == envParts[0] {
-				detailedEnvsResult[envParts[0]] = envParts[1]
-			}
+		if _, ok := envDetailsMap[envParts[0]]; ok {
+			detailedEnvsResult[envParts[0]] = envParts[1]
 		}
+
 	}
 
 	envs := &ProcessEnvs{

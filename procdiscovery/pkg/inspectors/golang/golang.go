@@ -17,8 +17,11 @@ func (g *GolangInspector) Inspect(p *process.Details) (common.ProgramLanguageDet
 	if err != nil {
 		return programLanguageDetails, false
 	}
+
 	programLanguageDetails.Language = common.GoProgrammingLanguage
-	programLanguageDetails.RuntimeVersion = buildInfo.GoVersion
+	if buildInfo != nil {
+		programLanguageDetails.RuntimeVersion = buildInfo.GoVersion
+	}
 
 	return programLanguageDetails, true
 }

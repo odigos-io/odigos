@@ -15,8 +15,10 @@ func (p *PythonInspector) Inspect(proc *process.Details) (common.ProgramLanguage
 	var programLanguageDetails common.ProgramLanguageDetails
 	if strings.Contains(proc.ExeName, pythonProcessName) || strings.Contains(proc.CmdLine, pythonProcessName) {
 		programLanguageDetails.Language = common.PythonProgrammingLanguage
-		if value, exists := proc.Environments.DetailedEnvs[process.PythonVersionConst]; exists {
-			programLanguageDetails.RuntimeVersion = value
+		if proc.Environments != nil {
+			if value, exists := proc.Environments.DetailedEnvs[process.PythonVersionConst]; exists {
+				programLanguageDetails.RuntimeVersion = value
+			}
 		}
 
 		return programLanguageDetails, true

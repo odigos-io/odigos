@@ -16,8 +16,10 @@ func (n *NodejsInspector) Inspect(proc *process.Details) (common.ProgramLanguage
 
 	if strings.Contains(proc.ExeName, nodeProcessName) || strings.Contains(proc.CmdLine, nodeProcessName) {
 		programLanguageDetails.Language = common.JavascriptProgrammingLanguage
-		if value, exists := proc.Environments.DetailedEnvs[process.NodeVersionConst]; exists {
-			programLanguageDetails.RuntimeVersion = value
+		if proc.Environments != nil {
+			if value, exists := proc.Environments.DetailedEnvs[process.NodeVersionConst]; exists {
+				programLanguageDetails.RuntimeVersion = value
+			}
 		}
 
 		return programLanguageDetails, true
