@@ -52,7 +52,7 @@ rules:
       - odigos.io
     resources:
       - collectorsgroups
-      - destinations
+      - collectorsgroups/status
     verbs:
       - get
       - list
@@ -82,7 +82,6 @@ rules:
       - odigos.io
     resources:
       - odigosconfigurations
-      - destinations
     verbs:
       - get
       - list

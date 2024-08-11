@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,7 +29,15 @@ func getNumberOfWorkers() int {
 
 func copyDirectories(srcDir string, destDir string) error {
 	start := time.Now()
-	files, err := getFiles(srcDir)
+
+	hostContainEbpfDir := HostContainsEbpfDir(destDir)
+	shouldRecreateCFiles := ShouldRecreateAllCFiles()
+
+	// If the host directory NOT contains ebpf directories OR we should recreate C files, we copy all files
+	CopyCFiles := !hostContainEbpfDir || shouldRecreateCFiles
+	log.Logger.V(0).Info("Copying instrumentation files to host", "srcDir", srcDir, "destDir", destDir, "CopyCFiles", CopyCFiles)
+
+	files, err := getFiles(srcDir, CopyCFiles)
 	if err != nil {
 		return err
 	}
@@ -76,13 +85,24 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
-func getFiles(dir string) ([]string, error) {
+func getFiles(dir string, CopyCFiles bool) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
+
+			if !CopyCFiles {
+				// filter out C files in ebpf directories
+				if strings.Contains(filepath.Dir(path), "ebpf") {
+					switch ext := filepath.Ext(path); ext {
+					case ".so", ".node", ".node.d", ".a":
+						return nil
+					}
+				}
+			}
+
 			files = append(files, path)
 		}
 		return nil
@@ -126,4 +146,19 @@ func copyFile(src, dst string, buf []byte) error {
 	}
 
 	return nil
+}
+
+func HostContainsEbpfDir(dir string) bool {
+	found := false
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || found {
+			return err
+		}
+		if info.IsDir() && strings.Contains(info.Name(), "ebpf") {
+			found = true
+			return filepath.SkipDir
+		}
+		return nil
+	})
+	return found
 }

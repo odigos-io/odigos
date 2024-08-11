@@ -2,10 +2,12 @@ package sdkconfig
 
 import (
 	"context"
+	"slices"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
-	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -14,22 +16,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type DestinationReconciler struct {
+type CollectorsGroupReconciler struct {
 	client.Client
 	Scheme          *runtime.Scheme
 	ConnectionCache *connection.ConnectionsCache
 }
 
-func (d *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (d *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+
+	// we are configuring the SDKs which sends data to node collectors group.
+	// thus, we only care about this specific CR
+	if req.Name != consts.OdigosNodeCollectorCollectorGroupName {
+		return ctrl.Result{}, nil
+	}
 
 	logger := log.FromContext(ctx)
 
-	// when there is a change in the destination CRD, we need to update the SDK configs
-	// to reflect a potential change in the enabled signals
-	tracesEnabled, _, err := configresolvers.CalcEnabledSignals(ctx, d.Client)
+	var collectorsGroup odigosv1.CollectorsGroup
+	err := d.Client.Get(ctx, req.NamespacedName, &collectorsGroup)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
+	tracesEnabled := slices.Contains(collectorsGroup.Status.ReceiverSignals, common.TracesObservabilitySignal)
 
 	d.ConnectionCache.UpdateAllConnectionConfigs(func(connInfo *connection.ConnectionInfo) *protobufs.AgentConfigMap {
 
@@ -50,8 +59,8 @@ func (d *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	return ctrl.Result{}, nil
 }
 
-func (i *DestinationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (i *CollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&odigosv1.Destination{}).
+		For(&odigosv1.CollectorsGroup{}).
 		Complete(i)
 }
