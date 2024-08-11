@@ -32,12 +32,18 @@ var (
 )
 
 type trafficMetrics struct {
+	// trace data sent in bytes, cumulative
 	tracesDataSent  int64
+	// log data sent in bytes, cumulative
 	logsDataSent    int64
+	// metric data sent in bytes, cumulative
 	metricsDataSent int64
 
+	// trace throughput in bytes/sec
 	tracesThroughput  int64
+	// log throughput in bytes/sec
 	logsThroughput    int64
+	// metric throughput in bytes/sec
 	metricsThroughput int64
 
 	// lastUpdate is the time when the last data was received which is relevant for the corresponding metrics.

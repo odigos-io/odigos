@@ -41,11 +41,11 @@ type watchers struct {
 }
 
 func runDeleteWatcher(ctx context.Context, cw *deleteWatcher) error {
-	nodeWatcher, err := newCollectorWatcher(ctx, cw.odigosNS, k8sconsts.OdigosNodeCollectorLabel)
+	nodeWatcher, err := newCollectorWatcher(ctx, cw.odigosNS, k8sconsts.NodeCollector)
 	if err != nil {
 		return err
 	}
-	clusterWatcher, err := newCollectorWatcher(ctx, cw.odigosNS, k8sconsts.OdigosClusterCollectorLabel)
+	clusterWatcher, err := newCollectorWatcher(ctx, cw.odigosNS, k8sconsts.ClusterCollector)
 	if err != nil {
 		return err
 	}
@@ -67,11 +67,11 @@ func runDeleteWatcher(ctx context.Context, cw *deleteWatcher) error {
 		}, cw.deleteNotifications)
 }
 
-func newCollectorWatcher(ctx context.Context, odigosNS string, matchLabel string) (watch.Interface, error) {
+func newCollectorWatcher(ctx context.Context, odigosNS string, collectorType k8sconsts.CollectorType) (watch.Interface, error) {
 	return kube.DefaultClient.CoreV1().Pods(odigosNS).Watch(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				matchLabel: "true",
+				k8sconsts.OdigosCollectorRoleLabel: string(collectorType),
 			},
 		}),
 	})

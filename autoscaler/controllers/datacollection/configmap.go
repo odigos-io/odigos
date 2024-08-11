@@ -171,10 +171,13 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 				"insecure": true,
 			},
 		},
-		"otlp/ui": config.GenericMap{
+		"otlp/odigos-own-telemetry-ui": config.GenericMap{
 			"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), consts.OTLPPort),
 			"tls": config.GenericMap{
 				"insecure": true,
+			},
+			"retry_on_failure": config.GenericMap{
+				"enabled": false,
 			},
 		},
 	}
@@ -200,7 +203,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 					},
 				},
 			},
-			"prometheus": config.GenericMap{
+			"prometheus/self-metrics": config.GenericMap{
 				"config": config.GenericMap{
 					"scrape_configs": []config.GenericMap{
 						{
@@ -233,9 +236,9 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{
 				"metrics/otelcol": {
-					Receivers: []string{"prometheus"},
+					Receivers: []string{"prometheus/self-metrics"},
 					Processors: []string{"resource/pod-name"},
-					Exporters: []string{"otlp/ui"},
+					Exporters: []string{"otlp/odigos-own-telemetry-ui"},
 				},
 			},
 			Extensions: []string{"health_check"},

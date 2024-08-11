@@ -6,7 +6,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/odigos-io/odigos/cli/pkg/containers"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/consts"
+	"github.com/odigos-io/odigos/common/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

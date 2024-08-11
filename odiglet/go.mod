@@ -10,7 +10,7 @@ require (
 	github.com/moby/sys/mountinfo v0.7.1
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v1.0.70
-	github.com/odigos-io/odigos/k8sutils v1.0.89
+	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/odigos/opampserver v0.0.0
 	github.com/odigos-io/odigos/procdiscovery v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5

@@ -6,7 +6,7 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v1.0.70
-	github.com/odigos-io/odigos/k8sutils v1.0.89
+	github.com/odigos-io/odigos/k8sutils v0.0.0
 	go.opentelemetry.io/otel v1.27.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.1

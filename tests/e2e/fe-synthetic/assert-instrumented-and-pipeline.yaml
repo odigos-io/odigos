@@ -22,7 +22,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    odigos.io/gateway: "true"
+    odigos.io/collector-role: "cluster"
   name: odigos-gateway
   namespace: odigos-system
   ownerReferences:
@@ -35,11 +35,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      odigos.io/gateway: "true"
+      odigos.io/collector-role: "cluster"
   template:
     metadata:
       labels:
-        odigos.io/gateway: "true"
+        odigos.io/collector-role: "cluster"
     spec:
       containers:
         - env:
@@ -105,7 +105,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    odigos.io/data-collection: "true"
+    odigos.io/collector-role: "node"
   name: odigos-data-collection
   namespace: odigos-system
   ownerReferences:
@@ -117,11 +117,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      odigos.io/data-collection: "true"
+      odigos.io/collector-role: "node"
   template:
     metadata:
       labels:
-        odigos.io/data-collection: "true"
+        odigos.io/collector-role: "node"
     spec:
       containers:
         - name: data-collection
@@ -333,5 +333,5 @@ metadata:
   labels:
     instrumented-app: deployment-membership
 status:
-    healthy: true
-    reason: LoadedSuccessfully
+  healthy: true
+  reason: LoadedSuccessfully

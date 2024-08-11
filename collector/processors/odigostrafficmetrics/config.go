@@ -12,6 +12,8 @@ type Config struct {
 
 	// SamplingRatio is the ratio of payloads that are measured. Values between 0.0 and 1.0 are valid.
 	// default is 1.0.
+	// It is useful to set this value when the processor is used in a high throughput environment
+	// and the overhead of measuring the metrics for each span/metric/log is too high.
 	SamplingRatio float64 `mapstructure:"sampling_ratio"`
 }
 

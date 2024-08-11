@@ -43,7 +43,7 @@ func addSelfTelemetryPipeline(c *config.Config) error {
 	if c.Exporters == nil {
 		return errNoExportersConfigured
 	}
-	c.Receivers["prometheus"] = config.GenericMap{
+	c.Receivers["prometheus/self-metrics"] = config.GenericMap{
 		"config": config.GenericMap{
 			"scrape_configs": []config.GenericMap{
 				{
@@ -81,16 +81,19 @@ func addSelfTelemetryPipeline(c *config.Config) error {
 	// as it helps to calculate the size of the data being exported.
 	// In case of performance impact caused by this processor, we should modify this config to reduce the sampling ratio.
 	c.Processors["odigostrafficmetrics"] = struct{}{}
-	c.Exporters["otlp/ui"] = config.GenericMap{
+	c.Exporters["otlp/odigos-own-telemetry-ui"] = config.GenericMap{
 		"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), odigosconsts.OTLPPort),
 		"tls": config.GenericMap{
 			"insecure": true,
 		},
+		"retry_on_failure": config.GenericMap{
+			"enabled": false,
+		},
 	}
 	c.Service.Pipelines["metrics/otelcol"] = config.Pipeline{
-		Receivers: []string{"prometheus"},
+		Receivers: []string{"prometheus/self-metrics"},
 		Processors: []string{"resource/pod-name"},
-		Exporters: []string{"otlp/ui"},
+		Exporters: []string{"otlp/odigos-own-telemetry-ui"},
 	}
 
 	c.Service.Telemetry.Metrics = config.GenericMap{
