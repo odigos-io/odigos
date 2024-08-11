@@ -52,16 +52,32 @@ class OpAMPHTTPClient:
         self.client_thread.start()
         
     def run(self):
-        if not self.mandatory_env_vars_set():
+        try:
+            if not self.mandatory_env_vars_set():
+                self.event.set()
+                return
+            
+            self.send_first_message_with_retry()
+            
             self.event.set()
-            return
+            
+            self.worker()
+        except Exception as e:
+            opamp_logger.error(f"Error running OpAMP client: {e}")
+            self.send_agent_failure_disconnect_message(error_message=str(e))
+            self.event.set()
+    
+    def send_agent_failure_disconnect_message(self, error_message: str) -> None:
+        first_disconnect_message = opamp_pb2.AgentToServer()
         
-        self.send_first_message_with_retry()
+        agent_disconnect = self.get_agent_disconnect()
+        first_disconnect_message.agent_disconnect.CopyFrom(agent_disconnect)
+    
+        agent_health = self.get_agent_health(component_health=False, last_error=error_message, status=AgentHealthStatus.AGENT_FAILURE.value)
+        first_disconnect_message.health.CopyFrom(agent_health)
         
-        self.event.set()
-        
-        self.worker()
-        
+        self.send_agent_to_server_message(first_disconnect_message)
+    
     def send_unsupported_version_disconnect_message(self, error_message: str) -> None:
         first_disconnect_message = opamp_pb2.AgentToServer()
         
