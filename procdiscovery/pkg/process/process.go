@@ -21,13 +21,23 @@ type Details struct {
 	ProcessID    int
 	ExeName      string
 	CmdLine      string
-	Environments *ProcessEnvs
+	Environments ProcessEnvs
 }
 
 type ProcessEnvs struct {
 	DetailedEnvs map[string]string
 	// OverwriteEnvs only contains environment variables that Odigos is using for auto-instrumentation and may need to be overwritten
 	OverwriteEnvs map[string]string
+}
+
+func (d *Details) GetDetailedEnvsValue(key string) (string, bool) {
+	value, exists := d.Environments.DetailedEnvs[key]
+	return value, exists
+}
+
+func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
+	value, exists := d.Environments.OverwriteEnvs[key]
+	return value, exists
 }
 
 // Find all processes in the system.
@@ -107,13 +117,13 @@ func getCommandLine(pid int) string {
 	}
 }
 
-func getRelevantEnvVars(pid int) *ProcessEnvs {
+func getRelevantEnvVars(pid int) ProcessEnvs {
 	envFileName := fmt.Sprintf("/proc/%d/environ", pid)
 	fileContent, err := os.ReadFile(envFileName)
 	if err != nil {
 		// TODO: if we fail to read the environment variables, we should probably return an error
 		// which will cause the process to be skipped and not instrumented?
-		return nil
+		return ProcessEnvs{}
 	}
 
 	r := bufio.NewReader(strings.NewReader(string(fileContent)))
@@ -134,7 +144,7 @@ func getRelevantEnvVars(pid int) *ProcessEnvs {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			return nil
+			return ProcessEnvs{}
 		}
 
 		str = strings.TrimRight(str, "\x00")
@@ -154,7 +164,7 @@ func getRelevantEnvVars(pid int) *ProcessEnvs {
 
 	}
 
-	envs := &ProcessEnvs{
+	envs := ProcessEnvs{
 		OverwriteEnvs: overWriteEnvsResult,
 		DetailedEnvs:  detailedEnvsResult,
 	}

@@ -115,11 +115,9 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				}
 
 				// Convert map to slice for k8s format
-				if inspectProc.Environments != nil {
-					envs = make([]odigosv1.EnvVar, 0, len(inspectProc.Environments.DetailedEnvs))
-					for envName, envValue := range inspectProc.Environments.OverwriteEnvs {
-						envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
-					}
+				envs = make([]odigosv1.EnvVar, 0, len(inspectProc.Environments.DetailedEnvs))
+				for envName, envValue := range inspectProc.Environments.OverwriteEnvs {
+					envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
 				}
 			}
 

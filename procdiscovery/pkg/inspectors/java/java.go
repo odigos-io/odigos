@@ -16,10 +16,8 @@ func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgramLanguageDe
 
 	if strings.Contains(proc.ExeName, processName) || strings.Contains(proc.CmdLine, processName) {
 		programLanguageDetails.Language = common.JavaProgrammingLanguage
-		if proc.Environments != nil {
-			if value, exists := proc.Environments.DetailedEnvs[process.JavaVersionConst]; exists {
-				programLanguageDetails.RuntimeVersion = value
-			}
+		if value, exists := proc.GetDetailedEnvsValue(process.JavaVersionConst); exists {
+			programLanguageDetails.RuntimeVersion = value
 		}
 
 		return programLanguageDetails, true
