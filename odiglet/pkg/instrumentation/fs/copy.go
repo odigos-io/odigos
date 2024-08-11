@@ -31,12 +31,13 @@ func copyDirectories(srcDir string, destDir string) error {
 	start := time.Now()
 
 	hostContainEbpfDir := HostContainsEbpfDir(destDir)
-	keepCFiles := !ShouldRecreateAllCFiles()
+	shouldRecreateCFiles := ShouldRecreateAllCFiles()
 
 	// If the host directory contains C files and we want to keep them, we don't copy C files
-	DontCopyCFiles := hostContainEbpfDir && keepCFiles
+	CopyCFiles := !hostContainEbpfDir || shouldRecreateCFiles
+	log.Logger.V(0).Info("Copying instrumentation files to host", "srcDir", srcDir, "destDir", destDir, "CopyCFiles", CopyCFiles)
 
-	files, err := getFiles(srcDir, DontCopyCFiles)
+	files, err := getFiles(srcDir, CopyCFiles)
 	if err != nil {
 		return err
 	}
@@ -84,17 +85,18 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
-func getFiles(dir string, DontCopyCFiles bool) ([]string, error) {
+func getFiles(dir string, CopyCFiles bool) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
-			if DontCopyCFiles {
+			if !CopyCFiles {
 				switch ext := filepath.Ext(path); ext {
 				// filter out C files
 				case ".so", ".node", ".node.d", ".a":
+					log.Logger.Info("Skipping copying file: ", path)
 					return nil
 				}
 			}

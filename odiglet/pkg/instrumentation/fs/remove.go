@@ -9,8 +9,8 @@ import (
 )
 
 func removeFilesInDir(hostDir string) error {
-	keepCFiles := !ShouldRecreateAllCFiles()
-	log.Logger.V(0).Info(fmt.Sprintf("Removing files in directory: %s, keepCFiles: %s", hostDir, fmt.Sprintf("%t", keepCFiles)))
+	shouldRecreateCFiles := ShouldRecreateAllCFiles()
+	log.Logger.V(0).Info(fmt.Sprintf("Removing files in directory: %s, shouldRecreateCFiles: %s", hostDir, fmt.Sprintf("%t", shouldRecreateCFiles)))
 
 	return filepath.Walk(hostDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -26,7 +26,7 @@ func removeFilesInDir(hostDir string) error {
 			return nil
 		}
 
-		if keepCFiles {
+		if !shouldRecreateCFiles {
 			switch ext := filepath.Ext(info.Name()); ext {
 			case ".so", ".node", "node.d", ".a":
 				return nil
