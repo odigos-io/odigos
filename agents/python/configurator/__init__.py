@@ -21,6 +21,8 @@ class OdigosPythonConfigurator(sdk_config._BaseConfigurator):
         
 def _initialize_components():    
     resource_attributes_event = threading.Event()
+    client = None
+    
     try:
         
         client = start_opamp_client(resource_attributes_event)
@@ -57,7 +59,8 @@ def _initialize_components():
         reload_distro_modules()
         
     except Exception as e:
-        client.shutdown(custom_failure_message=str(e))
+        if client is not None:
+            client.shutdown(custom_failure_message=str(e))
         
 
 def initialize_traces_if_enabled(trace_exporters, resource):
@@ -83,7 +86,7 @@ def start_opamp_client(event):
     client = OpAMPHTTPClient(event, condition)
     
     python_version_supported = is_supported_python_version()
-    
+
     client.start(python_version_supported)
     
     def shutdown():
