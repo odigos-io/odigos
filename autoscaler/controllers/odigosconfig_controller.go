@@ -19,7 +19,6 @@ type OdigosConfigReconciler struct {
 }
 
 func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Odigos Configuration")
 

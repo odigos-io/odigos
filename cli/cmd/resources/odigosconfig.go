@@ -100,7 +100,6 @@ func NewOdigosConfigResourceManager(client *kube.Client, ns string, config *comm
 func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
 
 func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
-
 	var defaultOtelSdkPerLanguage map[common.ProgrammingLanguage]common.OtelSdk
 	var supportedOtelSdksPerLanguage map[common.ProgrammingLanguage][]common.OtelSdk
 	switch a.odigosTier {

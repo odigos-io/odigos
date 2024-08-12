@@ -74,3 +74,32 @@ type OdigosConfigurationList struct {
 func init() {
 	SchemeBuilder.Register(&OdigosConfiguration{}, &OdigosConfigurationList{})
 }
+
+func (odigosConfig *OdigosConfiguration) ToCommonConfig() *common.OdigosConfiguration {
+	var collectorGateway common.CollectorGatewayConfiguration
+	if odigosConfig.Spec.CollectorGateway != nil {
+		collectorGateway = common.CollectorGatewayConfiguration{
+			RequestMemoryMiB:           odigosConfig.Spec.CollectorGateway.RequestMemoryMiB,
+			MemoryLimiterLimitMiB:      odigosConfig.Spec.CollectorGateway.MemoryLimiterLimitMiB,
+			MemoryLimiterSpikeLimitMiB: odigosConfig.Spec.CollectorGateway.MemoryLimiterSpikeLimitMiB,
+			GoMemLimitMib:              odigosConfig.Spec.CollectorGateway.GoMemLimitMib,
+		}
+	}
+	return &common.OdigosConfiguration{
+		OdigosVersion:               odigosConfig.Spec.OdigosVersion,
+		ConfigVersion:               odigosConfig.Spec.ConfigVersion,
+		TelemetryEnabled:            odigosConfig.Spec.TelemetryEnabled,
+		OpenshiftEnabled:            odigosConfig.Spec.OpenshiftEnabled,
+		IgnoredNamespaces:           odigosConfig.Spec.IgnoredNamespaces,
+		IgnoredContainers:           odigosConfig.Spec.IgnoredContainers,
+		Psp:                         odigosConfig.Spec.Psp,
+		ImagePrefix:                 odigosConfig.Spec.ImagePrefix,
+		OdigletImage:                odigosConfig.Spec.OdigletImage,
+		InstrumentorImage:           odigosConfig.Spec.InstrumentorImage,
+		AutoscalerImage:             odigosConfig.Spec.AutoscalerImage,
+		SupportedSDKs:               odigosConfig.Spec.SupportedSDKs,
+		DefaultSDKs:                 odigosConfig.Spec.DefaultSDKs,
+		CollectorGateway:            &collectorGateway,
+		GoAutoIncludeCodeAttributes: odigosConfig.Spec.GoAutoIncludeCodeAttributes,
+	}
+}

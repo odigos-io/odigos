@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/log"
@@ -53,3 +54,8 @@ func GetCurrentConfig(ctx context.Context, client *kube.Client, ns string) (*com
 	}
 	return &odigosConfig, nil
 }
+
+func GetCurrentOdigosConfig(ctx context.Context, client *kube.Client, ns string) (*v1alpha1.OdigosConfiguration, error) {
+  return client.OdigosClient.OdigosConfigurations(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+}
+

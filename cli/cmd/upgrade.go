@@ -92,8 +92,12 @@ and apply any required migrations and adaptations.`,
 
 		config, err := resources.GetCurrentConfig(ctx, client, ns)
 		if err != nil {
-			fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
-			os.Exit(1)
+			odigosConfig, err := resources.GetCurrentOdigosConfig(ctx, client, ns)
+			if err != nil {
+				fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
+				os.Exit(1)
+			}
+			config = odigosConfig.ToCommonConfig()
 		}
 
 		// update the config on upgrade
