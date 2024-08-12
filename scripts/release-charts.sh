@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # Setup
 TMPDIR="$(mktemp -d)"
 CHARTDIRS=("helm/odigos")
