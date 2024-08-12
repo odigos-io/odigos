@@ -7,7 +7,6 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
-	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/consts"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -17,13 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-const (
-	collectorLabel = "odigos.io/collector"
-)
-
 var (
 	CommonLabels = map[string]string{
-		collectorLabel: "true",
+		k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
 	}
 )
 
@@ -49,7 +44,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 		return err
 	}
 	// Add the generic batch processor to the list of processors
-	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
+	processors.Items = append(processors.Items, common.GetGenericBatchProcessor())
 
 	odigosSystemNamespaceName := env.GetCurrentNamespace()
 	var odigosConfig odigosv1.OdigosConfiguration
