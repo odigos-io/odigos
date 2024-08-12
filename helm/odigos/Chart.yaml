@@ -1,8 +1,9 @@
 apiVersion: v2
 name: odigos
-description: Odigos distribution for Kubernetes
+description: Instant Distributed Tracing
 type: application
 # 0.0.0 will be replaced by the git tag version on release
 version: "0.0.0"
-appVersion: "0.0.0"
+# docker image and git tags prefix the version with "v"
+appVersion: "v0.0.0"
 icon: https://d2q89wckrml3k4.cloudfront.net/logo.png

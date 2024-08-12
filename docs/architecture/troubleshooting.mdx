@@ -11,7 +11,7 @@ It is recommended to use the `odigos describe` command to get detailed informati
 The odigos describe command will show the status of the `odigos-instrumentation` label.
 
 ```bash
-odigos describe deployment myservice -n default
+odigos describe source deployment myservice -n default
 
 Labels:
   Instrumented:  false
@@ -94,7 +94,7 @@ If the programming language is not detected:
 The odigos describe command will show the instrumentation devices added to the pod spec for the workload.
 
 ```bash
-odigos describe deployment myservice -n default
+odigos describe source deployment myservice -n default
 
 Instrumentation Device:
   Status: Successfully applied instrumentation device to pod template
@@ -124,7 +124,7 @@ kubectl get deployment myservice -o jsonpath='{.spec.template.spec.containers[*]
 The odigos describe command will show the pods for this workload and the instrumentation devices resource they have.
 
 ```bash
-odigos describe deployment myservice -n default
+odigos describe source deployment myservice -n default
 
 Pods (Total 1, Running 1):
 
@@ -149,7 +149,7 @@ Instrumentation instances are currently available only for go, node.js, and pyth
 They describe the status of the OpenTelemetry SDK agent running in a pod container.
 
 ```bash
-odigos describe deployment myservice -n default
+odigos describe source deployment myservice -n default
 
 Pods (Total 1, Running 1):
 

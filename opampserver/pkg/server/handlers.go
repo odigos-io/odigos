@@ -16,8 +16,6 @@ import (
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -79,7 +77,6 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		c.logger.Error(err, "failed to get full config", "k8sAttributes", k8sAttributes)
 		return nil, nil, err
 	}
-
 	c.logger.Info("new OpAMP client connected", "deviceId", deviceId, "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", k8sAttributes.OtelServiceName)
 
 	connectionInfo := &connection.ConnectionInfo{
@@ -118,25 +115,42 @@ func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request
 }
 
 func (c *ConnectionHandlers) OnConnectionClosed(ctx context.Context, connectionInfo *connection.ConnectionInfo) {
-	c.logger.Info("Connection closed for device", "deviceId", connectionInfo.DeviceId)
-	instrumentationInstanceName := instrumentation_instance.InstrumentationInstanceName(connectionInfo.Pod, int(connectionInfo.Pid))
-	err := c.kubeclient.Delete(ctx, &odigosv1.InstrumentationInstance{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "odigos.io/v1alpha1",
-			Kind:       "InstrumentationInstance",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      instrumentationInstanceName,
-			Namespace: connectionInfo.Pod.GetNamespace(),
-		},
-	})
-
-	if err != nil && !apierrors.IsNotFound(err) {
-		c.logger.Error(err, "failed to delete instrumentation instance", "instrumentationInstanceName", instrumentationInstanceName)
-	}
+	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
 }
 
-func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Context, message *protobufs.AgentToServer, connectionInfo *connection.ConnectionInfo) error {
+func (c *ConnectionHandlers) OnConnectionNoHeartbeat(ctx context.Context, connectionInfo *connection.ConnectionInfo) error {
+	healthy := false
+	message := fmt.Sprintf("OpAMP server did not receive heartbeat from the agent, last message time: %s", connectionInfo.LastMessageTime.Format("2006-01-02 15:04:05 MST"))
+	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
+	err := instrumentation_instance.UpdateInstrumentationInstanceStatus(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme,
+		instrumentation_instance.WithHealthy(&healthy, string(common.AgentHealthStatusNoHeartbeat), &message),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to persist instrumentation instance health status on connection timedout: %w", err)
+	}
+
+	return nil
+}
+
+func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Context, message *protobufs.AgentToServer, connectionInfo *connection.ConnectionInfo) error {
+
+	isAgentDisconnect := message.AgentDisconnect != nil
+	hasHealth := message.Health != nil
+	// when agent disconnects, it need to report that it is unhealthy and disconnected
+	if isAgentDisconnect {
+		if !hasHealth {
+			return fmt.Errorf("missing health in agent disconnect message")
+		}
+		if message.Health.Healthy {
+			return fmt.Errorf("agent disconnect message with healthy status")
+		}
+		if message.Health.LastError == "" {
+			return fmt.Errorf("missing last error in unhealthy message")
+		}
+	}
+
+	dynamicOptions := make([]instrumentation_instance.InstrumentationInstanceOption, 0)
+
 	if message.AgentDescription != nil {
 		identifyingAttributes := make([]odigosv1.Attribute, 0, len(message.AgentDescription.IdentifyingAttributes))
 		for _, attr := range message.AgentDescription.IdentifyingAttributes {
@@ -146,13 +160,18 @@ func (c *ConnectionHandlers) PersistInstrumentationDeviceStatus(ctx context.Cont
 				Value: strValue,
 			})
 		}
+		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithAttributes(identifyingAttributes, []odigosv1.Attribute{}))
+	}
 
-		healthy := true // TODO: populate this field with real health status
-		err := instrumentation_instance.PersistInstrumentationInstanceStatus(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme,
-			instrumentation_instance.WithIdentifyingAttributes(identifyingAttributes),
-			instrumentation_instance.WithMessage("Agent connected"),
-			instrumentation_instance.WithHealthy(&healthy),
-		)
+	// agent is only expected to send health status when it changes, so if found - persist it to CRD as new status
+	if hasHealth {
+		// always record healthy status into the CRD, to reflect the current state
+		healthy := message.Health.Healthy
+		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithHealthy(&healthy, message.Health.Status, &message.Health.LastError))
+	}
+
+	if len(dynamicOptions) > 0 {
+		err := instrumentation_instance.UpdateInstrumentationInstanceStatus(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme, dynamicOptions...)
 		if err != nil {
 			return fmt.Errorf("failed to persist instrumentation instance status: %w", err)
 		}

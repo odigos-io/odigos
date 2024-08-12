@@ -20,17 +20,25 @@ import (
 	"go.opentelemetry.io/collector/processor/processortest"
 )
 
+func TestComponentFactoryType(t *testing.T) {
+	require.Equal(t, "odigosresourcename", NewFactory().Type().String())
+}
+
+func TestComponentConfigStruct(t *testing.T) {
+	require.NoError(t, componenttest.CheckConfigStruct(NewFactory().CreateDefaultConfig()))
+}
+
 func TestComponentLifecycle(t *testing.T) {
 	factory := NewFactory()
 
 	tests := []struct {
 		name     string
-		createFn func(ctx context.Context, set processor.CreateSettings, cfg component.Config) (component.Component, error)
+		createFn func(ctx context.Context, set processor.Settings, cfg component.Config) (component.Component, error)
 	}{
 
 		{
 			name: "traces",
-			createFn: func(ctx context.Context, set processor.CreateSettings, cfg component.Config) (component.Component, error) {
+			createFn: func(ctx context.Context, set processor.Settings, cfg component.Config) (component.Component, error) {
 				return factory.CreateTracesProcessor(ctx, set, cfg, consumertest.NewNop())
 			},
 		},
@@ -45,32 +53,38 @@ func TestComponentLifecycle(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name+"-shutdown", func(t *testing.T) {
-			c, err := test.createFn(context.Background(), processortest.NewNopCreateSettings(), cfg)
+			c, err := test.createFn(context.Background(), processortest.NewNopSettings(), cfg)
 			require.NoError(t, err)
 			err = c.Shutdown(context.Background())
 			require.NoError(t, err)
 		})
 		t.Run(test.name+"-lifecycle", func(t *testing.T) {
-			c, err := test.createFn(context.Background(), processortest.NewNopCreateSettings(), cfg)
+			c, err := test.createFn(context.Background(), processortest.NewNopSettings(), cfg)
 			require.NoError(t, err)
 			host := componenttest.NewNopHost()
 			err = c.Start(context.Background(), host)
 			require.NoError(t, err)
 			require.NotPanics(t, func() {
-				switch e := c.(type) {
-				case processor.Logs:
+				switch test.name {
+				case "logs":
+					e, ok := c.(processor.Logs)
+					require.True(t, ok)
 					logs := generateLifecycleTestLogs()
 					if !e.Capabilities().MutatesData {
 						logs.MarkReadOnly()
 					}
 					err = e.ConsumeLogs(context.Background(), logs)
-				case processor.Metrics:
+				case "metrics":
+					e, ok := c.(processor.Metrics)
+					require.True(t, ok)
 					metrics := generateLifecycleTestMetrics()
 					if !e.Capabilities().MutatesData {
 						metrics.MarkReadOnly()
 					}
 					err = e.ConsumeMetrics(context.Background(), metrics)
-				case processor.Traces:
+				case "traces":
+					e, ok := c.(processor.Traces)
+					require.True(t, ok)
 					traces := generateLifecycleTestTraces()
 					if !e.Capabilities().MutatesData {
 						traces.MarkReadOnly()

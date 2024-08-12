@@ -3,6 +3,7 @@ package workload
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -70,11 +71,11 @@ func GetRuntimeObjectName(name string, kind string) string {
 func GetWorkloadInfoRuntimeName(name string) (workloadName string, workloadKind string, err error) {
 	hyphenIndex := strings.Index(name, "-")
 	if hyphenIndex == -1 {
-		err = errors.New("invalid runtime name")
+		err = errors.New("invalid workload runtime object name, missing hyphen")
 		return
 	}
 
-	workloadKind, err = kindFromLowercase(name[:hyphenIndex])
+	workloadKind, err = workloadKindFromLowercase(name[:hyphenIndex])
 	if err != nil {
 		return
 	}
@@ -82,7 +83,7 @@ func GetWorkloadInfoRuntimeName(name string) (workloadName string, workloadKind 
 	return
 }
 
-func kindFromLowercase(lowercaseKind string) (string, error) {
+func workloadKindFromLowercase(lowercaseKind string) (string, error) {
 	switch lowercaseKind {
 	case "deployment":
 		return "Deployment", nil
@@ -91,7 +92,7 @@ func kindFromLowercase(lowercaseKind string) (string, error) {
 	case "daemonset":
 		return "DaemonSet", nil
 	default:
-		return "", errors.New("unknown kind")
+		return "", fmt.Errorf("unknown workload kind %s", lowercaseKind)
 	}
 }
 

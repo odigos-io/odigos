@@ -1,6 +1,4 @@
 import sys
-import importlib
-from importlib import metadata as md
 
 def reorder_python_path():
     paths_to_move = [path for path in sys.path if path.startswith('/var/odigos/python')]
@@ -11,9 +9,9 @@ def reorder_python_path():
     
     
 def reload_distro_modules() -> None:
-    # Reload distro modules, as they may have been imported before the path was reordered.
-    # Add any new distro modules to this list.
-    needed_modules = [
+    # Delete distro modules and their sub-modules, as they have been imported before the path was reordered.
+    # The distro modules will be re-imported from the new path.
+    needed_module_prefixes = [
         'google.protobuf',
         'requests',
         'charset_normalizer',
@@ -29,8 +27,8 @@ def reload_distro_modules() -> None:
         'uuid_extensions.uuid7',
         'typing_extensions',
     ]
-
-    for module_name in needed_modules:
-        if module_name in sys.modules:
-            module = sys.modules[module_name]
-            importlib.reload(module)
+    
+    for module in list(sys.modules):
+        # Check if the module starts with any of the needed prefixes
+        if any(module.startswith(prefix) for prefix in needed_module_prefixes):
+            del sys.modules[module]    

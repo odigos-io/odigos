@@ -42,6 +42,7 @@ export function ProbabilisticSamplerForm({
     <>
       <FormWrapper>
         <KeyvalInput
+          data-cy={'create-action-sampling-percentage'}
           label="Fallback Sampling Ratio"
           value={data?.sampling_percentage}
           onChange={(value) => handleOnChange(value)}

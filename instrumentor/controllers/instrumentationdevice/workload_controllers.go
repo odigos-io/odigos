@@ -44,7 +44,9 @@ func reconcileSingleInstrumentedApplicationByName(ctx context.Context, k8sClient
 	var instrumentedApplication odigosv1.InstrumentedApplication
 	err := k8sClient.Get(ctx, types.NamespacedName{Name: instrumentedAppName, Namespace: namespace}, &instrumentedApplication)
 	if err != nil {
+		// changes in workload when there is no instrumented application is not interesting
 		return client.IgnoreNotFound(err)
 	}
-	return reconcileSingleInstrumentedApplication(ctx, k8sClient, &instrumentedApplication)
+	isNodeCollectorReady := isDataCollectionReady(ctx, k8sClient)
+	return reconcileSingleWorkload(ctx, k8sClient, &instrumentedApplication, isNodeCollectorReady)
 }

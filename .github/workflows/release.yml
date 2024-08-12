@@ -52,7 +52,7 @@ jobs:
 
       - name: Verify Components Image Ready
         run: |
-          declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet")
+          declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui")
           TAG_TO_CHECK=${{ env.TAG }}
 
           for REPO in "${REPOS[@]}"; do
@@ -89,6 +89,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
 
+      # TODO: Remove once we are ready to fully sunset managing charts in a separate repo
       - name: Trigger Release PR in Odigos Charts
         run: |
           curl -X POST \
@@ -117,7 +118,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos CLI released successfully. new version is ready", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack on Failure
-        if: failure()
+        if: ${{ failure() || cancelled() }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}

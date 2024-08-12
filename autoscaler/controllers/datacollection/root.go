@@ -2,12 +2,14 @@ package datacollection
 
 import (
 	"context"
+	"time"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"time"
 )
 
 var dm = &DelayManager{}
@@ -30,23 +32,11 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 		return nil
 	}
 
-	var collectorGroups odigosv1.CollectorsGroupList
-	if err := c.List(ctx, &collectorGroups); err != nil {
-		logger.Error(err, "Failed to list collectors groups")
-		return err
-	}
-
-	var dataCollectionCollectorGroup *odigosv1.CollectorsGroup
-	for _, collectorGroup := range collectorGroups.Items {
-		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleNodeCollector {
-			dataCollectionCollectorGroup = &collectorGroup
-			break
-		}
-	}
-
-	if dataCollectionCollectorGroup == nil {
-		logger.V(3).Info("Data collection collector group doesn't exist, nothing to sync")
-		return nil
+	odigosNs := env.GetCurrentNamespace()
+	var dataCollectionCollectorGroup odigosv1.CollectorsGroup
+	err := c.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: consts.OdigosNodeCollectorCollectorGroupName}, &dataCollectionCollectorGroup)
+	if err != nil {
+		return client.IgnoreNotFound(err)
 	}
 
 	var dests odigosv1.DestinationList
@@ -61,7 +51,7 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 		return err
 	}
 
-	return syncDataCollection(&instApps, &dests, &processors, dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	return syncDataCollection(&instApps, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion)
 }
 
 func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,

@@ -32,7 +32,7 @@ func createDefaultConfig() component.Config {
 
 func createLogsExporter(
 	ctx context.Context,
-	set exporter.CreateSettings,
+	set exporter.Settings,
 	cfg component.Config) (exporter.Logs, error) {
 
 	pCfg := cfg.(*Config)
@@ -50,7 +50,7 @@ func createLogsExporter(
 
 func createTracesExporter(
 	ctx context.Context,
-	set exporter.CreateSettings,
+	set exporter.Settings,
 	cfg component.Config) (exporter.Traces, error) {
 
 	pCfg := cfg.(*Config)
