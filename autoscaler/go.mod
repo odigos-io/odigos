@@ -12,9 +12,9 @@ require (
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/otel v1.28.0
-	k8s.io/api v0.30.2
+	k8s.io/api v0.30.3
 	k8s.io/apimachinery v0.30.3
-	k8s.io/client-go v0.30.2
+	k8s.io/client-go v0.30.3
 	sigs.k8s.io/controller-runtime v0.18.4
 	sigs.k8s.io/yaml v1.4.0
 )
