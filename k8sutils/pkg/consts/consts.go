@@ -1,12 +1,10 @@
 package consts
 
-type CollectorType string
+type CollectorRole string
 
 const (
-	// Cluster collector is responsible for exporting observability data from the cluster.
-	ClusterCollector CollectorType = "cluster"
-	// Node collector is receiving data from different instrumentation SDKs in the same node.
-	NodeCollector    CollectorType = "node"
+	CollectorsRoleClusterGateway CollectorRole = "CLUSTER_GATEWAY"
+	CollectorsRoleNodeCollector  CollectorRole = "NODE_COLLECTOR"
 )
 
 // OdigosCollectorRoleLabel is the label used to identify the role of the Odigos collector.

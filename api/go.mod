@@ -4,6 +4,7 @@ go 1.22.0
 
 require (
 	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/stretchr/testify v1.8.4
 	k8s.io/api v0.30.1
 	k8s.io/apimachinery v0.30.3
@@ -66,4 +67,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-replace github.com/odigos-io/odigos/common => ../common
+replace (
+	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/k8sutils => ../k8sutils
+)

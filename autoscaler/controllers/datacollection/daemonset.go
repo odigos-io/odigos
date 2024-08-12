@@ -33,7 +33,7 @@ const (
 
 var (
 	commonLabels = map[string]string{
-		consts.OdigosCollectorRoleLabel: string(consts.NodeCollector),
+		consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleNodeCollector),
 	}
 )
 
