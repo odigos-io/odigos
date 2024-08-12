@@ -115,6 +115,11 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 				logger.Error(err, "Failed to create DaemonSet")
 				return nil, err
 			}
+			err = common.UpdateCollectorGroupReceiverSignals(ctx, c, datacollection, signals)
+			if err != nil {
+				logger.Error(err, "Failed to update node collectors group received signals")
+				return nil, err
+			}
 			return desiredDs, nil
 		} else {
 			logger.Error(err, "Failed to get DaemonSet")

@@ -15,7 +15,7 @@ func TestGetFiles(t *testing.T) {
 		t.Fatalf("createTestFiles failed: %v", err)
 	}
 
-	gotFiles, err := getFiles(tempDir + "/dir1")
+	gotFiles, err := getFiles(tempDir+"/dir1", false)
 	if err != nil {
 		t.Fatalf("getFiles failed: %v", err)
 	}

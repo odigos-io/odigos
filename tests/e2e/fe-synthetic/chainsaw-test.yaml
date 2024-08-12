@@ -63,7 +63,7 @@ spec:
         - script:
             timeout: 60s
             content: |
-              ../../common/ui-tests/run_cypress_tests.sh include-onboarding-flow
+              ../../common/ui-tests/run_cypress_tests.sh include-onboarding-flow action-addition
 
     - name: Stop Odigos UI
       try:
@@ -81,3 +81,9 @@ spec:
       try:
         - assert:
             file: assert-instrumented-and-pipeline.yaml
+
+    - name: Assert Action CRD
+      try:
+        - assert:
+            timeout: 60s
+            file: assert-action-added.yaml

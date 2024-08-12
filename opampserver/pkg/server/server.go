@@ -17,7 +17,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClient *kubernetes.Clientset, nodeName string) error {
+func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClient *kubernetes.Clientset, nodeName string, odigosNs string) error {
 
 	listenEndpoint := fmt.Sprintf("0.0.0.0:%d", OpAmpServerDefaultPort)
 	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
@@ -29,7 +29,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 
 	connectionCache := connection.NewConnectionsCache()
 
-	sdkConfig := sdkconfig.NewSdkConfigManager(logger, mgr, connectionCache)
+	sdkConfig := sdkconfig.NewSdkConfigManager(logger, mgr, connectionCache, odigosNs)
 
 	handlers := &ConnectionHandlers{
 		logger:        logger,

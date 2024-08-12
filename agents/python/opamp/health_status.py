@@ -5,3 +5,4 @@ class AgentHealthStatus(str, Enum):
     STARTING = "Starting"
     UNSUPPORTED_RUNTIME_VERSION = "UnsupportedRuntimeVersion"
     TERMINATED = "ProcessTerminated"
+    AGENT_FAILURE = "AgentFailure"

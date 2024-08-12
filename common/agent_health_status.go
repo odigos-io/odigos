@@ -22,4 +22,7 @@ const (
 	// The termination can be due to normal shutdown (e.g. event loop run out of work)
 	// due to explicit termination (e.g. code calls exit(), or OS signal), or due to an error (e.g. unhandled exception)
 	AgentHealthProcessTerminated AgentHealthStatus = "ProcessTerminated"
+
+	// AgentHealthStatusAgentFailure is when the opamp agent encountered an error during runtime.
+	AgentFailure AgentHealthStatus = "AgentFailure"
 )
