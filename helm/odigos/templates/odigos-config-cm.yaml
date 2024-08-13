@@ -56,33 +56,6 @@ data:
       mysql:
         sdkTier: enterprise
         sdkType: ebpf
-    supportedSDKs:
-      dotnet:
-        - sdkTier: community
-          sdkType: native
-      go:
-        - sdkTier: enterprise
-          sdkType: ebpf
-      java:
-        - sdkTier: community
-          sdkType: native
-        - sdkTier: enterprise
-          sdkType: ebpf
-        - sdkTier: enterprise
-          sdkType: native
-      javascript:
-        - sdkTier: community
-          sdkType: native
-        - sdkTier: enterprise
-          sdkType: ebpf
-      python:
-        - sdkTier: community
-          sdkType: native
-        - sdkTier: enterprise
-          sdkType: ebpf
-      mysql:
-        - sdkTier: enterprise
-          sdkType: ebpf
     {{- else }}
     defaultSDKs:
       dotnet:
@@ -100,20 +73,4 @@ data:
       python:
         sdkTier: community
         sdkType: native
-    supportedSDKs:
-      dotnet:
-        - sdkTier: community
-          sdkType: native
-      go:
-        - sdkTier: community
-          sdkType: ebpf
-      java:
-        - sdkTier: community
-          sdkType: native
-      javascript:
-        - sdkTier: community
-          sdkType: native
-      python:
-        - sdkTier: community
-          sdkType: native
       {{- end }}

@@ -97,7 +97,6 @@ func (odigosConfig *OdigosConfiguration) ToCommonConfig() *common.OdigosConfigur
 		OdigletImage:                odigosConfig.Spec.OdigletImage,
 		InstrumentorImage:           odigosConfig.Spec.InstrumentorImage,
 		AutoscalerImage:             odigosConfig.Spec.AutoscalerImage,
-		SupportedSDKs:               odigosConfig.Spec.SupportedSDKs,
 		DefaultSDKs:                 odigosConfig.Spec.DefaultSDKs,
 		CollectorGateway:            &collectorGateway,
 		GoAutoIncludeCodeAttributes: odigosConfig.Spec.GoAutoIncludeCodeAttributes,
