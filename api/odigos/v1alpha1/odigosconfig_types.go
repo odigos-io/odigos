@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Deprecated: Use common.OdigosConfiguration instead
 type CollectorGatewayConfiguration struct {
 	// RequestMemoryMiB is the memory request for the cluster gateway collector deployment.
 	// it will be embedded in the deployment as a resource request of the form "memory: <value>Mi"
@@ -30,6 +31,8 @@ type CollectorGatewayConfiguration struct {
 }
 
 // OdigosConfigurationSpec defines the desired state of OdigosConfiguration
+//
+// Deprecated: Use common.OdigosConfiguration instead
 type OdigosConfigurationSpec struct {
 	OdigosVersion     string                                          `json:"odigosVersion"`
 	ConfigVersion     int                                             `json:"configVersion"`
@@ -55,6 +58,8 @@ type OdigosConfigurationSpec struct {
 //+kubebuilder:object:root=true
 
 // OdigosConfiguration is the Schema for the odigos configuration
+//
+// Deprecated: Use common.OdigosConfiguration instead
 type OdigosConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
