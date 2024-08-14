@@ -1,7 +1,6 @@
 {
     "version": "0.2.0",
     "configurations": [
-
         {
             "name": "Remote Odiglet",
             "type": "go",
@@ -37,7 +36,7 @@
             "program": "${workspaceFolder}/autoscaler",
             "cwd": "${workspaceFolder}/autoscaler",
             "env": {
-                "ODIGOS_VERSION": "v1.0.89"
+                "ODIGOS_VERSION": "v1.0.90"
             }
         },
         {

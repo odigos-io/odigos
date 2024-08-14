@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	CommonLabels = map[string]string{
+	ClusterCollectorGateway = map[string]string{
 		k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
 	}
 )
