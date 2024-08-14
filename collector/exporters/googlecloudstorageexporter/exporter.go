@@ -20,7 +20,7 @@ type GCSExporter struct {
 }
 
 func NewGCSExporter(config *Config,
-	params exporter.CreateSettings) (*GCSExporter, error) {
+	params exporter.Settings) (*GCSExporter, error) {
 
 	if config == nil {
 		return nil, errors.New("gcs exporter config is nil")

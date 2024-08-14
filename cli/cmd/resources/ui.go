@@ -6,6 +6,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/odigos-io/odigos/cli/pkg/containers"
+	"github.com/odigos-io/odigos/common/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -152,6 +153,17 @@ func NewUIRole(ns string) *rbacv1.Role {
 					"secrets",
 				},
 			},
+			{
+				Verbs: []string{
+					"watch",
+					"list",
+					"get",
+				},
+				APIGroups: []string{""},
+				Resources: []string{
+					"pods",
+				},
+			},
 		},
 	}
 }
@@ -260,6 +272,10 @@ func NewUIService(ns string) *corev1.Service {
 				{
 					Name: "ui",
 					Port: 3000,
+				},
+				{
+					Name: "otlp",
+					Port: consts.OTLPPort,
 				},
 			},
 		},

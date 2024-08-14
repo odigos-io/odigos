@@ -36,7 +36,7 @@
             "program": "${workspaceFolder}/autoscaler",
             "cwd": "${workspaceFolder}/autoscaler",
             "env": {
-                "ODIGOS_VERSION": "v1.0.71"
+                "ODIGOS_VERSION": "v1.0.90"
             }
         },
         {

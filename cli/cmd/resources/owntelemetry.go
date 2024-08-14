@@ -80,8 +80,12 @@ func getOtelcolConfigMapValue() string {
 		Receivers: config.GenericMap{
 			"otlp": config.GenericMap{
 				"protocols": config.GenericMap{
-					"grpc": empty,
-					"http": empty,
+					"grpc": config.GenericMap{
+						"endpoint": "0.0.0.0:4317",
+					},
+					"http": config.GenericMap{
+						"endpoint": "0.0.0.0:4318",
+					},
 				},
 			},
 		},
@@ -98,7 +102,6 @@ func getOtelcolConfigMapValue() string {
 		},
 		Extensions: config.GenericMap{
 			"health_check": empty,
-			"zpages":       empty,
 		},
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
@@ -108,7 +111,7 @@ func getOtelcolConfigMapValue() string {
 					Exporters:  []string{"otlp"},
 				},
 			},
-			Extensions: []string{"health_check", "zpages"},
+			Extensions: []string{"health_check"},
 		},
 	}
 

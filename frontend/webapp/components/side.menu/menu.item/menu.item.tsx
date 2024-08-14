@@ -85,7 +85,7 @@ export default function MenuItem({
 
   const iconToRender = focused ? icons.focus() : icons.notFocus();
   return (
-    <MenuItemContainer onClick={onClick} focused={focused} expand={expand}>
+    <MenuItemContainer data-cy={'menu-'+ name} onClick={onClick} focused={focused} expand={expand}>
       <IconWrapper>{iconToRender}</IconWrapper>
       {showText && (
         <TextWrapper expand={showText}>

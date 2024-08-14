@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"strings"
@@ -24,10 +25,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	corev1 "k8s.io/api/core/v1"
-
-	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
-
-	"k8s.io/apimachinery/pkg/labels"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,6 +38,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -55,6 +53,7 @@ import (
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
+	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
 	nameutils "github.com/odigos-io/odigos/autoscaler/utils"
 
 	//+kubebuilder:scaffold:imports
@@ -118,7 +117,9 @@ func main() {
 	go common.StartPprofServer(setupLog)
 
 	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
-	nsSelector := client.InNamespace(env.GetCurrentNamespace()).AsSelector()
+	odigosNs := env.GetCurrentNamespace()
+	nsSelector := client.InNamespace(odigosNs).AsSelector()
+	clusterCollectorLabelSelector := labels.Set(gateway.ClusterCollectorGateway).AsSelector()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
@@ -129,11 +130,11 @@ func main() {
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
 				&appsv1.Deployment{}: {
-					Label: labels.Set(gateway.CommonLabels).AsSelector(),
+					Label: clusterCollectorLabelSelector,
 					Field: nsSelector,
 				},
 				&corev1.Service{}: {
-					Label: labels.Set(gateway.CommonLabels).AsSelector(),
+					Label: clusterCollectorLabelSelector,
 					Field: nsSelector,
 				},
 				&appsv1.DaemonSet{}: {
@@ -153,6 +154,12 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
+	}
+
+	err = MigrateCollectorsWorkloadToNewLabels(context.Background(), mgr.GetClient(), odigosNs)
+	if err != nil {
+		setupLog.Error(err, "unable to migrate collectors workload to new labels")
 		os.Exit(1)
 	}
 

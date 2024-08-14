@@ -3,6 +3,9 @@ package datacollection
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
@@ -17,12 +20,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sync"
-	"time"
 )
 
 const (
-	collectorLabel       = "odigos.io/data-collection"
 	containerName        = "data-collection"
 	containerImage       = "keyval/odigos-collector"
 	containerCommand     = "/odigosotelcol"
@@ -32,8 +32,8 @@ const (
 )
 
 var (
-	commonLabels = map[string]string{
-		collectorLabel: "true",
+	NodeCollectorsLabels = map[string]string{
+		consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleNodeCollector),
 	}
 )
 
@@ -91,7 +91,13 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		return nil, err
 	}
 
-	desiredDs, err := getDesiredDaemonSet(datacollection, configMap.String(), scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
+	otelcolConfigContent := configMap.Data[consts.OdigosNodeCollectorConfigMapKey]
+	signals, err := getSignalsFromOtelcolConfig(otelcolConfigContent)
+	if err != nil {
+		logger.Error(err, "Failed to get signals from otelcol config")
+		return nil, err
+	}
+	desiredDs, err := getDesiredDaemonSet(datacollection, otelcolConfigContent, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -109,6 +115,11 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 				logger.Error(err, "Failed to create DaemonSet")
 				return nil, err
 			}
+			err = common.UpdateCollectorGroupReceiverSignals(ctx, c, datacollection, signals)
+			if err != nil {
+				logger.Error(err, "Failed to update node collectors group received signals")
+				return nil, err
+			}
 			return desiredDs, nil
 		} else {
 			logger.Error(err, "Failed to get DaemonSet")
@@ -120,6 +131,12 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 	updated, err := patchDaemonSet(existing, desiredDs, ctx, c)
 	if err != nil {
 		logger.Error(err, "Failed to patch DaemonSet")
+		return nil, err
+	}
+
+	err = common.UpdateCollectorGroupReceiverSignals(ctx, c, datacollection, signals)
+	if err != nil {
+		logger.Error(err, "Failed to update node collectors group received signals")
 		return nil, err
 	}
 
@@ -156,11 +173,11 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      consts.OdigosNodeCollectorDaemonSetName,
 			Namespace: datacollection.Namespace,
-			Labels:    commonLabels,
+			Labels:    NodeCollectorsLabels,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: commonLabels,
+				MatchLabels: NodeCollectorsLabels,
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: appsv1.RollingUpdateDaemonSetStrategyType,
@@ -171,7 +188,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: commonLabels,
+					Labels: NodeCollectorsLabels,
 					Annotations: map[string]string{
 						configHashAnnotation: common.Sha256Hash(configData),
 					},
@@ -183,7 +200,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 					ServiceAccountName: consts.OdigosNodeCollectorDaemonSetName,
 					Volumes: []corev1.Volume{
 						{
-							Name: configKey,
+							Name: consts.OdigosNodeCollectorConfigMapKey,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
@@ -191,8 +208,8 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 									},
 									Items: []corev1.KeyToPath{
 										{
-											Key:  configKey,
-											Path: fmt.Sprintf("%s.yaml", configKey),
+											Key:  consts.OdigosNodeCollectorConfigMapKey,
+											Path: fmt.Sprintf("%s.yaml", consts.OdigosNodeCollectorConfigMapKey),
 										},
 									},
 								},
@@ -227,10 +244,10 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 						{
 							Name:    containerName,
 							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, configKey)},
+							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, consts.OdigosNodeCollectorConfigMapKey)},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      configKey,
+									Name:      consts.OdigosNodeCollectorConfigMapKey,
 									MountPath: confDir,
 								},
 								{
@@ -255,6 +272,14 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name: "POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
 										},
 									},
 								},

@@ -311,7 +311,7 @@ func printPodContainerInstrumentationInstancesInfo(instances []*odigosv1.Instrum
 		if instance.Status.Message != "" {
 			fmt.Println("      Message:", instance.Status.Message)
 		}
-		if instance.Status.Reason != "" {
+		if instance.Status.Reason != "" && instance.Status.Reason != string(common.AgentHealthStatusHealthy) {
 			fmt.Println("      Reason:", instance.Status.Reason)
 		}
 		if unhealthy {

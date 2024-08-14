@@ -27,7 +27,7 @@ export function SourceCard({ item, onClick, focus }: any) {
       <RadioButtonWrapper>
         <KeyvalRadioButton onChange={onClick} value={focus} />
       </RadioButtonWrapper>
-      <SourceCardWrapper onClick={onClick}>
+      <SourceCardWrapper onClick={onClick} data-cy={'choose-source-' + item.name}>
         <Logo width={'6vh'} height={'6vh'} />
         <SourceTextWrapper>
           <ApplicationNameWrapper>

@@ -2,6 +2,7 @@ package destination_recognition
 
 import (
 	"github.com/gin-gonic/gin"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
@@ -12,29 +13,18 @@ import (
 var SupportedDestinationType = []common.DestinationType{common.JaegerDestinationType, common.ElasticsearchDestinationType}
 
 type DestinationDetails struct {
-	Name      string `json:"name"`
-	UrlString string `json:"urlString"`
+	Type      common.DestinationType `json:"type"`
+	UrlString string                 `json:"urlString"`
 }
 
 type IDestinationFinder interface {
 	isPotentialService(k8s.Service) bool
 	fetchDestinationDetails(k8s.Service) DestinationDetails
+	getServiceURL() string
 }
 
-type DestinationFinder struct {
-	destinationFinder IDestinationFinder
-}
-
-func (d *DestinationFinder) isPotentialService(service k8s.Service) bool {
-	return d.destinationFinder.isPotentialService(service)
-}
-
-func (d *DestinationFinder) fetchDestinationDetails(service k8s.Service) DestinationDetails {
-	return d.destinationFinder.fetchDestinationDetails(service)
-}
-
-func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namespace) ([]DestinationDetails, error) {
-	var destinationFinder *DestinationFinder
+func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namespace, dests *odigosv1.DestinationList) ([]DestinationDetails, error) {
+	var destinationFinder IDestinationFinder
 	var destinationDetails []DestinationDetails
 	var err error
 
@@ -44,8 +34,13 @@ func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namesp
 				for _, service := range services.Items {
 					for _, destinationType := range SupportedDestinationType {
 						destinationFinder = getDestinationFinder(destinationType)
+
 						if destinationFinder.isPotentialService(service) {
-							destinationDetails = append(destinationDetails, destinationFinder.fetchDestinationDetails(service))
+							potentialDestination := destinationFinder.fetchDestinationDetails(service)
+
+							if !destinationExist(dests, potentialDestination, destinationFinder) {
+								destinationDetails = append(destinationDetails, potentialDestination)
+							}
 							break
 						}
 					}
@@ -61,17 +56,23 @@ func GetAllPotentialDestinationDetails(ctx *gin.Context, namespaces []k8s.Namesp
 	return destinationDetails, nil
 }
 
-func getDestinationFinder(destinationType common.DestinationType) *DestinationFinder {
+func getDestinationFinder(destinationType common.DestinationType) IDestinationFinder {
 	switch destinationType {
 	case common.JaegerDestinationType:
-		return &DestinationFinder{
-			destinationFinder: &JaegerDestinationFinder{},
-		}
+		return &JaegerDestinationFinder{}
 	case common.ElasticsearchDestinationType:
-		return &DestinationFinder{
-			destinationFinder: &ElasticSearchDestinationFinder{},
-		}
+		return &ElasticSearchDestinationFinder{}
 	}
 
 	return nil
+}
+
+func destinationExist(dests *odigosv1.DestinationList, potentialDestination DestinationDetails, destinationFinder IDestinationFinder) bool {
+	for _, dest := range dests.Items {
+		if dest.Spec.Type == potentialDestination.Type && dest.GetConfig()[destinationFinder.getServiceURL()] == potentialDestination.UrlString {
+			return true
+		}
+	}
+
+	return false
 }

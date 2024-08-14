@@ -4,7 +4,6 @@
 set -e
 
 echo "Killing Odigos UI process"
-cd ../../../frontend/webapp
 kill "$(cat odigos-ui.pid)"
 rm odigos-ui.pid
 rm ../../odigos-ui.log
