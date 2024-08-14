@@ -127,11 +127,9 @@ func main() {
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
 				&appsv1.Deployment{}: {
-					// Label: labels.Set(gateway.CommonLabels).AsSelector(),
 					Field: nsSelector,
 				},
 				&corev1.Service{}: {
-					// Label: labels.Set(gateway.CommonLabels).AsSelector(),
 					Field: nsSelector,
 				},
 				&appsv1.DaemonSet{}: {
