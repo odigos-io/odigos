@@ -23,7 +23,6 @@ import (
 )
 
 const (
-	collectorLabel       = "odigos.io/data-collection"
 	containerName        = "data-collection"
 	containerImage       = "keyval/odigos-collector"
 	containerCommand     = "/odigosotelcol"
@@ -34,7 +33,7 @@ const (
 
 var (
 	commonLabels = map[string]string{
-		collectorLabel: "true",
+		consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleNodeCollector),
 	}
 )
 
@@ -273,6 +272,14 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name: "POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
 										},
 									},
 								},

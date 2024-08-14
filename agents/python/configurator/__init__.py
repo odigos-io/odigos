@@ -20,40 +20,48 @@ class OdigosPythonConfigurator(sdk_config._BaseConfigurator):
         
         
 def _initialize_components():    
-    trace_exporters, metric_exporters, log_exporters = sdk_config._import_exporters(
-        sdk_config._get_exporter_names("traces"),
-        sdk_config._get_exporter_names("metrics"),
-        sdk_config._get_exporter_names("logs"),
-    )
-
-    auto_resource = {
-        "telemetry.distro.name": "odigos",
-        "telemetry.distro.version": VERSION,
-    }
-    
     resource_attributes_event = threading.Event()
-    client = start_opamp_client(resource_attributes_event)
-    resource_attributes_event.wait(timeout=30)  # Wait for the resource attributes to be received for 30 seconds
-
-    received_value = client.resource_attributes
+    client = None
     
-    if received_value:
-        auto_resource.update(received_value)
+    try:
+        
+        client = start_opamp_client(resource_attributes_event)
+        resource_attributes_event.wait(timeout=30)  # Wait for the resource attributes to be received for 30 seconds
 
-        resource = Resource.create(auto_resource) \
-            .merge(OTELResourceDetector().detect()) \
-            .merge(ProcessResourceDetector().detect())
+        received_value = client.resource_attributes
+        
+        if received_value:    
+            trace_exporters, metric_exporters, log_exporters = sdk_config._import_exporters(
+                sdk_config._get_exporter_names("traces"),
+                sdk_config._get_exporter_names("metrics"),
+                sdk_config._get_exporter_names("logs"),
+            )
 
-        initialize_traces_if_enabled(trace_exporters, resource)
-        initialize_metrics_if_enabled(metric_exporters, resource)
-        initialize_logging_if_enabled(log_exporters, resource)
+            auto_resource = {
+                "telemetry.distro.name": "odigos",
+                "telemetry.distro.version": VERSION,
+            }
+                        
+            auto_resource.update(received_value)
 
+            resource = Resource.create(auto_resource) \
+                .merge(OTELResourceDetector().detect()) \
+                .merge(ProcessResourceDetector().detect())
 
-    # Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
-    # This is necessary because the user application's dependencies may be incompatible with those used by the agent.
-    reorder_python_path()
-    # Reload distro modules to ensure the new path is used.
-    reload_distro_modules()
+            initialize_traces_if_enabled(trace_exporters, resource)
+            initialize_metrics_if_enabled(metric_exporters, resource)
+            initialize_logging_if_enabled(log_exporters, resource)
+
+        # Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
+        # This is necessary because the user application's dependencies may be incompatible with those used by the agent.
+        reorder_python_path()
+        # Reload distro modules to ensure the new path is used.
+        reload_distro_modules()
+        
+    except Exception as e:
+        if client is not None:
+            client.shutdown(custom_failure_message=str(e))
+        
 
 def initialize_traces_if_enabled(trace_exporters, resource):
     traces_enabled = os.getenv(sdk_config.OTEL_TRACES_EXPORTER, "none").strip().lower()
@@ -78,7 +86,7 @@ def start_opamp_client(event):
     client = OpAMPHTTPClient(event, condition)
     
     python_version_supported = is_supported_python_version()
-    
+
     client.start(python_version_supported)
     
     def shutdown():

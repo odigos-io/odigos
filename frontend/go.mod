@@ -11,12 +11,14 @@ require (
 	github.com/odigos-io/odigos/destinations v0.0.0-20240223090638-df3328a088bc
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/component v0.106.0
-	go.opentelemetry.io/collector/confmap v0.106.0
+	go.opentelemetry.io/collector/component v0.106.1
+	go.opentelemetry.io/collector/confmap v0.106.1
 	go.opentelemetry.io/collector/exporter v0.106.0
 	go.opentelemetry.io/collector/exporter/otlpexporter v0.106.0
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.106.0
 	go.opentelemetry.io/collector/pdata v1.12.0
+	go.opentelemetry.io/collector/receiver/otlpreceiver v0.106.1
+	go.opentelemetry.io/otel v1.28.0
 	golang.org/x/sync v0.7.0
 	k8s.io/api v0.30.1
 	k8s.io/apimachinery v0.30.3
@@ -47,22 +49,22 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/rs/cors v1.11.0 // indirect
-	go.opentelemetry.io/collector v0.106.0 // indirect
-	go.opentelemetry.io/collector/config/configauth v0.106.0 // indirect
+	go.opentelemetry.io/collector v0.106.1 // indirect
+	go.opentelemetry.io/collector/config/configauth v0.106.1 // indirect
 	go.opentelemetry.io/collector/config/configcompression v1.12.0 // indirect
-	go.opentelemetry.io/collector/config/configgrpc v0.106.0 // indirect
-	go.opentelemetry.io/collector/config/confighttp v0.106.0 // indirect
-	go.opentelemetry.io/collector/config/confignet v0.106.0 // indirect
+	go.opentelemetry.io/collector/config/configgrpc v0.106.1 // indirect
+	go.opentelemetry.io/collector/config/confighttp v0.106.1 // indirect
+	go.opentelemetry.io/collector/config/confignet v0.106.1 // indirect
 	go.opentelemetry.io/collector/config/configopaque v1.12.0 // indirect
 	go.opentelemetry.io/collector/config/configretry v1.12.0 // indirect
-	go.opentelemetry.io/collector/config/configtelemetry v0.106.0 // indirect
+	go.opentelemetry.io/collector/config/configtelemetry v0.106.1 // indirect
 	go.opentelemetry.io/collector/config/configtls v1.12.0 // indirect
-	go.opentelemetry.io/collector/config/internal v0.106.0 // indirect
-	go.opentelemetry.io/collector/consumer v0.106.0 // indirect
-	go.opentelemetry.io/collector/extension v0.106.0 // indirect
-	go.opentelemetry.io/collector/extension/auth v0.106.0 // indirect
+	go.opentelemetry.io/collector/config/internal v0.106.1 // indirect
+	go.opentelemetry.io/collector/consumer v0.106.1
+	go.opentelemetry.io/collector/extension v0.106.1 // indirect
+	go.opentelemetry.io/collector/extension/auth v0.106.1 // indirect
 	go.opentelemetry.io/collector/featuregate v1.12.0 // indirect
-	go.opentelemetry.io/collector/receiver v0.106.0 // indirect
+	go.opentelemetry.io/collector/receiver v0.106.1
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.53.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.53.0 // indirect
 	go.opentelemetry.io/otel/exporters/prometheus v0.50.0 // indirect
@@ -113,12 +115,11 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
-	go.opentelemetry.io/collector/client v0.106.0 // indirect
-	go.opentelemetry.io/collector/consumer/consumerprofiles v0.106.0 // indirect
-	go.opentelemetry.io/collector/consumer/consumertest v0.106.0 // indirect
-	go.opentelemetry.io/collector/internal/globalgates v0.106.0 // indirect
-	go.opentelemetry.io/collector/pdata/pprofile v0.106.0 // indirect
-	go.opentelemetry.io/otel v1.28.0 // indirect
+	go.opentelemetry.io/collector/client v0.106.1 // indirect
+	go.opentelemetry.io/collector/consumer/consumerprofiles v0.106.1 // indirect
+	go.opentelemetry.io/collector/consumer/consumertest v0.106.1 // indirect
+	go.opentelemetry.io/collector/internal/globalgates v0.106.1 // indirect
+	go.opentelemetry.io/collector/pdata/pprofile v0.106.1 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
