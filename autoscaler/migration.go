@@ -22,6 +22,8 @@ import (
 // and any update to the labels in the selector will fail with an error.
 // To overcome this, we will simply delete the collectors workloads, and have them re-created with the new labels
 // by the autoscaler controllers.
+//
+// TODO: remove this function after 1 year - Aug 2025
 func MigrateCollectorsWorkloadToNewLabels(ctx context.Context, c client.Client, ns string) error {
 
 	// Delete the cluster collector deployment itself has the label "odigos.io/collector": "true"
