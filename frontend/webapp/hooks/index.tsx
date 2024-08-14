@@ -7,3 +7,4 @@ export * from './destinations';
 export * from './actions';
 export * from './useNotify';
 export * from './useSSE';
+export * from './useOverviewMetrics';
