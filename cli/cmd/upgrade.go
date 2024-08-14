@@ -92,7 +92,7 @@ and apply any required migrations and adaptations.`,
 
 		config, err := resources.GetCurrentConfig(ctx, client, ns)
 		if err != nil {
-			odigosConfig, err := resources.GetCurrentOdigosConfig(ctx, client, ns)
+			odigosConfig, err := resources.GetDeprecatedConfig(ctx, client, ns)
 			if err != nil {
 				fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
 				os.Exit(1)

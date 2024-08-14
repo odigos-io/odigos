@@ -55,7 +55,7 @@ func GetCurrentConfig(ctx context.Context, client *kube.Client, ns string) (*com
 	return &odigosConfig, nil
 }
 
-func GetCurrentOdigosConfig(ctx context.Context, client *kube.Client, ns string) (*v1alpha1.OdigosConfiguration, error) {
+func GetDeprecatedConfig(ctx context.Context, client *kube.Client, ns string) (*v1alpha1.OdigosConfiguration, error) {
   return client.OdigosClient.OdigosConfigurations(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
 }
 
