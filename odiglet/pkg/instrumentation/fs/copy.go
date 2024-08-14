@@ -27,7 +27,7 @@ func getNumberOfWorkers() int {
 	return min(maxWorkers, max(1, runtime.NumCPU()/4))
 }
 
-func copyDirectories(srcDir string, destDir string) error {
+func copyDirectories(srcDir string, destDir string, filesToKeepMap map[string]struct{}) error {
 	start := time.Now()
 
 	hostContainEbpfDir := HostContainsEbpfDir(destDir)
@@ -37,7 +37,7 @@ func copyDirectories(srcDir string, destDir string) error {
 	CopyCFiles := !hostContainEbpfDir || shouldRecreateCFiles
 	log.Logger.V(0).Info("Copying instrumentation files to host", "srcDir", srcDir, "destDir", destDir, "CopyCFiles", CopyCFiles)
 
-	files, err := getFiles(srcDir, CopyCFiles)
+	files, err := getFiles(srcDir, CopyCFiles, filesToKeepMap)
 	if err != nil {
 		return err
 	}
@@ -85,21 +85,17 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
-func getFiles(dir string, CopyCFiles bool) ([]string, error) {
+func getFiles(dir string, CopyCFiles bool, filesToKeepMap map[string]struct{}) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
-
 			if !CopyCFiles {
-				// filter out C files in ebpf directories
-				if strings.Contains(filepath.Dir(path), "ebpf") {
-					switch ext := filepath.Ext(path); ext {
-					case ".so", ".node", ".node.d", ".a":
-						return nil
-					}
+				if _, found := filesToKeepMap[strings.Replace(path, "/instrumentations/", "/var/odigos/", 1)]; found {
+					log.Logger.V(0).Info("Skipping copying file", "file", path)
+					return nil
 				}
 			}
 
@@ -107,6 +103,7 @@ func getFiles(dir string, CopyCFiles bool) ([]string, error) {
 		}
 		return nil
 	})
+
 	return files, err
 }
 
