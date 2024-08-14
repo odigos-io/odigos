@@ -10,7 +10,7 @@ import (
 
 func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 	shouldRecreateCFiles := ShouldRecreateAllCFiles()
-	log.Logger.V(0).Info(fmt.Sprintf("Removing files in directory: %s, shouldRecreateCFiles: %t", hostDir, shouldRecreateCFiles))
+	log.Logger.V(0).Info("Removing files in the host directory", "hostDir", hostDir, "shouldRecreateCFiles", shouldRecreateCFiles)
 
 	// Mark directories as protected if they contain a file that needs to be preserved.
 	// If C files should be recreated, skip marking any directories as protected.
@@ -38,14 +38,14 @@ func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 		// Skip removing any files listed in filesToKeepMap
 		if !info.IsDir() {
 			if _, found := filesToKeep[path]; found {
-				log.Logger.V(0).Info(fmt.Sprintf("Skipping protected file: %s", path))
+				log.Logger.V(0).Info("Skipping protected file", "file", path)
 				return nil
 			}
 		}
 
 		// Skip removing protected directories
 		if info.IsDir() && protectedDirs[path] {
-			log.Logger.V(0).Info(fmt.Sprintf("Skipping protected directory: %s", path))
+			log.Logger.V(0).Info("Skipping protected directory", "directory", path)
 			return nil
 		}
 
