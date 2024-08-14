@@ -32,7 +32,7 @@ const (
 )
 
 var (
-	commonLabels = map[string]string{
+	NodeCollectorsLabels = map[string]string{
 		consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleNodeCollector),
 	}
 )
@@ -173,11 +173,11 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      consts.OdigosNodeCollectorDaemonSetName,
 			Namespace: datacollection.Namespace,
-			Labels:    commonLabels,
+			Labels:    NodeCollectorsLabels,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: commonLabels,
+				MatchLabels: NodeCollectorsLabels,
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: appsv1.RollingUpdateDaemonSetStrategyType,
@@ -188,7 +188,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: commonLabels,
+					Labels: NodeCollectorsLabels,
 					Annotations: map[string]string{
 						configHashAnnotation: common.Sha256Hash(configData),
 					},
