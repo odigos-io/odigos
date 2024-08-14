@@ -79,6 +79,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				Verbs: []string{
 					"create",
 					"delete",
+					"deletecollection",
 					"get",
 					"list",
 					"patch",
@@ -101,6 +102,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				Verbs: []string{
 					"create",
 					"delete",
+					"deletecollection",
 					"get",
 					"list",
 					"patch",
