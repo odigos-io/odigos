@@ -22,14 +22,25 @@ func CopyAgentsDirectoryToHost() error {
 	// as we want a fresh copy of instrumentation agents with no files leftover from previous odigos versions.
 	// we cannot remove /var/odigos itself: "unlinkat /var/odigos: device or resource busy"
 	// so we will just remove it's content
-	// We kept the .so/.node files to avoid removing the instrumentations that are already loaded in the process memory
-	err := removeFilesInDir(hostDir)
+
+	// We kept the following list of files to avoid removing instrumentations that are already loaded in the process memory
+	filesToKeepMap := map[string]struct{}{
+		"/var/odigos/nodejs-ebpf/build/Release/dtrace-injector-native.node":                            {},
+		"/var/odigos/nodejs-ebpf/build/Release/obj.target/dtrace-injector-native.node":                 {},
+		"/var/odigos/nodejs-ebpf/build/Release/.deps/Release/dtrace-injector-native.node.d":            {},
+		"/var/odigos/nodejs-ebpf/build/Release/.deps/Release/obj.target/dtrace-injector-native.node.d": {},
+		"/var/odigos/java-ebpf/tracing_probes.so":                                                      {},
+		"/var/odigos/java-ext-ebpf/end_span_usdt.so":                                                   {},
+		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
+	}
+
+	err := removeFilesInDir(hostDir, filesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error removing instrumentation directory from host")
 		return err
 	}
 
-	err = copyDirectories(containerDir, hostDir)
+	err = copyDirectories(containerDir, hostDir, filesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error copying instrumentation directory to host")
 		return err
