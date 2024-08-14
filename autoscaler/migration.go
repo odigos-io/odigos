@@ -4,6 +4,7 @@ import (
 	"context"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -30,6 +31,10 @@ func MigrateCollectorsWorkloadToNewLabels(ctx context.Context, c client.Client, 
 	// which means Spec.Selector.MatchLabels["odigos.io/collector"] = "true" as well
 	preV1_0_91LabelSelectorGateway := client.MatchingLabels{"odigos.io/collector": "true"}
 	err := c.DeleteAllOf(ctx, &appsv1.Deployment{}, client.InNamespace(ns), preV1_0_91LabelSelectorGateway)
+	if err != nil {
+		return err
+	}
+	err = c.DeleteAllOf(ctx, &corev1.Service{}, client.InNamespace(ns), preV1_0_91LabelSelectorGateway)
 	if err != nil {
 		return err
 	}

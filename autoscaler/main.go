@@ -38,6 +38,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -52,6 +53,7 @@ import (
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
+	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
 	nameutils "github.com/odigos-io/odigos/autoscaler/utils"
 
 	//+kubebuilder:scaffold:imports
@@ -117,6 +119,7 @@ func main() {
 	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
 	odigosNs := env.GetCurrentNamespace()
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
+	clusterCollectorLabelSelector := labels.Set(gateway.ClusterCollectorGateway).AsSelector()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
@@ -127,9 +130,11 @@ func main() {
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
 				&appsv1.Deployment{}: {
+					Label: clusterCollectorLabelSelector,
 					Field: nsSelector,
 				},
 				&corev1.Service{}: {
+					Label: clusterCollectorLabelSelector,
 					Field: nsSelector,
 				},
 				&appsv1.DaemonSet{}: {
