@@ -6,6 +6,11 @@ export const GET_COMPUTE_PLATFORM = gql`
       name
       k8sActualNamespaces {
         name
+        k8sActualSources {
+          kind
+          name
+          numberOfInstances
+        }
       }
     }
   }
