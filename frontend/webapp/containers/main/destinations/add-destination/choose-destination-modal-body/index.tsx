@@ -33,7 +33,7 @@ export function ChooseDestinationModalBody({
   const [selectedMonitors, setSelectedMonitors] = useState<string[]>([]);
   const [dropdownValue, setDropdownValue] = useState<DropdownOption>({
     id: 'all',
-    value: 'All',
+    value: 'All types',
   });
 
   function handleTagSelect(option: DropdownOption) {

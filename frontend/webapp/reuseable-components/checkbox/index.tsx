@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Tooltip } from '../tooltip';
 import Image from 'next/image';
@@ -44,6 +44,10 @@ const Checkbox: React.FC<CheckboxProps> = ({
   disabled,
 }) => {
   const [isChecked, setIsChecked] = useState(initialValue);
+
+  useEffect(() => {
+    setIsChecked(initialValue);
+  }, [initialValue]);
 
   const handleToggle = () => {
     if (!disabled) {

@@ -4,8 +4,13 @@ import styled from 'styled-components';
 import { NavigationButtons, Text } from '@/reuseable-components';
 
 interface SetupHeaderProps {
-  onBack: () => void;
-  onNext: () => void;
+  navigationButtons: {
+    label: string;
+    iconSrc?: string;
+    onClick: () => void;
+    variant?: 'primary' | 'secondary';
+    disabled?: boolean;
+  }[];
 }
 
 const HeaderContainer = styled.div`
@@ -26,7 +31,9 @@ const Logo = styled.div`
   font-size: 1.2em;
 `;
 
-export const SetupHeader: React.FC<SetupHeaderProps> = ({ onBack, onNext }) => {
+export const SetupHeader: React.FC<SetupHeaderProps> = ({
+  navigationButtons,
+}) => {
   return (
     <HeaderContainer>
       <Logo>
@@ -38,22 +45,7 @@ export const SetupHeader: React.FC<SetupHeaderProps> = ({ onBack, onNext }) => {
         />
       </Logo>
       <Title family={'secondary'}>START WITH ODIGOS</Title>
-      <NavigationButtons
-        buttons={[
-          {
-            label: 'BACK',
-            iconSrc: '/icons/common/arrow-white.svg',
-            onClick: onBack,
-            variant: 'secondary',
-          },
-          {
-            label: 'NEXT',
-            iconSrc: '/icons/common/arrow-black.svg',
-            onClick: onNext,
-            variant: 'primary',
-          },
-        ]}
-      />
+      <NavigationButtons buttons={navigationButtons} />
     </HeaderContainer>
   );
 };

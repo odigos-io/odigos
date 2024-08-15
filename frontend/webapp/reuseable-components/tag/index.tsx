@@ -13,8 +13,10 @@ const TagContainer = styled.div<{ isSelected: boolean; isDisabled: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
-  border-radius: 16px;
+  height: 36px;
+  gap: 6px;
+  padding: 0 12px;
+  border-radius: 32px;
   background-color: ${({ theme, isSelected }) =>
     isSelected ? theme.colors.primary : theme.colors.translucent_bg};
   cursor: ${({ isDisabled }) => (isDisabled ? 'not-allowed' : 'pointer')};
@@ -25,10 +27,7 @@ const TagContainer = styled.div<{ isSelected: boolean; isDisabled: boolean }>`
     !isDisabled &&
     css`
       &:hover {
-        background-color: ${theme.colors.secondary};
-        div {
-          color: ${theme.colors.primary};
-        }
+        background-color: ${theme.colors.primary};
       }
     `}
 `;

@@ -1,0 +1,98 @@
+import { useEffect, useState } from 'react';
+import { DropdownOption, K8sActualSource } from '@/types';
+import { useSelector } from 'react-redux';
+
+export const useConnectSourcesMenuState = ({ sourcesList }) => {
+  const [searchFilter, setSearchFilter] = useState('');
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
+  const [selectAllCheckbox, setSelectAllCheckbox] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<DropdownOption>();
+  const [futureAppsCheckbox, setFutureAppsCheckbox] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [selectedItems, setSelectedItems] = useState<{
+    [key: string]: K8sActualSource[];
+  }>({});
+
+  const { sources, namespaceFutureSelectAppsList } = useSelector(
+    ({ app }) => app
+  );
+
+  useEffect(() => {
+    sources && setSelectedItems(sources);
+    namespaceFutureSelectAppsList &&
+      setFutureAppsCheckbox(namespaceFutureSelectAppsList);
+  }, [namespaceFutureSelectAppsList, sources]);
+
+  useEffect(() => {
+    selectAllCheckbox && selectAllSources();
+  }, [selectAllCheckbox]);
+
+  function selectAllSources() {
+    if (selectedOption) {
+      setSelectedItems({
+        ...selectedItems,
+        [selectedOption.value]: sourcesList,
+      });
+    }
+  }
+
+  function filterSources(sources: K8sActualSource[]) {
+    return sources.filter((source: K8sActualSource) => {
+      return (
+        searchFilter === '' ||
+        source.name.toLowerCase().includes(searchFilter.toLowerCase())
+      );
+    });
+  }
+
+  function handleSelectItem(item: K8sActualSource) {
+    if (selectedOption) {
+      const currentSelectedItems = selectedItems[selectedOption.value] || [];
+      if (currentSelectedItems.includes(item)) {
+        const updatedSelectedItems = currentSelectedItems.filter(
+          (selectedItem) => selectedItem !== item
+        );
+        setSelectedItems({
+          ...selectedItems,
+          [selectedOption.value]: updatedSelectedItems,
+        });
+        if (
+          selectAllCheckbox &&
+          updatedSelectedItems.length !== sourcesList.length
+        ) {
+          setSelectAllCheckbox(false);
+        }
+      } else {
+        const updatedSelectedItems = [...currentSelectedItems, item];
+        setSelectedItems({
+          ...selectedItems,
+          [selectedOption.value]: updatedSelectedItems,
+        });
+        if (updatedSelectedItems.length === sourcesList.length) {
+          setSelectAllCheckbox(true);
+        }
+      }
+    }
+  }
+
+  return {
+    stateMenu: {
+      searchFilter,
+      setSearchFilter,
+      showSelectedOnly,
+      setShowSelectedOnly,
+      selectAllCheckbox,
+      setSelectAllCheckbox,
+      selectedOption,
+      setSelectedOption,
+      futureAppsCheckbox,
+      setFutureAppsCheckbox,
+      selectedItems,
+    },
+    stateHandlers: {
+      handleSelectItem,
+      filterSources,
+    },
+  };
+};

@@ -11,16 +11,17 @@ const TooltipContainer = styled.div`
   position: relative;
   display: inline-block;
   width: fit-content;
+
   cursor: pointer;
 `;
 
 const TooltipText = styled.div`
   visibility: hidden;
   background-color: ${({ theme }) => theme.colors.dark_grey};
-  background: #1a1a1a;
-  color: #fff;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.text.primary};
   text-align: center;
-  border-radius: 4px;
+  border-radius: 32px;
   padding: 8px;
   position: absolute;
   z-index: 1;
@@ -38,10 +39,6 @@ const TooltipText = styled.div`
     z-index: 99999;
     top: 100%; /* At the bottom of the tooltip */
     left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: #1a1a1a transparent transparent transparent;
   }
 `;
 
@@ -66,7 +63,7 @@ const Tooltip: React.FC<TooltipProps> = ({ text, children }) => {
         {children}
         {hasText && (
           <TooltipText>
-            <Text>{text}</Text>
+            <Text size={14}>{text}</Text>
           </TooltipText>
         )}
       </TooltipWrapper>

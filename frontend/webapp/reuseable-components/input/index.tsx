@@ -160,6 +160,7 @@ const Input: React.FC<InputProps> = ({
                 alt=""
                 width={16}
                 height={16}
+                style={{ marginBottom: 4 }}
               />
             )}
           </HeaderWrapper>

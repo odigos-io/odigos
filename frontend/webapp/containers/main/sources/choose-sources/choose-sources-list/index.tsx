@@ -1,4 +1,5 @@
 import { Text } from '@/reuseable-components';
+import { K8sActualSource } from '@/types';
 import Image from 'next/image';
 import React, { useState } from 'react';
 import styled from 'styled-components';
@@ -66,12 +67,6 @@ const SelectedTextWrapper = styled.div`
   margin-right: 24px;
 `;
 
-interface K8sActualSource {
-  name: string;
-  kind: string;
-  numberOfInstances: number;
-}
-
 interface SourcesListProps {
   items: K8sActualSource[];
   selectedItems: K8sActualSource[];
@@ -83,12 +78,19 @@ const SourcesList: React.FC<SourcesListProps> = ({
   selectedItems,
   setSelectedItems,
 }) => {
+  function isItemSelected(item: K8sActualSource) {
+    const selected = selectedItems.find(
+      (selectedItem) => selectedItem.name === item.name
+    );
+    return !!selected;
+  }
+
   return (
     <Container>
       {items.map((item) => (
         <ListItem
           key={item.name}
-          selected={selectedItems.includes(item)}
+          selected={isItemSelected(item)}
           onClick={() => setSelectedItems(item)}
         >
           <ListItemContent>
@@ -107,7 +109,7 @@ const SourcesList: React.FC<SourcesListProps> = ({
               </Text>
             </TextWrapper>
           </ListItemContent>
-          {selectedItems.includes(item) && (
+          {isItemSelected(item) && (
             <SelectedTextWrapper>
               <Text size={12} family="secondary">
                 SELECTED

@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import styled from 'styled-components';
-import { SetupHeader, SideMenu } from '@/components';
+import { SideMenu } from '@/components';
 
 const LayoutContainer = styled.div`
   width: 100%;
@@ -18,21 +18,12 @@ const SideMenuWrapper = styled.div`
   top: 144px;
 `;
 
-const HeaderWrapper = styled.div`
-  width: 100vw;
-`;
-
 const MainContent = styled.div`
   display: flex;
   max-width: 1440px;
-  width: 100%;
+  width: 100vh;
   flex-direction: column;
   align-items: center;
-`;
-
-const ContentWrapper = styled.div`
-  width: 640px;
-  padding-top: 64px;
 `;
 
 export default function SetupLayout({
@@ -42,22 +33,10 @@ export default function SetupLayout({
 }) {
   return (
     <LayoutContainer>
-      <HeaderWrapper>
-        <SetupHeader
-          onBack={function (): void {
-            throw new Error('Function not implemented.');
-          }}
-          onNext={function (): void {
-            throw new Error('Function not implemented.');
-          }}
-        />
-      </HeaderWrapper>
       <SideMenuWrapper>
         <SideMenu />
       </SideMenuWrapper>
-      <MainContent>
-        <ContentWrapper>{children}</ContentWrapper>
-      </MainContent>
+      <MainContent>{children}</MainContent>
     </LayoutContainer>
   );
 }

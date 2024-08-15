@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { Text, Tag } from '@/reuseable-components';
 import { MONITORS_OPTIONS } from '@/utils';
+import Image from 'next/image';
 
 interface MonitorButtonsProps {
   selectedMonitors: string[];
@@ -34,9 +35,13 @@ const MonitorsTapList: React.FC<MonitorButtonsProps> = ({
             isSelected={selectedMonitors.includes(monitor.id)}
             onClick={() => onMonitorSelect(monitor.id)}
           >
-            <Text size={12} color="rgba(249, 249, 249, 0.8)">
-              {monitor.value}
-            </Text>
+            <Image
+              src={`/icons/monitors/${monitor.id}.svg`}
+              alt="monitor"
+              width={16}
+              height={16}
+            />
+            <Text size={14}>{monitor.value}</Text>
           </Tag>
         ))}
       </MonitorButtonsContainer>

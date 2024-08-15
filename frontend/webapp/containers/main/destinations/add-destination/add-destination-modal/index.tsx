@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useQuery } from '@apollo/client';
 import { DestinationTypeItem } from '@/types';
 import { GET_DESTINATION_TYPE } from '@/graphql';
@@ -15,6 +15,7 @@ interface DestinationCategory {
   name: string;
   items: DestinationTypeItem[];
 }
+
 function ModalActionComponent({
   onNext,
   onBack,
@@ -37,7 +38,7 @@ function ModalActionComponent({
               },
               {
                 label: 'DONE',
-                onClick: onNext,
+                onClick: onNext, // This will trigger handleSubmit
                 variant: 'primary',
               },
             ]
@@ -56,6 +57,8 @@ export function AddDestinationModal({
   const [destinationTypeList, setDestinationTypeList] = useState<
     DestinationTypeItem[]
   >([]);
+
+  const submitRef = useRef<() => void | null>(null);
 
   useEffect(() => {
     data && buildDestinationTypeList();
@@ -86,7 +89,10 @@ export function AddDestinationModal({
 
   function renderModalBody() {
     return selectedItem ? (
-      <ConnectDestinationModalBody destination={selectedItem} />
+      <ConnectDestinationModalBody
+        destination={selectedItem}
+        onSubmitRef={submitRef}
+      />
     ) : (
       <ChooseDestinationModalBody
         data={destinationTypeList}
@@ -95,12 +101,19 @@ export function AddDestinationModal({
     );
   }
 
+  function handleNext() {
+    if (submitRef.current) {
+      submitRef.current();
+      handleCloseModal();
+    }
+  }
+
   return (
     <Modal
       isOpen={isModalOpen}
       actionComponent={
         <ModalActionComponent
-          onNext={() => {}}
+          onNext={handleNext}
           onBack={() => setSelectedItem(undefined)}
           item={selectedItem}
         />

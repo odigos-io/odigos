@@ -15,7 +15,7 @@ interface FilterComponentProps {
 const InputAndDropdownContainer = styled.div`
   display: flex;
   gap: 12px;
-  width: 438px;
+  width: 370px;
 `;
 
 const FilterContainer = styled.div`
@@ -25,7 +25,7 @@ const FilterContainer = styled.div`
 `;
 
 const DROPDOWN_OPTIONS = [
-  { value: 'All', id: 'all' },
+  { value: 'All types', id: 'all' },
   { value: 'Managed', id: 'managed' },
   { value: 'Self-hosted', id: 'self hosted' },
 ];
@@ -48,12 +48,14 @@ const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
   return (
     <FilterContainer>
       <InputAndDropdownContainer>
-        <Input
-          placeholder="Search..."
-          icon="/icons/common/search.svg"
-          value={searchTerm}
-          onChange={handleSearchChange}
-        />
+        <div>
+          <Input
+            placeholder="Search..."
+            icon="/icons/common/search.svg"
+            value={searchTerm}
+            onChange={handleSearchChange}
+          />
+        </div>
         <Dropdown
           options={DROPDOWN_OPTIONS}
           selectedOption={selectedTag}

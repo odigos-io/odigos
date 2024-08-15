@@ -43,7 +43,7 @@ export default function RootLayout({
               {/* <ThemeProviderWrapper> */}
               <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
                 {children}
-                <NotificationManager />
+                {/* <NotificationManager /> */}
               </body>
               {/* </ThemeProviderWrapper> */}
             </ThemeProvider>
