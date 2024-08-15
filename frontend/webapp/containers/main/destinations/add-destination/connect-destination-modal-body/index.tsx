@@ -1,26 +1,25 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import styled from 'styled-components';
+import { SideMenu } from '@/components';
+import { useQuery } from '@apollo/client';
+import { useConnectDestinationForm, useConnectEnv } from '@/hooks';
+import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
+import { Body, Container, SideMenuWrapper } from '../styled';
+import { DynamicConnectDestinationFormFields } from '../dynamic-form-fields';
 import {
-  DestinationDetailsResponse,
-  DestinationInput,
-  DestinationTypeItem,
+  StepProps,
   DynamicField,
   ExportedSignals,
-  StepProps,
+  DestinationInput,
+  DestinationTypeItem,
+  DestinationDetailsResponse,
 } from '@/types';
-import { SideMenu } from '@/components';
 import {
-  Button,
   CheckboxList,
   Divider,
   Input,
   SectionTitle,
 } from '@/reuseable-components';
-import { Body, Container, SideMenuWrapper } from '../styled';
-import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
-import { useQuery } from '@apollo/client';
-import styled from 'styled-components';
-import { DynamicConnectDestinationFormFields } from '../dynamic-form-fields';
-import { useConnectDestinationForm, useConnectEnv } from '@/hooks';
 
 const SIDE_MENU_DATA: StepProps[] = [
   {
@@ -45,10 +44,12 @@ const FormContainer = styled.div`
 
 interface ConnectDestinationModalBodyProps {
   destination: DestinationTypeItem | undefined;
+  onSubmitRef: React.MutableRefObject<(() => void) | null>;
 }
 
 export function ConnectDestinationModalBody({
   destination,
+  onSubmitRef,
 }: ConnectDestinationModalBodyProps) {
   const { data } = useQuery<DestinationDetailsResponse>(
     GET_DESTINATION_TYPE_DETAILS,
@@ -66,8 +67,7 @@ export function ConnectDestinationModalBody({
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const { buildFormDynamicFields } = useConnectDestinationForm();
-  const { connectEnv, result, loading, error } = useConnectEnv();
-
+  const { connectEnv } = useConnectEnv();
   const monitors = useMemo(() => {
     if (!destination) return [];
 
@@ -92,6 +92,11 @@ export function ConnectDestinationModalBody({
       setDynamicFields(df);
     }
   }, [data]);
+
+  useEffect(() => {
+    // Assign handleSubmit to the onSubmitRef so it can be triggered externally
+    onSubmitRef.current = handleSubmit;
+  }, [formData, destinationName, exportedSignals]);
 
   function handleDynamicFieldChange(name: string, value: any) {
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -149,9 +154,6 @@ export function ConnectDestinationModalBody({
             fields={dynamicFields}
             onChange={handleDynamicFieldChange}
           />
-          <Button onClick={handleSubmit} disabled={!destinationName}>
-            <span>CONNECT</span>
-          </Button>
         </FormContainer>
       </Body>
     </Container>

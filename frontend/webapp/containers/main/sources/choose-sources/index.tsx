@@ -61,7 +61,6 @@ export function ChooseSourcesContainer() {
       dispatch(setSources(selectedItems));
       dispatch(setNamespaceFutureSelectAppsList(futureAppsCheckbox));
     }
-    console.log({ selectedOption, selectedItems, futureAppsCheckbox });
     router.push('/setup/choose-destination');
   }
 
@@ -107,11 +106,6 @@ export function ChooseSourcesContainer() {
               iconSrc: '/icons/common/arrow-black.svg',
               onClick: () => onNextClick(),
               variant: 'primary',
-              disabled:
-                !stateMenu.selectedOption ||
-                Object.keys(stateMenu.selectedItems).every(
-                  (value) => stateMenu.selectedItems[value].length === 0
-                ),
             },
           ]}
         />
