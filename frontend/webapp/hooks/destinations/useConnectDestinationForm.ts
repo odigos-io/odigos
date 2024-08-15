@@ -1,14 +1,7 @@
 import { safeJsonParse } from '@/utils';
-import {
-  DestinationDetailsField,
-  DestinationInput,
-  DynamicField,
-} from '@/types';
-import { CREATE_DESTINATION } from '@/graphql';
-import { useMutation } from '@apollo/client';
+import { DestinationDetailsField, DynamicField } from '@/types';
 
 export function useConnectDestinationForm() {
-  const [createDestination] = useMutation(CREATE_DESTINATION);
   function buildFormDynamicFields(
     fields: DestinationDetailsField[]
   ): DynamicField[] {
@@ -68,17 +61,5 @@ export function useConnectDestinationForm() {
       .filter((field): field is DynamicField => field !== undefined);
   }
 
-  async function createNewDestination(destination: DestinationInput) {
-    try {
-      const { data } = await createDestination({
-        variables: { destination },
-      });
-      return data?.createNewDestination?.id;
-    } catch (error) {
-      console.error('Error creating new destination:', error);
-      throw error;
-    }
-  }
-
-  return { buildFormDynamicFields, createNewDestination };
+  return { buildFormDynamicFields };
 }

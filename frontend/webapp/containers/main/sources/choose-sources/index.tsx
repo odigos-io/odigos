@@ -61,6 +61,7 @@ export function ChooseSourcesContainer() {
       dispatch(setSources(selectedItems));
       dispatch(setNamespaceFutureSelectAppsList(futureAppsCheckbox));
     }
+    console.log({ selectedOption, selectedItems, futureAppsCheckbox });
     router.push('/setup/choose-destination');
   }
 

@@ -20,7 +20,7 @@ import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { useQuery } from '@apollo/client';
 import styled from 'styled-components';
 import { DynamicConnectDestinationFormFields } from '../dynamic-form-fields';
-import { useConnectDestinationForm } from '@/hooks';
+import { useConnectDestinationForm, useConnectEnv } from '@/hooks';
 
 const SIDE_MENU_DATA: StepProps[] = [
   {
@@ -65,8 +65,8 @@ export function ConnectDestinationModalBody({
   const [destinationName, setDestinationName] = useState<string>('');
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
   const [formData, setFormData] = useState<Record<string, any>>({});
-  const { buildFormDynamicFields, createNewDestination } =
-    useConnectDestinationForm();
+  const { buildFormDynamicFields } = useConnectDestinationForm();
+  const { connectEnv, result, loading, error } = useConnectEnv();
 
   const monitors = useMemo(() => {
     if (!destination) return [];
@@ -101,7 +101,7 @@ export function ConnectDestinationModalBody({
     setExportedSignals((prev) => ({ ...prev, [signal]: value }));
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const fields = Object.entries(formData).map(([name, value]) => ({
       key: name,
       value,
@@ -113,10 +113,7 @@ export function ConnectDestinationModalBody({
       exportedSignals,
       fields,
     };
-
-    createNewDestination(body);
-
-    console.log({ body });
+    await connectEnv(body);
   }
 
   if (!destination) return null;
