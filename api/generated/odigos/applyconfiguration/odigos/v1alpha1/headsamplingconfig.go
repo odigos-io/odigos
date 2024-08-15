@@ -20,8 +20,8 @@ package v1alpha1
 // HeadSamplingConfigApplyConfiguration represents an declarative configuration of the HeadSamplingConfig type for use
 // with apply.
 type HeadSamplingConfigApplyConfiguration struct {
-	Rules            []AttributesAndSamplerApplyConfiguration `json:"rules,omitempty"`
-	FallbackFraction *float64                                 `json:"fallbackFraction,omitempty"`
+	AttributesAndSamplerRules []AttributesAndSamplerRuleApplyConfiguration `json:"rules,omitempty"`
+	FallbackFraction          *float64                                     `json:"fallbackFraction,omitempty"`
 }
 
 // HeadSamplingConfigApplyConfiguration constructs an declarative configuration of the HeadSamplingConfig type for use with
@@ -30,15 +30,15 @@ func HeadSamplingConfig() *HeadSamplingConfigApplyConfiguration {
 	return &HeadSamplingConfigApplyConfiguration{}
 }
 
-// WithRules adds the given value to the Rules field in the declarative configuration
+// WithAttributesAndSamplerRules adds the given value to the AttributesAndSamplerRules field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Rules field.
-func (b *HeadSamplingConfigApplyConfiguration) WithRules(values ...*AttributesAndSamplerApplyConfiguration) *HeadSamplingConfigApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the AttributesAndSamplerRules field.
+func (b *HeadSamplingConfigApplyConfiguration) WithAttributesAndSamplerRules(values ...*AttributesAndSamplerRuleApplyConfiguration) *HeadSamplingConfigApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithRules")
+			panic("nil value passed to WithAttributesAndSamplerRules")
 		}
-		b.Rules = append(b.Rules, *values[i])
+		b.AttributesAndSamplerRules = append(b.AttributesAndSamplerRules, *values[i])
 	}
 	return b
 }

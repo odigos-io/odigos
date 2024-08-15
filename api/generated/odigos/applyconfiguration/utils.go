@@ -30,10 +30,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 	// Group=odigos.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithKind("Attribute"):
 		return &odigosv1alpha1.AttributeApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AttributeCompareSampler"):
-		return &odigosv1alpha1.AttributeCompareSamplerApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AttributesAndSampler"):
-		return &odigosv1alpha1.AttributesAndSamplerApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("AttributeCondition"):
+		return &odigosv1alpha1.AttributeConditionApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("AttributesAndSamplerRule"):
+		return &odigosv1alpha1.AttributesAndSamplerRuleApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorGatewayConfiguration"):
 		return &odigosv1alpha1.CollectorGatewayConfigurationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroup"):
@@ -70,6 +70,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationLibraryConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryConfigTraces"):
 		return &odigosv1alpha1.InstrumentationLibraryConfigTracesApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryId"):
+		return &odigosv1alpha1.InstrumentationLibraryIdApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryOptions"):
 		return &odigosv1alpha1.InstrumentationLibraryOptionsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryStatus"):
