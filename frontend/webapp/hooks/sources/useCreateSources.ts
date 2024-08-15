@@ -7,9 +7,15 @@ type CreateSourceResponse = {
   persistK8sSources: boolean;
 };
 
+type CreateSourcesArray = {
+  kind: string;
+  name: string;
+  selected: boolean;
+};
+
 type CreateSourceVariables = {
   namespace: string;
-  sources: K8sActualSource[];
+  sources: CreateSourcesArray[];
 };
 
 export const useCreateSource = () => {
@@ -22,7 +28,7 @@ export const useCreateSource = () => {
 
   const createSource = async (
     namespace: string,
-    sources: K8sActualSource[]
+    sources: CreateSourcesArray[]
   ) => {
     try {
       const result = await createSourceMutation({

@@ -62,7 +62,8 @@ export const useConnectEnv = () => {
         // Create sources for each namespace in sourcesList
         for (const namespaceName in sourcesList) {
           const sources = sourcesList[namespaceName].map((source) => ({
-            ...source,
+            kind: source.kind,
+            name: source.name,
             selected: true,
           }));
           await createSource(namespaceName, sources);
