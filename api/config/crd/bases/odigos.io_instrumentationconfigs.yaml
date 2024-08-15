@@ -187,7 +187,23 @@ spec:
                             description: |-
                               The name of the instrumentation library
                               - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
-                            type: string
+                            properties:
+                              instrumentationLibraryName:
+                                type: string
+                              spanKind:
+                                description: |-
+                                  SpanKind is already defined in opentelemetry-go as int.
+                                  this value can go into the CRD in which case it will be string for user convenience.
+                                enum:
+                                - client
+                                - server
+                                - producer
+                                - consumer
+                                - internal
+                                type: string
+                            required:
+                            - instrumentationLibraryName
+                            type: object
                           traceConfig:
                             properties:
                               enabled:
