@@ -120,6 +120,64 @@ spec:
                   TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
                 items:
                   properties:
+                    headSamplerConfig:
+                      description: |-
+                        HeadSamplingConfig is a set sampling rules.
+                        This config currently only applies to root spans.
+                        In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
+                      properties:
+                        fallbackFraction:
+                          description: |-
+                            Used as a fallback if all rules evaluate to false,
+                            it may be empty - in this case the default value will be 1 - all spans are sampled.
+                            it should be a float value in the range [0, 1] - the fraction of spans to sample.
+                            a value of 0 means no spans are sampled if none of the rules evaluate to true.
+                          type: number
+                        rules:
+                          items:
+                            description: |-
+                              AttributesAndSampler is a set of attribute compare samplers that are ANDed together.
+                              If all attribute compare samplers evaluate to true, the AND sampler evaluates to true,
+                              and the fraction is used to determine the sampling decision.
+                              If any of the attribute compare samplers evaluate to false,
+                              the fraction is not used and the rule is skipped.
+
+
+                              An "empty" AttributesAndSampler with no operands is considered to always evaluate to true.
+                              and the fraction is used to determine the sampling decision.
+                            properties:
+                              fraction:
+                                description: |-
+                                  The fraction of spans to sample, in the range [0, 1].
+                                  If the fraction is 0, no spans are sampled.
+                                  If the fraction is 1, all spans are sampled.
+                                type: number
+                              operands:
+                                items:
+                                  description: AttributeCompareSampler is a sampler
+                                    that compares an attribute value to a fixed value.
+                                  properties:
+                                    key:
+                                      description: attribute key (e.g. "url.path")
+                                      type: string
+                                    val:
+                                      description: |-
+                                        value to compare.
+                                        currently only string values are supported.
+                                      type: string
+                                  required:
+                                  - key
+                                  - val
+                                  type: object
+                                type: array
+                            required:
+                            - fraction
+                            - operands
+                            type: object
+                          type: array
+                      required:
+                      - rules
+                      type: object
                     instrumentationLibraryConfigs:
                       description: configurations for the instrumentation libraries
                         the the SDK should use

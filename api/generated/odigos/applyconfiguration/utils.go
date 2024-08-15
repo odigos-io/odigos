@@ -30,6 +30,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 	// Group=odigos.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithKind("Attribute"):
 		return &odigosv1alpha1.AttributeApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("AttributeCompareSampler"):
+		return &odigosv1alpha1.AttributeCompareSamplerApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("AttributesAndSampler"):
+		return &odigosv1alpha1.AttributesAndSamplerApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorGatewayConfiguration"):
 		return &odigosv1alpha1.CollectorGatewayConfigurationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroup"):
@@ -48,6 +52,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.DestinationStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("EnvVar"):
 		return &odigosv1alpha1.EnvVarApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("HeadSamplingConfig"):
+		return &odigosv1alpha1.HeadSamplingConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfig"):
 		return &odigosv1alpha1.InstrumentationConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfigSpec"):

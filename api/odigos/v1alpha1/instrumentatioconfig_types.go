@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	"github.com/odigos-io/odigos/common"
+	"go.opentelemetry.io/otel/attribute"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -41,6 +42,49 @@ type SdkConfig struct {
 
 	// configurations for the instrumentation libraries the the SDK should use
 	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs"`
+
+	// HeadSamplingConfig is a set sampling rules.
+	// This config currently only applies to root spans.
+	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
+	HeadSamplingConfig HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
+}
+
+// AttributeCompareSampler is a sampler that compares an attribute value to a fixed value.
+type AttributeCompareSampler struct {
+	// attribute key (e.g. "url.path")
+	Key attribute.Key `json:"key"`
+	// value to compare.
+	// currently only string values are supported.
+	Val string `json:"val"`
+}
+
+// AttributesAndSampler is a set of attribute compare samplers that are ANDed together.
+// If all attribute compare samplers evaluate to true, the AND sampler evaluates to true,
+// and the fraction is used to determine the sampling decision.
+// If any of the attribute compare samplers evaluate to false,
+// the fraction is not used and the rule is skipped.
+//
+// An "empty" AttributesAndSampler with no operands is considered to always evaluate to true.
+// and the fraction is used to determine the sampling decision.
+type AttributesAndSampler struct {
+	Operands []AttributeCompareSampler `json:"operands"`
+	// The fraction of spans to sample, in the range [0, 1].
+	// If the fraction is 0, no spans are sampled.
+	// If the fraction is 1, all spans are sampled.
+	Fraction float64 `json:"fraction"`
+}
+
+// HeadSamplingConfig is a set of attribute rules.
+// The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.
+//
+// If none of the rules evaluate to true, the fallback fraction is used to determine the sampling decision.
+type HeadSamplingConfig struct {
+	Rules []AttributesAndSampler `json:"rules"`
+	// Used as a fallback if all rules evaluate to false,
+	// it may be empty - in this case the default value will be 1 - all spans are sampled.
+	// it should be a float value in the range [0, 1] - the fraction of spans to sample.
+	// a value of 0 means no spans are sampled if none of the rules evaluate to true.
+	FallbackFraction *float64 `json:"fallbackFraction,omitempty"`
 }
 
 type InstrumentationLibraryConfig struct {

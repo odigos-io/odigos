@@ -26,6 +26,7 @@ import (
 type SdkConfigApplyConfiguration struct {
 	Language                      *common.ProgrammingLanguage                      `json:"language,omitempty"`
 	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration `json:"instrumentationLibraryConfigs,omitempty"`
+	HeadSamplingConfig            *HeadSamplingConfigApplyConfiguration            `json:"headSamplerConfig,omitempty"`
 }
 
 // SdkConfigApplyConfiguration constructs an declarative configuration of the SdkConfig type for use with
@@ -52,5 +53,13 @@ func (b *SdkConfigApplyConfiguration) WithInstrumentationLibraryConfigs(values .
 		}
 		b.InstrumentationLibraryConfigs = append(b.InstrumentationLibraryConfigs, *values[i])
 	}
+	return b
+}
+
+// WithHeadSamplingConfig sets the HeadSamplingConfig field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HeadSamplingConfig field is set to the value of the last call.
+func (b *SdkConfigApplyConfiguration) WithHeadSamplingConfig(value *HeadSamplingConfigApplyConfiguration) *SdkConfigApplyConfiguration {
+	b.HeadSamplingConfig = value
 	return b
 }
