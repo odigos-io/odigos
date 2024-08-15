@@ -5,6 +5,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": post-install,post-upgrade
+  labels:
+    odigos.io/config: "1"
+    odigos.io/system-object: "true"
 data:
   config.yaml: |
     configVersion: 1
