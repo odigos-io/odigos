@@ -4,15 +4,13 @@ import (
 	"context"
 
 	appsv1 "k8s.io/api/apps/v1"
-	"sigs.k8s.io/yaml"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	v1 "k8s.io/api/core/v1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,15 +47,9 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 	// Add the generic batch processor to the list of processors
 	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
 
-	odigosSystemNamespaceName := env.GetCurrentNamespace()
-	var configMap v1.ConfigMap
-	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: odigosSystemNamespaceName, Name: consts.OdigosConfigurationName}, &configMap); err != nil {
+	odigosConfig, err := utils.GetCurrentConfig(ctx, k8sClient)
+	if err != nil {
 		logger.Error(err, "failed to get odigos config")
-		return err
-	}
-	var odigosConfig common.OdigosConfiguration
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
-		logger.Error(err, "failed to parse odigos config from configmap")
 		return err
 	}
 

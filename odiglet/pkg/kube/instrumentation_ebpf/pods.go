@@ -3,16 +3,13 @@ package instrumentation_ebpf
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/common/consts"
-	"sigs.k8s.io/yaml"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	runtime_details "github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -27,14 +24,8 @@ type PodsReconciler struct {
 }
 
 func (p *PodsReconciler) isNamespaceIgnored(ctx context.Context, ns string) bool {
-	var configMap v1.ConfigMap
-	var odigosConfig common.OdigosConfiguration
-
-	err := p.Client.Get(ctx, client.ObjectKey{Name: consts.OdigosConfigurationName, Namespace: env.GetCurrentNamespace()}, &configMap)
+	odigosConfig, err := k8sutils.GetCurrentConfig(ctx, p.Client)
 	if err != nil {
-		return false
-	}
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
 		return false
 	}
 

@@ -5,23 +5,20 @@ import (
 	"errors"
 
 	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
-	"sigs.k8s.io/yaml"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,15 +46,9 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 		return errNoPodsFound
 	}
 
-	var configMap v1.ConfigMap
-	var odigosConfig common.OdigosConfiguration
-	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: consts.OdigosConfigurationName}, &configMap)
+	odigosConfig, err := k8sutils.GetCurrentConfig(ctx, kubeClient)
 	if err != nil {
-		logger.Error(err, "error fetching odigos configuration")
-		return err
-	}
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
-		logger.Error(err, "error parsing odigos configuration")
+		logger.Error(err, "failed to get odigos config")
 		return err
 	}
 

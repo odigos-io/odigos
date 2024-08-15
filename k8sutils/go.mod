@@ -8,6 +8,7 @@ require (
 	k8s.io/api v0.30.1
 	k8s.io/apimachinery v0.30.3
 	k8s.io/client-go v0.30.1
+	sigs.k8s.io/yaml v1.3.0
 )
 
 require (
@@ -41,7 +42,6 @@ require (
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 require (
