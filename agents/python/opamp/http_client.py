@@ -52,16 +52,36 @@ class OpAMPHTTPClient:
         self.client_thread.start()
         
     def run(self):
-        if not self.mandatory_env_vars_set():
+        try:
+            if not self.mandatory_env_vars_set():
+                self.event.set()
+                return
+            
+            self.send_first_message_with_retry()
             self.event.set()
-            return
+            
+            self.worker()
+            
+        except Exception as e:
+            opamp_logger.error(f"Error running OpAMP client: {e}")
+            failure_message = self.get_agent_failure_disconnect_message(error_message=str(e))            
+            self.send_agent_to_server_message(failure_message)
+            
+            # Exiting the opamp thread and set the event to notify the main thread
+            self.event.set()
+            sys.exit()
+
+    def get_agent_failure_disconnect_message(self, error_message: str) -> None:
+        agent_failure_message = opamp_pb2.AgentToServer()
         
-        self.send_first_message_with_retry()
+        agent_disconnect = self.get_agent_disconnect()
+        agent_failure_message.agent_disconnect.CopyFrom(agent_disconnect)
+    
+        agent_health = self.get_agent_health(component_health=False, last_error=error_message, status=AgentHealthStatus.AGENT_FAILURE.value)
+        agent_failure_message.health.CopyFrom(agent_health)
         
-        self.event.set()
-        
-        self.worker()
-        
+        return agent_failure_message
+    
     def send_unsupported_version_disconnect_message(self, error_message: str) -> None:
         first_disconnect_message = opamp_pb2.AgentToServer()
         
@@ -220,11 +240,14 @@ class OpAMPHTTPClient:
         
         return True        
     
-    def shutdown(self):
+    def shutdown(self, custom_failure_message: str = None):
         self.running = False
         opamp_logger.info("Sending agent disconnect message to OpAMP server...")
-        agent_health = self.get_agent_health(component_health=False, last_error="Python runtime is exiting", status=AgentHealthStatus.TERMINATED.value)
-        disconnect_message = opamp_pb2.AgentToServer(agent_disconnect=opamp_pb2.AgentDisconnect(), health=agent_health)
+        if custom_failure_message:
+            disconnect_message = self.get_agent_failure_disconnect_message(error_message=custom_failure_message)
+        else:
+            agent_health = self.get_agent_health(component_health=False, last_error="Python runtime is exiting", status=AgentHealthStatus.TERMINATED.value)
+            disconnect_message = opamp_pb2.AgentToServer(agent_disconnect=opamp_pb2.AgentDisconnect(), health=agent_health)
         
         with self.condition:
             self.condition.notify_all()

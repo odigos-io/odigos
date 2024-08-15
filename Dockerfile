@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.22 as builder
+FROM --platform=$BUILDPLATFORM golang:1.22 AS builder
 ARG SERVICE_NAME
 
 # Copyy local modules required by the build
@@ -21,7 +21,7 @@ RUN go mod tidy
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     CGO_ENABLED=0 GOARCH=$TARGETARCH \
-    go build -a -o /workspace/build/$SERVICE_NAME main.go
+    go build -a -o /workspace/build/$SERVICE_NAME .
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details

@@ -35,9 +35,15 @@ type Config struct {
 	Service    Service    `json:"service"`
 }
 
+type Telemetry struct {
+	Metrics GenericMap `json:"metrics"`
+	Resource map[string]*string `json:"resource"`
+}
+
 type Service struct {
 	Extensions []string            `json:"extensions"`
 	Pipelines  map[string]Pipeline `json:"pipelines"`
+	Telemetry Telemetry            `json:"telemetry,omitempty"`
 }
 
 type Pipeline struct {

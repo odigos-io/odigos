@@ -107,16 +107,16 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 		ObjectMeta: v1.ObjectMeta{
 			Name:      consts.OdigosClusterCollectorDeploymentName,
 			Namespace: gateway.Namespace,
-			Labels:    CommonLabels,
+			Labels:    ClusterCollectorGateway,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: intPtr(1),
 			Selector: &v1.LabelSelector{
-				MatchLabels: CommonLabels,
+				MatchLabels: ClusterCollectorGateway,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: v1.ObjectMeta{
-					Labels: CommonLabels,
+					Labels: ClusterCollectorGateway,
 					Annotations: map[string]string{
 						configHashAnnotation: configDataHash,
 					},
@@ -156,6 +156,14 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 												Name: "odigos-deployment",
 											},
 											Key: "ODIGOS_VERSION",
+										},
+									},
+								},
+								{
+									Name: "POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
 										},
 									},
 								},
