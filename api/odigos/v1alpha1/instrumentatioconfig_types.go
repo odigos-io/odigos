@@ -90,9 +90,15 @@ type HeadSamplingConfig struct {
 type InstrumentationLibraryConfig struct {
 	// The name of the instrumentation library
 	// - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
-	InstrumentationLibraryName string `json:"instrumentationLibraryName"`
+	InstrumentationLibraryId InstrumentationLibraryId `json:"instrumentationLibraryName"`
 
 	TraceConfig *InstrumentationLibraryConfigTraces `json:"traceConfig,omitempty"`
+}
+
+type InstrumentationLibraryId struct {
+	InstrumentationLibraryName string `json:"instrumentationLibraryName"`
+
+	SpanKind common.SpanKind `json:"spanKind,omitempty"`
 }
 
 type InstrumentationLibraryConfigTraces struct {
