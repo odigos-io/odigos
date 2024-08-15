@@ -7,9 +7,9 @@ import {
   DestinationInput,
   PersistNamespaceItemInput,
 } from '@/types';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNamespace } from '../compute-platform';
-import { IAppState } from '@/store';
+import { IAppState, resetState } from '@/store';
 
 type ConnectEnvResult = {
   success: boolean;
@@ -31,14 +31,11 @@ export const useConnectEnv = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Getting data from Redux
+  const dispatch = useDispatch();
   const sourcesList = useSelector(({ app }: { app: IAppState }) => app.sources);
   const namespaceFutureSelectAppsList = useSelector(
     ({ app }: { app: IAppState }) => app.namespaceFutureSelectAppsList
   );
-
-  useEffect(() => {
-    console.log({ sourcesList, namespaceFutureSelectAppsList });
-  }, [namespaceFutureSelectAppsList, sourcesList]);
 
   const connectEnv = useCallback(
     async (destination: DestinationInput) => {
@@ -74,7 +71,7 @@ export const useConnectEnv = () => {
             );
           }
         }
-
+        dispatch(resetState());
         // Create destination
         const destinationId = await createNewDestination(destination);
 

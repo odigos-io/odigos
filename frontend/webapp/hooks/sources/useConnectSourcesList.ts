@@ -7,7 +7,8 @@ export const useConnectSourcesList = ({ stateMenu, setSourcesList }) => {
 
   const { error, data } = useComputePlatform();
   const { data: namespacesData } = useNamespace(
-    stateMenu.selectedOption?.value
+    stateMenu.selectedOption?.value,
+    false
   );
 
   useEffect(() => {

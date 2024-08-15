@@ -30,11 +30,17 @@ export const appSlice = createSlice({
     ) => {
       state.namespaceFutureSelectAppsList = action.payload;
     },
+    // New resetState reducer to reset the state to initial values
+    resetState: (state) => {
+      state.sources = initialState.sources;
+      state.namespaceFutureSelectAppsList =
+        initialState.namespaceFutureSelectAppsList;
+    },
   },
 });
 
 // Action creators are generated for each case reducer function
-export const { setSources, setNamespaceFutureSelectAppsList } =
+export const { setSources, setNamespaceFutureSelectAppsList, resetState } =
   appSlice.actions;
 
 export const appReducer = appSlice.reducer;

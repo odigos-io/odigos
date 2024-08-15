@@ -14,11 +14,12 @@ type UseNamespaceHook = {
 };
 
 export const useNamespace = (
-  namespaceName: string | undefined
+  namespaceName: string | undefined,
+  instrumentationLabeled = null as boolean | null
 ): UseNamespaceHook => {
   const { data, loading, error } = useQuery<ComputePlatform>(GET_NAMESPACES, {
     skip: !namespaceName,
-    variables: { namespaceName },
+    variables: { namespaceName, instrumentationLabeled },
     fetchPolicy: 'cache-first',
   });
 

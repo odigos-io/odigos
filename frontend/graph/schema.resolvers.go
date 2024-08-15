@@ -24,9 +24,7 @@ import (
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
 func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
 
-	instrumentationLabelEnabled := true
-
-	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, name, &instrumentationLabelEnabled)
+	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +80,18 @@ func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destina
 
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace, instrumentationLabeled *bool) ([]*model.K8sActualSource, error) {
-	return obj.K8sActualSources, nil
+	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, obj.Name, instrumentationLabeled)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert namespaceActualSources to []*model.K8sActualSource
+	namespaceActualSourcesPointers := make([]*model.K8sActualSource, len(namespaceActualSources))
+	for i, source := range namespaceActualSources {
+		namespaceActualSourcesPointers[i] = &source
+	}
+
+	return namespaceActualSourcesPointers, nil
 }
 
 // CreateNewDestination is the resolver for the createNewDestination field.
@@ -193,19 +202,6 @@ func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlat
 	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
 	for i, namespace := range namespacesResponse.Namespaces {
 
-		instrumentationLabelEnabled := true
-
-		namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, namespace.Name, &instrumentationLabelEnabled)
-		if err != nil {
-			return nil, err
-		}
-
-		// Convert namespaceActualSources to []*model.K8sActualSource
-		namespaceActualSourcesPointers := make([]*model.K8sActualSource, len(namespaceActualSources))
-		for i, source := range namespaceActualSources {
-			namespaceActualSourcesPointers[i] = &source
-		}
-
 		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, namespace.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
@@ -216,7 +212,6 @@ func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlat
 		K8sActualNamespaces[i] = &model.K8sActualNamespace{
 			Name:                        namespace.Name,
 			InstrumentationLabelEnabled: nsInstrumented,
-			K8sActualSources:            namespaceActualSourcesPointers,
 		}
 	}
 
