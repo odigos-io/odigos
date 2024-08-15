@@ -154,19 +154,23 @@ spec:
                                 type: number
                               operands:
                                 items:
-                                  description: AttributeCompareSampler is a sampler
-                                    that compares an attribute value to a fixed value.
+                                  description: '''Operand'' represents the attributes
+                                    and values that an operator acts upon in an expression'
                                   properties:
                                     key:
                                       description: attribute key (e.g. "url.path")
                                       type: string
+                                    operator:
+                                      description: The operator to use to compare
+                                        the attribute value.
+                                      type: string
                                     val:
-                                      description: |-
-                                        value to compare.
-                                        currently only string values are supported.
+                                      description: currently only string values are
+                                        supported.
                                       type: string
                                   required:
                                   - key
+                                  - operator
                                   - val
                                   type: object
                                 type: array

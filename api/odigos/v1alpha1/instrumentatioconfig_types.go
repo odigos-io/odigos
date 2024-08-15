@@ -49,14 +49,25 @@ type SdkConfig struct {
 	HeadSamplingConfig HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
 }
 
-// AttributeCompareSampler is a sampler that compares an attribute value to a fixed value.
-type AttributeCompareSampler struct {
+// 'Operand' represents the attributes and values that an operator acts upon in an expression
+type AttributeCondition struct {
 	// attribute key (e.g. "url.path")
 	Key attribute.Key `json:"key"`
-	// value to compare.
 	// currently only string values are supported.
 	Val string `json:"val"`
+	// The operator to use to compare the attribute value.
+	Operator Operator `json:"operator"`
 }
+
+type Operator string
+
+const (
+	Equals    Operator = "equals"
+	NotEquals Operator = "notEquals"
+	Contain   Operator = "contain"
+	EndWith   Operator = "endWith"
+	StartWith Operator = "startWith"
+)
 
 // AttributesAndSampler is a set of attribute compare samplers that are ANDed together.
 // If all attribute compare samplers evaluate to true, the AND sampler evaluates to true,
@@ -66,8 +77,8 @@ type AttributeCompareSampler struct {
 //
 // An "empty" AttributesAndSampler with no operands is considered to always evaluate to true.
 // and the fraction is used to determine the sampling decision.
-type AttributesAndSampler struct {
-	Operands []AttributeCompareSampler `json:"operands"`
+type AttributesAndSamplerRule struct {
+	AttributeConditions []AttributeCondition `json:"operands"`
 	// The fraction of spans to sample, in the range [0, 1].
 	// If the fraction is 0, no spans are sampled.
 	// If the fraction is 1, all spans are sampled.
@@ -79,7 +90,7 @@ type AttributesAndSampler struct {
 //
 // If none of the rules evaluate to true, the fallback fraction is used to determine the sampling decision.
 type HeadSamplingConfig struct {
-	Rules []AttributesAndSampler `json:"rules"`
+	AttributesAndSamplerRules []AttributesAndSamplerRule `json:"rules"`
 	// Used as a fallback if all rules evaluate to false,
 	// it may be empty - in this case the default value will be 1 - all spans are sampled.
 	// it should be a float value in the range [0, 1] - the fraction of spans to sample.
