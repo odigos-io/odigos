@@ -5,6 +5,7 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/metadata"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
@@ -26,8 +27,9 @@ const (
 
 type Client struct {
 	kubernetes.Interface
-	OdigosClient  odigosv1alpha1.OdigosV1alpha1Interface
-	ActionsClient actionsv1alpha1.ActionsV1alpha1Interface
+	OdigosClient   odigosv1alpha1.OdigosV1alpha1Interface
+	ActionsClient  actionsv1alpha1.ActionsV1alpha1Interface
+	MetadataClient metadata.Interface
 }
 
 func CreateClient(kubeConfig string) (*Client, error) {
@@ -54,9 +56,15 @@ func CreateClient(kubeConfig string) (*Client, error) {
 		return nil, err
 	}
 
+	metadataClient, err := metadata.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Client{
-		Interface:     clientset,
-		OdigosClient:  odigosClient,
-		ActionsClient: actionsClient,
+		Interface:      clientset,
+		OdigosClient:   odigosClient,
+		ActionsClient:  actionsClient,
+		MetadataClient: metadataClient,
 	}, nil
 }

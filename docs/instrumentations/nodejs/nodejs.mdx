@@ -1,0 +1,91 @@
+---
+title: "Node.js Automatic Instrumentation"
+sidebarTitle: "Node.js"
+---
+
+## Supported Versions
+
+Odigos uses the official OpenTelemetry instrumentation libraries and SDK components, thus it supports the same Node.js versions as the OpenTelemetry Node.js.
+
+- Node.js runtime versions **14** and above are supported.
+
+## Traces
+
+Odigos will automatically instrument your Node.js sources to record and collect spans for distributed tracing, by utilizing the OpenTelemetry Node.js Official Instrumentation Libraries.
+
+If you use one of the supported logger libraries, the trace id and span id will be auto-injected into your log records allowing signals correlations between logs and traces.
+
+## Instrumentation Libraries
+
+The following npm packages will be auto instrumented by Odigos:
+
+### HTTP Frameworks
+
+- [`connect`](https://www.npmjs.com/package/connect) versions `>=3.0.0 <4`. http middleware framework
+- [`express`](https://www.npmjs.com/package/express) version `>=4.0.0 <5`. http web application framework
+- [`fastify`](https://www.npmjs.com/package/fastify) versions `>=3.0.0 <5`. http web application framework
+- [`graphql`](https://www.npmjs.com/package/graphql) versions `>=14.0.0 <17`. gql query language and runtime for GraphQL
+- [`http`](https://nodejs.org/api/http.html) `node:http` http server and client modules
+- [`https`](https://nodejs.org/api/https.html) `node:https` https server and client modules
+- [`koa`](https://www.npmjs.com/package/koa) versions `>=2.0.0 <3`. http web application framework
+- [`@koa/router`](https://www.npmjs.com/package/@koa/router) versions `>=8.0.0`. http web application framework
+- [`@hapi/hapi`](https://www.npmjs.com/package/@hapi/hapi) versions `>=17.0.0 <22`. http web application framework
+- [`@nestjs/core`](https://www.npmjs.com/package/@nestjs/core) versions `>=4.0.0 <11`. server side applications framework
+- [`restify`](https://www.npmjs.com/package/restify) versions `>=4.0.0 <12`. http web application framework
+- [`router`](https://www.npmjs.com/package/router) versions `>=1.0.0 <2`. http middleware router
+
+### HTTP Clients
+
+- [`undici`](https://www.npmjs.com/package/undici) version `>=5.12.0`. http client and Node.js fetch()
+- [`http`](https://nodejs.org/api/http.html) `node:http` http server and client modules
+- [`https`](https://nodejs.org/api/https.html) `node:https` https server and client modules
+
+### Database Clients, ORMs, and data access libraries
+
+- [`aws-sdk`](https://www.npmjs.com/package/aws-sdk) versions `>=2.308.0 <3`. clients for various AWS services
+- [`@aws-sdk/client-*`](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/) versions `>=3.0.0 <4`. clients for various AWS services
+- [`cassandra-driver`](https://www.npmjs.com/package/cassandra-driver) versions `>=4.4.0 <5`. database client library for Apache Cassandra
+- [`dataloader`](https://www.npmjs.com/package/dataloader) versions `>=2.0.0 <3`. data fetching layer
+- [`generic-pool`](https://www.npmjs.com/package/generic-pool) version `>=2.0.0 <4`. resource pool for managing expensive resources
+- [`ioredis`](https://www.npmjs.com/package/ioredis) versions `>=2.0.0 <6`. database redis client for Redis
+- [`knex`](https://www.npmjs.com/package/knex) versions `>=0.10.0 <4`. database SQL query builder
+- [`lru-memorizer`](https://www.npmjs.com/package/lru-memoizer) versions `>=1.3.0 <3`. function memoization using lru-cache
+- [`memcached`](https://www.npmjs.com/package/memcached) versions `>=2.2.0 <3`. database client for memcached
+- [`mongodb`](https://www.npmjs.com/package/mongodb) version `>=3.3.0 <7`. database client for MongoDB
+- [`mongoose`](https://www.npmjs.com/package/mongoose) versions `>=5.9.7 <7`. database object data modeling (ODM) library for MongoDB
+- [`mysql`](https://www.npmjs.com/package/mysql) versions `>=2.0.0 <3`. database client for MySQL
+- [`mysql2`](https://www.npmjs.com/package/mysql2) versions `>=1.4.2 <4`. database client for MySQL
+- [`pg`](https://www.npmjs.com/package/pg) versions `>=8.0.0 <9`. database client for PostgreSQL
+- [`pg-pool`](https://www.npmjs.com/package/pg-pool) versions `>=2.0.0 <4`. database client for PostgreSQL
+- [`redis`](https://www.npmjs.com/package/redis) versions `>=2.6.0`. database client for Redis
+- [`tedious`](https://www.npmjs.com/package/tedious) `>=1.11.0 <18`. database client for Microsoft SQL Server
+
+### Messaging Systems Clients
+
+- [`amqplib`](https://www.npmjs.com/package/amqplib) versions `>=0.5.5 <1`. messaging client for RabbitMQ
+- [`kafkajs`](https://www.npmjs.com/package/kafkajs) versions `>=0.1.0 <3`. messaging client for Apache Kafka
+- [`socket.io`](https://www.npmjs.com/package/socket.io) versions `>=2.0.0 <5`. messaging server implementation for Socket.IO communication
+- [`http`](https://nodejs.org/api/http.html) `node:http` http server and client modules
+- [`https`](https://nodejs.org/api/https.html) `node:https` https server and client modules
+
+### RPC (Remote Procedure Call)
+
+- [`@grpc/grpc-js`](https://www.npmjs.com/package/@grpc/grpc-js) versions `>=1.0.0 <2`. rpc client and server for gRPC framework
+- [`aws-sdk`](https://www.npmjs.com/package/aws-sdk) versions `>=2.308.0 <3`. clients for various AWS services
+- [`@aws-sdk/client-*`](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/) versions `>=3.0.0 <4`. clients for various AWS services
+
+### Node.js Core Modules
+
+- [`dns`](https://nodejs.org/api/dns.html). `node:dns` name resolution module
+- [`fs`](https://nodejs.org/api/fs.html) `node:fs` file system interactions module
+- [`http`](https://nodejs.org/api/http.html) `node:http` http server and client modules
+- [`https`](https://nodejs.org/api/https.html) `node:https` https server and client modules
+- [`net`](https://nodejs.org/api/net.html) `node:net` network API module
+
+### Loggers
+
+Automatic injection of trace context (trace id and span id) into log records for the following loggers:
+
+- [`bunyan`](https://www.npmjs.com/package/bunyan) versions `>=1.0.0 <2`
+- [`pino`](https://www.npmjs.com/package/pino) versions `>=5.14.0 <10`
+- [`winston`](https://www.npmjs.com/package/winston) versions `>=1.0.0 <4`

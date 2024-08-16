@@ -19,9 +19,9 @@ package deleteinstrumentedapplication
 import (
 	"context"
 
-	appsv1 "k8s.io/api/apps/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,20 +40,17 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	var ns corev1.Namespace
 	err := r.Get(ctx, client.ObjectKey{Name: req.Name}, &ns)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-
+	if client.IgnoreNotFound(err) != nil {
 		logger.Error(err, "error fetching namespace object")
 		return ctrl.Result{}, err
 	}
 
 	// If namespace is labeled, skip
-	if isInstrumentationLabelEnabled(&ns) {
+	if err == nil && workload.IsObjectLabeledForInstrumentation(&ns) {
 		return ctrl.Result{}, nil
 	}
 
+	// Because of cache settings in the controller, when namespace is unlabelled, it is appearing as not found
 	var deps appsv1.DeploymentList
 	err = r.Client.List(ctx, &deps, client.InNamespace(req.Name))
 	if client.IgnoreNotFound(err) != nil {
@@ -62,7 +59,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	for _, dep := range deps.Items {
-		if !isInstrumentationLabelEnabled(&dep) {
+		if !workload.IsObjectLabeledForInstrumentation(&dep) {
 			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, &dep); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
@@ -83,7 +80,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	for _, s := range ss.Items {
-		if !isInstrumentationLabelEnabled(&s) {
+		if !workload.IsObjectLabeledForInstrumentation(&s) {
 			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, &s); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err
@@ -104,7 +101,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	for _, d := range ds.Items {
-		if !isInstrumentationLabelEnabled(&d) {
+		if !workload.IsObjectLabeledForInstrumentation(&d) {
 			if err := deleteWorkloadInstrumentedApplication(ctx, r.Client, &d); err != nil {
 				logger.Error(err, "error removing runtime details")
 				return ctrl.Result{}, err

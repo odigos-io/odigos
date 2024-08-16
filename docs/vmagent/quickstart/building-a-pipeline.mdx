@@ -3,8 +3,9 @@ title: "Building a pipeline"
 sidebarTitle: "Building a pipeline"
 ---
 
-The default installation comes with only debug destination configured. That helps you to make sure that the Odigos is been able to instrument your applications, but will not too much more than that.
-We will now set up odigos to auto-instrument our demo application and send the traces to Jaeger.
+The default installation only includes a debug destination. This helps you confirm that Odigos can instrument your applications, but it doesn't do much beyond that.
+
+Next, we will set up Odigos to automatically instrument our demo application and send the traces to Jaeger.
 
 Save the following configuration to the file `/etc/odigos-vmagent/agent.yaml`:
 
@@ -13,7 +14,9 @@ sudo bash -c 'cat > /etc/odigos-vmagent/agent.yaml <<EOF
 sources:
   systemd:
     services:
-    - service_name: membership
+    - service_name: odigos-demo-membership # go service
+    - service_name: odigos-demo-frontend # java service
+    - service_name: odigos-demo-inventory # python service
 destinations:
 - name: demo-jaeger
   type: jaeger

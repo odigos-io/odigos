@@ -3,18 +3,12 @@ title: "Generating Data"
 sidebarTitle: "Generating Data"
 ---
 
-Trigger the demo application by sending a request to the service:
+Trigger the demo application by sending a request to the demo application:
 
 ```bash
-curl http://localhost:8081/isMember
+curl http://localhost:8080/buy?id=1
 ```
 
-This will generate a trace that will be sent to the Jaeger backend.
+This call will generate a trace that will be sent to the Jaeger backend.
 
-To see the traces open [http://localhost:16686](http://localhost:16686) in your browser and explore the traces. If Jaeger is running on a remote machine, replace `localhost` with the IP.
-
-If you do not have HTTP access to the machine, the pipeline can still be checked through Jaeger metrics:
-
-```bash
-curl -s http://localhost:14269/metrics | grep membership
-```
+To view the traces, open http://localhost:16686 in your browser and explore the data. If Jaeger is running on a remote machine, replace localhost with the appropriate IP address.

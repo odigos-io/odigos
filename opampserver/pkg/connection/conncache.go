@@ -31,13 +31,13 @@ func NewConnectionsCache() *ConnectionsCache {
 	}
 }
 
-// GetConnection returns the connection information for the given device id.
+// GetConnection returns the connection information for the given OpAMP instanceUid.
 // the returned object is a by-value copy of the connection information, so it can be safely used.
 // To change something in the connection information, use the functions below which are synced and safe.
-func (c *ConnectionsCache) GetConnection(deviceId string) (*ConnectionInfo, bool) {
+func (c *ConnectionsCache) GetConnection(instanceUid string) (*ConnectionInfo, bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
-	conn, ok := c.liveConnections[deviceId]
+	conn, ok := c.liveConnections[instanceUid]
 	if !ok || conn == nil {
 		return nil, false
 	} else {
@@ -47,30 +47,30 @@ func (c *ConnectionsCache) GetConnection(deviceId string) (*ConnectionInfo, bool
 	}
 }
 
-func (c *ConnectionsCache) AddConnection(deviceId string, conn *ConnectionInfo) {
+func (c *ConnectionsCache) AddConnection(instanceUid string, conn *ConnectionInfo) {
 	// copy the conn object to avoid it being accessed concurrently
 	connCopy := *conn
 	c.mux.Lock()
 	defer c.mux.Unlock()
-	c.liveConnections[deviceId] = &connCopy
+	c.liveConnections[instanceUid] = &connCopy
 }
 
-func (c *ConnectionsCache) RemoveConnection(deviceId string) {
+func (c *ConnectionsCache) RemoveConnection(instanceUid string) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
-	delete(c.liveConnections, deviceId)
+	delete(c.liveConnections, instanceUid)
 }
 
-func (c *ConnectionsCache) RecordMessageTime(deviceId string) {
+func (c *ConnectionsCache) RecordMessageTime(instanceUid string) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	conn, ok := c.liveConnections[deviceId]
+	conn, ok := c.liveConnections[instanceUid]
 	if !ok {
 		return
 	}
-	conn.lastMessageTime = time.Now()
-	c.liveConnections[deviceId] = conn
+	conn.LastMessageTime = time.Now()
+	c.liveConnections[instanceUid] = conn
 }
 
 func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
@@ -80,7 +80,7 @@ func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
 	deadConnectionInfos := make([]ConnectionInfo, 0)
 
 	for deviceId, conn := range c.liveConnections {
-		if time.Since(conn.lastMessageTime) > connectionStaleTime {
+		if time.Since(conn.LastMessageTime) > connectionStaleTime {
 			delete(c.liveConnections, deviceId)
 			deadConnectionInfos = append(deadConnectionInfos, *conn)
 		}

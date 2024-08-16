@@ -202,7 +202,7 @@ func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]
 	}
 
 	// read the original env vars (of the manifest) from the annotation
-	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(obj)
+	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(obj.GetAnnotations())
 	if err != nil {
 		fmt.Println("Failed to get original env vars from annotation: ", err)
 		manifestEnvOriginal = &envoverwrite.OrigWorkloadEnvValues{}

@@ -18,7 +18,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
@@ -29,7 +28,7 @@ import (
 type InstrumentationInstanceApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                             *v1alpha1.InstrumentationInstanceSpec            `json:"spec,omitempty"`
+	Spec                             *InstrumentationInstanceSpecApplyConfiguration   `json:"spec,omitempty"`
 	Status                           *InstrumentationInstanceStatusApplyConfiguration `json:"status,omitempty"`
 }
 
@@ -205,8 +204,8 @@ func (b *InstrumentationInstanceApplyConfiguration) ensureObjectMetaApplyConfigu
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-func (b *InstrumentationInstanceApplyConfiguration) WithSpec(value v1alpha1.InstrumentationInstanceSpec) *InstrumentationInstanceApplyConfiguration {
-	b.Spec = &value
+func (b *InstrumentationInstanceApplyConfiguration) WithSpec(value *InstrumentationInstanceSpecApplyConfiguration) *InstrumentationInstanceApplyConfiguration {
+	b.Spec = value
 	return b
 }
 

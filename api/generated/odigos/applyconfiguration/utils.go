@@ -48,10 +48,22 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.DestinationStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("EnvVar"):
 		return &odigosv1alpha1.EnvVarApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfig"):
+		return &odigosv1alpha1.InstrumentationConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfigSpec"):
+		return &odigosv1alpha1.InstrumentationConfigSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationInstance"):
 		return &odigosv1alpha1.InstrumentationInstanceApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationInstanceSpec"):
+		return &odigosv1alpha1.InstrumentationInstanceSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationInstanceStatus"):
 		return &odigosv1alpha1.InstrumentationInstanceStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibrary"):
+		return &odigosv1alpha1.InstrumentationLibraryApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryConfig"):
+		return &odigosv1alpha1.InstrumentationLibraryConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryConfigTraces"):
+		return &odigosv1alpha1.InstrumentationLibraryConfigTracesApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryOptions"):
 		return &odigosv1alpha1.InstrumentationLibraryOptionsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryStatus"):
@@ -74,6 +86,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.ProcessorSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RuntimeDetailsByContainer"):
 		return &odigosv1alpha1.RuntimeDetailsByContainerApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SdkConfig"):
+		return &odigosv1alpha1.SdkConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("WorkloadInstrumentationConfig"):
+		return &odigosv1alpha1.WorkloadInstrumentationConfigApplyConfiguration{}
 
 	}
 	return nil

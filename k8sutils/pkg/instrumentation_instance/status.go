@@ -13,84 +13,51 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type InstrumentationInstanceConfig struct {
-	healthy                  *bool
-	identifyingAttributes    []odigosv1.Attribute
-	nonIdentifyingAttributes []odigosv1.Attribute
-	message                  string
-	reason                   string
-}
-
 type InstrumentationInstanceOption interface {
-	applyInstrumentationInstance(InstrumentationInstanceConfig) InstrumentationInstanceConfig
+	applyInstrumentationInstance(odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus
 }
 
-type fnOpt func(InstrumentationInstanceConfig) InstrumentationInstanceConfig
+type updateInstrumentationInstanceStatusOpt func(odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus
 
-func (o fnOpt) applyInstrumentationInstance(c InstrumentationInstanceConfig) InstrumentationInstanceConfig {
-	return o(c)
+func (o updateInstrumentationInstanceStatusOpt) applyInstrumentationInstance(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
+	return o(s)
 }
 
-func WithHealthy(healthy *bool) InstrumentationInstanceOption {
-	return fnOpt(func(c InstrumentationInstanceConfig) InstrumentationInstanceConfig {
-		c.healthy = healthy
-		return c
+// set Healthy and related fields in InstrumentationInstanceStatus
+func WithHealthy(healthy *bool, reason string, message *string) InstrumentationInstanceOption {
+	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
+		s.Healthy = healthy
+		s.Reason = reason
+		if message != nil {
+			s.Message = *message
+		} else {
+			s.Message = ""
+		}
+		return s
 	})
 }
 
-func WithIdentifyingAttributes(attributes []odigosv1.Attribute) InstrumentationInstanceOption {
-	return fnOpt(func(c InstrumentationInstanceConfig) InstrumentationInstanceConfig {
-		c.identifyingAttributes = attributes
-		return c
+func WithAttributes(identifying []odigosv1.Attribute, nonIdentifying []odigosv1.Attribute) InstrumentationInstanceOption {
+	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
+		s.IdentifyingAttributes = identifying
+		s.NonIdentifyingAttributes = nonIdentifying
+		return s
 	})
 }
 
-func WithNonIdentifyingAttributes(attributes []odigosv1.Attribute) InstrumentationInstanceOption {
-	return fnOpt(func(c InstrumentationInstanceConfig) InstrumentationInstanceConfig {
-		c.nonIdentifyingAttributes = attributes
-		return c
-	})
-}
-
-func WithMessage(message string) InstrumentationInstanceOption {
-	return fnOpt(func(c InstrumentationInstanceConfig) InstrumentationInstanceConfig {
-		c.message = message
-		return c
-	})
-}
-
-func WithReason(reason string) InstrumentationInstanceOption {
-	return fnOpt(func(c InstrumentationInstanceConfig) InstrumentationInstanceConfig {
-		c.reason = reason
-		return c
-	})
-}
-
-func newInstrumentationInstanceConfig(options ...InstrumentationInstanceOption) InstrumentationInstanceConfig {
-	var c InstrumentationInstanceConfig
+func updateInstrumentationInstanceStatus(status odigosv1.InstrumentationInstanceStatus, options ...InstrumentationInstanceOption) odigosv1.InstrumentationInstanceStatus {
 	for _, option := range options {
-		c = option.applyInstrumentationInstance(c)
+		status = option.applyInstrumentationInstance(status)
 	}
-	return c
-}
-
-func newInstrumentationInstanceStatus(options ...InstrumentationInstanceOption) *odigosv1.InstrumentationInstanceStatus {
-	c := newInstrumentationInstanceConfig(options...)
-	return &odigosv1.InstrumentationInstanceStatus{
-		Healthy:                  c.healthy,
-		IdentifyingAttributes:    c.identifyingAttributes,
-		NonIdentifyingAttributes: c.nonIdentifyingAttributes,
-		Message:                  c.message,
-		Reason:                   c.reason,
-		LastStatusTime:           metav1.Now(),
-	}
+	status.LastStatusTime = metav1.Now()
+	return status
 }
 
 func InstrumentationInstanceName(owner client.Object, pid int) string {
 	return fmt.Sprintf("%s-%d", owner.GetName(), pid)
 }
 
-func PersistInstrumentationInstanceStatus(ctx context.Context, owner client.Object, kubeClient client.Client, instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
+func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Object, containerName string, kubeClient client.Client, instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
 	instrumentationInstanceName := InstrumentationInstanceName(owner, pid)
 	updatedInstance := &odigosv1.InstrumentationInstance{
 		TypeMeta: metav1.TypeMeta{
@@ -103,7 +70,11 @@ func PersistInstrumentationInstanceStatus(ctx context.Context, owner client.Obje
 			Labels: map[string]string{
 				consts.InstrumentedAppNameLabel: instrumentedAppName,
 			},
-		}}
+		},
+		Spec: odigosv1.InstrumentationInstanceSpec{
+			ContainerName: containerName,
+		},
+	}
 
 	err := controllerutil.SetControllerReference(owner, updatedInstance, scheme)
 	if err != nil {
@@ -120,7 +91,7 @@ func PersistInstrumentationInstanceStatus(ctx context.Context, owner client.Obje
 		}
 	}
 
-	updatedInstance.Status = *newInstrumentationInstanceStatus(options...)
+	updatedInstance.Status = updateInstrumentationInstanceStatus(updatedInstance.Status, options...)
 
 	err = kubeClient.Status().Update(ctx, updatedInstance)
 	if err != nil {

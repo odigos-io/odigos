@@ -1,0 +1,83 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-coupon
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: coupon
+spec:
+  runtimeDetails:
+    - containerName: coupon
+      language: javascript
+      runtimeVersion: 18.3.0
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-frontend
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: frontend
+spec:
+  runtimeDetails:
+    - containerName: frontend
+      language: java
+      runtimeVersion: jdk-17.0.11+9
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-inventory
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: inventory
+spec:
+  runtimeDetails:
+    - containerName: inventory
+      language: python
+      runtimeVersion: 3.11.9
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-membership
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: membership
+spec:
+  runtimeDetails:
+    - containerName: membership
+      language: go
+      runtimeVersion: go1.21.4
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-pricing
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: pricing
+spec:
+  runtimeDetails:
+    - containerName: pricing
+      language: dotnet

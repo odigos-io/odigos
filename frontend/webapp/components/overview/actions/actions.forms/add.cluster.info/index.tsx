@@ -25,6 +25,7 @@ interface ClusterAttributes {
 interface AddClusterInfoFormProps {
   data: ClusterAttributes | null;
   onChange: (key: string, keyValues: ClusterAttributes | null) => void;
+  setIsFormValid?: (value: boolean) => void;
 }
 
 const ACTION_DATA_KEY = 'actionData';
@@ -32,12 +33,17 @@ const ACTION_DATA_KEY = 'actionData';
 export function AddClusterInfoForm({
   data,
   onChange,
+  setIsFormValid = () => {},
 }: AddClusterInfoFormProps): React.JSX.Element {
   const [keyValuePairs, setKeyValuePairs] = React.useState<KeyValue[]>([]);
 
   useEffect(() => {
     buildKeyValuePairs();
   }, [data]);
+
+  useEffect(() => {
+    validateForm();
+  }, [keyValuePairs]);
 
   function handleKeyValuesChange(keyValues: KeyValue[]): void {
     const actionData = {
@@ -56,6 +62,8 @@ export function AddClusterInfoForm({
     } else {
       onChange(ACTION_DATA_KEY, actionData);
     }
+
+    setKeyValuePairs(keyValues); // Update state with new key-value pairs
   }
 
   function buildKeyValuePairs() {
@@ -70,6 +78,13 @@ export function AddClusterInfoForm({
     }));
 
     setKeyValuePairs(values || DEFAULT_KEY_VALUE_PAIR);
+  }
+
+  function validateForm() {
+    const isValid = keyValuePairs.every(
+      (pair) => pair.key.trim() !== '' && pair.value.trim() !== ''
+    );
+    setIsFormValid(isValid);
   }
 
   return (

@@ -7,7 +7,6 @@ import (
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
@@ -61,7 +60,16 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 					"watch",
 				},
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"odigosconfigurations", "destinations"},
+				Resources: []string{"odigosconfigurations", "collectorsgroups", "collectorsgroups/status"},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
 			},
 			{
 				Verbs: []string{
@@ -259,6 +267,8 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 					"get",
 					"list",
 					"watch",
+					"patch",
+					"update",
 				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{
@@ -479,10 +489,18 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							},
 						},
 						{
-							Name: "var-dir",
+							Name: "pod-resources",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var",
+									Path: "/var/lib/kubelet/pod-resources",
+								},
+							},
+						},
+						{
+							Name: "device-plugins-dir",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/var/lib/kubelet/device-plugins",
 								},
 							},
 						},
@@ -503,6 +521,26 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							},
 						},
 					}, odigosSeLinuxHostVolumes...),
+					InitContainers: []corev1.Container{
+						{
+							Name:  "init",
+							Image: containers.GetImageName(imagePrefix, imageName, version),
+							Command: []string{
+								"/root/odiglet",
+							},
+							Args: []string{
+								"init",
+							},
+							Resources: corev1.ResourceRequirements{},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "odigos",
+									MountPath: "/var/odigos",
+								},
+							},
+							ImagePullPolicy: "IfNotPresent",
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Name:  OdigletContainerName,
@@ -533,7 +571,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									},
 								},
 								{
-									Name: "OTEL_LOG_LEVEL",
+									Name:  "OTEL_LOG_LEVEL",
 									Value: "info",
 								},
 							}, dynamicEnv...),
@@ -549,19 +587,22 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							Resources: corev1.ResourceRequirements{},
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
-									Name:             "run-dir",
-									MountPath:        "/run",
-									MountPropagation: ptrMountPropagationMode("Bidirectional"),
+									Name:      "run-dir",
+									MountPath: "/run",
 								},
 								{
-									Name:             "var-dir",
-									MountPath:        "/var",
-									MountPropagation: ptrMountPropagationMode("Bidirectional"),
+									Name:      "device-plugins-dir",
+									MountPath: "/var/lib/kubelet/device-plugins",
 								},
 								{
-									Name:             "odigos",
-									MountPath:        "/var/odigos",
-									MountPropagation: ptrMountPropagationMode("Bidirectional"),
+									Name:      "pod-resources",
+									MountPath: "/var/lib/kubelet/pod-resources",
+									ReadOnly:  true,
+								},
+								{
+									Name:      "odigos",
+									MountPath: "/var/odigos",
+									ReadOnly:  true,
 								},
 								{
 									Name:      "kernel-debug",
@@ -635,11 +676,11 @@ func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropaga
 type odigletResourceManager struct {
 	client     *kube.Client
 	ns         string
-	config     *odigosv1.OdigosConfigurationSpec
+	config     *common.OdigosConfiguration
 	odigosTier common.OdigosTier
 }
 
-func NewOdigletResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
+func NewOdigletResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
 	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
 }
 

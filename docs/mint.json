@@ -68,10 +68,18 @@
           ]
         },
         {
+          "group": "Architecture",
+          "pages": [
+            "architecture/sources",
+            "architecture/troubleshooting"
+          ]
+        },
+        {
           "group": "CLI Reference",
           "pages": [
             "cli/odigos",
             "cli/odigos_cloud",
+            "cli/odigos_describe",
             "cli/odigos_install",
             "cli/odigos_ui",
             "cli/odigos_uninstall",
@@ -79,6 +87,40 @@
             "cli/odigos_version"
           ]
         }
+      ]
+    },
+    {
+      "group": "Instrumentations",
+      "pages": [
+        "instrumentations/overview",
+        {
+          "group": "Go",
+          "pages": [
+            "instrumentations/golang/golang",
+            "instrumentations/golang/enrichment"
+          ]
+        },
+        {
+          "group": "Node.js",
+          "pages": [
+            "instrumentations/nodejs/nodejs",
+            "instrumentations/nodejs/enrichment",
+            "instrumentations/nodejs/ebpf"
+          ]
+        },
+        {
+          "group": "Python",
+          "pages": [
+            "instrumentations/python/python",
+            "instrumentations/python/enrichment"
+          ]
+        },
+        {
+          "group": "Java",
+          "pages": [
+            "instrumentations/java/ebpf"
+          ]
+        }        
       ]
     },
     {
@@ -186,7 +228,8 @@
         "telemetry-types",
         "custom-resources",
         "uninstall",
-        "usage-reports"
+        "usage-reports",
+        "benchmarks"
       ]
     },
     {
@@ -200,9 +243,9 @@
         {
           "group": "Quickstart",
           "pages": [
-            "vmagent/setup/preparation",
+            "vmagent/quickstart/preparation",
             "vmagent/quickstart/introduction",
-            "vmagent/setup/installation",
+            "vmagent/quickstart/installation",
             "vmagent/quickstart/building-a-pipeline",
             "vmagent/quickstart/generating-data"
           ]

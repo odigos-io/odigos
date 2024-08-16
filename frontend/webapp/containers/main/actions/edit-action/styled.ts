@@ -25,12 +25,18 @@ export const FormFieldsWrapper = styled.div<{ disabled: boolean }>`
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
 `;
 
-export const SwitchWrapper = styled.div<{ disabled: boolean }>`
+export const SwitchWrapper = styled.div<{
+  disabled: boolean;
+  isValid: boolean;
+}>`
   p {
     color: ${({ disabled }) =>
       disabled ? theme.colors.orange_brown : theme.colors.success};
     font-weight: 600;
   }
+
+  opacity: ${({ isValid }) => (!isValid ? 0.3 : 1)};
+  pointer-events: ${({ isValid }) => (!isValid ? 'none' : 'auto')};
 `;
 
 export const KeyvalInputWrapper = styled.div`

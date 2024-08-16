@@ -1,0 +1,135 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: multi-apps
+spec:
+  description: This e2e test runs a multi-apps scenario
+  skipDelete: true
+  steps:
+  - name: Prepare destination
+    try:
+    - script:
+        timeout: 60s
+        content: |
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo update
+          helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 --version 1.10.1
+    - assert:
+        file: assert-tempo-running.yaml
+  - name: Wait for destination to be ready
+    try:
+      - script:
+          timeout: 60s
+          content: ../../common/wait_for_dest.sh
+  - name: Install Odigos
+    try:
+    - script:
+        content: ../../../cli/odigos install --version e2e-test
+        timeout: 60s
+    - assert:
+        file: assert-odigos-installed.yaml
+  - name: Install Demo App
+    try:
+    - script:
+        timeout: 100s
+        content: |
+          docker pull keyval/odigos-demo-inventory:v0.1
+          docker pull keyval/odigos-demo-membership:v0.1
+          docker pull keyval/odigos-demo-coupon:v0.1
+          docker pull keyval/odigos-demo-inventory:v0.1
+          docker pull keyval/odigos-demo-frontend:v0.2
+          kind load docker-image keyval/odigos-demo-inventory:v0.1
+          kind load docker-image keyval/odigos-demo-membership:v0.1
+          kind load docker-image keyval/odigos-demo-coupon:v0.1
+          kind load docker-image keyval/odigos-demo-inventory:v0.1
+          kind load docker-image keyval/odigos-demo-frontend:v0.2
+    - apply:
+        file: 02-install-simple-demo.yaml
+    - assert:
+        file: assert-apps-installed.yaml
+  - name: Detect Languages
+    try:
+    - apply:
+        file: 03-instrument-ns.yaml
+    - assert:
+        file: assert-runtime-detected.yaml
+  - name: Add Destination
+    try:
+    - apply:
+        file: 04-add-destination.yaml
+    - assert:
+        file: assert-instrumented-and-pipeline.yaml
+  - name: Generate Traffic
+    try:
+    - script:
+        timeout: 60s
+        content: |
+          while true; do
+            # Apply the job
+            kubectl apply -f 05-generate-traffic.yaml
+
+            # Wait for the job to complete
+            job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+            kubectl wait --for=condition=complete job/$job_name
+
+            # Delete the job
+            kubectl delete -f 05-generate-traffic.yaml
+
+            # Run the wait-for-trace script
+            ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
+            if [ $? -eq 0 ]; then
+              break
+            else
+              sleep 3
+              ../../common/flush_traces.sh
+            fi
+          done
+  - name: Verify Trace - Context Propagation
+    try:
+    - script:
+        content: |
+          ../../common/traceql_runner.sh tracesql/context-propagation.yaml
+    catch:
+    - podLogs:
+        name: odiglet
+        namespace: odigos-system
+  - name: Verify Trace - Resource Attributes
+    try:
+    - script:
+        content: |
+          ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
+    catch:
+    - podLogs:
+        name: odiglet
+        namespace: odigos-system
+  - name: Verify Trace - Span Attributes
+    try:
+      - script:
+          timeout: 60s
+          content: |
+            ../../common/traceql_runner.sh tracesql/span-attributes.yaml
+    catch:
+      - podLogs:
+          name: odiglet
+          namespace: odigos-system
+
+  - name: Start Odigos UI in background
+    try:
+     - script:
+        timeout: 60s
+        content: |
+          ../../common/ui-tests/start_odigos_ui.sh
+
+  - name: Run Cypress tests should pass
+    try:
+      - script:
+          timeout: 60s
+          content: |
+            ../../common/ui-tests/run_cypress_tests.sh
+
+  - name: Stop Odigos UI
+    try:
+      - script:
+          timeout: 60s
+          content: |
+            ../../common/ui-tests/stop_ui_and_clean.sh

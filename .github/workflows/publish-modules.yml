@@ -81,7 +81,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos go modules tagged successfully", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack on Failure
-        if: failure()
+        if: ${{ failure() || cancelled() }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -137,7 +137,9 @@ jobs:
         with:
           push: true
           tags: keyval/odigos-${{ matrix.service }}:${{ steps.extract_tag.outputs.tag }}
-          build-args: SERVICE_NAME=${{ matrix.service }}
+          build-args: |
+            SERVICE_NAME=${{ matrix.service }}
+            ODIGOS_VERSION=${{ steps.extract_tag.outputs.tag }}
           platforms: linux/amd64,linux/arm64
           file: >-
             ${{
@@ -159,7 +161,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos component ${{ matrix.service }} released successfully", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack on Failure
-        if: failure()
+        if: ${{ failure() || cancelled() }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -215,7 +217,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos collector linux packages released successfully", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack on Failure
-        if: failure()
+        if: ${{ failure() || cancelled() }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}

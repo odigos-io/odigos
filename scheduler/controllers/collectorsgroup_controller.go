@@ -18,8 +18,8 @@ package controllers
 
 import (
 	"context"
-
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/scheduler/controllers/collectorgroups"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -87,9 +87,14 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	if gatewayReady && !dataCollectionExists {
-		logger.Info("creating data collection collector group")
-		err = r.Create(ctx, collectorgroups.NewDataCollection(req.Namespace))
+	var instApps odigosv1.InstrumentedApplicationList
+	if err = r.List(ctx, &instApps); err != nil {
+		logger.Error(err, "failed to list InstrumentedApps")
+		return ctrl.Result{}, err
+	}
+
+	if collectorgroups.ShouldCreateNodeCollectorGroup(gatewayReady, dataCollectionExists, len(instApps.Items)) {
+		err = utils.CreateCollectorGroup(ctx, r.Client, collectorgroups.NewNodeCollectorGroup())
 		if err != nil {
 			logger.Error(err, "failed to create data collection collector group")
 			return ctrl.Result{}, err

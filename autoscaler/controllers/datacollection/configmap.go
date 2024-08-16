@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
+	"strings"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 
 	"github.com/ghodss/yaml"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -21,13 +24,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
-const (
-	configKey = "conf"
-)
-
-func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
+func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme) (string, error) {
 	logger := log.FromContext(ctx)
@@ -43,7 +44,7 @@ func syncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 		logger.Error(err, "failed to get desired config map")
 		return "", err
 	}
-	desiredData := desired.Data[configKey]
+	desiredData := desired.Data[constsK8s.OdigosNodeCollectorConfigMapKey]
 
 	existing := &v1.ConfigMap{}
 	if err := c.Get(ctx, client.ObjectKey{Namespace: datacollection.Namespace, Name: datacollection.Name}, existing); err != nil {
@@ -109,7 +110,7 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 			Namespace: datacollection.Namespace,
 		},
 		Data: map[string]string{
-			configKey: cmData,
+			constsK8s.OdigosNodeCollectorConfigMapKey: cmData,
 		},
 	}
 
@@ -145,12 +146,38 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 		}},
 	}
 	processorsCfg["resourcedetection"] = config.GenericMap{"detectors": []string{"ec2", "gcp", "azure"}}
+	processorsCfg["odigostrafficmetrics"] = config.GenericMap{
+		// adding the following resource attributes to the metrics allows to aggregate the metrics by source.
+		"res_attributes_keys": []string{
+			string(semconv.ServiceNameKey),
+			string(semconv.K8SNamespaceNameKey),
+			string(semconv.K8SDeploymentNameKey),
+			string(semconv.K8SStatefulSetNameKey),
+			string(semconv.K8SDaemonSetNameKey),
+		},
+	}
+	processorsCfg["resource/pod-name"] = config.GenericMap{
+		"attributes": []config.GenericMap{{
+			"key":    "k8s.pod.name",
+			"value":  "${POD_NAME}",
+			"action": "upsert",
+		}},
+	}
 
 	exporters := config.GenericMap{
 		"otlp/gateway": config.GenericMap{
 			"endpoint": fmt.Sprintf("dns:///odigos-gateway.%s:4317", env.GetCurrentNamespace()),
 			"tls": config.GenericMap{
 				"insecure": true,
+			},
+		},
+		"otlp/odigos-own-telemetry-ui": config.GenericMap{
+			"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), consts.OTLPPort),
+			"tls": config.GenericMap{
+				"insecure": true,
+			},
+			"retry_on_failure": config.GenericMap{
+				"enabled": false,
 			},
 		},
 	}
@@ -166,23 +193,67 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 
 	cfg := config.Config{
 		Receivers: config.GenericMap{
-			"zipkin": empty,
 			"otlp": config.GenericMap{
 				"protocols": config.GenericMap{
-					"grpc": empty,
-					"http": empty,
+					"grpc": config.GenericMap{
+						"endpoint": "0.0.0.0:4317",
+					},
+					"http": config.GenericMap{
+						"endpoint": "0.0.0.0:4318",
+					},
+				},
+			},
+			"prometheus/self-metrics": config.GenericMap{
+				"config": config.GenericMap{
+					"scrape_configs": []config.GenericMap{
+						{
+							"job_name": "otelcol",
+							"scrape_interval": "10s",
+							"static_configs": []config.GenericMap{
+								{
+									"targets": []string{"127.0.0.1:8888"},
+								},
+							},
+							"metric_relabel_configs": []config.GenericMap{
+								{
+									"source_labels": []string{"__name__"},
+									"regex": "(.*odigos.*|^otelcol_processor_accepted.*)",
+									"action": "keep",
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Exporters:  exporters,
 		Processors: processorsCfg,
 		Extensions: config.GenericMap{
-			"health_check": empty,
-			"zpages":       empty,
+			"health_check": config.GenericMap{
+				"endpoint": "0.0.0.0:13133",
+			},
 		},
 		Service: config.Service{
-			Pipelines:  map[string]config.Pipeline{},
-			Extensions: []string{"health_check", "zpages"},
+			Pipelines:  map[string]config.Pipeline{
+				"metrics/otelcol": {
+					Receivers: []string{"prometheus/self-metrics"},
+					Processors: []string{"resource/pod-name"},
+					Exporters: []string{"otlp/odigos-own-telemetry-ui"},
+				},
+			},
+			Extensions: []string{"health_check"},
+			Telemetry: config.Telemetry{
+				Metrics: config.GenericMap{
+					"address": "0.0.0.0:8888",
+				},
+				Resource: map[string]*string{
+					// The collector add "otelcol" as a service name, so we need to remove it
+					// to avoid duplication, since we are interested in the instrumented services.
+					string(semconv.ServiceNameKey):    nil,
+					// The collector adds its own version as a service version, which is not needed currently.
+					string(semconv.ServiceVersionKey): nil,
+				},
+			},
 		},
 	}
 
@@ -242,15 +313,15 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
-			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, logsProcessors...),
+			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, logsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
 
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
-			Receivers:  []string{"otlp", "zipkin"},
-			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, tracesProcessors...),
+			Receivers:  []string{"otlp"},
+			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, tracesProcessors...),
 			Exporters:  tracesPipelineExporter,
 		}
 	}
@@ -265,7 +336,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 
 		cfg.Service.Pipelines["metrics"] = config.Pipeline{
 			Receivers:  []string{"otlp", "kubeletstats"},
-			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection"}, metricsProcessors...),
+			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, metricsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -285,4 +356,43 @@ func getConfigMap(ctx context.Context, c client.Client, namespace string) (*v1.C
 	}
 
 	return configMap, nil
+}
+
+func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]common.ObservabilitySignal, error) {
+	config := config.Config{}
+	err := yaml.Unmarshal([]byte(otelcolConfigContent), &config)
+	if err != nil {
+		return nil, err
+	}
+
+	tracesEnabled := false
+	metricsEnabled := false
+	logsEnabled := false
+	for pipelineName, pipeline := range config.Service.Pipelines {
+		// only consider pipelines with `otlp` receiver
+		// which are the ones that can actually receive data
+		if !slices.Contains(pipeline.Receivers, "otlp") {
+			continue
+		}
+		if strings.HasPrefix(pipelineName, "traces") {
+			tracesEnabled = true
+		} else if strings.HasPrefix(pipelineName, "metrics") {
+			metricsEnabled = true
+		} else if strings.HasPrefix(pipelineName, "logs") {
+			logsEnabled = true
+		}
+	}
+
+	signals := []common.ObservabilitySignal{}
+	if tracesEnabled {
+		signals = append(signals, common.TracesObservabilitySignal)
+	}
+	if metricsEnabled {
+		signals = append(signals, common.MetricsObservabilitySignal)
+	}
+	if logsEnabled {
+		signals = append(signals, common.LogsObservabilitySignal)
+	}
+
+	return signals, nil
 }

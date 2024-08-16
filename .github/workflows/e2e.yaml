@@ -5,9 +5,28 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   kubernetes-test:
-    runs-on: large-runner
+    runs-on: warp-ubuntu-latest-x64-8x-spot
+    strategy:
+      fail-fast: false
+      matrix:
+        kube-version:
+          - "1.23"
+          - "1.30"
+        test-scenario:
+          - "multi-apps"
+          - "helm-chart"
+          - "fe-synthetic"
+        include:
+          - kube-version: "1.23"
+            kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
+          - kube-version: "1.30"
+            kind-image: "kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,16 +37,25 @@ jobs:
         with:
           go-version: "~1.22"
           check-latest: true
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
           version: v3.9.0
-      - name: Setup BATS
-        uses: mig4/setup-bats@v1
+      - name: Install chainsaw
+        uses: kyverno/action-install-chainsaw@v0.2.8
       - name: Create Kind Cluster
         uses: helm/kind-action@v1.10.0
         with:
+          node_image: ${{ matrix.kind-image }}
+          version: "v0.23.0"
           cluster_name: kind
+      - name: Install FE
+        run: |
+          cd frontend/webapp
+          yarn install
       - name: Build CLI
         run: |
           cd cli
@@ -35,64 +63,6 @@ jobs:
       - name: Build and Load Odigos Images
         run: |
           TAG=e2e-test make build-images load-to-kind
-      - name: Install Odigos
+      - name: Run E2E Tests
         run: |
-          cli/odigos install --version e2e-test
-      - name: Install Collector - Add Dependencies
-        shell: bash
-        run: |
-          helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-      - uses: actions/checkout@v4
-        with:
-          repository: 'open-telemetry/opentelemetry-helm-charts'
-          path: opentelemetry-helm-charts
-      - name: Install Collector - Helm install
-        run: helm install test -f .github/workflows/e2e/collector-helm-values.yaml opentelemetry-helm-charts/charts/opentelemetry-collector --namespace traces --create-namespace
-      - name: Wait for Collector to be ready
-        run: |
-          kubectl wait --for=condition=Ready --timeout=60s -n traces pod/test-opentelemetry-collector-0
-      - name: Install KV Shop
-        run: |
-          kubectl create ns kvshop
-          kubectl apply -f .github/workflows/e2e/kv-shop.yaml -n kvshop
-      - name: Wait for KV Shop to be ready
-        run: |
-          kubectl wait --for=condition=Ready --timeout=100s -n kvshop pods --all
-      - name: Select kvshop namespace for instrumentation
-        run: |
-          kubectl label namespace kvshop odigos-instrumentation=enabled
-      - name: Connect to Jaeger destination
-        run: |
-          kubectl create -f .github/workflows/e2e/jaeger-dest.yaml
-      - name: Wait for Odigos to bring up collectors
-        run: |
-          while [[ $(kubectl get daemonset odigos-data-collection -n odigos-system -o jsonpath='{.status.numberReady}') != 1 ]];
-          do
-          echo "Waiting for odigos-data-collection daemonset to be created" && sleep 3;
-          done
-          while [[ $(kubectl get deployment odigos-gateway -n odigos-system -o jsonpath='{.status.readyReplicas}') != 1 ]];
-          do
-          echo "Waiting for odigos-data-collection deployment to be created" && sleep 3;
-          done
-          while [[ $(kubectl get pods --output=jsonpath='{range .items[*]}{.status.phase}{"\n"}{end}' -n kvshop | grep -v Running | wc -l) != 0 ]];
-          do
-          echo "Waiting for kvshop pods to be running" && sleep 3;
-          done
-          sleep 10
-          kubectl get pods -A
-          kubectl get svc -A
-      - name: Start bot job
-        run: |
-          kubectl create -f .github/workflows/e2e/buybot-job.yaml -n kvshop
-      - name: Wait for bot job to complete
-        run: |
-          kubectl wait --for=condition=Complete --timeout=60s job/buybot-job -n kvshop
-      - name: Copy trace output
-        run: |
-          echo "Sleeping for 10 seconds to allow traces to be collected"
-          sleep 10
-          kubectl cp -c filecp traces/test-opentelemetry-collector-0:tmp/trace.json ./.github/workflows/e2e/bats/traces-orig.json
-          cat ./.github/workflows/e2e/bats/traces-orig.json
-      - name: Verify output trace
-        run: |
-          bats .github/workflows/e2e/bats/verify.bats
+          chainsaw test tests/e2e/${{ matrix.test-scenario }}

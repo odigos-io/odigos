@@ -3,10 +3,10 @@ package resources
 import (
 	"context"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -72,280 +72,119 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				Verbs: []string{
-					"list",
-					"watch",
-					"get",
-				},
 				APIGroups: []string{""},
-				Resources: []string{
-					"nodes",
-				},
+				Resources: []string{"nodes"},
+				Verbs:     []string{"list", "watch", "get"},
 			},
 			{
-				Verbs: []string{
-					"list",
-					"watch",
-					"get",
-				},
 				APIGroups: []string{""},
-				Resources: []string{
-					"namespaces",
-				},
+				Resources: []string{"namespaces"},
+				Verbs:     []string{"list", "watch", "get"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"daemonsets",
-				},
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"daemonsets/finalizers",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets"},
+				Verbs:     []string{"create", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"daemonsets/status",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets/finalizers"},
+				Verbs:     []string{"update"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"deployments",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets/status"},
+				Verbs:     []string{"get"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"deployments/finalizers",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments"},
+				Verbs:     []string{"create", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"deployments/status",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments/finalizers"},
+				Verbs:     []string{"update"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"statefulsets",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments/status"},
+				Verbs:     []string{"get"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"statefulsets/finalizers",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"statefulsets"},
+				Verbs:     []string{"create", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{
-					"apps",
-				},
-				Resources: []string{
-					"statefulsets/status",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"statefulsets/finalizers"},
+				Verbs:     []string{"update"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"collectorsgroups",
-				},
+				APIGroups: []string{"apps"},
+				Resources: []string{"statefulsets/status"},
+				Verbs:     []string{"get"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"collectorsgroups/finalizers",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"collectorsgroups/status",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/finalizers"},
+				Verbs:     []string{"update"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications/finalizers",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentedapplications"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications/status",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentedapplications/finalizers"},
+				Verbs:     []string{"update"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"odigosconfigurations",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentedapplications/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
 			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"destinations",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"odigosconfigurations"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"destinations/finalizers",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"destinations/status",
-				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations/finalizers"},
+				Verbs:     []string{"update"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations/status"},
+				Verbs:     []string{"get", "patch", "update"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationconfigs"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 		},
 	}
@@ -503,10 +342,10 @@ func ptrbool(b bool) *bool {
 type instrumentorResourceManager struct {
 	client *kube.Client
 	ns     string
-	config *odigosv1.OdigosConfigurationSpec
+	config *common.OdigosConfiguration
 }
 
-func NewInstrumentorResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) resourcemanager.ResourceManager {
+func NewInstrumentorResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration) resourcemanager.ResourceManager {
 	return &instrumentorResourceManager{
 		client: client,
 		ns:     ns,

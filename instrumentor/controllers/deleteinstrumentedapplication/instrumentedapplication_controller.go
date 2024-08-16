@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,7 +84,7 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 		return ctrl.Result{}, err
 	}
 
-	instEffectiveEnabled, err := isWorkloadInstrumentationEffectiveEnabled(ctx, r.Client, workloadObject)
+	instEffectiveEnabled, err := workload.IsWorkloadInstrumentationEffectiveEnabled(ctx, r.Client, workloadObject)
 	if err != nil {
 		logger.Error(err, "error checking if instrumentation is effective")
 		return ctrl.Result{}, err

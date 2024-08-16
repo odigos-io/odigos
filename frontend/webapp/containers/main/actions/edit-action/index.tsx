@@ -77,7 +77,7 @@ export function EditActionContainer(): React.JSX.Element {
         <KeyvalText size={18} weight={700}>
           {ACTIONS[type].TITLE}
         </KeyvalText>
-        <SwitchWrapper disabled={disabled}>
+        <SwitchWrapper disabled={disabled} isValid={isFormValid}>
           <KeyvalSwitch
             toggle={!disabled}
             handleToggleChange={() =>

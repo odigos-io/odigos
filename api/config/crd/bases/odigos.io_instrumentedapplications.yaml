@@ -110,6 +110,8 @@ spec:
                       - unknown
                       - ignored
                       type: string
+                    runtimeVersion:
+                      type: string
                   required:
                   - containerName
                   - language

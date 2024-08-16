@@ -21,13 +21,12 @@ var (
 )
 
 func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) error {
-
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
 	// and we need to cleanup the community device before adding the enterprise one.
 	RevertInstrumentationDevices(original)
 
-	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(targetObj)
+	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(targetObj.GetAnnotations())
 	if err != nil {
 		return err
 	}
@@ -71,7 +70,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 // it is used when the instrumentation is removed from the workload.
 // the original values are read from the annotation which was saved when the instrumentation was applied.
 func RevertEnvOverwrites(obj client.Object, podSpec *corev1.PodTemplateSpec) error {
-	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(obj)
+	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(obj.GetAnnotations())
 	if err != nil {
 		return err
 	}

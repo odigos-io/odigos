@@ -107,16 +107,16 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 		ObjectMeta: v1.ObjectMeta{
 			Name:      consts.OdigosClusterCollectorDeploymentName,
 			Namespace: gateway.Namespace,
-			Labels:    CommonLabels,
+			Labels:    ClusterCollectorGateway,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: intPtr(1),
 			Selector: &v1.LabelSelector{
-				MatchLabels: CommonLabels,
+				MatchLabels: ClusterCollectorGateway,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: v1.ObjectMeta{
-					Labels: CommonLabels,
+					Labels: ClusterCollectorGateway,
 					Annotations: map[string]string{
 						configHashAnnotation: configDataHash,
 					},
@@ -124,7 +124,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: configKey,
+							Name: consts.OdigosClusterCollectorConfigMapKey,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
@@ -132,8 +132,8 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 									},
 									Items: []corev1.KeyToPath{
 										{
-											Key:  configKey,
-											Path: fmt.Sprintf("%s.yaml", configKey),
+											Key:  consts.OdigosClusterCollectorConfigMapKey,
+											Path: fmt.Sprintf("%s.yaml", consts.OdigosClusterCollectorConfigMapKey),
 										},
 									},
 								},
@@ -144,7 +144,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 						{
 							Name:    containerName,
 							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, configKey)},
+							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, consts.OdigosClusterCollectorConfigMapKey)},
 							EnvFrom: getSecretsFromDests(dests),
 							// Add the ODIGOS_VERSION environment variable from the ConfigMap
 							Env: []corev1.EnvVar{
@@ -160,6 +160,14 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 									},
 								},
 								{
+									Name: "POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
 									Name:  "GOMEMLIMIT",
 									Value: fmt.Sprintf("%dMiB", memConfig.gomemlimitMiB),
 								},
@@ -169,7 +177,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      configKey,
+									Name:      consts.OdigosClusterCollectorConfigMapKey,
 									MountPath: confDir,
 								},
 							},

@@ -27,3 +27,4 @@ spec:
         type: password
         required: true
       secret: true
+  testConnectionSupported: true

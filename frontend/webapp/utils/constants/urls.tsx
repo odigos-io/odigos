@@ -18,6 +18,7 @@ const API = {
   ACTIONS: `${BASE_URL}/actions`,
   DELETE_ACTION: (type: string, id: string) =>
     `${BASE_URL}/actions/types/${type}/${id}`,
+  OVERVIEW_METRICS: `${BASE_URL}/metrics/overview`,
 };
 
 const QUERIES = {

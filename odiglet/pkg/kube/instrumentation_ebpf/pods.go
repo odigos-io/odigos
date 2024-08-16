@@ -2,14 +2,13 @@ package instrumentation_ebpf
 
 import (
 	"context"
-	"errors"
-	"strings"
 
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	runtime_details "github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,10 +23,26 @@ type PodsReconciler struct {
 	Directors ebpf.DirectorsMap
 }
 
+func (p *PodsReconciler) isNamespaceIgnored(ctx context.Context, ns string) bool {
+	odigosConfig, err := k8sutils.GetCurrentConfig(ctx, p.Client)
+	if err != nil {
+		return false
+	}
+
+	ignoredNamespaces := odigosConfig.IgnoredNamespaces
+	for _, ignoredNamespace := range ignoredNamespaces {
+		if ignoredNamespace == ns {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	if request.Namespace == env.GetCurrentNamespace() {
+	if request.Namespace == env.GetCurrentNamespace() || p.isNamespaceIgnored(ctx, request.Namespace) {
 		return ctrl.Result{}, nil
 	}
 
@@ -93,27 +108,20 @@ func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod
 
 func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*common.PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
-		if owner.Kind == "ReplicaSet" {
-			// ReplicaSet name is in the format <deployment-name>-<random-string>
-			hyphenIndex := strings.LastIndex(owner.Name, "-")
-			if hyphenIndex == -1 {
-				// It is possible for a user to define a bare ReplicaSet without a deployment, currently not supporting this
-				return nil, errors.New("replicaset name does not contain a hyphen")
+		name, kind, err := kubeutils.GetWorkloadNameFromOwnerReference(owner)
+		if err != nil {
+			if kubeutils.IsErrorKindNotSupported(err) {
+				return nil, nil
 			}
-			// Extract deployment name from ReplicaSet name
-			deploymentName := owner.Name[:hyphenIndex]
-			return &common.PodWorkload{
-				Name:      deploymentName,
-				Namespace: pod.Namespace,
-				Kind:      "Deployment",
-			}, nil
-		} else if owner.Kind == "DaemonSet" || owner.Kind == "Deployment" || owner.Kind == "StatefulSet" {
-			return &common.PodWorkload{
-				Name:      owner.Name,
-				Namespace: pod.Namespace,
-				Kind:      owner.Kind,
-			}, nil
+
+			return nil, err
 		}
+
+		return &common.PodWorkload{
+			Name:      name,
+			Kind:      kind,
+			Namespace: pod.Namespace,
+		}, nil
 	}
 
 	// Pod does not necessarily have to be managed by a controller

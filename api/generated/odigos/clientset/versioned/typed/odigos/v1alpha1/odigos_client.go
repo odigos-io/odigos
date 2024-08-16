@@ -29,6 +29,7 @@ type OdigosV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	CollectorsGroupsGetter
 	DestinationsGetter
+	InstrumentationConfigsGetter
 	InstrumentationInstancesGetter
 	InstrumentedApplicationsGetter
 	OdigosConfigurationsGetter
@@ -46,6 +47,10 @@ func (c *OdigosV1alpha1Client) CollectorsGroups(namespace string) CollectorsGrou
 
 func (c *OdigosV1alpha1Client) Destinations(namespace string) DestinationInterface {
 	return newDestinations(c, namespace)
+}
+
+func (c *OdigosV1alpha1Client) InstrumentationConfigs(namespace string) InstrumentationConfigInterface {
+	return newInstrumentationConfigs(c, namespace)
 }
 
 func (c *OdigosV1alpha1Client) InstrumentationInstances(namespace string) InstrumentationInstanceInterface {

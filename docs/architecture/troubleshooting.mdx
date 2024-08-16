@@ -1,0 +1,171 @@
+---
+title: "Troubleshooting Sources"
+sidebarTitle: "Troubleshooting Sources"
+---
+
+If you selected a workload to auto instrument and you do not see any data, use the checklist below to troubleshoot the issue. 
+It is recommended to use the `odigos describe` command to get detailed information in one command.
+
+### 1. Odigos Instrumentation Label
+
+The odigos describe command will show the status of the `odigos-instrumentation` label.
+
+```bash
+odigos describe source deployment myservice -n default
+
+Labels:
+  Instrumented:  false
+  Workload: odigos-instrumentation=disabled
+  Namespace: odigos-instrumentation=enabled
+  Decision: Workload is NOT instrumented because the Deployment contains the label 'odigos-instrumentation=disabled'
+```
+
+If you expect a different status, check the workload manifest and namespace manifests for the `odigos-instrumentation` label.
+
+The label is either set by the UI, explicitly set in the manifest, or managed by internal workflows like using `kubectl`.
+
+### 2. Odigos Instrumentation Config
+
+The odigos describe command will show the status of the `instrumentationconfig.odigos.io` object, 
+which should always exist for every instrumented workload, and absent for non-instrumented workloads.
+
+Please allow few seconds for the object to be created after the label is set.
+
+```bash
+odigos describe deployment myservice -n default
+
+Instrumentation Config:
+  Workload not instrumented, no instrumentation config
+```
+
+If the status is not as expected, check the `odigos-instrumentor` deployment in the `odigos-system` namespace for health and errors, and report any issues to the Odigos team.
+
+The `instrumentationconfig` resource is created by odigos instrumentor with the following details:
+- `name`: concatenated from the lowercase workload kind and name. for example: `deployment-myservice`.
+- `namespace`: the namespace of the workload.
+
+Examine the `instrumentationconfig.odigos.io` object for the workload:
+
+```bash
+kubectl get instrumentationconfigs.odigos.io deployment-myservice -n default -o yaml
+```
+
+### 3. Odigos Instrumented Application
+
+The instrumented application resource records runtime inspection results and contains the containers, programming language, and relevant env vars.
+Each workload should have an `instrumentedapplication.odigos.io` object, and it should be deleted when the workload is uninstrumented.
+
+If the object is not created when expected:
+- Please allow few seconds for the object to be created after the `instrumentationconfig` object is created.
+- The object will be created only if there are running pods for the workload.
+- For the object to be created, the `odiglet` daemonset must be running and healthy on nodes that run this workload.
+
+The `instrumentedapplication` resource is created by odiglet daemonset controller with the following details:
+- `name`: concatenated from the lowercase workload kind and name. for example: `deployment-myservice`.
+- `namespace`: the namespace of the workload.
+
+Examine an `instrumentedapplication.odigos.io` object for the workload:
+
+```bash
+kubectl get instrumentedapplication.odigos.io deployment-myservice -n default -o yaml
+```
+
+### 4. Language not Detected
+
+Use the `odigos describe` command to check the programming language detected by the odiglet controller per container.
+
+```bash
+odigos describe deployment myservice -n default
+
+Runtime inspection details:
+  Created at 2024-07-21 22:57:17 +0300 IDT
+  Detected Containers:
+    - Container Name: nginx
+      Language:       unknown
+```
+
+If the programming language is not detected:
+- odigos only supports the following platforms and languages: Node.js, Python, Java, Go, and .NET. Perhaps the container is running executable in a different language.
+- containers that starts with a script or a shell command that exec to the main process may not be detected correctly. Contact us for support.
+- check the `odiglet` pod in the namespace `odigos-system` on a node that runs the workload for health and errors.
+
+### 5. Odigos Instrumentation Devices not Added
+
+The odigos describe command will show the instrumentation devices added to the pod spec for the workload.
+
+```bash
+odigos describe source deployment myservice -n default
+
+Instrumentation Device:
+  Status: Successfully applied instrumentation device to pod template
+  - Container Name: coupon
+    Instrumentation Devices: javascript-native-community
+```
+
+If the instrumentation devices are missing:
+- Please allow few seconds after the `instrumentedapplication` object is created or updated for the instrumentation devices to be added to the pod spec.
+- The instrumentation devices are added to the pod spec only after the telemetry pipeline is healthy and ready to receive telemetry data.
+- check the `odigos-instrumentor` logs in the `odigos-system` namespace for health any errors.
+
+The instrumentation devices is selected based on the programming language and the configuration in the global odigos config resource:
+
+```bash
+kubectl get configmap -n odigos-system odigos-config -o json | jq -r '.data."config.yaml"' | jq .
+# or, if your environment does not have jq, examine "config.yaml" field under "data" of the configmap
+```
+
+To examine the resources for a workload, use this as an example:
+
+```bash
+kubectl get deployment myservice -o jsonpath='{.spec.template.spec.containers[*].resources.limits}'
+```
+
+### 6. Pods Instrumentation Devices not Matching Manifest
+
+The odigos describe command will show the pods for this workload and the instrumentation devices resource they have.
+
+```bash
+odigos describe source deployment myservice -n default
+
+Pods (Total 1, Running 1):
+
+  Pod Name: myservice-7dcf4c478d-kq428
+  Pod Phase: Running
+  Pod Node Name: kind-control-plane
+  Containers:
+  - Container Name: main
+    Instrumentation Devices: javascript-native-community
+```
+
+If the instrumentation devices are missing or not matching the manifest:
+- Please watch for any new pods that are created after the manifest is updated. New pods might be created in few minutes, or the mismatched pods might be terminated and replaced.
+- Check the pod logs for any errors or warnings that might prevent the instrumentation devices from being applied.
+- New pods will be scheduled by k8s to nodes where the `odiglet` daemonset is running and healthy. Check the `odiglet` pods for any errors preventing the odiglet pod from running.
+- Check general k8s events and logs for any issues that might prevent the pods from being scheduled or started in your cluster.
+
+### 7. Instrumentation Instance Unhealthy
+
+The odigos describe command will show the status of the instrumentation instance for the workload.
+Instrumentation instances are currently available only for go, node.js, and python.
+They describe the status of the OpenTelemetry SDK agent running in a pod container.
+
+```bash
+odigos describe source deployment myservice -n default
+
+Pods (Total 1, Running 1):
+
+  Pod Name: myservice-7dcf4c478d-kq428
+  Pod Phase: Running
+  Pod Node Name: kind-control-plane
+  Containers:
+  - Container Name: main
+    Instrumentation Devices: javascript-native-community
+    Instrumentation Instances:
+    - Healthy: true
+      Message: Agent connected
+```
+
+If the instrumentation instance is unhealthy:
+- Use the Message field to get more information about the issue.
+- Check the pod logs for the container that runs the instrumentation instance for any errors or warnings.
+- Check the `odiglet` daemonset logs in the `odigos-system` namespace, on the node that runs the pod, for any errors regarding the instrumentation instance.

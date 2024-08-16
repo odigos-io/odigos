@@ -21,7 +21,7 @@ func main() {
 	info := component.BuildInfo{
 		Command:     "odigosotelcol",
 		Description: "OpenTelemetry Collector for Odigos",
-		Version:     "0.103.0",
+		Version:     "0.106.0",
 	}
 
 	set := otelcol.CollectorSettings{

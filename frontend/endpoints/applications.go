@@ -4,6 +4,10 @@ import (
 	"context"
 	"net/http"
 
+	appsv1 "k8s.io/api/apps/v1"
+
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"golang.org/x/sync/errgroup"
@@ -38,7 +42,7 @@ type GetApplicationItemInNamespace struct {
 type GetApplicationItem struct {
 	// namespace is used when querying all the namespaces, the response can be grouped/filtered by namespace
 	namespace string
-	nsItem GetApplicationItemInNamespace
+	nsItem    GetApplicationItemInNamespace
 }
 
 func GetApplicationsInNamespace(c *gin.Context) {
@@ -126,69 +130,75 @@ func getApplicationsInNamespace(ctx context.Context, nsName string, nsInstrument
 }
 
 func getDeployments(namespace string, ctx context.Context) ([]GetApplicationItem, error) {
-	deps, err := kube.DefaultClient.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
+	var response []GetApplicationItem
+	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().Deployments(namespace).List, ctx, metav1.ListOptions{}, func(deps *appsv1.DeploymentList) error {
+		for _, dep := range deps.Items {
+			appInstrumentationLabeled := isObjectLabeledForInstrumentation(dep.ObjectMeta)
+			response = append(response, GetApplicationItem{
+				namespace: dep.Namespace,
+				nsItem: GetApplicationItemInNamespace{
+					Name:                      dep.Name,
+					Kind:                      WorkloadKindDeployment,
+					Instances:                 int(dep.Status.AvailableReplicas),
+					AppInstrumentationLabeled: appInstrumentationLabeled,
+				},
+			})
+		}
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
-	}
-
-	response := make([]GetApplicationItem, len(deps.Items))
-	for i, dep := range deps.Items {
-		appInstrumentationLabeled := isObjectLabeledForInstrumentation(dep.ObjectMeta)
-		response[i] = GetApplicationItem{
-			namespace:                 dep.Namespace,
-			nsItem: GetApplicationItemInNamespace {
-				Name:                      dep.Name,
-				Kind:                      WorkloadKindDeployment,
-				Instances:                 int(dep.Status.AvailableReplicas),
-				AppInstrumentationLabeled: appInstrumentationLabeled,
-			},
-		}
 	}
 
 	return response, nil
 }
 
 func getStatefulSets(namespace string, ctx context.Context) ([]GetApplicationItem, error) {
-	ss, err := kube.DefaultClient.AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{})
+	var response []GetApplicationItem
+	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().StatefulSets(namespace).List, ctx, metav1.ListOptions{}, func(sss *appsv1.StatefulSetList) error {
+		for _, ss := range sss.Items {
+			appInstrumentationLabeled := isObjectLabeledForInstrumentation(ss.ObjectMeta)
+			response = append(response, GetApplicationItem{
+				namespace: ss.Namespace,
+				nsItem: GetApplicationItemInNamespace{
+					Name:                      ss.Name,
+					Kind:                      WorkloadKindStatefulSet,
+					Instances:                 int(ss.Status.ReadyReplicas),
+					AppInstrumentationLabeled: appInstrumentationLabeled,
+				},
+			})
+		}
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
-	}
-
-	response := make([]GetApplicationItem, len(ss.Items))
-	for i, s := range ss.Items {
-		appInstrumentationLabeled := isObjectLabeledForInstrumentation(s.ObjectMeta)
-		response[i] = GetApplicationItem{
-			namespace: s.Namespace,
-			nsItem: GetApplicationItemInNamespace {
-				Name:      s.Name,
-				Kind:      WorkloadKindStatefulSet,
-				Instances: int(s.Status.ReadyReplicas),
-				AppInstrumentationLabeled: appInstrumentationLabeled,
-			},
-		}
 	}
 
 	return response, nil
 }
 
 func getDaemonSets(namespace string, ctx context.Context) ([]GetApplicationItem, error) {
-	dss, err := kube.DefaultClient.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{})
+	var response []GetApplicationItem
+	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().DaemonSets(namespace).List, ctx, metav1.ListOptions{}, func(dss *appsv1.DaemonSetList) error {
+		for _, ds := range dss.Items {
+			appInstrumentationLabeled := isObjectLabeledForInstrumentation(ds.ObjectMeta)
+			response = append(response, GetApplicationItem{
+				namespace: ds.Namespace,
+				nsItem: GetApplicationItemInNamespace{
+					Name:                      ds.Name,
+					Kind:                      WorkloadKindDaemonSet,
+					Instances:                 int(ds.Status.NumberReady),
+					AppInstrumentationLabeled: appInstrumentationLabeled,
+				},
+			})
+		}
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
-	}
-
-	response := make([]GetApplicationItem, len(dss.Items))
-	for i, ds := range dss.Items {
-		appInstrumentationLabeled := isObjectLabeledForInstrumentation(ds.ObjectMeta)
-		response[i] = GetApplicationItem{
-			namespace: ds.Namespace,
-			nsItem: GetApplicationItemInNamespace {
-				Name:      ds.Name,
-				Kind:      WorkloadKindDaemonSet,
-				Instances: int(ds.Status.NumberReady),
-				AppInstrumentationLabeled: appInstrumentationLabeled,
-			},
-		}
 	}
 
 	return response, nil

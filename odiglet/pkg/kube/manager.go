@@ -3,6 +3,9 @@ package kube
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/common/consts"
+	"k8s.io/apimachinery/pkg/labels"
+
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_ebpf"
@@ -42,9 +45,12 @@ func CreateManager() (ctrl.Manager, error) {
 			// running `kubectl get .... --show-managed-fields` will show the managed fields.
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
-				&corev1.Pod{} :{
+				&corev1.Pod{}: {
 					// only watch and list pods in the current node
 					Field: fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName),
+				},
+				&corev1.Namespace{}: {
+					Label: labels.Set{consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled}.AsSelector(),
 				},
 			},
 		},

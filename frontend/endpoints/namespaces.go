@@ -5,9 +5,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	"sigs.k8s.io/yaml"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"golang.org/x/sync/errgroup"
 
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
 
@@ -73,14 +78,20 @@ func GetNamespaces(c *gin.Context, odigosns string) {
 // Taking into account the ignored namespaces from the OdigosConfiguration.
 func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace, error) {
 	var (
-		odigosConfig *v1alpha1.OdigosConfiguration
+		odigosConfig *common.OdigosConfiguration
 		list         *v1.NamespaceList
 	)
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		var err error
-		odigosConfig, err = kube.DefaultClient.OdigosClient.OdigosConfigurations(odigosns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+		configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
+			return err
+		}
 		return err
 	})
 
@@ -96,7 +107,7 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace
 
 	result := []v1.Namespace{}
 	for _, namespace := range list.Items {
-		if utils.IsItemIgnored(namespace.Name, odigosConfig.Spec.IgnoredNamespaces) {
+		if utils.IsItemIgnored(namespace.Name, odigosConfig.IgnoredNamespaces) {
 			continue
 		}
 
@@ -177,31 +188,25 @@ func syncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []Pe
 // returns a map, where the key is a namespace name and the value is the
 // number of apps in this namespace (not necessarily instrumented)
 func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
-
-	deps, err := kube.DefaultClient.AppsV1().Deployments("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	ss, err := kube.DefaultClient.AppsV1().StatefulSets("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	ds, err := kube.DefaultClient.AppsV1().DaemonSets("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
 	namespaceToAppsCount := make(map[string]int)
-	for _, dep := range deps.Items {
-		namespaceToAppsCount[dep.Namespace]++
-	}
-	for _, st := range ss.Items {
-		namespaceToAppsCount[st.Namespace]++
-	}
-	for _, d := range ds.Items {
-		namespaceToAppsCount[d.Namespace]++
+
+	resourceTypes := []string{"deployments", "statefulsets", "daemonsets"}
+
+	for _, resourceType := range resourceTypes {
+		err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.MetadataClient.Resource(schema.GroupVersionResource{
+			Group:    "apps",
+			Version:  "v1",
+			Resource: resourceType,
+		}).List, ctx, metav1.ListOptions{}, func(list *metav1.PartialObjectMetadataList) error {
+			for _, item := range list.Items {
+				namespaceToAppsCount[item.Namespace]++
+			}
+			return nil
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to count %s: %w", resourceType, err)
+		}
 	}
 
 	return namespaceToAppsCount, nil

@@ -1,7 +1,6 @@
 package fs
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,29 +18,33 @@ const (
 )
 
 func CopyAgentsDirectoryToHost() error {
-
 	// remove the current content of /var/odigos
 	// as we want a fresh copy of instrumentation agents with no files leftover from previous odigos versions.
 	// we cannot remove /var/odigos itself: "unlinkat /var/odigos: device or resource busy"
 	// so we will just remove it's content
-	entries, err := os.ReadDir(hostDir)
+
+	// We kept the following list of files to avoid removing instrumentations that are already loaded in the process memory
+	filesToKeepMap := map[string]struct{}{
+		"/var/odigos/nodejs-ebpf/build/Release/dtrace-injector-native.node":                            {},
+		"/var/odigos/nodejs-ebpf/build/Release/obj.target/dtrace-injector-native.node":                 {},
+		"/var/odigos/nodejs-ebpf/build/Release/.deps/Release/dtrace-injector-native.node.d":            {},
+		"/var/odigos/nodejs-ebpf/build/Release/.deps/Release/obj.target/dtrace-injector-native.node.d": {},
+		"/var/odigos/java-ebpf/tracing_probes.so":                                                      {},
+		"/var/odigos/java-ext-ebpf/end_span_usdt.so":                                                   {},
+		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
+	}
+
+	err := removeFilesInDir(hostDir, filesToKeepMap)
 	if err != nil {
+		log.Logger.Error(err, "Error removing instrumentation directory from host")
 		return err
 	}
-	for _, entry := range entries {
-		entryPath := filepath.Join(hostDir, entry.Name())
-		err := os.RemoveAll(entryPath)
-		if err != nil {
-			return err
-		}
-	}
 
-	cmd := exec.Command("/bin/bash", "-c", "cp -r " + containerDir + "/* "  + hostDir)
-	output, err := cmd.CombinedOutput()
+	err = copyDirectories(containerDir, hostDir, filesToKeepMap)
 	if err != nil {
-		return fmt.Errorf("error copying agents directory to host: %v, output %s", err, output)
+		log.Logger.Error(err, "Error copying instrumentation directory to host")
+		return err
 	}
-
 
 	// Check if the semanage command exists when running on RHEL/CoreOS
 	_, err = exec.LookPath(filepath.Join(chrootDir, semanagePath))
@@ -68,4 +71,9 @@ func CopyAgentsDirectoryToHost() error {
 	}
 
 	return nil
+}
+
+func ShouldRecreateAllCFiles() bool {
+	value, exists := os.LookupEnv("RECREATE_ALL_C_FILES")
+	return exists && value == "true"
 }
