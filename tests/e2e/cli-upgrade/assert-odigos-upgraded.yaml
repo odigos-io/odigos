@@ -1,0 +1,158 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: odigos-test-cli-upgrade
+  labels:
+    odigos.io/system-object: "true"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-autoscaler
+  namespace: odigos-test-cli-upgrade
+spec:
+  containers:
+    - name: manager
+      image: keyval/odigos-autoscaler:e2e-test
+status:
+  containerStatuses:
+    - name: manager
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-scheduler
+  namespace: odigos-test-cli-upgrade
+spec:
+  containers:
+    - name: manager
+      image: keyval/odigos-scheduler:e2e-test
+status:
+  containerStatuses:
+    - name: manager
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-instrumentor
+  namespace: odigos-test-cli-upgrade
+spec:
+  containers:
+    - name: manager
+      image: keyval/odigos-instrumentor:e2e-test
+status:
+  containerStatuses:
+    - name: manager
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: odiglet
+  namespace: odigos-test-cli-upgrade
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DaemonSet
+      name: odiglet
+spec:
+  containers:
+    - name: odiglet
+      resources: {}
+      securityContext:
+        capabilities:
+          add:
+            - SYS_PTRACE
+        privileged: true
+      image: keyval/odigos-odiglet:e2e-test
+  hostNetwork: true
+  hostPID: true
+  nodeSelector:
+    kubernetes.io/os: linux
+  serviceAccount: odiglet
+  serviceAccountName: odiglet
+status:
+  containerStatuses:
+    - name: odiglet
+      ready: true
+      restartCount: 0
+      started: true
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    odigos.io/collector-role: CLUSTER_GATEWAY
+  namespace: odigos-test-cli-upgrade
+spec:
+  containers:
+    - name: gateway
+      image: keyval/odigos-collector:e2e-test
+status:
+  containerStatuses:
+    - name: gateway
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-gateway
+  namespace: odigos-test-cli-upgrade
+  labels:
+    odigos.io/collector-role: CLUSTER_GATEWAY
+status:
+  replicas: 1
+  readyReplicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    odigos.io/config: "2"
+    odigos.io/system-object: "true"
+  name: destinations.odigos.io
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    odigos.io/config: "2"
+    odigos.io/system-object: "true"
+  name: instrumentedapplications.odigos.io
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    odigos.io/config: "2"
+    odigos.io/system-object: "true"
+  name: odigosconfigurations.odigos.io
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    odigos.io/config: "2"
+    odigos.io/system-object: "true"
+  name: processors.odigos.io
