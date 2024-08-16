@@ -43,7 +43,7 @@ type PatchSourceRequest struct {
 }
 
 func GetSources(c *gin.Context, odigosns string) {
-	ctx := c.Request.Context()
+	reqCtx := c.Request.Context()
 	effectiveInstrumentedSources := map[common.SourceID]ThinSource{}
 
 	var (
@@ -51,9 +51,9 @@ func GetSources(c *gin.Context, odigosns string) {
 		instrumentedApplications *v1alpha1.InstrumentedApplicationList
 	)
 
-	g, ctx := errgroup.WithContext(ctx)
+	g, errCtx := errgroup.WithContext(reqCtx)
 	g.Go(func() error {
-		relevantNamespaces, err := getRelevantNameSpaces(ctx, odigosns)
+		relevantNamespaces, err := getRelevantNameSpaces(errCtx, odigosns)
 		if err != nil {
 			return err
 		}
@@ -64,13 +64,13 @@ func GetSources(c *gin.Context, odigosns string) {
 		// get all the applications in all the namespaces,
 		// passing an empty string here is more efficient compared to iterating over the namespaces
 		// since it will make a single request per workload type to the k8s api server
-		items, err = getApplicationsInNamespace(ctx, "", nsInstrumentedMap)
+		items, err = getApplicationsInNamespace(errCtx, "", nsInstrumentedMap)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		instrumentedApplications, err = kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(c, metav1.ListOptions{})
+		instrumentedApplications, err = kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(errCtx, metav1.ListOptions{})
 		return err
 	})
 
@@ -98,6 +98,11 @@ func GetSources(c *gin.Context, odigosns string) {
 		thinSource := k8sInstrumentedAppToThinSource(&app)
 		if source, ok := effectiveInstrumentedSources[thinSource.SourceID]; ok {
 			source.IaDetails = thinSource.IaDetails
+			err := addHealthyInstrumentationInstancesCondition(reqCtx, &app, &source)
+			if err != nil {
+				returnError(c, err)
+				return
+			}
 			effectiveInstrumentedSources[thinSource.SourceID] = source
 		}
 	}

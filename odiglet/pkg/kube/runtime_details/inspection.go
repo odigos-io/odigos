@@ -93,13 +93,13 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				continue
 			}
 
-			var lang common.ProgrammingLanguage
+			programLanguageDetails := common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}
 			var inspectProc *procdiscovery.Details
 			var detectErr error
 
 			for _, proc := range processes {
-				lang, detectErr = inspectors.DetectLanguage(proc)
-				if detectErr == nil && lang != common.UnknownProgrammingLanguage {
+				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc)
+				if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
 					inspectProc = &proc
 					break
 				}
@@ -108,22 +108,24 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 			envs := make([]odigosv1.EnvVar, 0)
 			if inspectProc == nil {
 				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
-				lang = common.UnknownProgrammingLanguage
+				programLanguageDetails.Language = common.UnknownProgrammingLanguage
 			} else {
 				if len(processes) > 1 {
 					log.Logger.V(0).Info("multiple processes found in pod container, only taking the first one with detected language into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				}
+
 				// Convert map to slice for k8s format
-				envs = make([]odigosv1.EnvVar, 0, len(inspectProc.Envs))
-				for envName, envValue := range inspectProc.Envs {
+				envs = make([]odigosv1.EnvVar, 0, len(inspectProc.Environments.DetailedEnvs))
+				for envName, envValue := range inspectProc.Environments.OverwriteEnvs {
 					envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
 				}
 			}
 
 			resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
-				ContainerName: container.Name,
-				Language:      lang,
-				EnvVars:       envs,
+				ContainerName:  container.Name,
+				Language:       programLanguageDetails.Language,
+				RuntimeVersion: programLanguageDetails.RuntimeVersion,
+				EnvVars:        envs,
 			}
 		}
 	}
