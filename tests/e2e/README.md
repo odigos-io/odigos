@@ -99,3 +99,30 @@ Once you have the file, you can run the test via:
 ```bash
 tests/e2e/common/traceql_runner.sh <path-to-yaml-file>
 ```
+
+## Debugging
+
+When tests fail, and it's related to some traceql query not succeeding, it can be useful to setup a grafana ui to commit queries and see the traces that are stored in tempo.
+
+- Install grafana with helm:
+
+```bash
+helm install -n traces grafana grafana/grafana --set adminPassword='odigos'
+```
+
+- Port forward to the grafana service:
+
+```bash
+kubectl port-forward svc/grafana 3080:80 -n traces
+```
+
+- Browse to `http://localhost:3080` and login with `admin` and `odigos`.
+
+- Add tempo as a datasource, by going to `Connections -> Data Sources -> Add data source` and selecting `Tempo` as the type. Set the URL to `http://e2e-tests-tempo:3100` and save.
+
+- In grafana left side menu, go to `Explore` and select the tempo datasource. You can now write queries, run them, and see the traces that are stored in tempo to troubleshoot your test issues. example query:
+
+```
+{resource.service.name = "coupon"}
+```
+

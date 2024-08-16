@@ -61,7 +61,7 @@ spec:
           # Extract the downloaded file
           tar -xvzf odigos-latest.tar.gz
 
-          # cleanup any previous installation of odigos the might be left over from previous runs while developing
+          # cleanup any existing installation of odigos the might be left over from previous runs while developing
           ./odigos uninstall --yes
           # Run the Odigos CLI installation
           ./odigos install --namespace odigos-test-cli-upgrade
