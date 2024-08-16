@@ -7,7 +7,6 @@ import (
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
@@ -62,6 +61,15 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"odigosconfigurations", "collectorsgroups", "collectorsgroups/status"},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
 			},
 			{
 				Verbs: []string{
@@ -668,11 +676,11 @@ func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropaga
 type odigletResourceManager struct {
 	client     *kube.Client
 	ns         string
-	config     *odigosv1.OdigosConfigurationSpec
+	config     *common.OdigosConfiguration
 	odigosTier common.OdigosTier
 }
 
-func NewOdigletResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
+func NewOdigletResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
 	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
 }
 

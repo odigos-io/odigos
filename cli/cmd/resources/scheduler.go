@@ -3,10 +3,10 @@ package resources
 import (
 	"context"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -301,10 +301,10 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 type schedulerResourceManager struct {
 	client *kube.Client
 	ns     string
-	config *odigosv1.OdigosConfigurationSpec
+	config *common.OdigosConfiguration
 }
 
-func NewSchedulerResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) resourcemanager.ResourceManager {
+func NewSchedulerResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration) resourcemanager.ResourceManager {
 	return &schedulerResourceManager{client: client, ns: ns, config: config}
 }
 
