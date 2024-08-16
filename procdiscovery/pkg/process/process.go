@@ -10,12 +10,34 @@ import (
 	"github.com/odigos-io/odigos/common/envOverwrite"
 )
 
+const NodeVersionConst = "NODE_VERSION"
+const PythonVersionConst = "PYTHON_VERSION"
+const JavaVersionConst = "JAVA_VERSION"
+
+// envDetailsMap is a map of environment variables and their separators
+var envDetailsMap = map[string]struct{}{NodeVersionConst: {}, PythonVersionConst: {}, JavaVersionConst: {}}
+
 type Details struct {
-	ProcessID int
-	ExeName   string
-	CmdLine   string
-	// Envs only contains the environment variables that we are interested in
-	Envs map[string]string
+	ProcessID    int
+	ExeName      string
+	CmdLine      string
+	Environments ProcessEnvs
+}
+
+type ProcessEnvs struct {
+	DetailedEnvs map[string]string
+	// OverwriteEnvs only contains environment variables that Odigos is using for auto-instrumentation and may need to be overwritten
+	OverwriteEnvs map[string]string
+}
+
+func (d *Details) GetDetailedEnvsValue(key string) (string, bool) {
+	value, exists := d.Environments.DetailedEnvs[key]
+	return value, exists
+}
+
+func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
+	value, exists := d.Environments.OverwriteEnvs[key]
+	return value, exists
 }
 
 // Find all processes in the system.
@@ -60,10 +82,10 @@ func GetPidDetails(pid int) Details {
 	envVars := getRelevantEnvVars(pid)
 
 	return Details{
-		ProcessID: pid,
-		ExeName:   exeName,
-		CmdLine:   cmdLine,
-		Envs:      envVars,
+		ProcessID:    pid,
+		ExeName:      exeName,
+		CmdLine:      cmdLine,
+		Environments: envVars,
 	}
 }
 
@@ -95,23 +117,25 @@ func getCommandLine(pid int) string {
 	}
 }
 
-func getRelevantEnvVars(pid int) map[string]string {
+func getRelevantEnvVars(pid int) ProcessEnvs {
 	envFileName := fmt.Sprintf("/proc/%d/environ", pid)
 	fileContent, err := os.ReadFile(envFileName)
 	if err != nil {
 		// TODO: if we fail to read the environment variables, we should probably return an error
 		// which will cause the process to be skipped and not instrumented?
-		return nil
+		return ProcessEnvs{}
 	}
 
 	r := bufio.NewReader(strings.NewReader(string(fileContent)))
-	result := make(map[string]string)
 
 	// We only care about the environment variables that we might overwrite
-	relevantEnvVars := make(map[string]interface{})
+	relevantOverwriteEnvVars := make(map[string]interface{})
 	for k := range envOverwrite.EnvValuesMap {
-		relevantEnvVars[k] = nil
+		relevantOverwriteEnvVars[k] = nil
 	}
+
+	overWriteEnvsResult := make(map[string]string)
+	detailedEnvsResult := make(map[string]string)
 
 	for {
 		// The entries are  separated  by
@@ -120,7 +144,7 @@ func getRelevantEnvVars(pid int) map[string]string {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			return nil
+			return ProcessEnvs{}
 		}
 
 		str = strings.TrimRight(str, "\x00")
@@ -130,10 +154,20 @@ func getRelevantEnvVars(pid int) map[string]string {
 			continue
 		}
 
-		if _, ok := relevantEnvVars[envParts[0]]; ok {
-			result[envParts[0]] = envParts[1]
+		if _, ok := relevantOverwriteEnvVars[envParts[0]]; ok {
+			overWriteEnvsResult[envParts[0]] = envParts[1]
 		}
+
+		if _, ok := envDetailsMap[envParts[0]]; ok {
+			detailedEnvsResult[envParts[0]] = envParts[1]
+		}
+
 	}
 
-	return result
+	envs := ProcessEnvs{
+		OverwriteEnvs: overWriteEnvsResult,
+		DetailedEnvs:  detailedEnvsResult,
+	}
+
+	return envs
 }

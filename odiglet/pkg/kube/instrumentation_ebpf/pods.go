@@ -3,10 +3,9 @@ package instrumentation_ebpf
 import (
 	"context"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	runtime_details "github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
@@ -25,13 +24,12 @@ type PodsReconciler struct {
 }
 
 func (p *PodsReconciler) isNamespaceIgnored(ctx context.Context, ns string) bool {
-	var odigosConfig odigosv1.OdigosConfiguration
-	err := p.Client.Get(ctx, client.ObjectKey{Name: "odigos-config", Namespace: env.GetCurrentNamespace()}, &odigosConfig)
+	odigosConfig, err := k8sutils.GetCurrentConfig(ctx, p.Client)
 	if err != nil {
 		return false
 	}
 
-	ignoredNamespaces := odigosConfig.Spec.IgnoredNamespaces
+	ignoredNamespaces := odigosConfig.IgnoredNamespaces
 	for _, ignoredNamespace := range ignoredNamespaces {
 		if ignoredNamespace == ns {
 			return true

@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-config
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+  labels:
+    odigos.io/config: "1"
+    odigos.io/system-object: "true"
+data:
+  config.yaml: |
+    configVersion: 1
+    autoscalerImage: {{ .Values.autoscaler.image.repository }}
+    {{- if .Values.imagePrefix }}
+    imagePrefix: {{ .Values.imagePrefix }}
+    {{- end }}
+    {{- if .Values.collectorGateway }}
+    collectorGateway:
+      {{- with .Values.collectorGateway.requestMemoryMiB }}
+      requestMemoryMiB: {{ . }}
+      {{- end }}
+      {{- with .Values.collectorGateway.memoryLimiterLimitMiB }}
+      memoryLimiterLimitMiB: {{ . }}
+      {{- end }}
+      {{- with .Values.collectorGateway.memoryLimiterSpikeLimitMiB }}
+      memoryLimiterSpikeLimitMiB: {{ . }}
+      {{- end }}
+      {{- with .Values.collectorGateway.goMemLimitMiB }}
+      goMemLimitMiB: {{ . }}
+      {{- end }}
+    {{- end }}
+    instrumentorImage: {{ .Values.instrumentor.image.repository }}
+    odigosVersion: {{ .Values.image.tag | default .Chart.AppVersion }}
+    telemetryEnabled: {{ .Values.telemetry.enabled }}
+    openshiftEnabled: {{ .Values.openshift.enabled }}
+    psp: {{ .Values.psp.enabled }}
+    ignoredNamespaces:
+      {{- toYaml .Values.ignoredNamespaces | nindent 8 }}
+    ignoredContainers:
+      {{- toYaml .Values.ignoredContainers | nindent 8 }}
+    {{- if .Values.onPremToken }}
+    defaultSDKs:
+      dotnet:
+        sdkTier: community
+        sdkType: native
+      go:
+        sdkTier: enterprise
+        sdkType: ebpf
+      java:
+        sdkTier: enterprise
+        sdkType: ebpf
+      javascript:
+        sdkTier: enterprise
+        sdkType: ebpf
+      python:
+        sdkTier: enterprise
+        sdkType: ebpf
+      mysql:
+        sdkTier: enterprise
+        sdkType: ebpf
+    {{- else }}
+    defaultSDKs:
+      dotnet:
+        sdkTier: community
+        sdkType: native
+      go:
+        sdkTier: community
+        sdkType: ebpf
+      java:
+        sdkTier: community
+        sdkType: native
+      javascript:
+        sdkTier: community
+        sdkType: native
+      python:
+        sdkTier: community
+        sdkType: native
+      {{- end }}

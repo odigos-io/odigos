@@ -194,3 +194,8 @@ cli-install:
 	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
 	go run -tags=embed_manifests ./cli install --version $(ODIGOS_CLI_VERSION)
 
+
+.PHONY: cli-upgrade
+cli-upgrade:
+	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
+	go run -tags=embed_manifests ./cli upgrade --version $(ODIGOS_CLI_VERSION) --yes
