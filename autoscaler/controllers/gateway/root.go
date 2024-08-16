@@ -47,7 +47,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 	// Add the generic batch processor to the list of processors
 	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
 
-	odigosConfig, err := utils.GetCurrentConfig(ctx, k8sClient)
+	odigosConfig, err := utils.GetCurrentOdigosConfig(ctx, k8sClient)
 	if err != nil {
 		logger.Error(err, "failed to get odigos config")
 		return err

@@ -24,7 +24,7 @@ type PodsReconciler struct {
 }
 
 func (p *PodsReconciler) isNamespaceIgnored(ctx context.Context, ns string) bool {
-	odigosConfig, err := k8sutils.GetCurrentConfig(ctx, p.Client)
+	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, p.Client)
 	if err != nil {
 		return false
 	}
