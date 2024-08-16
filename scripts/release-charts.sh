@@ -34,6 +34,9 @@ fi
 helm repo add odigos https://odigos-io.github.io/odigos-charts 2> /dev/null || true
 git worktree add $TMPDIR gh-pages -f
 
+# Setup work that needs to be done
+cp -r api/config/crd/bases/* helm/odigos/templates/crds/
+
 # Update index with new packages
 for chart in "${CHARTDIRS[@]}"
 do

@@ -26,7 +26,10 @@ spec:
     - script:
         content: |
           # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
-          helm upgrade --install odigos ../../../helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test
+          P="../../.."
+          # "build" complete helm chart by copying CRDs into the template folder
+          cp -r $P/api/config/crd/bases/* $P/helm/odigos/templates/crds/
+          helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test
           kubectl label namespace odigos-test-ns odigos.io/system-object="true"
         timeout: 60s
   - name: Verify Odigos Installation
