@@ -6,10 +6,11 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/autoscaler/controllers/common"
-	"github.com/odigos-io/odigos/common/consts"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,11 +45,10 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 		return err
 	}
 	// Add the generic batch processor to the list of processors
-	processors.Items = append(processors.Items, common.GetGenericBatchProcessor())
+	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
 
-	odigosSystemNamespaceName := env.GetCurrentNamespace()
-	var odigosConfig odigosv1.OdigosConfiguration
-	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: odigosSystemNamespaceName, Name: consts.OdigosConfigurationName}, &odigosConfig); err != nil {
+	odigosConfig, err := utils.GetCurrentConfig(ctx, k8sClient)
+	if err != nil {
 		logger.Error(err, "failed to get odigos config")
 		return err
 	}
@@ -58,7 +58,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigosConfig *odigosv1.OdigosConfiguration) error {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigosConfig *common.OdigosConfiguration) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing gateway")
 
@@ -88,7 +88,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	err = common.UpdateCollectorGroupReceiverSignals(ctx, c, gateway, signals)
+	err = commonconf.UpdateCollectorGroupReceiverSignals(ctx, c, gateway, signals)
 	if err != nil {
 		logger.Error(err, "Failed to update cluster collectors group received signals")
 		return err

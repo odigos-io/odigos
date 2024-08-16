@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Deprecated: Use common.OdigosConfiguration instead
 type CollectorGatewayConfiguration struct {
 	// RequestMemoryMiB is the memory request for the cluster gateway collector deployment.
 	// it will be embedded in the deployment as a resource request of the form "memory: <value>Mi"
@@ -30,6 +31,8 @@ type CollectorGatewayConfiguration struct {
 }
 
 // OdigosConfigurationSpec defines the desired state of OdigosConfiguration
+//
+// Deprecated: Use common.OdigosConfiguration instead
 type OdigosConfigurationSpec struct {
 	OdigosVersion     string                                          `json:"odigosVersion"`
 	ConfigVersion     int                                             `json:"configVersion"`
@@ -55,6 +58,8 @@ type OdigosConfigurationSpec struct {
 //+kubebuilder:object:root=true
 
 // OdigosConfiguration is the Schema for the odigos configuration
+//
+// Deprecated: Use common.OdigosConfiguration instead
 type OdigosConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -73,4 +78,32 @@ type OdigosConfigurationList struct {
 
 func init() {
 	SchemeBuilder.Register(&OdigosConfiguration{}, &OdigosConfigurationList{})
+}
+
+func (odigosConfig *OdigosConfiguration) ToCommonConfig() *common.OdigosConfiguration {
+	var collectorGateway common.CollectorGatewayConfiguration
+	if odigosConfig.Spec.CollectorGateway != nil {
+		collectorGateway = common.CollectorGatewayConfiguration{
+			RequestMemoryMiB:           odigosConfig.Spec.CollectorGateway.RequestMemoryMiB,
+			MemoryLimiterLimitMiB:      odigosConfig.Spec.CollectorGateway.MemoryLimiterLimitMiB,
+			MemoryLimiterSpikeLimitMiB: odigosConfig.Spec.CollectorGateway.MemoryLimiterSpikeLimitMiB,
+			GoMemLimitMib:              odigosConfig.Spec.CollectorGateway.GoMemLimitMib,
+		}
+	}
+	return &common.OdigosConfiguration{
+		OdigosVersion:               odigosConfig.Spec.OdigosVersion,
+		ConfigVersion:               odigosConfig.Spec.ConfigVersion,
+		TelemetryEnabled:            odigosConfig.Spec.TelemetryEnabled,
+		OpenshiftEnabled:            odigosConfig.Spec.OpenshiftEnabled,
+		IgnoredNamespaces:           odigosConfig.Spec.IgnoredNamespaces,
+		IgnoredContainers:           odigosConfig.Spec.IgnoredContainers,
+		Psp:                         odigosConfig.Spec.Psp,
+		ImagePrefix:                 odigosConfig.Spec.ImagePrefix,
+		OdigletImage:                odigosConfig.Spec.OdigletImage,
+		InstrumentorImage:           odigosConfig.Spec.InstrumentorImage,
+		AutoscalerImage:             odigosConfig.Spec.AutoscalerImage,
+		DefaultSDKs:                 odigosConfig.Spec.DefaultSDKs,
+		CollectorGateway:            &collectorGateway,
+		GoAutoIncludeCodeAttributes: odigosConfig.Spec.GoAutoIncludeCodeAttributes,
+	}
 }

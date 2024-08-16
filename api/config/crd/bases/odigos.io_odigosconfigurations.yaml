@@ -17,7 +17,11 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: OdigosConfiguration is the Schema for the odigos configuration
+        description: |-
+          OdigosConfiguration is the Schema for the odigos configuration
+
+
+          Deprecated: Use common.OdigosConfiguration instead
         properties:
           apiVersion:
             description: |-
@@ -37,11 +41,16 @@ spec:
           metadata:
             type: object
           spec:
-            description: OdigosConfigurationSpec defines the desired state of OdigosConfiguration
+            description: |-
+              OdigosConfigurationSpec defines the desired state of OdigosConfiguration
+
+
+              Deprecated: Use common.OdigosConfiguration instead
             properties:
               autoscalerImage:
                 type: string
               collectorGateway:
+                description: 'Deprecated: Use common.OdigosConfiguration instead'
                 properties:
                   goMemLimitMiB:
                     description: |-
