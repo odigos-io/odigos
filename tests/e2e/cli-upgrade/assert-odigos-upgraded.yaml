@@ -94,6 +94,37 @@ status:
       restartCount: 0
       started: true
 ---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    odigos.io/collector-role: CLUSTER_GATEWAY
+  namespace: odigos-test-cli-upgrade
+spec:
+  containers:
+    - name: gateway
+      image: keyval/odigos-collector:e2e-test
+status:
+  containerStatuses:
+    - name: gateway
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-gateway
+  namespace: odigos-test-cli-upgrade
+  labels:
+    odigos.io/collector-role: CLUSTER_GATEWAY
+status:
+  replicas: 1
+  readyReplicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
