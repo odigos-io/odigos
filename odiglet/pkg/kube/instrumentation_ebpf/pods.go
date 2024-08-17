@@ -108,18 +108,14 @@ func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod
 
 func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*workload.PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
-		name, kind, err := kubeutils.GetWorkloadNameFromOwnerReference(owner)
+		workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(owner)
 		if err != nil {
-			if kubeutils.IsErrorKindNotSupported(err) {
-				return nil, nil
-			}
-
-			return nil, err
+			return nil, workload.IgnoreErrorKindNotSupported(err)
 		}
 
 		return &workload.PodWorkload{
-			Name:      name,
-			Kind:      workload.WorkloadKind(kind),
+			Name:      workloadName,
+			Kind:      workloadKind,
 			Namespace: pod.Namespace,
 		}, nil
 	}

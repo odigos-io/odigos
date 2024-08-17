@@ -30,6 +30,26 @@ func TestWorkloadKindFromLowerCase(t *testing.T) {
 	assert.Equal(t, workload.WorkloadKind(""), invalid)
 }
 
+func TestWorkloadKindFromString(t *testing.T) {
+	depLower := workload.WorkloadKindFromString("deployment")
+	assert.Equal(t, workload.WorkloadKindDeployment, depLower)
+	depPascal := workload.WorkloadKindFromString("Deployment")
+	assert.Equal(t, workload.WorkloadKindDeployment, depPascal)
+
+	dsLower := workload.WorkloadKindFromString("daemonset")
+	assert.Equal(t, workload.WorkloadKindDaemonSet, dsLower)
+	dsPascal := workload.WorkloadKindFromString("DaemonSet")
+	assert.Equal(t, workload.WorkloadKindDaemonSet, dsPascal)
+
+	ssLower := workload.WorkloadKindFromString("statefulset")
+	assert.Equal(t, workload.WorkloadKindStatefulSet, ssLower)
+	ssPascal := workload.WorkloadKindFromString("StatefulSet")
+	assert.Equal(t, workload.WorkloadKindStatefulSet, ssPascal)
+
+	invalid := workload.WorkloadKindFromString("Invalid")
+	assert.Equal(t, workload.WorkloadKind(""), invalid)
+}
+
 func TestWorkloadKindFromClientObject(t *testing.T) {
 	dep := workload.WorkloadKindFromClientObject(&appsv1.Deployment{})
 	assert.Equal(t, workload.WorkloadKindDeployment, dep)

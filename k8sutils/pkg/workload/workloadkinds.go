@@ -1,6 +1,9 @@
 package workload
 
 import (
+	"errors"
+	"strings"
+
 	v1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -28,6 +31,19 @@ const (
 	WorkloadKindLowerCaseStatefulSet WorkloadKindLowerCase = "statefulset"
 )
 
+var ErrKindNotSupported = errors.New("workload kind not supported")
+
+func IsErrorKindNotSupported(err error) bool {
+	return err == ErrKindNotSupported
+}
+
+func IgnoreErrorKindNotSupported(err error) error {
+	if IsErrorKindNotSupported(err) {
+		return nil
+	}
+	return err
+}
+
 func WorkloadKindLowerCaseFromKind(pascalCase WorkloadKind) WorkloadKindLowerCase {
 	switch pascalCase {
 	case WorkloadKindDeployment:
@@ -50,6 +66,19 @@ func WorkloadKindFromLowerCase(lowerCase WorkloadKindLowerCase) WorkloadKind {
 		return WorkloadKindStatefulSet
 	}
 	return ""
+}
+
+func WorkloadKindFromString(kind string) WorkloadKind {
+	switch strings.ToLower(kind) {
+	case string(WorkloadKindLowerCaseDeployment):
+		return WorkloadKindDeployment
+	case string(WorkloadKindLowerCaseDaemonSet):
+		return WorkloadKindDaemonSet
+	case string(WorkloadKindLowerCaseStatefulSet):
+		return WorkloadKindStatefulSet
+	default:
+		return WorkloadKind("")
+	}
 }
 
 func WorkloadKindFromClientObject(w client.Object) WorkloadKind {
