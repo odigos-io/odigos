@@ -41,7 +41,7 @@ func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient clien
 
 	ns := workloadObject.GetNamespace()
 	name := workloadObject.GetName()
-	kind := workload.GetWorkloadKind(workloadObject)
+	kind := workload.WorkloadKindFromClientObject(workloadObject)
 	instrumentedApplicationName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
 
 	instAppErr := kubeClient.Delete(ctx, &odigosv1.InstrumentedApplication{

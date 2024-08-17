@@ -1,5 +1,10 @@
 package workload
 
+import (
+	v1 "k8s.io/api/apps/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
 // This go file contains utils to handle the kind of odigos workloads.
 // it allows transforming deployments / daemonsets / statefulsets from one representation to another
 
@@ -45,4 +50,17 @@ func WorkloadKindFromLowerCase(lowerCase WorkloadKindLowerCase) WorkloadKind {
 		return WorkloadKindStatefulSet
 	}
 	return ""
+}
+
+func WorkloadKindFromClientObject(w client.Object) WorkloadKind {
+	switch w.(type) {
+	case *v1.Deployment:
+		return WorkloadKindDeployment
+	case *v1.DaemonSet:
+		return WorkloadKindDaemonSet
+	case *v1.StatefulSet:
+		return WorkloadKindStatefulSet
+	default:
+		return ""
+	}
 }

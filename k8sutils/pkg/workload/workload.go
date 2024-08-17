@@ -74,19 +74,6 @@ func IsObjectLabeledForInstrumentation(obj client.Object) bool {
 	return val == consts.InstrumentationEnabled
 }
 
-func GetWorkloadKind(w client.Object) string {
-	switch w.(type) {
-	case *v1.Deployment:
-		return "Deployment"
-	case *v1.DaemonSet:
-		return "Daemonset"
-	case *v1.StatefulSet:
-		return "Statefulset"
-	default:
-		return "Unknown"
-	}
-}
-
 func IsWorkloadInstrumentationEffectiveEnabled(ctx context.Context, kubeClient client.Client, obj client.Object) (bool, error) {
 	// if the object itself is labeled, we will use that value
 	workloadLabels := obj.GetLabels()
