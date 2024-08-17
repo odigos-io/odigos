@@ -17,7 +17,7 @@ func TestExtractDeploymentWorkloadInfoFromRuntimeObjectName(t *testing.T) {
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName)
 	assert.Nil(t, err)
 	assert.Equal(t, "my-app", workloadName)
-	assert.Equal(t, string(workload.WorkloadKindDeployment), workloadKind)
+	assert.Equal(t, workload.WorkloadKindDeployment, workloadKind)
 }
 
 func TestExtractDaemonSetWorkloadInfoFromRuntimeObjectName(t *testing.T) {
@@ -25,7 +25,7 @@ func TestExtractDaemonSetWorkloadInfoFromRuntimeObjectName(t *testing.T) {
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName)
 	assert.Nil(t, err)
 	assert.Equal(t, "my-app", workloadName)
-	assert.Equal(t, string(workload.WorkloadKindDaemonSet), workloadKind)
+	assert.Equal(t, workload.WorkloadKindDaemonSet, workloadKind)
 }
 
 func TestExtractStatefulSetWorkloadInfoFromRuntimeObjectName(t *testing.T) {
@@ -33,7 +33,7 @@ func TestExtractStatefulSetWorkloadInfoFromRuntimeObjectName(t *testing.T) {
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName)
 	assert.Nil(t, err)
 	assert.Equal(t, "my-app", workloadName)
-	assert.Equal(t, string(workload.WorkloadKindStatefulSet), workloadKind)
+	assert.Equal(t, workload.WorkloadKindStatefulSet, workloadKind)
 }
 
 func TestExtractInvalidWorkloadInfoFromRuntimeObjectName(t *testing.T) {

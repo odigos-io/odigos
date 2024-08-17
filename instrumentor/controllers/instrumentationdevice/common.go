@@ -99,9 +99,9 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 	return nil
 }
 
-func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind string, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
+func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind workload.WorkloadKind, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
 
-	workloadObj := workload.ClientObjectFromWorkloadKind(workload.WorkloadKind(workloadKind))
+	workloadObj := workload.ClientObjectFromWorkloadKind(workloadKind)
 	if workloadObj == nil {
 		return errors.New("unknown kind")
 	}
@@ -150,7 +150,7 @@ func getWorkloadObject(ctx context.Context, kubeClient client.Client, runtimeDet
 		return nil, err
 	}
 
-	workloadObject := workload.ClientObjectFromWorkloadKind(workload.WorkloadKind(kind))
+	workloadObject := workload.ClientObjectFromWorkloadKind(kind)
 	if workloadObject == nil {
 		return nil, errors.New("unknown kind")
 	}

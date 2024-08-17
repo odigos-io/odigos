@@ -15,7 +15,7 @@ func CalculateWorkloadRuntimeObjectName[T string | WorkloadKind | WorkloadKindLo
 	return strings.ToLower(string(workloadKind) + "-" + workloadName)
 }
 
-func ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName string) (workloadName string, workloadKind string, err error) {
+func ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName string) (workloadName string, workloadKind WorkloadKind, err error) {
 	parts := strings.SplitN(runtimeObjectName, "-", 2)
 	if len(parts) != 2 {
 		err = errors.New("invalid workload runtime object name, missing hyphen")
@@ -24,12 +24,11 @@ func ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName string) (workloa
 
 	//convert the lowercase kind to pascal case and validate it
 	workloadKindLowerCase := WorkloadKindLowerCase(parts[0])
-	workloadKindPascalCase := WorkloadKindFromLowerCase(workloadKindLowerCase)
-	if workloadKindPascalCase == "" {
-		err = errors.New("invalid workload runtime object name, unknown kind")
+	workloadKind = WorkloadKindFromLowerCase(workloadKindLowerCase)
+	if workloadKind == "" {
+		err = ErrKindNotSupported
 		return
 	}
-	workloadKind = string(workloadKindPascalCase)
 
 	workloadName = parts[1]
 
