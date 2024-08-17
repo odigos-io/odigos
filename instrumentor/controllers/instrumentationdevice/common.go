@@ -114,17 +114,17 @@ func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient cli
 		return client.IgnoreNotFound(err)
 	}
 
-	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
+	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, workloadObj, func() error {
 
 		// clear old ebpf instrumentation annotation, just in case it still exists
-		clearInstrumentationEbpf(obj)
-		podSpec, err := getPodSpecFromObject(obj)
+		clearInstrumentationEbpf(workloadObj)
+		podSpec, err := getPodSpecFromObject(workloadObj)
 		if err != nil {
 			return err
 		}
 
 		instrumentation.RevertInstrumentationDevices(podSpec)
-		err = instrumentation.RevertEnvOverwrites(obj, podSpec)
+		err = instrumentation.RevertEnvOverwrites(workloadObj, podSpec)
 		if err != nil {
 			return err
 		}
@@ -138,7 +138,7 @@ func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient cli
 	modified := result != controllerutil.OperationResultNone
 	if modified {
 		logger := log.FromContext(ctx)
-		logger.V(0).Info("removed instrumentation device from workload", "namespace", obj.GetNamespace(), "kind", obj.GetObjectKind(), "name", obj.GetName(), "reason", uninstrumentReason)
+		logger.V(0).Info("removed instrumentation device from workload", "namespace", workloadObj.GetNamespace(), "kind", workloadObj.GetObjectKind(), "name", workloadObj.GetName(), "reason", uninstrumentReason)
 	}
 
 	return nil
