@@ -3,9 +3,9 @@ package instrumentation_ebpf
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	runtime_details "github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
@@ -93,7 +93,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	return ctrl.Result{}, nil
 }
 
-func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod, podWorkload *common.PodWorkload) (error, bool) {
+func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod, podWorkload *workload.PodWorkload) (error, bool) {
 	runtimeDetails, err := runtime_details.GetRuntimeDetails(ctx, p.Client, podWorkload)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -106,7 +106,7 @@ func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod
 	return instrumentPodWithEbpf(ctx, pod, p.Directors, runtimeDetails, podWorkload)
 }
 
-func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*common.PodWorkload, error) {
+func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*workload.PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
 		name, kind, err := kubeutils.GetWorkloadNameFromOwnerReference(owner)
 		if err != nil {
@@ -117,7 +117,7 @@ func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.P
 			return nil, err
 		}
 
-		return &common.PodWorkload{
+		return &workload.PodWorkload{
 			Name:      name,
 			Kind:      kind,
 			Namespace: pod.Namespace,

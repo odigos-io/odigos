@@ -59,7 +59,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, err
 	}
 
-	podWorkload := common.PodWorkload{
+	podWorkload := workload.PodWorkload{
 		Namespace: pod.GetNamespace(),
 		Kind:      k8sAttributes.WorkloadKind,
 		Name:      k8sAttributes.WorkloadName,

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
@@ -42,7 +42,7 @@ func GetRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 	return filteredPods, nil
 }
 
-func GetResourceAttributes(workload *common.PodWorkload, podName string) []attribute.KeyValue {
+func GetResourceAttributes(workload *workload.PodWorkload, podName string) []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
 		semconv.K8SNamespaceName(workload.Namespace),
 		semconv.K8SPodName(podName),

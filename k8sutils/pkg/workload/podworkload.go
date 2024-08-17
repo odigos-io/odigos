@@ -1,4 +1,4 @@
-package common
+package workload
 
 // PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
 // It contains essential details about the controller such as its Name, Namespace, and Kind.
