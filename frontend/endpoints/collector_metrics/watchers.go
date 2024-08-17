@@ -19,7 +19,7 @@ type deleteNotification struct {
 	notificationType deletedObject
 	object           string
 	// used for source deletion notification
-	sourceID         common.SourceID
+	sourceID common.SourceID
 }
 
 type deleteWatcher struct {
@@ -125,7 +125,7 @@ func runWatcherLoop(ctx context.Context, w watchers, notifyChan chan<- deleteNot
 			switch event.Type {
 			case watch.Deleted:
 				app := event.Object.(*v1alpha1.InstrumentedApplication)
-				name, kind, err := commonutils.GetWorkloadInfoRuntimeName(app.Name)
+				name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(app.Name)
 				if err != nil {
 					fmt.Printf("error getting workload info: %v\n", err)
 				}

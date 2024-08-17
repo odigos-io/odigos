@@ -139,7 +139,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 func persistRuntimeResults(ctx context.Context, results []odigosv1.RuntimeDetailsByContainer, owner client.Object, kubeClient client.Client, scheme *runtime.Scheme) error {
 	updatedIa := &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      workload.GetRuntimeObjectName(owner.GetName(), owner.GetObjectKind().GroupVersionKind().Kind),
+			Name:      workload.CalculateWorkloadRuntimeObjectName(owner.GetName(), owner.GetObjectKind().GroupVersionKind().Kind),
 			Namespace: owner.GetNamespace(),
 		},
 	}
@@ -168,7 +168,7 @@ func persistRuntimeResults(ctx context.Context, results []odigosv1.RuntimeDetail
 }
 
 func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *common.PodWorkload) (*odigosv1.InstrumentedApplication, error) {
-	instrumentedApplicationName := workload.GetRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
+	instrumentedApplicationName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
 
 	var runtimeDetails odigosv1.InstrumentedApplication
 	err := kubeClient.Get(ctx, client.ObjectKey{

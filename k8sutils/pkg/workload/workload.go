@@ -3,8 +3,6 @@ package workload
 import (
 	"context"
 	"errors"
-	"fmt"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -59,40 +57,6 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 		return &StatefulSetWorkload{StatefulSet: t}, nil
 	default:
 		return nil, errors.New("unknown kind")
-	}
-}
-
-// runtime name is a way to store workload specific CRs with odigos
-// and give the k8s object a name which is unique and can be used to extract the workload name and kind
-func GetRuntimeObjectName(name string, kind string) string {
-	return strings.ToLower(kind + "-" + name)
-}
-
-func GetWorkloadInfoRuntimeName(name string) (workloadName string, workloadKind string, err error) {
-	hyphenIndex := strings.Index(name, "-")
-	if hyphenIndex == -1 {
-		err = errors.New("invalid workload runtime object name, missing hyphen")
-		return
-	}
-
-	workloadKind, err = workloadKindFromLowercase(name[:hyphenIndex])
-	if err != nil {
-		return
-	}
-	workloadName = name[hyphenIndex+1:]
-	return
-}
-
-func workloadKindFromLowercase(lowercaseKind string) (string, error) {
-	switch lowercaseKind {
-	case "deployment":
-		return "Deployment", nil
-	case "statefulset":
-		return "StatefulSet", nil
-	case "daemonset":
-		return "DaemonSet", nil
-	default:
-		return "", fmt.Errorf("unknown workload kind %s", lowercaseKind)
 	}
 }
 

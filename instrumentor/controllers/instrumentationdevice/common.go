@@ -145,7 +145,7 @@ func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient cli
 }
 
 func getWorkloadObject(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) (client.Object, error) {
-	name, kind, err := workload.GetWorkloadInfoRuntimeName(runtimeDetails.Name)
+	name, kind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeDetails.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func getObjectFromKindString(kind string) (client.Object, error) {
 // and always writes the status into the InstrumentedApplication CR
 func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication, isNodeCollectorReady bool) error {
 
-	workloadName, workloadKind, err := workload.GetWorkloadInfoRuntimeName(runtimeDetails.Name)
+	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeDetails.Name)
 	if err != nil {
 		conditions.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), err.Error())
 		return err

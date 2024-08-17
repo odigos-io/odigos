@@ -33,7 +33,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
-	workloadName, workloadKind, err := workload.GetWorkloadInfoRuntimeName(req.Name)
+	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

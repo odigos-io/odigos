@@ -118,7 +118,7 @@ func GetSource(c *gin.Context) {
 	ns := c.Param("namespace")
 	kind := c.Param("kind")
 	name := c.Param("name")
-	k8sObjectName := workload.GetRuntimeObjectName(name, kind)
+	k8sObjectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
 
 	owner, numberOfRunningInstances := getWorkloadObject(c, ns, kind, name)
 	if owner == nil {

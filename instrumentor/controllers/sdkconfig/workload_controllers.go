@@ -1,7 +1,8 @@
-package startlangdetection
+package sdkconfig
 
 import (
 	"context"
+	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -48,6 +49,7 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 func reconcileWorkload(ctx context.Context, k8sClient client.Client, obj client.Object, objKind string, req ctrl.Request, scheme *runtime.Scheme) (ctrl.Result, error) {
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
+	fmt.Println(instConfigName)
 	err := getWorkloadObject(ctx, k8sClient, req, obj)
 	if err != nil {
 		// Deleted objects should be filtered in the event filter
@@ -58,17 +60,14 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, obj client.
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
 	if !instrumented {
+		// deleting odigos workload objects when instrumentation is not effective
+		// is handled by the deleteinstrumentedapplication controllers
+		// TODO: consider consolidating the logic here
 		return ctrl.Result{}, nil
 	}
 
-	err = requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, req.Namespace, obj, scheme)
-	return ctrl.Result{}, err
-}
-
-func getWorkloadObject(ctx context.Context, k8sClient client.Client, req ctrl.Request, obj client.Object) error {
-	return k8sClient.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, obj)
+	return ctrl.Result{}, nil
 }
 
 func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme) error {

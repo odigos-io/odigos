@@ -5,7 +5,7 @@ import "testing"
 func TestGetRuntimeObjectName(t *testing.T) {
 	name := "myworkload"
 	kind := "Deployment"
-	got := GetRuntimeObjectName(name, kind)
+	got := CalculateWorkloadRuntimeObjectName(name, kind)
 	want := "deployment-myworkload"
 	if got != want {
 		t.Errorf("GetRuntimeObjectName() = %v, want %v", got, want)
@@ -15,8 +15,8 @@ func TestGetRuntimeObjectName(t *testing.T) {
 func TestGetTargetFromRuntimeName(t *testing.T) {
 	name := "myworkload"
 	kind := "Deployment"
-	runtimeName := GetRuntimeObjectName(name, kind)
-	gotName, gotKind, err := GetWorkloadInfoRuntimeName(runtimeName)
+	runtimeName := CalculateWorkloadRuntimeObjectName(name, kind)
+	gotName, gotKind, err := ExtractWorkloadInfoFromRuntimeObjectName(runtimeName)
 	if err != nil {
 		t.Errorf("GetTargetFromRuntimeName() error = %v", err)
 	}
@@ -31,8 +31,8 @@ func TestGetTargetFromRuntimeName(t *testing.T) {
 func TestGetTargetFromRuntimeName_HyphenInName(t *testing.T) {
 	name := "my-workload"
 	kind := "Deployment"
-	runtimeName := GetRuntimeObjectName(name, kind)
-	gotName, gotKind, err := GetWorkloadInfoRuntimeName(runtimeName)
+	runtimeName := CalculateWorkloadRuntimeObjectName(name, kind)
+	gotName, gotKind, err := ExtractWorkloadInfoFromRuntimeObjectName(runtimeName)
 	if err != nil {
 		t.Errorf("GetTargetFromRuntimeName() error = %v", err)
 	}
@@ -45,14 +45,14 @@ func TestGetTargetFromRuntimeName_HyphenInName(t *testing.T) {
 }
 
 func TestGetTargetFromRuntimeName_EmptyName(t *testing.T) {
-	_, _, err := GetWorkloadInfoRuntimeName("")
+	_, _, err := ExtractWorkloadInfoFromRuntimeObjectName("")
 	if err == nil {
 		t.Errorf("GetTargetFromRuntimeName() error = %v, want %v", err, "invalid runtime name")
 	}
 }
 
 func TestGetTargetFromRuntimeName_InvalidKind(t *testing.T) {
-	_, _, err := GetWorkloadInfoRuntimeName("invalidworkloadkind-myworkload")
+	_, _, err := ExtractWorkloadInfoFromRuntimeObjectName("invalidworkloadkind-myworkload")
 	if err == nil {
 		t.Errorf("GetTargetFromRuntimeName() error = %v, want %v", err, "unknown kind")
 	}
@@ -69,7 +69,7 @@ func TestGetTargetFromRuntimeName_AllSupportedKinds(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		_, gotKind, err := GetWorkloadInfoRuntimeName(tc.runtimeName)
+		_, gotKind, err := ExtractWorkloadInfoFromRuntimeObjectName(tc.runtimeName)
 		if err != nil {
 			t.Errorf("GetTargetFromRuntimeName() with input %v error = %v", tc.runtimeName, err)
 		}

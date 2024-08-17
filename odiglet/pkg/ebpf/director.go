@@ -140,7 +140,7 @@ func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context, scheme *r
 				continue
 			}
 
-			instrumentedAppName := workload.GetRuntimeObjectName(status.Workload.Name, status.Workload.Kind)
+			instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(status.Workload.Name, status.Workload.Kind)
 			err = inst.UpdateInstrumentationInstanceStatus(ctx, &pod, status.ContainerName, d.client, instrumentedAppName, status.Pid, scheme,
 				inst.WithHealthy(&status.Healthy, string(status.Reason), &status.Message),
 			)

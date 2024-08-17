@@ -15,7 +15,7 @@ type DeploymentReconciler struct {
 }
 
 func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	instrumentedAppName := workload.GetRuntimeObjectName(req.Name, "Deployment")
+	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(req.Name, "Deployment")
 	err := reconcileSingleInstrumentedApplicationByName(ctx, r.Client, instrumentedAppName, req.Namespace)
 	return ctrl.Result{}, err
 }
@@ -25,7 +25,7 @@ type DaemonSetReconciler struct {
 }
 
 func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	instrumentedAppName := workload.GetRuntimeObjectName(req.Name, "DaemonSet")
+	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(req.Name, "DaemonSet")
 	err := reconcileSingleInstrumentedApplicationByName(ctx, r.Client, instrumentedAppName, req.Namespace)
 	return ctrl.Result{}, err
 }
@@ -35,7 +35,7 @@ type StatefulSetReconciler struct {
 }
 
 func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	instrumentedAppName := workload.GetRuntimeObjectName(req.Name, "StatefulSet")
+	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(req.Name, "StatefulSet")
 	err := reconcileSingleInstrumentedApplicationByName(ctx, r.Client, instrumentedAppName, req.Namespace)
 	return ctrl.Result{}, err
 }
