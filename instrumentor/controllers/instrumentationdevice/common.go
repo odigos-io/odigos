@@ -101,15 +101,15 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 
 func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind string, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
 
-	obj, err := getObjectFromKindString(workloadKind)
-	if err != nil {
-		return err
+	workloadObj := workload.ClientObjectFromWorkloadKind(workload.WorkloadKind(workloadKind))
+	if workloadObj == nil {
+		return errors.New("unknown kind")
 	}
 
-	err = kubeClient.Get(ctx, client.ObjectKey{
+	err := kubeClient.Get(ctx, client.ObjectKey{
 		Namespace: namespace,
 		Name:      workloadName,
-	}, obj)
+	}, workloadObj)
 	if err != nil {
 		return client.IgnoreNotFound(err)
 	}
@@ -150,20 +150,20 @@ func getWorkloadObject(ctx context.Context, kubeClient client.Client, runtimeDet
 		return nil, err
 	}
 
-	obj, err := getObjectFromKindString(kind)
-	if err != nil {
-		return nil, err
+	workloadObject := workload.ClientObjectFromWorkloadKind(workload.WorkloadKind(kind))
+	if workloadObject == nil {
+		return nil, errors.New("unknown kind")
 	}
 
 	err = kubeClient.Get(ctx, client.ObjectKey{
 		Namespace: runtimeDetails.Namespace,
 		Name:      name,
-	}, obj)
+	}, workloadObject)
 	if err != nil {
 		return nil, err
 	}
 
-	return obj, nil
+	return workloadObject, nil
 }
 
 func getPodSpecFromObject(obj client.Object) (*corev1.PodTemplateSpec, error) {
@@ -174,19 +174,6 @@ func getPodSpecFromObject(obj client.Object) (*corev1.PodTemplateSpec, error) {
 		return &o.Spec.Template, nil
 	case *appsv1.DaemonSet:
 		return &o.Spec.Template, nil
-	default:
-		return nil, errors.New("unknown kind")
-	}
-}
-
-func getObjectFromKindString(kind string) (client.Object, error) {
-	switch kind {
-	case "Deployment":
-		return &appsv1.Deployment{}, nil
-	case "StatefulSet":
-		return &appsv1.StatefulSet{}, nil
-	case "DaemonSet":
-		return &appsv1.DaemonSet{}, nil
 	default:
 		return nil, errors.New("unknown kind")
 	}

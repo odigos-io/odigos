@@ -40,3 +40,14 @@ func TestWorkloadKindFromClientObject(t *testing.T) {
 	invalid := workload.WorkloadKindFromClientObject(&appsv1.ReplicaSet{})
 	assert.Equal(t, workload.WorkloadKind(""), invalid)
 }
+
+func TestClientObjectFromWorkloadKind(t *testing.T) {
+	dep := workload.ClientObjectFromWorkloadKind(workload.WorkloadKindDeployment)
+	assert.Equal(t, &appsv1.Deployment{}, dep)
+	ds := workload.ClientObjectFromWorkloadKind(workload.WorkloadKindDaemonSet)
+	assert.Equal(t, &appsv1.DaemonSet{}, ds)
+	ss := workload.ClientObjectFromWorkloadKind(workload.WorkloadKindStatefulSet)
+	assert.Equal(t, &appsv1.StatefulSet{}, ss)
+	invalid := workload.ClientObjectFromWorkloadKind("Invalid")
+	assert.Equal(t, nil, invalid)
+}

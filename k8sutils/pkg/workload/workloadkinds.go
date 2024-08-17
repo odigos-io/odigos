@@ -64,3 +64,16 @@ func WorkloadKindFromClientObject(w client.Object) WorkloadKind {
 		return ""
 	}
 }
+
+func ClientObjectFromWorkloadKind(kind WorkloadKind) client.Object {
+	switch kind {
+	case WorkloadKindDeployment:
+		return &v1.Deployment{}
+	case WorkloadKindDaemonSet:
+		return &v1.DaemonSet{}
+	case WorkloadKindStatefulSet:
+		return &v1.StatefulSet{}
+	default:
+		return nil
+	}
+}
