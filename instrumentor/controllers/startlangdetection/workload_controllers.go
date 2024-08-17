@@ -25,7 +25,7 @@ type DeploymentReconciler struct {
 }
 
 func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, &appsv1.Deployment{}, workload.WorkloadKindPascalCaseDeployment, req, r.Scheme)
+	return reconcileWorkload(ctx, r.Client, &appsv1.Deployment{}, workload.WorkloadKindDeployment, req, r.Scheme)
 }
 
 type DaemonSetReconciler struct {
@@ -34,7 +34,7 @@ type DaemonSetReconciler struct {
 }
 
 func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, &appsv1.DaemonSet{}, workload.WorkloadKindPascalCaseDaemonSet, req, r.Scheme)
+	return reconcileWorkload(ctx, r.Client, &appsv1.DaemonSet{}, workload.WorkloadKindDaemonSet, req, r.Scheme)
 }
 
 type StatefulSetReconciler struct {
@@ -43,10 +43,10 @@ type StatefulSetReconciler struct {
 }
 
 func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, &appsv1.StatefulSet{}, workload.WorkloadKindPascalCaseStatefulSet, req, r.Scheme)
+	return reconcileWorkload(ctx, r.Client, &appsv1.StatefulSet{}, workload.WorkloadKindStatefulSet, req, r.Scheme)
 }
 
-func reconcileWorkload(ctx context.Context, k8sClient client.Client, obj client.Object, objKind workload.WorkloadKindPascalCase, req ctrl.Request, scheme *runtime.Scheme) (ctrl.Result, error) {
+func reconcileWorkload(ctx context.Context, k8sClient client.Client, obj client.Object, objKind workload.WorkloadKind, req ctrl.Request, scheme *runtime.Scheme) (ctrl.Result, error) {
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
 	err := getWorkloadObject(ctx, k8sClient, req, obj)
 	if err != nil {

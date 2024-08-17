@@ -5,12 +5,12 @@ package workload
 
 // 1. the pascal case representation of the workload kind
 // it is used in k8s api objects as the `Kind` field.
-type WorkloadKindPascalCase string
+type WorkloadKind string
 
 const (
-	WorkloadKindPascalCaseDeployment  WorkloadKindPascalCase = "Deployment"
-	WorkloadKindPascalCaseDaemonSet   WorkloadKindPascalCase = "DaemonSet"
-	WorkloadKindPascalCaseStatefulSet WorkloadKindPascalCase = "StatefulSet"
+	WorkloadKindDeployment  WorkloadKind = "Deployment"
+	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
+	WorkloadKindStatefulSet WorkloadKind = "StatefulSet"
 )
 
 // 2. the lower case representation of the workload kind
@@ -23,26 +23,26 @@ const (
 	WorkloadKindLowerCaseStatefulSet WorkloadKindLowerCase = "statefulset"
 )
 
-func WorkloadKindLowerCaseFromPascalCase(pascalCase WorkloadKindPascalCase) WorkloadKindLowerCase {
+func WorkloadKindLowerCaseFromKind(pascalCase WorkloadKind) WorkloadKindLowerCase {
 	switch pascalCase {
-	case WorkloadKindPascalCaseDeployment:
+	case WorkloadKindDeployment:
 		return WorkloadKindLowerCaseDeployment
-	case WorkloadKindPascalCaseDaemonSet:
+	case WorkloadKindDaemonSet:
 		return WorkloadKindLowerCaseDaemonSet
-	case WorkloadKindPascalCaseStatefulSet:
+	case WorkloadKindStatefulSet:
 		return WorkloadKindLowerCaseStatefulSet
 	}
 	return ""
 }
 
-func WorkloadKindPascalCaseFromLowerCase(lowerCase WorkloadKindLowerCase) WorkloadKindPascalCase {
+func WorkloadKindFromLowerCase(lowerCase WorkloadKindLowerCase) WorkloadKind {
 	switch lowerCase {
 	case WorkloadKindLowerCaseDeployment:
-		return WorkloadKindPascalCaseDeployment
+		return WorkloadKindDeployment
 	case WorkloadKindLowerCaseDaemonSet:
-		return WorkloadKindPascalCaseDaemonSet
+		return WorkloadKindDaemonSet
 	case WorkloadKindLowerCaseStatefulSet:
-		return WorkloadKindPascalCaseStatefulSet
+		return WorkloadKindStatefulSet
 	}
 	return ""
 }

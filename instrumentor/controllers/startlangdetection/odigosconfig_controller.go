@@ -31,7 +31,7 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	for _, dep := range deps.Items {
 		if !workload.IsInstrumentationDisabledExplicitly(&dep) {
 			req := ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}
-			_, err = reconcileWorkload(ctx, r.Client, &appsv1.Deployment{}, workload.WorkloadKindPascalCaseDeployment, req, r.Scheme)
+			_, err = reconcileWorkload(ctx, r.Client, &appsv1.Deployment{}, workload.WorkloadKindDeployment, req, r.Scheme)
 			if err != nil {
 				logger.Error(err, "error requesting runtime details from odiglets", "name", dep.Name, "namespace", dep.Namespace)
 			}
@@ -48,7 +48,7 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	for _, st := range sts.Items {
 		if !workload.IsInstrumentationDisabledExplicitly(&st) {
 			req := ctrl.Request{NamespacedName: client.ObjectKey{Name: st.Name, Namespace: st.Namespace}}
-			_, err = reconcileWorkload(ctx, r.Client, &appsv1.StatefulSet{}, workload.WorkloadKindPascalCaseStatefulSet, req, r.Scheme)
+			_, err = reconcileWorkload(ctx, r.Client, &appsv1.StatefulSet{}, workload.WorkloadKindStatefulSet, req, r.Scheme)
 			if err != nil {
 				logger.Error(err, "error requesting runtime details from odiglets", "name", st.Name, "namespace", st.Namespace)
 			}
@@ -65,7 +65,7 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	for _, ds := range dss.Items {
 		if !workload.IsInstrumentationDisabledExplicitly(&ds) {
 			req := ctrl.Request{NamespacedName: client.ObjectKey{Name: ds.Name, Namespace: ds.Namespace}}
-			_, err = reconcileWorkload(ctx, r.Client, &appsv1.DaemonSet{}, workload.WorkloadKindPascalCaseDaemonSet, req, r.Scheme)
+			_, err = reconcileWorkload(ctx, r.Client, &appsv1.DaemonSet{}, workload.WorkloadKindDaemonSet, req, r.Scheme)
 			if err != nil {
 				logger.Error(err, "error requesting runtime details from odiglets", "name", ds.Name, "namespace", ds.Namespace)
 			}

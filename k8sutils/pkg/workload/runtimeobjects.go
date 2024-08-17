@@ -11,7 +11,7 @@ import (
 // and then a hyphen and the workload name
 // example: deployment-myapp
 
-func CalculateWorkloadRuntimeObjectName[T string | WorkloadKindPascalCase | WorkloadKindLowerCase](workloadName string, workloadKind T) string {
+func CalculateWorkloadRuntimeObjectName[T string | WorkloadKind | WorkloadKindLowerCase](workloadName string, workloadKind T) string {
 	return strings.ToLower(string(workloadKind) + "-" + workloadName)
 }
 
@@ -24,12 +24,12 @@ func ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName string) (workloa
 
 	//convert the lowercase kind to pascal case and validate it
 	workloadKindLowerCase := WorkloadKindLowerCase(parts[0])
-	WorkloadKindPascalCase := WorkloadKindPascalCaseFromLowerCase(workloadKindLowerCase)
-	if WorkloadKindPascalCase == "" {
+	workloadKindPascalCase := WorkloadKindFromLowerCase(workloadKindLowerCase)
+	if workloadKindPascalCase == "" {
 		err = errors.New("invalid workload runtime object name, unknown kind")
 		return
 	}
-	workloadKind = string(WorkloadKindPascalCase)
+	workloadKind = string(workloadKindPascalCase)
 
 	workloadName = parts[1]
 
