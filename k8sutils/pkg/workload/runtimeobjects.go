@@ -11,8 +11,8 @@ import (
 // and then a hyphen and the workload name
 // example: deployment-myapp
 
-func CalculateWorkloadRuntimeObjectName(workloadName string, workloadKind string) string {
-	return strings.ToLower(workloadKind + "-" + workloadName)
+func CalculateWorkloadRuntimeObjectName[T string | WorkloadKindPascalCase | WorkloadKindLowerCase](workloadName string, workloadKind T) string {
+	return strings.ToLower(string(workloadKind) + "-" + workloadName)
 }
 
 func ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName string) (workloadName string, workloadKind string, err error) {
