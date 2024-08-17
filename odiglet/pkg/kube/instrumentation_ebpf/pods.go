@@ -119,7 +119,7 @@ func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.P
 
 		return &workload.PodWorkload{
 			Name:      name,
-			Kind:      kind,
+			Kind:      workload.WorkloadKind(kind),
 			Namespace: pod.Namespace,
 		}, nil
 	}

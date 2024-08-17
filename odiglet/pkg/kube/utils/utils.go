@@ -42,19 +42,19 @@ func GetRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 	return filteredPods, nil
 }
 
-func GetResourceAttributes(workload *workload.PodWorkload, podName string) []attribute.KeyValue {
+func GetResourceAttributes(podWorkload *workload.PodWorkload, podName string) []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
-		semconv.K8SNamespaceName(workload.Namespace),
+		semconv.K8SNamespaceName(podWorkload.Namespace),
 		semconv.K8SPodName(podName),
 	}
 
-	switch workload.Kind {
-	case "Deployment":
-		attrs = append(attrs, semconv.K8SDeploymentName(workload.Name))
-	case "StatefulSet":
-		attrs = append(attrs, semconv.K8SStatefulSetName(workload.Name))
-	case "DaemonSet":
-		attrs = append(attrs, semconv.K8SDaemonSetName(workload.Name))
+	switch podWorkload.Kind {
+	case workload.WorkloadKindDeployment:
+		attrs = append(attrs, semconv.K8SDeploymentName(podWorkload.Name))
+	case workload.WorkloadKindStatefulSet:
+		attrs = append(attrs, semconv.K8SStatefulSetName(podWorkload.Name))
+	case workload.WorkloadKindDaemonSet:
+		attrs = append(attrs, semconv.K8SDaemonSetName(podWorkload.Name))
 	}
 
 	return attrs

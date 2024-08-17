@@ -30,7 +30,7 @@ func TestGetPodWorkloadObject(t *testing.T) {
 				},
 			},
 			expectedWorkload: workload.PodWorkload{
-				Kind:      "Deployment",
+				Kind:      workload.WorkloadKindDeployment,
 				Name:      "deployment",
 				Namespace: "default",
 			},
@@ -49,7 +49,7 @@ func TestGetPodWorkloadObject(t *testing.T) {
 				},
 			},
 			expectedWorkload: workload.PodWorkload{
-				Kind:      "Deployment",
+				Kind:      workload.WorkloadKindDeployment,
 				Name:      "deployment-foo",
 				Namespace: "default",
 			},
@@ -68,7 +68,7 @@ func TestGetPodWorkloadObject(t *testing.T) {
 				},
 			},
 			expectedWorkload: workload.PodWorkload{
-				Kind:      "DaemonSet",
+				Kind:      workload.WorkloadKindDaemonSet,
 				Name:      "someDaemonSet",
 				Namespace: "default",
 			},
@@ -87,7 +87,7 @@ func TestGetPodWorkloadObject(t *testing.T) {
 				},
 			},
 			expectedWorkload: workload.PodWorkload{
-				Kind:      "StatefulSet",
+				Kind:      workload.WorkloadKindStatefulSet,
 				Name:      "someStatefulSet",
 				Namespace: "default",
 			},

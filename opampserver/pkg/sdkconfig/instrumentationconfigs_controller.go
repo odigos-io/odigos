@@ -39,7 +39,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 
 	podWorkload := workload.PodWorkload{
 		Namespace: req.Namespace,
-		Kind:      workloadKind,
+		Kind:      workload.WorkloadKind(workloadKind),
 		Name:      workloadName,
 	}
 

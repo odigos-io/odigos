@@ -9,5 +9,5 @@ package workload
 type PodWorkload struct {
 	Name      string
 	Namespace string
-	Kind      string
+	Kind      WorkloadKind
 }
