@@ -3,13 +3,13 @@ In addition to unit tests, Odigos has a suite of end-to-end tests that are run o
 These tests are installing multiple microservices, instrument with Odigos, generate traffic, and validate the results.
 
 ## Tools
-- [Kubernetes In Docker (KinD)](https://kind.sigs.k8s.io/) - a tool for running local Kubernetes clusters using Docker container “nodes”.
+- [Kubernetes In Docker (Kind)](https://kind.sigs.k8s.io/) - a tool for running local Kubernetes clusters using Docker container “nodes”.
 - [Chainsaw](https://kyverno.github.io/chainsaw/) - To orchestrate the different Kubernetes actions.
 - [Tempo](https://github.com/grafana/tempo) - Distributed tracing backend. Chosen due to its query language that allows for easy querying of traces.
 
 ## Running e2e locally
 To run the end-to-end tests you need to have the following:
-- kubectl configured to a fresh Kubernetes cluster. For local development, you can use KinD but also managed clusters like EKS should work.
+- kubectl configured to a fresh Kubernetes cluster. For local development, you can use Kind but also managed clusters like EKS should work.
 - yq and jq installed. You can install it via:
 ```bash
 brew install yq
@@ -19,7 +19,7 @@ brew install jq
 ```bash
 go build -tags=embed_manifests -o ./cli/odigos ./cli
 ```
-- Odigos images tagged with `e2e-test` preloaded to the cluster. If you are using KinD you can run:
+- Odigos images tagged with `e2e-test` preloaded to the cluster. If you are using Kind you can run:
 ```bash
 TAG=e2e-test make build-images load-to-kind 
 ```
@@ -125,4 +125,3 @@ kubectl port-forward svc/grafana 3080:80 -n traces
 ```
 {resource.service.name = "coupon"}
 ```
-

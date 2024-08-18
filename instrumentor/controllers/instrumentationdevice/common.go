@@ -73,7 +73,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		return err
 	}
 
-	odigosConfig, err := k8sutils.GetCurrentConfig(ctx, kubeClient)
+	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, kubeClient)
 	if err != nil {
 		return err
 	}

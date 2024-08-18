@@ -46,7 +46,7 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 		return errNoPodsFound
 	}
 
-	odigosConfig, err := k8sutils.GetCurrentConfig(ctx, kubeClient)
+	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, kubeClient)
 	if err != nil {
 		logger.Error(err, "failed to get odigos config")
 		return err

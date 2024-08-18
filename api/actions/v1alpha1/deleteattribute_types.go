@@ -46,6 +46,8 @@ type DeleteAttributeStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=deleteattributes,scope=Namespaced,shortName=da
+//+kubebuilder:metadata:labels=odigos.io/config=1
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // DeleteAttribute is the Schema for the DeleteAttribute odigos action API
 type DeleteAttribute struct {
