@@ -165,6 +165,7 @@ spec:
                                   type: object
                                 type: array
                               fraction:
+                                default: 1
                                 description: |-
                                   The fraction of spans to sample, in the range [0, 1].
                                   If the fraction is 0, no spans are sampled.
@@ -176,6 +177,7 @@ spec:
                             type: object
                           type: array
                         fallbackFraction:
+                          default: 1
                           description: |-
                             Used as a fallback if all rules evaluate to false,
                             it may be empty - in this case the default value will be 1 - all spans are sampled.
@@ -184,6 +186,7 @@ spec:
                           type: number
                       required:
                       - attributesAndSamplerRules
+                      - fallbackFraction
                       type: object
                     instrumentationLibraryConfigs:
                       description: configurations for the instrumentation libraries

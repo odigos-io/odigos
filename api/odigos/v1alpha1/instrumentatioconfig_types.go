@@ -83,7 +83,8 @@ type AttributesAndSamplerRule struct {
 	// The fraction of spans to sample, in the range [0, 1].
 	// If the fraction is 0, no spans are sampled.
 	// If the fraction is 1, all spans are sampled.
-	Fraction *float64 `json:"fraction"`
+	// +kubebuilder:default:=1
+	Fraction float64 `json:"fraction"`
 }
 
 // HeadSamplingConfig is a set of attribute rules.
@@ -96,7 +97,8 @@ type HeadSamplingConfig struct {
 	// it may be empty - in this case the default value will be 1 - all spans are sampled.
 	// it should be a float value in the range [0, 1] - the fraction of spans to sample.
 	// a value of 0 means no spans are sampled if none of the rules evaluate to true.
-	FallbackFraction *float64 `json:"fallbackFraction,omitempty"`
+	// +kubebuilder:default:=1
+	FallbackFraction float64 `json:"fallbackFraction"`
 }
 
 type InstrumentationLibraryConfig struct {
