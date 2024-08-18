@@ -126,33 +126,19 @@ spec:
                         This config currently only applies to root spans.
                         In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
                       properties:
-                        fallbackFraction:
-                          description: |-
-                            Used as a fallback if all rules evaluate to false,
-                            it may be empty - in this case the default value will be 1 - all spans are sampled.
-                            it should be a float value in the range [0, 1] - the fraction of spans to sample.
-                            a value of 0 means no spans are sampled if none of the rules evaluate to true.
-                          type: number
-                        rules:
+                        attributesAndSamplerRules:
                           items:
                             description: |-
-                              AttributesAndSampler is a set of attribute compare samplers that are ANDed together.
-                              If all attribute compare samplers evaluate to true, the AND sampler evaluates to true,
+                              AttributesAndSamplerRule is a set of AttributeCondition that are ANDed together.
+                              If all attribute conditions evaluate to true, the AND sampler evaluates to true,
                               and the fraction is used to determine the sampling decision.
                               If any of the attribute compare samplers evaluate to false,
                               the fraction is not used and the rule is skipped.
-
-
-                              An "empty" AttributesAndSampler with no operands is considered to always evaluate to true.
+                              An "empty" AttributesAndSamplerRule with no attribute conditions is considered to always evaluate to true.
                               and the fraction is used to determine the sampling decision.
+                              This entity is refered to a rule in Odigos terminology for head-sampling.
                             properties:
-                              fraction:
-                                description: |-
-                                  The fraction of spans to sample, in the range [0, 1].
-                                  If the fraction is 0, no spans are sampled.
-                                  If the fraction is 1, all spans are sampled.
-                                type: number
-                              operands:
+                              attributeConditions:
                                 items:
                                   description: '''Operand'' represents the attributes
                                     and values that an operator acts upon in an expression'
@@ -163,6 +149,11 @@ spec:
                                     operator:
                                       description: The operator to use to compare
                                         the attribute value.
+                                      enum:
+                                      - equals
+                                      - notEquals
+                                      - endWith
+                                      - startWith
                                       type: string
                                     val:
                                       description: currently only string values are
@@ -170,58 +161,30 @@ spec:
                                       type: string
                                   required:
                                   - key
-                                  - operator
                                   - val
                                   type: object
                                 type: array
+                              fraction:
+                                description: |-
+                                  The fraction of spans to sample, in the range [0, 1].
+                                  If the fraction is 0, no spans are sampled.
+                                  If the fraction is 1, all spans are sampled.
+                                type: number
                             required:
+                            - attributeConditions
                             - fraction
-                            - operands
                             type: object
                           type: array
+                        fallbackFraction:
+                          description: |-
+                            Used as a fallback if all rules evaluate to false,
+                            it may be empty - in this case the default value will be 1 - all spans are sampled.
+                            it should be a float value in the range [0, 1] - the fraction of spans to sample.
+                            a value of 0 means no spans are sampled if none of the rules evaluate to true.
+                          type: number
                       required:
-                      - rules
+                      - attributesAndSamplerRules
                       type: object
-                    instrumentationLibraryConfigs:
-                      description: configurations for the instrumentation libraries
-                        the the SDK should use
-                      items:
-                        properties:
-                          instrumentationLibraryName:
-                            description: |-
-                              The name of the instrumentation library
-                              - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
-                            properties:
-                              instrumentationLibraryName:
-                                type: string
-                              spanKind:
-                                description: |-
-                                  SpanKind is already defined in opentelemetry-go as int.
-                                  this value can go into the CRD in which case it will be string for user convenience.
-                                enum:
-                                - client
-                                - server
-                                - producer
-                                - consumer
-                                - internal
-                                type: string
-                            required:
-                            - instrumentationLibraryName
-                            type: object
-                          traceConfig:
-                            properties:
-                              enabled:
-                                description: |-
-                                  Whether the instrumentation library is enabled to record traces.
-                                  When false, it is expected that the instrumentation library does not produce any spans regardless of any other configuration.
-                                  When true, the instrumentation library should produce spans according to the other configuration options.
-                                  If not specified, the default value for this signal should be used (whether to enable libraries by default or not).
-                                type: boolean
-                            type: object
-                        required:
-                        - instrumentationLibraryName
-                        type: object
-                      type: array
                     language:
                       description: The language of the SDK being configured
                       enum:
@@ -234,9 +197,49 @@ spec:
                       - unknown
                       - ignored
                       type: string
+                    libraryConfigs:
+                      description: configurations for the instrumentation libraries
+                        the the SDK should use
+                      items:
+                        properties:
+                          libraryId:
+                            properties:
+                              libraryName:
+                                description: |-
+                                  The name of the instrumentation library
+                                  - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
+                                type: string
+                              spanKind:
+                                description: |-
+                                  SpanKind is only supported by Golang and will be ignored for any other SDK language.
+                                  In Go, SpanKind is used because the same instrumentation library can be utilized for different span kinds (e.g., client/server).
+                                enum:
+                                - client
+                                - server
+                                - producer
+                                - consumer
+                                - internal
+                                type: string
+                            required:
+                            - libraryName
+                            type: object
+                          traceConfig:
+                            properties:
+                              enabled:
+                                description: |-
+                                  Whether the instrumentation library is enabled to record traces.
+                                  When false, it is expected that the instrumentation library does not produce any spans regardless of any other configuration.
+                                  When true, the instrumentation library should produce spans according to the other configuration options.
+                                  If not specified, the default value for this signal should be used (whether to enable libraries by default or not).
+                                type: boolean
+                            type: object
+                        required:
+                        - libraryId
+                        type: object
+                      type: array
                   required:
-                  - instrumentationLibraryConfigs
                   - language
+                  - libraryConfigs
                   type: object
                 type: array
             type: object

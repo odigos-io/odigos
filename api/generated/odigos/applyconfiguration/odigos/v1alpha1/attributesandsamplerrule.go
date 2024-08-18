@@ -20,7 +20,7 @@ package v1alpha1
 // AttributesAndSamplerRuleApplyConfiguration represents an declarative configuration of the AttributesAndSamplerRule type for use
 // with apply.
 type AttributesAndSamplerRuleApplyConfiguration struct {
-	AttributeConditions []AttributeConditionApplyConfiguration `json:"operands,omitempty"`
+	AttributeConditions []AttributeConditionApplyConfiguration `json:"attributeConditions,omitempty"`
 	Fraction            *float64                               `json:"fraction,omitempty"`
 }
 

@@ -20,7 +20,7 @@ package v1alpha1
 // InstrumentationLibraryConfigApplyConfiguration represents an declarative configuration of the InstrumentationLibraryConfig type for use
 // with apply.
 type InstrumentationLibraryConfigApplyConfiguration struct {
-	InstrumentationLibraryId *InstrumentationLibraryIdApplyConfiguration           `json:"instrumentationLibraryName,omitempty"`
+	InstrumentationLibraryId *InstrumentationLibraryIdApplyConfiguration           `json:"libraryId,omitempty"`
 	TraceConfig              *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
 }
 

@@ -20,7 +20,7 @@ package v1alpha1
 // HeadSamplingConfigApplyConfiguration represents an declarative configuration of the HeadSamplingConfig type for use
 // with apply.
 type HeadSamplingConfigApplyConfiguration struct {
-	AttributesAndSamplerRules []AttributesAndSamplerRuleApplyConfiguration `json:"rules,omitempty"`
+	AttributesAndSamplerRules []AttributesAndSamplerRuleApplyConfiguration `json:"attributesAndSamplerRules,omitempty"`
 	FallbackFraction          *float64                                     `json:"fallbackFraction,omitempty"`
 }
 

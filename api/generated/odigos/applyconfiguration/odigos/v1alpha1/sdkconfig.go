@@ -25,7 +25,7 @@ import (
 // with apply.
 type SdkConfigApplyConfiguration struct {
 	Language                      *common.ProgrammingLanguage                      `json:"language,omitempty"`
-	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration `json:"instrumentationLibraryConfigs,omitempty"`
+	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration `json:"libraryConfigs,omitempty"`
 	HeadSamplingConfig            *HeadSamplingConfigApplyConfiguration            `json:"headSamplerConfig,omitempty"`
 }
 

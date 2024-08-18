@@ -24,7 +24,7 @@ import (
 // InstrumentationLibraryIdApplyConfiguration represents an declarative configuration of the InstrumentationLibraryId type for use
 // with apply.
 type InstrumentationLibraryIdApplyConfiguration struct {
-	InstrumentationLibraryName *string          `json:"instrumentationLibraryName,omitempty"`
+	InstrumentationLibraryName *string          `json:"libraryName,omitempty"`
 	SpanKind                   *common.SpanKind `json:"spanKind,omitempty"`
 }
 
