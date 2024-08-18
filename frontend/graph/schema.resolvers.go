@@ -23,6 +23,7 @@ import (
 
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
 func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
+
 	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, name, nil)
 	if err != nil {
 		return nil, err
@@ -62,9 +63,9 @@ func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *mode
 	return k8sActualSource, nil
 }
 
-// Conditions is the resolver for the conditions field.
-func (r *configuredDestinationResolver) Conditions(ctx context.Context, obj *model.ConfiguredDestination) ([]*model.Condition, error) {
-	panic(fmt.Errorf("not implemented: Conditions - conditions"))
+// Type is the resolver for the type field.
+func (r *destinationResolver) Type(ctx context.Context, obj *model.Destination) (string, error) {
+	panic(fmt.Errorf("not implemented: Type - type"))
 }
 
 // Fields is the resolver for the fields field.
@@ -231,31 +232,6 @@ func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, e
 	return gqlResponse, nil
 }
 
-// // Destinations is the resolver for the destinations field.
-func (r *queryResolver) Destinations(ctx context.Context) ([]*model.ConfiguredDestination, error) {
-	// Fetch destinations from the Kubernetes client
-	odigosns := consts.DefaultOdigosNamespace
-	dests, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	var resp []*model.ConfiguredDestination
-	for _, dest := range dests.Items {
-		// Fetch secret fields for the destination
-		secretFields, err := services.GetDestinationSecretFields(ctx, odigosns, &dest)
-		if err != nil {
-			return nil, err
-		}
-
-		// Convert the k8s destination to the GraphQL destination format
-		endpointDest := services.K8sDestinationToConfiguredDestination(dest, secretFields)
-		resp = append(resp, &endpointDest)
-	}
-
-	return resp, nil
-}
-
 // DestinationTypes is the resolver for the destinationTypes field.
 func (r *queryResolver) DestinationTypes(ctx context.Context) (*model.GetDestinationTypesResponse, error) {
 	destTypes := services.GetDestinationTypes()
@@ -294,11 +270,6 @@ func (r *queryResolver) DestinationTypeDetails(ctx context.Context, typeArg stri
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 
-// ConfiguredDestination returns ConfiguredDestinationResolver implementation.
-func (r *Resolver) ConfiguredDestination() ConfiguredDestinationResolver {
-	return &configuredDestinationResolver{r}
-}
-
 // Destination returns DestinationResolver implementation.
 func (r *Resolver) Destination() DestinationResolver { return &destinationResolver{r} }
 
@@ -314,18 +285,7 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type computePlatformResolver struct{ *Resolver }
-type configuredDestinationResolver struct{ *Resolver }
 type destinationResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *configuredDestinationResolver) Fields(ctx context.Context, obj *model.ConfiguredDestination) ([]string, error) {
-	panic(fmt.Errorf("not implemented: Fields - fields"))
-}
