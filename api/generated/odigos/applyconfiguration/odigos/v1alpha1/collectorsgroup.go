@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// CollectorsGroupApplyConfiguration represents an declarative configuration of the CollectorsGroup type for use
+// CollectorsGroupApplyConfiguration represents a declarative configuration of the CollectorsGroup type for use
 // with apply.
 type CollectorsGroupApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -32,7 +32,7 @@ type CollectorsGroupApplyConfiguration struct {
 	Status                           *CollectorsGroupStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// CollectorsGroup constructs an declarative configuration of the CollectorsGroup type for use with
+// CollectorsGroup constructs a declarative configuration of the CollectorsGroup type for use with
 // apply.
 func CollectorsGroup(name, namespace string) *CollectorsGroupApplyConfiguration {
 	b := &CollectorsGroupApplyConfiguration{}
@@ -215,4 +215,10 @@ func (b *CollectorsGroupApplyConfiguration) WithSpec(value *CollectorsGroupSpecA
 func (b *CollectorsGroupApplyConfiguration) WithStatus(value *CollectorsGroupStatusApplyConfiguration) *CollectorsGroupApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *CollectorsGroupApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

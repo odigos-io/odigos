@@ -17,7 +17,7 @@ var logoutCmd = &cobra.Command{
 	Use:   "logout",
 	Short: "Logout from Odigos cloud",
 	Long: `Disconnect this Odigos installation from your odigos cloud account.
-	
+
 	After running this command, you will no longer be able to control and monitor this Odigos installation from Odigos cloud.
 	You can run 'odigos ui' to manage your Odigos installation locally.
 	`,
@@ -65,10 +65,10 @@ var logoutCmd = &cobra.Command{
 			fmt.Println("Odigos cloud logout failed - unable to read the current Odigos configuration.")
 			os.Exit(1)
 		}
-		config.Spec.ConfigVersion += 1
+		config.ConfigVersion += 1
 
 		emptyApiKey := ""
-		resourceManagers := resources.CreateResourceManagers(client, ns, common.CommunityOdigosTier, &emptyApiKey, &config.Spec)
+		resourceManagers := resources.CreateResourceManagers(client, ns, common.CommunityOdigosTier, &emptyApiKey, config)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 		if err != nil {
 			fmt.Println("Odigos cloud logout failed - unable to apply Odigos resources.")

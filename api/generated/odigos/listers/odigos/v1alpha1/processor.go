@@ -19,8 +19,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -37,25 +37,17 @@ type ProcessorLister interface {
 
 // processorLister implements the ProcessorLister interface.
 type processorLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.Processor]
 }
 
 // NewProcessorLister returns a new ProcessorLister.
 func NewProcessorLister(indexer cache.Indexer) ProcessorLister {
-	return &processorLister{indexer: indexer}
-}
-
-// List lists all Processors in the indexer.
-func (s *processorLister) List(selector labels.Selector) (ret []*v1alpha1.Processor, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Processor))
-	})
-	return ret, err
+	return &processorLister{listers.New[*v1alpha1.Processor](indexer, v1alpha1.Resource("processor"))}
 }
 
 // Processors returns an object that can list and get Processors.
 func (s *processorLister) Processors(namespace string) ProcessorNamespaceLister {
-	return processorNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return processorNamespaceLister{listers.NewNamespaced[*v1alpha1.Processor](s.ResourceIndexer, namespace)}
 }
 
 // ProcessorNamespaceLister helps list and get Processors.
@@ -73,26 +65,5 @@ type ProcessorNamespaceLister interface {
 // processorNamespaceLister implements the ProcessorNamespaceLister
 // interface.
 type processorNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Processors in the indexer for a given namespace.
-func (s processorNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.Processor, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Processor))
-	})
-	return ret, err
-}
-
-// Get retrieves the Processor from the indexer for a given namespace and name.
-func (s processorNamespaceLister) Get(name string) (*v1alpha1.Processor, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("processor"), name)
-	}
-	return obj.(*v1alpha1.Processor), nil
+	listers.ResourceIndexer[*v1alpha1.Processor]
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -72,8 +73,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		return err
 	}
 
-	var odigosConfig odigosv1.OdigosConfiguration
-	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: consts.OdigosConfigurationName}, &odigosConfig)
+	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, kubeClient)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 			return err
 		}
 
-		return instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, odigosConfig.Spec.DefaultSDKs, obj)
+		return instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, odigosConfig.DefaultSDKs, obj)
 	})
 
 	if err != nil {
@@ -99,32 +99,32 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 	return nil
 }
 
-func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind string, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
+func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind workload.WorkloadKind, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
 
-	obj, err := getObjectFromKindString(workloadKind)
-	if err != nil {
-		return err
+	workloadObj := workload.ClientObjectFromWorkloadKind(workloadKind)
+	if workloadObj == nil {
+		return errors.New("unknown kind")
 	}
 
-	err = kubeClient.Get(ctx, client.ObjectKey{
+	err := kubeClient.Get(ctx, client.ObjectKey{
 		Namespace: namespace,
 		Name:      workloadName,
-	}, obj)
+	}, workloadObj)
 	if err != nil {
 		return client.IgnoreNotFound(err)
 	}
 
-	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
+	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, workloadObj, func() error {
 
 		// clear old ebpf instrumentation annotation, just in case it still exists
-		clearInstrumentationEbpf(obj)
-		podSpec, err := getPodSpecFromObject(obj)
+		clearInstrumentationEbpf(workloadObj)
+		podSpec, err := getPodSpecFromObject(workloadObj)
 		if err != nil {
 			return err
 		}
 
 		instrumentation.RevertInstrumentationDevices(podSpec)
-		err = instrumentation.RevertEnvOverwrites(obj, podSpec)
+		err = instrumentation.RevertEnvOverwrites(workloadObj, podSpec)
 		if err != nil {
 			return err
 		}
@@ -138,32 +138,32 @@ func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient cli
 	modified := result != controllerutil.OperationResultNone
 	if modified {
 		logger := log.FromContext(ctx)
-		logger.V(0).Info("removed instrumentation device from workload", "namespace", obj.GetNamespace(), "kind", obj.GetObjectKind(), "name", obj.GetName(), "reason", uninstrumentReason)
+		logger.V(0).Info("removed instrumentation device from workload", "namespace", workloadObj.GetNamespace(), "kind", workloadObj.GetObjectKind(), "name", workloadObj.GetName(), "reason", uninstrumentReason)
 	}
 
 	return nil
 }
 
 func getWorkloadObject(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) (client.Object, error) {
-	name, kind, err := workload.GetWorkloadInfoRuntimeName(runtimeDetails.Name)
+	name, kind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeDetails.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	obj, err := getObjectFromKindString(kind)
-	if err != nil {
-		return nil, err
+	workloadObject := workload.ClientObjectFromWorkloadKind(kind)
+	if workloadObject == nil {
+		return nil, errors.New("unknown kind")
 	}
 
 	err = kubeClient.Get(ctx, client.ObjectKey{
 		Namespace: runtimeDetails.Namespace,
 		Name:      name,
-	}, obj)
+	}, workloadObject)
 	if err != nil {
 		return nil, err
 	}
 
-	return obj, nil
+	return workloadObject, nil
 }
 
 func getPodSpecFromObject(obj client.Object) (*corev1.PodTemplateSpec, error) {
@@ -179,25 +179,12 @@ func getPodSpecFromObject(obj client.Object) (*corev1.PodTemplateSpec, error) {
 	}
 }
 
-func getObjectFromKindString(kind string) (client.Object, error) {
-	switch kind {
-	case "Deployment":
-		return &appsv1.Deployment{}, nil
-	case "StatefulSet":
-		return &appsv1.StatefulSet{}, nil
-	case "DaemonSet":
-		return &appsv1.DaemonSet{}, nil
-	default:
-		return nil, errors.New("unknown kind")
-	}
-}
-
 // reconciles a single workload, which might be triggered by a change in multiple resources.
 // each time a relevant resource changes, this function is called to reconcile the workload
 // and always writes the status into the InstrumentedApplication CR
 func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication, isNodeCollectorReady bool) error {
 
-	workloadName, workloadKind, err := workload.GetWorkloadInfoRuntimeName(runtimeDetails.Name)
+	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeDetails.Name)
 	if err != nil {
 		conditions.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), err.Error())
 		return err

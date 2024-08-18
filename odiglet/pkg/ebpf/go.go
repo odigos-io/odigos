@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/consts"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
@@ -24,7 +24,7 @@ func NewGoInstrumentationFactory() InstrumentationFactory[*GoOtelEbpfSdk] {
 	return &GoInstrumentationFactory{}
 }
 
-func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (*GoOtelEbpfSdk, error) {
+func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *workload.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (*GoOtelEbpfSdk, error) {
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
 		otlptracegrpc.WithInsecure(),

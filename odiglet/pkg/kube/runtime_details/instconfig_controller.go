@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
 
@@ -64,7 +64,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 }
 
 func getWorkloadAndLabelsfromOwner(ctx context.Context, k8sClient client.Client, ns string, ownerReference metav1.OwnerReference) (client.Object, map[string]string, error) {
-	workloadName, workloadKind, err := utils.GetWorkloadNameFromOwnerReference(ownerReference)
+	workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(ownerReference)
 	if err != nil {
 		return nil, nil, err
 	}

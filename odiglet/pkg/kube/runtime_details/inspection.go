@@ -8,12 +8,11 @@ import (
 
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
@@ -47,14 +46,13 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 		return errNoPodsFound
 	}
 
-	odigosConfig := &odigosv1.OdigosConfiguration{}
-	err = kubeClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: consts.OdigosConfigurationName}, odigosConfig)
+	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, kubeClient)
 	if err != nil {
-		logger.Error(err, "error fetching odigos configuration")
+		logger.Error(err, "failed to get odigos config")
 		return err
 	}
 
-	runtimeResults, err := runtimeInspection(pods, odigosConfig.Spec.IgnoredContainers)
+	runtimeResults, err := runtimeInspection(pods, odigosConfig.IgnoredContainers)
 	if err != nil {
 		logger.Error(err, "error inspecting pods")
 		return err
@@ -141,7 +139,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 func persistRuntimeResults(ctx context.Context, results []odigosv1.RuntimeDetailsByContainer, owner client.Object, kubeClient client.Client, scheme *runtime.Scheme) error {
 	updatedIa := &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      workload.GetRuntimeObjectName(owner.GetName(), owner.GetObjectKind().GroupVersionKind().Kind),
+			Name:      workload.CalculateWorkloadRuntimeObjectName(owner.GetName(), owner.GetObjectKind().GroupVersionKind().Kind),
 			Namespace: owner.GetNamespace(),
 		},
 	}
@@ -169,8 +167,8 @@ func persistRuntimeResults(ctx context.Context, results []odigosv1.RuntimeDetail
 	return nil
 }
 
-func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *common.PodWorkload) (*odigosv1.InstrumentedApplication, error) {
-	instrumentedApplicationName := workload.GetRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
+func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *workload.PodWorkload) (*odigosv1.InstrumentedApplication, error) {
+	instrumentedApplicationName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
 
 	var runtimeDetails odigosv1.InstrumentedApplication
 	err := kubeClient.Get(ctx, client.ObjectKey{

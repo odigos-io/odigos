@@ -109,8 +109,9 @@ If the instrumentation devices are missing:
 
 The instrumentation devices is selected based on the programming language and the configuration in the global odigos config resource:
 
-```
-kubectl get odigosconfigurations.odigos.io -n odigos-system odigos-config -o yaml
+```bash
+kubectl get configmap -n odigos-system odigos-config -o json | jq -r '.data."config.yaml"' | jq .
+# or, if your environment does not have jq, examine "config.yaml" field under "data" of the configmap
 ```
 
 To examine the resources for a workload, use this as an example:

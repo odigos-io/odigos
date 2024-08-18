@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
@@ -51,7 +52,7 @@ func NewSdkConfigManager(logger logr.Logger, mgr ctrl.Manager, connectionCache *
 	return sdkConfigManager
 }
 
-func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttributes []configresolvers.ResourceAttribute, podWorkload *common.PodWorkload, instrumentedAppName string) (*protobufs.AgentRemoteConfig, error) {
+func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttributes []configresolvers.ResourceAttribute, podWorkload *workload.PodWorkload, instrumentedAppName string) (*protobufs.AgentRemoteConfig, error) {
 
 	var nodeCollectorGroup v1alpha1.CollectorsGroup
 	err := m.mgr.GetClient().Get(ctx, client.ObjectKey{Name: k8sconsts.OdigosNodeCollectorCollectorGroupName, Namespace: m.odigosNs}, &nodeCollectorGroup)

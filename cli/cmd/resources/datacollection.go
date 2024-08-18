@@ -3,9 +3,9 @@ package resources
 import (
 	"context"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/common"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -113,10 +113,10 @@ func NewDataCollectionClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 type dataCollectionResourceManager struct {
 	client *kube.Client
 	ns     string
-	config *odigosv1.OdigosConfigurationSpec
+	config *common.OdigosConfiguration
 }
 
-func NewDataCollectionResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) resourcemanager.ResourceManager {
+func NewDataCollectionResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration) resourcemanager.ResourceManager {
 	return &dataCollectionResourceManager{client: client, ns: ns, config: config}
 }
 

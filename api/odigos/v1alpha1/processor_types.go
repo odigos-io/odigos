@@ -71,6 +71,8 @@ type ProcessorStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:metadata:labels=odigos.io/config=1
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // Processor is the Schema for an Opentelemetry Collector Processor that is added to Odigos pipeline
 type Processor struct {

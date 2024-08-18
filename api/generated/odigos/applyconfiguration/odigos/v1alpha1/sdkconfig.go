@@ -21,7 +21,7 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// SdkConfigApplyConfiguration represents an declarative configuration of the SdkConfig type for use
+// SdkConfigApplyConfiguration represents a declarative configuration of the SdkConfig type for use
 // with apply.
 type SdkConfigApplyConfiguration struct {
 	Language                      *common.ProgrammingLanguage                      `json:"language,omitempty"`
@@ -29,7 +29,7 @@ type SdkConfigApplyConfiguration struct {
 	HeadSamplingConfig            *HeadSamplingConfigApplyConfiguration            `json:"headSamplerConfig,omitempty"`
 }
 
-// SdkConfigApplyConfiguration constructs an declarative configuration of the SdkConfig type for use with
+// SdkConfigApplyConfiguration constructs a declarative configuration of the SdkConfig type for use with
 // apply.
 func SdkConfig() *SdkConfigApplyConfiguration {
 	return &SdkConfigApplyConfiguration{}

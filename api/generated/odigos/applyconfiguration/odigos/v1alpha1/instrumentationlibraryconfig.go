@@ -17,14 +17,14 @@ limitations under the License.
 
 package v1alpha1
 
-// InstrumentationLibraryConfigApplyConfiguration represents an declarative configuration of the InstrumentationLibraryConfig type for use
+// InstrumentationLibraryConfigApplyConfiguration represents a declarative configuration of the InstrumentationLibraryConfig type for use
 // with apply.
 type InstrumentationLibraryConfigApplyConfiguration struct {
 	InstrumentationLibraryId *InstrumentationLibraryIdApplyConfiguration           `json:"libraryId,omitempty"`
 	TraceConfig              *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
 }
 
-// InstrumentationLibraryConfigApplyConfiguration constructs an declarative configuration of the InstrumentationLibraryConfig type for use with
+// InstrumentationLibraryConfigApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryConfig type for use with
 // apply.
 func InstrumentationLibraryConfig() *InstrumentationLibraryConfigApplyConfiguration {
 	return &InstrumentationLibraryConfigApplyConfiguration{}

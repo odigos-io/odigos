@@ -17,13 +17,13 @@ limitations under the License.
 
 package v1alpha1
 
-// InstrumentationInstanceSpecApplyConfiguration represents an declarative configuration of the InstrumentationInstanceSpec type for use
+// InstrumentationInstanceSpecApplyConfiguration represents a declarative configuration of the InstrumentationInstanceSpec type for use
 // with apply.
 type InstrumentationInstanceSpecApplyConfiguration struct {
 	ContainerName *string `json:"containerName,omitempty"`
 }
 
-// InstrumentationInstanceSpecApplyConfiguration constructs an declarative configuration of the InstrumentationInstanceSpec type for use with
+// InstrumentationInstanceSpecApplyConfiguration constructs a declarative configuration of the InstrumentationInstanceSpec type for use with
 // apply.
 func InstrumentationInstanceSpec() *InstrumentationInstanceSpecApplyConfiguration {
 	return &InstrumentationInstanceSpecApplyConfiguration{}

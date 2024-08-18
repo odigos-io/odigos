@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// LatencySamplerStatusApplyConfiguration represents an declarative configuration of the LatencySamplerStatus type for use
+// LatencySamplerStatusApplyConfiguration represents a declarative configuration of the LatencySamplerStatus type for use
 // with apply.
 type LatencySamplerStatusApplyConfiguration struct {
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
-// LatencySamplerStatusApplyConfiguration constructs an declarative configuration of the LatencySamplerStatus type for use with
+// LatencySamplerStatusApplyConfiguration constructs a declarative configuration of the LatencySamplerStatus type for use with
 // apply.
 func LatencySamplerStatus() *LatencySamplerStatusApplyConfiguration {
 	return &LatencySamplerStatusApplyConfiguration{}

@@ -1,7 +1,6 @@
 package startlangdetection
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -12,6 +11,7 @@ import (
 func SetupWithManager(mgr ctrl.Manager) error {
 	err := builder.
 		ControllerManagedBy(mgr).
+		Named("startlangdetection-deployment").
 		For(&appsv1.Deployment{}).
 		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Complete(&DeploymentReconciler{
@@ -24,6 +24,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("startlangdetection-daemonset").
 		For(&appsv1.DaemonSet{}).
 		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Complete(&DaemonSetReconciler{
@@ -36,6 +37,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("startlangdetection-statefulset").
 		For(&appsv1.StatefulSet{}).
 		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Complete(&StatefulSetReconciler{
@@ -48,6 +50,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("startlangdetection-namespace").
 		For(&corev1.Namespace{}).
 		Complete(&NamespacesReconciler{
 			Client: mgr.GetClient(),
@@ -59,7 +62,8 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		For(&odigosv1.OdigosConfiguration{}).
+		Named("startlangdetection-configmaps").
+		For(&corev1.ConfigMap{}).
 		WithEventFilter(&utils.OnlyUpdatesPredicate{}).
 		Complete(&OdigosConfigReconciler{
 			Client: mgr.GetClient(),

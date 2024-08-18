@@ -12,6 +12,7 @@ import (
 func SetupWithManager(mgr ctrl.Manager) error {
 	err := builder.
 		ControllerManagedBy(mgr).
+		Named("deleteinstrumentedapplication-deployment").
 		For(&appsv1.Deployment{}).
 		WithEventFilter(predicate.LabelChangedPredicate{}).
 		Complete(&DeploymentReconciler{
@@ -24,6 +25,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("deleteinstrumentedapplication-statefulset").
 		For(&appsv1.StatefulSet{}).
 		WithEventFilter(predicate.LabelChangedPredicate{}).
 		Complete(&StatefulSetReconciler{
@@ -36,6 +38,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("deleteinstrumentedapplication-daemonset").
 		For(&appsv1.DaemonSet{}).
 		WithEventFilter(predicate.LabelChangedPredicate{}).
 		Complete(&DaemonSetReconciler{
@@ -48,6 +51,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("deleteinstrumentedapplication-namespace").
 		For(&corev1.Namespace{}).
 		WithEventFilter(predicate.LabelChangedPredicate{}).
 		Complete(&NamespaceReconciler{
@@ -60,6 +64,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("deleteinstrumentedapplication-instrumentedapplication").
 		For(&odigosv1.InstrumentedApplication{}).
 		Complete(&InstrumentedApplicationReconciler{
 			Client: mgr.GetClient(),

@@ -47,6 +47,8 @@ type RenameAttributeStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=renameattributes,scope=Namespaced
+//+kubebuilder:metadata:labels=odigos.io/config=1
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // RenameAttribute is the Schema for the RenameAttribute odigos action API
 type RenameAttribute struct {

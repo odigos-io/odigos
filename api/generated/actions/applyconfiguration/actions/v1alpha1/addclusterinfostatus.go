@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// AddClusterInfoStatusApplyConfiguration represents an declarative configuration of the AddClusterInfoStatus type for use
+// AddClusterInfoStatusApplyConfiguration represents a declarative configuration of the AddClusterInfoStatus type for use
 // with apply.
 type AddClusterInfoStatusApplyConfiguration struct {
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
-// AddClusterInfoStatusApplyConfiguration constructs an declarative configuration of the AddClusterInfoStatus type for use with
+// AddClusterInfoStatusApplyConfiguration constructs a declarative configuration of the AddClusterInfoStatus type for use with
 // apply.
 func AddClusterInfoStatus() *AddClusterInfoStatusApplyConfiguration {
 	return &AddClusterInfoStatusApplyConfiguration{}

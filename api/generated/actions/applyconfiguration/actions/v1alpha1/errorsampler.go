@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ErrorSamplerApplyConfiguration represents an declarative configuration of the ErrorSampler type for use
+// ErrorSamplerApplyConfiguration represents a declarative configuration of the ErrorSampler type for use
 // with apply.
 type ErrorSamplerApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -32,7 +32,7 @@ type ErrorSamplerApplyConfiguration struct {
 	Status                           *ErrorSamplerStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// ErrorSampler constructs an declarative configuration of the ErrorSampler type for use with
+// ErrorSampler constructs a declarative configuration of the ErrorSampler type for use with
 // apply.
 func ErrorSampler(name, namespace string) *ErrorSamplerApplyConfiguration {
 	b := &ErrorSamplerApplyConfiguration{}
@@ -215,4 +215,10 @@ func (b *ErrorSamplerApplyConfiguration) WithSpec(value *ErrorSamplerSpecApplyCo
 func (b *ErrorSamplerApplyConfiguration) WithStatus(value *ErrorSamplerStatusApplyConfiguration) *ErrorSamplerApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *ErrorSamplerApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }
