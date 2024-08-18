@@ -45,6 +45,11 @@ export const appSlice = createSlice({
     ) => {
       state.configuredDestinationsList = action.payload;
     },
+    resetSources: (state) => {
+      state.sources = initialState.sources;
+      state.namespaceFutureSelectAppsList =
+        initialState.namespaceFutureSelectAppsList;
+    },
     resetState: (state) => {
       state.sources = initialState.sources;
       state.namespaceFutureSelectAppsList =
@@ -62,6 +67,7 @@ export const {
   setConfiguredDestinationsList,
   addConfiguredDestination,
   resetState,
+  resetSources,
 } = appSlice.actions;
 
 export const appReducer = appSlice.reducer;

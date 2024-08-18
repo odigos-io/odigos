@@ -3,8 +3,8 @@ import Image from 'next/image';
 import { IAppState } from '@/store';
 import styled from 'styled-components';
 import { useSelector } from 'react-redux';
-import { Divider, Text } from '@/reuseable-components';
 import { ConfiguredDestination } from '@/types';
+import { Divider, Text } from '@/reuseable-components';
 import { ConfiguredDestinationFields } from '@/components';
 
 const Container = styled.div`
@@ -12,8 +12,8 @@ const Container = styled.div`
   flex-direction: column;
   align-items: flex-start;
   gap: 12px;
+  margin-top: 24px;
   align-self: stretch;
-  border-radius: 16px;
   height: 100%;
   max-height: 548px;
   overflow-y: auto;
@@ -36,10 +36,6 @@ const ListItemHeader = styled.div`
   justify-content: space-between;
   width: 100%;
   padding: 16px 0px;
-
-  /* &:last-child {
-    margin-bottom: 32px;
-  } */
 `;
 
 const ListItemContent = styled.div`

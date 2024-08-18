@@ -1,15 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useCreateSource } from '../sources';
 import { useCreateDestination } from '../destinations';
 
-import {
-  K8sActualSource,
-  DestinationInput,
-  PersistNamespaceItemInput,
-} from '@/types';
+import { DestinationInput, PersistNamespaceItemInput } from '@/types';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNamespace } from '../compute-platform';
-import { IAppState, resetState } from '@/store';
+import { IAppState, resetSources } from '@/store';
 
 type ConnectEnvResult = {
   success: boolean;
@@ -71,7 +67,7 @@ export const useConnectEnv = () => {
             );
           }
         }
-        dispatch(resetState());
+        dispatch(resetSources());
         // Create destination
         const destinationId = await createNewDestination(destination);
 

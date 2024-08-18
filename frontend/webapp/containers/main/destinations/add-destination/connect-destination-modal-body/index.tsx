@@ -113,7 +113,6 @@ export function ConnectDestinationModalBody({
   }
 
   async function handleSubmit() {
-    console.log({ formData, destination, exportedSignals, dynamicFields });
     const fields = Object.entries(formData).map(([name, value]) => ({
       key: name,
       value,
