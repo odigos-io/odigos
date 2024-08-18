@@ -22,8 +22,8 @@ func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) 
 			Event:       sse.MessageEventModified,
 			MessageType: sse.MessageTypeError,
 			Duration:    10 * time.Second,
-			CRDType:    "InstrumentationInstance",
-			FailureBatchMessageFunc: func (batchSize int, crd string) string {
+			CRDType:     "InstrumentationInstance",
+			FailureBatchMessageFunc: func(batchSize int, crd string) string {
 				return fmt.Sprintf("Failed to instrument %d instances", batchSize)
 			},
 		},
@@ -83,7 +83,7 @@ func handleModifiedInstrumentationInstance(event watch.Event) {
 		genericErrorMessage(sse.MessageEventModified, "InstrumentationInstance", "error getting instrumented app name from labels")
 	}
 
-	name, kind, err := commonutils.GetWorkloadInfoRuntimeName(instrumentedAppName)
+	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instrumentedAppName)
 	if err != nil {
 		genericErrorMessage(sse.MessageEventModified, "InstrumentationInstance", "error getting workload info")
 	}

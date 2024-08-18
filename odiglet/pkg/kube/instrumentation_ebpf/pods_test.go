@@ -4,22 +4,22 @@ import (
 	"context"
 	"testing"
 
-	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGetPodWorkloadObject(t *testing.T) {
 	pr := &PodsReconciler{}
-	cases := []struct{
-		name string
-		pod *corev1.Pod
-		expectedWorkload common.PodWorkload
+	cases := []struct {
+		name             string
+		pod              *corev1.Pod
+		expectedWorkload workload.PodWorkload
 	}{
 		{
 			name: "pod in deployment",
 			pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta {
+				ObjectMeta: metav1.ObjectMeta{
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							Kind: "ReplicaSet",
@@ -29,16 +29,16 @@ func TestGetPodWorkloadObject(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			expectedWorkload: common.PodWorkload{
-				Kind: "Deployment",
-				Name: "deployment",
+			expectedWorkload: workload.PodWorkload{
+				Kind:      workload.WorkloadKindDeployment,
+				Name:      "deployment",
 				Namespace: "default",
 			},
 		},
 		{
 			name: "pod with hyphen in name of deployment",
 			pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta {
+				ObjectMeta: metav1.ObjectMeta{
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							Kind: "ReplicaSet",
@@ -48,16 +48,16 @@ func TestGetPodWorkloadObject(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			expectedWorkload: common.PodWorkload{
-				Kind: "Deployment",
-				Name: "deployment-foo",
+			expectedWorkload: workload.PodWorkload{
+				Kind:      workload.WorkloadKindDeployment,
+				Name:      "deployment-foo",
 				Namespace: "default",
 			},
 		},
 		{
 			name: "pod in DaemonSet",
 			pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta {
+				ObjectMeta: metav1.ObjectMeta{
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							Kind: "DaemonSet",
@@ -67,16 +67,16 @@ func TestGetPodWorkloadObject(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			expectedWorkload: common.PodWorkload{
-				Kind: "DaemonSet",
-				Name: "someDaemonSet",
+			expectedWorkload: workload.PodWorkload{
+				Kind:      workload.WorkloadKindDaemonSet,
+				Name:      "someDaemonSet",
 				Namespace: "default",
 			},
 		},
 		{
 			name: "pod in StatefulSet",
 			pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta {
+				ObjectMeta: metav1.ObjectMeta{
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							Kind: "StatefulSet",
@@ -86,9 +86,9 @@ func TestGetPodWorkloadObject(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			expectedWorkload: common.PodWorkload{
-				Kind: "StatefulSet",
-				Name: "someStatefulSet",
+			expectedWorkload: workload.PodWorkload{
+				Kind:      workload.WorkloadKindStatefulSet,
+				Name:      "someStatefulSet",
 				Namespace: "default",
 			},
 		},

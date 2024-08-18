@@ -18,8 +18,8 @@ var deletedEventBatcher *EventBatcher
 func StartInstrumentedApplicationWatcher(ctx context.Context, namespace string) error {
 	addedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
-			Event: 		sse.MessageEventAdded,
-			CRDType: 	"InstrumentedApplication",
+			Event:   sse.MessageEventAdded,
+			CRDType: "InstrumentedApplication",
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("successfully added %d sources", count)
 			},
@@ -31,8 +31,8 @@ func StartInstrumentedApplicationWatcher(ctx context.Context, namespace string) 
 
 	deletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
-			Event: 		sse.MessageEventDeleted,
-			CRDType: 	"InstrumentedApplication",
+			Event:   sse.MessageEventDeleted,
+			CRDType: "InstrumentedApplication",
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("successfully deleted %d sources", count)
 			},
@@ -41,7 +41,7 @@ func StartInstrumentedApplicationWatcher(ctx context.Context, namespace string) 
 			},
 		},
 	)
-			
+
 	watcher, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(namespace).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating watcher: %v", err)
@@ -75,7 +75,7 @@ func handleInstrumentedApplicationWatchEvents(ctx context.Context, watcher watch
 }
 
 func handleAddedEvent(app *v1alpha1.InstrumentedApplication) {
-	name, kind, err := commonutils.GetWorkloadInfoRuntimeName(app.Name)
+	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(app.Name)
 	if err != nil {
 		genericErrorMessage(sse.MessageEventAdded, "InstrumentedApplication", "error getting workload info")
 		return
@@ -87,7 +87,7 @@ func handleAddedEvent(app *v1alpha1.InstrumentedApplication) {
 }
 
 func handleDeletedEvent(app *v1alpha1.InstrumentedApplication) {
-	name, _, err := commonutils.GetWorkloadInfoRuntimeName(app.Name)
+	name, _, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(app.Name)
 	if err != nil {
 		genericErrorMessage(sse.MessageEventDeleted, "InstrumentedApplication", "error getting workload info")
 		return

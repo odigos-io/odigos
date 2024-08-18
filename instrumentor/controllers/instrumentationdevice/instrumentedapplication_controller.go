@@ -46,7 +46,7 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 		}
 
 		// runtime details deleted: remove instrumentation from resource requests
-		workloadName, workloadKind, err := workload.GetWorkloadInfoRuntimeName(req.Name)
+		workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name)
 		if err != nil {
 			logger.Error(err, "error parsing workload info from runtime object name")
 			return ctrl.Result{}, err
