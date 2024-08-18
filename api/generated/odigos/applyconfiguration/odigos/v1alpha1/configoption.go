@@ -21,14 +21,14 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// ConfigOptionApplyConfiguration represents an declarative configuration of the ConfigOption type for use
+// ConfigOptionApplyConfiguration represents a declarative configuration of the ConfigOption type for use
 // with apply.
 type ConfigOptionApplyConfiguration struct {
 	OptionKey *string          `json:"optionKey,omitempty"`
 	SpanKind  *common.SpanKind `json:"spanKind,omitempty"`
 }
 
-// ConfigOptionApplyConfiguration constructs an declarative configuration of the ConfigOption type for use with
+// ConfigOptionApplyConfiguration constructs a declarative configuration of the ConfigOption type for use with
 // apply.
 func ConfigOption() *ConfigOptionApplyConfiguration {
 	return &ConfigOptionApplyConfiguration{}

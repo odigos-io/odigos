@@ -21,14 +21,14 @@ import (
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
-// CollectorsGroupSpecApplyConfiguration represents an declarative configuration of the CollectorsGroupSpec type for use
+// CollectorsGroupSpecApplyConfiguration represents a declarative configuration of the CollectorsGroupSpec type for use
 // with apply.
 type CollectorsGroupSpecApplyConfiguration struct {
 	InputSvc *string                       `json:"inputSvc,omitempty"`
 	Role     *v1alpha1.CollectorsGroupRole `json:"role,omitempty"`
 }
 
-// CollectorsGroupSpecApplyConfiguration constructs an declarative configuration of the CollectorsGroupSpec type for use with
+// CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
 // apply.
 func CollectorsGroupSpec() *CollectorsGroupSpecApplyConfiguration {
 	return &CollectorsGroupSpecApplyConfiguration{}

@@ -22,7 +22,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// DestinationSpecApplyConfiguration represents an declarative configuration of the DestinationSpec type for use
+// DestinationSpecApplyConfiguration represents a declarative configuration of the DestinationSpec type for use
 // with apply.
 type DestinationSpecApplyConfiguration struct {
 	Type            *common.DestinationType      `json:"type,omitempty"`
@@ -32,7 +32,7 @@ type DestinationSpecApplyConfiguration struct {
 	Signals         []common.ObservabilitySignal `json:"signals,omitempty"`
 }
 
-// DestinationSpecApplyConfiguration constructs an declarative configuration of the DestinationSpec type for use with
+// DestinationSpecApplyConfiguration constructs a declarative configuration of the DestinationSpec type for use with
 // apply.
 func DestinationSpec() *DestinationSpecApplyConfiguration {
 	return &DestinationSpecApplyConfiguration{}

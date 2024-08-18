@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// DeleteAttributeStatusApplyConfiguration represents an declarative configuration of the DeleteAttributeStatus type for use
+// DeleteAttributeStatusApplyConfiguration represents a declarative configuration of the DeleteAttributeStatus type for use
 // with apply.
 type DeleteAttributeStatusApplyConfiguration struct {
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
-// DeleteAttributeStatusApplyConfiguration constructs an declarative configuration of the DeleteAttributeStatus type for use with
+// DeleteAttributeStatusApplyConfiguration constructs a declarative configuration of the DeleteAttributeStatus type for use with
 // apply.
 func DeleteAttributeStatus() *DeleteAttributeStatusApplyConfiguration {
 	return &DeleteAttributeStatusApplyConfiguration{}

@@ -21,7 +21,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// InstrumentationInstanceStatusApplyConfiguration represents an declarative configuration of the InstrumentationInstanceStatus type for use
+// InstrumentationInstanceStatusApplyConfiguration represents a declarative configuration of the InstrumentationInstanceStatus type for use
 // with apply.
 type InstrumentationInstanceStatusApplyConfiguration struct {
 	IdentifyingAttributes    []AttributeApplyConfiguration                    `json:"identifyingAttributes,omitempty"`
@@ -33,7 +33,7 @@ type InstrumentationInstanceStatusApplyConfiguration struct {
 	Components               []InstrumentationLibraryStatusApplyConfiguration `json:"components,omitempty"`
 }
 
-// InstrumentationInstanceStatusApplyConfiguration constructs an declarative configuration of the InstrumentationInstanceStatus type for use with
+// InstrumentationInstanceStatusApplyConfiguration constructs a declarative configuration of the InstrumentationInstanceStatus type for use with
 // apply.
 func InstrumentationInstanceStatus() *InstrumentationInstanceStatusApplyConfiguration {
 	return &InstrumentationInstanceStatusApplyConfiguration{}

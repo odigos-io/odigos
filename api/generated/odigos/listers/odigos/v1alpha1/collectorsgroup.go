@@ -19,8 +19,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -37,25 +37,17 @@ type CollectorsGroupLister interface {
 
 // collectorsGroupLister implements the CollectorsGroupLister interface.
 type collectorsGroupLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.CollectorsGroup]
 }
 
 // NewCollectorsGroupLister returns a new CollectorsGroupLister.
 func NewCollectorsGroupLister(indexer cache.Indexer) CollectorsGroupLister {
-	return &collectorsGroupLister{indexer: indexer}
-}
-
-// List lists all CollectorsGroups in the indexer.
-func (s *collectorsGroupLister) List(selector labels.Selector) (ret []*v1alpha1.CollectorsGroup, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.CollectorsGroup))
-	})
-	return ret, err
+	return &collectorsGroupLister{listers.New[*v1alpha1.CollectorsGroup](indexer, v1alpha1.Resource("collectorsgroup"))}
 }
 
 // CollectorsGroups returns an object that can list and get CollectorsGroups.
 func (s *collectorsGroupLister) CollectorsGroups(namespace string) CollectorsGroupNamespaceLister {
-	return collectorsGroupNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return collectorsGroupNamespaceLister{listers.NewNamespaced[*v1alpha1.CollectorsGroup](s.ResourceIndexer, namespace)}
 }
 
 // CollectorsGroupNamespaceLister helps list and get CollectorsGroups.
@@ -73,26 +65,5 @@ type CollectorsGroupNamespaceLister interface {
 // collectorsGroupNamespaceLister implements the CollectorsGroupNamespaceLister
 // interface.
 type collectorsGroupNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all CollectorsGroups in the indexer for a given namespace.
-func (s collectorsGroupNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.CollectorsGroup, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.CollectorsGroup))
-	})
-	return ret, err
-}
-
-// Get retrieves the CollectorsGroup from the indexer for a given namespace and name.
-func (s collectorsGroupNamespaceLister) Get(name string) (*v1alpha1.CollectorsGroup, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("collectorsgroup"), name)
-	}
-	return obj.(*v1alpha1.CollectorsGroup), nil
+	listers.ResourceIndexer[*v1alpha1.CollectorsGroup]
 }

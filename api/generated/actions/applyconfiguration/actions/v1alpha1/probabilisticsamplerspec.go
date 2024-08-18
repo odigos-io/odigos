@@ -21,7 +21,7 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// ProbabilisticSamplerSpecApplyConfiguration represents an declarative configuration of the ProbabilisticSamplerSpec type for use
+// ProbabilisticSamplerSpecApplyConfiguration represents a declarative configuration of the ProbabilisticSamplerSpec type for use
 // with apply.
 type ProbabilisticSamplerSpecApplyConfiguration struct {
 	ActionName         *string                      `json:"actionName,omitempty"`
@@ -31,7 +31,7 @@ type ProbabilisticSamplerSpecApplyConfiguration struct {
 	SamplingPercentage *string                      `json:"sampling_percentage,omitempty"`
 }
 
-// ProbabilisticSamplerSpecApplyConfiguration constructs an declarative configuration of the ProbabilisticSamplerSpec type for use with
+// ProbabilisticSamplerSpecApplyConfiguration constructs a declarative configuration of the ProbabilisticSamplerSpec type for use with
 // apply.
 func ProbabilisticSamplerSpec() *ProbabilisticSamplerSpecApplyConfiguration {
 	return &ProbabilisticSamplerSpecApplyConfiguration{}

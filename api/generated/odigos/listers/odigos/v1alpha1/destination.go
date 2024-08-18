@@ -19,8 +19,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -37,25 +37,17 @@ type DestinationLister interface {
 
 // destinationLister implements the DestinationLister interface.
 type destinationLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.Destination]
 }
 
 // NewDestinationLister returns a new DestinationLister.
 func NewDestinationLister(indexer cache.Indexer) DestinationLister {
-	return &destinationLister{indexer: indexer}
-}
-
-// List lists all Destinations in the indexer.
-func (s *destinationLister) List(selector labels.Selector) (ret []*v1alpha1.Destination, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Destination))
-	})
-	return ret, err
+	return &destinationLister{listers.New[*v1alpha1.Destination](indexer, v1alpha1.Resource("destination"))}
 }
 
 // Destinations returns an object that can list and get Destinations.
 func (s *destinationLister) Destinations(namespace string) DestinationNamespaceLister {
-	return destinationNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return destinationNamespaceLister{listers.NewNamespaced[*v1alpha1.Destination](s.ResourceIndexer, namespace)}
 }
 
 // DestinationNamespaceLister helps list and get Destinations.
@@ -73,26 +65,5 @@ type DestinationNamespaceLister interface {
 // destinationNamespaceLister implements the DestinationNamespaceLister
 // interface.
 type destinationNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Destinations in the indexer for a given namespace.
-func (s destinationNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.Destination, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Destination))
-	})
-	return ret, err
-}
-
-// Get retrieves the Destination from the indexer for a given namespace and name.
-func (s destinationNamespaceLister) Get(name string) (*v1alpha1.Destination, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("destination"), name)
-	}
-	return obj.(*v1alpha1.Destination), nil
+	listers.ResourceIndexer[*v1alpha1.Destination]
 }

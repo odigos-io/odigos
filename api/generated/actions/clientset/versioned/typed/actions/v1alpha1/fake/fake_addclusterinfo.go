@@ -43,22 +43,24 @@ var addclusterinfosKind = v1alpha1.SchemeGroupVersion.WithKind("AddClusterInfo")
 
 // Get takes name of the addClusterInfo, and returns the corresponding addClusterInfo object, and an error if there is any.
 func (c *FakeAddClusterInfos) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AddClusterInfo, err error) {
+	emptyResult := &v1alpha1.AddClusterInfo{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(addclusterinfosResource, c.ns, name), &v1alpha1.AddClusterInfo{})
+		Invokes(testing.NewGetActionWithOptions(addclusterinfosResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AddClusterInfo), err
 }
 
 // List takes label and field selectors, and returns the list of AddClusterInfos that match those selectors.
 func (c *FakeAddClusterInfos) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AddClusterInfoList, err error) {
+	emptyResult := &v1alpha1.AddClusterInfoList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(addclusterinfosResource, addclusterinfosKind, c.ns, opts), &v1alpha1.AddClusterInfoList{})
+		Invokes(testing.NewListActionWithOptions(addclusterinfosResource, addclusterinfosKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -77,40 +79,43 @@ func (c *FakeAddClusterInfos) List(ctx context.Context, opts v1.ListOptions) (re
 // Watch returns a watch.Interface that watches the requested addClusterInfos.
 func (c *FakeAddClusterInfos) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(addclusterinfosResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(addclusterinfosResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a addClusterInfo and creates it.  Returns the server's representation of the addClusterInfo, and an error, if there is any.
 func (c *FakeAddClusterInfos) Create(ctx context.Context, addClusterInfo *v1alpha1.AddClusterInfo, opts v1.CreateOptions) (result *v1alpha1.AddClusterInfo, err error) {
+	emptyResult := &v1alpha1.AddClusterInfo{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(addclusterinfosResource, c.ns, addClusterInfo), &v1alpha1.AddClusterInfo{})
+		Invokes(testing.NewCreateActionWithOptions(addclusterinfosResource, c.ns, addClusterInfo, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AddClusterInfo), err
 }
 
 // Update takes the representation of a addClusterInfo and updates it. Returns the server's representation of the addClusterInfo, and an error, if there is any.
 func (c *FakeAddClusterInfos) Update(ctx context.Context, addClusterInfo *v1alpha1.AddClusterInfo, opts v1.UpdateOptions) (result *v1alpha1.AddClusterInfo, err error) {
+	emptyResult := &v1alpha1.AddClusterInfo{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(addclusterinfosResource, c.ns, addClusterInfo), &v1alpha1.AddClusterInfo{})
+		Invokes(testing.NewUpdateActionWithOptions(addclusterinfosResource, c.ns, addClusterInfo, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AddClusterInfo), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeAddClusterInfos) UpdateStatus(ctx context.Context, addClusterInfo *v1alpha1.AddClusterInfo, opts v1.UpdateOptions) (*v1alpha1.AddClusterInfo, error) {
+func (c *FakeAddClusterInfos) UpdateStatus(ctx context.Context, addClusterInfo *v1alpha1.AddClusterInfo, opts v1.UpdateOptions) (result *v1alpha1.AddClusterInfo, err error) {
+	emptyResult := &v1alpha1.AddClusterInfo{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(addclusterinfosResource, "status", c.ns, addClusterInfo), &v1alpha1.AddClusterInfo{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(addclusterinfosResource, "status", c.ns, addClusterInfo, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AddClusterInfo), err
 }
@@ -125,7 +130,7 @@ func (c *FakeAddClusterInfos) Delete(ctx context.Context, name string, opts v1.D
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeAddClusterInfos) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(addclusterinfosResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(addclusterinfosResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.AddClusterInfoList{})
 	return err
@@ -133,11 +138,12 @@ func (c *FakeAddClusterInfos) DeleteCollection(ctx context.Context, opts v1.Dele
 
 // Patch applies the patch and returns the patched addClusterInfo.
 func (c *FakeAddClusterInfos) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AddClusterInfo, err error) {
+	emptyResult := &v1alpha1.AddClusterInfo{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(addclusterinfosResource, c.ns, name, pt, data, subresources...), &v1alpha1.AddClusterInfo{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(addclusterinfosResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AddClusterInfo), err
 }
@@ -155,11 +161,12 @@ func (c *FakeAddClusterInfos) Apply(ctx context.Context, addClusterInfo *actions
 	if name == nil {
 		return nil, fmt.Errorf("addClusterInfo.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.AddClusterInfo{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(addclusterinfosResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.AddClusterInfo{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(addclusterinfosResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AddClusterInfo), err
 }
@@ -178,11 +185,12 @@ func (c *FakeAddClusterInfos) ApplyStatus(ctx context.Context, addClusterInfo *a
 	if name == nil {
 		return nil, fmt.Errorf("addClusterInfo.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.AddClusterInfo{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(addclusterinfosResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.AddClusterInfo{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(addclusterinfosResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AddClusterInfo), err
 }

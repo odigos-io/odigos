@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// RenameAttributeStatusApplyConfiguration represents an declarative configuration of the RenameAttributeStatus type for use
+// RenameAttributeStatusApplyConfiguration represents a declarative configuration of the RenameAttributeStatus type for use
 // with apply.
 type RenameAttributeStatusApplyConfiguration struct {
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
-// RenameAttributeStatusApplyConfiguration constructs an declarative configuration of the RenameAttributeStatus type for use with
+// RenameAttributeStatusApplyConfiguration constructs a declarative configuration of the RenameAttributeStatus type for use with
 // apply.
 func RenameAttributeStatus() *RenameAttributeStatusApplyConfiguration {
 	return &RenameAttributeStatusApplyConfiguration{}

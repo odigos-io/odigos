@@ -19,9 +19,6 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
-	"time"
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
 	scheme "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
@@ -29,7 +26,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // InstrumentationConfigsGetter has a method to return a InstrumentationConfigInterface.
@@ -54,154 +51,18 @@ type InstrumentationConfigInterface interface {
 
 // instrumentationConfigs implements InstrumentationConfigInterface
 type instrumentationConfigs struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithListAndApply[*v1alpha1.InstrumentationConfig, *v1alpha1.InstrumentationConfigList, *odigosv1alpha1.InstrumentationConfigApplyConfiguration]
 }
 
 // newInstrumentationConfigs returns a InstrumentationConfigs
 func newInstrumentationConfigs(c *OdigosV1alpha1Client, namespace string) *instrumentationConfigs {
 	return &instrumentationConfigs{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithListAndApply[*v1alpha1.InstrumentationConfig, *v1alpha1.InstrumentationConfigList, *odigosv1alpha1.InstrumentationConfigApplyConfiguration](
+			"instrumentationconfigs",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *v1alpha1.InstrumentationConfig { return &v1alpha1.InstrumentationConfig{} },
+			func() *v1alpha1.InstrumentationConfigList { return &v1alpha1.InstrumentationConfigList{} }),
 	}
-}
-
-// Get takes name of the instrumentationConfig, and returns the corresponding instrumentationConfig object, and an error if there is any.
-func (c *instrumentationConfigs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.InstrumentationConfig, err error) {
-	result = &v1alpha1.InstrumentationConfig{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("instrumentationconfigs").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of InstrumentationConfigs that match those selectors.
-func (c *instrumentationConfigs) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.InstrumentationConfigList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha1.InstrumentationConfigList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("instrumentationconfigs").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested instrumentationConfigs.
-func (c *instrumentationConfigs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("instrumentationconfigs").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a instrumentationConfig and creates it.  Returns the server's representation of the instrumentationConfig, and an error, if there is any.
-func (c *instrumentationConfigs) Create(ctx context.Context, instrumentationConfig *v1alpha1.InstrumentationConfig, opts v1.CreateOptions) (result *v1alpha1.InstrumentationConfig, err error) {
-	result = &v1alpha1.InstrumentationConfig{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("instrumentationconfigs").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(instrumentationConfig).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a instrumentationConfig and updates it. Returns the server's representation of the instrumentationConfig, and an error, if there is any.
-func (c *instrumentationConfigs) Update(ctx context.Context, instrumentationConfig *v1alpha1.InstrumentationConfig, opts v1.UpdateOptions) (result *v1alpha1.InstrumentationConfig, err error) {
-	result = &v1alpha1.InstrumentationConfig{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("instrumentationconfigs").
-		Name(instrumentationConfig.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(instrumentationConfig).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the instrumentationConfig and deletes it. Returns an error if one occurs.
-func (c *instrumentationConfigs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("instrumentationconfigs").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *instrumentationConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("instrumentationconfigs").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched instrumentationConfig.
-func (c *instrumentationConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.InstrumentationConfig, err error) {
-	result = &v1alpha1.InstrumentationConfig{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("instrumentationconfigs").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied instrumentationConfig.
-func (c *instrumentationConfigs) Apply(ctx context.Context, instrumentationConfig *odigosv1alpha1.InstrumentationConfigApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.InstrumentationConfig, err error) {
-	if instrumentationConfig == nil {
-		return nil, fmt.Errorf("instrumentationConfig provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(instrumentationConfig)
-	if err != nil {
-		return nil, err
-	}
-	name := instrumentationConfig.Name
-	if name == nil {
-		return nil, fmt.Errorf("instrumentationConfig.Name must be provided to Apply")
-	}
-	result = &v1alpha1.InstrumentationConfig{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("instrumentationconfigs").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

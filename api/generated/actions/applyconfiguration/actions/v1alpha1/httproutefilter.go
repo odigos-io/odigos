@@ -17,7 +17,7 @@ limitations under the License.
 
 package v1alpha1
 
-// HttpRouteFilterApplyConfiguration represents an declarative configuration of the HttpRouteFilter type for use
+// HttpRouteFilterApplyConfiguration represents a declarative configuration of the HttpRouteFilter type for use
 // with apply.
 type HttpRouteFilterApplyConfiguration struct {
 	HttpRoute               *string  `json:"http_route,omitempty"`
@@ -26,7 +26,7 @@ type HttpRouteFilterApplyConfiguration struct {
 	FallbackSamplingRatio   *float64 `json:"fallback_sampling_ratio,omitempty"`
 }
 
-// HttpRouteFilterApplyConfiguration constructs an declarative configuration of the HttpRouteFilter type for use with
+// HttpRouteFilterApplyConfiguration constructs a declarative configuration of the HttpRouteFilter type for use with
 // apply.
 func HttpRouteFilter() *HttpRouteFilterApplyConfiguration {
 	return &HttpRouteFilterApplyConfiguration{}

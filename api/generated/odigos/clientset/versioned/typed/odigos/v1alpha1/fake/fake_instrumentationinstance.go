@@ -43,22 +43,24 @@ var instrumentationinstancesKind = v1alpha1.SchemeGroupVersion.WithKind("Instrum
 
 // Get takes name of the instrumentationInstance, and returns the corresponding instrumentationInstance object, and an error if there is any.
 func (c *FakeInstrumentationInstances) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.InstrumentationInstance, err error) {
+	emptyResult := &v1alpha1.InstrumentationInstance{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(instrumentationinstancesResource, c.ns, name), &v1alpha1.InstrumentationInstance{})
+		Invokes(testing.NewGetActionWithOptions(instrumentationinstancesResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentationInstance), err
 }
 
 // List takes label and field selectors, and returns the list of InstrumentationInstances that match those selectors.
 func (c *FakeInstrumentationInstances) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.InstrumentationInstanceList, err error) {
+	emptyResult := &v1alpha1.InstrumentationInstanceList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(instrumentationinstancesResource, instrumentationinstancesKind, c.ns, opts), &v1alpha1.InstrumentationInstanceList{})
+		Invokes(testing.NewListActionWithOptions(instrumentationinstancesResource, instrumentationinstancesKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -77,40 +79,43 @@ func (c *FakeInstrumentationInstances) List(ctx context.Context, opts v1.ListOpt
 // Watch returns a watch.Interface that watches the requested instrumentationInstances.
 func (c *FakeInstrumentationInstances) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(instrumentationinstancesResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(instrumentationinstancesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a instrumentationInstance and creates it.  Returns the server's representation of the instrumentationInstance, and an error, if there is any.
 func (c *FakeInstrumentationInstances) Create(ctx context.Context, instrumentationInstance *v1alpha1.InstrumentationInstance, opts v1.CreateOptions) (result *v1alpha1.InstrumentationInstance, err error) {
+	emptyResult := &v1alpha1.InstrumentationInstance{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(instrumentationinstancesResource, c.ns, instrumentationInstance), &v1alpha1.InstrumentationInstance{})
+		Invokes(testing.NewCreateActionWithOptions(instrumentationinstancesResource, c.ns, instrumentationInstance, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentationInstance), err
 }
 
 // Update takes the representation of a instrumentationInstance and updates it. Returns the server's representation of the instrumentationInstance, and an error, if there is any.
 func (c *FakeInstrumentationInstances) Update(ctx context.Context, instrumentationInstance *v1alpha1.InstrumentationInstance, opts v1.UpdateOptions) (result *v1alpha1.InstrumentationInstance, err error) {
+	emptyResult := &v1alpha1.InstrumentationInstance{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(instrumentationinstancesResource, c.ns, instrumentationInstance), &v1alpha1.InstrumentationInstance{})
+		Invokes(testing.NewUpdateActionWithOptions(instrumentationinstancesResource, c.ns, instrumentationInstance, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentationInstance), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeInstrumentationInstances) UpdateStatus(ctx context.Context, instrumentationInstance *v1alpha1.InstrumentationInstance, opts v1.UpdateOptions) (*v1alpha1.InstrumentationInstance, error) {
+func (c *FakeInstrumentationInstances) UpdateStatus(ctx context.Context, instrumentationInstance *v1alpha1.InstrumentationInstance, opts v1.UpdateOptions) (result *v1alpha1.InstrumentationInstance, err error) {
+	emptyResult := &v1alpha1.InstrumentationInstance{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(instrumentationinstancesResource, "status", c.ns, instrumentationInstance), &v1alpha1.InstrumentationInstance{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(instrumentationinstancesResource, "status", c.ns, instrumentationInstance, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentationInstance), err
 }
@@ -125,7 +130,7 @@ func (c *FakeInstrumentationInstances) Delete(ctx context.Context, name string, 
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeInstrumentationInstances) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(instrumentationinstancesResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(instrumentationinstancesResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.InstrumentationInstanceList{})
 	return err
@@ -133,11 +138,12 @@ func (c *FakeInstrumentationInstances) DeleteCollection(ctx context.Context, opt
 
 // Patch applies the patch and returns the patched instrumentationInstance.
 func (c *FakeInstrumentationInstances) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.InstrumentationInstance, err error) {
+	emptyResult := &v1alpha1.InstrumentationInstance{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(instrumentationinstancesResource, c.ns, name, pt, data, subresources...), &v1alpha1.InstrumentationInstance{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(instrumentationinstancesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentationInstance), err
 }
@@ -155,11 +161,12 @@ func (c *FakeInstrumentationInstances) Apply(ctx context.Context, instrumentatio
 	if name == nil {
 		return nil, fmt.Errorf("instrumentationInstance.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.InstrumentationInstance{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(instrumentationinstancesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.InstrumentationInstance{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(instrumentationinstancesResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentationInstance), err
 }
@@ -178,11 +185,12 @@ func (c *FakeInstrumentationInstances) ApplyStatus(ctx context.Context, instrume
 	if name == nil {
 		return nil, fmt.Errorf("instrumentationInstance.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.InstrumentationInstance{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(instrumentationinstancesResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.InstrumentationInstance{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(instrumentationinstancesResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentationInstance), err
 }

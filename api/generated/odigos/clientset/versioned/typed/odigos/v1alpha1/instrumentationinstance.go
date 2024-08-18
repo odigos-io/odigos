@@ -19,9 +19,6 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
-	"time"
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
 	scheme "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
@@ -29,7 +26,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // InstrumentationInstancesGetter has a method to return a InstrumentationInstanceInterface.
@@ -42,6 +39,7 @@ type InstrumentationInstancesGetter interface {
 type InstrumentationInstanceInterface interface {
 	Create(ctx context.Context, instrumentationInstance *v1alpha1.InstrumentationInstance, opts v1.CreateOptions) (*v1alpha1.InstrumentationInstance, error)
 	Update(ctx context.Context, instrumentationInstance *v1alpha1.InstrumentationInstance, opts v1.UpdateOptions) (*v1alpha1.InstrumentationInstance, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 	UpdateStatus(ctx context.Context, instrumentationInstance *v1alpha1.InstrumentationInstance, opts v1.UpdateOptions) (*v1alpha1.InstrumentationInstance, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
@@ -50,206 +48,25 @@ type InstrumentationInstanceInterface interface {
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.InstrumentationInstance, err error)
 	Apply(ctx context.Context, instrumentationInstance *odigosv1alpha1.InstrumentationInstanceApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.InstrumentationInstance, err error)
+	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
 	ApplyStatus(ctx context.Context, instrumentationInstance *odigosv1alpha1.InstrumentationInstanceApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.InstrumentationInstance, err error)
 	InstrumentationInstanceExpansion
 }
 
 // instrumentationInstances implements InstrumentationInstanceInterface
 type instrumentationInstances struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithListAndApply[*v1alpha1.InstrumentationInstance, *v1alpha1.InstrumentationInstanceList, *odigosv1alpha1.InstrumentationInstanceApplyConfiguration]
 }
 
 // newInstrumentationInstances returns a InstrumentationInstances
 func newInstrumentationInstances(c *OdigosV1alpha1Client, namespace string) *instrumentationInstances {
 	return &instrumentationInstances{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithListAndApply[*v1alpha1.InstrumentationInstance, *v1alpha1.InstrumentationInstanceList, *odigosv1alpha1.InstrumentationInstanceApplyConfiguration](
+			"instrumentationinstances",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *v1alpha1.InstrumentationInstance { return &v1alpha1.InstrumentationInstance{} },
+			func() *v1alpha1.InstrumentationInstanceList { return &v1alpha1.InstrumentationInstanceList{} }),
 	}
-}
-
-// Get takes name of the instrumentationInstance, and returns the corresponding instrumentationInstance object, and an error if there is any.
-func (c *instrumentationInstances) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.InstrumentationInstance, err error) {
-	result = &v1alpha1.InstrumentationInstance{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("instrumentationinstances").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of InstrumentationInstances that match those selectors.
-func (c *instrumentationInstances) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.InstrumentationInstanceList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha1.InstrumentationInstanceList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("instrumentationinstances").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested instrumentationInstances.
-func (c *instrumentationInstances) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("instrumentationinstances").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a instrumentationInstance and creates it.  Returns the server's representation of the instrumentationInstance, and an error, if there is any.
-func (c *instrumentationInstances) Create(ctx context.Context, instrumentationInstance *v1alpha1.InstrumentationInstance, opts v1.CreateOptions) (result *v1alpha1.InstrumentationInstance, err error) {
-	result = &v1alpha1.InstrumentationInstance{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("instrumentationinstances").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(instrumentationInstance).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a instrumentationInstance and updates it. Returns the server's representation of the instrumentationInstance, and an error, if there is any.
-func (c *instrumentationInstances) Update(ctx context.Context, instrumentationInstance *v1alpha1.InstrumentationInstance, opts v1.UpdateOptions) (result *v1alpha1.InstrumentationInstance, err error) {
-	result = &v1alpha1.InstrumentationInstance{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("instrumentationinstances").
-		Name(instrumentationInstance.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(instrumentationInstance).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *instrumentationInstances) UpdateStatus(ctx context.Context, instrumentationInstance *v1alpha1.InstrumentationInstance, opts v1.UpdateOptions) (result *v1alpha1.InstrumentationInstance, err error) {
-	result = &v1alpha1.InstrumentationInstance{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("instrumentationinstances").
-		Name(instrumentationInstance.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(instrumentationInstance).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the instrumentationInstance and deletes it. Returns an error if one occurs.
-func (c *instrumentationInstances) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("instrumentationinstances").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *instrumentationInstances) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("instrumentationinstances").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched instrumentationInstance.
-func (c *instrumentationInstances) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.InstrumentationInstance, err error) {
-	result = &v1alpha1.InstrumentationInstance{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("instrumentationinstances").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied instrumentationInstance.
-func (c *instrumentationInstances) Apply(ctx context.Context, instrumentationInstance *odigosv1alpha1.InstrumentationInstanceApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.InstrumentationInstance, err error) {
-	if instrumentationInstance == nil {
-		return nil, fmt.Errorf("instrumentationInstance provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(instrumentationInstance)
-	if err != nil {
-		return nil, err
-	}
-	name := instrumentationInstance.Name
-	if name == nil {
-		return nil, fmt.Errorf("instrumentationInstance.Name must be provided to Apply")
-	}
-	result = &v1alpha1.InstrumentationInstance{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("instrumentationinstances").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *instrumentationInstances) ApplyStatus(ctx context.Context, instrumentationInstance *odigosv1alpha1.InstrumentationInstanceApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.InstrumentationInstance, err error) {
-	if instrumentationInstance == nil {
-		return nil, fmt.Errorf("instrumentationInstance provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(instrumentationInstance)
-	if err != nil {
-		return nil, err
-	}
-
-	name := instrumentationInstance.Name
-	if name == nil {
-		return nil, fmt.Errorf("instrumentationInstance.Name must be provided to Apply")
-	}
-
-	result = &v1alpha1.InstrumentationInstance{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("instrumentationinstances").
-		Name(*name).
-		SubResource("status").
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

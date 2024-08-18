@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// RenameAttributeApplyConfiguration represents an declarative configuration of the RenameAttribute type for use
+// RenameAttributeApplyConfiguration represents a declarative configuration of the RenameAttribute type for use
 // with apply.
 type RenameAttributeApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -32,7 +32,7 @@ type RenameAttributeApplyConfiguration struct {
 	Status                           *RenameAttributeStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// RenameAttribute constructs an declarative configuration of the RenameAttribute type for use with
+// RenameAttribute constructs a declarative configuration of the RenameAttribute type for use with
 // apply.
 func RenameAttribute(name, namespace string) *RenameAttributeApplyConfiguration {
 	b := &RenameAttributeApplyConfiguration{}
@@ -215,4 +215,10 @@ func (b *RenameAttributeApplyConfiguration) WithSpec(value *RenameAttributeSpecA
 func (b *RenameAttributeApplyConfiguration) WithStatus(value *RenameAttributeStatusApplyConfiguration) *RenameAttributeApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *RenameAttributeApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

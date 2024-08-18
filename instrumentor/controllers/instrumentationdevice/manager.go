@@ -65,6 +65,7 @@ func (w workloadEnvChangePredicate) Generic(e event.GenericEvent) bool {
 func SetupWithManager(mgr ctrl.Manager) error {
 	err := builder.
 		ControllerManagedBy(mgr).
+		Named("instrumentationdevice-collectorsgroup").
 		For(&odigosv1.CollectorsGroup{}).
 		Complete(&CollectorsGroupReconciler{
 			Client: mgr.GetClient(),
@@ -76,6 +77,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("instrumentationdevice-instrumentedapplication").
 		For(&odigosv1.InstrumentedApplication{}).
 		Complete(&InstrumentedApplicationReconciler{
 			Client: mgr.GetClient(),
@@ -87,6 +89,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("instrumentationdevice-configmaps").
 		For(&corev1.ConfigMap{}).
 		WithEventFilter(&utils.OnlyUpdatesPredicate{}).
 		Complete(&OdigosConfigReconciler{
@@ -99,6 +102,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("instrumentationdevice-deployment").
 		For(&appsv1.Deployment{}).
 		WithEventFilter(workloadEnvChangePredicate{}).
 		Complete(&DeploymentReconciler{
@@ -110,6 +114,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("instrumentationdevice-daemonset").
 		For(&appsv1.DaemonSet{}).
 		WithEventFilter(workloadEnvChangePredicate{}).
 		Complete(&DaemonSetReconciler{

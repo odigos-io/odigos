@@ -21,7 +21,7 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// WorkloadInstrumentationConfigApplyConfiguration represents an declarative configuration of the WorkloadInstrumentationConfig type for use
+// WorkloadInstrumentationConfigApplyConfiguration represents a declarative configuration of the WorkloadInstrumentationConfig type for use
 // with apply.
 type WorkloadInstrumentationConfigApplyConfiguration struct {
 	OptionKey                *string                                    `json:"optionKey,omitempty"`
@@ -30,7 +30,7 @@ type WorkloadInstrumentationConfigApplyConfiguration struct {
 	InstrumentationLibraries []InstrumentationLibraryApplyConfiguration `json:"instrumentationLibraries,omitempty"`
 }
 
-// WorkloadInstrumentationConfigApplyConfiguration constructs an declarative configuration of the WorkloadInstrumentationConfig type for use with
+// WorkloadInstrumentationConfigApplyConfiguration constructs a declarative configuration of the WorkloadInstrumentationConfig type for use with
 // apply.
 func WorkloadInstrumentationConfig() *WorkloadInstrumentationConfigApplyConfiguration {
 	return &WorkloadInstrumentationConfigApplyConfiguration{}

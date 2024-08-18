@@ -17,14 +17,14 @@ limitations under the License.
 
 package v1alpha1
 
-// InstrumentedApplicationSpecApplyConfiguration represents an declarative configuration of the InstrumentedApplicationSpec type for use
+// InstrumentedApplicationSpecApplyConfiguration represents a declarative configuration of the InstrumentedApplicationSpec type for use
 // with apply.
 type InstrumentedApplicationSpecApplyConfiguration struct {
 	RuntimeDetails []RuntimeDetailsByContainerApplyConfiguration `json:"runtimeDetails,omitempty"`
 	Options        []OptionByContainerApplyConfiguration         `json:"options,omitempty"`
 }
 
-// InstrumentedApplicationSpecApplyConfiguration constructs an declarative configuration of the InstrumentedApplicationSpec type for use with
+// InstrumentedApplicationSpecApplyConfiguration constructs a declarative configuration of the InstrumentedApplicationSpec type for use with
 // apply.
 func InstrumentedApplicationSpec() *InstrumentedApplicationSpecApplyConfiguration {
 	return &InstrumentedApplicationSpecApplyConfiguration{}
