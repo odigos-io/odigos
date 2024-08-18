@@ -21,14 +21,14 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// InstrumentationLibraryIdApplyConfiguration represents an declarative configuration of the InstrumentationLibraryId type for use
+// InstrumentationLibraryIdApplyConfiguration represents a declarative configuration of the InstrumentationLibraryId type for use
 // with apply.
 type InstrumentationLibraryIdApplyConfiguration struct {
 	InstrumentationLibraryName *string          `json:"libraryName,omitempty"`
 	SpanKind                   *common.SpanKind `json:"spanKind,omitempty"`
 }
 
-// InstrumentationLibraryIdApplyConfiguration constructs an declarative configuration of the InstrumentationLibraryId type for use with
+// InstrumentationLibraryIdApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryId type for use with
 // apply.
 func InstrumentationLibraryId() *InstrumentationLibraryIdApplyConfiguration {
 	return &InstrumentationLibraryIdApplyConfiguration{}

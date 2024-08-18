@@ -17,14 +17,14 @@ limitations under the License.
 
 package v1alpha1
 
-// AttributesAndSamplerRuleApplyConfiguration represents an declarative configuration of the AttributesAndSamplerRule type for use
+// AttributesAndSamplerRuleApplyConfiguration represents a declarative configuration of the AttributesAndSamplerRule type for use
 // with apply.
 type AttributesAndSamplerRuleApplyConfiguration struct {
 	AttributeConditions []AttributeConditionApplyConfiguration `json:"attributeConditions,omitempty"`
 	Fraction            *float64                               `json:"fraction,omitempty"`
 }
 
-// AttributesAndSamplerRuleApplyConfiguration constructs an declarative configuration of the AttributesAndSamplerRule type for use with
+// AttributesAndSamplerRuleApplyConfiguration constructs a declarative configuration of the AttributesAndSamplerRule type for use with
 // apply.
 func AttributesAndSamplerRule() *AttributesAndSamplerRuleApplyConfiguration {
 	return &AttributesAndSamplerRuleApplyConfiguration{}

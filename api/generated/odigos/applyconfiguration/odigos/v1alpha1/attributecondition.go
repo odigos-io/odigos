@@ -22,7 +22,7 @@ import (
 	attribute "go.opentelemetry.io/otel/attribute"
 )
 
-// AttributeConditionApplyConfiguration represents an declarative configuration of the AttributeCondition type for use
+// AttributeConditionApplyConfiguration represents a declarative configuration of the AttributeCondition type for use
 // with apply.
 type AttributeConditionApplyConfiguration struct {
 	Key      *attribute.Key     `json:"key,omitempty"`
@@ -30,7 +30,7 @@ type AttributeConditionApplyConfiguration struct {
 	Operator *v1alpha1.Operator `json:"operator,omitempty"`
 }
 
-// AttributeConditionApplyConfiguration constructs an declarative configuration of the AttributeCondition type for use with
+// AttributeConditionApplyConfiguration constructs a declarative configuration of the AttributeCondition type for use with
 // apply.
 func AttributeCondition() *AttributeConditionApplyConfiguration {
 	return &AttributeConditionApplyConfiguration{}

@@ -17,14 +17,14 @@ limitations under the License.
 
 package v1alpha1
 
-// HeadSamplingConfigApplyConfiguration represents an declarative configuration of the HeadSamplingConfig type for use
+// HeadSamplingConfigApplyConfiguration represents a declarative configuration of the HeadSamplingConfig type for use
 // with apply.
 type HeadSamplingConfigApplyConfiguration struct {
 	AttributesAndSamplerRules []AttributesAndSamplerRuleApplyConfiguration `json:"attributesAndSamplerRules,omitempty"`
 	FallbackFraction          *float64                                     `json:"fallbackFraction,omitempty"`
 }
 
-// HeadSamplingConfigApplyConfiguration constructs an declarative configuration of the HeadSamplingConfig type for use with
+// HeadSamplingConfigApplyConfiguration constructs a declarative configuration of the HeadSamplingConfig type for use with
 // apply.
 func HeadSamplingConfig() *HeadSamplingConfigApplyConfiguration {
 	return &HeadSamplingConfigApplyConfiguration{}
