@@ -85,7 +85,6 @@ const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({
     },
   ];
   useEffect(() => {
-    console.log({ currentStep });
     if (currentStep) {
       const currentSteps = (data || steps).map((step, index) => {
         if (index < currentStep - 1) {
@@ -96,7 +95,7 @@ const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({
           return { ...step, state: 'disabled' as const };
         }
       });
-      console.log({ currentSteps });
+
       setStepsList(currentSteps);
     }
   }, [currentStep, data]);
