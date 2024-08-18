@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -97,20 +98,9 @@ func (k *K8sPodInfoResolver) GetWorkloadNameByOwner(ctx context.Context, podName
 
 	ownerRefs := pod.GetOwnerReferences()
 	for _, ownerRef := range ownerRefs {
-		if ownerRef.Kind == "ReplicaSet" {
-			rs, err := k.kubeClient.AppsV1().ReplicaSets(pod.Namespace).Get(ctx, ownerRef.Name, metav1.GetOptions{})
-			if err != nil {
-				return "", "", pod, err
-			}
-
-			ownerRefs = rs.GetOwnerReferences()
-			for _, ownerRef := range ownerRefs {
-				if ownerRef.Kind == "Deployment" {
-					return ownerRef.Name, ownerRef.Kind, pod, nil
-				}
-			}
-		} else if ownerRef.Kind == "StatefulSet" || ownerRef.Kind == "DaemonSet" {
-			return ownerRef.Name, ownerRef.Kind, pod, nil
+		workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(ownerRef)
+		if err == nil {
+			return workloadName, string(workloadKind), pod, nil
 		}
 	}
 

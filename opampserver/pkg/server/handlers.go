@@ -59,13 +59,13 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, err
 	}
 
-	podWorkload := common.PodWorkload{
+	podWorkload := workload.PodWorkload{
 		Namespace: pod.GetNamespace(),
-		Kind:      k8sAttributes.WorkloadKind,
+		Kind:      workload.WorkloadKind(k8sAttributes.WorkloadKind),
 		Name:      k8sAttributes.WorkloadName,
 	}
 
-	instrumentedAppName := workload.GetRuntimeObjectName(k8sAttributes.WorkloadName, k8sAttributes.WorkloadKind)
+	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(k8sAttributes.WorkloadName, k8sAttributes.WorkloadKind)
 	remoteResourceAttributes, err := configresolvers.CalculateServerAttributes(k8sAttributes, c.nodeName)
 	if err != nil {
 		c.logger.Error(err, "failed to calculate server attributes", "k8sAttributes", k8sAttributes)
