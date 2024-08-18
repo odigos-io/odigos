@@ -1,15 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useCreateSource } from '../sources';
 import { useCreateDestination } from '../destinations';
 
-import {
-  K8sActualSource,
-  DestinationInput,
-  PersistNamespaceItemInput,
-} from '@/types';
+import { DestinationInput, PersistNamespaceItemInput } from '@/types';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNamespace } from '../compute-platform';
-import { IAppState, resetState } from '@/store';
+import { IAppState, resetSources } from '@/store';
 
 type ConnectEnvResult = {
   success: boolean;
@@ -38,7 +34,7 @@ export const useConnectEnv = () => {
   );
 
   const connectEnv = useCallback(
-    async (destination: DestinationInput) => {
+    async (destination: DestinationInput, callback?: () => void) => {
       setLoading(true);
       setError(null);
       setResult(null);
@@ -71,14 +67,14 @@ export const useConnectEnv = () => {
             );
           }
         }
-        dispatch(resetState());
+        dispatch(resetSources());
         // Create destination
         const destinationId = await createNewDestination(destination);
 
         if (!destinationId) {
           throw new Error('Error creating destination.');
         }
-
+        callback && callback();
         setResult({
           success: true,
           destinationId,

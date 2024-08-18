@@ -154,6 +154,16 @@ type Destination {
   conditions: [Condition!]
 }
 
+type ConfiguredDestination {
+  id: ID!
+  name: String!
+  type: String!
+  exportedSignals: ExportedSignals!
+  fields: String!
+  destinationType: DestinationTypesCategoryItem!
+  conditions: [Condition!]
+}
+
 type GetConfigResponse {
   installation: InstallationStatus!
 }
@@ -204,6 +214,7 @@ input PersistNamespaceSourceInput {
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
+  destinations: [ConfiguredDestination!]!
   destinationTypes: GetDestinationTypesResponse
   destinationTypeDetails(type: String!): GetDestinationDetailsResponse
 }
