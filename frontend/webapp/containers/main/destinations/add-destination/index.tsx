@@ -53,6 +53,7 @@ export function ChooseDestinationContainer() {
         <AddDestinationButtonWrapper>
           <AddDestinationButton onClick={() => handleOpenModal()} />
         </AddDestinationButtonWrapper>
+        <div>test</div>
         <AddDestinationModal
           isModalOpen={isModalOpen}
           handleCloseModal={handleCloseModal}
