@@ -170,49 +170,13 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 	return model.Destination{
 		Id:   k8sDest.Name,
 		Name: destName,
-		Type: string(destType),
+		Type: destType,
 		ExportedSignals: model.ExportedSignals{
 			Traces:  isSignalExported(k8sDest, common.TracesObservabilitySignal),
 			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),
 			Logs:    isSignalExported(k8sDest, common.LogsObservabilitySignal),
 		},
 		Fields:          mergedFields,
-		DestinationType: destTypeConfig,
-		Conditions:      conditions,
-	}
-}
-
-func K8sDestinationToConfiguredDestination(k8sDest v1alpha1.Destination, secretFields map[string]string) model.ConfiguredDestination {
-	destType := k8sDest.Spec.Type
-	destName := k8sDest.Spec.DestinationName
-	mergedFields := mergeDataAndSecrets(k8sDest.Spec.Data, secretFields)
-	destTypeConfig := DestinationTypeConfigToCategoryItem(destinations.GetDestinationByType(string(destType)))
-	mergedFieldsJSON, err := json.Marshal(mergedFields)
-	if err != nil {
-		// Handle error appropriately
-		mergedFieldsJSON = []byte("{}") // Default to empty JSON object if marshalling fails
-	}
-
-	var conditions []metav1.Condition
-	for _, condition := range k8sDest.Status.Conditions {
-		conditions = append(conditions, metav1.Condition{
-			Type:               condition.Type,
-			Status:             condition.Status,
-			Message:            condition.Message,
-			LastTransitionTime: condition.LastTransitionTime,
-		})
-	}
-
-	return model.ConfiguredDestination{
-		Id:   k8sDest.Name,
-		Name: destName,
-		Type: string(destType),
-		ExportedSignals: model.ExportedSignals{
-			Traces:  isSignalExported(k8sDest, common.TracesObservabilitySignal),
-			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),
-			Logs:    isSignalExported(k8sDest, common.LogsObservabilitySignal),
-		},
-		Fields:          string(mergedFieldsJSON),
 		DestinationType: destTypeConfig,
 		Conditions:      conditions,
 	}

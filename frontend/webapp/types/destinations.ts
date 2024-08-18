@@ -61,20 +61,6 @@ export interface DestinationInput {
   fields: { key: string; value: any }[];
 }
 
-export type DestinationTypeDetail = {
-  title: string;
-  value: string;
-};
-
-export type ConfiguredDestination = {
-  displayName: string;
-  category: string;
-  type: string;
-  exportedSignals: ExportedSignals;
-  imageUrl: string;
-  destinationTypeDetails: DestinationTypeDetail[];
-};
-
 export interface DestinationType {
   fields: any;
   display_name: string;

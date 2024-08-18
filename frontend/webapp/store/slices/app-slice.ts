@@ -1,4 +1,4 @@
-import { ConfiguredDestination, K8sActualSource } from '@/types';
+import { K8sActualSource } from '@/types';
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
@@ -7,13 +7,11 @@ export interface IAppState {
     [key: string]: K8sActualSource[];
   };
   namespaceFutureSelectAppsList: { [key: string]: boolean };
-  configuredDestinationsList: ConfiguredDestination[];
 }
 
 const initialState: IAppState = {
   sources: {},
   namespaceFutureSelectAppsList: {},
-  configuredDestinationsList: [],
 };
 
 export const appSlice = createSlice({
@@ -32,42 +30,17 @@ export const appSlice = createSlice({
     ) => {
       state.namespaceFutureSelectAppsList = action.payload;
     },
-    addConfiguredDestination: (
-      state,
-      action: PayloadAction<ConfiguredDestination>
-    ) => {
-      state.configuredDestinationsList.push(action.payload);
-    },
-
-    setConfiguredDestinationsList: (
-      state,
-      action: PayloadAction<ConfiguredDestination[]>
-    ) => {
-      state.configuredDestinationsList = action.payload;
-    },
-    resetSources: (state) => {
-      state.sources = initialState.sources;
-      state.namespaceFutureSelectAppsList =
-        initialState.namespaceFutureSelectAppsList;
-    },
+    // New resetState reducer to reset the state to initial values
     resetState: (state) => {
       state.sources = initialState.sources;
       state.namespaceFutureSelectAppsList =
         initialState.namespaceFutureSelectAppsList;
-      state.configuredDestinationsList =
-        initialState.configuredDestinationsList;
     },
   },
 });
 
 // Action creators are generated for each case reducer function
-export const {
-  setSources,
-  setNamespaceFutureSelectAppsList,
-  setConfiguredDestinationsList,
-  addConfiguredDestination,
-  resetState,
-  resetSources,
-} = appSlice.actions;
+export const { setSources, setNamespaceFutureSelectAppsList, resetState } =
+  appSlice.actions;
 
 export const appReducer = appSlice.reducer;

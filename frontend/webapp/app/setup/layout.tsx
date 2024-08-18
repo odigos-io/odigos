@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import styled from 'styled-components';
+import { SideMenu } from '@/components';
 
 const LayoutContainer = styled.div`
   width: 100%;
@@ -9,6 +10,12 @@ const LayoutContainer = styled.div`
   display: flex;
   align-items: center;
   flex-direction: column;
+`;
+
+const SideMenuWrapper = styled.div`
+  position: absolute;
+  left: 24px;
+  top: 144px;
 `;
 
 const MainContent = styled.div`
@@ -26,6 +33,9 @@ export default function SetupLayout({
 }) {
   return (
     <LayoutContainer>
+      <SideMenuWrapper>
+        <SideMenu />
+      </SideMenuWrapper>
       <MainContent>{children}</MainContent>
     </LayoutContainer>
   );
