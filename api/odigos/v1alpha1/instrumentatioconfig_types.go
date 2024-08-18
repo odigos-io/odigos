@@ -41,7 +41,7 @@ type SdkConfig struct {
 	Language common.ProgrammingLanguage `json:"language"`
 
 	// configurations for the instrumentation libraries the the SDK should use
-	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"libraryConfigs"`
+	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs"`
 
 	// HeadSamplingConfig is a set sampling rules.
 	// This config currently only applies to root spans.

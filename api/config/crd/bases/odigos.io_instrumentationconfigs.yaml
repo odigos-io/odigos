@@ -185,19 +185,7 @@ spec:
                       required:
                       - attributesAndSamplerRules
                       type: object
-                    language:
-                      description: The language of the SDK being configured
-                      enum:
-                      - java
-                      - python
-                      - go
-                      - dotnet
-                      - javascript
-                      - mysql
-                      - unknown
-                      - ignored
-                      type: string
-                    libraryConfigs:
+                    instrumentationLibraryConfigs:
                       description: configurations for the instrumentation libraries
                         the the SDK should use
                       items:
@@ -237,9 +225,21 @@ spec:
                         - libraryId
                         type: object
                       type: array
+                    language:
+                      description: The language of the SDK being configured
+                      enum:
+                      - java
+                      - python
+                      - go
+                      - dotnet
+                      - javascript
+                      - mysql
+                      - unknown
+                      - ignored
+                      type: string
                   required:
+                  - instrumentationLibraryConfigs
                   - language
-                  - libraryConfigs
                   type: object
                 type: array
             type: object
