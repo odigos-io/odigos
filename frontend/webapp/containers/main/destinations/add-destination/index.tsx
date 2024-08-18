@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { IAppState } from '@/store';
 import styled from 'styled-components';
+import { useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { NotificationNote, SectionTitle } from '@/reuseable-components';
 import { AddDestinationModal } from './add-destination-modal';
 import { AddDestinationButton, SetupHeader } from '@/components';
+import { NotificationNote, SectionTitle } from '@/reuseable-components';
 import { ConfiguredDestinationsList } from './configured-destinations-list';
-import { useSelector } from 'react-redux';
 
 const AddDestinationButtonWrapper = styled.div`
   width: 100%;
@@ -31,13 +32,15 @@ export function ChooseDestinationContainer() {
   const router = useRouter();
 
   const sourcesList = useSelector(({ app }) => app.sources);
-  console.log({ sourcesList });
-
+  const destinations = useSelector(
+    ({ app }: { app: IAppState }) => app.configuredDestinationsList
+  );
   const isSourcesListEmpty = () => {
     const sourceLen = Object.keys(sourcesList).length === 0;
     if (sourceLen) {
       return true;
     }
+
     let empty = true;
     for (const source in sourcesList) {
       if (sourcesList[source].length > 0) {
@@ -75,7 +78,7 @@ export function ChooseDestinationContainer() {
           title="Configure destinations"
           description="Add backend destinations where collected data will be sent and configure their settings."
         />
-        {isSourcesListEmpty() && (
+        {isSourcesListEmpty() && destinations.length === 0 && (
           <NotificationNoteWrapper>
             <NotificationNote type={'warning'} text={'No sources selected.'} />
           </NotificationNoteWrapper>
@@ -83,7 +86,7 @@ export function ChooseDestinationContainer() {
         <AddDestinationButtonWrapper>
           <AddDestinationButton onClick={() => handleOpenModal()} />
         </AddDestinationButtonWrapper>
-        <ConfiguredDestinationsList />
+        <ConfiguredDestinationsList data={destinations} />
         <AddDestinationModal
           isModalOpen={isModalOpen}
           handleCloseModal={handleCloseModal}

@@ -1,8 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import { IAppState } from '@/store';
 import styled from 'styled-components';
-import { useSelector } from 'react-redux';
 import { ConfiguredDestination } from '@/types';
 import { Divider, Text } from '@/reuseable-components';
 import { ConfiguredDestinationFields } from '@/components';
@@ -107,7 +105,9 @@ const ExpandIconWrapper = styled.div<{ expand?: boolean }>`
   }
 `;
 
-interface DestinationsListProps {}
+interface DestinationsListProps {
+  data: ConfiguredDestination[];
+}
 
 function ConfiguredDestinationsListItem({
   item,
@@ -184,14 +184,12 @@ function ConfiguredDestinationsListItem({
   );
 }
 
-const ConfiguredDestinationsList: React.FC<DestinationsListProps> = ({}) => {
-  const destinations = useSelector(
-    ({ app }: { app: IAppState }) => app.configuredDestinationsList
-  );
-
+const ConfiguredDestinationsList: React.FC<DestinationsListProps> = ({
+  data,
+}) => {
   return (
     <Container>
-      {destinations.map((item) => (
+      {data.map((item) => (
         <ConfiguredDestinationsListItem key={item.displayName} item={item} />
       ))}
     </Container>
