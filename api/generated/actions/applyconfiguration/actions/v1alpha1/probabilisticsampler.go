@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ProbabilisticSamplerApplyConfiguration represents an declarative configuration of the ProbabilisticSampler type for use
+// ProbabilisticSamplerApplyConfiguration represents a declarative configuration of the ProbabilisticSampler type for use
 // with apply.
 type ProbabilisticSamplerApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -32,7 +32,7 @@ type ProbabilisticSamplerApplyConfiguration struct {
 	Status                           *ProbabilisticSamplerStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// ProbabilisticSampler constructs an declarative configuration of the ProbabilisticSampler type for use with
+// ProbabilisticSampler constructs a declarative configuration of the ProbabilisticSampler type for use with
 // apply.
 func ProbabilisticSampler(name, namespace string) *ProbabilisticSamplerApplyConfiguration {
 	b := &ProbabilisticSamplerApplyConfiguration{}
@@ -215,4 +215,10 @@ func (b *ProbabilisticSamplerApplyConfiguration) WithSpec(value *ProbabilisticSa
 func (b *ProbabilisticSamplerApplyConfiguration) WithStatus(value *ProbabilisticSamplerStatusApplyConfiguration) *ProbabilisticSamplerApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *ProbabilisticSamplerApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

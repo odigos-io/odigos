@@ -17,7 +17,7 @@ limitations under the License.
 
 package v1alpha1
 
-// InstrumentationConfigSpecApplyConfiguration represents an declarative configuration of the InstrumentationConfigSpec type for use
+// InstrumentationConfigSpecApplyConfiguration represents a declarative configuration of the InstrumentationConfigSpec type for use
 // with apply.
 type InstrumentationConfigSpecApplyConfiguration struct {
 	RuntimeDetailsInvalidated *bool                                             `json:"runtimeDetailsInvalidated,omitempty"`
@@ -25,7 +25,7 @@ type InstrumentationConfigSpecApplyConfiguration struct {
 	SdkConfigs                []SdkConfigApplyConfiguration                     `json:"sdkConfigs,omitempty"`
 }
 
-// InstrumentationConfigSpecApplyConfiguration constructs an declarative configuration of the InstrumentationConfigSpec type for use with
+// InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
 // apply.
 func InstrumentationConfigSpec() *InstrumentationConfigSpecApplyConfiguration {
 	return &InstrumentationConfigSpecApplyConfiguration{}

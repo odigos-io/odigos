@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// LatencySamplerApplyConfiguration represents an declarative configuration of the LatencySampler type for use
+// LatencySamplerApplyConfiguration represents a declarative configuration of the LatencySampler type for use
 // with apply.
 type LatencySamplerApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -32,7 +32,7 @@ type LatencySamplerApplyConfiguration struct {
 	Status                           *LatencySamplerStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// LatencySampler constructs an declarative configuration of the LatencySampler type for use with
+// LatencySampler constructs a declarative configuration of the LatencySampler type for use with
 // apply.
 func LatencySampler(name, namespace string) *LatencySamplerApplyConfiguration {
 	b := &LatencySamplerApplyConfiguration{}
@@ -215,4 +215,10 @@ func (b *LatencySamplerApplyConfiguration) WithSpec(value *LatencySamplerSpecApp
 func (b *LatencySamplerApplyConfiguration) WithStatus(value *LatencySamplerStatusApplyConfiguration) *LatencySamplerApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *LatencySamplerApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

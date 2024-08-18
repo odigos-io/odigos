@@ -24,7 +24,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ProcessorApplyConfiguration represents an declarative configuration of the Processor type for use
+// ProcessorApplyConfiguration represents a declarative configuration of the Processor type for use
 // with apply.
 type ProcessorApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -33,7 +33,7 @@ type ProcessorApplyConfiguration struct {
 	Status                           *odigosv1alpha1.ProcessorStatus  `json:"status,omitempty"`
 }
 
-// Processor constructs an declarative configuration of the Processor type for use with
+// Processor constructs a declarative configuration of the Processor type for use with
 // apply.
 func Processor(name, namespace string) *ProcessorApplyConfiguration {
 	b := &ProcessorApplyConfiguration{}
@@ -216,4 +216,10 @@ func (b *ProcessorApplyConfiguration) WithSpec(value *ProcessorSpecApplyConfigur
 func (b *ProcessorApplyConfiguration) WithStatus(value odigosv1alpha1.ProcessorStatus) *ProcessorApplyConfiguration {
 	b.Status = &value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *ProcessorApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

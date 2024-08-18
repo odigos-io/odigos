@@ -17,14 +17,14 @@ limitations under the License.
 
 package v1alpha1
 
-// OptionByContainerApplyConfiguration represents an declarative configuration of the OptionByContainer type for use
+// OptionByContainerApplyConfiguration represents a declarative configuration of the OptionByContainer type for use
 // with apply.
 type OptionByContainerApplyConfiguration struct {
 	ContainerName            *string                                           `json:"containerName,omitempty"`
 	InstrumentationLibraries []InstrumentationLibraryOptionsApplyConfiguration `json:"instrumentationsLibraries,omitempty"`
 }
 
-// OptionByContainerApplyConfiguration constructs an declarative configuration of the OptionByContainer type for use with
+// OptionByContainerApplyConfiguration constructs a declarative configuration of the OptionByContainer type for use with
 // apply.
 func OptionByContainer() *OptionByContainerApplyConfiguration {
 	return &OptionByContainerApplyConfiguration{}

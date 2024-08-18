@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// AddClusterInfoApplyConfiguration represents an declarative configuration of the AddClusterInfo type for use
+// AddClusterInfoApplyConfiguration represents a declarative configuration of the AddClusterInfo type for use
 // with apply.
 type AddClusterInfoApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -32,7 +32,7 @@ type AddClusterInfoApplyConfiguration struct {
 	Status                           *AddClusterInfoStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// AddClusterInfo constructs an declarative configuration of the AddClusterInfo type for use with
+// AddClusterInfo constructs a declarative configuration of the AddClusterInfo type for use with
 // apply.
 func AddClusterInfo(name, namespace string) *AddClusterInfoApplyConfiguration {
 	b := &AddClusterInfoApplyConfiguration{}
@@ -215,4 +215,10 @@ func (b *AddClusterInfoApplyConfiguration) WithSpec(value *AddClusterInfoSpecApp
 func (b *AddClusterInfoApplyConfiguration) WithStatus(value *AddClusterInfoStatusApplyConfiguration) *AddClusterInfoApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *AddClusterInfoApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }
