@@ -38,7 +38,7 @@ export const useConnectEnv = () => {
   );
 
   const connectEnv = useCallback(
-    async (destination: DestinationInput) => {
+    async (destination: DestinationInput, callback?: () => void) => {
       setLoading(true);
       setError(null);
       setResult(null);
@@ -78,7 +78,7 @@ export const useConnectEnv = () => {
         if (!destinationId) {
           throw new Error('Error creating destination.');
         }
-
+        callback && callback();
         setResult({
           success: true,
           destinationId,

@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { DestinationTypeItem } from '@/types';
+import { ConfiguredDestination, DestinationTypeItem } from '@/types';
 import { Text } from '@/reuseable-components';
+import { useSelector } from 'react-redux';
+import { IAppState } from '@/store';
 
 const Container = styled.div`
   display: flex;
@@ -59,6 +61,7 @@ const DestinationIconWrapper = styled.div`
 
 const SignalsWrapper = styled.div`
   display: flex;
+  align-items: center;
   gap: 4px;
 `;
 
@@ -75,34 +78,44 @@ const TextWrapper = styled.div`
   justify-content: space-between;
 `;
 
-interface DestinationsListProps {
-  items: DestinationTypeItem[];
-  setSelectedItems: (item: DestinationTypeItem) => void;
-}
+interface DestinationsListProps {}
 
-const ConfiguredDestinationsList: React.FC<DestinationsListProps> = ({
-  items,
-  setSelectedItems,
-}) => {
-  function renderSupportedSignals(item: DestinationTypeItem) {
-    const supportedSignals = item.supportedSignals;
+const ConfiguredDestinationsList: React.FC<DestinationsListProps> = ({}) => {
+  const destinations = useSelector(
+    ({ app }: { app: IAppState }) => app.configuredDestinationsList
+  );
+
+  function renderSupportedSignals(item: ConfiguredDestination) {
+    const supportedSignals = item.exportedSignals;
     const signals = Object.keys(supportedSignals);
     const supportedSignalsList = signals.filter(
       (signal) => supportedSignals[signal].supported
     );
 
-    return supportedSignalsList.map((signal, index) => (
-      <SignalsWrapper key={index}>
-        <SignalText>{signal}</SignalText>
-        {index < supportedSignalsList.length - 1 && <SignalText>·</SignalText>}
-      </SignalsWrapper>
-    ));
+    return Object.keys(supportedSignals).map(
+      (signal, index) =>
+        supportedSignals[signal] && (
+          <SignalsWrapper key={index}>
+            <Image
+              src={`/icons/monitors/${signal}.svg`}
+              alt="monitor"
+              width={10}
+              height={16}
+            />
+
+            <SignalText>{signal}</SignalText>
+            {index < supportedSignalsList.length - 1 && (
+              <SignalText>·</SignalText>
+            )}
+          </SignalsWrapper>
+        )
+    );
   }
 
   return (
     <Container>
-      {items.map((item) => (
-        <ListItem key={item.displayName} onClick={() => setSelectedItems(item)}>
+      {destinations.map((item) => (
+        <ListItem key={item.displayName}>
           <ListItemContent>
             <DestinationIconWrapper>
               <Image

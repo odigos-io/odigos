@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { SectionTitle } from '@/reuseable-components';
 import { AddDestinationModal } from './add-destination-modal';
 import { AddDestinationButton, SetupHeader } from '@/components';
+import { ConfiguredDestinationsList } from './configured-destinations-list';
 
 const AddDestinationButtonWrapper = styled.div`
   width: 100%;
@@ -23,6 +24,7 @@ export function ChooseDestinationContainer() {
   const [isModalOpen, setModalOpen] = useState(false);
 
   const router = useRouter();
+
   const handleOpenModal = () => setModalOpen(true);
   const handleCloseModal = () => setModalOpen(false);
 
@@ -53,7 +55,7 @@ export function ChooseDestinationContainer() {
         <AddDestinationButtonWrapper>
           <AddDestinationButton onClick={() => handleOpenModal()} />
         </AddDestinationButtonWrapper>
-        <div>test</div>
+        <ConfiguredDestinationsList />
         <AddDestinationModal
           isModalOpen={isModalOpen}
           handleCloseModal={handleCloseModal}
