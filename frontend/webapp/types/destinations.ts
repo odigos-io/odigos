@@ -61,7 +61,7 @@ export interface DestinationInput {
   fields: { key: string; value: any }[];
 }
 
-type DestinationTypeDetail = {
+export type DestinationTypeDetail = {
   title: string;
   value: string;
 };
