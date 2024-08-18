@@ -56,6 +56,8 @@ type OdigosConfigurationSpec struct {
 
 //+genclient
 //+kubebuilder:object:root=true
+//+kubebuilder:metadata:labels=odigos.io/config=1
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // OdigosConfiguration is the Schema for the odigos configuration
 //

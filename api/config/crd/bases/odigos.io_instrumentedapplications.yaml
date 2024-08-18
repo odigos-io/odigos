@@ -4,6 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
+  labels:
+    odigos.io/config: "1"
+    odigos.io/system-object: "true"
   name: instrumentedapplications.odigos.io
 spec:
   group: odigos.io

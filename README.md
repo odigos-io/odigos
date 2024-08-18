@@ -1,6 +1,6 @@
 <p align="center">
-    <a href="https://github.com/odigos-io/odigos/actions/workflows/publish-cli.yml" target="_blank">
-        <img src="https://github.com/odigos-io/odigos/actions/workflows/publish-cli.yml/badge.svg" alt="Release Odigos CLI" style="margin-right: 10px; border: 1px solid #007acc; border-radius: 4px; padding: 5px;">
+    <a href="https://github.com/odigos-io/odigos/actions/workflows/release.yml" target="_blank">
+        <img src="https://github.com/odigos-io/odigos/actions/workflows/release.yml/badge.svg" alt="Release Odigos CLI" style="margin-right: 10px; border: 1px solid #007acc; border-radius: 4px; padding: 5px;">
     </a>
     <a href="https://goreportcard.com/report/github.com/odigos-io/odigos/cli" target="_blank">
         <img src="https://goreportcard.com/badge/github.com/odigos-io/odigos/cli" alt="Go Report Card" style="margin-right: 10px; border: 1px solid #4CAF50; border-radius: 4px; padding: 5px;">

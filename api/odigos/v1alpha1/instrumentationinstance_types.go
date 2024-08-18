@@ -118,6 +118,8 @@ type InstrumentationInstanceStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:metadata:labels=odigos.io/config=1
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // InstrumentationInstance is the Schema for the InstrumentationInstances API
 type InstrumentationInstance struct {

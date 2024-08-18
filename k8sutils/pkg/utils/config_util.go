@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func GetCurrentConfig(ctx context.Context, k8sClient client.Client) (common.OdigosConfiguration, error) {
+func GetCurrentOdigosConfig(ctx context.Context, k8sClient client.Client) (common.OdigosConfiguration, error) {
 	var configMap v1.ConfigMap
 	var odigosConfig common.OdigosConfiguration
 	odigosSystemNamespaceName := env.GetCurrentNamespace()
