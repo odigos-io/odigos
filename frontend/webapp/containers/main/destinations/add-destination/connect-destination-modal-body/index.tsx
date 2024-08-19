@@ -171,7 +171,7 @@ export function ConnectDestinationModalBody({
           description="Connect selected destination with Odigos."
           actionButton={
             destination.testConnectionSupported ? (
-              <TestConnection
+              <TestConnection // TODO: refactor this after add form validation
                 onError={() => setShowConnectionError(true)}
                 destination={{
                   name: destinationName,

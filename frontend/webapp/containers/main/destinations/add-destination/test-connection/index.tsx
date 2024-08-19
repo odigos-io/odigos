@@ -1,9 +1,9 @@
+import Image from 'next/image';
+import styled from 'styled-components';
+import React, { useState } from 'react';
+import { DestinationInput } from '@/types';
 import { useTestConnection } from '@/hooks';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
-import { DestinationInput } from '@/types';
-import Image from 'next/image';
-import React, { useState } from 'react';
-import styled from 'styled-components';
 
 interface TestConnectionProps {
   destination: DestinationInput | undefined;
@@ -14,7 +14,7 @@ const ActionButton = styled(Button)<{ isTestConnectionSuccess?: boolean }>`
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: ${({ theme, isTestConnectionSuccess }) =>
+  background-color: ${({ isTestConnectionSuccess }) =>
     isTestConnectionSuccess ? 'rgba(129, 175, 101, 0.16)' : 'transparent'};
 `;
 
