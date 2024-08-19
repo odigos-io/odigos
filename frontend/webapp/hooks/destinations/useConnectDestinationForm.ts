@@ -35,6 +35,7 @@ export function useConnectDestinationForm() {
             };
 
           case 'input':
+          case 'textarea':
             componentPropertiesJson = safeJsonParse<string[]>(
               componentProperties,
               []
@@ -45,15 +46,6 @@ export function useConnectDestinationForm() {
               title: displayName,
               ...componentPropertiesJson,
             };
-
-          //   case 'multi_input':
-          //   case 'textarea':
-          //     return {
-          //       name,
-          //       componentType,
-          //       title: displayName,
-          //       ...componentPropertiesJson,
-          //     };
           default:
             return undefined;
         }
