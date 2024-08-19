@@ -19,10 +19,12 @@ import {
   CheckboxList,
   Divider,
   Input,
+  NotificationNote,
   SectionTitle,
 } from '@/reuseable-components';
 import { addConfiguredDestination } from '@/store';
 import { useDispatch } from 'react-redux';
+import { TestConnection } from '../test-connection';
 
 const SIDE_MENU_DATA: StepProps[] = [
   {
@@ -45,7 +47,9 @@ const FormContainer = styled.div`
   gap: 24px;
 `;
 
-//
+const NotificationNoteWrapper = styled.div`
+  margin-top: 24px;
+`;
 
 interface ConnectDestinationModalBodyProps {
   destination: DestinationTypeItem | undefined;
@@ -68,6 +72,7 @@ export function ConnectDestinationModalBody({
     metrics: false,
     traces: false,
   });
+  const [showConnectionError, setShowConnectionError] = useState(false);
   const [destinationName, setDestinationName] = useState<string>('');
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -164,9 +169,35 @@ export function ConnectDestinationModalBody({
         <SectionTitle
           title="Create connection"
           description="Connect selected destination with Odigos."
-          buttonText="Check connection"
-          onButtonClick={() => {}}
+          actionButton={
+            destination.testConnectionSupported ? (
+              <TestConnection
+                onError={() => setShowConnectionError(true)}
+                destination={{
+                  name: destinationName,
+                  type: destination?.type || '',
+                  exportedSignals,
+                  fields: Object.entries(formData).map(([name, value]) => ({
+                    key: name,
+                    value,
+                  })),
+                }}
+              />
+            ) : (
+              <></>
+            )
+          }
         />
+        {showConnectionError && (
+          <NotificationNoteWrapper>
+            <NotificationNote
+              type="error"
+              text={
+                'Connection failed. Please check your input and try once again.'
+              }
+            />
+          </NotificationNoteWrapper>
+        )}
         <Divider margin="24px 0" />
         <FormContainer>
           <CheckboxList

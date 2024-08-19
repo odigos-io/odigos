@@ -16,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
+	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -23,7 +24,6 @@ import (
 
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
 func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
-
 	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, name, nil)
 	if err != nil {
 		return nil, err
@@ -193,6 +193,43 @@ func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace stri
 	}
 
 	return true, nil
+}
+
+// TestConnectionForDestination is the resolver for the testConnectionForDestination field.
+func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, input model.DestinationInput) (*model.TestConnectionResponse, error) {
+	destType := common.DestinationType(input.Type)
+
+	destConfig, err := services.GetDestinationTypeConfig(destType)
+	if err != nil {
+		return nil, err
+	}
+
+	if !destConfig.Spec.TestConnectionSupported {
+		return nil, fmt.Errorf("destination type %s does not support test connection", input.Type)
+	}
+
+	configurer, err := testconnection.ConvertDestinationToConfigurer(input)
+	if err != nil {
+		return nil, err
+	}
+
+	// Assuming testconnection.TestConnection returns a struct with fields similar to res.Succeeded, res.StatusCode, etc.
+	res := testconnection.TestConnection(ctx, configurer)
+	if !res.Succeeded {
+		return &model.TestConnectionResponse{
+			Succeeded:       false,
+			StatusCode:      res.StatusCode,
+			DestinationType: (*string)(&res.DestinationType),
+			Message:         &res.Message,
+			Reason:          (*string)(&res.Reason),
+		}, nil
+	}
+
+	return &model.TestConnectionResponse{
+		Succeeded:       true,
+		StatusCode:      200,
+		DestinationType: (*string)(&res.DestinationType),
+	}, nil
 }
 
 // ComputePlatform is the resolver for the computePlatform field.

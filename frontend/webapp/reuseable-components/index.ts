@@ -13,3 +13,4 @@ export * from './navigation-buttons';
 export * from './tag';
 export * from './checkbox-list';
 export * from './notification-note';
+export * from './fade-loader';

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import theme from '@/styles/palette';
-import { useCheckConnection, useKeyDown } from '@/hooks';
+import { useTestConnection, useKeyDown } from '@/hooks';
 import { Field, SelectedDestination } from '@/types';
 import { renderFields } from './dynamic.fields';
 import {
@@ -81,7 +81,7 @@ export function CreateConnectionForm({
     destinationNameValue || ''
   );
 
-  const { checkDestinationConnection, isLoading } = useCheckConnection();
+  const { testConnection } = useTestConnection();
 
   useEffect(() => {
     setInitialDynamicFields();
@@ -209,7 +209,7 @@ export function CreateConnectionForm({
       type: destination.type,
     };
     try {
-      checkDestinationConnection(body, setIsConnectionTested);
+      // testConnection(body);
     } catch (error) {}
   }
 
@@ -251,7 +251,8 @@ export function CreateConnectionForm({
             disabled={isCreateButtonDisabled}
             onClick={handleCheckDestinationConnection}
           >
-            {isLoading ? (
+            <div></div>
+            {/* {isLoading ? (
               <KeyvalLoader width={9} height={9} />
             ) : isConnectionTested.enabled === null ? (
               <KeyvalText color={theme.text.secondary} size={14} weight={600}>
@@ -265,7 +266,7 @@ export function CreateConnectionForm({
               <KeyvalText color={theme.colors.error} size={14} weight={600}>
                 {isConnectionTested.message}
               </KeyvalText>
-            )}
+            )} */}
           </KeyvalButton>
         )}
         <KeyvalButton

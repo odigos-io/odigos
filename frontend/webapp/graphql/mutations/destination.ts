@@ -7,3 +7,15 @@ export const CREATE_DESTINATION = gql`
     }
   }
 `;
+
+export const TEST_CONNECTION_MUTATION = gql`
+  mutation TestConnection($destination: DestinationInput!) {
+    testConnectionForDestination(destination: $destination) {
+      succeeded
+      statusCode
+      destinationType
+      message
+      reason
+    }
+  }
+`;
