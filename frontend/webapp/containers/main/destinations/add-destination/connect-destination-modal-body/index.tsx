@@ -2,11 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { SideMenu } from '@/components';
 import { useQuery } from '@apollo/client';
-import { useDispatch } from 'react-redux';
-import { addConfiguredDestination } from '@/store';
+import { useConnectDestinationForm, useConnectEnv } from '@/hooks';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { Body, Container, SideMenuWrapper } from '../styled';
-import { useConnectDestinationForm, useConnectEnv } from '@/hooks';
 import { DynamicConnectDestinationFormFields } from '../dynamic-form-fields';
 import {
   StepProps,
@@ -15,6 +13,7 @@ import {
   DestinationInput,
   DestinationTypeItem,
   DestinationDetailsResponse,
+  ConfiguredDestination,
 } from '@/types';
 import {
   CheckboxList,
@@ -22,6 +21,8 @@ import {
   Input,
   SectionTitle,
 } from '@/reuseable-components';
+import { addConfiguredDestination } from '@/store';
+import { useDispatch } from 'react-redux';
 
 const SIDE_MENU_DATA: StepProps[] = [
   {
@@ -43,6 +44,8 @@ const FormContainer = styled.div`
   flex-direction: column;
   gap: 24px;
 `;
+
+//
 
 interface ConnectDestinationModalBodyProps {
   destination: DestinationTypeItem | undefined;
@@ -70,6 +73,9 @@ export function ConnectDestinationModalBody({
   const [formData, setFormData] = useState<Record<string, any>>({});
   const { buildFormDynamicFields } = useConnectDestinationForm();
   const { connectEnv } = useConnectEnv();
+
+  const dispatch = useDispatch();
+
   const monitors = useMemo(() => {
     if (!destination) return [];
 
@@ -114,13 +120,36 @@ export function ConnectDestinationModalBody({
       value,
     }));
 
+    function storeConfiguredDestination() {
+      const destinationTypeDetails = dynamicFields.map((field) => ({
+        title: field.title,
+        value: formData[field.name],
+      }));
+
+      destinationTypeDetails.unshift({
+        title: 'Destination name',
+        value: destinationName,
+      });
+
+      const storedDestination: ConfiguredDestination = {
+        exportedSignals,
+        destinationTypeDetails,
+        type: destination?.type || '',
+        imageUrl: destination?.imageUrl || '',
+        category: destination?.category || '',
+        displayName: destination?.displayName || '',
+      };
+
+      dispatch(addConfiguredDestination(storedDestination));
+    }
+
     const body: DestinationInput = {
       name: destinationName,
       type: destination?.type || '',
       exportedSignals,
       fields,
     };
-    await connectEnv(body);
+    await connectEnv(body, storeConfiguredDestination);
   }
 
   if (!destination) return null;
@@ -128,7 +157,7 @@ export function ConnectDestinationModalBody({
   return (
     <Container>
       <SideMenuWrapper>
-        <SideMenu data={SIDE_MENU_DATA} currentStep={2} />
+        <SideMenu data={SIDE_MENU_DATA} />
       </SideMenuWrapper>
 
       <Body>

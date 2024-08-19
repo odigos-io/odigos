@@ -1,7 +1,7 @@
-import { Text } from '@/reuseable-components';
-import { StepProps } from '@/types';
 import Image from 'next/image';
+import { StepProps } from '@/types';
 import React, { useEffect } from 'react';
+import { Text } from '@/reuseable-components';
 import styled, { css } from 'styled-components';
 
 const Container = styled.div`
@@ -14,7 +14,7 @@ const Step = styled.div<{ state: 'finish' | 'active' | 'disabled' }>`
   display: flex;
   gap: 16px;
   padding: 10px 0;
-  cursor: ${({ state }) => (state === 'disabled' ? 'not-allowed' : 'pointer')};
+  cursor: ${({ state }) => (state === 'disabled' ? 'auto' : 'auto')};
   opacity: ${({ state }) => (state === 'disabled' ? 0.5 : 1)};
 
   transition: opacity 0.3s;
@@ -63,9 +63,7 @@ const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({
   data,
   currentStep,
 }) => {
-  const [stepsList, setStepsList] = React.useState<StepProps[] | null>(
-    null as any
-  );
+  const [stepsList, setStepsList] = React.useState<StepProps[]>([]);
   const steps: StepProps[] = data || [
     {
       title: 'INSTALLATION',
@@ -76,6 +74,8 @@ const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({
     {
       title: 'SOURCES',
       state: 'active',
+      subtitle: '',
+
       stepNumber: 2,
     },
     {
@@ -102,7 +102,7 @@ const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({
 
   return (
     <Container>
-      {stepsList?.map((step, index) => (
+      {stepsList.map((step, index) => (
         <Step key={index} state={step.state}>
           <IconWrapper state={step.state}>
             {step.state === 'finish' && (
