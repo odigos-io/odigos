@@ -54,11 +54,16 @@ export interface ExportedSignals {
   traces: boolean;
 }
 
+interface FieldInput {
+  key: string;
+  value: string;
+}
+
 export interface DestinationInput {
   name: string;
   type: string;
   exportedSignals: ExportedSignals;
-  fields: { key: string; value: any }[];
+  fields: FieldInput[];
 }
 
 export type DestinationTypeDetail = {

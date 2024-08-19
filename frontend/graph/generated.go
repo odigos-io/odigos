@@ -141,9 +141,10 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateNewDestination func(childComplexity int, destination model.DestinationInput) int
-		PersistK8sNamespace  func(childComplexity int, namespace model.PersistNamespaceItemInput) int
-		PersistK8sSources    func(childComplexity int, namespace string, sources []*model.PersistNamespaceSourceInput) int
+		CreateNewDestination         func(childComplexity int, destination model.DestinationInput) int
+		PersistK8sNamespace          func(childComplexity int, namespace model.PersistNamespaceItemInput) int
+		PersistK8sSources            func(childComplexity int, namespace string, sources []*model.PersistNamespaceSourceInput) int
+		TestConnectionForDestination func(childComplexity int, destination model.DestinationInput) int
 	}
 
 	ObservabilitySignalSupport struct {
@@ -167,6 +168,14 @@ type ComplexityRoot struct {
 		Metrics func(childComplexity int) int
 		Traces  func(childComplexity int) int
 	}
+
+	TestConnectionResponse struct {
+		DestinationType func(childComplexity int) int
+		Message         func(childComplexity int) int
+		Reason          func(childComplexity int) int
+		StatusCode      func(childComplexity int) int
+		Succeeded       func(childComplexity int) int
+	}
 }
 
 type ComputePlatformResolver interface {
@@ -188,6 +197,7 @@ type MutationResolver interface {
 	CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error)
 	PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error)
 	PersistK8sSources(ctx context.Context, namespace string, sources []*model.PersistNamespaceSourceInput) (bool, error)
+	TestConnectionForDestination(ctx context.Context, destination model.DestinationInput) (*model.TestConnectionResponse, error)
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
@@ -623,6 +633,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.PersistK8sSources(childComplexity, args["namespace"].(string), args["sources"].([]*model.PersistNamespaceSourceInput)), true
 
+	case "Mutation.testConnectionForDestination":
+		if e.complexity.Mutation.TestConnectionForDestination == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_testConnectionForDestination_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.TestConnectionForDestination(childComplexity, args["destination"].(model.DestinationInput)), true
+
 	case "ObservabilitySignalSupport.supported":
 		if e.complexity.ObservabilitySignalSupport.Supported == nil {
 			break
@@ -697,6 +719,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SupportedSignals.Traces(childComplexity), true
+
+	case "TestConnectionResponse.destinationType":
+		if e.complexity.TestConnectionResponse.DestinationType == nil {
+			break
+		}
+
+		return e.complexity.TestConnectionResponse.DestinationType(childComplexity), true
+
+	case "TestConnectionResponse.message":
+		if e.complexity.TestConnectionResponse.Message == nil {
+			break
+		}
+
+		return e.complexity.TestConnectionResponse.Message(childComplexity), true
+
+	case "TestConnectionResponse.reason":
+		if e.complexity.TestConnectionResponse.Reason == nil {
+			break
+		}
+
+		return e.complexity.TestConnectionResponse.Reason(childComplexity), true
+
+	case "TestConnectionResponse.statusCode":
+		if e.complexity.TestConnectionResponse.StatusCode == nil {
+			break
+		}
+
+		return e.complexity.TestConnectionResponse.StatusCode(childComplexity), true
+
+	case "TestConnectionResponse.succeeded":
+		if e.complexity.TestConnectionResponse.Succeeded == nil {
+			break
+		}
+
+		return e.complexity.TestConnectionResponse.Succeeded(childComplexity), true
 
 	}
 	return 0, false
@@ -945,6 +1002,21 @@ func (ec *executionContext) field_Mutation_persistK8sSources_args(ctx context.Co
 		}
 	}
 	args["sources"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_testConnectionForDestination_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.DestinationInput
+	if tmp, ok := rawArgs["destination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("destination"))
+		arg0, err = ec.unmarshalNDestinationInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDestinationInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["destination"] = arg0
 	return args, nil
 }
 
@@ -3594,6 +3666,73 @@ func (ec *executionContext) fieldContext_Mutation_persistK8sSources(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_testConnectionForDestination(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_testConnectionForDestination(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().TestConnectionForDestination(rctx, fc.Args["destination"].(model.DestinationInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.TestConnectionResponse)
+	fc.Result = res
+	return ec.marshalNTestConnectionResponse2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTestConnectionResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_testConnectionForDestination(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "succeeded":
+				return ec.fieldContext_TestConnectionResponse_succeeded(ctx, field)
+			case "statusCode":
+				return ec.fieldContext_TestConnectionResponse_statusCode(ctx, field)
+			case "destinationType":
+				return ec.fieldContext_TestConnectionResponse_destinationType(ctx, field)
+			case "message":
+				return ec.fieldContext_TestConnectionResponse_message(ctx, field)
+			case "reason":
+				return ec.fieldContext_TestConnectionResponse_reason(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TestConnectionResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_testConnectionForDestination_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ObservabilitySignalSupport_supported(ctx context.Context, field graphql.CollectedField, obj *model.ObservabilitySignalSupport) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ObservabilitySignalSupport_supported(ctx, field)
 	if err != nil {
@@ -4195,6 +4334,217 @@ func (ec *executionContext) fieldContext_SupportedSignals_logs(_ context.Context
 				return ec.fieldContext_ObservabilitySignalSupport_supported(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ObservabilitySignalSupport", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TestConnectionResponse_succeeded(ctx context.Context, field graphql.CollectedField, obj *model.TestConnectionResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TestConnectionResponse_succeeded(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Succeeded, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TestConnectionResponse_succeeded(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TestConnectionResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TestConnectionResponse_statusCode(ctx context.Context, field graphql.CollectedField, obj *model.TestConnectionResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TestConnectionResponse_statusCode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StatusCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TestConnectionResponse_statusCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TestConnectionResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TestConnectionResponse_destinationType(ctx context.Context, field graphql.CollectedField, obj *model.TestConnectionResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TestConnectionResponse_destinationType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DestinationType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TestConnectionResponse_destinationType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TestConnectionResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TestConnectionResponse_message(ctx context.Context, field graphql.CollectedField, obj *model.TestConnectionResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TestConnectionResponse_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TestConnectionResponse_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TestConnectionResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TestConnectionResponse_reason(ctx context.Context, field graphql.CollectedField, obj *model.TestConnectionResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TestConnectionResponse_reason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TestConnectionResponse_reason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TestConnectionResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7183,6 +7533,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "testConnectionForDestination":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_testConnectionForDestination(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7441,6 +7798,56 @@ func (ec *executionContext) _SupportedSignals(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var testConnectionResponseImplementors = []string{"TestConnectionResponse"}
+
+func (ec *executionContext) _TestConnectionResponse(ctx context.Context, sel ast.SelectionSet, obj *model.TestConnectionResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, testConnectionResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TestConnectionResponse")
+		case "succeeded":
+			out.Values[i] = ec._TestConnectionResponse_succeeded(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "statusCode":
+			out.Values[i] = ec._TestConnectionResponse_statusCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "destinationType":
+			out.Values[i] = ec._TestConnectionResponse_destinationType(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._TestConnectionResponse_message(ctx, field, obj)
+		case "reason":
+			out.Values[i] = ec._TestConnectionResponse_reason(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8060,6 +8467,21 @@ func (ec *executionContext) marshalNInstallationStatus2githubᚗcomᚋodigosᚑi
 	return v
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNK8sActualNamespace2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sActualNamespace(ctx context.Context, sel ast.SelectionSet, v []*model.K8sActualNamespace) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -8236,6 +8658,20 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 
 func (ec *executionContext) marshalNSupportedSignals2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSupportedSignals(ctx context.Context, sel ast.SelectionSet, v model.SupportedSignals) graphql.Marshaler {
 	return ec._SupportedSignals(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTestConnectionResponse2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTestConnectionResponse(ctx context.Context, sel ast.SelectionSet, v model.TestConnectionResponse) graphql.Marshaler {
+	return ec._TestConnectionResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTestConnectionResponse2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTestConnectionResponse(ctx context.Context, sel ast.SelectionSet, v *model.TestConnectionResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TestConnectionResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

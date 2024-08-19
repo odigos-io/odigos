@@ -201,6 +201,14 @@ input PersistNamespaceSourceInput {
   selected: Boolean
 }
 
+type TestConnectionResponse {
+  succeeded: Boolean!
+  statusCode: Int!
+  destinationType: String
+  message: String
+  reason: String
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -215,4 +223,7 @@ type Mutation {
     namespace: String!
     sources: [PersistNamespaceSourceInput!]!
   ): Boolean!
+  testConnectionForDestination(
+    destination: DestinationInput!
+  ): TestConnectionResponse!
 }

@@ -79,7 +79,7 @@ export function ChooseDestinationModalBody({
   return (
     <Container>
       <SideMenuWrapper>
-        <SideMenu data={SIDE_MENU_DATA} />
+        <SideMenu data={SIDE_MENU_DATA} currentStep={1} />
       </SideMenuWrapper>
       <Body>
         <SectionTitle

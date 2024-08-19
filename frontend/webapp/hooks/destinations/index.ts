@@ -1,4 +1,4 @@
 export * from './useDestinations';
-export * from './useCheckConnection';
+export * from './useTestConnection';
 export * from './useConnectDestinationForm';
 export * from './useCreateDestination';

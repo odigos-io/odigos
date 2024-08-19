@@ -22,7 +22,7 @@ const NotificationContainer = styled.div<{ type: NotificationType }>`
       case 'warning':
         return '#472300'; // Orange
       case 'error':
-        return '#FF4C4C'; // Red
+        return 'rgba(226, 90, 90, 0.12);';
       case 'success':
         return '#28A745'; // Green
       case 'info':
@@ -45,20 +45,19 @@ const Title = styled(Text)<{ type: NotificationType }>`
   color: ${({ type }) => {
     switch (type) {
       case 'warning':
-        return '#E9CF35'; // Orange
+        return '#E9CF35';
       case 'error':
-        return '#FF4C4C'; // Red
+        return '#E25A5A';
       case 'success':
-        return '#28A745'; // Green
+        return '#28A745';
       case 'info':
-        return '#2B2D66'; // Blue
+        return '#2B2D66';
       default:
-        return '#2B2D66'; // Default to info color
+        return '#2B2D66';
     }
   }};
 `;
 
-// Icons can be dynamically rendered based on the type
 const NotificationIcon = ({ type }: { type: NotificationType }) => {
   switch (type) {
     case 'warning':

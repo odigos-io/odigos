@@ -124,6 +124,14 @@ type SourceContainerRuntimeDetails struct {
 	Language      string `json:"language"`
 }
 
+type TestConnectionResponse struct {
+	Succeeded       bool    `json:"succeeded"`
+	StatusCode      int     `json:"statusCode"`
+	DestinationType *string `json:"destinationType,omitempty"`
+	Message         *string `json:"message,omitempty"`
+	Reason          *string `json:"reason,omitempty"`
+}
+
 type ComputePlatformType string
 
 const (

@@ -23,9 +23,9 @@ const ItemTitle = styled(Text)`
 
 const ItemValue = styled(Text)`
   word-break: break-all;
+  width: 90%;
   color: ${({ theme }) => theme.colors.text};
   font-size: 12px;
-  font-weight: 300;
   line-height: 18px;
 `;
 
