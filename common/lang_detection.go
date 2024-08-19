@@ -5,7 +5,7 @@ type ProgramLanguageDetails struct {
 	RuntimeVersion string
 }
 
-// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;mysql;unknown;ignored
+// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;mysql;nginx;unknown;ignored
 type ProgrammingLanguage string
 
 const (
@@ -17,6 +17,7 @@ const (
 	// This is an experimental feature, It is not a language
 	// but in order to avoid huge refactoring we are adding it here for now
 	MySQLProgrammingLanguage ProgrammingLanguage = "mysql"
+	NginxProgrammingLanguage ProgrammingLanguage = "nginx"
 	// Used when the language detection is not successful for all the available inspectors
 	UnknownProgrammingLanguage ProgrammingLanguage = "unknown"
 	// Ignored is used when the odigos is configured to ignore the process/container
