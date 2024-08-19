@@ -213,7 +213,6 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, inp
 		return nil, err
 	}
 
-	// Assuming testconnection.TestConnection returns a struct with fields similar to res.Succeeded, res.StatusCode, etc.
 	res := testconnection.TestConnection(ctx, configurer)
 	if !res.Succeeded {
 		return &model.TestConnectionResponse{

@@ -2,9 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { SideMenu } from '@/components';
 import { useQuery } from '@apollo/client';
-import { useConnectDestinationForm, useConnectEnv } from '@/hooks';
+import { useDispatch } from 'react-redux';
+import { addConfiguredDestination } from '@/store';
+import { TestConnection } from '../test-connection';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { Body, Container, SideMenuWrapper } from '../styled';
+import { useConnectDestinationForm, useConnectEnv } from '@/hooks';
 import { DynamicConnectDestinationFormFields } from '../dynamic-form-fields';
 import {
   StepProps,
@@ -22,9 +25,6 @@ import {
   NotificationNote,
   SectionTitle,
 } from '@/reuseable-components';
-import { addConfiguredDestination } from '@/store';
-import { useDispatch } from 'react-redux';
-import { TestConnection } from '../test-connection';
 
 const SIDE_MENU_DATA: StepProps[] = [
   {
@@ -60,6 +60,20 @@ export function ConnectDestinationModalBody({
   destination,
   onSubmitRef,
 }: ConnectDestinationModalBodyProps) {
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [destinationName, setDestinationName] = useState<string>('');
+  const [showConnectionError, setShowConnectionError] = useState(false);
+  const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
+  const [exportedSignals, setExportedSignals] = useState<ExportedSignals>({
+    logs: false,
+    metrics: false,
+    traces: false,
+  });
+
+  const dispatch = useDispatch();
+  const { connectEnv } = useConnectEnv();
+  const { buildFormDynamicFields } = useConnectDestinationForm();
+
   const { data } = useQuery<DestinationDetailsResponse>(
     GET_DESTINATION_TYPE_DETAILS,
     {
@@ -67,19 +81,6 @@ export function ConnectDestinationModalBody({
       skip: !destination,
     }
   );
-  const [exportedSignals, setExportedSignals] = useState<ExportedSignals>({
-    logs: false,
-    metrics: false,
-    traces: false,
-  });
-  const [showConnectionError, setShowConnectionError] = useState(false);
-  const [destinationName, setDestinationName] = useState<string>('');
-  const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
-  const [formData, setFormData] = useState<Record<string, any>>({});
-  const { buildFormDynamicFields } = useConnectDestinationForm();
-  const { connectEnv } = useConnectEnv();
-
-  const dispatch = useDispatch();
 
   const monitors = useMemo(() => {
     if (!destination) return [];
