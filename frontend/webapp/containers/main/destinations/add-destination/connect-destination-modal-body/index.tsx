@@ -157,7 +157,7 @@ export function ConnectDestinationModalBody({
   return (
     <Container>
       <SideMenuWrapper>
-        <SideMenu data={SIDE_MENU_DATA} />
+        <SideMenu data={SIDE_MENU_DATA} currentStep={2} />
       </SideMenuWrapper>
 
       <Body>
