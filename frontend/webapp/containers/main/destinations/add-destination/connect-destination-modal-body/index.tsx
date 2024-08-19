@@ -2,9 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { SideMenu } from '@/components';
 import { useQuery } from '@apollo/client';
-import { useConnectDestinationForm, useConnectEnv } from '@/hooks';
+import { useDispatch } from 'react-redux';
+import { addConfiguredDestination } from '@/store';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { Body, Container, SideMenuWrapper } from '../styled';
+import { useConnectDestinationForm, useConnectEnv } from '@/hooks';
 import { DynamicConnectDestinationFormFields } from '../dynamic-form-fields';
 import {
   StepProps,
@@ -21,8 +23,6 @@ import {
   Input,
   SectionTitle,
 } from '@/reuseable-components';
-import { addConfiguredDestination } from '@/store';
-import { useDispatch } from 'react-redux';
 
 const SIDE_MENU_DATA: StepProps[] = [
   {
