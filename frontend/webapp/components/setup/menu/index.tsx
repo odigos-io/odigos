@@ -1,7 +1,7 @@
 import { Text } from '@/reuseable-components';
 import { StepProps } from '@/types';
 import Image from 'next/image';
-import React from 'react';
+import React, { useEffect } from 'react';
 import styled, { css } from 'styled-components';
 
 const Container = styled.div`
@@ -59,7 +59,13 @@ const StepTitle = styled(Text)`
 
 const StepSubtitle = styled(Text)``;
 
-const SideMenu: React.FC<{ data?: StepProps[] }> = ({ data }) => {
+const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({
+  data,
+  currentStep,
+}) => {
+  const [stepsList, setStepsList] = React.useState<StepProps[] | null>(
+    null as any
+  );
   const steps: StepProps[] = data || [
     {
       title: 'INSTALLATION',
@@ -78,10 +84,25 @@ const SideMenu: React.FC<{ data?: StepProps[] }> = ({ data }) => {
       stepNumber: 3,
     },
   ];
+  useEffect(() => {
+    if (currentStep) {
+      const currentSteps = (data || steps).map((step, index) => {
+        if (index < currentStep - 1) {
+          return { ...step, state: 'finish' as const };
+        } else if (index === currentStep - 1) {
+          return { ...step, state: 'active' as const };
+        } else {
+          return { ...step, state: 'disabled' as const };
+        }
+      });
+
+      setStepsList(currentSteps);
+    }
+  }, [currentStep, data]);
 
   return (
     <Container>
-      {steps.map((step, index) => (
+      {stepsList?.map((step, index) => (
         <Step key={index} state={step.state}>
           <IconWrapper state={step.state}>
             {step.state === 'finish' && (
