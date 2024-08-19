@@ -23,7 +23,7 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-// ProcessorSpecApplyConfiguration represents an declarative configuration of the ProcessorSpec type for use
+// ProcessorSpecApplyConfiguration represents a declarative configuration of the ProcessorSpec type for use
 // with apply.
 type ProcessorSpecApplyConfiguration struct {
 	Type            *string                        `json:"type,omitempty"`
@@ -36,7 +36,7 @@ type ProcessorSpecApplyConfiguration struct {
 	ProcessorConfig *runtime.RawExtension          `json:"processorConfig,omitempty"`
 }
 
-// ProcessorSpecApplyConfiguration constructs an declarative configuration of the ProcessorSpec type for use with
+// ProcessorSpecApplyConfiguration constructs a declarative configuration of the ProcessorSpec type for use with
 // apply.
 func ProcessorSpec() *ProcessorSpecApplyConfiguration {
 	return &ProcessorSpecApplyConfiguration{}

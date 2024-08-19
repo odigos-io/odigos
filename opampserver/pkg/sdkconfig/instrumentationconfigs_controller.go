@@ -65,6 +65,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 
 func (i *InstrumentationConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		Named("opampserver-instrumentationconfig").
 		For(&odigosv1.InstrumentationConfig{}).
 		Complete(i)
 }

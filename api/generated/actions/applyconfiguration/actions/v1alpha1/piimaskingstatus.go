@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// PiiMaskingStatusApplyConfiguration represents an declarative configuration of the PiiMaskingStatus type for use
+// PiiMaskingStatusApplyConfiguration represents a declarative configuration of the PiiMaskingStatus type for use
 // with apply.
 type PiiMaskingStatusApplyConfiguration struct {
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
-// PiiMaskingStatusApplyConfiguration constructs an declarative configuration of the PiiMaskingStatus type for use with
+// PiiMaskingStatusApplyConfiguration constructs a declarative configuration of the PiiMaskingStatus type for use with
 // apply.
 func PiiMaskingStatus() *PiiMaskingStatusApplyConfiguration {
 	return &PiiMaskingStatusApplyConfiguration{}

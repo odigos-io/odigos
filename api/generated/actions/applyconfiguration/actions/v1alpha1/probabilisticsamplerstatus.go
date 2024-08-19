@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ProbabilisticSamplerStatusApplyConfiguration represents an declarative configuration of the ProbabilisticSamplerStatus type for use
+// ProbabilisticSamplerStatusApplyConfiguration represents a declarative configuration of the ProbabilisticSamplerStatus type for use
 // with apply.
 type ProbabilisticSamplerStatusApplyConfiguration struct {
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
-// ProbabilisticSamplerStatusApplyConfiguration constructs an declarative configuration of the ProbabilisticSamplerStatus type for use with
+// ProbabilisticSamplerStatusApplyConfiguration constructs a declarative configuration of the ProbabilisticSamplerStatus type for use with
 // apply.
 func ProbabilisticSamplerStatus() *ProbabilisticSamplerStatusApplyConfiguration {
 	return &ProbabilisticSamplerStatusApplyConfiguration{}

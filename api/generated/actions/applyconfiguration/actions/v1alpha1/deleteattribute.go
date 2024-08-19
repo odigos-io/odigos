@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// DeleteAttributeApplyConfiguration represents an declarative configuration of the DeleteAttribute type for use
+// DeleteAttributeApplyConfiguration represents a declarative configuration of the DeleteAttribute type for use
 // with apply.
 type DeleteAttributeApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -32,7 +32,7 @@ type DeleteAttributeApplyConfiguration struct {
 	Status                           *DeleteAttributeStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// DeleteAttribute constructs an declarative configuration of the DeleteAttribute type for use with
+// DeleteAttribute constructs a declarative configuration of the DeleteAttribute type for use with
 // apply.
 func DeleteAttribute(name, namespace string) *DeleteAttributeApplyConfiguration {
 	b := &DeleteAttributeApplyConfiguration{}
@@ -215,4 +215,10 @@ func (b *DeleteAttributeApplyConfiguration) WithSpec(value *DeleteAttributeSpecA
 func (b *DeleteAttributeApplyConfiguration) WithStatus(value *DeleteAttributeStatusApplyConfiguration) *DeleteAttributeApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *DeleteAttributeApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

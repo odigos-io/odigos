@@ -21,14 +21,14 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// CollectorsGroupStatusApplyConfiguration represents an declarative configuration of the CollectorsGroupStatus type for use
+// CollectorsGroupStatusApplyConfiguration represents a declarative configuration of the CollectorsGroupStatus type for use
 // with apply.
 type CollectorsGroupStatusApplyConfiguration struct {
 	Ready           *bool                        `json:"ready,omitempty"`
 	ReceiverSignals []common.ObservabilitySignal `json:"receiverSignals,omitempty"`
 }
 
-// CollectorsGroupStatusApplyConfiguration constructs an declarative configuration of the CollectorsGroupStatus type for use with
+// CollectorsGroupStatusApplyConfiguration constructs a declarative configuration of the CollectorsGroupStatus type for use with
 // apply.
 func CollectorsGroupStatus() *CollectorsGroupStatusApplyConfiguration {
 	return &CollectorsGroupStatusApplyConfiguration{}

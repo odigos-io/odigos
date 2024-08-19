@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// InstrumentedApplicationStatusApplyConfiguration represents an declarative configuration of the InstrumentedApplicationStatus type for use
+// InstrumentedApplicationStatusApplyConfiguration represents a declarative configuration of the InstrumentedApplicationStatus type for use
 // with apply.
 type InstrumentedApplicationStatusApplyConfiguration struct {
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
-// InstrumentedApplicationStatusApplyConfiguration constructs an declarative configuration of the InstrumentedApplicationStatus type for use with
+// InstrumentedApplicationStatusApplyConfiguration constructs a declarative configuration of the InstrumentedApplicationStatus type for use with
 // apply.
 func InstrumentedApplicationStatus() *InstrumentedApplicationStatusApplyConfiguration {
 	return &InstrumentedApplicationStatusApplyConfiguration{}

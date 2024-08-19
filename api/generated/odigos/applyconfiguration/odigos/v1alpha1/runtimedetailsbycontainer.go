@@ -21,7 +21,7 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// RuntimeDetailsByContainerApplyConfiguration represents an declarative configuration of the RuntimeDetailsByContainer type for use
+// RuntimeDetailsByContainerApplyConfiguration represents a declarative configuration of the RuntimeDetailsByContainer type for use
 // with apply.
 type RuntimeDetailsByContainerApplyConfiguration struct {
 	ContainerName  *string                     `json:"containerName,omitempty"`
@@ -30,7 +30,7 @@ type RuntimeDetailsByContainerApplyConfiguration struct {
 	EnvVars        []EnvVarApplyConfiguration  `json:"envVars,omitempty"`
 }
 
-// RuntimeDetailsByContainerApplyConfiguration constructs an declarative configuration of the RuntimeDetailsByContainer type for use with
+// RuntimeDetailsByContainerApplyConfiguration constructs a declarative configuration of the RuntimeDetailsByContainer type for use with
 // apply.
 func RuntimeDetailsByContainer() *RuntimeDetailsByContainerApplyConfiguration {
 	return &RuntimeDetailsByContainerApplyConfiguration{}

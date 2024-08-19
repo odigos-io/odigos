@@ -43,22 +43,24 @@ var destinationsKind = v1alpha1.SchemeGroupVersion.WithKind("Destination")
 
 // Get takes name of the destination, and returns the corresponding destination object, and an error if there is any.
 func (c *FakeDestinations) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Destination, err error) {
+	emptyResult := &v1alpha1.Destination{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(destinationsResource, c.ns, name), &v1alpha1.Destination{})
+		Invokes(testing.NewGetActionWithOptions(destinationsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Destination), err
 }
 
 // List takes label and field selectors, and returns the list of Destinations that match those selectors.
 func (c *FakeDestinations) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.DestinationList, err error) {
+	emptyResult := &v1alpha1.DestinationList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(destinationsResource, destinationsKind, c.ns, opts), &v1alpha1.DestinationList{})
+		Invokes(testing.NewListActionWithOptions(destinationsResource, destinationsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -77,40 +79,43 @@ func (c *FakeDestinations) List(ctx context.Context, opts v1.ListOptions) (resul
 // Watch returns a watch.Interface that watches the requested destinations.
 func (c *FakeDestinations) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(destinationsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(destinationsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a destination and creates it.  Returns the server's representation of the destination, and an error, if there is any.
 func (c *FakeDestinations) Create(ctx context.Context, destination *v1alpha1.Destination, opts v1.CreateOptions) (result *v1alpha1.Destination, err error) {
+	emptyResult := &v1alpha1.Destination{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(destinationsResource, c.ns, destination), &v1alpha1.Destination{})
+		Invokes(testing.NewCreateActionWithOptions(destinationsResource, c.ns, destination, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Destination), err
 }
 
 // Update takes the representation of a destination and updates it. Returns the server's representation of the destination, and an error, if there is any.
 func (c *FakeDestinations) Update(ctx context.Context, destination *v1alpha1.Destination, opts v1.UpdateOptions) (result *v1alpha1.Destination, err error) {
+	emptyResult := &v1alpha1.Destination{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(destinationsResource, c.ns, destination), &v1alpha1.Destination{})
+		Invokes(testing.NewUpdateActionWithOptions(destinationsResource, c.ns, destination, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Destination), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeDestinations) UpdateStatus(ctx context.Context, destination *v1alpha1.Destination, opts v1.UpdateOptions) (*v1alpha1.Destination, error) {
+func (c *FakeDestinations) UpdateStatus(ctx context.Context, destination *v1alpha1.Destination, opts v1.UpdateOptions) (result *v1alpha1.Destination, err error) {
+	emptyResult := &v1alpha1.Destination{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(destinationsResource, "status", c.ns, destination), &v1alpha1.Destination{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(destinationsResource, "status", c.ns, destination, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Destination), err
 }
@@ -125,7 +130,7 @@ func (c *FakeDestinations) Delete(ctx context.Context, name string, opts v1.Dele
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeDestinations) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(destinationsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(destinationsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.DestinationList{})
 	return err
@@ -133,11 +138,12 @@ func (c *FakeDestinations) DeleteCollection(ctx context.Context, opts v1.DeleteO
 
 // Patch applies the patch and returns the patched destination.
 func (c *FakeDestinations) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Destination, err error) {
+	emptyResult := &v1alpha1.Destination{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(destinationsResource, c.ns, name, pt, data, subresources...), &v1alpha1.Destination{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(destinationsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Destination), err
 }
@@ -155,11 +161,12 @@ func (c *FakeDestinations) Apply(ctx context.Context, destination *odigosv1alpha
 	if name == nil {
 		return nil, fmt.Errorf("destination.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.Destination{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(destinationsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.Destination{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(destinationsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Destination), err
 }
@@ -178,11 +185,12 @@ func (c *FakeDestinations) ApplyStatus(ctx context.Context, destination *odigosv
 	if name == nil {
 		return nil, fmt.Errorf("destination.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.Destination{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(destinationsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.Destination{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(destinationsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Destination), err
 }

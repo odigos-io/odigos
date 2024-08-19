@@ -19,8 +19,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -37,25 +37,17 @@ type LatencySamplerLister interface {
 
 // latencySamplerLister implements the LatencySamplerLister interface.
 type latencySamplerLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.LatencySampler]
 }
 
 // NewLatencySamplerLister returns a new LatencySamplerLister.
 func NewLatencySamplerLister(indexer cache.Indexer) LatencySamplerLister {
-	return &latencySamplerLister{indexer: indexer}
-}
-
-// List lists all LatencySamplers in the indexer.
-func (s *latencySamplerLister) List(selector labels.Selector) (ret []*v1alpha1.LatencySampler, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.LatencySampler))
-	})
-	return ret, err
+	return &latencySamplerLister{listers.New[*v1alpha1.LatencySampler](indexer, v1alpha1.Resource("latencysampler"))}
 }
 
 // LatencySamplers returns an object that can list and get LatencySamplers.
 func (s *latencySamplerLister) LatencySamplers(namespace string) LatencySamplerNamespaceLister {
-	return latencySamplerNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return latencySamplerNamespaceLister{listers.NewNamespaced[*v1alpha1.LatencySampler](s.ResourceIndexer, namespace)}
 }
 
 // LatencySamplerNamespaceLister helps list and get LatencySamplers.
@@ -73,26 +65,5 @@ type LatencySamplerNamespaceLister interface {
 // latencySamplerNamespaceLister implements the LatencySamplerNamespaceLister
 // interface.
 type latencySamplerNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all LatencySamplers in the indexer for a given namespace.
-func (s latencySamplerNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.LatencySampler, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.LatencySampler))
-	})
-	return ret, err
-}
-
-// Get retrieves the LatencySampler from the indexer for a given namespace and name.
-func (s latencySamplerNamespaceLister) Get(name string) (*v1alpha1.LatencySampler, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("latencysampler"), name)
-	}
-	return obj.(*v1alpha1.LatencySampler), nil
+	listers.ResourceIndexer[*v1alpha1.LatencySampler]
 }

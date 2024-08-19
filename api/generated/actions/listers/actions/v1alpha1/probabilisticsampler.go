@@ -19,8 +19,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -37,25 +37,17 @@ type ProbabilisticSamplerLister interface {
 
 // probabilisticSamplerLister implements the ProbabilisticSamplerLister interface.
 type probabilisticSamplerLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.ProbabilisticSampler]
 }
 
 // NewProbabilisticSamplerLister returns a new ProbabilisticSamplerLister.
 func NewProbabilisticSamplerLister(indexer cache.Indexer) ProbabilisticSamplerLister {
-	return &probabilisticSamplerLister{indexer: indexer}
-}
-
-// List lists all ProbabilisticSamplers in the indexer.
-func (s *probabilisticSamplerLister) List(selector labels.Selector) (ret []*v1alpha1.ProbabilisticSampler, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ProbabilisticSampler))
-	})
-	return ret, err
+	return &probabilisticSamplerLister{listers.New[*v1alpha1.ProbabilisticSampler](indexer, v1alpha1.Resource("probabilisticsampler"))}
 }
 
 // ProbabilisticSamplers returns an object that can list and get ProbabilisticSamplers.
 func (s *probabilisticSamplerLister) ProbabilisticSamplers(namespace string) ProbabilisticSamplerNamespaceLister {
-	return probabilisticSamplerNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return probabilisticSamplerNamespaceLister{listers.NewNamespaced[*v1alpha1.ProbabilisticSampler](s.ResourceIndexer, namespace)}
 }
 
 // ProbabilisticSamplerNamespaceLister helps list and get ProbabilisticSamplers.
@@ -73,26 +65,5 @@ type ProbabilisticSamplerNamespaceLister interface {
 // probabilisticSamplerNamespaceLister implements the ProbabilisticSamplerNamespaceLister
 // interface.
 type probabilisticSamplerNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all ProbabilisticSamplers in the indexer for a given namespace.
-func (s probabilisticSamplerNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.ProbabilisticSampler, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ProbabilisticSampler))
-	})
-	return ret, err
-}
-
-// Get retrieves the ProbabilisticSampler from the indexer for a given namespace and name.
-func (s probabilisticSamplerNamespaceLister) Get(name string) (*v1alpha1.ProbabilisticSampler, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("probabilisticsampler"), name)
-	}
-	return obj.(*v1alpha1.ProbabilisticSampler), nil
+	listers.ResourceIndexer[*v1alpha1.ProbabilisticSampler]
 }

@@ -43,22 +43,24 @@ var errorsamplersKind = v1alpha1.SchemeGroupVersion.WithKind("ErrorSampler")
 
 // Get takes name of the errorSampler, and returns the corresponding errorSampler object, and an error if there is any.
 func (c *FakeErrorSamplers) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ErrorSampler, err error) {
+	emptyResult := &v1alpha1.ErrorSampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(errorsamplersResource, c.ns, name), &v1alpha1.ErrorSampler{})
+		Invokes(testing.NewGetActionWithOptions(errorsamplersResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ErrorSampler), err
 }
 
 // List takes label and field selectors, and returns the list of ErrorSamplers that match those selectors.
 func (c *FakeErrorSamplers) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ErrorSamplerList, err error) {
+	emptyResult := &v1alpha1.ErrorSamplerList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(errorsamplersResource, errorsamplersKind, c.ns, opts), &v1alpha1.ErrorSamplerList{})
+		Invokes(testing.NewListActionWithOptions(errorsamplersResource, errorsamplersKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -77,40 +79,43 @@ func (c *FakeErrorSamplers) List(ctx context.Context, opts v1.ListOptions) (resu
 // Watch returns a watch.Interface that watches the requested errorSamplers.
 func (c *FakeErrorSamplers) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(errorsamplersResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(errorsamplersResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a errorSampler and creates it.  Returns the server's representation of the errorSampler, and an error, if there is any.
 func (c *FakeErrorSamplers) Create(ctx context.Context, errorSampler *v1alpha1.ErrorSampler, opts v1.CreateOptions) (result *v1alpha1.ErrorSampler, err error) {
+	emptyResult := &v1alpha1.ErrorSampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(errorsamplersResource, c.ns, errorSampler), &v1alpha1.ErrorSampler{})
+		Invokes(testing.NewCreateActionWithOptions(errorsamplersResource, c.ns, errorSampler, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ErrorSampler), err
 }
 
 // Update takes the representation of a errorSampler and updates it. Returns the server's representation of the errorSampler, and an error, if there is any.
 func (c *FakeErrorSamplers) Update(ctx context.Context, errorSampler *v1alpha1.ErrorSampler, opts v1.UpdateOptions) (result *v1alpha1.ErrorSampler, err error) {
+	emptyResult := &v1alpha1.ErrorSampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(errorsamplersResource, c.ns, errorSampler), &v1alpha1.ErrorSampler{})
+		Invokes(testing.NewUpdateActionWithOptions(errorsamplersResource, c.ns, errorSampler, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ErrorSampler), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeErrorSamplers) UpdateStatus(ctx context.Context, errorSampler *v1alpha1.ErrorSampler, opts v1.UpdateOptions) (*v1alpha1.ErrorSampler, error) {
+func (c *FakeErrorSamplers) UpdateStatus(ctx context.Context, errorSampler *v1alpha1.ErrorSampler, opts v1.UpdateOptions) (result *v1alpha1.ErrorSampler, err error) {
+	emptyResult := &v1alpha1.ErrorSampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(errorsamplersResource, "status", c.ns, errorSampler), &v1alpha1.ErrorSampler{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(errorsamplersResource, "status", c.ns, errorSampler, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ErrorSampler), err
 }
@@ -125,7 +130,7 @@ func (c *FakeErrorSamplers) Delete(ctx context.Context, name string, opts v1.Del
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeErrorSamplers) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(errorsamplersResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(errorsamplersResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.ErrorSamplerList{})
 	return err
@@ -133,11 +138,12 @@ func (c *FakeErrorSamplers) DeleteCollection(ctx context.Context, opts v1.Delete
 
 // Patch applies the patch and returns the patched errorSampler.
 func (c *FakeErrorSamplers) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ErrorSampler, err error) {
+	emptyResult := &v1alpha1.ErrorSampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(errorsamplersResource, c.ns, name, pt, data, subresources...), &v1alpha1.ErrorSampler{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(errorsamplersResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ErrorSampler), err
 }
@@ -155,11 +161,12 @@ func (c *FakeErrorSamplers) Apply(ctx context.Context, errorSampler *actionsv1al
 	if name == nil {
 		return nil, fmt.Errorf("errorSampler.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.ErrorSampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(errorsamplersResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.ErrorSampler{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(errorsamplersResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ErrorSampler), err
 }
@@ -178,11 +185,12 @@ func (c *FakeErrorSamplers) ApplyStatus(ctx context.Context, errorSampler *actio
 	if name == nil {
 		return nil, fmt.Errorf("errorSampler.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.ErrorSampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(errorsamplersResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.ErrorSampler{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(errorsamplersResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ErrorSampler), err
 }

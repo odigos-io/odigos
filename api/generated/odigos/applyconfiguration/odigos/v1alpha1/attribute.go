@@ -17,14 +17,14 @@ limitations under the License.
 
 package v1alpha1
 
-// AttributeApplyConfiguration represents an declarative configuration of the Attribute type for use
+// AttributeApplyConfiguration represents a declarative configuration of the Attribute type for use
 // with apply.
 type AttributeApplyConfiguration struct {
 	Key   *string `json:"key,omitempty"`
 	Value *string `json:"value,omitempty"`
 }
 
-// AttributeApplyConfiguration constructs an declarative configuration of the Attribute type for use with
+// AttributeApplyConfiguration constructs a declarative configuration of the Attribute type for use with
 // apply.
 func Attribute() *AttributeApplyConfiguration {
 	return &AttributeApplyConfiguration{}

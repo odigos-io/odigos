@@ -21,7 +21,7 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// ErrorSamplerSpecApplyConfiguration represents an declarative configuration of the ErrorSamplerSpec type for use
+// ErrorSamplerSpecApplyConfiguration represents a declarative configuration of the ErrorSamplerSpec type for use
 // with apply.
 type ErrorSamplerSpecApplyConfiguration struct {
 	ActionName            *string                      `json:"actionName,omitempty"`
@@ -31,7 +31,7 @@ type ErrorSamplerSpecApplyConfiguration struct {
 	FallbackSamplingRatio *float64                     `json:"fallback_sampling_ratio,omitempty"`
 }
 
-// ErrorSamplerSpecApplyConfiguration constructs an declarative configuration of the ErrorSamplerSpec type for use with
+// ErrorSamplerSpecApplyConfiguration constructs a declarative configuration of the ErrorSamplerSpec type for use with
 // apply.
 func ErrorSamplerSpec() *ErrorSamplerSpecApplyConfiguration {
 	return &ErrorSamplerSpecApplyConfiguration{}

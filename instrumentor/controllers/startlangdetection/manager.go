@@ -11,6 +11,7 @@ import (
 func SetupWithManager(mgr ctrl.Manager) error {
 	err := builder.
 		ControllerManagedBy(mgr).
+		Named("startlangdetection-deployment").
 		For(&appsv1.Deployment{}).
 		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Complete(&DeploymentReconciler{
@@ -23,6 +24,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("startlangdetection-daemonset").
 		For(&appsv1.DaemonSet{}).
 		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Complete(&DaemonSetReconciler{
@@ -35,6 +37,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("startlangdetection-statefulset").
 		For(&appsv1.StatefulSet{}).
 		WithEventFilter(&WorkloadEnabledPredicate{}).
 		Complete(&StatefulSetReconciler{
@@ -47,6 +50,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("startlangdetection-namespace").
 		For(&corev1.Namespace{}).
 		Complete(&NamespacesReconciler{
 			Client: mgr.GetClient(),
@@ -58,6 +62,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("startlangdetection-configmaps").
 		For(&corev1.ConfigMap{}).
 		WithEventFilter(&utils.OnlyUpdatesPredicate{}).
 		Complete(&OdigosConfigReconciler{
