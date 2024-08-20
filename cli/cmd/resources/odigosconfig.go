@@ -13,37 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func otelSdkConfigCommunity() map[common.ProgrammingLanguage]common.OtelSdk {
-	return map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavaProgrammingLanguage:       common.OtelSdkNativeCommunity,
-		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.GoProgrammingLanguage:         common.OtelSdkEbpfCommunity,
-		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
-	}
-}
-
-func otelSdkConfigCloud() map[common.ProgrammingLanguage]common.OtelSdk {
-	return map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavaProgrammingLanguage:       common.OtelSdkNativeCommunity,
-		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
-		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
-	}
-}
-
-func otelSdkConfigOnPrem() map[common.ProgrammingLanguage]common.OtelSdk {
-	return map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavaProgrammingLanguage:       common.OtelSdkEbpfEnterprise, // Notice - for onprem, the default for java is eBPF
-		common.PythonProgrammingLanguage:     common.OtelSdkEbpfEnterprise, // Also Python
-		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
-		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.JavascriptProgrammingLanguage: common.OtelSdkEbpfEnterprise, // Also Javascript
-		common.MySQLProgrammingLanguage:      common.OtelSdkEbpfEnterprise,
-	}
-}
-
 func NewOdigosConfiguration(ns string, config *common.OdigosConfiguration) (client.Object, error) {
 	data, err := json.Marshal(config)
 	if err != nil {
@@ -78,18 +47,6 @@ func NewOdigosConfigResourceManager(client *kube.Client, ns string, config *comm
 func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
 
 func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
-	var defaultOtelSdkPerLanguage map[common.ProgrammingLanguage]common.OtelSdk
-	switch a.odigosTier {
-	case common.CommunityOdigosTier:
-		defaultOtelSdkPerLanguage = otelSdkConfigCommunity()
-	case common.CloudOdigosTier:
-		defaultOtelSdkPerLanguage = otelSdkConfigCloud()
-	case common.OnPremOdigosTier:
-		defaultOtelSdkPerLanguage = otelSdkConfigOnPrem()
-	}
-
-	// the default SDK should be retained in the future.
-	a.config.DefaultSDKs = defaultOtelSdkPerLanguage
 
 	obj, err := NewOdigosConfiguration(a.ns, a.config)
 	if err != nil {
