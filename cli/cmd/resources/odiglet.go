@@ -673,7 +673,7 @@ type odigletResourceManager struct {
 }
 
 func NewOdigletResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string) resourcemanager.ResourceManager {
-	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
+	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion}
 }
 
 func (a *odigletResourceManager) Name() string { return "Odiglet" }
