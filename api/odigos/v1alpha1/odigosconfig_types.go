@@ -93,7 +93,6 @@ func (odigosConfig *OdigosConfiguration) ToCommonConfig() *common.OdigosConfigur
 		}
 	}
 	return &common.OdigosConfiguration{
-		OdigosVersion:               odigosConfig.Spec.OdigosVersion,
 		ConfigVersion:               odigosConfig.Spec.ConfigVersion,
 		TelemetryEnabled:            odigosConfig.Spec.TelemetryEnabled,
 		OpenshiftEnabled:            odigosConfig.Spec.OpenshiftEnabled,

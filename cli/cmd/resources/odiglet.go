@@ -665,13 +665,14 @@ func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropaga
 }
 
 type odigletResourceManager struct {
-	client     *kube.Client
-	ns         string
-	config     *common.OdigosConfiguration
-	odigosTier common.OdigosTier
+	client        *kube.Client
+	ns            string
+	config        *common.OdigosConfiguration
+	odigosTier    common.OdigosTier
+	odigosVersion string
 }
 
-func NewOdigletResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
+func NewOdigletResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string) resourcemanager.ResourceManager {
 	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
 }
 
@@ -710,7 +711,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
 	resources = append(resources,
-		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled, a.config.GoAutoIncludeCodeAttributes))
+		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled, a.config.GoAutoIncludeCodeAttributes))
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
