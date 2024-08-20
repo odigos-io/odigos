@@ -102,7 +102,7 @@ This command will install k8s components that will auto-instrument your applicat
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config)
+		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config, versionFlag)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
@@ -223,7 +223,6 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 	}
 
 	return common.OdigosConfiguration{
-		OdigosVersion:     versionFlag,
 		ConfigVersion:     1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:  telemetryEnabled,
 		OpenshiftEnabled:  openshiftEnabled,

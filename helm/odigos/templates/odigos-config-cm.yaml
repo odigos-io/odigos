@@ -31,7 +31,6 @@ data:
       {{- end }}
     {{- end }}
     instrumentorImage: {{ .Values.instrumentor.image.repository }}
-    odigosVersion: {{ .Values.image.tag | default .Chart.AppVersion }}
     telemetryEnabled: {{ .Values.telemetry.enabled }}
     openshiftEnabled: {{ .Values.openshift.enabled }}
     psp: {{ .Values.psp.enabled }}

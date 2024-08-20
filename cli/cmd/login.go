@@ -60,6 +60,12 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	currentOdigosVersion, err := getOdigosVersionInClusterFromConfigMap(ctx, client, ns)
+	if err != nil {
+		fmt.Println("Odigos cloud login failed - unable to read the current Odigos version.")
+		os.Exit(1)
+	}
+
 	config, err := resources.GetCurrentConfig(ctx, client, ns)
 	if err != nil {
 		fmt.Println("Odigos cloud login failed - unable to read the current Odigos configuration.")
@@ -92,7 +98,7 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 	}
 	isPrevOdigosCloud := currentTier == common.CloudOdigosTier
 
-	resourceManagers := resources.CreateResourceManagers(client, ns, common.CloudOdigosTier, &odigosCloudApiKeyFlag, config)
+	resourceManagers := resources.CreateResourceManagers(client, ns, common.CloudOdigosTier, &odigosCloudApiKeyFlag, config, currentOdigosVersion)
 	err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 	if err != nil {
 		fmt.Println("Odigos cloud login failed - unable to apply Odigos resources.")

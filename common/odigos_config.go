@@ -24,19 +24,18 @@ type CollectorGatewayConfiguration struct {
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
-	OdigosVersion     string                            `json:"odigosVersion"`
-	ConfigVersion     int                               `json:"configVersion"`
-	TelemetryEnabled  bool                              `json:"telemetryEnabled,omitempty"`
-	OpenshiftEnabled  bool                              `json:"openshiftEnabled,omitempty"`
-	IgnoredNamespaces []string                          `json:"ignoredNamespaces,omitempty"`
-	IgnoredContainers []string                          `json:"ignoredContainers,omitempty"`
-	Psp               bool                              `json:"psp,omitempty"`
-	ImagePrefix       string                            `json:"imagePrefix,omitempty"`
-	OdigletImage      string                            `json:"odigletImage,omitempty"`
-	InstrumentorImage string                            `json:"instrumentorImage,omitempty"`
-	AutoscalerImage   string                            `json:"autoscalerImage,omitempty"`
-	DefaultSDKs       map[ProgrammingLanguage]OtelSdk   `json:"defaultSDKs,omitempty"`
-	CollectorGateway  *CollectorGatewayConfiguration    `json:"collectorGateway,omitempty"`
+	ConfigVersion     int                             `json:"configVersion"`
+	TelemetryEnabled  bool                            `json:"telemetryEnabled,omitempty"`
+	OpenshiftEnabled  bool                            `json:"openshiftEnabled,omitempty"`
+	IgnoredNamespaces []string                        `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers []string                        `json:"ignoredContainers,omitempty"`
+	Psp               bool                            `json:"psp,omitempty"`
+	ImagePrefix       string                          `json:"imagePrefix,omitempty"`
+	OdigletImage      string                          `json:"odigletImage,omitempty"`
+	InstrumentorImage string                          `json:"instrumentorImage,omitempty"`
+	AutoscalerImage   string                          `json:"autoscalerImage,omitempty"`
+	DefaultSDKs       map[ProgrammingLanguage]OtelSdk `json:"defaultSDKs,omitempty"`
+	CollectorGateway  *CollectorGatewayConfiguration  `json:"collectorGateway,omitempty"`
 
 	// this is internal currently, and is not exposed on the CLI / helm
 	// used for odigos enterprise
