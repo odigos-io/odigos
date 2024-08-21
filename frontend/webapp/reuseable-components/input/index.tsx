@@ -151,9 +151,9 @@ const Input: React.FC<InputProps> = ({
   return (
     <Container>
       {title && (
-        <Tooltip text={tooltip || ''}>
-          <HeaderWrapper>
-            <Title>{title}</Title>
+        <HeaderWrapper>
+          <Title>{title}</Title>
+          <Tooltip text={tooltip || ''}>
             {tooltip && (
               <Image
                 src="/icons/common/info.svg"
@@ -163,8 +163,8 @@ const Input: React.FC<InputProps> = ({
                 style={{ marginBottom: 4 }}
               />
             )}
-          </HeaderWrapper>
-        </Tooltip>
+          </Tooltip>
+        </HeaderWrapper>
       )}
 
       <InputWrapper
