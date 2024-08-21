@@ -1,5 +1,5 @@
 import opentelemetry.sdk._configuration as sdk_config
-from initializer.components import _initialize_components
+from initializer.components import initialize_components
 
 
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
@@ -12,4 +12,4 @@ class OdigosPythonConfigurator(sdk_config._BaseConfigurator):
             sdk_config._get_exporter_names("metrics"),
             sdk_config._get_exporter_names("logs"),
         )
-        _initialize_components(trace_exporters, metric_exporters, log_exporters)
+        initialize_components(trace_exporters, metric_exporters, log_exporters)
