@@ -68,6 +68,13 @@ export function useConnectDestinationForm() {
               initialValues: initialValuesJson,
               ...componentPropertiesJson,
             };
+          case 'keyValuePairs':
+            return {
+              name,
+              componentType,
+              title: displayName,
+              ...componentPropertiesJson,
+            };
           default:
             return undefined;
         }

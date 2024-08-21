@@ -33,11 +33,25 @@ export const ConfiguredDestinationFields: React.FC<
   const parseValue = (value: string) => {
     try {
       const parsed = JSON.parse(value);
+
       if (Array.isArray(parsed)) {
-        return parsed.join(', ');
+        return parsed
+          .map((item) => {
+            if (typeof item === 'object' && item !== null) {
+              return `${item.key}: ${item.value}`;
+            }
+            return item;
+          })
+          .join(', ');
+      }
+
+      // Handle objects (non-array JSON objects)
+      if (typeof parsed === 'object' && parsed !== null) {
+        return Object.entries(parsed)
+          .map(([key, val]) => `${key}: ${val}`)
+          .join(', ');
       }
     } catch (error) {
-      // If parsing fails, just return the original value
       return value;
     }
     return value;

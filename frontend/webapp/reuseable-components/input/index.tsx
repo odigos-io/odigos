@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import React from 'react';
-import styled, { css } from 'styled-components';
 import { Text } from '../text';
+import styled, { css } from 'styled-components';
 import { Tooltip } from '../tooltip';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
