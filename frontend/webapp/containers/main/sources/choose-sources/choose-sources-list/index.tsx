@@ -85,38 +85,7 @@ const SourcesList: React.FC<SourcesListProps> = ({
 
   return (
     <Container>
-      {[
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-        ...items,
-      ].map((item) => (
+      {items.map((item) => (
         <ListItem
           key={item.name}
           selected={isItemSelected(item)}
