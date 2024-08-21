@@ -1,5 +1,14 @@
 from setuptools import setup, find_packages
 
+index_url = None
+
+# DEV - Local Uncomment to develop locally \/ 
+# index_url = 'http://host.docker.internal:8080/packages/odigos_opentelemetry_python-0.1.1-py3-none-any.whl'
+
+install_requires = [
+    f"odigos-opentelemetry-python @ {index_url}" if index_url else "odigos-opentelemetry-python"
+]
+
 setup(
     name="odigos-python-configurator",
     version="0.1.0",
@@ -7,9 +16,7 @@ setup(
     author="Tamir David",
     author_email="tamir@odigos.io",
     packages=find_packages(include=["configurator", "configurator.*"]),
-    install_requires=[
-        "odigos-opentelemetry-python"
-    ],
+    install_requires=install_requires,
     python_requires=">=3.8",
     entry_points={
         'opentelemetry_configurator': [
