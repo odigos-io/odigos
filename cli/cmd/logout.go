@@ -37,6 +37,12 @@ var logoutCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		currentOdigosVersion, err := getOdigosVersionInClusterFromConfigMap(ctx, client, ns)
+		if err != nil {
+			fmt.Println("Odigos cloud login failed - unable to read the current Odigos version.")
+			os.Exit(1)
+		}
+
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
 			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
@@ -68,7 +74,7 @@ var logoutCmd = &cobra.Command{
 		config.ConfigVersion += 1
 
 		emptyApiKey := ""
-		resourceManagers := resources.CreateResourceManagers(client, ns, common.CommunityOdigosTier, &emptyApiKey, config)
+		resourceManagers := resources.CreateResourceManagers(client, ns, common.CommunityOdigosTier, &emptyApiKey, config, currentOdigosVersion)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 		if err != nil {
 			fmt.Println("Odigos cloud logout failed - unable to apply Odigos resources.")
