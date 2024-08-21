@@ -32,6 +32,7 @@ const Overlay = styled.div`
 const ModalWrapper = styled.div`
   background: ${({ theme }) => theme.colors.translucent_bg};
   border-radius: 40px;
+  max-height: 84vh;
   border: ${({ theme }) => `1px solid ${theme.colors.border}`};
   box-shadow: 0px 1px 1px 0px rgba(17, 17, 17, 0.8),
     0px 2px 2px 0px rgba(17, 17, 17, 0.8), 0px 5px 5px 0px rgba(17, 17, 17, 0.8),

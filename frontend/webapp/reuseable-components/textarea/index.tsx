@@ -30,7 +30,7 @@ const InputWrapper = styled.div<{
   gap: 12px;
 
   transition: border-color 0.3s;
-  border-radius: 48px;
+  border-radius: 24px;
   border: 1px solid rgba(249, 249, 249, 0.24);
   ${({ isDisabled }) =>
     isDisabled &&
@@ -70,7 +70,7 @@ const StyledTextArea = styled.textarea<{}>`
   padding: 12px 20px;
   font-family: ${({ theme }) => theme.font_family.primary};
   font-weight: 300;
-
+  line-height: 22px;
   &::placeholder {
     color: ${({ theme }) => theme.colors.text};
     font-family: ${({ theme }) => theme.font_family.primary};

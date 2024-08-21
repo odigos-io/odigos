@@ -45,6 +45,11 @@ const FormContainer = styled.div`
   max-width: 500px;
   flex-direction: column;
   gap: 24px;
+  height: 443px;
+  overflow-y: auto;
+  padding-right: 16px;
+  box-sizing: border-box;
+  overflow: overlay;
 `;
 
 const NotificationNoteWrapper = styled.div`

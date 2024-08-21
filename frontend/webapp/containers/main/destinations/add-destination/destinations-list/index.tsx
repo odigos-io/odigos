@@ -10,9 +10,7 @@ const Container = styled.div`
   align-items: flex-start;
   gap: 12px;
   align-self: stretch;
-  border-radius: 16px;
-  height: 100%;
-  max-height: 548px;
+  height: 443px;
   overflow-y: auto;
 `;
 
