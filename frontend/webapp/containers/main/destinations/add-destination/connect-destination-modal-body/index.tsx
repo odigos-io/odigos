@@ -161,6 +161,7 @@ export function ConnectDestinationModalBody({
       exportedSignals,
       fields,
     };
+
     await connectEnv(body, storeConfiguredDestination);
   }
 

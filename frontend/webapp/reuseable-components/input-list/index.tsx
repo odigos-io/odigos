@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Input } from '../input';
 import { Button } from '../button';
@@ -10,6 +10,7 @@ interface InputListProps {
   initialValues?: string[];
   title?: string;
   tooltip?: string;
+  onChange: (values: string[]) => void;
 }
 
 const Container = styled.div`
@@ -31,14 +32,16 @@ const DeleteButton = styled.button`
   cursor: pointer;
 `;
 
-const AddButton = styled(Button)`
+const AddButton = styled(Button)<{ disabled: boolean }>`
   color: white;
   background: transparent;
   display: flex;
   gap: 8px;
   border: none;
-  cursor: pointer;
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
   align-self: flex-start;
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+  transition: opacity 0.3s;
 `;
 
 const ButtonText = styled(Text)`
@@ -65,8 +68,15 @@ const InputList: React.FC<InputListProps> = ({
   initialValues = [''],
   title,
   tooltip,
+  onChange,
 }) => {
   const [inputs, setInputs] = useState<string[]>(initialValues);
+
+  useEffect(() => {
+    if (initialValues.length > 0) {
+      onChange(initialValues);
+    }
+  }, [initialValues]);
 
   const handleAddInput = () => {
     setInputs([...inputs, '']);
@@ -80,7 +90,11 @@ const InputList: React.FC<InputListProps> = ({
     const newInputs = [...inputs];
     newInputs[index] = value;
     setInputs(newInputs);
+    onChange(newInputs);
   };
+
+  // Check if any input field is empty
+  const isAddButtonDisabled = inputs.some((input) => input.trim() === '');
 
   return (
     <Container>
@@ -116,17 +130,16 @@ const InputList: React.FC<InputListProps> = ({
           </DeleteButton>
         </InputRow>
       ))}
-      <AddButton variant={'tertiary'} onClick={handleAddInput}>
-        <Image
-          src="/icons/common/plus.svg"
-          alt="Delete"
-          width={16}
-          height={16}
-        />
+      <AddButton
+        disabled={isAddButtonDisabled}
+        variant={'tertiary'}
+        onClick={handleAddInput}
+      >
+        <Image src="/icons/common/plus.svg" alt="Add" width={16} height={16} />
         <ButtonText>ADD ATTRIBUTE</ButtonText>
       </AddButton>
     </Container>
   );
 };
 
-export default InputList;
+export { InputList };

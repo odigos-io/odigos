@@ -7,9 +7,16 @@ export function useConnectDestinationForm() {
   ): DynamicField[] {
     return fields
       .map((field) => {
-        const { name, componentType, displayName, componentProperties } = field;
+        const {
+          name,
+          componentType,
+          displayName,
+          componentProperties,
+          initialValue,
+        } = field;
 
         let componentPropertiesJson;
+        let initialValuesJson;
         switch (componentType) {
           case 'dropdown':
             componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(
@@ -52,10 +59,13 @@ export function useConnectDestinationForm() {
               componentProperties,
               []
             );
+            initialValuesJson = safeJsonParse<string[]>(initialValue, []);
+
             return {
               name,
               componentType,
               title: displayName,
+              initialValues: initialValuesJson,
               ...componentPropertiesJson,
             };
           default:
