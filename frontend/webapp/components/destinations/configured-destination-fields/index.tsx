@@ -1,7 +1,7 @@
-import { Text } from '@/reuseable-components';
-import { DestinationTypeDetail } from '@/types';
 import React from 'react';
 import styled from 'styled-components';
+import { Text } from '@/reuseable-components';
+import { DestinationTypeDetail } from '@/types';
 
 type ConfiguredDestinationFieldsProps = {
   details: DestinationTypeDetail[];
@@ -22,8 +22,6 @@ const ItemTitle = styled(Text)`
 `;
 
 const ItemValue = styled(Text)`
-  word-break: break-all;
-  width: 90%;
   color: ${({ theme }) => theme.colors.text};
   font-size: 12px;
   line-height: 18px;
@@ -32,12 +30,25 @@ const ItemValue = styled(Text)`
 export const ConfiguredDestinationFields: React.FC<
   ConfiguredDestinationFieldsProps
 > = ({ details }) => {
+  const parseValue = (value: string) => {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.join(', ');
+      }
+    } catch (error) {
+      // If parsing fails, just return the original value
+      return value;
+    }
+    return value;
+  };
+
   return (
     <ListContainer>
       {details.map((detail, index) => (
         <ListItem key={index}>
           <ItemTitle>{detail.title}</ItemTitle>
-          <ItemValue>{detail.value}</ItemValue>
+          <ItemValue>{parseValue(detail.value)}</ItemValue>
         </ListItem>
       ))}
     </ListContainer>
