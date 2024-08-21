@@ -26,6 +26,7 @@ spec:
         {{- end }}
         args:
           - --namespace=$(CURRENT_NS)
+          - --address=0.0.0.0
         env:
           - name: CURRENT_NS
             valueFrom:
