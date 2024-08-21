@@ -51,6 +51,10 @@ const FormContainer = styled.div`
   box-sizing: border-box;
   overflow: overlay;
   max-height: calc(100vh - 410px);
+
+  @media (height < 768px) {
+    max-height: calc(100vh - 350px);
+  }
 `;
 
 const NotificationNoteWrapper = styled.div`
