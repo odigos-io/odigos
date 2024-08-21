@@ -122,9 +122,9 @@ const TextArea: React.FC<TextAreaProps> = ({
   return (
     <Container>
       {title && (
-        <Tooltip text={tooltip || ''}>
-          <HeaderWrapper>
-            <Title>{title}</Title>
+        <HeaderWrapper>
+          <Title>{title}</Title>
+          <Tooltip text={tooltip || ''}>
             {tooltip && (
               <Image
                 src="/icons/common/info.svg"
@@ -134,8 +134,8 @@ const TextArea: React.FC<TextAreaProps> = ({
                 style={{ marginBottom: 4 }}
               />
             )}
-          </HeaderWrapper>
-        </Tooltip>
+          </Tooltip>
+        </HeaderWrapper>
       )}
 
       <InputWrapper

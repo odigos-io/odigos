@@ -1,7 +1,13 @@
 import React from 'react';
 
 import { INPUT_TYPES } from '@/utils/constants/string';
-import { Dropdown, Input, TextArea, InputList } from '@/reuseable-components';
+import {
+  Dropdown,
+  Input,
+  TextArea,
+  InputList,
+  KeyValueInputsList,
+} from '@/reuseable-components';
 
 export function DynamicConnectDestinationFormFields({
   fields,
@@ -41,7 +47,13 @@ export function DynamicConnectDestinationFormFields({
         );
 
       case INPUT_TYPES.KEY_VALUE_PAIR:
-        return <div></div>;
+        return (
+          <KeyValueInputsList
+            key={field.name}
+            {...field}
+            onChange={(value) => onChange(field.name, JSON.stringify(value))}
+          />
+        );
       case INPUT_TYPES.TEXTAREA:
         return (
           <TextArea
