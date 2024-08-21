@@ -2,6 +2,7 @@ import React from 'react';
 
 import { INPUT_TYPES } from '@/utils/constants/string';
 import { Dropdown, Input, TextArea } from '@/reuseable-components';
+import InputList from '@/reuseable-components/input-list';
 
 export function DynamicConnectDestinationFormFields({
   fields,
@@ -30,7 +31,8 @@ export function DynamicConnectDestinationFormFields({
           />
         );
       case INPUT_TYPES.MULTI_INPUT:
-        return <div></div>;
+        console.log({ field });
+        return <InputList key={field.name} {...field} />;
 
       case INPUT_TYPES.KEY_VALUE_PAIR:
         return <div></div>;

@@ -46,6 +46,18 @@ export function useConnectDestinationForm() {
               title: displayName,
               ...componentPropertiesJson,
             };
+
+          case 'multiInput':
+            componentPropertiesJson = safeJsonParse<string[]>(
+              componentProperties,
+              []
+            );
+            return {
+              name,
+              componentType,
+              title: displayName,
+              ...componentPropertiesJson,
+            };
           default:
             return undefined;
         }
