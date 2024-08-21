@@ -1,19 +1,17 @@
-import { Text } from '@/reuseable-components';
-import { K8sActualSource } from '@/types';
+import React from 'react';
 import Image from 'next/image';
-import React, { useState } from 'react';
 import styled from 'styled-components';
+import { K8sActualSource } from '@/types';
+import { Text } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 12px;
-  align-self: stretch;
-  border-radius: 16px;
   background: ${({ theme }) => theme.colors.primary};
   height: 100%;
-  max-height: 548px;
+  max-height: calc(100vh - 360px);
   overflow-y: auto;
 `;
 
