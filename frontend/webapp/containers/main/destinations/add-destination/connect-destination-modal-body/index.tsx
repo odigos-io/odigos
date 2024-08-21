@@ -50,6 +50,11 @@ const FormContainer = styled.div`
   padding-right: 16px;
   box-sizing: border-box;
   overflow: overlay;
+  max-height: calc(100vh - 410px);
+
+  @media (height < 768px) {
+    max-height: calc(100vh - 350px);
+  }
 `;
 
 const NotificationNoteWrapper = styled.div`
@@ -160,6 +165,7 @@ export function ConnectDestinationModalBody({
       exportedSignals,
       fields,
     };
+
     await connectEnv(body, storeConfiguredDestination);
   }
 

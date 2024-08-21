@@ -36,12 +36,10 @@ const variantStyles = {
   tertiary: css`
     background-color: transparent;
     border-radius: 32px;
-    border: 2px solid rgba(249, 249, 249, 0.8);
     &:hover {
-      background-color: #eaeaea;
+      background: #151515;
     }
     &:active {
-      background-color: #ccc;
     }
   `,
 };
