@@ -10,8 +10,12 @@ const Container = styled.div`
   align-items: flex-start;
   gap: 12px;
   align-self: stretch;
-  height: 443px;
+  max-height: calc(100vh - 410px);
   overflow-y: auto;
+
+  @media (height < 800px) {
+    max-height: calc(100vh - 400px);
+  }
 `;
 
 const ListItem = styled.div<{}>`
