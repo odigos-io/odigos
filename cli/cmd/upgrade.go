@@ -107,7 +107,6 @@ and apply any required migrations and adaptations.`,
 		}
 
 		// update the config on upgrade
-		config.OdigosVersion = versionFlag
 		config.ConfigVersion += 1
 
 		// make sure the current system namespaces is in the ignored in config
@@ -118,7 +117,7 @@ and apply any required migrations and adaptations.`,
 			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
 			os.Exit(1)
 		}
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config)
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, versionFlag)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")

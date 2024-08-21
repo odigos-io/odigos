@@ -2,6 +2,7 @@ package inspectors
 
 import (
 	"fmt"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/nginx"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/dotnet"
@@ -32,6 +33,7 @@ var inspectorsList = []inspector{
 	&dotnet.DotnetInspector{},
 	&nodejs.NodejsInspector{},
 	&mysql.MySQLInspector{},
+	&nginx.NginxInspector{},
 }
 
 // DetectLanguage returns the detected language for the process or

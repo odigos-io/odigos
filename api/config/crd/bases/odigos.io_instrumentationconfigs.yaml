@@ -75,6 +75,7 @@ spec:
                             - dotnet
                             - javascript
                             - mysql
+                            - nginx
                             - unknown
                             - ignored
                             type: string
@@ -119,16 +120,100 @@ spec:
                   The SDKs are identified by the programming language they are written in.
                 items:
                   properties:
+                    headSamplerConfig:
+                      description: |-
+                        HeadSamplingConfig is a set sampling rules.
+                        This config currently only applies to root spans.
+                        In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
+                      properties:
+                        attributesAndSamplerRules:
+                          items:
+                            description: |-
+                              AttributesAndSamplerRule is a set of AttributeCondition that are ANDed together.
+                              If all attribute conditions evaluate to true, the AND sampler evaluates to true,
+                              and the fraction is used to determine the sampling decision.
+                              If any of the attribute compare samplers evaluate to false,
+                              the fraction is not used and the rule is skipped.
+                              An "empty" AttributesAndSamplerRule with no attribute conditions is considered to always evaluate to true.
+                              and the fraction is used to determine the sampling decision.
+                              This entity is refered to a rule in Odigos terminology for head-sampling.
+                            properties:
+                              attributeConditions:
+                                items:
+                                  description: '''Operand'' represents the attributes
+                                    and values that an operator acts upon in an expression'
+                                  properties:
+                                    key:
+                                      description: attribute key (e.g. "url.path")
+                                      type: string
+                                    operator:
+                                      description: The operator to use to compare
+                                        the attribute value.
+                                      enum:
+                                      - equals
+                                      - notEquals
+                                      - endWith
+                                      - startWith
+                                      type: string
+                                    val:
+                                      description: currently only string values are
+                                        supported.
+                                      type: string
+                                  required:
+                                  - key
+                                  - val
+                                  type: object
+                                type: array
+                              fraction:
+                                default: 1
+                                description: |-
+                                  The fraction of spans to sample, in the range [0, 1].
+                                  If the fraction is 0, no spans are sampled.
+                                  If the fraction is 1, all spans are sampled.
+                                type: number
+                            required:
+                            - attributeConditions
+                            - fraction
+                            type: object
+                          type: array
+                        fallbackFraction:
+                          default: 1
+                          description: |-
+                            Used as a fallback if all rules evaluate to false,
+                            it may be empty - in this case the default value will be 1 - all spans are sampled.
+                            it should be a float value in the range [0, 1] - the fraction of spans to sample.
+                            a value of 0 means no spans are sampled if none of the rules evaluate to true.
+                          type: number
+                      required:
+                      - attributesAndSamplerRules
+                      - fallbackFraction
+                      type: object
                     instrumentationLibraryConfigs:
                       description: configurations for the instrumentation libraries
                         the the SDK should use
                       items:
                         properties:
-                          instrumentationLibraryName:
-                            description: |-
-                              The name of the instrumentation library
-                              - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
-                            type: string
+                          libraryId:
+                            properties:
+                              libraryName:
+                                description: |-
+                                  The name of the instrumentation library
+                                  - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
+                                type: string
+                              spanKind:
+                                description: |-
+                                  SpanKind is only supported by Golang and will be ignored for any other SDK language.
+                                  In Go, SpanKind is used because the same instrumentation library can be utilized for different span kinds (e.g., client/server).
+                                enum:
+                                - client
+                                - server
+                                - producer
+                                - consumer
+                                - internal
+                                type: string
+                            required:
+                            - libraryName
+                            type: object
                           traceConfig:
                             properties:
                               enabled:
@@ -140,7 +225,7 @@ spec:
                                 type: boolean
                             type: object
                         required:
-                        - instrumentationLibraryName
+                        - libraryId
                         type: object
                       type: array
                     language:
@@ -152,6 +237,7 @@ spec:
                       - dotnet
                       - javascript
                       - mysql
+                      - nginx
                       - unknown
                       - ignored
                       type: string

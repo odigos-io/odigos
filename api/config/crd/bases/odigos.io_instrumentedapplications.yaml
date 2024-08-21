@@ -110,6 +110,7 @@ spec:
                       - dotnet
                       - javascript
                       - mysql
+                      - nginx
                       - unknown
                       - ignored
                       type: string

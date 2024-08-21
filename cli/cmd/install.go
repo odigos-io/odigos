@@ -82,7 +82,7 @@ This command will install k8s components that will auto-instrument your applicat
 			odigosProToken = odigosOnPremToken
 		}
 
-		config := createOdigosConfig()
+		config := createOdigosConfig(odigosTier)
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
@@ -102,7 +102,7 @@ This command will install k8s components that will auto-instrument your applicat
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config)
+		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config, versionFlag)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
@@ -177,12 +177,52 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	return nil
 }
 
-func createOdigosConfig() common.OdigosConfiguration {
+func otelSdkConfigCommunity() map[common.ProgrammingLanguage]common.OtelSdk {
+	return map[common.ProgrammingLanguage]common.OtelSdk{
+		common.JavaProgrammingLanguage:       common.OtelSdkNativeCommunity,
+		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
+		common.GoProgrammingLanguage:         common.OtelSdkEbpfCommunity,
+		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
+		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+	}
+}
+
+func otelSdkConfigCloud() map[common.ProgrammingLanguage]common.OtelSdk {
+	return map[common.ProgrammingLanguage]common.OtelSdk{
+		common.JavaProgrammingLanguage:       common.OtelSdkNativeCommunity,
+		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
+		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
+		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
+		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+	}
+}
+
+func otelSdkConfigOnPrem() map[common.ProgrammingLanguage]common.OtelSdk {
+	return map[common.ProgrammingLanguage]common.OtelSdk{
+		common.JavaProgrammingLanguage:       common.OtelSdkEbpfEnterprise, // Notice - for onprem, the default for java is eBPF
+		common.PythonProgrammingLanguage:     common.OtelSdkEbpfEnterprise,
+		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
+		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
+		common.JavascriptProgrammingLanguage: common.OtelSdkEbpfEnterprise,
+		common.MySQLProgrammingLanguage:      common.OtelSdkEbpfEnterprise,
+	}
+}
+
+func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
 	fullIgnoredNamespaces := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredNamespaces, consts.SystemNamespaces)
 	fullIgnoredContainers := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredContainers, consts.IgnoredContainers)
 
+	var defaultOtelSdkPerLanguage map[common.ProgrammingLanguage]common.OtelSdk
+	switch odigosTier {
+	case common.CommunityOdigosTier:
+		defaultOtelSdkPerLanguage = otelSdkConfigCommunity()
+	case common.CloudOdigosTier:
+		defaultOtelSdkPerLanguage = otelSdkConfigCloud()
+	case common.OnPremOdigosTier:
+		defaultOtelSdkPerLanguage = otelSdkConfigOnPrem()
+	}
+
 	return common.OdigosConfiguration{
-		OdigosVersion:     versionFlag,
 		ConfigVersion:     1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:  telemetryEnabled,
 		OpenshiftEnabled:  openshiftEnabled,
@@ -193,6 +233,7 @@ func createOdigosConfig() common.OdigosConfiguration {
 		OdigletImage:      odigletImage,
 		InstrumentorImage: instrumentorImage,
 		AutoscalerImage:   autoScalerImage,
+		DefaultSDKs:       defaultOtelSdkPerLanguage,
 	}
 }
 

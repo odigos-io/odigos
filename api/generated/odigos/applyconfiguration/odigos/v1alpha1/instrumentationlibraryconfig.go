@@ -20,8 +20,8 @@ package v1alpha1
 // InstrumentationLibraryConfigApplyConfiguration represents a declarative configuration of the InstrumentationLibraryConfig type for use
 // with apply.
 type InstrumentationLibraryConfigApplyConfiguration struct {
-	InstrumentationLibraryName *string                                               `json:"instrumentationLibraryName,omitempty"`
-	TraceConfig                *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
+	InstrumentationLibraryId *InstrumentationLibraryIdApplyConfiguration           `json:"libraryId,omitempty"`
+	TraceConfig              *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
 }
 
 // InstrumentationLibraryConfigApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryConfig type for use with
@@ -30,11 +30,11 @@ func InstrumentationLibraryConfig() *InstrumentationLibraryConfigApplyConfigurat
 	return &InstrumentationLibraryConfigApplyConfiguration{}
 }
 
-// WithInstrumentationLibraryName sets the InstrumentationLibraryName field in the declarative configuration to the given value
+// WithInstrumentationLibraryId sets the InstrumentationLibraryId field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the InstrumentationLibraryName field is set to the value of the last call.
-func (b *InstrumentationLibraryConfigApplyConfiguration) WithInstrumentationLibraryName(value string) *InstrumentationLibraryConfigApplyConfiguration {
-	b.InstrumentationLibraryName = &value
+// If called multiple times, the InstrumentationLibraryId field is set to the value of the last call.
+func (b *InstrumentationLibraryConfigApplyConfiguration) WithInstrumentationLibraryId(value *InstrumentationLibraryIdApplyConfiguration) *InstrumentationLibraryConfigApplyConfiguration {
+	b.InstrumentationLibraryId = value
 	return b
 }
 
