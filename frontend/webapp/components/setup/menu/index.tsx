@@ -13,13 +13,23 @@ const Container = styled.div`
 const Step = styled.div<{ state: 'finish' | 'active' | 'disabled' }>`
   display: flex;
   gap: 16px;
-  padding: 10px 0;
-  cursor: ${({ state }) => (state === 'disabled' ? 'auto' : 'auto')};
+  padding: 8px;
   opacity: ${({ state }) => (state === 'disabled' ? 0.5 : 1)};
+  transition: all 0.3s;
 
-  transition: opacity 0.3s;
+  ${({ state }) =>
+    state === 'finish' &&
+    css`
+      opacity: 0.8;
+    `}
 
   ${({ state }) => state === 'active' && css``}
+
+  ${({ state }) =>
+    state === 'disabled' &&
+    css`
+      opacity: 0.5;
+    `}
 
   & + & {
     margin-top: 10px;
