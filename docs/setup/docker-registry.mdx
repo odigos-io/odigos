@@ -1,0 +1,61 @@
+---
+title: "Install Odigos Images from a Custom Docker Registry"
+sidebarTitle: "Custom Docker Registry"
+---
+
+## Tagging and Pushing Images
+
+
+### Step 1: Set Environment Variables
+First, export the `VERSION` and `CUSTOM-DOCKER-REGISTRY` environment variables in your shell:
+
+```bash
+export VERSION=<YOUR-DESIRED-VERSION>
+export CUSTOM_DOCKER_REGISTRY=<YOUR-CUSTOM-DOCKER-REGISTRY>
+```
+Replace `<YOUR-DESIRED-VERSION>` with the version of the Odigos images you want to use, and `<YOUR-CUSTOM-DOCKER-REGISTRY>` with the URL of your custom Docker registry.
+
+### Step 2: Pull the Images
+Start by pulling the required images from the official Docker Hub onto your local machine or CI environment:
+
+```bash
+docker pull keyval/odigos-scheduler:$VERSION
+docker pull keyval/odigos-instrumentor:$VERSION
+docker pull keyval/odigos-ui:$VERSION
+docker pull keyval/odigos-autoscaler:$VERSION
+docker pull keyval/odigos-odiglet:$VERSION
+docker pull keyval/odigos-collector:$VERSION
+```
+
+### Step 3: Tag the Images
+Next, Tag each image with your custom Docker registry prefix:
+
+```bash
+docker tag keyval/odigos-scheduler:$VERSION $CUSTOM_DOCKER_REGISTRY/keyval/odigos-scheduler:$VERSION
+docker tag keyval/odigos-instrumentor:$VERSION $CUSTOM_DOCKER_REGISTRY/keyval/odigos-instrumentor:$VERSION
+docker tag keyval/odigos-ui:$VERSION $CUSTOM_DOCKER_REGISTRY/keyval/odigos-ui:$VERSION
+docker tag keyval/odigos-autoscaler:$VERSION $CUSTOM_DOCKER_REGISTRY/keyval/odigos-autoscaler:$VERSION
+docker tag keyval/odigos-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/keyval/odigos-odiglet:$VERSION
+docker tag keyval/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/keyval/odigos-collector:$VERSION
+```
+
+### Step 4: Push the Images
+Now, push the tagged images to your custom Docker registry:  
+```bash
+docker push $CUSTOM_DOCKER_REGISTRY/keyval/odigos-scheduler:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/keyval/odigos-instrumentor:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/keyval/odigos-ui:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/keyval/odigos-autoscaler:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/keyval/odigos-odiglet:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/keyval/odigos-collector:$VERSION
+```
+
+### Step 5: Configure Access for Private Registries
+
+If your Docker registry is private, configure your Kubernetes cluster to pull images from it. Refer to the official Kubernetes documentation for guidance: [Pull an Image from a Private Registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
+
+### Step 6: Install Odigos Using Custom Images
+Finally, install Odigos using the images from your custom Docker registry:
+```bash
+odigos install --image-prefix=$CUSTOM_DOCKER_REGISTRY
+```
