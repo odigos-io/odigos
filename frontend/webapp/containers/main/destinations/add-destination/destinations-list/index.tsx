@@ -2,12 +2,12 @@ import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { DestinationTypeItem } from '@/types';
-import { Text } from '@/reuseable-components';
+import { NoDataFound, Text } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   align-self: stretch;
   max-height: calc(100vh - 410px);
@@ -76,6 +76,9 @@ const TextWrapper = styled.div`
   height: 36px;
   justify-content: space-between;
 `;
+const NoDataFoundWrapper = styled(Container)`
+  margin-top: 80px;
+`;
 
 interface DestinationsListProps {
   items: DestinationTypeItem[];
@@ -99,6 +102,14 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
         {index < supportedSignalsList.length - 1 && <SignalText>·</SignalText>}
       </SignalsWrapper>
     ));
+  }
+
+  if (!items.length) {
+    return (
+      <NoDataFoundWrapper>
+        <NoDataFound title="No sources found" />
+      </NoDataFoundWrapper>
+    );
   }
 
   return (

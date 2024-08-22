@@ -80,7 +80,14 @@ export function ChooseDestinationContainer() {
         />
         {isSourcesListEmpty() && destinations.length === 0 && (
           <NotificationNoteWrapper>
-            <NotificationNote type={'warning'} text={'No sources selected.'} />
+            <NotificationNote
+              type={'warning'}
+              text={'No sources selected.'}
+              action={{
+                label: 'Select sources',
+                onClick: () => router.push('/setup/choose-sources'),
+              }}
+            />
           </NotificationNoteWrapper>
         )}
         <AddDestinationButtonWrapper>

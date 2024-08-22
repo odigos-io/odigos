@@ -2,12 +2,12 @@ import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { K8sActualSource } from '@/types';
-import { Text } from '@/reuseable-components';
+import { NoDataFound, Text } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   background: ${({ theme }) => theme.colors.primary};
   height: 100%;
@@ -65,6 +65,10 @@ const SelectedTextWrapper = styled.div`
   margin-right: 24px;
 `;
 
+const NoDataFoundWrapper = styled(Container)`
+  margin-top: 80px;
+`;
+
 interface SourcesListProps {
   items: K8sActualSource[];
   selectedItems: K8sActualSource[];
@@ -81,6 +85,14 @@ const SourcesList: React.FC<SourcesListProps> = ({
       (selectedItem) => selectedItem.name === item.name
     );
     return !!selected;
+  }
+
+  if (!items.length) {
+    return (
+      <NoDataFoundWrapper>
+        <NoDataFound title="No sources found" />
+      </NoDataFoundWrapper>
+    );
   }
 
   return (

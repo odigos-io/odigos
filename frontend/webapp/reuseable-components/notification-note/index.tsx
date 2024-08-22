@@ -9,11 +9,16 @@ type NotificationType = 'warning' | 'error' | 'success' | 'info';
 interface NotificationProps {
   type: NotificationType;
   text: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 const NotificationContainer = styled.div<{ type: NotificationType }>`
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 12px 16px;
   border-radius: 32px;
 
@@ -58,6 +63,26 @@ const Title = styled(Text)<{ type: NotificationType }>`
   }};
 `;
 
+const TitleWrapper = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const ActionButtonWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+`;
+
+const ActionButton = styled(Text)`
+  text-decoration: underline;
+  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: ${({ theme }) => theme.font_family.secondary};
+`;
+
 const NotificationIcon = ({ type }: { type: NotificationType }) => {
   switch (type) {
     case 'warning':
@@ -95,13 +120,24 @@ const NotificationIcon = ({ type }: { type: NotificationType }) => {
   }
 };
 
-const NotificationNote: React.FC<NotificationProps> = ({ type, text }) => {
+const NotificationNote: React.FC<NotificationProps> = ({
+  type,
+  text,
+  action,
+}) => {
   return (
     <NotificationContainer type={type}>
-      <IconWrapper>
-        <NotificationIcon type={type} />
-      </IconWrapper>
-      <Title type={type}>{text}</Title>
+      <TitleWrapper>
+        <IconWrapper>
+          <NotificationIcon type={type} />
+        </IconWrapper>
+        <Title type={type}>{text}</Title>
+      </TitleWrapper>
+      {action && (
+        <ActionButtonWrapper onClick={action.onClick}>
+          <ActionButton decoration="under">{action.label}</ActionButton>
+        </ActionButtonWrapper>
+      )}
     </NotificationContainer>
   );
 };
