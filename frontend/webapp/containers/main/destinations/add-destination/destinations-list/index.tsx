@@ -107,7 +107,7 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
   if (!items.length) {
     return (
       <NoDataFoundWrapper>
-        <NoDataFound title="No sources found" />
+        <NoDataFound title="No destinations found" />
       </NoDataFoundWrapper>
     );
   }
