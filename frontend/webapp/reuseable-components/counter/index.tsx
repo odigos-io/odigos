@@ -13,7 +13,7 @@ const Container = styled.div`
   gap: 8px;
 `;
 
-const ValueContainer = styled.div`
+const ValueContainer = styled.div<{ value?: number }>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -21,16 +21,22 @@ const ValueContainer = styled.div`
   height: 20px;
   border-radius: 32px;
   border: 1px solid rgba(249, 249, 249, 0.24);
+  background: ${({ value, theme }) =>
+    value ? theme.colors.majestic_blue : 'transparent'};
+`;
+
+const Value = styled(Text)<{ value?: number }>`
+  opacity: ${({ value }) => (value ? 1 : 0.8)};
+  font-family: ${({ theme }) => theme.font_family.secondary};
+  font-size: 12px;
 `;
 
 const Counter: React.FC<CounterProps> = ({ value, title }) => {
   return (
     <Container>
       <Text>{title}</Text>
-      <ValueContainer>
-        <Text size={12} opacity={0.8} family={'secondary'}>
-          {value}
-        </Text>
+      <ValueContainer value={value}>
+        <Value>{value}</Value>
       </ValueContainer>
     </Container>
   );
