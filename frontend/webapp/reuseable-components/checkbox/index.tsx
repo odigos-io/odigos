@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Text } from '../text';
 
 interface CheckboxProps {
-  title: string;
+  title?: string;
   tooltip?: string;
   initialValue?: boolean;
   onChange?: (value: boolean) => void;
@@ -72,7 +72,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
             />
           )}
         </CheckboxWrapper>
-        <Text size={14}>{title}</Text>
+        {title && <Text size={14}>{title}</Text>}
         {tooltip && (
           <Image src="/icons/common/info.svg" alt="" width={16} height={16} />
         )}

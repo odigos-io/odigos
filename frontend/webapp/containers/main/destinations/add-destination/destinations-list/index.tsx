@@ -31,7 +31,7 @@ const ListItem = styled.div<{}>`
   background: rgba(249, 249, 249, 0.04);
 
   &:hover {
-    background: rgba(68, 74, 217, 0.24);
+    background: rgba(249, 249, 249, 0.08);
   }
   &:last-child {
     margin-bottom: 32px;

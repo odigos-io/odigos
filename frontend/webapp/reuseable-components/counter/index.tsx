@@ -21,6 +21,7 @@ const ValueContainer = styled.div<{ value?: number }>`
   height: 20px;
   border-radius: 32px;
   border: 1px solid rgba(249, 249, 249, 0.24);
+  transition: background-color 0.3s;
   background: ${({ value, theme }) =>
     value ? theme.colors.majestic_blue : 'transparent'};
 `;
