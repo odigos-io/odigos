@@ -240,6 +240,7 @@
       "group": "VM Agent",
       "pages": [
         "vmagent/overview",
+        "vmagent/architecture",
         {
           "group": "Quickstart",
           "pages": [
