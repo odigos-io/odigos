@@ -20,7 +20,7 @@ func (g *GolangInspector) Inspect(p *process.Details) (common.ProgrammingLanguag
 	return common.GoProgrammingLanguage, true
 }
 
-func (g *GolangInspector) GetRuntimeVersion(p *process.Details, podIp string) string {
+func (g *GolangInspector) GetRuntimeVersion(p *process.Details, containerURL string) string {
 	var runtimeVersion string
 	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
 	buildInfo, err := buildinfo.ReadFile(file)

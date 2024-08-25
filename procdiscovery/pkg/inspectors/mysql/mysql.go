@@ -21,6 +21,6 @@ func (j *MySQLInspector) Inspect(p *process.Details) (common.ProgrammingLanguage
 	return "", false
 }
 
-func (j *MySQLInspector) GetRuntimeVersion(p *process.Details, podIp string) string {
+func (j *MySQLInspector) GetRuntimeVersion(p *process.Details, containerURL string) string {
 	return ""
 }

@@ -96,7 +96,8 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 			var detectErr error
 
 			for _, proc := range processes {
-				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, pod.Status.PodIP)
+				containerURL := kubeutils.GetPodExternalURL(pod.Status.PodIP, container.Ports)
+				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL)
 				if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
 					inspectProc = &proc
 					break

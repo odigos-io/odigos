@@ -28,6 +28,6 @@ func (d *DotnetInspector) Inspect(p *process.Details) (common.ProgrammingLanguag
 	return "", false
 }
 
-func (d *DotnetInspector) GetRuntimeVersion(p *process.Details, podIp string) string {
+func (d *DotnetInspector) GetRuntimeVersion(p *process.Details, containerURL string) string {
 	return ""
 }

@@ -13,7 +13,10 @@ import (
 // but in order to avoid huge refactoring we are adding it as a language for now
 type NginxInspector struct{}
 
-const NginxProcessName = "nginx"
+const (
+	NginxProcessName  = "nginx"
+	NginxVersionRegex = "`nginx/(\\d+\\.\\d+\\.\\d+)`"
+)
 
 func (j *NginxInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
 	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExeName, NginxProcessName) {
@@ -23,8 +26,8 @@ func (j *NginxInspector) Inspect(p *process.Details) (common.ProgrammingLanguage
 	return "", false
 }
 
-func (j *NginxInspector) GetRuntimeVersion(p *process.Details, podIp string) string {
-	version, err := GetNginxVersion(podIp)
+func (j *NginxInspector) GetRuntimeVersion(p *process.Details, containerURL string) string {
+	version, err := GetNginxVersion(containerURL)
 	if err != nil {
 		return ""
 	}
@@ -44,7 +47,7 @@ func GetNginxVersion(podIP string) (string, error) {
 		return "", nil
 	}
 
-	re := regexp.MustCompile(`nginx/(\d+\.\d+\.\d+)`)
+	re := regexp.MustCompile(NginxVersionRegex)
 	match := re.FindStringSubmatch(serverHeader)
 	if len(match) != 2 {
 		return "", nil

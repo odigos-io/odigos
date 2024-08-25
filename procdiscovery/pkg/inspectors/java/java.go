@@ -19,7 +19,7 @@ func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLangua
 	return "", false
 }
 
-func (j *JavaInspector) GetRuntimeVersion(proc *process.Details, podIp string) string {
+func (j *JavaInspector) GetRuntimeVersion(proc *process.Details, containerURL string) string {
 	if value, exists := proc.GetDetailedEnvsValue(process.JavaVersionConst); exists {
 		return value
 	}

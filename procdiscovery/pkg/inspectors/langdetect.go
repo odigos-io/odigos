@@ -24,7 +24,7 @@ func (e ErrLanguageDetectionConflict) Error() string {
 
 type inspector interface {
 	Inspect(process *process.Details) (common.ProgrammingLanguage, bool)
-	GetRuntimeVersion(process *process.Details, podIp string) string
+	GetRuntimeVersion(process *process.Details, containerURL string) string
 }
 
 var inspectorsList = []inspector{
@@ -40,7 +40,7 @@ var inspectorsList = []inspector{
 // DetectLanguage returns the detected language for the process or
 // common.UnknownProgrammingLanguage if the language could not be detected, in which case error == nil
 // if error or language detectors disagree common.UnknownProgrammingLanguage is also returned
-func DetectLanguage(process process.Details, podIp string) (common.ProgramLanguageDetails, error) {
+func DetectLanguage(process process.Details, containerURL string) (common.ProgramLanguageDetails, error) {
 	detectedProgramLanguageDetails := common.ProgramLanguageDetails{
 		Language: common.UnknownProgrammingLanguage,
 	}
@@ -50,7 +50,7 @@ func DetectLanguage(process process.Details, podIp string) (common.ProgramLangua
 		if detected {
 			if detectedProgramLanguageDetails.Language == common.UnknownProgrammingLanguage {
 				detectedProgramLanguageDetails.Language = languageDetected
-				detectedProgramLanguageDetails.RuntimeVersion = i.GetRuntimeVersion(&process, podIp)
+				detectedProgramLanguageDetails.RuntimeVersion = i.GetRuntimeVersion(&process, containerURL)
 				continue
 			}
 			return common.ProgramLanguageDetails{

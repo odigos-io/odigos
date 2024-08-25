@@ -19,7 +19,7 @@ func (n *NodejsInspector) Inspect(proc *process.Details) (common.ProgrammingLang
 	return "", false
 }
 
-func (n *NodejsInspector) GetRuntimeVersion(proc *process.Details, podIp string) string {
+func (n *NodejsInspector) GetRuntimeVersion(proc *process.Details, containerURL string) string {
 	if version, exists := proc.GetDetailedEnvsValue(process.NodeVersionConst); exists {
 		return version
 	}
