@@ -25,6 +25,12 @@ type Condition struct {
 	Message            *string         `json:"message,omitempty"`
 }
 
+type DestinationDetails struct {
+	Type      string `json:"type"`
+	URLString string `json:"urlString"`
+	Fields    string `json:"fields"`
+}
+
 type DestinationInput struct {
 	Name            string                `json:"name"`
 	Type            string                `json:"type"`
