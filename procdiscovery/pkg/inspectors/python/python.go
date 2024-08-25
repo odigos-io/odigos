@@ -11,16 +11,18 @@ type PythonInspector struct{}
 
 const pythonProcessName = "python"
 
-func (p *PythonInspector) Inspect(proc *process.Details) (common.ProgramLanguageDetails, bool) {
-	var programLanguageDetails common.ProgramLanguageDetails
+func (p *PythonInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
 	if strings.Contains(proc.ExeName, pythonProcessName) || strings.Contains(proc.CmdLine, pythonProcessName) {
-		programLanguageDetails.Language = common.PythonProgrammingLanguage
-		if value, exists := proc.GetDetailedEnvsValue(process.PythonVersionConst); exists {
-			programLanguageDetails.RuntimeVersion = value
-		}
-
-		return programLanguageDetails, true
+		return common.PythonProgrammingLanguage, true
 	}
 
-	return programLanguageDetails, false
+	return "", false
+}
+
+func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, podIp string) string {
+	if value, exists := proc.GetDetailedEnvsValue(process.PythonVersionConst); exists {
+		return value
+	}
+
+	return ""
 }

@@ -11,17 +11,18 @@ type NodejsInspector struct{}
 
 const nodeProcessName = "node"
 
-func (n *NodejsInspector) Inspect(proc *process.Details) (common.ProgramLanguageDetails, bool) {
-	var programLanguageDetails common.ProgramLanguageDetails
-
+func (n *NodejsInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
 	if strings.Contains(proc.ExeName, nodeProcessName) || strings.Contains(proc.CmdLine, nodeProcessName) {
-		programLanguageDetails.Language = common.JavascriptProgrammingLanguage
-		if value, exists := proc.GetDetailedEnvsValue(process.NodeVersionConst); exists {
-			programLanguageDetails.RuntimeVersion = value
-		}
-
-		return programLanguageDetails, true
+		return common.JavascriptProgrammingLanguage, true
 	}
 
-	return programLanguageDetails, false
+	return "", false
+}
+
+func (n *NodejsInspector) GetRuntimeVersion(proc *process.Details, podIp string) string {
+	if version, exists := proc.GetDetailedEnvsValue(process.NodeVersionConst); exists {
+		return version
+	}
+
+	return ""
 }

@@ -15,14 +15,21 @@ type NginxInspector struct{}
 
 const NginxProcessName = "nginx"
 
-func (j *NginxInspector) Inspect(p *process.Details) (common.ProgramLanguageDetails, bool) {
-	var programLanguageDetails common.ProgramLanguageDetails
+func (j *NginxInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
 	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExeName, NginxProcessName) {
-		programLanguageDetails.Language = common.NginxProgrammingLanguage
-		return programLanguageDetails, true
+		return common.NginxProgrammingLanguage, true
 	}
 
-	return programLanguageDetails, false
+	return "", false
+}
+
+func (j *NginxInspector) GetRuntimeVersion(p *process.Details, podIp string) string {
+	version, err := GetNginxVersion(podIp)
+	if err != nil {
+		return ""
+	}
+
+	return version
 }
 
 func GetNginxVersion(podIP string) (string, error) {

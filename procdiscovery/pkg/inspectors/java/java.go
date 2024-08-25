@@ -11,17 +11,18 @@ type JavaInspector struct{}
 
 const processName = "java"
 
-func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgramLanguageDetails, bool) {
-	var programLanguageDetails common.ProgramLanguageDetails
-
+func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
 	if strings.Contains(proc.ExeName, processName) || strings.Contains(proc.CmdLine, processName) {
-		programLanguageDetails.Language = common.JavaProgrammingLanguage
-		if value, exists := proc.GetDetailedEnvsValue(process.JavaVersionConst); exists {
-			programLanguageDetails.RuntimeVersion = value
-		}
-
-		return programLanguageDetails, true
+		return common.JavaProgrammingLanguage, true
 	}
 
-	return programLanguageDetails, false
+	return "", false
+}
+
+func (j *JavaInspector) GetRuntimeVersion(proc *process.Details, podIp string) string {
+	if value, exists := proc.GetDetailedEnvsValue(process.JavaVersionConst); exists {
+		return value
+	}
+
+	return ""
 }

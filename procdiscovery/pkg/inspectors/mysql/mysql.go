@@ -13,12 +13,14 @@ type MySQLInspector struct{}
 
 const MySQLProcessName = "mysqld"
 
-func (j *MySQLInspector) Inspect(p *process.Details) (common.ProgramLanguageDetails, bool) {
-	var programLanguageDetails common.ProgramLanguageDetails
+func (j *MySQLInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
 	if strings.HasSuffix(p.ExeName, MySQLProcessName) || strings.HasSuffix(p.CmdLine, MySQLProcessName) {
-		programLanguageDetails.Language = common.MySQLProgrammingLanguage
-		return programLanguageDetails, true
+		return common.MySQLProgrammingLanguage, true
 	}
 
-	return programLanguageDetails, false
+	return "", false
+}
+
+func (j *MySQLInspector) GetRuntimeVersion(p *process.Details, podIp string) string {
+	return ""
 }

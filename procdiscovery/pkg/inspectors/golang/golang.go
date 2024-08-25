@@ -10,18 +10,26 @@ import (
 
 type GolangInspector struct{}
 
-func (g *GolangInspector) Inspect(p *process.Details) (common.ProgramLanguageDetails, bool) {
-	var programLanguageDetails common.ProgramLanguageDetails
+func (g *GolangInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
+	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
+	_, err := buildinfo.ReadFile(file)
+	if err != nil {
+		return "", false
+	}
+
+	return common.GoProgrammingLanguage, true
+}
+
+func (g *GolangInspector) GetRuntimeVersion(p *process.Details, podIp string) string {
+	var runtimeVersion string
 	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
 	buildInfo, err := buildinfo.ReadFile(file)
 	if err != nil {
-		return programLanguageDetails, false
+		return ""
 	}
-
-	programLanguageDetails.Language = common.GoProgrammingLanguage
 	if buildInfo != nil {
-		programLanguageDetails.RuntimeVersion = buildInfo.GoVersion
+		runtimeVersion = buildInfo.GoVersion
 	}
 
-	return programLanguageDetails, true
+	return runtimeVersion
 }
