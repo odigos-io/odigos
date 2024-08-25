@@ -16,6 +16,7 @@ GOBIN := $(shell go env GOPATH)/bin
 BUILDER_URL = https://github.com/open-telemetry/opentelemetry-collector/releases/download/cmd%2Fbuilder%2Fv$(BUILDER_VERSION)/ocb_$(BUILDER_VERSION)_$(CURRENT_OS)_$(CURRENT_ARCH)
 
 GOCMD?= go
+MDATAGENCMD?= mdatagen
 
 .PHONY: download_builder
 download_builder:
@@ -50,3 +51,13 @@ install-tools:
 .PHONY: generate
 generate: install-tools
 	@find . -type f -name 'metadata.yaml' -print0 | xargs -0 -I {} sh -c 'cd $$(dirname {}); $(GOBIN)/mdatagen metadata.yaml'
+
+ALL_GO_MODS := $(shell find . -type f -name 'go.mod' ! -path './exporters/googlecloudstorageexporter/*'  ! -path './internal/tools/*' ! -path './odigosotelcol/*' | sort)
+GO_MODS_TO_TEST := $(ALL_GO_MODS:%=test/%)
+
+.PHONY: test
+test: $(GO_MODS_TO_TEST)
+test/%: GO_MOD=$*
+test/%:
+	cd $(shell dirname $(GO_MOD)) && $(GOCMD) test -v ./...
+
