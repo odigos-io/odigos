@@ -9,8 +9,9 @@ interface TooltipProps {
 }
 
 const TooltipWrapper = styled.div`
-  display: inline-block;
+  display: flex;
   position: relative;
+  align-items: center;
 `;
 
 const TooltipContent = styled.div<{ top: number; left: number }>`
