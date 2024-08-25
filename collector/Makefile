@@ -52,7 +52,7 @@ install-tools:
 generate: install-tools
 	@find . -type f -name 'metadata.yaml' -print0 | xargs -0 -I {} sh -c 'cd $$(dirname {}); $(GOBIN)/mdatagen metadata.yaml'
 
-ALL_GO_MODS := $(shell find . -type f -name 'go.mod' ! -path './exporters/googlecloudstorageexporter/*'  ! -path './internal/tools/*' ! -path './odigosotelcol/*' | sort)
+ALL_GO_MODS := $(shell find . -type f -name 'go.mod' ! -path './exporters/googlecloudstorageexporter/*' ! -path './exporters/azureblobstorageexporter/*' ! -path './internal/tools/*' ! -path './odigosotelcol/*' | sort)
 GO_MODS_TO_TEST := $(ALL_GO_MODS:%=test/%)
 
 .PHONY: test
