@@ -29,6 +29,14 @@
       "args": ["--port", "8085", "--address", "0.0.0.0"]
     },
     {
+      "name": "gql-playground",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/frontend/main.go",
+      "cwd": "${workspaceFolder}/frontend"
+    },
+    {
       "name": "autoscaler local",
       "type": "go",
       "request": "launch",
