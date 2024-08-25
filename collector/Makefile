@@ -9,7 +9,7 @@ BUILDER := $(TOOLS_BIN_DIR)/builder_$(BUILDER_VERSION)
 
 # Determine the current operating system and architecture
 CURRENT_OS := $(shell go env GOOS)
-CURRENT_ARCH := $(shell go env GOARCH)
+CURRENT_ARCH := $(shell go env GOHOSTARCH)
 GOBIN := $(shell go env GOPATH)/bin
 
 # Define the URL format for the tool executable
