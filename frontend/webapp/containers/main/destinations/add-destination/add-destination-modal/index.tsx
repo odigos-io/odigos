@@ -65,7 +65,6 @@ export function AddDestinationModal({
   }, [data]);
 
   function buildDestinationTypeList() {
-    console.log({ data });
     const destinationTypes = data?.destinationTypes?.categories || [];
     const destinationTypeList: DestinationTypeItem[] = destinationTypes.reduce(
       (acc: DestinationTypeItem[], category: DestinationCategory) => {

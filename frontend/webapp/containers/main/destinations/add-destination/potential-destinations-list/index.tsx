@@ -1,13 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { DestinationTypeItem } from '@/types';
-import { NoDataFound, Text } from '@/reuseable-components';
+import {
+  NoDataFound,
+  SectionTitle,
+  SkeletonLoader,
+  Text,
+} from '@/reuseable-components';
+import { usePotentialDestinations } from '@/hooks';
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 12px;
   align-self: stretch;
   max-height: calc(100vh - 424px);
@@ -80,15 +85,23 @@ const NoDataFoundWrapper = styled(Container)`
   margin-top: 80px;
 `;
 
-interface DestinationsListProps {
+interface PotentialDestinationsListProps {
   items: DestinationTypeItem[];
   setSelectedItems: (item: DestinationTypeItem) => void;
 }
 
-const DestinationsList: React.FC<DestinationsListProps> = ({
+const PotentialDestinationsList: React.FC<PotentialDestinationsListProps> = ({
   items,
   setSelectedItems,
 }) => {
+  const { loading, error, data: pd } = usePotentialDestinations();
+
+  useEffect(() => {
+    if (pd) {
+      console.log({ pd });
+    }
+  }, [pd]);
+
   function renderSupportedSignals(item: DestinationTypeItem) {
     const supportedSignals = item.supportedSignals;
     const signals = Object.keys(supportedSignals);
@@ -114,14 +127,21 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
 
   return (
     <Container>
+      <SectionTitle
+        size="small"
+        icon="/brand/odigos-icon.svg"
+        title="Detected by Odigos"
+        description="Odigos detects destinations for which automatic connection is available. All data will be filled out automatically."
+      />
+      <SkeletonLoader size={1} />
       {items.map((item) => (
         <ListItem key={item.displayName} onClick={() => setSelectedItems(item)}>
           <ListItemContent>
             <DestinationIconWrapper>
               <Image
                 src={item.imageUrl}
-                width={20}
-                height={20}
+                width={14}
+                height={11}
                 alt="destination"
               />
             </DestinationIconWrapper>
@@ -136,4 +156,4 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
   );
 };
 
-export { DestinationsList };
+export { PotentialDestinationsList };

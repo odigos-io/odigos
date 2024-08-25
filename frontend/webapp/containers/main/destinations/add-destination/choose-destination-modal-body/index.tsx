@@ -6,6 +6,7 @@ import { Body, Container, SideMenuWrapper } from '../styled';
 import { Divider, SectionTitle } from '@/reuseable-components';
 import { DestinationFilterComponent } from '../choose-destination-menu';
 import { DestinationTypeItem, DropdownOption, StepProps } from '@/types';
+import { PotentialDestinationsList } from '../potential-destinations-list';
 
 interface ChooseDestinationModalBodyProps {
   data: DestinationTypeItem[];
@@ -96,7 +97,11 @@ export function ChooseDestinationModalBody({
           onMonitorSelect={onMonitorSelect}
         />
         <Divider margin="0 0 24px 0" />
-        <DestinationsList items={filterData()} setSelectedItems={onSelect} />
+        <PotentialDestinationsList
+          items={filterData()}
+          setSelectedItems={onSelect}
+        />
+        {/* <DestinationsList items={filterData()} setSelectedItems={onSelect} /> */}
       </Body>
     </Container>
   );

@@ -314,11 +314,14 @@ func (r *queryResolver) PotentialDestinations(ctx context.Context) ([]*model.Des
 	var result []*model.DestinationDetails
 	for _, dest := range potentialDestinations {
 
-		fieldsString := services.ConvertFieldsToString(dest.Fields)
+		fieldsString, err := json.Marshal(dest.Fields)
+		if err != nil {
+			return nil, fmt.Errorf("error marshalling fields: %v", err)
+		}
 
 		result = append(result, &model.DestinationDetails{
 			Type:   string(dest.Type),
-			Fields: fieldsString,
+			Fields: string(fieldsString),
 		})
 	}
 
