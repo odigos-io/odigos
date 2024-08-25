@@ -64,6 +64,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: false
           tags: odigos-collector:pr-${{ github.event.number }}
+          context: ./collector
           file: collector/Dockerfile
       - name: run tests
         working-directory: ./collector
