@@ -21,7 +21,7 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// AddClusterInfoSpecApplyConfiguration represents an declarative configuration of the AddClusterInfoSpec type for use
+// AddClusterInfoSpecApplyConfiguration represents a declarative configuration of the AddClusterInfoSpec type for use
 // with apply.
 type AddClusterInfoSpecApplyConfiguration struct {
 	ActionName        *string                                    `json:"actionName,omitempty"`
@@ -31,7 +31,7 @@ type AddClusterInfoSpecApplyConfiguration struct {
 	ClusterAttributes []OtelAttributeWithValueApplyConfiguration `json:"clusterAttributes,omitempty"`
 }
 
-// AddClusterInfoSpecApplyConfiguration constructs an declarative configuration of the AddClusterInfoSpec type for use with
+// AddClusterInfoSpecApplyConfiguration constructs a declarative configuration of the AddClusterInfoSpec type for use with
 // apply.
 func AddClusterInfoSpec() *AddClusterInfoSpecApplyConfiguration {
 	return &AddClusterInfoSpecApplyConfiguration{}

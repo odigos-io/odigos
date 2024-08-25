@@ -18,9 +18,12 @@ limitations under the License.
 package applyconfiguration
 
 import (
+	internal "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/internal"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
+	testing "k8s.io/client-go/testing"
 )
 
 // ForKind returns an apply configuration type for the given GroupVersionKind, or nil if no
@@ -30,6 +33,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 	// Group=odigos.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithKind("Attribute"):
 		return &odigosv1alpha1.AttributeApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("AttributeCondition"):
+		return &odigosv1alpha1.AttributeConditionApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("AttributesAndSamplerRule"):
+		return &odigosv1alpha1.AttributesAndSamplerRuleApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorGatewayConfiguration"):
 		return &odigosv1alpha1.CollectorGatewayConfigurationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroup"):
@@ -48,6 +55,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.DestinationStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("EnvVar"):
 		return &odigosv1alpha1.EnvVarApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("HeadSamplingConfig"):
+		return &odigosv1alpha1.HeadSamplingConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfig"):
 		return &odigosv1alpha1.InstrumentationConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfigSpec"):
@@ -64,6 +73,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationLibraryConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryConfigTraces"):
 		return &odigosv1alpha1.InstrumentationLibraryConfigTracesApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryId"):
+		return &odigosv1alpha1.InstrumentationLibraryIdApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryOptions"):
 		return &odigosv1alpha1.InstrumentationLibraryOptionsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryStatus"):
@@ -93,4 +104,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 
 	}
 	return nil
+}
+
+func NewTypeConverter(scheme *runtime.Scheme) *testing.TypeConverter {
+	return &testing.TypeConverter{Scheme: scheme, TypeResolver: internal.Parser()}
 }

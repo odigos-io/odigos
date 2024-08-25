@@ -26,19 +26,19 @@ type OtelEbpfSdk interface {
 
 // users can use different eBPF otel SDKs by returning them from this function
 type InstrumentationFactory[T OtelEbpfSdk] interface {
-	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *common.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (T, error)
+	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *workload.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (T, error)
 }
 
 // Director manages the instrumentation for a specific SDK in a specific language
 type Director interface {
 	Language() common.ProgrammingLanguage
-	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload *common.PodWorkload, appName string, containerName string) error
+	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload *workload.PodWorkload, appName string, containerName string) error
 	Cleanup(podDetails types.NamespacedName)
 	Shutdown()
 }
 
 type podDetails struct {
-	Workload *common.PodWorkload
+	Workload *workload.PodWorkload
 	Pids     []int
 }
 
@@ -51,7 +51,7 @@ const (
 )
 
 type instrumentationStatus struct {
-	Workload      common.PodWorkload
+	Workload      workload.PodWorkload
 	PodName       types.NamespacedName
 	ContainerName string
 	Healthy       bool
@@ -81,7 +81,7 @@ type EbpfDirector[T OtelEbpfSdk] struct {
 	podsToDetails map[types.NamespacedName]podDetails
 
 	// this map can be used when we only have the workload, and need to find the pods to derive pids.
-	workloadToPods map[common.PodWorkload]map[types.NamespacedName]struct{}
+	workloadToPods map[workload.PodWorkload]map[types.NamespacedName]struct{}
 
 	// this channel is used to send the status of the instrumentation SDK after it is created and ran.
 	// the status is used to update the status conditions for the instrumentedApplication CR.
@@ -108,7 +108,7 @@ func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, s
 		pidsToInstrumentation:        make(map[int]T),
 		pidsAttemptedInstrumentation: make(map[int]struct{}),
 		podsToDetails:                make(map[types.NamespacedName]podDetails),
-		workloadToPods:               make(map[common.PodWorkload]map[types.NamespacedName]struct{}),
+		workloadToPods:               make(map[workload.PodWorkload]map[types.NamespacedName]struct{}),
 		instrumentationStatusChan:    make(chan instrumentationStatus),
 		client:                       client,
 	}
@@ -140,11 +140,9 @@ func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context, scheme *r
 				continue
 			}
 
-			instrumentedAppName := workload.GetRuntimeObjectName(status.Workload.Name, status.Workload.Kind)
-			err = inst.PersistInstrumentationInstanceStatus(ctx, &pod, status.ContainerName, d.client, instrumentedAppName, status.Pid, scheme,
-				inst.WithHealthy(&status.Healthy),
-				inst.WithMessage(status.Message),
-				inst.WithReason(string(status.Reason)),
+			instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(status.Workload.Name, status.Workload.Kind)
+			err = inst.UpdateInstrumentationInstanceStatus(ctx, &pod, status.ContainerName, d.client, instrumentedAppName, status.Pid, scheme,
+				inst.WithHealthy(&status.Healthy, string(status.Reason), &status.Message),
 			)
 
 			if err != nil {
@@ -154,7 +152,7 @@ func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context, scheme *r
 	}
 }
 
-func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *common.PodWorkload, appName string, containerName string) error {
+func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *workload.PodWorkload, appName string, containerName string) error {
 	log.Logger.V(0).Info("Instrumenting process", "pid", pid, "workload", podWorkload)
 	d.mux.Lock()
 	defer d.mux.Unlock()
@@ -313,7 +311,7 @@ func (d *EbpfDirector[T]) Shutdown() {
 	}
 }
 
-func (d *EbpfDirector[T]) GetWorkloadInstrumentations(workload *common.PodWorkload) []T {
+func (d *EbpfDirector[T]) GetWorkloadInstrumentations(workload *workload.PodWorkload) []T {
 	d.mux.Lock()
 	defer d.mux.Unlock()
 

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/go-logr/logr"
@@ -23,6 +24,7 @@ import (
 	"github.com/gin-contrib/cors"
 
 	"github.com/odigos-io/odigos/frontend/endpoints/actions"
+	collectormetrics "github.com/odigos-io/odigos/frontend/endpoints/collector_metrics"
 	"github.com/odigos-io/odigos/frontend/endpoints/sse"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/kube/watchers"
@@ -78,7 +80,7 @@ func initKubernetesClient(flags *Flags) error {
 	return nil
 }
 
-func startHTTPServer(flags *Flags) (*gin.Engine, error) {
+func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetricsConsumer) (*gin.Engine, error) {
 	var r *gin.Engine
 	if flags.Debug {
 		r = gin.Default()
@@ -140,6 +142,13 @@ func startHTTPServer(flags *Flags) (*gin.Engine, error) {
 		apis.POST("/actions/types/RenameAttribute", func(c *gin.Context) { actions.CreateRenameAttribute(c, flags.Namespace) })
 		apis.PUT("/actions/types/RenameAttribute/:id", func(c *gin.Context) { actions.UpdateRenameAttribute(c, flags.Namespace, c.Param("id")) })
 		apis.DELETE("/actions/types/RenameAttribute/:id", func(c *gin.Context) { actions.DeleteRenameAttribute(c, flags.Namespace, c.Param("id")) })
+
+		// Metrics
+		apis.GET("/metrics/namespace/:namespace/kind/:kind/name/:name", func(c *gin.Context) { endpoints.GetSingleSourceMetrics(c, odigosMetrics) })
+		apis.GET("/metrics/destinations/:id", func(c *gin.Context) { endpoints.GetSingleDestinationMetrics(c, odigosMetrics) })
+		apis.GET("/metrics/sources", func(c *gin.Context) { endpoints.GetSourcesMetrics(c, odigosMetrics) })
+		apis.GET("/metrics/destinations", func(c *gin.Context) { endpoints.GetDestinationsMetrics(c, odigosMetrics) })
+		apis.GET("/metrics/overview", func(c *gin.Context) { endpoints.GetOverviewMetrics(c, odigosMetrics) })
 
 		// ErrorSampler
 		apis.GET("/actions/types/ErrorSampler/:id", func(c *gin.Context) { actions.GetErrorSampler(c, flags.Namespace, c.Param("id")) })
@@ -209,12 +218,6 @@ func main() {
 		log.Fatalf("Error creating Kubernetes client: %s", err)
 	}
 
-	// Start server
-	r, err := startHTTPServer(&flags)
-	if err != nil {
-		log.Fatalf("Error starting server: %s", err)
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
@@ -222,6 +225,20 @@ func main() {
 		signal.Stop(ch)
 		cancel()
 	}()
+
+	odigosMetrics := collectormetrics.NewOdigosMetrics()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		odigosMetrics.Run(ctx, flags.Namespace)
+	}()
+
+	// Start server
+	r, err := startHTTPServer(&flags, odigosMetrics)
+	if err != nil {
+		log.Fatalf("Error starting server: %s", err)
+	}
 
 	// Start watchers
 	err = watchers.StartInstrumentedApplicationWatcher(ctx, "")
@@ -253,4 +270,6 @@ func main() {
 
 	<-ch
 	log.Println("Shutting down Odigos UI...")
+	cancel()
+	wg.Wait()
 }

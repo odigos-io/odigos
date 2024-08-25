@@ -56,6 +56,8 @@ type AddClusterInfoStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=addclusterinfos,scope=Namespaced,shortName=aci
+//+kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
+//+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
 
 // AddClusterInfo is the Schema for the addclusterinfo odigos action API
 type AddClusterInfo struct {

@@ -43,22 +43,24 @@ var renameattributesKind = v1alpha1.SchemeGroupVersion.WithKind("RenameAttribute
 
 // Get takes name of the renameAttribute, and returns the corresponding renameAttribute object, and an error if there is any.
 func (c *FakeRenameAttributes) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.RenameAttribute, err error) {
+	emptyResult := &v1alpha1.RenameAttribute{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(renameattributesResource, c.ns, name), &v1alpha1.RenameAttribute{})
+		Invokes(testing.NewGetActionWithOptions(renameattributesResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.RenameAttribute), err
 }
 
 // List takes label and field selectors, and returns the list of RenameAttributes that match those selectors.
 func (c *FakeRenameAttributes) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.RenameAttributeList, err error) {
+	emptyResult := &v1alpha1.RenameAttributeList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(renameattributesResource, renameattributesKind, c.ns, opts), &v1alpha1.RenameAttributeList{})
+		Invokes(testing.NewListActionWithOptions(renameattributesResource, renameattributesKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -77,40 +79,43 @@ func (c *FakeRenameAttributes) List(ctx context.Context, opts v1.ListOptions) (r
 // Watch returns a watch.Interface that watches the requested renameAttributes.
 func (c *FakeRenameAttributes) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(renameattributesResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(renameattributesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a renameAttribute and creates it.  Returns the server's representation of the renameAttribute, and an error, if there is any.
 func (c *FakeRenameAttributes) Create(ctx context.Context, renameAttribute *v1alpha1.RenameAttribute, opts v1.CreateOptions) (result *v1alpha1.RenameAttribute, err error) {
+	emptyResult := &v1alpha1.RenameAttribute{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(renameattributesResource, c.ns, renameAttribute), &v1alpha1.RenameAttribute{})
+		Invokes(testing.NewCreateActionWithOptions(renameattributesResource, c.ns, renameAttribute, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.RenameAttribute), err
 }
 
 // Update takes the representation of a renameAttribute and updates it. Returns the server's representation of the renameAttribute, and an error, if there is any.
 func (c *FakeRenameAttributes) Update(ctx context.Context, renameAttribute *v1alpha1.RenameAttribute, opts v1.UpdateOptions) (result *v1alpha1.RenameAttribute, err error) {
+	emptyResult := &v1alpha1.RenameAttribute{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(renameattributesResource, c.ns, renameAttribute), &v1alpha1.RenameAttribute{})
+		Invokes(testing.NewUpdateActionWithOptions(renameattributesResource, c.ns, renameAttribute, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.RenameAttribute), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeRenameAttributes) UpdateStatus(ctx context.Context, renameAttribute *v1alpha1.RenameAttribute, opts v1.UpdateOptions) (*v1alpha1.RenameAttribute, error) {
+func (c *FakeRenameAttributes) UpdateStatus(ctx context.Context, renameAttribute *v1alpha1.RenameAttribute, opts v1.UpdateOptions) (result *v1alpha1.RenameAttribute, err error) {
+	emptyResult := &v1alpha1.RenameAttribute{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(renameattributesResource, "status", c.ns, renameAttribute), &v1alpha1.RenameAttribute{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(renameattributesResource, "status", c.ns, renameAttribute, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.RenameAttribute), err
 }
@@ -125,7 +130,7 @@ func (c *FakeRenameAttributes) Delete(ctx context.Context, name string, opts v1.
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeRenameAttributes) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(renameattributesResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(renameattributesResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.RenameAttributeList{})
 	return err
@@ -133,11 +138,12 @@ func (c *FakeRenameAttributes) DeleteCollection(ctx context.Context, opts v1.Del
 
 // Patch applies the patch and returns the patched renameAttribute.
 func (c *FakeRenameAttributes) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.RenameAttribute, err error) {
+	emptyResult := &v1alpha1.RenameAttribute{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(renameattributesResource, c.ns, name, pt, data, subresources...), &v1alpha1.RenameAttribute{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(renameattributesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.RenameAttribute), err
 }
@@ -155,11 +161,12 @@ func (c *FakeRenameAttributes) Apply(ctx context.Context, renameAttribute *actio
 	if name == nil {
 		return nil, fmt.Errorf("renameAttribute.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.RenameAttribute{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(renameattributesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.RenameAttribute{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(renameattributesResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.RenameAttribute), err
 }
@@ -178,11 +185,12 @@ func (c *FakeRenameAttributes) ApplyStatus(ctx context.Context, renameAttribute 
 	if name == nil {
 		return nil, fmt.Errorf("renameAttribute.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.RenameAttribute{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(renameattributesResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.RenameAttribute{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(renameattributesResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.RenameAttribute), err
 }

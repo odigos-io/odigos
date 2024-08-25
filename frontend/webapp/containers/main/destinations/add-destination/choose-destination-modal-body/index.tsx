@@ -30,7 +30,11 @@ export function ChooseDestinationModalBody({
   onSelect,
 }: ChooseDestinationModalBodyProps) {
   const [searchValue, setSearchValue] = useState('');
-  const [selectedMonitors, setSelectedMonitors] = useState<string[]>([]);
+  const [selectedMonitors, setSelectedMonitors] = useState<string[]>([
+    'logs',
+    'metrics',
+    'traces',
+  ]);
   const [dropdownValue, setDropdownValue] = useState<DropdownOption>({
     id: 'all',
     value: 'All types',
@@ -58,9 +62,7 @@ export function ChooseDestinationModalBody({
     if (selectedMonitors.length) {
       filteredData = filteredData.filter((item) =>
         selectedMonitors.some(
-          (monitor) =>
-            item.supportedSignals[monitor as keyof typeof item.supportedSignals]
-              .supported
+          (monitor) => item.supportedSignals[monitor].supported
         )
       );
     }

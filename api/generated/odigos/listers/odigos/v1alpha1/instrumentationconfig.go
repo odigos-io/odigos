@@ -19,8 +19,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -37,25 +37,17 @@ type InstrumentationConfigLister interface {
 
 // instrumentationConfigLister implements the InstrumentationConfigLister interface.
 type instrumentationConfigLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.InstrumentationConfig]
 }
 
 // NewInstrumentationConfigLister returns a new InstrumentationConfigLister.
 func NewInstrumentationConfigLister(indexer cache.Indexer) InstrumentationConfigLister {
-	return &instrumentationConfigLister{indexer: indexer}
-}
-
-// List lists all InstrumentationConfigs in the indexer.
-func (s *instrumentationConfigLister) List(selector labels.Selector) (ret []*v1alpha1.InstrumentationConfig, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.InstrumentationConfig))
-	})
-	return ret, err
+	return &instrumentationConfigLister{listers.New[*v1alpha1.InstrumentationConfig](indexer, v1alpha1.Resource("instrumentationconfig"))}
 }
 
 // InstrumentationConfigs returns an object that can list and get InstrumentationConfigs.
 func (s *instrumentationConfigLister) InstrumentationConfigs(namespace string) InstrumentationConfigNamespaceLister {
-	return instrumentationConfigNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return instrumentationConfigNamespaceLister{listers.NewNamespaced[*v1alpha1.InstrumentationConfig](s.ResourceIndexer, namespace)}
 }
 
 // InstrumentationConfigNamespaceLister helps list and get InstrumentationConfigs.
@@ -73,26 +65,5 @@ type InstrumentationConfigNamespaceLister interface {
 // instrumentationConfigNamespaceLister implements the InstrumentationConfigNamespaceLister
 // interface.
 type instrumentationConfigNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all InstrumentationConfigs in the indexer for a given namespace.
-func (s instrumentationConfigNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.InstrumentationConfig, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.InstrumentationConfig))
-	})
-	return ret, err
-}
-
-// Get retrieves the InstrumentationConfig from the indexer for a given namespace and name.
-func (s instrumentationConfigNamespaceLister) Get(name string) (*v1alpha1.InstrumentationConfig, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("instrumentationconfig"), name)
-	}
-	return obj.(*v1alpha1.InstrumentationConfig), nil
+	listers.ResourceIndexer[*v1alpha1.InstrumentationConfig]
 }

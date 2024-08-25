@@ -22,7 +22,7 @@ var CurrentKubernetesVersion KubernetesVersion
 const (
 	KindUnknown   Kind = "Unknown"
 	KindMinikube  Kind = "Minikube"
-	KindKind      Kind = "KinD"
+	KindKind      Kind = "Kind"
 	KindEKS       Kind = "EKS"
 	KindGKE       Kind = "GKE"
 	KindAKS       Kind = "AKS"

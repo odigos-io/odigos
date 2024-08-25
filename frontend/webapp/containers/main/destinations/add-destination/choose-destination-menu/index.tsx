@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { DropdownOption } from '@/types';
-import { MonitorsTapList } from '@/components';
-import { Dropdown, Input } from '@/reuseable-components';
+import { MONITORS_OPTIONS } from '@/utils';
+import { Checkbox, Dropdown, Input } from '@/reuseable-components';
 
 interface FilterComponentProps {
   selectedTag: DropdownOption | undefined;
@@ -24,6 +24,12 @@ const FilterContainer = styled.div`
   padding: 24px 0;
 `;
 
+const MonitorButtonsContainer = styled.div`
+  display: flex;
+  gap: 32px;
+  margin-left: 32px;
+`;
+
 const DROPDOWN_OPTIONS = [
   { value: 'All types', id: 'all' },
   { value: 'Managed', id: 'managed' },
@@ -32,9 +38,9 @@ const DROPDOWN_OPTIONS = [
 
 const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
   selectedTag,
+  selectedMonitors,
   onTagSelect,
   onSearch,
-  selectedMonitors,
   onMonitorSelect,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,10 +68,20 @@ const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
           onSelect={onTagSelect}
         />
       </InputAndDropdownContainer>
-      <MonitorsTapList
-        selectedMonitors={selectedMonitors}
-        onMonitorSelect={onMonitorSelect}
-      />
+      <MonitorButtonsContainer>
+        {MONITORS_OPTIONS.map((monitor) => (
+          <Checkbox
+            key={monitor.id}
+            title={monitor.value}
+            initialValue
+            onChange={() => onMonitorSelect(monitor.id)}
+            disabled={
+              selectedMonitors.length === 1 &&
+              selectedMonitors.includes(monitor.id)
+            }
+          />
+        ))}
+      </MonitorButtonsContainer>
     </FilterContainer>
   );
 };

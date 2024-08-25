@@ -128,7 +128,7 @@ export function ActionsTableRow({
               {ACTIONS[item?.type || ''].TITLE}
             </KeyvalText>
             <ClusterAttributesContainer>
-              <KeyvalText weight={600}>
+              <KeyvalText data-cy={'actions-action-name'} weight={600}>
                 {`${item.spec.actionName || 'Action'} `}
               </KeyvalText>
               <StatusIndicator disabled={!!item.spec.disabled} />

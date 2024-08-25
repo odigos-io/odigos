@@ -30,7 +30,7 @@ func CalcInstrumentationLibrariesRemoteConfig(ctx context.Context, kubeClient cl
 			}
 
 			instrumentationLibrariesConfig = append(instrumentationLibrariesConfig, RemoteConfigInstrumentationLibrary{
-				Name: instrumentationConfig.InstrumentationLibraryName,
+				Name: instrumentationConfig.InstrumentationLibraryId.InstrumentationLibraryName,
 				Traces: RemoteConfigInstrumentationLibraryTraces{
 					Enabled: tracesEnabled,
 				},

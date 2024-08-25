@@ -19,9 +19,6 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
-	"time"
 
 	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/applyconfiguration/actions/v1alpha1"
@@ -29,7 +26,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // ErrorSamplersGetter has a method to return a ErrorSamplerInterface.
@@ -42,6 +39,7 @@ type ErrorSamplersGetter interface {
 type ErrorSamplerInterface interface {
 	Create(ctx context.Context, errorSampler *v1alpha1.ErrorSampler, opts v1.CreateOptions) (*v1alpha1.ErrorSampler, error)
 	Update(ctx context.Context, errorSampler *v1alpha1.ErrorSampler, opts v1.UpdateOptions) (*v1alpha1.ErrorSampler, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 	UpdateStatus(ctx context.Context, errorSampler *v1alpha1.ErrorSampler, opts v1.UpdateOptions) (*v1alpha1.ErrorSampler, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
@@ -50,206 +48,25 @@ type ErrorSamplerInterface interface {
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ErrorSampler, err error)
 	Apply(ctx context.Context, errorSampler *actionsv1alpha1.ErrorSamplerApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ErrorSampler, err error)
+	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
 	ApplyStatus(ctx context.Context, errorSampler *actionsv1alpha1.ErrorSamplerApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ErrorSampler, err error)
 	ErrorSamplerExpansion
 }
 
 // errorSamplers implements ErrorSamplerInterface
 type errorSamplers struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithListAndApply[*v1alpha1.ErrorSampler, *v1alpha1.ErrorSamplerList, *actionsv1alpha1.ErrorSamplerApplyConfiguration]
 }
 
 // newErrorSamplers returns a ErrorSamplers
 func newErrorSamplers(c *ActionsV1alpha1Client, namespace string) *errorSamplers {
 	return &errorSamplers{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithListAndApply[*v1alpha1.ErrorSampler, *v1alpha1.ErrorSamplerList, *actionsv1alpha1.ErrorSamplerApplyConfiguration](
+			"errorsamplers",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *v1alpha1.ErrorSampler { return &v1alpha1.ErrorSampler{} },
+			func() *v1alpha1.ErrorSamplerList { return &v1alpha1.ErrorSamplerList{} }),
 	}
-}
-
-// Get takes name of the errorSampler, and returns the corresponding errorSampler object, and an error if there is any.
-func (c *errorSamplers) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ErrorSampler, err error) {
-	result = &v1alpha1.ErrorSampler{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("errorsamplers").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of ErrorSamplers that match those selectors.
-func (c *errorSamplers) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ErrorSamplerList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha1.ErrorSamplerList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("errorsamplers").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested errorSamplers.
-func (c *errorSamplers) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("errorsamplers").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a errorSampler and creates it.  Returns the server's representation of the errorSampler, and an error, if there is any.
-func (c *errorSamplers) Create(ctx context.Context, errorSampler *v1alpha1.ErrorSampler, opts v1.CreateOptions) (result *v1alpha1.ErrorSampler, err error) {
-	result = &v1alpha1.ErrorSampler{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("errorsamplers").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(errorSampler).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a errorSampler and updates it. Returns the server's representation of the errorSampler, and an error, if there is any.
-func (c *errorSamplers) Update(ctx context.Context, errorSampler *v1alpha1.ErrorSampler, opts v1.UpdateOptions) (result *v1alpha1.ErrorSampler, err error) {
-	result = &v1alpha1.ErrorSampler{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("errorsamplers").
-		Name(errorSampler.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(errorSampler).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *errorSamplers) UpdateStatus(ctx context.Context, errorSampler *v1alpha1.ErrorSampler, opts v1.UpdateOptions) (result *v1alpha1.ErrorSampler, err error) {
-	result = &v1alpha1.ErrorSampler{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("errorsamplers").
-		Name(errorSampler.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(errorSampler).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the errorSampler and deletes it. Returns an error if one occurs.
-func (c *errorSamplers) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("errorsamplers").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *errorSamplers) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("errorsamplers").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched errorSampler.
-func (c *errorSamplers) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ErrorSampler, err error) {
-	result = &v1alpha1.ErrorSampler{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("errorsamplers").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied errorSampler.
-func (c *errorSamplers) Apply(ctx context.Context, errorSampler *actionsv1alpha1.ErrorSamplerApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ErrorSampler, err error) {
-	if errorSampler == nil {
-		return nil, fmt.Errorf("errorSampler provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(errorSampler)
-	if err != nil {
-		return nil, err
-	}
-	name := errorSampler.Name
-	if name == nil {
-		return nil, fmt.Errorf("errorSampler.Name must be provided to Apply")
-	}
-	result = &v1alpha1.ErrorSampler{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("errorsamplers").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *errorSamplers) ApplyStatus(ctx context.Context, errorSampler *actionsv1alpha1.ErrorSamplerApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ErrorSampler, err error) {
-	if errorSampler == nil {
-		return nil, fmt.Errorf("errorSampler provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(errorSampler)
-	if err != nil {
-		return nil, err
-	}
-
-	name := errorSampler.Name
-	if name == nil {
-		return nil, fmt.Errorf("errorSampler.Name must be provided to Apply")
-	}
-
-	result = &v1alpha1.ErrorSampler{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("errorsamplers").
-		Name(*name).
-		SubResource("status").
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

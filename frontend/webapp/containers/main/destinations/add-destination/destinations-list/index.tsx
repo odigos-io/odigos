@@ -10,7 +10,7 @@ const Container = styled.div`
   align-items: center;
   gap: 12px;
   align-self: stretch;
-  max-height: calc(100vh - 410px);
+  max-height: calc(100vh - 424px);
   overflow-y: auto;
 
   @media (height < 800px) {
@@ -31,7 +31,7 @@ const ListItem = styled.div<{}>`
   background: rgba(249, 249, 249, 0.04);
 
   &:hover {
-    background: rgba(68, 74, 217, 0.24);
+    background: rgba(249, 249, 249, 0.08);
   }
   &:last-child {
     margin-bottom: 32px;
@@ -89,6 +89,7 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
   items,
   setSelectedItems,
 }) => {
+  console.log({ items });
   function renderSupportedSignals(item: DestinationTypeItem) {
     const supportedSignals = item.supportedSignals;
     const signals = Object.keys(supportedSignals);

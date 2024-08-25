@@ -43,22 +43,24 @@ var odigosconfigurationsKind = v1alpha1.SchemeGroupVersion.WithKind("OdigosConfi
 
 // Get takes name of the odigosConfiguration, and returns the corresponding odigosConfiguration object, and an error if there is any.
 func (c *FakeOdigosConfigurations) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.OdigosConfiguration, err error) {
+	emptyResult := &v1alpha1.OdigosConfiguration{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(odigosconfigurationsResource, c.ns, name), &v1alpha1.OdigosConfiguration{})
+		Invokes(testing.NewGetActionWithOptions(odigosconfigurationsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.OdigosConfiguration), err
 }
 
 // List takes label and field selectors, and returns the list of OdigosConfigurations that match those selectors.
 func (c *FakeOdigosConfigurations) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.OdigosConfigurationList, err error) {
+	emptyResult := &v1alpha1.OdigosConfigurationList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(odigosconfigurationsResource, odigosconfigurationsKind, c.ns, opts), &v1alpha1.OdigosConfigurationList{})
+		Invokes(testing.NewListActionWithOptions(odigosconfigurationsResource, odigosconfigurationsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -77,28 +79,30 @@ func (c *FakeOdigosConfigurations) List(ctx context.Context, opts v1.ListOptions
 // Watch returns a watch.Interface that watches the requested odigosConfigurations.
 func (c *FakeOdigosConfigurations) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(odigosconfigurationsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(odigosconfigurationsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a odigosConfiguration and creates it.  Returns the server's representation of the odigosConfiguration, and an error, if there is any.
 func (c *FakeOdigosConfigurations) Create(ctx context.Context, odigosConfiguration *v1alpha1.OdigosConfiguration, opts v1.CreateOptions) (result *v1alpha1.OdigosConfiguration, err error) {
+	emptyResult := &v1alpha1.OdigosConfiguration{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(odigosconfigurationsResource, c.ns, odigosConfiguration), &v1alpha1.OdigosConfiguration{})
+		Invokes(testing.NewCreateActionWithOptions(odigosconfigurationsResource, c.ns, odigosConfiguration, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.OdigosConfiguration), err
 }
 
 // Update takes the representation of a odigosConfiguration and updates it. Returns the server's representation of the odigosConfiguration, and an error, if there is any.
 func (c *FakeOdigosConfigurations) Update(ctx context.Context, odigosConfiguration *v1alpha1.OdigosConfiguration, opts v1.UpdateOptions) (result *v1alpha1.OdigosConfiguration, err error) {
+	emptyResult := &v1alpha1.OdigosConfiguration{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(odigosconfigurationsResource, c.ns, odigosConfiguration), &v1alpha1.OdigosConfiguration{})
+		Invokes(testing.NewUpdateActionWithOptions(odigosconfigurationsResource, c.ns, odigosConfiguration, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.OdigosConfiguration), err
 }
@@ -113,7 +117,7 @@ func (c *FakeOdigosConfigurations) Delete(ctx context.Context, name string, opts
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeOdigosConfigurations) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(odigosconfigurationsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(odigosconfigurationsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.OdigosConfigurationList{})
 	return err
@@ -121,11 +125,12 @@ func (c *FakeOdigosConfigurations) DeleteCollection(ctx context.Context, opts v1
 
 // Patch applies the patch and returns the patched odigosConfiguration.
 func (c *FakeOdigosConfigurations) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.OdigosConfiguration, err error) {
+	emptyResult := &v1alpha1.OdigosConfiguration{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(odigosconfigurationsResource, c.ns, name, pt, data, subresources...), &v1alpha1.OdigosConfiguration{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(odigosconfigurationsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.OdigosConfiguration), err
 }
@@ -143,11 +148,12 @@ func (c *FakeOdigosConfigurations) Apply(ctx context.Context, odigosConfiguratio
 	if name == nil {
 		return nil, fmt.Errorf("odigosConfiguration.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.OdigosConfiguration{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(odigosconfigurationsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.OdigosConfiguration{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(odigosconfigurationsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.OdigosConfiguration), err
 }

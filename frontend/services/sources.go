@@ -63,7 +63,7 @@ type ThinSource struct {
 }
 
 func GetActualSource(ctx context.Context, ns string, kind string, name string) (*Source, error) {
-	k8sObjectName := workload.GetRuntimeObjectName(name, kind)
+	k8sObjectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
 	owner, numberOfRunningInstances := getWorkload(ctx, ns, kind, name)
 	if owner == nil {
 		return nil, fmt.Errorf("owner not found")

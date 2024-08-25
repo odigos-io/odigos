@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ErrorSamplerStatusApplyConfiguration represents an declarative configuration of the ErrorSamplerStatus type for use
+// ErrorSamplerStatusApplyConfiguration represents a declarative configuration of the ErrorSamplerStatus type for use
 // with apply.
 type ErrorSamplerStatusApplyConfiguration struct {
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
-// ErrorSamplerStatusApplyConfiguration constructs an declarative configuration of the ErrorSamplerStatus type for use with
+// ErrorSamplerStatusApplyConfiguration constructs a declarative configuration of the ErrorSamplerStatus type for use with
 // apply.
 func ErrorSamplerStatus() *ErrorSamplerStatusApplyConfiguration {
 	return &ErrorSamplerStatusApplyConfiguration{}

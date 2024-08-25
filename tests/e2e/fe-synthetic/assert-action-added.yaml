@@ -1,0 +1,9 @@
+apiVersion:  actions.odigos.io/v1alpha1
+kind:         ProbabilisticSampler
+metadata:
+  namespace:    odigos-system
+spec:
+  actionName:          action-test
+  sampling_percentage:  "0.5"
+  signals:
+  - TRACES

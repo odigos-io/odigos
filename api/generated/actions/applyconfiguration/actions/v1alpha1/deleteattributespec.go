@@ -21,7 +21,7 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// DeleteAttributeSpecApplyConfiguration represents an declarative configuration of the DeleteAttributeSpec type for use
+// DeleteAttributeSpecApplyConfiguration represents a declarative configuration of the DeleteAttributeSpec type for use
 // with apply.
 type DeleteAttributeSpecApplyConfiguration struct {
 	ActionName             *string                      `json:"actionName,omitempty"`
@@ -31,7 +31,7 @@ type DeleteAttributeSpecApplyConfiguration struct {
 	AttributeNamesToDelete []string                     `json:"attributeNamesToDelete,omitempty"`
 }
 
-// DeleteAttributeSpecApplyConfiguration constructs an declarative configuration of the DeleteAttributeSpec type for use with
+// DeleteAttributeSpecApplyConfiguration constructs a declarative configuration of the DeleteAttributeSpec type for use with
 // apply.
 func DeleteAttributeSpec() *DeleteAttributeSpecApplyConfiguration {
 	return &DeleteAttributeSpecApplyConfiguration{}

@@ -2,7 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { K8sActualSource } from '@/types';
-import { NoDataFound, Text } from '@/reuseable-components';
+import { Checkbox, NoDataFound, Text } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;
@@ -29,7 +29,8 @@ const ListItem = styled.div<{ selected: boolean }>`
     selected ? 'rgba(68, 74, 217, 0.24)' : 'rgba(249, 249, 249, 0.04)'};
 
   &:hover {
-    background: rgba(68, 74, 217, 0.24);
+    background: ${({ selected }) =>
+      selected ? 'rgba(68, 74, 217, 0.40)' : 'rgba(249, 249, 249, 0.08)'};
   }
 `;
 
@@ -121,9 +122,7 @@ const SourcesList: React.FC<SourcesListProps> = ({
           </ListItemContent>
           {isItemSelected(item) && (
             <SelectedTextWrapper>
-              <Text size={12} family="secondary">
-                SELECTED
-              </Text>
+              <Checkbox initialValue={true} />
             </SelectedTextWrapper>
           )}
         </ListItem>

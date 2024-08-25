@@ -19,8 +19,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -37,25 +37,17 @@ type AddClusterInfoLister interface {
 
 // addClusterInfoLister implements the AddClusterInfoLister interface.
 type addClusterInfoLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.AddClusterInfo]
 }
 
 // NewAddClusterInfoLister returns a new AddClusterInfoLister.
 func NewAddClusterInfoLister(indexer cache.Indexer) AddClusterInfoLister {
-	return &addClusterInfoLister{indexer: indexer}
-}
-
-// List lists all AddClusterInfos in the indexer.
-func (s *addClusterInfoLister) List(selector labels.Selector) (ret []*v1alpha1.AddClusterInfo, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AddClusterInfo))
-	})
-	return ret, err
+	return &addClusterInfoLister{listers.New[*v1alpha1.AddClusterInfo](indexer, v1alpha1.Resource("addclusterinfo"))}
 }
 
 // AddClusterInfos returns an object that can list and get AddClusterInfos.
 func (s *addClusterInfoLister) AddClusterInfos(namespace string) AddClusterInfoNamespaceLister {
-	return addClusterInfoNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return addClusterInfoNamespaceLister{listers.NewNamespaced[*v1alpha1.AddClusterInfo](s.ResourceIndexer, namespace)}
 }
 
 // AddClusterInfoNamespaceLister helps list and get AddClusterInfos.
@@ -73,26 +65,5 @@ type AddClusterInfoNamespaceLister interface {
 // addClusterInfoNamespaceLister implements the AddClusterInfoNamespaceLister
 // interface.
 type addClusterInfoNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all AddClusterInfos in the indexer for a given namespace.
-func (s addClusterInfoNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.AddClusterInfo, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AddClusterInfo))
-	})
-	return ret, err
-}
-
-// Get retrieves the AddClusterInfo from the indexer for a given namespace and name.
-func (s addClusterInfoNamespaceLister) Get(name string) (*v1alpha1.AddClusterInfo, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("addclusterinfo"), name)
-	}
-	return obj.(*v1alpha1.AddClusterInfo), nil
+	listers.ResourceIndexer[*v1alpha1.AddClusterInfo]
 }

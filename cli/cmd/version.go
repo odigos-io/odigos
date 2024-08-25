@@ -108,5 +108,5 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 
 	versionCmd.Flags().Bool(cliFlag, false, "prints only the CLI version")
-	versionCmd.Flags().Bool(clusterFlag, false, "prints only the Cluster version")
+	versionCmd.Flags().Bool(clusterFlag, false, "prints only the version of odigos deployed in the cluster")
 }

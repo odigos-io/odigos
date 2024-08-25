@@ -6,13 +6,14 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/odigos-io/odigos/cli/pkg/containers"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 )
@@ -27,9 +28,10 @@ const (
 )
 
 type uiResourceManager struct {
-	client *kube.Client
-	ns     string
-	config *odigosv1.OdigosConfigurationSpec
+	client        *kube.Client
+	ns            string
+	config        *common.OdigosConfiguration
+	odigosVersion string
 }
 
 func (u *uiResourceManager) Name() string {
@@ -152,6 +154,17 @@ func NewUIRole(ns string) *rbacv1.Role {
 					"secrets",
 				},
 			},
+			{
+				Verbs: []string{
+					"watch",
+					"list",
+					"get",
+				},
+				APIGroups: []string{""},
+				Resources: []string{
+					"pods",
+				},
+			},
 		},
 	}
 }
@@ -195,6 +208,11 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 				APIGroups: []string{""},
 				Resources: []string{"namespaces"},
 				Verbs:     []string{"get", "list", "watch", "patch"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"get", "list", "watch", "patch", "create", "delete", "update"},
 			},
 			{
 				APIGroups: []string{"apps"},
@@ -261,6 +279,10 @@ func NewUIService(ns string) *corev1.Service {
 					Name: "ui",
 					Port: 3000,
 				},
+				{
+					Name: "otlp",
+					Port: consts.OTLPPort,
+				},
 			},
 		},
 	}
@@ -273,16 +295,17 @@ func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewUIRoleBinding(u.ns),
 		NewUIClusterRole(),
 		NewUIClusterRoleBinding(u.ns),
-		NewUIDeployment(u.ns, u.config.OdigosVersion, u.config.ImagePrefix),
+		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix),
 		NewUIService(u.ns),
 	}
 	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources)
 }
 
-func NewUIResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) resourcemanager.ResourceManager {
+func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string) resourcemanager.ResourceManager {
 	return &uiResourceManager{
-		client: client,
-		ns:     ns,
-		config: config,
+		client:        client,
+		ns:            ns,
+		config:        config,
+		odigosVersion: odigosVersion,
 	}
 }

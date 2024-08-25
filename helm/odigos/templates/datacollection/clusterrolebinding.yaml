@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: odigos-data-collection
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: odigos-data-collection
+subjects:
+- kind: ServiceAccount
+  name: odigos-data-collection
+  namespace: {{ .Release.Namespace }}

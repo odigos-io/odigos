@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// PiiMaskingApplyConfiguration represents an declarative configuration of the PiiMasking type for use
+// PiiMaskingApplyConfiguration represents a declarative configuration of the PiiMasking type for use
 // with apply.
 type PiiMaskingApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -32,7 +32,7 @@ type PiiMaskingApplyConfiguration struct {
 	Status                           *PiiMaskingStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// PiiMasking constructs an declarative configuration of the PiiMasking type for use with
+// PiiMasking constructs a declarative configuration of the PiiMasking type for use with
 // apply.
 func PiiMasking(name, namespace string) *PiiMaskingApplyConfiguration {
 	b := &PiiMaskingApplyConfiguration{}
@@ -215,4 +215,10 @@ func (b *PiiMaskingApplyConfiguration) WithSpec(value *PiiMaskingSpecApplyConfig
 func (b *PiiMaskingApplyConfiguration) WithStatus(value *PiiMaskingStatusApplyConfiguration) *PiiMaskingApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *PiiMaskingApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

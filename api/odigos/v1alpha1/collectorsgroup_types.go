@@ -17,15 +17,17 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/common"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // +kubebuilder:validation:Enum=CLUSTER_GATEWAY;NODE_COLLECTOR
-type CollectorsGroupRole string
+type CollectorsGroupRole k8sconsts.CollectorRole
 
 const (
-	CollectorsGroupRoleClusterGateway CollectorsGroupRole = "CLUSTER_GATEWAY"
-	CollectorsGroupRoleNodeCollector  CollectorsGroupRole = "NODE_COLLECTOR"
+	CollectorsGroupRoleClusterGateway CollectorsGroupRole = CollectorsGroupRole(k8sconsts.CollectorsRoleClusterGateway)
+	CollectorsGroupRoleNodeCollector  CollectorsGroupRole = CollectorsGroupRole(k8sconsts.CollectorsRoleNodeCollector)
 )
 
 // CollectorsGroupSpec defines the desired state of Collector
@@ -37,11 +39,19 @@ type CollectorsGroupSpec struct {
 // CollectorsGroupStatus defines the observed state of Collector
 type CollectorsGroupStatus struct {
 	Ready bool `json:"ready,omitempty"`
+
+	// Receiver Signals are the signals (trace, metrics, logs) that the collector has setup
+	// an otlp receiver for, thus it can accept data from an upstream component.
+	// this is used to determine if a workload should export each signal or not.
+	// this list is calculated based on the odigos destinations that were configured
+	ReceiverSignals []common.ObservabilitySignal `json:"receiverSignals,omitempty"`
 }
 
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:metadata:labels=odigos.io/config=1
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // CollectorsGroup is the Schema for the collectors API
 type CollectorsGroup struct {

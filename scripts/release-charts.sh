@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # Setup
 TMPDIR="$(mktemp -d)"
 CHARTDIRS=("helm/odigos")
@@ -32,6 +34,9 @@ fi
 helm repo add odigos https://odigos-io.github.io/odigos-charts 2> /dev/null || true
 git worktree add $TMPDIR gh-pages -f
 
+# Setup work that needs to be done
+cp -r api/config/crd/bases/* helm/odigos/templates/crds/
+
 # Update index with new packages
 for chart in "${CHARTDIRS[@]}"
 do
@@ -40,7 +45,7 @@ do
 done
 helm package ${CHARTDIRS[*]} -d $TMPDIR
 pushd $TMPDIR
-prefix 'test-helm-assets-' *.tgz
+prefix 'helm-chart-' *.tgz
 helm repo index . --merge index.yaml --url https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/
 git diff -G apiVersion
 
