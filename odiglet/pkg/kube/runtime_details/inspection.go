@@ -96,7 +96,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 			var detectErr error
 
 			for _, proc := range processes {
-				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc)
+				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, pod.Status.PodIP)
 				if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
 					inspectProc = &proc
 					break

@@ -1,6 +1,8 @@
 package nginx
 
 import (
+	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -21,4 +23,25 @@ func (j *NginxInspector) Inspect(p *process.Details) (common.ProgramLanguageDeta
 	}
 
 	return programLanguageDetails, false
+}
+
+func GetNginxVersion(podIP string) (string, error) {
+	resp, err := http.Get("http://" + podIP)
+	if err != nil {
+		return "", nil
+	}
+	defer resp.Body.Close()
+
+	serverHeader := resp.Header.Get("Server")
+	if serverHeader == "" {
+		return "", nil
+	}
+
+	re := regexp.MustCompile(`nginx/(\d+\.\d+\.\d+)`)
+	match := re.FindStringSubmatch(serverHeader)
+	if len(match) != 2 {
+		return "", nil
+	}
+
+	return match[1], nil
 }

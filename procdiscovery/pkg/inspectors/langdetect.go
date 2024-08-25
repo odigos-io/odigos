@@ -2,13 +2,13 @@ package inspectors
 
 import (
 	"fmt"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/nginx"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/dotnet"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/golang"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/java"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/mysql"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/nginx"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/nodejs"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/python"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -39,7 +39,7 @@ var inspectorsList = []inspector{
 // DetectLanguage returns the detected language for the process or
 // common.UnknownProgrammingLanguage if the language could not be detected, in which case error == nil
 // if error or language detectors disagree common.UnknownProgrammingLanguage is also returned
-func DetectLanguage(process process.Details) (common.ProgramLanguageDetails, error) {
+func DetectLanguage(process process.Details, podIp string) (common.ProgramLanguageDetails, error) {
 	detectedProgramLanguageDetails := common.ProgramLanguageDetails{
 		Language: common.UnknownProgrammingLanguage,
 	}
@@ -59,6 +59,13 @@ func DetectLanguage(process process.Details) (common.ProgramLanguageDetails, err
 						languageDetails.Language,
 					},
 				}
+		}
+	}
+
+	if detectedProgramLanguageDetails.Language == common.NginxProgrammingLanguage {
+		runtimeVersion, err := nginx.GetNginxVersion(podIp)
+		if err == nil {
+			detectedProgramLanguageDetails.RuntimeVersion = runtimeVersion
 		}
 	}
 
