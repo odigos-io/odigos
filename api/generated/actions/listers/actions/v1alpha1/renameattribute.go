@@ -19,8 +19,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -37,25 +37,17 @@ type RenameAttributeLister interface {
 
 // renameAttributeLister implements the RenameAttributeLister interface.
 type renameAttributeLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.RenameAttribute]
 }
 
 // NewRenameAttributeLister returns a new RenameAttributeLister.
 func NewRenameAttributeLister(indexer cache.Indexer) RenameAttributeLister {
-	return &renameAttributeLister{indexer: indexer}
-}
-
-// List lists all RenameAttributes in the indexer.
-func (s *renameAttributeLister) List(selector labels.Selector) (ret []*v1alpha1.RenameAttribute, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.RenameAttribute))
-	})
-	return ret, err
+	return &renameAttributeLister{listers.New[*v1alpha1.RenameAttribute](indexer, v1alpha1.Resource("renameattribute"))}
 }
 
 // RenameAttributes returns an object that can list and get RenameAttributes.
 func (s *renameAttributeLister) RenameAttributes(namespace string) RenameAttributeNamespaceLister {
-	return renameAttributeNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return renameAttributeNamespaceLister{listers.NewNamespaced[*v1alpha1.RenameAttribute](s.ResourceIndexer, namespace)}
 }
 
 // RenameAttributeNamespaceLister helps list and get RenameAttributes.
@@ -73,26 +65,5 @@ type RenameAttributeNamespaceLister interface {
 // renameAttributeNamespaceLister implements the RenameAttributeNamespaceLister
 // interface.
 type renameAttributeNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all RenameAttributes in the indexer for a given namespace.
-func (s renameAttributeNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.RenameAttribute, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.RenameAttribute))
-	})
-	return ret, err
-}
-
-// Get retrieves the RenameAttribute from the indexer for a given namespace and name.
-func (s renameAttributeNamespaceLister) Get(name string) (*v1alpha1.RenameAttribute, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("renameattribute"), name)
-	}
-	return obj.(*v1alpha1.RenameAttribute), nil
+	listers.ResourceIndexer[*v1alpha1.RenameAttribute]
 }

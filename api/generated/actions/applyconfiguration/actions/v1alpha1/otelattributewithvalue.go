@@ -17,14 +17,14 @@ limitations under the License.
 
 package v1alpha1
 
-// OtelAttributeWithValueApplyConfiguration represents an declarative configuration of the OtelAttributeWithValue type for use
+// OtelAttributeWithValueApplyConfiguration represents a declarative configuration of the OtelAttributeWithValue type for use
 // with apply.
 type OtelAttributeWithValueApplyConfiguration struct {
 	AttributeName        *string `json:"attributeName,omitempty"`
 	AttributeStringValue *string `json:"attributeStringValue,omitempty"`
 }
 
-// OtelAttributeWithValueApplyConfiguration constructs an declarative configuration of the OtelAttributeWithValue type for use with
+// OtelAttributeWithValueApplyConfiguration constructs a declarative configuration of the OtelAttributeWithValue type for use with
 // apply.
 func OtelAttributeWithValue() *OtelAttributeWithValueApplyConfiguration {
 	return &OtelAttributeWithValueApplyConfiguration{}

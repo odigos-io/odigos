@@ -4,6 +4,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -64,6 +65,7 @@ func (w workloadEnvChangePredicate) Generic(e event.GenericEvent) bool {
 func SetupWithManager(mgr ctrl.Manager) error {
 	err := builder.
 		ControllerManagedBy(mgr).
+		Named("instrumentationdevice-collectorsgroup").
 		For(&odigosv1.CollectorsGroup{}).
 		Complete(&CollectorsGroupReconciler{
 			Client: mgr.GetClient(),
@@ -75,6 +77,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("instrumentationdevice-instrumentedapplication").
 		For(&odigosv1.InstrumentedApplication{}).
 		Complete(&InstrumentedApplicationReconciler{
 			Client: mgr.GetClient(),
@@ -86,7 +89,8 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		For(&odigosv1.OdigosConfiguration{}).
+		Named("instrumentationdevice-configmaps").
+		For(&corev1.ConfigMap{}).
 		WithEventFilter(&utils.OnlyUpdatesPredicate{}).
 		Complete(&OdigosConfigReconciler{
 			Client: mgr.GetClient(),
@@ -98,6 +102,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("instrumentationdevice-deployment").
 		For(&appsv1.Deployment{}).
 		WithEventFilter(workloadEnvChangePredicate{}).
 		Complete(&DeploymentReconciler{
@@ -109,6 +114,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("instrumentationdevice-daemonset").
 		For(&appsv1.DaemonSet{}).
 		WithEventFilter(workloadEnvChangePredicate{}).
 		Complete(&DaemonSetReconciler{

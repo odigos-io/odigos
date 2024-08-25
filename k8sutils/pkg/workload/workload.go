@@ -3,7 +3,6 @@ package workload
 import (
 	"context"
 	"errors"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -61,40 +60,6 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 	}
 }
 
-// runtime name is a way to store workload specific CRs with odigos
-// and give the k8s object a name which is unique and can be used to extract the workload name and kind
-func GetRuntimeObjectName(name string, kind string) string {
-	return strings.ToLower(kind + "-" + name)
-}
-
-func GetWorkloadInfoRuntimeName(name string) (workloadName string, workloadKind string, err error) {
-	hyphenIndex := strings.Index(name, "-")
-	if hyphenIndex == -1 {
-		err = errors.New("invalid runtime name")
-		return
-	}
-
-	workloadKind, err = kindFromLowercase(name[:hyphenIndex])
-	if err != nil {
-		return
-	}
-	workloadName = name[hyphenIndex+1:]
-	return
-}
-
-func kindFromLowercase(lowercaseKind string) (string, error) {
-	switch lowercaseKind {
-	case "deployment":
-		return "Deployment", nil
-	case "statefulset":
-		return "StatefulSet", nil
-	case "daemonset":
-		return "DaemonSet", nil
-	default:
-		return "", errors.New("unknown kind")
-	}
-}
-
 func IsObjectLabeledForInstrumentation(obj client.Object) bool {
 	labels := obj.GetLabels()
 	if labels == nil {
@@ -107,19 +72,6 @@ func IsObjectLabeledForInstrumentation(obj client.Object) bool {
 	}
 
 	return val == consts.InstrumentationEnabled
-}
-
-func GetWorkloadKind(w client.Object) string {
-	switch w.(type) {
-	case *v1.Deployment:
-		return "Deployment"
-	case *v1.DaemonSet:
-		return "Daemonset"
-	case *v1.StatefulSet:
-		return "Statefulset"
-	default:
-		return "Unknown"
-	}
 }
 
 func IsWorkloadInstrumentationEffectiveEnabled(ctx context.Context, kubeClient client.Client, obj client.Object) (bool, error) {

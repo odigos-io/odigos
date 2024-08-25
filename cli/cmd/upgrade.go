@@ -42,73 +42,82 @@ and apply any required migrations and adaptations.`,
 			os.Exit(1)
 		}
 
-		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-		if err != nil {
-			fmt.Println("Odigos upgrade failed - unable to read the current Odigos version for migration")
-			os.Exit(1)
-		}
-
-		currOdigosVersion := cm.Data["ODIGOS_VERSION"]
-		if currOdigosVersion == "" {
-			fmt.Println("Odigos upgrade failed - unable to read the current Odigos version for migration")
-			os.Exit(1)
-		}
-
-		sourceVersion, err := version.NewVersion(currOdigosVersion)
-		if err != nil {
-			fmt.Println("Odigos upgrade failed - unable to parse the current Odigos version for migration")
-			os.Exit(1)
-		}
-		if sourceVersion.LessThan(version.Must(version.NewVersion("1.0.0"))) {
-			fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0' current version is %s.\n", currOdigosVersion)
-			fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.\n")
-			os.Exit(1)
-		}
-		targetVersion, err := version.NewVersion(versionFlag)
-		if err != nil {
-			fmt.Println("Odigos upgrade failed - unable to parse the target Odigos version for migration")
-			os.Exit(1)
-		}
-
 		var operation string
-		if sourceVersion.Equal(targetVersion) {
-			fmt.Printf("Odigos version is already '%s', synching installation\n", versionFlag)
-			operation = "Synching"
-		} else if sourceVersion.GreaterThan(targetVersion) {
-			fmt.Printf("About to DOWNGRADE Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
-			operation = "Downgrading"
-		} else {
-			fmt.Printf("About to upgrade Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
-			operation = "Upgrading"
-		}
 
-		if !cmd.Flag("yes").Changed {
-			confirmed, err := confirm.Ask("Are you sure?")
-			if err != nil || !confirmed {
-				fmt.Println("Aborting upgrade")
-				return
+		if !cmd.Flag("skip-version-check").Changed {
+
+			cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+			if err != nil {
+				fmt.Println("Odigos upgrade failed - unable to read the current Odigos version for migration")
+				os.Exit(1)
 			}
+
+			currOdigosVersion := cm.Data["ODIGOS_VERSION"]
+			if currOdigosVersion == "" {
+				fmt.Println("Odigos upgrade failed - unable to read the current Odigos version for migration")
+				os.Exit(1)
+			}
+
+			sourceVersion, err := version.NewVersion(currOdigosVersion)
+			if err != nil {
+				fmt.Println("Odigos upgrade failed - unable to parse the current Odigos version for migration")
+				os.Exit(1)
+			}
+			if sourceVersion.LessThan(version.Must(version.NewVersion("1.0.0"))) {
+				fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0' current version is %s.\n", currOdigosVersion)
+				fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.\n")
+				os.Exit(1)
+			}
+			targetVersion, err := version.NewVersion(versionFlag)
+			if err != nil {
+				fmt.Println("Odigos upgrade failed - unable to parse the target Odigos version for migration")
+				os.Exit(1)
+			}
+
+			if sourceVersion.Equal(targetVersion) {
+				fmt.Printf("Odigos version is already '%s', synching installation\n", versionFlag)
+				operation = "Synching"
+			} else if sourceVersion.GreaterThan(targetVersion) {
+				fmt.Printf("About to DOWNGRADE Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
+				operation = "Downgrading"
+			} else {
+				fmt.Printf("About to upgrade Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
+				operation = "Upgrading"
+			}
+
+			if !cmd.Flag("yes").Changed {
+				confirmed, err := confirm.Ask("Are you sure?")
+				if err != nil || !confirmed {
+					fmt.Println("Aborting upgrade")
+					return
+				}
+			}
+		} else {
+			operation = "Focefully upgrading"
 		}
 
 		config, err := resources.GetCurrentConfig(ctx, client, ns)
 		if err != nil {
-			fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
-			os.Exit(1)
+			odigosConfig, err := resources.GetDeprecatedConfig(ctx, client, ns)
+			if err != nil {
+				fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
+				os.Exit(1)
+			}
+			config = odigosConfig.ToCommonConfig()
 		}
 
 		// update the config on upgrade
-		config.Spec.OdigosVersion = versionFlag
-		config.Spec.ConfigVersion += 1
+		config.ConfigVersion += 1
 
 		// make sure the current system namespaces is in the ignored in config
-		config.Spec.IgnoredNamespaces = utils.MergeDefaultIgnoreWithUserInput(config.Spec.IgnoredNamespaces, consts.SystemNamespaces)
+		config.IgnoredNamespaces = utils.MergeDefaultIgnoreWithUserInput(config.IgnoredNamespaces, consts.SystemNamespaces)
 
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
 			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
 			os.Exit(1)
 		}
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, &config.Spec)
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, versionFlag)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")
@@ -129,5 +138,7 @@ func init() {
 		versionFlag = OdigosVersion
 	} else {
 		upgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "for development purposes only")
+		upgradeCmd.Flags().Bool("skip-version-check", false, "skip the version check and install any version tag provided. used for tests")
+		updateCmd.Flags().MarkHidden("skip-version-check")
 	}
 }

@@ -17,7 +17,7 @@ limitations under the License.
 
 package v1alpha1
 
-// CollectorGatewayConfigurationApplyConfiguration represents an declarative configuration of the CollectorGatewayConfiguration type for use
+// CollectorGatewayConfigurationApplyConfiguration represents a declarative configuration of the CollectorGatewayConfiguration type for use
 // with apply.
 type CollectorGatewayConfigurationApplyConfiguration struct {
 	RequestMemoryMiB           *int `json:"requestMemoryMiB,omitempty"`
@@ -26,7 +26,7 @@ type CollectorGatewayConfigurationApplyConfiguration struct {
 	GoMemLimitMib              *int `json:"goMemLimitMiB,omitempty"`
 }
 
-// CollectorGatewayConfigurationApplyConfiguration constructs an declarative configuration of the CollectorGatewayConfiguration type for use with
+// CollectorGatewayConfigurationApplyConfiguration constructs a declarative configuration of the CollectorGatewayConfiguration type for use with
 // apply.
 func CollectorGatewayConfiguration() *CollectorGatewayConfigurationApplyConfiguration {
 	return &CollectorGatewayConfigurationApplyConfiguration{}

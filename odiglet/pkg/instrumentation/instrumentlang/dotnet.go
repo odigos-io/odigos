@@ -2,6 +2,7 @@ package instrumentlang
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -14,7 +15,7 @@ const (
 	profilerEndVar        = "CORECLR_PROFILER"
 	profilerId            = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
 	profilerPathEnv       = "CORECLR_PROFILER_PATH"
-	profilerPath          = "/var/odigos/dotnet/OpenTelemetry.AutoInstrumentation.ClrProfiler.Native.so"
+	profilerPath          = "/var/odigos/dotnet/linux-%s/OpenTelemetry.AutoInstrumentation.Native.so"
 	serviceNameEnv        = "OTEL_SERVICE_NAME"
 	collectorUrlEnv       = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	tracerHomeEnv         = "OTEL_DOTNET_AUTO_HOME"
@@ -34,7 +35,7 @@ func DotNet(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 		Envs: map[string]string{
 			enableProfilingEnvVar: "1",
 			profilerEndVar:        profilerId,
-			profilerPathEnv:       profilerPath,
+			profilerPathEnv:       fmt.Sprintf(profilerPath, getArch()), // TODO(edenfed): Support both musl and glibc. Requires improved language detection
 			tracerHomeEnv:         tracerHome,
 			collectorUrlEnv:       fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort),
 			serviceNameEnv:        deviceId,
@@ -52,4 +53,12 @@ func DotNet(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 			},
 		},
 	}
+}
+
+func getArch() string {
+	if runtime.GOARCH == "arm64" {
+		return "arm64"
+	}
+
+	return "x64"
 }

@@ -61,7 +61,7 @@
           "pages": [
             {
               "group": "Installation",
-              "pages": ["setup/installation", "setup/installation-options"]
+              "pages": ["setup/installation", "setup/installation-options", "setup/docker-registry"]
             },
             "setup/upgrade",
             "setup/uninstall"
@@ -79,6 +79,7 @@
           "pages": [
             "cli/odigos",
             "cli/odigos_cloud",
+            "cli/odigos_describe",
             "cli/odigos_install",
             "cli/odigos_ui",
             "cli/odigos_uninstall",
@@ -103,7 +104,8 @@
           "group": "Node.js",
           "pages": [
             "instrumentations/nodejs/nodejs",
-            "instrumentations/nodejs/enrichment"
+            "instrumentations/nodejs/enrichment",
+            "instrumentations/nodejs/ebpf"
           ]
         },
         {
@@ -111,6 +113,12 @@
           "pages": [
             "instrumentations/python/python",
             "instrumentations/python/enrichment"
+          ]
+        },
+        {
+          "group": "Java",
+          "pages": [
+            "instrumentations/java/ebpf"
           ]
         }        
       ]
@@ -220,7 +228,8 @@
         "telemetry-types",
         "custom-resources",
         "uninstall",
-        "usage-reports"
+        "usage-reports",
+        "benchmarks"
       ]
     },
     {

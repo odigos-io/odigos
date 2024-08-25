@@ -19,8 +19,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -37,25 +37,17 @@ type InstrumentedApplicationLister interface {
 
 // instrumentedApplicationLister implements the InstrumentedApplicationLister interface.
 type instrumentedApplicationLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.InstrumentedApplication]
 }
 
 // NewInstrumentedApplicationLister returns a new InstrumentedApplicationLister.
 func NewInstrumentedApplicationLister(indexer cache.Indexer) InstrumentedApplicationLister {
-	return &instrumentedApplicationLister{indexer: indexer}
-}
-
-// List lists all InstrumentedApplications in the indexer.
-func (s *instrumentedApplicationLister) List(selector labels.Selector) (ret []*v1alpha1.InstrumentedApplication, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.InstrumentedApplication))
-	})
-	return ret, err
+	return &instrumentedApplicationLister{listers.New[*v1alpha1.InstrumentedApplication](indexer, v1alpha1.Resource("instrumentedapplication"))}
 }
 
 // InstrumentedApplications returns an object that can list and get InstrumentedApplications.
 func (s *instrumentedApplicationLister) InstrumentedApplications(namespace string) InstrumentedApplicationNamespaceLister {
-	return instrumentedApplicationNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return instrumentedApplicationNamespaceLister{listers.NewNamespaced[*v1alpha1.InstrumentedApplication](s.ResourceIndexer, namespace)}
 }
 
 // InstrumentedApplicationNamespaceLister helps list and get InstrumentedApplications.
@@ -73,26 +65,5 @@ type InstrumentedApplicationNamespaceLister interface {
 // instrumentedApplicationNamespaceLister implements the InstrumentedApplicationNamespaceLister
 // interface.
 type instrumentedApplicationNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all InstrumentedApplications in the indexer for a given namespace.
-func (s instrumentedApplicationNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.InstrumentedApplication, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.InstrumentedApplication))
-	})
-	return ret, err
-}
-
-// Get retrieves the InstrumentedApplication from the indexer for a given namespace and name.
-func (s instrumentedApplicationNamespaceLister) Get(name string) (*v1alpha1.InstrumentedApplication, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("instrumentedapplication"), name)
-	}
-	return obj.(*v1alpha1.InstrumentedApplication), nil
+	listers.ResourceIndexer[*v1alpha1.InstrumentedApplication]
 }

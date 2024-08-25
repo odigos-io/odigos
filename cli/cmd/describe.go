@@ -12,20 +12,23 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/spf13/cobra"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var (
 	describeNamespaceFlag string
 )
+
+type K8sSourceObject struct {
+	metav1.ObjectMeta
+	Kind            string
+	PodTemplateSpec *v1.PodTemplateSpec
+	LabelSelector   *metav1.LabelSelector
+}
 
 func wrapTextInRed(text string) string {
 	return "\033[31m" + text + "\033[0m"
@@ -43,55 +46,7 @@ func wrapTextSuccessOfFailure(text string, success bool) string {
 	}
 }
 
-func cmdKindToK8sGVR(kind string) (schema.GroupVersionResource, error) {
-	kind = strings.ToLower(kind)
-	if kind == "deployment" || kind == "deployments" || kind == "dep" {
-		return schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}, nil
-	}
-	if kind == "statefulset" || kind == "statefulsets" || kind == "sts" {
-		return schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"}, nil
-	}
-	if kind == "daemonset" || kind == "daemonsets" || kind == "ds" {
-		return schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "daemonsets"}, nil
-	}
-
-	return schema.GroupVersionResource{}, fmt.Errorf("unsupported kind: %s", kind)
-}
-
-func extractPodInfo(obj *unstructured.Unstructured) (*v1.PodTemplateSpec, string, error) {
-	gvk := obj.GroupVersionKind()
-
-	switch gvk.Kind {
-	case "Deployment":
-		var deployment appsv1.Deployment
-		err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &deployment)
-		if err != nil {
-			return nil, "", fmt.Errorf("failed to cast to Deployment: %v", err)
-		}
-		return &deployment.Spec.Template, metav1.FormatLabelSelector(deployment.Spec.Selector), nil
-
-	case "StatefulSet":
-		var statefulSet appsv1.StatefulSet
-		err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &statefulSet)
-		if err != nil {
-			return nil, "", fmt.Errorf("failed to cast to StatefulSet: %v", err)
-		}
-		return &statefulSet.Spec.Template, metav1.FormatLabelSelector(statefulSet.Spec.Selector), nil
-
-	case "DaemonSet":
-		var daemonSet appsv1.DaemonSet
-		err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &daemonSet)
-		if err != nil {
-			return nil, "", fmt.Errorf("failed to cast to DaemonSet: %v", err)
-		}
-		return &daemonSet.Spec.Template, metav1.FormatLabelSelector(daemonSet.Spec.Selector), nil
-
-	default:
-		return nil, "", fmt.Errorf("unsupported kind: %s", gvk.Kind)
-	}
-}
-
-func getInstrumentationLabelTexts(workload *unstructured.Unstructured, ns *v1.Namespace) (workloadText, nsText, decisionText string, instrumented bool) {
+func getInstrumentationLabelTexts(workload *K8sSourceObject, ns *v1.Namespace) (workloadText, nsText, decisionText string, instrumented bool) {
 	workloadLabel, workloadFound := workload.GetLabels()[consts.OdigosInstrumentationLabel]
 	nsLabel, nsFound := ns.GetLabels()[consts.OdigosInstrumentationLabel]
 
@@ -110,17 +65,17 @@ func getInstrumentationLabelTexts(workload *unstructured.Unstructured, ns *v1.Na
 	if workloadFound {
 		instrumented = workloadLabel == consts.InstrumentationEnabled
 		if instrumented {
-			decisionText = "Workload is instrumented because the " + workload.GetKind() + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
+			decisionText = "Workload is instrumented because the " + workload.Kind + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
 		} else {
-			decisionText = "Workload is NOT instrumented because the " + workload.GetKind() + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
+			decisionText = "Workload is NOT instrumented because the " + workload.Kind + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
 		}
 	} else {
 		instrumented = nsLabel == consts.InstrumentationEnabled
 		if instrumented {
-			decisionText = "Workload is instrumented because the " + workload.GetKind() + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
+			decisionText = "Workload is instrumented because the " + workload.Kind + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
 		} else {
 			if nsFound {
-				decisionText = "Workload is NOT instrumented because the " + workload.GetKind() + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
+				decisionText = "Workload is NOT instrumented because the " + workload.Kind + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
 			} else {
 				decisionText = "Workload is NOT instrumented because neither the workload nor the namespace has the '" + consts.OdigosInstrumentationLabel + "' label set"
 			}
@@ -130,23 +85,15 @@ func getInstrumentationLabelTexts(workload *unstructured.Unstructured, ns *v1.Na
 	return
 }
 
-func getRelevantResources(ctx context.Context, client *kube.Client, ns string, kind string, name string) (workloadObj *unstructured.Unstructured, namespace *corev1.Namespace, instrumentationConfig *odigosv1.InstrumentationConfig, instrumentedApplication *odigosv1.InstrumentedApplication, podTemplate *corev1.PodTemplateSpec, instrumentationInstances *odigosv1.InstrumentationInstanceList, pods *corev1.PodList, err error) {
-	gvr, err := cmdKindToK8sGVR(kind)
-	if err != nil {
-		return
-	}
+func getRelevantResources(ctx context.Context, client *kube.Client, workloadObj *K8sSourceObject) (namespace *corev1.Namespace, instrumentationConfig *odigosv1.InstrumentationConfig, instrumentedApplication *odigosv1.InstrumentedApplication, instrumentationInstances *odigosv1.InstrumentationInstanceList, pods *corev1.PodList, err error) {
 
-	workloadObj, err = client.Dynamic.Resource(gvr).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return
-	}
-
+	ns := workloadObj.GetNamespace()
 	namespace, err = client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
 		return
 	}
 
-	runtimeObjectName := workload.GetRuntimeObjectName(workloadObj.GetName(), workloadObj.GetKind())
+	runtimeObjectName := workload.CalculateWorkloadRuntimeObjectName(workloadObj.GetName(), workloadObj.Kind)
 	instrumentationConfig, err = client.OdigosClient.InstrumentationConfigs(ns).Get(ctx, runtimeObjectName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -178,8 +125,7 @@ func getRelevantResources(ctx context.Context, client *kube.Client, ns string, k
 		return
 	}
 
-	var podLabelSelector string
-	podTemplate, podLabelSelector, err = extractPodInfo(workloadObj)
+	podLabelSelector := metav1.FormatLabelSelector(workloadObj.LabelSelector)
 	if err != nil {
 		// if pod info cannot be extracted, it is an unrecoverable error
 		return
@@ -193,10 +139,9 @@ func getRelevantResources(ctx context.Context, client *kube.Client, ns string, k
 	return
 }
 
-func printWorkloadManifestInfo(workloadObj *unstructured.Unstructured, namespace *corev1.Namespace) bool {
-	fmt.Println("Showing details for Workload")
+func printWorkloadManifestInfo(workloadObj *K8sSourceObject, namespace *corev1.Namespace) bool {
 	fmt.Println("Name: ", workloadObj.GetName())
-	fmt.Println("Kind: ", workloadObj.GetKind())
+	fmt.Println("Kind: ", workloadObj.Kind)
 	fmt.Println("Namespace: ", workloadObj.GetNamespace())
 
 	fmt.Println("")
@@ -279,7 +224,7 @@ func printInstrumentedApplicationInfo(instrumentedApplication *odigosv1.Instrume
 	}
 }
 
-func printAppliedInstrumentationDeviceInfo(workloadObj *unstructured.Unstructured, instrumentedApplication *odigosv1.InstrumentedApplication, podTemplate *corev1.PodTemplateSpec, instrumented bool) map[string][]string {
+func printAppliedInstrumentationDeviceInfo(workloadObj *K8sSourceObject, instrumentedApplication *odigosv1.InstrumentedApplication, instrumented bool) map[string][]string {
 	appliedInstrumentationDeviceStatusMessage := "Unknown"
 	if !instrumented {
 		// if the workload is not instrumented, the instrumentation device expected
@@ -303,7 +248,7 @@ func printAppliedInstrumentationDeviceInfo(workloadObj *unstructured.Unstructure
 	fmt.Println("Instrumentation Device:")
 	fmt.Println("  Status:", appliedInstrumentationDeviceStatusMessage)
 	containerNameToExpectedDevices := make(map[string][]string)
-	for _, container := range podTemplate.Spec.Containers {
+	for _, container := range workloadObj.PodTemplateSpec.Spec.Containers {
 		fmt.Println("  - Container Name:", container.Name)
 		odigosDevices := make([]string, 0)
 		for resourceName := range container.Resources.Limits {
@@ -365,6 +310,9 @@ func printPodContainerInstrumentationInstancesInfo(instances []*odigosv1.Instrum
 		fmt.Println("    - Healthy:", healthyText)
 		if instance.Status.Message != "" {
 			fmt.Println("      Message:", instance.Status.Message)
+		}
+		if instance.Status.Reason != "" && instance.Status.Reason != string(common.AgentHealthStatusHealthy) {
+			fmt.Println("      Reason:", instance.Status.Reason)
 		}
 		if unhealthy {
 			fmt.Println("      Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#7-instrumentation-instance-unhealthy")
@@ -445,44 +393,134 @@ func printPodsInfo(pods *corev1.PodList, instrumentationInstances *odigosv1.Inst
 	}
 }
 
-// installCmd represents the install command
 var describeCmd = &cobra.Command{
 	Use:   "describe",
 	Short: "Show details of a specific odigos entity",
 	Long:  `Print detailed description of a specific odigos entity, which can be used to troubleshoot issues`,
+}
+
+var describeSourceCmd = &cobra.Command{
+	Use:   "source",
+	Short: "Show details of a specific odigos source",
+	Long:  `Print detailed description of a specific odigos source, which can be used to troubleshoot issues`,
+}
+
+func printDescribeSource(ctx context.Context, client *kube.Client, workloadObj *K8sSourceObject) {
+	namespace, instrumentationConfig, instrumentedApplication, instrumentationInstances, pods, err := getRelevantResources(ctx, client, workloadObj)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	instrumented := printWorkloadManifestInfo(workloadObj, namespace)
+	printInstrumentationConfigInfo(instrumentationConfig, instrumented)
+	printInstrumentedApplicationInfo(instrumentedApplication, instrumented)
+	containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(workloadObj, instrumentedApplication, instrumented)
+	printPodsInfo(pods, instrumentationInstances, containerNameToExpectedDevices)
+}
+
+var describeSourceDeploymentCmd = &cobra.Command{
+	Use:     "deployment <name>",
+	Short:   "Show details of a specific odigos source of type deployment",
+	Long:    `Print detailed description of a specific odigos source of type deployment, which can be used to troubleshoot issues`,
+	Aliases: []string{"deploy", "deployments", "deploy.apps", "deployment.apps", "deployments.apps"},
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		client, err := kube.CreateClient(cmd)
 		if err != nil {
 			kube.PrintClientErrorAndExit(err)
 		}
+
 		ctx := cmd.Context()
+		name := args[0]
 		ns := cmd.Flag("namespace").Value.String()
-
-		if len(args) != 2 {
-			fmt.Println("Usage: odigos describe <kind> <name>")
-			return
-		}
-
-		kind := args[0]
-		name := args[1]
-
-		workloadObj, namespace, instrumentationConfig, instrumentedApplication, podTemplate, instrumentationInstances, pods, err := getRelevantResources(ctx, client, ns, kind, name)
+		deployment, err := client.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			return
 		}
+		workloadObj := &K8sSourceObject{
+			Kind:            "deployment",
+			ObjectMeta:      deployment.ObjectMeta,
+			PodTemplateSpec: &deployment.Spec.Template,
+			LabelSelector:   deployment.Spec.Selector,
+		}
+		printDescribeSource(ctx, client, workloadObj)
+	},
+}
 
-		instrumented := printWorkloadManifestInfo(workloadObj, namespace)
-		printInstrumentationConfigInfo(instrumentationConfig, instrumented)
-		printInstrumentedApplicationInfo(instrumentedApplication, instrumented)
-		containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(workloadObj, instrumentedApplication, podTemplate, instrumented)
-		printPodsInfo(pods, instrumentationInstances, containerNameToExpectedDevices)
+var describeSourceDaemonSetCmd = &cobra.Command{
+	Use:     "daemonset <name>",
+	Short:   "Show details of a specific odigos source of type daemonset",
+	Long:    `Print detailed description of a specific odigos source of type daemonset, which can be used to troubleshoot issues`,
+	Aliases: []string{"ds", "daemonsets", "ds.apps", "daemonset.apps", "daemonsets.apps"},
+	Args:    cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		client, err := kube.CreateClient(cmd)
+		if err != nil {
+			kube.PrintClientErrorAndExit(err)
+		}
+
+		ctx := cmd.Context()
+		name := args[0]
+		ns := cmd.Flag("namespace").Value.String()
+		ds, err := client.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+		workloadObj := &K8sSourceObject{
+			Kind:            "daemonset",
+			ObjectMeta:      ds.ObjectMeta,
+			PodTemplateSpec: &ds.Spec.Template,
+			LabelSelector:   ds.Spec.Selector,
+		}
+		printDescribeSource(ctx, client, workloadObj)
+	},
+}
+
+var describeSourceStatefulSetCmd = &cobra.Command{
+	Use:     "statefulset <name>",
+	Short:   "Show details of a specific odigos source of type statefulset",
+	Long:    `Print detailed description of a specific odigos source of type statefulset, which can be used to troubleshoot issues`,
+	Aliases: []string{"sts", "statefulsets", "sts.apps", "statefulset.apps", "statefulsets.apps"},
+	Args:    cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		client, err := kube.CreateClient(cmd)
+		if err != nil {
+			kube.PrintClientErrorAndExit(err)
+		}
+
+		ctx := cmd.Context()
+		name := args[0]
+		ns := cmd.Flag("namespace").Value.String()
+		sts, err := client.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+		workloadObj := &K8sSourceObject{
+			Kind:            "statefulset",
+			ObjectMeta:      sts.ObjectMeta,
+			PodTemplateSpec: &sts.Spec.Template,
+			LabelSelector:   sts.Spec.Selector,
+		}
+		printDescribeSource(ctx, client, workloadObj)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(describeCmd)
-	describeCmd.Flags().StringVarP(&describeNamespaceFlag, "namespace", "n", "default", "namespace of the resource being described")
 
+	// describe
+	rootCmd.AddCommand(describeCmd)
+
+	// source
+	describeCmd.AddCommand(describeSourceCmd)
+	describeSourceCmd.PersistentFlags().StringVarP(&describeNamespaceFlag, "namespace", "n", "default", "namespace of the source being described")
+
+	// source kinds
+	describeSourceCmd.AddCommand(describeSourceDeploymentCmd)
+	describeSourceCmd.AddCommand(describeSourceDaemonSetCmd)
+	describeSourceCmd.AddCommand(describeSourceStatefulSetCmd)
 }

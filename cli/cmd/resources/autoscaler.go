@@ -3,10 +3,10 @@ package resources
 import (
 	"context"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -66,6 +66,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				Verbs: []string{
 					"create",
 					"delete",
+					"deletecollection",
 					"get",
 					"list",
 					"patch",
@@ -79,6 +80,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				Verbs: []string{
 					"create",
 					"delete",
+					"deletecollection",
 					"get",
 					"list",
 					"patch",
@@ -101,6 +103,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				Verbs: []string{
 					"create",
 					"delete",
+					"deletecollection",
 					"get",
 					"list",
 					"patch",
@@ -511,13 +514,14 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 }
 
 type autoScalerResourceManager struct {
-	client *kube.Client
-	ns     string
-	config *odigosv1.OdigosConfigurationSpec
+	client        *kube.Client
+	ns            string
+	config        *common.OdigosConfiguration
+	odigosVersion string
 }
 
-func NewAutoScalerResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec) resourcemanager.ResourceManager {
-	return &autoScalerResourceManager{client: client, ns: ns, config: config}
+func NewAutoScalerResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string) resourcemanager.ResourceManager {
+	return &autoScalerResourceManager{client: client, ns: ns, config: config, odigosVersion: odigosVersion}
 }
 
 func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
@@ -530,7 +534,7 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerClusterRole(),
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
-		NewAutoscalerDeployment(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage),
+		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

@@ -4,9 +4,9 @@
 FROM python:3.11 AS python-builder
 ARG ODIGOS_VERSION
 WORKDIR /python-instrumentation
-COPY ../agents/python ./agents/python
-RUN echo "VERSION = \"$ODIGOS_VERSION\";" > ./agents/python/configurator/version.py
-RUN mkdir workspace && pip install ./agents/python/  --target workspace
+COPY ../agents/python ./agents/configurator
+RUN pip install ./agents/configurator/  --target workspace
+RUN echo "VERSION = \"$ODIGOS_VERSION\";" > /python-instrumentation/workspace/initializer/version.py
 
 ######### Node.js Native Community Agent #########
 #
@@ -52,13 +52,22 @@ RUN yarn compile
 
 
 
-FROM busybox AS dotnet-builder
+FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
-ARG DOTNET_OTEL_VERSION=v0.7.0
-ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/$DOTNET_OTEL_VERSION/opentelemetry-dotnet-instrumentation-linux-musl.zip .
-RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip && rm opentelemetry-dotnet-instrumentation-linux-musl.zip
+ARG DOTNET_OTEL_VERSION=v1.7.0
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        echo "arm64" > /tmp/arch_suffix; \
+    else \
+        echo "x64" > /tmp/arch_suffix; \
+    fi
 
-FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.4 AS builder
+RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
+    wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
+    unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
+    rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip
+
+FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.5 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
@@ -77,7 +86,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 WORKDIR /instrumentations
 
 # Java
-ARG JAVA_OTEL_VERSION=v2.3.0
+ARG JAVA_OTEL_VERSION=v2.7.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 

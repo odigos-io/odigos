@@ -19,8 +19,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -37,25 +37,17 @@ type DeleteAttributeLister interface {
 
 // deleteAttributeLister implements the DeleteAttributeLister interface.
 type deleteAttributeLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.DeleteAttribute]
 }
 
 // NewDeleteAttributeLister returns a new DeleteAttributeLister.
 func NewDeleteAttributeLister(indexer cache.Indexer) DeleteAttributeLister {
-	return &deleteAttributeLister{indexer: indexer}
-}
-
-// List lists all DeleteAttributes in the indexer.
-func (s *deleteAttributeLister) List(selector labels.Selector) (ret []*v1alpha1.DeleteAttribute, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.DeleteAttribute))
-	})
-	return ret, err
+	return &deleteAttributeLister{listers.New[*v1alpha1.DeleteAttribute](indexer, v1alpha1.Resource("deleteattribute"))}
 }
 
 // DeleteAttributes returns an object that can list and get DeleteAttributes.
 func (s *deleteAttributeLister) DeleteAttributes(namespace string) DeleteAttributeNamespaceLister {
-	return deleteAttributeNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return deleteAttributeNamespaceLister{listers.NewNamespaced[*v1alpha1.DeleteAttribute](s.ResourceIndexer, namespace)}
 }
 
 // DeleteAttributeNamespaceLister helps list and get DeleteAttributes.
@@ -73,26 +65,5 @@ type DeleteAttributeNamespaceLister interface {
 // deleteAttributeNamespaceLister implements the DeleteAttributeNamespaceLister
 // interface.
 type deleteAttributeNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all DeleteAttributes in the indexer for a given namespace.
-func (s deleteAttributeNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.DeleteAttribute, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.DeleteAttribute))
-	})
-	return ret, err
-}
-
-// Get retrieves the DeleteAttribute from the indexer for a given namespace and name.
-func (s deleteAttributeNamespaceLister) Get(name string) (*v1alpha1.DeleteAttribute, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("deleteattribute"), name)
-	}
-	return obj.(*v1alpha1.DeleteAttribute), nil
+	listers.ResourceIndexer[*v1alpha1.DeleteAttribute]
 }

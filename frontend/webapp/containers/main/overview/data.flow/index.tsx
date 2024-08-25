@@ -4,7 +4,12 @@ import { OverviewDataFlowWrapper } from './styled';
 import { ROUTES, getMainContainerLanguage } from '@/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { KeyvalDataFlow, KeyvalLoader } from '@/design.system';
-import { useActions, useDestinations, useSources } from '@/hooks';
+import {
+  useActions,
+  useDestinations,
+  useOverviewMetrics,
+  useSources,
+} from '@/hooks';
 import { buildFlowNodesAndEdges } from '@keyval-dev/design-system';
 
 interface FlowNode {
@@ -42,6 +47,9 @@ export function DataFlowContainer() {
 
   const useSearch = useSearchParams();
   const intervalId = useRef<NodeJS.Timer>();
+
+  const { metrics } = useOverviewMetrics();
+
   useEffect(() => {
     if (!sources || !destinationList || !actions) return;
 
@@ -61,9 +69,32 @@ export function DataFlowContainer() {
         const conditions =
           source?.instrumented_application_details?.conditions || [];
 
+        const currentSourceMetrics = metrics?.sources?.find(
+          (metric) =>
+            metric.name === source.name &&
+            metric.namespace === source.namespace &&
+            metric.kind === source.kind
+        );
+
+        if (!currentSourceMetrics) {
+          return {
+            ...source,
+            conditions,
+            languages:
+              languages.length > 0
+                ? languages
+                : [{ language: 'default', container_name: '' }],
+          };
+        }
+
+        const data_transfer = formatBytes(currentSourceMetrics?.throughput);
+
         return {
           ...source,
           conditions,
+          metrics: {
+            data_transfer,
+          },
           languages:
             languages.length > 0
               ? languages
@@ -71,14 +102,38 @@ export function DataFlowContainer() {
         };
       });
 
+    const mapDestinations = destinationList.map((destination) => {
+      const currentDestinationMetrics = metrics?.destinations?.find(
+        (metric) => metric.id === destination.id
+      );
+
+      if (!currentDestinationMetrics) {
+        return destination;
+      }
+
+      const data_transfer = formatBytes(
+        currentDestinationMetrics?.throughput ||
+          currentDestinationMetrics?.throughput === 0
+          ? currentDestinationMetrics?.throughput
+          : 0
+      );
+
+      return {
+        ...destination,
+        metrics: {
+          data_transfer,
+        },
+      };
+    });
+
     const { nodes, edges } = buildFlowNodesAndEdges(
       mapSources,
-      destinationList,
+      mapDestinations,
       filteredActions
     );
     setNodes(nodes);
     setEdges(edges);
-  }, [actions, destinationList, sources]);
+  }, [actions, destinationList, sources, metrics]);
 
   useEffect(() => {
     const pullData = useSearch.get(POLL_DATA);
@@ -125,4 +180,12 @@ export function DataFlowContainer() {
       <KeyvalDataFlow nodes={nodes} edges={edges} onNodeClick={onNodeClick} />
     </OverviewDataFlowWrapper>
   );
+}
+
+function formatBytes(bytes: number): string {
+  const sizes = ['Bytes', 'KB/s', 'MB/s', 'GB/s', 'TB/s'];
+  if (bytes === 0) return '0 KB/s';
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  const value = bytes / Math.pow(1024, i);
+  return `${value.toFixed(2)} ${sizes[i]}`;
 }

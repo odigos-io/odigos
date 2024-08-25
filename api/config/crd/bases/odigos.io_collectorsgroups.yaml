@@ -3,7 +3,10 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.1
+  labels:
+    odigos.io/config: "1"
+    odigos.io/system-object: "true"
   name: collectorsgroups.odigos.io
 spec:
   group: odigos.io
@@ -54,6 +57,19 @@ spec:
             properties:
               ready:
                 type: boolean
+              receiverSignals:
+                description: |-
+                  Receiver Signals are the signals (trace, metrics, logs) that the collector has setup
+                  an otlp receiver for, thus it can accept data from an upstream component.
+                  this is used to determine if a workload should export each signal or not.
+                  this list is calculated based on the odigos destinations that were configured
+                items:
+                  enum:
+                  - LOGS
+                  - TRACES
+                  - METRICS
+                  type: string
+                type: array
             type: object
         type: object
     served: true

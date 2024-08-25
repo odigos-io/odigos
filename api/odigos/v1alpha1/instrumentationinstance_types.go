@@ -90,7 +90,11 @@ type InstrumentationInstanceStatus struct {
 
 	// Attributes that are not reported as resource attributes but useful to describe characteristics of the SDK.
 	NonIdentifyingAttributes []Attribute `json:"nonIdentifyingAttributes,omitempty"`
-	Healthy                  *bool       `json:"healthy,omitempty"`
+
+	// Healthy true means that the odigos agent has started the SDK, and there are no errors. User can expect telemetry to be generated.
+	// Healthy false means that the agent has stopped and telemetry data is not expected to be generated.
+	// Healthy nil means that the agent did not report any health status yet (prefer to always report health status).
+	Healthy *bool `json:"healthy,omitempty"`
 
 	// message is a human readable message indicating details about the SDK general health.
 	// can be omitted if healthy is true
@@ -114,6 +118,8 @@ type InstrumentationInstanceStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:metadata:labels=odigos.io/config=1
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // InstrumentationInstance is the Schema for the InstrumentationInstances API
 type InstrumentationInstance struct {

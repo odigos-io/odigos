@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// DestinationApplyConfiguration represents an declarative configuration of the Destination type for use
+// DestinationApplyConfiguration represents a declarative configuration of the Destination type for use
 // with apply.
 type DestinationApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -32,7 +32,7 @@ type DestinationApplyConfiguration struct {
 	Status                           *DestinationStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// Destination constructs an declarative configuration of the Destination type for use with
+// Destination constructs a declarative configuration of the Destination type for use with
 // apply.
 func Destination(name, namespace string) *DestinationApplyConfiguration {
 	b := &DestinationApplyConfiguration{}
@@ -215,4 +215,10 @@ func (b *DestinationApplyConfiguration) WithSpec(value *DestinationSpecApplyConf
 func (b *DestinationApplyConfiguration) WithStatus(value *DestinationStatusApplyConfiguration) *DestinationApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *DestinationApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

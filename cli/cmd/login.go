@@ -60,12 +60,18 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	currentOdigosVersion, err := getOdigosVersionInClusterFromConfigMap(ctx, client, ns)
+	if err != nil {
+		fmt.Println("Odigos cloud login failed - unable to read the current Odigos version.")
+		os.Exit(1)
+	}
+
 	config, err := resources.GetCurrentConfig(ctx, client, ns)
 	if err != nil {
 		fmt.Println("Odigos cloud login failed - unable to read the current Odigos configuration.")
 		os.Exit(1)
 	}
-	config.Spec.ConfigVersion += 1
+	config.ConfigVersion += 1
 
 	if odigosCloudApiKeyFlag == "" {
 		fmt.Println("Enter your odigos cloud api-key. You can find it here: https://app.odigos.io/settings")
@@ -92,7 +98,7 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 	}
 	isPrevOdigosCloud := currentTier == common.CloudOdigosTier
 
-	resourceManagers := resources.CreateResourceManagers(client, ns, common.CloudOdigosTier, &odigosCloudApiKeyFlag, &config.Spec)
+	resourceManagers := resources.CreateResourceManagers(client, ns, common.CloudOdigosTier, &odigosCloudApiKeyFlag, config, currentOdigosVersion)
 	err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 	if err != nil {
 		fmt.Println("Odigos cloud login failed - unable to apply Odigos resources.")
@@ -106,7 +112,7 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 
 	if isPrevOdigosCloud {
 		l := log.Print("Restarting relevant pods ...")
-		err := restartPodsAfterCloudLogin(ctx, client, ns, config.Spec.ConfigVersion)
+		err := restartPodsAfterCloudLogin(ctx, client, ns, config.ConfigVersion)
 		if err != nil {
 			l.Error(err)
 		}

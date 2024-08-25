@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/odigos-io/odigos/frontend/endpoints/destination_recognition"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -633,4 +635,24 @@ func addDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, 
 		return err
 	}
 	return nil
+}
+
+func potentialDestinations(c *gin.Context, odigosns string) []destination_recognition.DestinationDetails {
+	relevantNamespaces, err := getRelevantNameSpaces(c, env.GetCurrentNamespace())
+	if err != nil {
+		return nil
+	}
+
+	// Existing Destinations
+	existingDestination, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).List(c, metav1.ListOptions{})
+	if err != nil {
+		return nil
+	}
+
+	destinationDetails, err := destination_recognition.GetAllPotentialDestinationDetails(c, relevantNamespaces, existingDestination)
+	if err != nil {
+		return nil
+	}
+
+	return destinationDetails
 }

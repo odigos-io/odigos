@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
 )
@@ -69,7 +69,7 @@ func (c *ConnectionsCache) RecordMessageTime(instanceUid string) {
 	if !ok {
 		return
 	}
-	conn.lastMessageTime = time.Now()
+	conn.LastMessageTime = time.Now()
 	c.liveConnections[instanceUid] = conn
 }
 
@@ -80,7 +80,7 @@ func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
 	deadConnectionInfos := make([]ConnectionInfo, 0)
 
 	for deviceId, conn := range c.liveConnections {
-		if time.Since(conn.lastMessageTime) > connectionStaleTime {
+		if time.Since(conn.LastMessageTime) > connectionStaleTime {
 			delete(c.liveConnections, deviceId)
 			deadConnectionInfos = append(deadConnectionInfos, *conn)
 		}
@@ -90,7 +90,7 @@ func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
 }
 
 // allow to completely overwrite the remote config for a set of keys for a given workload
-func (c *ConnectionsCache) UpdateWorkloadRemoteConfigByKeys(workload common.PodWorkload, newConfigEntries *protobufs.AgentConfigMap) {
+func (c *ConnectionsCache) UpdateWorkloadRemoteConfigByKeys(workload workload.PodWorkload, newConfigEntries *protobufs.AgentConfigMap) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 

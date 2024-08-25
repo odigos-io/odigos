@@ -55,7 +55,7 @@ export function DestinationCard({
 
   return (
     <KeyvalCard>
-      <DestinationCardWrapper onClick={onClick}>
+      <DestinationCardWrapper data-cy={'choose-destination-'+ display_name} onClick={onClick}>
         <KeyvalImage
           src={image_url}
           width={56}

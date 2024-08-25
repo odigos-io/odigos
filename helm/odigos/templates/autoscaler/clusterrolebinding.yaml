@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: odigos-autoscaler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: odigos-autoscaler
+subjects:
+- kind: ServiceAccount
+  name: odigos-autoscaler
+  namespace: {{ .Release.Namespace }}

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	elasticsearchUrlKey = "ELASTICSEARCH_URL"
+	ElasticsearchUrlKey = "ELASTICSEARCH_URL"
 	esTracesIndexKey    = "ES_TRACES_INDEX"
 	esLogsIndexKey      = "ES_LOGS_INDEX"
 	esUsername          = "ELASTICSEARCH_USERNAME"
@@ -26,7 +26,7 @@ func (e *Elasticsearch) DestType() common.DestinationType {
 }
 
 func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-	rawURL, exists := dest.GetConfig()[elasticsearchUrlKey]
+	rawURL, exists := dest.GetConfig()[ElasticsearchUrlKey]
 	if !exists {
 		return errors.New("ElasticSearch url not specified, gateway will not be configured for ElasticSearch")
 	}

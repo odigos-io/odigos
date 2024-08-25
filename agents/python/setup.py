@@ -1,65 +1,22 @@
 from setuptools import setup, find_packages
 
+index_url = None
+
+# DEV - Local Uncomment to develop locally \/ 
+# index_url = 'http://host.docker.internal:8080/packages/odigos_opentelemetry_python-0.1.1-py3-none-any.whl'
+
+install_requires = [
+    f"odigos-opentelemetry-python @ {index_url}" if index_url else "odigos-opentelemetry-python"
+]
+
 setup(
     name="odigos-python-configurator",
     version="0.1.0",
     description="Odigos Configurator for Python OpenTelemetry Auto-Instrumentation",
     author="Tamir David",
     author_email="tamir@odigos.io",
-    packages=find_packages(include=["configurator", "configurator.*", "opamp", "opamp.*"]),
-    install_requires=[
-        "requests~=2.7",
-        'protobuf>=3.19, <5.0',
-        "uuid7 == 0.1.0",
-        'opentelemetry-distro==0.45b0',
-        'opentelemetry-exporter-otlp-proto-http==1.24.0',
-        'opentelemetry-instrumentation==0.45b0',
-        'opentelemetry-instrumentation-aio-pika==0.45b0',
-        'opentelemetry-instrumentation-aiohttp-client==0.45b0',
-        'opentelemetry-instrumentation-aiopg==0.45b0',
-        'opentelemetry-instrumentation-asgi==0.45b0',
-        'opentelemetry-instrumentation-asyncio==0.45b0',
-        'opentelemetry-instrumentation-asyncpg==0.45b0',
-        'opentelemetry-instrumentation-boto==0.45b0',
-        'opentelemetry-instrumentation-boto3sqs==0.45b0',
-        'opentelemetry-instrumentation-botocore==0.45b0',
-        'opentelemetry-instrumentation-cassandra==0.45b0',
-        'opentelemetry-instrumentation-celery==0.45b0',
-        'opentelemetry-instrumentation-confluent-kafka==0.45b0',
-        'opentelemetry-instrumentation-dbapi==0.45b0',
-        'opentelemetry-instrumentation-django==0.45b0',
-        'opentelemetry-instrumentation-elasticsearch==0.45b0',
-        'opentelemetry-instrumentation-falcon==0.45b0',
-        'opentelemetry-instrumentation-fastapi==0.45b0',
-        'opentelemetry-instrumentation-flask==0.45b0',
-        'opentelemetry-instrumentation-grpc==0.45b0',
-        'opentelemetry-instrumentation-httpx==0.45b0',
-        'opentelemetry-instrumentation-jinja2==0.45b0',
-        'opentelemetry-instrumentation-kafka-python==0.45b0',
-        'opentelemetry-instrumentation-logging==0.45b0',
-        'opentelemetry-instrumentation-mysql==0.45b0',
-        'opentelemetry-instrumentation-mysqlclient==0.45b0',
-        'opentelemetry-instrumentation-pika==0.45b0',
-        'opentelemetry-instrumentation-psycopg==0.45b0',
-        'opentelemetry-instrumentation-psycopg2==0.45b0',
-        'opentelemetry-instrumentation-pymemcache==0.45b0',
-        'opentelemetry-instrumentation-pymongo==0.45b0',
-        'opentelemetry-instrumentation-pymysql==0.45b0',
-        'opentelemetry-instrumentation-pyramid==0.45b0',
-        'opentelemetry-instrumentation-redis==0.45b0',
-        'opentelemetry-instrumentation-remoulade==0.45b0',
-        'opentelemetry-instrumentation-requests==0.45b0',
-        'opentelemetry-instrumentation-sklearn==0.45b0',
-        'opentelemetry-instrumentation-sqlalchemy==0.45b0',
-        'opentelemetry-instrumentation-sqlite3==0.45b0',
-        'opentelemetry-instrumentation-starlette==0.45b0',
-        'opentelemetry-instrumentation-system-metrics==0.45b0',
-        'opentelemetry-instrumentation-tornado==0.45b0',
-        'opentelemetry-instrumentation-tortoiseorm==0.45b0',
-        'opentelemetry-instrumentation-urllib==0.45b0',
-        'opentelemetry-instrumentation-urllib3==0.45b0',
-        'opentelemetry-instrumentation-wsgi==0.45b0',        
-    ],
+    packages=find_packages(include=["configurator", "configurator.*"]),
+    install_requires=install_requires,
     python_requires=">=3.8",
     entry_points={
         'opentelemetry_configurator': [

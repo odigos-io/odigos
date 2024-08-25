@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -26,9 +27,17 @@ func getNumberOfWorkers() int {
 	return min(maxWorkers, max(1, runtime.NumCPU()/4))
 }
 
-func copyDirectories(srcDir string, destDir string) error {
+func copyDirectories(srcDir string, destDir string, filesToKeepMap map[string]struct{}) error {
 	start := time.Now()
-	files, err := getFiles(srcDir)
+
+	hostContainEbpfDir := HostContainsEbpfDir(destDir)
+	shouldRecreateCFiles := ShouldRecreateAllCFiles()
+
+	// If the host directory NOT contains ebpf directories OR we should recreate C files, we copy all files
+	CopyCFiles := !hostContainEbpfDir || shouldRecreateCFiles
+	log.Logger.V(0).Info("Copying instrumentation files to host", "srcDir", srcDir, "destDir", destDir, "CopyCFiles", CopyCFiles)
+
+	files, err := getFiles(srcDir, CopyCFiles, filesToKeepMap)
 	if err != nil {
 		return err
 	}
@@ -76,17 +85,25 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
-func getFiles(dir string) ([]string, error) {
+func getFiles(dir string, CopyCFiles bool, filesToKeepMap map[string]struct{}) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
+			if !CopyCFiles {
+				if _, found := filesToKeepMap[strings.Replace(path, "/instrumentations/", "/var/odigos/", 1)]; found {
+					log.Logger.V(0).Info("Skipping copying file", "file", path)
+					return nil
+				}
+			}
+
 			files = append(files, path)
 		}
 		return nil
 	})
+
 	return files, err
 }
 
@@ -126,4 +143,19 @@ func copyFile(src, dst string, buf []byte) error {
 	}
 
 	return nil
+}
+
+func HostContainsEbpfDir(dir string) bool {
+	found := false
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || found {
+			return err
+		}
+		if info.IsDir() && strings.Contains(info.Name(), "ebpf") {
+			found = true
+			return filepath.SkipDir
+		}
+		return nil
+	})
+	return found
 }

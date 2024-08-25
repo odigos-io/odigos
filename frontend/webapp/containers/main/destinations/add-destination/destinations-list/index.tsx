@@ -89,6 +89,7 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
   items,
   setSelectedItems,
 }) => {
+  console.log({ items });
   function renderSupportedSignals(item: DestinationTypeItem) {
     const supportedSignals = item.supportedSignals;
     const signals = Object.keys(supportedSignals);

@@ -17,13 +17,18 @@ limitations under the License.
 
 package v1alpha1
 
-// CollectorsGroupStatusApplyConfiguration represents an declarative configuration of the CollectorsGroupStatus type for use
+import (
+	common "github.com/odigos-io/odigos/common"
+)
+
+// CollectorsGroupStatusApplyConfiguration represents a declarative configuration of the CollectorsGroupStatus type for use
 // with apply.
 type CollectorsGroupStatusApplyConfiguration struct {
-	Ready *bool `json:"ready,omitempty"`
+	Ready           *bool                        `json:"ready,omitempty"`
+	ReceiverSignals []common.ObservabilitySignal `json:"receiverSignals,omitempty"`
 }
 
-// CollectorsGroupStatusApplyConfiguration constructs an declarative configuration of the CollectorsGroupStatus type for use with
+// CollectorsGroupStatusApplyConfiguration constructs a declarative configuration of the CollectorsGroupStatus type for use with
 // apply.
 func CollectorsGroupStatus() *CollectorsGroupStatusApplyConfiguration {
 	return &CollectorsGroupStatusApplyConfiguration{}
@@ -34,5 +39,15 @@ func CollectorsGroupStatus() *CollectorsGroupStatusApplyConfiguration {
 // If called multiple times, the Ready field is set to the value of the last call.
 func (b *CollectorsGroupStatusApplyConfiguration) WithReady(value bool) *CollectorsGroupStatusApplyConfiguration {
 	b.Ready = &value
+	return b
+}
+
+// WithReceiverSignals adds the given value to the ReceiverSignals field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the ReceiverSignals field.
+func (b *CollectorsGroupStatusApplyConfiguration) WithReceiverSignals(values ...common.ObservabilitySignal) *CollectorsGroupStatusApplyConfiguration {
+	for i := range values {
+		b.ReceiverSignals = append(b.ReceiverSignals, values[i])
+	}
 	return b
 }

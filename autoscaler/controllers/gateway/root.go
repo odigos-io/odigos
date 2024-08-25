@@ -7,78 +7,64 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
-	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-const (
-	collectorLabel = "odigos.io/collector"
-)
-
 var (
-	CommonLabels = map[string]string{
-		collectorLabel: "true",
+	ClusterCollectorGateway = map[string]string{
+		k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
 	}
 )
 
-func Sync(ctx context.Context, client client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
+func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
-	var collectorGroups odigosv1.CollectorsGroupList
-	if err := client.List(ctx, &collectorGroups); err != nil {
-		logger.Error(err, "Failed to list collectors groups")
-		return err
-	}
 
-	var gatewayCollectorGroup *odigosv1.CollectorsGroup
-	for _, collectorGroup := range collectorGroups.Items {
-		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleClusterGateway {
-			gatewayCollectorGroup = &collectorGroup
-			break
-		}
-	}
-
-	if gatewayCollectorGroup == nil {
-		logger.V(3).Info("Gateway collector group doesn't exist, nothing to sync")
-		return nil
+	odigosNs := env.GetCurrentNamespace()
+	var gatewayCollectorGroup odigosv1.CollectorsGroup
+	err := k8sClient.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosClusterCollectorConfigMapName}, &gatewayCollectorGroup)
+	if err != nil {
+		return client.IgnoreNotFound(err)
 	}
 
 	var dests odigosv1.DestinationList
-	if err := client.List(ctx, &dests); err != nil {
+	if err := k8sClient.List(ctx, &dests); err != nil {
 		logger.Error(err, "Failed to list destinations")
 		return err
 	}
 
 	var processors odigosv1.ProcessorList
-	if err := client.List(ctx, &processors); err != nil {
+	if err := k8sClient.List(ctx, &processors); err != nil {
 		logger.Error(err, "Failed to list processors")
 		return err
 	}
 	// Add the generic batch processor to the list of processors
 	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
 
-	odigosSystemNamespaceName := env.GetCurrentNamespace()
-	var odigosConfig odigosv1.OdigosConfiguration
-	if err := client.Get(ctx, types.NamespacedName{Namespace: odigosSystemNamespaceName, Name: consts.OdigosConfigurationName}, &odigosConfig); err != nil {
+	odigosConfig, err := utils.GetCurrentOdigosConfig(ctx, k8sClient)
+	if err != nil {
 		logger.Error(err, "failed to get odigos config")
 		return err
 	}
 
-	return syncGateway(&dests, &processors, gatewayCollectorGroup, ctx, client, scheme, imagePullSecrets, odigosVersion, &odigosConfig)
+	return syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion, &odigosConfig)
 }
 
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigosConfig *odigosv1.OdigosConfiguration) error {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigosConfig *common.OdigosConfiguration) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing gateway")
 
 	memConfig := getMemoryConfigurations(odigosConfig)
 
-	configData, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme, memConfig)
+	configData, signals, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme, memConfig)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
@@ -99,6 +85,12 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 	_, err = syncDeployment(dests, gateway, configData, ctx, c, scheme, imagePullSecrets, odigosVersion, memConfig)
 	if err != nil {
 		logger.Error(err, "Failed to sync deployment")
+		return err
+	}
+
+	err = commonconf.UpdateCollectorGroupReceiverSignals(ctx, c, gateway, signals)
+	if err != nil {
+		logger.Error(err, "Failed to update cluster collectors group received signals")
 		return err
 	}
 

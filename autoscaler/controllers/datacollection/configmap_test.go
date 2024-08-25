@@ -67,7 +67,7 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
 	return &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      workload.GetRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
+			Name:      workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
 			Namespace: workloadObject.GetNamespace(),
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -83,7 +83,7 @@ func NewMockInstrumentedApplicationWoOwner(workloadObject client.Object) *odigos
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
 	return &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      workload.GetRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
+			Name:      workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
 			Namespace: workloadObject.GetNamespace(),
 		},
 	}
