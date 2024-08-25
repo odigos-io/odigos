@@ -10,7 +10,7 @@ const Container = styled.div`
   align-items: center;
   gap: 12px;
   align-self: stretch;
-  max-height: calc(100vh - 410px);
+  max-height: calc(100vh - 424px);
   overflow-y: auto;
 
   @media (height < 800px) {

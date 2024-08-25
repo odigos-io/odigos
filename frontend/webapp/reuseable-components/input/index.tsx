@@ -11,6 +11,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   errorMessage?: string;
   title?: string;
   tooltip?: string;
+  required?: boolean;
 }
 
 const Container = styled.div`
@@ -146,6 +147,7 @@ const Input: React.FC<InputProps> = ({
   errorMessage,
   title,
   tooltip,
+  required,
   ...props
 }) => {
   return (
@@ -153,6 +155,11 @@ const Input: React.FC<InputProps> = ({
       {title && (
         <HeaderWrapper>
           <Title>{title}</Title>
+          {!required && (
+            <Text color="#7A7A7A" size={14} weight={300} opacity={0.8}>
+              (optional)
+            </Text>
+          )}
           <Tooltip text={tooltip || ''}>
             {tooltip && (
               <Image
