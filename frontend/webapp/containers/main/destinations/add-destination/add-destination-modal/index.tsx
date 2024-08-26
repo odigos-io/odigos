@@ -1,19 +1,12 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useQuery } from '@apollo/client';
-import { DestinationTypeItem, GetDestinationTypesResponse } from '@/types';
-import { GET_DESTINATION_TYPE } from '@/graphql';
+import React, { useState, useRef } from 'react';
+import { DestinationTypeItem } from '@/types';
 import { Modal, NavigationButtons } from '@/reuseable-components';
-import { ConnectDestinationModalBody } from '../connect-destination-modal-body';
 import { ChooseDestinationModalBody } from '../choose-destination-modal-body';
+import { ConnectDestinationModalBody } from '../connect-destination-modal-body';
 
 interface AddDestinationModalProps {
   isModalOpen: boolean;
   handleCloseModal: () => void;
-}
-
-interface DestinationCategory {
-  name: string;
-  items: DestinationTypeItem[];
 }
 
 function ModalActionComponent({
@@ -38,7 +31,7 @@ function ModalActionComponent({
               },
               {
                 label: 'DONE',
-                onClick: onNext, // This will trigger handleSubmit
+                onClick: onNext,
                 variant: 'primary',
               },
             ]
@@ -52,36 +45,8 @@ export function AddDestinationModal({
   isModalOpen,
   handleCloseModal,
 }: AddDestinationModalProps) {
-  const { data } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
-  const [selectedItem, setSelectedItem] = useState<DestinationTypeItem>();
-  const [destinationTypeList, setDestinationTypeList] = useState<
-    DestinationTypeItem[]
-  >([]);
-
   const submitRef = useRef<() => void | null>(null);
-
-  useEffect(() => {
-    data && buildDestinationTypeList();
-  }, [data]);
-
-  function buildDestinationTypeList() {
-    const destinationTypes = data?.destinationTypes?.categories || [];
-    const destinationTypeList: DestinationTypeItem[] = destinationTypes.reduce(
-      (acc: DestinationTypeItem[], category: DestinationCategory) => {
-        const items = category.items.map((item: DestinationTypeItem) => ({
-          category: category.name,
-          displayName: item.displayName,
-          imageUrl: item.imageUrl,
-          supportedSignals: item.supportedSignals,
-          testConnectionSupported: item.testConnectionSupported,
-          type: item.type,
-        }));
-        return [...acc, ...items];
-      },
-      []
-    );
-    setDestinationTypeList(destinationTypeList);
-  }
+  const [selectedItem, setSelectedItem] = useState<DestinationTypeItem>();
 
   function handleNextStep(item: DestinationTypeItem) {
     setSelectedItem(item);
@@ -94,10 +59,7 @@ export function AddDestinationModal({
         onSubmitRef={submitRef}
       />
     ) : (
-      <ChooseDestinationModalBody
-        data={destinationTypeList}
-        onSelect={handleNextStep}
-      />
+      <ChooseDestinationModalBody onSelect={handleNextStep} />
     );
   }
 

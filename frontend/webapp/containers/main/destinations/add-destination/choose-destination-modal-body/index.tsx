@@ -12,12 +12,11 @@ import {
   GetDestinationTypesResponse,
   StepProps,
 } from '@/types';
-import { PotentialDestinationsList } from '../destinations-list/potential-destinations-list';
+
 import { useQuery } from '@apollo/client';
 import { GET_DESTINATION_TYPE } from '@/graphql';
 
 interface ChooseDestinationModalBodyProps {
-  data: DestinationTypeItem[];
   onSelect: (item: DestinationTypeItem) => void;
 }
 
