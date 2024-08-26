@@ -1,6 +1,7 @@
 package nginx
 
 import (
+	"github.com/hashicorp/go-version"
 	"net/http"
 	"regexp"
 	"strings"
@@ -15,7 +16,7 @@ type NginxInspector struct{}
 
 const (
 	NginxProcessName  = "nginx"
-	NginxVersionRegex = "`nginx/(\\d+\\.\\d+\\.\\d+)`"
+	NginxVersionRegex = `nginx/(\d+\.\d+\.\d+)`
 )
 
 func (j *NginxInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
@@ -26,17 +27,17 @@ func (j *NginxInspector) Inspect(p *process.Details) (common.ProgrammingLanguage
 	return "", false
 }
 
-func (j *NginxInspector) GetRuntimeVersion(p *process.Details, containerURL string) string {
-	version, err := GetNginxVersion(containerURL)
+func (j *NginxInspector) GetRuntimeVersion(p *process.Details, containerURL string) *version.Version {
+	nginxVersion, err := GetNginxVersion(containerURL)
 	if err != nil {
-		return ""
+		return nil
 	}
 
-	return version
+	return common.GetVersion(nginxVersion)
 }
 
-func GetNginxVersion(podIP string) (string, error) {
-	resp, err := http.Get("http://" + podIP)
+func GetNginxVersion(containerURL string) (string, error) {
+	resp, err := http.Get(containerURL)
 	if err != nil {
 		return "", nil
 	}

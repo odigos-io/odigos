@@ -1,6 +1,7 @@
 package nodejs
 
 import (
+	"github.com/hashicorp/go-version"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -19,10 +20,10 @@ func (n *NodejsInspector) Inspect(proc *process.Details) (common.ProgrammingLang
 	return "", false
 }
 
-func (n *NodejsInspector) GetRuntimeVersion(proc *process.Details, containerURL string) string {
-	if version, exists := proc.GetDetailedEnvsValue(process.NodeVersionConst); exists {
-		return version
+func (n *NodejsInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
+	if value, exists := proc.GetDetailedEnvsValue(process.NodeVersionConst); exists {
+		return common.GetVersion(value)
 	}
 
-	return ""
+	return nil
 }

@@ -1,6 +1,7 @@
 package python
 
 import (
+	"github.com/hashicorp/go-version"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -19,10 +20,10 @@ func (p *PythonInspector) Inspect(proc *process.Details) (common.ProgrammingLang
 	return "", false
 }
 
-func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, containerURL string) string {
+func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
 	if value, exists := proc.GetDetailedEnvsValue(process.PythonVersionConst); exists {
-		return value
+		return common.GetVersion(value)
 	}
 
-	return ""
+	return nil
 }

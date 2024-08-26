@@ -2,7 +2,7 @@ package inspectors
 
 import (
 	"fmt"
-
+	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/dotnet"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/golang"
@@ -22,12 +22,15 @@ func (e ErrLanguageDetectionConflict) Error() string {
 	return fmt.Sprintf("language detection conflict between %v and %v", e.languages[0], e.languages[1])
 }
 
-type inspector interface {
+type LanguageInspector interface {
 	Inspect(process *process.Details) (common.ProgrammingLanguage, bool)
-	GetRuntimeVersion(process *process.Details, containerURL string) string
 }
 
-var inspectorsList = []inspector{
+type VersionInspector interface {
+	GetRuntimeVersion(process *process.Details, containerURL string) *version.Version
+}
+
+var inspectorsList = []LanguageInspector{
 	&golang.GolangInspector{},
 	&java.JavaInspector{},
 	&python.PythonInspector{},
@@ -50,7 +53,9 @@ func DetectLanguage(process process.Details, containerURL string) (common.Progra
 		if detected {
 			if detectedProgramLanguageDetails.Language == common.UnknownProgrammingLanguage {
 				detectedProgramLanguageDetails.Language = languageDetected
-				detectedProgramLanguageDetails.RuntimeVersion = i.GetRuntimeVersion(&process, containerURL)
+				if v, ok := i.(VersionInspector); ok {
+					detectedProgramLanguageDetails.RuntimeVersion = v.GetRuntimeVersion(&process, containerURL)
+				}
 				continue
 			}
 			return common.ProgramLanguageDetails{
