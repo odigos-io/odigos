@@ -66,6 +66,7 @@ export function AddDestinationModal({
   function handleNext() {
     if (submitRef.current) {
       submitRef.current();
+      setSelectedItem(undefined);
       handleCloseModal();
     }
   }
@@ -81,7 +82,10 @@ export function AddDestinationModal({
         />
       }
       header={{ title: 'Add destination' }}
-      onClose={handleCloseModal}
+      onClose={() => {
+        setSelectedItem(undefined);
+        handleCloseModal();
+      }}
     >
       {renderModalBody()}
     </Modal>

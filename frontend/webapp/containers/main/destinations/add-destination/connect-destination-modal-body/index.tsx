@@ -111,11 +111,21 @@ export function ConnectDestinationModalBody({
   }, [destination]);
 
   useEffect(() => {
-    if (data) {
+    if (data && destination) {
       const df = buildFormDynamicFields(data.destinationTypeDetails.fields);
-      setDynamicFields(df);
+
+      const newDynamicFields = df.map((field) => {
+        if (destination.fields && field?.name in destination.fields) {
+          return {
+            ...field,
+            initialValue: destination.fields[field.name],
+          };
+        }
+        return field;
+      });
+      setDynamicFields(newDynamicFields);
     }
-  }, [data]);
+  }, [data, destination]);
 
   useEffect(() => {
     // Assign handleSubmit to the onSubmitRef so it can be triggered externally
@@ -152,7 +162,7 @@ export function ConnectDestinationModalBody({
         destinationTypeDetails,
         type: destination?.type || '',
         imageUrl: destination?.imageUrl || '',
-        category: destination?.category || '',
+        category: '',
         displayName: destination?.displayName || '',
       };
 
@@ -207,6 +217,14 @@ export function ConnectDestinationModalBody({
               text={
                 'Connection failed. Please check your input and try once again.'
               }
+            />
+          </NotificationNoteWrapper>
+        )}
+        {destination.fields && !showConnectionError && (
+          <NotificationNoteWrapper>
+            <NotificationNote
+              type="info"
+              text={`Odigos autocompleted ${destination.displayName} connection details.`}
             />
           </NotificationNoteWrapper>
         )}
