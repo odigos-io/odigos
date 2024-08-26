@@ -1,20 +1,19 @@
 import React, { useEffect, useState } from 'react';
 
 import { SideMenu } from '@/components';
+import { useQuery } from '@apollo/client';
+import { GET_DESTINATION_TYPE } from '@/graphql';
 import { DestinationsList } from '../destinations-list';
 import { Body, Container, SideMenuWrapper } from '../styled';
 import { Divider, SectionTitle } from '@/reuseable-components';
 import { DestinationFilterComponent } from '../choose-destination-menu';
 import {
-  DestinationsCategory,
-  DestinationTypeItem,
-  DropdownOption,
-  GetDestinationTypesResponse,
   StepProps,
+  DropdownOption,
+  DestinationTypeItem,
+  DestinationsCategory,
+  GetDestinationTypesResponse,
 } from '@/types';
-
-import { useQuery } from '@apollo/client';
-import { GET_DESTINATION_TYPE } from '@/graphql';
 
 interface ChooseDestinationModalBodyProps {
   onSelect: (item: DestinationTypeItem) => void;
@@ -35,7 +34,6 @@ const SIDE_MENU_DATA: StepProps[] = [
 
 const DEFAULT_MONITORS = ['logs', 'metrics', 'traces'];
 const DEFAULT_DROPDOWN_VALUE = { id: 'all', value: 'All types' };
-
 const CATEGORIES_DESCRIPTION = {
   managed: 'Effortless Monitoring with Scalable Performance Management',
   'self hosted':

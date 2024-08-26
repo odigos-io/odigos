@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { DestinationTypeItem } from '@/types';
 import { capitalizeFirstLetter } from '@/utils';
 import { DestinationListItem } from './destination-list-item';
-import { NoDataFound, SectionTitle } from '@/reuseable-components';
+import { Counter, NoDataFound, SectionTitle } from '@/reuseable-components';
 import { IDestinationListItem } from '../choose-destination-modal-body';
 import { PotentialDestinationsList } from './potential-destinations-list';
 
