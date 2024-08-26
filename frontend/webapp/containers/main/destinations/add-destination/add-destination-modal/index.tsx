@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useQuery } from '@apollo/client';
-import { DestinationTypeItem } from '@/types';
+import { DestinationTypeItem, GetDestinationTypesResponse } from '@/types';
 import { GET_DESTINATION_TYPE } from '@/graphql';
 import { Modal, NavigationButtons } from '@/reuseable-components';
 import { ConnectDestinationModalBody } from '../connect-destination-modal-body';
@@ -52,7 +52,7 @@ export function AddDestinationModal({
   isModalOpen,
   handleCloseModal,
 }: AddDestinationModalProps) {
-  const { data } = useQuery(GET_DESTINATION_TYPE);
+  const { data } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
   const [selectedItem, setSelectedItem] = useState<DestinationTypeItem>();
   const [destinationTypeList, setDestinationTypeList] = useState<
     DestinationTypeItem[]
