@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Type = component.MustNewType("odigosresourcename")
+	Type = component.MustNewType("odigossampling")
 )
 
 const (

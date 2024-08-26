@@ -18,6 +18,7 @@ func TestGetPatchedEnvValue(t *testing.T) {
 		envName              string
 		observedValue        string
 		sdk                  common.OtelSdk
+		programmingLanguage  common.ProgrammingLanguage
 		patchedValueExpected string
 	}{
 		{
@@ -25,6 +26,7 @@ func TestGetPatchedEnvValue(t *testing.T) {
 			envName:              "PATH",
 			observedValue:        "/usr/local/bin:/usr/bin:/bin",
 			sdk:                  common.OtelSdkNativeCommunity,
+			programmingLanguage:  common.JavascriptProgrammingLanguage,
 			patchedValueExpected: "",
 		},
 		{
@@ -32,6 +34,7 @@ func TestGetPatchedEnvValue(t *testing.T) {
 			envName:              "NODE_OPTIONS",
 			observedValue:        userVal,
 			sdk:                  common.OtelSdkNativeCommunity,
+			programmingLanguage:  common.JavascriptProgrammingLanguage,
 			patchedValueExpected: userVal + " " + nodeOptionsNativeCommunity,
 		},
 		{
@@ -39,6 +42,7 @@ func TestGetPatchedEnvValue(t *testing.T) {
 			envName:              "NODE_OPTIONS",
 			observedValue:        nodeOptionsNativeCommunity,
 			sdk:                  common.OtelSdkNativeCommunity,
+			programmingLanguage:  common.JavascriptProgrammingLanguage,
 			patchedValueExpected: "",
 		},
 		{
@@ -46,6 +50,7 @@ func TestGetPatchedEnvValue(t *testing.T) {
 			envName:              "NODE_OPTIONS",
 			observedValue:        userVal + " " + nodeOptionsNativeCommunity,
 			sdk:                  common.OtelSdkNativeCommunity,
+			programmingLanguage:  common.JavascriptProgrammingLanguage,
 			patchedValueExpected: userVal + " " + nodeOptionsNativeCommunity,
 		},
 		{
@@ -53,6 +58,7 @@ func TestGetPatchedEnvValue(t *testing.T) {
 			envName:              "NODE_OPTIONS",
 			observedValue:        userVal + " " + nodeOptionsNativeCommunity,
 			sdk:                  common.OtelSdkEbpfEnterprise,
+			programmingLanguage:  common.JavascriptProgrammingLanguage,
 			patchedValueExpected: userVal + " " + nodeOptionsEbpfEnterprise,
 		},
 		{
@@ -62,13 +68,22 @@ func TestGetPatchedEnvValue(t *testing.T) {
 			envName:              "NODE_OPTIONS",
 			observedValue:        nodeOptionsNativeCommunity,
 			sdk:                  common.OtelSdkEbpfEnterprise,
+			programmingLanguage:  common.JavascriptProgrammingLanguage,
+			patchedValueExpected: "",
+		},
+		{
+			name:                 "observed env is for a different programming language than what detected",
+			envName:              "NODE_OPTIONS",
+			observedValue:        userVal,
+			sdk:                  common.OtelSdkNativeCommunity,
+			programmingLanguage:  common.PythonProgrammingLanguage,
 			patchedValueExpected: "",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			patchedValue := GetPatchedEnvValue(tt.envName, tt.observedValue, tt.sdk)
+			patchedValue := GetPatchedEnvValue(tt.envName, tt.observedValue, tt.sdk, tt.programmingLanguage)
 			if patchedValue == nil {
 				assert.Equal(t, tt.patchedValueExpected, "", "mismatch in GetPatchedEnvValue: %s", tt.name)
 			} else {
