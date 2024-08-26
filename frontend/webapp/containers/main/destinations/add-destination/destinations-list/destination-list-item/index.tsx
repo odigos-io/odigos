@@ -4,6 +4,10 @@ import styled from 'styled-components';
 import { DestinationTypeItem } from '@/types';
 import { Text } from '@/reuseable-components';
 
+const HoverTextWrapper = styled.div`
+  visibility: hidden;
+`;
+
 const ListItem = styled.div`
   display: flex;
   align-items: center;
@@ -20,6 +24,12 @@ const ListItem = styled.div`
   }
   &:last-child {
     margin-bottom: 24px;
+  }
+
+  &:hover {
+    ${HoverTextWrapper} {
+      visibility: visible;
+    }
   }
 `;
 
@@ -62,6 +72,12 @@ const TextWrapper = styled.div`
   justify-content: space-between;
 `;
 
+const HoverText = styled(Text)`
+  font-family: ${({ theme }) => theme.font_family.secondary};
+  text-transform: uppercase;
+  margin-right: 16px;
+`;
+
 interface DestinationListItemProps {
   item: DestinationTypeItem;
   onSelect: (item: DestinationTypeItem) => void;
@@ -95,6 +111,9 @@ const DestinationListItem: React.FC<DestinationListItemProps> = ({
           <SignalsWrapper>{renderSupportedSignals()}</SignalsWrapper>
         </TextWrapper>
       </ListItemContent>
+      <HoverTextWrapper>
+        <HoverText size={14}>{'Select'}</HoverText>
+      </HoverTextWrapper>
     </ListItem>
   );
 };

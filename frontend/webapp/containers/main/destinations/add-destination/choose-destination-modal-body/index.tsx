@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { SideMenu } from '@/components';
 import { useQuery } from '@apollo/client';
@@ -47,7 +47,6 @@ export interface IDestinationListItem extends DestinationsCategory {
 export function ChooseDestinationModalBody({
   onSelect,
 }: ChooseDestinationModalBodyProps) {
-  const { data } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
   const [searchValue, setSearchValue] = useState('');
   const [destinations, setDestinations] = useState<IDestinationListItem[]>([]);
   const [selectedMonitors, setSelectedMonitors] =
@@ -56,6 +55,7 @@ export function ChooseDestinationModalBody({
     DEFAULT_DROPDOWN_VALUE
   );
 
+  const { data } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
   useEffect(() => {
     if (data) {
       const destinationsCategories = data.destinationTypes.categories.map(
@@ -75,31 +75,32 @@ export function ChooseDestinationModalBody({
     setDropdownValue(option);
   }
 
-  // function filterData() {
-  //   let filteredData = data;
+  const filteredDestinations = useMemo(() => {
+    return destinations
+      .map((category) => {
+        const filteredItems = category.items.filter((item) => {
+          const matchesSearch = searchValue
+            ? item.displayName.toLowerCase().includes(searchValue.toLowerCase())
+            : true;
 
-  //   if (searchValue) {
-  //     filteredData = filteredData.filter((item) =>
-  //       item.displayName.toLowerCase().includes(searchValue.toLowerCase())
-  //     );
-  //   }
+          const matchesDropdown =
+            dropdownValue.id !== 'all'
+              ? category.name === dropdownValue.id
+              : true;
 
-  //   if (dropdownValue.id !== 'all') {
-  //     filteredData = filteredData.filter(
-  //       (item) => item.category === dropdownValue.id
-  //     );
-  //   }
+          const matchesMonitor = selectedMonitors.length
+            ? selectedMonitors.some(
+                (monitor) => item.supportedSignals[monitor]?.supported
+              )
+            : true;
 
-  //   if (selectedMonitors.length) {
-  //     filteredData = filteredData.filter((item) =>
-  //       selectedMonitors.some(
-  //         (monitor) => item.supportedSignals[monitor].supported
-  //       )
-  //     );
-  //   }
+          return matchesSearch && matchesDropdown && matchesMonitor;
+        });
 
-  //   return filteredData;
-  // }
+        return { ...category, items: filteredItems };
+      })
+      .filter((category) => category.items.length > 0); // Filter out empty categories
+  }, [destinations, searchValue, dropdownValue, selectedMonitors]);
 
   function onMonitorSelect(monitor: string) {
     if (selectedMonitors.includes(monitor)) {
@@ -127,7 +128,10 @@ export function ChooseDestinationModalBody({
           onMonitorSelect={onMonitorSelect}
         />
         <Divider margin="0 0 24px 0" />
-        <DestinationsList items={destinations} setSelectedItems={onSelect} />
+        <DestinationsList
+          items={filteredDestinations}
+          setSelectedItems={onSelect}
+        />
       </Body>
     </Container>
   );
