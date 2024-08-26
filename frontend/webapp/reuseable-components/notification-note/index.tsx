@@ -31,7 +31,7 @@ const NotificationContainer = styled.div<{ type: NotificationType }>`
       case 'success':
         return '#28A745'; // Green
       case 'info':
-        return '#2B2D66'; // Blue
+        return '#181944'; // Blue
       default:
         return '#2B2D66'; // Default to info color
     }
@@ -56,7 +56,7 @@ const Title = styled(Text)<{ type: NotificationType }>`
       case 'success':
         return '#28A745';
       case 'info':
-        return '#2B2D66';
+        return '#AABEF7';
       default:
         return '#2B2D66';
     }
@@ -115,7 +115,7 @@ const NotificationIcon = ({ type }: { type: NotificationType }) => {
     case 'info':
     default:
       return (
-        <Image src="/icons/info-icon.svg" alt="info" width={16} height={16} />
+        <Image src="/brand/odigos-icon.svg" alt="info" width={16} height={16} />
       );
   }
 };

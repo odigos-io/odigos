@@ -209,11 +209,18 @@ type TestConnectionResponse {
   reason: String
 }
 
+type DestinationDetails {
+  type: String!
+  urlString: String!
+  fields: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
   destinationTypes: GetDestinationTypesResponse
   destinationTypeDetails(type: String!): GetDestinationDetailsResponse
+  potentialDestinations: [DestinationDetails!]!
 }
 
 type Mutation {

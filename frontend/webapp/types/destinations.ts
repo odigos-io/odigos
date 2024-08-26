@@ -5,22 +5,35 @@ export enum DestinationsSortType {
   TYPE = 'type',
 }
 
+interface ObservabilitySignalSupport {
+  supported: boolean;
+}
+
+interface SupportedSignals {
+  logs: ObservabilitySignalSupport;
+  metrics: ObservabilitySignalSupport;
+  traces: ObservabilitySignalSupport;
+}
+
 export interface DestinationTypeItem {
-  displayName: string;
-  imageUrl: string;
-  category: 'managed' | 'self-hosted';
   type: string;
   testConnectionSupported: boolean;
-  supportedSignals: {
-    logs: {
-      supported: boolean;
-    };
-    metrics: {
-      supported: boolean;
-    };
-    traces: {
-      supported: boolean;
-    };
+  displayName: string;
+  imageUrl: string;
+  supportedSignals: SupportedSignals;
+  fields: {
+    [key: string]: string;
+  };
+}
+
+export interface DestinationsCategory {
+  name: string;
+  items: DestinationTypeItem[];
+}
+
+export interface GetDestinationTypesResponse {
+  destinationTypes: {
+    categories: DestinationsCategory[];
   };
 }
 

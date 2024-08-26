@@ -7,9 +7,12 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services/destination_recognition"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -266,4 +269,25 @@ func AddDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, 
 		return err
 	}
 	return nil
+}
+
+func PotentialDestinations(ctx context.Context) []destination_recognition.DestinationDetails {
+	odigosns := consts.DefaultOdigosNamespace
+	relevantNamespaces, err := getRelevantNameSpaces(ctx, env.GetCurrentNamespace())
+	if err != nil {
+		return nil
+	}
+
+	// Existing Destinations
+	existingDestination, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil
+	}
+
+	destinationDetails, err := destination_recognition.GetAllPotentialDestinationDetails(ctx, relevantNamespaces, existingDestination)
+	if err != nil {
+		return nil
+	}
+
+	return destinationDetails
 }

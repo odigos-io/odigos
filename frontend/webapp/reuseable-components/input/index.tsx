@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import React from 'react';
+import React, { useState } from 'react';
 import { Text } from '../text';
 import styled, { css } from 'styled-components';
 import { Tooltip } from '../tooltip';
@@ -12,6 +12,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   title?: string;
   tooltip?: string;
   required?: boolean;
+  initialValue?: string;
 }
 
 const Container = styled.div`
@@ -148,8 +149,19 @@ const Input: React.FC<InputProps> = ({
   title,
   tooltip,
   required,
+  initialValue,
+  onChange,
   ...props
 }) => {
+  const [value, setValue] = useState<string>(initialValue || '');
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value);
+    if (onChange) {
+      onChange(e);
+    }
+  };
+
   return (
     <Container>
       {title && (
@@ -184,7 +196,12 @@ const Input: React.FC<InputProps> = ({
             <Image src={icon} alt="" width={14} height={14} />
           </IconWrapper>
         )}
-        <StyledInput hasIcon={icon} {...props} />
+        <StyledInput
+          hasIcon={icon}
+          value={value}
+          onChange={handleInputChange}
+          {...props}
+        />
         {buttonLabel && onButtonClick && (
           <Button onClick={onButtonClick} disabled={props.disabled}>
             {buttonLabel}

@@ -196,8 +196,8 @@ func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace stri
 }
 
 // TestConnectionForDestination is the resolver for the testConnectionForDestination field.
-func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, input model.DestinationInput) (*model.TestConnectionResponse, error) {
-	destType := common.DestinationType(input.Type)
+func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, destination model.DestinationInput) (*model.TestConnectionResponse, error) {
+	destType := common.DestinationType(destination.Type)
 
 	destConfig, err := services.GetDestinationTypeConfig(destType)
 	if err != nil {
@@ -205,10 +205,10 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, inp
 	}
 
 	if !destConfig.Spec.TestConnectionSupported {
-		return nil, fmt.Errorf("destination type %s does not support test connection", input.Type)
+		return nil, fmt.Errorf("destination type %s does not support test connection", destination.Type)
 	}
 
-	configurer, err := testconnection.ConvertDestinationToConfigurer(input)
+	configurer, err := testconnection.ConvertDestinationToConfigurer(destination)
 	if err != nil {
 		return nil, err
 	}
@@ -301,6 +301,31 @@ func (r *queryResolver) DestinationTypeDetails(ctx context.Context, typeArg stri
 	}
 
 	return &resp, nil
+}
+
+// PotentialDestinations is the resolver for the potentialDestinations field.
+func (r *queryResolver) PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error) {
+	potentialDestinations := services.PotentialDestinations(ctx)
+	if potentialDestinations == nil {
+		return nil, fmt.Errorf("failed to fetch potential destinations")
+	}
+
+	// Convert []destination_recognition.DestinationDetails to []*DestinationDetails
+	var result []*model.DestinationDetails
+	for _, dest := range potentialDestinations {
+
+		fieldsString, err := json.Marshal(dest.Fields)
+		if err != nil {
+			return nil, fmt.Errorf("error marshalling fields: %v", err)
+		}
+
+		result = append(result, &model.DestinationDetails{
+			Type:   string(dest.Type),
+			Fields: string(fieldsString),
+		})
+	}
+
+	return result, nil
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.

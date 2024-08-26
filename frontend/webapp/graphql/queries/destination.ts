@@ -40,3 +40,12 @@ export const GET_DESTINATION_TYPE_DETAILS = gql`
     }
   }
 `;
+
+export const GET_POTENTIAL_DESTINATIONS = gql`
+  query GetPotentialDestinations {
+    potentialDestinations {
+      type
+      fields
+    }
+  }
+`;

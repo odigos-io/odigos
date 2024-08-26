@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { SideMenu } from '@/components';
+import { useQuery } from '@apollo/client';
+import { GET_DESTINATION_TYPE } from '@/graphql';
 import { DestinationsList } from '../destinations-list';
 import { Body, Container, SideMenuWrapper } from '../styled';
 import { Divider, SectionTitle } from '@/reuseable-components';
 import { DestinationFilterComponent } from '../choose-destination-menu';
-import { DestinationTypeItem, DropdownOption, StepProps } from '@/types';
+import {
+  StepProps,
+  DropdownOption,
+  DestinationTypeItem,
+  DestinationsCategory,
+  GetDestinationTypesResponse,
+} from '@/types';
 
 interface ChooseDestinationModalBodyProps {
-  data: DestinationTypeItem[];
   onSelect: (item: DestinationTypeItem) => void;
 }
 
@@ -25,50 +32,75 @@ const SIDE_MENU_DATA: StepProps[] = [
   },
 ];
 
+const DEFAULT_MONITORS = ['logs', 'metrics', 'traces'];
+const DEFAULT_DROPDOWN_VALUE = { id: 'all', value: 'All types' };
+const CATEGORIES_DESCRIPTION = {
+  managed: 'Effortless Monitoring with Scalable Performance Management',
+  'self hosted':
+    'Full Control and Customization for Advanced Application Monitoring',
+};
+
+export interface IDestinationListItem extends DestinationsCategory {
+  description: string;
+}
+
 export function ChooseDestinationModalBody({
-  data,
   onSelect,
 }: ChooseDestinationModalBodyProps) {
   const [searchValue, setSearchValue] = useState('');
-  const [selectedMonitors, setSelectedMonitors] = useState<string[]>([
-    'logs',
-    'metrics',
-    'traces',
-  ]);
-  const [dropdownValue, setDropdownValue] = useState<DropdownOption>({
-    id: 'all',
-    value: 'All types',
-  });
+  const [destinations, setDestinations] = useState<IDestinationListItem[]>([]);
+  const [selectedMonitors, setSelectedMonitors] =
+    useState<string[]>(DEFAULT_MONITORS);
+  const [dropdownValue, setDropdownValue] = useState<DropdownOption>(
+    DEFAULT_DROPDOWN_VALUE
+  );
+
+  const { data } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
+  useEffect(() => {
+    if (data) {
+      const destinationsCategories = data.destinationTypes.categories.map(
+        (category) => {
+          return {
+            name: category.name,
+            description: CATEGORIES_DESCRIPTION[category.name],
+            items: category.items,
+          };
+        }
+      );
+      setDestinations(destinationsCategories);
+    }
+  }, [data]);
 
   function handleTagSelect(option: DropdownOption) {
     setDropdownValue(option);
   }
 
-  function filterData() {
-    let filteredData = data;
+  const filteredDestinations = useMemo(() => {
+    return destinations
+      .map((category) => {
+        const filteredItems = category.items.filter((item) => {
+          const matchesSearch = searchValue
+            ? item.displayName.toLowerCase().includes(searchValue.toLowerCase())
+            : true;
 
-    if (searchValue) {
-      filteredData = filteredData.filter((item) =>
-        item.displayName.toLowerCase().includes(searchValue.toLowerCase())
-      );
-    }
+          const matchesDropdown =
+            dropdownValue.id !== 'all'
+              ? category.name === dropdownValue.id
+              : true;
 
-    if (dropdownValue.id !== 'all') {
-      filteredData = filteredData.filter(
-        (item) => item.category === dropdownValue.id
-      );
-    }
+          const matchesMonitor = selectedMonitors.length
+            ? selectedMonitors.some(
+                (monitor) => item.supportedSignals[monitor]?.supported
+              )
+            : true;
 
-    if (selectedMonitors.length) {
-      filteredData = filteredData.filter((item) =>
-        selectedMonitors.some(
-          (monitor) => item.supportedSignals[monitor].supported
-        )
-      );
-    }
+          return matchesSearch && matchesDropdown && matchesMonitor;
+        });
 
-    return filteredData;
-  }
+        return { ...category, items: filteredItems };
+      })
+      .filter((category) => category.items.length > 0); // Filter out empty categories
+  }, [destinations, searchValue, dropdownValue, selectedMonitors]);
 
   function onMonitorSelect(monitor: string) {
     if (selectedMonitors.includes(monitor)) {
@@ -96,7 +128,10 @@ export function ChooseDestinationModalBody({
           onMonitorSelect={onMonitorSelect}
         />
         <Divider margin="0 0 24px 0" />
-        <DestinationsList items={filterData()} setSelectedItems={onSelect} />
+        <DestinationsList
+          items={filteredDestinations}
+          setSelectedItems={onSelect}
+        />
       </Body>
     </Container>
   );

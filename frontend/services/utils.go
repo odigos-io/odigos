@@ -3,7 +3,9 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path"
+	"strings"
 
 	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,4 +34,17 @@ func setWorkloadInstrumentationLabel(ctx context.Context, nsName string, workloa
 	default:
 		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
+}
+
+func ConvertFieldsToString(fields map[string]string) string {
+	if len(fields) == 0 {
+		return ""
+	}
+
+	var parts []string
+	for key, value := range fields {
+		parts = append(parts, fmt.Sprintf("%s: %s", key, value))
+	}
+
+	return strings.Join(parts, ", ")
 }
