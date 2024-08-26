@@ -52,9 +52,26 @@ jobs:
         working-directory: ./instrumentor
         run: |
           make test
-
-  build-and-test-odiglet:
+  build-and-test-odigos-collector:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: build Odigos Collector Image
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: odigos-collector:pr-${{ github.event.number }}
+          context: ./collector
+          file: collector/Dockerfile
+      - name: run tests
+        working-directory: ./collector
+        run: |
+          make test
+  build-and-test-odiglet:
+    runs-on: ubuntu-latest  
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx

@@ -171,7 +171,7 @@ deploy: deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor de
 e2e-test:
 	./e2e-test.sh
 
-ALL_GO_MOD_DIRS := $(shell go list -m -f '{{.Dir}}' | sort)
+ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort)
 
 .PHONY: go-mod-tidy
 go-mod-tidy: $(ALL_GO_MOD_DIRS:%=go-mod-tidy/%)
