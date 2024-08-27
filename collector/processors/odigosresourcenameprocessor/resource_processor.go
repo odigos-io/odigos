@@ -114,6 +114,8 @@ func (rp *resourceProcessor) processLogs(ctx context.Context, ld plog.Logs) (plo
 }
 
 func (rp *resourceProcessor) Shutdown(ctx context.Context) error {
-	rp.nameResolver.Shutdown()
+	if rp.nameResolver != nil {
+		rp.nameResolver.Shutdown()
+	}
 	return nil
 }

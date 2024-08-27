@@ -171,7 +171,7 @@ deploy: deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor de
 e2e-test:
 	./e2e-test.sh
 
-ALL_GO_MOD_DIRS := $(shell go list -m -f '{{.Dir}}' | sort)
+ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort)
 
 .PHONY: go-mod-tidy
 go-mod-tidy: $(ALL_GO_MOD_DIRS:%=go-mod-tidy/%)
@@ -192,10 +192,10 @@ check-clean-work-tree:
 .PHONY: cli-install
 cli-install:
 	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	go run -tags=embed_manifests ./cli install --version $(ODIGOS_CLI_VERSION)
+	cd ./cli ; go run -tags=embed_manifests . install --version $(ODIGOS_CLI_VERSION)
 
 
 .PHONY: cli-upgrade
 cli-upgrade:
 	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	go run -tags=embed_manifests ./cli upgrade --version $(ODIGOS_CLI_VERSION) --yes
+	cd ./cli ; go run -tags=embed_manifests . upgrade --version $(ODIGOS_CLI_VERSION) --yes

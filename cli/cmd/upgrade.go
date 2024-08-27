@@ -44,7 +44,8 @@ and apply any required migrations and adaptations.`,
 
 		var operation string
 
-		if !cmd.Flag("skip-version-check").Changed {
+		skipVersionCheckFlag := cmd.Flag("skip-version-check")
+		if skipVersionCheckFlag == nil || !cmd.Flag("skip-version-check").Changed {
 
 			cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 			if err != nil {
