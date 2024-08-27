@@ -32,7 +32,9 @@ export function DynamicConnectDestinationFormFields({
           <Dropdown
             key={field.name}
             {...field}
-            onSelect={(option) => onChange(field.name, option.value)}
+            onSelect={(option) =>
+              onChange(field.name, { id: option.id, value: option.value })
+            }
           />
         );
       case INPUT_TYPES.MULTI_INPUT:

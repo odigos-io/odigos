@@ -30,9 +30,12 @@ const ItemValue = styled(Text)`
 export const ConfiguredDestinationFields: React.FC<
   ConfiguredDestinationFieldsProps
 > = ({ details }) => {
-  const parseValue = (value: string) => {
+  const parseValue = (value: any) => {
     try {
       const parsed = JSON.parse(value);
+      if (typeof parsed === 'string') {
+        return parsed;
+      }
 
       if (Array.isArray(parsed)) {
         return parsed
@@ -40,6 +43,7 @@ export const ConfiguredDestinationFields: React.FC<
             if (typeof item === 'object' && item !== null) {
               return `${item.key}: ${item.value}`;
             }
+
             return item;
           })
           .join(', ');

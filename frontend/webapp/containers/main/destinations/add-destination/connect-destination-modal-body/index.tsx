@@ -64,13 +64,14 @@ const NotificationNoteWrapper = styled.div`
 interface ConnectDestinationModalBodyProps {
   destination: DestinationTypeItem | undefined;
   onSubmitRef: React.MutableRefObject<(() => void) | null>;
+  onFormValidChange: (isValid: boolean) => void;
 }
 
 export function ConnectDestinationModalBody({
   destination,
   onSubmitRef,
+  onFormValidChange,
 }: ConnectDestinationModalBodyProps) {
-  const [formData, setFormData] = useState<Record<string, any>>({});
   const [destinationName, setDestinationName] = useState<string>('');
   const [showConnectionError, setShowConnectionError] = useState(false);
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
@@ -118,11 +119,12 @@ export function ConnectDestinationModalBody({
         if (destination.fields && field?.name in destination.fields) {
           return {
             ...field,
-            initialValue: destination.fields[field.name],
+            value: destination.fields[field.name],
           };
         }
         return field;
       });
+
       setDynamicFields(newDynamicFields);
     }
   }, [data, destination]);
@@ -130,45 +132,85 @@ export function ConnectDestinationModalBody({
   useEffect(() => {
     // Assign handleSubmit to the onSubmitRef so it can be triggered externally
     onSubmitRef.current = handleSubmit;
-  }, [formData, destinationName, exportedSignals]);
+  }, [dynamicFields, destinationName, exportedSignals]);
+
+  useEffect(() => {
+    const isFormValid = dynamicFields.every((field) =>
+      field.required ? field.value : true
+    );
+
+    onFormValidChange(isFormValid);
+  }, [dynamicFields]);
 
   function handleDynamicFieldChange(name: string, value: any) {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setShowConnectionError(false);
+    setDynamicFields((prev) => {
+      return prev.map((field) => {
+        if (field.name === name) {
+          return { ...field, value };
+        }
+        return field;
+      });
+    });
   }
 
   function handleSignalChange(signal: string, value: boolean) {
     setExportedSignals((prev) => ({ ...prev, [signal]: value }));
   }
 
-  async function handleSubmit() {
-    const fields = Object.entries(formData).map(([name, value]) => ({
-      key: name,
-      value,
-    }));
+  function processFormFields() {
+    function processFieldValue(field) {
+      return field.componentType === 'dropdown'
+        ? field.value.value
+        : field.value;
+    }
 
+    // Prepare fields for the request body
+    return dynamicFields.map((field) => ({
+      key: field.name,
+      value: processFieldValue(field),
+    }));
+  }
+
+  async function handleSubmit() {
+    // Helper function to process field values
+    function processFieldValue(field) {
+      return field.componentType === 'dropdown'
+        ? field.value.value
+        : field.value;
+    }
+
+    // Prepare fields for the request body
+    const fields = processFormFields();
+
+    // Function to store configured destination
     function storeConfiguredDestination() {
       const destinationTypeDetails = dynamicFields.map((field) => ({
         title: field.title,
-        value: formData[field.name],
+        value: processFieldValue(field),
       }));
 
+      // Add 'Destination name' as the first item
       destinationTypeDetails.unshift({
         title: 'Destination name',
         value: destinationName,
       });
 
+      // Construct the configured destination object
       const storedDestination: ConfiguredDestination = {
         exportedSignals,
         destinationTypeDetails,
         type: destination?.type || '',
         imageUrl: destination?.imageUrl || '',
-        category: '',
+        category: '', // Could be handled in a more dynamic way if needed
         displayName: destination?.displayName || '',
       };
 
+      // Dispatch action to store the destination
       dispatch(addConfiguredDestination(storedDestination));
     }
 
+    // Prepare the request body
     const body: DestinationInput = {
       name: destinationName,
       type: destination?.type || '',
@@ -176,7 +218,13 @@ export function ConnectDestinationModalBody({
       fields,
     };
 
-    await connectEnv(body, storeConfiguredDestination);
+    try {
+      // Await connection and store the configured destination if successful
+      await connectEnv(body, storeConfiguredDestination);
+    } catch (error) {
+      console.error('Failed to submit destination configuration:', error);
+      // Handle error (e.g., show notification or alert)
+    }
   }
 
   if (!destination) return null;
@@ -194,15 +242,15 @@ export function ConnectDestinationModalBody({
           actionButton={
             destination.testConnectionSupported ? (
               <TestConnection // TODO: refactor this after add form validation
-                onError={() => setShowConnectionError(true)}
+                onError={() => {
+                  setShowConnectionError(true);
+                  onFormValidChange(false);
+                }}
                 destination={{
                   name: destinationName,
                   type: destination?.type || '',
                   exportedSignals,
-                  fields: Object.entries(formData).map(([name, value]) => ({
-                    key: name,
-                    value,
-                  })),
+                  fields: processFormFields(),
                 }}
               />
             ) : (

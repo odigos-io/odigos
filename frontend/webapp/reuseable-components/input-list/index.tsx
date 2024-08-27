@@ -10,6 +10,7 @@ interface InputListProps {
   initialValues?: string[];
   title?: string;
   tooltip?: string;
+  required?: boolean;
   onChange: (values: string[]) => void;
 }
 
@@ -55,19 +56,20 @@ const Title = styled(Text)`
   font-size: 14px;
   opacity: 0.8;
   line-height: 22px;
-  margin-bottom: 4px;
 `;
 
 const HeaderWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-bottom: 4px;
 `;
 
 const InputList: React.FC<InputListProps> = ({
   initialValues = [''],
   title,
   tooltip,
+  required,
   onChange,
 }) => {
   const [inputs, setInputs] = useState<string[]>(initialValues);
@@ -102,6 +104,11 @@ const InputList: React.FC<InputListProps> = ({
         <Tooltip text={tooltip || ''}>
           <HeaderWrapper>
             <Title>{title}</Title>
+            {!required && (
+              <Text color="#7A7A7A" size={14} weight={300} opacity={0.8}>
+                (optional)
+              </Text>
+            )}
             {tooltip && (
               <Image
                 src="/icons/common/info.svg"

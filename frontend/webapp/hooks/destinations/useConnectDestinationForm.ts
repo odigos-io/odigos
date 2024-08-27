@@ -37,7 +37,7 @@ export function useConnectDestinationForm() {
               title: displayName,
               onSelect: () => {},
               options,
-              selectedOption: options[0],
+              placeholder: 'Select an option',
               ...componentPropertiesJson,
             };
 

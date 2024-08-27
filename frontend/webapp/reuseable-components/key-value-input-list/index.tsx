@@ -10,6 +10,7 @@ interface KeyValueInputsListProps {
   initialKeyValuePairs?: { key: string; value: string }[];
   title?: string;
   tooltip?: string;
+  required?: boolean;
   onChange?: (validKeyValuePairs: { key: string; value: string }[]) => void;
 }
 
@@ -23,6 +24,7 @@ const HeaderWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-bottom: 4px;
 `;
 
 const Row = styled.div`
@@ -61,13 +63,13 @@ const Title = styled(Text)`
   font-size: 14px;
   opacity: 0.8;
   line-height: 22px;
-  margin-bottom: 4px;
 `;
 
 export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
   initialKeyValuePairs = [{ key: '', value: '' }],
   title,
   tooltip,
+  required,
   onChange,
 }) => {
   const [keyValuePairs, setKeyValuePairs] =
@@ -124,6 +126,11 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
         <Tooltip text={tooltip || ''}>
           <HeaderWrapper>
             <Title>{title}</Title>
+            {!required && (
+              <Text color="#7A7A7A" size={14} weight={300} opacity={0.8}>
+                (optional)
+              </Text>
+            )}
             {tooltip && (
               <Image
                 src="/icons/common/info.svg"
