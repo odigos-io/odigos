@@ -64,7 +64,7 @@ const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
         </div>
         <Dropdown
           options={DROPDOWN_OPTIONS}
-          selectedOption={selectedTag}
+          value={selectedTag}
           onSelect={onTagSelect}
         />
       </InputAndDropdownContainer>

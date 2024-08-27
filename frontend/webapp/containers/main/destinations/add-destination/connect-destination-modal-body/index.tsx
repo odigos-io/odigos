@@ -140,12 +140,11 @@ export function ConnectDestinationModalBody({
       field.required ? field.value : true
     );
 
-    console.log({ isFormValid, dynamicFields });
-
     onFormValidChange(isFormValid);
   }, [dynamicFields]);
 
   function handleDynamicFieldChange(name: string, value: any) {
+    setShowConnectionError(false);
     setDynamicFields((prev) => {
       return prev.map((field) => {
         if (field.name === name) {
@@ -244,7 +243,10 @@ export function ConnectDestinationModalBody({
           actionButton={
             destination.testConnectionSupported ? (
               <TestConnection // TODO: refactor this after add form validation
-                onError={() => setShowConnectionError(true)}
+                onError={() => {
+                  setShowConnectionError(true);
+                  onFormValidChange(false);
+                }}
                 destination={{
                   name: destinationName,
                   type: destination?.type || '',

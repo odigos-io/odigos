@@ -115,7 +115,7 @@ function ConfiguredDestinationsListItem({
   item: ConfiguredDestination;
 }) {
   const [expand, setExpand] = React.useState(false);
-  console.log({ item });
+
   function renderSupportedSignals(item: ConfiguredDestination) {
     const supportedSignals = item.exportedSignals;
     const signals = Object.keys(supportedSignals);
