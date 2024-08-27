@@ -32,11 +32,10 @@ export const ConfiguredDestinationFields: React.FC<
 > = ({ details }) => {
   const parseValue = (value: any) => {
     try {
-      if (typeof value === 'string') {
-        return value;
-      }
-
       const parsed = JSON.parse(value);
+      if (typeof parsed === 'string') {
+        return parsed;
+      }
 
       if (Array.isArray(parsed)) {
         return parsed
@@ -44,6 +43,7 @@ export const ConfiguredDestinationFields: React.FC<
             if (typeof item === 'object' && item !== null) {
               return `${item.key}: ${item.value}`;
             }
+
             return item;
           })
           .join(', ');
