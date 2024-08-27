@@ -18,10 +18,10 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Change directory to docs
+      - name: Run sync-dest-doc.py in docs directory
         run: |
-        cd docs
-        python sync-dest-doc.py
+          cd docs
+          python sync-dest-doc.py
 
       - name: Check for changes in destinations
         run: |
