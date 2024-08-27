@@ -30,8 +30,12 @@ const ItemValue = styled(Text)`
 export const ConfiguredDestinationFields: React.FC<
   ConfiguredDestinationFieldsProps
 > = ({ details }) => {
-  const parseValue = (value: string) => {
+  const parseValue = (value: any) => {
     try {
+      if (typeof value === 'string') {
+        return value;
+      }
+
       const parsed = JSON.parse(value);
 
       if (Array.isArray(parsed)) {
