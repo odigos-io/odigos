@@ -19,7 +19,7 @@ jobs:
           python-version: '3.x'
 
       - name: Change directory to docs
-        run: cd doc
+        run: cd docs
 
       - name: Run sync-dest-doc.py
         run: python sync-dest-doc.py
