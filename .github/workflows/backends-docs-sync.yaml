@@ -19,15 +19,14 @@ jobs:
           python-version: '3.x'
 
       - name: Change directory to docs
-        run: cd docs
-
-      - name: Run sync-dest-doc.py
-        run: python sync-dest-doc.py
+        run: |
+        cd docs
+        python sync-dest-doc.py
 
       - name: Check for changes in destinations
         run: |
-          git diff --exit-code ../destinations || (
+          git diff --exit-code destinations || (
             echo "Changes detected in destinations directory. Failing the workflow.";
-            git diff ../destinations;
+            git diff destinations;
             exit 1;
           )
