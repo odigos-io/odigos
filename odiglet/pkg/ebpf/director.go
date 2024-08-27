@@ -2,6 +2,7 @@ package ebpf
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -22,6 +23,7 @@ import (
 type OtelEbpfSdk interface {
 	Run(ctx context.Context) error
 	Close(ctx context.Context) error
+	ApplyConfig(ctx context.Context, config *odigosv1.InstrumentationConfig) error
 }
 
 // users can use different eBPF otel SDKs by returning them from this function
@@ -35,6 +37,7 @@ type Director interface {
 	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload *workload.PodWorkload, appName string, containerName string) error
 	Cleanup(podDetails types.NamespacedName)
 	Shutdown()
+	ApplyInstrumentationConfig(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error
 }
 
 type podDetails struct {
@@ -101,6 +104,8 @@ type DirectorKey struct {
 
 type DirectorsMap map[DirectorKey]Director
 
+var _ Director = &EbpfDirector[*GoOtelEbpfSdk]{}
+
 func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, scheme *runtime.Scheme, language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
 	director := &EbpfDirector[T]{
 		language:                     language,
@@ -116,6 +121,27 @@ func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, s
 	go director.observeInstrumentations(ctx, scheme)
 
 	return director
+}
+
+func (d *EbpfDirector[T]) ApplyInstrumentationConfig(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
+	d.mux.Lock()
+	defer d.mux.Unlock()
+
+	insts := d.GetWorkloadInstrumentations(workload)
+
+	log.Logger.V(3).Info("Applying config to instrumentations after CRD change", "instrumentationConfig", instrumentationConfig, "workload", workload, "SDKs count", len(insts))
+
+	var retErr []error
+	for _, inst := range insts {
+		err := inst.ApplyConfig(ctx, instrumentationConfig)
+		if err != nil {
+			retErr = append(retErr, err)
+		}
+	}
+	if len(retErr) > 0 {
+		return fmt.Errorf("failed to apply config to %d instrumentations", len(retErr))
+	}
+	return nil
 }
 
 func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context, scheme *runtime.Scheme) {
@@ -312,9 +338,6 @@ func (d *EbpfDirector[T]) Shutdown() {
 }
 
 func (d *EbpfDirector[T]) GetWorkloadInstrumentations(workload *workload.PodWorkload) []T {
-	d.mux.Lock()
-	defer d.mux.Unlock()
-
 	pods, ok := d.workloadToPods[*workload]
 	if !ok {
 		return nil
