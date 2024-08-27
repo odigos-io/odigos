@@ -20,3 +20,44 @@ Make sure the API Key is permitted to **Send Events** to Honeycomb.
 - **API Key**: Insert the API Key from the previous step in the **API Key** field.
 - **Endpoint** - Choose one of the endpoints in the dropdown (api.honeycomb.io is the US instance, api.eu1.honeycomb.io is EU instance)
 
+
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: honeycomb-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    HONEYCOMB_ENDPOINT: <Endpoint [api.honeycomb.io, api.eu1.honeycomb.io]>
+  destinationName: honeycomb
+  secretRef:
+    name: honeycomb-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: honeycomb
+
+---
+apiVersion: v1
+data:
+  HONEYCOMB_API_KEY: <base64 API Key>
+kind: Secret
+metadata:
+  name: honeycomb-secret
+  namespace: <odigos namespace>
+type: Opaque
+```

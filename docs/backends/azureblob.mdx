@@ -11,3 +11,31 @@ There are two required fields to configure Azure Blob Storage backend:
 
 - **Account name**: Azure Storage account name
 - **Container name**: Azure Storage container name
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: azureblob-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    AZURE_BLOB_ACCOUNT_NAME: <Account Name>
+    AZURE_BLOB_CONTAINER_NAME: <Container Name>
+  destinationName: azureblob
+  signals:
+  - TRACES
+  - LOGS
+  type: azureblob
+```

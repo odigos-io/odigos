@@ -23,3 +23,45 @@ Enter the following account details in Odigos UI:
 - **Name**: Choose a name for this backend (e.g. Datadog)
 - **Site** - The datadog site you are using (the url of the datadog site you are using). [click here for more details](https://docs.datadoghq.com/getting_started/site/).
 - **API Key**: The API key you obtained from Datadog
+
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: datadog-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    DATADOG_SITE: <Site [us3.datadoghq.com, datadoghq.com, us5.datadoghq.com, datadoghq.eu,
+      ddog-gov.com, ap1.datadoghq.com]>
+  destinationName: datadog
+  secretRef:
+    name: datadog-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: datadog
+
+---
+apiVersion: v1
+data:
+  DATADOG_API_KEY: <base64 API Key>
+kind: Secret
+metadata:
+  name: datadog-secret
+  namespace: <odigos namespace>
+type: Opaque
+```

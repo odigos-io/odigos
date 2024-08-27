@@ -24,3 +24,42 @@ Enter the following account details in Odigos UI:
 - **Realm** - The Splunk ream in use. This is the second part of the URL you use to access Splunk/SignalFX.
   For example, if you access Splunk at `https://app.us1.signalfx.com`, then the realm is `us1`.
 - **Access Token**: The access token you created in the previous step.
+
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: splunk-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    SPLUNK_REALM: <Realm>
+  destinationName: splunk
+  secretRef:
+    name: splunk-secret
+  signals:
+  - TRACES
+  type: splunk
+
+---
+apiVersion: v1
+data:
+  SPLUNK_ACCESS_TOKEN: <base64 Access Token>
+kind: Secret
+metadata:
+  name: splunk-secret
+  namespace: <odigos namespace>
+type: Opaque
+```

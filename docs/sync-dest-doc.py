@@ -22,7 +22,7 @@ def shorten_yaml(yaml_content):
         "kind": "Destination",
         "metadata": {
             "name": f"{destination_name}-example",  # Adding '-example' suffix to the name
-            "namespace": "odigos-system"
+            "namespace": "<odigos namespace>"
         },
         "spec": {
             "data": {},  # This will hold the required fields directly
@@ -37,7 +37,7 @@ def shorten_yaml(yaml_content):
         "kind": "Secret",
         "metadata": {
             "name": f"{destination_name}-secret",
-            "namespace": "odigos-system"
+            "namespace": "<odigos namespace>"  # Updated default namespace
         },
         "type": "Opaque",
         "data": {}
@@ -99,6 +99,15 @@ def update_mdx_with_yaml(mdx_path, shortened_yaml, optional_section, secret_mani
     Function to update the MDX file by adding the shortened YAML under the '## Deploying using yaml' section.
     If a Secret manifest is generated, it is also added within the same yaml code block.
     """
+    instructions = (
+        "\n\n### Applying the Configuration\n"
+        "Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:\n\n"
+        "```bash\n"
+        "kubectl apply -f destination.yaml\n"
+        "```\n"
+        "Optional fields are commented out; be sure to uncomment any relevant fields before applying.\n"
+    )
+
     yaml_section_title = "## Deploying using yaml"
     new_yaml_content = yaml.dump(shortened_yaml, default_flow_style=False)
 
@@ -124,21 +133,19 @@ def update_mdx_with_yaml(mdx_path, shortened_yaml, optional_section, secret_mani
     # Wrap the combined YAML content in a single yaml code block
     code_block = f"```yaml\n{new_yaml_content}```"
 
+    # Construct the final content to insert
+    final_content = f"{yaml_section_title}{instructions}\n\n{code_block}"
+
     with open(mdx_path, 'r') as mdx_file:
         mdx_content = mdx_file.read()
 
-    if yaml_section_title in mdx_content:
-        # Locate the 'destinations' block within the existing '## Deploying using yaml' section
-        section_pattern = re.compile(rf"{yaml_section_title}\n\n```yaml\n(apiVersion:[\s\S]*?)```(?=\n## |\Z)", re.MULTILINE)
-        if section_pattern.search(mdx_content):
-            # Replace the existing block with the new one
-            mdx_content = section_pattern.sub(f"{yaml_section_title}\n\n{code_block}", mdx_content)
-        else:
-            # If the block is not found, append it under the section
-            mdx_content = mdx_content.replace(yaml_section_title, f"{yaml_section_title}\n\n{code_block}")
+    # Find the existing section and replace it with the updated content
+    section_pattern = re.compile(rf"({yaml_section_title}\n\n### Applying the Configuration[\s\S]*?)```yaml\n[\s\S]*?```", re.DOTALL)
+    if section_pattern.search(mdx_content):
+        mdx_content = section_pattern.sub(final_content, mdx_content)
     else:
-        # Append the new section at the end of the file
-        mdx_content += f"\n\n{yaml_section_title}\n\n{code_block}"
+        # If the section is not found, append the entire content
+        mdx_content += f"\n\n{final_content}"
 
     with open(mdx_path, 'w') as mdx_file:
         mdx_file.write(mdx_content)

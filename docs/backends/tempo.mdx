@@ -5,3 +5,30 @@ title: "Tempo"
 ## Configuring the Tempo Backend
 
 In order to add a new tempo backend, insert the tempo URL into Odigos UI.
+
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: tempo-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    TEMPO_URL: <Endpoint>
+  destinationName: tempo
+  signals:
+  - TRACES
+  type: tempo
+```

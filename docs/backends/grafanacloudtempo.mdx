@@ -29,3 +29,43 @@ The username is a number.
 - **Password** - This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. 
 You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page.
 Make sure your token scope includes "traces:write" scope.
+
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: grafanacloudtempo-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    GRAFANA_CLOUD_TEMPO_ENDPOINT: <Endpoint (host:port)>
+    GRAFANA_CLOUD_TEMPO_USERNAME: <Username>
+  destinationName: grafanacloudtempo
+  secretRef:
+    name: grafanacloudtempo-secret
+  signals:
+  - TRACES
+  type: grafanacloudtempo
+
+---
+apiVersion: v1
+data:
+  GRAFANA_CLOUD_TEMPO_PASSWORD: <base64 Password (Api Token)>
+kind: Secret
+metadata:
+  name: grafanacloudtempo-secret
+  namespace: <odigos namespace>
+type: Opaque
+```

@@ -100,3 +100,34 @@ For example, the following JSON string represents a single span in `otlp_json` f
 ```json
 {"resourceSpans":[{"resource":{"attributes":[{"key":"telemetry.sdk.language","value":{"stringValue":"python"}},{"key":"telemetry.sdk.name","value":{"stringValue":"opentelemetry"}},{"key":"telemetry.sdk.version","value":{"stringValue":"1.19.0"}},{"key":"service.name","value":{"stringValue":"inventory"}},{"key":"odigos.device","value":{"stringValue":"python"}},{"key":"telemetry.auto.version","value":{"stringValue":"0.40b0"}},{"key":"k8s.namespace.name","value":{"stringValue":"default"}},{"key":"k8s.deployment.name","value":{"stringValue":"inventory"}},{"key":"k8s.pod.name","value":{"stringValue":"inventory-7b87f7566c-2d6fq"}},{"key":"container.name","value":{"stringValue":"inventory"}},{"key":"k8s.node.name","value":{"stringValue":"ip-192-168-4-178.ec2.internal"}}]},"scopeSpans":[{"scope":{"name":"opentelemetry.instrumentation.flask","version":"0.40b0"},"spans":[{"traceId":"9ee5a0de5802d3f1e7f93440f892509c","spanId":"88a4bfb5bfcaf297","parentSpanId":"f9d7bb9e9243df06","name":"/buy","kind":2,"startTimeUnixNano":"1707600957298456744","endTimeUnixNano":"1707600958303042894","attributes":[{"key":"http.method","value":{"stringValue":"POST"}},{"key":"http.server_name","value":{"stringValue":"0.0.0.0"}},{"key":"http.scheme","value":{"stringValue":"http"}},{"key":"net.host.port","value":{"intValue":"8080"}},{"key":"http.host","value":{"stringValue":"inventory:8080"}},{"key":"http.target","value":{"stringValue":"/buy?id=10"}},{"key":"net.peer.ip","value":{"stringValue":"192.168.13.194"}},{"key":"http.user_agent","value":{"stringValue":"Java/17.0.9"}},{"key":"net.peer.port","value":{"intValue":"49420"}},{"key":"http.flavor","value":{"stringValue":"1.1"}},{"key":"http.route","value":{"stringValue":"/buy"}},{"key":"http.status_code","value":{"intValue":"200"}}],"status":{}}]}]}]}
 ```
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: s3-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    S3_BUCKET: <Bucket Name>
+    S3_MARSHALER: <Marshaller (Data Format) [otlp_json, otlp_proto]>
+    S3_PARTITION: <Time granularity of S3 Bucket [minute, hour]>
+    S3_REGION: <Bucket Region>
+  destinationName: s3
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: s3
+```

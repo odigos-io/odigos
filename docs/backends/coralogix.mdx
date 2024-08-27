@@ -17,3 +17,46 @@ Follow the [Domain instructions](https://coralogix.com/docs/coralogix-domain/) t
 ### Application and Subsystem Names
 
 You can configure the application and subsystem names for your Coralogix account. Follow the [Application and Subsystem Names guide](https://coralogix.com/docs/application-and-subsystem-names/) to learn more.
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: coralogix-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    CORALOGIX_APPLICATION_NAME: <Application Name>
+    CORALOGIX_DOMAIN: <Domain [coralogix.com, eu2.coralogix.com, coralogix.us, cx498.coralogix.com,
+      coralogix.in, coralogixsg.com]>
+    CORALOGIX_SUBSYSTEM_NAME: <Subsystem Name>
+  destinationName: coralogix
+  secretRef:
+    name: coralogix-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: coralogix
+
+---
+apiVersion: v1
+data:
+  CORALOGIX_PRIVATE_KEY: <base64 Send-Your-Data API Key>
+kind: Secret
+metadata:
+  name: coralogix-secret
+  namespace: <odigos namespace>
+type: Opaque
+```

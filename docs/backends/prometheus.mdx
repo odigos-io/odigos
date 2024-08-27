@@ -11,3 +11,30 @@ In order to enable remote write in Prometheus, set [the following feature flag](
 
 Once the remote write API is enabled, you can configure the Prometheus backend in the Odigos UI.
 Enter the URL of the Prometheus server and give a name to the backend.
+
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: prometheus-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    PROMETHEUS_REMOTEWRITE_URL: <Remote Write URL>
+  destinationName: prometheus
+  signals:
+  - METRICS
+  type: prometheus
+```

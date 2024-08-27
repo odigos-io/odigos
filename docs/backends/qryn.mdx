@@ -9,3 +9,45 @@ Fill in the following information using your relevant qryn details:
 - **Tempo URL**: https://qryn.host/tempo/api/push
 - **Prometheus URL**: https://qryn.host/api/prom/remote/write
 - **Loki URL**: https://qryn.host/loki/api/v1/push
+
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: qryn-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    QRYN_URL: <API Url>
+  destinationName: qryn
+  secretRef:
+    name: qryn-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: qryn
+
+---
+apiVersion: v1
+data:
+  QRYN_API_KEY: <base64 API Key>
+  QRYN_API_SECRET: <base64 API Secret>
+kind: Secret
+metadata:
+  name: qryn-secret
+  namespace: <odigos namespace>
+type: Opaque
+```

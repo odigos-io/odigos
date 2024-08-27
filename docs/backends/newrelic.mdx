@@ -19,3 +19,44 @@ For key type select **Ingest - License**, give a name to your key and press **Cr
 ## Configuring New Relic Backend
 
 In the New Relic backend configuration page, enter the **License Key** from previous step and name the backend.
+
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: newrelic-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    NEWRELIC_ENDPOINT: <Endpoint [https://otlp.nr-data.net, https://otlp.eu01.nr-data.net]>
+  destinationName: newrelic
+  secretRef:
+    name: newrelic-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: newrelic
+
+---
+apiVersion: v1
+data:
+  NEWRELIC_API_KEY: <base64 License Key>
+kind: Secret
+metadata:
+  name: newrelic-secret
+  namespace: <odigos namespace>
+type: Opaque
+```

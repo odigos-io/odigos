@@ -13,3 +13,43 @@ On the left sidebar click on `Apps`, then under `Manage` select `Access Tokens`:
 Make sure to add the required capabilities for the access tokens (e.g `Ingest OpenTelemetry traces` for traces).
 
 The URL is usually of the form `https://{your-environment-id}.live.dynatrace.com` [click her for more details](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/otlp-export)
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: dynatrace-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    DYNATRACE_URL: <Tenant URL>
+  destinationName: dynatrace
+  secretRef:
+    name: dynatrace-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: dynatrace
+
+---
+apiVersion: v1
+data:
+  DYNATRACE_API_TOKEN: <base64 API Access Token>
+kind: Secret
+metadata:
+  name: dynatrace-secret
+  namespace: <odigos namespace>
+type: Opaque
+```

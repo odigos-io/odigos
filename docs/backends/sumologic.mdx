@@ -5,3 +5,42 @@ title: "Sumo Logic"
 ## Obtaining a OTLP/HTTP Source URL
 
 Follow the [following instructions](https://help.sumologic.com/docs/send-data/hosted-collectors/http-source/otlp/) to obtain a OTLP/HTTP Source URL.
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: sumologic-example
+  namespace: <odigos namespace>
+spec:
+  data: {}
+  destinationName: sumologic
+  secretRef:
+    name: sumologic-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: sumologic
+
+---
+apiVersion: v1
+data:
+  SUMOLOGIC_COLLECTION_URL: <base64 Source URL>
+kind: Secret
+metadata:
+  name: sumologic-secret
+  namespace: <odigos namespace>
+type: Opaque
+```

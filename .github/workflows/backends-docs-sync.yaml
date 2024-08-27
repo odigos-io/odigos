@@ -31,7 +31,7 @@ jobs:
       - name: Check for changes in docs-backends
         run: |
           git diff --exit-code docs/backends || (
-            echo "Changes detected in docs/backends directory. You should update run python ./docs/sync-dest-doc.py and commit the changes.";
+            echo "Changes detected in docs/backends directory. You should update run cd docs ; python sync-dest-doc.py and commit the changes.";
             git diff docs/backends;
             exit 1;
           )

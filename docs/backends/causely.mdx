@@ -21,3 +21,30 @@ The endpoint URL is the combined `<protocol>://<hostname>:<port>` to access your
 - Default port is `4317`; if no port is specified, it will be appended automatically
 
 Example: `http://mediator.causely:4317`
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: causely-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    CAUSELY_URL: <Endpoint>
+  destinationName: causely
+  signals:
+  - TRACES
+  - METRICS
+  type: causely
+```

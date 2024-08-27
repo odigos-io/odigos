@@ -19,3 +19,32 @@ The only required configuration is the endpoint of the OTLP gRPC server. Note th
 The endpoint format is `host:port`. 
 - host is required
 - port is optional and defaults to the default OTLP gRPC port `4317`.
+
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: otlp-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    OTLP_GRPC_ENDPOINT: <OTLP gRPC Endpoint>
+  destinationName: otlp
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: otlp
+```

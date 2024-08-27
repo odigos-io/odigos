@@ -8,3 +8,31 @@ The only required field is the Quickwit endpoint which is supporting OTLP grpc (
 This endpoint must be a valid URL without scheme for your Quickwit cluster, i.e: `{quickwit_host}:7281`
 
 You'll find more details here: https://quickwit.io/docs/log-management/otel-service
+
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: quickwit-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    QUICKWIT_URL: <Quickwit OTLP gRPC Endpoint>
+  destinationName: quickwit
+  signals:
+  - TRACES
+  - LOGS
+  type: quickwit
+```

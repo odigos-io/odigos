@@ -35,3 +35,45 @@ Make sure your token scope includes "logs:write" scope.
 ### Loki Labels
 
 Read about setting grafana loki labels in the [Loki](/backends/loki#loki-labels) page.
+
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: grafanacloudloki-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    GRAFANA_CLOUD_LOKI_ENDPOINT: <Endpoint>
+    # GRAFANA_CLOUD_LOKI_LABELS: <Labels>
+    # Note: The commented fields above are optional.
+    GRAFANA_CLOUD_LOKI_USERNAME: <Username>
+  destinationName: grafanacloudloki
+  secretRef:
+    name: grafanacloudloki-secret
+  signals:
+  - LOGS
+  type: grafanacloudloki
+
+---
+apiVersion: v1
+data:
+  GRAFANA_CLOUD_LOKI_PASSWORD: <base64 Password (Api Token)>
+kind: Secret
+metadata:
+  name: grafanacloudloki-secret
+  namespace: <odigos namespace>
+type: Opaque
+```

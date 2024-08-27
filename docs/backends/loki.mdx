@@ -32,3 +32,31 @@ You can configure your grafana cloud loki labels in the `Labels` multi-input con
 - [Use only low cardinality values](https://grafana.com/docs/loki/latest/get-started/labels/#cardinality). e.g. use only opentelemetry attributes for which you expect a small number of unique values like `http.response.status_code` but **not** `network.peer.address`.
 - If the label is not present in a log record, it will be ignored.
 - The default labels if not set are: `k8s.container.name, k8s.pod.name, k8s.namespace.name`
+
+
+## Deploying using yaml
+
+### Applying the Configuration
+Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+
+```bash
+kubectl apply -f destination.yaml
+```
+Optional fields are commented out; be sure to uncomment any relevant fields before applying.
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: loki-example
+  namespace: <odigos namespace>
+spec:
+  data:
+    LOKI_LABELS: <Labels>
+    LOKI_URL: <Endpoint>
+  destinationName: loki
+  signals:
+  - LOGS
+  type: loki
+```
