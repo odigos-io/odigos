@@ -1,0 +1,33 @@
+name: Backend Doc Change
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-doc-change:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Change directory to docs
+        run: cd doc
+
+      - name: Run sync-dest-doc.py
+        run: python sync-dest-doc.py
+
+      - name: Check for changes in destinations
+        run: |
+          git diff --exit-code ../destinations || (
+            echo "Changes detected in destinations directory. Failing the workflow.";
+            git diff ../destinations;
+            exit 1;
+          )
