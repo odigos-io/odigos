@@ -18,6 +18,11 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml          
+
       - name: Run sync-dest-doc.py in docs directory
         run: |
           cd docs
