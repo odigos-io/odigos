@@ -64,11 +64,13 @@ const NotificationNoteWrapper = styled.div`
 interface ConnectDestinationModalBodyProps {
   destination: DestinationTypeItem | undefined;
   onSubmitRef: React.MutableRefObject<(() => void) | null>;
+  onFormValidChange: (isValid: boolean) => void;
 }
 
 export function ConnectDestinationModalBody({
   destination,
   onSubmitRef,
+  onFormValidChange,
 }: ConnectDestinationModalBodyProps) {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [destinationName, setDestinationName] = useState<string>('');
@@ -118,11 +120,13 @@ export function ConnectDestinationModalBody({
         if (destination.fields && field?.name in destination.fields) {
           return {
             ...field,
-            initialValue: destination.fields[field.name],
+            value: destination.fields[field.name],
+            // initialValue: destination.fields[field.name],
           };
         }
         return field;
       });
+
       setDynamicFields(newDynamicFields);
     }
   }, [data, destination]);
@@ -132,8 +136,26 @@ export function ConnectDestinationModalBody({
     onSubmitRef.current = handleSubmit;
   }, [formData, destinationName, exportedSignals]);
 
+  useEffect(() => {
+    const isFormValid =
+      dynamicFields.every(
+        (field) =>
+          formData[field.name] !== undefined && formData[field.name] !== ''
+      ) && Object.keys(formData).length > 0;
+
+    onFormValidChange(isFormValid);
+  }, [formData]);
+
   function handleDynamicFieldChange(name: string, value: any) {
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setDynamicFields((prev) => {
+      return prev.map((field) => {
+        if (field.name === name) {
+          return { ...field, value };
+        }
+        return field;
+      });
+    });
   }
 
   function handleSignalChange(signal: string, value: boolean) {
@@ -141,34 +163,47 @@ export function ConnectDestinationModalBody({
   }
 
   async function handleSubmit() {
-    const fields = Object.entries(formData).map(([name, value]) => ({
-      key: name,
-      value,
+    // Helper function to process field values
+    function processFieldValue(field) {
+      return field.componentType === 'dropdown'
+        ? field.value.value
+        : field.value;
+    }
+
+    // Prepare fields for the request body
+    const fields = dynamicFields.map((field) => ({
+      key: field.name,
+      value: processFieldValue(field),
     }));
 
+    // Function to store configured destination
     function storeConfiguredDestination() {
       const destinationTypeDetails = dynamicFields.map((field) => ({
         title: field.title,
-        value: formData[field.name],
+        value: processFieldValue(field),
       }));
 
+      // Add 'Destination name' as the first item
       destinationTypeDetails.unshift({
         title: 'Destination name',
         value: destinationName,
       });
 
+      // Construct the configured destination object
       const storedDestination: ConfiguredDestination = {
         exportedSignals,
         destinationTypeDetails,
         type: destination?.type || '',
         imageUrl: destination?.imageUrl || '',
-        category: '',
+        category: '', // Could be handled in a more dynamic way if needed
         displayName: destination?.displayName || '',
       };
 
+      // Dispatch action to store the destination
       dispatch(addConfiguredDestination(storedDestination));
     }
 
+    // Prepare the request body
     const body: DestinationInput = {
       name: destinationName,
       type: destination?.type || '',
@@ -176,7 +211,13 @@ export function ConnectDestinationModalBody({
       fields,
     };
 
-    await connectEnv(body, storeConfiguredDestination);
+    try {
+      // Await connection and store the configured destination if successful
+      await connectEnv(body, storeConfiguredDestination);
+    } catch (error) {
+      console.error('Failed to submit destination configuration:', error);
+      // Handle error (e.g., show notification or alert)
+    }
   }
 
   if (!destination) return null;

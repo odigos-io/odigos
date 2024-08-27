@@ -16,6 +16,7 @@ export function DynamicConnectDestinationFormFields({
   fields: any[];
   onChange: (name: string, value: any) => void;
 }) {
+  console.log({ fields });
   return fields?.map((field: any) => {
     switch (field.componentType) {
       case INPUT_TYPES.INPUT:
@@ -32,7 +33,9 @@ export function DynamicConnectDestinationFormFields({
           <Dropdown
             key={field.name}
             {...field}
-            onSelect={(option) => onChange(field.name, option.value)}
+            onSelect={(option) =>
+              onChange(field.name, { id: option.id, value: option.value })
+            }
           />
         );
       case INPUT_TYPES.MULTI_INPUT:

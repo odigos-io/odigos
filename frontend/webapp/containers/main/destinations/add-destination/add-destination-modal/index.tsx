@@ -13,9 +13,11 @@ function ModalActionComponent({
   onNext,
   onBack,
   item,
+  isFormValid,
 }: {
   onNext: () => void;
   onBack: () => void;
+  isFormValid?: boolean;
   item: DestinationTypeItem | undefined;
 }) {
   return (
@@ -33,6 +35,7 @@ function ModalActionComponent({
                 label: 'DONE',
                 onClick: onNext,
                 variant: 'primary',
+                disabled: !isFormValid,
               },
             ]
           : []
@@ -47,6 +50,7 @@ export function AddDestinationModal({
 }: AddDestinationModalProps) {
   const submitRef = useRef<() => void | null>(null);
   const [selectedItem, setSelectedItem] = useState<DestinationTypeItem>();
+  const [isFormValid, setIsFormValid] = useState(false);
 
   function handleNextStep(item: DestinationTypeItem) {
     setSelectedItem(item);
@@ -55,8 +59,9 @@ export function AddDestinationModal({
   function renderModalBody() {
     return selectedItem ? (
       <ConnectDestinationModalBody
-        destination={selectedItem}
         onSubmitRef={submitRef}
+        destination={selectedItem}
+        onFormValidChange={setIsFormValid}
       />
     ) : (
       <ChooseDestinationModalBody onSelect={handleNextStep} />
@@ -78,6 +83,7 @@ export function AddDestinationModal({
         <ModalActionComponent
           onNext={handleNext}
           onBack={() => setSelectedItem(undefined)}
+          isFormValid={isFormValid}
           item={selectedItem}
         />
       }

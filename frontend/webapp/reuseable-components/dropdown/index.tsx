@@ -10,10 +10,11 @@ import { useOnClickOutside } from '@/hooks';
 
 interface DropdownProps {
   options: DropdownOption[];
-  selectedOption: DropdownOption | undefined;
+  value: DropdownOption | undefined;
   onSelect: (option: DropdownOption) => void;
   title?: string;
   tooltip?: string;
+  placeholder?: string;
 }
 
 const Container = styled.div`
@@ -105,10 +106,11 @@ const OpenDropdownIcon = styled(Image)<{ isOpen: boolean }>`
 
 const Dropdown: React.FC<DropdownProps> = ({
   options,
-  selectedOption,
+  value,
   onSelect,
   title,
   tooltip,
+  placeholder,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -143,7 +145,7 @@ const Dropdown: React.FC<DropdownProps> = ({
         </Tooltip>
       )}
       <DropdownHeader isOpen={isOpen} onClick={() => setIsOpen(!isOpen)}>
-        <Text size={14}>{selectedOption?.value}</Text>
+        <Text size={14}>{value?.value || placeholder}</Text>
 
         <OpenDropdownIcon
           src="/icons/common/extend-arrow.svg"
@@ -167,12 +169,12 @@ const Dropdown: React.FC<DropdownProps> = ({
           {filteredOptions.map((option) => (
             <DropdownItem
               key={option.id}
-              isSelected={option.id === selectedOption?.id}
+              isSelected={option.id === value?.id}
               onClick={() => handleSelect(option)}
             >
               <Text size={14}>{option.value}</Text>
 
-              {option.id === selectedOption?.id && (
+              {option.id === value?.id && (
                 <Image
                   src="/icons/common/check.svg"
                   alt=""
