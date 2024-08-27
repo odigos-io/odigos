@@ -1,12 +1,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
-  name: cleanup-clusterrolebinding
+  name: cleanup-rolebinding
+  namespace: {{ .Release.Namespace }}  # Templated namespace
 subjects:
 - kind: ServiceAccount
-  name: cleanup-sa
-  namespace: {{ .Release.Namespace }}
+  name: cleanup-sa  # The name of your service account
+  namespace: {{ .Release.Namespace }}  # Templated namespace for the service account
 roleRef:
-  kind: ClusterRole
-  name: cleanup-clusterrole
+  kind: Role
+  name: cleanup-role
   apiGroup: rbac.authorization.k8s.io
