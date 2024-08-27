@@ -210,6 +210,12 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, runt
 		return err
 	}
 
+	if runtimeDetails.Spec.RuntimeDetails[0].Language == "nginx" {
+		err := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, runtimeDetails.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonDataCollectionNotReady)
+		conditions.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), "Nginx Instrumentation is Coming Soon!")
+		return err
+	}
+
 	err = addInstrumentationDeviceToWorkload(ctx, kubeClient, runtimeDetails)
 	if err == nil {
 		conditions.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationDeviceApplied", "Instrumentation device applied successfully")
