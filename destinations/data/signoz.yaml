@@ -14,7 +14,7 @@ spec:
     logs:
       supported: true
   fields:
-    - name: SIGNOZ_URL
+    - name: SIGNOZ_URLS
       displayName: Collector Endpoint
       componentType: input
       componentProps:
