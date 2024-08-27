@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// DestinationStatusApplyConfiguration represents an declarative configuration of the DestinationStatus type for use
+// DestinationStatusApplyConfiguration represents a declarative configuration of the DestinationStatus type for use
 // with apply.
 type DestinationStatusApplyConfiguration struct {
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
-// DestinationStatusApplyConfiguration constructs an declarative configuration of the DestinationStatus type for use with
+// DestinationStatusApplyConfiguration constructs a declarative configuration of the DestinationStatus type for use with
 // apply.
 func DestinationStatus() *DestinationStatusApplyConfiguration {
 	return &DestinationStatusApplyConfiguration{}

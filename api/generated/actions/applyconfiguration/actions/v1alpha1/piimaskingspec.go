@@ -22,7 +22,7 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// PiiMaskingSpecApplyConfiguration represents an declarative configuration of the PiiMaskingSpec type for use
+// PiiMaskingSpecApplyConfiguration represents a declarative configuration of the PiiMaskingSpec type for use
 // with apply.
 type PiiMaskingSpecApplyConfiguration struct {
 	ActionName    *string                      `json:"actionName,omitempty"`
@@ -32,7 +32,7 @@ type PiiMaskingSpecApplyConfiguration struct {
 	PiiCategories []v1alpha1.PiiCategory       `json:"piiCategories,omitempty"`
 }
 
-// PiiMaskingSpecApplyConfiguration constructs an declarative configuration of the PiiMaskingSpec type for use with
+// PiiMaskingSpecApplyConfiguration constructs a declarative configuration of the PiiMaskingSpec type for use with
 // apply.
 func PiiMaskingSpec() *PiiMaskingSpecApplyConfiguration {
 	return &PiiMaskingSpecApplyConfiguration{}

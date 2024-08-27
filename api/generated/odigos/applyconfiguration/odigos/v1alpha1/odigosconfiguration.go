@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// OdigosConfigurationApplyConfiguration represents an declarative configuration of the OdigosConfiguration type for use
+// OdigosConfigurationApplyConfiguration represents a declarative configuration of the OdigosConfiguration type for use
 // with apply.
 type OdigosConfigurationApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -31,7 +31,7 @@ type OdigosConfigurationApplyConfiguration struct {
 	Spec                             *OdigosConfigurationSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
-// OdigosConfiguration constructs an declarative configuration of the OdigosConfiguration type for use with
+// OdigosConfiguration constructs a declarative configuration of the OdigosConfiguration type for use with
 // apply.
 func OdigosConfiguration(name, namespace string) *OdigosConfigurationApplyConfiguration {
 	b := &OdigosConfigurationApplyConfiguration{}
@@ -206,4 +206,10 @@ func (b *OdigosConfigurationApplyConfiguration) ensureObjectMetaApplyConfigurati
 func (b *OdigosConfigurationApplyConfiguration) WithSpec(value *OdigosConfigurationSpecApplyConfiguration) *OdigosConfigurationApplyConfiguration {
 	b.Spec = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *OdigosConfigurationApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

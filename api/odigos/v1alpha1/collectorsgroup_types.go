@@ -50,6 +50,8 @@ type CollectorsGroupStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:metadata:labels=odigos.io/config=1
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // CollectorsGroup is the Schema for the collectors API
 type CollectorsGroup struct {

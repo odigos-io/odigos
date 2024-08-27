@@ -43,7 +43,7 @@ type PatchSourceRequest struct {
 }
 
 func GetSources(c *gin.Context, odigosns string) {
-	ctx := c.Request.Context()
+	reqCtx := c.Request.Context()
 	effectiveInstrumentedSources := map[common.SourceID]ThinSource{}
 
 	var (
@@ -51,9 +51,9 @@ func GetSources(c *gin.Context, odigosns string) {
 		instrumentedApplications *v1alpha1.InstrumentedApplicationList
 	)
 
-	g, ctx := errgroup.WithContext(ctx)
+	g, errCtx := errgroup.WithContext(reqCtx)
 	g.Go(func() error {
-		relevantNamespaces, err := getRelevantNameSpaces(ctx, odigosns)
+		relevantNamespaces, err := getRelevantNameSpaces(errCtx, odigosns)
 		if err != nil {
 			return err
 		}
@@ -64,13 +64,13 @@ func GetSources(c *gin.Context, odigosns string) {
 		// get all the applications in all the namespaces,
 		// passing an empty string here is more efficient compared to iterating over the namespaces
 		// since it will make a single request per workload type to the k8s api server
-		items, err = getApplicationsInNamespace(ctx, "", nsInstrumentedMap)
+		items, err = getApplicationsInNamespace(errCtx, "", nsInstrumentedMap)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		instrumentedApplications, err = kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(c, metav1.ListOptions{})
+		instrumentedApplications, err = kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(errCtx, metav1.ListOptions{})
 		return err
 	})
 
@@ -81,7 +81,7 @@ func GetSources(c *gin.Context, odigosns string) {
 
 	for _, item := range items {
 		if item.nsItem.InstrumentationEffective {
-			id := common.SourceID{Namespace: item.namespace, Kind: string(item.nsItem.Kind), Name: item.nsItem.Name}
+			id := common.SourceID{Namespace: item.namespace, Kind: workload.WorkloadKind(item.nsItem.Kind), Name: item.nsItem.Name}
 			effectiveInstrumentedSources[id] = ThinSource{
 				NumberOfRunningInstances: item.nsItem.Instances,
 				SourceID:                 id,
@@ -98,6 +98,11 @@ func GetSources(c *gin.Context, odigosns string) {
 		thinSource := k8sInstrumentedAppToThinSource(&app)
 		if source, ok := effectiveInstrumentedSources[thinSource.SourceID]; ok {
 			source.IaDetails = thinSource.IaDetails
+			err := addHealthyInstrumentationInstancesCondition(reqCtx, &app, &source)
+			if err != nil {
+				returnError(c, err)
+				return
+			}
 			effectiveInstrumentedSources[thinSource.SourceID] = source
 		}
 	}
@@ -113,7 +118,7 @@ func GetSource(c *gin.Context) {
 	ns := c.Param("namespace")
 	kind := c.Param("kind")
 	name := c.Param("name")
-	k8sObjectName := workload.GetRuntimeObjectName(name, kind)
+	k8sObjectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
 
 	owner, numberOfRunningInstances := getWorkloadObject(c, ns, kind, name)
 	if owner == nil {
@@ -131,7 +136,7 @@ func GetSource(c *gin.Context) {
 	ts := ThinSource{
 		SourceID: common.SourceID{
 			Namespace: ns,
-			Kind:      kind,
+			Kind:      workload.WorkloadKind(kind),
 			Name:      name,
 		},
 		NumberOfRunningInstances: numberOfRunningInstances,
@@ -250,7 +255,7 @@ func DeleteSource(c *gin.Context) {
 func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinSource {
 	var source ThinSource
 	source.Name = app.OwnerReferences[0].Name
-	source.Kind = app.OwnerReferences[0].Kind
+	source.Kind = workload.WorkloadKind(app.OwnerReferences[0].Kind)
 	source.Namespace = app.Namespace
 	var conditions []metav1.Condition
 	for _, condition := range app.Status.Conditions {

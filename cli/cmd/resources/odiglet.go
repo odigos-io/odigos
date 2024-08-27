@@ -7,7 +7,6 @@ import (
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
@@ -70,6 +69,15 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 					"watch",
 				},
 				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{""},
 				Resources: []string{
 					"pods",
 				},
@@ -93,15 +101,6 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				Resources: []string{
 					"nodes",
 				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{"replicasets"},
 			},
 			{
 				Verbs: []string{
@@ -666,14 +665,15 @@ func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropaga
 }
 
 type odigletResourceManager struct {
-	client     *kube.Client
-	ns         string
-	config     *odigosv1.OdigosConfigurationSpec
-	odigosTier common.OdigosTier
+	client        *kube.Client
+	ns            string
+	config        *common.OdigosConfiguration
+	odigosTier    common.OdigosTier
+	odigosVersion string
 }
 
-func NewOdigletResourceManager(client *kube.Client, ns string, config *odigosv1.OdigosConfigurationSpec, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
-	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
+func NewOdigletResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string) resourcemanager.ResourceManager {
+	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion}
 }
 
 func (a *odigletResourceManager) Name() string { return "Odiglet" }
@@ -711,7 +711,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
 	resources = append(resources,
-		NewOdigletDaemonSet(a.ns, a.config.OdigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled, a.config.GoAutoIncludeCodeAttributes))
+		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled, a.config.GoAutoIncludeCodeAttributes))
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

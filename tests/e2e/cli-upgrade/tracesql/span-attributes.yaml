@@ -1,0 +1,18 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: |
+  This test checks the span attributes for a specific trace.
+  TODO - JS, Python and DotNet SDK are not generating data in latest semconv. add additional checks when they are updated.
+query: |
+  { resource.odigos.version = "e2e-test" && resource.service.name = "frontend" && resource.telemetry.sdk.language = "java" &&
+    span.http.request.method = "POST" && span.http.route = "/buy" && span:kind = server &&
+    span.http.response.status_code = 200 && span.url.query = "id=123" }
+  >> (
+    { resource.odigos.version = "e2e-test" && resource.service.name = "pricing" && resource.telemetry.sdk.language = "dotnet" && span:kind = server } &&
+    { resource.odigos.version = "e2e-test" && resource.service.name = "inventory" && resource.telemetry.sdk.language = "python" && span:kind = server } &&
+    ({ resource.odigos.version = "e2e-test" && resource.service.name = "coupon" && resource.telemetry.sdk.language = "nodejs" && span:kind = server }
+    >> { resource.odigos.version = "e2e-test" && resource.service.name = "membership" && resource.telemetry.sdk.language = "go" &&
+      span.http.request.method = "GET" && span:kind = server &&
+      span.http.response.status_code = 200 && span.url.path = "/isMember" }))
+expected:
+  count: 1

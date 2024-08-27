@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	collectormetrics "github.com/odigos-io/odigos/frontend/endpoints/collector_metrics"
 	"github.com/odigos-io/odigos/frontend/endpoints/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 type singleSourceMetricsResponse struct {
@@ -22,7 +23,7 @@ func GetSingleSourceMetrics(c *gin.Context, m *collectormetrics.OdigosMetricsCon
 
 	sID := common.SourceID{
 		Namespace: ns,
-		Kind:      kind,
+		Kind:      workload.WorkloadKind(kind),
 		Name:      name,
 	}
 	metric, ok := m.GetSingleSourceMetrics(sID)

@@ -81,6 +81,15 @@ status:
       restartCount: 0
       started: true
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    odigos.io/config: "1"
+    odigos.io/system-object: "true"
+  name: odigos-config
+  namespace: odigos-system
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:

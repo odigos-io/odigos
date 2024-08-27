@@ -22,7 +22,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// InstrumentationLibraryStatusApplyConfiguration represents an declarative configuration of the InstrumentationLibraryStatus type for use
+// InstrumentationLibraryStatusApplyConfiguration represents a declarative configuration of the InstrumentationLibraryStatus type for use
 // with apply.
 type InstrumentationLibraryStatusApplyConfiguration struct {
 	Name                     *string                              `json:"name,omitempty"`
@@ -35,7 +35,7 @@ type InstrumentationLibraryStatusApplyConfiguration struct {
 	LastStatusTime           *v1.Time                             `json:"lastStatusTime,omitempty"`
 }
 
-// InstrumentationLibraryStatusApplyConfiguration constructs an declarative configuration of the InstrumentationLibraryStatus type for use with
+// InstrumentationLibraryStatusApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryStatus type for use with
 // apply.
 func InstrumentationLibraryStatus() *InstrumentationLibraryStatusApplyConfiguration {
 	return &InstrumentationLibraryStatusApplyConfiguration{}

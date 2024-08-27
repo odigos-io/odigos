@@ -93,7 +93,7 @@ func getRelevantResources(ctx context.Context, client *kube.Client, workloadObj 
 		return
 	}
 
-	runtimeObjectName := workload.GetRuntimeObjectName(workloadObj.GetName(), workloadObj.Kind)
+	runtimeObjectName := workload.CalculateWorkloadRuntimeObjectName(workloadObj.GetName(), workloadObj.Kind)
 	instrumentationConfig, err = client.OdigosClient.InstrumentationConfigs(ns).Get(ctx, runtimeObjectName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {

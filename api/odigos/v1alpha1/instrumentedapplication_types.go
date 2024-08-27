@@ -21,41 +21,42 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type ConfigOption struct {
-	OptionKey string `json:"optionKey"`
+	OptionKey string          `json:"optionKey"`
 	SpanKind  common.SpanKind `json:"spanKind"`
 }
 
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type InstrumentationLibraryOptions struct {
-	LibraryName string `json:"libraryName"`
-	Options []ConfigOption `json:"options"`
+	LibraryName string         `json:"libraryName"`
+	Options     []ConfigOption `json:"options"`
 }
 
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type EnvVar struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
-	ContainerName string              `json:"containerName"`
-	Language      common.ProgrammingLanguage `json:"language"`
-	EnvVars       []EnvVar            `json:"envVars,omitempty"`
+	ContainerName  string                     `json:"containerName"`
+	Language       common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
+	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
 type OptionByContainer struct {
-	ContainerName string `json:"containerName"`
+	ContainerName            string                          `json:"containerName"`
 	InstrumentationLibraries []InstrumentationLibraryOptions `json:"instrumentationsLibraries"`
 }
 
 // InstrumentedApplicationSpec defines the desired state of InstrumentedApplication
 type InstrumentedApplicationSpec struct {
 	RuntimeDetails []RuntimeDetailsByContainer `json:"runtimeDetails,omitempty"`
-	Options  []OptionByContainer   `json:"options,omitempty"`
+	Options        []OptionByContainer         `json:"options,omitempty"`
 }
 
 // InstrumentedApplicationStatus defines the observed state of InstrumentedApplication
@@ -67,6 +68,8 @@ type InstrumentedApplicationStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:metadata:labels=odigos.io/config=1
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // InstrumentedApplication is the Schema for the instrumentedapplications API
 type InstrumentedApplication struct {

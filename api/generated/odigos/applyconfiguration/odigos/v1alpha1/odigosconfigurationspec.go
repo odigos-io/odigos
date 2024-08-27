@@ -21,7 +21,7 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// OdigosConfigurationSpecApplyConfiguration represents an declarative configuration of the OdigosConfigurationSpec type for use
+// OdigosConfigurationSpecApplyConfiguration represents a declarative configuration of the OdigosConfigurationSpec type for use
 // with apply.
 type OdigosConfigurationSpecApplyConfiguration struct {
 	OdigosVersion               *string                                          `json:"odigosVersion,omitempty"`
@@ -41,7 +41,7 @@ type OdigosConfigurationSpecApplyConfiguration struct {
 	GoAutoIncludeCodeAttributes *bool                                            `json:"goAutoIncludeCodeAttributes,omitempty"`
 }
 
-// OdigosConfigurationSpecApplyConfiguration constructs an declarative configuration of the OdigosConfigurationSpec type for use with
+// OdigosConfigurationSpecApplyConfiguration constructs a declarative configuration of the OdigosConfigurationSpec type for use with
 // apply.
 func OdigosConfigurationSpec() *OdigosConfigurationSpecApplyConfiguration {
 	return &OdigosConfigurationSpecApplyConfiguration{}

@@ -21,7 +21,6 @@ var (
 )
 
 func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) error {
-
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
 	// and we need to cleanup the community device before adding the enterprise one.
@@ -52,7 +51,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 		}
 		container.Resources.Limits[corev1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
 
-		err = patchEnvVarsForContainer(runtimeDetails, &container, targetObj, otelSdk, manifestEnvOriginal)
+		err = patchEnvVarsForContainer(runtimeDetails, &container, otelSdk, *containerLanguage, manifestEnvOriginal)
 		if err != nil {
 			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
 		}
@@ -146,7 +145,7 @@ func getEnvVarsOfContainer(instrumentation *odigosv1.InstrumentedApplication, co
 	return envVars
 }
 
-func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, container *corev1.Container, obj client.Object, sdk common.OtelSdk, manifestEnvOriginal *envoverwrite.OrigWorkloadEnvValues) error {
+func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, container *corev1.Container, sdk common.OtelSdk, programmingLanguage common.ProgrammingLanguage, manifestEnvOriginal *envoverwrite.OrigWorkloadEnvValues) error {
 
 	observedEnvs := getEnvVarsOfContainer(runtimeDetails, container.Name)
 
@@ -157,7 +156,7 @@ func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, 
 		// extract the observed value for this env var, which might be empty if not currently exists
 		observedEnvValue := observedEnvs[envVar.Name]
 
-		desiredEnvValue := envOverwrite.GetPatchedEnvValue(envVar.Name, observedEnvValue, sdk)
+		desiredEnvValue := envOverwrite.GetPatchedEnvValue(envVar.Name, observedEnvValue, sdk, programmingLanguage)
 
 		if desiredEnvValue == nil {
 			// no need to patch this env var, so make sure it is reverted to its original value
@@ -192,7 +191,7 @@ func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, 
 
 	// Step 2: add the new env vars which odigos might patch, but which are not defined in the manifest
 	for envName, envValue := range observedEnvs {
-		desiredEnvValue := envOverwrite.GetPatchedEnvValue(envName, envValue, sdk)
+		desiredEnvValue := envOverwrite.GetPatchedEnvValue(envName, envValue, sdk, programmingLanguage)
 		if desiredEnvValue != nil {
 			// store that it was empty to begin with
 			manifestEnvOriginal.InsertOriginalValue(container.Name, envName, nil)

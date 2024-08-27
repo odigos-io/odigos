@@ -43,22 +43,24 @@ var collectorsgroupsKind = v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroup
 
 // Get takes name of the collectorsGroup, and returns the corresponding collectorsGroup object, and an error if there is any.
 func (c *FakeCollectorsGroups) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.CollectorsGroup, err error) {
+	emptyResult := &v1alpha1.CollectorsGroup{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(collectorsgroupsResource, c.ns, name), &v1alpha1.CollectorsGroup{})
+		Invokes(testing.NewGetActionWithOptions(collectorsgroupsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.CollectorsGroup), err
 }
 
 // List takes label and field selectors, and returns the list of CollectorsGroups that match those selectors.
 func (c *FakeCollectorsGroups) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.CollectorsGroupList, err error) {
+	emptyResult := &v1alpha1.CollectorsGroupList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(collectorsgroupsResource, collectorsgroupsKind, c.ns, opts), &v1alpha1.CollectorsGroupList{})
+		Invokes(testing.NewListActionWithOptions(collectorsgroupsResource, collectorsgroupsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -77,40 +79,43 @@ func (c *FakeCollectorsGroups) List(ctx context.Context, opts v1.ListOptions) (r
 // Watch returns a watch.Interface that watches the requested collectorsGroups.
 func (c *FakeCollectorsGroups) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(collectorsgroupsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(collectorsgroupsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a collectorsGroup and creates it.  Returns the server's representation of the collectorsGroup, and an error, if there is any.
 func (c *FakeCollectorsGroups) Create(ctx context.Context, collectorsGroup *v1alpha1.CollectorsGroup, opts v1.CreateOptions) (result *v1alpha1.CollectorsGroup, err error) {
+	emptyResult := &v1alpha1.CollectorsGroup{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(collectorsgroupsResource, c.ns, collectorsGroup), &v1alpha1.CollectorsGroup{})
+		Invokes(testing.NewCreateActionWithOptions(collectorsgroupsResource, c.ns, collectorsGroup, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.CollectorsGroup), err
 }
 
 // Update takes the representation of a collectorsGroup and updates it. Returns the server's representation of the collectorsGroup, and an error, if there is any.
 func (c *FakeCollectorsGroups) Update(ctx context.Context, collectorsGroup *v1alpha1.CollectorsGroup, opts v1.UpdateOptions) (result *v1alpha1.CollectorsGroup, err error) {
+	emptyResult := &v1alpha1.CollectorsGroup{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(collectorsgroupsResource, c.ns, collectorsGroup), &v1alpha1.CollectorsGroup{})
+		Invokes(testing.NewUpdateActionWithOptions(collectorsgroupsResource, c.ns, collectorsGroup, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.CollectorsGroup), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeCollectorsGroups) UpdateStatus(ctx context.Context, collectorsGroup *v1alpha1.CollectorsGroup, opts v1.UpdateOptions) (*v1alpha1.CollectorsGroup, error) {
+func (c *FakeCollectorsGroups) UpdateStatus(ctx context.Context, collectorsGroup *v1alpha1.CollectorsGroup, opts v1.UpdateOptions) (result *v1alpha1.CollectorsGroup, err error) {
+	emptyResult := &v1alpha1.CollectorsGroup{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(collectorsgroupsResource, "status", c.ns, collectorsGroup), &v1alpha1.CollectorsGroup{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(collectorsgroupsResource, "status", c.ns, collectorsGroup, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.CollectorsGroup), err
 }
@@ -125,7 +130,7 @@ func (c *FakeCollectorsGroups) Delete(ctx context.Context, name string, opts v1.
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeCollectorsGroups) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(collectorsgroupsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(collectorsgroupsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.CollectorsGroupList{})
 	return err
@@ -133,11 +138,12 @@ func (c *FakeCollectorsGroups) DeleteCollection(ctx context.Context, opts v1.Del
 
 // Patch applies the patch and returns the patched collectorsGroup.
 func (c *FakeCollectorsGroups) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.CollectorsGroup, err error) {
+	emptyResult := &v1alpha1.CollectorsGroup{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(collectorsgroupsResource, c.ns, name, pt, data, subresources...), &v1alpha1.CollectorsGroup{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(collectorsgroupsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.CollectorsGroup), err
 }
@@ -155,11 +161,12 @@ func (c *FakeCollectorsGroups) Apply(ctx context.Context, collectorsGroup *odigo
 	if name == nil {
 		return nil, fmt.Errorf("collectorsGroup.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.CollectorsGroup{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(collectorsgroupsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.CollectorsGroup{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(collectorsgroupsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.CollectorsGroup), err
 }
@@ -178,11 +185,12 @@ func (c *FakeCollectorsGroups) ApplyStatus(ctx context.Context, collectorsGroup 
 	if name == nil {
 		return nil, fmt.Errorf("collectorsGroup.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.CollectorsGroup{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(collectorsgroupsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.CollectorsGroup{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(collectorsgroupsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.CollectorsGroup), err
 }

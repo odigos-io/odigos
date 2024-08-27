@@ -19,9 +19,6 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
-	"time"
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
 	scheme "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
@@ -29,7 +26,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // DestinationsGetter has a method to return a DestinationInterface.
@@ -42,6 +39,7 @@ type DestinationsGetter interface {
 type DestinationInterface interface {
 	Create(ctx context.Context, destination *v1alpha1.Destination, opts v1.CreateOptions) (*v1alpha1.Destination, error)
 	Update(ctx context.Context, destination *v1alpha1.Destination, opts v1.UpdateOptions) (*v1alpha1.Destination, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 	UpdateStatus(ctx context.Context, destination *v1alpha1.Destination, opts v1.UpdateOptions) (*v1alpha1.Destination, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
@@ -50,206 +48,25 @@ type DestinationInterface interface {
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Destination, err error)
 	Apply(ctx context.Context, destination *odigosv1alpha1.DestinationApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Destination, err error)
+	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
 	ApplyStatus(ctx context.Context, destination *odigosv1alpha1.DestinationApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Destination, err error)
 	DestinationExpansion
 }
 
 // destinations implements DestinationInterface
 type destinations struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithListAndApply[*v1alpha1.Destination, *v1alpha1.DestinationList, *odigosv1alpha1.DestinationApplyConfiguration]
 }
 
 // newDestinations returns a Destinations
 func newDestinations(c *OdigosV1alpha1Client, namespace string) *destinations {
 	return &destinations{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithListAndApply[*v1alpha1.Destination, *v1alpha1.DestinationList, *odigosv1alpha1.DestinationApplyConfiguration](
+			"destinations",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *v1alpha1.Destination { return &v1alpha1.Destination{} },
+			func() *v1alpha1.DestinationList { return &v1alpha1.DestinationList{} }),
 	}
-}
-
-// Get takes name of the destination, and returns the corresponding destination object, and an error if there is any.
-func (c *destinations) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Destination, err error) {
-	result = &v1alpha1.Destination{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("destinations").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of Destinations that match those selectors.
-func (c *destinations) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.DestinationList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha1.DestinationList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("destinations").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested destinations.
-func (c *destinations) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("destinations").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a destination and creates it.  Returns the server's representation of the destination, and an error, if there is any.
-func (c *destinations) Create(ctx context.Context, destination *v1alpha1.Destination, opts v1.CreateOptions) (result *v1alpha1.Destination, err error) {
-	result = &v1alpha1.Destination{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("destinations").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(destination).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a destination and updates it. Returns the server's representation of the destination, and an error, if there is any.
-func (c *destinations) Update(ctx context.Context, destination *v1alpha1.Destination, opts v1.UpdateOptions) (result *v1alpha1.Destination, err error) {
-	result = &v1alpha1.Destination{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("destinations").
-		Name(destination.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(destination).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *destinations) UpdateStatus(ctx context.Context, destination *v1alpha1.Destination, opts v1.UpdateOptions) (result *v1alpha1.Destination, err error) {
-	result = &v1alpha1.Destination{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("destinations").
-		Name(destination.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(destination).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the destination and deletes it. Returns an error if one occurs.
-func (c *destinations) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("destinations").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *destinations) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("destinations").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched destination.
-func (c *destinations) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Destination, err error) {
-	result = &v1alpha1.Destination{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("destinations").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied destination.
-func (c *destinations) Apply(ctx context.Context, destination *odigosv1alpha1.DestinationApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Destination, err error) {
-	if destination == nil {
-		return nil, fmt.Errorf("destination provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(destination)
-	if err != nil {
-		return nil, err
-	}
-	name := destination.Name
-	if name == nil {
-		return nil, fmt.Errorf("destination.Name must be provided to Apply")
-	}
-	result = &v1alpha1.Destination{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("destinations").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *destinations) ApplyStatus(ctx context.Context, destination *odigosv1alpha1.DestinationApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Destination, err error) {
-	if destination == nil {
-		return nil, fmt.Errorf("destination provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(destination)
-	if err != nil {
-		return nil, err
-	}
-
-	name := destination.Name
-	if name == nil {
-		return nil, fmt.Errorf("destination.Name must be provided to Apply")
-	}
-
-	result = &v1alpha1.Destination{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("destinations").
-		Name(*name).
-		SubResource("status").
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

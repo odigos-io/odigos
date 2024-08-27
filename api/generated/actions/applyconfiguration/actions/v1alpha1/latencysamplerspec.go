@@ -21,7 +21,7 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// LatencySamplerSpecApplyConfiguration represents an declarative configuration of the LatencySamplerSpec type for use
+// LatencySamplerSpecApplyConfiguration represents a declarative configuration of the LatencySamplerSpec type for use
 // with apply.
 type LatencySamplerSpecApplyConfiguration struct {
 	ActionName       *string                             `json:"actionName,omitempty"`
@@ -31,7 +31,7 @@ type LatencySamplerSpecApplyConfiguration struct {
 	EndpointsFilters []HttpRouteFilterApplyConfiguration `json:"endpoints_filters,omitempty"`
 }
 
-// LatencySamplerSpecApplyConfiguration constructs an declarative configuration of the LatencySamplerSpec type for use with
+// LatencySamplerSpecApplyConfiguration constructs a declarative configuration of the LatencySamplerSpec type for use with
 // apply.
 func LatencySamplerSpec() *LatencySamplerSpecApplyConfiguration {
 	return &LatencySamplerSpecApplyConfiguration{}

@@ -61,7 +61,7 @@
           "pages": [
             {
               "group": "Installation",
-              "pages": ["setup/installation", "setup/installation-options"]
+              "pages": ["setup/installation", "setup/installation-options", "setup/docker-registry"]
             },
             "setup/upgrade",
             "setup/uninstall"

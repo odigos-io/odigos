@@ -43,22 +43,24 @@ var instrumentedapplicationsKind = v1alpha1.SchemeGroupVersion.WithKind("Instrum
 
 // Get takes name of the instrumentedApplication, and returns the corresponding instrumentedApplication object, and an error if there is any.
 func (c *FakeInstrumentedApplications) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.InstrumentedApplication, err error) {
+	emptyResult := &v1alpha1.InstrumentedApplication{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(instrumentedapplicationsResource, c.ns, name), &v1alpha1.InstrumentedApplication{})
+		Invokes(testing.NewGetActionWithOptions(instrumentedapplicationsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentedApplication), err
 }
 
 // List takes label and field selectors, and returns the list of InstrumentedApplications that match those selectors.
 func (c *FakeInstrumentedApplications) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.InstrumentedApplicationList, err error) {
+	emptyResult := &v1alpha1.InstrumentedApplicationList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(instrumentedapplicationsResource, instrumentedapplicationsKind, c.ns, opts), &v1alpha1.InstrumentedApplicationList{})
+		Invokes(testing.NewListActionWithOptions(instrumentedapplicationsResource, instrumentedapplicationsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -77,40 +79,43 @@ func (c *FakeInstrumentedApplications) List(ctx context.Context, opts v1.ListOpt
 // Watch returns a watch.Interface that watches the requested instrumentedApplications.
 func (c *FakeInstrumentedApplications) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(instrumentedapplicationsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(instrumentedapplicationsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a instrumentedApplication and creates it.  Returns the server's representation of the instrumentedApplication, and an error, if there is any.
 func (c *FakeInstrumentedApplications) Create(ctx context.Context, instrumentedApplication *v1alpha1.InstrumentedApplication, opts v1.CreateOptions) (result *v1alpha1.InstrumentedApplication, err error) {
+	emptyResult := &v1alpha1.InstrumentedApplication{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(instrumentedapplicationsResource, c.ns, instrumentedApplication), &v1alpha1.InstrumentedApplication{})
+		Invokes(testing.NewCreateActionWithOptions(instrumentedapplicationsResource, c.ns, instrumentedApplication, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentedApplication), err
 }
 
 // Update takes the representation of a instrumentedApplication and updates it. Returns the server's representation of the instrumentedApplication, and an error, if there is any.
 func (c *FakeInstrumentedApplications) Update(ctx context.Context, instrumentedApplication *v1alpha1.InstrumentedApplication, opts v1.UpdateOptions) (result *v1alpha1.InstrumentedApplication, err error) {
+	emptyResult := &v1alpha1.InstrumentedApplication{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(instrumentedapplicationsResource, c.ns, instrumentedApplication), &v1alpha1.InstrumentedApplication{})
+		Invokes(testing.NewUpdateActionWithOptions(instrumentedapplicationsResource, c.ns, instrumentedApplication, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentedApplication), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeInstrumentedApplications) UpdateStatus(ctx context.Context, instrumentedApplication *v1alpha1.InstrumentedApplication, opts v1.UpdateOptions) (*v1alpha1.InstrumentedApplication, error) {
+func (c *FakeInstrumentedApplications) UpdateStatus(ctx context.Context, instrumentedApplication *v1alpha1.InstrumentedApplication, opts v1.UpdateOptions) (result *v1alpha1.InstrumentedApplication, err error) {
+	emptyResult := &v1alpha1.InstrumentedApplication{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(instrumentedapplicationsResource, "status", c.ns, instrumentedApplication), &v1alpha1.InstrumentedApplication{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(instrumentedapplicationsResource, "status", c.ns, instrumentedApplication, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentedApplication), err
 }
@@ -125,7 +130,7 @@ func (c *FakeInstrumentedApplications) Delete(ctx context.Context, name string, 
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeInstrumentedApplications) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(instrumentedapplicationsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(instrumentedapplicationsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.InstrumentedApplicationList{})
 	return err
@@ -133,11 +138,12 @@ func (c *FakeInstrumentedApplications) DeleteCollection(ctx context.Context, opt
 
 // Patch applies the patch and returns the patched instrumentedApplication.
 func (c *FakeInstrumentedApplications) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.InstrumentedApplication, err error) {
+	emptyResult := &v1alpha1.InstrumentedApplication{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(instrumentedapplicationsResource, c.ns, name, pt, data, subresources...), &v1alpha1.InstrumentedApplication{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(instrumentedapplicationsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentedApplication), err
 }
@@ -155,11 +161,12 @@ func (c *FakeInstrumentedApplications) Apply(ctx context.Context, instrumentedAp
 	if name == nil {
 		return nil, fmt.Errorf("instrumentedApplication.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.InstrumentedApplication{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(instrumentedapplicationsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.InstrumentedApplication{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(instrumentedapplicationsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentedApplication), err
 }
@@ -178,11 +185,12 @@ func (c *FakeInstrumentedApplications) ApplyStatus(ctx context.Context, instrume
 	if name == nil {
 		return nil, fmt.Errorf("instrumentedApplication.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.InstrumentedApplication{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(instrumentedapplicationsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.InstrumentedApplication{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(instrumentedapplicationsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.InstrumentedApplication), err
 }

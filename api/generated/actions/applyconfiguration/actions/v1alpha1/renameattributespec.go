@@ -21,7 +21,7 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// RenameAttributeSpecApplyConfiguration represents an declarative configuration of the RenameAttributeSpec type for use
+// RenameAttributeSpecApplyConfiguration represents a declarative configuration of the RenameAttributeSpec type for use
 // with apply.
 type RenameAttributeSpecApplyConfiguration struct {
 	ActionName *string                      `json:"actionName,omitempty"`
@@ -31,7 +31,7 @@ type RenameAttributeSpecApplyConfiguration struct {
 	Renames    map[string]string            `json:"renames,omitempty"`
 }
 
-// RenameAttributeSpecApplyConfiguration constructs an declarative configuration of the RenameAttributeSpec type for use with
+// RenameAttributeSpecApplyConfiguration constructs a declarative configuration of the RenameAttributeSpec type for use with
 // apply.
 func RenameAttributeSpec() *RenameAttributeSpecApplyConfiguration {
 	return &RenameAttributeSpecApplyConfiguration{}

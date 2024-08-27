@@ -25,12 +25,11 @@ spec:
     try:
     - script:
         content: |
-          # Retry to avoid flakiness (due to CRD race conditions in helm). Timeout after 60s.
           # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
-          while ! helm upgrade --install odigos ../../../helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test; do
-            echo "Failed to install Odigos, retrying..."
-            sleep 1
-          done
+          P="../../.."
+          # "build" complete helm chart by copying CRDs into the template folder
+          cp -r $P/api/config/crd/bases/* $P/helm/odigos/templates/crds/
+          helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test
           kubectl label namespace odigos-test-ns odigos.io/system-object="true"
         timeout: 60s
   - name: Verify Odigos Installation
@@ -83,14 +82,14 @@ spec:
             while true; do
               # Apply the job
               kubectl apply -f 05-generate-traffic.yaml
-            
+
               # Wait for the job to complete
               job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
               kubectl wait --for=condition=complete job/$job_name
-            
+
               # Delete the job
               kubectl delete -f 05-generate-traffic.yaml
-            
+
               # Run the wait-for-trace script
               ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
               if [ $? -eq 0 ]; then

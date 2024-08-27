@@ -19,8 +19,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -37,25 +37,17 @@ type PiiMaskingLister interface {
 
 // piiMaskingLister implements the PiiMaskingLister interface.
 type piiMaskingLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.PiiMasking]
 }
 
 // NewPiiMaskingLister returns a new PiiMaskingLister.
 func NewPiiMaskingLister(indexer cache.Indexer) PiiMaskingLister {
-	return &piiMaskingLister{indexer: indexer}
-}
-
-// List lists all PiiMaskings in the indexer.
-func (s *piiMaskingLister) List(selector labels.Selector) (ret []*v1alpha1.PiiMasking, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.PiiMasking))
-	})
-	return ret, err
+	return &piiMaskingLister{listers.New[*v1alpha1.PiiMasking](indexer, v1alpha1.Resource("piimasking"))}
 }
 
 // PiiMaskings returns an object that can list and get PiiMaskings.
 func (s *piiMaskingLister) PiiMaskings(namespace string) PiiMaskingNamespaceLister {
-	return piiMaskingNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return piiMaskingNamespaceLister{listers.NewNamespaced[*v1alpha1.PiiMasking](s.ResourceIndexer, namespace)}
 }
 
 // PiiMaskingNamespaceLister helps list and get PiiMaskings.
@@ -73,26 +65,5 @@ type PiiMaskingNamespaceLister interface {
 // piiMaskingNamespaceLister implements the PiiMaskingNamespaceLister
 // interface.
 type piiMaskingNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all PiiMaskings in the indexer for a given namespace.
-func (s piiMaskingNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.PiiMasking, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.PiiMasking))
-	})
-	return ret, err
-}
-
-// Get retrieves the PiiMasking from the indexer for a given namespace and name.
-func (s piiMaskingNamespaceLister) Get(name string) (*v1alpha1.PiiMasking, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("piimasking"), name)
-	}
-	return obj.(*v1alpha1.PiiMasking), nil
+	listers.ResourceIndexer[*v1alpha1.PiiMasking]
 }

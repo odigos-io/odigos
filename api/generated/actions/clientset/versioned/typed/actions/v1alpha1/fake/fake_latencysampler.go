@@ -43,22 +43,24 @@ var latencysamplersKind = v1alpha1.SchemeGroupVersion.WithKind("LatencySampler")
 
 // Get takes name of the latencySampler, and returns the corresponding latencySampler object, and an error if there is any.
 func (c *FakeLatencySamplers) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.LatencySampler, err error) {
+	emptyResult := &v1alpha1.LatencySampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(latencysamplersResource, c.ns, name), &v1alpha1.LatencySampler{})
+		Invokes(testing.NewGetActionWithOptions(latencysamplersResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.LatencySampler), err
 }
 
 // List takes label and field selectors, and returns the list of LatencySamplers that match those selectors.
 func (c *FakeLatencySamplers) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.LatencySamplerList, err error) {
+	emptyResult := &v1alpha1.LatencySamplerList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(latencysamplersResource, latencysamplersKind, c.ns, opts), &v1alpha1.LatencySamplerList{})
+		Invokes(testing.NewListActionWithOptions(latencysamplersResource, latencysamplersKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -77,40 +79,43 @@ func (c *FakeLatencySamplers) List(ctx context.Context, opts v1.ListOptions) (re
 // Watch returns a watch.Interface that watches the requested latencySamplers.
 func (c *FakeLatencySamplers) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(latencysamplersResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(latencysamplersResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a latencySampler and creates it.  Returns the server's representation of the latencySampler, and an error, if there is any.
 func (c *FakeLatencySamplers) Create(ctx context.Context, latencySampler *v1alpha1.LatencySampler, opts v1.CreateOptions) (result *v1alpha1.LatencySampler, err error) {
+	emptyResult := &v1alpha1.LatencySampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(latencysamplersResource, c.ns, latencySampler), &v1alpha1.LatencySampler{})
+		Invokes(testing.NewCreateActionWithOptions(latencysamplersResource, c.ns, latencySampler, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.LatencySampler), err
 }
 
 // Update takes the representation of a latencySampler and updates it. Returns the server's representation of the latencySampler, and an error, if there is any.
 func (c *FakeLatencySamplers) Update(ctx context.Context, latencySampler *v1alpha1.LatencySampler, opts v1.UpdateOptions) (result *v1alpha1.LatencySampler, err error) {
+	emptyResult := &v1alpha1.LatencySampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(latencysamplersResource, c.ns, latencySampler), &v1alpha1.LatencySampler{})
+		Invokes(testing.NewUpdateActionWithOptions(latencysamplersResource, c.ns, latencySampler, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.LatencySampler), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeLatencySamplers) UpdateStatus(ctx context.Context, latencySampler *v1alpha1.LatencySampler, opts v1.UpdateOptions) (*v1alpha1.LatencySampler, error) {
+func (c *FakeLatencySamplers) UpdateStatus(ctx context.Context, latencySampler *v1alpha1.LatencySampler, opts v1.UpdateOptions) (result *v1alpha1.LatencySampler, err error) {
+	emptyResult := &v1alpha1.LatencySampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(latencysamplersResource, "status", c.ns, latencySampler), &v1alpha1.LatencySampler{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(latencysamplersResource, "status", c.ns, latencySampler, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.LatencySampler), err
 }
@@ -125,7 +130,7 @@ func (c *FakeLatencySamplers) Delete(ctx context.Context, name string, opts v1.D
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeLatencySamplers) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(latencysamplersResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(latencysamplersResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.LatencySamplerList{})
 	return err
@@ -133,11 +138,12 @@ func (c *FakeLatencySamplers) DeleteCollection(ctx context.Context, opts v1.Dele
 
 // Patch applies the patch and returns the patched latencySampler.
 func (c *FakeLatencySamplers) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.LatencySampler, err error) {
+	emptyResult := &v1alpha1.LatencySampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(latencysamplersResource, c.ns, name, pt, data, subresources...), &v1alpha1.LatencySampler{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(latencysamplersResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.LatencySampler), err
 }
@@ -155,11 +161,12 @@ func (c *FakeLatencySamplers) Apply(ctx context.Context, latencySampler *actions
 	if name == nil {
 		return nil, fmt.Errorf("latencySampler.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.LatencySampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(latencysamplersResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.LatencySampler{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(latencysamplersResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.LatencySampler), err
 }
@@ -178,11 +185,12 @@ func (c *FakeLatencySamplers) ApplyStatus(ctx context.Context, latencySampler *a
 	if name == nil {
 		return nil, fmt.Errorf("latencySampler.Name must be provided to Apply")
 	}
+	emptyResult := &v1alpha1.LatencySampler{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(latencysamplersResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.LatencySampler{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(latencysamplersResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.LatencySampler), err
 }

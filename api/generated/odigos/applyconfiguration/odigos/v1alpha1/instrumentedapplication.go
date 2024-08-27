@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// InstrumentedApplicationApplyConfiguration represents an declarative configuration of the InstrumentedApplication type for use
+// InstrumentedApplicationApplyConfiguration represents a declarative configuration of the InstrumentedApplication type for use
 // with apply.
 type InstrumentedApplicationApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -32,7 +32,7 @@ type InstrumentedApplicationApplyConfiguration struct {
 	Status                           *InstrumentedApplicationStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// InstrumentedApplication constructs an declarative configuration of the InstrumentedApplication type for use with
+// InstrumentedApplication constructs a declarative configuration of the InstrumentedApplication type for use with
 // apply.
 func InstrumentedApplication(name, namespace string) *InstrumentedApplicationApplyConfiguration {
 	b := &InstrumentedApplicationApplyConfiguration{}
@@ -215,4 +215,10 @@ func (b *InstrumentedApplicationApplyConfiguration) WithSpec(value *Instrumented
 func (b *InstrumentedApplicationApplyConfiguration) WithStatus(value *InstrumentedApplicationStatusApplyConfiguration) *InstrumentedApplicationApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *InstrumentedApplicationApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }
