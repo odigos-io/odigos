@@ -28,10 +28,10 @@ jobs:
           cd docs
           python sync-dest-doc.py
 
-      - name: Check for changes in destinations
+      - name: Check for changes in docs-backends
         run: |
-          git diff --exit-code destinations || (
-            echo "Changes detected in destinations directory. Failing the workflow.";
-            git diff destinations;
+          git diff --exit-code docs/backends || (
+            echo "Changes detected in docs/backends directory. You should update run python ./docs/sync-dest-doc.py and commit the changes.";
+            git diff docs/backends;
             exit 1;
           )
