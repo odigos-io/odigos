@@ -120,7 +120,6 @@ export function ConnectDestinationModalBody({
           return {
             ...field,
             value: destination.fields[field.name],
-            // initialValue: destination.fields[field.name],
           };
         }
         return field;
