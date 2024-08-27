@@ -72,7 +72,6 @@ export function ConnectDestinationModalBody({
   onSubmitRef,
   onFormValidChange,
 }: ConnectDestinationModalBodyProps) {
-  const [formData, setFormData] = useState<Record<string, any>>({});
   const [destinationName, setDestinationName] = useState<string>('');
   const [showConnectionError, setShowConnectionError] = useState(false);
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
@@ -134,20 +133,19 @@ export function ConnectDestinationModalBody({
   useEffect(() => {
     // Assign handleSubmit to the onSubmitRef so it can be triggered externally
     onSubmitRef.current = handleSubmit;
-  }, [formData, destinationName, exportedSignals]);
+  }, [dynamicFields, destinationName, exportedSignals]);
 
   useEffect(() => {
-    const isFormValid =
-      dynamicFields.every(
-        (field) =>
-          formData[field.name] !== undefined && formData[field.name] !== ''
-      ) && Object.keys(formData).length > 0;
+    const isFormValid = dynamicFields.every((field) =>
+      field.required ? field.value : true
+    );
+
+    console.log({ isFormValid, dynamicFields });
 
     onFormValidChange(isFormValid);
-  }, [formData]);
+  }, [dynamicFields]);
 
   function handleDynamicFieldChange(name: string, value: any) {
-    setFormData((prev) => ({ ...prev, [name]: value }));
     setDynamicFields((prev) => {
       return prev.map((field) => {
         if (field.name === name) {
@@ -162,6 +160,20 @@ export function ConnectDestinationModalBody({
     setExportedSignals((prev) => ({ ...prev, [signal]: value }));
   }
 
+  function processFormFields() {
+    function processFieldValue(field) {
+      return field.componentType === 'dropdown'
+        ? field.value.value
+        : field.value;
+    }
+
+    // Prepare fields for the request body
+    return dynamicFields.map((field) => ({
+      key: field.name,
+      value: processFieldValue(field),
+    }));
+  }
+
   async function handleSubmit() {
     // Helper function to process field values
     function processFieldValue(field) {
@@ -171,10 +183,7 @@ export function ConnectDestinationModalBody({
     }
 
     // Prepare fields for the request body
-    const fields = dynamicFields.map((field) => ({
-      key: field.name,
-      value: processFieldValue(field),
-    }));
+    const fields = processFormFields();
 
     // Function to store configured destination
     function storeConfiguredDestination() {
@@ -240,10 +249,7 @@ export function ConnectDestinationModalBody({
                   name: destinationName,
                   type: destination?.type || '',
                   exportedSignals,
-                  fields: Object.entries(formData).map(([name, value]) => ({
-                    key: name,
-                    value,
-                  })),
+                  fields: processFormFields(),
                 }}
               />
             ) : (

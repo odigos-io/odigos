@@ -16,7 +16,6 @@ export function DynamicConnectDestinationFormFields({
   fields: any[];
   onChange: (name: string, value: any) => void;
 }) {
-  console.log({ fields });
   return fields?.map((field: any) => {
     switch (field.componentType) {
       case INPUT_TYPES.INPUT:
