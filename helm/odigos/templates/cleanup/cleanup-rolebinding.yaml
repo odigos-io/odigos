@@ -2,11 +2,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: cleanup-rolebinding
-  namespace: {{ .Release.Namespace }}  # Templated namespace
+  namespace: {{ .Release.Namespace }}
 subjects:
 - kind: ServiceAccount
-  name: cleanup-sa  # The name of your service account
-  namespace: {{ .Release.Namespace }}  # Templated namespace for the service account
+  name: cleanup-sa
+  namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
   name: cleanup-role
