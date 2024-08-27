@@ -158,6 +158,15 @@ export function useSources() {
     setSortedSources(filtered);
   }
 
+  function filterSourcesByLanguage(languages: string[]) {
+    const filtered = sources?.filter((source) =>
+      languages.includes(
+        source.instrumented_application_details?.languages?.[0]?.language || ''
+      )
+    );
+    setSortedSources(filtered);
+  }
+
   function filterSourcesByKind(kind: string[]) {
     const filtered = sources?.filter((source) =>
       kind.includes(source.kind.toLowerCase())
@@ -173,6 +182,7 @@ export function useSources() {
     isLoading,
     sortSources,
     filterSourcesByNamespace,
+    filterSourcesByLanguage,
     filterSourcesByKind,
     instrumentedNamespaces,
     namespaces: namespaces?.namespaces || [],
