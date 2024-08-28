@@ -19,6 +19,8 @@ const (
 	NginxVersionRegex = `nginx/(\d+\.\d+\.\d+)`
 )
 
+var re = regexp.MustCompile(NginxVersionRegex)
+
 func (j *NginxInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
 	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExeName, NginxProcessName) {
 		return common.NginxProgrammingLanguage, true
@@ -48,7 +50,6 @@ func GetNginxVersion(containerURL string) (string, error) {
 		return "", nil
 	}
 
-	re := regexp.MustCompile(NginxVersionRegex)
 	match := re.FindStringSubmatch(serverHeader)
 	if len(match) != 2 {
 		return "", nil

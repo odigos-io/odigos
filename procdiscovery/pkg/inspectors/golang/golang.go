@@ -9,29 +9,31 @@ import (
 	"regexp"
 )
 
-type GolangInspector struct{}
+type GolangInspector struct {
+	*buildinfo.BuildInfo
+}
 
 const GolangVersionRegex = `go(\d+\.\d+\.\d+)`
 
+var re = regexp.MustCompile(GolangVersionRegex)
+
 func (g *GolangInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
 	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
-	_, err := buildinfo.ReadFile(file)
+	buildInfo, err := buildinfo.ReadFile(file)
 	if err != nil {
 		return "", false
 	}
+
+	g.BuildInfo = buildInfo
 
 	return common.GoProgrammingLanguage, true
 }
 
 func (g *GolangInspector) GetRuntimeVersion(p *process.Details, containerURL string) *version.Version {
-	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
-	buildInfo, err := buildinfo.ReadFile(file)
-	if err != nil || buildInfo == nil {
+	if g.BuildInfo == nil {
 		return nil
 	}
-
-	re := regexp.MustCompile(GolangVersionRegex)
-	match := re.FindStringSubmatch(buildInfo.GoVersion)
+	match := re.FindStringSubmatch(g.BuildInfo.GoVersion)
 
 	return common.GetVersion(match[1])
 
