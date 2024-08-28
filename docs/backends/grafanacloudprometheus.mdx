@@ -42,3 +42,62 @@ you can set the resource attribute names in the `Resource Attributes as Labels` 
 ### Cluster Static Labels
 
 You can set static labels for each metric data pointsent exported to Grafana Cloud Prometheus from the cluster by setting the `External Labels` configuration with lable keys and values.
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Grafana Cloud Prometheus` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: grafanacloudprometheus-example
+  namespace: odigos-system
+spec:
+  data:
+    GRAFANA_CLOUD_PROMETHEUS_RW_ENDPOINT: <Prometheus Remote Write Endpoint>
+    # PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS: <Resource Attributes Labels>
+    # PROMETHEUS_RESOURCE_EXTERNAL_LABELS: <External Labels>
+    # Note: The commented fields above are optional.
+    GRAFANA_CLOUD_PROMETHEUS_USERNAME: <Username / Instance ID>
+  destinationName: grafanacloudprometheus
+  secretRef:
+    name: grafanacloudprometheus-secret
+  signals:
+  - METRICS
+  type: grafanacloudprometheus
+
+---
+apiVersion: v1
+data:
+  GRAFANA_CLOUD_PROMETHEUS_PASSWORD: <base64 Password / Api Token>
+kind: Secret
+metadata:
+  name: grafanacloudprometheus-secret
+  namespace: odigos-system
+type: Opaque
+```

@@ -24,3 +24,58 @@ Enter the following account details in Odigos UI:
 - **Realm** - The Splunk ream in use. This is the second part of the URL you use to access Splunk/SignalFX.
   For example, if you access Splunk at `https://app.us1.signalfx.com`, then the realm is `us1`.
 - **Access Token**: The access token you created in the previous step.
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Splunk` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: splunk-example
+  namespace: odigos-system
+spec:
+  data:
+    SPLUNK_REALM: <Realm>
+  destinationName: splunk
+  secretRef:
+    name: splunk-secret
+  signals:
+  - TRACES
+  type: splunk
+
+---
+apiVersion: v1
+data:
+  SPLUNK_ACCESS_TOKEN: <base64 Access Token>
+kind: Secret
+metadata:
+  name: splunk-secret
+  namespace: odigos-system
+type: Opaque
+```

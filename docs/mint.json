@@ -188,7 +188,7 @@
         {
           "group": "Supported Backends",
           "pages": [
-            "backends/awss3",
+            "backends/s3",
             "backends/azureblob",
             "backends/causely",
             "backends/coralogix",
