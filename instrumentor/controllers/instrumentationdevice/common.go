@@ -3,6 +3,7 @@ package instrumentationdevice
 import (
 	"context"
 	"errors"
+	"github.com/odigos-io/odigos/common"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
@@ -26,6 +27,7 @@ const (
 	ApplyInstrumentationDeviceReasonNoRuntimeDetails       ApplyInstrumentationDeviceReason = "NoRuntimeDetails"
 	ApplyInstrumentationDeviceReasonErrApplying            ApplyInstrumentationDeviceReason = "ErrApplyingInstrumentationDevice"
 	ApplyInstrumentationDeviceReasonErrRemoving            ApplyInstrumentationDeviceReason = "ErrRemovingInstrumentationDevice"
+	ApplyInstrumentationDeviceReasonNotSupported           ApplyInstrumentationDeviceReason = "ErrInstrumentationNotSupported"
 )
 
 const (
@@ -210,10 +212,12 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, runt
 		return err
 	}
 
-	if runtimeDetails.Spec.RuntimeDetails[0].Language == "nginx" {
-		err := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, runtimeDetails.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonDataCollectionNotReady)
-		conditions.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), "Nginx Instrumentation is Coming Soon!")
-		return err
+	for _, runtimeDetail := range runtimeDetails.Spec.RuntimeDetails {
+		if runtimeDetail.Language == common.NginxProgrammingLanguage {
+			err := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, runtimeDetails.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonNotSupported)
+			conditions.UpdateStatusConditions(ctx, kubeClient, runtimeDetails, &runtimeDetails.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonNotSupported), "Nginx Instrumentation is Coming Soon!")
+			return err
+		}
 	}
 
 	err = addInstrumentationDeviceToWorkload(ctx, kubeClient, runtimeDetails)
