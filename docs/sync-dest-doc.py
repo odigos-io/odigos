@@ -22,7 +22,7 @@ def shorten_yaml(yaml_content):
         "kind": "Destination",
         "metadata": {
             "name": f"{destination_name}-example",  # Adding '-example' suffix to the name
-            "namespace": "<odigos namespace>"
+            "namespace": "odigos-system"
         },
         "spec": {
             "data": {},  # This will hold the required fields directly
@@ -37,7 +37,7 @@ def shorten_yaml(yaml_content):
         "kind": "Secret",
         "metadata": {
             "name": f"{destination_name}-secret",
-            "namespace": "<odigos namespace>"  # Updated default namespace
+            "namespace": "odigos-system"  # Updated default namespace
         },
         "type": "Opaque",
         "data": {}
@@ -96,18 +96,17 @@ def shorten_yaml(yaml_content):
 
 def update_mdx_with_yaml(mdx_path, shortened_yaml, optional_section, secret_manifest, secret_ref_section):
     """
-    Function to update the MDX file by adding the shortened YAML under the '## Deploying using yaml' section.
+    Function to update the MDX file by adding the shortened YAML under the '2. **Using kubernetes manifests**' section.
     If a Secret manifest is generated, it is also added within the same yaml code block.
     """
     instructions = (
-        "\n\n### Applying the Configuration\n"
-        "Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:\n\n"
+        "\n\nSave the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:\n\n"
         "```bash\n"
         "kubectl apply -f destination.yaml\n"
         "```\n"
     )
 
-    yaml_section_title = "## Deploying using yaml"
+    yaml_section_title = "2. **Using kubernetes manifests**"
     new_yaml_content = yaml.dump(shortened_yaml, default_flow_style=False)
 
     # Inject the optional fields under the 'data' section
@@ -139,7 +138,8 @@ def update_mdx_with_yaml(mdx_path, shortened_yaml, optional_section, secret_mani
         mdx_content = mdx_file.read()
 
     # Find the existing section and replace it with the updated content
-    section_pattern = re.compile(rf"({yaml_section_title}\n\n### Applying the Configuration[\s\S]*?)```yaml\n[\s\S]*?```", re.DOTALL)
+    # Updated regex pattern to avoid multiple repeat error
+    section_pattern = re.compile(rf"({re.escape(yaml_section_title)}[\s\S]+?)```yaml\n[\s\S]+?```", re.DOTALL)
     if section_pattern.search(mdx_content):
         mdx_content = section_pattern.sub(final_content, mdx_content)
     else:

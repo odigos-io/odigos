@@ -100,11 +100,27 @@ For example, the following JSON string represents a single span in `otlp_json` f
 ```json
 {"resourceSpans":[{"resource":{"attributes":[{"key":"telemetry.sdk.language","value":{"stringValue":"python"}},{"key":"telemetry.sdk.name","value":{"stringValue":"opentelemetry"}},{"key":"telemetry.sdk.version","value":{"stringValue":"1.19.0"}},{"key":"service.name","value":{"stringValue":"inventory"}},{"key":"odigos.device","value":{"stringValue":"python"}},{"key":"telemetry.auto.version","value":{"stringValue":"0.40b0"}},{"key":"k8s.namespace.name","value":{"stringValue":"default"}},{"key":"k8s.deployment.name","value":{"stringValue":"inventory"}},{"key":"k8s.pod.name","value":{"stringValue":"inventory-7b87f7566c-2d6fq"}},{"key":"container.name","value":{"stringValue":"inventory"}},{"key":"k8s.node.name","value":{"stringValue":"ip-192-168-4-178.ec2.internal"}}]},"scopeSpans":[{"scope":{"name":"opentelemetry.instrumentation.flask","version":"0.40b0"},"spans":[{"traceId":"9ee5a0de5802d3f1e7f93440f892509c","spanId":"88a4bfb5bfcaf297","parentSpanId":"f9d7bb9e9243df06","name":"/buy","kind":2,"startTimeUnixNano":"1707600957298456744","endTimeUnixNano":"1707600958303042894","attributes":[{"key":"http.method","value":{"stringValue":"POST"}},{"key":"http.server_name","value":{"stringValue":"0.0.0.0"}},{"key":"http.scheme","value":{"stringValue":"http"}},{"key":"net.host.port","value":{"intValue":"8080"}},{"key":"http.host","value":{"stringValue":"inventory:8080"}},{"key":"http.target","value":{"stringValue":"/buy?id=10"}},{"key":"net.peer.ip","value":{"stringValue":"192.168.13.194"}},{"key":"http.user_agent","value":{"stringValue":"Java/17.0.9"}},{"key":"net.peer.port","value":{"intValue":"49420"}},{"key":"http.flavor","value":{"stringValue":"1.1"}},{"key":"http.route","value":{"stringValue":"/buy"}},{"key":"http.status_code","value":{"intValue":"200"}}],"status":{}}]}]}]}
 ```
+## Adding a Destination to Odigos
 
-## Deploying using yaml
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
 
-### Applying the Configuration
-Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `AWS S3` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
 
 ```bash
 kubectl apply -f destination.yaml
@@ -116,7 +132,7 @@ apiVersion: odigos.io/v1alpha1
 kind: Destination
 metadata:
   name: s3-example
-  namespace: <odigos namespace>
+  namespace: odigos-system
 spec:
   data:
     S3_BUCKET: <Bucket Name>

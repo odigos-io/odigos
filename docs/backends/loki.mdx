@@ -34,10 +34,27 @@ You can configure your grafana cloud loki labels in the `Labels` multi-input con
 - The default labels if not set are: `k8s.container.name, k8s.pod.name, k8s.namespace.name`
 
 
-## Deploying using yaml
+## Adding a Destination to Odigos
 
-### Applying the Configuration
-Save the below YAML to a file (e.g., `destination.yaml`) and apply it using kubectl:
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Loki` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
 
 ```bash
 kubectl apply -f destination.yaml
@@ -49,7 +66,7 @@ apiVersion: odigos.io/v1alpha1
 kind: Destination
 metadata:
   name: loki-example
-  namespace: <odigos namespace>
+  namespace: odigos-system
 spec:
   data:
     LOKI_LABELS: <Labels>
