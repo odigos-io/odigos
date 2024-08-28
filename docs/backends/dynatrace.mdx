@@ -13,3 +13,59 @@ On the left sidebar click on `Apps`, then under `Manage` select `Access Tokens`:
 Make sure to add the required capabilities for the access tokens (e.g `Ingest OpenTelemetry traces` for traces).
 
 The URL is usually of the form `https://{your-environment-id}.live.dynatrace.com` [click her for more details](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/otlp-export)
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Dynatrace` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: dynatrace-example
+  namespace: odigos-system
+spec:
+  data:
+    DYNATRACE_URL: <Tenant URL>
+  destinationName: dynatrace
+  secretRef:
+    name: dynatrace-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: dynatrace
+
+---
+apiVersion: v1
+data:
+  DYNATRACE_API_TOKEN: <base64 API Access Token>
+kind: Secret
+metadata:
+  name: dynatrace-secret
+  namespace: odigos-system
+type: Opaque
+```

@@ -9,3 +9,57 @@ Go to **⚙️ > Access Tokens** and click **Create New**
 ## Configuring Lightstep Backend
 
 Add a new backend with the access token you just created.
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Lightstep` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: lightstep-example
+  namespace: odigos-system
+spec:
+  data: {}
+  destinationName: lightstep
+  secretRef:
+    name: lightstep-secret
+  signals:
+  - TRACES
+  type: lightstep
+
+---
+apiVersion: v1
+data:
+  LIGHTSTEP_ACCESS_TOKEN: <base64 Access Token>
+kind: Secret
+metadata:
+  name: lightstep-secret
+  namespace: odigos-system
+type: Opaque
+```
