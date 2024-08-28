@@ -105,7 +105,6 @@ def update_mdx_with_yaml(mdx_path, shortened_yaml, optional_section, secret_mani
         "```bash\n"
         "kubectl apply -f destination.yaml\n"
         "```\n"
-        "Optional fields are commented out; be sure to uncomment any relevant fields before applying.\n"
     )
 
     yaml_section_title = "## Deploying using yaml"
