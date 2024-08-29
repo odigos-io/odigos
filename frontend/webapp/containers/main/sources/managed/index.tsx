@@ -38,6 +38,7 @@ export function ManagedSourcesContainer() {
     refetchSources,
     filterSourcesByKind,
     deleteSourcesHandler,
+    filterSourcesByLanguage,
     instrumentedNamespaces,
     filterSourcesByNamespace,
   } = useSources();
@@ -121,6 +122,7 @@ export function ManagedSourcesContainer() {
                 deleteSourcesHandler={deleteSourcesHandler}
                 namespaces={instrumentedNamespaces}
                 filterSourcesByKind={filterSourcesByKind}
+                filterSourcesByLanguage={filterSourcesByLanguage}
                 data={searchInput ? filterSources() : sources}
                 filterSourcesByNamespace={filterSourcesByNamespace}
               />
