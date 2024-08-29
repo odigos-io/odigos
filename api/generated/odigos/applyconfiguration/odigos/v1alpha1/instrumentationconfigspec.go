@@ -20,9 +20,8 @@ package v1alpha1
 // InstrumentationConfigSpecApplyConfiguration represents a declarative configuration of the InstrumentationConfigSpec type for use
 // with apply.
 type InstrumentationConfigSpecApplyConfiguration struct {
-	RuntimeDetailsInvalidated *bool                                             `json:"runtimeDetailsInvalidated,omitempty"`
-	Config                    []WorkloadInstrumentationConfigApplyConfiguration `json:"config,omitempty"`
-	SdkConfigs                []SdkConfigApplyConfiguration                     `json:"sdkConfigs,omitempty"`
+	RuntimeDetailsInvalidated *bool                         `json:"runtimeDetailsInvalidated,omitempty"`
+	SdkConfigs                []SdkConfigApplyConfiguration `json:"sdkConfigs,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -36,19 +35,6 @@ func InstrumentationConfigSpec() *InstrumentationConfigSpecApplyConfiguration {
 // If called multiple times, the RuntimeDetailsInvalidated field is set to the value of the last call.
 func (b *InstrumentationConfigSpecApplyConfiguration) WithRuntimeDetailsInvalidated(value bool) *InstrumentationConfigSpecApplyConfiguration {
 	b.RuntimeDetailsInvalidated = &value
-	return b
-}
-
-// WithConfig adds the given value to the Config field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Config field.
-func (b *InstrumentationConfigSpecApplyConfiguration) WithConfig(values ...*WorkloadInstrumentationConfigApplyConfiguration) *InstrumentationConfigSpecApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithConfig")
-		}
-		b.Config = append(b.Config, *values[i])
-	}
 	return b
 }
 

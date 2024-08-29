@@ -24,11 +24,6 @@ type InstrumentationConfigSpec struct {
 	// true when the runtime details are invalidated and should be recalculated
 	RuntimeDetailsInvalidated bool `json:"runtimeDetailsInvalidated,omitempty"`
 
-	// config for this workload.
-	// the config is a list to allow for multiple config options and values to be applied.
-	// the list is processed in order, and the first matching config is applied.
-	Config []WorkloadInstrumentationConfig `json:"config,omitempty"`
-
 	// Configuration for the OpenTelemetry SDKs that this workload should use.
 	// The SDKs are identified by the programming language they are written in.
 	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
@@ -105,6 +100,10 @@ type InstrumentationLibraryConfig struct {
 	InstrumentationLibraryId InstrumentationLibraryId `json:"libraryId"`
 
 	TraceConfig *InstrumentationLibraryConfigTraces `json:"traceConfig,omitempty"`
+
+	// Configuration boolean options which are enabled for this instrumentation library.
+	// All options are disabled by default. To enable an option, add it's name to this list.
+	EnabledOptions []string `json:"enabledOptions,omitempty"`
 }
 
 type InstrumentationLibraryId struct {

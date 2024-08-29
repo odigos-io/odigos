@@ -42,74 +42,6 @@ spec:
               Config for the OpenTelemeetry SDKs that should be applied to a workload.
               The workload is identified by the owner reference
             properties:
-              config:
-                description: |-
-                  config for this workload.
-                  the config is a list to allow for multiple config options and values to be applied.
-                  the list is processed in order, and the first matching config is applied.
-                items:
-                  description: |-
-                    WorkloadInstrumentationConfig defined a single config option to apply
-                    on a workload, along with it's value, filters and instrumentation libraries
-                  properties:
-                    instrumentationLibraries:
-                      description: |-
-                        a list of instrumentation libraries to apply this setting to
-                        if a library is not in this list, the setting should not apply to it
-                        and should be cleared.
-                      items:
-                        description: InstrumentationLibrary represents a library for
-                          instrumentation
-                        properties:
-                          instrumentationLibraryName:
-                            description: InstrumentationLibraryName is the name of
-                              the instrumentation library
-                            type: string
-                          language:
-                            description: Language is the programming language of the
-                              library
-                            enum:
-                            - java
-                            - python
-                            - go
-                            - dotnet
-                            - javascript
-                            - mysql
-                            - nginx
-                            - unknown
-                            - ignored
-                            type: string
-                        required:
-                        - instrumentationLibraryName
-                        - language
-                        type: object
-                      type: array
-                    optionKey:
-                      description: |-
-                        OptionKey is the name of the option
-                        This value is transparent to the CRD and is passed as-is to the SDK.
-                      type: string
-                    optionValueBoolean:
-                      description: OptionValueBoolean is the boolean value of the
-                        option if it is a boolean
-                      type: boolean
-                    spanKind:
-                      description: |-
-                        This option allow to specify the config option for a specific span kind
-                        for example, only to client spans or only to server spans.
-                        it the span kind is not specified, the option will apply to all spans.
-                      enum:
-                      - client
-                      - server
-                      - producer
-                      - consumer
-                      - internal
-                      type: string
-                  required:
-                  - instrumentationLibraries
-                  - optionKey
-                  type: object
-                type: array
               runtimeDetailsInvalidated:
                 description: true when the runtime details are invalidated and should
                   be recalculated
@@ -193,6 +125,13 @@ spec:
                         the the SDK should use
                       items:
                         properties:
+                          enabledOptions:
+                            description: |-
+                              Configuration boolean options which are enabled for this instrumentation library.
+                              All options are disabled by default. To enable an option, add it's name to this list.
+                            items:
+                              type: string
+                            type: array
                           libraryId:
                             properties:
                               libraryName:
