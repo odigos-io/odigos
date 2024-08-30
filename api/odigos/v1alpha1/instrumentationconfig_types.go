@@ -143,7 +143,7 @@ type InstrumentationLibraryCapability struct {
 
 	// The parameters that can be configured for the capability, which are specific to the capability and the instrumentation library.
 	// Used to configure the behavior of the capability.
-	Parameters []InstrumentationLibraryCapabilityParameter `json:"parameters"`
+	Parameters []InstrumentationLibraryCapabilityParameter `json:"parameters,omitempty"`
 }
 
 type InstrumentationLibraryConfig struct {

@@ -195,7 +195,6 @@ spec:
                                   type: array
                               required:
                               - capabilityName
-                              - parameters
                               type: object
                             type: array
                           libraryId:
