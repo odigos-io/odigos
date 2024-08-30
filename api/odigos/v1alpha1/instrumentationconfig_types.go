@@ -123,37 +123,6 @@ type InstrumentationLibraryConfigTraces struct {
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
-// WorkloadInstrumentationConfig defined a single config option to apply
-// on a workload, along with it's value, filters and instrumentation libraries
-type WorkloadInstrumentationConfig struct {
-
-	// OptionKey is the name of the option
-	// This value is transparent to the CRD and is passed as-is to the SDK.
-	OptionKey string `json:"optionKey"`
-
-	// This option allow to specify the config option for a specific span kind
-	// for example, only to client spans or only to server spans.
-	// it the span kind is not specified, the option will apply to all spans.
-	SpanKind common.SpanKind `json:"spanKind,omitempty"`
-
-	// OptionValueBoolean is the boolean value of the option if it is a boolean
-	OptionValueBoolean bool `json:"optionValueBoolean,omitempty"`
-
-	// a list of instrumentation libraries to apply this setting to
-	// if a library is not in this list, the setting should not apply to it
-	// and should be cleared.
-	InstrumentationLibraries []InstrumentationLibrary `json:"instrumentationLibraries"`
-}
-
-// InstrumentationLibrary represents a library for instrumentation
-type InstrumentationLibrary struct {
-	// Language is the programming language of the library
-	Language common.ProgrammingLanguage `json:"language"`
-
-	// InstrumentationLibraryName is the name of the instrumentation library
-	InstrumentationLibraryName string `json:"instrumentationLibraryName"`
-}
-
 // +kubebuilder:object:root=true
 
 // InstrumentationConfigList contains a list of InstrumentationOption
