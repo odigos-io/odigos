@@ -96,14 +96,63 @@ type HeadSamplingConfig struct {
 	FallbackFraction float64 `json:"fallbackFraction"`
 }
 
+// The InstrumentationLibraryCapabilityParameter represents a single configuration property that can be set for an instrumentation library option.
+// For example, the capability might be payload collection, and the parameter can be the maximum size of the payload to record,
+// if to skip recording incomplete payloads, conditions for recording payload (for example only for specific mime types - "only application/json"),
+// additional attributes to record original length, etc.
+type InstrumentationLibraryCapabilityParameter struct {
+	// The name of the property that should be configured for the instrumentation library option
+	ParameterName string `json:"parameterName"`
+
+	// If this parameter value is boolean, the boolean value should be set here.
+	// Default value for any boolean parameter is false, which can be omitted in this case.
+	BooleanValue *bool `json:"booleanValue,omitempty"`
+
+	// When the value is an integer, the integer value should be set here.
+	// For example: number of bytes, number of items, etc.
+	// If absent, the instrumentation library can use a pre-defined default value
+	// which can be any number that makes sense for the parameter (not necessarily 0).
+	// To use a value 0 and not the default, set the value to 0 instead of omitting it.
+	IntValue *int `json:"intValue,omitempty"`
+
+	// If this parameter value is for a number, the number value should be set here.
+	// If absent, the instrumentation library can use a pre-defined default value
+	// which can be any number that makes sense for the parameter (not necessarily 0).
+	// To use a value 0 and not the default, set the value to 0 instead of omitting it.
+	NumberValue *float64 `json:"numberValue,omitempty"`
+
+	// StringValue is used for string parameters.
+	// If absent, the instrumentation library can use a pre-defined default value (not necessarily empty string).
+	// To use an empty string, set the value to an empty string instead of omitting it.
+	StringValue *string `json:"stringValue,omitempty"`
+
+	// If the parameter value is a list of strings, the list should be set here.
+	// If absent, the instrumentation library can use a pre-defined default value (not necessarily an empty list).
+	// To use an empty list, set the value to an empty list instead of omitting it.
+	StringListValue []string `json:"stringListValue,omitempty"`
+}
+
+// Each instrumentation library can implement a set of capabilities that can be configured by the user.
+// The capabilities should be published by the instrumentation library and documented elsewhere.
+// If the capability is not used, it should be omitted from the configuration.
+type InstrumentationLibraryCapability struct {
+
+	// Each instrumentation library advertise a set of capabilities that can be configured be the users.
+	// The capability name is used to identify the capability that is being configured.
+	CapabilityName string `json:"capabilityName"`
+
+	// The parameters that can be configured for the capability, which are specific to the capability and the instrumentation library.
+	// Used to configure the behavior of the capability.
+	Parameters []InstrumentationLibraryCapabilityParameter `json:"parameters"`
+}
+
 type InstrumentationLibraryConfig struct {
 	InstrumentationLibraryId InstrumentationLibraryId `json:"libraryId"`
 
 	TraceConfig *InstrumentationLibraryConfigTraces `json:"traceConfig,omitempty"`
 
-	// Configuration boolean options which are enabled for this instrumentation library.
-	// All options are disabled by default. To enable an option, add it's name to this list.
-	EnabledOptions []string `json:"enabledOptions,omitempty"`
+	// A list of enabled capabilities for the instrumentation library and their configuration.
+	Capabilities []InstrumentationLibraryCapability `json:"capabilities,omitempty"`
 }
 
 type InstrumentationLibraryId struct {

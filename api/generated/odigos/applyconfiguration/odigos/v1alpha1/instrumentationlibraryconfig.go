@@ -22,7 +22,7 @@ package v1alpha1
 type InstrumentationLibraryConfigApplyConfiguration struct {
 	InstrumentationLibraryId *InstrumentationLibraryIdApplyConfiguration           `json:"libraryId,omitempty"`
 	TraceConfig              *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
-	EnabledOptions           []string                                              `json:"enabledOptions,omitempty"`
+	Capabilities             []InstrumentationLibraryCapabilityApplyConfiguration  `json:"capabilities,omitempty"`
 }
 
 // InstrumentationLibraryConfigApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryConfig type for use with
@@ -47,12 +47,15 @@ func (b *InstrumentationLibraryConfigApplyConfiguration) WithTraceConfig(value *
 	return b
 }
 
-// WithEnabledOptions adds the given value to the EnabledOptions field in the declarative configuration
+// WithCapabilities adds the given value to the Capabilities field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the EnabledOptions field.
-func (b *InstrumentationLibraryConfigApplyConfiguration) WithEnabledOptions(values ...string) *InstrumentationLibraryConfigApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the Capabilities field.
+func (b *InstrumentationLibraryConfigApplyConfiguration) WithCapabilities(values ...*InstrumentationLibraryCapabilityApplyConfiguration) *InstrumentationLibraryConfigApplyConfiguration {
 	for i := range values {
-		b.EnabledOptions = append(b.EnabledOptions, values[i])
+		if values[i] == nil {
+			panic("nil value passed to WithCapabilities")
+		}
+		b.Capabilities = append(b.Capabilities, *values[i])
 	}
 	return b
 }

@@ -125,12 +125,78 @@ spec:
                         the the SDK should use
                       items:
                         properties:
-                          enabledOptions:
-                            description: |-
-                              Configuration boolean options which are enabled for this instrumentation library.
-                              All options are disabled by default. To enable an option, add it's name to this list.
+                          capabilities:
+                            description: A list of enabled capabilities for the instrumentation
+                              library and their configuration.
                             items:
-                              type: string
+                              description: |-
+                                Each instrumentation library can implement a set of capabilities that can be configured by the user.
+                                The capabilities should be published by the instrumentation library and documented elsewhere.
+                                If the capability is not used, it should be omitted from the configuration.
+                              properties:
+                                capabilityName:
+                                  description: |-
+                                    Each instrumentation library advertise a set of capabilities that can be configured be the users.
+                                    The capability name is used to identify the capability that is being configured.
+                                  type: string
+                                parameters:
+                                  description: |-
+                                    The parameters that can be configured for the capability, which are specific to the capability and the instrumentation library.
+                                    Used to configure the behavior of the capability.
+                                  items:
+                                    description: |-
+                                      The InstrumentationLibraryCapabilityParameter represents a single configuration property that can be set for an instrumentation library option.
+                                      For example, the capability might be payload collection, and the parameter can be the maximum size of the payload to record,
+                                      if to skip recording incomplete payloads, conditions for recording payload (for example only for specific mime types - "only application/json"),
+                                      additional attributes to record original length, etc.
+                                    properties:
+                                      booleanValue:
+                                        description: |-
+                                          If this parameter value is boolean, the boolean value should be set here.
+                                          Default value for any boolean parameter is false, which can be omitted in this case.
+                                        type: boolean
+                                      intValue:
+                                        description: |-
+                                          When the value is an integer, the integer value should be set here.
+                                          For example: number of bytes, number of items, etc.
+                                          If absent, the instrumentation library can use a pre-defined default value
+                                          which can be any number that makes sense for the parameter (not necessarily 0).
+                                          To use a value 0 and not the default, set the value to 0 instead of omitting it.
+                                        type: integer
+                                      numberValue:
+                                        description: |-
+                                          If this parameter value is for a number, the number value should be set here.
+                                          If absent, the instrumentation library can use a pre-defined default value
+                                          which can be any number that makes sense for the parameter (not necessarily 0).
+                                          To use a value 0 and not the default, set the value to 0 instead of omitting it.
+                                        type: number
+                                      parameterName:
+                                        description: The name of the property that
+                                          should be configured for the instrumentation
+                                          library option
+                                        type: string
+                                      stringListValue:
+                                        description: |-
+                                          If the parameter value is a list of strings, the list should be set here.
+                                          If absent, the instrumentation library can use a pre-defined default value (not necessarily an empty list).
+                                          To use an empty list, set the value to an empty list instead of omitting it.
+                                        items:
+                                          type: string
+                                        type: array
+                                      stringValue:
+                                        description: |-
+                                          StringValue is used for string parameters.
+                                          If absent, the instrumentation library can use a pre-defined default value (not necessarily empty string).
+                                          To use an empty string, set the value to an empty string instead of omitting it.
+                                        type: string
+                                    required:
+                                    - parameterName
+                                    type: object
+                                  type: array
+                              required:
+                              - capabilityName
+                              - parameters
+                              type: object
                             type: array
                           libraryId:
                             properties:
