@@ -22,15 +22,17 @@ type SourceLanguage struct {
 }
 
 type InstrumentedApplicationDetails struct {
-	Languages  []SourceLanguage   `json:"languages,omitempty"`
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	Languages              []SourceLanguage                         `json:"languages,omitempty"`
+	Conditions             []metav1.Condition                       `json:"conditions,omitempty"`
+	InstrumentationOptions []v1alpha1.WorkloadInstrumentationConfig `json:"instrumentation_options,omitempty"`
 }
 
 // this object contains only part of the source fields. It is used to display the sources in the frontend
 type ThinSource struct {
 	common.SourceID
-	NumberOfRunningInstances int                             `json:"number_of_running_instances"`
-	IaDetails                *InstrumentedApplicationDetails `json:"instrumented_application_details"`
+	NumberOfRunningInstances int                                 `json:"number_of_running_instances"`
+	IaDetails                *InstrumentedApplicationDetails     `json:"instrumented_application_details"`
+	InstrumentationConfig    *v1alpha1.InstrumentationConfigList `json:"instrumentation_config,omitempty"`
 }
 
 type Source struct {
@@ -266,10 +268,31 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 			LastTransitionTime: condition.LastTransitionTime,
 		})
 	}
-	source.IaDetails = &InstrumentedApplicationDetails{
-		Languages:  []SourceLanguage{},
-		Conditions: conditions,
+
+	var instrumentationOptions []v1alpha1.WorkloadInstrumentationConfig
+	for _, option := range app.Spec.Options {
+		for _, libOptions := range option.InstrumentationLibraries {
+			for _, configOption := range libOptions.Options {
+				instrumentationOptions = append(instrumentationOptions, v1alpha1.WorkloadInstrumentationConfig{
+					OptionKey:          configOption.OptionKey,
+					SpanKind:           configOption.SpanKind,
+					OptionValueBoolean: false, // Adjust based on your logic
+					InstrumentationLibraries: []v1alpha1.InstrumentationLibrary{
+						{
+							InstrumentationLibraryName: libOptions.LibraryName,
+						},
+					},
+				})
+			}
+		}
 	}
+
+	source.IaDetails = &InstrumentedApplicationDetails{
+		Languages:              []SourceLanguage{},
+		Conditions:             conditions,
+		InstrumentationOptions: instrumentationOptions,
+	}
+
 	for _, language := range app.Spec.RuntimeDetails {
 		source.IaDetails.Languages = append(source.IaDetails.Languages, SourceLanguage{
 			ContainerName: language.ContainerName,
