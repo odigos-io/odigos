@@ -14,4 +14,6 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
       - name: Lint Charts
-        run: helm lint helm/*
+        run: |
+        shopt -s extglob
+        helm lint helm/!(*.md)

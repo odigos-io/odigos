@@ -29,3 +29,59 @@ The username is a number.
 - **Password** - This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. 
 You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page.
 Make sure your token scope includes "traces:write" scope.
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Grafana Cloud Tempo` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: grafanacloudtempo-example
+  namespace: odigos-system
+spec:
+  data:
+    GRAFANA_CLOUD_TEMPO_ENDPOINT: <Endpoint (host:port)>
+    GRAFANA_CLOUD_TEMPO_USERNAME: <Username>
+  destinationName: grafanacloudtempo
+  secretRef:
+    name: grafanacloudtempo-secret
+  signals:
+  - TRACES
+  type: grafanacloudtempo
+
+---
+apiVersion: v1
+data:
+  GRAFANA_CLOUD_TEMPO_PASSWORD: <base64 Password (Api Token)>
+kind: Secret
+metadata:
+  name: grafanacloudtempo-secret
+  namespace: odigos-system
+type: Opaque
+```
