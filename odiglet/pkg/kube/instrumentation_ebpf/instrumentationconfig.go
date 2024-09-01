@@ -19,7 +19,7 @@ type InstrumentationConfigReconciler struct {
 }
 
 func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	workloadName, workloadKind, err :=  workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name)
+	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -42,7 +42,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	for _, director := range i.Directors {
-		err = director.ApplyInstrumentationConfig(ctx, podWorkload, instrumentationConfig)
+		err = director.ApplyInstrumentationConfiguration(ctx, podWorkload, instrumentationConfig)
 		if err != nil {
 			return ctrl.Result{}, err
 		}

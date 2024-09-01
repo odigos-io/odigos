@@ -37,7 +37,9 @@ type Director interface {
 	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload *workload.PodWorkload, appName string, containerName string) error
 	Cleanup(podDetails types.NamespacedName)
 	Shutdown()
-	ApplyInstrumentationConfig(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error
+	// TODO: once all our implementation move to this function we can rename it to ApplyInstrumentationConfig,
+	// currently that name is reserved for the old API until it is removed
+	ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error
 }
 
 type podDetails struct {
@@ -123,7 +125,7 @@ func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, s
 	return director
 }
 
-func (d *EbpfDirector[T]) ApplyInstrumentationConfig(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
+func (d *EbpfDirector[T]) ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
