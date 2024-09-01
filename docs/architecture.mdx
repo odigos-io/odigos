@@ -22,14 +22,15 @@ is responsible for:
 
 ## High Level Architecture
 
-These tasks are performed by 4 microservices:
+These tasks are performed by following components:
 
 - Instrumentor
+- Odiglet
 - Autoscaler
 - Scheduler
 - UI
 
-The different microservices communicate via Kubernetes API server (see
+The different components communicate via Kubernetes API server (see
 [Custom Resources](/custom-resources) for more details).
 
 The following diagram shows the architecture of the Odigos observability system.
@@ -40,37 +41,33 @@ The following diagram shows the architecture of the Odigos observability system.
 
 ## Instrumentor
 
-The instrumentor microservice is responsible for automatic detection of
-applications in the cluster and instrumentation of them. Automatic
+Instrumentor is responsible for automatic detection of
+applications in the cluster and providing necessary setup for Odiglet to instrument them. Automatic
 instrumentation is done according to the applications selected by the user in
-the UI. The instrumentor may change the arguments passed to the instrumentation
+the UI. Instrumentor may change the arguments passed to the instrumentation
 SDK to reflect the following changes:
 
 - A configuration change made by the user (for example changing the sampling
   rate in the UI)
 - Rescheduling done by the scheduler (when the collectors pipeline changes)
 
-### Language Detection
+### Odiglet
+
+Odiglet does the heavy lifting of instrumenting the running application.
 
 A key part of being able to automatically instrument every new application is to
 be able to detect the language of the application. After the language is
 detected Odigos will perform automatic instrumentation according to the
 language. For runtime languages Odigos uses the appropriate OpenTelemetry
-instrumentation. For compiled languages Odigos uses eBPF instrumentation. In
-order to detect the language of the application Odigos deploys a lang detection
-pod that analyzes one of the target application instances. This pod is deployed
-on the same node as the target instance and is able to look into the target pod
-filesystem.
+instrumentation. For compiled languages Odigos uses eBPF instrumentation.
 
-The lang detection pod uses the following heuristics in order to detect the
-language of the application:
+Following heuristics are used to detect the language and the suitable instrumentations
+for the application:
 
-- process name
-- environment variables
-- dynamically loaded libraries
-
-The lang detection pod reports the detected language by leveraging the
-`TerminationMessagePath` field of the Pod resource.
+- process name,
+- the command,
+- environment variables,
+- dynamically loaded libraries.
 
 ## Autoscaler
 
@@ -84,8 +81,8 @@ Deployment of collectors is done in two scenarios:
 
 ## Scheduler
 
-The scheduler service assigns applications discovered by the instrumentor to the
-collectors pipeline create by the autoscaler.
+Scheduler service assigns applications discovered by Instrumentor to the
+collectors pipeline created by the autoscaler.
 
 ## UI
 

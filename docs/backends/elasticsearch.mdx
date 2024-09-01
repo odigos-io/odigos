@@ -25,3 +25,67 @@ If empty, the system root CA will be used to validate the server certificate.
 ## Authentication
 
 If your Elasticsearch cluster requires authentication, you can provide the username and password.
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Elasticseach` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: elasticsearch-example
+  namespace: odigos-system
+spec:
+  data:
+    ELASTICSEARCH_URL: <Elasticsearch URL>
+    # ES_TRACES_INDEX: <Traces Index>
+    # ES_LOGS_INDEX: <Logs Index>
+    # ELASTICSEARCH_USERNAME: <Username>
+    # ELASTICSEARCH_CA_PEM: <CA Certificate>
+    # Note: The commented fields above are optional.
+  destinationName: elasticsearch
+  # Uncomment the secretRef below if you are using the optional Secret.
+  # secretRef:
+  #   name: elasticsearch-secret
+
+  signals:
+  - TRACES
+  - LOGS
+  type: elasticsearch
+
+---
+# The following Secret is optional. Uncomment the entire block if you need to use it.
+# apiVersion: v1
+# data:
+#   ELASTICSEARCH_PASSWORD: <base64 Password>
+# kind: Secret
+# metadata:
+#   name: elasticsearch-secret
+#   namespace: odigos-system
+# type: Opaque
+```
