@@ -27,7 +27,7 @@ const (
 	ApplyInstrumentationDeviceReasonNoRuntimeDetails       ApplyInstrumentationDeviceReason = "NoRuntimeDetails"
 	ApplyInstrumentationDeviceReasonErrApplying            ApplyInstrumentationDeviceReason = "ErrApplyingInstrumentationDevice"
 	ApplyInstrumentationDeviceReasonErrRemoving            ApplyInstrumentationDeviceReason = "ErrRemovingInstrumentationDevice"
-	ApplyInstrumentationDeviceReasonNotSupported           ApplyInstrumentationDeviceReason = "ErrInstrumentationNotSupported"
+	ApplyInstrumentationDeviceReasonNotSupported           ApplyInstrumentationDeviceReason = "ErrVersionNotSupported"
 )
 
 const (
