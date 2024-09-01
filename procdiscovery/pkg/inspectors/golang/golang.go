@@ -3,25 +3,36 @@ package golang
 import (
 	"debug/buildinfo"
 	"fmt"
-
+	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
+	"regexp"
 )
 
 type GolangInspector struct{}
 
-func (g *GolangInspector) Inspect(p *process.Details) (common.ProgramLanguageDetails, bool) {
-	var programLanguageDetails common.ProgramLanguageDetails
+const GolangVersionRegex = `go(\d+\.\d+\.\d+)`
+
+var re = regexp.MustCompile(GolangVersionRegex)
+
+func (g *GolangInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
+	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
+	_, err := buildinfo.ReadFile(file)
+	if err != nil {
+		return "", false
+	}
+
+	return common.GoProgrammingLanguage, true
+}
+
+func (g *GolangInspector) GetRuntimeVersion(p *process.Details, containerURL string) *version.Version {
 	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
 	buildInfo, err := buildinfo.ReadFile(file)
-	if err != nil {
-		return programLanguageDetails, false
+	if err != nil || buildInfo == nil {
+		return nil
 	}
+	match := re.FindStringSubmatch(buildInfo.GoVersion)
 
-	programLanguageDetails.Language = common.GoProgrammingLanguage
-	if buildInfo != nil {
-		programLanguageDetails.RuntimeVersion = buildInfo.GoVersion
-	}
+	return common.GetVersion(match[1])
 
-	return programLanguageDetails, true
 }
