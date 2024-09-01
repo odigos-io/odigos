@@ -59,6 +59,7 @@ interface ActionsTableHeaderProps {
   selectedCheckbox: string[];
   onSelectedCheckboxChange: (id: string) => void;
   deleteSourcesHandler: () => void;
+  filterSourcesByLanguage?: (languages: string[]) => void;
 }
 
 export function SourcesTableHeader({
@@ -67,12 +68,20 @@ export function SourcesTableHeader({
   sortSources,
   filterSourcesByKind,
   filterSourcesByNamespace,
+  filterSourcesByLanguage,
   deleteSourcesHandler,
   selectedCheckbox,
   onSelectedCheckboxChange,
 }: ActionsTableHeaderProps) {
   const [currentSortId, setCurrentSortId] = useState('');
   const [groupNamespaces, setGroupNamespaces] = useState<string[]>([]);
+  const [groupLanguages, setGroupLanguages] = useState<string[]>([
+    'javascript',
+    'python',
+    'java',
+    'go',
+    'dotnet',
+  ]);
   const [groupKinds, setGroupKinds] = useState<string[]>([
     K8SSourceTypes.DEPLOYMENT,
     K8SSourceTypes.STATEFUL_SET,
@@ -118,6 +127,19 @@ export function SourcesTableHeader({
     filterSourcesByKind && filterSourcesByKind(newGroup);
   }
 
+  function onLanguageClick(id: string) {
+    let newGroup: string[] = [];
+    if (groupLanguages.includes(id)) {
+      setGroupLanguages(groupLanguages.filter((item) => item !== id));
+      newGroup = groupLanguages.filter((item) => item !== id);
+    } else {
+      setGroupLanguages([...groupLanguages, id]);
+      newGroup = [...groupLanguages, id];
+    }
+
+    filterSourcesByLanguage && filterSourcesByLanguage(newGroup);
+  }
+
   const sourcesGroups = useMemo(() => {
     if (!namespaces) return [];
 
@@ -140,6 +162,54 @@ export function SourcesTableHeader({
       }));
 
     return [
+      {
+        label: 'Language',
+        subTitle: 'Filter',
+        condition: true,
+        items: [
+          {
+            label: 'Javascript',
+            onClick: () => onLanguageClick('javascript'),
+            id: 'javascript',
+            selected: groupLanguages.includes('javascript'),
+            disabled:
+              groupLanguages.length === 1 &&
+              groupLanguages.includes('javascript'),
+          },
+          {
+            label: 'Python',
+            onClick: () => onLanguageClick('python'),
+            id: 'python',
+            selected: groupLanguages.includes('python'),
+            disabled:
+              groupLanguages.length === 1 && groupLanguages.includes('python'),
+          },
+          {
+            label: 'Java',
+            onClick: () => onLanguageClick('java'),
+            id: 'java',
+            selected: groupLanguages.includes('java'),
+            disabled:
+              groupLanguages.length === 1 && groupLanguages.includes('java'),
+          },
+          {
+            label: 'Go',
+            onClick: () => onLanguageClick('go'),
+            id: 'go',
+            selected: groupLanguages.includes('go'),
+            disabled:
+              groupLanguages.length === 1 && groupLanguages.includes('go'),
+          },
+          {
+            label: '.NET',
+            onClick: () => onLanguageClick('dotnet'),
+            id: 'dotnet',
+            selected: groupLanguages.includes('dotnet'),
+            disabled:
+              groupLanguages.length === 1 && groupLanguages.includes('dotnet'),
+          },
+        ],
+      },
       {
         label: 'Kind',
         subTitle: 'Filter',

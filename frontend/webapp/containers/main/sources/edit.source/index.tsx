@@ -30,6 +30,7 @@ import {
   Conditions,
 } from '@/design.system';
 import { BackIcon } from '@keyval-dev/design-system';
+import { InstrumentationConfigList } from '@/components';
 
 const NAME = 'name';
 const KIND = 'kind';
@@ -113,6 +114,7 @@ export function EditSourceForm() {
               onChange={(e) => setInputValue(e)}
             />
           </FieldWrapper>
+          <InstrumentationConfigList list={undefined} onChange={() => {}} />
           <SaveSourceButtonWrapper>
             <KeyvalButton disabled={!inputValue} onClick={onSaveClick}>
               <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
@@ -123,11 +125,7 @@ export function EditSourceForm() {
           <DeleteSource
             onDelete={onSourceDelete}
             name={currentSource?.name}
-            image_url={
-              LANGUAGES_LOGOS[
-                getMainContainerLanguage(currentSource)
-              ]
-            }
+            image_url={LANGUAGES_LOGOS[getMainContainerLanguage(currentSource)]}
           />
         </div>
         <Conditions

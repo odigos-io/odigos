@@ -15,6 +15,7 @@ type TableProps = {
   sortSources?: (condition: string) => void;
   filterSourcesByKind?: (kinds: string[]) => void;
   filterSourcesByNamespace?: (namespaces: string[]) => void;
+  filterSourcesByLanguage?: (languages: string[]) => void;
   toggleActionStatus?: (ids: string[], disabled: boolean) => void;
   deleteSourcesHandler?: (sources: ManagedSource[]) => void;
 };
@@ -30,6 +31,7 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
   filterSourcesByKind,
   deleteSourcesHandler,
   filterSourcesByNamespace,
+  filterSourcesByLanguage,
 }) => {
   const [selectedCheckbox, setSelectedCheckbox] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -95,6 +97,7 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
           toggleActionStatus={toggleActionStatus}
           filterSourcesByKind={filterSourcesByKind}
           filterSourcesByNamespace={filterSourcesByNamespace}
+          filterSourcesByLanguage={filterSourcesByLanguage}
           selectedCheckbox={selectedCheckbox}
           onSelectedCheckboxChange={onSelectedCheckboxChange}
           deleteSourcesHandler={() => setShowModal(true)}

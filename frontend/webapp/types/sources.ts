@@ -70,3 +70,16 @@ export interface SelectedSources {
     future_selected: boolean;
   };
 }
+
+export interface InstrumentationConfig {
+  option_key: string;
+  option_value_boolean: boolean;
+  span_kind: string;
+  instrumentation_libraries: InstrumentationConfigLibrary[];
+}
+
+export interface InstrumentationConfigLibrary {
+  instrumentation_library_name: string;
+  language: string;
+  selected?: boolean;
+}
