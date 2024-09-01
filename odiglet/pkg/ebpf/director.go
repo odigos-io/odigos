@@ -38,7 +38,8 @@ type Director interface {
 	Cleanup(podDetails types.NamespacedName)
 	Shutdown()
 	// TODO: once all our implementation move to this function we can rename it to ApplyInstrumentationConfig,
-	// currently that name is reserved for the old API until it is removed
+	// currently that name is reserved for the old API until it is removed.
+	// Do we want to move this to a separate interface? since this might not be relevant for all SDKs
 	ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error
 }
 
