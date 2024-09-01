@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import theme from '@/styles/palette';
 import { useKeyDown } from '@/hooks';
-import { ManagedSource } from '@/types';
+import { InstrumentationConfig, ManagedSource } from '@/types';
 import { useMutation } from 'react-query';
 import { DeleteSource } from '@/components/overview';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -39,6 +39,9 @@ const NAMESPACE = 'namespace';
 export function EditSourceForm() {
   const [inputValue, setInputValue] = useState('');
   const [currentSource, setCurrentSource] = useState<ManagedSource>();
+  const [instrumentationOptions, setInstrumentationOptions] = useState<
+    InstrumentationConfig[]
+  >([]);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -56,15 +59,27 @@ export function EditSourceForm() {
       currentSource?.namespace || '',
       currentSource?.kind || '',
       currentSource?.name || '',
-      { reported_name: inputValue }
+      {
+        reported_name: inputValue,
+        instrumentation_options: instrumentationOptions,
+      }
     )
   );
+
+  useEffect(() => {
+    console.log({ instrumentationOptions });
+  }, [instrumentationOptions]);
+
   useEffect(() => {
     onPageLoad();
   }, [searchParams]);
 
   useEffect(() => {
     setInputValue(currentSource?.reported_name || '');
+    setInstrumentationOptions(
+      currentSource?.instrumented_application_details
+        ?.instrumentation_options || []
+    );
   }, [currentSource]);
 
   useKeyDown('Enter', handleKeyPress);
@@ -94,6 +109,12 @@ export function EditSourceForm() {
     });
   }
 
+  function handleInstrumentationChange(
+    updatedOptions: InstrumentationConfig[]
+  ) {
+    setInstrumentationOptions(updatedOptions);
+  }
+
   if (!currentSource) {
     return <KeyvalLoader />;
   }
@@ -114,7 +135,12 @@ export function EditSourceForm() {
               onChange={(e) => setInputValue(e)}
             />
           </FieldWrapper>
-          <InstrumentationConfigList list={undefined} onChange={() => {}} />
+          {instrumentationOptions && (
+            <InstrumentationConfigList
+              list={instrumentationOptions}
+              onChange={handleInstrumentationChange}
+            />
+          )}
           <SaveSourceButtonWrapper>
             <KeyvalButton disabled={!inputValue} onClick={onSaveClick}>
               <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>

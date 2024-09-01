@@ -28,53 +28,52 @@ const InstrumentationConfigListItem = ({
   };
 
   function renderOptions() {
-    return item.instrumentation_libraries.map(
+    return item.instrumentationLibraries.map(
       (lib: InstrumentationConfigLibrary) => (
         <InstrumentedLibraryOption
-          key={lib.instrumentation_library_name}
-          name={lib.instrumentation_library_name}
+          key={lib.instrumentationLibraryName}
+          name={lib.instrumentationLibraryName}
           language={lib.language}
           selected={!!lib.selected}
-          onChange={() => onLibChange(lib.instrumentation_library_name)}
-          disabled={!item.option_value_boolean}
+          onChange={() => onLibChange(lib.instrumentationLibraryName)}
+          disabled={!item.optionValueBoolean}
         />
       )
     );
   }
 
   function onOptionKeyChange() {
-    const newLibraries = item.instrumentation_libraries.map((lib) => ({
+    const newLibraries = item.instrumentationLibraries.map((lib) => ({
       ...lib,
-      selected: !item.option_value_boolean,
+      selected: !item.optionValueBoolean,
     }));
     onOptionChange({
       ...item,
-      option_value_boolean: !item.option_value_boolean,
-      instrumentation_libraries: newLibraries,
+      optionValueBoolean: !item.optionValueBoolean,
+      instrumentationLibraries: newLibraries,
     });
   }
 
   function onLibChange(name: string) {
-    const instrumentation_libraries = item.instrumentation_libraries.map(
-      (lib) =>
-        lib.instrumentation_library_name === name
-          ? { ...lib, selected: !lib.selected }
-          : lib
+    const instrumentationLibraries = item.instrumentationLibraries.map((lib) =>
+      lib.instrumentationLibraryName === name
+        ? { ...lib, selected: !lib.selected }
+        : lib
     );
 
-    const option_value_boolean = instrumentation_libraries.some(
+    const optionValueBoolean = instrumentationLibraries.some(
       (lib) => lib.selected
     );
 
     onOptionChange({
       ...item,
-      option_value_boolean,
-      instrumentation_libraries,
+      optionValueBoolean,
+      instrumentationLibraries,
     });
   }
 
   function getSelectedLibrariesCount() {
-    return item.instrumentation_libraries?.filter(
+    return item.instrumentationLibraries?.filter(
       (lib: InstrumentationConfigLibrary) => lib.selected
     ).length;
   }
@@ -83,7 +82,7 @@ const InstrumentationConfigListItem = ({
     return (
       <InstrumentationConfigItemHeader>
         <KeyvalCheckbox
-          value={item.option_value_boolean}
+          value={!!item.optionValueBoolean}
           onChange={onOptionKeyChange}
         />
 
@@ -91,13 +90,13 @@ const InstrumentationConfigListItem = ({
           <div>
             <HeaderItemWrapper>
               <KeyvalText size={14} weight={600}>
-                {item.option_key}
+                {item.optionKey}
               </KeyvalText>
 
               <KeyvalTag
-                title={item.span_kind}
+                title={item.spanKind}
                 color={
-                  item.span_kind === 'Server'
+                  item.spanKind === 'Server'
                     ? theme.colors.dark_blue
                     : theme.colors.blue_grey
                 }
@@ -110,7 +109,7 @@ const InstrumentationConfigListItem = ({
                 color={theme.text.secondary}
                 size={12}
               >{`${getSelectedLibrariesCount()}/${
-                item.instrumentation_libraries.length
+                item.instrumentationLibraries?.length
               } libraries`}</KeyvalText>
             </StyledItemCountContainer>
 

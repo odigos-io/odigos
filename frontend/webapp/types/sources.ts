@@ -20,6 +20,7 @@ export interface ManagedSource {
   reported_name?: string;
   number_of_running_instances: number;
   instrumented_application_details: {
+    instrumentation_options: Array<InstrumentationConfig>;
     conditions: Array<Condition>;
     languages: Array<{
       container_name: string;
@@ -72,14 +73,14 @@ export interface SelectedSources {
 }
 
 export interface InstrumentationConfig {
-  option_key: string;
-  option_value_boolean: boolean;
-  span_kind: string;
-  instrumentation_libraries: InstrumentationConfigLibrary[];
+  optionKey: string;
+  optionValueBoolean?: boolean;
+  spanKind: string;
+  instrumentationLibraries: InstrumentationConfigLibrary[];
 }
 
 export interface InstrumentationConfigLibrary {
-  instrumentation_library_name: string;
+  instrumentationLibraryName: string;
   language: string;
   selected?: boolean;
 }

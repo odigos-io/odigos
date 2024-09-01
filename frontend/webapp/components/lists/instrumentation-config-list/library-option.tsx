@@ -18,7 +18,7 @@ export default function InstrumentedLibraryOption({
   language,
   selected,
   onChange,
-  disabled,
+  disabled = false,
 }: {
   name: string;
   language: string;
@@ -43,14 +43,14 @@ export default function InstrumentedLibraryOption({
           {name}
         </KeyvalText>
       </LibNameWrapper>
-      <LibNameWrapper>
+      {/* <LibNameWrapper>
         <KeyvalText size={12} color={theme.text.light_grey}>
           {SOURCES.LANGUAGE}
         </KeyvalText>
         <KeyvalText size={14} weight={600}>
           {language}
         </KeyvalText>
-      </LibNameWrapper>
+      </LibNameWrapper> */}
     </StyledLibraryOptionContainer>
   );
 }

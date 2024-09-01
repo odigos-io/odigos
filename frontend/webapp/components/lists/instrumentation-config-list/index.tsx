@@ -23,8 +23,8 @@ export function InstrumentationConfigList({
   function onOptionChange(option: InstrumentationConfig) {
     const newConfig = list?.map((item: InstrumentationConfig) => {
       if (
-        item.option_key === option.option_key &&
-        item.span_kind === option.span_kind
+        item.optionKey === option.optionKey &&
+        item.spanKind === option.spanKind
       ) {
         return {
           ...option,
