@@ -19,7 +19,7 @@ import (
 
 type GoOtelEbpfSdk struct {
 	inst *auto.Instrumentation
-	cp    *configProvider[goAutoConfig.InstrumentationConfig]
+	cp   *configProvider[goAutoConfig.InstrumentationConfig]
 }
 
 // compile-time check that configProvider[goAutoConfig.InstrumentationConfig] implements goAutoConfig.Provider
@@ -42,7 +42,7 @@ func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context
 		return nil, err
 	}
 
-	cp := newConfigProvider(goAutoConfig.InstrumentationConfig{})
+	cp := NewConfigProvider(goAutoConfig.InstrumentationConfig{})
 
 	inst, err := auto.NewInstrumentation(
 		ctx,

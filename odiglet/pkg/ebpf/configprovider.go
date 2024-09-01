@@ -16,7 +16,9 @@ type configProvider[C any] struct {
 	stopped      bool
 }
 
-func newConfigProvider[C any](initialConfig C) *configProvider[C] {
+// NewConfigProvider creates a new configProvider with the given initial config.
+// It allows for updating the configuration of a running instrumentation.
+func NewConfigProvider[C any](initialConfig C) *configProvider[C] {
 	return &configProvider[C]{
 		initialConfig: initialConfig,
 		configChan:    make(chan C),
@@ -54,6 +56,7 @@ func (c *configProvider[C]) SendConfig(ctx context.Context, newConfig C) error {
 	}
 
 	// send a config or potentially return an error on timeout
+	// TODO: we should decide on a timeout value for sending config.
 	select {
 	case c.configChan <- newConfig:
 		return nil
