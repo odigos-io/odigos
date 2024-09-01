@@ -8,7 +8,7 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 )
 
-type configProvider[C any] struct {
+type ConfigProvider[C any] struct {
 	configChan    chan C
 	initialConfig C
 
@@ -18,18 +18,18 @@ type configProvider[C any] struct {
 
 // NewConfigProvider creates a new configProvider with the given initial config.
 // It allows for updating the configuration of a running instrumentation.
-func NewConfigProvider[C any](initialConfig C) *configProvider[C] {
-	return &configProvider[C]{
+func NewConfigProvider[C any](initialConfig C) *ConfigProvider[C] {
+	return &ConfigProvider[C]{
 		initialConfig: initialConfig,
 		configChan:    make(chan C),
 	}
 }
 
-func (c *configProvider[C]) InitialConfig(_ context.Context) C {
+func (c *ConfigProvider[C]) InitialConfig(_ context.Context) C {
 	return c.initialConfig
 }
 
-func (c *configProvider[C]) Shutdown(_ context.Context) error {
+func (c *ConfigProvider[C]) Shutdown(_ context.Context) error {
 	c.stoppedMutex.Lock()
 	defer c.stoppedMutex.Unlock()
 
@@ -42,11 +42,11 @@ func (c *configProvider[C]) Shutdown(_ context.Context) error {
 	return nil
 }
 
-func (c *configProvider[C]) Watch() <-chan C {
+func (c *ConfigProvider[C]) Watch() <-chan C {
 	return c.configChan
 }
 
-func (c *configProvider[C]) SendConfig(ctx context.Context, newConfig C) error {
+func (c *ConfigProvider[C]) SendConfig(ctx context.Context, newConfig C) error {
 	c.stoppedMutex.Lock()
 	defer c.stoppedMutex.Unlock()
 

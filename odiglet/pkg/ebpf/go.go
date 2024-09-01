@@ -19,11 +19,11 @@ import (
 
 type GoOtelEbpfSdk struct {
 	inst *auto.Instrumentation
-	cp   *configProvider[goAutoConfig.InstrumentationConfig]
+	cp   *ConfigProvider[goAutoConfig.InstrumentationConfig]
 }
 
 // compile-time check that configProvider[goAutoConfig.InstrumentationConfig] implements goAutoConfig.Provider
-var _ goAutoConfig.Provider = (*configProvider[goAutoConfig.InstrumentationConfig])(nil)
+var _ goAutoConfig.Provider = (*ConfigProvider[goAutoConfig.InstrumentationConfig])(nil)
 
 type GoInstrumentationFactory struct{}
 
