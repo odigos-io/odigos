@@ -4,9 +4,13 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 )
+
+// Max time to wait for a config update to be sent to the instrumentation.
+const applyConfigTimeout = 50 * time.Millisecond
 
 type ConfigProvider[C any] struct {
 	configChan    chan C
@@ -56,11 +60,13 @@ func (c *ConfigProvider[C]) SendConfig(ctx context.Context, newConfig C) error {
 	}
 
 	// send a config or potentially return an error on timeout
-	// TODO: we should decide on a timeout value for sending config.
+	applyCtx, cancel := context.WithTimeout(ctx, applyConfigTimeout)
+	defer cancel()
+
 	select {
 	case c.configChan <- newConfig:
 		return nil
-	case <-ctx.Done():
+	case <-applyCtx.Done():
 		if ctx.Err() == context.DeadlineExceeded {
 			return errors.New("failed to update config of instrumentation: timeout waiting for config update")
 		}
