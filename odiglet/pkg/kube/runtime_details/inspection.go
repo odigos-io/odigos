@@ -120,7 +120,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				}
 			}
 
-			runtimeVersion := ""
+			var runtimeVersion string
 			if programLanguageDetails.RuntimeVersion != nil {
 				runtimeVersion = programLanguageDetails.RuntimeVersion.String()
 			}

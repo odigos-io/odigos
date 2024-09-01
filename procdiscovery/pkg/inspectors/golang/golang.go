@@ -13,6 +13,8 @@ type GolangInspector struct{}
 
 const GolangVersionRegex = `go(\d+\.\d+\.\d+)`
 
+var re = regexp.MustCompile(GolangVersionRegex)
+
 func (g *GolangInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
 	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
 	_, err := buildinfo.ReadFile(file)
@@ -29,8 +31,6 @@ func (g *GolangInspector) GetRuntimeVersion(p *process.Details, containerURL str
 	if err != nil || buildInfo == nil {
 		return nil
 	}
-
-	re := regexp.MustCompile(GolangVersionRegex)
 	match := re.FindStringSubmatch(buildInfo.GoVersion)
 
 	return common.GetVersion(match[1])

@@ -5,3 +5,57 @@ title: "Sumo Logic"
 ## Obtaining a OTLP/HTTP Source URL
 
 Follow the [following instructions](https://help.sumologic.com/docs/send-data/hosted-collectors/http-source/otlp/) to obtain a OTLP/HTTP Source URL.
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Sumo Logic` and follow the on-screen instructions.
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: sumologic-example
+  namespace: odigos-system
+spec:
+  data: {}
+  destinationName: sumologic
+  secretRef:
+    name: sumologic-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: sumologic
+
+---
+apiVersion: v1
+data:
+  SUMOLOGIC_COLLECTION_URL: <base64 Source URL>
+kind: Secret
+metadata:
+  name: sumologic-secret
+  namespace: odigos-system
+type: Opaque
+```

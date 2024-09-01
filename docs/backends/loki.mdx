@@ -32,3 +32,47 @@ You can configure your grafana cloud loki labels in the `Labels` multi-input con
 - [Use only low cardinality values](https://grafana.com/docs/loki/latest/get-started/labels/#cardinality). e.g. use only opentelemetry attributes for which you expect a small number of unique values like `http.response.status_code` but **not** `network.peer.address`.
 - If the label is not present in a log record, it will be ignored.
 - The default labels if not set are: `k8s.container.name, k8s.pod.name, k8s.namespace.name`
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Loki` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: loki-example
+  namespace: odigos-system
+spec:
+  data:
+    LOKI_LABELS: <Labels>
+    LOKI_URL: <Endpoint>
+  destinationName: loki
+  signals:
+  - LOGS
+  type: loki
+```
