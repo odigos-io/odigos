@@ -19,7 +19,10 @@ The following go modules will be auto instrumented by Odigos:
 
 ### HTTP Frameworks
 
-- [`github.com/gin-gonic/gin`](https://pkg.go.dev/github.com/gin-gonic/gin) <sup>*</sup>. HTTP web framework
+<Warning>Please note that in order for the `http.route` parameter to be properly extracted by Go auto instrumentation, 
+you should use Go 1.22 or above.</Warning>
+
+- [`github.com/gin-gonic/gin`](https://pkg.go.dev/github.com/gin-gonic/gin) HTTP web framework ⭐️
 - [`net/http`](https://pkg.go.dev/net/http) go standard library for http server and client
 
 ### HTTP Clients
@@ -28,19 +31,19 @@ The following go modules will be auto instrumented by Odigos:
 
 ### Database Clients, ORMs, and data access libraries
 
-- [`github.com/gocql/gocql`](https://pkg.go.dev/github.com/gocql/gocql) <sup>*</sup> versions `>= v1.0.0`. database client library for Apache Cassandra
-- [`github.com/elastic/go-elasticsearch/v8`](https://pkg.go.dev/github.com/elastic/go-elasticsearch/v8) <sup>*</sup> versions >= v8.0.0
+- [`github.com/gocql/gocql`](https://pkg.go.dev/github.com/gocql/gocql) ⭐️ versions `>= v1.0.0`. database client library for Apache Cassandra
+- [`github.com/elastic/go-elasticsearch/v8`](https://pkg.go.dev/github.com/elastic/go-elasticsearch/v8) ⭐️ versions >= v8.0.0
 - [`database/sql`](https://pkg.go.dev/database/sql) go standard library for SQL database access
 
 ### Messaging Systems Clients
 
-- [`github.com/rabbitmq/amqp091-go`](https://pkg.go.dev/github.com/rabbitmq/amqp091-go) <sup>*</sup> versions `>= v1.4.0`. messaging client for RabbitMQ
+- [`github.com/rabbitmq/amqp091-go`](https://pkg.go.dev/github.com/rabbitmq/amqp091-go) ⭐️ versions `>= v1.4.0`. messaging client for RabbitMQ
 - [`github.com/segmentio/kafka-go`](https://pkg.go.dev/github.com/segmentio/kafka-go) versions `>= v0.4.1`. messaging client for Apache Kafka
-- [`github.com/apache/pulsar-client-go`](https://pkg.go.dev/github.com/apache/pulsar-client-go) <sup>*</sup> versions `>= v0.12.0`. messaging client for Apache Pulsar
-- [`github.com/IBM/sarama`](https://pkg.go.dev/github.com/IBM/sarama) <sup>*</sup> versions `>= v1.40.0`. messaging client for Apache Kafka
+- [`github.com/apache/pulsar-client-go`](https://pkg.go.dev/github.com/apache/pulsar-client-go) ⭐️ versions `>= v0.12.0`. messaging client for Apache Pulsar
+- [`github.com/IBM/sarama`](https://pkg.go.dev/github.com/IBM/sarama) ⭐️ versions `>= v1.40.0`. messaging client for Apache Kafka
 
 ### RPC (Remote Procedure Call)
 
 - [`google.golang.org/grpc`](https://pkg.go.dev/google.golang.org/grpc) versions `>= v1.14.0`. rpc client and server for gRPC framework
 
-modules marked with <sup>*</sup> are available in odigos pro only.
+Modules marked with ⭐️ are available in Odigos Pro only.

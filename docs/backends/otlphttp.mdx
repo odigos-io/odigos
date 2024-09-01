@@ -26,3 +26,64 @@ The endpoint format is `http://host:port`.
 This section is relevant if your OTLP http endpoint requires [basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) (username and password).
 
 To configure basic authentication, use the optional config options `Basic Auth Username` and `Basic Auth Password`.
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `OTLP http` and follow the on-screen instructions.
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: otlphttp-example
+  namespace: odigos-system
+spec:
+  data:
+    OTLP_HTTP_ENDPOINT: <OTLP http Endpoint>
+    # OTLP_HTTP_BASIC_AUTH_USERNAME: <Basic Auth Username>
+    # Note: The commented fields above are optional.
+  destinationName: otlphttp
+  # Uncomment the secretRef below if you are using the optional Secret.
+  # secretRef:
+  #   name: otlphttp-secret
+
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: otlphttp
+
+---
+# The following Secret is optional. Uncomment the entire block if you need to use it.
+# apiVersion: v1
+# data:
+#   OTLP_HTTP_BASIC_AUTH_PASSWORD: <base64 Basic Auth Password>
+# kind: Secret
+# metadata:
+#   name: otlphttp-secret
+#   namespace: odigos-system
+# type: Opaque
+```
