@@ -17,6 +17,8 @@ type PayloadCollectionReconciler struct {
 
 func (r *PayloadCollectionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
+	logger := log.FromContext(ctx)
+
 	payloadCollectionRules := &rulesv1alpha1.PayloadCollectionList{}
 	err := r.Client.List(ctx, payloadCollectionRules)
 	if err != nil {
@@ -24,14 +26,25 @@ func (r *PayloadCollectionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	// filter out only enabled rules
-	enabledRules := make([]rulesv1alpha1.PayloadCollection, 0)
+	enabledRules := make([]rulesv1alpha1.PayloadCollection, 0, len(payloadCollectionRules.Items))
 	for _, rule := range payloadCollectionRules.Items {
 		if !rule.Spec.Disabled {
 			enabledRules = append(enabledRules, rule)
 		}
 	}
 
-	logger := log.FromContext(ctx)
-	logger.V(0).Info("Payload Collection Rules changed, recalculating instrumentation configs", "number of enabled rules", len(enabledRules))
+	workloads, err := getAllInstrumentedWorkloads(ctx, r.Client)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	for _, workload := range workloads {
+		err = calcInstrumentationConfigForWorkload(workload, enabledRules)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	logger.V(0).Info("Payload Collection Rules changed, recalculating instrumentation configs", "number of enabled rules", len(enabledRules), "number of instrumented workloads", len(workloads))
 	return ctrl.Result{}, nil
 }
