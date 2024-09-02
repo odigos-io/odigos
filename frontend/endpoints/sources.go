@@ -7,15 +7,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/endpoints/common"
 	"github.com/odigos-io/odigos/frontend/kube"
-
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"golang.org/x/sync/errgroup"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type SourceLanguage struct {
@@ -186,6 +185,12 @@ func PatchSource(c *gin.Context) {
 		return
 	}
 
+	tier, err := GetCurrentOdigosTier(c.Request.Context(), kube.DefaultClient, consts.DefaultOdigosNamespace)
+	if err != nil {
+		returnError(c, err)
+		return
+	}
+
 	if request.ReportedName != nil {
 
 		newReportedName := *request.ReportedName
@@ -233,7 +238,8 @@ func PatchSource(c *gin.Context) {
 		}
 	}
 
-	if request.InstrumentationConfig != nil {
+	// Run instrumentation config logic only if the tier is "onprem"
+	if tier == odigoscommon.OnPremOdigosTier && request.InstrumentationConfig != nil {
 		if err := handleInstrumentationConfigRequest(c, ns, kind, name, request.InstrumentationConfig); err != nil {
 			returnError(c, err)
 			return
