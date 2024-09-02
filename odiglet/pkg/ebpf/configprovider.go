@@ -10,6 +10,9 @@ import (
 )
 
 // Max time to wait for a config update to be sent to the instrumentation.
+// In case the configuration is updating in a faster pace relative to the pace the instrumentation can apply it,
+// this timeout will be hit and avoid sending new configuration before the previous one is applied.
+// This timeout might be changed in the future.
 const applyConfigTimeout = 50 * time.Millisecond
 
 type ConfigProvider[C any] struct {
@@ -50,6 +53,9 @@ func (c *ConfigProvider[C]) Watch() <-chan C {
 	return c.configChan
 }
 
+// SendConfig sends a new configuration to the instrumentation.
+// If the instrumentation was closed or cannot accept the new configuration within a configured timeout,
+// an error is returned.
 func (c *ConfigProvider[C]) SendConfig(ctx context.Context, newConfig C) error {
 	c.stoppedMutex.Lock()
 	defer c.stoppedMutex.Unlock()
