@@ -151,9 +151,7 @@ func GetSource(c *gin.Context) {
 
 	if err == nil {
 		// valid instrumented application, grab the runtime details
-		thinSource := k8sInstrumentedAppToThinSource(instrumentedApplication)
-		ts.IaDetails = thinSource.IaDetails
-
+		ts.IaDetails = k8sInstrumentedAppToThinSource(instrumentedApplication).IaDetails
 		// potentially add a condition for healthy instrumentation instances
 		err = addHealthyInstrumentationInstancesCondition(c, instrumentedApplication, &ts)
 		if err != nil {
