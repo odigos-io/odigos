@@ -41,10 +41,15 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
-	for _, director := range i.Directors {
-		err = director.ApplyInstrumentationConfiguration(ctx, podWorkload, instrumentationConfig)
-		if err != nil {
-			return ctrl.Result{}, err
+	langs := instrumentationConfig.Languages()
+
+	for key, director := range i.Directors {
+		// Apply the configuration only for languages specified in the InstrumentationConfig
+		if _, ok := langs[key.Language]; ok {
+			err = director.ApplyInstrumentationConfiguration(ctx, podWorkload, instrumentationConfig)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	}
 

@@ -133,7 +133,7 @@ func (d *EbpfDirector[T]) ApplyInstrumentationConfiguration(ctx context.Context,
 	var t T
 	if _, ok := any(t).(ConfigurableOtelEbpfSdk); !ok {
 		// TODO increase verbosity level
-		log.Logger.V(0).Info("eBPF SDK is not configurable, skip applying configuration", "workload", workload)
+		log.Logger.V(0).Info("eBPF SDK is not configurable, skip applying configuration", "language", d.Language())
 		return nil
 	}
 
