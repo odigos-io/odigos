@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	rulesv1alpha1 "github.com/odigos-io/odigos/api/rules/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"go.opentelemetry.io/otel/attribute"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,6 +48,12 @@ type SdkConfig struct {
 	// This config currently only applies to root spans.
 	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
 	HeadSamplingConfig HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
+
+	// In the absence of any instrumentation library specific rule, these rules will be used by default for http payload collection.
+	DefaultHttpPayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule `json:"defaultHttpPayloadCollection,omitempty"`
+
+	// In the absence of any instrumentation library specific rule, these rules will be used by default for db payload collection.
+	DefaultDbPayloadCollection *rulesv1alpha1.DbPayloadCollectionRule `json:"defaultDbPayloadCollection,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
@@ -105,6 +112,12 @@ type InstrumentationLibraryConfig struct {
 	InstrumentationLibraryId InstrumentationLibraryId `json:"libraryId"`
 
 	TraceConfig *InstrumentationLibraryConfigTraces `json:"traceConfig,omitempty"`
+
+	// Http payload collection rules for this instrumentation library
+	HttpPayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule `json:"httpPayloadCollection,omitempty"`
+
+	// Db payload collection rules for this instrumentation library
+	DbPayloadCollection *rulesv1alpha1.DbPayloadCollectionRule `json:"dbPayloadCollection,omitempty"`
 }
 
 type InstrumentationLibraryId struct {

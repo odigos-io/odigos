@@ -41,7 +41,7 @@ type HttpPayloadCollectionRule struct {
 }
 
 // Rule for collecting payloads for a DbStatement
-type DbStatementPayloadCollectionRule struct {
+type DbPayloadCollectionRule struct {
 
 	// the maximum length of the payload to collect
 	// This value relates to the actual payload length in the attribute, which might be different than the length in bytes due to encoding.
@@ -75,21 +75,11 @@ type PayloadCollectionSpec struct {
 	// If empty, no instrumentation libraries will be used.
 	InstrumentationLibraryNames *[]string `json:"instrumentationLibraryNames,omitempty"`
 
-	// Payload Categories to collect
-	// To make things generic and manageable, we abstract the various types of payloads into categories.
-	// Users can then hop-in to categories without having to know the details of specific libraries in various languages.
-	// The support and semantics of these categories per instrumentation library and language are documented elsewhere.
-	// When a category is not supported, it is silently ignored, allowing the user to specify collection and have it working everywhere possible.
+	// rule for collecting http payloads for the mentioned workload and instrumentation libraries
+	HttpPayloadCollectionRule *HttpPayloadCollectionRule `json:"httpPayloadCollectionRule,omitempty"`
 
-	// Wether to collect the payload for a request or not.
-	// Request means different things for different instrumentations.
-	// For example, for HTTP, it means the request body both for server or client.
-	CollectPayloadForRequests *bool `json:"collectPayloadForRequests,omitempty"`
-
-	// Wether to collect the payload for a response or not.
-	// Response means different things for different instrumentations.
-	// For example, for HTTP, it means the response body both for server or client.
-	CollectPayloadForResponses *bool `json:"collectPayloadForResponses,omitempty"`
+	// rule for collecting db payloads for the mentioned workload and instrumentation libraries
+	DbPayloadCollectionRule *DbPayloadCollectionRule `json:"dbPayloadCollectionRule,omitempty"`
 }
 
 type PayloadCollectionStatus struct {

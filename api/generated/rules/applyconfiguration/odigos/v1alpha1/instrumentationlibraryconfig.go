@@ -17,11 +17,17 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	rulesv1alpha1 "github.com/odigos-io/odigos/api/rules/v1alpha1"
+)
+
 // InstrumentationLibraryConfigApplyConfiguration represents a declarative configuration of the InstrumentationLibraryConfig type for use
 // with apply.
 type InstrumentationLibraryConfigApplyConfiguration struct {
 	InstrumentationLibraryId *InstrumentationLibraryIdApplyConfiguration           `json:"libraryId,omitempty"`
 	TraceConfig              *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
+	HttpPayloadCollection    *rulesv1alpha1.HttpPayloadCollectionRule              `json:"httpPayloadCollection,omitempty"`
+	DbPayloadCollection      *rulesv1alpha1.DbPayloadCollectionRule                `json:"dbPayloadCollection,omitempty"`
 }
 
 // InstrumentationLibraryConfigApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryConfig type for use with
@@ -43,5 +49,21 @@ func (b *InstrumentationLibraryConfigApplyConfiguration) WithInstrumentationLibr
 // If called multiple times, the TraceConfig field is set to the value of the last call.
 func (b *InstrumentationLibraryConfigApplyConfiguration) WithTraceConfig(value *InstrumentationLibraryConfigTracesApplyConfiguration) *InstrumentationLibraryConfigApplyConfiguration {
 	b.TraceConfig = value
+	return b
+}
+
+// WithHttpPayloadCollection sets the HttpPayloadCollection field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HttpPayloadCollection field is set to the value of the last call.
+func (b *InstrumentationLibraryConfigApplyConfiguration) WithHttpPayloadCollection(value rulesv1alpha1.HttpPayloadCollectionRule) *InstrumentationLibraryConfigApplyConfiguration {
+	b.HttpPayloadCollection = &value
+	return b
+}
+
+// WithDbPayloadCollection sets the DbPayloadCollection field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DbPayloadCollection field is set to the value of the last call.
+func (b *InstrumentationLibraryConfigApplyConfiguration) WithDbPayloadCollection(value rulesv1alpha1.DbPayloadCollectionRule) *InstrumentationLibraryConfigApplyConfiguration {
+	b.DbPayloadCollection = &value
 	return b
 }

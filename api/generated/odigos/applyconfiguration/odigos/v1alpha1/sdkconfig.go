@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	rulesv1alpha1 "github.com/odigos-io/odigos/api/rules/v1alpha1"
 	common "github.com/odigos-io/odigos/common"
 )
 
@@ -27,6 +28,8 @@ type SdkConfigApplyConfiguration struct {
 	Language                      *common.ProgrammingLanguage                      `json:"language,omitempty"`
 	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration `json:"instrumentationLibraryConfigs,omitempty"`
 	HeadSamplingConfig            *HeadSamplingConfigApplyConfiguration            `json:"headSamplerConfig,omitempty"`
+	DefaultHttpPayloadCollection  *rulesv1alpha1.HttpPayloadCollectionRule         `json:"defaultHttpPayloadCollection,omitempty"`
+	DefaultDbPayloadCollection    *rulesv1alpha1.DbPayloadCollectionRule           `json:"defaultDbPayloadCollection,omitempty"`
 }
 
 // SdkConfigApplyConfiguration constructs a declarative configuration of the SdkConfig type for use with
@@ -61,5 +64,21 @@ func (b *SdkConfigApplyConfiguration) WithInstrumentationLibraryConfigs(values .
 // If called multiple times, the HeadSamplingConfig field is set to the value of the last call.
 func (b *SdkConfigApplyConfiguration) WithHeadSamplingConfig(value *HeadSamplingConfigApplyConfiguration) *SdkConfigApplyConfiguration {
 	b.HeadSamplingConfig = value
+	return b
+}
+
+// WithDefaultHttpPayloadCollection sets the DefaultHttpPayloadCollection field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DefaultHttpPayloadCollection field is set to the value of the last call.
+func (b *SdkConfigApplyConfiguration) WithDefaultHttpPayloadCollection(value rulesv1alpha1.HttpPayloadCollectionRule) *SdkConfigApplyConfiguration {
+	b.DefaultHttpPayloadCollection = &value
+	return b
+}
+
+// WithDefaultDbPayloadCollection sets the DefaultDbPayloadCollection field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DefaultDbPayloadCollection field is set to the value of the last call.
+func (b *SdkConfigApplyConfiguration) WithDefaultDbPayloadCollection(value rulesv1alpha1.DbPayloadCollectionRule) *SdkConfigApplyConfiguration {
+	b.DefaultDbPayloadCollection = &value
 	return b
 }
