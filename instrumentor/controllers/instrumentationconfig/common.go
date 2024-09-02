@@ -90,8 +90,18 @@ func mergeHttpPayloadCollectionRules(rule1 *rulesv1alpha1.HttpPayloadCollectionR
 	if rule1.AllowedMimeType == nil || rule2.AllowedMimeType == nil {
 		mergedRules.AllowedMimeType = nil
 	} else {
-		mergedMimeTypes := append(*rule1.AllowedMimeType, *rule2.AllowedMimeType...)
-		mergedRules.AllowedMimeType = &mergedMimeTypes
+		mergeMimeTypeMap := make(map[string]struct{})
+		for _, mimeType := range *rule1.AllowedMimeType {
+			mergeMimeTypeMap[mimeType] = struct{}{}
+		}
+		for _, mimeType := range *rule2.AllowedMimeType {
+			mergeMimeTypeMap[mimeType] = struct{}{}
+		}
+		mergedMimeTypeSlice := make([]string, 0, len(mergeMimeTypeMap))
+		for mimeType := range mergeMimeTypeMap {
+			mergedMimeTypeSlice = append(mergedMimeTypeSlice, mimeType)
+		}
+		mergedRules.AllowedMimeType = &mergedMimeTypeSlice
 	}
 
 	// MaxPayloadLength - choose the smallest value, as this is the maximum allowed
