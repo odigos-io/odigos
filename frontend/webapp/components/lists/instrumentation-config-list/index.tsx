@@ -4,7 +4,7 @@ import { KeyvalText } from '@/design.system';
 import { InstrumentationConfig } from '@/types';
 import { TextInformationWrapper } from './style.styled';
 import InstrumentationConfigListItem from './instrumentation-config-list-item';
-import { FAKE_LIST } from './fake';
+
 const SOURCES = {
   INSTRUMENTATION_CONFIG_LIBRARIES: 'Data Collection Settings',
   INSTRUMENTATION_CONFIG_INFO:
@@ -17,7 +17,7 @@ interface InstrumentationConfigListProps {
 }
 
 export function InstrumentationConfigList({
-  list = FAKE_LIST,
+  list,
   onChange,
 }: InstrumentationConfigListProps) {
   function onOptionChange(option: InstrumentationConfig) {

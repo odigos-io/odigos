@@ -36,7 +36,7 @@ const InstrumentationConfigListItem = ({
           language={lib.language}
           selected={!!lib.selected}
           onChange={() => onLibChange(lib.instrumentationLibraryName)}
-          disabled={!item.optionValueBoolean}
+          disabled={false}
         />
       )
     );
