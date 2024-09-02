@@ -23,6 +23,10 @@ import (
 type OtelEbpfSdk interface {
 	Run(ctx context.Context) error
 	Close(ctx context.Context) error
+}
+
+type ConfigurableOtelEbpfSdk interface {
+	OtelEbpfSdk
 	ApplyConfig(ctx context.Context, config *odigosv1.InstrumentationConfig) error
 }
 
@@ -39,7 +43,6 @@ type Director interface {
 	Shutdown()
 	// TODO: once all our implementation move to this function we can rename it to ApplyInstrumentationConfig,
 	// currently that name is reserved for the old API until it is removed.
-	// Do we want to move this to a separate interface? since this might not be relevant for all SDKs
 	ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error
 }
 
@@ -127,6 +130,13 @@ func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, s
 }
 
 func (d *EbpfDirector[T]) ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
+	var t T
+	if _, ok := any(t).(ConfigurableOtelEbpfSdk); !ok {
+		// TODO increase verbosity level
+		log.Logger.V(0).Info("eBPF SDK is not configurable, skip applying configuration", "workload", workload)
+		return nil
+	}
+
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
@@ -136,7 +146,8 @@ func (d *EbpfDirector[T]) ApplyInstrumentationConfiguration(ctx context.Context,
 
 	var retErr []error
 	for _, inst := range insts {
-		err := inst.ApplyConfig(ctx, instrumentationConfig)
+		// The type assertion is safe because we made sure the SDK for this director implements the ConfigurableOtelEbpfSdk interface
+		err := any(inst).(ConfigurableOtelEbpfSdk).ApplyConfig(ctx, instrumentationConfig)
 		if err != nil {
 			retErr = append(retErr, err)
 		}

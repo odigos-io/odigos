@@ -25,6 +25,9 @@ type GoOtelEbpfSdk struct {
 // compile-time check that configProvider[goAutoConfig.InstrumentationConfig] implements goAutoConfig.Provider
 var _ goAutoConfig.Provider = (*ConfigProvider[goAutoConfig.InstrumentationConfig])(nil)
 
+// compile-time check that GoOtelEbpfSdk implements ConfigurableOtelEbpfSdk
+var _ ConfigurableOtelEbpfSdk = (*GoOtelEbpfSdk)(nil)
+
 type GoInstrumentationFactory struct{}
 
 func NewGoInstrumentationFactory() InstrumentationFactory[*GoOtelEbpfSdk] {
