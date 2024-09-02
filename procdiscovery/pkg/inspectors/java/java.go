@@ -1,6 +1,8 @@
 package java
 
 import (
+	"github.com/hashicorp/go-version"
+	"regexp"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -10,18 +12,23 @@ import (
 type JavaInspector struct{}
 
 const processName = "java"
+const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
 
-func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgramLanguageDetails, bool) {
-	var programLanguageDetails common.ProgramLanguageDetails
+var re = regexp.MustCompile(JavaVersionRegex)
 
+func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
 	if strings.Contains(proc.ExeName, processName) || strings.Contains(proc.CmdLine, processName) {
-		programLanguageDetails.Language = common.JavaProgrammingLanguage
-		if value, exists := proc.GetDetailedEnvsValue(process.JavaVersionConst); exists {
-			programLanguageDetails.RuntimeVersion = value
-		}
-
-		return programLanguageDetails, true
+		return common.JavaProgrammingLanguage, true
 	}
 
-	return programLanguageDetails, false
+	return "", false
+}
+
+func (j *JavaInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
+	if value, exists := proc.GetDetailedEnvsValue(process.JavaVersionConst); exists {
+		javaVersion := re.FindString(value)
+		return common.GetVersion(javaVersion)
+	}
+
+	return nil
 }

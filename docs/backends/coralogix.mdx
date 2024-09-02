@@ -17,3 +17,62 @@ Follow the [Domain instructions](https://coralogix.com/docs/coralogix-domain/) t
 ### Application and Subsystem Names
 
 You can configure the application and subsystem names for your Coralogix account. Follow the [Application and Subsystem Names guide](https://coralogix.com/docs/application-and-subsystem-names/) to learn more.
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Coralogix` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: coralogix-example
+  namespace: odigos-system
+spec:
+  data:
+    CORALOGIX_APPLICATION_NAME: <Application Name>
+    CORALOGIX_DOMAIN: <Domain [coralogix.com, eu2.coralogix.com, coralogix.us, cx498.coralogix.com,
+      coralogix.in, coralogixsg.com]>
+    CORALOGIX_SUBSYSTEM_NAME: <Subsystem Name>
+  destinationName: coralogix
+  secretRef:
+    name: coralogix-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: coralogix
+
+---
+apiVersion: v1
+data:
+  CORALOGIX_PRIVATE_KEY: <base64 Send-Your-Data API Key>
+kind: Secret
+metadata:
+  name: coralogix-secret
+  namespace: odigos-system
+type: Opaque
+```
