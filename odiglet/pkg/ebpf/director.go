@@ -132,8 +132,7 @@ func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, s
 func (d *EbpfDirector[T]) ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
 	var t T
 	if _, ok := any(t).(ConfigurableOtelEbpfSdk); !ok {
-		// TODO increase verbosity level
-		log.Logger.V(0).Info("eBPF SDK is not configurable, skip applying configuration", "language", d.Language())
+		log.Logger.V(1).Info("eBPF SDK is not configurable, skip applying configuration", "language", d.Language())
 		return nil
 	}
 
