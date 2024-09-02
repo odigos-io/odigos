@@ -73,18 +73,13 @@ export function EditSourceForm() {
           (library) => library.selected
         );
 
-        // Return the option with filtered libraries if any remain
         return {
           ...option,
           instrumentationLibraries: filteredLibraries,
         };
       })
-      .filter((option) => option.instrumentationLibraries.length > 0); // Remove options with empty libraries
+      .filter((option) => option.instrumentationLibraries.length > 0);
   }
-
-  useEffect(() => {
-    console.log({ instrumentationOptions });
-  }, [instrumentationOptions]);
 
   useEffect(() => {
     onPageLoad();
@@ -208,7 +203,7 @@ export function EditSourceForm() {
               onChange={(e) => setInputValue(e)}
             />
           </FieldWrapper>
-          {instrumentationOptions && (
+          {instrumentationOptions.length > 0 && (
             <InstrumentationConfigList
               list={instrumentationOptions}
               onChange={handleInstrumentationChange}
