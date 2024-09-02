@@ -19,3 +19,48 @@ The only required configuration is the endpoint of the OTLP gRPC server. Note th
 The endpoint format is `host:port`. 
 - host is required
 - port is optional and defaults to the default OTLP gRPC port `4317`.
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `OTLP gRPC` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: otlp-example
+  namespace: odigos-system
+spec:
+  data:
+    OTLP_GRPC_ENDPOINT: <OTLP gRPC Endpoint>
+  destinationName: otlp
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: otlp
+```

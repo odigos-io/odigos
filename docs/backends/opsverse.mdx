@@ -11,3 +11,63 @@ Create a new OpsVerse backend with the following details:
 - **Logs Endpoint** (if logs selected)
 - **Metrics Endpoint** (if metrics selected)
 - **Traces (OTLP) Endpoint** (if traces selected)
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `OpsVerse` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: opsverse-example
+  namespace: odigos-system
+spec:
+  data:
+    OPSVERSE_LOGS_URL: <Logs Endpoint>
+    OPSVERSE_METRICS_URL: <Metrics Endpoint>
+    OPSVERSE_TRACES_URL: <Traces Endpoint>
+    OPSVERSE_USERNAME: <User>
+  destinationName: opsverse
+  secretRef:
+    name: opsverse-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: opsverse
+
+---
+apiVersion: v1
+data:
+  OPSVERSE_PASSWORD: <base64 Password>
+kind: Secret
+metadata:
+  name: opsverse-secret
+  namespace: odigos-system
+type: Opaque
+```
