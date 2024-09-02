@@ -92,11 +92,14 @@ export function EditSourceForm() {
       const instrumentationOptions =
         currentSource?.instrumented_application_details?.instrumentation_options.map(
           (option) => {
-            const isSelected = currentSource.instrumentation_config.some(
+            const selected = currentSource.instrumentation_config.some(
               (config) =>
                 config.optionKey === option.optionKey &&
                 config.spanKind === option.spanKind
             );
+            const language =
+              currentSource?.instrumented_application_details.languages?.[0]
+                .language || '';
 
             return {
               ...option,
@@ -108,7 +111,8 @@ export function EditSourceForm() {
               instrumentationLibraries: option.instrumentationLibraries.map(
                 (library) => ({
                   ...library,
-                  selected: isSelected,
+                  language,
+                  selected,
                 })
               ),
             };
@@ -154,33 +158,7 @@ export function EditSourceForm() {
   function handleInstrumentationChange(
     updatedOptions: InstrumentationConfig[]
   ) {
-    // Get the language from the current source
-    const lan =
-      currentSource?.instrumented_application_details.languages?.[0].language;
-
-    // Iterate over the updatedOptions to add the language where it's missing
-    const updatedOptionsWithLanguage = updatedOptions.map((option) => {
-      const updatedLibraries = option.instrumentationLibraries.map(
-        (library) => {
-          // If language is empty, set it to the determined language
-          if (!library.language) {
-            return {
-              ...library,
-              language: lan || '', // Use the retrieved language or keep it empty if lan is undefined
-            };
-          }
-          return library; // Return the library as is if language is already set
-        }
-      );
-
-      return {
-        ...option,
-        instrumentationLibraries: updatedLibraries,
-      };
-    });
-
-    // Update the state with the modified options
-    setInstrumentationOptions(updatedOptionsWithLanguage);
+    setInstrumentationOptions(updatedOptions);
   }
 
   if (!currentSource) {
