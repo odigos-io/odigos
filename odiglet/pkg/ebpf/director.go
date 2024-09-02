@@ -2,6 +2,7 @@ package ebpf
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -24,6 +25,11 @@ type OtelEbpfSdk interface {
 	Close(ctx context.Context) error
 }
 
+type ConfigurableOtelEbpfSdk interface {
+	OtelEbpfSdk
+	ApplyConfig(ctx context.Context, config *odigosv1.InstrumentationConfig) error
+}
+
 // users can use different eBPF otel SDKs by returning them from this function
 type InstrumentationFactory[T OtelEbpfSdk] interface {
 	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *workload.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (T, error)
@@ -35,6 +41,9 @@ type Director interface {
 	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload *workload.PodWorkload, appName string, containerName string) error
 	Cleanup(podDetails types.NamespacedName)
 	Shutdown()
+	// TODO: once all our implementation move to this function we can rename it to ApplyInstrumentationConfig,
+	// currently that name is reserved for the old API until it is removed.
+	ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error
 }
 
 type podDetails struct {
@@ -101,6 +110,8 @@ type DirectorKey struct {
 
 type DirectorsMap map[DirectorKey]Director
 
+var _ Director = &EbpfDirector[*GoOtelEbpfSdk]{}
+
 func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, scheme *runtime.Scheme, language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
 	director := &EbpfDirector[T]{
 		language:                     language,
@@ -116,6 +127,34 @@ func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, s
 	go director.observeInstrumentations(ctx, scheme)
 
 	return director
+}
+
+func (d *EbpfDirector[T]) ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
+	var t T
+	if _, ok := any(t).(ConfigurableOtelEbpfSdk); !ok {
+		log.Logger.V(1).Info("eBPF SDK is not configurable, skip applying configuration", "language", d.Language())
+		return nil
+	}
+
+	d.mux.Lock()
+	defer d.mux.Unlock()
+
+	insts := d.GetWorkloadInstrumentations(workload)
+
+	log.Logger.V(3).Info("Applying config to instrumentations after CRD change", "instrumentationConfig", instrumentationConfig, "workload", workload, "SDKs count", len(insts))
+
+	var retErr []error
+	for _, inst := range insts {
+		// The type assertion is safe because we made sure the SDK for this director implements the ConfigurableOtelEbpfSdk interface
+		err := any(inst).(ConfigurableOtelEbpfSdk).ApplyConfig(ctx, instrumentationConfig)
+		if err != nil {
+			retErr = append(retErr, err)
+		}
+	}
+	if len(retErr) > 0 {
+		return fmt.Errorf("failed to apply config to %d instrumentations", len(retErr))
+	}
+	return nil
 }
 
 func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context, scheme *runtime.Scheme) {
@@ -312,9 +351,6 @@ func (d *EbpfDirector[T]) Shutdown() {
 }
 
 func (d *EbpfDirector[T]) GetWorkloadInstrumentations(workload *workload.PodWorkload) []T {
-	d.mux.Lock()
-	defer d.mux.Unlock()
-
 	pods, ok := d.workloadToPods[*workload]
 	if !ok {
 		return nil
