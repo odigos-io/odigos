@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/consts"
@@ -28,10 +29,14 @@ var _ goAutoConfig.Provider = (*ConfigProvider[goAutoConfig.InstrumentationConfi
 // compile-time check that GoOtelEbpfSdk implements ConfigurableOtelEbpfSdk
 var _ ConfigurableOtelEbpfSdk = (*GoOtelEbpfSdk)(nil)
 
-type GoInstrumentationFactory struct{}
+type GoInstrumentationFactory struct{
+	kubeclient client.Client
+}
 
-func NewGoInstrumentationFactory() InstrumentationFactory[*GoOtelEbpfSdk] {
-	return &GoInstrumentationFactory{}
+func NewGoInstrumentationFactory(kubeclient client.Client) InstrumentationFactory[*GoOtelEbpfSdk] {
+	return &GoInstrumentationFactory{
+		kubeclient: kubeclient,
+	}
 }
 
 func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *workload.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (*GoOtelEbpfSdk, error) {
@@ -45,7 +50,18 @@ func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context
 		return nil, err
 	}
 
-	cp := NewConfigProvider(goAutoConfig.InstrumentationConfig{})
+	// Fetch initial config based on the InstrumentationConfig CR
+	instrumentationConfig := &odigosv1.InstrumentationConfig{}
+	initialConfig := goAutoConfig.InstrumentationConfig{}
+	instrumentationConfigKey := client.ObjectKey{
+		Namespace: podWorkload.Namespace,
+		Name:      workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind),
+	}
+	if err := g.kubeclient.Get(ctx, instrumentationConfigKey, instrumentationConfig); err == nil {
+		initialConfig = convertToGoInstrumentationConfig(instrumentationConfig)
+	}
+
+	cp := NewConfigProvider(initialConfig)
 
 	inst, err := auto.NewInstrumentation(
 		ctx,
@@ -74,11 +90,11 @@ func (g *GoOtelEbpfSdk) Close(ctx context.Context) error {
 	return g.inst.Close()
 }
 
-func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, instConfig *v1alpha1.InstrumentationConfig) error {
+func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, instConfig *odigosv1.InstrumentationConfig) error {
 	return g.cp.SendConfig(ctx, convertToGoInstrumentationConfig(instConfig))
 }
 
-func convertToGoInstrumentationConfig(instConfig *v1alpha1.InstrumentationConfig) goAutoConfig.InstrumentationConfig {
+func convertToGoInstrumentationConfig(instConfig *odigosv1.InstrumentationConfig) goAutoConfig.InstrumentationConfig {
 	ic := goAutoConfig.InstrumentationConfig{}
 	ic.InstrumentationLibraryConfigs = make(map[goAutoConfig.InstrumentationLibraryID]goAutoConfig.InstrumentationLibrary)
 	for _, sdkConfig := range instConfig.Spec.SdkConfigs {
