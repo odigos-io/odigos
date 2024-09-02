@@ -19,6 +19,7 @@ export interface ManagedSource {
   namespace: string;
   reported_name?: string;
   number_of_running_instances: number;
+  instrumentation_config: Array<InstrumentationConfig>;
   instrumented_application_details: {
     instrumentation_options: Array<InstrumentationConfig>;
     conditions: Array<Condition>;

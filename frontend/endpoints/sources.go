@@ -14,6 +14,8 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type SourceLanguage struct {
@@ -30,9 +32,9 @@ type InstrumentedApplicationDetails struct {
 // this object contains only part of the source fields. It is used to display the sources in the frontend
 type ThinSource struct {
 	common.SourceID
-	NumberOfRunningInstances int                                 `json:"number_of_running_instances"`
-	IaDetails                *InstrumentedApplicationDetails     `json:"instrumented_application_details"`
-	InstrumentationConfig    *v1alpha1.InstrumentationConfigList `json:"instrumentation_config,omitempty"`
+	NumberOfRunningInstances int                                      `json:"number_of_running_instances"`
+	IaDetails                *InstrumentedApplicationDetails          `json:"instrumented_application_details"`
+	InstrumentationConfig    []v1alpha1.WorkloadInstrumentationConfig `json:"instrumentation_config,omitempty"`
 }
 
 type Source struct {
@@ -41,7 +43,8 @@ type Source struct {
 }
 
 type PatchSourceRequest struct {
-	ReportedName *string `json:"reported_name"`
+	ReportedName          *string                                  `json:"reported_name"`
+	InstrumentationConfig []v1alpha1.WorkloadInstrumentationConfig `json:"instrumentation_config,omitempty"`
 }
 
 func GetSources(c *gin.Context, odigosns string) {
@@ -147,7 +150,9 @@ func GetSource(c *gin.Context) {
 	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(c, k8sObjectName, metav1.GetOptions{})
 	if err == nil {
 		// valid instrumented application, grab the runtime details
-		ts.IaDetails = k8sInstrumentedAppToThinSource(instrumentedApplication).IaDetails
+		thinSource := k8sInstrumentedAppToThinSource(instrumentedApplication)
+		ts.IaDetails = thinSource.IaDetails
+		ts.InstrumentationConfig = thinSource.InstrumentationConfig
 		// potentially add a condition for healthy instrumentation instances
 		err = addHealthyInstrumentationInstancesCondition(c, instrumentedApplication, &ts)
 		if err != nil {
@@ -220,6 +225,70 @@ func PatchSource(c *gin.Context) {
 		}
 	}
 
+	if request.InstrumentationConfig != nil {
+
+		// Calculate the name of the InstrumentationConfig resource based on the workload name and kind
+		k8sObjectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
+
+		// Attempt to get the existing InstrumentationConfig resource
+		instrumentationConfigResource, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Get(c.Request.Context(), k8sObjectName, metav1.GetOptions{})
+
+		// Check if the resource was not found or if another error occurred
+		if err != nil && !apierrors.IsNotFound(err) {
+			returnError(c, err)
+			return
+		}
+
+		shouldInsert := apierrors.IsNotFound(err)
+
+		// Retrieve the owner of the workload to set as the owner reference
+		workloadOwner, _ := getWorkloadObject(c, ns, kind, name)
+
+		// Prepare the list of WorkloadInstrumentationConfig objects from the request
+		var workloadConfigs []v1alpha1.WorkloadInstrumentationConfig
+		for _, c := range request.InstrumentationConfig {
+			workloadConfig := v1alpha1.WorkloadInstrumentationConfig{
+				OptionKey:                c.OptionKey,
+				OptionValueBoolean:       c.OptionValueBoolean,
+				SpanKind:                 c.SpanKind,
+				InstrumentationLibraries: c.InstrumentationLibraries,
+			}
+			workloadConfigs = append(workloadConfigs, workloadConfig)
+		}
+
+		// Create a new InstrumentationConfig object
+		newConfig := v1alpha1.InstrumentationConfig{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            k8sObjectName,
+				Namespace:       ns,
+				ResourceVersion: instrumentationConfigResource.ResourceVersion, // Keep the existing ResourceVersion for updates
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "apps/v1",
+						Kind:       kind,
+						Name:       k8sObjectName,
+						UID:        workloadOwner.GetUID(),
+					},
+				},
+			},
+			Spec: v1alpha1.InstrumentationConfigSpec{
+				Config: workloadConfigs,
+			},
+		}
+
+		// If the resource does not exist, create it; otherwise, update the existing resource
+		if shouldInsert {
+			_, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Create(c.Request.Context(), &newConfig, metav1.CreateOptions{})
+		} else {
+			_, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Update(c.Request.Context(), &newConfig, metav1.UpdateOptions{})
+		}
+
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+	}
+
 	c.Status(200)
 }
 
@@ -269,14 +338,20 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 		})
 	}
 
+	instrumentationConfig, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(app.Namespace).Get(context.Background(), app.Name, metav1.GetOptions{})
+	if err == nil {
+		source.InstrumentationConfig = instrumentationConfig.Spec.Config
+
+	}
+
 	var instrumentationOptions []v1alpha1.WorkloadInstrumentationConfig
+
 	for _, option := range app.Spec.Options {
 		for _, libOptions := range option.InstrumentationLibraries {
 			for _, configOption := range libOptions.Options {
 				instrumentationOptions = append(instrumentationOptions, v1alpha1.WorkloadInstrumentationConfig{
-					OptionKey:          configOption.OptionKey,
-					SpanKind:           configOption.SpanKind,
-					OptionValueBoolean: false, // Adjust based on your logic
+					OptionKey: configOption.OptionKey,
+					SpanKind:  configOption.SpanKind,
 					InstrumentationLibraries: []v1alpha1.InstrumentationLibrary{
 						{
 							InstrumentationLibraryName: libOptions.LibraryName,

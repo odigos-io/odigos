@@ -61,10 +61,26 @@ export function EditSourceForm() {
       currentSource?.name || '',
       {
         reported_name: inputValue,
-        instrumentation_options: instrumentationOptions,
+        instrumentation_config: filterInstrumentationOptions(),
       }
     )
   );
+
+  function filterInstrumentationOptions() {
+    return instrumentationOptions
+      .map((option) => {
+        const filteredLibraries = option.instrumentationLibraries.filter(
+          (library) => library.selected
+        );
+
+        // Return the option with filtered libraries if any remain
+        return {
+          ...option,
+          instrumentationLibraries: filteredLibraries,
+        };
+      })
+      .filter((option) => option.instrumentationLibraries.length > 0); // Remove options with empty libraries
+  }
 
   useEffect(() => {
     console.log({ instrumentationOptions });
@@ -76,6 +92,37 @@ export function EditSourceForm() {
 
   useEffect(() => {
     setInputValue(currentSource?.reported_name || '');
+
+    if (currentSource?.instrumentation_config) {
+      const instrumentationOptions =
+        currentSource?.instrumented_application_details?.instrumentation_options.map(
+          (option) => {
+            const isSelected = currentSource.instrumentation_config.some(
+              (config) =>
+                config.optionKey === option.optionKey &&
+                config.spanKind === option.spanKind
+            );
+
+            return {
+              ...option,
+              optionValueBoolean: currentSource?.instrumentation_config.find(
+                (config) =>
+                  config.optionKey === option.optionKey &&
+                  config.spanKind === option.spanKind
+              )?.optionValueBoolean,
+              instrumentationLibraries: option.instrumentationLibraries.map(
+                (library) => ({
+                  ...library,
+                  selected: isSelected,
+                })
+              ),
+            };
+          }
+        );
+      setInstrumentationOptions(instrumentationOptions);
+      return;
+    }
+
     setInstrumentationOptions(
       currentSource?.instrumented_application_details
         ?.instrumentation_options || []
@@ -112,7 +159,33 @@ export function EditSourceForm() {
   function handleInstrumentationChange(
     updatedOptions: InstrumentationConfig[]
   ) {
-    setInstrumentationOptions(updatedOptions);
+    // Get the language from the current source
+    const lan =
+      currentSource?.instrumented_application_details.languages?.[0].language;
+
+    // Iterate over the updatedOptions to add the language where it's missing
+    const updatedOptionsWithLanguage = updatedOptions.map((option) => {
+      const updatedLibraries = option.instrumentationLibraries.map(
+        (library) => {
+          // If language is empty, set it to the determined language
+          if (!library.language) {
+            return {
+              ...library,
+              language: lan || '', // Use the retrieved language or keep it empty if lan is undefined
+            };
+          }
+          return library; // Return the library as is if language is already set
+        }
+      );
+
+      return {
+        ...option,
+        instrumentationLibraries: updatedLibraries,
+      };
+    });
+
+    // Update the state with the modified options
+    setInstrumentationOptions(updatedOptionsWithLanguage);
   }
 
   if (!currentSource) {
