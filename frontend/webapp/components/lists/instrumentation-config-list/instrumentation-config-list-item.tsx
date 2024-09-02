@@ -33,7 +33,6 @@ const InstrumentationConfigListItem = ({
         <InstrumentedLibraryOption
           key={lib.instrumentationLibraryName}
           name={lib.instrumentationLibraryName}
-          language={lib.language}
           selected={!!lib.selected}
           onChange={() => onLibChange(lib.instrumentationLibraryName)}
           disabled={false}

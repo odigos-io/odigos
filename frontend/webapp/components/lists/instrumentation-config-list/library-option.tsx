@@ -15,13 +15,11 @@ const SOURCES = {
 
 export default function InstrumentedLibraryOption({
   name,
-  language,
   selected,
   onChange,
   disabled = false,
 }: {
   name: string;
-  language: string;
   selected: boolean;
   onChange: (name: string) => void;
   disabled: boolean;
@@ -43,14 +41,6 @@ export default function InstrumentedLibraryOption({
           {name}
         </KeyvalText>
       </LibNameWrapper>
-      {/* <LibNameWrapper>
-        <KeyvalText size={12} color={theme.text.light_grey}>
-          {SOURCES.LANGUAGE}
-        </KeyvalText>
-        <KeyvalText size={14} weight={600}>
-          {language}
-        </KeyvalText>
-      </LibNameWrapper> */}
     </StyledLibraryOptionContainer>
   );
 }
