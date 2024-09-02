@@ -264,8 +264,26 @@ func DeleteSource(c *gin.Context) {
 		return
 	}
 
+	// Fetch the existing InstrumentationConfig
+	k8sObjectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
+	instrumentationConfig, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Get(context.Background(), k8sObjectName, metav1.GetOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		returnError(c, err)
+		return
+	}
+
+	// Reset the InstrumentationConfig if it exists
+	if err == nil {
+		instrumentationConfig.Spec.Config = []v1alpha1.WorkloadInstrumentationConfig{}
+		_, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Update(c.Request.Context(), instrumentationConfig, metav1.UpdateOptions{})
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+	}
+
 	instrumented := false
-	err := setWorkloadInstrumentationLabel(c, ns, name, kindAsEnum, &instrumented)
+	err = setWorkloadInstrumentationLabel(c, ns, name, kindAsEnum, &instrumented)
 	if err != nil {
 		returnError(c, err)
 		return
