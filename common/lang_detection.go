@@ -1,8 +1,10 @@
 package common
 
+import "github.com/hashicorp/go-version"
+
 type ProgramLanguageDetails struct {
 	Language       ProgrammingLanguage
-	RuntimeVersion string
+	RuntimeVersion *version.Version
 }
 
 // +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;mysql;nginx;unknown;ignored
@@ -23,3 +25,11 @@ const (
 	// Ignored is used when the odigos is configured to ignore the process/container
 	IgnoredProgrammingLanguage ProgrammingLanguage = "ignored"
 )
+
+func GetVersion(versionString string) *version.Version {
+	runtimeVersion, err := version.NewVersion(versionString)
+	if err != nil {
+		return nil
+	}
+	return runtimeVersion
+}
