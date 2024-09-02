@@ -7,7 +7,7 @@ package workload
 // that governs the lifecycle and behavior of a Pod, especially in contexts where
 // understanding the relationship between a Pod and its controlling workload is crucial.
 type PodWorkload struct {
-	Name      string
-	Namespace string
-	Kind      WorkloadKind
+	Name      string       `json:"name"`
+	Namespace string       `json:"namespace"`
+	Kind      WorkloadKind `json:"kind"`
 }
