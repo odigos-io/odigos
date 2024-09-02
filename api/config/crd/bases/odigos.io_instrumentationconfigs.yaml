@@ -333,7 +333,6 @@ spec:
                       - ignored
                       type: string
                   required:
-                  - instrumentationLibraryConfigs
                   - language
                   type: object
                 type: array

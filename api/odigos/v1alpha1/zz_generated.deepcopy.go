@@ -1056,7 +1056,11 @@ func (in *SdkConfig) DeepCopyInto(out *SdkConfig) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	in.HeadSamplingConfig.DeepCopyInto(&out.HeadSamplingConfig)
+	if in.HeadSamplingConfig != nil {
+		in, out := &in.HeadSamplingConfig, &out.HeadSamplingConfig
+		*out = new(HeadSamplingConfig)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.DefaultHttpPayloadCollection != nil {
 		in, out := &in.DefaultHttpPayloadCollection, &out.DefaultHttpPayloadCollection
 		*out = new(rulesv1alpha1.HttpPayloadCollectionRule)

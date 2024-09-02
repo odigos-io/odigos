@@ -42,12 +42,12 @@ type SdkConfig struct {
 	Language common.ProgrammingLanguage `json:"language"`
 
 	// configurations for the instrumentation libraries the the SDK should use
-	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs"`
+	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs,omitempty"`
 
 	// HeadSamplingConfig is a set sampling rules.
 	// This config currently only applies to root spans.
 	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
-	HeadSamplingConfig HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
+	HeadSamplingConfig *HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
 
 	// In the absence of any instrumentation library specific rule, these rules will be used by default for http payload collection.
 	DefaultHttpPayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule `json:"defaultHttpPayloadCollection,omitempty"`
