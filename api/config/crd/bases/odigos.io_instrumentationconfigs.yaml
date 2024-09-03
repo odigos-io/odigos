@@ -138,10 +138,38 @@ spec:
                           format: int64
                           type: integer
                       type: object
-                    defaultHttpPayloadCollection:
+                    defaultHttpRequestPayloadCollection:
                       description: In the absence of any instrumentation library specific
-                        rule, these rules will be used by default for http payload
-                        collection.
+                        rule, these rules will be used by default for http request
+                        payload collection.
+                      properties:
+                        allowedMimeTypePatterns:
+                          description: |-
+                            which mime types to allow for collection, as specified in the http header
+                            if any item in the list matches, the payload will be considered for collection
+                            if empty list - non of the mime types will be collected
+                            if nil - all mime types will be collected
+                          items:
+                            type: string
+                          type: array
+                        dropPartialPayloads:
+                          description: |-
+                            If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                            This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                          type: boolean
+                        maxPayloadLength:
+                          description: |-
+                            the maximum length of the payload to collect
+                            This value relates to the actual payload length in the attribute, which might be different than the length in bytes due to encoding.
+                            if the content length is below or equal to this value, the payload will be collected
+                            if the content length is above this value, the decision to collect will be based on the dropPartialPayloads parameter
+                          format: int64
+                          type: integer
+                      type: object
+                    defaultHttpResponsePayloadCollection:
+                      description: In the absence of any instrumentation library specific
+                        rule, these rules will be used by default for http response
+                        payload collection.
                       properties:
                         allowedMimeTypePatterns:
                           description: |-
@@ -239,9 +267,9 @@ spec:
                         the the SDK should use
                       items:
                         properties:
-                          dbPayloadCollection:
+                          dbStatementPayloadCollection:
                             description: |-
-                              Db payload collection rules for this instrumentation library
+                              Db statement payload collection rules for this instrumentation library
                               If db category is not supported by the instrumentation library, the rule is ignored
                               Use empty value when this category is irrelevant or to use the default SDK level rules
                             properties:
@@ -259,9 +287,38 @@ spec:
                                 format: int64
                                 type: integer
                             type: object
-                          httpPayloadCollection:
+                          httpRequestPayloadCollection:
                             description: |-
-                              Http payload collection rules for this instrumentation library
+                              Http request payload collection rules for this instrumentation library
+                              If http category is not supported by the instrumentation library, the rule is ignored
+                              Use empty value when this category is irrelevant or to use the default SDK level rules
+                            properties:
+                              allowedMimeTypePatterns:
+                                description: |-
+                                  which mime types to allow for collection, as specified in the http header
+                                  if any item in the list matches, the payload will be considered for collection
+                                  if empty list - non of the mime types will be collected
+                                  if nil - all mime types will be collected
+                                items:
+                                  type: string
+                                type: array
+                              dropPartialPayloads:
+                                description: |-
+                                  If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                                  This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                                type: boolean
+                              maxPayloadLength:
+                                description: |-
+                                  the maximum length of the payload to collect
+                                  This value relates to the actual payload length in the attribute, which might be different than the length in bytes due to encoding.
+                                  if the content length is below or equal to this value, the payload will be collected
+                                  if the content length is above this value, the decision to collect will be based on the dropPartialPayloads parameter
+                                format: int64
+                                type: integer
+                            type: object
+                          httpResponsePayloadCollection:
+                            description: |-
+                              Http response payload collection rules for this instrumentation library
                               If http category is not supported by the instrumentation library, the rule is ignored
                               Use empty value when this category is irrelevant or to use the default SDK level rules
                             properties:

@@ -24,10 +24,11 @@ import (
 // InstrumentationLibraryConfigApplyConfiguration represents a declarative configuration of the InstrumentationLibraryConfig type for use
 // with apply.
 type InstrumentationLibraryConfigApplyConfiguration struct {
-	InstrumentationLibraryId *InstrumentationLibraryIdApplyConfiguration           `json:"libraryId,omitempty"`
-	TraceConfig              *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
-	HttpPayloadCollection    *rulesv1alpha1.HttpPayloadCollectionRule              `json:"httpPayloadCollection,omitempty"`
-	DbPayloadCollection      *rulesv1alpha1.DbPayloadCollectionRule                `json:"dbPayloadCollection,omitempty"`
+	InstrumentationLibraryId      *InstrumentationLibraryIdApplyConfiguration           `json:"libraryId,omitempty"`
+	TraceConfig                   *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
+	HttpRequestPayloadCollection  *rulesv1alpha1.HttpPayloadCollectionRule              `json:"httpRequestPayloadCollection,omitempty"`
+	HttpResponsePayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule              `json:"httpResponsePayloadCollection,omitempty"`
+	DbStatementPayloadCollection  *rulesv1alpha1.DbStatementPayloadCollectionRule       `json:"dbStatementPayloadCollection,omitempty"`
 }
 
 // InstrumentationLibraryConfigApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryConfig type for use with
@@ -52,18 +53,26 @@ func (b *InstrumentationLibraryConfigApplyConfiguration) WithTraceConfig(value *
 	return b
 }
 
-// WithHttpPayloadCollection sets the HttpPayloadCollection field in the declarative configuration to the given value
+// WithHttpRequestPayloadCollection sets the HttpRequestPayloadCollection field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the HttpPayloadCollection field is set to the value of the last call.
-func (b *InstrumentationLibraryConfigApplyConfiguration) WithHttpPayloadCollection(value rulesv1alpha1.HttpPayloadCollectionRule) *InstrumentationLibraryConfigApplyConfiguration {
-	b.HttpPayloadCollection = &value
+// If called multiple times, the HttpRequestPayloadCollection field is set to the value of the last call.
+func (b *InstrumentationLibraryConfigApplyConfiguration) WithHttpRequestPayloadCollection(value rulesv1alpha1.HttpPayloadCollectionRule) *InstrumentationLibraryConfigApplyConfiguration {
+	b.HttpRequestPayloadCollection = &value
 	return b
 }
 
-// WithDbPayloadCollection sets the DbPayloadCollection field in the declarative configuration to the given value
+// WithHttpResponsePayloadCollection sets the HttpResponsePayloadCollection field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DbPayloadCollection field is set to the value of the last call.
-func (b *InstrumentationLibraryConfigApplyConfiguration) WithDbPayloadCollection(value rulesv1alpha1.DbPayloadCollectionRule) *InstrumentationLibraryConfigApplyConfiguration {
-	b.DbPayloadCollection = &value
+// If called multiple times, the HttpResponsePayloadCollection field is set to the value of the last call.
+func (b *InstrumentationLibraryConfigApplyConfiguration) WithHttpResponsePayloadCollection(value rulesv1alpha1.HttpPayloadCollectionRule) *InstrumentationLibraryConfigApplyConfiguration {
+	b.HttpResponsePayloadCollection = &value
+	return b
+}
+
+// WithDbStatementPayloadCollection sets the DbStatementPayloadCollection field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DbStatementPayloadCollection field is set to the value of the last call.
+func (b *InstrumentationLibraryConfigApplyConfiguration) WithDbStatementPayloadCollection(value rulesv1alpha1.DbStatementPayloadCollectionRule) *InstrumentationLibraryConfigApplyConfiguration {
+	b.DbStatementPayloadCollection = &value
 	return b
 }

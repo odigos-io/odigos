@@ -25,11 +25,12 @@ import (
 // SdkConfigApplyConfiguration represents a declarative configuration of the SdkConfig type for use
 // with apply.
 type SdkConfigApplyConfiguration struct {
-	Language                      *common.ProgrammingLanguage                      `json:"language,omitempty"`
-	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration `json:"instrumentationLibraryConfigs,omitempty"`
-	HeadSamplingConfig            *HeadSamplingConfigApplyConfiguration            `json:"headSamplerConfig,omitempty"`
-	DefaultHttpPayloadCollection  *rulesv1alpha1.HttpPayloadCollectionRule         `json:"defaultHttpPayloadCollection,omitempty"`
-	DefaultDbPayloadCollection    *rulesv1alpha1.DbPayloadCollectionRule           `json:"defaultDbPayloadCollection,omitempty"`
+	Language                             *common.ProgrammingLanguage                      `json:"language,omitempty"`
+	InstrumentationLibraryConfigs        []InstrumentationLibraryConfigApplyConfiguration `json:"instrumentationLibraryConfigs,omitempty"`
+	HeadSamplingConfig                   *HeadSamplingConfigApplyConfiguration            `json:"headSamplerConfig,omitempty"`
+	DefaultHttpRequestPayloadCollection  *rulesv1alpha1.HttpPayloadCollectionRule         `json:"defaultHttpRequestPayloadCollection,omitempty"`
+	DefaultHttpResponsePayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule         `json:"defaultHttpResponsePayloadCollection,omitempty"`
+	DefaultDbStatementPayloadCollection  *rulesv1alpha1.DbStatementPayloadCollectionRule  `json:"defaultDbPayloadCollection,omitempty"`
 }
 
 // SdkConfigApplyConfiguration constructs a declarative configuration of the SdkConfig type for use with
@@ -67,18 +68,26 @@ func (b *SdkConfigApplyConfiguration) WithHeadSamplingConfig(value *HeadSampling
 	return b
 }
 
-// WithDefaultHttpPayloadCollection sets the DefaultHttpPayloadCollection field in the declarative configuration to the given value
+// WithDefaultHttpRequestPayloadCollection sets the DefaultHttpRequestPayloadCollection field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DefaultHttpPayloadCollection field is set to the value of the last call.
-func (b *SdkConfigApplyConfiguration) WithDefaultHttpPayloadCollection(value rulesv1alpha1.HttpPayloadCollectionRule) *SdkConfigApplyConfiguration {
-	b.DefaultHttpPayloadCollection = &value
+// If called multiple times, the DefaultHttpRequestPayloadCollection field is set to the value of the last call.
+func (b *SdkConfigApplyConfiguration) WithDefaultHttpRequestPayloadCollection(value rulesv1alpha1.HttpPayloadCollectionRule) *SdkConfigApplyConfiguration {
+	b.DefaultHttpRequestPayloadCollection = &value
 	return b
 }
 
-// WithDefaultDbPayloadCollection sets the DefaultDbPayloadCollection field in the declarative configuration to the given value
+// WithDefaultHttpResponsePayloadCollection sets the DefaultHttpResponsePayloadCollection field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DefaultDbPayloadCollection field is set to the value of the last call.
-func (b *SdkConfigApplyConfiguration) WithDefaultDbPayloadCollection(value rulesv1alpha1.DbPayloadCollectionRule) *SdkConfigApplyConfiguration {
-	b.DefaultDbPayloadCollection = &value
+// If called multiple times, the DefaultHttpResponsePayloadCollection field is set to the value of the last call.
+func (b *SdkConfigApplyConfiguration) WithDefaultHttpResponsePayloadCollection(value rulesv1alpha1.HttpPayloadCollectionRule) *SdkConfigApplyConfiguration {
+	b.DefaultHttpResponsePayloadCollection = &value
+	return b
+}
+
+// WithDefaultDbStatementPayloadCollection sets the DefaultDbStatementPayloadCollection field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DefaultDbStatementPayloadCollection field is set to the value of the last call.
+func (b *SdkConfigApplyConfiguration) WithDefaultDbStatementPayloadCollection(value rulesv1alpha1.DbStatementPayloadCollectionRule) *SdkConfigApplyConfiguration {
+	b.DefaultDbStatementPayloadCollection = &value
 	return b
 }

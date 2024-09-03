@@ -575,14 +575,19 @@ func (in *InstrumentationLibraryConfig) DeepCopyInto(out *InstrumentationLibrary
 		*out = new(InstrumentationLibraryConfigTraces)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.HttpPayloadCollection != nil {
-		in, out := &in.HttpPayloadCollection, &out.HttpPayloadCollection
+	if in.HttpRequestPayloadCollection != nil {
+		in, out := &in.HttpRequestPayloadCollection, &out.HttpRequestPayloadCollection
 		*out = new(rulesv1alpha1.HttpPayloadCollectionRule)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.DbPayloadCollection != nil {
-		in, out := &in.DbPayloadCollection, &out.DbPayloadCollection
-		*out = new(rulesv1alpha1.DbPayloadCollectionRule)
+	if in.HttpResponsePayloadCollection != nil {
+		in, out := &in.HttpResponsePayloadCollection, &out.HttpResponsePayloadCollection
+		*out = new(rulesv1alpha1.HttpPayloadCollectionRule)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.DbStatementPayloadCollection != nil {
+		in, out := &in.DbStatementPayloadCollection, &out.DbStatementPayloadCollection
+		*out = new(rulesv1alpha1.DbStatementPayloadCollectionRule)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -1061,14 +1066,19 @@ func (in *SdkConfig) DeepCopyInto(out *SdkConfig) {
 		*out = new(HeadSamplingConfig)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.DefaultHttpPayloadCollection != nil {
-		in, out := &in.DefaultHttpPayloadCollection, &out.DefaultHttpPayloadCollection
+	if in.DefaultHttpRequestPayloadCollection != nil {
+		in, out := &in.DefaultHttpRequestPayloadCollection, &out.DefaultHttpRequestPayloadCollection
 		*out = new(rulesv1alpha1.HttpPayloadCollectionRule)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.DefaultDbPayloadCollection != nil {
-		in, out := &in.DefaultDbPayloadCollection, &out.DefaultDbPayloadCollection
-		*out = new(rulesv1alpha1.DbPayloadCollectionRule)
+	if in.DefaultHttpResponsePayloadCollection != nil {
+		in, out := &in.DefaultHttpResponsePayloadCollection, &out.DefaultHttpResponsePayloadCollection
+		*out = new(rulesv1alpha1.HttpPayloadCollectionRule)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.DefaultDbStatementPayloadCollection != nil {
+		in, out := &in.DefaultDbStatementPayloadCollection, &out.DefaultDbStatementPayloadCollection
+		*out = new(rulesv1alpha1.DbStatementPayloadCollectionRule)
 		(*in).DeepCopyInto(*out)
 	}
 }

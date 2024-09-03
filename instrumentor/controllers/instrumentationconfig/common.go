@@ -65,16 +65,18 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 
 		for i := range ic.Spec.SdkConfigs {
 			if rule.Spec.InstrumentationLibraries == nil { // nil means a rule in SDK level, that applies unless overridden by library level rule
-				ic.Spec.SdkConfigs[i].DefaultHttpPayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpPayloadCollection, rule.Spec.HttpPayloadCollectionRule)
-				ic.Spec.SdkConfigs[i].DefaultDbPayloadCollection = mergeDbPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultDbPayloadCollection, rule.Spec.DbPayloadCollectionRule)
+				ic.Spec.SdkConfigs[i].DefaultHttpRequestPayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpRequestPayloadCollection, rule.Spec.HttpRequestPayloadCollectionRule)
+				ic.Spec.SdkConfigs[i].DefaultHttpResponsePayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpResponsePayloadCollection, rule.Spec.HttpResponsePayloadCollectionRule)
+				ic.Spec.SdkConfigs[i].DefaultDbStatementPayloadCollection = mergeDbPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultDbStatementPayloadCollection, rule.Spec.DbStatementPayloadCollectionRule)
 			} else {
 				for _, library := range *rule.Spec.InstrumentationLibraries {
 					if library.Language != ic.Spec.SdkConfigs[i].Language {
 						continue
 					}
 					libraryConfig := findOrCreateSdkLibraryConfig(&ic.Spec.SdkConfigs[i], library)
-					libraryConfig.HttpPayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpPayloadCollection, rule.Spec.HttpPayloadCollectionRule)
-					libraryConfig.DbPayloadCollection = mergeDbPayloadCollectionRules(libraryConfig.DbPayloadCollection, rule.Spec.DbPayloadCollectionRule)
+					libraryConfig.HttpRequestPayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpRequestPayloadCollection, rule.Spec.HttpRequestPayloadCollectionRule)
+					libraryConfig.HttpResponsePayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpResponsePayloadCollection, rule.Spec.HttpResponsePayloadCollectionRule)
+					libraryConfig.DbStatementPayloadCollection = mergeDbPayloadCollectionRules(libraryConfig.DbStatementPayloadCollection, rule.Spec.DbStatementPayloadCollectionRule)
 				}
 			}
 		}
@@ -190,14 +192,14 @@ func mergeHttpPayloadCollectionRules(rule1 *rulesv1alpha1.HttpPayloadCollectionR
 	return &mergedRules
 }
 
-func mergeDbPayloadCollectionRules(rule1 *rulesv1alpha1.DbPayloadCollectionRule, rule2 *rulesv1alpha1.DbPayloadCollectionRule) *rulesv1alpha1.DbPayloadCollectionRule {
+func mergeDbPayloadCollectionRules(rule1 *rulesv1alpha1.DbStatementPayloadCollectionRule, rule2 *rulesv1alpha1.DbStatementPayloadCollectionRule) *rulesv1alpha1.DbStatementPayloadCollectionRule {
 	if rule1 == nil {
 		return rule2
 	} else if rule2 == nil {
 		return rule1
 	}
 
-	mergedRules := rulesv1alpha1.DbPayloadCollectionRule{}
+	mergedRules := rulesv1alpha1.DbStatementPayloadCollectionRule{}
 
 	// MaxPayloadLength - choose the smallest value, as this is the maximum allowed
 	if rule1.MaxPayloadLength == nil {

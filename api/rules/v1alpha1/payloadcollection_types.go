@@ -42,7 +42,7 @@ type HttpPayloadCollectionRule struct {
 }
 
 // Rule for collecting payloads for a DbStatement
-type DbPayloadCollectionRule struct {
+type DbStatementPayloadCollectionRule struct {
 
 	// the maximum length of the payload to collect
 	// This value relates to the actual payload length in the attribute, which might be different than the length in bytes due to encoding.
@@ -89,11 +89,16 @@ type PayloadCollectionSpec struct {
 	// If empty, no instrumentation libraries will be used.
 	InstrumentationLibraries *[]InstrumentationLibraryId `json:"instrumentationLibraries,omitempty"`
 
-	// rule for collecting http payloads for the mentioned workload and instrumentation libraries
-	HttpPayloadCollectionRule *HttpPayloadCollectionRule `json:"httpPayloadCollectionRule,omitempty"`
+	// rule for collecting the request part of an http payload.
+	// request can be a client request (incoming ) or a server request, depending on the instrumentation library
+	HttpRequestPayloadCollectionRule *HttpPayloadCollectionRule `json:"httpRequestPayloadCollectionRule,omitempty"`
+
+	// rule for collecting the response part of an http payload.
+	// response can be a client response or a server response, depending on the instrumentation library
+	HttpResponsePayloadCollectionRule *HttpPayloadCollectionRule `json:"httpResponsePayloadCollectionRule,omitempty"`
 
 	// rule for collecting db payloads for the mentioned workload and instrumentation libraries
-	DbPayloadCollectionRule *DbPayloadCollectionRule `json:"dbPayloadCollectionRule,omitempty"`
+	DbStatementPayloadCollectionRule *DbStatementPayloadCollectionRule `json:"dbStatementPayloadCollectionRule,omitempty"`
 }
 
 type PayloadCollectionStatus struct {

@@ -203,3 +203,7 @@ cli-upgrade:
 .PHONY: api-all
 api-all:
 	make -C api all
+
+.PHONY: crd-apply
+crd-apply: api-all cli-upgrade
+	@echo "Applying changes to CRDs in api directory"
