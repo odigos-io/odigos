@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import theme from '@/styles/palette';
 import { useKeyDown } from '@/hooks';
-import { ManagedSource } from '@/types';
+import { InstrumentationConfig, ManagedSource } from '@/types';
 import { useMutation } from 'react-query';
 import { DeleteSource } from '@/components/overview';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -30,6 +30,7 @@ import {
   Conditions,
 } from '@/design.system';
 import { BackIcon } from '@keyval-dev/design-system';
+import { InstrumentationConfigList } from '@/components';
 
 const NAME = 'name';
 const KIND = 'kind';
@@ -38,6 +39,9 @@ const NAMESPACE = 'namespace';
 export function EditSourceForm() {
   const [inputValue, setInputValue] = useState('');
   const [currentSource, setCurrentSource] = useState<ManagedSource>();
+  const [instrumentationOptions, setInstrumentationOptions] = useState<
+    InstrumentationConfig[]
+  >([]);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -55,15 +59,73 @@ export function EditSourceForm() {
       currentSource?.namespace || '',
       currentSource?.kind || '',
       currentSource?.name || '',
-      { reported_name: inputValue }
+      {
+        reported_name: inputValue,
+        instrumentation_config: filterInstrumentationOptions(),
+      }
     )
   );
+
+  function filterInstrumentationOptions() {
+    return instrumentationOptions
+      .map((option) => {
+        const filteredLibraries = option.instrumentationLibraries.filter(
+          (library) => library.selected
+        );
+
+        return {
+          ...option,
+          instrumentationLibraries: filteredLibraries,
+        };
+      })
+      .filter((option) => option.instrumentationLibraries.length > 0);
+  }
+
   useEffect(() => {
     onPageLoad();
   }, [searchParams]);
 
   useEffect(() => {
     setInputValue(currentSource?.reported_name || '');
+
+    if (currentSource?.instrumentation_config) {
+      const instrumentationOptions =
+        currentSource?.instrumented_application_details?.instrumentation_options.map(
+          (option) => {
+            const selected = currentSource.instrumentation_config.some(
+              (config) =>
+                config.optionKey === option.optionKey &&
+                config.spanKind === option.spanKind
+            );
+            const language =
+              currentSource?.instrumented_application_details.languages?.[0]
+                .language || '';
+
+            return {
+              ...option,
+              optionValueBoolean: currentSource?.instrumentation_config.find(
+                (config) =>
+                  config.optionKey === option.optionKey &&
+                  config.spanKind === option.spanKind
+              )?.optionValueBoolean,
+              instrumentationLibraries: option.instrumentationLibraries.map(
+                (library) => ({
+                  ...library,
+                  language,
+                  selected,
+                })
+              ),
+            };
+          }
+        );
+      setInstrumentationOptions(instrumentationOptions);
+      return;
+    }
+
+    setInstrumentationOptions(
+      currentSource?.instrumented_application_details
+        ?.instrumentation_options || []
+    );
   }, [currentSource]);
 
   useKeyDown('Enter', handleKeyPress);
@@ -93,6 +155,12 @@ export function EditSourceForm() {
     });
   }
 
+  function handleInstrumentationChange(
+    updatedOptions: InstrumentationConfig[]
+  ) {
+    setInstrumentationOptions(updatedOptions);
+  }
+
   if (!currentSource) {
     return <KeyvalLoader />;
   }
@@ -113,6 +181,12 @@ export function EditSourceForm() {
               onChange={(e) => setInputValue(e)}
             />
           </FieldWrapper>
+          {instrumentationOptions.length > 0 && (
+            <InstrumentationConfigList
+              list={instrumentationOptions}
+              onChange={handleInstrumentationChange}
+            />
+          )}
           <SaveSourceButtonWrapper>
             <KeyvalButton disabled={!inputValue} onClick={onSaveClick}>
               <KeyvalText color={theme.colors.dark_blue} size={14} weight={600}>
@@ -123,11 +197,7 @@ export function EditSourceForm() {
           <DeleteSource
             onDelete={onSourceDelete}
             name={currentSource?.name}
-            image_url={
-              LANGUAGES_LOGOS[
-                getMainContainerLanguage(currentSource)
-              ]
-            }
+            image_url={LANGUAGES_LOGOS[getMainContainerLanguage(currentSource)]}
           />
         </div>
         <Conditions

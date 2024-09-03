@@ -21,7 +21,7 @@ import (
 )
 
 func TestComponentFactoryType(t *testing.T) {
-	require.Equal(t, "odigosresourcename", NewFactory().Type().String())
+	require.Equal(t, "odigossampling", NewFactory().Type().String())
 }
 
 func TestComponentConfigStruct(t *testing.T) {

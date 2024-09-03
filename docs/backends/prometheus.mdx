@@ -11,3 +11,46 @@ In order to enable remote write in Prometheus, set [the following feature flag](
 
 Once the remote write API is enabled, you can configure the Prometheus backend in the Odigos UI.
 Enter the URL of the Prometheus server and give a name to the backend.
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Prometheus` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: prometheus-example
+  namespace: odigos-system
+spec:
+  data:
+    PROMETHEUS_REMOTEWRITE_URL: <Remote Write URL>
+  destinationName: prometheus
+  signals:
+  - METRICS
+  type: prometheus
+```
