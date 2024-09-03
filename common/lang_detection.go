@@ -7,7 +7,7 @@ type ProgramLanguageDetails struct {
 	RuntimeVersion *version.Version
 }
 
-// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;mysql;nginx;unknown;ignored
+// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;mysql;postgres;nginx;unknown;ignored
 type ProgrammingLanguage string
 
 const (
