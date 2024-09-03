@@ -1,13 +1,13 @@
-import Image from 'next/image';
 import React from 'react';
+import Image from 'next/image';
 import styled from 'styled-components';
+import { ConnectionStatus } from '@/reuseable-components';
 
 interface SetupHeaderProps {}
 
 const HeaderContainer = styled.div`
   display: flex;
   padding: 20px 24px 20px 32px;
-  justify-content: space-between;
   align-items: center;
   background-color: ${({ theme }) => theme.colors.dark_grey};
   border-bottom: 1px solid rgba(249, 249, 249, 0.16);
@@ -31,6 +31,11 @@ export const MainHeader: React.FC<SetupHeaderProps> = () => {
           height={20}
         />
       </Logo>
+      <ConnectionStatus
+        title="Connection Status"
+        status="lost"
+        subtitle="Please check your internet connection"
+      />
     </HeaderContainer>
   );
 };
