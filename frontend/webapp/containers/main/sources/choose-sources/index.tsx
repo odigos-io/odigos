@@ -61,7 +61,7 @@ export function ChooseSourcesContainer() {
       dispatch(setSources(selectedItems));
       dispatch(setNamespaceFutureSelectAppsList(futureAppsCheckbox));
     }
-    router.push('/setup/choose-destination');
+    router.push('/choose-destination');
   }
 
   const toggleCheckboxState: ToggleCheckboxState = {
