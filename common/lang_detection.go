@@ -18,8 +18,9 @@ const (
 	JavascriptProgrammingLanguage ProgrammingLanguage = "javascript"
 	// This is an experimental feature, It is not a language
 	// but in order to avoid huge refactoring we are adding it here for now
-	MySQLProgrammingLanguage ProgrammingLanguage = "mysql"
-	NginxProgrammingLanguage ProgrammingLanguage = "nginx"
+	MySQLProgrammingLanguage    ProgrammingLanguage = "mysql"
+	PostgresProgrammingLanguage ProgrammingLanguage = "postgres"
+	NginxProgrammingLanguage    ProgrammingLanguage = "nginx"
 	// Used when the language detection is not successful for all the available inspectors
 	UnknownProgrammingLanguage ProgrammingLanguage = "unknown"
 	// Ignored is used when the odigos is configured to ignore the process/container

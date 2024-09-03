@@ -2,6 +2,7 @@ package inspectors
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/dotnet"
@@ -10,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/mysql"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/nginx"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/nodejs"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/postgres"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/python"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
@@ -37,6 +39,7 @@ var inspectorsList = []LanguageInspector{
 	&dotnet.DotnetInspector{},
 	&nodejs.NodejsInspector{},
 	&mysql.MySQLInspector{},
+	&postgres.PostgresInspector{},
 	&nginx.NginxInspector{},
 }
 
