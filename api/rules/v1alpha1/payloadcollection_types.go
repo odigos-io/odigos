@@ -35,7 +35,7 @@ type HttpPayloadCollectionRule struct {
 	// if the content length is above this value, the decision to collect will be based on the dropPartialPayloads parameter
 	MaxPayloadLength *int64 `json:"maxPayloadLength,omitempty"`
 
-	// If the payload is larger than the maxContentLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+	// If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
 	// This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 }
