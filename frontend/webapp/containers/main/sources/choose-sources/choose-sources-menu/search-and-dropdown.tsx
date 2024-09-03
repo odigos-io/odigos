@@ -27,7 +27,7 @@ const SearchAndDropdown: React.FC<SearchDropdownProps> = ({
       />
       <Dropdown
         options={dropdownOptions}
-        selectedOption={selectedOption}
+        value={selectedOption}
         onSelect={setSelectedOption}
       />
     </Container>
