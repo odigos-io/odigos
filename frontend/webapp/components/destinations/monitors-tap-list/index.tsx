@@ -31,6 +31,7 @@ const MonitorsTapList: React.FC<MonitorButtonsProps> = ({
       <MonitorButtonsContainer>
         {MONITORS_OPTIONS.map((monitor) => (
           <Tag
+            key={monitor.id}
             id={monitor.id}
             isSelected={selectedMonitors.includes(monitor.id)}
             onClick={() => onMonitorSelect(monitor.id)}
