@@ -67,7 +67,7 @@ export function ChooseDestinationContainer() {
             },
             {
               label: 'DONE',
-              onClick: () => console.log('Next button clicked'),
+              onClick: () => router.push('/main'),
               variant: 'primary',
             },
           ]}
