@@ -12,6 +12,7 @@ export const useConnectSourcesList = ({ stateMenu, setSourcesList }) => {
   );
 
   useEffect(() => {
+    console.log({ data });
     data && buildNamespacesList();
   }, [data, error]);
 
