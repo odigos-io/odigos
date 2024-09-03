@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -54,6 +55,14 @@ type DbPayloadCollectionRule struct {
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 }
 
+type InstrumentationLibraryId struct {
+	// The name of the instrumentation library
+	Name string `json:"name"`
+
+	// The language in which this library will collect data
+	Language common.ProgrammingLanguage `json:"language"`
+}
+
 type PayloadCollectionSpec struct {
 
 	// free text to give a human readable name to the rule if desired
@@ -70,10 +79,11 @@ type PayloadCollectionSpec struct {
 	// nil will make this rule apply to all workloads
 	Workloads *[]workload.PodWorkload `json:"workloads,omitempty"`
 
-	// For fine grained control, the user can specify the instrumentation library names to use.
+	// For fine grained control, the user can specify the instrumentation library to use.
+	// One can specify same rule for multiple languages and libraries at the same time.
 	// If nil, all instrumentation libraries will be used.
 	// If empty, no instrumentation libraries will be used.
-	InstrumentationLibraryNames *[]string `json:"instrumentationLibraryNames,omitempty"`
+	InstrumentationLibraries *[]InstrumentationLibraryId `json:"instrumentationLibraries,omitempty"`
 
 	// rule for collecting http payloads for the mentioned workload and instrumentation libraries
 	HttpPayloadCollectionRule *HttpPayloadCollectionRule `json:"httpPayloadCollectionRule,omitempty"`

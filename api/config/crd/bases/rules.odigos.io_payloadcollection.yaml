@@ -89,13 +89,35 @@ spec:
                     format: int64
                     type: integer
                 type: object
-              instrumentationLibraryNames:
+              instrumentationLibraries:
                 description: |-
-                  For fine grained control, the user can specify the instrumentation library names to use.
+                  For fine grained control, the user can specify the instrumentation library to use.
+                  One can specify same rule for multiple languages and libraries at the same time.
                   If nil, all instrumentation libraries will be used.
                   If empty, no instrumentation libraries will be used.
                 items:
-                  type: string
+                  properties:
+                    language:
+                      description: The language in which this library will collect
+                        data
+                      enum:
+                      - java
+                      - python
+                      - go
+                      - dotnet
+                      - javascript
+                      - mysql
+                      - nginx
+                      - unknown
+                      - ignored
+                      type: string
+                    name:
+                      description: The name of the instrumentation library
+                      type: string
+                  required:
+                  - language
+                  - name
+                  type: object
                 type: array
               notes:
                 description: Place to document the purpose of the rule if desired
