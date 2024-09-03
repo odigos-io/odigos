@@ -98,3 +98,11 @@ rules:
     - patch
     - update
     - watch
+  - apiGroups:
+    - rules.odigos.io
+    resources:
+    - payloadcollections
+    verbs:
+    - get
+    - list
+    - watch
