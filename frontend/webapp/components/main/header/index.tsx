@@ -2,12 +2,13 @@ import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { ConnectionStatus } from '@/reuseable-components';
+import { PlatformTitle } from './cp-title';
 
-interface SetupHeaderProps {}
+interface MainHeaderProps {}
 
 const HeaderContainer = styled.div`
   display: flex;
-  padding: 20px 24px 20px 32px;
+  padding: 10px 0;
   align-items: center;
   background-color: ${({ theme }) => theme.colors.dark_grey};
   border-bottom: 1px solid rgba(249, 249, 249, 0.16);
@@ -20,7 +21,11 @@ const Logo = styled.div`
   margin-left: 32px;
 `;
 
-export const MainHeader: React.FC<SetupHeaderProps> = () => {
+const PlatformTitleWrapper = styled.div`
+  margin-left: 32px;
+`;
+
+export const MainHeader: React.FC<MainHeaderProps> = () => {
   return (
     <HeaderContainer>
       <Logo>
@@ -31,6 +36,9 @@ export const MainHeader: React.FC<SetupHeaderProps> = () => {
           height={20}
         />
       </Logo>
+      <PlatformTitleWrapper>
+        <PlatformTitle type="k8s" />
+      </PlatformTitleWrapper>
       <ConnectionStatus
         title="Connection Status"
         status="lost"

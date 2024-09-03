@@ -38,6 +38,7 @@ const TextWrapper = styled.div`
 
 const Title = styled(Text)<{ status: 'alive' | 'lost' }>`
   font-weight: 400;
+  font-size: 14px;
   color: ${({ status, theme }) =>
     status === 'alive' ? theme.text.success : theme.text.error};
 `;
