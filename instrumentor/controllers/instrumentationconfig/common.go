@@ -1,13 +1,33 @@
 package instrumentationconfig
 
 import (
+	"context"
+
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	rulesv1alpha1 "github.com/odigos-io/odigos/api/rules/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, ia *odigosv1alpha1.InstrumentedApplication, payloadcollectionrules []rulesv1alpha1.PayloadCollection) error {
+type instrumentationRules struct {
+	payloadCollection *rulesv1alpha1.PayloadCollectionList
+}
+
+func getAllInstrumentationRules(ctx context.Context, client client.Client) (instrumentationRules, error) {
+
+	payloadCollectionRules := &rulesv1alpha1.PayloadCollectionList{}
+	err := client.List(ctx, payloadCollectionRules)
+	if err != nil {
+		return instrumentationRules{}, err
+	}
+
+	return instrumentationRules{
+		payloadCollection: payloadCollectionRules,
+	}, nil
+}
+
+func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, ia *odigosv1alpha1.InstrumentedApplication, rules instrumentationRules) error {
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ia.Name)
 	if err != nil {
@@ -23,29 +43,22 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	ic.Spec.SdkConfigs = []odigosv1alpha1.SdkConfig{}
 
 	// create an empty sdk config for each detected programming language
-ContainersIteration:
 	for _, container := range ia.Spec.RuntimeDetails {
 		containerLanguage := container.Language
 		if containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.UnknownProgrammingLanguage {
 			continue
 		}
-		for _, sdkConfig := range ic.Spec.SdkConfigs {
-			if sdkConfig.Language == containerLanguage {
-				continue ContainersIteration
-			}
-		}
-		ic.Spec.SdkConfigs = append(ic.Spec.SdkConfigs, odigosv1alpha1.SdkConfig{
-			Language: containerLanguage,
-		})
+		createDefaultSdkConfig(ic, containerLanguage)
 	}
 
 	// iterate over all the payload collection rules, and update the instrumentation config accordingly
-	for _, rule := range payloadcollectionrules {
+	for i := range rules.payloadCollection.Items {
+		rule := &rules.payloadCollection.Items[i]
 		if rule.Spec.Disabled {
 			continue
 		}
 		// filter out rules where the workload does not match
-		participating := isWorkloadParticipatingInRule(workload, &rule)
+		participating := isWorkloadParticipatingInRule(workload, rule)
 		if !participating {
 			continue
 		}
@@ -57,6 +70,18 @@ ContainersIteration:
 	}
 
 	return nil
+}
+
+func createDefaultSdkConfig(ic *odigosv1alpha1.InstrumentationConfig, containerLanguage common.ProgrammingLanguage) {
+	// if the language is already present, do nothing
+	for _, sdkConfig := range ic.Spec.SdkConfigs {
+		if sdkConfig.Language == containerLanguage {
+			return
+		}
+	}
+	ic.Spec.SdkConfigs = append(ic.Spec.SdkConfigs, odigosv1alpha1.SdkConfig{
+		Language: containerLanguage,
+	})
 }
 
 // naive implementation, can be optimized.

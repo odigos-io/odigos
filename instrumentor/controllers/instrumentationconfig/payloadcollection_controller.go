@@ -4,7 +4,7 @@ import (
 	"context"
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	rulesv1alpha1 "github.com/odigos-io/odigos/api/rules/v1alpha1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,18 +20,9 @@ func (r *PayloadCollectionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	logger := log.FromContext(ctx)
 
-	payloadCollectionRules := &rulesv1alpha1.PayloadCollectionList{}
-	err := r.Client.List(ctx, payloadCollectionRules)
+	rules, err := getAllInstrumentationRules(ctx, r.Client)
 	if err != nil {
 		return ctrl.Result{}, err
-	}
-
-	// filter out only enabled rules
-	enabledRules := make([]rulesv1alpha1.PayloadCollection, 0, len(payloadCollectionRules.Items))
-	for _, rule := range payloadCollectionRules.Items {
-		if !rule.Spec.Disabled {
-			enabledRules = append(enabledRules, rule)
-		}
 	}
 
 	instrumentedApplications := &odigosv1alpha1.InstrumentedApplicationList{}
@@ -43,12 +34,16 @@ func (r *PayloadCollectionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	for _, ia := range instrumentedApplications.Items {
 		ic := &odigosv1alpha1.InstrumentationConfig{}
 		err = r.Client.Get(ctx, client.ObjectKey{Name: ia.Name, Namespace: ia.Namespace}, ic)
-		if client.IgnoreNotFound(err) != nil { // might be just deleted by another controller, in which case ignore
-			logger.Error(err, "error fetching instrumentation config", "workload", ia.Name)
-			return ctrl.Result{}, err
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			} else {
+				logger.Error(err, "error fetching instrumentation config", "workload", ia.Name)
+				return ctrl.Result{}, err
+			}
 		}
 
-		err := updateInstrumentationConfigForWorkload(ic, &ia, enabledRules)
+		err := updateInstrumentationConfigForWorkload(ic, &ia, rules)
 		if err != nil {
 			logger.Error(err, "error updating instrumentation config", "workload", ia.Name)
 			continue
@@ -63,6 +58,6 @@ func (r *PayloadCollectionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		logger.V(0).Info("Updated instrumentation config", "workload", ia.Name)
 	}
 
-	logger.V(0).Info("Payload Collection Rules changed, recalculating instrumentation configs", "number of enabled rules", len(enabledRules), "number of instrumented workloads", len(instrumentedApplications.Items))
+	logger.V(0).Info("Payload Collection Rules changed, recalculating instrumentation configs", "number of payload collection rules", len(rules.payloadCollection.Items), "number of instrumented workloads", len(instrumentedApplications.Items))
 	return ctrl.Result{}, nil
 }
