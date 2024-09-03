@@ -4,24 +4,39 @@ import (
 	"context"
 	"fmt"
 
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/consts"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"go.opentelemetry.io/auto"
+	goAutoConfig "go.opentelemetry.io/auto/config"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 )
 
 type GoOtelEbpfSdk struct {
 	inst *auto.Instrumentation
+	cp   *ConfigProvider[goAutoConfig.InstrumentationConfig]
 }
 
-type GoInstrumentationFactory struct{}
+// compile-time check that configProvider[goAutoConfig.InstrumentationConfig] implements goAutoConfig.Provider
+var _ goAutoConfig.Provider = (*ConfigProvider[goAutoConfig.InstrumentationConfig])(nil)
 
-func NewGoInstrumentationFactory() InstrumentationFactory[*GoOtelEbpfSdk] {
-	return &GoInstrumentationFactory{}
+// compile-time check that GoOtelEbpfSdk implements ConfigurableOtelEbpfSdk
+var _ ConfigurableOtelEbpfSdk = (*GoOtelEbpfSdk)(nil)
+
+type GoInstrumentationFactory struct{
+	kubeclient client.Client
+}
+
+func NewGoInstrumentationFactory(kubeclient client.Client) InstrumentationFactory[*GoOtelEbpfSdk] {
+	return &GoInstrumentationFactory{
+		kubeclient: kubeclient,
+	}
 }
 
 func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *workload.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (*GoOtelEbpfSdk, error) {
@@ -35,6 +50,19 @@ func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context
 		return nil, err
 	}
 
+	// Fetch initial config based on the InstrumentationConfig CR
+	instrumentationConfig := &odigosv1.InstrumentationConfig{}
+	initialConfig := goAutoConfig.InstrumentationConfig{}
+	instrumentationConfigKey := client.ObjectKey{
+		Namespace: podWorkload.Namespace,
+		Name:      workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind),
+	}
+	if err := g.kubeclient.Get(ctx, instrumentationConfigKey, instrumentationConfig); err == nil {
+		initialConfig = convertToGoInstrumentationConfig(instrumentationConfig)
+	}
+
+	cp := NewConfigProvider(initialConfig)
+
 	inst, err := auto.NewInstrumentation(
 		ctx,
 		auto.WithEnv(), // for OTEL_LOG_LEVEL
@@ -44,13 +72,14 @@ func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context
 		auto.WithTraceExporter(defaultExporter),
 		auto.WithGlobal(),
 		auto.WithLoadedIndicator(loadedIndicator),
+		auto.WithConfigProvider(cp),
 	)
 	if err != nil {
 		log.Logger.Error(err, "instrumentation setup failed")
 		return nil, err
 	}
 
-	return &GoOtelEbpfSdk{inst: inst}, nil
+	return &GoOtelEbpfSdk{inst: inst, cp: cp}, nil
 }
 
 func (g *GoOtelEbpfSdk) Run(ctx context.Context) error {
@@ -59,4 +88,34 @@ func (g *GoOtelEbpfSdk) Run(ctx context.Context) error {
 
 func (g *GoOtelEbpfSdk) Close(ctx context.Context) error {
 	return g.inst.Close()
+}
+
+func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, instConfig *odigosv1.InstrumentationConfig) error {
+	return g.cp.SendConfig(ctx, convertToGoInstrumentationConfig(instConfig))
+}
+
+func convertToGoInstrumentationConfig(instConfig *odigosv1.InstrumentationConfig) goAutoConfig.InstrumentationConfig {
+	ic := goAutoConfig.InstrumentationConfig{}
+	ic.InstrumentationLibraryConfigs = make(map[goAutoConfig.InstrumentationLibraryID]goAutoConfig.InstrumentationLibrary)
+	for _, sdkConfig := range instConfig.Spec.SdkConfigs {
+		if sdkConfig.Language != common.GoProgrammingLanguage {
+			continue
+		}
+		for _, ilc := range sdkConfig.InstrumentationLibraryConfigs {
+			libID := goAutoConfig.InstrumentationLibraryID{
+				InstrumentedPkg: ilc.InstrumentationLibraryId.InstrumentationLibraryName,
+				SpanKind:        common.SpanKindOdigosToOtel(ilc.InstrumentationLibraryId.SpanKind),
+			}
+			var tracesEnabled *bool
+			if ilc.TraceConfig != nil {
+				tracesEnabled = ilc.TraceConfig.Enabled
+			}
+			ic.InstrumentationLibraryConfigs[libID] = goAutoConfig.InstrumentationLibrary{
+				TracesEnabled: tracesEnabled,
+			}
+		}
+
+		// TODO: sampling config
+	}
+	return ic
 }

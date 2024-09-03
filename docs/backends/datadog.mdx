@@ -23,3 +23,61 @@ Enter the following account details in Odigos UI:
 - **Name**: Choose a name for this backend (e.g. Datadog)
 - **Site** - The datadog site you are using (the url of the datadog site you are using). [click here for more details](https://docs.datadoghq.com/getting_started/site/).
 - **API Key**: The API key you obtained from Datadog
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Datadog` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: datadog-example
+  namespace: odigos-system
+spec:
+  data:
+    DATADOG_SITE: <Site [us3.datadoghq.com, datadoghq.com, us5.datadoghq.com, datadoghq.eu,
+      ddog-gov.com, ap1.datadoghq.com]>
+  destinationName: datadog
+  secretRef:
+    name: datadog-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: datadog
+
+---
+apiVersion: v1
+data:
+  DATADOG_API_KEY: <base64 API Key>
+kind: Secret
+metadata:
+  name: datadog-secret
+  namespace: odigos-system
+type: Opaque
+```

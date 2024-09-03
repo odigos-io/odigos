@@ -4,6 +4,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	corev1 "k8s.io/api/core/v1"
@@ -53,9 +54,24 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap) error {
 
 	err := builder.
 		ControllerManagedBy(mgr).
+		Named("PodReconciler_ebpf").
 		For(&corev1.Pod{}).
 		WithEventFilter(&podPredicate{}).
 		Complete(&PodsReconciler{
+			Client:    mgr.GetClient(),
+			Scheme:    mgr.GetScheme(),
+			Directors: ebpfDirectors,
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("InstrumentationConfigReconciler_ebpf").
+		For(&odigosv1.InstrumentationConfig{}).
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
+		Complete(&InstrumentationConfigReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
 			Directors: ebpfDirectors,

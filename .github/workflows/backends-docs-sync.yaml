@@ -1,0 +1,37 @@
+name: Backend Doc Change
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-doc-change:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml          
+
+      - name: Run sync-dest-doc.py in docs directory
+        run: |
+          cd docs
+          python sync-dest-doc.py
+
+      - name: Check for changes in docs-backends
+        run: |
+          git diff --exit-code docs/backends || (
+            echo "Changes detected in docs/backends directory. You should update run cd docs ; python sync-dest-doc.py and commit the changes.";
+            git diff docs/backends;
+            exit 1;
+          )

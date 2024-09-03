@@ -1,20 +1,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
-  name: cleanup-clusterrole
+  name: cleanup-role
+  namespace: {{ .Release.Namespace }}
 rules:
-- apiGroups: ["apps"]
-  resources: ["deployments", "statefulsets", "daemonsets", "customresourcedefinitions"]
-  verbs: ["get", "list", "patch"]
 - apiGroups: [""]
-  resources: ["namespaces", "configmaps", "services", "secrets"]
-  verbs: ["get", "list", "patch"]
-- apiGroups: [""]
-  resources: ["namespaces"]
+  resources: ["namespaces", "configmaps"]
   verbs: ["get", "list", "patch", "delete"]
-- apiGroups: ["rbac.authorization.k8s.io"]
-  resources: ["clusterroles", "clusterrolebindings"]
-  verbs: ["get", "list", "patch"]
-- apiGroups: ["apiextensions.k8s.io"]
-  resources: ["customresourcedefinitions"]
-  verbs: ["list"]

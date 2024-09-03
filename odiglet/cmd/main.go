@@ -127,6 +127,9 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 		common.DotNetProgrammingLanguage: {
 			common.OtelSdkNativeCommunity: instrumentlang.DotNet,
 		},
+		common.NginxProgrammingLanguage: {
+			common.OtelSdkNativeCommunity: instrumentlang.Nginx,
+		},
 	}
 
 	lister, err := instrumentation.NewLister(ctx, clientset, otelSdkLsf)
@@ -140,7 +143,7 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 }
 
 func initEbpf(ctx context.Context, client client.Client, scheme *runtime.Scheme) (ebpf.DirectorsMap, error) {
-	goInstrumentationFactory := ebpf.NewGoInstrumentationFactory()
+	goInstrumentationFactory := ebpf.NewGoInstrumentationFactory(client)
 	goDirector := ebpf.NewEbpfDirector(ctx, client, scheme, common.GoProgrammingLanguage, goInstrumentationFactory)
 	goDirectorKey := ebpf.DirectorKey{
 		Language: common.GoProgrammingLanguage,
