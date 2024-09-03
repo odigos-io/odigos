@@ -52,31 +52,33 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	}
 
 	// iterate over all the payload collection rules, and update the instrumentation config accordingly
-	for i := range rules.payloadCollection.Items {
-		rule := &rules.payloadCollection.Items[i]
-		if rule.Spec.Disabled {
-			continue
-		}
-		// filter out rules where the workload does not match
-		participating := isWorkloadParticipatingInRule(workload, rule)
-		if !participating {
-			continue
-		}
+	if rules.payloadCollection != nil {
+		for i := range rules.payloadCollection.Items {
+			rule := &rules.payloadCollection.Items[i]
+			if rule.Spec.Disabled {
+				continue
+			}
+			// filter out rules where the workload does not match
+			participating := isWorkloadParticipatingInRule(workload, rule)
+			if !participating {
+				continue
+			}
 
-		for i := range ic.Spec.SdkConfigs {
-			if rule.Spec.InstrumentationLibraries == nil { // nil means a rule in SDK level, that applies unless overridden by library level rule
-				ic.Spec.SdkConfigs[i].DefaultHttpRequestPayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpRequestPayloadCollection, rule.Spec.HttpRequestPayloadCollectionRule)
-				ic.Spec.SdkConfigs[i].DefaultHttpResponsePayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpResponsePayloadCollection, rule.Spec.HttpResponsePayloadCollectionRule)
-				ic.Spec.SdkConfigs[i].DefaultDbStatementPayloadCollection = mergeDbPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultDbStatementPayloadCollection, rule.Spec.DbStatementPayloadCollectionRule)
-			} else {
-				for _, library := range *rule.Spec.InstrumentationLibraries {
-					if library.Language != ic.Spec.SdkConfigs[i].Language {
-						continue
+			for i := range ic.Spec.SdkConfigs {
+				if rule.Spec.InstrumentationLibraries == nil { // nil means a rule in SDK level, that applies unless overridden by library level rule
+					ic.Spec.SdkConfigs[i].DefaultHttpRequestPayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpRequestPayloadCollection, rule.Spec.HttpRequestPayloadCollectionRule)
+					ic.Spec.SdkConfigs[i].DefaultHttpResponsePayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpResponsePayloadCollection, rule.Spec.HttpResponsePayloadCollectionRule)
+					ic.Spec.SdkConfigs[i].DefaultDbStatementPayloadCollection = mergeDbPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultDbStatementPayloadCollection, rule.Spec.DbStatementPayloadCollectionRule)
+				} else {
+					for _, library := range *rule.Spec.InstrumentationLibraries {
+						if library.Language != ic.Spec.SdkConfigs[i].Language {
+							continue
+						}
+						libraryConfig := findOrCreateSdkLibraryConfig(&ic.Spec.SdkConfigs[i], library)
+						libraryConfig.HttpRequestPayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpRequestPayloadCollection, rule.Spec.HttpRequestPayloadCollectionRule)
+						libraryConfig.HttpResponsePayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpResponsePayloadCollection, rule.Spec.HttpResponsePayloadCollectionRule)
+						libraryConfig.DbStatementPayloadCollection = mergeDbPayloadCollectionRules(libraryConfig.DbStatementPayloadCollection, rule.Spec.DbStatementPayloadCollectionRule)
 					}
-					libraryConfig := findOrCreateSdkLibraryConfig(&ic.Spec.SdkConfigs[i], library)
-					libraryConfig.HttpRequestPayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpRequestPayloadCollection, rule.Spec.HttpRequestPayloadCollectionRule)
-					libraryConfig.HttpResponsePayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpResponsePayloadCollection, rule.Spec.HttpResponsePayloadCollectionRule)
-					libraryConfig.DbStatementPayloadCollection = mergeDbPayloadCollectionRules(libraryConfig.DbStatementPayloadCollection, rule.Spec.DbStatementPayloadCollectionRule)
 				}
 			}
 		}
