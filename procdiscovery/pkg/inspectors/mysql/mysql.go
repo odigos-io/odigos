@@ -12,9 +12,10 @@ import (
 type MySQLInspector struct{}
 
 const MySQLProcessName = "mysqld"
+const PostgreSQLProcessName = "postgres"
 
 func (j *MySQLInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
-	if strings.HasSuffix(p.ExeName, MySQLProcessName) || strings.HasSuffix(p.CmdLine, MySQLProcessName) {
+	if strings.HasSuffix(p.ExeName, MySQLProcessName) || strings.HasSuffix(p.CmdLine, MySQLProcessName) || strings.HasSuffix(p.ExeName, PostgreSQLProcessName) || strings.HasSuffix(p.CmdLine, PostgreSQLProcessName) {
 		return common.MySQLProgrammingLanguage, true
 	}
 
