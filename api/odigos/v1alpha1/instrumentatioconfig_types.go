@@ -114,9 +114,13 @@ type InstrumentationLibraryConfig struct {
 	TraceConfig *InstrumentationLibraryConfigTraces `json:"traceConfig,omitempty"`
 
 	// Http payload collection rules for this instrumentation library
+	// If http category is not supported by the instrumentation library, the rule is ignored
+	// Use empty value when this category is irrelevant or to use the default SDK level rules
 	HttpPayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule `json:"httpPayloadCollection,omitempty"`
 
 	// Db payload collection rules for this instrumentation library
+	// If db category is not supported by the instrumentation library, the rule is ignored
+	// Use empty value when this category is irrelevant or to use the default SDK level rules
 	DbPayloadCollection *rulesv1alpha1.DbPayloadCollectionRule `json:"dbPayloadCollection,omitempty"`
 }
 

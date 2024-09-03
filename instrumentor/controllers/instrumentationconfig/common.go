@@ -64,12 +64,41 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 		}
 
 		for i := range ic.Spec.SdkConfigs {
-			ic.Spec.SdkConfigs[i].DefaultHttpPayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpPayloadCollection, rule.Spec.HttpPayloadCollectionRule)
-			ic.Spec.SdkConfigs[i].DefaultDbPayloadCollection = mergeDbPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultDbPayloadCollection, rule.Spec.DbPayloadCollectionRule)
+			if rule.Spec.InstrumentationLibraries == nil { // nil means a rule in SDK level, that applies unless overridden by library level rule
+				ic.Spec.SdkConfigs[i].DefaultHttpPayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpPayloadCollection, rule.Spec.HttpPayloadCollectionRule)
+				ic.Spec.SdkConfigs[i].DefaultDbPayloadCollection = mergeDbPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultDbPayloadCollection, rule.Spec.DbPayloadCollectionRule)
+			} else {
+				for _, library := range *rule.Spec.InstrumentationLibraries {
+					if library.Language != ic.Spec.SdkConfigs[i].Language {
+						continue
+					}
+					libraryConfig := findOrCreateSdkLibraryConfig(&ic.Spec.SdkConfigs[i], library.Name)
+					libraryConfig.HttpPayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpPayloadCollection, rule.Spec.HttpPayloadCollectionRule)
+					libraryConfig.DbPayloadCollection = mergeDbPayloadCollectionRules(libraryConfig.DbPayloadCollection, rule.Spec.DbPayloadCollectionRule)
+				}
+			}
 		}
 	}
 
 	return nil
+}
+
+// returns a pointer to the instrumentation library config, creating it if it does not exist
+// the pointer can be used to modify the config
+func findOrCreateSdkLibraryConfig(sdkConfig *odigosv1alpha1.SdkConfig, instrumentationLibraryName string) *odigosv1alpha1.InstrumentationLibraryConfig {
+	for i, libConfig := range sdkConfig.InstrumentationLibraryConfigs {
+		if libConfig.InstrumentationLibraryId.InstrumentationLibraryName == instrumentationLibraryName {
+			// if already present, return a pointer to it which can be modified by the caller
+			return &sdkConfig.InstrumentationLibraryConfigs[i]
+		}
+	}
+	newLibConfig := odigosv1alpha1.InstrumentationLibraryConfig{
+		InstrumentationLibraryId: odigosv1alpha1.InstrumentationLibraryId{
+			InstrumentationLibraryName: instrumentationLibraryName,
+		},
+	}
+	sdkConfig.InstrumentationLibraryConfigs = append(sdkConfig.InstrumentationLibraryConfigs, newLibConfig)
+	return &sdkConfig.InstrumentationLibraryConfigs[len(sdkConfig.InstrumentationLibraryConfigs)-1]
 }
 
 func createDefaultSdkConfig(ic *odigosv1alpha1.InstrumentationConfig, containerLanguage common.ProgrammingLanguage) {
