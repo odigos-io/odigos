@@ -75,6 +75,7 @@ spec:
                             - dotnet
                             - javascript
                             - mysql
+                            - postgres
                             - nginx
                             - unknown
                             - ignored
@@ -237,6 +238,7 @@ spec:
                       - dotnet
                       - javascript
                       - mysql
+                      - postgres
                       - nginx
                       - unknown
                       - ignored
