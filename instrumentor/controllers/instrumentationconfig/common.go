@@ -72,7 +72,7 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 					if library.Language != ic.Spec.SdkConfigs[i].Language {
 						continue
 					}
-					libraryConfig := findOrCreateSdkLibraryConfig(&ic.Spec.SdkConfigs[i], library.Name)
+					libraryConfig := findOrCreateSdkLibraryConfig(&ic.Spec.SdkConfigs[i], library)
 					libraryConfig.HttpPayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpPayloadCollection, rule.Spec.HttpPayloadCollectionRule)
 					libraryConfig.DbPayloadCollection = mergeDbPayloadCollectionRules(libraryConfig.DbPayloadCollection, rule.Spec.DbPayloadCollectionRule)
 				}
@@ -85,16 +85,23 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 
 // returns a pointer to the instrumentation library config, creating it if it does not exist
 // the pointer can be used to modify the config
-func findOrCreateSdkLibraryConfig(sdkConfig *odigosv1alpha1.SdkConfig, instrumentationLibraryName string) *odigosv1alpha1.InstrumentationLibraryConfig {
+func findOrCreateSdkLibraryConfig(sdkConfig *odigosv1alpha1.SdkConfig, library rulesv1alpha1.InstrumentationLibraryId) *odigosv1alpha1.InstrumentationLibraryConfig {
+	if library.Language != sdkConfig.Language {
+		return nil
+	}
+
 	for i, libConfig := range sdkConfig.InstrumentationLibraryConfigs {
-		if libConfig.InstrumentationLibraryId.InstrumentationLibraryName == instrumentationLibraryName {
+		if libConfig.InstrumentationLibraryId.InstrumentationLibraryName == library.Name &&
+			libConfig.InstrumentationLibraryId.SpanKind == library.SpanKind {
+
 			// if already present, return a pointer to it which can be modified by the caller
 			return &sdkConfig.InstrumentationLibraryConfigs[i]
 		}
 	}
 	newLibConfig := odigosv1alpha1.InstrumentationLibraryConfig{
 		InstrumentationLibraryId: odigosv1alpha1.InstrumentationLibraryId{
-			InstrumentationLibraryName: instrumentationLibraryName,
+			InstrumentationLibraryName: library.Name,
+			SpanKind:                   library.SpanKind,
 		},
 	}
 	sdkConfig.InstrumentationLibraryConfigs = append(sdkConfig.InstrumentationLibraryConfigs, newLibConfig)

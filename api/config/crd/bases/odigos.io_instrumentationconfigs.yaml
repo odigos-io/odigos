@@ -240,8 +240,10 @@ spec:
                       items:
                         properties:
                           dbPayloadCollection:
-                            description: Db payload collection rules for this instrumentation
-                              library
+                            description: |-
+                              Db payload collection rules for this instrumentation library
+                              If db category is not supported by the instrumentation library, the rule is ignored
+                              Use empty value when this category is irrelevant or to use the default SDK level rules
                             properties:
                               dropPartialPayloads:
                                 description: |-
@@ -258,8 +260,10 @@ spec:
                                 type: integer
                             type: object
                           httpPayloadCollection:
-                            description: Http payload collection rules for this instrumentation
-                              library
+                            description: |-
+                              Http payload collection rules for this instrumentation library
+                              If http category is not supported by the instrumentation library, the rule is ignored
+                              Use empty value when this category is irrelevant or to use the default SDK level rules
                             properties:
                               allowedMimeTypePatterns:
                                 description: |-

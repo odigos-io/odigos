@@ -114,6 +114,17 @@ spec:
                     name:
                       description: The name of the instrumentation library
                       type: string
+                    spanKind:
+                      description: |-
+                        SpanKind is only supported by Golang and will be ignored for any other SDK language.
+                        In Go, SpanKind is used because the same instrumentation library can be utilized for different span kinds (e.g., client/server).
+                      enum:
+                      - client
+                      - server
+                      - producer
+                      - consumer
+                      - internal
+                      type: string
                   required:
                   - language
                   - name

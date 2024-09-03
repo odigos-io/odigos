@@ -61,6 +61,10 @@ type InstrumentationLibraryId struct {
 
 	// The language in which this library will collect data
 	Language common.ProgrammingLanguage `json:"language"`
+
+	// SpanKind is only supported by Golang and will be ignored for any other SDK language.
+	// In Go, SpanKind is used because the same instrumentation library can be utilized for different span kinds (e.g., client/server).
+	SpanKind common.SpanKind `json:"spanKind,omitempty"`
 }
 
 type PayloadCollectionSpec struct {
