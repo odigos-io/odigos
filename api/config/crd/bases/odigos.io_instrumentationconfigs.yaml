@@ -120,7 +120,7 @@ spec:
                   The SDKs are identified by the programming language they are written in.
                 items:
                   properties:
-                    defaultDbPayloadCollection:
+                    defaultDbQueryPayloadCollection:
                       description: In the absence of any instrumentation library specific
                         rule, these rules will be used by default for db payload collection.
                       properties:
@@ -259,7 +259,7 @@ spec:
                         the the SDK should use
                       items:
                         properties:
-                          dbStatementPayloadCollection:
+                          dbQueryPayloadCollection:
                             description: |-
                               Db statement payload collection rules for this instrumentation library
                               If db category is not supported by the instrumentation library, the rule is ignored

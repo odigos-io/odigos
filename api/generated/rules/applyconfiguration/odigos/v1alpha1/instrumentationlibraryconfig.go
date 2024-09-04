@@ -28,7 +28,7 @@ type InstrumentationLibraryConfigApplyConfiguration struct {
 	TraceConfig                   *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
 	HttpRequestPayloadCollection  *rulesv1alpha1.HttpPayloadCollectionRule              `json:"httpRequestPayloadCollection,omitempty"`
 	HttpResponsePayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule              `json:"httpResponsePayloadCollection,omitempty"`
-	DbStatementPayloadCollection  *rulesv1alpha1.DbStatementPayloadCollectionRule       `json:"dbStatementPayloadCollection,omitempty"`
+	DbQueryPayloadCollection      *rulesv1alpha1.DbQueryPayloadCollectionRule           `json:"dbQueryPayloadCollection,omitempty"`
 }
 
 // InstrumentationLibraryConfigApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryConfig type for use with
@@ -69,10 +69,10 @@ func (b *InstrumentationLibraryConfigApplyConfiguration) WithHttpResponsePayload
 	return b
 }
 
-// WithDbStatementPayloadCollection sets the DbStatementPayloadCollection field in the declarative configuration to the given value
+// WithDbQueryPayloadCollection sets the DbQueryPayloadCollection field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DbStatementPayloadCollection field is set to the value of the last call.
-func (b *InstrumentationLibraryConfigApplyConfiguration) WithDbStatementPayloadCollection(value rulesv1alpha1.DbStatementPayloadCollectionRule) *InstrumentationLibraryConfigApplyConfiguration {
-	b.DbStatementPayloadCollection = &value
+// If called multiple times, the DbQueryPayloadCollection field is set to the value of the last call.
+func (b *InstrumentationLibraryConfigApplyConfiguration) WithDbQueryPayloadCollection(value rulesv1alpha1.DbQueryPayloadCollectionRule) *InstrumentationLibraryConfigApplyConfiguration {
+	b.DbQueryPayloadCollection = &value
 	return b
 }

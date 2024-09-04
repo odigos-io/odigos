@@ -39,7 +39,7 @@ type HttpPayloadCollectionRule struct {
 }
 
 // Rule for collecting payloads for a DbStatement
-type DbStatementPayloadCollectionRule struct {
+type DbQueryPayloadCollectionRule struct {
 
 	// Maximum length of the payload to collect.
 	// If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
@@ -91,7 +91,7 @@ type PayloadCollectionSpec struct {
 	HttpResponse *HttpPayloadCollectionRule `json:"httpResponse,omitempty"`
 
 	// rule for collecting db payloads for the mentioned workload and instrumentation libraries
-	DbStatement *DbStatementPayloadCollectionRule `json:"dbStatement,omitempty"`
+	DbQuery *DbQueryPayloadCollectionRule `json:"dbQuery,omitempty"`
 }
 
 type PayloadCollectionStatus struct {

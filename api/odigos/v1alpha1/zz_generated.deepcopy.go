@@ -585,9 +585,9 @@ func (in *InstrumentationLibraryConfig) DeepCopyInto(out *InstrumentationLibrary
 		*out = new(rulesv1alpha1.HttpPayloadCollectionRule)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.DbStatementPayloadCollection != nil {
-		in, out := &in.DbStatementPayloadCollection, &out.DbStatementPayloadCollection
-		*out = new(rulesv1alpha1.DbStatementPayloadCollectionRule)
+	if in.DbQueryPayloadCollection != nil {
+		in, out := &in.DbQueryPayloadCollection, &out.DbQueryPayloadCollection
+		*out = new(rulesv1alpha1.DbQueryPayloadCollectionRule)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -1076,9 +1076,9 @@ func (in *SdkConfig) DeepCopyInto(out *SdkConfig) {
 		*out = new(rulesv1alpha1.HttpPayloadCollectionRule)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.DefaultDbStatementPayloadCollection != nil {
-		in, out := &in.DefaultDbStatementPayloadCollection, &out.DefaultDbStatementPayloadCollection
-		*out = new(rulesv1alpha1.DbStatementPayloadCollectionRule)
+	if in.DefaultDbQueryPayloadCollection != nil {
+		in, out := &in.DefaultDbQueryPayloadCollection, &out.DefaultDbQueryPayloadCollection
+		*out = new(rulesv1alpha1.DbQueryPayloadCollectionRule)
 		(*in).DeepCopyInto(*out)
 	}
 }

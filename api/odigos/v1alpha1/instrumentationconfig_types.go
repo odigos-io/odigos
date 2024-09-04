@@ -56,7 +56,7 @@ type SdkConfig struct {
 	DefaultHttpResponsePayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule `json:"defaultHttpResponsePayloadCollection,omitempty"`
 
 	// In the absence of any instrumentation library specific rule, these rules will be used by default for db payload collection.
-	DefaultDbStatementPayloadCollection *rulesv1alpha1.DbStatementPayloadCollectionRule `json:"defaultDbPayloadCollection,omitempty"`
+	DefaultDbQueryPayloadCollection *rulesv1alpha1.DbQueryPayloadCollectionRule `json:"defaultDbQueryPayloadCollection,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
@@ -129,7 +129,7 @@ type InstrumentationLibraryConfig struct {
 	// Db statement payload collection rules for this instrumentation library
 	// If db category is not supported by the instrumentation library, the rule is ignored
 	// Use empty value when this category is irrelevant or to use the default SDK level rules
-	DbStatementPayloadCollection *rulesv1alpha1.DbStatementPayloadCollectionRule `json:"dbStatementPayloadCollection,omitempty"`
+	DbQueryPayloadCollection *rulesv1alpha1.DbQueryPayloadCollectionRule `json:"dbQueryPayloadCollection,omitempty"`
 }
 
 type InstrumentationLibraryId struct {

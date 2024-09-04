@@ -40,7 +40,7 @@ spec:
             type: object
           spec:
             properties:
-              dbStatement:
+              dbQuery:
                 description: rule for collecting db payloads for the mentioned workload
                   and instrumentation libraries
                 properties:
