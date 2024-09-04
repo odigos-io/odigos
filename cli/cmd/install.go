@@ -207,6 +207,7 @@ func otelSdkConfigOnPrem() map[common.ProgrammingLanguage]common.OtelSdk {
 		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
 		common.JavascriptProgrammingLanguage: common.OtelSdkEbpfEnterprise,
 		common.MySQLProgrammingLanguage:      common.OtelSdkEbpfEnterprise,
+		common.PostgresProgrammingLanguage:   common.OtelSdkEbpfEnterprise,
 	}
 }
 
