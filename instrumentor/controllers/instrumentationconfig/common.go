@@ -66,18 +66,18 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 
 			for i := range ic.Spec.SdkConfigs {
 				if rule.Spec.InstrumentationLibraries == nil { // nil means a rule in SDK level, that applies unless overridden by library level rule
-					ic.Spec.SdkConfigs[i].DefaultHttpRequestPayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpRequestPayloadCollection, rule.Spec.HttpRequestPayloadCollectionRule)
-					ic.Spec.SdkConfigs[i].DefaultHttpResponsePayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpResponsePayloadCollection, rule.Spec.HttpResponsePayloadCollectionRule)
-					ic.Spec.SdkConfigs[i].DefaultDbStatementPayloadCollection = mergeDbPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultDbStatementPayloadCollection, rule.Spec.DbStatementPayloadCollectionRule)
+					ic.Spec.SdkConfigs[i].DefaultHttpRequestPayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpRequestPayloadCollection, rule.Spec.HttpRequest)
+					ic.Spec.SdkConfigs[i].DefaultHttpResponsePayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpResponsePayloadCollection, rule.Spec.HttpResponse)
+					ic.Spec.SdkConfigs[i].DefaultDbStatementPayloadCollection = mergeDbPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultDbStatementPayloadCollection, rule.Spec.DbStatement)
 				} else {
 					for _, library := range *rule.Spec.InstrumentationLibraries {
 						if library.Language != ic.Spec.SdkConfigs[i].Language {
 							continue
 						}
 						libraryConfig := findOrCreateSdkLibraryConfig(&ic.Spec.SdkConfigs[i], library)
-						libraryConfig.HttpRequestPayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpRequestPayloadCollection, rule.Spec.HttpRequestPayloadCollectionRule)
-						libraryConfig.HttpResponsePayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpResponsePayloadCollection, rule.Spec.HttpResponsePayloadCollectionRule)
-						libraryConfig.DbStatementPayloadCollection = mergeDbPayloadCollectionRules(libraryConfig.DbStatementPayloadCollection, rule.Spec.DbStatementPayloadCollectionRule)
+						libraryConfig.HttpRequestPayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpRequestPayloadCollection, rule.Spec.HttpRequest)
+						libraryConfig.HttpResponsePayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpResponsePayloadCollection, rule.Spec.HttpResponse)
+						libraryConfig.DbStatementPayloadCollection = mergeDbPayloadCollectionRules(libraryConfig.DbStatementPayloadCollection, rule.Spec.DbStatement)
 					}
 				}
 			}
@@ -151,22 +151,22 @@ func mergeHttpPayloadCollectionRules(rule1 *rulesv1alpha1.HttpPayloadCollectionR
 	// merge of the 2 non nil rules
 	mergedRules := rulesv1alpha1.HttpPayloadCollectionRule{}
 
-	// AllowedMimeType is extended to include both. nil means "all" so treat it as such
-	if rule1.AllowedMimeType == nil || rule2.AllowedMimeType == nil {
-		mergedRules.AllowedMimeType = nil
+	// MimeTypes is extended to include both. nil means "all" so treat it as such
+	if rule1.MimeTypes == nil || rule2.MimeTypes == nil {
+		mergedRules.MimeTypes = nil
 	} else {
 		mergeMimeTypeMap := make(map[string]struct{})
-		for _, mimeType := range *rule1.AllowedMimeType {
+		for _, mimeType := range *rule1.MimeTypes {
 			mergeMimeTypeMap[mimeType] = struct{}{}
 		}
-		for _, mimeType := range *rule2.AllowedMimeType {
+		for _, mimeType := range *rule2.MimeTypes {
 			mergeMimeTypeMap[mimeType] = struct{}{}
 		}
 		mergedMimeTypeSlice := make([]string, 0, len(mergeMimeTypeMap))
 		for mimeType := range mergeMimeTypeMap {
 			mergedMimeTypeSlice = append(mergedMimeTypeSlice, mimeType)
 		}
-		mergedRules.AllowedMimeType = &mergedMimeTypeSlice
+		mergedRules.MimeTypes = &mergedMimeTypeSlice
 	}
 
 	// MaxPayloadLength - choose the smallest value, as this is the maximum allowed

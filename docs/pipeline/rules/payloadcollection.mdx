@@ -1,0 +1,117 @@
+---
+title: "Payload Collection Instrumentation Rule"
+sidebarTitle: "Payload Collection"
+---
+
+The "Payload Collection" Rule can be used to instruct Odigos to collect and record payload data from operations into spans.
+
+Payload can supply valuable context to trace signal consumers, which can help in understanding the behavior of the application.
+
+## Considerations
+
+Before enabling payload collection, please note the following:
+
+- If your payload contains PII data (Personally Identifiable Information), this data can be exposed in the traces. Evaluate the risk of collecting this data, and consider using the [PII Masking Action](/pipeline/actions/attributes/piimasking) to remove sensitive data.
+- Payload data can be large and may increase the size of your traces. This can impact the performance of your application and the cost of storing and analyzing traces.
+
+## Basic Example
+
+The following example demonstrates how to enable payload collection any supported payload, for all workloads in the cluster and all supported instrumentation Libraries.
+
+Create a file named `payloadcollection.yaml` with the following content:
+
+```yaml
+apiVersion: rules.odigos.io/v1alpha1
+kind: PayloadCollection
+metadata:
+  name: collect-all-payloads
+  namespace: odigos-system
+spec:
+  ruleName: "collect all supported payloads"
+  httpRequest: {}
+  httpResponse: {}
+  dbStatement: {}
+```
+
+Apply the action to the cluster:
+
+```shell
+kubectl apply -f payloadcollection.yaml
+```
+
+## Full Example
+
+The following example is a demonstration of all the options available in the "Payload Collection" Rule.
+It is not meant to be used "as is", but rather as a reference to customize the rule to your needs.
+
+Create a file named `fullpayloadcollection.yaml` with the following content:
+
+```yaml
+apiVersion: rules.odigos.io/v1alpha1
+kind: PayloadCollection
+metadata:
+  name: full-payload-collection-example
+  namespace: odigos-system
+spec:
+  ruleName: "Full example for payload collection"
+  disabled: false
+  notes: "This rule showcase all the options available for payload collection rule"
+  workloads:
+    - kind: Deployment
+      name: example-deployment
+      namespace: default
+    - kind: DaemonSet
+      name: example-ds
+      namespace: default
+  instrumentationLibraries:
+    - language: go
+      name: "net/http"
+      spanKind: server
+    - language: go
+      name: "database/sql"
+      spanKind: client
+  httpRequest:
+    mimeTypes:
+      - "application/json"
+      - "text/plain"
+    maxPayloadLength: 2048
+    dropPartialPayloads: true
+  httpResponse:
+    mimeTypes:
+      - "application/json"
+      - "text/plain"
+    maxPayloadLength: 2048
+    dropPartialPayloads: true
+  dbStatement:
+    maxPayloadLength: 1024
+    dropPartialPayloads: true
+```
+
+### Configuration Options
+
+The full list of configuration options for the "Payload Collection" Rule are:
+
+- `ruleName` (optional): Allows you to attach a meaningful name to the rule for convenience. Odigos does not use or assume any meaning from this field.
+
+- `notes` (optional): A free-form text field that allows you to attach notes regarding the rule for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.
+
+- `disabled` (optional, default `false` - enabled): A boolean field allowing to temporarily disable the rule, but keep it around for future use
+
+- `workloads` (optional, default is nil - all workloads): An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will make the rule ineffective.
+
+- `instrumentationLibraries` (optional, default is nil - all libraries): An array of instrumentation library id objects to which the rule should be applied. If not specified, the rule will be applied to all instrumentation libraries. empty array will make the rule ineffective.
+
+- `httpRequest` (optional): Collect HTTP request payload data when available. Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library
+  - `mimeTypes` (optional, default is nil - all mime types): Limit payload collection to specific mime types based on the content type header. When not specified, all mime types payloads will be collected. empty array will make the rule ineffective.
+  - `maxPayloadLength` (optional): Maximum length of the payload to collect. If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option. When not specified (recommended), the instrumentation library will use any reasonable default value.
+  - `dropPartialPayloads` (optional, default is false): If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all. This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+
+- `httpResponse` (optional): Collect HTTP response payload data when available. Can be a client (incoming) response or a server (outgoing) response, depending on the instrumentation library
+  - `mimeTypes` (optional, default is nil - all mime types): Limit payload collection to specific mime types based on the content type header. When not specified, all mime types payloads will be collected. empty array will make the rule ineffective.
+  - `maxPayloadLength` (optional): Maximum length of the payload to collect. If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option. When not specified (recommended), the instrumentation library will use any reasonable default value
+  - `dropPartialPayloads` (optional, default is false): If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all. This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+
+- `dbStatement` (optional): Collect database statement payload data when available.
+  - `maxPayloadLength` (optional): Maximum length of the payload to collect. If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option. When not specified (recommended), the instrumentation library will use any reasonable default value
+  - `dropPartialPayloads` (optional, default is false): If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all. This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+

@@ -227,8 +227,8 @@ func TestUpdateInstrumentationConfigForWorkload_SingleMatchingRule(t *testing.T)
 			Items: []rulesv1alpha1.PayloadCollection{
 				{
 					Spec: rulesv1alpha1.PayloadCollectionSpec{
-						HttpRequestPayloadCollectionRule: &rulesv1alpha1.HttpPayloadCollectionRule{
-							AllowedMimeType:     &[]string{"application/json"},
+						HttpRequest: &rulesv1alpha1.HttpPayloadCollectionRule{
+							MimeTypes:           &[]string{"application/json"},
 							MaxPayloadLength:    Int64Ptr(1234),
 							DropPartialPayloads: BoolPtr(true),
 						},
@@ -244,11 +244,11 @@ func TestUpdateInstrumentationConfigForWorkload_SingleMatchingRule(t *testing.T)
 	if len(ic.Spec.SdkConfigs) != 1 {
 		t.Errorf("Expected 1 sdk config, got %d", len(ic.Spec.SdkConfigs))
 	}
-	if len(*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType) != 1 {
-		t.Errorf("Expected 1 mime type, got %d", len(*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType))
+	if len(*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes) != 1 {
+		t.Errorf("Expected 1 mime type, got %d", len(*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes))
 	}
-	if (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType)[0] != "application/json" {
-		t.Errorf("Expected mime type %s, got %s", "application/json", (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType)[0])
+	if (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes)[0] != "application/json" {
+		t.Errorf("Expected mime type %s, got %s", "application/json", (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes)[0])
 	}
 	if *ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MaxPayloadLength != 1234 {
 		t.Errorf("Expected max payload length %d, got %d", 1234, ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MaxPayloadLength)
@@ -294,8 +294,8 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 								Namespace: "testns",
 							},
 						},
-						HttpRequestPayloadCollectionRule: &rulesv1alpha1.HttpPayloadCollectionRule{
-							AllowedMimeType: &[]string{"application/json"},
+						HttpRequest: &rulesv1alpha1.HttpPayloadCollectionRule{
+							MimeTypes: &[]string{"application/json"},
 						},
 					},
 				},
@@ -310,8 +310,8 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 	if len(ic.Spec.SdkConfigs) != 1 {
 		t.Errorf("Expected 1 sdk config, got %d", len(ic.Spec.SdkConfigs))
 	}
-	if len(*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType) != 1 {
-		t.Errorf("Expected 1 mime type, got %d", len(*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType))
+	if len(*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes) != 1 {
+		t.Errorf("Expected 1 mime type, got %d", len(*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes))
 	}
 }
 
@@ -351,8 +351,8 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 								Namespace: "testns",
 							},
 						},
-						HttpRequestPayloadCollectionRule: &rulesv1alpha1.HttpPayloadCollectionRule{
-							AllowedMimeType: &[]string{"application/json"},
+						HttpRequest: &rulesv1alpha1.HttpPayloadCollectionRule{
+							MimeTypes: &[]string{"application/json"},
 						},
 					},
 				},
@@ -403,8 +403,8 @@ func TestUpdateInstrumentationConfigForWorkload_DisabledRule(t *testing.T) {
 				{
 					Spec: rulesv1alpha1.PayloadCollectionSpec{
 						Disabled: true,
-						HttpRequestPayloadCollectionRule: &rulesv1alpha1.HttpPayloadCollectionRule{
-							AllowedMimeType: &[]string{"application/json"},
+						HttpRequest: &rulesv1alpha1.HttpPayloadCollectionRule{
+							MimeTypes: &[]string{"application/json"},
 						},
 					},
 				},
@@ -454,8 +454,8 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleDefaultRules(t *testing.
 			Items: []rulesv1alpha1.PayloadCollection{
 				{
 					Spec: rulesv1alpha1.PayloadCollectionSpec{
-						HttpRequestPayloadCollectionRule: &rulesv1alpha1.HttpPayloadCollectionRule{
-							AllowedMimeType:     &[]string{"application/json", "application/text"},
+						HttpRequest: &rulesv1alpha1.HttpPayloadCollectionRule{
+							MimeTypes:           &[]string{"application/json", "application/text"},
 							MaxPayloadLength:    Int64Ptr(1111),
 							DropPartialPayloads: BoolPtr(true),
 						},
@@ -463,8 +463,8 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleDefaultRules(t *testing.
 				},
 				{
 					Spec: rulesv1alpha1.PayloadCollectionSpec{
-						HttpRequestPayloadCollectionRule: &rulesv1alpha1.HttpPayloadCollectionRule{
-							AllowedMimeType:     &[]string{"application/xml", "application/json"},
+						HttpRequest: &rulesv1alpha1.HttpPayloadCollectionRule{
+							MimeTypes:           &[]string{"application/xml", "application/json"},
 							MaxPayloadLength:    Int64Ptr(2222),
 							DropPartialPayloads: BoolPtr(false),
 						},
@@ -483,17 +483,17 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleDefaultRules(t *testing.
 	}
 
 	// mime types should merge
-	if len(*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType) != 3 {
-		t.Errorf("Expected 2 mime types, got %d", len(*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType))
+	if len(*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes) != 3 {
+		t.Errorf("Expected 2 mime types, got %d", len(*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes))
 	}
-	if (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType)[0] != "application/json" {
-		t.Errorf("Expected mime type %s, got %s", "application/json", (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType)[0])
+	if (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes)[0] != "application/json" {
+		t.Errorf("Expected mime type %s, got %s", "application/json", (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes)[0])
 	}
-	if (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType)[1] != "application/text" {
-		t.Errorf("Expected mime type %s, got %s", "application/text", (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType)[1])
+	if (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes)[1] != "application/text" {
+		t.Errorf("Expected mime type %s, got %s", "application/text", (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes)[1])
 	}
-	if (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType)[2] != "application/xml" {
-		t.Errorf("Expected mime type %s, got %s", "application/xml", (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.AllowedMimeType)[1])
+	if (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes)[2] != "application/xml" {
+		t.Errorf("Expected mime type %s, got %s", "application/xml", (*ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MimeTypes)[1])
 	}
 	// smallest max payload length should be selected
 	if *ic.Spec.SdkConfigs[0].DefaultHttpRequestPayloadCollection.MaxPayloadLength != 1111 {
@@ -540,8 +540,8 @@ func TestUpdateInstrumentationConfigForWorkload_RuleForLibrary(t *testing.T) {
 								Language: common.JavascriptProgrammingLanguage,
 							},
 						},
-						HttpRequestPayloadCollectionRule: &rulesv1alpha1.HttpPayloadCollectionRule{
-							AllowedMimeType: &[]string{"application/json"},
+						HttpRequest: &rulesv1alpha1.HttpPayloadCollectionRule{
+							MimeTypes: &[]string{"application/json"},
 						},
 					},
 				},
@@ -562,8 +562,8 @@ func TestUpdateInstrumentationConfigForWorkload_RuleForLibrary(t *testing.T) {
 	if len(ic.Spec.SdkConfigs[0].InstrumentationLibraryConfigs) != 1 {
 		t.Errorf("Expected 1 library, got %d", len(ic.Spec.SdkConfigs[0].InstrumentationLibraryConfigs))
 	}
-	if len(*ic.Spec.SdkConfigs[0].InstrumentationLibraryConfigs[0].HttpRequestPayloadCollection.AllowedMimeType) != 1 {
-		t.Errorf("Expected 1 mime type, got %d", len(*ic.Spec.SdkConfigs[0].InstrumentationLibraryConfigs[0].HttpRequestPayloadCollection.AllowedMimeType))
+	if len(*ic.Spec.SdkConfigs[0].InstrumentationLibraryConfigs[0].HttpRequestPayloadCollection.MimeTypes) != 1 {
+		t.Errorf("Expected 1 mime type, got %d", len(*ic.Spec.SdkConfigs[0].InstrumentationLibraryConfigs[0].HttpRequestPayloadCollection.MimeTypes))
 	}
 }
 
@@ -602,8 +602,8 @@ func TestUpdateInstrumentationConfigForWorkload_LibraryRuleOtherLanguage(t *test
 								Language: common.PythonProgrammingLanguage, // Notice, the library is for python and sdk language is javascript
 							},
 						},
-						HttpRequestPayloadCollectionRule: &rulesv1alpha1.HttpPayloadCollectionRule{
-							AllowedMimeType: &[]string{"application/json"},
+						HttpRequest: &rulesv1alpha1.HttpPayloadCollectionRule{
+							MimeTypes: &[]string{"application/json"},
 						},
 					},
 				},
@@ -628,20 +628,20 @@ func TestUpdateInstrumentationConfigForWorkload_LibraryRuleOtherLanguage(t *test
 
 func TestMergeHttpPayloadCollectionRules(t *testing.T) {
 	res := mergeHttpPayloadCollectionRules(&rulesv1alpha1.HttpPayloadCollectionRule{
-		AllowedMimeType:  &[]string{"application/json"},
+		MimeTypes:        &[]string{"application/json"},
 		MaxPayloadLength: Int64Ptr(1234),
 	}, &rulesv1alpha1.HttpPayloadCollectionRule{
-		AllowedMimeType:     &[]string{"application/xml"},
+		MimeTypes:           &[]string{"application/xml"},
 		DropPartialPayloads: BoolPtr(false),
 	})
-	if len(*res.AllowedMimeType) != 2 {
-		t.Errorf("Expected 2 mime types, got %d", len(*res.AllowedMimeType))
+	if len(*res.MimeTypes) != 2 {
+		t.Errorf("Expected 2 mime types, got %d", len(*res.MimeTypes))
 	}
-	if (*res.AllowedMimeType)[0] != "application/json" {
-		t.Errorf("Expected mime type %s, got %s", "application/json", (*res.AllowedMimeType)[0])
+	if (*res.MimeTypes)[0] != "application/json" {
+		t.Errorf("Expected mime type %s, got %s", "application/json", (*res.MimeTypes)[0])
 	}
-	if (*res.AllowedMimeType)[1] != "application/xml" {
-		t.Errorf("Expected mime type %s, got %s", "application/xml", (*res.AllowedMimeType)[1])
+	if (*res.MimeTypes)[1] != "application/xml" {
+		t.Errorf("Expected mime type %s, got %s", "application/xml", (*res.MimeTypes)[1])
 	}
 	if *res.MaxPayloadLength != 1234 {
 		t.Errorf("Expected max payload length %d, got %d", 1234, *res.MaxPayloadLength)
@@ -660,14 +660,14 @@ func TestMergeHttpPayloadCollectionRules_BothNil(t *testing.T) {
 
 func TestMergeHttpPayloadCollectionRules_FirstNil(t *testing.T) {
 	res := mergeHttpPayloadCollectionRules(nil, &rulesv1alpha1.HttpPayloadCollectionRule{
-		AllowedMimeType:     &[]string{"application/xml"},
+		MimeTypes:           &[]string{"application/xml"},
 		DropPartialPayloads: BoolPtr(false),
 	})
-	if len(*res.AllowedMimeType) != 1 {
-		t.Errorf("Expected 1 mime type, got %d", len(*res.AllowedMimeType))
+	if len(*res.MimeTypes) != 1 {
+		t.Errorf("Expected 1 mime type, got %d", len(*res.MimeTypes))
 	}
-	if (*res.AllowedMimeType)[0] != "application/xml" {
-		t.Errorf("Expected mime type %s, got %s", "application/xml", (*res.AllowedMimeType)[0])
+	if (*res.MimeTypes)[0] != "application/xml" {
+		t.Errorf("Expected mime type %s, got %s", "application/xml", (*res.MimeTypes)[0])
 	}
 	if res.MaxPayloadLength != nil {
 		t.Errorf("Expected nil, got %v", res.MaxPayloadLength)
@@ -681,8 +681,8 @@ func TestMergeHttpPayloadCollectionRules_SecondNil(t *testing.T) {
 	res := mergeHttpPayloadCollectionRules(&rulesv1alpha1.HttpPayloadCollectionRule{
 		MaxPayloadLength: Int64Ptr(1234),
 	}, nil)
-	if res.AllowedMimeType != nil {
-		t.Errorf("Expected nil, got %v", res.AllowedMimeType)
+	if res.MimeTypes != nil {
+		t.Errorf("Expected nil, got %v", res.MimeTypes)
 	}
 	if *res.MaxPayloadLength != 1234 {
 		t.Errorf("Expected max payload length %d, got %d", 1234, *res.MaxPayloadLength)

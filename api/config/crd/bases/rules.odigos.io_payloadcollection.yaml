@@ -40,7 +40,7 @@ spec:
             type: object
           spec:
             properties:
-              dbStatementPayloadCollectionRule:
+              dbStatement:
                 description: rule for collecting db payloads for the mentioned workload
                   and instrumentation libraries
                 properties:
@@ -59,23 +59,14 @@ spec:
                     type: integer
                 type: object
               disabled:
-                description: A flag for users allowing to temporarily disable the
-                  rule, but keep it around for future use
+                description: A boolean field allowing to temporarily disable the rule,
+                  but keep it around for future use
                 type: boolean
-              httpRequestPayloadCollectionRule:
+              httpRequest:
                 description: |-
                   rule for collecting the request part of an http payload.
                   request can be a client request (incoming ) or a server request, depending on the instrumentation library
                 properties:
-                  allowedMimeTypePatterns:
-                    description: |-
-                      which mime types to allow for collection, as specified in the http header
-                      if any item in the list matches, the payload will be considered for collection
-                      if empty list - non of the mime types will be collected
-                      if nil - all mime types will be collected
-                    items:
-                      type: string
-                    type: array
                   dropPartialPayloads:
                     description: |-
                       If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
@@ -89,21 +80,21 @@ spec:
                       if the content length is above this value, the decision to collect will be based on the dropPartialPayloads parameter
                     format: int64
                     type: integer
+                  mimeTypes:
+                    description: |-
+                      which mime types to allow for collection, as specified in the http header
+                      if any item in the list matches, the payload will be considered for collection
+                      if empty list - non of the mime types will be collected
+                      if nil - all mime types will be collected
+                    items:
+                      type: string
+                    type: array
                 type: object
-              httpResponsePayloadCollectionRule:
+              httpResponse:
                 description: |-
                   rule for collecting the response part of an http payload.
                   response can be a client response or a server response, depending on the instrumentation library
                 properties:
-                  allowedMimeTypePatterns:
-                    description: |-
-                      which mime types to allow for collection, as specified in the http header
-                      if any item in the list matches, the payload will be considered for collection
-                      if empty list - non of the mime types will be collected
-                      if nil - all mime types will be collected
-                    items:
-                      type: string
-                    type: array
                   dropPartialPayloads:
                     description: |-
                       If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
@@ -117,6 +108,15 @@ spec:
                       if the content length is above this value, the decision to collect will be based on the dropPartialPayloads parameter
                     format: int64
                     type: integer
+                  mimeTypes:
+                    description: |-
+                      which mime types to allow for collection, as specified in the http header
+                      if any item in the list matches, the payload will be considered for collection
+                      if empty list - non of the mime types will be collected
+                      if nil - all mime types will be collected
+                    items:
+                      type: string
+                    type: array
                 type: object
               instrumentationLibraries:
                 description: |-
@@ -160,17 +160,20 @@ spec:
                   type: object
                 type: array
               notes:
-                description: Place to document the purpose of the rule if desired
+                description: 'A free-form text field that allows you to attach notes
+                  regarding the rule for convenience. For example: why it was added.
+                  Odigos does not use or assume any meaning from this field.'
                 type: string
               ruleName:
-                description: free text to give a human readable name to the rule if
-                  desired
+                description: Allows you to attach a meaningful name to the rule for
+                  convenience. Odigos does not use or assume any meaning from this
+                  field.
                 type: string
               workloads:
-                description: |-
-                  To which workloads should this rule apply
-                  Empty list will make this rule ineffective for all workloads
-                  nil will make this rule apply to all workloads
+                description: An array of workload objects (name, namespace, kind)
+                  to which the rule should be applied. If not specified, the rule
+                  will be applied to all workloads. empty array will render the rule
+                  inactive.
                 items:
                   description: |-
                     PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
