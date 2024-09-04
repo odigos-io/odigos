@@ -30,7 +30,7 @@ spec:
   runtimeDetails:
     - containerName: frontend
       language: java
-      runtimeVersion: jdk-17.0.11+9
+      runtimeVersion: 17.0.11+9
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentedApplication
@@ -64,7 +64,7 @@ spec:
   runtimeDetails:
     - containerName: membership
       language: go
-      runtimeVersion: go1.21.4
+      runtimeVersion: 1.21.4
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentedApplication

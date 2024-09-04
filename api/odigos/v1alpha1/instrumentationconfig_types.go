@@ -192,3 +192,12 @@ type InstrumentationConfigList struct {
 func init() {
 	SchemeBuilder.Register(&InstrumentationConfig{}, &InstrumentationConfigList{})
 }
+
+// Languages returns the set of languages that this configuration applies to
+func (ic *InstrumentationConfig) Languages() map[common.ProgrammingLanguage]struct{} {
+	langs := make(map[common.ProgrammingLanguage]struct{})
+	for _, sdkConfig := range ic.Spec.SdkConfigs {
+		langs[sdkConfig.Language] = struct{}{}
+	}
+	return langs
+}
