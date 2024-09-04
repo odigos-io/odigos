@@ -30,7 +30,7 @@ spec:
   ruleName: "collect all supported payloads"
   httpRequest: {}
   httpResponse: {}
-  dbStatement: {}
+  dbQuery: {}
 ```
 
 Apply the action to the cluster:
@@ -82,7 +82,7 @@ spec:
       - "text/plain"
     maxPayloadLength: 2048
     dropPartialPayloads: true
-  dbStatement:
+  dbQuery:
     maxPayloadLength: 1024
     dropPartialPayloads: true
 ```
@@ -111,7 +111,12 @@ The full list of configuration options for the "Payload Collection" Rule are:
   - `maxPayloadLength` (optional): Maximum length of the payload to collect. If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option. When not specified (recommended), the instrumentation library will use any reasonable default value
   - `dropPartialPayloads` (optional, default is false): If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all. This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
 
-- `dbStatement` (optional): Collect database statement payload data when available.
+- `dbQuery` (optional): Collect database query payload info when available.
   - `maxPayloadLength` (optional): Maximum length of the payload to collect. If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option. When not specified (recommended), the instrumentation library will use any reasonable default value
   - `dropPartialPayloads` (optional, default is false): If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all. This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
 
+## Multiple Rules
+
+You can create multiple "Payload Collection" rules to specify different configurations for different workloads or instrumentation libraries.
+Rules for specific libraries are considered before rules for all libraries.
+In case multiple rules apply to the same workload or library, they will be merged together to create the final configuration.
