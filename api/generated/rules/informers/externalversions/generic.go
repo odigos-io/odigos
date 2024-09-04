@@ -20,7 +20,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	v1alpha1 "github.com/odigos-io/odigos/api/rules/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -51,21 +51,9 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=odigos.io, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("collectorsgroups"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().CollectorsGroups().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("destinations"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Destinations().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("instrumentationconfigs"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().InstrumentationConfigs().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("instrumentationinstances"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().InstrumentationInstances().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("instrumentedapplications"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().InstrumentedApplications().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("odigosconfigurations"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().OdigosConfigurations().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("processors"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Processors().Informer()}, nil
+	// Group=rules, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("payloadcollections"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Rules().V1alpha1().PayloadCollections().Informer()}, nil
 
 	}
 

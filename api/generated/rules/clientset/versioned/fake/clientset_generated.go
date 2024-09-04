@@ -20,8 +20,8 @@ package fake
 import (
 	applyconfiguration "github.com/odigos-io/odigos/api/generated/rules/applyconfiguration"
 	clientset "github.com/odigos-io/odigos/api/generated/rules/clientset/versioned"
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/rules/clientset/versioned/typed/odigos/v1alpha1"
-	fakeodigosv1alpha1 "github.com/odigos-io/odigos/api/generated/rules/clientset/versioned/typed/odigos/v1alpha1/fake"
+	rulesv1alpha1 "github.com/odigos-io/odigos/api/generated/rules/clientset/versioned/typed/rules/v1alpha1"
+	fakerulesv1alpha1 "github.com/odigos-io/odigos/api/generated/rules/clientset/versioned/typed/rules/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -115,7 +115,7 @@ var (
 	_ testing.FakeClient  = &Clientset{}
 )
 
-// OdigosV1alpha1 retrieves the OdigosV1alpha1Client
-func (c *Clientset) OdigosV1alpha1() odigosv1alpha1.OdigosV1alpha1Interface {
-	return &fakeodigosv1alpha1.FakeOdigosV1alpha1{Fake: &c.Fake}
+// RulesV1alpha1 retrieves the RulesV1alpha1Client
+func (c *Clientset) RulesV1alpha1() rulesv1alpha1.RulesV1alpha1Interface {
+	return &fakerulesv1alpha1.FakeRulesV1alpha1{Fake: &c.Fake}
 }

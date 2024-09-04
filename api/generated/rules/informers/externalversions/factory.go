@@ -24,7 +24,7 @@ import (
 
 	versioned "github.com/odigos-io/odigos/api/generated/rules/clientset/versioned"
 	internalinterfaces "github.com/odigos-io/odigos/api/generated/rules/informers/externalversions/internalinterfaces"
-	odigos "github.com/odigos-io/odigos/api/generated/rules/informers/externalversions/odigos"
+	rules "github.com/odigos-io/odigos/api/generated/rules/informers/externalversions/rules"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -253,9 +253,9 @@ type SharedInformerFactory interface {
 	// client.
 	InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer
 
-	Odigos() odigos.Interface
+	Rules() rules.Interface
 }
 
-func (f *sharedInformerFactory) Odigos() odigos.Interface {
-	return odigos.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Rules() rules.Interface {
+	return rules.New(f, f.namespace, f.tweakListOptions)
 }

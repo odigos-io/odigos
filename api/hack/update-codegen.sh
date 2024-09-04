@@ -34,7 +34,7 @@ kube::codegen::gen_client \
 kube::codegen::gen_client \
     --with-watch \
     --with-applyconfig \
-    --one-input-api "odigos/v1alpha1" \
+    --one-input-api "rules/v1alpha1" \
     --output-dir "${SCRIPT_ROOT}/generated/rules" \
     --output-pkg "github.com/odigos-io/odigos/api/generated/rules" \
     --boilerplate "${SCRIPT_ROOT}/hack/boilerplate.go.txt" \
