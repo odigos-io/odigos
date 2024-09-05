@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -87,6 +88,8 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 			logger.Error(err, "error finding processes")
 			return err, instrumentedEbpf
 		}
+		minProcessId := getMinimumProcessID(details, language)
+
 		// print the details
 		programLanguageDetails := common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}
 		var detectErr error
@@ -101,6 +104,10 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 		}
 		var errs []error
 		for _, d := range processes {
+			// Hack - if NginxInstrumentation - only instrument the process with the minimum PID (it's root)
+			if minProcessId != -1 && d.ProcessID != minProcessId {
+				continue
+			}
 			podDetails := types.NamespacedName{
 				Namespace: pod.Namespace,
 				Name:      pod.Name,
@@ -121,4 +128,24 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 		}
 	}
 	return nil, instrumentedEbpf
+}
+
+func getMinimumProcessID(details []procdiscovery.Details, language common.ProgrammingLanguage) int {
+	if language != common.NginxProgrammingLanguage {
+		return -1
+	}
+
+	return findMinProcessID(details)
+}
+
+func findMinProcessID(details []procdiscovery.Details) int {
+	minPID := math.MaxInt // Start with the maximum possible integer value
+
+	for _, detail := range details {
+		if detail.ProcessID < minPID {
+			minPID = detail.ProcessID
+		}
+	}
+
+	return minPID
 }
