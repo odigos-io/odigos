@@ -115,7 +115,6 @@ type InstrumentationRuleStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:path=instrumentationrule,scope=Namespaced
 //+kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
 //+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
 

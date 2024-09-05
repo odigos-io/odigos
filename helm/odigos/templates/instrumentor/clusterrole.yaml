@@ -99,9 +99,9 @@ rules:
     - update
     - watch
   - apiGroups:
-    - rules.odigos.io
+    - odigos.io
     resources:
-    - payloadcollections
+    - instrumentationrules
     verbs:
     - get
     - list

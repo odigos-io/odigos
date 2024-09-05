@@ -7,13 +7,13 @@ metadata:
   labels:
     metadata.labels.odigos.io/config: "1"
     metadata.labels.odigos.io/system-object: "true"
-  name: instrumentationrule.odigos.io
+  name: instrumentationrules.odigos.io
 spec:
   group: odigos.io
   names:
     kind: InstrumentationRule
     listKind: InstrumentationRuleList
-    plural: instrumentationrule
+    plural: instrumentationrules
     singular: instrumentationrule
   scope: Namespaced
   versions:
