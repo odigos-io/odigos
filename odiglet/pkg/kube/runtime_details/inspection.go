@@ -3,6 +3,7 @@ package runtime_details
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
 
@@ -80,7 +81,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				}
 				continue
 			}
-
+			fmt.Printf("@@@@ FindAllInContainer:%v, pod: %v, container: %v\n", pod.UID, pod.Name, container.Name)
 			processes, err := process.FindAllInContainer(string(pod.UID), container.Name)
 			if err != nil {
 				log.Logger.Error(err, "failed to find processes in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
@@ -99,6 +100,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				containerURL := kubeutils.GetPodExternalURL(pod.Status.PodIP, container.Ports)
 				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL)
 				if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
+					fmt.Printf("@@@@ DetectLanguage:%v, Proc: %v pod: %v, container: %v\n", programLanguageDetails.Language, proc, pod.Name, container.Name)
 					inspectProc = &proc
 					break
 				}
@@ -110,7 +112,12 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				programLanguageDetails.Language = common.UnknownProgrammingLanguage
 			} else {
 				if len(processes) > 1 {
-					log.Logger.V(0).Info("multiple processes found in pod container, only taking the first one with detected language into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+					//log.Logger.V(0).Info("multiple processes found in pod container, only taking the first one with detected language into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+					fmt.Printf("@@@@ container[%v] multiple processes found in pod container, only taking the first one with detected language into account pod: %v\n", container.Name, pod.Name)
+					// debud, print all processes
+					for _, proc := range processes {
+						fmt.Printf("@@@@ container[%v] DetectLanguage:%v, Proc: %v pod: %v\n", container.Name, programLanguageDetails.Language, proc, pod.Name)
+					}
 				}
 
 				// Convert map to slice for k8s format

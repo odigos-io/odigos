@@ -3,6 +3,7 @@ package instrumentation_ebpf
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
@@ -46,7 +47,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 		if len(runtimeDetails.Spec.RuntimeDetails) == 1 {
 			serviceName = podWorkload.Name
 		}
-
+		fmt.Printf("@@@@ Instrumenting pod %v:%s container %s with service name %s\n", pod.UID, pod.Name, containerName, serviceName)
 		details, err := process.FindAllInContainer(podUid, containerName)
 		if err != nil {
 			logger.Error(err, "error finding processes")
