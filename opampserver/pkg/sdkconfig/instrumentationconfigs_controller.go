@@ -58,18 +58,19 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		},
 	}
 
-	connectionInfo, _ := i.ConnectionCache.GetConnectionInfoByWorkload(podWorkload)
+	connectionInfo := i.ConnectionCache.GetConnectionsInfoByWorkload(podWorkload)
 
 	if connectionInfo != nil {
-		connectionProgragmingLanguage := connectionInfo.ProgrammingLanguage
-		workloadInstrumentationConfig, err := configsections.FilterRelevantSdk(instrumentationConfig, connectionProgragmingLanguage)
-		if err != nil {
-			return ctrl.Result{}, err
+		for _, con := range connectionInfo {
+			connectionProgragmingLanguage := con.ProgrammingLanguage
+			workloadInstrumentationConfig, err := configsections.FilterRelevantSdk(instrumentationConfig, connectionProgragmingLanguage)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			updatedConfigMapEntries.ConfigMap[""] = workloadInstrumentationConfig
+			i.ConnectionCache.UpdateWorkloadRemoteConfigByKeys(podWorkload, &updatedConfigMapEntries, connectionProgragmingLanguage)
 		}
-		updatedConfigMapEntries.ConfigMap[""] = workloadInstrumentationConfig
 	}
-
-	i.ConnectionCache.UpdateWorkloadRemoteConfigByKeys(podWorkload, &updatedConfigMapEntries)
 
 	return ctrl.Result{}, nil
 }

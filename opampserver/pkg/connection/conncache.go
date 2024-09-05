@@ -1,7 +1,6 @@
 package connection
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -22,7 +21,7 @@ var connectionStaleTime = time.Duration(float64(HeartbeatInterval) * 2.5)
 type ConnectionsCache struct {
 	mux sync.Mutex
 
-	// map from device id to connection information
+	// map from OpAMP Instance id to connection information
 	liveConnections map[string]*ConnectionInfo
 }
 
@@ -91,12 +90,12 @@ func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
 }
 
 // allow to completely overwrite the remote config for a set of keys for a given workload
-func (c *ConnectionsCache) UpdateWorkloadRemoteConfigByKeys(workload workload.PodWorkload, newConfigEntries *protobufs.AgentConfigMap) {
+func (c *ConnectionsCache) UpdateWorkloadRemoteConfigByKeys(workload workload.PodWorkload, newConfigEntries *protobufs.AgentConfigMap, programingLanguage string) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
 	for _, conn := range c.liveConnections {
-		if conn.Workload != workload {
+		if conn.Workload != workload || conn.ProgrammingLanguage != programingLanguage {
 			continue
 		}
 
@@ -144,11 +143,17 @@ func (c *ConnectionsCache) UpdateAllConnectionConfigs(connConfigEvaluator func(c
 	}
 }
 
-func (c *ConnectionsCache) GetConnectionInfoByWorkload(podWorkload workload.PodWorkload) (*ConnectionInfo, error) {
+func (c *ConnectionsCache) GetConnectionsInfoByWorkload(podWorkload workload.PodWorkload) []*ConnectionInfo {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	var connections []*ConnectionInfo
+
 	for _, conn := range c.liveConnections {
 		if conn.Workload == podWorkload {
-			return conn, nil
+			connections = append(connections, conn)
 		}
 	}
-	return nil, fmt.Errorf("no connection found for workload %v", podWorkload)
+
+	return connections // Return the slice (can be empty if no matches)
 }
