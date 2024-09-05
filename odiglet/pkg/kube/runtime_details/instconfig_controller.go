@@ -50,8 +50,10 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		logger.Error(err, "Failed to get workload and labels from owner")
 		return reconcile.Result{}, err
 	}
+	fmt.Printf("@@@@ Reconciling InstrumentationConfig %s/%s for workload %s/%s\n", instConfig.Namespace, instConfig.Name, workload.GetNamespace(), workload.GetName())
 	err = inspectRuntimesOfRunningPods(ctx, &logger, labels, i.Client, i.Scheme, workload)
 	if err != nil {
+		logger.Error(err, "@@@@ Failed to inspect runtimes of running pods")
 		return reconcile.Result{}, ignoreNoPodsFoundError(err)
 	}
 
