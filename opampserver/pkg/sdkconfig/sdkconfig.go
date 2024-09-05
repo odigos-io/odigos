@@ -82,7 +82,13 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttr
 
 	// We are moving towards passing all Instrumentation capabilities unchanged within the instrumentationConfig to the opamp client.
 	// Gradually, we will migrate the InstrumentationLibraryConfigs and SDK remote config into the instrumentationConfig and the agents to use it.
-	opampRemoteConfigInstrumentationConfig, err := configsections.GetWorkloadInstrumentationConfig(ctx, m.mgr.GetClient(), instrumentedAppName, podWorkload.Namespace, programmingLanguage)
+	instrumentationConfig, err := configsections.GetWorkloadInstrumentationConfig(ctx, m.mgr.GetClient(), instrumentedAppName, podWorkload.Namespace)
+	if err != nil {
+		m.logger.Error(err, "failed to get instrumentation config", "k8sAttributes", remoteResourceAttributes)
+		return nil, err
+	}
+
+	opampRemoteConfigInstrumentationConfig, err := configsections.FilterRelevantSdk(instrumentationConfig, programmingLanguage)
 
 	agentConfigMap := protobufs.AgentConfigMap{
 		ConfigMap: map[string]*protobufs.AgentConfigFile{

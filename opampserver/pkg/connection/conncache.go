@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -141,4 +142,13 @@ func (c *ConnectionsCache) UpdateAllConnectionConfigs(connConfigEvaluator func(c
 			ConfigHash: CalcRemoteConfigHash(newRemoteConfigMap),
 		}
 	}
+}
+
+func (c *ConnectionsCache) GetConnectionInfoByWorkload(podWorkload workload.PodWorkload) (*ConnectionInfo, error) {
+	for _, conn := range c.liveConnections {
+		if conn.Workload == podWorkload {
+			return conn, nil
+		}
+	}
+	return nil, fmt.Errorf("no connection found for workload %v", podWorkload)
 }

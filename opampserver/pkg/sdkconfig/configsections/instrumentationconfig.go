@@ -10,17 +10,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Client, configObjectName string, ns string, programmingLanguage string) (*protobufs.AgentConfigFile, error) {
-	instrumentationSdkConfig := &v1alpha1.InstrumentationConfig{}
-	err := kubeClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: configObjectName}, instrumentationSdkConfig)
-	// if the crd is not found, just use the empty one which we initialized above
+func GetWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Client, configObjectName string, ns string) (*v1alpha1.InstrumentationConfig, error) {
+	instrumentationConfig := &v1alpha1.InstrumentationConfig{}
+	err := kubeClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: configObjectName}, instrumentationConfig)
+
 	if err != nil && !apierrors.IsNotFound(err) {
 		return nil, err
 	}
 
+	return instrumentationConfig, nil
+}
+
+func FilterRelevantSdk(instrumentationConfig *v1alpha1.InstrumentationConfig, programmingLanguage string) (*protobufs.AgentConfigFile, error) {
 	relevantSdkConfig := v1alpha1.SdkConfig{}
 
-	for _, sdkConfig := range instrumentationSdkConfig.Spec.SdkConfigs {
+	for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
 		if string(sdkConfig.Language) == programmingLanguage {
 			relevantSdkConfig = sdkConfig
 		}
