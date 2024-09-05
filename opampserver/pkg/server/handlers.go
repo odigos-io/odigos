@@ -53,6 +53,17 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, fmt.Errorf("missing pid in agent description")
 	}
 
+	var programmingLanguage string
+	for _, attr := range firstMessage.AgentDescription.IdentifyingAttributes {
+		if attr.Key == string(semconv.TelemetrySDKLanguageKey) {
+			programmingLanguage = attr.Value.GetStringValue()
+			break
+		}
+	}
+	if programmingLanguage == "" {
+		return nil, nil, fmt.Errorf("missing programming language in agent description")
+	}
+
 	k8sAttributes, pod, err := c.deviceIdCache.GetAttributesFromDevice(ctx, deviceId)
 	if err != nil {
 		c.logger.Error(err, "failed to get attributes from device", "deviceId", deviceId)
@@ -72,7 +83,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, err
 	}
 
-	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, remoteResourceAttributes, &podWorkload, instrumentedAppName)
+	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, remoteResourceAttributes, &podWorkload, instrumentedAppName, programmingLanguage)
 	if err != nil {
 		c.logger.Error(err, "failed to get full config", "k8sAttributes", k8sAttributes)
 		return nil, nil, err
@@ -85,6 +96,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		Pod:                      pod,
 		ContainerName:            k8sAttributes.ContainerName,
 		Pid:                      pid,
+		ProgrammingLanguage:      programmingLanguage,
 		InstrumentedAppName:      instrumentedAppName,
 		AgentRemoteConfig:        fullRemoteConfig,
 		RemoteResourceAttributes: remoteResourceAttributes,
