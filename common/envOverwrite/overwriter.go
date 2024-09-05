@@ -7,8 +7,9 @@ import (
 )
 
 type envValues struct {
-	delim  string
-	values map[common.OtelSdk]string
+	delim               string
+	programmingLanguage common.ProgrammingLanguage
+	values              map[common.OtelSdk]string
 }
 
 // EnvValuesMap is a map of environment variables odigos uses for various languages and goals.
@@ -20,21 +21,24 @@ type envValues struct {
 // If the paths are changed in the odigos images, the values here should be updated accordingly.
 var EnvValuesMap = map[string]envValues{
 	"NODE_OPTIONS": {
-		delim: " ",
+		delim:               " ",
+		programmingLanguage: common.JavascriptProgrammingLanguage,
 		values: map[common.OtelSdk]string{
 			common.OtelSdkNativeCommunity: "--require /var/odigos/nodejs/autoinstrumentation.js",
 			common.OtelSdkEbpfEnterprise:  "--require /var/odigos/nodejs-ebpf/autoinstrumentation.js",
 		},
 	},
 	"PYTHONPATH": {
-		delim: ":",
+		delim:               ":",
+		programmingLanguage: common.PythonProgrammingLanguage,
 		values: map[common.OtelSdk]string{
 			common.OtelSdkNativeCommunity: "/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation",
 			common.OtelSdkEbpfEnterprise:  "/var/odigos/python-ebpf:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation:/var/odigos/python",
 		},
 	},
 	"JAVA_OPTS": {
-		delim: " ",
+		delim:               " ",
+		programmingLanguage: common.JavaProgrammingLanguage,
 		values: map[common.OtelSdk]string{
 			common.OtelSdkNativeCommunity: "-javaagent:/var/odigos/java/javaagent.jar",
 			common.OtelSdkEbpfEnterprise:  "-javaagent:/var/odigos/java-ebpf/dtrace-injector.jar",
@@ -43,7 +47,8 @@ var EnvValuesMap = map[string]envValues{
 		},
 	},
 	"JAVA_TOOL_OPTIONS": {
-		delim: " ",
+		delim:               " ",
+		programmingLanguage: common.JavaProgrammingLanguage,
 		values: map[common.OtelSdk]string{
 			common.OtelSdkNativeCommunity: "-javaagent:/var/odigos/java/javaagent.jar",
 			common.OtelSdkEbpfEnterprise:  "-javaagent:/var/odigos/java-ebpf/dtrace-injector.jar",
@@ -58,10 +63,15 @@ var EnvValuesMap = map[string]envValues{
 // the are 2 parts to the environment value: odigos part and user part.
 // either one can be set or empty.
 // so we have 4 cases to handle:
-func GetPatchedEnvValue(envName string, observedValue string, currentSdk common.OtelSdk) *string {
+func GetPatchedEnvValue(envName string, observedValue string, currentSdk common.OtelSdk, language common.ProgrammingLanguage) *string {
 	envMetadata, ok := EnvValuesMap[envName]
 	if !ok {
 		// Odigos does not manipulate this environment variable, so ignore it
+		return nil
+	}
+
+	if envMetadata.programmingLanguage != language {
+		// Odigos does not manipulate this environment variable for the given language, so ignore it
 		return nil
 	}
 

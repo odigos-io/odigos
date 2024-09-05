@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -49,4 +50,12 @@ func GetResourceAttributes(podWorkload *workload.PodWorkload, podName string) []
 	}
 
 	return attrs
+}
+
+func GetPodExternalURL(ip string, ports []corev1.ContainerPort) string {
+	if ports != nil && len(ports) > 0 {
+		return fmt.Sprintf("http://%s:%d", ip, ports[0].ContainerPort)
+	}
+
+	return ""
 }

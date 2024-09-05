@@ -127,6 +127,9 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 		common.DotNetProgrammingLanguage: {
 			common.OtelSdkNativeCommunity: instrumentlang.DotNet,
 		},
+		common.NginxProgrammingLanguage: {
+			common.OtelSdkNativeCommunity: instrumentlang.Nginx,
+		},
 	}
 
 	lister, err := instrumentation.NewLister(ctx, clientset, otelSdkLsf)

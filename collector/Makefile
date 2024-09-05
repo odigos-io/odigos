@@ -9,13 +9,14 @@ BUILDER := $(TOOLS_BIN_DIR)/builder_$(BUILDER_VERSION)
 
 # Determine the current operating system and architecture
 CURRENT_OS := $(shell go env GOOS)
-CURRENT_ARCH := $(shell go env GOARCH)
+CURRENT_ARCH := $(shell go env GOHOSTARCH)
 GOBIN := $(shell go env GOPATH)/bin
 
 # Define the URL format for the tool executable
 BUILDER_URL = https://github.com/open-telemetry/opentelemetry-collector/releases/download/cmd%2Fbuilder%2Fv$(BUILDER_VERSION)/ocb_$(BUILDER_VERSION)_$(CURRENT_OS)_$(CURRENT_ARCH)
 
 GOCMD?= go
+MDATAGENCMD?= mdatagen
 
 .PHONY: download_builder
 download_builder:
@@ -50,3 +51,13 @@ install-tools:
 .PHONY: generate
 generate: install-tools
 	@find . -type f -name 'metadata.yaml' -print0 | xargs -0 -I {} sh -c 'cd $$(dirname {}); $(GOBIN)/mdatagen metadata.yaml'
+
+ALL_GO_MODS := $(shell find . -type f -name 'go.mod' ! -path './exporters/googlecloudstorageexporter/*' ! -path './exporters/azureblobstorageexporter/*' ! -path './internal/tools/*' ! -path './odigosotelcol/*' | sort)
+GO_MODS_TO_TEST := $(ALL_GO_MODS:%=test/%)
+
+.PHONY: test
+test: $(GO_MODS_TO_TEST)
+test/%: GO_MOD=$*
+test/%:
+	cd $(shell dirname $(GO_MOD)) && $(GOCMD) test -v ./...
+

@@ -20,3 +20,60 @@ Make sure the API Key is permitted to **Send Events** to Honeycomb.
 - **API Key**: Insert the API Key from the previous step in the **API Key** field.
 - **Endpoint** - Choose one of the endpoints in the dropdown (api.honeycomb.io is the US instance, api.eu1.honeycomb.io is EU instance)
 
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Honeycomb` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: honeycomb-example
+  namespace: odigos-system
+spec:
+  data:
+    HONEYCOMB_ENDPOINT: <Endpoint [api.honeycomb.io, api.eu1.honeycomb.io]>
+  destinationName: honeycomb
+  secretRef:
+    name: honeycomb-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: honeycomb
+
+---
+apiVersion: v1
+data:
+  HONEYCOMB_API_KEY: <base64 API Key>
+kind: Secret
+metadata:
+  name: honeycomb-secret
+  namespace: odigos-system
+type: Opaque
+```
