@@ -2,6 +2,7 @@ package instrumentation_ebpf
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -41,7 +42,7 @@ func (p *PodsReconciler) isNamespaceIgnored(ctx context.Context, ns string) bool
 
 func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-
+	fmt.Printf("@@@@ Reconciling pod %s/%s\n", request.Namespace, request.Name)
 	if request.Namespace == env.GetCurrentNamespace() || p.isNamespaceIgnored(ctx, request.Namespace) {
 		return ctrl.Result{}, nil
 	}
@@ -59,6 +60,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	}
 
 	if !kubeutils.IsPodInCurrentNode(&pod) {
+		fmt.Printf("@@@@ Pod %s/%s is not in the current node\n", pod.Namespace, pod.Name)
 		return ctrl.Result{}, nil
 	}
 
@@ -75,6 +77,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	}
 	if podWorkload == nil {
 		// pod is not managed by a controller
+		fmt.Printf("@@@@ Pod %s/%s is not managed by a controller\n", pod.Namespace, pod.Name)
 		return ctrl.Result{}, nil
 	}
 
