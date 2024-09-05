@@ -16,6 +16,7 @@ export enum WORKLOAD_PROGRAMMING_LANGUAGES {
   PROCESSING = 'processing', // language detection is not yet complotted, data is not available
   NO_CONTAINERS = 'no containers', // language detection completed but no containers found or they are ignored
   NO_RUNNING_PODS = 'no running pods', // no running pods are available for language detection
+  NGINX = 'nginx',
 }
 
 export const LANGUAGES_LOGOS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> = {
@@ -29,6 +30,7 @@ export const LANGUAGES_LOGOS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> = {
   [WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING]: `${BASE_URL}default.svg`, // TODO: good icon
   [WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS]: `${BASE_URL}default.svg`, // TODO: good icon
   [WORKLOAD_PROGRAMMING_LANGUAGES.NO_RUNNING_PODS]: `${BASE_URL}default.svg`, // TODO: good icon
+  [WORKLOAD_PROGRAMMING_LANGUAGES.NGINX]: `${BASE_URL}nginx.svg`,
 };
 
 export const LANGUAGES_COLORS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> =
@@ -43,6 +45,7 @@ export const LANGUAGES_COLORS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> =
     [WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING]: '#3367d9',
     [WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS]: '#111111',
     [WORKLOAD_PROGRAMMING_LANGUAGES.NO_RUNNING_PODS]: '#666666',
+    [WORKLOAD_PROGRAMMING_LANGUAGES.NGINX]: '#009237',
   };
 
 export const getMainContainerLanguage = (
