@@ -40,7 +40,6 @@ import (
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	rulesv1alpha1 "github.com/odigos-io/odigos/api/rules/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentedapplication"
@@ -72,7 +71,6 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(v1.AddToScheme(scheme))
-	utilruntime.Must(rulesv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
