@@ -26,6 +26,15 @@ const (
 	IgnoredProgrammingLanguage ProgrammingLanguage = "ignored"
 )
 
+func MapOdigosToSemConv(odigosPrograminglang string) string {
+	switch odigosPrograminglang {
+	case string(JavascriptProgrammingLanguage):
+		return "nodejs"
+	default:
+		return odigosPrograminglang
+	}
+}
+
 func GetVersion(versionString string) *version.Version {
 	runtimeVersion, err := version.NewVersion(versionString)
 	if err != nil {

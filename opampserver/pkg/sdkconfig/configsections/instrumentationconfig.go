@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,7 +26,7 @@ func FilterRelevantSdk(instrumentationConfig *v1alpha1.InstrumentationConfig, pr
 	relevantSdkConfig := v1alpha1.SdkConfig{}
 
 	for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
-		if string(sdkConfig.Language) == programmingLanguage {
+		if common.MapOdigosToSemConv(string(sdkConfig.Language)) == programmingLanguage {
 			relevantSdkConfig = sdkConfig
 		}
 	}
