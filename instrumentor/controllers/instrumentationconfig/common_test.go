@@ -639,12 +639,30 @@ func TestMergeHttpPayloadCollectionRules(t *testing.T) {
 	if len(*res.MimeTypes) != 2 {
 		t.Errorf("Expected 2 mime types, got %d", len(*res.MimeTypes))
 	}
-	if (*res.MimeTypes)[0] != "application/json" {
-		t.Errorf("Expected mime type %s, got %s", "application/json", (*res.MimeTypes)[0])
+	// Test MimeTypes without considering the order
+	expectedMimeTypes := map[string]bool{
+		"application/json": true,
+		"application/xml":  true,
 	}
-	if (*res.MimeTypes)[1] != "application/xml" {
-		t.Errorf("Expected mime type %s, got %s", "application/xml", (*res.MimeTypes)[1])
+	for _, mt := range *res.MimeTypes {
+		if !expectedMimeTypes[mt] {
+			t.Errorf("Unexpected mime type %s", mt)
+		}
 	}
+	// Ensure all expected mime types are present
+	for expected := range expectedMimeTypes {
+		found := false
+		for _, actual := range *res.MimeTypes {
+			if actual == expected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Missing expected mime type %s", expected)
+		}
+	}
+
 	if *res.MaxPayloadLength != 1234 {
 		t.Errorf("Expected max payload length %d, got %d", 1234, *res.MaxPayloadLength)
 	}
