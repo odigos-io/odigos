@@ -44,6 +44,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	logger := log.FromContext(ctx)
 	fmt.Printf("@@@@ Reconciling pod %s/%s\n", request.Namespace, request.Name)
 	if request.Namespace == env.GetCurrentNamespace() || p.isNamespaceIgnored(ctx, request.Namespace) {
+		fmt.Printf("@@@@ Namespace %s is ignored\n", request.Namespace)
 		return ctrl.Result{}, nil
 	}
 
@@ -52,10 +53,12 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			cleanupEbpf(p.Directors, request.NamespacedName)
+			fmt.Printf("@@@@ Pod %s/%s not found\n", request.Namespace, request.Name)
 			return ctrl.Result{}, nil
 		}
 
 		logger.Error(err, "error fetching pod object")
+		fmt.Printf("@@@@ Error fetching pod object: %v\n", err)
 		return ctrl.Result{}, err
 	}
 
@@ -66,6 +69,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 
 	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
 		logger.Info("pod is not running, removing instrumentation")
+		fmt.Printf("@@@@ Pod %s/%s is not running, removing instrumentation\n", pod.Namespace, pod.Name)
 		cleanupEbpf(p.Directors, request.NamespacedName)
 		return ctrl.Result{}, nil
 	}
@@ -73,6 +77,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	podWorkload, err := p.getPodWorkloadObject(ctx, &pod)
 	if err != nil {
 		logger.Error(err, "error getting pod workload object")
+		fmt.Printf("@@@@ Error getting pod workload object: %v\n", err)
 		return ctrl.Result{}, err
 	}
 	if podWorkload == nil {
@@ -80,14 +85,16 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		fmt.Printf("@@@@ Pod %s/%s is not managed by a controller\n", pod.Namespace, pod.Name)
 		return ctrl.Result{}, nil
 	}
-
+	fmt.Printf("@@@@ Pod %s/%s is managed by a controller\n", pod.Namespace, pod.Name)
 	if pod.Status.Phase == corev1.PodRunning {
 		err, instrumentedEbpf := p.instrumentWithEbpf(ctx, &pod, podWorkload)
 		if err != nil {
 			logger.Error(err, "error instrumenting pod")
+			fmt.Printf("@@@@ Error instrumenting pod: %v\n", err)
 			cleanupEbpf(p.Directors, request.NamespacedName)
 			return ctrl.Result{}, err
 		} else if !instrumentedEbpf {
+			fmt.Printf("@@@@ Pod %s/%s is not instrumentedEbpf\n", pod.Namespace, pod.Name)
 			cleanupEbpf(p.Directors, request.NamespacedName)
 			return ctrl.Result{}, nil
 		}
