@@ -94,7 +94,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 			cleanupEbpf(p.Directors, request.NamespacedName)
 			return ctrl.Result{}, err
 		} else if !instrumentedEbpf {
-			fmt.Printf("@@@@ Pod %s/%s is not instrumentedEbpf\n", pod.Namespace, pod.Name)
+			fmt.Printf("@@@@ Pod %s/%s is not instrumentedEbpf      \n", pod.Namespace, pod.Name)
 			cleanupEbpf(p.Directors, request.NamespacedName)
 			return ctrl.Result{}, nil
 		}
