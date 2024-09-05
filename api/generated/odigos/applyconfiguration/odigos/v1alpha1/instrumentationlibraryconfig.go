@@ -17,18 +17,12 @@ limitations under the License.
 
 package v1alpha1
 
-import (
-	rulesv1alpha1 "github.com/odigos-io/odigos/api/rules/v1alpha1"
-)
-
 // InstrumentationLibraryConfigApplyConfiguration represents a declarative configuration of the InstrumentationLibraryConfig type for use
 // with apply.
 type InstrumentationLibraryConfigApplyConfiguration struct {
-	InstrumentationLibraryId      *InstrumentationLibraryIdApplyConfiguration           `json:"libraryId,omitempty"`
-	TraceConfig                   *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
-	HttpRequestPayloadCollection  *rulesv1alpha1.HttpPayloadCollectionRule              `json:"httpRequestPayloadCollection,omitempty"`
-	HttpResponsePayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule              `json:"httpResponsePayloadCollection,omitempty"`
-	DbQueryPayloadCollection      *rulesv1alpha1.DbQueryPayloadCollectionRule           `json:"dbQueryPayloadCollection,omitempty"`
+	InstrumentationLibraryId *InstrumentationLibraryIdApplyConfiguration           `json:"libraryId,omitempty"`
+	TraceConfig              *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
+	PayloadCollection        *PayloadCollectionApplyConfiguration                  `json:"payloadCollection,omitempty"`
 }
 
 // InstrumentationLibraryConfigApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryConfig type for use with
@@ -53,26 +47,10 @@ func (b *InstrumentationLibraryConfigApplyConfiguration) WithTraceConfig(value *
 	return b
 }
 
-// WithHttpRequestPayloadCollection sets the HttpRequestPayloadCollection field in the declarative configuration to the given value
+// WithPayloadCollection sets the PayloadCollection field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the HttpRequestPayloadCollection field is set to the value of the last call.
-func (b *InstrumentationLibraryConfigApplyConfiguration) WithHttpRequestPayloadCollection(value rulesv1alpha1.HttpPayloadCollectionRule) *InstrumentationLibraryConfigApplyConfiguration {
-	b.HttpRequestPayloadCollection = &value
-	return b
-}
-
-// WithHttpResponsePayloadCollection sets the HttpResponsePayloadCollection field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the HttpResponsePayloadCollection field is set to the value of the last call.
-func (b *InstrumentationLibraryConfigApplyConfiguration) WithHttpResponsePayloadCollection(value rulesv1alpha1.HttpPayloadCollectionRule) *InstrumentationLibraryConfigApplyConfiguration {
-	b.HttpResponsePayloadCollection = &value
-	return b
-}
-
-// WithDbQueryPayloadCollection sets the DbQueryPayloadCollection field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DbQueryPayloadCollection field is set to the value of the last call.
-func (b *InstrumentationLibraryConfigApplyConfiguration) WithDbQueryPayloadCollection(value rulesv1alpha1.DbQueryPayloadCollectionRule) *InstrumentationLibraryConfigApplyConfiguration {
-	b.DbQueryPayloadCollection = &value
+// If called multiple times, the PayloadCollection field is set to the value of the last call.
+func (b *InstrumentationLibraryConfigApplyConfiguration) WithPayloadCollection(value *PayloadCollectionApplyConfiguration) *InstrumentationLibraryConfigApplyConfiguration {
+	b.PayloadCollection = value
 	return b
 }

@@ -11,16 +11,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type PayloadCollectionReconciler struct {
+type InstrumentationRuleReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *PayloadCollectionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	logger := log.FromContext(ctx)
 
-	rules, err := getAllInstrumentationRules(ctx, r.Client)
+	instrumentationRules := &odigosv1alpha1.InstrumentationRuleList{}
+	err := r.Client.List(ctx, instrumentationRules)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -43,7 +44,7 @@ func (r *PayloadCollectionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			}
 		}
 
-		err := updateInstrumentationConfigForWorkload(ic, &ia, rules)
+		err := updateInstrumentationConfigForWorkload(ic, &ia, instrumentationRules)
 		if err != nil {
 			logger.Error(err, "error updating instrumentation config", "workload", ia.Name)
 			continue
@@ -58,6 +59,6 @@ func (r *PayloadCollectionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		logger.V(0).Info("Updated instrumentation config", "workload", ia.Name)
 	}
 
-	logger.V(0).Info("Payload Collection Rules changed, recalculating instrumentation configs", "number of payload collection rules", len(rules.payloadCollection.Items), "number of instrumented workloads", len(instrumentedApplications.Items))
+	logger.V(0).Info("Payload Collection Rules changed, recalculating instrumentation configs", "number of instrumentation rules", len(instrumentationRules.Items), "number of instrumented workloads", len(instrumentedApplications.Items))
 	return ctrl.Result{}, nil
 }

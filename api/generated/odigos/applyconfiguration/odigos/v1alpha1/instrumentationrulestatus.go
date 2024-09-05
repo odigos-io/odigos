@@ -21,22 +21,22 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// PayloadCollectionStatusApplyConfiguration represents a declarative configuration of the PayloadCollectionStatus type for use
+// InstrumentationRuleStatusApplyConfiguration represents a declarative configuration of the InstrumentationRuleStatus type for use
 // with apply.
-type PayloadCollectionStatusApplyConfiguration struct {
+type InstrumentationRuleStatusApplyConfiguration struct {
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
-// PayloadCollectionStatusApplyConfiguration constructs a declarative configuration of the PayloadCollectionStatus type for use with
+// InstrumentationRuleStatusApplyConfiguration constructs a declarative configuration of the InstrumentationRuleStatus type for use with
 // apply.
-func PayloadCollectionStatus() *PayloadCollectionStatusApplyConfiguration {
-	return &PayloadCollectionStatusApplyConfiguration{}
+func InstrumentationRuleStatus() *InstrumentationRuleStatusApplyConfiguration {
+	return &InstrumentationRuleStatusApplyConfiguration{}
 }
 
 // WithConditions adds the given value to the Conditions field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Conditions field.
-func (b *PayloadCollectionStatusApplyConfiguration) WithConditions(values ...*v1.ConditionApplyConfiguration) *PayloadCollectionStatusApplyConfiguration {
+func (b *InstrumentationRuleStatusApplyConfiguration) WithConditions(values ...*v1.ConditionApplyConfiguration) *InstrumentationRuleStatusApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithConditions")

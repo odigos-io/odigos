@@ -49,6 +49,14 @@ type InstrumentationInstanceListerExpansion interface{}
 // InstrumentationInstanceNamespaceLister.
 type InstrumentationInstanceNamespaceListerExpansion interface{}
 
+// InstrumentationRuleListerExpansion allows custom methods to be added to
+// InstrumentationRuleLister.
+type InstrumentationRuleListerExpansion interface{}
+
+// InstrumentationRuleNamespaceListerExpansion allows custom methods to be added to
+// InstrumentationRuleNamespaceLister.
+type InstrumentationRuleNamespaceListerExpansion interface{}
+
 // InstrumentedApplicationListerExpansion allows custom methods to be added to
 // InstrumentedApplicationLister.
 type InstrumentedApplicationListerExpansion interface{}

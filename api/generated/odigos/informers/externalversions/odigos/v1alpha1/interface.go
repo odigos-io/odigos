@@ -31,6 +31,8 @@ type Interface interface {
 	InstrumentationConfigs() InstrumentationConfigInformer
 	// InstrumentationInstances returns a InstrumentationInstanceInformer.
 	InstrumentationInstances() InstrumentationInstanceInformer
+	// InstrumentationRules returns a InstrumentationRuleInformer.
+	InstrumentationRules() InstrumentationRuleInformer
 	// InstrumentedApplications returns a InstrumentedApplicationInformer.
 	InstrumentedApplications() InstrumentedApplicationInformer
 	// OdigosConfigurations returns a OdigosConfigurationInformer.
@@ -68,6 +70,11 @@ func (v *version) InstrumentationConfigs() InstrumentationConfigInformer {
 // InstrumentationInstances returns a InstrumentationInstanceInformer.
 func (v *version) InstrumentationInstances() InstrumentationInstanceInformer {
 	return &instrumentationInstanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// InstrumentationRules returns a InstrumentationRuleInformer.
+func (v *version) InstrumentationRules() InstrumentationRuleInformer {
+	return &instrumentationRuleInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // InstrumentedApplications returns a InstrumentedApplicationInformer.

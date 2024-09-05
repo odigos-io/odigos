@@ -1,33 +1,12 @@
 package instrumentationconfig
 
 import (
-	"context"
-
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	rulesv1alpha1 "github.com/odigos-io/odigos/api/rules/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type instrumentationRules struct {
-	payloadCollection *rulesv1alpha1.PayloadCollectionList
-}
-
-func getAllInstrumentationRules(ctx context.Context, client client.Client) (instrumentationRules, error) {
-
-	payloadCollectionRules := &rulesv1alpha1.PayloadCollectionList{}
-	err := client.List(ctx, payloadCollectionRules)
-	if err != nil {
-		return instrumentationRules{}, err
-	}
-
-	return instrumentationRules{
-		payloadCollection: payloadCollectionRules,
-	}, nil
-}
-
-func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, ia *odigosv1alpha1.InstrumentedApplication, rules instrumentationRules) error {
+func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, ia *odigosv1alpha1.InstrumentedApplication, rules *odigosv1alpha1.InstrumentationRuleList) error {
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ia.Name)
 	if err != nil {
@@ -52,33 +31,31 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	}
 
 	// iterate over all the payload collection rules, and update the instrumentation config accordingly
-	if rules.payloadCollection != nil {
-		for i := range rules.payloadCollection.Items {
-			rule := &rules.payloadCollection.Items[i]
-			if rule.Spec.Disabled {
-				continue
-			}
-			// filter out rules where the workload does not match
-			participating := isWorkloadParticipatingInRule(workload, rule)
-			if !participating {
-				continue
-			}
+	for i := range rules.Items {
+		rule := &rules.Items[i]
+		if rule.Spec.Disabled {
+			continue
+		}
+		// filter out rules where the workload does not match
+		participating := isWorkloadParticipatingInRule(workload, rule)
+		if !participating {
+			continue
+		}
 
-			for i := range ic.Spec.SdkConfigs {
-				if rule.Spec.InstrumentationLibraries == nil { // nil means a rule in SDK level, that applies unless overridden by library level rule
-					ic.Spec.SdkConfigs[i].DefaultHttpRequestPayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpRequestPayloadCollection, rule.Spec.HttpRequest)
-					ic.Spec.SdkConfigs[i].DefaultHttpResponsePayloadCollection = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultHttpResponsePayloadCollection, rule.Spec.HttpResponse)
-					ic.Spec.SdkConfigs[i].DefaultDbQueryPayloadCollection = mergeDbPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultDbQueryPayloadCollection, rule.Spec.DbQuery)
-				} else {
-					for _, library := range *rule.Spec.InstrumentationLibraries {
-						if library.Language != ic.Spec.SdkConfigs[i].Language {
-							continue
-						}
-						libraryConfig := findOrCreateSdkLibraryConfig(&ic.Spec.SdkConfigs[i], library)
-						libraryConfig.HttpRequestPayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpRequestPayloadCollection, rule.Spec.HttpRequest)
-						libraryConfig.HttpResponsePayloadCollection = mergeHttpPayloadCollectionRules(libraryConfig.HttpResponsePayloadCollection, rule.Spec.HttpResponse)
-						libraryConfig.DbQueryPayloadCollection = mergeDbPayloadCollectionRules(libraryConfig.DbQueryPayloadCollection, rule.Spec.DbQuery)
+		for i := range ic.Spec.SdkConfigs {
+			if rule.Spec.InstrumentationLibraries == nil { // nil means a rule in SDK level, that applies unless overridden by library level rule
+				ic.Spec.SdkConfigs[i].DefaultPayloadCollection.HttpRequest = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultPayloadCollection.HttpRequest, rule.Spec.PayloadCollection.HttpRequest)
+				ic.Spec.SdkConfigs[i].DefaultPayloadCollection.HttpResponse = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultPayloadCollection.HttpResponse, rule.Spec.PayloadCollection.HttpResponse)
+				ic.Spec.SdkConfigs[i].DefaultPayloadCollection.DbQuery = mergeDbPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultPayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
+			} else {
+				for _, library := range *rule.Spec.InstrumentationLibraries {
+					if library.Language != ic.Spec.SdkConfigs[i].Language {
+						continue
 					}
+					libraryConfig := findOrCreateSdkLibraryConfig(&ic.Spec.SdkConfigs[i], library)
+					libraryConfig.PayloadCollection.HttpRequest = mergeHttpPayloadCollectionRules(libraryConfig.PayloadCollection.HttpRequest, rule.Spec.PayloadCollection.HttpRequest)
+					libraryConfig.PayloadCollection.HttpResponse = mergeHttpPayloadCollectionRules(libraryConfig.PayloadCollection.HttpResponse, rule.Spec.PayloadCollection.HttpResponse)
+					libraryConfig.PayloadCollection.DbQuery = mergeDbPayloadCollectionRules(libraryConfig.PayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
 				}
 			}
 		}
@@ -89,7 +66,7 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 
 // returns a pointer to the instrumentation library config, creating it if it does not exist
 // the pointer can be used to modify the config
-func findOrCreateSdkLibraryConfig(sdkConfig *odigosv1alpha1.SdkConfig, library rulesv1alpha1.InstrumentationLibraryId) *odigosv1alpha1.InstrumentationLibraryConfig {
+func findOrCreateSdkLibraryConfig(sdkConfig *odigosv1alpha1.SdkConfig, library odigosv1alpha1.InstrumentationLibraryGlobalId) *odigosv1alpha1.InstrumentationLibraryConfig {
 	if library.Language != sdkConfig.Language {
 		return nil
 	}
@@ -126,7 +103,7 @@ func createDefaultSdkConfig(ic *odigosv1alpha1.InstrumentationConfig, containerL
 
 // naive implementation, can be optimized.
 // assumption is that the list of workloads is small
-func isWorkloadParticipatingInRule(workload workload.PodWorkload, rule *rulesv1alpha1.PayloadCollection) bool {
+func isWorkloadParticipatingInRule(workload workload.PodWorkload, rule *odigosv1alpha1.InstrumentationRule) bool {
 	// nil means all workloads are participating
 	if rule.Spec.Workloads == nil {
 		return true
@@ -139,7 +116,7 @@ func isWorkloadParticipatingInRule(workload workload.PodWorkload, rule *rulesv1a
 	return false
 }
 
-func mergeHttpPayloadCollectionRules(rule1 *rulesv1alpha1.HttpPayloadCollectionRule, rule2 *rulesv1alpha1.HttpPayloadCollectionRule) *rulesv1alpha1.HttpPayloadCollectionRule {
+func mergeHttpPayloadCollectionRules(rule1 *odigosv1alpha1.HttpPayloadCollectionRule, rule2 *odigosv1alpha1.HttpPayloadCollectionRule) *odigosv1alpha1.HttpPayloadCollectionRule {
 
 	// nil means a rules has not yet been set, so return the other rule
 	if rule1 == nil {
@@ -149,7 +126,7 @@ func mergeHttpPayloadCollectionRules(rule1 *rulesv1alpha1.HttpPayloadCollectionR
 	}
 
 	// merge of the 2 non nil rules
-	mergedRules := rulesv1alpha1.HttpPayloadCollectionRule{}
+	mergedRules := odigosv1alpha1.HttpPayloadCollectionRule{}
 
 	// MimeTypes is extended to include both. nil means "all" so treat it as such
 	if rule1.MimeTypes == nil || rule2.MimeTypes == nil {
@@ -194,14 +171,14 @@ func mergeHttpPayloadCollectionRules(rule1 *rulesv1alpha1.HttpPayloadCollectionR
 	return &mergedRules
 }
 
-func mergeDbPayloadCollectionRules(rule1 *rulesv1alpha1.DbQueryPayloadCollectionRule, rule2 *rulesv1alpha1.DbQueryPayloadCollectionRule) *rulesv1alpha1.DbQueryPayloadCollectionRule {
+func mergeDbPayloadCollectionRules(rule1 *odigosv1alpha1.DbQueryPayloadCollectionRule, rule2 *odigosv1alpha1.DbQueryPayloadCollectionRule) *odigosv1alpha1.DbQueryPayloadCollectionRule {
 	if rule1 == nil {
 		return rule2
 	} else if rule2 == nil {
 		return rule1
 	}
 
-	mergedRules := rulesv1alpha1.DbQueryPayloadCollectionRule{}
+	mergedRules := odigosv1alpha1.DbQueryPayloadCollectionRule{}
 
 	// MaxPayloadLength - choose the smallest value, as this is the maximum allowed
 	if rule1.MaxPayloadLength == nil {

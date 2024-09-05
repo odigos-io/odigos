@@ -50,19 +50,35 @@ type DbQueryPayloadCollectionRule struct {
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 }
 
-type InstrumentationLibraryId struct {
+// Includes the instrumentation library name, span kind (for golang) and language
+// which identifies a specific library globally.
+type InstrumentationLibraryGlobalId struct {
+
 	// The name of the instrumentation library
 	Name string `json:"name"`
-
-	// The language in which this library will collect data
-	Language common.ProgrammingLanguage `json:"language"`
 
 	// SpanKind is only supported by Golang and will be ignored for any other SDK language.
 	// In Go, SpanKind is used because the same instrumentation library can be utilized for different span kinds (e.g., client/server).
 	SpanKind common.SpanKind `json:"spanKind,omitempty"`
+
+	// The language in which this library will collect data
+	Language common.ProgrammingLanguage `json:"language"`
 }
 
-type PayloadCollectionSpec struct {
+type PayloadCollection struct {
+	// Collect HTTP request payload data when available.
+	// Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library
+	HttpRequest *HttpPayloadCollectionRule `json:"httpRequest,omitempty"`
+
+	// rule for collecting the response part of an http payload.
+	// Can be a client response or a server response, depending on the instrumentation library
+	HttpResponse *HttpPayloadCollectionRule `json:"httpResponse,omitempty"`
+
+	// rule for collecting db payloads for the mentioned workload and instrumentation libraries
+	DbQuery *DbQueryPayloadCollectionRule `json:"dbQuery,omitempty"`
+}
+
+type InstrumentationRuleSpec struct {
 
 	// Allows you to attach a meaningful name to the rule for convenience. Odigos does not use or assume any meaning from this field.
 	RuleName string `json:"ruleName,omitempty"`
@@ -80,22 +96,14 @@ type PayloadCollectionSpec struct {
 	// One can specify same rule for multiple languages and libraries at the same time.
 	// If nil, all instrumentation libraries will be used.
 	// If empty, no instrumentation libraries will be used.
-	InstrumentationLibraries *[]InstrumentationLibraryId `json:"instrumentationLibraries,omitempty"`
+	InstrumentationLibraries *[]InstrumentationLibraryGlobalId `json:"instrumentationLibraries,omitempty"`
 
-	// Collect HTTP request payload data when available.
-	// Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library
-	HttpRequest *HttpPayloadCollectionRule `json:"httpRequest,omitempty"`
-
-	// rule for collecting the response part of an http payload.
-	// Can be a client response or a server response, depending on the instrumentation library
-	HttpResponse *HttpPayloadCollectionRule `json:"httpResponse,omitempty"`
-
-	// rule for collecting db payloads for the mentioned workload and instrumentation libraries
-	DbQuery *DbQueryPayloadCollectionRule `json:"dbQuery,omitempty"`
+	// Allows to configure payload collection aspects for different types of payloads.
+	PayloadCollection *PayloadCollection `json:"payloadCollection,omitempty"`
 }
 
-type PayloadCollectionStatus struct {
-	// Represents the observations of a payloadcollection's current state.
+type InstrumentationRuleStatus struct {
+	// Represents the observations of a instrumentationrule's current state.
 	// Known .status.conditions.type are: "Available", "Progressing"
 	// +patchMergeKey=type
 	// +patchStrategy=merge
@@ -107,26 +115,26 @@ type PayloadCollectionStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:path=payloadcollection,scope=Namespaced
+//+kubebuilder:resource:path=instrumentationrule,scope=Namespaced
 //+kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
 //+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
 
-type PayloadCollection struct {
+type InstrumentationRule struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PayloadCollectionSpec   `json:"spec,omitempty"`
-	Status PayloadCollectionStatus `json:"status,omitempty"`
+	Spec   InstrumentationRuleSpec   `json:"spec,omitempty"`
+	Status InstrumentationRuleStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-type PayloadCollectionList struct {
+type InstrumentationRuleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []PayloadCollection `json:"items"`
+	Items           []InstrumentationRule `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&PayloadCollection{}, &PayloadCollectionList{})
+	SchemeBuilder.Register(&InstrumentationRule{}, &InstrumentationRuleList{})
 }

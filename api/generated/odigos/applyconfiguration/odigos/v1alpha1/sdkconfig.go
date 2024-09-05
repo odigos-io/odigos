@@ -18,19 +18,16 @@ limitations under the License.
 package v1alpha1
 
 import (
-	rulesv1alpha1 "github.com/odigos-io/odigos/api/rules/v1alpha1"
 	common "github.com/odigos-io/odigos/common"
 )
 
 // SdkConfigApplyConfiguration represents a declarative configuration of the SdkConfig type for use
 // with apply.
 type SdkConfigApplyConfiguration struct {
-	Language                             *common.ProgrammingLanguage                      `json:"language,omitempty"`
-	InstrumentationLibraryConfigs        []InstrumentationLibraryConfigApplyConfiguration `json:"instrumentationLibraryConfigs,omitempty"`
-	HeadSamplingConfig                   *HeadSamplingConfigApplyConfiguration            `json:"headSamplerConfig,omitempty"`
-	DefaultHttpRequestPayloadCollection  *rulesv1alpha1.HttpPayloadCollectionRule         `json:"defaultHttpRequestPayloadCollection,omitempty"`
-	DefaultHttpResponsePayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule         `json:"defaultHttpResponsePayloadCollection,omitempty"`
-	DefaultDbQueryPayloadCollection      *rulesv1alpha1.DbQueryPayloadCollectionRule      `json:"defaultDbQueryPayloadCollection,omitempty"`
+	Language                      *common.ProgrammingLanguage                      `json:"language,omitempty"`
+	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration `json:"instrumentationLibraryConfigs,omitempty"`
+	HeadSamplingConfig            *HeadSamplingConfigApplyConfiguration            `json:"headSamplerConfig,omitempty"`
+	DefaultPayloadCollection      *PayloadCollectionApplyConfiguration             `json:"payloadCollection,omitempty"`
 }
 
 // SdkConfigApplyConfiguration constructs a declarative configuration of the SdkConfig type for use with
@@ -68,26 +65,10 @@ func (b *SdkConfigApplyConfiguration) WithHeadSamplingConfig(value *HeadSampling
 	return b
 }
 
-// WithDefaultHttpRequestPayloadCollection sets the DefaultHttpRequestPayloadCollection field in the declarative configuration to the given value
+// WithDefaultPayloadCollection sets the DefaultPayloadCollection field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DefaultHttpRequestPayloadCollection field is set to the value of the last call.
-func (b *SdkConfigApplyConfiguration) WithDefaultHttpRequestPayloadCollection(value rulesv1alpha1.HttpPayloadCollectionRule) *SdkConfigApplyConfiguration {
-	b.DefaultHttpRequestPayloadCollection = &value
-	return b
-}
-
-// WithDefaultHttpResponsePayloadCollection sets the DefaultHttpResponsePayloadCollection field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DefaultHttpResponsePayloadCollection field is set to the value of the last call.
-func (b *SdkConfigApplyConfiguration) WithDefaultHttpResponsePayloadCollection(value rulesv1alpha1.HttpPayloadCollectionRule) *SdkConfigApplyConfiguration {
-	b.DefaultHttpResponsePayloadCollection = &value
-	return b
-}
-
-// WithDefaultDbQueryPayloadCollection sets the DefaultDbQueryPayloadCollection field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DefaultDbQueryPayloadCollection field is set to the value of the last call.
-func (b *SdkConfigApplyConfiguration) WithDefaultDbQueryPayloadCollection(value rulesv1alpha1.DbQueryPayloadCollectionRule) *SdkConfigApplyConfiguration {
-	b.DefaultDbQueryPayloadCollection = &value
+// If called multiple times, the DefaultPayloadCollection field is set to the value of the last call.
+func (b *SdkConfigApplyConfiguration) WithDefaultPayloadCollection(value *PayloadCollectionApplyConfiguration) *SdkConfigApplyConfiguration {
+	b.DefaultPayloadCollection = value
 	return b
 }

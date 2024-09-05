@@ -53,12 +53,10 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 		return ctrl.Result{}, err
 	}
 
-	rules, err := getAllInstrumentationRules(ctx, r.Client)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
+	instrumentationRules := &odigosv1.InstrumentationRuleList{}
+	err = r.Client.List(ctx, instrumentationRules)
 
-	err = updateInstrumentationConfigForWorkload(&ic, &ia, rules)
+	err = updateInstrumentationConfigForWorkload(&ic, &ia, instrumentationRules)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

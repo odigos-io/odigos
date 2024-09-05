@@ -120,72 +120,6 @@ spec:
                   The SDKs are identified by the programming language they are written in.
                 items:
                   properties:
-                    defaultDbQueryPayloadCollection:
-                      description: In the absence of any instrumentation library specific
-                        rule, these rules will be used by default for db payload collection.
-                      properties:
-                        dropPartialPayloads:
-                          description: |-
-                            If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                            This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
-                          type: boolean
-                        maxPayloadLength:
-                          description: |-
-                            Maximum length of the payload to collect.
-                            If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
-                          format: int64
-                          type: integer
-                      type: object
-                    defaultHttpRequestPayloadCollection:
-                      description: In the absence of any instrumentation library specific
-                        rule, these rules will be used by default for http request
-                        payload collection.
-                      properties:
-                        dropPartialPayloads:
-                          description: |-
-                            If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                            This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
-                          type: boolean
-                        maxPayloadLength:
-                          description: |-
-                            Maximum length of the payload to collect.
-                            If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
-                          format: int64
-                          type: integer
-                        mimeTypes:
-                          description: |-
-                            Limit payload collection to specific mime types based on the content type header.
-                            When not specified, all mime types payloads will be collected.
-                            Empty array will make the rule ineffective.
-                          items:
-                            type: string
-                          type: array
-                      type: object
-                    defaultHttpResponsePayloadCollection:
-                      description: In the absence of any instrumentation library specific
-                        rule, these rules will be used by default for http response
-                        payload collection.
-                      properties:
-                        dropPartialPayloads:
-                          description: |-
-                            If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                            This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
-                          type: boolean
-                        maxPayloadLength:
-                          description: |-
-                            Maximum length of the payload to collect.
-                            If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
-                          format: int64
-                          type: integer
-                        mimeTypes:
-                          description: |-
-                            Limit payload collection to specific mime types based on the content type header.
-                            When not specified, all mime types payloads will be collected.
-                            Empty array will make the rule ineffective.
-                          items:
-                            type: string
-                          type: array
-                      type: object
                     headSamplerConfig:
                       description: |-
                         HeadSamplingConfig is a set sampling rules.
@@ -259,76 +193,6 @@ spec:
                         the the SDK should use
                       items:
                         properties:
-                          dbQueryPayloadCollection:
-                            description: |-
-                              Db statement payload collection rules for this instrumentation library
-                              If db category is not supported by the instrumentation library, the rule is ignored
-                              Use empty value when this category is irrelevant or to use the default SDK level rules
-                            properties:
-                              dropPartialPayloads:
-                                description: |-
-                                  If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                  This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
-                                type: boolean
-                              maxPayloadLength:
-                                description: |-
-                                  Maximum length of the payload to collect.
-                                  If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
-                                format: int64
-                                type: integer
-                            type: object
-                          httpRequestPayloadCollection:
-                            description: |-
-                              Http request payload collection rules for this instrumentation library
-                              If http category is not supported by the instrumentation library, the rule is ignored
-                              Use empty value when this category is irrelevant or to use the default SDK level rules
-                            properties:
-                              dropPartialPayloads:
-                                description: |-
-                                  If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                  This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
-                                type: boolean
-                              maxPayloadLength:
-                                description: |-
-                                  Maximum length of the payload to collect.
-                                  If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
-                                format: int64
-                                type: integer
-                              mimeTypes:
-                                description: |-
-                                  Limit payload collection to specific mime types based on the content type header.
-                                  When not specified, all mime types payloads will be collected.
-                                  Empty array will make the rule ineffective.
-                                items:
-                                  type: string
-                                type: array
-                            type: object
-                          httpResponsePayloadCollection:
-                            description: |-
-                              Http response payload collection rules for this instrumentation library
-                              If http category is not supported by the instrumentation library, the rule is ignored
-                              Use empty value when this category is irrelevant or to use the default SDK level rules
-                            properties:
-                              dropPartialPayloads:
-                                description: |-
-                                  If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                  This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
-                                type: boolean
-                              maxPayloadLength:
-                                description: |-
-                                  Maximum length of the payload to collect.
-                                  If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
-                                format: int64
-                                type: integer
-                              mimeTypes:
-                                description: |-
-                                  Limit payload collection to specific mime types based on the content type header.
-                                  When not specified, all mime types payloads will be collected.
-                                  Empty array will make the rule ineffective.
-                                items:
-                                  type: string
-                                type: array
-                            type: object
                           libraryId:
                             properties:
                               libraryName:
@@ -349,6 +213,75 @@ spec:
                                 type: string
                             required:
                             - libraryName
+                            type: object
+                          payloadCollection:
+                            properties:
+                              dbQuery:
+                                description: rule for collecting db payloads for the
+                                  mentioned workload and instrumentation libraries
+                                properties:
+                                  dropPartialPayloads:
+                                    description: |-
+                                      If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                                      This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                                    type: boolean
+                                  maxPayloadLength:
+                                    description: |-
+                                      Maximum length of the payload to collect.
+                                      If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
+                                    format: int64
+                                    type: integer
+                                type: object
+                              httpRequest:
+                                description: |-
+                                  Collect HTTP request payload data when available.
+                                  Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library
+                                properties:
+                                  dropPartialPayloads:
+                                    description: |-
+                                      If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                                      This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                                    type: boolean
+                                  maxPayloadLength:
+                                    description: |-
+                                      Maximum length of the payload to collect.
+                                      If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
+                                    format: int64
+                                    type: integer
+                                  mimeTypes:
+                                    description: |-
+                                      Limit payload collection to specific mime types based on the content type header.
+                                      When not specified, all mime types payloads will be collected.
+                                      Empty array will make the rule ineffective.
+                                    items:
+                                      type: string
+                                    type: array
+                                type: object
+                              httpResponse:
+                                description: |-
+                                  rule for collecting the response part of an http payload.
+                                  Can be a client response or a server response, depending on the instrumentation library
+                                properties:
+                                  dropPartialPayloads:
+                                    description: |-
+                                      If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                                      This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                                    type: boolean
+                                  maxPayloadLength:
+                                    description: |-
+                                      Maximum length of the payload to collect.
+                                      If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
+                                    format: int64
+                                    type: integer
+                                  mimeTypes:
+                                    description: |-
+                                      Limit payload collection to specific mime types based on the content type header.
+                                      When not specified, all mime types payloads will be collected.
+                                      Empty array will make the rule ineffective.
+                                    items:
+                                      type: string
+                                    type: array
+                                type: object
                             type: object
                           traceConfig:
                             properties:
@@ -377,8 +310,78 @@ spec:
                       - unknown
                       - ignored
                       type: string
+                    payloadCollection:
+                      properties:
+                        dbQuery:
+                          description: rule for collecting db payloads for the mentioned
+                            workload and instrumentation libraries
+                          properties:
+                            dropPartialPayloads:
+                              description: |-
+                                If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                                This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                              type: boolean
+                            maxPayloadLength:
+                              description: |-
+                                Maximum length of the payload to collect.
+                                If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
+                              format: int64
+                              type: integer
+                          type: object
+                        httpRequest:
+                          description: |-
+                            Collect HTTP request payload data when available.
+                            Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library
+                          properties:
+                            dropPartialPayloads:
+                              description: |-
+                                If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                                This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                              type: boolean
+                            maxPayloadLength:
+                              description: |-
+                                Maximum length of the payload to collect.
+                                If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
+                              format: int64
+                              type: integer
+                            mimeTypes:
+                              description: |-
+                                Limit payload collection to specific mime types based on the content type header.
+                                When not specified, all mime types payloads will be collected.
+                                Empty array will make the rule ineffective.
+                              items:
+                                type: string
+                              type: array
+                          type: object
+                        httpResponse:
+                          description: |-
+                            rule for collecting the response part of an http payload.
+                            Can be a client response or a server response, depending on the instrumentation library
+                          properties:
+                            dropPartialPayloads:
+                              description: |-
+                                If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                                This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                              type: boolean
+                            maxPayloadLength:
+                              description: |-
+                                Maximum length of the payload to collect.
+                                If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
+                              format: int64
+                              type: integer
+                            mimeTypes:
+                              description: |-
+                                Limit payload collection to specific mime types based on the content type header.
+                                When not specified, all mime types payloads will be collected.
+                                Empty array will make the rule ineffective.
+                              items:
+                                type: string
+                              type: array
+                          type: object
+                      type: object
                   required:
                   - language
+                  - payloadCollection
                   type: object
                 type: array
             type: object

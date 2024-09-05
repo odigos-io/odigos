@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	rulesv1alpha1 "github.com/odigos-io/odigos/api/rules/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"go.opentelemetry.io/otel/attribute"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,14 +48,7 @@ type SdkConfig struct {
 	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
 	HeadSamplingConfig *HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
 
-	// In the absence of any instrumentation library specific rule, these rules will be used by default for http request payload collection.
-	DefaultHttpRequestPayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule `json:"defaultHttpRequestPayloadCollection,omitempty"`
-
-	// In the absence of any instrumentation library specific rule, these rules will be used by default for http response payload collection.
-	DefaultHttpResponsePayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule `json:"defaultHttpResponsePayloadCollection,omitempty"`
-
-	// In the absence of any instrumentation library specific rule, these rules will be used by default for db payload collection.
-	DefaultDbQueryPayloadCollection *rulesv1alpha1.DbQueryPayloadCollectionRule `json:"defaultDbQueryPayloadCollection,omitempty"`
+	DefaultPayloadCollection PayloadCollection `json:"payloadCollection"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
@@ -116,20 +108,7 @@ type InstrumentationLibraryConfig struct {
 
 	TraceConfig *InstrumentationLibraryConfigTraces `json:"traceConfig,omitempty"`
 
-	// Http request payload collection rules for this instrumentation library
-	// If http category is not supported by the instrumentation library, the rule is ignored
-	// Use empty value when this category is irrelevant or to use the default SDK level rules
-	HttpRequestPayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule `json:"httpRequestPayloadCollection,omitempty"`
-
-	// Http response payload collection rules for this instrumentation library
-	// If http category is not supported by the instrumentation library, the rule is ignored
-	// Use empty value when this category is irrelevant or to use the default SDK level rules
-	HttpResponsePayloadCollection *rulesv1alpha1.HttpPayloadCollectionRule `json:"httpResponsePayloadCollection,omitempty"`
-
-	// Db statement payload collection rules for this instrumentation library
-	// If db category is not supported by the instrumentation library, the rule is ignored
-	// Use empty value when this category is irrelevant or to use the default SDK level rules
-	DbQueryPayloadCollection *rulesv1alpha1.DbQueryPayloadCollectionRule `json:"dbQueryPayloadCollection,omitempty"`
+	PayloadCollection PayloadCollection `json:"payloadCollection,omitempty"`
 }
 
 type InstrumentationLibraryId struct {

@@ -23,30 +23,30 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// PayloadCollectionApplyConfiguration represents a declarative configuration of the PayloadCollection type for use
+// InstrumentationRuleApplyConfiguration represents a declarative configuration of the InstrumentationRule type for use
 // with apply.
-type PayloadCollectionApplyConfiguration struct {
+type InstrumentationRuleApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                             *PayloadCollectionSpecApplyConfiguration   `json:"spec,omitempty"`
-	Status                           *PayloadCollectionStatusApplyConfiguration `json:"status,omitempty"`
+	Spec                             *InstrumentationRuleSpecApplyConfiguration   `json:"spec,omitempty"`
+	Status                           *InstrumentationRuleStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// PayloadCollection constructs a declarative configuration of the PayloadCollection type for use with
+// InstrumentationRule constructs a declarative configuration of the InstrumentationRule type for use with
 // apply.
-func PayloadCollection(name, namespace string) *PayloadCollectionApplyConfiguration {
-	b := &PayloadCollectionApplyConfiguration{}
+func InstrumentationRule(name, namespace string) *InstrumentationRuleApplyConfiguration {
+	b := &InstrumentationRuleApplyConfiguration{}
 	b.WithName(name)
 	b.WithNamespace(namespace)
-	b.WithKind("PayloadCollection")
-	b.WithAPIVersion("rules/v1alpha1")
+	b.WithKind("InstrumentationRule")
+	b.WithAPIVersion("odigos.io/v1alpha1")
 	return b
 }
 
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Kind field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithKind(value string) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithKind(value string) *InstrumentationRuleApplyConfiguration {
 	b.Kind = &value
 	return b
 }
@@ -54,7 +54,7 @@ func (b *PayloadCollectionApplyConfiguration) WithKind(value string) *PayloadCol
 // WithAPIVersion sets the APIVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the APIVersion field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithAPIVersion(value string) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithAPIVersion(value string) *InstrumentationRuleApplyConfiguration {
 	b.APIVersion = &value
 	return b
 }
@@ -62,7 +62,7 @@ func (b *PayloadCollectionApplyConfiguration) WithAPIVersion(value string) *Payl
 // WithName sets the Name field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Name field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithName(value string) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithName(value string) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.Name = &value
 	return b
@@ -71,7 +71,7 @@ func (b *PayloadCollectionApplyConfiguration) WithName(value string) *PayloadCol
 // WithGenerateName sets the GenerateName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the GenerateName field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithGenerateName(value string) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithGenerateName(value string) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.GenerateName = &value
 	return b
@@ -80,7 +80,7 @@ func (b *PayloadCollectionApplyConfiguration) WithGenerateName(value string) *Pa
 // WithNamespace sets the Namespace field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Namespace field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithNamespace(value string) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithNamespace(value string) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.Namespace = &value
 	return b
@@ -89,7 +89,7 @@ func (b *PayloadCollectionApplyConfiguration) WithNamespace(value string) *Paylo
 // WithUID sets the UID field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the UID field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithUID(value types.UID) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithUID(value types.UID) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.UID = &value
 	return b
@@ -98,7 +98,7 @@ func (b *PayloadCollectionApplyConfiguration) WithUID(value types.UID) *PayloadC
 // WithResourceVersion sets the ResourceVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ResourceVersion field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithResourceVersion(value string) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithResourceVersion(value string) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ResourceVersion = &value
 	return b
@@ -107,7 +107,7 @@ func (b *PayloadCollectionApplyConfiguration) WithResourceVersion(value string) 
 // WithGeneration sets the Generation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Generation field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithGeneration(value int64) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithGeneration(value int64) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.Generation = &value
 	return b
@@ -116,7 +116,7 @@ func (b *PayloadCollectionApplyConfiguration) WithGeneration(value int64) *Paylo
 // WithCreationTimestamp sets the CreationTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CreationTimestamp field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithCreationTimestamp(value metav1.Time) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithCreationTimestamp(value metav1.Time) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.CreationTimestamp = &value
 	return b
@@ -125,7 +125,7 @@ func (b *PayloadCollectionApplyConfiguration) WithCreationTimestamp(value metav1
 // WithDeletionTimestamp sets the DeletionTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionTimestamp field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.DeletionTimestamp = &value
 	return b
@@ -134,7 +134,7 @@ func (b *PayloadCollectionApplyConfiguration) WithDeletionTimestamp(value metav1
 // WithDeletionGracePeriodSeconds sets the DeletionGracePeriodSeconds field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionGracePeriodSeconds field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.DeletionGracePeriodSeconds = &value
 	return b
@@ -144,7 +144,7 @@ func (b *PayloadCollectionApplyConfiguration) WithDeletionGracePeriodSeconds(val
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Labels field,
 // overwriting an existing map entries in Labels field with the same key.
-func (b *PayloadCollectionApplyConfiguration) WithLabels(entries map[string]string) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithLabels(entries map[string]string) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.Labels == nil && len(entries) > 0 {
 		b.Labels = make(map[string]string, len(entries))
@@ -159,7 +159,7 @@ func (b *PayloadCollectionApplyConfiguration) WithLabels(entries map[string]stri
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Annotations field,
 // overwriting an existing map entries in Annotations field with the same key.
-func (b *PayloadCollectionApplyConfiguration) WithAnnotations(entries map[string]string) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithAnnotations(entries map[string]string) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.Annotations == nil && len(entries) > 0 {
 		b.Annotations = make(map[string]string, len(entries))
@@ -173,7 +173,7 @@ func (b *PayloadCollectionApplyConfiguration) WithAnnotations(entries map[string
 // WithOwnerReferences adds the given value to the OwnerReferences field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the OwnerReferences field.
-func (b *PayloadCollectionApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		if values[i] == nil {
@@ -187,7 +187,7 @@ func (b *PayloadCollectionApplyConfiguration) WithOwnerReferences(values ...*v1.
 // WithFinalizers adds the given value to the Finalizers field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Finalizers field.
-func (b *PayloadCollectionApplyConfiguration) WithFinalizers(values ...string) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithFinalizers(values ...string) *InstrumentationRuleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		b.Finalizers = append(b.Finalizers, values[i])
@@ -195,7 +195,7 @@ func (b *PayloadCollectionApplyConfiguration) WithFinalizers(values ...string) *
 	return b
 }
 
-func (b *PayloadCollectionApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
+func (b *InstrumentationRuleApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
 	if b.ObjectMetaApplyConfiguration == nil {
 		b.ObjectMetaApplyConfiguration = &v1.ObjectMetaApplyConfiguration{}
 	}
@@ -204,7 +204,7 @@ func (b *PayloadCollectionApplyConfiguration) ensureObjectMetaApplyConfiguration
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithSpec(value *PayloadCollectionSpecApplyConfiguration) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithSpec(value *InstrumentationRuleSpecApplyConfiguration) *InstrumentationRuleApplyConfiguration {
 	b.Spec = value
 	return b
 }
@@ -212,13 +212,13 @@ func (b *PayloadCollectionApplyConfiguration) WithSpec(value *PayloadCollectionS
 // WithStatus sets the Status field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Status field is set to the value of the last call.
-func (b *PayloadCollectionApplyConfiguration) WithStatus(value *PayloadCollectionStatusApplyConfiguration) *PayloadCollectionApplyConfiguration {
+func (b *InstrumentationRuleApplyConfiguration) WithStatus(value *InstrumentationRuleStatusApplyConfiguration) *InstrumentationRuleApplyConfiguration {
 	b.Status = value
 	return b
 }
 
 // GetName retrieves the value of the Name field in the declarative configuration.
-func (b *PayloadCollectionApplyConfiguration) GetName() *string {
+func (b *InstrumentationRuleApplyConfiguration) GetName() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
 	return b.Name
 }
