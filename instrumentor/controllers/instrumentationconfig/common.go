@@ -50,10 +50,11 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 				ic.Spec.SdkConfigs[i].DefaultPayloadCollection.DbQuery = mergeDbPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultPayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
 			} else {
 				for _, library := range *rule.Spec.InstrumentationLibraries {
-					if library.Language != ic.Spec.SdkConfigs[i].Language {
+					libraryConfig := findOrCreateSdkLibraryConfig(&ic.Spec.SdkConfigs[i], library)
+					if libraryConfig == nil {
+						// library is not relevant to this SDK
 						continue
 					}
-					libraryConfig := findOrCreateSdkLibraryConfig(&ic.Spec.SdkConfigs[i], library)
 					libraryConfig.PayloadCollection.HttpRequest = mergeHttpPayloadCollectionRules(libraryConfig.PayloadCollection.HttpRequest, rule.Spec.PayloadCollection.HttpRequest)
 					libraryConfig.PayloadCollection.HttpResponse = mergeHttpPayloadCollectionRules(libraryConfig.PayloadCollection.HttpResponse, rule.Spec.PayloadCollection.HttpResponse)
 					libraryConfig.PayloadCollection.DbQuery = mergeDbPayloadCollectionRules(libraryConfig.PayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
@@ -85,6 +86,7 @@ func findOrCreateSdkLibraryConfig(sdkConfig *odigosv1alpha1.SdkConfig, library o
 			InstrumentationLibraryName: library.Name,
 			SpanKind:                   library.SpanKind,
 		},
+		PayloadCollection: &instrumentationrules.PayloadCollection{},
 	}
 	sdkConfig.InstrumentationLibraryConfigs = append(sdkConfig.InstrumentationLibraryConfigs, newLibConfig)
 	return &sdkConfig.InstrumentationLibraryConfigs[len(sdkConfig.InstrumentationLibraryConfigs)-1]

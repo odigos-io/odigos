@@ -485,18 +485,34 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleDefaultRules(t *testing.
 	}
 
 	// mime types should merge
-	if len(*ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes) != 3 {
+	mimeTypes := ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes
+	if len(*mimeTypes) != 3 {
 		t.Errorf("Expected 2 mime types, got %d", len(*ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes))
 	}
-	if (*ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes)[0] != "application/json" {
-		t.Errorf("Expected mime type %s, got %s", "application/json", (*ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes)[0])
+	expectedMimeTypes := map[string]bool{
+		"application/json": true,
+		"application/xml":  true,
+		"application/text": true,
 	}
-	if (*ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes)[1] != "application/text" {
-		t.Errorf("Expected mime type %s, got %s", "application/text", (*ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes)[1])
+	for _, mt := range *mimeTypes {
+		if !expectedMimeTypes[mt] {
+			t.Errorf("Unexpected mime type %s", mt)
+		}
 	}
-	if (*ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes)[2] != "application/xml" {
-		t.Errorf("Expected mime type %s, got %s", "application/xml", (*ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes)[1])
+	// Ensure all expected mime types are present
+	for expected := range expectedMimeTypes {
+		found := false
+		for _, actual := range *mimeTypes {
+			if actual == expected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Missing expected mime type %s", expected)
+		}
 	}
+
 	// smallest max payload length should be selected
 	if *ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MaxPayloadLength != 1111 {
 		t.Errorf("Expected max payload length %d, got %d", 1111, ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MaxPayloadLength)
