@@ -26,7 +26,7 @@ func FilterRelevantSdk(instrumentationConfig *v1alpha1.InstrumentationConfig, pr
 	relevantSdkConfig := v1alpha1.SdkConfig{}
 
 	for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
-		if common.MapOdigosToSemConv(string(sdkConfig.Language)) == programmingLanguage {
+		if common.MapOdigosToSemConv(sdkConfig.Language) == programmingLanguage {
 			relevantSdkConfig = sdkConfig
 		}
 	}

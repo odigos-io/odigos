@@ -1,6 +1,11 @@
 package common
 
-import "github.com/hashicorp/go-version"
+import (
+	"fmt"
+
+	"github.com/hashicorp/go-version"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+)
 
 type ProgramLanguageDetails struct {
 	Language       ProgrammingLanguage
@@ -26,12 +31,13 @@ const (
 	IgnoredProgrammingLanguage ProgrammingLanguage = "ignored"
 )
 
-func MapOdigosToSemConv(odigosPrograminglang string) string {
+func MapOdigosToSemConv(odigosPrograminglang ProgrammingLanguage) string {
+	fmt.Println(semconv.TelemetrySDKLanguageNodejs.Value.AsString())
 	switch odigosPrograminglang {
-	case string(JavascriptProgrammingLanguage):
-		return "nodejs"
+	case JavascriptProgrammingLanguage:
+		return semconv.TelemetrySDKLanguageNodejs.Value.AsString()
 	default:
-		return odigosPrograminglang
+		return string(odigosPrograminglang)
 	}
 }
 
