@@ -1,9 +1,15 @@
 package ebpf
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/odiglet/pkg/env"
+	"os"
+	"strconv"
 	"sync"
+	"syscall"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -193,6 +199,26 @@ func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context, scheme *r
 
 func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *workload.PodWorkload, appName string, containerName string) error {
 	log.Logger.V(0).Info("Instrumenting process", "pid", pid, "workload", podWorkload)
+	if d.language == common.NginxProgrammingLanguage {
+
+		err := modifyNginxConfFile(pid)
+		if err != nil {
+			return err
+		}
+
+		err = addOtelNginxAttributeConfFile(pid, podWorkload.Name)
+		if err != nil {
+			return err
+		}
+
+		err = reloadNginx(pid)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	d.mux.Lock()
 	defer d.mux.Unlock()
 	if _, exists := d.pidsAttemptedInstrumentation[pid]; exists {
@@ -284,6 +310,78 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 			}
 		}
 	}()
+
+	return nil
+}
+
+func addOtelNginxAttributeConfFile(pid int, deploymentName string) error {
+	nginx_path := "/proc/" + strconv.Itoa(pid) + "/root/etc/nginx/conf.d"
+	nginx_conf_file_name := "opentelemetry_module.conf"
+	opentelemetry_module_conf := nginx_path + "/" + nginx_conf_file_name
+
+	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPPort)
+
+	content := "NginxModuleEnabled ON;\n" +
+		"NginxModuleOtelSpanExporter otlp;\n" +
+		"NginxModuleOtelExporterEndpoint " + otlpEndpoint + ";\n" +
+		"NginxModuleServiceName " + deploymentName + ";\n" +
+		"NginxModuleServiceNamespace NginxServiceNamespace;\n" +
+		"NginxModuleServiceInstanceId NginxInstanceId;\n" +
+		"NginxModuleResolveBackends ON;\n"
+
+	file, err := os.Create(opentelemetry_module_conf)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Write content to the file
+	_, err = file.WriteString(content)
+	if err != nil {
+		return err
+	}
+
+	// Sync to ensure the content is written to disk
+	err = file.Sync()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func reloadNginx(pid int) error {
+
+	err := syscall.Kill(pid, syscall.SIGHUP)
+	if err != nil {
+		return fmt.Errorf("failed to send SIGHUP signal to nginx: %v", err)
+	}
+
+	fmt.Println("NGINX reloaded successfully")
+	return nil
+}
+
+func modifyNginxConfFile(pid int) error {
+	nginx_path := "/proc/" + strconv.Itoa(pid) + "/root/etc/nginx"
+	nginx_conf_file_name := "nginx.conf"
+	nginx_conf_full_path := nginx_path + "/" + nginx_conf_file_name
+
+	originalContent, err := os.ReadFile(nginx_conf_full_path)
+	if err != nil {
+		return err
+	}
+	file, err := os.OpenFile(nginx_conf_full_path, os.O_TRUNC|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+
+	otelLoadConf := "load_module /var/odigos/nginx/opentelemetry-webserver-sdk/WebServerModule/Nginx/1.25.5/ngx_http_opentelemetry_module.so;"
+	if !bytes.Contains(originalContent, []byte(otelLoadConf)) {
+		_, err = file.WriteString(otelLoadConf + string(originalContent))
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
