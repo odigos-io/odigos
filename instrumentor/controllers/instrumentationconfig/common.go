@@ -19,8 +19,7 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 		Kind:      workloadKind,
 	}
 
-	// delete all existing sdk configs to re-calculate them
-	ic.Spec.SdkConfigs = []odigosv1alpha1.SdkConfig{}
+	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ia.Spec.RuntimeDetails))
 
 	// create an empty sdk config for each detected programming language
 	for _, container := range ia.Spec.RuntimeDetails {
@@ -28,7 +27,7 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 		if containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.UnknownProgrammingLanguage {
 			continue
 		}
-		createDefaultSdkConfig(ic, containerLanguage)
+		sdkConfigs = createDefaultSdkConfig(sdkConfigs, containerLanguage)
 	}
 
 	// iterate over all the payload collection rules, and update the instrumentation config accordingly
@@ -43,14 +42,14 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 			continue
 		}
 
-		for i := range ic.Spec.SdkConfigs {
+		for i := range sdkConfigs {
 			if rule.Spec.InstrumentationLibraries == nil { // nil means a rule in SDK level, that applies unless overridden by library level rule
-				ic.Spec.SdkConfigs[i].DefaultPayloadCollection.HttpRequest = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultPayloadCollection.HttpRequest, rule.Spec.PayloadCollection.HttpRequest)
-				ic.Spec.SdkConfigs[i].DefaultPayloadCollection.HttpResponse = mergeHttpPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultPayloadCollection.HttpResponse, rule.Spec.PayloadCollection.HttpResponse)
-				ic.Spec.SdkConfigs[i].DefaultPayloadCollection.DbQuery = mergeDbPayloadCollectionRules(ic.Spec.SdkConfigs[i].DefaultPayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
+				sdkConfigs[i].DefaultPayloadCollection.HttpRequest = mergeHttpPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.HttpRequest, rule.Spec.PayloadCollection.HttpRequest)
+				sdkConfigs[i].DefaultPayloadCollection.HttpResponse = mergeHttpPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.HttpResponse, rule.Spec.PayloadCollection.HttpResponse)
+				sdkConfigs[i].DefaultPayloadCollection.DbQuery = mergeDbPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
 			} else {
 				for _, library := range *rule.Spec.InstrumentationLibraries {
-					libraryConfig := findOrCreateSdkLibraryConfig(&ic.Spec.SdkConfigs[i], library)
+					libraryConfig := findOrCreateSdkLibraryConfig(&sdkConfigs[i], library)
 					if libraryConfig == nil {
 						// library is not relevant to this SDK
 						continue
@@ -62,6 +61,8 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 			}
 		}
 	}
+
+	ic.Spec.SdkConfigs = sdkConfigs
 
 	return nil
 }
@@ -92,14 +93,14 @@ func findOrCreateSdkLibraryConfig(sdkConfig *odigosv1alpha1.SdkConfig, library o
 	return &sdkConfig.InstrumentationLibraryConfigs[len(sdkConfig.InstrumentationLibraryConfigs)-1]
 }
 
-func createDefaultSdkConfig(ic *odigosv1alpha1.InstrumentationConfig, containerLanguage common.ProgrammingLanguage) {
+func createDefaultSdkConfig(sdkConfigs []odigosv1alpha1.SdkConfig, containerLanguage common.ProgrammingLanguage) []odigosv1alpha1.SdkConfig {
 	// if the language is already present, do nothing
-	for _, sdkConfig := range ic.Spec.SdkConfigs {
+	for _, sdkConfig := range sdkConfigs {
 		if sdkConfig.Language == containerLanguage {
-			return
+			return sdkConfigs
 		}
 	}
-	ic.Spec.SdkConfigs = append(ic.Spec.SdkConfigs, odigosv1alpha1.SdkConfig{
+	return append(sdkConfigs, odigosv1alpha1.SdkConfig{
 		Language:                 containerLanguage,
 		DefaultPayloadCollection: &instrumentationrules.PayloadCollection{},
 	})
