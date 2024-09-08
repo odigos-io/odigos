@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -225,8 +226,8 @@ func TestUpdateInstrumentationConfigForWorkload_SingleMatchingRule(t *testing.T)
 		Items: []odigosv1.InstrumentationRule{
 			{
 				Spec: odigosv1.InstrumentationRuleSpec{
-					PayloadCollection: &odigosv1.PayloadCollection{
-						HttpRequest: &odigosv1.HttpPayloadCollection{
+					PayloadCollection: &instrumentationrules.PayloadCollection{
+						HttpRequest: &instrumentationrules.HttpPayloadCollection{
 							MimeTypes:           &[]string{"application/json"},
 							MaxPayloadLength:    Int64Ptr(1234),
 							DropPartialPayloads: BoolPtr(true),
@@ -292,8 +293,8 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 							Namespace: "testns",
 						},
 					},
-					PayloadCollection: &odigosv1.PayloadCollection{
-						HttpRequest: &odigosv1.HttpPayloadCollection{
+					PayloadCollection: &instrumentationrules.PayloadCollection{
+						HttpRequest: &instrumentationrules.HttpPayloadCollection{
 							MimeTypes: &[]string{"application/json"},
 						},
 					},
@@ -349,8 +350,8 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 							Namespace: "testns",
 						},
 					},
-					PayloadCollection: &odigosv1.PayloadCollection{
-						HttpRequest: &odigosv1.HttpPayloadCollection{
+					PayloadCollection: &instrumentationrules.PayloadCollection{
+						HttpRequest: &instrumentationrules.HttpPayloadCollection{
 							MimeTypes: &[]string{"application/json"},
 						},
 					},
@@ -401,8 +402,8 @@ func TestUpdateInstrumentationConfigForWorkload_DisabledRule(t *testing.T) {
 			{
 				Spec: odigosv1.InstrumentationRuleSpec{
 					Disabled: true,
-					PayloadCollection: &odigosv1.PayloadCollection{
-						HttpRequest: &odigosv1.HttpPayloadCollection{
+					PayloadCollection: &instrumentationrules.PayloadCollection{
+						HttpRequest: &instrumentationrules.HttpPayloadCollection{
 							MimeTypes: &[]string{"application/json"},
 						},
 					},
@@ -452,8 +453,8 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleDefaultRules(t *testing.
 		Items: []odigosv1.InstrumentationRule{
 			{
 				Spec: odigosv1.InstrumentationRuleSpec{
-					PayloadCollection: &odigosv1.PayloadCollection{
-						HttpRequest: &odigosv1.HttpPayloadCollection{
+					PayloadCollection: &instrumentationrules.PayloadCollection{
+						HttpRequest: &instrumentationrules.HttpPayloadCollection{
 							MimeTypes:           &[]string{"application/json", "application/text"},
 							MaxPayloadLength:    Int64Ptr(1111),
 							DropPartialPayloads: BoolPtr(true),
@@ -463,8 +464,8 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleDefaultRules(t *testing.
 			},
 			{
 				Spec: odigosv1.InstrumentationRuleSpec{
-					PayloadCollection: &odigosv1.PayloadCollection{
-						HttpRequest: &odigosv1.HttpPayloadCollection{
+					PayloadCollection: &instrumentationrules.PayloadCollection{
+						HttpRequest: &instrumentationrules.HttpPayloadCollection{
 							MimeTypes:           &[]string{"application/xml", "application/json"},
 							MaxPayloadLength:    Int64Ptr(2222),
 							DropPartialPayloads: BoolPtr(false),
@@ -540,8 +541,8 @@ func TestUpdateInstrumentationConfigForWorkload_RuleForLibrary(t *testing.T) {
 							Language: common.JavascriptProgrammingLanguage,
 						},
 					},
-					PayloadCollection: &odigosv1.PayloadCollection{
-						HttpRequest: &odigosv1.HttpPayloadCollection{
+					PayloadCollection: &instrumentationrules.PayloadCollection{
+						HttpRequest: &instrumentationrules.HttpPayloadCollection{
 							MimeTypes: &[]string{"application/json"},
 						},
 					},
@@ -603,8 +604,8 @@ func TestUpdateInstrumentationConfigForWorkload_LibraryRuleOtherLanguage(t *test
 							Language: common.PythonProgrammingLanguage, // Notice, the library is for python and sdk language is javascript
 						},
 					},
-					PayloadCollection: &odigosv1.PayloadCollection{
-						HttpRequest: &odigosv1.HttpPayloadCollection{
+					PayloadCollection: &instrumentationrules.PayloadCollection{
+						HttpRequest: &instrumentationrules.HttpPayloadCollection{
 							MimeTypes: &[]string{"application/json"},
 						},
 					},
@@ -629,10 +630,10 @@ func TestUpdateInstrumentationConfigForWorkload_LibraryRuleOtherLanguage(t *test
 }
 
 func TestMergeHttpPayloadCollectionRules(t *testing.T) {
-	res := mergeHttpPayloadCollectionRules(&odigosv1.HttpPayloadCollection{
+	res := mergeHttpPayloadCollectionRules(&instrumentationrules.HttpPayloadCollection{
 		MimeTypes:        &[]string{"application/json"},
 		MaxPayloadLength: Int64Ptr(1234),
-	}, &odigosv1.HttpPayloadCollection{
+	}, &instrumentationrules.HttpPayloadCollection{
 		MimeTypes:           &[]string{"application/xml"},
 		DropPartialPayloads: BoolPtr(false),
 	})
@@ -679,7 +680,7 @@ func TestMergeHttpPayloadCollectionRules_BothNil(t *testing.T) {
 }
 
 func TestMergeHttpPayloadCollectionRules_FirstNil(t *testing.T) {
-	res := mergeHttpPayloadCollectionRules(nil, &odigosv1.HttpPayloadCollection{
+	res := mergeHttpPayloadCollectionRules(nil, &instrumentationrules.HttpPayloadCollection{
 		MimeTypes:           &[]string{"application/xml"},
 		DropPartialPayloads: BoolPtr(false),
 	})
@@ -698,7 +699,7 @@ func TestMergeHttpPayloadCollectionRules_FirstNil(t *testing.T) {
 }
 
 func TestMergeHttpPayloadCollectionRules_SecondNil(t *testing.T) {
-	res := mergeHttpPayloadCollectionRules(&odigosv1.HttpPayloadCollection{
+	res := mergeHttpPayloadCollectionRules(&instrumentationrules.HttpPayloadCollection{
 		MaxPayloadLength: Int64Ptr(1234),
 	}, nil)
 	if res.MimeTypes != nil {
