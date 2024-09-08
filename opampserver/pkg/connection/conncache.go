@@ -1,9 +1,12 @@
 package connection
 
 import (
+	"encoding/json"
 	"sync"
 	"time"
 
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
@@ -21,7 +24,7 @@ var connectionStaleTime = time.Duration(float64(HeartbeatInterval) * 2.5)
 type ConnectionsCache struct {
 	mux sync.Mutex
 
-	// map from device id to connection information
+	// map from OpAMP Instance id to connection information
 	liveConnections map[string]*ConnectionInfo
 }
 
@@ -90,26 +93,35 @@ func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
 }
 
 // allow to completely overwrite the remote config for a set of keys for a given workload
-func (c *ConnectionsCache) UpdateWorkloadRemoteConfigByKeys(workload workload.PodWorkload, newConfigEntries *protobufs.AgentConfigMap) {
+func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload workload.PodWorkload, sdkConfig *v1alpha1.SdkConfig) error {
+	sdkConfigProgrammingLang := common.MapOdigosToSemConv(sdkConfig.Language)
 	c.mux.Lock()
 	defer c.mux.Unlock()
-
 	for _, conn := range c.liveConnections {
-		if conn.Workload != workload {
+		if conn.Workload != workload || conn.ProgrammingLanguage != sdkConfigProgrammingLang {
 			continue
 		}
 
-		// merge the new config entries into the existing remote config
+		remoteConfigInstrumentationConfigBytes, err := json.Marshal(sdkConfig)
+		if err != nil {
+			return err
+		}
+
+		instrumentationConfigContent := &protobufs.AgentConfigFile{
+			Body:        remoteConfigInstrumentationConfigBytes,
+			ContentType: "application/json",
+		}
+
 		// copy the old remote config to avoid it being accessed concurrently
 		newRemoteConfigMap := proto.Clone(conn.AgentRemoteConfig.Config).(*protobufs.AgentConfigMap)
-		for key, value := range newConfigEntries.ConfigMap {
-			newRemoteConfigMap.ConfigMap[key] = value
-		}
+		newRemoteConfigMap.ConfigMap[""] = instrumentationConfigContent
+
 		conn.AgentRemoteConfig = &protobufs.AgentRemoteConfig{
 			Config:     newRemoteConfigMap,
 			ConfigHash: CalcRemoteConfigHash(newRemoteConfigMap),
 		}
 	}
+	return nil
 }
 
 // how to use this function:
