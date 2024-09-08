@@ -173,8 +173,11 @@ export function SourcesTableHeader({
             id: 'javascript',
             selected: groupLanguages.includes('javascript'),
             disabled:
-              groupLanguages.length === 1 &&
-              groupLanguages.includes('javascript'),
+              (groupLanguages.length === 1 &&
+                groupLanguages.includes('javascript')) ||
+              (data.length === 1 &&
+                data?.[0]?.instrumented_application_details?.languages?.[0]
+                  .language === 'javascript'),
           },
           {
             label: 'Python',
@@ -182,7 +185,11 @@ export function SourcesTableHeader({
             id: 'python',
             selected: groupLanguages.includes('python'),
             disabled:
-              groupLanguages.length === 1 && groupLanguages.includes('python'),
+              (groupLanguages.length === 1 &&
+                groupLanguages.includes('python')) ||
+              (data.length === 1 &&
+                data?.[0]?.instrumented_application_details?.languages?.[0]
+                  .language === 'python'),
           },
           {
             label: 'Java',
@@ -190,7 +197,11 @@ export function SourcesTableHeader({
             id: 'java',
             selected: groupLanguages.includes('java'),
             disabled:
-              groupLanguages.length === 1 && groupLanguages.includes('java'),
+              (groupLanguages.length === 1 &&
+                groupLanguages.includes('java')) ||
+              (data.length === 1 &&
+                data?.[0]?.instrumented_application_details?.languages?.[0]
+                  .language === 'java'),
           },
           {
             label: 'Go',
@@ -198,7 +209,10 @@ export function SourcesTableHeader({
             id: 'go',
             selected: groupLanguages.includes('go'),
             disabled:
-              groupLanguages.length === 1 && groupLanguages.includes('go'),
+              (groupLanguages.length === 1 && groupLanguages.includes('go')) ||
+              (data.length === 1 &&
+                data?.[0]?.instrumented_application_details?.languages?.[0]
+                  .language === 'go'),
           },
           {
             label: '.NET',
@@ -206,7 +220,11 @@ export function SourcesTableHeader({
             id: 'dotnet',
             selected: groupLanguages.includes('dotnet'),
             disabled:
-              groupLanguages.length === 1 && groupLanguages.includes('dotnet'),
+              (groupLanguages.length === 1 &&
+                groupLanguages.includes('dotnet')) ||
+              (data.length === 1 &&
+                data?.[0]?.instrumented_application_details?.languages?.[0]
+                  .language === 'dotnet'),
           },
         ],
       },
