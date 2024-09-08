@@ -17,38 +17,11 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-type HttpPayloadCollectionRule struct {
-
-	// Limit payload collection to specific mime types based on the content type header.
-	// When not specified, all mime types payloads will be collected.
-	// Empty array will make the rule ineffective.
-	MimeTypes *[]string `json:"mimeTypes,omitempty"`
-
-	// Maximum length of the payload to collect.
-	// If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
-	MaxPayloadLength *int64 `json:"maxPayloadLength,omitempty"`
-
-	// If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-	// This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
-	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
-}
-
-// Rule for collecting payloads for a DbStatement
-type DbQueryPayloadCollectionRule struct {
-
-	// Maximum length of the payload to collect.
-	// If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
-	MaxPayloadLength *int64 `json:"maxPayloadLength,omitempty"`
-
-	// If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-	// This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
-	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
-}
 
 // Includes the instrumentation library name, span kind (for golang) and language
 // which identifies a specific library globally.
@@ -63,19 +36,6 @@ type InstrumentationLibraryGlobalId struct {
 
 	// The language in which this library will collect data
 	Language common.ProgrammingLanguage `json:"language"`
-}
-
-type PayloadCollection struct {
-	// Collect HTTP request payload data when available.
-	// Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library
-	HttpRequest *HttpPayloadCollectionRule `json:"httpRequest,omitempty"`
-
-	// rule for collecting the response part of an http payload.
-	// Can be a client response or a server response, depending on the instrumentation library
-	HttpResponse *HttpPayloadCollectionRule `json:"httpResponse,omitempty"`
-
-	// rule for collecting db payloads for the mentioned workload and instrumentation libraries
-	DbQuery *DbQueryPayloadCollectionRule `json:"dbQuery,omitempty"`
 }
 
 type InstrumentationRuleSpec struct {
@@ -99,7 +59,7 @@ type InstrumentationRuleSpec struct {
 	InstrumentationLibraries *[]InstrumentationLibraryGlobalId `json:"instrumentationLibraries,omitempty"`
 
 	// Allows to configure payload collection aspects for different types of payloads.
-	PayloadCollection *PayloadCollection `json:"payloadCollection,omitempty"`
+	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 }
 
 type InstrumentationRuleStatus struct {

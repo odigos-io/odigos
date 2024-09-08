@@ -2,6 +2,7 @@ package instrumentationconfig
 
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
@@ -97,7 +98,8 @@ func createDefaultSdkConfig(ic *odigosv1alpha1.InstrumentationConfig, containerL
 		}
 	}
 	ic.Spec.SdkConfigs = append(ic.Spec.SdkConfigs, odigosv1alpha1.SdkConfig{
-		Language: containerLanguage,
+		Language:                 containerLanguage,
+		DefaultPayloadCollection: &instrumentationrules.PayloadCollection{},
 	})
 }
 
@@ -116,7 +118,7 @@ func isWorkloadParticipatingInRule(workload workload.PodWorkload, rule *odigosv1
 	return false
 }
 
-func mergeHttpPayloadCollectionRules(rule1 *odigosv1alpha1.HttpPayloadCollectionRule, rule2 *odigosv1alpha1.HttpPayloadCollectionRule) *odigosv1alpha1.HttpPayloadCollectionRule {
+func mergeHttpPayloadCollectionRules(rule1 *instrumentationrules.HttpPayloadCollection, rule2 *instrumentationrules.HttpPayloadCollection) *instrumentationrules.HttpPayloadCollection {
 
 	// nil means a rules has not yet been set, so return the other rule
 	if rule1 == nil {
@@ -126,7 +128,7 @@ func mergeHttpPayloadCollectionRules(rule1 *odigosv1alpha1.HttpPayloadCollection
 	}
 
 	// merge of the 2 non nil rules
-	mergedRules := odigosv1alpha1.HttpPayloadCollectionRule{}
+	mergedRules := instrumentationrules.HttpPayloadCollection{}
 
 	// MimeTypes is extended to include both. nil means "all" so treat it as such
 	if rule1.MimeTypes == nil || rule2.MimeTypes == nil {
@@ -171,14 +173,14 @@ func mergeHttpPayloadCollectionRules(rule1 *odigosv1alpha1.HttpPayloadCollection
 	return &mergedRules
 }
 
-func mergeDbPayloadCollectionRules(rule1 *odigosv1alpha1.DbQueryPayloadCollectionRule, rule2 *odigosv1alpha1.DbQueryPayloadCollectionRule) *odigosv1alpha1.DbQueryPayloadCollectionRule {
+func mergeDbPayloadCollectionRules(rule1 *instrumentationrules.DbQueryPayloadCollection, rule2 *instrumentationrules.DbQueryPayloadCollection) *instrumentationrules.DbQueryPayloadCollection {
 	if rule1 == nil {
 		return rule2
 	} else if rule2 == nil {
 		return rule1
 	}
 
-	mergedRules := odigosv1alpha1.DbQueryPayloadCollectionRule{}
+	mergedRules := instrumentationrules.DbQueryPayloadCollection{}
 
 	// MaxPayloadLength - choose the smallest value, as this is the maximum allowed
 	if rule1.MaxPayloadLength == nil {

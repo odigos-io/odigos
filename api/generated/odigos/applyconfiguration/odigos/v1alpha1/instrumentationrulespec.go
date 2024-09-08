@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	instrumentationrules "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	workload "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -29,7 +30,7 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	Disabled                 *bool                                               `json:"disabled,omitempty"`
 	Workloads                *[]workload.PodWorkload                             `json:"workloads,omitempty"`
 	InstrumentationLibraries *[]InstrumentationLibraryGlobalIdApplyConfiguration `json:"instrumentationLibraries,omitempty"`
-	PayloadCollection        *PayloadCollectionApplyConfiguration                `json:"payloadCollection,omitempty"`
+	PayloadCollection        *instrumentationrules.PayloadCollection             `json:"payloadCollection,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -93,7 +94,7 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithInstrumentationLibraries
 // WithPayloadCollection sets the PayloadCollection field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the PayloadCollection field is set to the value of the last call.
-func (b *InstrumentationRuleSpecApplyConfiguration) WithPayloadCollection(value *PayloadCollectionApplyConfiguration) *InstrumentationRuleSpecApplyConfiguration {
-	b.PayloadCollection = value
+func (b *InstrumentationRuleSpecApplyConfiguration) WithPayloadCollection(value instrumentationrules.PayloadCollection) *InstrumentationRuleSpecApplyConfiguration {
+	b.PayloadCollection = &value
 	return b
 }

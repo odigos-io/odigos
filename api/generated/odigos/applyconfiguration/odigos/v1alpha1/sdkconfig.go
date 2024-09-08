@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	instrumentationrules "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	common "github.com/odigos-io/odigos/common"
 )
 
@@ -27,7 +28,7 @@ type SdkConfigApplyConfiguration struct {
 	Language                      *common.ProgrammingLanguage                      `json:"language,omitempty"`
 	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration `json:"instrumentationLibraryConfigs,omitempty"`
 	HeadSamplingConfig            *HeadSamplingConfigApplyConfiguration            `json:"headSamplerConfig,omitempty"`
-	DefaultPayloadCollection      *PayloadCollectionApplyConfiguration             `json:"payloadCollection,omitempty"`
+	DefaultPayloadCollection      *instrumentationrules.PayloadCollection          `json:"payloadCollection,omitempty"`
 }
 
 // SdkConfigApplyConfiguration constructs a declarative configuration of the SdkConfig type for use with
@@ -68,7 +69,7 @@ func (b *SdkConfigApplyConfiguration) WithHeadSamplingConfig(value *HeadSampling
 // WithDefaultPayloadCollection sets the DefaultPayloadCollection field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DefaultPayloadCollection field is set to the value of the last call.
-func (b *SdkConfigApplyConfiguration) WithDefaultPayloadCollection(value *PayloadCollectionApplyConfiguration) *SdkConfigApplyConfiguration {
-	b.DefaultPayloadCollection = value
+func (b *SdkConfigApplyConfiguration) WithDefaultPayloadCollection(value instrumentationrules.PayloadCollection) *SdkConfigApplyConfiguration {
+	b.DefaultPayloadCollection = &value
 	return b
 }

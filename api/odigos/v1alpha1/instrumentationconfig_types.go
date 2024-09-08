@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	"go.opentelemetry.io/otel/attribute"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,7 +49,7 @@ type SdkConfig struct {
 	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
 	HeadSamplingConfig *HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
 
-	DefaultPayloadCollection PayloadCollection `json:"payloadCollection"`
+	DefaultPayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
@@ -108,7 +109,7 @@ type InstrumentationLibraryConfig struct {
 
 	TraceConfig *InstrumentationLibraryConfigTraces `json:"traceConfig,omitempty"`
 
-	PayloadCollection PayloadCollection `json:"payloadCollection,omitempty"`
+	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 }
 
 type InstrumentationLibraryId struct {

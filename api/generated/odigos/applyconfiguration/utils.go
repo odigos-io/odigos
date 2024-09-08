@@ -47,8 +47,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.CollectorsGroupStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ConfigOption"):
 		return &odigosv1alpha1.ConfigOptionApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("DbQueryPayloadCollectionRule"):
-		return &odigosv1alpha1.DbQueryPayloadCollectionRuleApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Destination"):
 		return &odigosv1alpha1.DestinationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DestinationSpec"):
@@ -59,8 +57,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.EnvVarApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("HeadSamplingConfig"):
 		return &odigosv1alpha1.HeadSamplingConfigApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("HttpPayloadCollectionRule"):
-		return &odigosv1alpha1.HttpPayloadCollectionRuleApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfig"):
 		return &odigosv1alpha1.InstrumentationConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfigSpec"):
@@ -103,8 +99,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.OdigosConfigurationSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OptionByContainer"):
 		return &odigosv1alpha1.OptionByContainerApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("PayloadCollection"):
-		return &odigosv1alpha1.PayloadCollectionApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Processor"):
 		return &odigosv1alpha1.ProcessorApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ProcessorSpec"):
