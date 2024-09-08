@@ -3,6 +3,49 @@ title: "Instrumentation Rules Overview"
 sidebarTitle: "Overview"
 ---
 
-Instrumentation rules are a set of flexible configuration options that describe how Odigos should instrument your application.
-They are applied at the data recording stage of the pipeline, and offer fine-grained control over the collection of telemetry data.
+Instrumentation Rules control how telemetry is recorded from your application.
 
+## Rule Types:
+
+- [Payload Collection](/pipeline/rules/payloadcollection)
+
+## Scope
+
+A rule can be applied to a set of Odigos sources (k8s workloads) and instrumentation libraries.
+
+### Sources
+
+- To apply a rule to all sources in the cluster, omit the `workloads` field.
+- To limit the rule to specific sources, provide an array of workload objects (name, namespace, kind).
+
+### Instrumentation Libraries
+
+This is an advanced feature that allows you to apply a rule to a specific instrumentation library.
+It is recommended to set the same rules to all instrumentation libraries, and only use this feature when you need fine-grained control.
+
+- To apply the rule to all instrumentation libraries, omit the `instrumentationLibraries` field.
+- Alternatively, you can specify a list of instrumentation libraries to which the rule should be applied. Instrumentation library is identified by a combination of it's unique name, and language (and span kind for golang).
+
+Any rule on a specific library will take precedence over a rule that does not specify a library.
+
+## Configuration Options
+
+- `ruleName` (optional): Allows you to attach a meaningful name to the rule for convenience and documentation. Odigos does not use or assume any meaning from this field.
+
+- `notes` (optional): A free-form text field that allows you to attach notes regarding the rule for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.
+
+- `disabled` (optional, default is `false`, e.g. enabled): A boolean field allowing to temporarily disable the rule, but keep it around for future use
+
+- `workloads` (optional, default is omitted, e.g. all workloads): An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will make the rule ineffective.
+
+- `instrumentationLibraries` (optional, default is omitted, e.g. all libraries): An array of instrumentation library id objects to which the rule should be applied. If not specified, the rule will be applied to all instrumentation libraries. empty array will make the rule ineffective.
+
+## Merging Rules
+
+You can specify multiple rules in your cluster:
+
+- When multiple teams work on the same cluster, they can each define their own rules.
+- To define some global default behavior and override it for specific cases.
+- If you need to create a temporary rule for a givin task which will be removed later.
+
+Odigos allows you to define multiple rules, and will merge them together to create a single rule per source.

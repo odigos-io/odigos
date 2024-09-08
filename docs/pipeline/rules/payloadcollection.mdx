@@ -3,34 +3,36 @@ title: "Payload Collection Instrumentation Rule"
 sidebarTitle: "Payload Collection"
 ---
 
-The "Payload Collection" Rule can be used to instruct Odigos to collect and record payload data from operations into spans.
+The "Payload Collection" Rule can be used to add span attributes containing payload data to traces.
 
-Payload can supply valuable context to trace signal consumers, which can help in understanding the behavior of the application.
+In many cases, the payload data can provide valuable context for understanding the behavior of your application.
 
 ## Considerations
 
 Before enabling payload collection, please note the following:
 
-- If your payload contains PII data (Personally Identifiable Information), this data can be exposed in the traces. Evaluate the risk of collecting this data, and consider using the [PII Masking Action](/pipeline/actions/attributes/piimasking) to remove sensitive data.
-- Payload data can be large and may increase the size of your traces. This can impact the performance of your application and the cost of storing and analyzing traces.
+- PII (Personally Identifiable Information) and other potentially sensitive data may be present in the payload. Evaluate the risk of collecting this data, and consider using the [PII Masking Action](/pipeline/actions/attributes/piimasking) to mask sensitive data.
+- Payload data can be large and may increase the size of your traces. This can impact the performance of your application and the cost of processing, storing and analyzing traces.
+- The support for payload collection varies between instrumentation libraries and languages. Not all libraries support payload collection, and the supported payload types and formats may differ. Consult the documentation of the instrumentation library you are using for more information.
 
 ## Basic Example
 
-The following example demonstrates how to enable payload collection any supported payload, for all workloads in the cluster and all supported instrumentation Libraries.
+The following example demonstrates how to enable payload collection for all supported workloads and instrumentation libraries in the cluster.
 
 Create a file named `payloadcollection.yaml` with the following content:
 
 ```yaml
-apiVersion: rules.odigos.io/v1alpha1
-kind: PayloadCollection
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
 metadata:
   name: collect-all-payloads
   namespace: odigos-system
 spec:
   ruleName: "collect all supported payloads"
-  httpRequest: {}
-  httpResponse: {}
-  dbQuery: {}
+  payloadCollection:
+    httpRequest: {}
+    httpResponse: {}
+    dbQuery: {}
 ```
 
 Apply the action to the cluster:
@@ -44,11 +46,11 @@ kubectl apply -f payloadcollection.yaml
 The following example is a demonstration of all the options available in the "Payload Collection" Rule.
 It is not meant to be used "as is", but rather as a reference to customize the rule to your needs.
 
-Create a file named `fullpayloadcollection.yaml` with the following content:
+Create a file named `full-payload-collection-example.yaml` with the following content:
 
 ```yaml
-apiVersion: rules.odigos.io/v1alpha1
-kind: PayloadCollection
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
 metadata:
   name: full-payload-collection-example
   namespace: odigos-system
@@ -70,36 +72,32 @@ spec:
     - language: go
       name: "database/sql"
       spanKind: client
-  httpRequest:
-    mimeTypes:
-      - "application/json"
-      - "text/plain"
-    maxPayloadLength: 2048
-    dropPartialPayloads: true
-  httpResponse:
-    mimeTypes:
-      - "application/json"
-      - "text/plain"
-    maxPayloadLength: 2048
-    dropPartialPayloads: true
-  dbQuery:
-    maxPayloadLength: 1024
-    dropPartialPayloads: true
+  payloadCollection:
+    httpRequest:
+        mimeTypes:
+        - "application/json"
+        maxPayloadLength: 2048
+        dropPartialPayloads: true
+    httpResponse:
+        mimeTypes:
+        - "application/json"
+        - "text/plain"
+        maxPayloadLength: 8096
+        dropPartialPayloads: true
+    dbQuery:
+        maxPayloadLength: 1024
+        dropPartialPayloads: true
+```
+
+Apply the action to the cluster:
+
+```shell
+kubectl apply -f full-payload-collection-example.yaml
 ```
 
 ### Configuration Options
 
 The full list of configuration options for the "Payload Collection" Rule are:
-
-- `ruleName` (optional): Allows you to attach a meaningful name to the rule for convenience. Odigos does not use or assume any meaning from this field.
-
-- `notes` (optional): A free-form text field that allows you to attach notes regarding the rule for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.
-
-- `disabled` (optional, default `false` - enabled): A boolean field allowing to temporarily disable the rule, but keep it around for future use
-
-- `workloads` (optional, default is nil - all workloads): An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will make the rule ineffective.
-
-- `instrumentationLibraries` (optional, default is nil - all libraries): An array of instrumentation library id objects to which the rule should be applied. If not specified, the rule will be applied to all instrumentation libraries. empty array will make the rule ineffective.
 
 - `httpRequest` (optional): Collect HTTP request payload data when available. Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library
   - `mimeTypes` (optional, default is nil - all mime types): Limit payload collection to specific mime types based on the content type header. When not specified, all mime types payloads will be collected. empty array will make the rule ineffective.
@@ -115,8 +113,8 @@ The full list of configuration options for the "Payload Collection" Rule are:
   - `maxPayloadLength` (optional): Maximum length of the payload to collect. If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option. When not specified (recommended), the instrumentation library will use any reasonable default value
   - `dropPartialPayloads` (optional, default is false): If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all. This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
 
-## Multiple Rules
+## Merging Rules
 
-You can create multiple "Payload Collection" rules to specify different configurations for different workloads or instrumentation libraries.
-Rules for specific libraries are considered before rules for all libraries.
-In case multiple rules apply to the same workload or library, they will be merged together to create the final configuration.
+- Any payload collection rule for a specific instrumentation library will take precedence over a rule that does not specify a library.
+- If multiple rules are defined for the same source, the rules will be merged together. Any conflicting options will be resolved by taking the "safest" option.
+- Any unspecified options will fallback to a reasonable default value provided by the instrumentation library (recommended).
