@@ -154,18 +154,3 @@ func (c *ConnectionsCache) UpdateAllConnectionConfigs(connConfigEvaluator func(c
 		}
 	}
 }
-
-func (c *ConnectionsCache) GetConnectionsInfoByWorkload(podWorkload workload.PodWorkload) []*ConnectionInfo {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-
-	var connections []*ConnectionInfo
-
-	for _, conn := range c.liveConnections {
-		if conn.Workload == podWorkload {
-			connections = append(connections, conn)
-		}
-	}
-
-	return connections // Return the slice (can be empty if no matches)
-}
