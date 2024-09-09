@@ -11,6 +11,7 @@ import (
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
+	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
@@ -64,7 +65,6 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 			return nil, instrumentedEbpf
 		}
 		programLanguageDetails := common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}
-		var inspectProc *procdiscovery.Details
 		var detectErr error
 		i := 0
 		for _, proc := range processes {
