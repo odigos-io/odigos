@@ -5,6 +5,7 @@ import (
 	"errors"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/instrumentor/controllers/utils/versionsupport"
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -210,7 +211,7 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 		return err
 	}
 
-	if isRuntimeVersionSupported(instrumentedApplication.Spec.RuntimeDetails) {
+	if versionsupport.IsRuntimeVersionSupported(instrumentedApplication.Spec.RuntimeDetails) {
 		err := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, instrumentedApplication.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonRuntimeVersionNotSupported)
 		if err == nil {
 			conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonRuntimeVersionNotSupported), "Runtime version is not supported")
@@ -227,9 +228,4 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrApplying), err.Error())
 	}
 	return err
-}
-
-func isRuntimeVersionSupported(details []odigosv1.RuntimeDetailsByContainer) bool {
-
-	return true
 }
