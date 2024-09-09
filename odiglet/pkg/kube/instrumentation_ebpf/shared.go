@@ -4,12 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -48,12 +51,40 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 			serviceName = podWorkload.Name
 		}
 		fmt.Printf("@@@@ Instrumenting pod %v:%s container %s with service name %s\n", pod.UID, pod.Name, containerName, serviceName)
+		if podWorkload.Name == "postgres" {
+			// sleep for 10 seconds to allow the postgres container to start
+			fmt.Printf("@@@@ Sleeping for 10 seconds to allow the postgres container to start\n")
+			time.Sleep(10 * time.Second)
+		}
+		// test
+		fmt.Printf("@@@@ FindAllInContainer:%v, pod: %v, container: %v\n", pod.UID, pod.Name, container.Name)
+		processes, err := process.FindAllInContainer(podUid, containerName)
+		if err != nil {
+			logger.Error(err, "error finding processes")
+			return nil, instrumentedEbpf
+		}
+		programLanguageDetails := common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}
+		var inspectProc *procdiscovery.Details
+		var detectErr error
+		i := 0
+		for _, proc := range processes {
+			i++
+			containerURL := kubeutils.GetPodExternalURL(pod.Status.PodIP, container.Ports)
+			programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL)
+			if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
+				fmt.Printf("@@@@ [%d] DetectLanguage:%v, Proc: %v pod: %v, container: %v\n", i, programLanguageDetails.Language, proc, pod.Name, container.Name)
+			}
+		}
+		// test end
 		details, err := process.FindAllInContainer(podUid, containerName)
 		if err != nil {
 			logger.Error(err, "error finding processes")
 			return err, instrumentedEbpf
 		}
-
+		// print the details
+		for _, d := range details {
+			fmt.Printf("@@@@ $$$ Found process %v in container %s\n", d.ProcessID, containerName)
+		}
 		var errs []error
 		for _, d := range details {
 			podDetails := types.NamespacedName{

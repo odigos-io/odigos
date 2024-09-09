@@ -17,6 +17,7 @@ export enum WORKLOAD_PROGRAMMING_LANGUAGES {
   NO_CONTAINERS = 'no containers', // language detection completed but no containers found or they are ignored
   NO_RUNNING_PODS = 'no running pods', // no running pods are available for language detection
   NGINX = 'nginx',
+  POSTGRES = 'postgres',
 }
 
 export const LANGUAGES_LOGOS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> = {
@@ -31,6 +32,7 @@ export const LANGUAGES_LOGOS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> = {
   [WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS]: `${BASE_URL}default.svg`, // TODO: good icon
   [WORKLOAD_PROGRAMMING_LANGUAGES.NO_RUNNING_PODS]: `${BASE_URL}default.svg`, // TODO: good icon
   [WORKLOAD_PROGRAMMING_LANGUAGES.NGINX]: `${BASE_URL}nginx.svg`,
+  [WORKLOAD_PROGRAMMING_LANGUAGES.POSTGRES]: `${BASE_URL}postgres.svg`,
 };
 
 export const LANGUAGES_COLORS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> =
@@ -46,6 +48,7 @@ export const LANGUAGES_COLORS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> =
     [WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS]: '#111111',
     [WORKLOAD_PROGRAMMING_LANGUAGES.NO_RUNNING_PODS]: '#666666',
     [WORKLOAD_PROGRAMMING_LANGUAGES.NGINX]: '#009237',
+    [WORKLOAD_PROGRAMMING_LANGUAGES.POSTGRES]: '#336791',
   };
 
 export const getMainContainerLanguage = (
