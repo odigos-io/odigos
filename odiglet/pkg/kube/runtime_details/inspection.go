@@ -3,6 +3,7 @@ package runtime_details
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
 
@@ -80,6 +81,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				}
 				continue
 			}
+			fmt.Printf("@@@@ 1.0.95 FindAllInContainer:%v, pod: %v, container: %v\n", pod.UID, pod.Name, container.Name)
 
 			processes, err := process.FindAllInContainer(string(pod.UID), container.Name)
 			if err != nil {
@@ -98,6 +100,8 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 			for _, proc := range processes {
 				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc)
 				if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
+					fmt.Printf("@@@@ 1.0.95 DetectLanguage:%v, Proc: %v pod: %v, container: %v\n", programLanguageDetails.Language, proc, pod.Name, container.Name)
+
 					inspectProc = &proc
 					break
 				}
@@ -110,6 +114,8 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 			} else {
 				if len(processes) > 1 {
 					log.Logger.V(0).Info("multiple processes found in pod container, only taking the first one with detected language into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+					fmt.Printf("@@@@ 1.0.95 container[%v] multiple processes found in pod container, only taking the first one with detected language into account pod: %v\n", container.Name, pod.Name)
+
 				}
 
 				// Convert map to slice for k8s format

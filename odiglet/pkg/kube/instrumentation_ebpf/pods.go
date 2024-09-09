@@ -2,6 +2,7 @@ package instrumentation_ebpf
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -77,8 +78,10 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		// pod is not managed by a controller
 		return ctrl.Result{}, nil
 	}
+	fmt.Printf("@@@@ 95 Reconciling pod %s/%s\n", request.Namespace, request.Name)
 
 	if pod.Status.Phase == corev1.PodRunning {
+		fmt.Printf("@@@@ 95 Instrumenting pod %v:%s\n", pod.UID, pod.Name)
 		err, instrumentedEbpf := p.instrumentWithEbpf(ctx, &pod, podWorkload)
 		if err != nil {
 			logger.Error(err, "error instrumenting pod")
