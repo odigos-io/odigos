@@ -397,7 +397,7 @@ export function SourcesTableHeader({
             handleToggleChange={() =>
               setShowSourcesWithIssues(!showSourcesWithIssues)
             }
-            label={'Show only sources with issues'}
+            label={'Show Sources with Errors'}
           />
         )}
         {selectedCheckbox.length > 0 && (
