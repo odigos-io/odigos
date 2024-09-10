@@ -106,7 +106,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 				Name:      pod.Name,
 			}
 			err = director.Instrument(ctx, d.ProcessID, podDetails, podWorkload, serviceName, containerName)
-
+			time.Sleep(2 * time.Second)
 			if err != nil {
 				logger.Error(err, "error initiating process instrumentation", "pid", d.ProcessID)
 				errs = append(errs, err)
