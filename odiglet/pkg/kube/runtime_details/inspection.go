@@ -116,7 +116,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 					fmt.Printf("@@@@ container[%v] multiple processes found in pod container, only taking the first one with detected language into account pod: %v\n", container.Name, pod.Name)
 					// debud, print all processes
 					for _, proc := range processes {
-						fmt.Printf("@@@@ container[%v] DetectLanguage:%v, Proc: %v pod: %v\n", container.Name, programLanguageDetails.Language, proc, pod.Name)
+						fmt.Printf("@@@@ container[%v] DetectLanguage:%v, Proc: %+v pod: %v\n", container.Name, programLanguageDetails.Language, proc, pod.Name)
 					}
 				}
 

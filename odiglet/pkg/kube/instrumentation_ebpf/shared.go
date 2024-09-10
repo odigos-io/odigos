@@ -14,6 +14,7 @@ import (
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
+	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -51,6 +52,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 		if len(runtimeDetails.Spec.RuntimeDetails) == 1 {
 			serviceName = podWorkload.Name
 		}
+		var processes []procdiscovery.Details
 		fmt.Printf("@@@@ Instrumenting pod %v:%s container %s with service name %s\n", pod.UID, pod.Name, containerName, serviceName)
 		if podWorkload.Name == "postgres" {
 			// loop 10 times to test the detection of the programming language
@@ -86,11 +88,19 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 			return err, instrumentedEbpf
 		}
 		// print the details
-		for _, d := range details {
-			fmt.Printf("@@@@ $$$ Found process %v in container %s\n", d.ProcessID, containerName)
+		programLanguageDetails := common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}
+		var detectErr error
+		for _, proc := range details {
+			fmt.Printf("@@@@ $$$ Found process %v in container %s\n", proc.ProcessID, containerName)
+			containerURL := kubeutils.GetPodExternalURL(pod.Status.PodIP, container.Ports)
+			programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL)
+			if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
+				fmt.Printf("@@@@ $$$ DetectLanguage:%v, Proc: %v pod: %v, container: %v\n", programLanguageDetails.Language, proc, pod.Name, container.Name)
+				processes = append(processes, proc)
+			}
 		}
 		var errs []error
-		for _, d := range details {
+		for _, d := range processes {
 			podDetails := types.NamespacedName{
 				Namespace: pod.Namespace,
 				Name:      pod.Name,
