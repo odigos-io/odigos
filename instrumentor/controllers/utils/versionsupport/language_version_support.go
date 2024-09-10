@@ -1,37 +1,51 @@
 package versionsupport
 
 import (
+	"context"
+	"fmt"
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type RuntimeVersionChecker interface {
 	IsVersionSupported(version *version.Version) bool
+	GetSupportedVersion() string
 }
 
-func IsRuntimeVersionSupported(details []v1alpha1.RuntimeDetailsByContainer) bool {
+func IsRuntimeVersionSupported(ctx context.Context, details []v1alpha1.RuntimeDetailsByContainer) (bool, error) {
+	logger := log.FromContext(ctx)
+
 	for _, runtimeDetailsByContainer := range details {
 		runtimeVersionSupporter := getRuntimeVersionCheck(runtimeDetailsByContainer.Language)
 		if runtimeVersionSupporter == nil {
-			return false
+			logger.Info("Unsupported language", "language", runtimeDetailsByContainer.Language)
+			return false, fmt.Errorf("Unsupported language: %s", runtimeDetailsByContainer.Language)
 		}
 
 		if runtimeDetailsByContainer.RuntimeVersion == "" {
-			return true
+			continue
 		}
 
 		runtimeVersion, err := version.NewVersion(runtimeDetailsByContainer.RuntimeVersion)
 		if err != nil {
-			return false
+			logger.Info("Version format error: %s is not a valid version for language %s",
+				runtimeDetailsByContainer.RuntimeVersion, runtimeDetailsByContainer.Language)
+			return false, fmt.Errorf("Version format error: %s is not a valid version for language %s",
+				runtimeDetailsByContainer.RuntimeVersion, runtimeDetailsByContainer.Language)
 		}
 
 		if !runtimeVersionSupporter.IsVersionSupported(runtimeVersion) {
-			return false
+			runtimeVersionOtelSDKSupport := runtimeVersionSupporter.GetSupportedVersion()
+			logger.Info("%s runtime version not supported by OpenTelemetry SDK. Found: %s, supports: %s",
+				runtimeDetailsByContainer.Language, runtimeDetailsByContainer.RuntimeVersion, runtimeVersionOtelSDKSupport)
+			return false, fmt.Errorf("%s runtime version not supported by OpenTelemetry SDK. Found: %s, supports: %s",
+				runtimeDetailsByContainer.Language, runtimeDetailsByContainer.RuntimeVersion, runtimeVersionOtelSDKSupport)
 		}
 	}
 
-	return true
+	return true, nil
 }
 
 func getRuntimeVersionCheck(language common.ProgrammingLanguage) RuntimeVersionChecker {

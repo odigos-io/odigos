@@ -1,6 +1,9 @@
 package versionsupport
 
-import "github.com/hashicorp/go-version"
+import (
+	"github.com/hashicorp/go-version"
+	"strings"
+)
 
 type NginxVersionCheck struct{}
 
@@ -13,4 +16,8 @@ func (g NginxVersionCheck) IsVersionSupported(version *version.Version) bool {
 		}
 	}
 	return false
+}
+
+func (g NginxVersionCheck) GetSupportedVersion() string {
+	return strings.Join(nginxSupportedVersions, ", ")
 }

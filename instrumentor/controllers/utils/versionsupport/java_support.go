@@ -10,3 +10,7 @@ func (j JavaVersionChecker) IsVersionSupported(version *version.Version) bool {
 	return version.Metadata() >= JavaMinVersion.Metadata() &&
 		version.GreaterThanOrEqual(JavaMinVersion)
 }
+
+func (j JavaVersionChecker) GetSupportedVersion() string {
+	return JavaMinVersion.String()
+}
