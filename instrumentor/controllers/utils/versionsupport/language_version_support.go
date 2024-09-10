@@ -12,14 +12,12 @@ type RuntimeVersionChecker interface {
 
 func IsRuntimeVersionSupported(details []v1alpha1.RuntimeDetailsByContainer) bool {
 	for _, runtimeDetailsByContainer := range details {
-
 		runtimeVersionSupporter := getRuntimeVersionCheck(runtimeDetailsByContainer.Language)
 		if runtimeVersionSupporter == nil {
 			return false
 		}
 
 		if runtimeDetailsByContainer.RuntimeVersion == "" {
-			// We haven't succeed to get the runtime version, so we can't check if it's supported
 			return true
 		}
 

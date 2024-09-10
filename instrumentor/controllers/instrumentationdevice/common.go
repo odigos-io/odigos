@@ -211,7 +211,7 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 		return err
 	}
 
-	if versionsupport.IsRuntimeVersionSupported(instrumentedApplication.Spec.RuntimeDetails) {
+	if !versionsupport.IsRuntimeVersionSupported(instrumentedApplication.Spec.RuntimeDetails) {
 		err := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, instrumentedApplication.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonRuntimeVersionNotSupported)
 		if err == nil {
 			conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonRuntimeVersionNotSupported), "Runtime version is not supported")
