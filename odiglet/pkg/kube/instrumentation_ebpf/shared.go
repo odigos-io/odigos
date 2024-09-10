@@ -53,26 +53,30 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 		}
 		fmt.Printf("@@@@ Instrumenting pod %v:%s container %s with service name %s\n", pod.UID, pod.Name, containerName, serviceName)
 		if podWorkload.Name == "postgres" {
-			// sleep for 10 seconds to allow the postgres container to start
-			fmt.Printf("@@@@ Sleeping for 10 seconds to allow the postgres container to start\n")
-			time.Sleep(10 * time.Second)
-		}
-		// test
-		fmt.Printf("@@@@ FindAllInContainer:%v, pod: %v, container: %v\n", pod.UID, pod.Name, container.Name)
-		processes, err := process.FindAllInContainer(podUid, containerName)
-		if err != nil {
-			logger.Error(err, "error finding processes")
-			return nil, instrumentedEbpf
-		}
-		programLanguageDetails := common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}
-		var detectErr error
-		i := 0
-		for _, proc := range processes {
-			i++
-			containerURL := kubeutils.GetPodExternalURL(pod.Status.PodIP, container.Ports)
-			programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL)
-			if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
-				fmt.Printf("@@@@ [%d] DetectLanguage:%v, Proc: %v pod: %v, container: %v\n", i, programLanguageDetails.Language, proc, pod.Name, container.Name)
+			// loop 10 times to test the detection of the programming language
+			for i := 0; i < 10; i++ {
+				// sleep for 10 seconds to allow the postgres container to start
+				fmt.Printf("@@@@ Time %v - Sleeping for 10 seconds to allow the postgres container to start\n", time.Now())
+				time.Sleep(10 * time.Second)
+
+				// test
+				fmt.Printf("@@@@ [%d] FindAllInContainer:%v, pod: %v, container: %v\n", i, pod.UID, pod.Name, container.Name)
+				processes, err := process.FindAllInContainer(podUid, containerName)
+				if err != nil {
+					logger.Error(err, "error finding processes")
+					return nil, instrumentedEbpf
+				}
+				programLanguageDetails := common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}
+				var detectErr error
+				j := 0
+				for _, proc := range processes {
+					j++
+					containerURL := kubeutils.GetPodExternalURL(pod.Status.PodIP, container.Ports)
+					programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL)
+					if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
+						fmt.Printf("@@@@ [%d][%d] DetectLanguage:%v, Proc: %v pod: %v, container: %v\n", i, j, programLanguageDetails.Language, proc, pod.Name, container.Name)
+					}
+				}
 			}
 		}
 		// test end
