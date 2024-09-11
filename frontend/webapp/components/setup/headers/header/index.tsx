@@ -31,6 +31,11 @@ const Logo = styled.div`
   font-size: 1.2em;
 `;
 
+const NavigationButtonsWrapper = styled.div`
+  position: absolute;
+  right: 24px;
+`;
+
 export const SetupHeader: React.FC<SetupHeaderProps> = ({
   navigationButtons,
 }) => {
@@ -45,7 +50,10 @@ export const SetupHeader: React.FC<SetupHeaderProps> = ({
         />
       </Logo>
       <Title family={'secondary'}>START WITH ODIGOS</Title>
-      <NavigationButtons buttons={navigationButtons} />
+      <div style={{ width: 84 }} />
+      <NavigationButtonsWrapper>
+        <NavigationButtons buttons={navigationButtons} />
+      </NavigationButtonsWrapper>
     </HeaderContainer>
   );
 };

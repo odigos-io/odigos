@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Input } from '../input';
 import styled, { css } from 'styled-components';
 import { Tooltip } from '../tooltip';
@@ -7,6 +7,7 @@ import { Text } from '../text';
 import { Divider } from '../divider';
 import { DropdownOption } from '@/types';
 import { useOnClickOutside } from '@/hooks';
+import ReactDOM from 'react-dom';
 
 interface DropdownProps {
   options: DropdownOption[];
@@ -36,7 +37,6 @@ const DropdownHeader = styled.div<{ isOpen: boolean }>`
   border: 1px solid rgba(249, 249, 249, 0.24);
   cursor: pointer;
   background-color: transparent;
-  border-radius: 32px;
   ${({ isOpen, theme }) =>
     isOpen &&
     css`
@@ -54,8 +54,6 @@ const DropdownHeader = styled.div<{ isOpen: boolean }>`
 
 const DropdownListContainer = styled.div`
   position: absolute;
-  top: 60px;
-  left: 0;
   width: 100%;
   max-height: 200px;
   overflow-y: auto;
@@ -66,8 +64,7 @@ const DropdownListContainer = styled.div`
   background-color: #242424;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 32px;
-  margin-top: 4px;
-  z-index: 999;
+  z-index: 9999;
 `;
 
 const SearchInputContainer = styled.div`
@@ -114,9 +111,26 @@ const Dropdown: React.FC<DropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dropdownPosition, setDropdownPosition] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+  });
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useOnClickOutside(dropdownRef, () => setIsOpen(false));
+
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY, // Ensure correct vertical position
+        left: rect.left + window.scrollX, // Ensure correct horizontal position
+        width: rect.width, // Ensure dropdown matches the width of the input
+      });
+    }
+  }, [isOpen]);
 
   const filteredOptions = options.filter((option) =>
     option.value.toLowerCase().includes(searchTerm.toLowerCase())
@@ -127,8 +141,48 @@ const Dropdown: React.FC<DropdownProps> = ({
     setIsOpen(false);
   };
 
+  const dropdownContent = (
+    <div
+      style={{
+        position: 'absolute',
+        top: dropdownPosition.top,
+        left: dropdownPosition.left,
+        width: dropdownPosition.width,
+      }}
+    >
+      <DropdownListContainer>
+        <SearchInputContainer>
+          <Input
+            placeholder="Search..."
+            icon={'/icons/common/search.svg'}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <Divider thickness={1} margin="8px 0 0 0" />
+        </SearchInputContainer>
+        {filteredOptions.map((option) => (
+          <DropdownItem
+            key={option.id}
+            isSelected={option.id === value?.id}
+            onClick={() => handleSelect(option)}
+          >
+            <Text size={14}>{option.value}</Text>
+            {option.id === value?.id && (
+              <Image
+                src="/icons/common/check.svg"
+                alt=""
+                width={16}
+                height={16}
+              />
+            )}
+          </DropdownItem>
+        ))}
+      </DropdownListContainer>
+    </div>
+  );
+
   return (
-    <Container ref={dropdownRef}>
+    <Container ref={containerRef}>
       {title && (
         <Tooltip text={tooltip || ''}>
           <HeaderWrapper>
@@ -146,7 +200,6 @@ const Dropdown: React.FC<DropdownProps> = ({
       )}
       <DropdownHeader isOpen={isOpen} onClick={() => setIsOpen(!isOpen)}>
         <Text size={14}>{value?.value || placeholder}</Text>
-
         <OpenDropdownIcon
           src="/icons/common/extend-arrow.svg"
           alt="open-dropdown"
@@ -155,37 +208,7 @@ const Dropdown: React.FC<DropdownProps> = ({
           isOpen={isOpen}
         />
       </DropdownHeader>
-      {isOpen && (
-        <DropdownListContainer>
-          <SearchInputContainer>
-            <Input
-              placeholder="Search..."
-              icon={'/icons/common/search.svg'}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Divider thickness={1} margin="8px 0 0 0" />
-          </SearchInputContainer>
-          {filteredOptions.map((option) => (
-            <DropdownItem
-              key={option.id}
-              isSelected={option.id === value?.id}
-              onClick={() => handleSelect(option)}
-            >
-              <Text size={14}>{option.value}</Text>
-
-              {option.id === value?.id && (
-                <Image
-                  src="/icons/common/check.svg"
-                  alt=""
-                  width={16}
-                  height={16}
-                />
-              )}
-            </DropdownItem>
-          ))}
-        </DropdownListContainer>
-      )}
+      {isOpen && ReactDOM.createPortal(dropdownContent, document.body)}
     </Container>
   );
 };

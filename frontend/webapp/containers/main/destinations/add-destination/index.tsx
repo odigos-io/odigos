@@ -85,7 +85,7 @@ export function ChooseDestinationContainer() {
               text={'No sources selected.'}
               action={{
                 label: 'Select sources',
-                onClick: () => router.push('/setup/choose-sources'),
+                onClick: () => router.push('/choose-sources'),
               }}
             />
           </NotificationNoteWrapper>
