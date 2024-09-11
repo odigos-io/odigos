@@ -1,6 +1,6 @@
-import { API } from "@/utils/constants";
-import { get, post, httpDelete, patch } from "./api";
-import { SelectedSources } from "@/types/sources";
+import { API } from '@/utils/constants';
+import { SelectedSources } from '@/types/sources';
+import { get, post, httpDelete, patch } from './api';
 
 export async function getNamespaces() {
   return await get(API.NAMESPACES);

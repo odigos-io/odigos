@@ -137,6 +137,13 @@
           ]
         },
         {
+          "group": "Instrumentation Rules",
+          "pages": [
+            "pipeline/rules/overview",
+            "pipeline/rules/payloadcollection"
+          ]
+        },
+        {
           "group": "Actions",
           "pages": [
             "pipeline/actions/introduction",

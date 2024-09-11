@@ -52,7 +52,7 @@ func NewSdkConfigManager(logger logr.Logger, mgr ctrl.Manager, connectionCache *
 	return sdkConfigManager
 }
 
-func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttributes []configresolvers.ResourceAttribute, podWorkload *workload.PodWorkload, instrumentedAppName string) (*protobufs.AgentRemoteConfig, error) {
+func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttributes []configresolvers.ResourceAttribute, podWorkload *workload.PodWorkload, instrumentedAppName string, programmingLanguage string) (*protobufs.AgentRemoteConfig, error) {
 
 	var nodeCollectorGroup v1alpha1.CollectorsGroup
 	err := m.mgr.GetClient().Get(ctx, client.ObjectKey{Name: k8sconsts.OdigosNodeCollectorCollectorGroupName, Namespace: m.odigosNs}, &nodeCollectorGroup)
@@ -80,10 +80,21 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttr
 		return nil, err
 	}
 
+	// We are moving towards passing all Instrumentation capabilities unchanged within the instrumentationConfig to the opamp client.
+	// Gradually, we will migrate the InstrumentationLibraryConfigs and SDK remote config into the instrumentationConfig and the agents to use it.
+	instrumentationConfig, err := configsections.GetWorkloadInstrumentationConfig(ctx, m.mgr.GetClient(), instrumentedAppName, podWorkload.Namespace)
+	if err != nil {
+		m.logger.Error(err, "failed to get instrumentation config", "k8sAttributes", remoteResourceAttributes)
+		return nil, err
+	}
+
+	opampRemoteConfigInstrumentationConfig, err := configsections.FilterRelevantSdk(instrumentationConfig, programmingLanguage)
+
 	agentConfigMap := protobufs.AgentConfigMap{
 		ConfigMap: map[string]*protobufs.AgentConfigFile{
 			sdkSectionName:                      opampRemoteConfigSdk,
 			instrumentationLibrariesSectionName: opampRemoteConfigInstrumentationLibraries,
+			"":                                  opampRemoteConfigInstrumentationConfig,
 		},
 	}
 	configHash := connection.CalcRemoteConfigHash(&agentConfigMap)

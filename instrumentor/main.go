@@ -20,6 +20,7 @@ import (
 	"flag"
 	"os"
 
+	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -193,6 +194,12 @@ func main() {
 	err = startlangdetection.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller")
+		os.Exit(1)
+	}
+
+	err = instrumentationconfig.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller for instrumentation rules")
 		os.Exit(1)
 	}
 
