@@ -6,10 +6,12 @@ import {
   ActionsGroup,
   KeyvalCheckbox,
   KeyvalLink,
+  KeyvalSwitch,
   KeyvalText,
 } from '@/design.system';
 import { ManagedSource, Namespace } from '@/types';
 import { UnFocusSourcesIcon } from '@keyval-dev/design-system';
+import { useSources } from '@/hooks';
 
 enum K8SSourceTypes {
   DEPLOYMENT = 'deployment',
@@ -55,11 +57,12 @@ interface ActionsTableHeaderProps {
   sortSources?: (condition: string) => void;
   filterSourcesByKind?: (kinds: string[]) => void;
   filterSourcesByNamespace?: (namespaces: string[]) => void;
-  toggleActionStatus?: (ids: string[], disabled: boolean) => void;
   selectedCheckbox: string[];
   onSelectedCheckboxChange: (id: string) => void;
   deleteSourcesHandler: () => void;
   filterSourcesByLanguage?: (languages: string[]) => void;
+  filterByConditionStatus?: (status: 'All' | 'True' | 'False') => void;
+  filterByConditionMessage: (message: string[]) => void;
 }
 
 export function SourcesTableHeader({
@@ -72,9 +75,13 @@ export function SourcesTableHeader({
   deleteSourcesHandler,
   selectedCheckbox,
   onSelectedCheckboxChange,
+  filterByConditionStatus,
+  filterByConditionMessage,
 }: ActionsTableHeaderProps) {
   const [currentSortId, setCurrentSortId] = useState('');
   const [groupNamespaces, setGroupNamespaces] = useState<string[]>([]);
+  const [showSourcesWithIssues, setShowSourcesWithIssues] = useState(false);
+  const [groupErrorMessage, setGroupErrorMessage] = useState<string[]>([]);
   const [groupLanguages, setGroupLanguages] = useState<string[]>([
     'javascript',
     'python',
@@ -87,6 +94,20 @@ export function SourcesTableHeader({
     K8SSourceTypes.STATEFUL_SET,
     K8SSourceTypes.DAEMON_SET,
   ]);
+
+  const { groupErrorMessages } = useSources();
+
+  useEffect(() => {
+    if (!filterByConditionStatus) {
+      return;
+    }
+
+    setGroupErrorMessage(groupErrorMessages());
+
+    showSourcesWithIssues
+      ? filterByConditionStatus('False')
+      : filterByConditionStatus('All');
+  }, [showSourcesWithIssues, data]);
 
   useEffect(() => {
     if (namespaces) {
@@ -140,6 +161,21 @@ export function SourcesTableHeader({
     filterSourcesByLanguage && filterSourcesByLanguage(newGroup);
   }
 
+  function onErrorClick(message: string) {
+    let newGroup: string[] = [];
+    if (groupErrorMessage.includes(message)) {
+      setGroupErrorMessage(
+        groupErrorMessage.filter((item) => item !== message)
+      );
+      newGroup = groupErrorMessage.filter((item) => item !== message);
+    } else {
+      setGroupErrorMessage([...groupErrorMessage, message]);
+      newGroup = [...groupErrorMessage, message];
+    }
+
+    filterByConditionMessage(newGroup);
+  }
+
   const sourcesGroups = useMemo(() => {
     if (!namespaces) return [];
 
@@ -161,7 +197,7 @@ export function SourcesTableHeader({
           totalNamespacesWithApps === 1,
       }));
 
-    return [
+    const actionsGroup = [
       {
         label: 'Language',
         subTitle: 'Filter',
@@ -323,6 +359,24 @@ export function SourcesTableHeader({
         condition: true,
       },
     ];
+
+    if (showSourcesWithIssues) {
+      actionsGroup.unshift({
+        label: 'Error',
+        subTitle: 'Filter by error message',
+        condition: true,
+        items: groupErrorMessages().map((item) => ({
+          label: item,
+          onClick: () => onErrorClick(item),
+          id: item,
+          selected: groupErrorMessage.includes(item),
+          disabled:
+            groupErrorMessage.length === 1 && groupErrorMessage.includes(item),
+        })),
+      });
+    }
+
+    return actionsGroup;
   }, [namespaces, groupNamespaces, data]);
 
   return (
@@ -336,6 +390,16 @@ export function SourcesTableHeader({
         <KeyvalText size={14} weight={600} color={theme.text.white}>
           {`${data.length} ${OVERVIEW.MENU.SOURCES}`}
         </KeyvalText>
+
+        {groupErrorMessage.length > 0 && (
+          <KeyvalSwitch
+            toggle={showSourcesWithIssues}
+            handleToggleChange={() =>
+              setShowSourcesWithIssues(!showSourcesWithIssues)
+            }
+            label={'Show Sources with Errors'}
+          />
+        )}
         {selectedCheckbox.length > 0 && (
           <KeyvalLink
             onClick={deleteSourcesHandler}
