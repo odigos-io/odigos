@@ -25,6 +25,8 @@ type InstrumentationConfigExpansion interface{}
 
 type InstrumentationInstanceExpansion interface{}
 
+type InstrumentationRuleExpansion interface{}
+
 type InstrumentedApplicationExpansion interface{}
 
 type OdigosConfigurationExpansion interface{}
