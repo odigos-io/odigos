@@ -328,6 +328,29 @@ func (r *queryResolver) PotentialDestinations(ctx context.Context) ([]*model.Des
 	return result, nil
 }
 
+// Destinations is the resolver for the destinations field.
+func (r *queryResolver) Destinations(ctx context.Context) ([]*model.Destination, error) {
+	odigosns := consts.DefaultOdigosNamespace
+	dests, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	var destinations []*model.Destination
+	for _, dest := range dests.Items {
+		secretFields, err := services.GetDestinationSecretFields(ctx, odigosns, &dest)
+		if err != nil {
+			return nil, err
+		}
+
+		// Convert the k8s destination format to the expected endpoint format
+		endpointDest := services.K8sDestinationToEndpointFormat(dest, secretFields)
+		destinations = append(destinations, &endpointDest)
+	}
+
+	return destinations, nil
+}
+
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 
