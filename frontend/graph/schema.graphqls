@@ -49,9 +49,20 @@ type SourceContainerRuntimeDetails {
   language: String!
 }
 
+type InstrumentationOption {
+  optionKey: String!
+  spanKind: SpanKind!
+}
+
+type InstrumentationLibrary {
+  libraryName: String!
+  options: [InstrumentationOption!]!
+}
+
 type InstrumentedApplicationDetails {
   containers: [SourceContainerRuntimeDetails!]
   conditions: [Condition!]
+  instrumentationOptions: [InstrumentationLibrary!]!
 }
 
 type Condition {
@@ -222,6 +233,7 @@ type Query {
   destinationTypeDetails(type: String!): GetDestinationDetailsResponse
   potentialDestinations: [DestinationDetails!]!
   destinations: [Destination!]!
+  actualSources: [K8sActualSource]!
 }
 
 type Mutation {

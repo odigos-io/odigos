@@ -3,6 +3,7 @@ package graph
 import (
 	"time"
 
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	gqlmodel "github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -88,5 +89,62 @@ func k8sSourceToGql(k8sSource *services.Source) *gqlmodel.K8sActualSource {
 		NumberOfInstances:              baseSource.NumberOfInstances,
 		InstrumentedApplicationDetails: baseSource.InstrumentedApplicationDetails,
 		ServiceName:                    &k8sSource.ReportedName,
+	}
+}
+
+func instrumentedApplicationToActualSource(instrumentedApp v1alpha1.InstrumentedApplication) *gqlmodel.K8sActualSource {
+	// Map the container runtime details
+	var containers []*gqlmodel.SourceContainerRuntimeDetails
+	for _, container := range instrumentedApp.Spec.RuntimeDetails {
+		containers = append(containers, &gqlmodel.SourceContainerRuntimeDetails{
+			ContainerName: container.ContainerName,
+			Language:      string(container.Language),
+		})
+	}
+
+	// Map the conditions of the application
+	var conditions []*gqlmodel.Condition
+	for _, condition := range instrumentedApp.Status.Conditions {
+		conditions = append(conditions, &gqlmodel.Condition{
+			Type:               condition.Type,
+			Status:             k8sConditionStatusToGql(condition.Status),
+			Reason:             &condition.Reason,
+			LastTransitionTime: k8sLastTransitionTimeToGql(condition.LastTransitionTime),
+			Message:            &condition.Message,
+		})
+	}
+
+	// Map the options for instrumentation libraries
+	var instrumentationOptions []*gqlmodel.InstrumentedApplicationDetails
+	for _, option := range instrumentedApp.Spec.Options {
+		for _, libOptions := range option.InstrumentationLibraries {
+			var libraries []*gqlmodel.InstrumentationOption
+			for _, configOption := range libOptions.Options {
+				libraries = append(libraries, &gqlmodel.InstrumentationOption{
+					OptionKey: configOption.OptionKey,
+					SpanKind:  gqlmodel.SpanKind(configOption.SpanKind),
+				})
+			}
+
+			instrumentationOptions = append(instrumentationOptions, &gqlmodel.InstrumentedApplicationDetails{
+				Containers: containers,
+				Conditions: conditions,
+			})
+		}
+	}
+
+	// Return the converted K8sActualSource object
+	return &gqlmodel.K8sActualSource{
+		Namespace:                instrumentedApp.Namespace,
+		Kind:                     k8sKindToGql(instrumentedApp.OwnerReferences[0].Kind),
+		Name:                     instrumentedApp.OwnerReferences[0].Name,
+		ServiceName:              &instrumentedApp.Name, // Assuming serviceName is derived from the app name
+		NumberOfInstances:        nil,                   // Assuming this is handled separately; can be updated if needed
+		AutoInstrumented:         instrumentedApp.Spec.Options != nil,
+		AutoInstrumentedDecision: "", // Assuming this comes from another source, add if applicable
+		InstrumentedApplicationDetails: &gqlmodel.InstrumentedApplicationDetails{
+			Containers: containers,
+			Conditions: conditions,
+		},
 	}
 }
