@@ -67,9 +67,20 @@ type GetDestinationDetailsResponse struct {
 	Fields []*Field `json:"fields"`
 }
 
+type InstrumentationLibrary struct {
+	LibraryName string                   `json:"libraryName"`
+	Options     []*InstrumentationOption `json:"options"`
+}
+
+type InstrumentationOption struct {
+	OptionKey string   `json:"optionKey"`
+	SpanKind  SpanKind `json:"spanKind"`
+}
+
 type InstrumentedApplicationDetails struct {
-	Containers []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
-	Conditions []*Condition                     `json:"conditions,omitempty"`
+	Containers             []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
+	Conditions             []*Condition                     `json:"conditions,omitempty"`
+	InstrumentationOptions []*InstrumentationLibrary        `json:"instrumentationOptions"`
 }
 
 type K8sActualNamespace struct {
