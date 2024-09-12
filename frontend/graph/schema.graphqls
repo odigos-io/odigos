@@ -221,6 +221,7 @@ type Query {
   destinationTypes: GetDestinationTypesResponse
   destinationTypeDetails(type: String!): GetDestinationDetailsResponse
   potentialDestinations: [DestinationDetails!]!
+  destinations: [Destination!]!
 }
 
 type Mutation {

@@ -1,5 +1,5 @@
-import { DropdownOption, K8sActualNamespace, K8sActualSource } from '@/types';
 import { useEffect, useState } from 'react';
+import { DropdownOption, K8sActualNamespace } from '@/types';
 import { useComputePlatform, useNamespace } from '../compute-platform';
 
 export const useConnectSourcesList = ({ stateMenu, setSourcesList }) => {
@@ -12,7 +12,6 @@ export const useConnectSourcesList = ({ stateMenu, setSourcesList }) => {
   );
 
   useEffect(() => {
-    console.log({ data });
     data && buildNamespacesList();
   }, [data, error]);
 
