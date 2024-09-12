@@ -212,11 +212,11 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 	}
 	runtimeVersionSupport, err := versionsupport.IsRuntimeVersionSupported(ctx, instrumentedApplication.Spec.RuntimeDetails)
 	if !runtimeVersionSupport {
-		err := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, instrumentedApplication.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonRuntimeVersionNotSupported)
-		if err == nil {
+		errRemove := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, instrumentedApplication.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonRuntimeVersionNotSupported)
+		if errRemove == nil {
 			conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonRuntimeVersionNotSupported), err.Error())
 		} else {
-			conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), err.Error())
+			conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), errRemove.Error())
 		}
 		return err
 	}
