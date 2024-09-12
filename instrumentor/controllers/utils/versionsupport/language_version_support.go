@@ -30,12 +30,10 @@ func IsRuntimeVersionSupported(ctx context.Context, details []v1alpha1.RuntimeDe
 
 		runtimeVersion, err := version.NewVersion(runtimeDetailsByContainer.RuntimeVersion)
 		if err != nil {
-			logger.Info("Runtime version not supported by OpenTelemetry SDK",
+			logger.Info("Version format error: Invalid version for language",
 				"runtimeVersion", runtimeDetailsByContainer.RuntimeVersion,
 				"language", runtimeDetailsByContainer.Language,
 			)
-			logger.Info("Version format error: Invalid version for language",
-				runtimeDetailsByContainer.RuntimeVersion, runtimeDetailsByContainer.Language)
 			return false, fmt.Errorf("Version format error: %s is not a valid version for language %s",
 				runtimeDetailsByContainer.RuntimeVersion, runtimeDetailsByContainer.Language)
 		}
