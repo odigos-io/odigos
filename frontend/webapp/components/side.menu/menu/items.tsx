@@ -32,6 +32,16 @@ export const MENU_ITEMS: MenuItem[] = [
   },
   {
     id: 3,
+    name: OVERVIEW.MENU.INSTRUMENTATION_RULES,
+    icons: {
+      // TODO: find an icon for instrumentation rules
+      focus: () => <FocusDestinationsIcon />,
+      notFocus: () => <UnFocusDestinationsIcon />,
+    },
+    navigate: ROUTES.INSTRUMENTATION_RULES,
+  },
+  {
+    id: 4,
     name: OVERVIEW.MENU.ACTIONS,
     icons: {
       focus: () => <FocusActionIcon />,
@@ -40,7 +50,7 @@ export const MENU_ITEMS: MenuItem[] = [
     navigate: ROUTES.ACTIONS,
   },
   {
-    id: 4,
+    id: 5,
     name: OVERVIEW.MENU.DESTINATIONS,
     icons: {
       focus: () => <FocusDestinationsIcon />,

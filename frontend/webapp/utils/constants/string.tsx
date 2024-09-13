@@ -67,6 +67,7 @@ export const OVERVIEW = {
     SOURCES: 'Sources',
     DESTINATIONS: 'Destinations',
     ACTIONS: 'Actions',
+    INSTRUMENTATION_RULES: 'Instrumentation Rules',
   },
   SEARCH_SOURCE: 'Search Source',
   ADD_NEW_SOURCE: 'Add New Source',
