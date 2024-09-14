@@ -36,6 +36,7 @@ var (
 	psp                        bool
 	userInputIgnoredNamespaces []string
 	userInputIgnoredContainers []string
+	userInputInstallProfiles   []string
 
 	instrumentorImage string
 	odigletImage      string
@@ -223,6 +224,23 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		defaultOtelSdkPerLanguage = otelSdkConfigOnPrem()
 	}
 
+	selectedProfiles := []common.ProfileName{}
+	profiles := resources.GetAvailableProfilesForTier(odigosTier)
+	for _, profile := range userInputInstallProfiles {
+		found := false
+		for _, p := range profiles {
+			if string(p.ProfileName) == profile {
+				found = true
+				break
+			}
+		}
+		if !found {
+			fmt.Printf("\033[34mINFO\033[0m Profile '%s' skipped - not available for tier '%s'.\n", profile, odigosTier)
+		} else {
+			selectedProfiles = append(selectedProfiles, common.ProfileName(profile))
+		}
+	}
+
 	return common.OdigosConfiguration{
 		ConfigVersion:     1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:  telemetryEnabled,
@@ -235,6 +253,7 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		InstrumentorImage: instrumentorImage,
 		AutoscalerImage:   autoScalerImage,
 		DefaultSDKs:       defaultOtelSdkPerLanguage,
+		Profiles:          selectedProfiles,
 	}
 }
 
@@ -263,6 +282,7 @@ func init() {
 	installCmd.Flags().BoolVar(&psp, "psp", false, "enable pod security policy")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", consts.SystemNamespaces, "namespaces not to show in odigos ui")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", consts.IgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
+	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
