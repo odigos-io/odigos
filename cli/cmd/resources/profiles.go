@@ -28,10 +28,14 @@ var (
 		ProfileName:      common.ProfileName("category-attributes"),
 		ShortDescription: "Add category attributes to the spans",
 	}
+	copyScopeProfile = Profile{
+		ProfileName:      common.ProfileName("copy-scope"),
+		ShortDescription: "Copy the scope name into a separate attribute for backends that do not support scopes",
+	}
 )
 
 func GetAvailableCommunityProfiles() []Profile {
-	return []Profile{semconvUpgraderProfile}
+	return []Profile{semconvUpgraderProfile, copyScopeProfile}
 }
 
 func GetAvailableOnPremProfiles() []Profile {
@@ -47,6 +51,8 @@ func GetResourcesForProfileName(profileName string) ([]client.Object, error) {
 		return profiles.GetEmbeddedYAMLRenameAttributeActionFileAsObjects("semconv.yaml")
 	case "category-attributes":
 		return profiles.GetEmbeddedYAMLProcessorFileAsObjects("category-attributes.yaml")
+	case "copy-scope":
+		return profiles.GetEmbeddedYAMLProcessorFileAsObjects("copy-scope.yaml")
 	}
 	return nil, nil
 }
