@@ -60,6 +60,11 @@ type InstrumentationRuleSpec struct {
 
 	// Allows to configure payload collection aspects for different types of payloads.
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
+
+	// Set the OtelSdk to use for the workloads in this rule.
+	// instrumentation libraries will be ignored if set.
+	// the rule will be used only for languages which are specified, and ignored otherwise.
+	OtelSdks *instrumentationrules.OtelSdks `json:"otelSdks,omitempty"`
 }
 
 type InstrumentationRuleStatus struct {

@@ -46,6 +46,11 @@ var (
 		ShortDescription: "Populate the spans resource `host.name` attribute with value of `k8s.pod.name`",
 		ClientObject:     &odigosv1alpha1.Processor{},
 	}
+	javaNativeInstrumentationsProfile = Profile{
+		ProfileName:      common.ProfileName("java-native-instrumentations"),
+		ShortDescription: "Instrument Java applications using native instrumentation and eBPF enterprise processing",
+		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
+	}
 	codeAttributesProfile = Profile{
 		ProfileName:      common.ProfileName("code-attributes"),
 		ShortDescription: "Record span attributes in 'code' namespace where supported",
@@ -53,8 +58,8 @@ var (
 
 	kratosProfile = Profile{
 		ProfileName:      common.ProfileName("kratos"),
-		ShortDescription: "Bundle profile that includes full-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname",
-		Dependencies:     []common.ProfileName{"full-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname"},
+		ShortDescription: "Bundle profile that includes full-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes",
+		Dependencies:     []common.ProfileName{"full-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes"},
 	}
 )
 
@@ -63,7 +68,7 @@ func GetAvailableCommunityProfiles() []Profile {
 }
 
 func GetAvailableOnPremProfiles() []Profile {
-	return append([]Profile{fullPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile, kratosProfile},
+	return append([]Profile{fullPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile, javaNativeInstrumentationsProfile, kratosProfile},
 		GetAvailableCommunityProfiles()...)
 }
 
