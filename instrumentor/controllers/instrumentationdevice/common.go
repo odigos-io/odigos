@@ -3,8 +3,10 @@ package instrumentationdevice
 import (
 	"context"
 	"errors"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils/versionsupport"
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
@@ -74,9 +76,45 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		return err
 	}
 
+	workload := workload.PodWorkload{
+		Name:      obj.GetName(),
+		Namespace: obj.GetNamespace(),
+		Kind:      workload.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
+	}
+
 	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, kubeClient)
 	if err != nil {
 		return err
+	}
+
+	// build an otel sdk map from instrumentation rules first, and merge it with the default otel sdk map
+	// this way, we can override the default otel sdk with the instrumentation rules
+	instrumentationRules := odigosv1.InstrumentationRuleList{}
+	err = kubeClient.List(ctx, &instrumentationRules)
+	if err != nil {
+		return err
+	}
+
+	otelSdkToUse := odigosConfig.DefaultSDKs
+
+	for i := range instrumentationRules.Items {
+		instrumentationRule := &instrumentationRules.Items[i]
+		if instrumentationRule.Spec.Disabled || instrumentationRule.Spec.OtelSdks == nil {
+			// we only care about rules that have otel sdks configuration
+			continue
+		}
+
+		participating := utils.IsWorkloadParticipatingInRule(workload, instrumentationRule)
+		if !participating {
+			// filter rules that do not apply to the workload
+			continue
+		}
+
+		for lang, otelSdk := range instrumentationRule.Spec.OtelSdks.OtelSdkByLanguage {
+			// languages can override the default otel sdk or another rule.
+			// there is not check or warning if a language is defined in multiple rules at the moment.
+			otelSdkToUse[lang] = otelSdk
+		}
 	}
 
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
@@ -85,7 +123,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 			return err
 		}
 
-		return instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, odigosConfig.DefaultSDKs, obj)
+		return instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj)
 	})
 
 	if err != nil {
