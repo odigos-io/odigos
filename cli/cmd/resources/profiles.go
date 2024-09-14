@@ -51,11 +51,15 @@ var (
 		ShortDescription: "Instrument Java applications using native instrumentation and eBPF enterprise processing",
 		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
 	}
+	codeAttributesProfile = Profile{
+		ProfileName:      common.ProfileName("code-attributes"),
+		ShortDescription: "Record span attributes in 'code' namespace where supported",
+	}
 
 	kratosProfile = Profile{
 		ProfileName:      common.ProfileName("kratos"),
-		ShortDescription: "Bundle profile that includes full-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations",
-		Dependencies:     []common.ProfileName{"full-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations"},
+		ShortDescription: "Bundle profile that includes full-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes",
+		Dependencies:     []common.ProfileName{"full-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes"},
 	}
 )
 
@@ -87,6 +91,7 @@ func GetResourcesForProfileName(profileName common.ProfileName, tier common.Odig
 				}
 				return allResources, nil
 			}
+			return nil, nil // a profile might not be implemented as a resource necessarily
 		}
 	}
 
