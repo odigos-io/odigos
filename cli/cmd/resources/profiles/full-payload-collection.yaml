@@ -1,0 +1,11 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: collect-all-payloads
+spec:
+  ruleName: "collect all supported payloads"
+  notes: "Auto generated rule from full-payload-collection profile. Do not edit."
+  payloadCollection:
+    httpRequest: {}
+    httpResponse: {}
+    dbQuery: {}
