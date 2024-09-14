@@ -99,7 +99,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 
 	for i := range instrumentationRules.Items {
 		instrumentationRule := &instrumentationRules.Items[i]
-		if instrumentationRule.Spec.OtelSdks == nil {
+		if instrumentationRule.Spec.Disabled || instrumentationRule.Spec.OtelSdks == nil {
 			// we only care about rules that have otel sdks configuration
 			continue
 		}
