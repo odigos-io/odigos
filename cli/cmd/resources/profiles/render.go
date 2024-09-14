@@ -4,8 +4,8 @@ import (
 	"embed"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -13,39 +13,19 @@ import (
 var embeddedFiles embed.FS
 
 // GetEmbeddedYAMLFilesAsObjects reads embedded YAML files and converts them into runtime.Object
-func GetEmbeddedYAMLFilesAsObjects() ([]runtime.Object, error) {
-	// List all the embedded YAML files
-	files, err := embeddedFiles.ReadDir("config")
+func GetEmbeddedYAMLInstrumentationRuleFileAsObjects(filename string) ([]client.Object, error) {
+
+	// Read the embedded YAML file content
+	yamlBytes, err := embeddedFiles.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read embedded files: %v", err)
+		return nil, fmt.Errorf("failed to read embedded file %s: %v", filename, err)
 	}
 
-	var objects []runtime.Object
-
-	for _, file := range files {
-		// Skip directories if any
-		if file.IsDir() {
-			continue
-		}
-
-		// Read the embedded YAML file content
-		filePath := "config/" + file.Name()
-		yamlBytes, err := embeddedFiles.ReadFile(filePath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read embedded file %s: %v", file.Name(), err)
-		}
-
-		// Unmarshal the YAML into an unstructured object
-		var unstructuredObj unstructured.Unstructured
-		err = yaml.Unmarshal(yamlBytes, &unstructuredObj)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal YAML file %s: %v", file.Name(), err)
-		}
-
-		// Convert to runtime.Object
-		obj := &unstructuredObj
-		objects = append(objects, obj)
+	var instrumentationRule odigosv1alpha1.InstrumentationRule
+	err = yaml.Unmarshal(yamlBytes, &instrumentationRule)
+	if err != nil {
+		return nil, err
 	}
 
-	return objects, nil
+	return []client.Object{&instrumentationRule}, nil
 }

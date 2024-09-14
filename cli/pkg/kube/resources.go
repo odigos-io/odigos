@@ -90,6 +90,14 @@ func newRbacV1RoleBindings() schema.GroupVersionResource {
 	}
 }
 
+func newInstrumentationRules() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "odigos.io",
+		Version:  "v1alpha1",
+		Resource: "instrumentationrules",
+	}
+}
+
 type ResourceAndNs struct {
 	Resource  schema.GroupVersionResource
 	Namespace string
@@ -108,5 +116,6 @@ func GetManagedResources(odigosNamespace string) []ResourceAndNs {
 		{Resource: newRbacV1ClusterRoleBindings(), Namespace: ""},
 		{Resource: newRbacV1Roles(), Namespace: odigosNamespace},
 		{Resource: newRbacV1RoleBindings(), Namespace: odigosNamespace},
+		{Resource: newInstrumentationRules(), Namespace: odigosNamespace},
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Profile struct {
@@ -21,10 +22,18 @@ func GetAvailableCommunityProfiles() []Profile {
 func GetAvailableOnPremProfiles() []Profile {
 	return []Profile{
 		{
-			ProfileName:      common.ProfileName("kratos"),
-			ShortDescription: "Includes category attributes",
+			ProfileName:      common.ProfileName("full-payload-collection"),
+			ShortDescription: "Collect any payload from the cluster where supported with default settings",
 		},
 	}
+}
+
+func GetResourcesForProfileName(profileName string) ([]client.Object, error) {
+	switch profileName {
+	case "full-payload-collection":
+		return profiles.GetEmbeddedYAMLInstrumentationRuleFileAsObjects("full-payload-collection.yaml")
+	}
+	return nil, nil
 }
 
 func GetAvailableProfilesForTier(odigosTier common.OdigosTier) []Profile {
@@ -48,12 +57,19 @@ func NewProfilesResourceManager(client *kube.Client, ns string, config *common.O
 	return &profilesResourceManager{client: client, ns: ns, config: config}
 }
 
-func (a *profilesResourceManager) Name() string { return "CloudProxy" }
+func (a *profilesResourceManager) Name() string { return "Profiles" }
 
 func (a *profilesResourceManager) InstallFromScratch(ctx context.Context) error {
-	resources, err := profiles.GetEmbeddedYAMLFilesAsObjects()
-	if err != nil {
-		return err
+	allResources := []client.Object{}
+	for _, profile := range a.config.Profiles {
+		profileResources, err := GetResourcesForProfileName(string(profile))
+		if err != nil {
+			return err
+		}
+		for _, r := range profileResources {
+			r.SetNamespace(a.ns)
+		}
+		allResources = append(allResources, profileResources...)
 	}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, allResources)
 }

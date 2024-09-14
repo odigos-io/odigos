@@ -11,12 +11,14 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	"github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
+	v1alpha1clientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigoslabels "github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/spf13/cobra"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -31,7 +33,7 @@ type Client struct {
 	kubernetes.Interface
 	Dynamic       *dynamic.DynamicClient
 	ApiExtensions apiextensionsclient.Interface
-	OdigosClient  v1alpha1.OdigosV1alpha1Interface
+	OdigosClient  v1alpha1clientset.OdigosV1alpha1Interface
 	Config        *rest.Config
 }
 
@@ -40,6 +42,11 @@ func CreateClient(cmd *cobra.Command) (*Client, error) {
 
 	config, err := k8sutils.GetClientConfig(kc)
 	if err != nil {
+		return nil, err
+	}
+
+	scheme := runtime.NewScheme()
+	if err := odigosv1alpha1.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
 
@@ -58,7 +65,7 @@ func CreateClient(cmd *cobra.Command) (*Client, error) {
 		return nil, err
 	}
 
-	odigosClient, err := v1alpha1.NewForConfig(config)
+	odigosClient, err := v1alpha1clientset.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}

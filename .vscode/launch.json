@@ -48,13 +48,13 @@
             "cwd": "${workspaceFolder}/scheduler"
         },
         {
-            "name": "cli uninstall",
+            "name": "cli upgrade",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/cli",
             "cwd": "${workspaceFolder}/cli",
-            "args": ["uninstall", "--yes"],
+            "args": ["upgrade", "--yes", "--version", "v1.0.103"],
             "buildFlags": "-tags=embed_manifests"
         }
     ]
