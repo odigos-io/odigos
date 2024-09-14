@@ -24,6 +24,10 @@ var (
 		ProfileName:      common.ProfileName("semconv"),
 		ShortDescription: "Upgrade and align some attribute names to a newer version of the OpenTelemetry semantic conventions",
 	}
+	categoryAttributesProfile = Profile{
+		ProfileName:      common.ProfileName("category-attributes"),
+		ShortDescription: "Add category attributes to the spans",
+	}
 )
 
 func GetAvailableCommunityProfiles() []Profile {
@@ -31,7 +35,7 @@ func GetAvailableCommunityProfiles() []Profile {
 }
 
 func GetAvailableOnPremProfiles() []Profile {
-	return append([]Profile{fullPayloadCollectionProfile},
+	return append([]Profile{fullPayloadCollectionProfile, categoryAttributesProfile},
 		GetAvailableCommunityProfiles()...)
 }
 
@@ -41,6 +45,8 @@ func GetResourcesForProfileName(profileName string) ([]client.Object, error) {
 		return profiles.GetEmbeddedYAMLInstrumentationRuleFileAsObjects("full-payload-collection.yaml")
 	case "semconv":
 		return profiles.GetEmbeddedYAMLRenameAttributeActionFileAsObjects("semconv.yaml")
+	case "category-attributes":
+		return profiles.GetEmbeddedYAMLProcessorFileAsObjects("category-attributes.yaml")
 	}
 	return nil, nil
 }

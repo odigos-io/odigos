@@ -1,10 +1,10 @@
 apiVersion: actions.odigos.io/v1alpha1
 kind: RenameAttribute
 metadata:
-  name: semconv-aligner
+  name: semconv
 spec:
-  actionName: "upgrade old semconv attribute names to new spec version"
-  notes: "Auto generated rule from full-payload-collection profile. Do not edit."
+  actionName: "semconv"
+  notes: "Auto generated rule from semconv profile. Do not edit."
   renames:
     net.peer.address: network.peer.address
     net.local.address: network.local.address

@@ -47,3 +47,20 @@ func GetEmbeddedYAMLRenameAttributeActionFileAsObjects(filename string) ([]clien
 
 	return []client.Object{&action}, nil
 }
+
+func GetEmbeddedYAMLProcessorFileAsObjects(filename string) ([]client.Object, error) {
+
+	// Read the embedded YAML file content
+	yamlBytes, err := embeddedFiles.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read embedded file %s: %v", filename, err)
+	}
+
+	var processor odigosv1alpha1.Processor
+	err = yaml.Unmarshal(yamlBytes, &processor)
+	if err != nil {
+		return nil, err
+	}
+
+	return []client.Object{&processor}, nil
+}
