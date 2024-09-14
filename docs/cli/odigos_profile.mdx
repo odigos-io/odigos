@@ -1,0 +1,65 @@
+---
+title: "odigos profile"
+sidebarTitle: "odigos profile"
+---
+
+Manage presets of applied profiles to your odigos installation
+
+## Synopsis
+
+This command can be used to interact with the applied profiles in your odigos installation.
+
+- Check which profiles are currently applied to your odigos installation:
+
+```
+odigos profile
+```
+
+- List available profiles to your installation tier:
+
+```
+odigos profile --available
+```
+
+- Apply a profile to your odigos installation:
+
+```
+odigos profile add <PROFILE_NAME>
+```
+
+- Remove a profile from your odigos installation:
+
+```
+odigos profile remove <PROFILE_NAME>
+```
+
+## Examples
+
+```
+
+    # Enable payload collection for all supported workloads and instrumentation libraries in the cluster
+    odigos profile add full-payload-collection
+
+    # Remove the full-payload-collection profile from the cluster
+    odigos profile remove full-payload-collection
+
+```
+
+## Options
+
+```
+    -a, --available        list all available profiles to use
+```
+
+
+## Options inherited from parent commands
+
+```
+        --kubeconfig string   (optional) absolute path to the kubeconfig file
+```
+
+## SEE ALSO
+
+* [odigos](/cli/odigos)	 - odigos CLI
+* [odigos install](/cli/odigos_install)	 - install Odigos on your cluster with profiles.
+* [odigos upgrade](/cli/odigos_upgrade)	 - upgrade odigos version in your cluster to apply changes in new version to existing profiles.

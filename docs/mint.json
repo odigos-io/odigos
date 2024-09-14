@@ -81,6 +81,7 @@
             "cli/odigos_cloud",
             "cli/odigos_describe",
             "cli/odigos_install",
+            "cli/odigos_profile",
             "cli/odigos_ui",
             "cli/odigos_uninstall",
             "cli/odigos_upgrade",
