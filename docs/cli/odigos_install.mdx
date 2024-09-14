@@ -27,6 +27,9 @@ odigos install [flags]
     # Install Odigos cloud in a specific cluster
     odigos install --kubeconfig <path-to-kubeconfig>
 
+    # Install Odigos onprem tier for enterprise users
+    odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
+
 ```
 
 ## Options
@@ -45,6 +48,8 @@ odigos install [flags]
         --psp                       enable pod security policy
         --ignore-namespace          namespaces not to show in odigos ui
         --ignore-container          container names to exclude from instrumentation (useful for sidecar container)
+        --onprem-token              authentication token for odigos enterprise on-premises
+        --profile                   install preset profiles with a specific configuration by name. can set multiple times
 ```
 
 The `--api-key` is required if you use Odigos Cloud.

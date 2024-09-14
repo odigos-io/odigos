@@ -1,0 +1,19 @@
+apiVersion: actions.odigos.io/v1alpha1
+kind: RenameAttribute
+metadata:
+  name: semconv
+spec:
+  actionName: "semconv"
+  notes: "Auto generated rule from semconv profile. Do not edit."
+  renames:
+    net.peer.address: network.peer.address
+    net.local.address: network.local.address
+    net.peer.ip: network.peer.address
+    net.peer.port: network.peer.port
+    net.host.ip: network.local.address
+    net.host.name: server.address
+    net.host.port: server.port
+    net.transport: network.transport
+    db.operation: db.operation.name
+  signals:
+  - TRACES
