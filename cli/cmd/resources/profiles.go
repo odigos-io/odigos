@@ -36,6 +36,11 @@ var (
 		ProfileName:      common.ProfileName("hostname-as-podname"),
 		ShortDescription: "Populate the spans resource `host.name` attribute with value of `k8s.pod.name`",
 	}
+
+	kratosProfile = Profile{
+		ProfileName:      common.ProfileName("kratos"),
+		ShortDescription: "Bundle profile that includes full-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname",
+	}
 )
 
 func GetAvailableCommunityProfiles() []Profile {
@@ -43,7 +48,7 @@ func GetAvailableCommunityProfiles() []Profile {
 }
 
 func GetAvailableOnPremProfiles() []Profile {
-	return append([]Profile{fullPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile},
+	return append([]Profile{fullPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile, kratosProfile},
 		GetAvailableCommunityProfiles()...)
 }
 
@@ -59,6 +64,18 @@ func GetResourcesForProfileName(profileName string) ([]client.Object, error) {
 		return profiles.GetEmbeddedYAMLProcessorFileAsObjects("copy-scope.yaml")
 	case "hostname-as-podname":
 		return profiles.GetEmbeddedYAMLProcessorFileAsObjects("hostname-as-podname.yaml")
+	case "kratos":
+		// call and merge all the above profiles
+		profiles := []string{"full-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname"}
+		allResources := []client.Object{}
+		for _, p := range profiles {
+			resources, err := GetResourcesForProfileName(p)
+			if err != nil {
+				return nil, err
+			}
+			allResources = append(allResources, resources...)
+		}
+		return allResources, nil
 	}
 	return nil, nil
 }
