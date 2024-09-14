@@ -46,6 +46,10 @@ var (
 		ShortDescription: "Populate the spans resource `host.name` attribute with value of `k8s.pod.name`",
 		ClientObject:     &odigosv1alpha1.Processor{},
 	}
+	codeAttributesProfile = Profile{
+		ProfileName:      common.ProfileName("code-attributes"),
+		ShortDescription: "Record span attributes in 'code' namespace where supported",
+	}
 
 	kratosProfile = Profile{
 		ProfileName:      common.ProfileName("kratos"),
@@ -82,6 +86,7 @@ func GetResourcesForProfileName(profileName common.ProfileName, tier common.Odig
 				}
 				return allResources, nil
 			}
+			return nil, nil // a profile might not be implemented as a resource necessarily
 		}
 	}
 
