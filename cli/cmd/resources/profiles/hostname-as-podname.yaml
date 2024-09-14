@@ -1,0 +1,18 @@
+apiVersion: odigos.io/v1alpha1
+kind: Processor
+metadata:
+  name: hostname-as-podname
+  namespace: odigos-system
+spec:
+  type: resource
+  processorName: "host.name as pod.name"
+  notes: "Auto generated rule from hostname-as-podname profile. Do not edit."
+  processorConfig:
+    attributes:
+      - key: host.name
+        from_attribute: k8s.pod.name
+        action: insert
+  signals:
+    - TRACES
+  collectorRoles:
+    - CLUSTER_GATEWAY

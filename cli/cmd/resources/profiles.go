@@ -32,6 +32,10 @@ var (
 		ProfileName:      common.ProfileName("copy-scope"),
 		ShortDescription: "Copy the scope name into a separate attribute for backends that do not support scopes",
 	}
+	hostnameAsPodNameProfile = Profile{
+		ProfileName:      common.ProfileName("hostname-as-podname"),
+		ShortDescription: "Populate the spans resource `host.name` attribute with value of `k8s.pod.name`",
+	}
 )
 
 func GetAvailableCommunityProfiles() []Profile {
@@ -39,7 +43,7 @@ func GetAvailableCommunityProfiles() []Profile {
 }
 
 func GetAvailableOnPremProfiles() []Profile {
-	return append([]Profile{fullPayloadCollectionProfile, categoryAttributesProfile},
+	return append([]Profile{fullPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile},
 		GetAvailableCommunityProfiles()...)
 }
 
@@ -53,6 +57,8 @@ func GetResourcesForProfileName(profileName string) ([]client.Object, error) {
 		return profiles.GetEmbeddedYAMLProcessorFileAsObjects("category-attributes.yaml")
 	case "copy-scope":
 		return profiles.GetEmbeddedYAMLProcessorFileAsObjects("copy-scope.yaml")
+	case "hostname-as-podname":
+		return profiles.GetEmbeddedYAMLProcessorFileAsObjects("hostname-as-podname.yaml")
 	}
 	return nil, nil
 }
