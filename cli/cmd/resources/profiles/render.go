@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 
+	actions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -28,4 +29,21 @@ func GetEmbeddedYAMLInstrumentationRuleFileAsObjects(filename string) ([]client.
 	}
 
 	return []client.Object{&instrumentationRule}, nil
+}
+
+func GetEmbeddedYAMLRenameAttributeActionFileAsObjects(filename string) ([]client.Object, error) {
+
+	// Read the embedded YAML file content
+	yamlBytes, err := embeddedFiles.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read embedded file %s: %v", filename, err)
+	}
+
+	var action actions.RenameAttribute
+	err = yaml.Unmarshal(yamlBytes, &action)
+	if err != nil {
+		return nil, err
+	}
+
+	return []client.Object{&action}, nil
 }

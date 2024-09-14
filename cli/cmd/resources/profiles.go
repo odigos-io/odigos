@@ -15,23 +15,32 @@ type Profile struct {
 	ShortDescription string
 }
 
+var (
+	fullPayloadCollectionProfile = Profile{
+		ProfileName:      common.ProfileName("full-payload-collection"),
+		ShortDescription: "Collect any payload from the cluster where supported with default settings",
+	}
+	semconvUpgraderProfile = Profile{
+		ProfileName:      common.ProfileName("semconv"),
+		ShortDescription: "Upgrade and align some attribute names to a newer version of the OpenTelemetry semantic conventions",
+	}
+)
+
 func GetAvailableCommunityProfiles() []Profile {
-	return []Profile{}
+	return []Profile{semconvUpgraderProfile}
 }
 
 func GetAvailableOnPremProfiles() []Profile {
-	return []Profile{
-		{
-			ProfileName:      common.ProfileName("full-payload-collection"),
-			ShortDescription: "Collect any payload from the cluster where supported with default settings",
-		},
-	}
+	return append([]Profile{fullPayloadCollectionProfile},
+		GetAvailableCommunityProfiles()...)
 }
 
 func GetResourcesForProfileName(profileName string) ([]client.Object, error) {
 	switch profileName {
 	case "full-payload-collection":
 		return profiles.GetEmbeddedYAMLInstrumentationRuleFileAsObjects("full-payload-collection.yaml")
+	case "semconv":
+		return profiles.GetEmbeddedYAMLRenameAttributeActionFileAsObjects("semconv.yaml")
 	}
 	return nil, nil
 }

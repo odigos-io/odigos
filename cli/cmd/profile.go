@@ -127,6 +127,7 @@ var addProfileCmd = &cobra.Command{
 			fmt.Println("\033[31mERROR\033[0m Odigos profile unavailable - no configuration found:", err)
 			os.Exit(1)
 		}
+		config.ConfigVersion += 1
 
 		// Check if the profile is already applied
 		for _, appliedProfile := range config.Profiles {
@@ -195,6 +196,7 @@ var removeProfileCmd = &cobra.Command{
 			fmt.Println("\033[31mERROR\033[0m Odigos profile unavailable - no configuration found:", err)
 			os.Exit(1)
 		}
+		config.ConfigVersion += 1
 
 		profileExists := false
 		newProfiles := []common.ProfileName{}
