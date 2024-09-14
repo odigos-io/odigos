@@ -2,7 +2,10 @@ package resources
 
 import (
 	"context"
+	"fmt"
 
+	actions "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/profiles"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -13,33 +16,41 @@ import (
 type Profile struct {
 	ProfileName      common.ProfileName
 	ShortDescription string
+	ClientObject     client.Object        // used to read it from the embedded YAML file
+	Dependencies     []common.ProfileName // other profiles that are applied by the current profile
 }
 
 var (
 	fullPayloadCollectionProfile = Profile{
 		ProfileName:      common.ProfileName("full-payload-collection"),
 		ShortDescription: "Collect any payload from the cluster where supported with default settings",
+		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
 	}
 	semconvUpgraderProfile = Profile{
 		ProfileName:      common.ProfileName("semconv"),
 		ShortDescription: "Upgrade and align some attribute names to a newer version of the OpenTelemetry semantic conventions",
+		ClientObject:     &actions.RenameAttribute{},
 	}
 	categoryAttributesProfile = Profile{
 		ProfileName:      common.ProfileName("category-attributes"),
 		ShortDescription: "Add category attributes to the spans",
+		ClientObject:     &odigosv1alpha1.Processor{},
 	}
 	copyScopeProfile = Profile{
 		ProfileName:      common.ProfileName("copy-scope"),
 		ShortDescription: "Copy the scope name into a separate attribute for backends that do not support scopes",
+		ClientObject:     &odigosv1alpha1.Processor{},
 	}
 	hostnameAsPodNameProfile = Profile{
 		ProfileName:      common.ProfileName("hostname-as-podname"),
 		ShortDescription: "Populate the spans resource `host.name` attribute with value of `k8s.pod.name`",
+		ClientObject:     &odigosv1alpha1.Processor{},
 	}
 
 	kratosProfile = Profile{
 		ProfileName:      common.ProfileName("kratos"),
 		ShortDescription: "Bundle profile that includes full-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname",
+		Dependencies:     []common.ProfileName{"full-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname"},
 	}
 )
 
@@ -52,31 +63,28 @@ func GetAvailableOnPremProfiles() []Profile {
 		GetAvailableCommunityProfiles()...)
 }
 
-func GetResourcesForProfileName(profileName string) ([]client.Object, error) {
-	switch profileName {
-	case "full-payload-collection":
-		return profiles.GetEmbeddedYAMLInstrumentationRuleFileAsObjects("full-payload-collection.yaml")
-	case "semconv":
-		return profiles.GetEmbeddedYAMLRenameAttributeActionFileAsObjects("semconv.yaml")
-	case "category-attributes":
-		return profiles.GetEmbeddedYAMLProcessorFileAsObjects("category-attributes.yaml")
-	case "copy-scope":
-		return profiles.GetEmbeddedYAMLProcessorFileAsObjects("copy-scope.yaml")
-	case "hostname-as-podname":
-		return profiles.GetEmbeddedYAMLProcessorFileAsObjects("hostname-as-podname.yaml")
-	case "kratos":
-		// call and merge all the above profiles
-		profiles := []string{"full-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname"}
-		allResources := []client.Object{}
-		for _, p := range profiles {
-			resources, err := GetResourcesForProfileName(p)
-			if err != nil {
-				return nil, err
+func GetResourcesForProfileName(profileName common.ProfileName, tier common.OdigosTier) ([]client.Object, error) {
+	allAvailableProfiles := GetAvailableProfilesForTier(tier)
+	for _, p := range allAvailableProfiles {
+		if p.ProfileName == common.ProfileName(profileName) {
+			if p.ClientObject != nil {
+				filename := fmt.Sprintf("%s.yaml", profileName)
+				return profiles.GetEmbeddedYAMLFileAsObjects(filename, p.ClientObject)
 			}
-			allResources = append(allResources, resources...)
+			if len(p.Dependencies) > 0 {
+				allResources := []client.Object{}
+				for _, dep := range p.Dependencies {
+					resources, err := GetResourcesForProfileName(dep, tier)
+					if err != nil {
+						return nil, err
+					}
+					allResources = append(allResources, resources...)
+				}
+				return allResources, nil
+			}
 		}
-		return allResources, nil
 	}
+
 	return nil, nil
 }
 
@@ -95,10 +103,11 @@ type profilesResourceManager struct {
 	client *kube.Client
 	ns     string
 	config *common.OdigosConfiguration
+	tier   common.OdigosTier
 }
 
-func NewProfilesResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration) resourcemanager.ResourceManager {
-	return &profilesResourceManager{client: client, ns: ns, config: config}
+func NewProfilesResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, tier common.OdigosTier) resourcemanager.ResourceManager {
+	return &profilesResourceManager{client: client, ns: ns, config: config, tier: tier}
 }
 
 func (a *profilesResourceManager) Name() string { return "Profiles" }
@@ -106,7 +115,7 @@ func (a *profilesResourceManager) Name() string { return "Profiles" }
 func (a *profilesResourceManager) InstallFromScratch(ctx context.Context) error {
 	allResources := []client.Object{}
 	for _, profile := range a.config.Profiles {
-		profileResources, err := GetResourcesForProfileName(string(profile))
+		profileResources, err := GetResourcesForProfileName(profile, a.tier)
 		if err != nil {
 			return err
 		}
