@@ -9,12 +9,13 @@ import (
 )
 
 type ComputePlatform struct {
-	Name                *string               `json:"name,omitempty"`
-	ComputePlatformType ComputePlatformType   `json:"computePlatformType"`
-	K8sActualNamespace  *K8sActualNamespace   `json:"k8sActualNamespace,omitempty"`
-	K8sActualNamespaces []*K8sActualNamespace `json:"k8sActualNamespaces"`
-	K8sActualSource     *K8sActualSource      `json:"k8sActualSource,omitempty"`
-	K8sActualSources    []*K8sActualSource    `json:"k8sActualSources"`
+	ComputePlatformType ComputePlatformType    `json:"computePlatformType"`
+	K8sActualNamespace  *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
+	K8sActualNamespaces []*K8sActualNamespace  `json:"k8sActualNamespaces"`
+	K8sActualSource     *K8sActualSource       `json:"k8sActualSource,omitempty"`
+	K8sActualSources    []*K8sActualSource     `json:"k8sActualSources"`
+	Destinations        []*Destination         `json:"destinations"`
+	Actions             []*IcaInstanceResponse `json:"actions"`
 }
 
 type Condition struct {

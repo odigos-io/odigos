@@ -48,6 +48,10 @@ models:
         resolver: true
       k8sActualSource:
         resolver: true
+      destinations:
+        resolver: true
+      actions:
+        resolver: true
   K8sActualNamespace:
     fields:
       k8sActualSources:
