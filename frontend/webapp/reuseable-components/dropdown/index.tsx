@@ -119,7 +119,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useOnClickOutside(dropdownRef, () => setIsOpen(false));
+  // useOnClickOutside(dropdownRef, () => setIsOpen(false)); //TODO:: find a way to use it without breaking the dropdown click event
 
   useEffect(() => {
     if (isOpen && containerRef.current) {
