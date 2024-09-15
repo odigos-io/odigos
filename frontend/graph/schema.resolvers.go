@@ -63,6 +63,25 @@ func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *mode
 	return k8sActualSource, nil
 }
 
+// K8sActualSources is the resolver for the k8sActualSources field.
+func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
+	instrumentedApplications, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize an empty list of K8sActualSource
+	var actualSources []*model.K8sActualSource
+
+	// Convert each instrumented application to the K8sActualSource type
+	for _, app := range instrumentedApplications.Items {
+		actualSource := instrumentedApplicationToActualSource(app)
+		actualSources = append(actualSources, actualSource)
+	}
+
+	return actualSources, nil
+}
+
 // Destinations is the resolver for the destinations field.
 func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.ComputePlatform) ([]*model.Destination, error) {
 	odigosns := consts.DefaultOdigosNamespace
@@ -476,25 +495,6 @@ func (r *queryResolver) PotentialDestinations(ctx context.Context) ([]*model.Des
 	}
 
 	return result, nil
-}
-
-// ActualSources is the resolver for the actualSources field.
-func (r *queryResolver) ActualSources(ctx context.Context) ([]*model.K8sActualSource, error) {
-	instrumentedApplications, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	// Initialize an empty list of K8sActualSource
-	var actualSources []*model.K8sActualSource
-
-	// Convert each instrumented application to the K8sActualSource type
-	for _, app := range instrumentedApplications.Items {
-		actualSource := instrumentedApplicationToActualSource(app)
-		actualSources = append(actualSources, actualSource)
-	}
-
-	return actualSources, nil
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.

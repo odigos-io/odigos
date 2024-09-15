@@ -239,7 +239,6 @@ type Query {
   destinationTypes: GetDestinationTypesResponse
   destinationTypeDetails(type: String!): GetDestinationDetailsResponse
   potentialDestinations: [DestinationDetails!]!
-  actualSources: [K8sActualSource]!
 }
 
 type Mutation {

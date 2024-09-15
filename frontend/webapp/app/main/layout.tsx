@@ -1,7 +1,9 @@
 'use client';
-import { MainHeader } from '@/components';
-import React from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
+import { MainHeader } from '@/components';
+import { useActualSources, useComputePlatform, useGetActions } from '@/hooks';
+import { useActualDestination } from '@/hooks/destinations/useActualDestinations';
 
 const LayoutContainer = styled.div`
   width: 100%;
@@ -25,6 +27,16 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { data } = useComputePlatform();
+  const { actions } = useGetActions();
+  const { sources } = useActualSources();
+  const { destinations } = useActualDestination();
+
+  useEffect(() => {
+    if (data || destinations) {
+      console.log('data', actions, sources, destinations, data);
+    }
+  }, [destinations, data, actions, sources]);
   return (
     <LayoutContainer>
       <MainContent>
