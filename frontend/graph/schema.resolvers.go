@@ -49,6 +49,29 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 	}, nil
 }
 
+// K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
+func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
+	namespacesResponse := services.GetK8SNamespaces(ctx)
+
+	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
+	for i, namespace := range namespacesResponse.Namespaces {
+
+		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, namespace.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
+
+		K8sActualNamespaces[i] = &model.K8sActualNamespace{
+			Name:                        namespace.Name,
+			InstrumentationLabelEnabled: nsInstrumented,
+		}
+	}
+
+	return K8sActualNamespaces, nil
+}
+
 // K8sActualSource is the resolver for the k8sActualSource field.
 func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *model.ComputePlatform, name *string, namespace *string, kind *string) (*model.K8sActualSource, error) {
 	source, err := services.GetActualSource(ctx, *namespace, *kind, *name)
@@ -402,27 +425,9 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
-	namespacesResponse := services.GetK8SNamespaces(ctx)
-
-	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
-	for i, namespace := range namespacesResponse.Namespaces {
-
-		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, namespace.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
-
-		K8sActualNamespaces[i] = &model.K8sActualNamespace{
-			Name:                        namespace.Name,
-			InstrumentationLabelEnabled: nsInstrumented,
-		}
-	}
 
 	return &model.ComputePlatform{
 		ComputePlatformType: model.ComputePlatformTypeK8s,
-		K8sActualNamespaces: K8sActualNamespaces,
 	}, nil
 }
 
