@@ -73,12 +73,20 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationLibraryConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryConfigTraces"):
 		return &odigosv1alpha1.InstrumentationLibraryConfigTracesApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryGlobalId"):
+		return &odigosv1alpha1.InstrumentationLibraryGlobalIdApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryId"):
 		return &odigosv1alpha1.InstrumentationLibraryIdApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryOptions"):
 		return &odigosv1alpha1.InstrumentationLibraryOptionsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryStatus"):
 		return &odigosv1alpha1.InstrumentationLibraryStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationRule"):
+		return &odigosv1alpha1.InstrumentationRuleApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationRuleSpec"):
+		return &odigosv1alpha1.InstrumentationRuleSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationRuleStatus"):
+		return &odigosv1alpha1.InstrumentationRuleStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentedApplication"):
 		return &odigosv1alpha1.InstrumentedApplicationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentedApplicationSpec"):

@@ -43,6 +43,10 @@ func (c *FakeOdigosV1alpha1) InstrumentationInstances(namespace string) v1alpha1
 	return &FakeInstrumentationInstances{c, namespace}
 }
 
+func (c *FakeOdigosV1alpha1) InstrumentationRules(namespace string) v1alpha1.InstrumentationRuleInterface {
+	return &FakeInstrumentationRules{c, namespace}
+}
+
 func (c *FakeOdigosV1alpha1) InstrumentedApplications(namespace string) v1alpha1.InstrumentedApplicationInterface {
 	return &FakeInstrumentedApplications{c, namespace}
 }

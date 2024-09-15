@@ -17,11 +17,16 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	instrumentationrules "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
+)
+
 // InstrumentationLibraryConfigApplyConfiguration represents a declarative configuration of the InstrumentationLibraryConfig type for use
 // with apply.
 type InstrumentationLibraryConfigApplyConfiguration struct {
 	InstrumentationLibraryId *InstrumentationLibraryIdApplyConfiguration           `json:"libraryId,omitempty"`
 	TraceConfig              *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
+	PayloadCollection        *instrumentationrules.PayloadCollection               `json:"payloadCollection,omitempty"`
 }
 
 // InstrumentationLibraryConfigApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryConfig type for use with
@@ -43,5 +48,13 @@ func (b *InstrumentationLibraryConfigApplyConfiguration) WithInstrumentationLibr
 // If called multiple times, the TraceConfig field is set to the value of the last call.
 func (b *InstrumentationLibraryConfigApplyConfiguration) WithTraceConfig(value *InstrumentationLibraryConfigTracesApplyConfiguration) *InstrumentationLibraryConfigApplyConfiguration {
 	b.TraceConfig = value
+	return b
+}
+
+// WithPayloadCollection sets the PayloadCollection field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PayloadCollection field is set to the value of the last call.
+func (b *InstrumentationLibraryConfigApplyConfiguration) WithPayloadCollection(value instrumentationrules.PayloadCollection) *InstrumentationLibraryConfigApplyConfiguration {
+	b.PayloadCollection = &value
 	return b
 }
