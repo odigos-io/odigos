@@ -4,6 +4,9 @@ export const GET_COMPUTE_PLATFORM = gql`
   query GetComputePlatform {
     computePlatform {
       name
+      k8sActualSources {
+        name
+      }
       k8sActualNamespaces {
         name
         k8sActualSources {

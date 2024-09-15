@@ -110,7 +110,6 @@ input K8sSourceId {
 }
 
 type ComputePlatform {
-  name: String
   computePlatformType: ComputePlatformType!
   k8sActualNamespace(name: String!): K8sActualNamespace
   k8sActualNamespaces: [K8sActualNamespace]!
@@ -120,6 +119,8 @@ type ComputePlatform {
     kind: String
   ): K8sActualSource
   k8sActualSources: [K8sActualSource]!
+  destinations: [Destination!]!
+  actions: [IcaInstanceResponse!]!
 }
 
 type SupportedSignals {
@@ -238,9 +239,6 @@ type Query {
   destinationTypes: GetDestinationTypesResponse
   destinationTypeDetails(type: String!): GetDestinationDetailsResponse
   potentialDestinations: [DestinationDetails!]!
-  destinations: [Destination!]!
-  actualSources: [K8sActualSource]!
-  actions: [IcaInstanceResponse!]!
 }
 
 type Mutation {
