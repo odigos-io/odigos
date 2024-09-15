@@ -226,6 +226,12 @@ type DestinationDetails {
   fields: String!
 }
 
+type IcaInstanceResponse {
+  id: String!
+  type: String!
+  spec: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -234,6 +240,7 @@ type Query {
   potentialDestinations: [DestinationDetails!]!
   destinations: [Destination!]!
   actualSources: [K8sActualSource]!
+  actions: [IcaInstanceResponse!]!
 }
 
 type Mutation {

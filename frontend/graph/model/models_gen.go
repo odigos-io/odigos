@@ -67,6 +67,12 @@ type GetDestinationDetailsResponse struct {
 	Fields []*Field `json:"fields"`
 }
 
+type IcaInstanceResponse struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	Spec string `json:"spec"`
+}
+
 type InstrumentationLibrary struct {
 	LibraryName string                   `json:"libraryName"`
 	Options     []*InstrumentationOption `json:"options"`
