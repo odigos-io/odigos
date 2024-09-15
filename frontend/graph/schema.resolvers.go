@@ -370,6 +370,133 @@ func (r *queryResolver) ActualSources(ctx context.Context) ([]*model.K8sActualSo
 	return actualSources, nil
 }
 
+// Actions is the resolver for the actions field.
+func (r *queryResolver) Actions(ctx context.Context) ([]*model.IcaInstanceResponse, error) {
+	var response []*model.IcaInstanceResponse
+	odigosns := consts.DefaultOdigosNamespace
+
+	// AddClusterInfos actions
+	icaActions, err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range icaActions.Items {
+		specStr, err := json.Marshal(action.Spec) // Convert spec to JSON string
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, &model.IcaInstanceResponse{
+			ID:   action.Name,
+			Type: action.Kind,
+			Spec: string(specStr), // Return the JSON string
+		})
+	}
+
+	// DeleteAttributes actions
+	daActions, err := kube.DefaultClient.ActionsClient.DeleteAttributes(odigosns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range daActions.Items {
+		specStr, err := json.Marshal(action.Spec)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, &model.IcaInstanceResponse{
+			ID:   action.Name,
+			Type: action.Kind,
+			Spec: string(specStr),
+		})
+	}
+
+	// RenameAttributes actions
+	raActions, err := kube.DefaultClient.ActionsClient.RenameAttributes(odigosns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range raActions.Items {
+		specStr, err := json.Marshal(action.Spec)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, &model.IcaInstanceResponse{
+			ID:   action.Name,
+			Type: action.Kind,
+			Spec: string(specStr),
+		})
+	}
+
+	// ErrorSamplers actions
+	esActions, err := kube.DefaultClient.ActionsClient.ErrorSamplers(odigosns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range esActions.Items {
+		specStr, err := json.Marshal(action.Spec)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, &model.IcaInstanceResponse{
+			ID:   action.Name,
+			Type: action.Kind,
+			Spec: string(specStr),
+		})
+	}
+
+	// LatencySamplers actions
+	lsActions, err := kube.DefaultClient.ActionsClient.LatencySamplers(odigosns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range lsActions.Items {
+		specStr, err := json.Marshal(action.Spec)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, &model.IcaInstanceResponse{
+			ID:   action.Name,
+			Type: action.Kind,
+			Spec: string(specStr),
+		})
+	}
+
+	// ProbabilisticSamplers actions
+	psActions, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(odigosns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range psActions.Items {
+		specStr, err := json.Marshal(action.Spec)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, &model.IcaInstanceResponse{
+			ID:   action.Name,
+			Type: action.Kind,
+			Spec: string(specStr),
+		})
+	}
+
+	// PiiMaskings actions
+	piActions, err := kube.DefaultClient.ActionsClient.PiiMaskings(odigosns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range piActions.Items {
+		specStr, err := json.Marshal(action.Spec)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, &model.IcaInstanceResponse{
+			ID:   action.Name,
+			Type: action.Kind,
+			Spec: string(specStr),
+		})
+	}
+
+	return response, nil
+}
+
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 

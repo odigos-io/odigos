@@ -10,6 +10,11 @@ export const GET_COMPUTE_PLATFORM = gql`
           kind
           name
           numberOfInstances
+          instrumentedApplicationDetails {
+            conditions {
+              status
+            }
+          }
         }
       }
     }
