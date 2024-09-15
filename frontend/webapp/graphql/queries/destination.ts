@@ -49,33 +49,3 @@ export const GET_POTENTIAL_DESTINATIONS = gql`
     }
   }
 `;
-
-export const GET_DESTINATIONS = gql`
-  query GetDestinations {
-    destinations {
-      id
-      name
-      exportedSignals {
-        traces
-        metrics
-        logs
-      }
-      destinationType {
-        type
-        displayName
-        imageUrl
-        supportedSignals {
-          traces {
-            supported
-          }
-          metrics {
-            supported
-          }
-          logs {
-            supported
-          }
-        }
-      }
-    }
-  }
-`;
