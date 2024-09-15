@@ -1,5 +1,7 @@
 package common
 
+type ProfileName string
+
 type CollectorGatewayConfiguration struct {
 	// RequestMemoryMiB is the memory request for the cluster gateway collector deployment.
 	// it will be embedded in the deployment as a resource request of the form "memory: <value>Mi"
@@ -36,6 +38,7 @@ type OdigosConfiguration struct {
 	AutoscalerImage   string                          `json:"autoscalerImage,omitempty"`
 	DefaultSDKs       map[ProgrammingLanguage]OtelSdk `json:"defaultSDKs,omitempty"`
 	CollectorGateway  *CollectorGatewayConfiguration  `json:"collectorGateway,omitempty"`
+	Profiles          []ProfileName                   `json:"profiles,omitempty"`
 
 	// this is internal currently, and is not exposed on the CLI / helm
 	// used for odigos enterprise

@@ -41,6 +41,8 @@ export function ManagedSourcesContainer() {
     filterSourcesByLanguage,
     instrumentedNamespaces,
     filterSourcesByNamespace,
+    filterByConditionStatus,
+    filterByConditionMessage,
   } = useSources();
 
   useEffect(() => {
@@ -119,12 +121,14 @@ export function ManagedSourcesContainer() {
               <ManagedSourcesTable
                 sortSources={sortSources}
                 onRowClick={handleEditSource}
-                deleteSourcesHandler={deleteSourcesHandler}
                 namespaces={instrumentedNamespaces}
                 filterSourcesByKind={filterSourcesByKind}
-                filterSourcesByLanguage={filterSourcesByLanguage}
+                filterByConditionStatus={filterByConditionStatus}
+                deleteSourcesHandler={deleteSourcesHandler}
                 data={searchInput ? filterSources() : sources}
+                filterSourcesByLanguage={filterSourcesByLanguage}
                 filterSourcesByNamespace={filterSourcesByNamespace}
+                filterByConditionMessage={filterByConditionMessage}
               />
             </Content>
           </SourcesContainer>

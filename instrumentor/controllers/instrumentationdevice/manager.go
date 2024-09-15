@@ -135,5 +135,17 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("instrumentationdevice-instrumentationrules").
+		For(&odigosv1.InstrumentationRule{}).
+		WithEventFilter(&utils.OtelSdkInstrumentationRulePredicate{}).
+		Complete(&InstrumentationRuleReconciler{
+			Client: mgr.GetClient(),
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

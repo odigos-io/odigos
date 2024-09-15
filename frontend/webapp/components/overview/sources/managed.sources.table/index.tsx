@@ -5,7 +5,7 @@ import { SourcesTableRow } from './sources.table.row';
 import { SourcesTableHeader } from './sources.table.header';
 import { EmptyList } from '@/components/lists';
 import { OVERVIEW } from '@/utils';
-import { ConnectionsIcons, DeleteSource } from '@/components';
+
 import { ModalPositionX, ModalPositionY } from '@/design.system/modal/types';
 
 type TableProps = {
@@ -16,8 +16,9 @@ type TableProps = {
   filterSourcesByKind?: (kinds: string[]) => void;
   filterSourcesByNamespace?: (namespaces: string[]) => void;
   filterSourcesByLanguage?: (languages: string[]) => void;
-  toggleActionStatus?: (ids: string[], disabled: boolean) => void;
   deleteSourcesHandler?: (sources: ManagedSource[]) => void;
+  filterByConditionStatus?: (status: 'All' | 'True' | 'False') => void;
+  filterByConditionMessage: (message: string[]) => void;
 };
 
 const SELECT_ALL_CHECKBOX = 'select_all';
@@ -27,11 +28,12 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
   namespaces,
   onRowClick,
   sortSources,
-  toggleActionStatus,
   filterSourcesByKind,
   deleteSourcesHandler,
   filterSourcesByNamespace,
   filterSourcesByLanguage,
+  filterByConditionStatus,
+  filterByConditionMessage,
 }) => {
   const [selectedCheckbox, setSelectedCheckbox] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -94,13 +96,14 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
           data={data}
           namespaces={namespaces}
           sortSources={sortSources}
-          toggleActionStatus={toggleActionStatus}
           filterSourcesByKind={filterSourcesByKind}
           filterSourcesByNamespace={filterSourcesByNamespace}
           filterSourcesByLanguage={filterSourcesByLanguage}
           selectedCheckbox={selectedCheckbox}
           onSelectedCheckboxChange={onSelectedCheckboxChange}
           deleteSourcesHandler={() => setShowModal(true)}
+          filterByConditionStatus={filterByConditionStatus}
+          filterByConditionMessage={filterByConditionMessage}
         />
         {showModal && (
           <KeyvalModal

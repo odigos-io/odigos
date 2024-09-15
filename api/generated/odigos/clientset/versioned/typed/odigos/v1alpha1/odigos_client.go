@@ -31,6 +31,7 @@ type OdigosV1alpha1Interface interface {
 	DestinationsGetter
 	InstrumentationConfigsGetter
 	InstrumentationInstancesGetter
+	InstrumentationRulesGetter
 	InstrumentedApplicationsGetter
 	OdigosConfigurationsGetter
 	ProcessorsGetter
@@ -55,6 +56,10 @@ func (c *OdigosV1alpha1Client) InstrumentationConfigs(namespace string) Instrume
 
 func (c *OdigosV1alpha1Client) InstrumentationInstances(namespace string) InstrumentationInstanceInterface {
 	return newInstrumentationInstances(c, namespace)
+}
+
+func (c *OdigosV1alpha1Client) InstrumentationRules(namespace string) InstrumentationRuleInterface {
+	return newInstrumentationRules(c, namespace)
 }
 
 func (c *OdigosV1alpha1Client) InstrumentedApplications(namespace string) InstrumentedApplicationInterface {
