@@ -1,15 +1,9 @@
-import { GET_DESTINATIONS } from '@/graphql';
-import { Destination } from '@/types';
-import { useQuery } from '@apollo/client';
+import { useComputePlatform } from '../compute-platform';
 
 export const useActualDestination = () => {
-  const { loading, error, data } = useQuery<{ destinations: Destination[] }>(
-    GET_DESTINATIONS
-  );
+  const { data } = useComputePlatform();
 
   return {
-    loading,
-    error,
-    destinations: data?.destinations || [],
+    destinations: data?.computePlatform.destinations || [],
   };
 };

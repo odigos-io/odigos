@@ -1,17 +1,9 @@
-import { GET_SOURCES } from '@/graphql';
-import { ManagedSource } from '@/types';
-import { useQuery } from '@apollo/client';
+import { useComputePlatform } from '../compute-platform';
 
 export function useActualSources() {
-  const { loading, error, data } = useQuery<{ actualSources: ManagedSource[] }>(
-    GET_SOURCES
-  );
+  const { data } = useComputePlatform();
 
   return {
-    loading,
-    error,
-    sources: data?.actualSources || [],
+    sources: data?.computePlatform.k8sActualSources || [],
   };
-
-  return {};
 }
