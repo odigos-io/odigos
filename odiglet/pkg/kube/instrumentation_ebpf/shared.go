@@ -3,6 +3,9 @@ package instrumentation_ebpf
 import (
 	"context"
 	"errors"
+	"github.com/odigos-io/odigos/common"
+	process2 "github.com/odigos-io/odigos/procdiscovery/pkg/process"
+	"math"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
@@ -53,8 +56,15 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 			return err, instrumentedEbpf
 		}
 
+		minProcessId := getMinimumProcessID(details, language)
+
 		var errs []error
 		for _, d := range details {
+			// Hack - if NginxInstrumentation - only instrument the process with the minimum PID (it's root)
+			if minProcessId != -1 && d.ProcessID != minProcessId {
+				continue
+			}
+
 			podDetails := types.NamespacedName{
 				Namespace: pod.Namespace,
 				Name:      pod.Name,
@@ -75,4 +85,24 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 		}
 	}
 	return nil, instrumentedEbpf
+}
+
+func getMinimumProcessID(details []process2.Details, language common.ProgrammingLanguage) int {
+	if language != common.NginxProgrammingLanguage {
+		return -1
+	}
+
+	return findMinProcessID(details)
+}
+
+func findMinProcessID(details []process2.Details) int {
+	minPID := math.MaxInt // Start with the maximum possible integer value
+
+	for _, detail := range details {
+		if detail.ProcessID < minPID {
+			minPID = detail.ProcessID
+		}
+	}
+
+	return minPID
 }
