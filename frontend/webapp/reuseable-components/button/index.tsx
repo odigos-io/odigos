@@ -8,12 +8,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles = {
   primary: css`
-    border-radius: 32px;
     border: 1px solid rgba(249, 249, 249, 0.24);
     background: ${({ theme }) => theme.colors.secondary};
-    height: 36px;
-    padding: 8px 14px 8px 16px;
-
     &:hover {
       background: rgba(224, 224, 224, 1);
     }
@@ -27,7 +23,7 @@ const variantStyles = {
   secondary: css`
     background: rgba(249, 249, 249, 0);
     border: 1px solid rgba(82, 82, 82, 1);
-    border-radius: 32px;
+
     &:hover {
       border: 1px solid rgba(249, 249, 249, 0.32);
       background: rgba(249, 249, 249, 0.04);
@@ -43,8 +39,6 @@ const variantStyles = {
   tertiary: css`
     border-color: transparent;
     background: transparent;
-
-    border-radius: 32px;
     &:hover {
       background: rgba(249, 249, 249, 0.04);
     }
@@ -58,9 +52,8 @@ const variantStyles = {
 };
 
 const StyledButton = styled.button<ButtonProps>`
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
+  height: 36px;
+  border-radius: 32px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 
@@ -70,8 +63,7 @@ const StyledButton = styled.button<ButtonProps>`
     css`
       opacity: 0.5;
       cursor: not-allowed;
-      &:hover,
-      &:active {
+      &:hover {
         background-color: #eaeaea;
       }
     `}
@@ -98,7 +90,12 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
   return (
     <ButtonContainer variant={variant}>
-      <StyledButton variant={variant} isDisabled={isDisabled} {...props}>
+      <StyledButton
+        variant={variant}
+        disabled={isDisabled}
+        isDisabled={isDisabled}
+        {...props}
+      >
         {children}
       </StyledButton>
     </ButtonContainer>
