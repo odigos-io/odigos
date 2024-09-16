@@ -82,6 +82,22 @@ status:
       started: true
 ---
 apiVersion: v1
+kind: Service
+metadata:
+  name: ui
+  namespace: odigos-system
+  labels:
+    app.kubernetes.io/name: odigos-ui
+spec:
+  ports:
+    - name: ui
+      port: 3000
+    - name: otlp
+      port: 4317
+  selector:
+    app: odigos-ui
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
