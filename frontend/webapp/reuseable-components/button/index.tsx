@@ -10,36 +10,49 @@ const variantStyles = {
   primary: css`
     border-radius: 32px;
     border: 1px solid rgba(249, 249, 249, 0.24);
-    background: rgba(249, 249, 249, 0.8);
+    background: ${({ theme }) => theme.colors.secondary};
     height: 36px;
     padding: 8px 14px 8px 16px;
 
     &:hover {
-      background: rgba(249, 249, 249, 0.6);
+      background: rgba(224, 224, 224, 1);
     }
     &:active {
-      background: rgba(249, 249, 249, 0.5);
+      background: rgba(184, 184, 184, 1);
+    }
+    &:focus {
+      background: ${({ theme }) => theme.colors.secondary};
     }
   `,
   secondary: css`
-    background: #151515;
-    border: 1px solid rgba(249, 249, 249, 0.24);
+    background: rgba(249, 249, 249, 0);
+    border: 1px solid rgba(82, 82, 82, 1);
     border-radius: 32px;
     &:hover {
       border: 1px solid rgba(249, 249, 249, 0.32);
       background: rgba(249, 249, 249, 0.04);
     }
     &:active {
-      background: #1515158d;
+      background: rgba(249, 249, 249, 0.08);
+      border: 1px solid rgba(143, 143, 143, 1);
+    }
+    &:focus {
+      background: rgba(249, 249, 249, 0);
     }
   `,
   tertiary: css`
-    background-color: transparent;
+    border-color: transparent;
+    background: transparent;
+
     border-radius: 32px;
     &:hover {
-      background: #151515;
+      background: rgba(249, 249, 249, 0.04);
     }
     &:active {
+      background: rgba(249, 249, 249, 0.08);
+    }
+    &:focus {
+      background: rgba(249, 249, 249, 0);
     }
   `,
 };
@@ -64,6 +77,19 @@ const StyledButton = styled.button<ButtonProps>`
     `}
 `;
 
+const ButtonContainer = styled.div<{
+  variant?: 'primary' | 'secondary' | 'tertiary';
+}>`
+  border: 2px solid transparent;
+  padding: 2px;
+  border-radius: 32px;
+  background-color: transparent;
+  transition: border-color 0.3s ease;
+  &:focus-within {
+    border-color: ${({ theme }) => theme.colors.secondary};
+  }
+`;
+
 export const Button: React.FC<ButtonProps> = ({
   children,
   variant = 'primary',
@@ -71,8 +97,10 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   return (
-    <StyledButton variant={variant} isDisabled={isDisabled} {...props}>
-      {children}
-    </StyledButton>
+    <ButtonContainer variant={variant}>
+      <StyledButton variant={variant} isDisabled={isDisabled} {...props}>
+        {children}
+      </StyledButton>
+    </ButtonContainer>
   );
 };

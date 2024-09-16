@@ -8,6 +8,7 @@ import { Divider } from '../divider';
 import { DropdownOption } from '@/types';
 import { useOnClickOutside } from '@/hooks';
 import ReactDOM from 'react-dom';
+import { NoDataFound } from '../no-data-found';
 
 interface DropdownProps {
   options: DropdownOption[];
@@ -61,6 +62,7 @@ const DropdownListContainer = styled.div`
   flex-direction: column;
   gap: 8px;
   padding: 8px;
+  margin-top: 12px;
   background-color: #242424;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 32px;
@@ -98,6 +100,7 @@ const HeaderWrapper = styled.div`
 `;
 
 const OpenDropdownIcon = styled(Image)<{ isOpen: boolean }>`
+  transition: transform 0.3s;
   transform: ${({ isOpen }) => (isOpen ? 'rotate(180deg)' : 'rotate(0deg)')};
 `;
 
@@ -160,6 +163,7 @@ const Dropdown: React.FC<DropdownProps> = ({
           />
           <Divider thickness={1} margin="8px 0 0 0" />
         </SearchInputContainer>
+        {filteredOptions.length === 0 && <NoDataFound title="No data found" />}
         {filteredOptions.map((option) => (
           <DropdownItem
             key={option.id}
