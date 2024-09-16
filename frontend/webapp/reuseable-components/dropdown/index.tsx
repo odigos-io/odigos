@@ -17,6 +17,7 @@ interface DropdownProps {
   title?: string;
   tooltip?: string;
   placeholder?: string;
+  showSearch?: boolean;
 }
 
 const Container = styled.div`
@@ -111,6 +112,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   title,
   tooltip,
   placeholder,
+  showSearch = true,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -154,16 +156,20 @@ const Dropdown: React.FC<DropdownProps> = ({
       }}
     >
       <DropdownListContainer>
-        <SearchInputContainer>
-          <Input
-            placeholder="Search..."
-            icon={'/icons/common/search.svg'}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Divider thickness={1} margin="8px 0 0 0" />
-        </SearchInputContainer>
-        {filteredOptions.length === 0 && <NoDataFound title="No data found" />}
+        {showSearch && (
+          <SearchInputContainer>
+            <Input
+              placeholder="Search..."
+              icon={'/icons/common/search.svg'}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Divider thickness={1} margin="8px 0 0 0" />
+          </SearchInputContainer>
+        )}
+        {filteredOptions.length === 0 && (
+          <NoDataFound title="No data found" subTitle=" " />
+        )}
         {filteredOptions.map((option) => (
           <DropdownItem
             key={option.id}

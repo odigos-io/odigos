@@ -66,6 +66,7 @@ const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
           options={DROPDOWN_OPTIONS}
           value={selectedTag}
           onSelect={onTagSelect}
+          showSearch={false}
         />
       </InputAndDropdownContainer>
       <MonitorButtonsContainer>

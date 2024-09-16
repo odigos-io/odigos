@@ -33,6 +33,7 @@ const ToggleSwitch = styled.div<{ isActive: boolean; disabled?: boolean }>`
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
   cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
   opacity: ${({ isActive }) => (isActive ? 1 : 0.4)};
+  transition: background-color 0.3s, opacity 0.3s;
   &::before {
     content: '';
     width: 12px;
