@@ -37,6 +37,25 @@ func (i *podPredicate) Update(e event.UpdateEvent) bool {
 		return true
 	}
 
+	// Sum the restart counts for both oldPod and newPod containers, then compare them.
+	// If the newPod has a higher restart count than the oldPod, we need to re-instrument it.
+	// This happens because the pod was abruptly killed, which caused an increment in the restart count.
+
+	oldPodRestartCount := 0
+	newPodRestartCount := 0
+
+	for _, containerStatus := range oldPod.Status.ContainerStatuses {
+		oldPodRestartCount += int(containerStatus.RestartCount)
+	}
+
+	for _, containerStatus := range newPod.Status.ContainerStatuses {
+		newPodRestartCount += int(containerStatus.RestartCount)
+	}
+
+	if newPodRestartCount > oldPodRestartCount {
+		return true
+	}
+
 	return false
 }
 
