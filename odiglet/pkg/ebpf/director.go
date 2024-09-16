@@ -3,6 +3,7 @@ package ebpf
 import (
 	"context"
 	"fmt"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 	"sync"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -44,6 +45,7 @@ type Director interface {
 	// TODO: once all our implementation move to this function we can rename it to ApplyInstrumentationConfig,
 	// currently that name is reserved for the old API until it is removed.
 	ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error
+	ShouldInstrument(ctx context.Context, id int, details []process.Details) bool
 }
 
 type podDetails struct {
@@ -101,6 +103,10 @@ type EbpfDirector[T OtelEbpfSdk] struct {
 
 	// k8s client used to update status conditions for the instrumentedApplication CR
 	client client.Client
+}
+
+func (d *EbpfDirector[T]) ShouldInstrument(ctx context.Context, id int, details []process.Details) bool {
+	return true
 }
 
 type DirectorKey struct {
