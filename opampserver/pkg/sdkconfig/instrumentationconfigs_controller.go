@@ -24,7 +24,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			instrumentationConfig = nil
+			return ctrl.Result{}, nil
 		} else {
 			return ctrl.Result{}, err
 		}
