@@ -45,7 +45,7 @@ type Director interface {
 	// TODO: once all our implementation move to this function we can rename it to ApplyInstrumentationConfig,
 	// currently that name is reserved for the old API until it is removed.
 	ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error
-	ShouldInstrument(ctx context.Context, id int, details []process.Details) bool
+	ShouldInstrument(pid int, details []process.Details) bool
 }
 
 type podDetails struct {
@@ -105,7 +105,7 @@ type EbpfDirector[T OtelEbpfSdk] struct {
 	client client.Client
 }
 
-func (d *EbpfDirector[T]) ShouldInstrument(ctx context.Context, id int, details []process.Details) bool {
+func (d *EbpfDirector[T]) ShouldInstrument(pid int, details []process.Details) bool {
 	return true
 }
 
