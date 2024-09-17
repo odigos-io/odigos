@@ -337,7 +337,7 @@ func (d *EbpfDirector[T]) Cleanup(pod types.NamespacedName) {
 		return
 	}
 
-	log.Logger.V(0).Info("Cleaning up ebpf go instrumentation for pod", "pod", pod)
+	log.Logger.V(0).Info("Cleaning up ebpf instrumentation for pod", "pod", pod, "language", d.language)
 	delete(d.podsToDetails, pod)
 
 	// clear the pod from the workloadToPods map
