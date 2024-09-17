@@ -9,5 +9,7 @@ spec:
   ports:
     - name: ui
       port: 3000
+    - name: otlp
+      port: 4317
   selector:
     app: odigos-ui

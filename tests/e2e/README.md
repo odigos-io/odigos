@@ -17,8 +17,9 @@ brew install jq
 ```
 - Odigos cli compiled at `cli` folder. Compile via:
 ```bash
-go build -tags=embed_manifests -o ./cli/odigos ./cli
+cd cli; go build -tags=embed_manifests -o odigos .
 ```
+Go back to the root folder of the project.
 - Odigos images tagged with `e2e-test` preloaded to the cluster. If you are using Kind you can run:
 ```bash
 TAG=e2e-test make build-images load-to-kind 
