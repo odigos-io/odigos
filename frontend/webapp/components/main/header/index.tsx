@@ -39,11 +39,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
       <PlatformTitleWrapper>
         <PlatformTitle type="k8s" />
       </PlatformTitleWrapper>
-      <ConnectionStatus
-        title="Connection Status"
-        status="lost"
-        subtitle="Please check your internet connection"
-      />
+      <ConnectionStatus title="Connection Status" status="alive" />
     </HeaderContainer>
   );
 };

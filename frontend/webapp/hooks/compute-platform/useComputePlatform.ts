@@ -1,6 +1,6 @@
 import { ComputePlatform } from '@/types';
 import { useQuery } from '@apollo/client';
-import { GET_COMPUTE_PLATFORM, GET_NAMESPACES } from '@/graphql';
+import { GET_COMPUTE_PLATFORM } from '@/graphql';
 
 type UseComputePlatformHook = {
   data?: ComputePlatform;
