@@ -3,6 +3,7 @@ package runtime_details
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,6 +47,18 @@ func getGenerationFromReplicaSet(ctx context.Context, kubeClient *kubernetes.Cli
 	return deployment.Status.ObservedGeneration, nil
 }
 
+func getGenerationForDsOrSs(pod *corev1.Pod) (int64, error) {
+	// the "pod-template-generation" seems to be deprecated, but still valid and populated.
+	// I tried to use the "controller-revision-hash" label, find the controller revision object
+	// and extract the generation from it, but it seems to be more complex and not worth the effort.
+	podTemplateGeneration, ok := pod.Labels["pod-template-generation"]
+	if !ok {
+		return 0, errors.New("pod from ds or ss has no pod-template-generation label")
+	}
+
+	return strconv.ParseInt(podTemplateGeneration, 10, 64)
+}
+
 // Givin a pod, this function calculates it's workload generation.
 // e.g. it will return the generation of the deployment/ds/ss manifest that created the pod.
 // This function uses clientset and not the controller-runtime client, so not to pull these objects into the cache,
@@ -53,25 +66,13 @@ func getGenerationFromReplicaSet(ctx context.Context, kubeClient *kubernetes.Cli
 // Avoid calling this function too often, as it will make an API call to the k8s API server.
 func GetPodGeneration(ctx context.Context, kubeClient *kubernetes.Clientset, pod *corev1.Pod) (int64, error) {
 	for _, owner := range pod.ObjectMeta.OwnerReferences {
-		switch owner.Kind {
-		case "ReplicaSet":
+		if owner.Kind == "ReplicaSet" {
 			return getGenerationFromReplicaSet(ctx, kubeClient, owner.Name, pod.Namespace)
+		} else if owner.Kind == "DaemonSet" || owner.Kind == "StatefulSet" {
+			return getGenerationForDsOrSs(pod)
 		}
-		// case "DaemonSet":
-		// 	ds, err := kubeClient.AppsV1().DaemonSets(pod.Namespace).Get(ctx, owner.Name, metav1.GetOptions{})
-		// 	if err != nil {
-		// 		return 0, err
-		// 	}
-		// 	return *ds.ObjectMeta.Generation, nil
-
-		// case "StatefulSet":
-		// 	ss, err := kubeClient.AppsV1().StatefulSets(pod.Namespace).Get(ctx, owner.Name, metav1.GetOptions{})
-		// 	if err != nil {
-		// 		return 0, err
-		// 	}
-		// 	return *ss.ObjectMeta.Generation, nil
-		// }
 	}
 
+	// the pod is not owned by a workload odigos supports, so no need to handle it.
 	return 0, nil
 }
