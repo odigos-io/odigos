@@ -16,7 +16,13 @@ type InstrumentationConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec InstrumentationConfigSpec `json:"spec,omitempty"`
+	Spec   InstrumentationConfigSpec   `json:"spec,omitempty"`
+	Status InstrumentationConfigStatus `json:"status,omitempty"`
+}
+
+type InstrumentationConfigStatus struct {
+	// Capture Runtime Details for the workloads that this CR applies to.
+	RuntimeDetailsByContainer []RuntimeDetailsByContainer `json:"runtimeDetailsByContainer,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.

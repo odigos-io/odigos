@@ -385,6 +385,47 @@ spec:
                   type: object
                 type: array
             type: object
+          status:
+            properties:
+              runtimeDetailsByContainer:
+                description: Capture Runtime Details for the workloads that this CR
+                  applies to.
+                items:
+                  properties:
+                    containerName:
+                      type: string
+                    envVars:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                        required:
+                        - name
+                        - value
+                        type: object
+                      type: array
+                    language:
+                      enum:
+                      - java
+                      - python
+                      - go
+                      - dotnet
+                      - javascript
+                      - mysql
+                      - nginx
+                      - unknown
+                      - ignored
+                      type: string
+                    runtimeVersion:
+                      type: string
+                  required:
+                  - containerName
+                  - language
+                  type: object
+                type: array
+            type: object
         type: object
     served: true
     storage: true
