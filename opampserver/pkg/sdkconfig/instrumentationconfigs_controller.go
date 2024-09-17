@@ -6,7 +6,6 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,11 +22,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	err := i.Get(ctx, req.NamespacedName, instrumentationConfig)
 
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			instrumentationConfig = nil
-		} else {
-			return ctrl.Result{}, err
-		}
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name)
