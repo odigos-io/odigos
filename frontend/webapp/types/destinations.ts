@@ -164,3 +164,21 @@ export interface DestinationConfig {
     [key: string]: string;
   };
 }
+
+export interface ActualDestination {
+  id: string;
+  name: string;
+  type: string;
+  signals: {
+    traces: boolean;
+    metrics: boolean;
+    logs: boolean;
+  };
+  fields: Record<string, any>;
+  conditions: Condition[];
+  destinationType: {
+    type: string;
+    displayName: string;
+    imageUrl: string;
+  };
+}

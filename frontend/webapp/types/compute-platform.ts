@@ -1,5 +1,5 @@
 import { ActionData } from './actions';
-import { Destination } from './destinations';
+import { ActualDestination } from './destinations';
 import { K8sActualSource } from './sources';
 export type K8sActualNamespace = {
   name: string;
@@ -14,7 +14,7 @@ type ComputePlatformData = {
   k8sActualNamespaces: K8sActualNamespace[];
   actions: ActionData[];
   k8sActualSources: K8sActualSource[];
-  destinations: Destination[];
+  destinations: ActualDestination[];
 };
 
 export type ComputePlatform = {

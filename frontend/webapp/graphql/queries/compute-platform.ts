@@ -21,6 +21,15 @@ export const GET_COMPUTE_PLATFORM = gql`
       }
       destinations {
         name
+        exportedSignals {
+          logs
+          metrics
+          traces
+        }
+        destinationType {
+          imageUrl
+          displayName
+        }
       }
       actions {
         type
