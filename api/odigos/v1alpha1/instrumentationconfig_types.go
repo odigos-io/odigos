@@ -23,6 +23,9 @@ type InstrumentationConfig struct {
 type InstrumentationConfigStatus struct {
 	// Capture Runtime Details for the workloads that this CR applies to.
 	RuntimeDetailsByContainer []RuntimeDetailsByContainer `json:"runtimeDetailsByContainer,omitempty"`
+
+	// The generation of the workload object for which these runtime details were captured.
+	ObserverWorkloadGeneration int64 `json:"observerWorkflowGeneration,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.

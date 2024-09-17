@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -55,7 +56,8 @@ func (p *podPredicate) Generic(e event.GenericEvent) bool {
 
 type PodsReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme    *runtime.Scheme
+	Clientset *kubernetes.Clientset
 }
 
 // We need to apply runtime details detection for a new running pod in the following cases:
@@ -88,6 +90,17 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
 
+	podGeneration, err := GetPodGeneration(ctx, p.Clientset, &pod)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// prevent runtime inspection on pods for which we already have the runtime details for this generation
+	if podGeneration == 0 || podGeneration <= instrumentationConfig.Status.ObserverWorkloadGeneration {
+		logger.Info("skipping redundant runtime details detection for pod with generation ", "name", request.Name, "namespace", request.Namespace, "currentPodGeneration", podGeneration, "observerWorkloadGeneration", instrumentationConfig.Status.ObserverWorkloadGeneration)
+		return reconcile.Result{}, nil
+	}
+
 	// The reconcile should be called every time the pod is updated and changes from not running to running
 
 	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, p.Client)
@@ -103,7 +116,8 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 	// persist the runtime results into the status of the instrumentation config
 	patchStatus := odigosv1.InstrumentationConfig{
 		Status: odigosv1.InstrumentationConfigStatus{
-			RuntimeDetailsByContainer: runtimeResults,
+			RuntimeDetailsByContainer:  runtimeResults,
+			ObserverWorkloadGeneration: podGeneration,
 		},
 	}
 	patchData, err := json.Marshal(patchStatus)
@@ -115,7 +129,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, err
 	}
 
-	logger.V(0).Info("Completed runtime details detection for a new running pod", "name", request.Name, "namespace", request.Namespace)
+	logger.V(0).Info("Completed runtime details detection for a new running pod", "name", request.Name, "namespace", request.Namespace, "generation", podGeneration)
 
 	return reconcile.Result{}, nil
 }

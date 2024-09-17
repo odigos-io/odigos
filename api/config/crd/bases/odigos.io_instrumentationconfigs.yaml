@@ -387,6 +387,11 @@ spec:
             type: object
           status:
             properties:
+              observerWorkflowGeneration:
+                description: The generation of the workload object for which these
+                  runtime details were captured.
+                format: int64
+                type: integer
               runtimeDetailsByContainer:
                 description: Capture Runtime Details for the workloads that this CR
                   applies to.

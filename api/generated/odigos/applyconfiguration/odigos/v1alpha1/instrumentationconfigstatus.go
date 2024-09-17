@@ -20,7 +20,8 @@ package v1alpha1
 // InstrumentationConfigStatusApplyConfiguration represents a declarative configuration of the InstrumentationConfigStatus type for use
 // with apply.
 type InstrumentationConfigStatusApplyConfiguration struct {
-	RuntimeDetailsByContainer []RuntimeDetailsByContainerApplyConfiguration `json:"runtimeDetailsByContainer,omitempty"`
+	RuntimeDetailsByContainer  []RuntimeDetailsByContainerApplyConfiguration `json:"runtimeDetailsByContainer,omitempty"`
+	ObserverWorkloadGeneration *int64                                        `json:"observerWorkflowGeneration,omitempty"`
 }
 
 // InstrumentationConfigStatusApplyConfiguration constructs a declarative configuration of the InstrumentationConfigStatus type for use with
@@ -39,5 +40,13 @@ func (b *InstrumentationConfigStatusApplyConfiguration) WithRuntimeDetailsByCont
 		}
 		b.RuntimeDetailsByContainer = append(b.RuntimeDetailsByContainer, *values[i])
 	}
+	return b
+}
+
+// WithObserverWorkloadGeneration sets the ObserverWorkloadGeneration field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ObserverWorkloadGeneration field is set to the value of the last call.
+func (b *InstrumentationConfigStatusApplyConfiguration) WithObserverWorkloadGeneration(value int64) *InstrumentationConfigStatusApplyConfiguration {
+	b.ObserverWorkloadGeneration = &value
 	return b
 }
