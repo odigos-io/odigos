@@ -81,7 +81,6 @@ const SourcesList: React.FC<SourcesListProps> = ({
   selectedItems,
   setSelectedItems,
 }) => {
-  console.log({ items, selectedItems, setSelectedItems });
   function isItemSelected(item: K8sActualSource) {
     const selected = selectedItems.find(
       (selectedItem) => selectedItem.name === item.name
