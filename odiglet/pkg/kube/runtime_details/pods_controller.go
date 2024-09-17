@@ -106,17 +106,16 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 			RuntimeDetailsByContainer: runtimeResults,
 		},
 	}
-	// make it into json bytes
 	patchData, err := json.Marshal(patchStatus)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = p.Client.Status().Patch(ctx, &instrumentationConfig, client.RawPatch(types.MergePatchType, patchData), client.FieldOwner("odigos"))
+	err = p.Client.Status().Patch(ctx, &instrumentationConfig, client.RawPatch(types.MergePatchType, patchData), client.FieldOwner("odiglet-runtimedetails"))
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	logger.V(0).Info("======================== Completed runtime details detection for a new running pod", "name", request.Name, "namespace", request.Namespace)
+	logger.V(0).Info("Completed runtime details detection for a new running pod", "name", request.Name, "namespace", request.Namespace)
 
 	return reconcile.Result{}, nil
 }
