@@ -51,7 +51,9 @@ export const useConnectSourcesMenuState = ({ sourcesList }) => {
       const currentSelectedItems = selectedItems[selectedOption.value] || [];
 
       const isItemSelected = currentSelectedItems.some(
-        (currentSelectedItem) => currentSelectedItem.name === item.name
+        (currentSelectedItem) =>
+          currentSelectedItem.name === item.name &&
+          currentSelectedItem.kind === item.kind
       );
 
       if (isItemSelected) {
