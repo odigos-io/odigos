@@ -243,10 +243,11 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 	defer d.mux.Unlock()
 
 	podDetails, exists := d.podsToDetails[pod]
+	ip := InstrumentedProcess[T]{PID: pid}
 	if !exists {
 		// the first we instrument processes in this pod
 		podDetails.Workload = podWorkload
-		podDetails.InstrumentedProcesses = make([]*InstrumentedProcess[T], 1)
+		podDetails.InstrumentedProcesses = []*InstrumentedProcess[T]{&ip}
 	} else {
 		// check if the process is already instrumented
 		for i := range podDetails.InstrumentedProcesses {
@@ -255,10 +256,9 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 				return nil
 			}
 		}
+		podDetails.InstrumentedProcesses = append(podDetails.InstrumentedProcesses, &ip)
 	}
 
-	ip := InstrumentedProcess[T]{PID: pid}
-	podDetails.InstrumentedProcesses = append(podDetails.InstrumentedProcesses, &ip)
 	d.podsToDetails[pod] = podDetails
 
 	if _, exists := d.workloadToPods[*podWorkload]; !exists {
