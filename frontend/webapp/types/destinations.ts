@@ -169,7 +169,7 @@ export interface ActualDestination {
   id: string;
   name: string;
   type: string;
-  signals: {
+  exportedSignals: {
     traces: boolean;
     metrics: boolean;
     logs: boolean;

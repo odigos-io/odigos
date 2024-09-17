@@ -6,7 +6,7 @@ const colors = {
   secondary: '#F9F9F9',
   dark_grey: '#151515',
   text: '#F9F9F9',
-  border: 'rgba(249, 249, 249, 0.08)',
+  border: '#525252',
   translucent_bg: '#1A1A1A',
   majestic_blue: '#444AD9',
   white_opacity: {
@@ -105,9 +105,9 @@ const colors = {
 const text = {
   primary: '#07111A',
   secondary: '#0EE6F3',
+  grey: '#B8B8B8',
   white: '#fff',
   light_grey: '#CCD0D2',
-  grey: '#8b92a5',
   dark_button: '#0A1824',
   success: '#81AF65',
   error: '#EF7676',

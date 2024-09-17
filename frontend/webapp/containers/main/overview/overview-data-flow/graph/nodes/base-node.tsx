@@ -65,6 +65,7 @@ export default memo(({ isConnectable, data }: BaseNodeProps) => {
   console.log({ data });
 
   const { title, subTitle, imageUri, status, onClick } = data;
+
   return (
     <BaseNodeContainer onClick={onClick}>
       <SourceIconWrapper>

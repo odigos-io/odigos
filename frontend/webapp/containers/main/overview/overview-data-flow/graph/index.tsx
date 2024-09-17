@@ -5,6 +5,10 @@ import '@xyflow/react/dist/style.css';
 import BaseNode, { NodeDataProps } from './nodes/base-node';
 import { useActualDestination, useActualSources, useGetActions } from '@/hooks';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
+import Image from 'next/image';
+import { Text } from '@/reuseable-components';
+import theme from '@/styles/theme';
+import { DataFlowHeader } from './header';
 
 const nodeTypes = {
   base: BaseNode,
@@ -16,6 +20,8 @@ export function NodeBaseDataFlow() {
   const { actions } = useGetActions();
   const { sources } = useActualSources();
   const { destinations } = useActualDestination();
+
+  console.log({ destinations });
 
   const sourcesNode = useMemo(() => {
     return sources.map((source, index) => ({
@@ -45,6 +51,7 @@ export function NodeBaseDataFlow() {
         title: destination.destinationType.displayName,
         subTitle: 'Destination',
         imageUri: destination.destinationType.imageUrl,
+        monitors: destination.exportedSignals,
         status: 'healthy',
         onClick: () => {
           console.log(destination);
@@ -71,8 +78,29 @@ export function NodeBaseDataFlow() {
     }));
   }, [actions]);
 
+  const COLUMNS = [
+    {
+      icon: '/icons/overview/sources.svg',
+      title: 'Sources',
+      tagValue: sources.length,
+    },
+    {
+      icon: '/icons/overview/actions.svg',
+      title: 'Actions',
+      tagValue: actions.length,
+    },
+    {
+      icon: '/icons/overview/destinations.svg',
+      title: 'Destinations',
+      tagValue: destinations.length,
+    },
+  ];
+
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <div
+      style={{ height: '100vh', padding: '0 32px', width: 'calc(100% - 64px)' }}
+    >
+      <DataFlowHeader columns={COLUMNS} />
       <ReactFlow
         nodeTypes={nodeTypes}
         nodes={[...sourcesNode, ...destinationNode, ...actionsNode]}

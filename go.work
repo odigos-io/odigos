@@ -1,0 +1,18 @@
+go 1.22.0
+
+use (
+	./api
+	./autoscaler
+	./cli
+	./collector/odigosotelcol
+	./common
+	./destinations
+	./frontend
+	./instrumentor
+	./k8sutils
+	./odiglet
+	./opampserver
+	./procdiscovery
+	./scheduler
+	./collector/processors/odigostrafficmetrics
+)
