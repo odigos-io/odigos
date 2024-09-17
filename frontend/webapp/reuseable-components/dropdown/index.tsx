@@ -121,10 +121,12 @@ const Dropdown: React.FC<DropdownProps> = ({
     left: 0,
     width: 0,
   });
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  // useOnClickOutside(dropdownRef, () => setIsOpen(false)); //TODO:: find a way to use it without breaking the dropdown click event
+  const [isDisabled, setIsDisabled] = useState(false); // Disable flag for debounce
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useOnClickOutside(dropdownRef, () => setIsOpen(false));
 
   useEffect(() => {
     if (isOpen && containerRef.current) {
@@ -146,6 +148,23 @@ const Dropdown: React.FC<DropdownProps> = ({
     setIsOpen(false);
   };
 
+  const handleDropdownToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (isDisabled) {
+      return; // Prevent multiple clicks if debounce is active
+    }
+
+    // Toggle dropdown open/close state
+    setIsOpen((prev) => !prev);
+
+    // Set the disable flag to true and reset after 1 second
+    setIsDisabled(true);
+    setTimeout(() => {
+      setIsDisabled(false);
+    }, 1000); // 1 second debounce delay
+  };
+
   const dropdownContent = (
     <div
       style={{
@@ -154,8 +173,9 @@ const Dropdown: React.FC<DropdownProps> = ({
         left: dropdownPosition.left,
         width: dropdownPosition.width,
       }}
+      onClick={(e) => e.stopPropagation()}
     >
-      <DropdownListContainer>
+      <DropdownListContainer ref={dropdownRef}>
         {showSearch && (
           <SearchInputContainer>
             <Input
@@ -208,7 +228,7 @@ const Dropdown: React.FC<DropdownProps> = ({
           </HeaderWrapper>
         </Tooltip>
       )}
-      <DropdownHeader isOpen={isOpen} onClick={() => setIsOpen(!isOpen)}>
+      <DropdownHeader isOpen={isOpen} onClick={handleDropdownToggle}>
         <Text size={14}>{value?.value || placeholder}</Text>
         <OpenDropdownIcon
           src="/icons/common/extend-arrow.svg"

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import styled, { css } from 'styled-components';
-import { Tooltip } from '../tooltip';
 import { Text } from '../text';
+import { Tooltip } from '../tooltip';
+import styled from 'styled-components';
+import React, { useEffect, useState } from 'react';
 
 interface ToggleProps {
   title: string;

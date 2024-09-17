@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { DestinationTypeItem } from '@/types';
 import { capitalizeFirstLetter } from '@/utils';
 import { DestinationListItem } from './destination-list-item';
-import { Counter, NoDataFound, SectionTitle } from '@/reuseable-components';
+import { NoDataFound, SectionTitle } from '@/reuseable-components';
 import { IDestinationListItem } from '../choose-destination-modal-body';
 import { PotentialDestinationsList } from './potential-destinations-list';
 
@@ -11,7 +11,7 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   align-self: stretch;
-  max-height: calc(100vh - 424px);
+  max-height: calc(100vh - 450px);
   overflow-y: auto;
 
   @media (height < 800px) {
