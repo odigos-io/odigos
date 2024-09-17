@@ -3,8 +3,12 @@ package ebpf
 import (
 	"context"
 	"fmt"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
+	"os"
 	"sync"
+	"syscall"
+	"time"
+
+	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -48,9 +52,16 @@ type Director interface {
 	ShouldInstrument(pid int, details []process.Details) bool
 }
 
-type podDetails struct {
+type InstrumentedProcess[T OtelEbpfSdk] struct {
+	PID  int
+	inst T
+	// Used to make sure the instrumentation is run Once for the given process
+	runOnce sync.Once
+}
+
+type podDetails[T OtelEbpfSdk] struct {
 	Workload *workload.PodWorkload
-	Pids     []int
+	InstrumentedProcesses []*InstrumentedProcess[T]
 }
 
 type InstrumentationStatusReason string
@@ -60,6 +71,8 @@ const (
 	FailedToInitialize InstrumentationStatusReason = "FailedToInitialize"
 	LoadedSuccessfully InstrumentationStatusReason = "LoadedSuccessfully"
 )
+
+const CleanupInterval = 10 * time.Second
 
 type instrumentationStatus struct {
 	Workload      workload.PodWorkload
@@ -77,19 +90,9 @@ type EbpfDirector[T OtelEbpfSdk] struct {
 	language               common.ProgrammingLanguage
 	instrumentationFactory InstrumentationFactory[T]
 
-	// this map holds the instrumentation object which is used to close the instrumentation
-	// the map is filled only after the instrumentation is actually created
-	// which is an asyn process that might take some time
-	pidsToInstrumentation map[int]T
-
-	// this map is used to make sure we do not attempt to instrument the same process twice.
-	// it keeps track of which processes we already attempted to instrument,
-	// so we can avoid attempting to instrument them again.
-	pidsAttemptedInstrumentation map[int]struct{}
-
 	// via this map, we can find the workload and pids for a specific pod.
 	// sometimes we only have the pod name and namespace, so this map is useful.
-	podsToDetails map[types.NamespacedName]podDetails
+	podsToDetails map[types.NamespacedName]podDetails[T]
 
 	// this map can be used when we only have the workload, and need to find the pods to derive pids.
 	workloadToPods map[workload.PodWorkload]map[types.NamespacedName]struct{}
@@ -122,17 +125,54 @@ func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, s
 	director := &EbpfDirector[T]{
 		language:                     language,
 		instrumentationFactory:       instrumentationFactory,
-		pidsToInstrumentation:        make(map[int]T),
-		pidsAttemptedInstrumentation: make(map[int]struct{}),
-		podsToDetails:                make(map[types.NamespacedName]podDetails),
+		podsToDetails:  make(map[types.NamespacedName]podDetails[T]),
 		workloadToPods:               make(map[workload.PodWorkload]map[types.NamespacedName]struct{}),
 		instrumentationStatusChan:    make(chan instrumentationStatus),
 		client:                       client,
 	}
 
 	go director.observeInstrumentations(ctx, scheme)
+	go director.periodicCleanup(ctx)
 
 	return director
+}
+
+func (d *EbpfDirector[T]) periodicCleanup(ctx context.Context) {
+	ticker := time.NewTicker(CleanupInterval)
+
+	isProcessExists := func(pid int) bool {
+		p, err := os.FindProcess(pid)
+		if err != nil {
+			return false
+		}
+		// To check if the process exists, we send signal 0 to the process
+		// this is the standard way to check if a process exists in unix
+		err = p.Signal(syscall.Signal(0))
+		return err == nil
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			d.mux.Lock()
+			for _, details := range d.podsToDetails {
+				for i := range details.InstrumentedProcesses {
+					ip := details.InstrumentedProcesses[i]
+					if !isProcessExists(ip.PID) {
+						log.Logger.V(0).Info("Instrumented process does not exist, cleaning up", "pid", ip.PID)
+						err := ip.inst.Close(ctx)
+						if err != nil {
+							log.Logger.Error(err, "error cleaning up instrumentation for process", "pid", ip.PID)
+						}
+						details.InstrumentedProcesses = append(details.InstrumentedProcesses[:i], details.InstrumentedProcesses[i+1:]...)
+					}
+				}
+			}
+			d.mux.Unlock()
+		}
+	}
 }
 
 func (d *EbpfDirector[T]) ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
@@ -201,95 +241,85 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 	log.Logger.V(0).Info("Instrumenting process", "pid", pid, "workload", podWorkload)
 	d.mux.Lock()
 	defer d.mux.Unlock()
-	if _, exists := d.pidsAttemptedInstrumentation[pid]; exists {
-		log.Logger.V(5).Info("Process already instrumented", "pid", pid)
-		return nil
-	}
 
-	details, exists := d.podsToDetails[pod]
+	podDetails, exists := d.podsToDetails[pod]
 	if !exists {
-		details = podDetails{
-			Workload: podWorkload,
-			Pids:     []int{},
+		// the first we instrument processes in this pod
+		podDetails.Workload = podWorkload
+		podDetails.InstrumentedProcesses = make([]*InstrumentedProcess[T], 1)
+	} else {
+		// check if the process is already instrumented
+		for i := range podDetails.InstrumentedProcesses {
+			if podDetails.InstrumentedProcesses[i].PID == pid {
+				log.Logger.V(5).Info("Process already instrumented", "pid", pid, "pod", pod)
+				return nil
+			}
 		}
-		d.podsToDetails[pod] = details
 	}
-	details.Pids = append(details.Pids, pid)
-	d.podsToDetails[pod] = details
 
-	d.pidsAttemptedInstrumentation[pid] = struct{}{}
+	ip := InstrumentedProcess[T]{PID: pid}
+	podDetails.InstrumentedProcesses = append(podDetails.InstrumentedProcesses, &ip)
+	d.podsToDetails[pod] = podDetails
 
 	if _, exists := d.workloadToPods[*podWorkload]; !exists {
 		d.workloadToPods[*podWorkload] = make(map[types.NamespacedName]struct{})
 	}
 	d.workloadToPods[*podWorkload][pod] = struct{}{}
 
-	loadedIndicator := make(chan struct{})
-	loadedCtx, loadedObserverCancel := context.WithCancel(ctx)
-	go func() {
-		select {
-		case <-loadedCtx.Done():
-			return
-		case <-loadedIndicator:
-			d.instrumentationStatusChan <- instrumentationStatus{
-				Healthy:       true,
-				Message:       "Successfully loaded eBPF probes to pod: " + pod.String(),
-				Workload:      *podWorkload,
-				Reason:        LoadedSuccessfully,
-				PodName:       pod,
-				ContainerName: containerName,
-				Pid:           pid,
+	ip.runOnce.Do(func() {
+		loadedIndicator := make(chan struct{})
+		loadedCtx, loadedObserverCancel := context.WithCancel(ctx)
+		go func() {
+			select {
+			case <-loadedCtx.Done():
+				return
+			case <-loadedIndicator:
+				d.instrumentationStatusChan <- instrumentationStatus{
+					Healthy:       true,
+					Message:       "Successfully loaded eBPF probes to pod: " + pod.String(),
+					Workload:      *podWorkload,
+					Reason:        LoadedSuccessfully,
+					PodName:       pod,
+					ContainerName: containerName,
+					Pid:           pid,
+				}
 			}
-		}
-	}()
-
-	go func() {
-		// once the instrumentation finished running (either by error or successful exit), we can cancel the 'loaded' observer for this instrumentation
-		defer loadedObserverCancel()
-		inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName, pod.Name, loadedIndicator)
-		if err != nil {
-			d.instrumentationStatusChan <- instrumentationStatus{
-				Healthy:       false,
-				Message:       err.Error(),
-				Workload:      *podWorkload,
-				Reason:        FailedToInitialize,
-				PodName:       pod,
-				ContainerName: containerName,
-				Pid:           pid,
-			}
-			return
-		}
-
-		d.mux.Lock()
-		_, stillExists := d.pidsAttemptedInstrumentation[pid]
-		if stillExists {
-			d.pidsToInstrumentation[pid] = inst
-			d.mux.Unlock()
-		} else {
-			d.mux.Unlock()
-			// we attempted to instrument this process, but it was already cleaned up
-			// so we need to clean up the instrumentation we just created
-			err = inst.Close(ctx)
+		}()
+	
+		go func() {
+			// once the instrumentation finished running (either by error or successful exit), we can cancel the 'loaded' observer for this instrumentation
+			defer loadedObserverCancel()
+			inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName, pod.Name, loadedIndicator)
 			if err != nil {
-				log.Logger.Error(err, "error cleaning up instrumentation for process", "pid", pid)
+				d.instrumentationStatusChan <- instrumentationStatus{
+					Healthy:       false,
+					Message:       err.Error(),
+					Workload:      *podWorkload,
+					Reason:        FailedToInitialize,
+					PodName:       pod,
+					ContainerName: containerName,
+					Pid:           pid,
+				}
+				return
 			}
-			return
-		}
 
-		log.Logger.V(0).Info("Running ebpf instrumentation", "workload", podWorkload, "pod", pod, "language", d.language)
-
-		if err := inst.Run(context.Background()); err != nil {
-			d.instrumentationStatusChan <- instrumentationStatus{
-				Healthy:       false,
-				Message:       err.Error(),
-				Workload:      *podWorkload,
-				Reason:        FailedToLoad,
-				PodName:       pod,
-				ContainerName: containerName,
-				Pid:           pid,
+			ip.inst = inst
+	
+			log.Logger.V(0).Info("Running ebpf instrumentation", "workload", podWorkload, "pod", pod, "language", d.language)
+	
+			if err := inst.Run(ctx); err != nil {
+				d.instrumentationStatusChan <- instrumentationStatus{
+					Healthy:       false,
+					Message:       err.Error(),
+					Workload:      *podWorkload,
+					Reason:        FailedToLoad,
+					PodName:       pod,
+					ContainerName: containerName,
+					Pid:           pid,
+				}
 			}
-		}
-	}()
+		}()
+	})
 
 	return nil
 }
@@ -329,20 +359,11 @@ func (d *EbpfDirector[T]) Cleanup(pod types.NamespacedName) {
 		log.Logger.Error(err, "error deleting instrumentation instance", "pod", pod)
 	}
 
-	for _, pid := range details.Pids {
-		delete(d.pidsAttemptedInstrumentation, pid)
-
-		inst, exists := d.pidsToInstrumentation[pid]
-		if !exists {
-			log.Logger.V(5).Info("No objects to cleanup for process", "pid", pid)
-			continue
-		}
-
-		delete(d.pidsToInstrumentation, pid)
+	for _, ip := range details.InstrumentedProcesses {
 		go func() {
-			err := inst.Close(context.Background())
+			err := ip.inst.Close(context.Background())
 			if err != nil {
-				log.Logger.Error(err, "error cleaning up objects for process", "pid", pid)
+				log.Logger.Error(err, "error cleaning up objects for process", "pid", ip.PID)
 			}
 		}()
 	}
@@ -369,13 +390,8 @@ func (d *EbpfDirector[T]) GetWorkloadInstrumentations(workload *workload.PodWork
 			continue
 		}
 
-		for _, pid := range details.Pids {
-			inst, ok := d.pidsToInstrumentation[pid]
-			if !ok {
-				continue
-			}
-
-			insts = append(insts, inst)
+		for _, ip := range details.InstrumentedProcesses {
+			insts = append(insts, ip.inst)
 		}
 	}
 
