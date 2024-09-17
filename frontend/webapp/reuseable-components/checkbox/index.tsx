@@ -34,6 +34,7 @@ const CheckboxWrapper = styled.div<{ isChecked: boolean; disabled?: boolean }>`
   background-color: ${({ isChecked, theme }) =>
     isChecked ? theme.colors.majestic_blue : 'transparent'};
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
+  transition: border 0.3s, background-color 0.3s;
 `;
 
 const Checkbox: React.FC<CheckboxProps> = ({

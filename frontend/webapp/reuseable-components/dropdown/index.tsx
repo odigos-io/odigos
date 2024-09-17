@@ -8,6 +8,7 @@ import { Divider } from '../divider';
 import { DropdownOption } from '@/types';
 import { useOnClickOutside } from '@/hooks';
 import ReactDOM from 'react-dom';
+import { NoDataFound } from '../no-data-found';
 
 interface DropdownProps {
   options: DropdownOption[];
@@ -16,6 +17,7 @@ interface DropdownProps {
   title?: string;
   tooltip?: string;
   placeholder?: string;
+  showSearch?: boolean;
 }
 
 const Container = styled.div`
@@ -61,6 +63,7 @@ const DropdownListContainer = styled.div`
   flex-direction: column;
   gap: 8px;
   padding: 8px;
+  margin-top: 12px;
   background-color: #242424;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 32px;
@@ -98,6 +101,7 @@ const HeaderWrapper = styled.div`
 `;
 
 const OpenDropdownIcon = styled(Image)<{ isOpen: boolean }>`
+  transition: transform 0.3s;
   transform: ${({ isOpen }) => (isOpen ? 'rotate(180deg)' : 'rotate(0deg)')};
 `;
 
@@ -108,6 +112,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   title,
   tooltip,
   placeholder,
+  showSearch = true,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -116,10 +121,12 @@ const Dropdown: React.FC<DropdownProps> = ({
     left: 0,
     width: 0,
   });
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  // useOnClickOutside(dropdownRef, () => setIsOpen(false)); //TODO:: find a way to use it without breaking the dropdown click event
+  const [isDisabled, setIsDisabled] = useState(false); // Disable flag for debounce
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useOnClickOutside(dropdownRef, () => setIsOpen(false));
 
   useEffect(() => {
     if (isOpen && containerRef.current) {
@@ -141,6 +148,23 @@ const Dropdown: React.FC<DropdownProps> = ({
     setIsOpen(false);
   };
 
+  const handleDropdownToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (isDisabled) {
+      return; // Prevent multiple clicks if debounce is active
+    }
+
+    // Toggle dropdown open/close state
+    setIsOpen((prev) => !prev);
+
+    // Set the disable flag to true and reset after 1 second
+    setIsDisabled(true);
+    setTimeout(() => {
+      setIsDisabled(false);
+    }, 1000); // 1 second debounce delay
+  };
+
   const dropdownContent = (
     <div
       style={{
@@ -149,17 +173,23 @@ const Dropdown: React.FC<DropdownProps> = ({
         left: dropdownPosition.left,
         width: dropdownPosition.width,
       }}
+      onClick={(e) => e.stopPropagation()}
     >
-      <DropdownListContainer>
-        <SearchInputContainer>
-          <Input
-            placeholder="Search..."
-            icon={'/icons/common/search.svg'}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Divider thickness={1} margin="8px 0 0 0" />
-        </SearchInputContainer>
+      <DropdownListContainer ref={dropdownRef}>
+        {showSearch && (
+          <SearchInputContainer>
+            <Input
+              placeholder="Search..."
+              icon={'/icons/common/search.svg'}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Divider thickness={1} margin="8px 0 0 0" />
+          </SearchInputContainer>
+        )}
+        {filteredOptions.length === 0 && (
+          <NoDataFound title="No data found" subTitle=" " />
+        )}
         {filteredOptions.map((option) => (
           <DropdownItem
             key={option.id}
@@ -198,7 +228,7 @@ const Dropdown: React.FC<DropdownProps> = ({
           </HeaderWrapper>
         </Tooltip>
       )}
-      <DropdownHeader isOpen={isOpen} onClick={() => setIsOpen(!isOpen)}>
+      <DropdownHeader isOpen={isOpen} onClick={handleDropdownToggle}>
         <Text size={14}>{value?.value || placeholder}</Text>
         <OpenDropdownIcon
           src="/icons/common/extend-arrow.svg"

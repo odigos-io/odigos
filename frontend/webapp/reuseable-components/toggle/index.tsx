@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import styled, { css } from 'styled-components';
-import { Tooltip } from '../tooltip';
 import { Text } from '../text';
+import { Tooltip } from '../tooltip';
+import styled from 'styled-components';
+import React, { useEffect, useState } from 'react';
 
 interface ToggleProps {
   title: string;
@@ -33,6 +33,7 @@ const ToggleSwitch = styled.div<{ isActive: boolean; disabled?: boolean }>`
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
   cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
   opacity: ${({ isActive }) => (isActive ? 1 : 0.4)};
+  transition: background-color 0.3s, opacity 0.3s;
   &::before {
     content: '';
     width: 12px;

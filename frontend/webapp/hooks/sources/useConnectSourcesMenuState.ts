@@ -49,9 +49,17 @@ export const useConnectSourcesMenuState = ({ sourcesList }) => {
   function handleSelectItem(item: K8sActualSource) {
     if (selectedOption) {
       const currentSelectedItems = selectedItems[selectedOption.value] || [];
-      if (currentSelectedItems.includes(item)) {
+
+      const isItemSelected = currentSelectedItems.some(
+        (currentSelectedItem) =>
+          currentSelectedItem.name === item.name &&
+          currentSelectedItem.kind === item.kind
+      );
+
+      if (isItemSelected) {
         const updatedSelectedItems = currentSelectedItems.filter(
-          (selectedItem) => selectedItem !== item
+          (selectedItem) =>
+            JSON.stringify(selectedItem) !== JSON.stringify(item)
         );
         setSelectedItems({
           ...selectedItems,
