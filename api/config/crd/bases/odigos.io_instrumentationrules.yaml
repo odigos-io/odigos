@@ -93,6 +93,29 @@ spec:
                   regarding the rule for convenience. For example: why it was added.
                   Odigos does not use or assume any meaning from this field.'
                 type: string
+              otelSdks:
+                description: |-
+                  Set the OtelSdk to use for the workloads in this rule.
+                  instrumentation libraries will be ignored if set.
+                  the rule will be used only for languages which are specified, and ignored otherwise.
+                properties:
+                  otelSdkByLanguage:
+                    additionalProperties:
+                      properties:
+                        sdkTier:
+                          type: string
+                        sdkType:
+                          description: 'Odigos supports two types of OpenTelemetry
+                            SDKs: native and ebpf.'
+                          type: string
+                      required:
+                      - sdkTier
+                      - sdkType
+                      type: object
+                    type: object
+                required:
+                - otelSdkByLanguage
+                type: object
               payloadCollection:
                 description: Allows to configure payload collection aspects for different
                   types of payloads.

@@ -1,0 +1,18 @@
+apiVersion: odigos.io/v1alpha1
+kind: Processor
+metadata:
+  name: copy-scope
+  namespace: odigos-system
+spec:
+  type: transform
+  processorName: "copy scope"
+  notes: "Auto generated rule from copy-scope profile. Do not edit."
+  processorConfig:
+    trace_statements:
+      - context: span
+        statements:
+        - set(attributes["otel.instrumentation.scope"], instrumentation_scope.name)
+  signals:
+    - TRACES
+  collectorRoles:
+    - CLUSTER_GATEWAY
