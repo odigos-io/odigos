@@ -92,7 +92,7 @@ type EbpfDirector[T OtelEbpfSdk] struct {
 
 	// via this map, we can find the workload and pids for a specific pod.
 	// sometimes we only have the pod name and namespace, so this map is useful.
-	podsToDetails map[types.NamespacedName]podDetails[T]
+	podsToDetails map[types.NamespacedName]*podDetails[T]
 
 	// this map can be used when we only have the workload, and need to find the pods to derive pids.
 	workloadToPods map[workload.PodWorkload]map[types.NamespacedName]struct{}
@@ -125,7 +125,7 @@ func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, s
 	director := &EbpfDirector[T]{
 		language:                     language,
 		instrumentationFactory:       instrumentationFactory,
-		podsToDetails:  make(map[types.NamespacedName]podDetails[T]),
+		podsToDetails:                make(map[types.NamespacedName]*podDetails[T]),
 		workloadToPods:               make(map[workload.PodWorkload]map[types.NamespacedName]struct{}),
 		instrumentationStatusChan:    make(chan instrumentationStatus),
 		client:                       client,
@@ -158,6 +158,7 @@ func (d *EbpfDirector[T]) periodicCleanup(ctx context.Context) {
 		case <-ticker.C:
 			d.mux.Lock()
 			for _, details := range d.podsToDetails {
+				newInstrumentedProcesses := make([]*InstrumentedProcess[T], 0, len(details.InstrumentedProcesses))
 				for i := range details.InstrumentedProcesses {
 					ip := details.InstrumentedProcesses[i]
 					if !isProcessExists(ip.PID) {
@@ -166,9 +167,11 @@ func (d *EbpfDirector[T]) periodicCleanup(ctx context.Context) {
 						if err != nil {
 							log.Logger.Error(err, "error cleaning up instrumentation for process", "pid", ip.PID)
 						}
-						details.InstrumentedProcesses = append(details.InstrumentedProcesses[:i], details.InstrumentedProcesses[i+1:]...)
+					} else {
+						newInstrumentedProcesses = append(newInstrumentedProcesses, ip)
 					}
 				}
+				details.InstrumentedProcesses = newInstrumentedProcesses
 			}
 			d.mux.Unlock()
 		}
@@ -242,24 +245,25 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
-	podDetails, exists := d.podsToDetails[pod]
+	pd, exists := d.podsToDetails[pod]
 	ip := InstrumentedProcess[T]{PID: pid}
 	if !exists {
 		// the first we instrument processes in this pod
-		podDetails.Workload = podWorkload
-		podDetails.InstrumentedProcesses = []*InstrumentedProcess[T]{&ip}
+		d.podsToDetails[pod] = &podDetails[T]{
+			Workload: podWorkload,
+			InstrumentedProcesses: []*InstrumentedProcess[T]{&ip},
+		}
 	} else {
 		// check if the process is already instrumented
-		for i := range podDetails.InstrumentedProcesses {
-			if podDetails.InstrumentedProcesses[i].PID == pid {
+		for i := range pd.InstrumentedProcesses {
+			if pd.InstrumentedProcesses[i].PID == pid {
 				log.Logger.V(5).Info("Process already instrumented", "pid", pid, "pod", pod)
 				return nil
 			}
 		}
-		podDetails.InstrumentedProcesses = append(podDetails.InstrumentedProcesses, &ip)
+		// New process to instrument in the same pod
+		pd.InstrumentedProcesses = append(pd.InstrumentedProcesses, &ip)
 	}
-
-	d.podsToDetails[pod] = podDetails
 
 	if _, exists := d.workloadToPods[*podWorkload]; !exists {
 		d.workloadToPods[*podWorkload] = make(map[types.NamespacedName]struct{})
