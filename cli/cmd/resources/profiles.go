@@ -26,6 +26,11 @@ var (
 		ShortDescription: "Collect any payload from the cluster where supported with default settings",
 		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
 	}
+	dbPayloadCollectionProfile = Profile{
+		ProfileName:      common.ProfileName("db-payload-collection"),
+		ShortDescription: "Collect any payload from the cluster where supported with default settings",
+		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
+	}
 	semconvUpgraderProfile = Profile{
 		ProfileName:      common.ProfileName("semconv"),
 		ShortDescription: "Upgrade and align some attribute names to a newer version of the OpenTelemetry semantic conventions",
@@ -55,11 +60,10 @@ var (
 		ProfileName:      common.ProfileName("code-attributes"),
 		ShortDescription: "Record span attributes in 'code' namespace where supported",
 	}
-
 	kratosProfile = Profile{
 		ProfileName:      common.ProfileName("kratos"),
-		ShortDescription: "Bundle profile that includes full-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes",
-		Dependencies:     []common.ProfileName{"full-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes"},
+		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes",
+		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes"},
 	}
 )
 
@@ -68,7 +72,7 @@ func GetAvailableCommunityProfiles() []Profile {
 }
 
 func GetAvailableOnPremProfiles() []Profile {
-	return append([]Profile{fullPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile, javaNativeInstrumentationsProfile, kratosProfile},
+	return append([]Profile{fullPayloadCollectionProfile, dbPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile, javaNativeInstrumentationsProfile, kratosProfile},
 		GetAvailableCommunityProfiles()...)
 }
 
