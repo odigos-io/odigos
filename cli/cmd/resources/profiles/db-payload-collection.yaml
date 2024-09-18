@@ -3,7 +3,7 @@ kind: InstrumentationRule
 metadata:
   name: full-payload-collection
 spec:
-  ruleName: "full payload collection"
+  ruleName: "db payload collection"
   notes: "Auto generated rule from full-payload-collection profile. Do not edit."
   payloadCollection:
     dbQuery: {}
