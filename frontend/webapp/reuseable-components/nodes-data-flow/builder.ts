@@ -1,20 +1,14 @@
 import { Node, Edge } from 'react-flow-renderer';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
-import {
-  ActionData,
-  ActionItem,
-  ActualDestination,
-  K8sActualSource,
-} from '@/types';
+import { ActionItem } from '@/types';
 import theme from '@/styles/theme';
 
 // Constants
 const NODE_HEIGHT = 80;
-const COLUMN_WIDTH = 296;
+
 const STROKE_COLOR = theme.colors.border;
 const ACTION_ICON_PATH = '/icons/actions/';
 const HEADER_ICON_PATH = '/icons/overview/';
-const POSITION_OFFSET = 64;
 
 // Helper to create a node
 const createNode = (

@@ -1,9 +1,8 @@
 'use client';
 import styled from 'styled-components';
-import { NodeBaseDataFlow } from './graph';
-import { buildNodesAndEdges } from './graph/builder';
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { useActualDestination, useActualSources, useGetActions } from '@/hooks';
+import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
 
 export const OverviewDataFlowWrapper = styled.div`
   width: calc(100% - 64px);
