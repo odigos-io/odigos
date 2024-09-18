@@ -96,8 +96,8 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 	}
 
 	// prevent runtime inspection on pods for which we already have the runtime details for this generation
-	if podGeneration == 0 || podGeneration <= instrumentationConfig.Status.ObserverWorkloadGeneration {
-		logger.Info("skipping redundant runtime details detection for pod with generation ", "name", request.Name, "namespace", request.Namespace, "currentPodGeneration", podGeneration, "observerWorkloadGeneration", instrumentationConfig.Status.ObserverWorkloadGeneration)
+	if podGeneration == 0 || podGeneration <= instrumentationConfig.Status.ObservedWorkloadGeneration {
+		logger.Info("skipping redundant runtime details detection for pod with generation ", "name", request.Name, "namespace", request.Namespace, "currentPodGeneration", podGeneration, "observedWorkloadGeneration", instrumentationConfig.Status.ObservedWorkloadGeneration)
 		return reconcile.Result{}, nil
 	}
 
@@ -117,7 +117,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 	patchStatus := odigosv1.InstrumentationConfig{
 		Status: odigosv1.InstrumentationConfigStatus{
 			RuntimeDetailsByContainer:  runtimeResults,
-			ObserverWorkloadGeneration: podGeneration,
+			ObservedWorkloadGeneration: podGeneration,
 		},
 	}
 	patchData, err := json.Marshal(patchStatus)
