@@ -1,7 +1,6 @@
 package startlangdetection
 
 import (
-	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -60,18 +59,18 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	err = builder.
-		ControllerManagedBy(mgr).
-		Named("startlangdetection-configmaps").
-		For(&corev1.ConfigMap{}).
-		WithEventFilter(&utils.OnlyUpdatesPredicate{}).
-		Complete(&OdigosConfigReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-		})
-	if err != nil {
-		return err
-	}
+	//err = builder.
+	//	ControllerManagedBy(mgr).
+	//	Named("startlangdetection-configmaps").
+	//	For(&corev1.ConfigMap{}).
+	//	WithEventFilter(&utils.OnlyUpdatesPredicate{}).
+	//	Complete(&OdigosConfigReconciler{
+	//		Client: mgr.GetClient(),
+	//		Scheme: mgr.GetScheme(),
+	//	})
+	//if err != nil {
+	//	return err
+	//}
 
 	return nil
 }
