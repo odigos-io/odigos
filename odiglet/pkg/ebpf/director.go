@@ -165,7 +165,7 @@ func (d *EbpfDirector[T]) periodicCleanup(ctx context.Context) {
 				newInstrumentedProcesses := make([]*InstrumentedProcess[T], 0, len(details.InstrumentedProcesses))
 				for i := range details.InstrumentedProcesses {
 					ip := details.InstrumentedProcesses[i]
-					if !isProcessExists(ip.PID) && ip.inst.(any) != nil {
+					if !isProcessExists(ip.PID) && any(ip.inst) != nil {
 						log.Logger.V(0).Info("Instrumented process does not exist, cleaning up", "pid", ip.PID)
 
 						err := ip.inst.Close(ctx)
