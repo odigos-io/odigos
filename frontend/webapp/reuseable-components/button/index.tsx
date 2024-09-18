@@ -55,7 +55,7 @@ const StyledButton = styled.button<ButtonProps>`
   height: 36px;
   border-radius: 32px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+
   padding: 0 12px;
   ${({ variant }) => variant && variantStyles[variant]}
   ${({ isDisabled }) =>

@@ -5,25 +5,38 @@ export const GET_COMPUTE_PLATFORM = gql`
     computePlatform {
       k8sActualSources {
         name
+        kind
+        numberOfInstances
+        instrumentedApplicationDetails {
+          containers {
+            containerName
+            language
+          }
+          conditions {
+            type
+            status
+            message
+          }
+        }
       }
       destinations {
         name
+        exportedSignals {
+          logs
+          metrics
+          traces
+        }
+        destinationType {
+          imageUrl
+          displayName
+        }
       }
       actions {
         type
+        spec
       }
       k8sActualNamespaces {
         name
-        k8sActualSources {
-          kind
-          name
-          numberOfInstances
-          instrumentedApplicationDetails {
-            conditions {
-              status
-            }
-          }
-        }
       }
     }
   }
@@ -43,9 +56,6 @@ export const GET_NAMESPACES = gql`
           name
           numberOfInstances
         }
-      }
-      k8sActualSources {
-        name
       }
     }
   }
