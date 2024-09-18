@@ -11,7 +11,7 @@ const BaseNodeContainer = styled.div`
   gap: 8px;
   align-self: stretch;
   border-radius: 16px;
-  min-width: 296px;
+  width: 296px;
   cursor: pointer;
   background-color: ${({ theme }) => theme.colors.white_opacity['004']};
 
@@ -48,6 +48,7 @@ const TextWrapper = styled.div`
 `;
 
 export interface NodeDataProps {
+  type: 'source' | 'action' | 'destination';
   title: string;
   subTitle: string;
   imageUri: string;
@@ -62,9 +63,60 @@ interface BaseNodeProps {
 }
 
 export default memo(({ isConnectable, data }: BaseNodeProps) => {
-  console.log({ data });
+  const { title, subTitle, imageUri, status, onClick, type } = data;
 
-  const { title, subTitle, imageUri, status, onClick } = data;
+  function renderHandles() {
+    switch (type) {
+      case 'source':
+        return (
+          <>
+            {/* Source nodes have an output handle */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="source-output"
+              style={{ visibility: 'hidden' }}
+              isConnectable={isConnectable}
+            />
+          </>
+        );
+      case 'action':
+        return (
+          <>
+            {/* Action nodes have both input and output handles */}
+            <Handle
+              type="target"
+              position={Position.Left}
+              id="action-input"
+              isConnectable={isConnectable}
+              style={{ visibility: 'hidden' }}
+            />
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="action-output"
+              isConnectable={isConnectable}
+              style={{ visibility: 'hidden' }}
+            />
+          </>
+        );
+      case 'destination':
+        return (
+          <>
+            {/* Destination nodes only have an input handle */}
+            <Handle
+              style={{ visibility: 'hidden' }}
+              type="target"
+              position={Position.Left}
+              id="destination-input"
+              isConnectable={isConnectable}
+            />
+          </>
+        );
+      default:
+        return null;
+    }
+  }
 
   return (
     <BaseNodeContainer onClick={onClick}>
@@ -82,13 +134,8 @@ export default memo(({ isConnectable, data }: BaseNodeProps) => {
           {subTitle}
         </Text>
       </TextWrapper>
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="a"
-        isConnectable={isConnectable}
-        style={{ visibility: 'hidden' }}
-      />
+      {/* Conditionally render handles based on node type */}
+      {renderHandles()}
     </BaseNodeContainer>
   );
 });
