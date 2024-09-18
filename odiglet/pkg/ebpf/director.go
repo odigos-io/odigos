@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -57,10 +58,11 @@ type InstrumentedProcess[T OtelEbpfSdk] struct {
 	inst T
 	// Used to make sure the instrumentation is run Once for the given process
 	runOnce sync.Once
+	closed  atomic.Bool
 }
 
 type podDetails[T OtelEbpfSdk] struct {
-	Workload *workload.PodWorkload
+	Workload              *workload.PodWorkload
 	InstrumentedProcesses []*InstrumentedProcess[T]
 }
 
@@ -72,6 +74,8 @@ const (
 	LoadedSuccessfully InstrumentationStatusReason = "LoadedSuccessfully"
 )
 
+// CleanupInterval is the interval in which the director will check if the instrumented processes are still running
+// and clean up the resources associated to the ones that are not.
 const CleanupInterval = 10 * time.Second
 
 type instrumentationStatus struct {
@@ -123,12 +127,12 @@ var _ Director = &EbpfDirector[*GoOtelEbpfSdk]{}
 
 func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, scheme *runtime.Scheme, language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
 	director := &EbpfDirector[T]{
-		language:                     language,
-		instrumentationFactory:       instrumentationFactory,
-		podsToDetails:                make(map[types.NamespacedName]*podDetails[T]),
-		workloadToPods:               make(map[workload.PodWorkload]map[types.NamespacedName]struct{}),
-		instrumentationStatusChan:    make(chan instrumentationStatus),
-		client:                       client,
+		language:                  language,
+		instrumentationFactory:    instrumentationFactory,
+		podsToDetails:             make(map[types.NamespacedName]*podDetails[T]),
+		workloadToPods:            make(map[workload.PodWorkload]map[types.NamespacedName]struct{}),
+		instrumentationStatusChan: make(chan instrumentationStatus),
+		client:                    client,
 	}
 
 	go director.observeInstrumentations(ctx, scheme)
@@ -161,11 +165,22 @@ func (d *EbpfDirector[T]) periodicCleanup(ctx context.Context) {
 				newInstrumentedProcesses := make([]*InstrumentedProcess[T], 0, len(details.InstrumentedProcesses))
 				for i := range details.InstrumentedProcesses {
 					ip := details.InstrumentedProcesses[i]
-					if !isProcessExists(ip.PID) {
+					if !isProcessExists(ip.PID) && ip.inst.(any) != nil {
 						log.Logger.V(0).Info("Instrumented process does not exist, cleaning up", "pid", ip.PID)
+
 						err := ip.inst.Close(ctx)
 						if err != nil {
 							log.Logger.Error(err, "error cleaning up instrumentation for process", "pid", ip.PID)
+						}
+						ip.closed.Store(true)
+
+						if err := d.client.Delete(context.Background(), &odigosv1.InstrumentationInstance{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      details.Workload.Name,
+								Namespace: details.Workload.Namespace,
+							},
+						}); err != nil && !apierrors.IsNotFound(err) {
+							log.Logger.Error(err, "error deleting instrumentation instance", "workload", details.Workload)
 						}
 					} else {
 						newInstrumentedProcesses = append(newInstrumentedProcesses, ip)
@@ -250,7 +265,7 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 	if !exists {
 		// the first we instrument processes in this pod
 		d.podsToDetails[pod] = &podDetails[T]{
-			Workload: podWorkload,
+			Workload:              podWorkload,
 			InstrumentedProcesses: []*InstrumentedProcess[T]{&ip},
 		}
 	} else {
@@ -273,6 +288,7 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 	ip.runOnce.Do(func() {
 		loadedIndicator := make(chan struct{})
 		loadedCtx, loadedObserverCancel := context.WithCancel(ctx)
+		// launch an observer for successful loading of the eBPF probes
 		go func() {
 			select {
 			case <-loadedCtx.Done():
@@ -289,7 +305,7 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 				}
 			}
 		}()
-	
+
 		go func() {
 			// once the instrumentation finished running (either by error or successful exit), we can cancel the 'loaded' observer for this instrumentation
 			defer loadedObserverCancel()
@@ -307,10 +323,15 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 				return
 			}
 
+			if ip.closed.Load() {
+				log.Logger.Info("Instrumentation already closed before running, stopping instrumentation", "pid", pid)
+				return
+			}
+
 			ip.inst = inst
-	
+
 			log.Logger.V(0).Info("Running ebpf instrumentation", "workload", podWorkload, "pod", pod, "language", d.language)
-	
+
 			if err := inst.Run(ctx); err != nil {
 				d.instrumentationStatusChan <- instrumentationStatus{
 					Healthy:       false,
@@ -369,6 +390,7 @@ func (d *EbpfDirector[T]) Cleanup(pod types.NamespacedName) {
 			if err != nil {
 				log.Logger.Error(err, "error cleaning up objects for process", "pid", ip.PID)
 			}
+			ip.closed.Store(true)
 		}()
 	}
 }
