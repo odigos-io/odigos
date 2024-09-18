@@ -41,8 +41,9 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset) error {
 		For(&odigosv1.InstrumentationConfig{}).
 		WithEventFilter(&instrumentationConfigPredicate{}).
 		Complete(&InstrumentationConfigReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
+			Client:    mgr.GetClient(),
+			Scheme:    mgr.GetScheme(),
+			Clientset: clientset,
 		})
 	if err != nil {
 		return err
