@@ -20,11 +20,6 @@ const BaseNodeContainer = styled.div`
   }
 `;
 
-const ListItemContent = styled.div`
-  display: flex;
-  gap: 12px;
-`;
-
 const SourceIconWrapper = styled.div`
   display: flex;
   width: 36px;
@@ -40,11 +35,22 @@ const SourceIconWrapper = styled.div`
   );
 `;
 
-const TextWrapper = styled.div`
+const BodyWrapper = styled.div`
   display: flex;
   flex-direction: column;
   height: 36px;
   justify-content: space-between;
+`;
+
+const FooterWrapper = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+`;
+
+const FooterText = styled(Text)`
+  color: ${({ theme }) => theme.text.grey};
+  font-size: 10px;
 `;
 
 export interface NodeDataProps {
@@ -63,7 +69,7 @@ interface BaseNodeProps {
 }
 
 export default memo(({ isConnectable, data }: BaseNodeProps) => {
-  const { title, subTitle, imageUri, status, onClick, type } = data;
+  const { title, subTitle, imageUri, status, onClick, type, monitors } = data;
 
   function renderHandles() {
     switch (type) {
@@ -118,6 +124,26 @@ export default memo(({ isConnectable, data }: BaseNodeProps) => {
     }
   }
 
+  function renderMonitors() {
+    if (monitors) {
+      return (
+        <FooterWrapper>
+          <FooterText>{'·'}</FooterText>
+          {monitors.map((monitor, index) => (
+            <Image
+              key={index}
+              src={`/icons/monitors/${monitor}.svg`}
+              width={10}
+              height={10}
+              alt={monitor}
+            />
+          ))}
+        </FooterWrapper>
+      );
+    }
+    return null;
+  }
+
   return (
     <BaseNodeContainer onClick={onClick}>
       <SourceIconWrapper>
@@ -128,13 +154,14 @@ export default memo(({ isConnectable, data }: BaseNodeProps) => {
           alt="source"
         />
       </SourceIconWrapper>
-      <TextWrapper>
+      <BodyWrapper>
         <Text>{title}</Text>
-        <Text opacity={0.8} size={10}>
-          {subTitle}
-        </Text>
-      </TextWrapper>
-      {/* Conditionally render handles based on node type */}
+        <FooterWrapper>
+          <FooterText>{subTitle}</FooterText>
+
+          {renderMonitors()}
+        </FooterWrapper>
+      </BodyWrapper>
       {renderHandles()}
     </BaseNodeContainer>
   );

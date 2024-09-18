@@ -33,6 +33,7 @@ export const GET_COMPUTE_PLATFORM = gql`
       }
       actions {
         type
+        spec
       }
       k8sActualNamespaces {
         name
