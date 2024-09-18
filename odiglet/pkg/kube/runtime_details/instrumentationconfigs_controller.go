@@ -117,7 +117,8 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 	// persist the runtime results into the status of the instrumentation config
 	patchStatus := odigosv1.InstrumentationConfig{
 		Status: odigosv1.InstrumentationConfigStatus{
-			RuntimeDetailsByContainer: runtimeResults,
+			RuntimeDetailsByContainer:  runtimeResults,
+			ObservedWorkloadGeneration: selectedPodGeneration,
 		},
 	}
 	patchData, err := json.Marshal(patchStatus)
