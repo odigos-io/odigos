@@ -28,7 +28,7 @@ var (
 	}
 	dbPayloadCollectionProfile = Profile{
 		ProfileName:      common.ProfileName("db-payload-collection"),
-		ShortDescription: "Collect any payload from the cluster where supported with default settings",
+		ShortDescription: "Collect db payload from the cluster where supported with default settings",
 		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
 	}
 	semconvUpgraderProfile = Profile{
