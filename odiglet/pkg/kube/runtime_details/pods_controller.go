@@ -97,7 +97,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 
 	// prevent runtime inspection on pods for which we already have the runtime details for this generation
 	if podGeneration == 0 || podGeneration <= instrumentationConfig.Status.ObservedWorkloadGeneration {
-		logger.Info("skipping redundant runtime details detection for pod with generation ", "name", request.Name, "namespace", request.Namespace, "currentPodGeneration", podGeneration, "observedWorkloadGeneration", instrumentationConfig.Status.ObservedWorkloadGeneration)
+		logger.Info("skipping redundant runtime details detection since generation is not newer", "name", request.Name, "namespace", request.Namespace, "currentPodGeneration", podGeneration, "observedWorkloadGeneration", instrumentationConfig.Status.ObservedWorkloadGeneration)
 		return reconcile.Result{}, nil
 	}
 
