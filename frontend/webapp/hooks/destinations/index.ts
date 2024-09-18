@@ -1,2 +1,6 @@
 export * from './useDestinations';
-export * from './useCheckConnection';
+export * from './useTestConnection';
+export * from './useConnectDestinationForm';
+export * from './useCreateDestination';
+export * from './usePotentialDestinations';
+export * from './useActualDestinations';

@@ -73,6 +73,21 @@ export interface SelectedSources {
   };
 }
 
+export type SourceContainer = {
+  containerName: string;
+  language: string;
+};
+
+export type K8sActualSource = {
+  name: string;
+  kind: string;
+  numberOfInstances: number;
+  selected?: boolean;
+  instrumentedApplicationDetails: {
+    containers: Array<SourceContainer>;
+    conditions: Array<Condition>;
+  };
+};
 export interface InstrumentationConfig {
   optionKey: string;
   optionValueBoolean?: boolean;

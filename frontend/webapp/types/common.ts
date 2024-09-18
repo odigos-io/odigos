@@ -17,3 +17,21 @@ export interface Notification {
   crdType?: string;
   type: 'success' | 'error' | 'info';
 }
+
+export type Config = {
+  config: {
+    installation: string;
+  };
+};
+
+export interface DropdownOption {
+  id: string;
+  value: string;
+}
+
+export interface StepProps {
+  title: string;
+  subtitle?: string;
+  state: 'finish' | 'active' | 'disabled';
+  stepNumber: number;
+}
