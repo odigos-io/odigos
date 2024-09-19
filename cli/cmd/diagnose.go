@@ -22,11 +22,13 @@ import (
 )
 
 const (
-	logBufferSize = 1024 * 1024 // 1MB buffer size for reading logs in chunks
-	LogsDir       = "Logs"
-	CRDsDir       = "CRDs"
-	CRDName       = "crdName"
-	CRDGroup      = "crdGroup"
+	logBufferSize   = 1024 * 1024 // 1MB buffer size for reading logs in chunks
+	LogsDir         = "Logs"
+	CRDsDir         = "CRDs"
+	CRDName         = "crdName"
+	CRDGroup        = "crdGroup"
+	actionGroupName = "actions.odigos.io"
+	odigosGroupName = "odigos.io"
 )
 
 var (
@@ -34,39 +36,39 @@ var (
 	CRDsList     = []map[string]string{
 		{
 			CRDName:  "addclusterinfos",
-			CRDGroup: "actions.odigos.io",
+			CRDGroup: actionGroupName,
 		},
 		{
 			CRDName:  "deleteattributes",
-			CRDGroup: "actions.odigos.io",
+			CRDGroup: actionGroupName,
 		},
 		{
 			CRDName:  "renameattributes",
-			CRDGroup: "actions.odigos.io",
+			CRDGroup: actionGroupName,
 		},
 		{
 			CRDName:  "probabilisticsamplers",
-			CRDGroup: "actions.odigos.io",
+			CRDGroup: actionGroupName,
 		},
 		{
 			CRDName:  "piimaskings",
-			CRDGroup: "actions.odigos.io",
+			CRDGroup: actionGroupName,
 		},
 		{
 			CRDName:  "latencysamplers",
-			CRDGroup: "actions.odigos.io",
+			CRDGroup: actionGroupName,
 		},
 		{
 			CRDName:  "errorsamplers",
-			CRDGroup: "actions.odigos.io",
+			CRDGroup: actionGroupName,
 		},
 		{
 			CRDName:  "instrumentedapplications",
-			CRDGroup: "odigos.io",
+			CRDGroup: odigosGroupName,
 		},
 		{
 			CRDName:  "instrumentationconfigs",
-			CRDGroup: "odigos.io",
+			CRDGroup: odigosGroupName,
 		},
 	}
 )
