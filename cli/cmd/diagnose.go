@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"archive/tar"
 	"compress/gzip"
 	"context"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 const (
@@ -39,34 +41,38 @@ var diagnozeCmd = &cobra.Command{
 }
 
 func startDiagnose(ctx context.Context, client *kube.Client) error {
-	if err := createAllDirs(); err != nil {
+	mainTempDir, logTempDir, err := createAllDirs()
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(mainTempDir)
+
+	if err := fetchOdigosComponentsLogs(ctx, client, logTempDir); err != nil {
 		return err
 	}
 
-	if err := fetchOdigosComponentsLogs(ctx, client); err != nil {
+	if err := createTarGz(mainTempDir); err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func createAllDirs() error {
-	if err := os.RemoveAll(mainDir); err != nil {
-		return err
-	}
-	if err := os.MkdirAll(mainDir, 0755); err != nil {
-		return err
+func createAllDirs() (string, string, error) {
+	mainTempDir, err := os.MkdirTemp("", "parent-")
+	if err != nil {
+		return "", "", err
 	}
 
-	logsPath := filepath.Join(mainDir, logDir)
-	if err := os.MkdirAll(logsPath, 0755); err != nil {
-		return err
+	logTempDir := filepath.Join(mainTempDir, "Logs")
+	err = os.Mkdir(logTempDir, os.ModePerm) // os.ModePerm gives full permissions (0777)
+	if err != nil {
+		return "", "", err
 	}
 
-	return nil
+	return mainTempDir, logTempDir, nil
 }
 
-func fetchOdigosComponentsLogs(ctx context.Context, client *kube.Client) error {
+func fetchOdigosComponentsLogs(ctx context.Context, client *kube.Client, logDir string) error {
 	odigosNamespace, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {
 		return err
@@ -78,7 +84,7 @@ func fetchOdigosComponentsLogs(ctx context.Context, client *kube.Client) error {
 	}
 
 	for _, pod := range pods.Items {
-		if err = fetchPodLogs(ctx, client, odigosNamespace, pod); err != nil {
+		if err = fetchPodLogs(ctx, client, odigosNamespace, pod, logDir); err != nil {
 			return err
 		}
 	}
@@ -86,12 +92,12 @@ func fetchOdigosComponentsLogs(ctx context.Context, client *kube.Client) error {
 	return nil
 }
 
-func fetchPodLogs(ctx context.Context, client *kube.Client, odigosNamespace string, pod v1.Pod) error {
+func fetchPodLogs(ctx context.Context, client *kube.Client, odigosNamespace string, pod v1.Pod, logDir string) error {
 	for _, container := range pod.Spec.Containers {
-		fmt.Printf("Fetching logs for Pod: %s, Container: %s\n", pod.Name, container.Name)
+		fmt.Printf("Fetching logs for Pod: %s, Container: %s in Node: %s\n", pod.Name, container.Name, pod.Spec.NodeName)
 
 		// Define the log file path for saving compressed logs
-		logFilePath := filepath.Join(mainDir, logDir, pod.Name+"_"+container.Name+".log.gz")
+		logFilePath := filepath.Join(logDir, pod.Name+"_"+container.Name+"_"+pod.Spec.NodeName+".log.gz")
 		logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
 			return err
@@ -141,6 +147,61 @@ func saveLogsToGzipFileInBatches(logFile *os.File, logStream io.ReadCloser, buff
 	}
 
 	return nil
+}
+
+func createTarGz(sourceDir string) error {
+	timestamp := time.Now().Format("02012006150405")
+	tarGzFileName := fmt.Sprintf("odigos_debug_%s.tar.gz", timestamp)
+
+	tarGzFile, err := os.Create(tarGzFileName)
+	if err != nil {
+		return err
+	}
+	defer tarGzFile.Close()
+
+	gzipWriter := gzip.NewWriter(tarGzFile)
+	defer gzipWriter.Close()
+
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+
+	err = filepath.Walk(sourceDir, func(file string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		header, err := tar.FileInfoHeader(fi, fi.Name())
+		if err != nil {
+			return err
+		}
+
+		header.Name, err = filepath.Rel(sourceDir, file)
+		if err != nil {
+			return err
+		}
+
+		if err := tarWriter.WriteHeader(header); err != nil {
+			return err
+		}
+
+		if !fi.Mode().IsRegular() {
+			return nil
+		}
+
+		fileContent, err := os.Open(file)
+		if err != nil {
+			return err
+		}
+		defer fileContent.Close()
+
+		if _, err := io.Copy(tarWriter, fileContent); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
 }
 
 func init() {
