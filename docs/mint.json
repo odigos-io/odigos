@@ -119,6 +119,7 @@
         {
           "group": "Java",
           "pages": [
+            "instrumentations/java/java",
             "instrumentations/java/ebpf"
           ]
         }        
