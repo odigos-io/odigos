@@ -214,47 +214,63 @@ func saveLogsToGzipFileInBatches(logFile *os.File, logStream io.ReadCloser, buff
 
 func fetchOdigosCRDs(ctx context.Context, kubeClient *kube.Client, crdDir string) error {
 	for _, resourceData := range CRDsList {
-		gvr := schema.GroupVersionResource{
-			Group:    resourceData[CRDGroup], // The API group
-			Version:  "v1alpha1",             // The version of the resourceData
-			Resource: resourceData[CRDName],  // The resourceData type
+		crdDataDirPath := filepath.Join(crdDir, resourceData[CRDName])
+		err := os.Mkdir(crdDataDirPath, os.ModePerm) // os.ModePerm gives full permissions (0777)
+		if err != nil {
+			fmt.Printf("Error creating directory for CRD: %v, because: %v", resourceData, err)
+			continue
 		}
 
-		err := client.ListWithPages(client.DefaultPageSize, kubeClient.Dynamic.Resource(gvr).List, ctx, metav1.ListOptions{}, func(crds *unstructured.UnstructuredList) error {
-			for _, crd := range crds.Items {
-				crdDirPath := filepath.Join(crdDir, resourceData[CRDName], crd.GetName()+".yaml.gz")
-				crdFile, err := os.OpenFile(crdDirPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-				if err != nil {
-					//fmt.Printf(logPrefix+" - Failed - Error creating log file: %v\n", err)
-					return err
-				}
-
-				gzipWriter := gzip.NewWriter(crdFile)
-
-				crdYAML, err := yaml.Marshal(crd)
-				if err != nil {
-					return err
-				}
-
-				_, err = gzipWriter.Write(crdYAML)
-				if err != nil {
-					return err
-				}
-				if err := gzipWriter.Flush(); err != nil {
-					return fmt.Errorf("error flushing gzip writer: %v", err)
-				}
-
-				gzipWriter.Close()
-				crdFile.Close()
-			}
-
-			return nil
-		})
-
+		err = fetchSingleResource(ctx, kubeClient, crdDataDirPath, resourceData)
 		if err != nil {
 			fmt.Printf("Error Getting CRDs of: %v, because: %v", resourceData, err)
 		}
+	}
 
+	return nil
+}
+
+func fetchSingleResource(ctx context.Context, kubeClient *kube.Client, crdDataDirPath string, resourceData map[string]string) error {
+	gvr := schema.GroupVersionResource{
+		Group:    resourceData[CRDGroup], // The API group
+		Version:  "v1alpha1",             // The version of the resourceData
+		Resource: resourceData[CRDName],  // The resourceData type
+	}
+
+	err := client.ListWithPages(client.DefaultPageSize, kubeClient.Dynamic.Resource(gvr).List, ctx, metav1.ListOptions{}, func(crds *unstructured.UnstructuredList) error {
+		for _, crd := range crds.Items {
+			crdDirPath := filepath.Join(crdDataDirPath, crd.GetName()+".yaml.gz")
+			crdFile, err := os.OpenFile(crdDirPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+			if err != nil {
+				fmt.Printf("Error creating directory for CRD: %v, because: %v", resourceData, err)
+				return err
+			}
+
+			gzipWriter := gzip.NewWriter(crdFile)
+
+			crdYAML, err := yaml.Marshal(crd)
+			if err != nil {
+				return err
+			}
+
+			_, err = gzipWriter.Write(crdYAML)
+			if err != nil {
+				return err
+			}
+			if err := gzipWriter.Flush(); err != nil {
+				return fmt.Errorf("error flushing gzip writer: %v", err)
+			}
+
+			gzipWriter.Close()
+			crdFile.Close()
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		fmt.Printf("Error Getting CRDs of: %v, because: %v", resourceData, err)
+		return nil
 	}
 
 	return nil
