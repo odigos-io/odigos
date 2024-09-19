@@ -1,0 +1,56 @@
+---
+title: "Chronosphere"
+---
+
+Chronosphere is a monitoring and observability platform that provides a scalable, reliable, and cost-effective way to collect, store, and analyze metrics and traces.
+To send data from Odigos to Chronosphere, [you need to have an account with Chronosphere](https://chronosphere.io/demo-request/) and configure the Chronosphere destination in Odigos with the following details:
+
+- **Chronosphere Company Domain** - Your company domain can be found in the URL of the Chronosphere UI. 
+For example, if your URL is `https://demo-sandbox.chronosphere.io/`, then your company domain is `demo-sandbox`. 
+
+- **API Token** - To create your API token for sending data from odigos to Chronosphere, you should login to your Chronosphere admin account click the `Platform` menu on the left side of the screen, then click `Service Accounts` and create a new service account.
+
+<Frame>
+    <img src="/backends/images/chronosphere1.png" alt="Service Account Navigation" />
+</Frame>
+<Frame>
+    <img src="/backends/images/chronosphere2.png" alt="Create Service Account" />
+</Frame>
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: chronosphere-example
+  namespace: odigos-system
+spec:
+  data:
+    CHRONOSPHERE_DOMAIN: <Chronosphere Company Domain>
+  destinationName: chronosphere
+  secretRef:
+    name: chronosphere-secret
+  signals:
+  - TRACES
+  - METRICS
+  type: chronosphere
+
+---
+apiVersion: v1
+data:
+  CHRONOSPHERE_API_TOKEN: <base64 API Token>
+kind: Secret
+metadata:
+  name: chronosphere-secret
+  namespace: odigos-system
+type: Opaque
+```
