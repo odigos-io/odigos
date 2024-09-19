@@ -2,10 +2,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: odigos-ui
-  namespace: {{ .Release.Namespace }}
+  namespace: { { .Release.Namespace } }
 rules:
   - apiGroups:
-      - ""
+      - ''
     resources:
       - secrets
     verbs:
@@ -16,7 +16,15 @@ rules:
       - update
       - watch
   - apiGroups:
-    - "odigos.io"
+      - ''
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - 'odigos.io'
     resources:
       - instrumentationrules
     verbs:
@@ -26,4 +34,3 @@ rules:
       - list
       - patch
       - update
-      - watch

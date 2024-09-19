@@ -93,6 +93,29 @@ spec:
                   regarding the rule for convenience. For example: why it was added.
                   Odigos does not use or assume any meaning from this field.'
                 type: string
+              otelSdks:
+                description: |-
+                  Set the OtelSdk to use for the workloads in this rule.
+                  instrumentation libraries will be ignored if set.
+                  the rule will be used only for languages which are specified, and ignored otherwise.
+                properties:
+                  otelSdkByLanguage:
+                    additionalProperties:
+                      properties:
+                        sdkTier:
+                          type: string
+                        sdkType:
+                          description: 'Odigos supports two types of OpenTelemetry
+                            SDKs: native and ebpf.'
+                          type: string
+                      required:
+                      - sdkTier
+                      - sdkType
+                      type: object
+                    type: object
+                required:
+                - otelSdkByLanguage
+                type: object
               payloadCollection:
                 description: Allows to configure payload collection aspects for different
                   types of payloads.
@@ -162,6 +185,22 @@ spec:
                         items:
                           type: string
                         type: array
+                    type: object
+                  messaging:
+                    description: rule for collecting messaging payloads for the mentioned
+                      workload and instrumentation libraries
+                    properties:
+                      dropPartialPayloads:
+                        description: |-
+                          If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                          This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                        type: boolean
+                      maxPayloadLength:
+                        description: |-
+                          Maximum length of the payload to collect.
+                          If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
+                        format: int64
+                        type: integer
                     type: object
                 type: object
               ruleName:

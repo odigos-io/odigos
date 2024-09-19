@@ -3,6 +3,7 @@ package versionsupport
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -30,16 +31,21 @@ func IsRuntimeVersionSupported(ctx context.Context, details []v1alpha1.RuntimeDe
 
 		runtimeVersion, err := version.NewVersion(runtimeDetailsByContainer.RuntimeVersion)
 		if err != nil {
-			logger.Info("Version format error: %s is not a valid version for language %s",
-				runtimeDetailsByContainer.RuntimeVersion, runtimeDetailsByContainer.Language)
+			logger.Info("Version format error: Invalid version for language",
+				"runtimeVersion", runtimeDetailsByContainer.RuntimeVersion,
+				"language", runtimeDetailsByContainer.Language,
+			)
 			return false, fmt.Errorf("Version format error: %s is not a valid version for language %s",
 				runtimeDetailsByContainer.RuntimeVersion, runtimeDetailsByContainer.Language)
 		}
 
 		if !runtimeVersionSupporter.IsVersionSupported(runtimeVersion) {
 			runtimeVersionOtelSDKSupport := runtimeVersionSupporter.GetSupportedVersion()
-			logger.Info("%s runtime version not supported by OpenTelemetry SDK. Found: %s, supports: %s",
-				runtimeDetailsByContainer.Language, runtimeDetailsByContainer.RuntimeVersion, runtimeVersionOtelSDKSupport)
+			logger.Info("Runtime version not supported by OpenTelemetry SDK",
+				"language", runtimeDetailsByContainer.Language,
+				"runtimeVersion", runtimeDetailsByContainer.RuntimeVersion,
+				"supportedVersions", runtimeVersionOtelSDKSupport,
+			)
 			return false, fmt.Errorf("%s runtime version not supported by OpenTelemetry SDK. Found: %s, supports: %s",
 				runtimeDetailsByContainer.Language, runtimeDetailsByContainer.RuntimeVersion, runtimeVersionOtelSDKSupport)
 		}
@@ -64,6 +70,10 @@ func getRuntimeVersionCheck(language common.ProgrammingLanguage) RuntimeVersionC
 		return &NginxVersionCheck{}
 	case common.MySQLProgrammingLanguage:
 		return &MySQLVersionCheck{}
+	case common.UnknownProgrammingLanguage:
+		return &UnknownVersionCheck{}
+	case common.IgnoredProgrammingLanguage:
+		return &IgnoredVersionCheck{}
 	default:
 		return nil
 	}
