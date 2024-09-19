@@ -18,10 +18,24 @@ type HttpPayloadCollection struct {
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 }
 
-// Rule for collecting payloads for a DbStatement
+// Rule for collecting payloads for a Db Query Text
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type DbQueryPayloadCollection struct {
+
+	// Maximum length of the payload to collect.
+	// If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
+	MaxPayloadLength *int64 `json:"maxPayloadLength,omitempty"`
+
+	// If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+	// This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
+}
+
+// Rule for collecting messaging related payloads
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type MessagingPayloadCollection struct {
 
 	// Maximum length of the payload to collect.
 	// If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
@@ -45,4 +59,7 @@ type PayloadCollection struct {
 
 	// rule for collecting db payloads for the mentioned workload and instrumentation libraries
 	DbQuery *DbQueryPayloadCollection `json:"dbQuery,omitempty"`
+
+	// rule for collecting messaging payloads for the mentioned workload and instrumentation libraries
+	Messaging *MessagingPayloadCollection `json:"messaging,omitempty"`
 }
