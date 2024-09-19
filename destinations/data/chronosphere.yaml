@@ -20,10 +20,12 @@ spec:
       componentProps:
         type: text
         required: true
+        tooltip: 'Company domain in Chronosphere, can be found in the URL (my-company.chronosphere.io)'
     - name: CHRONOSPHERE_API_TOKEN
       displayName: API Token
       componentType: input
       componentProps:
         type: password
         required: true
+        tooltip: 'API token generated from your Chronosphere service account in the Chronosphere admin UI'
       secret: true
