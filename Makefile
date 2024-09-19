@@ -200,8 +200,8 @@ cli-upgrade:
 	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
 	cd ./cli ; go run -tags=embed_manifests . upgrade --version $(ODIGOS_CLI_VERSION) --yes
 
-.PHONY: cli-tests-artifacts
-cli-tests-artifacts:
+.PHONY: cli-build
+cli-build:
 	@echo "Building the cli executable for tests"
 	cd cli && go build -tags=embed_manifests -o odigos .
 
@@ -221,4 +221,4 @@ dev-tests-kind-cluster:
 
 .PHONY: dev-tests-setup
 dev-tests-setup: TAG := e2e-test
-dev-tests-setup: dev-tests-kind-cluster cli-tests-artifacts build-images load-to-kind
+dev-tests-setup: dev-tests-kind-cluster cli-build build-images load-to-kind

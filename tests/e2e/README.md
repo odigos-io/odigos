@@ -43,7 +43,7 @@ brew install jq
 You can run all the below steps with `make dev-tests-setup`.
 
 - Fresh Kubernetes cluster in kubectl context. For local development, you can use KinD but also managed clusters like EKS should work. you can create the cluster with `make dev-tests-kind-cluster`.
-- Odigos CLI compiled at the `cli` directory in odigos OSS repo (which is expected to be cloned as sibling of the current repo). To compile the cli executable, go to the OSS repository and run: `make cli-tests-artifacts`.
+- Odigos CLI compiled at the `cli` directory in odigos OSS repo (which is expected to be cloned as sibling of the current repo). To compile the cli executable, go to the OSS repository and run: `make cli-build`.
 - Odigos component images (instrumentor, autoscaler, odiglet etc) tagged with `e2e-test` preloaded to the cluster. If you are using KinD you can run: `TAG=e2e-test make build-images load-to-kind`.
 
 ### Running the Tests
