@@ -17,8 +17,6 @@ import (
 )
 
 const (
-	mainDir       = "odigos-diagnose"
-	logDir        = "logs"
 	logBufferSize = 1024 * 1024 // 1MB buffer size for reading logs in chunks
 )
 
