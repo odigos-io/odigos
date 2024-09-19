@@ -7,18 +7,68 @@ import (
 	"fmt"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/spf13/cobra"
 	"io"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"os"
 	"path/filepath"
+	"sigs.k8s.io/yaml"
 	"sync"
 	"time"
 )
 
 const (
 	logBufferSize = 1024 * 1024 // 1MB buffer size for reading logs in chunks
+	LogsDir       = "Logs"
+	CRDsDir       = "CRDs"
+	CRDName       = "crdName"
+	CRDGroup      = "crdGroup"
+)
+
+var (
+	diagnoseDirs = []string{LogsDir, CRDsDir}
+	CRDsList     = []map[string]string{
+		{
+			CRDName:  "addclusterinfos",
+			CRDGroup: "actions.odigos.io",
+		},
+		{
+			CRDName:  "deleteattributes",
+			CRDGroup: "actions.odigos.io",
+		},
+		{
+			CRDName:  "renameattributes",
+			CRDGroup: "actions.odigos.io",
+		},
+		{
+			CRDName:  "probabilisticsamplers",
+			CRDGroup: "actions.odigos.io",
+		},
+		{
+			CRDName:  "piimaskings",
+			CRDGroup: "actions.odigos.io",
+		},
+		{
+			CRDName:  "latencysamplers",
+			CRDGroup: "actions.odigos.io",
+		},
+		{
+			CRDName:  "errorsamplers",
+			CRDGroup: "actions.odigos.io",
+		},
+		{
+			CRDName:  "instrumentedapplications",
+			CRDGroup: "odigos.io",
+		},
+		{
+			CRDName:  "instrumentationconfigs",
+			CRDGroup: "odigos.io",
+		},
+	}
 )
 
 var diagnozeCmd = &cobra.Command{
@@ -40,13 +90,17 @@ var diagnozeCmd = &cobra.Command{
 }
 
 func startDiagnose(ctx context.Context, client *kube.Client) error {
-	mainTempDir, logTempDir, err := createAllDirs()
+	mainTempDir, err := createAllDirs()
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(mainTempDir)
 
-	if err := fetchOdigosComponentsLogs(ctx, client, logTempDir); err != nil {
+	//if err := fetchOdigosComponentsLogs(ctx, client, filepath.Join(mainTempDir, LogsDir)); err != nil {
+	//	return err
+	//}
+
+	if err := fetchOdigosCRDs(ctx, client, filepath.Join(mainTempDir, CRDsDir)); err != nil {
 		return err
 	}
 
@@ -56,19 +110,21 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 	return nil
 }
 
-func createAllDirs() (string, string, error) {
+func createAllDirs() (string, error) {
 	mainTempDir, err := os.MkdirTemp("", "odigos-diagnose")
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	logTempDir := filepath.Join(mainTempDir, "Logs")
-	err = os.Mkdir(logTempDir, os.ModePerm) // os.ModePerm gives full permissions (0777)
-	if err != nil {
-		return "", "", err
+	for _, dir := range diagnoseDirs {
+		tempDir := filepath.Join(mainTempDir, dir)
+		err = os.Mkdir(tempDir, os.ModePerm) // os.ModePerm gives full permissions (0777)
+		if err != nil {
+			return "", err
+		}
 	}
 
-	return mainTempDir, logTempDir, nil
+	return mainTempDir, nil
 }
 
 func fetchOdigosComponentsLogs(ctx context.Context, client *kube.Client, logDir string) error {
@@ -151,6 +207,54 @@ func saveLogsToGzipFileInBatches(logFile *os.File, logStream io.ReadCloser, buff
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func fetchOdigosCRDs(ctx context.Context, kubeClient *kube.Client, crdDir string) error {
+	for _, resourceData := range CRDsList {
+		gvr := schema.GroupVersionResource{
+			Group:    resourceData[CRDGroup], // The API group
+			Version:  "v1alpha1",             // The version of the resourceData
+			Resource: resourceData[CRDName],  // The resourceData type
+		}
+
+		err := client.ListWithPages(client.DefaultPageSize, kubeClient.Dynamic.Resource(gvr).List, ctx, metav1.ListOptions{}, func(crds *unstructured.UnstructuredList) error {
+			for _, crd := range crds.Items {
+				crdDirPath := filepath.Join(crdDir, resourceData[CRDName], crd.GetName()+".yaml.gz")
+				crdFile, err := os.OpenFile(crdDirPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+				if err != nil {
+					//fmt.Printf(logPrefix+" - Failed - Error creating log file: %v\n", err)
+					return err
+				}
+
+				gzipWriter := gzip.NewWriter(crdFile)
+
+				crdYAML, err := yaml.Marshal(crd)
+				if err != nil {
+					return err
+				}
+
+				_, err = gzipWriter.Write(crdYAML)
+				if err != nil {
+					return err
+				}
+				if err := gzipWriter.Flush(); err != nil {
+					return fmt.Errorf("error flushing gzip writer: %v", err)
+				}
+
+				gzipWriter.Close()
+				crdFile.Close()
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			fmt.Printf("Error Getting CRDs of: %v, because: %v", resourceData, err)
+		}
+
 	}
 
 	return nil
