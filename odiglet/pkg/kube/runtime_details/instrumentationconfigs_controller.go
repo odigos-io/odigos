@@ -2,7 +2,6 @@ package runtime_details
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -10,7 +9,6 @@ import (
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -77,7 +75,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 	}
 
 	// we need to apply runtime detection for just one pod with newer generation
-	var podForRuntimeDetails *corev1.Pod
+	var selectedPodForInspection *corev1.Pod
 	selectedPodGeneration := int64(0)
 	for _, pod := range pods {
 		podGeneration, err := GetPodGeneration(ctx, r.Clientset, &pod)
@@ -90,15 +88,13 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 			continue
 		}
 
-		if podGeneration > instrumentationConfig.Status.ObservedWorkloadGeneration {
-			if podGeneration > selectedPodGeneration {
-				selectedPodGeneration = podGeneration
-				podForRuntimeDetails = &pod
-			}
+		if podGeneration > instrumentationConfig.Status.ObservedWorkloadGeneration && podGeneration > selectedPodGeneration {
+			selectedPodGeneration = podGeneration
+			selectedPodForInspection = &pod
 		}
 	}
 
-	if podForRuntimeDetails == nil {
+	if selectedPodForInspection == nil {
 		// when a instrumentation config is created, many nodes may not have any running pods for it
 		// or the runtime detection has already been completed for this generation in other odiglets
 		return reconcile.Result{}, nil
@@ -109,23 +105,15 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		return reconcile.Result{}, err
 	}
 
-	runtimeResults, err := runtimeInspection([]corev1.Pod{*podForRuntimeDetails}, odigosConfig.IgnoredContainers)
+	runtimeResults, err := runtimeInspection([]corev1.Pod{*selectedPodForInspection}, odigosConfig.IgnoredContainers)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// persist the runtime results into the status of the instrumentation config
-	patchStatus := odigosv1.InstrumentationConfig{
-		Status: odigosv1.InstrumentationConfigStatus{
-			RuntimeDetailsByContainer:  runtimeResults,
-			ObservedWorkloadGeneration: selectedPodGeneration,
-		},
-	}
-	patchData, err := json.Marshal(patchStatus)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	err = r.Client.Status().Patch(ctx, &instrumentationConfig, client.RawPatch(types.MergePatchType, patchData), client.FieldOwner("odiglet-runtimedetails"))
+	err = persistRuntimeDetailsToInstrumentationConfig(ctx, r.Client, &instrumentationConfig, odigosv1.InstrumentationConfigStatus{
+		RuntimeDetailsByContainer:  runtimeResults,
+		ObservedWorkloadGeneration: selectedPodGeneration,
+	})
 	if err != nil {
 		return reconcile.Result{}, err
 	}

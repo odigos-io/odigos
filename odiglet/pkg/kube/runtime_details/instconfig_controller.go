@@ -22,6 +22,7 @@ import (
 // replaced by odiglet/pkg/kube/runtime_details/instrumentationconfigs_controller.go
 // which does not rely on the RuntimeDetailsInvalidated flag
 // left here until the migration is complete
+// Deprecated: the new runtime inspection logic is found in odiglet/pkg/kube/runtime_details/instrumentationconfigs_controller.go
 type DeprecatedInstrumentationConfigReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme

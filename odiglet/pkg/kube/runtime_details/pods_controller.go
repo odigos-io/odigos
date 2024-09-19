@@ -2,14 +2,12 @@ package runtime_details
 
 import (
 	"context"
-	"encoding/json"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -101,36 +99,26 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, nil
 	}
 
-	// The reconcile should be called every time the pod is updated and changes from not running to running
-
 	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, p.Client)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
+	// Perform runtime inspection once we know the pod is newer that the latest runtime inspection performed and saved.
 	runtimeResults, err := runtimeInspection([]corev1.Pod{pod}, odigosConfig.IgnoredContainers)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// persist the runtime results into the status of the instrumentation config
-	patchStatus := odigosv1.InstrumentationConfig{
-		Status: odigosv1.InstrumentationConfigStatus{
-			RuntimeDetailsByContainer:  runtimeResults,
-			ObservedWorkloadGeneration: podGeneration,
-		},
-	}
-	patchData, err := json.Marshal(patchStatus)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	err = p.Client.Status().Patch(ctx, &instrumentationConfig, client.RawPatch(types.MergePatchType, patchData), client.FieldOwner("odiglet-runtimedetails"))
+	err = persistRuntimeDetailsToInstrumentationConfig(ctx, p.Client, &instrumentationConfig, odigosv1.InstrumentationConfigStatus{
+		RuntimeDetailsByContainer:  runtimeResults,
+		ObservedWorkloadGeneration: podGeneration,
+	})
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	logger.V(0).Info("Completed runtime details detection for a new running pod", "name", request.Name, "namespace", request.Namespace, "generation", podGeneration)
-
 	return reconcile.Result{}, nil
 }
 
