@@ -1,0 +1,9 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: db-payload-collection
+spec:
+  ruleName: "db payload collection"
+  notes: "Auto generated rule from db-payload-collection profile. Do not edit."
+  payloadCollection:
+    dbQuery: {}
