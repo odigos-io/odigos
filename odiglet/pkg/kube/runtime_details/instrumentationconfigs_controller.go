@@ -45,7 +45,11 @@ func (p *instrumentationConfigPredicate) Generic(e event.GenericEvent) bool {
 
 type InstrumentationConfigReconciler struct {
 	client.Client
-	Scheme    *runtime.Scheme
+	Scheme *runtime.Scheme
+
+	// the clientset is used to interact with the k8s API directly,
+	// without pulling in specific objects into the controller runtime cache
+	// which can be expensive (memory and CPU)
 	Clientset *kubernetes.Clientset
 }
 
