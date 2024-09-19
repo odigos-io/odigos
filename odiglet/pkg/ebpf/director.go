@@ -76,7 +76,7 @@ const (
 
 // CleanupInterval is the interval in which the director will check if the instrumented processes are still running
 // and clean up the resources associated to the ones that are not.
-const CleanupInterval = 10 * time.Second
+const CleanupInterval = 30 * time.Second
 
 type instrumentationStatus struct {
 	Workload      workload.PodWorkload
@@ -339,6 +339,7 @@ func (d *EbpfDirector[T]) Language() common.ProgrammingLanguage {
 	return d.language
 }
 
+// Cleanup cleans up the resources associated with the given pod including all the instrumented processes.
 func (d *EbpfDirector[T]) Cleanup(pod types.NamespacedName) {
 	d.mux.Lock()
 	defer d.mux.Unlock()
@@ -363,6 +364,7 @@ func (d *EbpfDirector[T]) Cleanup(pod types.NamespacedName) {
 	}
 }
 
+// cleanProcess cleans up the resources associated with the given instrumented process in the given pod.
 func (d *EbpfDirector[T]) cleanProcess(ctx context.Context, pod types.NamespacedName, ip *InstrumentedProcess[T]) {
 	err := ip.inst.Close(ctx)
 	if err != nil {
