@@ -161,27 +161,13 @@ func (d *EbpfDirector[T]) periodicCleanup(ctx context.Context) {
 			return
 		case <-ticker.C:
 			d.mux.Lock()
-			for _, details := range d.podsToDetails {
+			for pod, details := range d.podsToDetails {
 				newInstrumentedProcesses := make([]*InstrumentedProcess[T], 0, len(details.InstrumentedProcesses))
 				for i := range details.InstrumentedProcesses {
 					ip := details.InstrumentedProcesses[i]
 					if !isProcessExists(ip.PID) && any(ip.inst) != nil {
 						log.Logger.V(0).Info("Instrumented process does not exist, cleaning up", "pid", ip.PID)
-
-						err := ip.inst.Close(ctx)
-						if err != nil {
-							log.Logger.Error(err, "error cleaning up instrumentation for process", "pid", ip.PID)
-						}
-						ip.closed.Store(true)
-
-						if err := d.client.Delete(context.Background(), &odigosv1.InstrumentationInstance{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      details.Workload.Name,
-								Namespace: details.Workload.Namespace,
-							},
-						}); err != nil && !apierrors.IsNotFound(err) {
-							log.Logger.Error(err, "error deleting instrumentation instance", "workload", details.Workload)
-						}
+						d.cleanProcess(ctx, pod, ip)
 					} else {
 						newInstrumentedProcesses = append(newInstrumentedProcesses, ip)
 					}
@@ -372,26 +358,25 @@ func (d *EbpfDirector[T]) Cleanup(pod types.NamespacedName) {
 		delete(d.workloadToPods, *workload)
 	}
 
-	err := d.client.Delete(context.Background(), &odigosv1.InstrumentationInstance{
+	for _, ip := range details.InstrumentedProcesses {
+		d.cleanProcess(context.Background(), pod, ip)
+	}
+}
+
+func (d *EbpfDirector[T]) cleanProcess(ctx context.Context, pod types.NamespacedName, ip *InstrumentedProcess[T]) {
+	err := ip.inst.Close(ctx)
+	if err != nil {
+		log.Logger.Error(err, "error cleaning up objects for process", "pid", ip.PID)
+	}
+	ip.closed.Store(true)
+
+	if err = d.client.Delete(ctx, &odigosv1.InstrumentationInstance{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      pod.Name,
+			Name:      inst.InstrumentationInstanceName(pod.Name, ip.PID),
 			Namespace: pod.Namespace,
 		},
-	})
-
-	// the instrumentation instance might already be deleted at this point if the pod was deleted
-	if err != nil && !apierrors.IsNotFound(err) {
-		log.Logger.Error(err, "error deleting instrumentation instance", "pod", pod)
-	}
-
-	for _, ip := range details.InstrumentedProcesses {
-		go func() {
-			err := ip.inst.Close(context.Background())
-			if err != nil {
-				log.Logger.Error(err, "error cleaning up objects for process", "pid", ip.PID)
-			}
-			ip.closed.Store(true)
-		}()
+	}); err != nil && !apierrors.IsNotFound(err) {
+		log.Logger.Error(err, "error deleting instrumentation instance", "workload", pod)
 	}
 }
 
