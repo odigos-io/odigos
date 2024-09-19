@@ -31,14 +31,14 @@ var diagnozeCmd = &cobra.Command{
 			kube.PrintClientErrorAndExit(err)
 		}
 
-		err = activateDiagnosticCmd(ctx, client)
+		err = startDiagnose(ctx, client)
 		if err != nil {
-			fmt.Printf("The diagnose script crashed because: %v\n", err)
+			fmt.Printf("The diagnose script crashed on: %v\n", err)
 		}
 	},
 }
 
-func activateDiagnosticCmd(ctx context.Context, client *kube.Client) error {
+func startDiagnose(ctx context.Context, client *kube.Client) error {
 	if err := createAllDirs(); err != nil {
 		return err
 	}
@@ -59,11 +59,8 @@ func createAllDirs() error {
 	}
 
 	logsPath := filepath.Join(mainDir, logDir)
-	if _, err := os.Stat(logsPath); os.IsNotExist(err) {
-		err = os.MkdirAll(logsPath, 0755)
-		if err != nil {
-			return err
-		}
+	if err := os.MkdirAll(logsPath, 0755); err != nil {
+		return err
 	}
 
 	return nil
