@@ -100,6 +100,7 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 
 	var wg sync.WaitGroup
 
+	// Fetch Odigos components logs
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -108,19 +109,22 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 		}
 	}()
 
+	// Fetch Odigos CRDs
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := fetchOdigosCRDs(ctx, client, filepath.Join(mainTempDir, CRDsDir)); err != nil {
+		if err = fetchOdigosCRDs(ctx, client, filepath.Join(mainTempDir, CRDsDir)); err != nil {
 			fmt.Printf("Error fetching Odigos CRDs: %v\n", err)
 		}
 	}()
 
 	wg.Wait()
 
-	if err := createTarGz(mainTempDir); err != nil {
+	// Package the results into a tar.gz file
+	if err = createTarGz(mainTempDir); err != nil {
 		return err
 	}
+
 	return nil
 }
 
