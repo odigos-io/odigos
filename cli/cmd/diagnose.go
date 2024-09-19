@@ -57,7 +57,7 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 }
 
 func createAllDirs() (string, string, error) {
-	mainTempDir, err := os.MkdirTemp("", "parent-")
+	mainTempDir, err := os.MkdirTemp("", "odigos-diagnose")
 	if err != nil {
 		return "", "", err
 	}
