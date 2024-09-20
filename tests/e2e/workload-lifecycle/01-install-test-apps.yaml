@@ -68,3 +68,38 @@ spec:
     - protocol: TCP
       port: 3000
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-minimum-version
+  namespace: default
+  labels:
+    app: nodejs-minimum-version
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-minimum-version
+  template:
+    metadata:
+      labels:
+        app: nodejs-minimum-version
+    spec:
+      containers:
+        - name: nodejs-minimum-version
+          image: nodejs-minimum-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nodejs-minimum-version
+  namespace: default
+spec:
+  selector:
+    app: nodejs-minimum-version
+  ports:
+    - protocol: TCP
+      port: 3000
+---
