@@ -6,8 +6,13 @@ This e2e test verify various scenarios related to the lifecycle of workloads in 
 
 ### nodejs-unsupported-version
 
-This workload is running Node.js version 8 and verify that odigos can ignore it gracefully.
-Odigos is expected to detect the runtime version from the environment in the base docker image and not apply any instrumentation device to the deployment, should not restart the pods, and report the issue in instrumented application CR.
+This workload is running Node.js version 8 and it has the NODE_VERSION environment variable set in the image so odigos can detect it.
+Odigos is expected to not add instrumentation device to the deployment, should not restart the pods, and report the issue in instrumented application CR.
+
+### nodejs-very-old-version
+
+This workload is running Node.js version 8 and it has the NODE_VERSION environment variable set in the image so odigos can detect it.
+Odigos is expected to add instrumentation device to the deployment, should restart the pods, but the agent should not load due to the unsupported version.
 
 ## Steps
 
@@ -19,3 +24,4 @@ Verify the expected state for each workload according to it's caracteristics.
 In this step we deploy the following workloads:
 
 - nodejs-unsupported-version - should detect the runtime version and avoid instrumentation device.
+- nodejs-very-old-version - should not detect the runtime version and add instrumentation device but the agent should not load and application can run as usual.

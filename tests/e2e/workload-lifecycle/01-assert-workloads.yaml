@@ -24,3 +24,32 @@ status:
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+  generation: 2 # the deployment spec changed when odigos resource was added
+  labels:
+    app: nodejs-very-old-version
+  name: nodejs-very-old-version
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-very-old-version
+  template:
+    spec:
+      containers:
+      - image: nodejs-very-old-version:v0.0.1
+        name: nodejs-very-old-version
+        resources:
+          limits:
+            instrumentation.odigos.io/javascript-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
