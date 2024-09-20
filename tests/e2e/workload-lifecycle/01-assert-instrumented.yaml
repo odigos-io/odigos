@@ -25,3 +25,38 @@ status:
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
+---
+# expecting injection of instrumentation device to be successful since the runtime version is supported
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-nodejs-minimum-version
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-nodejs-minimum-version
+status:
+  healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: nodejs
+    - key: process.runtime.version
+      value: "14.0.0"
+    - key: telemetry.distro.version
+      value: e2e-test
+    - key: process.pid
+      (value != null): true
+---

@@ -31,4 +31,20 @@ spec:
     - containerName: nodejs-very-old-version
       language: javascript
       (runtimeVersion == null): true
-
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-nodejs-minimum-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-minimum-version
+spec:
+  runtimeDetails:
+    - containerName: nodejs-minimum-version
+      language: javascript
+      runtimeVersion: 14.0.0
