@@ -222,3 +222,8 @@ dev-tests-kind-cluster:
 .PHONY: dev-tests-setup
 dev-tests-setup: TAG := e2e-test
 dev-tests-setup: dev-tests-kind-cluster cli-build build-images load-to-kind
+
+# Use this target to avoid rebuilding the images if all that changed is the e2e test code
+.PHONY: dev-tests-setup-no-build
+dev-tests-setup-no-build: TAG := e2e-test
+dev-tests-setup-no-build: dev-tests-kind-cluster load-to-kind

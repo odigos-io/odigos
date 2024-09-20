@@ -11,3 +11,17 @@ status:
       reason: RuntimeVersionNotSupported
       status: "False"
       type: AppliedInstrumentationDevice
+---
+# expecting injection of instrumentation device to be successful since the runtime version was not detected
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-nodejs-very-old-version
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice

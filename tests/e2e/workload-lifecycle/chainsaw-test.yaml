@@ -6,6 +6,15 @@ spec:
   description: This e2e test runs various scenarios to test the lifecycle of the workload
   skipDelete: true
   steps:
+  - name: Build and Load Test App Images
+    try:
+    - script:
+        timeout: 100s
+        content: |
+          docker build -t nodejs-unsupported-version:v0.0.1 -f services/nodejs-http-server/unsupported-version.Dockerfile services/nodejs-http-server
+          kind load docker-image nodejs-unsupported-version:v0.0.1
+          docker build -t nodejs-very-old-version:v0.0.1 -f services/nodejs-http-server/very-old-version.Dockerfile services/nodejs-http-server
+          kind load docker-image nodejs-very-old-version:v0.0.1
   - name: Prepare destination
     try:
     - script:
@@ -28,13 +37,6 @@ spec:
         timeout: 60s
     - assert:
         file: assert-odigos-installed.yaml
-  - name: Build and Load Test App Images
-    try:
-    - script:
-        timeout: 100s
-        content: |
-          docker build -t nodejs-unsupported-version:v0.0.1 -f services/nodejs-unsupported-version/Dockerfile services/nodejs-unsupported-version
-          kind load docker-image nodejs-unsupported-version:v0.0.1
   - name: '01 - Install Test Apps'
     try:
     - apply:
