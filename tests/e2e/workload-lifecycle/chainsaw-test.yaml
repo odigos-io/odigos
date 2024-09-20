@@ -33,8 +33,8 @@ spec:
     - script:
         timeout: 100s
         content: |
-          docker build -t node-very-old-version:v0.0.1 -f services/node-very-old-version/Dockerfile services/node-very-old-version
-          kind load docker-image node-very-old-version:v0.0.1
+          docker build -t nodejs-unsupported-version:v0.0.1 -f services/nodejs-unsupported-version/Dockerfile services/nodejs-unsupported-version
+          kind load docker-image nodejs-unsupported-version:v0.0.1
   - name: '01 - Install Test Apps'
     try:
     - apply:

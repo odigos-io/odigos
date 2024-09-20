@@ -1,5 +1,5 @@
 {
-  "name": "node-very-old-version",
+  "name": "nodejs-unsupported-version",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",

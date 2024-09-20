@@ -1,17 +1,17 @@
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentedApplication
 metadata:
-  name: deployment-node-very-old-version
+  name: deployment-nodejs-unsupported-version
   namespace: default
   ownerReferences:
     - apiVersion: apps/v1
       blockOwnerDeletion: true
       controller: true
       kind: Deployment
-      name: node-very-old-version
+      name: nodejs-unsupported-version
 spec:
   runtimeDetails:
-    - containerName: node-very-old-version
+    - containerName: nodejs-unsupported-version
       language: javascript
       runtimeVersion: 8.17.0
 ---

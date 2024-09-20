@@ -2,7 +2,7 @@ apiVersion: odigos.io/v1alpha1
 kind: InstrumentedApplication
 metadata:
   namespace: default
-  name: deployment-node-very-old-version
+  name: deployment-nodejs-unsupported-version
 status:
   conditions:
     - message: "javascript runtime version not supported by OpenTelemetry SDK. Found:

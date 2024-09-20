@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: node-very-old-version
+  name: nodejs-unsupported-version
   namespace: default
   labels:
-    app: node-very-old-version
+    app: nodejs-unsupported-version
 spec:
   selector:
     matchLabels:
-      app: node-very-old-version
+      app: nodejs-unsupported-version
   template:
     metadata:
       labels:
-        app: node-very-old-version
+        app: nodejs-unsupported-version
     spec:
       containers:
-        - name: node-very-old-version
-          image: node-very-old-version:v0.0.1
+        - name: nodejs-unsupported-version
+          image: nodejs-unsupported-version:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -24,11 +24,11 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: node-very-old-version
+  name: nodejs-unsupported-version
   namespace: default
 spec:
   selector:
-    app: node-very-old-version
+    app: nodejs-unsupported-version
   ports:
     - protocol: TCP
       port: 3000

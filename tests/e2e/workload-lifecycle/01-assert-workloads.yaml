@@ -5,18 +5,18 @@ metadata:
     deployment.kubernetes.io/revision: "1"
   generation: 1
   labels:
-    app: node-very-old-version
-  name: node-very-old-version
+    app: nodejs-unsupported-version
+  name: nodejs-unsupported-version
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: node-very-old-version
+      app: nodejs-unsupported-version
   template:
     spec:
       containers:
-      - image: node-very-old-version:v0.0.1
-        name: node-very-old-version
+      - image: nodejs-unsupported-version:v0.0.1
+        name: nodejs-unsupported-version
         resources: {}
 status:
   availableReplicas: 1
