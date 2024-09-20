@@ -15,7 +15,7 @@ verify-nodejs-agent:
 
 .PHONY: build-odiglet-with-agents
 build-odiglet-with-agents:
-	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-native-community-src=../opentelemetry-node
+	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-src=../opentelemetry-node
 
 .PHONY: build-autoscaler
 build-autoscaler:
