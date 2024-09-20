@@ -59,6 +59,12 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 				Namespace: pod.Namespace,
 				Name:      pod.Name,
 			}
+
+			// Hack - Nginx instrumentation needs to be on Master Pid which is the min Pid in the container
+			if !director.ShouldInstrument(d.ProcessID, details) {
+				continue
+			}
+
 			err = director.Instrument(ctx, d.ProcessID, podDetails, podWorkload, serviceName, containerName)
 
 			if err != nil {

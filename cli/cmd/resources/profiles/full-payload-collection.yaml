@@ -9,3 +9,4 @@ spec:
     httpRequest: {}
     httpResponse: {}
     dbQuery: {}
+    messaging: {}

@@ -107,7 +107,7 @@ export function SourcesTableHeader({
     showSourcesWithIssues
       ? filterByConditionStatus('False')
       : filterByConditionStatus('All');
-  }, [showSourcesWithIssues, data]);
+  }, [showSourcesWithIssues]);
 
   useEffect(() => {
     if (namespaces) {

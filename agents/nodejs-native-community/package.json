@@ -1,0 +1,8 @@
+{
+  "name": "@odigos/opentelemetry-node-native-community",
+  "version": "0.0.1",
+  "main": "index.js",
+  "dependencies": {
+    "@odigos/opentelemetry-node": "file:../../../opentelemetry-node"
+  }
+}
