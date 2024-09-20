@@ -53,10 +53,6 @@ jobs:
           node_image: ${{ matrix.kind-image }}
           version: "v0.23.0"
           cluster_name: kind
-      - name: Install FE
-        run: |
-          cd frontend/webapp
-          yarn install
       - name: Build CLI
         run: |
           cd cli
