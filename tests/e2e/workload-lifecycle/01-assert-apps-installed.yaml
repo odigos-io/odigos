@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: node-very-old-version
+  namespace: default
+status:
+  containerStatuses:
+    - name: node-very-old-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---

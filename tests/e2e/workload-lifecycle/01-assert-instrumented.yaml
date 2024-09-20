@@ -1,0 +1,13 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-node-very-old-version
+status:
+  conditions:
+    - message: "javascript runtime version not supported by OpenTelemetry SDK. Found:
+        8.17.0, supports: 14.0.0"
+      observedGeneration: 1
+      reason: RuntimeVersionNotSupported
+      status: "False"
+      type: AppliedInstrumentationDevice

@@ -200,6 +200,11 @@ cli-upgrade:
 	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
 	cd ./cli ; go run -tags=embed_manifests . upgrade --version $(ODIGOS_CLI_VERSION) --yes
 
+.PHONY: cli-build
+cli-build:
+	@echo "Building the cli executable for tests"
+	cd cli && go build -tags=embed_manifests -o odigos .
+
 .PHONY: api-all
 api-all:
 	make -C api all
@@ -207,3 +212,13 @@ api-all:
 .PHONY: crd-apply
 crd-apply: api-all cli-upgrade
 	@echo "Applying changes to CRDs in api directory"
+
+.PHONY: dev-tests-kind-cluster
+dev-tests-kind-cluster:
+	@echo "Creating a kind cluster for development"
+	kind delete cluster
+	kind create cluster
+
+.PHONY: dev-tests-setup
+dev-tests-setup: TAG := e2e-test
+dev-tests-setup: dev-tests-kind-cluster cli-build build-images load-to-kind

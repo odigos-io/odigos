@@ -1,6 +1,7 @@
-ui/node_modules
+frontend/webapp/node_modules
 .git/
 Dockerfile
 odiglet/Dockerfile
 odiglet/base.Dockerfile
 odiglet/debug.Dockerfile
+tests # not needed in context for odigos components builds
