@@ -2,6 +2,7 @@ package instrumentationdevice
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -10,6 +11,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
+
+func countOdigosResources(resources corev1.ResourceList) int {
+	numOdigosResources := 0
+	for resourceName := range resources {
+		if common.IsResourceNameOdigosInstrumentation(resourceName.String()) {
+			numOdigosResources = numOdigosResources + 1
+		}
+	}
+	return numOdigosResources
+}
 
 type workloadEnvChangePredicate struct {
 	predicate.Funcs
@@ -49,13 +60,12 @@ func (w workloadEnvChangePredicate) Update(e event.UpdateEvent) bool {
 				return true
 			}
 		}
-		if len(oldPodSpec.Spec.Containers[i].Resources.Limits) != len(newPodSpec.Spec.Containers[i].Resources.Limits) {
+
+		// user might apply a change to workload which will overwrite odigos injected resources
+		prevNumOdigosResources := countOdigosResources(oldPodSpec.Spec.Containers[i].Resources.Limits)
+		newNumOdigosResources := countOdigosResources(newPodSpec.Spec.Containers[i].Resources.Limits)
+		if prevNumOdigosResources != newNumOdigosResources {
 			return true
-		}
-		for k, v := range oldPodSpec.Spec.Containers[i].Resources.Limits {
-			if newPodSpec.Spec.Containers[i].Resources.Limits[k] != v {
-				return true
-			}
 		}
 	}
 
