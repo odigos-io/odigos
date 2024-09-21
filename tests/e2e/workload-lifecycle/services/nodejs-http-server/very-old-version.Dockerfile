@@ -6,3 +6,4 @@ RUN yarn install
 COPY . /app
 ENV NODE_VERSION=""
 CMD ["node", "index.js"]
+

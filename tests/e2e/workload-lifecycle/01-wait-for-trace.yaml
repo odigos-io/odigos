@@ -3,6 +3,7 @@ kind: TraceTest
 description: This test waits for a trace that is generated from the successful instrumented services.
 query: |
   { resource.service.name = "nodejs-minimum-version" } ||
-  { resource.service.name = "nodejs-latest-version" }
+  { resource.service.name = "nodejs-latest-version" } ||
+  { resource.service.name = "nodejs-dockerfile-env" }
 expected:
-  count: 2
+  count: 3

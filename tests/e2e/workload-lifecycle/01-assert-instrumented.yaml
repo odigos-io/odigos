@@ -97,12 +97,45 @@ apiVersion: odigos.io/v1alpha1
 kind: InstrumentedApplication
 metadata:
   namespace: default
-  name: deployment-cpp-http-server
+  name: deployment-nodejs-dockerfile-env
 status:
   conditions:
-    # TODO: update the message to reflect that no instrumentation device was applied
     - message: "Instrumentation device applied successfully"
       observedGeneration: 1
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-nodejs-dockerfile-env
+status:
+  healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: nodejs
+    - key: process.runtime.version
+      value: "20.17.0"
+    - key: telemetry.distro.version
+      value: e2e-test
+    - key: process.pid
+      (value != null): true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-cpp-http-server
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---

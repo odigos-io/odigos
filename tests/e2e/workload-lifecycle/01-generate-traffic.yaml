@@ -16,31 +16,16 @@ spec:
       securityContext: {}
       terminationGracePeriodSeconds: 30
       containers:
-        - name: nodejs-unsupported-version
+        - name: generate-traffic
           image: curlimages/curl:8.4.0
           imagePullPolicy: IfNotPresent
-          command: [ "curl" ]
-          args: [ "-s", "--fail", "http://nodejs-unsupported-version:3000" ]
-        - name: nodejs-very-old-version
-          image: curlimages/curl:8.4.0
-          imagePullPolicy: IfNotPresent
-          command: [ "curl" ]
-          args: [ "-s", "--fail", "http://nodejs-very-old-version:3000" ]
-        - name: nodejs-minimum-version
-          image: curlimages/curl:8.4.0
-          imagePullPolicy: IfNotPresent
-          command: [ "curl" ]
-          args: [ "-s", "--fail", "http://nodejs-minimum-version:3000" ]
-        - name: nodejs-latest-version
-          image: curlimages/curl:8.4.0
-          imagePullPolicy: IfNotPresent
-          command: [ "curl" ]
-          args: [ "-s", "--fail", "http://nodejs-latest-version:3000" ]
-        - name: cpp-http-server
-          image: curlimages/curl:8.4.0
-          imagePullPolicy: IfNotPresent
-          command: [ "curl" ]
-          args: [ "-s", "--fail", "http://cpp-http-server:3000" ]
-
-
-
+          command: [ "sh", "-c" ]
+          args:
+            - |
+              set -e
+              curl -s --fail http://nodejs-unsupported-version:3000
+              curl -s --fail http://nodejs-very-old-version:3000
+              curl -s --fail http://nodejs-minimum-version:3000
+              curl -s --fail http://nodejs-latest-version:3000
+              curl -s --fail http://nodejs-dockerfile-env:3000
+              curl -s --fail http://cpp-http-server:3000

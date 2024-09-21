@@ -1,3 +1,11 @@
+// verify the script set with --require flag is executed before the index.js file.
+if(process.env.CHECK_FOR_APP_REQUIRE) {
+  if(global.executeBeforeApplied !== true) {
+    console.log('execute_before script was not executed before the index.js script');
+    process.exit(1);
+  }
+}
+
 // Import the express module
 var express = require('express');
 

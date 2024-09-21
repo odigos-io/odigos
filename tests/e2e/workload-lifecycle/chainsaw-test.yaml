@@ -19,6 +19,8 @@ spec:
           kind load docker-image nodejs-minimum-version:v0.0.1
           docker build -t nodejs-latest-version:v0.0.1 -f services/nodejs-http-server/latest-version.Dockerfile services/nodejs-http-server
           kind load docker-image nodejs-latest-version:v0.0.1
+          docker build -t nodejs-dockerfile-env:v0.0.1 -f services/nodejs-http-server/dockerfile-env.Dockerfile services/nodejs-http-server
+          kind load docker-image nodejs-dockerfile-env:v0.0.1
           docker build -t cpp-http-server:v0.0.1 -f services/cpp-http-server/Dockerfile services/cpp-http-server
           kind load docker-image cpp-http-server:v0.0.1
 

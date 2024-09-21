@@ -114,6 +114,37 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
+    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+  generation: 2 # the deployment spec changed when odigos resource was added
+  labels:
+    app: nodejs-dockerfile-env
+  name: nodejs-dockerfile-env
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-dockerfile-env
+  template:
+    spec:
+      containers:
+      - name: nodejs-dockerfile-env
+        resources:
+          limits:
+            instrumentation.odigos.io/javascript-native-community: "1"
+        env:
+        - name: NODE_OPTIONS
+          value: "--require /app/execute_before.js --require /var/odigos/nodejs/autoinstrumentation.js"
+status:
+  availableReplicas: 1
+  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
     deployment.kubernetes.io/revision: "1"
   generation: 1
   labels:

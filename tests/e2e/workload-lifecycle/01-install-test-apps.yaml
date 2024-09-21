@@ -141,6 +141,41 @@ spec:
 kind: Deployment
 apiVersion: apps/v1
 metadata:
+  name: nodejs-dockerfile-env
+  namespace: default
+  labels:
+    app: nodejs-dockerfile-env
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-dockerfile-env
+  template:
+    metadata:
+      labels:
+        app: nodejs-dockerfile-env
+    spec:
+      containers:
+        - name: nodejs-dockerfile-env
+          image: nodejs-dockerfile-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nodejs-dockerfile-env
+  namespace: default
+spec:
+  selector:
+    app: nodejs-dockerfile-env
+  ports:
+    - protocol: TCP
+      port: 3000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
   name: cpp-http-server
   namespace: default
   labels:
