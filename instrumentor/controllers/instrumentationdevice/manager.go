@@ -49,6 +49,14 @@ func (w workloadEnvChangePredicate) Update(e event.UpdateEvent) bool {
 				return true
 			}
 		}
+		if len(oldPodSpec.Spec.Containers[i].Resources.Limits) != len(newPodSpec.Spec.Containers[i].Resources.Limits) {
+			return true
+		}
+		for k, v := range oldPodSpec.Spec.Containers[i].Resources.Limits {
+			if newPodSpec.Spec.Containers[i].Resources.Limits[k] != v {
+				return true
+			}
+		}
 	}
 
 	return false
