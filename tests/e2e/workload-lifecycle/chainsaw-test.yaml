@@ -70,7 +70,7 @@ spec:
         file: 01-assert-instrumented.yaml
     - assert:
         file: 01-assert-workloads.yaml
-  - name: Generate Traffic
+  - name: '01 - Generate Traffic'
     # at this point, we know the expected services are instrumented because we asserted the instrumentation instance
     # send traffic to all services to verify they are working as expected and verify traces for instrumented ones
     try:
@@ -100,6 +100,11 @@ spec:
               ../../common/flush_traces.sh
             fi
           done
+
+  - name: '02 - Update workload manifest template spec'
+    try:
+    - apply:
+        file: 02-update-workload-manifests.yaml
 
   # - name: Verify Trace - Context Propagation
   #   try:
