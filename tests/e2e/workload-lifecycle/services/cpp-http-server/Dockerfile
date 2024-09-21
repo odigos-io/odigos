@@ -7,7 +7,8 @@ RUN apk add --no-cache g++ wget cmake
 # Download and install cpp-httplib
 RUN wget https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.10.7.tar.gz -O cpp-httplib.tar.gz \
     && tar -xzf cpp-httplib.tar.gz \
-    && cp cpp-httplib-0.10.7/httplib.h /usr/local/include/ \
+    && mkdir -p /usr/local/include \
+    && cp cpp-httplib-0.10.7/httplib.h /usr/local/include/httplib.h \
     && rm -rf cpp-httplib.tar.gz cpp-httplib-0.10.7
 
 WORKDIR /app

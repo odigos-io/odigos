@@ -11,7 +11,6 @@ spec:
     - script:
         timeout: 100s
         content: |
-          # NodeJS
           docker build -t nodejs-unsupported-version:v0.0.1 -f services/nodejs-http-server/unsupported-version.Dockerfile services/nodejs-http-server
           kind load docker-image nodejs-unsupported-version:v0.0.1
           docker build -t nodejs-very-old-version:v0.0.1 -f services/nodejs-http-server/very-old-version.Dockerfile services/nodejs-http-server
@@ -20,11 +19,9 @@ spec:
           kind load docker-image nodejs-minimum-version:v0.0.1
           docker build -t nodejs-latest-version:v0.0.1 -f services/nodejs-http-server/latest-version.Dockerfile services/nodejs-http-server
           kind load docker-image nodejs-latest-version:v0.0.1
-
-          # C++
           docker build -t cpp-http-server:v0.0.1 -f services/cpp-http-server/Dockerfile services/cpp-http-server
           kind load docker-image cpp-http-server:v0.0.1
-          
+
   - name: Prepare destination
     try:
     - script:
