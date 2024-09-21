@@ -110,3 +110,30 @@ status:
   replicas: 1
   updatedReplicas: 1
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  generation: 1
+  labels:
+    app: cpp-http-server
+  name: cpp-http-server
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: cpp-http-server
+  template:
+    spec:
+      containers:
+      - image: cpp-http-server:v0.0.1
+        name: cpp-http-server
+        resources: {}
+status:
+  availableReplicas: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+

@@ -54,3 +54,17 @@ status:
       started: true
   phase: Running
 ---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: cpp-http-server
+  namespace: default
+status:
+  containerStatuses:
+    - name: cpp-http-server
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---

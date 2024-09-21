@@ -138,3 +138,38 @@ spec:
     - protocol: TCP
       port: 3000
 ---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: cpp-http-server
+  namespace: default
+  labels:
+    app: cpp-http-server
+spec:
+  selector:
+    matchLabels:
+      app: cpp-http-server
+  template:
+    metadata:
+      labels:
+        app: cpp-http-server
+    spec:
+      containers:
+        - name: cpp-http-server
+          image: cpp-http-server:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: cpp-http-server
+  namespace: default
+spec:
+  selector:
+    app: cpp-http-server
+  ports:
+    - protocol: TCP
+      port: 3000
+---

@@ -66,4 +66,19 @@ spec:
       language: javascript
       (runtimeVersion != null): true
 ---
-
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-cpp-http-server
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: cpp-http-server
+spec:
+  runtimeDetails:
+    - containerName: cpp-http-server
+      language: unknown
+---

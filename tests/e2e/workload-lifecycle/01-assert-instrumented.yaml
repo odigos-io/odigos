@@ -93,3 +93,16 @@ status:
     - key: process.pid
       (value != null): true
 ---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-cpp-http-server
+status:
+  conditions:
+    # TODO: update the message to reflect that no instrumentation device was applied
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice

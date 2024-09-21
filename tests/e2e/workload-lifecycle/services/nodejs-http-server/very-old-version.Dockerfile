@@ -4,4 +4,5 @@ COPY ./package.json /app
 COPY ./yarn.lock /app
 RUN yarn install
 COPY . /app
-CMD ["sh", "-c", "unset NODE_VERSION && node index.js"]
+ENV NODE_VERSION=""
+CMD ["node", "index.js"]

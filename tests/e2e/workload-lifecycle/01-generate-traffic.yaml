@@ -36,6 +36,11 @@ spec:
           imagePullPolicy: IfNotPresent
           command: [ "curl" ]
           args: [ "-s", "--fail", "http://nodejs-latest-version:3000" ]
+        - name: cpp-http-server
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: [ "curl" ]
+          args: [ "-s", "--fail", "http://cpp-http-server:3000" ]
 
 
 

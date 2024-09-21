@@ -133,3 +133,4 @@ spec:
           timeout: 60s
           content: |
             ../../common/ui-tests/stop_ui_and_clean.sh
+ 
