@@ -54,8 +54,6 @@ This e2e test verify various scenarios related to the lifecycle of workloads in 
 Adds the initial workloads, instrument the ns and add destination to odigos.
 Verify the expected state for each workload according to it's caracteristics.
 
-In this step we deploy the following workloads:
-
 - nodejs-unsupported-version
   - detect the runtime version
   - avoid adding instrumentation device
@@ -87,3 +85,33 @@ In this step we deploy the following workloads:
 - cpp-http-server
   - should NOT detect the runtime language and report it as `unknown`
   - should NOT add instrumentation device
+
+## Step 02 - Update Workload Manifest
+
+This steps will make a change in the workload manifests and make sure that after the new revision, the applications are running, instrumented and produce traces.
+
+- nodejs-unsupported-version
+  - deployment manifest should be patched by odigos
+  - workload should not restart due to odigos
+- nodejs-very-old-version
+  - should reinject the instrumentation device as runtime version not available
+  - process should restart and agent should not load
+- nodejs-minimum-version
+  - deployment manifest should be patched by odigos
+  - workload should restart and agent should load
+  - it should report traces
+- nodejs-latest-version
+  - deployment manifest should be patched by odigos
+  - workload should restart and agent should load
+  - it should report traces
+- nodejs-docker-env
+  - deployment manifest should be patched by odigos, both instrumentation device and NODE_OPTIONS env
+  - workload should restart and agent should load
+  - it should report traces
+- nodejs-manifest-env
+  - deployment manifest should be patched by odigos, both instrumentation device and NODE_OPTIONS env
+  - workload should restart and agent should load
+  - it should report traces
+- cpp-http-server
+  - deployment manifest should be patched by odigos
+  - workload should not restart and agent should not load

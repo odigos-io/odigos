@@ -88,10 +88,13 @@ spec:
 
           # Delete the job
           kubectl delete -f 01-generate-traffic.yaml
-
-          # wait for traces to arrive
+    
+  - name: '01 - Wait for Traces'
+    try:
+    - script:
+        timeout: 60s
+        content: |
           while true; do
-            set +e # Disable exit on error
             ../../common/traceql_runner.sh 01-wait-for-trace.yaml
             if [ $? -eq 0 ]; then
               break
@@ -105,6 +108,35 @@ spec:
     try:
     - apply:
         file: 02-update-workload-manifests.yaml
+    - assert:
+        file: 02-assert-workload-update.yaml
+  
+  - name: '02 - Generate Traffic'
+    try:
+    - script:
+        timeout: 60s
+        content: |
+          set -e
+          kubectl apply -f 01-generate-traffic.yaml
+          job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+          kubectl wait --for=condition=complete job/$job_name
+          kubectl delete -f 01-generate-traffic.yaml
+    
+  - name: '02 - Wait for Traces'
+    try:
+    - script:
+        timeout: 60s
+        content: |
+          while true; do
+            ../../common/traceql_runner.sh 02-wait-for-trace.yaml
+            if [ $? -eq 0 ]; then
+              break
+            else
+              sleep 3
+              ../../common/flush_traces.sh
+            fi
+          done
+
 
   # - name: Verify Trace - Context Propagation
   #   try:
