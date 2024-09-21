@@ -31,5 +31,11 @@ spec:
           imagePullPolicy: IfNotPresent
           command: [ "curl" ]
           args: [ "-s", "--fail", "http://nodejs-minimum-version:3000" ]
+        - name: nodejs-latest-version
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: [ "curl" ]
+          args: [ "-s", "--fail", "http://nodejs-latest-version:3000" ]
+
 
 

@@ -39,3 +39,18 @@ status:
       restartCount: 0
       started: true
   phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: nodejs-latest-version
+  namespace: default
+status:
+  containerStatuses:
+    - name: nodejs-latest-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---

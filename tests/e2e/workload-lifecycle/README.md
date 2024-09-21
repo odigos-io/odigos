@@ -19,6 +19,11 @@ Odigos is expected to add instrumentation device to the deployment, should resta
 This workload runs the nodejs http server test app with node 14.0.0 which is the minimum supported version by the agent.
 Instrumentation is expected to work for this workload.
 
+### nodejs-latest-version
+
+Workload that runs nodejs http server with the latest version of nodejs from dockerhub.
+Make sure application is stable and the agent is able to instrument it.
+
 ## Steps
 
 ## Step 01
@@ -31,3 +36,4 @@ In this step we deploy the following workloads:
 - nodejs-unsupported-version - should detect the runtime version and avoid instrumentation device.
 - nodejs-very-old-version - should not detect the runtime version and add instrumentation device but the agent should not load and application can run as usual.
 - nodejs-minimum-version - should detect the runtime version and add instrumentation device, and report success in the instrumented instance CR.
+- nodejs-latest-version - should detect the runtime version and add instrumentation device, and report success in the instrumented instance CR.

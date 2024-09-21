@@ -103,3 +103,38 @@ spec:
     - protocol: TCP
       port: 3000
 ---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: nodejs-latest-version
+  namespace: default
+  labels:
+    app: nodejs-latest-version
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-latest-version
+  template:
+    metadata:
+      labels:
+        app: nodejs-latest-version
+    spec:
+      containers:
+        - name: nodejs-latest-version
+          image: nodejs-latest-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nodejs-latest-version
+  namespace: default
+spec:
+  selector:
+    app: nodejs-latest-version
+  ports:
+    - protocol: TCP
+      port: 3000
+---

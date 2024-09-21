@@ -17,6 +17,8 @@ spec:
           kind load docker-image nodejs-very-old-version:v0.0.1
           docker build -t nodejs-minimum-version:v0.0.1 -f services/nodejs-http-server/minimum-version.Dockerfile services/nodejs-http-server
           kind load docker-image nodejs-minimum-version:v0.0.1
+          docker build -t nodejs-latest-version:v0.0.1 -f services/nodejs-http-server/latest-version.Dockerfile services/nodejs-http-server
+          kind load docker-image nodejs-latest-version:v0.0.1
   - name: Prepare destination
     try:
     - script:
