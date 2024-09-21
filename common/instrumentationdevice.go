@@ -40,3 +40,7 @@ func InstrumentationDeviceNameToComponents(deviceName string) (ProgrammingLangua
 	pluginName := strings.Split(deviceName, "/")[1]
 	return InstrumentationPluginNameToComponents(pluginName)
 }
+
+func IsResourceNameOdigosInstrumentation(resourceName string) bool {
+	return strings.HasPrefix(resourceName, OdigosResourceNamespace)
+}
