@@ -133,7 +133,7 @@ spec:
             instrumentation.odigos.io/javascript-native-community: "1"
         env:
         - name: NODE_OPTIONS
-          value: "--require /app/execute_before.js --require /var/odigos/nodejs/autoinstrumentation.js"
+          value: "--require /app/execute_before.js --max-old-space-size=256 --require /var/odigos/nodejs/autoinstrumentation.js"
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added

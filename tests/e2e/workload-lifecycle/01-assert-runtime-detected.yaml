@@ -82,7 +82,7 @@ spec:
     - containerName: nodejs-dockerfile-env
       envVars:
       - name: NODE_OPTIONS
-        value: "--require /app/execute_before.js"
+        value: "--require /app/execute_before.js --max-old-space-size=256"
       language: javascript
       runtimeVersion: 20.17.0
 ---
