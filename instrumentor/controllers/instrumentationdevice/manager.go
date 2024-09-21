@@ -22,15 +22,15 @@ func countOdigosResources(resources corev1.ResourceList) int {
 	return numOdigosResources
 }
 
-type workloadEnvChangePredicate struct {
+type workloadPodTemplatePredicate struct {
 	predicate.Funcs
 }
 
-func (w workloadEnvChangePredicate) Create(e event.CreateEvent) bool {
+func (w workloadPodTemplatePredicate) Create(e event.CreateEvent) bool {
 	return false
 }
 
-func (w workloadEnvChangePredicate) Update(e event.UpdateEvent) bool {
+func (w workloadPodTemplatePredicate) Update(e event.UpdateEvent) bool {
 
 	if e.ObjectOld == nil || e.ObjectNew == nil {
 		return false
@@ -72,11 +72,11 @@ func (w workloadEnvChangePredicate) Update(e event.UpdateEvent) bool {
 	return false
 }
 
-func (w workloadEnvChangePredicate) Delete(e event.DeleteEvent) bool {
+func (w workloadPodTemplatePredicate) Delete(e event.DeleteEvent) bool {
 	return false
 }
 
-func (w workloadEnvChangePredicate) Generic(e event.GenericEvent) bool {
+func (w workloadPodTemplatePredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
@@ -122,7 +122,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentationdevice-deployment").
 		For(&appsv1.Deployment{}).
-		WithEventFilter(workloadEnvChangePredicate{}).
+		WithEventFilter(workloadPodTemplatePredicate{}).
 		Complete(&DeploymentReconciler{
 			Client: mgr.GetClient(),
 		})
@@ -134,7 +134,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentationdevice-daemonset").
 		For(&appsv1.DaemonSet{}).
-		WithEventFilter(workloadEnvChangePredicate{}).
+		WithEventFilter(workloadPodTemplatePredicate{}).
 		Complete(&DaemonSetReconciler{
 			Client: mgr.GetClient(),
 		})
@@ -145,7 +145,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.StatefulSet{}).
-		WithEventFilter(workloadEnvChangePredicate{}).
+		WithEventFilter(workloadPodTemplatePredicate{}).
 		Complete(&StatefulSetReconciler{
 			Client: mgr.GetClient(),
 		})
