@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: step-01-generate-traffic
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        workload: job
+      labels:
+        app: step-01-generate-traffic
+    spec:
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: nodejs-unsupported-version
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: [ "curl" ]
+          args: [ "-s", "--fail", "http://nodejs-unsupported-version:3000" ]
+        - name: nodejs-very-old-version
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: [ "curl" ]
+          args: [ "-s", "--fail", "http://nodejs-very-old-version:3000" ]
+        - name: nodejs-minimum-version
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: [ "curl" ]
+          args: [ "-s", "--fail", "http://nodejs-minimum-version:3000" ]
+
+

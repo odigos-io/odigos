@@ -61,31 +61,37 @@ spec:
         file: 01-assert-instrumented.yaml
     - assert:
         file: 01-assert-workloads.yaml
-  # - name: Generate Traffic
-  #   try:
-  #   - script:
-  #       timeout: 60s
-  #       content: |
-  #         while true; do
-  #           # Apply the job
-  #           kubectl apply -f 05-generate-traffic.yaml
+  - name: Generate Traffic
+    # at this point, we know the expected services are instrumented because we asserted the instrumentation instance
+    # send traffic to all services to verify they are working as expected and verify traces for instrumented ones
+    try:
+    - script:
+        timeout: 60s
+        content: |
+          set -e
 
-  #           # Wait for the job to complete
-  #           job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-  #           kubectl wait --for=condition=complete job/$job_name
+          # Apply the job
+          kubectl apply -f 01-generate-traffic.yaml
 
-  #           # Delete the job
-  #           kubectl delete -f 05-generate-traffic.yaml
+          # Wait for the job to complete
+          job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+          kubectl wait --for=condition=complete job/$job_name
 
-  #           # Run the wait-for-trace script
-  #           ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
-  #           if [ $? -eq 0 ]; then
-  #             break
-  #           else
-  #             sleep 3
-  #             ../../common/flush_traces.sh
-  #           fi
-  #         done
+          # Delete the job
+          kubectl delete -f 01-generate-traffic.yaml
+
+          # wait for traces to arrive
+          while true; do
+            set +e # Disable exit on error
+            ../../common/traceql_runner.sh 01-wait-for-trace.yaml
+            if [ $? -eq 0 ]; then
+              break
+            else
+              sleep 3
+              ../../common/flush_traces.sh
+            fi
+          done
+
   # - name: Verify Trace - Context Propagation
   #   try:
   #   - script:
