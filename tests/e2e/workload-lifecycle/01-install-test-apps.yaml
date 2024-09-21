@@ -176,6 +176,44 @@ spec:
 kind: Deployment
 apiVersion: apps/v1
 metadata:
+  name: nodejs-manifest-env
+  namespace: default
+  labels:
+    app: nodejs-manifest-env
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-manifest-env
+  template:
+    metadata:
+      labels:
+        app: nodejs-manifest-env
+    spec:
+      containers:
+        - name: nodejs-manifest-env
+          image: nodejs-manifest-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_OPTIONS
+              value: "--require /app/execute_before.js --max-old-space-size=256"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nodejs-manifest-env
+  namespace: default
+spec:
+  selector:
+    app: nodejs-manifest-env
+  ports:
+    - protocol: TCP
+      port: 3000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
   name: cpp-http-server
   namespace: default
   labels:

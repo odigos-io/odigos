@@ -4,6 +4,7 @@ description: This test waits for a trace that is generated from the successful i
 query: |
   { resource.service.name = "nodejs-minimum-version" } ||
   { resource.service.name = "nodejs-latest-version" } ||
-  { resource.service.name = "nodejs-dockerfile-env" }
+  { resource.service.name = "nodejs-dockerfile-env" } ||
+  { resource.service.name = "nodejs-manifest-env" }
 expected:
-  count: 3
+  count: 4

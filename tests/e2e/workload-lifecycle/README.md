@@ -36,7 +36,13 @@ This e2e test verify various scenarios related to the lifecycle of workloads in 
 - Application uses NODE_OPTIONS environment variable in the dockerfile to set one `--require` flag and another `--max-old-space-size` flag.
 - This workload verifies that after instrumentation is applied, those 2 options still works as expected.
 
-### cpp-http-server
+### nodejs-manifest-env
+
+- Node.js version `20.17.0` (common version)
+- Application uses NODE_OPTIONS environment variable in the k8s deployment manifest to set one `--require` flag and another `--max-old-space-size` flag.
+- This workload verifies that after instrumentation is applied, those 2 options still works as expected.
+
+## CPP Workloads
 
 - Workload with a language odigos does not support.
 - Should not be instrumented or restarted.
@@ -68,7 +74,12 @@ In this step we deploy the following workloads:
   - should add instrumentation device
   - should report health in the instrumented instance CR
   - agent should load and report traces
-- nodejs-docker-env - should detect the runtime and relevant env vars add instrumentation device. the application checks that the `--require` script it uses is loaded correctly. agent should run and report traces.
+- nodejs-docker-env
+  - should detect the runtime version and NODE_OPTIONS value from container env
+  - should add instrumentation device and patch the NODE_OPTIONS value
+  - should report health in the instrumented instance CR
+  - agent should load and report traces, and verify the `--require` script is loaded correctly and the `--max-old-space-size` is in effect in v8 runtime.
+- nodejs-manifest-env
   - should detect the runtime version and NODE_OPTIONS value from container env
   - should add instrumentation device and patch the NODE_OPTIONS value
   - should report health in the instrumented instance CR
