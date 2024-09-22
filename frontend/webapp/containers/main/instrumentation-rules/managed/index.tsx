@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useActions, useNotify } from '@/hooks';
+import { useInstrumentationRules } from '@/hooks';
 import theme from '@/styles/palette';
 import { useRouter } from 'next/navigation';
-import { ACTIONS, OVERVIEW, ROUTES } from '@/utils';
-import { EmptyList, ActionsTable } from '@/components';
+import { EmptyList } from '@/components';
 import {
   KeyvalText,
   KeyvalButton,
@@ -11,106 +10,78 @@ import {
   KeyvalSearchInput,
 } from '@/design.system';
 import {
-    InstrumentationRulesContainer,
+  InstrumentationRulesContainer,
   Container,
   Content,
   Header,
   HeaderRight,
 } from './styled';
+import { InstrumentationRulesTable } from '@/components/overview/instrumentation-rules/rules-table';
 
 export function ManagedInstrumentationRulesContainer() {
-    return <>TEST</>
-//   const [searchInput, setSearchInput] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const router = useRouter();
 
-//   const router = useRouter();
-//   const notify = useNotify();
-//   const {
-//     isLoading,
-//     actions,
-//     sortActions,
-//     filterActionsBySignal,
-//     toggleActionStatus,
-//     refetch,
-//   } = useActions();
+  const { isLoading, rules, sortRules, refetch } = useInstrumentationRules();
 
-//   useEffect(() => {
-//     refetch();
-//   }, []);
+  useEffect(() => {
+    refetch();
+  }, []);
 
-//   function handleAddAction() {
-//     router.push(ROUTES.CHOOSE_ACTIONS);
-//   }
+  function handleAddRule() {
+    router.push('/choose-rule');
+  }
 
-//   function handleEditAction(id: string) {
-//     router.push(`${ROUTES.EDIT_ACTION}?id=${id}`);
-//   }
+  function handleEditRule(id: string) {
+    router.push(`edit-rule?id=${id}`);
+  }
 
-//   function filterActions() {
-//     return actions.filter(
-//       ({ spec: { actionName } }) =>
-//         actionName &&
-//         actionName.toLowerCase().includes(searchInput.toLowerCase())
-//     );
-//   }
+  function filterRules() {
+    return rules;
+  }
 
-//   async function onSelectStatus(ids: string[], disabled: boolean) {
-//     const res = await toggleActionStatus(ids, disabled);
+  if (isLoading) return <KeyvalLoader />;
 
-//     notify({
-//       type: res ? 'success' : 'error',
-//       message: res
-//         ? OVERVIEW.ACTION_UPDATE_SUCCESS
-//         : OVERVIEW.ACTION_UPDATE_ERROR,
-//       title: res ? 'Success' : 'Error',
-//       crdType: 'action',
-//       target: '',
-//     });
-//   }
-
-//   if (isLoading) return <KeyvalLoader />;
-
-//   return (
-//     <>
-//       <Container>
-//         {!actions?.length ? (
-//           <EmptyList
-//             title={OVERVIEW.EMPTY_ACTION}
-//             btnTitle={OVERVIEW.ADD_NEW_ACTION}
-//             btnAction={handleAddAction}
-//           />
-//         ) : (
-//           <ActionsContainer>
-//             <Header>
-//               <KeyvalSearchInput
-//                 containerStyle={{ padding: '6px 8px' }}
-//                 placeholder={ACTIONS.SEARCH_ACTION}
-//                 value={searchInput}
-//                 onChange={(e) => setSearchInput(e.target.value)}
-//               />
-//               <HeaderRight>
-//                 <KeyvalButton onClick={handleAddAction} style={{ height: 32 }}>
-//                   <KeyvalText
-//                     size={14}
-//                     weight={600}
-//                     color={theme.text.dark_button}
-//                   >
-//                     {OVERVIEW.ADD_NEW_ACTION}
-//                   </KeyvalText>
-//                 </KeyvalButton>
-//               </HeaderRight>
-//             </Header>
-//             <Content>
-//               <ActionsTable
-//                 data={searchInput ? filterActions() : actions}
-//                 onRowClick={handleEditAction}
-//                 sortActions={sortActions}
-//                 filterActionsBySignal={filterActionsBySignal}
-//                 toggleActionStatus={onSelectStatus}
-//               />
-//             </Content>
-//           </ActionsContainer>
-//         )}
-//       </Container>
-//     </>
-//   );
+  return (
+    <>
+      <Container>
+        {!rules?.length ? (
+          <EmptyList
+            title={'No rules found'}
+            btnTitle={'Add Rule'}
+            btnAction={handleAddRule}
+          />
+        ) : (
+          <InstrumentationRulesContainer>
+            <Header>
+              <KeyvalSearchInput
+                containerStyle={{ padding: '6px 8px' }}
+                placeholder={'Search Rule'}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+              <HeaderRight>
+                <KeyvalButton onClick={handleAddRule} style={{ height: 32 }}>
+                  <KeyvalText
+                    size={14}
+                    weight={600}
+                    color={theme.text.dark_button}
+                  >
+                    {'Add Rule'}
+                  </KeyvalText>
+                </KeyvalButton>
+              </HeaderRight>
+            </Header>
+            <Content>
+              <InstrumentationRulesTable
+                data={searchInput ? filterRules() : rules}
+                onRowClick={handleEditRule}
+                sortRules={sortRules}
+              />
+            </Content>
+          </InstrumentationRulesContainer>
+        )}
+      </Container>
+    </>
+  );
 }

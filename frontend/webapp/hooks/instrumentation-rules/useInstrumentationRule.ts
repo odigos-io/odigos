@@ -8,6 +8,7 @@ import {
   deleteInstrumentationRule,
 } from '@/services';
 import { InstrumentationRuleSpec } from '@/types';
+import { useRouter } from 'next/navigation';
 
 export function useInstrumentationRules() {
   // Fetch all instrumentation rules
@@ -15,7 +16,7 @@ export function useInstrumentationRules() {
     [],
     getInstrumentationRules
   );
-
+  const router = useRouter();
   // State to manage sorted rules
   const [sortedRules, setSortedRules] = useState<
     InstrumentationRuleSpec[] | undefined
@@ -27,8 +28,11 @@ export function useInstrumentationRules() {
   );
 
   const { mutateAsync: updateRule } = useMutation(
-    (body: { id: string; data: InstrumentationRuleSpec }) =>
-      updateInstrumentationRule(body.id, body.data)
+    (body: { data: InstrumentationRuleSpec }) =>
+      updateInstrumentationRule(body.data.ruleId as string, body.data),
+    {
+      onSuccess: () => router.push('/instrumentation-rules'),
+    }
   );
 
   const { mutateAsync: deleteRule } = useMutation((id: string) =>
@@ -47,7 +51,7 @@ export function useInstrumentationRules() {
       const res = await refetch();
       rules = res.data;
     }
-    return rules?.find((rule) => rule.ruleName === id); // Assuming id is ruleName, adjust as needed
+    return rules?.find((rule) => rule.ruleId === id);
   }
 
   // Function to sort rules by name or status

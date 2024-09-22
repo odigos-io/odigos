@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { ActionIcon } from '@/components';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   KeyvalButton,
   KeyvalCheckbox,
@@ -25,6 +25,7 @@ import {
 import theme from '@/styles/palette';
 import { useInstrumentationRules } from '@/hooks'; // Custom hook for instrumentation rules
 import { InstrumentationRuleSpec } from '@/types';
+import { func } from 'prop-types';
 
 const TYPE = 'type';
 
@@ -32,7 +33,7 @@ export function CreateInstrumentationRulesContainer(): React.JSX.Element {
   const [ruleType, setRuleType] = useState<string | null>(null);
   const [ruleName, setRuleName] = useState<string>('');
   const [ruleNote, setRuleNote] = useState<string>('');
-
+  const [isFormValid, setIsFormValid] = useState<boolean>(false);
   const [payloadCollection, setPayloadCollection] = useState({
     httpRequest: false,
     httpResponse: false,
@@ -40,7 +41,7 @@ export function CreateInstrumentationRulesContainer(): React.JSX.Element {
     messaging: false,
   });
   const search = useSearchParams();
-
+  const router = useRouter();
   // Using the custom hook for CRUD operations
   const { addRule } = useInstrumentationRules();
 
@@ -48,6 +49,12 @@ export function CreateInstrumentationRulesContainer(): React.JSX.Element {
     const type = search.get(TYPE);
     setRuleType(type);
   }, [search]);
+
+  useEffect(() => {
+    Object.values(payloadCollection).some((value) => value)
+      ? setIsFormValid(true)
+      : setIsFormValid(false);
+  }, [payloadCollection]);
 
   // Function to handle checkbox change
   const handleCheckboxChange = (key: string) => {
@@ -74,7 +81,7 @@ export function CreateInstrumentationRulesContainer(): React.JSX.Element {
 
     try {
       await addRule(payload); // Using the addRule function from the custom hook
-      alert('Rule created successfully!');
+      router.push('/instrumentation-rules');
     } catch (error) {
       console.error('Error creating rule:', error);
       alert('Failed to create rule.');
@@ -120,26 +127,38 @@ export function CreateInstrumentationRulesContainer(): React.JSX.Element {
         </KeyvalInputWrapper>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <KeyvalCheckbox
-            label="Collect HTTP Request"
-            value={payloadCollection.httpRequest}
-            onChange={() => handleCheckboxChange('httpRequest')}
-          />
-          <KeyvalCheckbox
-            label="Collect HTTP Response"
-            value={payloadCollection.httpResponse}
-            onChange={() => handleCheckboxChange('httpResponse')}
-          />
-          <KeyvalCheckbox
-            label="Collect DB Query"
-            value={payloadCollection.dbQuery}
-            onChange={() => handleCheckboxChange('dbQuery')}
-          />
-          <KeyvalCheckbox
-            label="Collect Messaging"
-            value={payloadCollection.messaging}
-            onChange={() => handleCheckboxChange('messaging')}
-          />
+          <KeyvalText size={14}>
+            {'Select the type of data you want to collect'}
+          </KeyvalText>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              marginLeft: '16px',
+            }}
+          >
+            <KeyvalCheckbox
+              label="Collect HTTP Request"
+              value={payloadCollection.httpRequest}
+              onChange={() => handleCheckboxChange('httpRequest')}
+            />
+            <KeyvalCheckbox
+              label="Collect HTTP Response"
+              value={payloadCollection.httpResponse}
+              onChange={() => handleCheckboxChange('httpResponse')}
+            />
+            <KeyvalCheckbox
+              label="Collect DB Query"
+              value={payloadCollection.dbQuery}
+              onChange={() => handleCheckboxChange('dbQuery')}
+            />
+            <KeyvalCheckbox
+              label="Collect Messaging"
+              value={payloadCollection.messaging}
+              onChange={() => handleCheckboxChange('messaging')}
+            />
+          </div>
         </div>
         <TextareaWrapper>
           <KeyvalTextArea
@@ -149,7 +168,7 @@ export function CreateInstrumentationRulesContainer(): React.JSX.Element {
           />
         </TextareaWrapper>
         <CreateButtonWrapper>
-          <KeyvalButton onClick={createRule}>
+          <KeyvalButton onClick={createRule} disabled={!isFormValid}>
             <KeyvalText size={14} weight={700} color={theme.text.dark_button}>
               Create Rule
             </KeyvalText>
