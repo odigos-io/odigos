@@ -27,7 +27,10 @@ import (
 // This interface should be implemented by all ebpf sdks
 // for example, the go auto instrumentation sdk implements it
 type OtelEbpfSdk interface {
+	// Run starts the eBPF instrumentation.
+	// It should block until the instrumentation is stopped or the context is canceled or an error occurs.
 	Run(ctx context.Context) error
+	// Close cleans up the resources associated with the eBPF instrumentation.
 	Close(ctx context.Context) error
 }
 
@@ -76,7 +79,8 @@ const (
 
 // CleanupInterval is the interval in which the director will check if the instrumented processes are still running
 // and clean up the resources associated to the ones that are not.
-const CleanupInterval = 30 * time.Second
+// It is not const for testing purposes.
+var CleanupInterval = 30 * time.Second
 
 type instrumentationStatus struct {
 	Workload      workload.PodWorkload
@@ -123,8 +127,6 @@ type DirectorKey struct {
 
 type DirectorsMap map[DirectorKey]Director
 
-var _ Director = &EbpfDirector[*GoOtelEbpfSdk]{}
-
 func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, scheme *runtime.Scheme, language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
 	director := &EbpfDirector[T]{
 		language:                  language,
@@ -141,19 +143,21 @@ func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, s
 	return director
 }
 
+// defining this function here allows mocking it in tests
+var IsProcessExists = func(pid int) bool {
+	p, err := os.FindProcess(pid)
+	if err != nil {
+		return false
+	}
+	// To check if the process exists, we send signal 0 to the process
+	// this is the standard way to check if a process exists in unix
+	err = p.Signal(syscall.Signal(0))
+	return err == nil
+}
+
 func (d *EbpfDirector[T]) periodicCleanup(ctx context.Context) {
 	ticker := time.NewTicker(CleanupInterval)
-
-	isProcessExists := func(pid int) bool {
-		p, err := os.FindProcess(pid)
-		if err != nil {
-			return false
-		}
-		// To check if the process exists, we send signal 0 to the process
-		// this is the standard way to check if a process exists in unix
-		err = p.Signal(syscall.Signal(0))
-		return err == nil
-	}
+	defer ticker.Stop()
 
 	for {
 		select {
@@ -165,7 +169,7 @@ func (d *EbpfDirector[T]) periodicCleanup(ctx context.Context) {
 				newInstrumentedProcesses := make([]*InstrumentedProcess[T], 0, len(details.InstrumentedProcesses))
 				for i := range details.InstrumentedProcesses {
 					ip := details.InstrumentedProcesses[i]
-					if !isProcessExists(ip.PID) && any(ip.inst) != nil {
+					if !IsProcessExists(ip.PID) && any(ip.inst) != nil {
 						log.Logger.V(0).Info("Instrumented process does not exist, cleaning up", "pid", ip.PID)
 						d.cleanProcess(ctx, pod, ip)
 					} else {
@@ -404,7 +408,9 @@ func (d *EbpfDirector[T]) GetWorkloadInstrumentations(workload *workload.PodWork
 		}
 
 		for _, ip := range details.InstrumentedProcesses {
-			insts = append(insts, ip.inst)
+			if any(ip.inst) != nil {
+				insts = append(insts, ip.inst)
+			}
 		}
 	}
 
