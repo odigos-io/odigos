@@ -119,6 +119,7 @@
         {
           "group": "Java",
           "pages": [
+            "instrumentations/java/java",
             "instrumentations/java/ebpf"
           ]
         }        
@@ -199,6 +200,7 @@
             "backends/s3",
             "backends/azureblob",
             "backends/causely",
+            "backends/chronosphere",
             "backends/coralogix",
             "backends/datadog",
             "backends/dynatrace",
