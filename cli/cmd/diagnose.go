@@ -99,31 +99,35 @@ func fetchOdigosComponentsLogs(ctx context.Context, client *kube.Client, logDir 
 
 func fetchPodLogs(ctx context.Context, client *kube.Client, odigosNamespace string, pod v1.Pod, logDir string) {
 	for _, container := range pod.Spec.Containers {
-		logPrefix := fmt.Sprintf("Fetching logs for Pod: %s, Container: %s, Node: %s", pod.Name, container.Name, pod.Spec.NodeName)
-		fmt.Printf(logPrefix + "\n")
+		fetchingContainerLogs(ctx, client, odigosNamespace, pod, container, logDir)
 
-		// Define the log file path for saving compressed logs
-		logFilePath := filepath.Join(logDir, pod.Name+"_"+container.Name+"_"+pod.Spec.NodeName+".log.gz")
-		logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-		if err != nil {
-			fmt.Printf(logPrefix+" - Failed - Error creating log file: %v\n", err)
-			return
-		}
+	}
+}
 
-		req := client.CoreV1().Pods(odigosNamespace).GetLogs(pod.Name, &v1.PodLogOptions{})
-		logStream, err := req.Stream(ctx)
-		if err != nil {
-			fmt.Printf(logPrefix+" - Failed - Error creating log stream: %v\n", err)
-			return
-		}
+func fetchingContainerLogs(ctx context.Context, client *kube.Client, odigosNamespace string, pod v1.Pod, container v1.Container, logDir string) {
+	logPrefix := fmt.Sprintf("Fetching logs for Pod: %s, Container: %s, Node: %s", pod.Name, container.Name, pod.Spec.NodeName)
+	fmt.Printf(logPrefix + "\n")
 
-		if err = saveLogsToGzipFileInBatches(logFile, logStream, logBufferSize); err != nil {
-			fmt.Printf(logPrefix+" - Failed - Error saving logs to file: %v\n", err)
-			return
-		}
+	// Define the log file path for saving compressed logs
+	logFilePath := filepath.Join(logDir, pod.Name+"_"+container.Name+"_"+pod.Spec.NodeName+".log.gz")
+	logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		fmt.Printf(logPrefix+" - Failed - Error creating log file: %v\n", err)
+		return
+	}
+	defer logFile.Close()
 
-		logStream.Close()
-		logFile.Close()
+	req := client.CoreV1().Pods(odigosNamespace).GetLogs(pod.Name, &v1.PodLogOptions{})
+	logStream, err := req.Stream(ctx)
+	if err != nil {
+		fmt.Printf(logPrefix+" - Failed - Error creating log stream: %v\n", err)
+		return
+	}
+	defer logStream.Close()
+
+	if err = saveLogsToGzipFileInBatches(logFile, logStream, logBufferSize); err != nil {
+		fmt.Printf(logPrefix+" - Failed - Error saving logs to file: %v\n", err)
+		return
 	}
 }
 
