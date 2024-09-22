@@ -16,13 +16,6 @@ export enum RulesSortType {
   STATUS = 'status',
 }
 
-// Define the structure of Rule Data used in the table components and rules handling
-export interface RuleData {
-  id: string;
-  type: RulesType;
-  spec: InstrumentationRuleSpec;
-}
-
 // Define the types for the Instrumentation Rule Spec
 export interface InstrumentationRuleSpec {
   ruleId?: string;

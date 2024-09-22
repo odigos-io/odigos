@@ -1,28 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { useInstrumentationRules } from '@/hooks';
+import React, { useEffect } from 'react';
 import theme from '@/styles/palette';
-import { useRouter } from 'next/navigation';
 import { EmptyList } from '@/components';
+import { useRouter } from 'next/navigation';
+import { useInstrumentationRules } from '@/hooks';
+import { KeyvalText, KeyvalButton, KeyvalLoader } from '@/design.system';
 import {
-  KeyvalText,
-  KeyvalButton,
-  KeyvalLoader,
-  KeyvalSearchInput,
-} from '@/design.system';
-import {
-  InstrumentationRulesContainer,
-  Container,
-  Content,
   Header,
+  Content,
+  Container,
   HeaderRight,
+  InstrumentationRulesContainer,
 } from './styled';
 import { InstrumentationRulesTable } from '@/components/overview/instrumentation-rules/rules-table';
 
 export function ManagedInstrumentationRulesContainer() {
-  const [searchInput, setSearchInput] = useState('');
   const router = useRouter();
 
-  const { isLoading, rules, sortRules, refetch } = useInstrumentationRules();
+  const { isLoading, rules, refetch } = useInstrumentationRules();
 
   useEffect(() => {
     refetch();
@@ -34,10 +28,6 @@ export function ManagedInstrumentationRulesContainer() {
 
   function handleEditRule(id: string) {
     router.push(`edit-rule?id=${id}`);
-  }
-
-  function filterRules() {
-    return rules;
   }
 
   if (isLoading) return <KeyvalLoader />;
@@ -54,12 +44,7 @@ export function ManagedInstrumentationRulesContainer() {
         ) : (
           <InstrumentationRulesContainer>
             <Header>
-              <KeyvalSearchInput
-                containerStyle={{ padding: '6px 8px' }}
-                placeholder={'Search Rule'}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
+              <div />
               <HeaderRight>
                 <KeyvalButton onClick={handleAddRule} style={{ height: 32 }}>
                   <KeyvalText
@@ -74,9 +59,8 @@ export function ManagedInstrumentationRulesContainer() {
             </Header>
             <Content>
               <InstrumentationRulesTable
-                data={searchInput ? filterRules() : rules}
+                data={rules}
                 onRowClick={handleEditRule}
-                sortRules={sortRules}
               />
             </Content>
           </InstrumentationRulesContainer>

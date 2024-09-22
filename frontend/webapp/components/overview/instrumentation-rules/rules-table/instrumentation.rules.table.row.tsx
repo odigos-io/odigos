@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import theme from '@/styles/palette';
-import { InstrumentationRuleSpec, RuleData } from '@/types';
+import { KeyvalText } from '@/design.system';
 import styled, { css } from 'styled-components';
-import { KeyvalCheckbox, KeyvalText } from '@/design.system';
-import RuleRowDynamicContent from './rule.row.dynamic.content';
 import { INSTRUMENTATION_RULES } from '@/utils';
 import { PayloadCollectionIcon } from '@/assets';
+import { InstrumentationRuleSpec } from '@/types';
+import RuleRowDynamicContent from './rule.row.dynamic.content';
 
 const StyledTr = styled.tr`
   &:hover {
@@ -48,14 +48,6 @@ const ClusterAttributesContainer = styled.div`
   align-items: center;
 `;
 
-const StatusIndicator = styled.div<{ disabled: boolean }>`
-  width: 6px;
-  height: 6px;
-  border-radius: 4px;
-  background-color: ${({ disabled }) =>
-    disabled ? theme.colors.orange_brown : theme.colors.success};
-`;
-
 export function InstrumentationRulesTableRow({
   item,
   index,
@@ -63,13 +55,10 @@ export function InstrumentationRulesTableRow({
 }: {
   item: InstrumentationRuleSpec;
   index: number;
-  data: InstrumentationRuleSpec[];
-  selectedCheckbox: string[];
-  onSelectedCheckboxChange: (id: string) => void;
   onRowClick: (id: string) => void;
 }) {
   return (
-    <StyledTr key={'TODO'}>
+    <StyledTr key={item?.ruleId}>
       <StyledMainTd
         isFirstRow={index === 0}
         onClick={() => onRowClick(item?.ruleId || '')}
@@ -84,12 +73,12 @@ export function InstrumentationRulesTableRow({
             </KeyvalText>
             <ClusterAttributesContainer>
               <KeyvalText data-cy={'rules-rule-name'} weight={600}>
-                {`${item.ruleName || 'Rule'}`}
+                {`${item?.ruleName || 'Rule'}`}
               </KeyvalText>
               <RuleRowDynamicContent item={item} />
             </ClusterAttributesContainer>
             <KeyvalText color={theme.text.light_grey} size={14}>
-              {item.notes}
+              {item?.notes}
             </KeyvalText>
           </RuleDetails>
         </RuleIconContainer>
