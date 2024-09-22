@@ -25,7 +25,6 @@ import {
 import theme from '@/styles/palette';
 import { useInstrumentationRules } from '@/hooks'; // Custom hook for instrumentation rules
 import { InstrumentationRuleSpec } from '@/types';
-import { func } from 'prop-types';
 
 const TYPE = 'type';
 
@@ -84,7 +83,6 @@ export function CreateInstrumentationRulesContainer(): React.JSX.Element {
       router.push('/instrumentation-rules');
     } catch (error) {
       console.error('Error creating rule:', error);
-      alert('Failed to create rule.');
     }
   };
   if (!ruleType)

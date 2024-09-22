@@ -1,8 +1,8 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { NewActionCard } from '@/components';
-import { ActionItemCard, InstrumentationRuleType } from '@/types';
 import { KeyvalLink, KeyvalText } from '@/design.system';
+import { ActionItemCard, InstrumentationRuleType } from '@/types';
 import { ACTION, INSTRUMENTATION_RULES_DOCS_LINK, OVERVIEW } from '@/utils';
 import {
   ActionCardWrapper,
