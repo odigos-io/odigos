@@ -1,4 +1,4 @@
-package ebpf
+package sdks
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -20,20 +21,20 @@ import (
 
 type GoOtelEbpfSdk struct {
 	inst *auto.Instrumentation
-	cp   *ConfigProvider[goAutoConfig.InstrumentationConfig]
+	cp   *ebpf.ConfigProvider[goAutoConfig.InstrumentationConfig]
 }
 
 // compile-time check that configProvider[goAutoConfig.InstrumentationConfig] implements goAutoConfig.Provider
-var _ goAutoConfig.Provider = (*ConfigProvider[goAutoConfig.InstrumentationConfig])(nil)
+var _ goAutoConfig.Provider = (*ebpf.ConfigProvider[goAutoConfig.InstrumentationConfig])(nil)
 
 // compile-time check that GoOtelEbpfSdk implements ConfigurableOtelEbpfSdk
-var _ ConfigurableOtelEbpfSdk = (*GoOtelEbpfSdk)(nil)
+var _ ebpf.ConfigurableOtelEbpfSdk = (*GoOtelEbpfSdk)(nil)
 
 type GoInstrumentationFactory struct{
 	kubeclient client.Client
 }
 
-func NewGoInstrumentationFactory(kubeclient client.Client) InstrumentationFactory[*GoOtelEbpfSdk] {
+func NewGoInstrumentationFactory(kubeclient client.Client) ebpf.InstrumentationFactory[*GoOtelEbpfSdk] {
 	return &GoInstrumentationFactory{
 		kubeclient: kubeclient,
 	}
@@ -61,7 +62,7 @@ func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context
 		initialConfig = convertToGoInstrumentationConfig(instrumentationConfig)
 	}
 
-	cp := NewConfigProvider(initialConfig)
+	cp := ebpf.NewConfigProvider(initialConfig)
 
 	inst, err := auto.NewInstrumentation(
 		ctx,
