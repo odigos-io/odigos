@@ -89,7 +89,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	err = kube.SetupWithManager(mgr, ebpfDirectors)
+	err = kube.SetupWithManager(mgr, ebpfDirectors, clientset)
 	if err != nil {
 		log.Logger.Error(err, "Failed to setup controller-runtime manager")
 		os.Exit(-1)

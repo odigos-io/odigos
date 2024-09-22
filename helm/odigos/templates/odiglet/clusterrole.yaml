@@ -59,6 +59,21 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
+      - instrumentationconfigs/status
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+  - apiGroups:
+      - apps
+    resources:
+      - replicasets
+    verbs:
+      - get
+  - apiGroups:
+      - odigos.io
+    resources:
       - instrumentationconfigs
     verbs:
       - get

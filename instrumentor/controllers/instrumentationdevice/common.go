@@ -256,7 +256,7 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 		} else {
 			conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), errRemove.Error())
 		}
-		return err
+		return nil
 	}
 
 	err = addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentedApplication)

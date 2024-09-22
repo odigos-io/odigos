@@ -15,7 +15,7 @@ verify-nodejs-agent:
 
 .PHONY: build-odiglet-with-agents
 build-odiglet-with-agents:
-	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-native-community-src=../opentelemetry-node
+	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-src=../opentelemetry-node
 
 .PHONY: build-autoscaler
 build-autoscaler:
@@ -194,11 +194,20 @@ cli-install:
 	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
 	cd ./cli ; go run -tags=embed_manifests . install --version $(ODIGOS_CLI_VERSION)
 
-
 .PHONY: cli-upgrade
 cli-upgrade:
-	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
+	@echo "Upgrading odigos from source. version: $(ODIGOS_CLI_VERSION)"
 	cd ./cli ; go run -tags=embed_manifests . upgrade --version $(ODIGOS_CLI_VERSION) --yes
+
+.PHONY: cli-build
+cli-build:
+	@echo "Building the cli executable for tests"
+	cd cli && go build -tags=embed_manifests -o odigos .
+
+.PHONY: cli-diagnose
+cli-diagnose:
+	@echo "Diagnosing cluster data for debugging"
+	cd ./cli ; go run -tags=embed_manifests . diagnose
 
 .PHONY: api-all
 api-all:
@@ -207,3 +216,13 @@ api-all:
 .PHONY: crd-apply
 crd-apply: api-all cli-upgrade
 	@echo "Applying changes to CRDs in api directory"
+
+.PHONY: dev-tests-kind-cluster
+dev-tests-kind-cluster:
+	@echo "Creating a kind cluster for development"
+	kind delete cluster
+	kind create cluster
+
+.PHONY: dev-tests-setup
+dev-tests-setup: TAG := e2e-test
+dev-tests-setup: dev-tests-kind-cluster cli-build build-images load-to-kind

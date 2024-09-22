@@ -28,7 +28,8 @@ import (
 type InstrumentationConfigApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                             *InstrumentationConfigSpecApplyConfiguration `json:"spec,omitempty"`
+	Spec                             *InstrumentationConfigSpecApplyConfiguration   `json:"spec,omitempty"`
+	Status                           *InstrumentationConfigStatusApplyConfiguration `json:"status,omitempty"`
 }
 
 // InstrumentationConfig constructs a declarative configuration of the InstrumentationConfig type for use with
@@ -205,6 +206,14 @@ func (b *InstrumentationConfigApplyConfiguration) ensureObjectMetaApplyConfigura
 // If called multiple times, the Spec field is set to the value of the last call.
 func (b *InstrumentationConfigApplyConfiguration) WithSpec(value *InstrumentationConfigSpecApplyConfiguration) *InstrumentationConfigApplyConfiguration {
 	b.Spec = value
+	return b
+}
+
+// WithStatus sets the Status field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Status field is set to the value of the last call.
+func (b *InstrumentationConfigApplyConfiguration) WithStatus(value *InstrumentationConfigStatusApplyConfiguration) *InstrumentationConfigApplyConfiguration {
+	b.Status = value
 	return b
 }
 
