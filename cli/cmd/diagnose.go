@@ -70,10 +70,18 @@ var (
 			CRDName:  "instrumentationconfigs",
 			CRDGroup: odigosGroupName,
 		},
+		{
+			CRDName:  "instrumentationrules",
+			CRDGroup: odigosGroupName,
+		},
+		{
+			CRDName:  "instrumentationinstances",
+			CRDGroup: odigosGroupName,
+		},
 	}
 )
 
-var diagnozeCmd = &cobra.Command{
+var diagnoseCmd = &cobra.Command{
 	Use:   "diagnose",
 	Short: "Diagnose Client Cluster",
 	Long:  `Diagnose Client Cluster to identify issues and resolve them. This command is useful for troubleshooting and debugging.`,
@@ -113,7 +121,7 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err = fetchOdigosCRDs(ctx, client, filepath.Join(mainTempDir, CRDsDir)); err != nil {
+		if err = fetchOdigosCRs(ctx, client, filepath.Join(mainTempDir, CRDsDir)); err != nil {
 			fmt.Printf("Error fetching Odigos CRDs: %v\n", err)
 		}
 	}()
@@ -234,7 +242,7 @@ func saveLogsToGzipFileInBatches(logFile *os.File, logStream io.ReadCloser, buff
 	return nil
 }
 
-func fetchOdigosCRDs(ctx context.Context, kubeClient *kube.Client, crdDir string) error {
+func fetchOdigosCRs(ctx context.Context, kubeClient *kube.Client, crdDir string) error {
 	var wg sync.WaitGroup
 
 	for _, resourceData := range CRDsList {
@@ -251,7 +259,7 @@ func fetchOdigosCRDs(ctx context.Context, kubeClient *kube.Client, crdDir string
 			defer wg.Done()
 			err = fetchSingleResource(ctx, kubeClient, crdDataDirPath, resourceData)
 			if err != nil {
-				fmt.Printf("Error Getting CRDs of: %v, because: %v", resourceData[CRDName], err)
+				fmt.Printf("Error Getting CRDs of: %v, because: %v\n", resourceData[CRDName], err)
 			}
 		}()
 	}
@@ -262,7 +270,7 @@ func fetchOdigosCRDs(ctx context.Context, kubeClient *kube.Client, crdDir string
 }
 
 func fetchSingleResource(ctx context.Context, kubeClient *kube.Client, crdDataDirPath string, resourceData map[string]string) error {
-	fmt.Printf("Fetching Resource: %s", resourceData[CRDName]+"\n")
+	fmt.Printf("Fetching Resource: %s\n", resourceData[CRDName])
 
 	gvr := schema.GroupVersionResource{
 		Group:    resourceData[CRDGroup], // The API group
@@ -272,7 +280,9 @@ func fetchSingleResource(ctx context.Context, kubeClient *kube.Client, crdDataDi
 
 	err := client.ListWithPages(client.DefaultPageSize, kubeClient.Dynamic.Resource(gvr).List, ctx, metav1.ListOptions{}, func(crds *unstructured.UnstructuredList) error {
 		for _, crd := range crds.Items {
-			saveCrdToFile(crd, crdDataDirPath)
+			if err := saveCrdToFile(crd, crdDataDirPath); err != nil {
+				fmt.Printf("Fetching Resource %s Failed because: %s\n", resourceData[CRDName], err)
+			}
 		}
 		return nil
 	},
@@ -285,11 +295,11 @@ func fetchSingleResource(ctx context.Context, kubeClient *kube.Client, crdDataDi
 	return nil
 }
 
-func saveCrdToFile(crd unstructured.Unstructured, crdDataDirPath string) {
+func saveCrdToFile(crd unstructured.Unstructured, crdDataDirPath string) error {
 	crdDirPath := filepath.Join(crdDataDirPath, crd.GetName()+".yaml.gz")
 	crdFile, err := os.OpenFile(crdDirPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		return
+		return err
 	}
 	defer crdFile.Close()
 
@@ -298,16 +308,18 @@ func saveCrdToFile(crd unstructured.Unstructured, crdDataDirPath string) {
 
 	crdYAML, err := yaml.Marshal(crd)
 	if err != nil {
-		return
+		return err
 	}
 
 	_, err = gzipWriter.Write(crdYAML)
 	if err != nil {
-		return
+		return err
 	}
 	if err = gzipWriter.Flush(); err != nil {
-		return
+		return err
 	}
+
+	return nil
 }
 
 func createTarGz(sourceDir string) error {
@@ -366,5 +378,5 @@ func createTarGz(sourceDir string) error {
 }
 
 func init() {
-	rootCmd.AddCommand(diagnozeCmd)
+	rootCmd.AddCommand(diagnoseCmd)
 }
