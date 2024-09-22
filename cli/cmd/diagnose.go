@@ -7,21 +7,81 @@ import (
 	"fmt"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/spf13/cobra"
 	"io"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"os"
 	"path/filepath"
+	"sigs.k8s.io/yaml"
 	"sync"
 	"time"
 )
 
 const (
-	logBufferSize = 1024 * 1024 // 1MB buffer size for reading logs in chunks
+	logBufferSize   = 1024 * 1024 // 1MB buffer size for reading logs in chunks
+	LogsDir         = "Logs"
+	CRDsDir         = "CRDs"
+	CRDName         = "crdName"
+	CRDGroup        = "crdGroup"
+	actionGroupName = "actions.odigos.io"
+	odigosGroupName = "odigos.io"
 )
 
-var diagnozeCmd = &cobra.Command{
+var (
+	diagnoseDirs = []string{LogsDir, CRDsDir}
+	CRDsList     = []map[string]string{
+		{
+			CRDName:  "addclusterinfos",
+			CRDGroup: actionGroupName,
+		},
+		{
+			CRDName:  "deleteattributes",
+			CRDGroup: actionGroupName,
+		},
+		{
+			CRDName:  "renameattributes",
+			CRDGroup: actionGroupName,
+		},
+		{
+			CRDName:  "probabilisticsamplers",
+			CRDGroup: actionGroupName,
+		},
+		{
+			CRDName:  "piimaskings",
+			CRDGroup: actionGroupName,
+		},
+		{
+			CRDName:  "latencysamplers",
+			CRDGroup: actionGroupName,
+		},
+		{
+			CRDName:  "errorsamplers",
+			CRDGroup: actionGroupName,
+		},
+		{
+			CRDName:  "instrumentedapplications",
+			CRDGroup: odigosGroupName,
+		},
+		{
+			CRDName:  "instrumentationconfigs",
+			CRDGroup: odigosGroupName,
+		},
+		{
+			CRDName:  "instrumentationrules",
+			CRDGroup: odigosGroupName,
+		},
+		{
+			CRDName:  "instrumentationinstances",
+			CRDGroup: odigosGroupName,
+		},
+	}
+)
+
+var diagnoseCmd = &cobra.Command{
 	Use:   "diagnose",
 	Short: "Diagnose Client Cluster",
 	Long:  `Diagnose Client Cluster to identify issues and resolve them. This command is useful for troubleshooting and debugging.`,
@@ -40,35 +100,57 @@ var diagnozeCmd = &cobra.Command{
 }
 
 func startDiagnose(ctx context.Context, client *kube.Client) error {
-	mainTempDir, logTempDir, err := createAllDirs()
+	mainTempDir, err := createAllDirs()
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(mainTempDir)
 
-	if err := fetchOdigosComponentsLogs(ctx, client, logTempDir); err != nil {
+	var wg sync.WaitGroup
+
+	// Fetch Odigos components logs
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := fetchOdigosComponentsLogs(ctx, client, filepath.Join(mainTempDir, LogsDir)); err != nil {
+			fmt.Printf("Error fetching Odigos components logs: %v\n", err)
+		}
+	}()
+
+	// Fetch Odigos CRDs
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err = fetchOdigosCRs(ctx, client, filepath.Join(mainTempDir, CRDsDir)); err != nil {
+			fmt.Printf("Error fetching Odigos CRDs: %v\n", err)
+		}
+	}()
+
+	wg.Wait()
+
+	// Package the results into a tar.gz file
+	if err = createTarGz(mainTempDir); err != nil {
 		return err
 	}
 
-	if err := createTarGz(mainTempDir); err != nil {
-		return err
-	}
 	return nil
 }
 
-func createAllDirs() (string, string, error) {
+func createAllDirs() (string, error) {
 	mainTempDir, err := os.MkdirTemp("", "odigos-diagnose")
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	logTempDir := filepath.Join(mainTempDir, "Logs")
-	err = os.Mkdir(logTempDir, os.ModePerm) // os.ModePerm gives full permissions (0777)
-	if err != nil {
-		return "", "", err
+	for _, dir := range diagnoseDirs {
+		tempDir := filepath.Join(mainTempDir, dir)
+		err = os.Mkdir(tempDir, os.ModePerm) // os.ModePerm gives full permissions (0777)
+		if err != nil {
+			return "", err
+		}
 	}
 
-	return mainTempDir, logTempDir, nil
+	return mainTempDir, nil
 }
 
 func fetchOdigosComponentsLogs(ctx context.Context, client *kube.Client, logDir string) error {
@@ -160,6 +242,86 @@ func saveLogsToGzipFileInBatches(logFile *os.File, logStream io.ReadCloser, buff
 	return nil
 }
 
+func fetchOdigosCRs(ctx context.Context, kubeClient *kube.Client, crdDir string) error {
+	var wg sync.WaitGroup
+
+	for _, resourceData := range CRDsList {
+		crdDataDirPath := filepath.Join(crdDir, resourceData[CRDName])
+		err := os.Mkdir(crdDataDirPath, os.ModePerm) // os.ModePerm gives full permissions (0777)
+		if err != nil {
+			fmt.Printf("Error creating directory for CRD: %v, because: %v", resourceData, err)
+			continue
+		}
+
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			err = fetchSingleResource(ctx, kubeClient, crdDataDirPath, resourceData)
+			if err != nil {
+				fmt.Printf("Error Getting CRDs of: %v, because: %v\n", resourceData[CRDName], err)
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	return nil
+}
+
+func fetchSingleResource(ctx context.Context, kubeClient *kube.Client, crdDataDirPath string, resourceData map[string]string) error {
+	fmt.Printf("Fetching Resource: %s\n", resourceData[CRDName])
+
+	gvr := schema.GroupVersionResource{
+		Group:    resourceData[CRDGroup], // The API group
+		Version:  "v1alpha1",             // The version of the resourceData
+		Resource: resourceData[CRDName],  // The resourceData type
+	}
+
+	err := client.ListWithPages(client.DefaultPageSize, kubeClient.Dynamic.Resource(gvr).List, ctx, metav1.ListOptions{}, func(crds *unstructured.UnstructuredList) error {
+		for _, crd := range crds.Items {
+			if err := saveCrdToFile(crd, crdDataDirPath); err != nil {
+				fmt.Printf("Fetching Resource %s Failed because: %s\n", resourceData[CRDName], err)
+			}
+		}
+		return nil
+	},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func saveCrdToFile(crd unstructured.Unstructured, crdDataDirPath string) error {
+	crdDirPath := filepath.Join(crdDataDirPath, crd.GetName()+".yaml.gz")
+	crdFile, err := os.OpenFile(crdDirPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		return err
+	}
+	defer crdFile.Close()
+
+	gzipWriter := gzip.NewWriter(crdFile)
+	defer gzipWriter.Close()
+
+	crdYAML, err := yaml.Marshal(crd)
+	if err != nil {
+		return err
+	}
+
+	_, err = gzipWriter.Write(crdYAML)
+	if err != nil {
+		return err
+	}
+	if err = gzipWriter.Flush(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func createTarGz(sourceDir string) error {
 	timestamp := time.Now().Format("02012006150405")
 	tarGzFileName := fmt.Sprintf("odigos_debug_%s.tar.gz", timestamp)
@@ -216,5 +378,5 @@ func createTarGz(sourceDir string) error {
 }
 
 func init() {
-	rootCmd.AddCommand(diagnozeCmd)
+	rootCmd.AddCommand(diagnoseCmd)
 }
