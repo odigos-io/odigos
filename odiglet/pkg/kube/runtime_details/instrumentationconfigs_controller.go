@@ -81,8 +81,9 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 	// we need to apply runtime detection for just one pod with newer generation
 	var selectedPodForInspection *corev1.Pod
 	selectedPodGeneration := int64(0)
-	for _, pod := range pods {
-		podGeneration, err := GetPodGeneration(ctx, r.Clientset, &pod)
+	for i := range pods {
+		podPtr := &pods[i]
+		podGeneration, err := GetPodGeneration(ctx, r.Clientset, podPtr)
 		if err != nil {
 			logger.Error(err, "Failed to get pod generation")
 			return reconcile.Result{}, err
@@ -94,7 +95,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 
 		if podGeneration > instrumentationConfig.Status.ObservedWorkloadGeneration && podGeneration > selectedPodGeneration {
 			selectedPodGeneration = podGeneration
-			selectedPodForInspection = &pod
+			selectedPodForInspection = podPtr
 		}
 	}
 
