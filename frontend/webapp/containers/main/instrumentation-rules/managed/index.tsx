@@ -16,7 +16,7 @@ import { InstrumentationRulesTable } from '@/components/overview/instrumentation
 export function ManagedInstrumentationRulesContainer() {
   const router = useRouter();
 
-  const { isLoading, rules, refetch } = useInstrumentationRules();
+  const { isLoading, rules, refetch, removeRule } = useInstrumentationRules();
 
   useEffect(() => {
     refetch();
@@ -43,20 +43,22 @@ export function ManagedInstrumentationRulesContainer() {
           />
         ) : (
           <InstrumentationRulesContainer>
-            <Header>
-              <div />
-              <HeaderRight>
-                <KeyvalButton onClick={handleAddRule} style={{ height: 32 }}>
-                  <KeyvalText
-                    size={14}
-                    weight={600}
-                    color={theme.text.dark_button}
-                  >
-                    {'Add Rule'}
-                  </KeyvalText>
-                </KeyvalButton>
-              </HeaderRight>
-            </Header>
+            {!(isLoading || rules.length === 1) && (
+              <Header>
+                <div />
+                <HeaderRight>
+                  <KeyvalButton onClick={handleAddRule} style={{ height: 32 }}>
+                    <KeyvalText
+                      size={14}
+                      weight={600}
+                      color={theme.text.dark_button}
+                    >
+                      {'Add Rule'}
+                    </KeyvalText>
+                  </KeyvalButton>
+                </HeaderRight>
+              </Header>
+            )}
             <Content>
               <InstrumentationRulesTable
                 data={rules}

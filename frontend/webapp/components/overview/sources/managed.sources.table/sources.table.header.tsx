@@ -391,13 +391,13 @@ export function SourcesTableHeader({
           {`${data.length} ${OVERVIEW.MENU.SOURCES}`}
         </KeyvalText>
 
-        {groupErrorMessage.length > 0 && (
+        {true && (
           <KeyvalSwitch
             toggle={showSourcesWithIssues}
             handleToggleChange={() =>
               setShowSourcesWithIssues(!showSourcesWithIssues)
             }
-            label={'Show Sources with Errors'}
+            label={'Show Only Sources with Errors'}
           />
         )}
         {selectedCheckbox.length > 0 && (
