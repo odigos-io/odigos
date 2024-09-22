@@ -35,6 +35,7 @@ spec:
     httpRequest: {}
     httpResponse: {}
     dbQuery: {}
+    messaging: {}
 ```
 
 Apply the action to the cluster:
@@ -89,6 +90,9 @@ spec:
     dbQuery:
         maxPayloadLength: 1024
         dropPartialPayloads: true
+    messaging:
+        maxPayloadLength: 512
+        dropPartialPayloads: false
 ```
 
 Apply the action to the cluster:
@@ -112,6 +116,10 @@ The full list of configuration options for the "Payload Collection" Rule are:
   - `dropPartialPayloads` (optional, default is false): If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all. This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
 
 - `dbQuery` (optional): Collect database query payload info when available.
+  - `maxPayloadLength` (optional): Maximum length of the payload to collect. If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option. When not specified (recommended), the instrumentation library will use any reasonable default value
+  - `dropPartialPayloads` (optional, default is false): If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all. This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+
+- `messaging` (optional): Collect messaging system operation payload info when available.
   - `maxPayloadLength` (optional): Maximum length of the payload to collect. If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option. When not specified (recommended), the instrumentation library will use any reasonable default value
   - `dropPartialPayloads` (optional, default is false): If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all. This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
 
