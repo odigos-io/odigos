@@ -5,6 +5,7 @@ import styled, { css } from 'styled-components';
 import { KeyvalCheckbox, KeyvalText } from '@/design.system';
 import RuleRowDynamicContent from './rule.row.dynamic.content';
 import { INSTRUMENTATION_RULES } from '@/utils';
+import { PayloadCollectionIcon } from '@/assets';
 
 const StyledTr = styled.tr`
   &:hover {
@@ -75,7 +76,7 @@ export function InstrumentationRulesTableRow({
       >
         <RuleIconContainer>
           <div style={{ height: 16 }}>
-            {/* <RuleIcon type={item.type} style={{ width: 16, height: 16 }} /> */}
+            <PayloadCollectionIcon style={{ width: 16, height: 16 }} />
           </div>
           <RuleDetails>
             <KeyvalText color={theme.colors.light_grey} size={12}>
@@ -83,7 +84,7 @@ export function InstrumentationRulesTableRow({
             </KeyvalText>
             <ClusterAttributesContainer>
               <KeyvalText data-cy={'rules-rule-name'} weight={600}>
-                {`${item.ruleName || 'Rule'} `}
+                {`${item.ruleName || 'Rule'}`}
               </KeyvalText>
               <RuleRowDynamicContent item={item} />
             </ClusterAttributesContainer>

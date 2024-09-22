@@ -4,6 +4,7 @@ import theme from '@/styles/palette';
 import styled from 'styled-components';
 import { RulesSortType } from '@/types';
 import { ActionsGroup, KeyvalText } from '@/design.system';
+import { Funnel } from '@/assets';
 
 const StyledThead = styled.div`
   background-color: ${theme.colors.light_dark};
@@ -79,6 +80,7 @@ export function InstrumentationRulesTableHeader({
   return (
     <StyledThead>
       <StyledMainTh>
+        <Funnel style={{ width: 18 }} />
         <KeyvalText size={14} weight={600} color={theme.text.white}>
           {`${data.length} ${OVERVIEW.MENU.INSTRUMENTATION_RULES}`}
         </KeyvalText>

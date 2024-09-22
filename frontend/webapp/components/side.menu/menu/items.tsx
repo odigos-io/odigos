@@ -10,6 +10,7 @@ import {
   UnFocusOverviewIcon,
   UnFocusSourcesIcon,
 } from '@keyval-dev/design-system';
+import { Funnel, FunnelFocus } from '@/assets';
 
 export const MENU_ITEMS: MenuItem[] = [
   {
@@ -34,9 +35,8 @@ export const MENU_ITEMS: MenuItem[] = [
     id: 3,
     name: OVERVIEW.MENU.INSTRUMENTATION_RULES,
     icons: {
-      // TODO: find an icon for instrumentation rules
-      focus: () => <FocusDestinationsIcon />,
-      notFocus: () => <UnFocusDestinationsIcon />,
+      focus: () => <FunnelFocus style={{ width: 24 }} />,
+      notFocus: () => <Funnel style={{ width: 24 }} />,
     },
     navigate: ROUTES.INSTRUMENTATION_RULES,
   },
