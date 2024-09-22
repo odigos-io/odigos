@@ -272,29 +272,7 @@ func fetchSingleResource(ctx context.Context, kubeClient *kube.Client, crdDataDi
 
 	err := client.ListWithPages(client.DefaultPageSize, kubeClient.Dynamic.Resource(gvr).List, ctx, metav1.ListOptions{}, func(crds *unstructured.UnstructuredList) error {
 		for _, crd := range crds.Items {
-			crdDirPath := filepath.Join(crdDataDirPath, crd.GetName()+".yaml.gz")
-			crdFile, err := os.OpenFile(crdDirPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-			if err != nil {
-				continue
-			}
-
-			gzipWriter := gzip.NewWriter(crdFile)
-
-			crdYAML, err := yaml.Marshal(crd)
-			if err != nil {
-				continue
-			}
-
-			_, err = gzipWriter.Write(crdYAML)
-			if err != nil {
-				continue
-			}
-			if err = gzipWriter.Flush(); err != nil {
-				continue
-			}
-
-			gzipWriter.Close()
-			crdFile.Close()
+			saveCrdToFile(crd, crdDataDirPath)
 		}
 		return nil
 	},
@@ -305,6 +283,31 @@ func fetchSingleResource(ctx context.Context, kubeClient *kube.Client, crdDataDi
 	}
 
 	return nil
+}
+
+func saveCrdToFile(crd unstructured.Unstructured, crdDataDirPath string) {
+	crdDirPath := filepath.Join(crdDataDirPath, crd.GetName()+".yaml.gz")
+	crdFile, err := os.OpenFile(crdDirPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		return
+	}
+	defer crdFile.Close()
+
+	gzipWriter := gzip.NewWriter(crdFile)
+	defer gzipWriter.Close()
+
+	crdYAML, err := yaml.Marshal(crd)
+	if err != nil {
+		return
+	}
+
+	_, err = gzipWriter.Write(crdYAML)
+	if err != nil {
+		return
+	}
+	if err = gzipWriter.Flush(); err != nil {
+		return
+	}
 }
 
 func createTarGz(sourceDir string) error {
