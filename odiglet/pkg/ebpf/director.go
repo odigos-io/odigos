@@ -2,6 +2,7 @@ package ebpf
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -152,7 +153,26 @@ var IsProcessExists = func(pid int) bool {
 	// To check if the process exists, we send signal 0 to the process
 	// this is the standard way to check if a process exists in unix
 	err = p.Signal(syscall.Signal(0))
-	return err == nil
+	if err == nil {
+		return true
+	}
+
+	if errors.Is(err, os.ErrProcessDone) {
+		return false
+	}
+
+	errno, ok := err.(syscall.Errno)
+	if !ok {
+		return false
+	}
+
+	if errno == syscall.EPERM {
+		// we don't have permission to send signal 0 to the process
+		// so we assume the process exists, to avoid removing the instrumentation
+		return true
+	}
+
+	return false
 }
 
 func (d *EbpfDirector[T]) periodicCleanup(ctx context.Context) {
