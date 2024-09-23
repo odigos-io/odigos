@@ -9,6 +9,8 @@ const colors = {
   border: '#525252',
   translucent_bg: '#1A1A1A',
   majestic_blue: '#444AD9',
+  selected_hover: '#444AD93D',
+  card: '#F9F9F90A',
   white_opacity: {
     '004': 'rgba(249, 249, 249, 0.04)',
     '008': 'rgba(249, 249, 249, 0.08)',

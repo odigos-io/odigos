@@ -1,12 +1,13 @@
 'use client';
 import styled from 'styled-components';
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { useActualDestination, useActualSources, useGetActions } from '@/hooks';
+import { OverviewActionMenuContainer } from '../overview-actions-menu';
 import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
+import { useActualDestination, useActualSources, useGetActions } from '@/hooks';
 
 export const OverviewDataFlowWrapper = styled.div`
   width: calc(100% - 64px);
-  height: calc(100vh - 100px);
+  height: calc(100vh - 176px);
   position: relative;
 `;
 
@@ -53,6 +54,7 @@ export function OverviewDataFlowContainer() {
 
   return (
     <OverviewDataFlowWrapper ref={containerRef}>
+      <OverviewActionMenuContainer />
       <NodeBaseDataFlow nodes={nodes} edges={edges} />
     </OverviewDataFlowWrapper>
   );
