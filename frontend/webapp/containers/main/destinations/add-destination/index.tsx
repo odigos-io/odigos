@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { IAppState } from '@/store';
+import { useAppStore } from '@/store';
 import styled from 'styled-components';
-import { useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { AddDestinationModal } from './add-destination-modal';
 import { AddDestinationButton, SetupHeader } from '@/components';
@@ -31,10 +30,9 @@ export function ChooseDestinationContainer() {
 
   const router = useRouter();
 
-  const sourcesList = useSelector(({ app }) => app.sources);
-  const destinations = useSelector(
-    ({ app }: { app: IAppState }) => app.configuredDestinationsList
-  );
+  const sourcesList = useAppStore((state) => state.sources);
+  const destinations = useAppStore((state) => state.configuredDestinationsList);
+
   const isSourcesListEmpty = () => {
     const sourceLen = Object.keys(sourcesList).length === 0;
     if (sourceLen) {

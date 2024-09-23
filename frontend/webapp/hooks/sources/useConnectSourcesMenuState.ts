@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useAppStore } from '@/store';
 import { DropdownOption, K8sActualSource } from '@/types';
-import { useSelector } from 'react-redux';
 
 export const useConnectSourcesMenuState = ({ sourcesList }) => {
   const [searchFilter, setSearchFilter] = useState('');
@@ -14,8 +14,9 @@ export const useConnectSourcesMenuState = ({ sourcesList }) => {
     [key: string]: K8sActualSource[];
   }>({});
 
-  const { sources, namespaceFutureSelectAppsList } = useSelector(
-    ({ app }) => app
+  const sources = useAppStore((state) => state.sources);
+  const namespaceFutureSelectAppsList = useAppStore(
+    (state) => state.namespaceFutureSelectAppsList
   );
 
   useEffect(() => {

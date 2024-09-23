@@ -1,8 +1,7 @@
-import { appReducer, notificationReducer } from './slices';
+import { notificationReducer } from './slices';
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 
 const rootReducer = combineReducers({
-  app: appReducer,
   notification: notificationReducer,
 });
 
@@ -16,3 +15,4 @@ export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
 export * from './slices';
+export * from './useAppStore';
