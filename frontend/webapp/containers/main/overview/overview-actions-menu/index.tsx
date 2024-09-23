@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Input, TabList } from '@/reuseable-components';
+import { AddEntityButtonDropdown } from '../add-entity';
+import { DropdownOption } from '@/types';
 
 const MenuContainer = styled.div`
-  width: calc(100% - 64px);
   display: flex;
   align-items: center;
   margin: 20px 0;
@@ -26,6 +27,11 @@ const Divider = styled.div`
   margin: 0 16px;
 `;
 
+// Aligns the AddEntityButtonDropdown to the right
+const StyledAddEntityButtonDropdownWrapper = styled.div`
+  margin-left: auto;
+`;
+
 export function OverviewActionMenuContainer() {
   const [searchFilter, setSearchFilter] = useState<string>('');
 
@@ -43,6 +49,13 @@ export function OverviewActionMenuContainer() {
           onChange={(e) => setSearchFilter(e.target.value)}
         />
       </SearchInputContainer>
+      <StyledAddEntityButtonDropdownWrapper>
+        <AddEntityButtonDropdown
+          onSelect={(option: DropdownOption) => {
+            console.log({ option });
+          }}
+        />
+      </StyledAddEntityButtonDropdownWrapper>
     </MenuContainer>
   );
 }
