@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { useDispatch } from 'react-redux';
+import { useAppStore } from '@/store';
 import { K8sActualSource } from '@/types';
 import { SetupHeader } from '@/components';
 import { useRouter } from 'next/navigation';
 import { SourcesList } from './choose-sources-list';
 import { SectionTitle, Divider } from '@/reuseable-components';
-import { setNamespaceFutureSelectAppsList, setSources } from '@/store';
 import { useConnectSourcesList, useConnectSourcesMenuState } from '@/hooks';
 import { SearchAndDropdown, TogglesAndCheckboxes } from './choose-sources-menu';
 import {
@@ -36,7 +35,7 @@ export function ChooseSourcesContainer() {
   });
 
   const router = useRouter();
-  const dispatch = useDispatch();
+  const { setSources, setNamespaceFutureSelectAppsList } = useAppStore();
 
   function getVisibleSources() {
     const allSources = sourcesList || [];
@@ -58,8 +57,8 @@ export function ChooseSourcesContainer() {
   function onNextClick() {
     const { selectedOption, selectedItems, futureAppsCheckbox } = stateMenu;
     if (selectedOption) {
-      dispatch(setSources(selectedItems));
-      dispatch(setNamespaceFutureSelectAppsList(futureAppsCheckbox));
+      setSources(selectedItems);
+      setNamespaceFutureSelectAppsList(futureAppsCheckbox);
     }
     router.push('/choose-destination');
   }

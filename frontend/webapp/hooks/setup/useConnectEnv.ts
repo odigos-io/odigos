@@ -1,11 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useCreateSource } from '../sources';
-import { useCreateDestination } from '../destinations';
-
-import { DestinationInput, PersistNamespaceItemInput } from '@/types';
-import { useDispatch, useSelector } from 'react-redux';
 import { useNamespace } from '../compute-platform';
-import { IAppState, resetSources } from '@/store';
+import { resetSources, useAppStore } from '@/store';
+import { useCreateDestination } from '../destinations';
+import { DestinationInput, PersistNamespaceItemInput } from '@/types';
 
 type ConnectEnvResult = {
   success: boolean;
@@ -26,11 +24,10 @@ export const useConnectEnv = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Getting data from Redux
-  const dispatch = useDispatch();
-  const sourcesList = useSelector(({ app }: { app: IAppState }) => app.sources);
-  const namespaceFutureSelectAppsList = useSelector(
-    ({ app }: { app: IAppState }) => app.namespaceFutureSelectAppsList
+  const sourcesList = useAppStore((state) => state.sources);
+  const resetSources = useAppStore((state) => state.resetSources);
+  const namespaceFutureSelectAppsList = useAppStore(
+    (state) => state.namespaceFutureSelectAppsList
   );
 
   const connectEnv = useCallback(
@@ -67,7 +64,7 @@ export const useConnectEnv = () => {
             );
           }
         }
-        dispatch(resetSources());
+        resetSources();
         // Create destination
         const destinationId = await createNewDestination(destination);
 

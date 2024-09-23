@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { SideMenu } from '@/components';
 import { useQuery } from '@apollo/client';
-import { useDispatch } from 'react-redux';
-import { addConfiguredDestination } from '@/store';
 import { TestConnection } from '../test-connection';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { Body, Container, SideMenuWrapper } from '../styled';
@@ -81,9 +80,11 @@ export function ConnectDestinationModalBody({
     traces: false,
   });
 
-  const dispatch = useDispatch();
   const { connectEnv } = useConnectEnv();
   const { buildFormDynamicFields } = useConnectDestinationForm();
+  const addConfiguredDestination = useAppStore(
+    ({ addConfiguredDestination }) => addConfiguredDestination
+  );
 
   const { data } = useQuery<DestinationDetailsResponse>(
     GET_DESTINATION_TYPE_DETAILS,
@@ -207,7 +208,7 @@ export function ConnectDestinationModalBody({
       };
 
       // Dispatch action to store the destination
-      dispatch(addConfiguredDestination(storedDestination));
+      addConfiguredDestination(storedDestination);
     }
 
     // Prepare the request body

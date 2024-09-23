@@ -2,7 +2,7 @@ import { ConfiguredDestination, K8sActualSource } from '@/types';
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
-export interface IAppState {
+export interface IAppStoreState {
   sources: {
     [key: string]: K8sActualSource[];
   };
@@ -10,7 +10,7 @@ export interface IAppState {
   configuredDestinationsList: ConfiguredDestination[];
 }
 
-const initialState: IAppState = {
+const initialState: IAppStoreState = {
   sources: {},
   namespaceFutureSelectAppsList: {},
   configuredDestinationsList: [],
