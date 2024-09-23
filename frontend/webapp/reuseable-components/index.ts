@@ -21,3 +21,4 @@ export * from './no-data-found';
 export * from './skeleton-loader';
 export * from './connection-status';
 export * from './nodes-data-flow';
+export * from './tab-list';

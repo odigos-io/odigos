@@ -1,3 +1,4 @@
+import { drop } from 'cypress/types/lodash';
 import { DefaultTheme } from 'styled-components';
 
 // Define your color palette
@@ -9,6 +10,9 @@ const colors = {
   border: '#525252',
   translucent_bg: '#1A1A1A',
   majestic_blue: '#444AD9',
+  selected_hover: '#444AD93D',
+  card: '#F9F9F90A',
+  dropdown_bg: '#242424',
   white_opacity: {
     '004': 'rgba(249, 249, 249, 0.04)',
     '008': 'rgba(249, 249, 249, 0.08)',
@@ -103,7 +107,7 @@ const colors = {
 };
 
 const text = {
-  primary: '#07111A',
+  primary: '#111',
   secondary: '#0EE6F3',
   grey: '#B8B8B8',
   white: '#fff',
