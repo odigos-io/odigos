@@ -194,16 +194,20 @@ cli-install:
 	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
 	cd ./cli ; go run -tags=embed_manifests . install --version $(ODIGOS_CLI_VERSION)
 
-
 .PHONY: cli-upgrade
 cli-upgrade:
-	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
+	@echo "Upgrading odigos from source. version: $(ODIGOS_CLI_VERSION)"
 	cd ./cli ; go run -tags=embed_manifests . upgrade --version $(ODIGOS_CLI_VERSION) --yes
 
 .PHONY: cli-build
 cli-build:
 	@echo "Building the cli executable for tests"
 	cd cli && go build -tags=embed_manifests -o odigos .
+
+.PHONY: cli-diagnose
+cli-diagnose:
+	@echo "Diagnosing cluster data for debugging"
+	cd ./cli ; go run -tags=embed_manifests . diagnose
 
 .PHONY: api-all
 api-all:

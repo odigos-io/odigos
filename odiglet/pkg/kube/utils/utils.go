@@ -19,16 +19,15 @@ func IsPodInCurrentNode(pod *corev1.Pod) bool {
 func GetRunningPods(ctx context.Context, labels map[string]string, ns string, kubeClient client.Client) ([]corev1.Pod, error) {
 	var podList corev1.PodList
 	err := kubeClient.List(ctx, &podList, client.MatchingLabels(labels), client.InNamespace(ns))
+	if err != nil {
+		return nil, err
+	}
 
 	var filteredPods []corev1.Pod
 	for _, pod := range podList.Items {
 		if IsPodInCurrentNode(&pod) && pod.Status.Phase == corev1.PodRunning && pod.DeletionTimestamp == nil {
 			filteredPods = append(filteredPods, pod)
 		}
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	return filteredPods, nil

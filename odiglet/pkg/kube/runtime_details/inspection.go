@@ -2,6 +2,7 @@ package runtime_details
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -21,6 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -140,6 +142,24 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 	}
 
 	return results, nil
+}
+
+func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, newStatus odigosv1.InstrumentationConfigStatus) error {
+
+	// persist the runtime results into the status of the instrumentation config
+	patchStatus := odigosv1.InstrumentationConfig{
+		Status: newStatus,
+	}
+	patchData, err := json.Marshal(patchStatus)
+	if err != nil {
+		return err
+	}
+	err = kubeclient.Status().Patch(ctx, instrumentationConfig, client.RawPatch(types.MergePatchType, patchData), client.FieldOwner("odiglet-runtimedetails"))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func persistRuntimeResults(ctx context.Context, results []odigosv1.RuntimeDetailsByContainer, owner client.Object, kubeClient client.Client, scheme *runtime.Scheme) error {

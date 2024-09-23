@@ -19,6 +19,9 @@ const API = {
   DELETE_ACTION: (type: string, id: string) =>
     `${BASE_URL}/actions/types/${type}/${id}`,
   OVERVIEW_METRICS: `${BASE_URL}/metrics/overview`,
+  INSTRUMENTATION_RULES: `${BASE_URL}/instrumentation-rules`,
+  INSTRUMENTATION_RULE: (id: string) =>
+    `${BASE_URL}/instrumentation-rules/${id}`,
 };
 
 const QUERIES = {
@@ -38,5 +41,8 @@ const SLACK_INVITE_LINK =
 export const ACTION_DOCS_LINK =
   'https://docs.odigos.io/pipeline/actions/introduction';
 export const ACTION_ITEM_DOCS_LINK = 'https://docs.odigos.io/pipeline/actions';
+
+export const INSTRUMENTATION_RULES_DOCS_LINK =
+  'https://docs.odigos.io/pipeline/rules/overview';
 
 export { API, QUERIES, SLACK_INVITE_LINK };

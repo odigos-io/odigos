@@ -34,7 +34,6 @@ func getGenerationFromReplicaSet(ctx context.Context, kubeClient *kubernetes.Cli
 		return 0, errors.New("replica set with deployment revision has no deployment owner")
 	}
 
-	kubeClient.AppsV1().ControllerRevisions(ns).Get(ctx, deploymentRevision, metav1.GetOptions{})
 	deployment, err := kubeClient.AppsV1().Deployments(ns).Get(ctx, deploymentName, metav1.GetOptions{})
 	if err != nil {
 		return 0, err
