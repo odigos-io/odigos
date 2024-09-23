@@ -165,6 +165,21 @@ func NewUIRole(ns string) *rbacv1.Role {
 					"pods",
 				},
 			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"patch",
+					"delete",
+					"create",
+					"update",
+				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{
+					"instrumentaitonrules",
+				},
+			},
 		},
 	}
 }

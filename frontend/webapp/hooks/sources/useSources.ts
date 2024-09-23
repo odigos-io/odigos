@@ -198,8 +198,8 @@ export function useSources() {
     }
 
     const filteredSources = sources?.filter((deployment) =>
-      deployment.instrumented_application_details.conditions.some(
-        (condition) => condition.status === status
+      deployment?.instrumented_application_details?.conditions.some(
+        (condition) => condition?.status === status
       )
     );
 

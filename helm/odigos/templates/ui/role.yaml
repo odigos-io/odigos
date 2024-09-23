@@ -23,3 +23,14 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - "odigos.io"
+    resources:
+      - instrumentationrules
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
