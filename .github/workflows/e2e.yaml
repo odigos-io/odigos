@@ -22,7 +22,7 @@ jobs:
       - name: Build and Export Odigos Images
         run: |
           TAG=e2e-test make build-images
-          docker save -o odigos-images.tar $(docker images --filter=reference="odigos*" --format "{{.Repository}}:{{.Tag}}")
+          docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
 
       - name: Upload Docker Images
         uses: actions/upload-artifact@v3
