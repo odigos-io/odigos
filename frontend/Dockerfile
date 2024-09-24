@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/usr/local/share/.cache/yarn/v6 \
 FROM --platform=$BUILDPLATFORM node:20.2.0 AS builder
 WORKDIR /webapp
 COPY frontend//webapp .
-RUN yarn build
+RUN yarn build --verbose
 
 
 FROM --platform=$BUILDPLATFORM golang:1.22 AS backend
