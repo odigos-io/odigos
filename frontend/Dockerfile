@@ -9,17 +9,20 @@ COPY frontend/webapp/.yarnrc.yml ./.yarnrc.yml
 RUN --mount=type=cache,target=/usr/local/share/.cache/yarn/v6 \
     yarn install --frozen-lockfile
 
-
 # Stage 2: Build
 FROM --platform=$BUILDPLATFORM node:20.2.0 AS builder
 WORKDIR /webapp
-# Copy necessary files
+# Copy all necessary files, including Yarn PnP setup
 COPY frontend/webapp .
-# List the directory contents to ensure files are present
-RUN ls -la
-# Attempt to build with verbose output for detailed errors
+COPY --from=deps /app/.yarn ./.yarn
+COPY --from=deps /app/.pnp.cjs ./.pnp.cjs
+COPY --from=deps /app/.yarnrc.yml ./.yarnrc.yml
+# Install dependencies to ensure PnP setup works in this stage
+RUN yarn install --frozen-lockfile
+# Set NODE_OPTIONS to use PnP loader
+ENV NODE_OPTIONS="--require ./.pnp.cjs"
+# Attempt to build the project
 RUN yarn build --verbose
-
 
 FROM --platform=$BUILDPLATFORM golang:1.22 AS backend
 WORKDIR /app
