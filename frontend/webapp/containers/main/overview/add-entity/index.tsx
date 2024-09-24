@@ -1,9 +1,12 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
-import { DropdownOption } from '@/types';
-import { useOnClickOutside } from '@/hooks';
+import { DropdownOption, K8sActualSource } from '@/types';
+import { useConnectSourcesMenuState, useOnClickOutside } from '@/hooks';
 import styled, { css } from 'styled-components';
-import { Button, Text } from '@/reuseable-components';
+import { Button, Modal, Text } from '@/reuseable-components';
+import { ChooseSourcesContainer } from '../../sources';
+import { useAppStore } from '@/store';
+import { ChooseSourcesBody } from '../../sources/choose-sources/choose-sources-body';
 
 interface AddEntityButtonDropdownProps {
   options?: DropdownOption[];
@@ -83,6 +86,12 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [sourcesList, setSourcesList] = useState<K8sActualSource[]>([]);
+
+  const { setSources, setNamespaceFutureSelectAppsList } = useAppStore();
+  const { stateMenu, stateHandlers } = useConnectSourcesMenuState({
+    sourcesList,
+  });
 
   useOnClickOutside(dropdownRef, () => setIsOpen(false));
 
@@ -125,6 +134,24 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
           ))}
         </DropdownListContainer>
       )}
+      <Modal isOpen={true} header={{ title: 'ADD SOURCE' }} onClose={() => {}}>
+        <div
+          style={{
+            width: '1080px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            flexDirection: 'column',
+          }}
+        >
+          <ChooseSourcesBody
+            stateMenu={stateMenu}
+            stateHandlers={stateHandlers}
+            sourcesList={sourcesList}
+            setSourcesList={setSourcesList}
+          />
+        </div>
+      </Modal>
     </Container>
   );
 };
