@@ -233,7 +233,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "3"
+    deployment.kubernetes.io/revision: "4"
   generation: 4 # on step 2, the manifest was updated (1->2)
   labels:
     app: java-azul
