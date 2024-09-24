@@ -19,7 +19,7 @@ COPY --from=deps /app/. .
 # Set NODE_OPTIONS to use PnP loader
 ENV NODE_OPTIONS="--require ./.pnp.cjs"
 # Build the project with verbose output
-RUN yarn build --verbose
+RUN yarn build 
 
 # Stage 3: Backend (Golang)
 FROM --platform=$BUILDPLATFORM golang:1.22 AS backend
