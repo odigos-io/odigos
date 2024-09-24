@@ -19,16 +19,27 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Build CLI
+        run: |
+          cd cli
+          go build -tags=embed_manifests -o odigos
+
       - name: Build and Export Odigos Images
         run: |
           TAG=e2e-test make build-images
           docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
 
-      - name: Upload Docker Images
+      - name: Upload Docker Images and CLI
         uses: actions/upload-artifact@v3
         with:
           name: odigos-images
           path: odigos-images.tar
+          
+      - name: Upload CLI binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: odigos-cli
+          path: cli/odigos
 
   kubernetes-test:
     needs: build-odigos-images
@@ -52,9 +63,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -85,11 +93,6 @@ jobs:
           cd frontend/webapp
           yarn install
 
-      - name: Build CLI
-        run: |
-          cd cli
-          go build -tags=embed_manifests -o odigos
-
       - name: Download and Load Docker Images to Kind
         uses: actions/download-artifact@v3
         with:
@@ -97,6 +100,13 @@ jobs:
       - run: |
           docker load -i odigos-images.tar
           TAG=e2e-test make load-to-kind
+
+      - name: Download CLI binary
+        uses: actions/download-artifact@v3
+        with:
+          name: odigos-cli
+      - run: |
+          mv odigos cli/odigos
 
       - name: Run E2E Tests
         run: |
