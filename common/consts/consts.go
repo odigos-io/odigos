@@ -34,5 +34,5 @@ var (
 
 var (
 	SystemNamespaces  = []string{DefaultOdigosNamespace, "kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
-	IgnoredContainers = []string{"istio-proxy", "vault-agent", "filebeat", "linkerd-proxy", "fluentd"}
+	IgnoredContainers = []string{"istio-proxy", "vault-agent", "filebeat", "linkerd-proxy", "fluentd", "akeyless-init"}
 )
