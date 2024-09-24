@@ -2,13 +2,12 @@ FROM --platform=$BUILDPLATFORM node:20.2.0 AS deps
 WORKDIR /app
 COPY frontend/webapp/package.json frontend/webapp/yarn.lock ./
 RUN --mount=type=cache,target=/usr/local/share/.cache/yarn/v6 \
-    yarn install --frozen-lockfile --prefer-offline
+    yarn install --frozen-lockfile
 
 FROM --platform=$BUILDPLATFORM node:20.2.0 AS builder
 WORKDIR /webapp
-COPY frontend/webapp .
-RUN --mount=type=cache,target=/usr/local/share/.cache/yarn/v6 \
-    yarn build
+COPY frontend//webapp .
+RUN yarn build
 
 
 FROM --platform=$BUILDPLATFORM golang:1.22 AS backend
