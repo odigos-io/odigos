@@ -1,8 +1,14 @@
+# Stage 1: Dependencies
 FROM --platform=$BUILDPLATFORM node:20.2.0 AS deps
 WORKDIR /app
+# Copy necessary Yarn files for PnP
 COPY frontend/webapp/package.json frontend/webapp/yarn.lock ./
+COPY frontend/webapp/.yarn ./.yarn
+COPY frontend/webapp/.yarnrc.yml ./.yarnrc.yml
+# Use cache to speed up installation
 RUN --mount=type=cache,target=/usr/local/share/.cache/yarn/v6 \
     yarn install --frozen-lockfile
+
 
 FROM --platform=$BUILDPLATFORM node:20.2.0 AS builder
 WORKDIR /webapp
