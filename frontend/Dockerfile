@@ -10,9 +10,14 @@ RUN --mount=type=cache,target=/usr/local/share/.cache/yarn/v6 \
     yarn install --frozen-lockfile
 
 
+# Stage 2: Build
 FROM --platform=$BUILDPLATFORM node:20.2.0 AS builder
 WORKDIR /webapp
-COPY frontend//webapp .
+# Copy necessary files
+COPY frontend/webapp .
+# List the directory contents to ensure files are present
+RUN ls -la
+# Attempt to build with verbose output for detailed errors
 RUN yarn build --verbose
 
 
