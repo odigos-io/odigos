@@ -174,10 +174,47 @@ func printInstrumentationConfigInfo(instrumentationConfig *odigosv1.Instrumentat
 	}
 }
 
+func printRuntimeDetails(instrumentationConfig *odigosv1.InstrumentationConfig, instrumented bool, sb *strings.Builder) {
+	if instrumentationConfig == nil {
+		sb.WriteString("No runtime details\n")
+		return
+	}
+
+	sb.WriteString("\nRuntime inspection details (new):\n")
+	sb.WriteString(fmt.Sprintf("Workload generation: %d\n", instrumentationConfig.Status.ObservedWorkloadGeneration))
+	for _, container := range instrumentationConfig.Status.RuntimeDetailsByContainer {
+		sb.WriteString(fmt.Sprintf("  Container Name: %s\n", container.ContainerName))
+		colorfulLanguage := string(container.Language)
+		isUnknown := container.Language == common.UnknownProgrammingLanguage
+		if isUnknown {
+			colorfulLanguage = wrapTextInRed(string(container.Language))
+		} else if container.Language != common.IgnoredProgrammingLanguage {
+			colorfulLanguage = wrapTextInGreen(string(container.Language))
+		}
+		sb.WriteString("    Language:      " + colorfulLanguage + "\n")
+		if isUnknown {
+			sb.WriteString("    Troubleshooting: http://localhost:3000/architecture/troubleshooting#4-language-not-detected\n")
+		}
+		if container.RuntimeVersion != "" {
+			sb.WriteString("    Runtime Version: " + container.RuntimeVersion + "\n")
+		} else {
+			sb.WriteString("    Runtime Version: not detected\n")
+		}
+
+		// calculate env vars for this container
+		if container.EnvVars != nil && len(container.EnvVars) > 0 {
+			sb.WriteString("    Relevant Environment Variables:\n")
+			for _, envVar := range container.EnvVars {
+				sb.WriteString(fmt.Sprintf("      - %s: %s\n", envVar.Name, envVar.Value))
+			}
+		}
+	}
+}
+
 func printInstrumentedApplicationInfo(instrumentedApplication *odigosv1.InstrumentedApplication, instrumented bool, sb *strings.Builder) {
 	instrumentedApplicationNotFound := instrumentedApplication == nil
 	statusAsExpected := instrumentedApplicationNotFound == !instrumented
-	sb.WriteString("\nRuntime inspection details:\n")
+	sb.WriteString("\nRuntime inspection details (old):\n")
 	if instrumentedApplicationNotFound {
 		if instrumented {
 			sb.WriteString("  Not yet created\n")
@@ -200,6 +237,11 @@ func printInstrumentedApplicationInfo(instrumentedApplication *odigosv1.Instrume
 			sb.WriteString("      Language:      " + colorfulLanguage + "\n")
 			if isUnknown {
 				sb.WriteString("      Troubleshooting: http://localhost:3000/architecture/troubleshooting#4-language-not-detected\n")
+			}
+			if container.RuntimeVersion != "" {
+				sb.WriteString("      Runtime Version: " + container.RuntimeVersion + "\n")
+			} else {
+				sb.WriteString("      Runtime Version: not detected\n")
 			}
 
 			// calculate env vars for this container
@@ -393,6 +435,7 @@ func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, o
 
 	instrumented := printWorkloadManifestInfo(workloadObj, namespace, &sb)
 	printInstrumentationConfigInfo(instrumentationConfig, instrumented, &sb)
+	printRuntimeDetails(instrumentationConfig, instrumented, &sb)
 	printInstrumentedApplicationInfo(instrumentedApplication, instrumented, &sb)
 	containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(workloadObj, instrumentedApplication, instrumented, &sb)
 	printPodsInfo(pods, instrumentationInstances, containerNameToExpectedDevices, &sb)
