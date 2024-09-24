@@ -261,6 +261,7 @@ func components() (otelcol.Factories, error) {
 	factories.ProcessorModules = make(map[component.Type]string, len(factories.Processors))
 	factories.ProcessorModules[odigosresourcenameprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor v0.106.0"
 	factories.ProcessorModules[odigossamplingprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor v0.106.0"
+	factories.ProcessorModules[odigossqldboperationprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor v0.106.0"
 	factories.ProcessorModules[batchprocessor.NewFactory().Type()] = "go.opentelemetry.io/collector/processor/batchprocessor v0.106.0"
 	factories.ProcessorModules[memorylimiterprocessor.NewFactory().Type()] = "go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.106.0"
 	factories.ProcessorModules[attributesprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.106.0"
