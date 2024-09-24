@@ -19,6 +19,7 @@ jobs:
       - name: Verify Generate
         working-directory: ./collector
         run: |
+          git diff
           if [[ $(git diff --exit-code) ]]; then
             echo "odigos collector distribution module is not in sync with builder config. Please run 'make genodigoscol' in 'collector' directory and commit the changes."
             exit 1
