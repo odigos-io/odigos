@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/odigos-io/odigos/common"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -26,10 +28,15 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 	logger := log.FromContext(ctx)
 	podUid := string(pod.UID)
 	instrumentedEbpf := false
+	ignoredContainers := getIgnoredContainers(runtimeDetails)
 
 	for _, container := range pod.Spec.Containers {
-		language, sdk, found := odgiosK8s.GetLanguageAndOtelSdk(container)
+		// Ignored containers should not have a device but double check just in case
+		if _, ignored := ignoredContainers[container.Name]; ignored {
+			continue
+		}
 
+		language, sdk, found := odgiosK8s.GetLanguageAndOtelSdk(container)
 		if !found {
 			continue
 		}
@@ -39,15 +46,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 			continue
 		}
 
-		// if we instrument multiple containers in the same pod,
-		// we want to give each one a unique service.name attribute to differentiate them
-		containerName := container.Name
-		serviceName := containerName
-		if len(runtimeDetails.Spec.RuntimeDetails) == 1 {
-			serviceName = podWorkload.Name
-		}
-
-		details, err := process.FindAllInContainer(podUid, containerName)
+		details, err := process.FindAllInContainer(podUid, container.Name)
 		if err != nil {
 			logger.Error(err, "error finding processes")
 			return err, instrumentedEbpf
@@ -65,7 +64,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 				continue
 			}
 
-			err = director.Instrument(ctx, d.ProcessID, podDetails, podWorkload, serviceName, containerName)
+			err = director.Instrument(ctx, d.ProcessID, podDetails, podWorkload, podWorkload.Name, container.Name)
 
 			if err != nil {
 				logger.Error(err, "error initiating process instrumentation", "pid", d.ProcessID)
@@ -81,4 +80,14 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 		}
 	}
 	return nil, instrumentedEbpf
+}
+
+func getIgnoredContainers(instApp *odigosv1.InstrumentedApplication) map[string]struct{} {
+	ignoredContainers := make(map[string]struct{})
+	for _, container := range instApp.Spec.RuntimeDetails {
+		if container.Language == common.IgnoredProgrammingLanguage {
+			ignoredContainers[container.ContainerName] = struct{}{}
+		}
+	}
+	return ignoredContainers
 }
