@@ -70,7 +70,7 @@ func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Tra
 func DetectSQLOperationName(query string) string {
 	query = strings.TrimSpace(query)
 	if len(query) == 0 {
-		return "UNKNOWN"
+		return OperationUnknown
 	}
 
 	firstWord := extractFirstWord(query)
