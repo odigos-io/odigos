@@ -6,6 +6,7 @@ RUN --mount=type=cache,target=/usr/local/share/.cache/yarn/v6 \
 
 FROM --platform=$BUILDPLATFORM node:20.2.0 AS builder
 WORKDIR /webapp
+COPY --from=deps /app/node_modules ./node_modules
 COPY frontend//webapp .
 RUN yarn build
 
