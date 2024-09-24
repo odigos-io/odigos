@@ -91,6 +91,21 @@ const LOGO_STYLE: React.CSSProperties = {
   backgroundColor: theme.colors.white,
 };
 
+function getFirstNonIgnoredContainerName(
+  managedSource: ManagedSource
+): string | null {
+  if (!managedSource.instrumented_application_details.languages) {
+    return null;
+  }
+
+  const nonIgnoredLanguage =
+    managedSource.instrumented_application_details.languages.find(
+      (language) => language.language !== 'ignore'
+    );
+
+  return nonIgnoredLanguage ? nonIgnoredLanguage.container_name : null;
+}
+
 const DEPLOYMENT = 'deployment';
 export function SourcesTableRow({
   item,
@@ -108,8 +123,7 @@ export function SourcesTableRow({
 }) {
   const workloadProgrammingLanguage = getMainContainerLanguage(item);
 
-  const containerName =
-    item?.instrumented_application_details?.languages?.[0].container_name || '';
+  const containerName = getFirstNonIgnoredContainerName(item) || '';
 
   function getLanguageStatus() {
     if (workloadProgrammingLanguage === 'processing') {

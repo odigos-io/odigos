@@ -26,6 +26,7 @@ export interface ManagedSource {
     languages: Array<{
       container_name: string;
       language: string;
+      runtime_version?: string;
     }> | null;
   };
 }
