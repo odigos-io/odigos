@@ -34,7 +34,7 @@ jobs:
         with:
           name: odigos-images
           path: odigos-images.tar
-          
+
       - name: Upload CLI binary
         uses: actions/upload-artifact@v3
         with:
@@ -107,6 +107,7 @@ jobs:
           name: odigos-cli
       - run: |
           mv odigos cli/odigos
+          chmod +x cli/odigos
 
       - name: Run E2E Tests
         run: |
