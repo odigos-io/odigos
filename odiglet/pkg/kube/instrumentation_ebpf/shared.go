@@ -31,6 +31,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 	ignoredContainers := getIgnoredContainers(runtimeDetails)
 
 	for _, container := range pod.Spec.Containers {
+		// Ignored containers should not have a device but double check just in case
 		if _, ignored := ignoredContainers[container.Name]; ignored {
 			continue
 		}
