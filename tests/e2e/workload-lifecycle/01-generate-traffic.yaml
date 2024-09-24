@@ -30,3 +30,5 @@ spec:
               curl -s --fail http://nodejs-dockerfile-env:3000
               curl -s --fail http://nodejs-manifest-env:3000
               curl -s --fail http://cpp-http-server:3000
+              curl -s --fail http://java-supported-version:3000
+              curl -s --fail http://java-azul:3000

@@ -25,6 +25,10 @@ spec:
           kind load docker-image nodejs-manifest-env:v0.0.1
           docker build -t cpp-http-server:v0.0.1 -f services/cpp-http-server/Dockerfile services/cpp-http-server
           kind load docker-image cpp-http-server:v0.0.1
+          docker build -t java-supported-version:v0.0.1 -f services/java-http-server/java-supported-version.Dockerfile services/java-http-server
+          kind load docker-image java-supported-version:v0.0.1
+          docker build -t java-azul:v0.0.1 -f services/java-http-server/java-azul.Dockerfile services/java-http-server
+          kind load docker-image java-azul:v0.0.1
 
   - name: Prepare destination
     try:
@@ -60,16 +64,24 @@ spec:
         file: 01-instrument-ns.yaml
     - assert:
         file: 01-assert-runtime-detected.yaml
+
   - name: '01 Add Destination'
     try:
     - apply:
         file: 01-add-destination.yaml
-    - assert:
-        file: 01-assert-pipeline.yaml
+  - name: Assert Pipeline
+    try:
+      - assert:
+          file: 01-assert-pipeline.yaml
+  - name: Assert instrumented
+    try:
     - assert:
         file: 01-assert-instrumented.yaml
+  - name: Assert workload
+    try:
     - assert:
         file: 01-assert-workloads.yaml
+
   - name: '01 - Generate Traffic'
     # at this point, we know the expected services are instrumented because we asserted the instrumentation instance
     # send traffic to all services to verify they are working as expected and verify traces for instrumented ones

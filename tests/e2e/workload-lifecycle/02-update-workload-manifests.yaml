@@ -176,3 +176,53 @@ spec:
           ports:
             - containerPort: 3000
 ---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: java-supported-version
+  namespace: default
+  labels:
+    app: java-supported-version
+spec:
+  selector:
+    matchLabels:
+      app: java-supported-version
+  template:
+    metadata:
+      labels:
+        app: java-supported-version
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: java-supported-version
+          image: java-supported-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: java-azul
+  namespace: default
+  labels:
+    app: java-azul
+spec:
+  selector:
+    matchLabels:
+      app: java-azul
+  template:
+    metadata:
+      labels:
+        app: java-azul
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: java-azul
+          image: java-azul:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
