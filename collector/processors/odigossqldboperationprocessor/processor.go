@@ -13,6 +13,17 @@ type DBOperationProcessor struct {
 	logger *zap.Logger
 }
 
+const (
+	OperationSelect  string = "SELECT"
+	OperationInsert  string = "INSERT"
+	OperationUpdate  string = "UPDATE"
+	OperationDelete  string = "DELETE"
+	OperationCreate  string = "CREATE"
+	OperationDrop    string = "DROP"
+	OperationAlter   string = "ALTER"
+	OperationUnknown string = "UNKNOWN"
+)
+
 func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 	resources := td.ResourceSpans()
 	// Iterate over resources
@@ -42,8 +53,10 @@ func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Tra
 				// Detect the `db.operation.name` from the query text
 				operationName := DetectSQLOperationName(dbQueryText.AsString())
 
-				// Set the `db.operation.name` with the detected operation name
-				span.Attributes().PutStr(string(semconv.DBOperationNameKey), operationName)
+				// Only set the `db.operation.name` if the detected operation name is not "UNKNOWN"
+				if operationName != OperationUnknown {
+					span.Attributes().PutStr(string(semconv.DBOperationNameKey), operationName)
+				}
 			}
 		}
 	}
@@ -66,10 +79,10 @@ func DetectSQLOperationName(query string) string {
 	firstWord = strings.ToUpper(firstWord)
 
 	switch firstWord {
-	case "SELECT", "INSERT", "UPDATE", "DELETE", "CREATE", "DROP", "ALTER":
+	case OperationSelect, OperationInsert, OperationUpdate, OperationDelete, OperationCreate, OperationDrop, OperationAlter:
 		return firstWord
 	default:
-		return "UNKNOWN"
+		return OperationUnknown
 	}
 }
 
