@@ -22,7 +22,7 @@ RUN yarn install --frozen-lockfile
 # Set NODE_OPTIONS to use PnP loader
 ENV NODE_OPTIONS="--require ./.pnp.cjs"
 # Attempt to build the project
-RUN yarn build --verbose
+RUN yarn build 
 
 FROM --platform=$BUILDPLATFORM golang:1.22 AS backend
 WORKDIR /app
