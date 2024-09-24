@@ -28,7 +28,7 @@ FROM --platform=$BUILDPLATFORM golang:1.22 AS backend
 WORKDIR /app
 
 # Copy only the go.mod and go.sum files first to leverage caching of dependencies
-COPY go.mod go.sum ./
+COPY frontend/go.mod frontend/go.sum ./
 RUN go mod download
 
 # Copy the rest of the application code
