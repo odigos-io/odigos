@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/usr/local/share/.cache/yarn/v6 \
 
 FROM --platform=$BUILDPLATFORM golang:1.22 AS backend
 WORKDIR /app
-COPY frontend/ frontend/
+COPY . .
 COPY --from=builder /webapp/out frontend/webapp/out
 WORKDIR /app/frontend
 ARG TARGETARCH
