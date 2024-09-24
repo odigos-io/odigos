@@ -52,7 +52,8 @@ var describeSourceDeploymentCmd = &cobra.Command{
 			PodTemplateSpec: &deployment.Spec.Template,
 			LabelSelector:   deployment.Spec.Selector,
 		}
-		describe.PrintDescribeSource(ctx, client, client.OdigosClient, workloadObj)
+		describeText := describe.PrintDescribeSource(ctx, client.Interface, client.OdigosClient, workloadObj)
+		fmt.Println(describeText)
 	},
 }
 
@@ -82,7 +83,8 @@ var describeSourceDaemonSetCmd = &cobra.Command{
 			PodTemplateSpec: &ds.Spec.Template,
 			LabelSelector:   ds.Spec.Selector,
 		}
-		describe.PrintDescribeSource(ctx, client, client.OdigosClient, workloadObj)
+		describeText := describe.PrintDescribeSource(ctx, client, client.OdigosClient, workloadObj)
+		fmt.Println(describeText)
 	},
 }
 
@@ -112,7 +114,8 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 			PodTemplateSpec: &sts.Spec.Template,
 			LabelSelector:   sts.Spec.Selector,
 		}
-		describe.PrintDescribeSource(ctx, client, client.OdigosClient, workloadObj)
+		describeText := describe.PrintDescribeSource(ctx, client.Interface, client.OdigosClient, workloadObj)
+		fmt.Println(describeText)
 	},
 }
 
