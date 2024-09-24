@@ -6,7 +6,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -32,27 +31,15 @@ var describeSourceDeploymentCmd = &cobra.Command{
 	Aliases: []string{"deploy", "deployments", "deploy.apps", "deployment.apps", "deployments.apps"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-
 		client, err := kube.CreateClient(cmd)
 		if err != nil {
 			kube.PrintClientErrorAndExit(err)
 		}
-
 		ctx := cmd.Context()
 		name := args[0]
 		ns := cmd.Flag("namespace").Value.String()
-		deployment, err := client.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			return
-		}
-		workloadObj := &describe.K8sSourceObject{
-			Kind:            "deployment",
-			ObjectMeta:      deployment.ObjectMeta,
-			PodTemplateSpec: &deployment.Spec.Template,
-			LabelSelector:   deployment.Spec.Selector,
-		}
-		describeText := describe.PrintDescribeSource(ctx, client.Interface, client.OdigosClient, workloadObj)
+
+		describeText := describe.DescribeDeployment(ctx, client.Interface, client.OdigosClient, ns, name)
 		fmt.Println(describeText)
 	},
 }
@@ -72,18 +59,8 @@ var describeSourceDaemonSetCmd = &cobra.Command{
 		ctx := cmd.Context()
 		name := args[0]
 		ns := cmd.Flag("namespace").Value.String()
-		ds, err := client.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			return
-		}
-		workloadObj := &describe.K8sSourceObject{
-			Kind:            "daemonset",
-			ObjectMeta:      ds.ObjectMeta,
-			PodTemplateSpec: &ds.Spec.Template,
-			LabelSelector:   ds.Spec.Selector,
-		}
-		describeText := describe.PrintDescribeSource(ctx, client, client.OdigosClient, workloadObj)
+
+		describeText := describe.DescribeDaemonSet(ctx, client, client.OdigosClient, ns, name)
 		fmt.Println(describeText)
 	},
 }
@@ -103,18 +80,8 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 		ctx := cmd.Context()
 		name := args[0]
 		ns := cmd.Flag("namespace").Value.String()
-		sts, err := client.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			return
-		}
-		workloadObj := &describe.K8sSourceObject{
-			Kind:            "statefulset",
-			ObjectMeta:      sts.ObjectMeta,
-			PodTemplateSpec: &sts.Spec.Template,
-			LabelSelector:   sts.Spec.Selector,
-		}
-		describeText := describe.PrintDescribeSource(ctx, client.Interface, client.OdigosClient, workloadObj)
+
+		describeText := describe.DescribeStatefulSet(ctx, client.Interface, client.OdigosClient, ns, name)
 		fmt.Println(describeText)
 	},
 }

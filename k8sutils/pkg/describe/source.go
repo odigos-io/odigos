@@ -399,3 +399,45 @@ func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, o
 
 	return sb.String()
 }
+
+func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) string {
+	deployment, err := kubeClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Sprintf("Error: %v\n", err)
+	}
+	workloadObj := &K8sSourceObject{
+		Kind:            "deployment",
+		ObjectMeta:      deployment.ObjectMeta,
+		PodTemplateSpec: &deployment.Spec.Template,
+		LabelSelector:   deployment.Spec.Selector,
+	}
+	return PrintDescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+}
+
+func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) string {
+	ds, err := kubeClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Sprintf("Error: %v\n", err)
+	}
+	workloadObj := &K8sSourceObject{
+		Kind:            "daemonset",
+		ObjectMeta:      ds.ObjectMeta,
+		PodTemplateSpec: &ds.Spec.Template,
+		LabelSelector:   ds.Spec.Selector,
+	}
+	return PrintDescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+}
+
+func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) string {
+	ss, err := kubeClient.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Sprintf("Error: %v\n", err)
+	}
+	workloadObj := &K8sSourceObject{
+		Kind:            "statefulset",
+		ObjectMeta:      ss.ObjectMeta,
+		PodTemplateSpec: &ss.Spec.Template,
+		LabelSelector:   ss.Spec.Selector,
+	}
+	return PrintDescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+}

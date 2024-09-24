@@ -127,6 +127,11 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 		apis.DELETE("/instrumentation-rules/:id", func(c *gin.Context) { endpoints.DeleteInstrumentationRule(c, flags.Namespace, c.Param("id")) })
 		apis.PUT("/instrumentation-rules/:id", func(c *gin.Context) { endpoints.UpdateInstrumentationRule(c, flags.Namespace, c.Param("id")) })
 
+		// Describe
+		apis.GET("/describe/source/kind/:kind/namespace/:namespace/name/:name", func(c *gin.Context) {
+			endpoints.DescribeSource(c, c.Param("kind"), c.Param("namespace"), c.Param("name"))
+		})
+
 		apis.GET("/actions", func(c *gin.Context) { actions.GetActions(c, flags.Namespace) })
 
 		// AddClusterInfo
