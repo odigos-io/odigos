@@ -94,12 +94,12 @@ const LOGO_STYLE: React.CSSProperties = {
 function getFirstNonIgnoredContainerName(
   managedSource: ManagedSource
 ): string | null {
-  if (!managedSource.instrumented_application_details.languages) {
+  if (!managedSource?.instrumented_application_details?.languages) {
     return null;
   }
 
   const nonIgnoredLanguage =
-    managedSource.instrumented_application_details.languages.find(
+    managedSource?.instrumented_application_details?.languages.find(
       (language) => language.language !== 'ignore'
     );
 
