@@ -107,11 +107,7 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 
 func executeRemoteDescribe(ctx context.Context, client *kube.Client, workloadKind string, workloadNs string, workloadName string) string {
 	uiSvcProxyEndpoint := getUiServiceEndpoint(ctx, client, workloadKind, workloadNs, workloadName)
-	fmt.Println(uiSvcProxyEndpoint)
-	// Send the HTTP GET request
 	request := client.Clientset.RESTClient().Get().AbsPath(uiSvcProxyEndpoint).Do(ctx)
-
-	// Handle the response
 	response, err := request.Raw()
 	if err != nil {
 		return "Remote describe failed: " + err.Error()
