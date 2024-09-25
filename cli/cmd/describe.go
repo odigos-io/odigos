@@ -107,6 +107,7 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 
 func executeRemoteDescribe(ctx context.Context, client *kube.Client, workloadKind string, workloadNs string, workloadName string) string {
 	uiSvcProxyEndpoint := getUiServiceEndpoint(ctx, client, workloadKind, workloadNs, workloadName)
+	fmt.Println(uiSvcProxyEndpoint)
 	// Send the HTTP GET request
 	request := client.Clientset.RESTClient().Get().AbsPath(uiSvcProxyEndpoint).Do(ctx)
 
@@ -132,8 +133,7 @@ func getUiServiceEndpoint(ctx context.Context, client *kube.Client, workloadKind
 	uiServiceName := "ui"
 	uiServicePort := 3000
 
-	return fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/source/kind/%s/namespace/%s/name/%s", ns, uiServiceName, uiServicePort, workloadKind, workloadNs, workloadName)
-	// return fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy", ns, uiServiceName, uiServicePort)
+	return fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/source/namespace/%s/kind/%s/name/%s", ns, uiServiceName, uiServicePort, workloadNs, workloadKind, workloadName)
 }
 
 func init() {

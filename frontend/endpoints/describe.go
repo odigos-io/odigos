@@ -6,7 +6,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 )
 
-func DescribeSource(c *gin.Context, kind string, ns string, name string) {
+func DescribeSource(c *gin.Context, ns string, kind string, name string) {
 	ctx := c.Request.Context()
 	switch kind {
 	case "deployment":
