@@ -16,6 +16,10 @@ There are 2 ways to install odigos in your kubernetes cluster:
 Both install methods will deploy and configure resources in the active Kubernetes cluster as per the current context. 
 Before proceeding with the installation, ensure that you are targeting the correct cluster with `kubectl config current-context`.
 
+<Info>
+  Odigos enterprise data collection is done using eBPF, so Odigos requires, at minimum, platforms that have underlying Linux kernel versions of 5.4.0.
+</Info>
+
 ## Odigos CLI
 
 ### Install the CLI
@@ -35,11 +39,11 @@ Before proceeding with the installation, ensure that you are targeting the corre
 
   3. Move the File to a Folder in Your `PATH`. You’ll need to move this file to a folder where your computer looks for programs, known as your "PATH."
 
-  4. For Windows: Move the extracted file to a folder like `C:\Windows\System32` or any folder listed in your system’s PATH. You can find out where by typing echo `%PATH%` in Command Prompt.
+   - For Windows: Move the extracted file to a folder like `C:\Windows\System32` or any folder listed in your system’s PATH. You can find out where by typing echo `%PATH%` in Command Prompt.
 
-  5. For macOS/Linux: Move the file to a folder like `/usr/local/bin/` or `/usr/bin/`, both of which are common folders included in the PATH. You can check your PATH by opening the terminal and typing echo $PATH.
+   - For macOS/Linux: Move the file to a folder like `/usr/local/bin/` or `/usr/bin/`, both of which are common folders included in the PATH. You can check your PATH by opening the terminal and typing `echo $PATH`.
 
-  6. Verify It’s Working: Once the file is in the correct folder, open a terminal or command prompt and type the name of the program (e.g., odigos). If it runs, you’ve successfully installed it! If not, double-check that you moved the file to a folder included in your PATH.
+  4. Verify It’s Working: Once the file is in the correct folder, open a terminal or command prompt and type the name of the program (e.g., odigos). If it runs, you’ve successfully installed it! If not, double-check that you moved the file to a folder included in your PATH.
   </Tab>
   <Tab title="Windows">
 1. Download the Latest Version: Go to the [Odigos GitHub Releases](https://github.com/odigos-io/odigos/releases) page. Look for the latest version and download the file that matches your system (typically, this will be a `.zip` file for Windows).
