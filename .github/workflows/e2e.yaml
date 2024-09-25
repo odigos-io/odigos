@@ -87,6 +87,7 @@ jobs:
           cluster_name: kind
 
       - name: Install FE
+        if: matrix.test-scenario == 'fe-synthetic'
         run: |
           cd frontend/webapp
           yarn install
