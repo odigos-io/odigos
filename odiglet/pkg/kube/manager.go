@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -71,8 +72,8 @@ func StartManager(ctx context.Context, mgr ctrl.Manager) error {
 	return nil
 }
 
-func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap) error {
-	err := runtime_details.SetupWithManager(mgr)
+func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, clientset *kubernetes.Clientset) error {
+	err := runtime_details.SetupWithManager(mgr, clientset)
 	if err != nil {
 		return err
 	}

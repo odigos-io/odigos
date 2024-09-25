@@ -120,6 +120,18 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 		apis.PUT("/destinations/:id", func(c *gin.Context) { endpoints.UpdateExistingDestination(c, flags.Namespace) })
 		apis.DELETE("/destinations/:id", func(c *gin.Context) { endpoints.DeleteDestination(c, flags.Namespace) })
 
+		// Instrumentation Rules
+		apis.GET("/instrumentation-rules", func(c *gin.Context) { endpoints.GetInstrumentationRules(c, flags.Namespace) })
+		apis.GET("/instrumentation-rules/:id", func(c *gin.Context) { endpoints.GetInstrumentationRule(c, flags.Namespace, c.Param("id")) })
+		apis.POST("/instrumentation-rules", func(c *gin.Context) { endpoints.CreateInstrumentationRule(c, flags.Namespace) })
+		apis.DELETE("/instrumentation-rules/:id", func(c *gin.Context) { endpoints.DeleteInstrumentationRule(c, flags.Namespace, c.Param("id")) })
+		apis.PUT("/instrumentation-rules/:id", func(c *gin.Context) { endpoints.UpdateInstrumentationRule(c, flags.Namespace, c.Param("id")) })
+
+		// Describe
+		apis.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", func(c *gin.Context) {
+			endpoints.DescribeSource(c, c.Param("namespace"), c.Param("kind"), c.Param("name"))
+		})
+
 		apis.GET("/actions", func(c *gin.Context) { actions.GetActions(c, flags.Namespace) })
 
 		// AddClusterInfo

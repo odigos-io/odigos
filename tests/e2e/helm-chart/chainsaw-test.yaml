@@ -74,6 +74,8 @@ spec:
         file: 04-add-destination.yaml
     - assert:
         file: assert-instrumented-and-pipeline.yaml
+    - assert:
+        file: assert-post-dest-runtime-details.yaml
   - name: Generate Traffic
     try:
       - script:

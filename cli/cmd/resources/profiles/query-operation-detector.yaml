@@ -1,0 +1,14 @@
+apiVersion: odigos.io/v1alpha1
+kind: Processor
+metadata:
+  name: query-operation-detector
+  namespace: odigos-system
+spec:
+  type: odigossqldboperationprocessor
+  processorName: query-operation-detector
+  notes: "Auto generated rule from query-operation-detector profile. Do not edit."
+  processorConfig: {}
+  signals:
+  - TRACES
+  collectorRoles:
+  - CLUSTER_GATEWAY  

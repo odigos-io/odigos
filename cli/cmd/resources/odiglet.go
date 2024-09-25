@@ -186,6 +186,15 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 			},
 			{
 				Verbs: []string{
+					"get",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"replicasets",
+				},
+			},
+			{
+				Verbs: []string{
 					"create",
 					"get",
 					"list",
@@ -265,6 +274,18 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{
 					"instrumentationconfigs",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"patch",
+				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{
+					"instrumentationconfigs/status",
 				},
 			},
 		},
