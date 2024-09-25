@@ -1,24 +1,27 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import styled, { css } from 'styled-components';
+import theme from '@/styles/theme';
+import { ChooseSourcesBody } from '../../sources';
 import {
   DropdownOption,
   K8sActualSource,
   PersistNamespaceItemInput,
 } from '@/types';
-import { Button, Modal, NavigationButtons, Text } from '@/reuseable-components';
-import { ChooseSourcesBody } from '../../sources/choose-sources/choose-sources-body';
+import {
+  Button,
+  FadeLoader,
+  Modal,
+  NavigationButtons,
+  Text,
+} from '@/reuseable-components';
 import {
   useActualSources,
   useOnClickOutside,
   useConnectSourcesMenuState,
 } from '@/hooks';
 
-interface AddEntityButtonDropdownProps {
-  options?: DropdownOption[];
-  placeholder?: string;
-}
-
+// Styled components for the dropdown UI
 const Container = styled.div`
   position: relative;
   display: inline-block;
@@ -34,7 +37,7 @@ const StyledButton = styled(Button)`
 
 const DropdownListContainer = styled.div`
   position: absolute;
-  right: 0px;
+  right: 0;
   top: 48px;
   border-radius: 24px;
   width: 131px;
@@ -51,7 +54,6 @@ const DropdownItem = styled.div<{ isSelected: boolean }>`
   border-radius: 24px;
   gap: 8px;
   display: flex;
-
   align-items: center;
   &:hover {
     background: ${({ theme }) => theme.colors.white_opacity['008']};
@@ -77,37 +79,33 @@ const ChooseSourcesBodyWrapper = styled.div`
   flex-direction: column;
 `;
 
-const OPTIONS = [
-  {
-    id: 'sources',
-    value: 'Source',
-  },
-  {
-    id: 'actions',
-    value: 'Action',
-  },
-  {
-    id: 'destinations',
-    value: 'Destination',
-  },
+// Default options for the dropdown
+const DEFAULT_OPTIONS: DropdownOption[] = [
+  { id: 'sources', value: 'Source' },
+  { id: 'actions', value: 'Action' },
+  { id: 'destinations', value: 'Destination' },
 ];
 
-function ModalActionComponent({ onNext }: { onNext: () => void }) {
-  return (
-    <NavigationButtons
-      buttons={[
-        {
-          label: 'DONE',
-          onClick: onNext,
-          variant: 'primary',
-        },
-      ]}
-    />
-  );
+// Action component for the modal's footer
+const ModalActionComponent: React.FC<{ onNext: () => void }> = ({ onNext }) => (
+  <NavigationButtons
+    buttons={[
+      {
+        label: 'DONE',
+        onClick: onNext,
+        variant: 'primary',
+      },
+    ]}
+  />
+);
+
+interface AddEntityButtonDropdownProps {
+  options?: DropdownOption[];
+  placeholder?: string;
 }
 
 const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
-  options = OPTIONS,
+  options = DEFAULT_OPTIONS,
   placeholder = 'ADD...',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -115,7 +113,7 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
   const [currentModal, setCurrentModal] = useState<string>('');
   const [sourcesList, setSourcesList] = useState<K8sActualSource[]>([]);
 
-  const { createSourcesForNamespace, persistNamespaceItems } =
+  const { createSourcesForNamespace, persistNamespaceItems, isPolling } =
     useActualSources();
   const { stateMenu, stateHandlers } = useConnectSourcesMenuState({
     sourcesList,
@@ -123,19 +121,21 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
 
   useOnClickOutside(dropdownRef, () => setIsOpen(false));
 
-  const handleToggle = () => {
+  // Toggle dropdown open state
+  const handleToggle = useCallback(() => {
     setIsOpen((prev) => !prev);
-  };
+  }, []);
 
-  const handleSelect = (option: DropdownOption) => {
+  // Handle selection of dropdown items
+  const handleSelect = useCallback((option: DropdownOption) => {
     setCurrentModal(option.id);
     setIsOpen(false);
-  };
+  }, []);
 
-  async function onNextClick() {
-    console.log('object');
+  // Handle next click action in the modal
+  const onNextClick = useCallback(async () => {
     try {
-      // Persist the selected namespaces
+      // Prepare namespace items for persistence
       const namespaceItems: PersistNamespaceItemInput[] = Object.entries(
         stateMenu.futureAppsCheckbox
       ).map(([namespaceName, futureSelected]) => ({
@@ -146,31 +146,38 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
       await persistNamespaceItems(namespaceItems);
 
       // Create sources for each namespace
-      for (const namespaceName in stateMenu.selectedItems) {
-        const sources = stateMenu.selectedItems[namespaceName].map(
-          (source) => ({
-            kind: source.kind,
-            name: source.name,
-            selected: true,
-          })
-        );
-        await createSourcesForNamespace(namespaceName, sources);
-      }
+      await Promise.all(
+        Object.entries(stateMenu.selectedItems).map(
+          async ([namespaceName, sources]) => {
+            const formattedSources = sources.map((source) => ({
+              kind: source.kind,
+              name: source.name,
+              selected: true,
+            }));
+            await createSourcesForNamespace(namespaceName, formattedSources);
+          }
+        )
+      );
+
       setCurrentModal('');
     } catch (error) {
       console.error('Error during onNextClick:', error);
     }
-  }
+  }, [persistNamespaceItems, stateMenu, createSourcesForNamespace]);
 
   return (
     <Container ref={dropdownRef}>
       <StyledButton onClick={handleToggle}>
-        <Image
-          src="/icons/common/plus-black.svg"
-          width={16}
-          height={16}
-          alt="Add"
-        />
+        {isPolling ? (
+          <FadeLoader color={theme.colors.primary} />
+        ) : (
+          <Image
+            src="/icons/common/plus-black.svg"
+            width={16}
+            height={16}
+            alt="Add"
+          />
+        )}
         <ButtonText size={14}>{placeholder}</ButtonText>
       </StyledButton>
       {isOpen && (
@@ -185,7 +192,7 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
                 src={`/icons/overview/${option.id}.svg`}
                 width={16}
                 height={16}
-                alt="Add"
+                alt={`Add ${option.value}`}
               />
               <Text size={14}>{option.value}</Text>
             </DropdownItem>
