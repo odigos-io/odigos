@@ -13,6 +13,11 @@ ignoredNamespaces:
 
 ignoredContainers:
   - istio-proxy
+  - vault-agent
+  - filebeat
+  - linkerd-proxy
+  - fluentd
+  - akeyless-init
 
 collectorGateway:
   # the memory request for the cluster gateway collector deployment.

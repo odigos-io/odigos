@@ -4,7 +4,7 @@ import theme from '@/styles/palette';
 import { useKeyDown } from '@/hooks';
 import { ManagedSource } from '@/types';
 import { useMutation } from 'react-query';
-import { DeleteSource } from '@/components/overview';
+import { DeleteSource, DetectedContainers } from '@/components/overview';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { deleteSource, getSource, patchSources } from '@/services';
 import { ManageSourceHeader } from '@/components/overview/sources/manage.source.header/manage.source.header';
@@ -109,6 +109,11 @@ export function EditSourceForm() {
       {currentSource && <ManageSourceHeader source={currentSource} />}
       <div style={{ display: 'flex', gap: 60 }}>
         <div>
+          <DetectedContainers
+            languages={
+              currentSource.instrumented_application_details.languages || []
+            }
+          />
           <FieldWrapper>
             <KeyvalInput
               label={OVERVIEW.REPORTED_NAME}

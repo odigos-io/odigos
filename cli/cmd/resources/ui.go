@@ -230,6 +230,11 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 				Verbs:     []string{"get", "list", "watch", "patch", "create", "delete", "update"},
 			},
 			{
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list"},
+			},
+			{
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments", "statefulsets", "daemonsets"},
 				Verbs:     []string{"get", "list", "watch", "patch"},
