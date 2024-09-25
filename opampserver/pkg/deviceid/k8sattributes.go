@@ -66,8 +66,7 @@ func (k *K8sPodInfoResolver) getWorkloadObject(ctx context.Context, name string,
 
 // Resolves the service name, with the following priority:
 // 1. If the user added reported name annotation to the workload, use it
-// 2. If the pod has multiple containers, use the container name as service name
-// 3. Otherwise, use the workload name as service name
+// 2. Otherwise, use the workload name as service name
 //
 // if one of the above conditions has err, it will be logged and the next condition will be checked
 func (k *K8sPodInfoResolver) ResolveServiceName(ctx context.Context, workloadName string, workloadKind string, containerDetails *ContainerDetails) string {
@@ -76,14 +75,6 @@ func (k *K8sPodInfoResolver) ResolveServiceName(ctx context.Context, workloadNam
 	serviceName, foundReportedName := k.getServiceNameFromAnnotation(ctx, workloadName, workloadKind, containerDetails.PodNamespace)
 	if foundReportedName {
 		return serviceName
-	}
-
-	if containerDetails.ContainersInPod > 1 {
-		// multiple containers in pod, use container name as service name
-		// might want to revisit in the future:
-		// should we include the workload name?
-		// should we use same service name for multiple containers if configured via annotation?
-		return containerDetails.ContainerName
 	}
 
 	return workloadName

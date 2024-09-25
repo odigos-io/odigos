@@ -1,4 +1,4 @@
-ui/node_modules
+frontend/node_modules
 .git/
 Dockerfile
 odiglet/Dockerfile
