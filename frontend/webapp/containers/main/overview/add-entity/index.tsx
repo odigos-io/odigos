@@ -10,7 +10,6 @@ import { ChooseSourcesBody } from '../../sources/choose-sources/choose-sources-b
 
 interface AddEntityButtonDropdownProps {
   options?: DropdownOption[];
-  onSelect: (option: DropdownOption) => void;
   placeholder?: string;
 }
 
@@ -81,7 +80,6 @@ const OPTIONS = [
 
 const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
   options = OPTIONS,
-  onSelect,
   placeholder = 'ADD...',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -100,7 +98,6 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
   };
 
   const handleSelect = (option: DropdownOption) => {
-    onSelect(option);
     setIsOpen(false);
   };
 
@@ -145,9 +142,10 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
           }}
         >
           <ChooseSourcesBody
+            isModal={true}
             stateMenu={stateMenu}
             stateHandlers={stateHandlers}
-            sourcesList={sourcesList}
+            sourcesList={[...sourcesList, ...sourcesList, ...sourcesList]}
             setSourcesList={setSourcesList}
           />
         </div>

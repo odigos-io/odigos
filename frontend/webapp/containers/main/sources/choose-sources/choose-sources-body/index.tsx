@@ -20,8 +20,22 @@ const ContentWrapper = styled.div`
   padding-top: 64px;
 `;
 
+const SourcesListWrapper = styled.div<{ isModal: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  padding-bottom: ${({ isModal }) =>
+    isModal ? 'calc(100vh - 500px)' : 'calc(100vh - 360px)'};
+  max-height: ${({ isModal }) =>
+    isModal ? 'calc(100vh - 500px)' : 'calc(100vh - 360px)'};
+  overflow-y: auto;
+`;
+
 interface ChooseSourcesContentProps {
   stateMenu: any;
+  isModal?: boolean;
   stateHandlers: any;
   sourcesList: K8sActualSource[];
   setSourcesList: React.Dispatch<React.SetStateAction<K8sActualSource[]>>;
@@ -29,8 +43,9 @@ interface ChooseSourcesContentProps {
 
 const ChooseSourcesBody: React.FC<ChooseSourcesContentProps> = ({
   stateMenu,
-  stateHandlers,
+  isModal = false,
   sourcesList,
+  stateHandlers,
   setSourcesList,
 }) => {
   const { namespacesList } = useConnectSourcesList({
@@ -104,15 +119,17 @@ const ChooseSourcesBody: React.FC<ChooseSourcesContentProps> = ({
         handlers={toggleCheckboxHandlers}
       />
       <Divider margin="16px 0 24px" />
-      <SourcesList
-        selectedItems={
-          stateMenu.selectedOption
-            ? stateMenu.selectedItems[stateMenu.selectedOption.value] || []
-            : []
-        }
-        setSelectedItems={stateHandlers.handleSelectItem}
-        items={getVisibleSources()}
-      />
+      <SourcesListWrapper isModal={isModal}>
+        <SourcesList
+          selectedItems={
+            stateMenu.selectedOption
+              ? stateMenu.selectedItems[stateMenu.selectedOption.value] || []
+              : []
+          }
+          setSelectedItems={stateHandlers.handleSelectItem}
+          items={getVisibleSources()}
+        />
+      </SourcesListWrapper>
     </ContentWrapper>
   );
 };

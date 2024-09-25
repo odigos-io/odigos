@@ -4,17 +4,6 @@ import styled from 'styled-components';
 import { K8sActualSource } from '@/types';
 import { Checkbox, NoDataFound, Text } from '@/reuseable-components';
 
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  background: ${({ theme }) => theme.colors.primary};
-  height: 100%;
-  max-height: calc(100vh - 360px);
-  overflow-y: auto;
-`;
-
 const ListItem = styled.div<{ selected: boolean }>`
   display: flex;
   align-items: center;
@@ -66,8 +55,15 @@ const SelectedTextWrapper = styled.div`
   margin-right: 24px;
 `;
 
-const NoDataFoundWrapper = styled(Container)`
+const NoDataFoundWrapper = styled.div`
   margin-top: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  max-height: calc(100vh - 360px);
+  overflow-y: auto;
 `;
 
 interface SourcesListProps {
@@ -97,7 +93,7 @@ const SourcesList: React.FC<SourcesListProps> = ({
   }
 
   return (
-    <Container>
+    <>
       {items.map((item) => (
         <ListItem
           key={item.name}
@@ -127,7 +123,7 @@ const SourcesList: React.FC<SourcesListProps> = ({
           )}
         </ListItem>
       ))}
-    </Container>
+    </>
   );
 };
 
