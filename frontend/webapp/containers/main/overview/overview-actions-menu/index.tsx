@@ -50,11 +50,7 @@ export function OverviewActionMenuContainer() {
         />
       </SearchInputContainer>
       <StyledAddEntityButtonDropdownWrapper>
-        <AddEntityButtonDropdown
-          onSelect={(option: DropdownOption) => {
-            console.log({ option });
-          }}
-        />
+        <AddEntityButtonDropdown />
       </StyledAddEntityButtonDropdownWrapper>
     </MenuContainer>
   );

@@ -6,11 +6,12 @@ type UseComputePlatformHook = {
   data?: ComputePlatform;
   loading: boolean;
   error?: Error;
+  refetch: () => void;
 };
 
 export const useComputePlatform = (): UseComputePlatformHook => {
-  const { data, loading, error } =
+  const { data, loading, error, refetch } =
     useQuery<ComputePlatform>(GET_COMPUTE_PLATFORM);
 
-  return { data, loading, error };
+  return { data, loading, error, refetch };
 };
