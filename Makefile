@@ -39,7 +39,7 @@ build-ui:
 
 .PHONY: build-images
 build-images:
-	make -j 3 build-autoscaler build-scheduler build-odiglet build-instrumentor build-collector build-ui TAG=$(TAG)
+	make -j 3 build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor TAG=$(TAG)
 
 .PHONY: push-odiglet
 push-odiglet:
