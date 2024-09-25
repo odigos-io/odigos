@@ -1,0 +1,124 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-nodejs-unsupported-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-unsupported-version
+spec:
+  runtimeDetails:
+    - containerName: nodejs-unsupported-version
+      language: javascript
+      runtimeVersion: 8.17.0
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-nodejs-very-old-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-very-old-version
+spec:
+  runtimeDetails:
+    - containerName: nodejs-very-old-version
+      language: javascript
+      (runtimeVersion == null): true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-nodejs-minimum-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-minimum-version
+spec:
+  runtimeDetails:
+    - containerName: nodejs-minimum-version
+      language: javascript
+      runtimeVersion: 14.0.0
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-nodejs-latest-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-latest-version
+spec:
+  runtimeDetails:
+    - containerName: nodejs-latest-version
+      language: javascript
+      (runtimeVersion != null): true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-nodejs-dockerfile-env
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-dockerfile-env
+spec:
+  runtimeDetails:
+    - containerName: nodejs-dockerfile-env
+      envVars:
+      - name: NODE_OPTIONS
+        value: "--require /app/execute_before.js --max-old-space-size=256"
+      language: javascript
+      runtimeVersion: 20.17.0
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-nodejs-manifest-env
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-manifest-env
+spec:
+  runtimeDetails:
+    - containerName: nodejs-manifest-env
+      envVars:
+      - name: NODE_OPTIONS
+        value: "--require /app/execute_before.js --max-old-space-size=256"
+      language: javascript
+      runtimeVersion: 20.17.0
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-cpp-http-server
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: cpp-http-server
+spec:
+  runtimeDetails:
+    - containerName: cpp-http-server
+      language: unknown
+---

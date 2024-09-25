@@ -1,0 +1,201 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  generation: 1
+  labels:
+    app: nodejs-unsupported-version
+  name: nodejs-unsupported-version
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-unsupported-version
+  template:
+    spec:
+      containers:
+      - image: nodejs-unsupported-version:v0.0.1
+        name: nodejs-unsupported-version
+        resources: {}
+status:
+  availableReplicas: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+  generation: 2 # the deployment spec changed when odigos resource was added
+  labels:
+    app: nodejs-very-old-version
+  name: nodejs-very-old-version
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-very-old-version
+  template:
+    spec:
+      containers:
+      - image: nodejs-very-old-version:v0.0.1
+        name: nodejs-very-old-version
+        resources:
+          limits:
+            instrumentation.odigos.io/javascript-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+  generation: 2 # the deployment spec changed when odigos resource was added
+  labels:
+    app: nodejs-minimum-version
+  name: nodejs-minimum-version
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-minimum-version
+  template:
+    spec:
+      containers:
+      - name: nodejs-minimum-version
+        resources:
+          limits:
+            instrumentation.odigos.io/javascript-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+  generation: 2 # the deployment spec changed when odigos resource was added
+  labels:
+    app: nodejs-latest-version
+  name: nodejs-latest-version
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-latest-version
+  template:
+    spec:
+      containers:
+      - name: nodejs-latest-version
+        resources:
+          limits:
+            instrumentation.odigos.io/javascript-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+  generation: 2 # the deployment spec changed when odigos resource was added
+  labels:
+    app: nodejs-dockerfile-env
+  name: nodejs-dockerfile-env
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-dockerfile-env
+  template:
+    spec:
+      containers:
+      - name: nodejs-dockerfile-env
+        resources:
+          limits:
+            instrumentation.odigos.io/javascript-native-community: "1"
+        env:
+        - name: NODE_OPTIONS
+          value: "--require /app/execute_before.js --max-old-space-size=256 --require /var/odigos/nodejs/autoinstrumentation.js"
+status:
+  availableReplicas: 1
+  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+  generation: 2 # the deployment spec changed when odigos resource was added
+  labels:
+    app: nodejs-manifest-env
+  name: nodejs-manifest-env
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-manifest-env
+  template:
+    spec:
+      containers:
+      - name: nodejs-manifest-env
+        resources:
+          limits:
+            instrumentation.odigos.io/javascript-native-community: "1"
+        env:
+        - name: NODE_OPTIONS
+          value: "--require /app/execute_before.js --max-old-space-size=256 --require /var/odigos/nodejs/autoinstrumentation.js"
+status:
+  availableReplicas: 1
+  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  generation: 1
+  labels:
+    app: cpp-http-server
+  name: cpp-http-server
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: cpp-http-server
+  template:
+    spec:
+      containers:
+      - image: cpp-http-server:v0.0.1
+        name: cpp-http-server
+        resources: {}
+status:
+  availableReplicas: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+

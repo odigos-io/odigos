@@ -52,6 +52,7 @@ jobs:
           - "helm-chart"
           - "fe-synthetic"
           - "cli-upgrade"
+          - "workload-lifecycle"
         include:
           - kube-version: "1.23"
             kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
