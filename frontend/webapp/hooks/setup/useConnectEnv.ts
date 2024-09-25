@@ -1,9 +1,8 @@
+import { useAppStore } from '@/store';
+import { DestinationInput } from '@/types';
+import { useActualSources } from '../sources';
 import { useState, useCallback } from 'react';
-import { useCreateSource } from '../sources';
-import { useNamespace } from '../compute-platform';
-import { resetSources, useAppStore } from '@/store';
 import { useCreateDestination } from '../destinations';
-import { DestinationInput, PersistNamespaceItemInput } from '@/types';
 
 type ConnectEnvResult = {
   success: boolean;
@@ -11,14 +10,9 @@ type ConnectEnvResult = {
 };
 
 export const useConnectEnv = () => {
-  const {
-    createSource,
-    success: sourceSuccess,
-    loading: sourceLoading,
-    error: sourceError,
-  } = useCreateSource();
   const { createNewDestination } = useCreateDestination();
-  const { persistNamespace } = useNamespace(undefined);
+  const { createSourcesForNamespace, persistNamespaceItems } =
+    useActualSources();
 
   const [result, setResult] = useState<ConnectEnvResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,16 +32,14 @@ export const useConnectEnv = () => {
 
       try {
         // Persist namespaces based on namespaceFutureSelectAppsList
-        for (const namespaceName in namespaceFutureSelectAppsList) {
-          const futureSelected = namespaceFutureSelectAppsList[namespaceName];
+        const namespaceItems = Object.entries(
+          namespaceFutureSelectAppsList
+        ).map(([namespaceName, futureSelected]) => ({
+          name: namespaceName,
+          futureSelected,
+        }));
 
-          const namespace: PersistNamespaceItemInput = {
-            name: namespaceName,
-            futureSelected,
-          };
-
-          await persistNamespace(namespace);
-        }
+        await persistNamespaceItems(namespaceItems);
 
         // Create sources for each namespace in sourcesList
         for (const namespaceName in sourcesList) {
@@ -56,15 +48,11 @@ export const useConnectEnv = () => {
             name: source.name,
             selected: true,
           }));
-          await createSource(namespaceName, sources);
-
-          if (sourceError) {
-            throw new Error(
-              `Error creating sources for namespace: ${namespaceName}`
-            );
-          }
+          await createSourcesForNamespace(namespaceName, sources);
         }
+
         resetSources();
+
         // Create destination
         const destinationId = await createNewDestination(destination);
 
@@ -86,11 +74,10 @@ export const useConnectEnv = () => {
       }
     },
     [
-      createSource,
-      createNewDestination,
-      persistNamespace,
-      sourceError,
       sourcesList,
+      createNewDestination,
+      persistNamespaceItems,
+      createSourcesForNamespace,
       namespaceFutureSelectAppsList,
     ]
   );

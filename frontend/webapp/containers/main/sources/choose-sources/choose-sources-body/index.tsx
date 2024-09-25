@@ -26,10 +26,9 @@ const SourcesListWrapper = styled.div<{ isModal: boolean }>`
   align-items: center;
   gap: 12px;
   height: 100%;
-  padding-bottom: ${({ isModal }) =>
-    isModal ? 'calc(100vh - 500px)' : 'calc(100vh - 360px)'};
+  padding-bottom: ${({ isModal }) => (isModal ? '48px' : '0')};
   max-height: ${({ isModal }) =>
-    isModal ? 'calc(100vh - 500px)' : 'calc(100vh - 360px)'};
+    isModal ? 'calc(100vh - 548px)' : 'calc(100vh - 360px)'};
   overflow-y: auto;
 `;
 

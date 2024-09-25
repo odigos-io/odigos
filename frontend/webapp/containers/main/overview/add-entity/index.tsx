@@ -1,12 +1,18 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
-import { DropdownOption, K8sActualSource } from '@/types';
-import { useConnectSourcesMenuState, useOnClickOutside } from '@/hooks';
 import styled, { css } from 'styled-components';
-import { Button, Modal, Text } from '@/reuseable-components';
-import { ChooseSourcesContainer } from '../../sources';
-import { useAppStore } from '@/store';
+import {
+  DropdownOption,
+  K8sActualSource,
+  PersistNamespaceItemInput,
+} from '@/types';
+import { Button, Modal, NavigationButtons, Text } from '@/reuseable-components';
 import { ChooseSourcesBody } from '../../sources/choose-sources/choose-sources-body';
+import {
+  useActualSources,
+  useOnClickOutside,
+  useConnectSourcesMenuState,
+} from '@/hooks';
 
 interface AddEntityButtonDropdownProps {
   options?: DropdownOption[];
@@ -63,6 +69,14 @@ const ButtonText = styled(Text)`
   font-weight: 600;
 `;
 
+const ChooseSourcesBodyWrapper = styled.div`
+  width: 1080px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+`;
+
 const OPTIONS = [
   {
     id: 'sources',
@@ -78,15 +92,31 @@ const OPTIONS = [
   },
 ];
 
+function ModalActionComponent({ onNext }: { onNext: () => void }) {
+  return (
+    <NavigationButtons
+      buttons={[
+        {
+          label: 'DONE',
+          onClick: onNext,
+          variant: 'primary',
+        },
+      ]}
+    />
+  );
+}
+
 const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
   options = OPTIONS,
   placeholder = 'ADD...',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [currentModal, setCurrentModal] = useState<string>('');
   const [sourcesList, setSourcesList] = useState<K8sActualSource[]>([]);
 
-  const { setSources, setNamespaceFutureSelectAppsList } = useAppStore();
+  const { createSourcesForNamespace, persistNamespaceItems } =
+    useActualSources();
   const { stateMenu, stateHandlers } = useConnectSourcesMenuState({
     sourcesList,
   });
@@ -98,8 +128,39 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
   };
 
   const handleSelect = (option: DropdownOption) => {
+    setCurrentModal(option.id);
     setIsOpen(false);
   };
+
+  async function onNextClick() {
+    console.log('object');
+    try {
+      // Persist the selected namespaces
+      const namespaceItems: PersistNamespaceItemInput[] = Object.entries(
+        stateMenu.futureAppsCheckbox
+      ).map(([namespaceName, futureSelected]) => ({
+        name: namespaceName,
+        futureSelected,
+      }));
+
+      await persistNamespaceItems(namespaceItems);
+
+      // Create sources for each namespace
+      for (const namespaceName in stateMenu.selectedItems) {
+        const sources = stateMenu.selectedItems[namespaceName].map(
+          (source) => ({
+            kind: source.kind,
+            name: source.name,
+            selected: true,
+          })
+        );
+        await createSourcesForNamespace(namespaceName, sources);
+      }
+      setCurrentModal('');
+    } catch (error) {
+      console.error('Error during onNextClick:', error);
+    }
+  }
 
   return (
     <Container ref={dropdownRef}>
@@ -131,24 +192,21 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
           ))}
         </DropdownListContainer>
       )}
-      <Modal isOpen={true} header={{ title: 'ADD SOURCE' }} onClose={() => {}}>
-        <div
-          style={{
-            width: '1080px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            flexDirection: 'column',
-          }}
-        >
+      <Modal
+        isOpen={currentModal === 'sources'}
+        header={{ title: `ADD ${currentModal.toUpperCase()}` }}
+        actionComponent={<ModalActionComponent onNext={onNextClick} />}
+        onClose={() => setCurrentModal('')}
+      >
+        <ChooseSourcesBodyWrapper>
           <ChooseSourcesBody
-            isModal={true}
+            isModal
             stateMenu={stateMenu}
+            sourcesList={sourcesList}
             stateHandlers={stateHandlers}
-            sourcesList={[...sourcesList, ...sourcesList, ...sourcesList]}
             setSourcesList={setSourcesList}
           />
-        </div>
+        </ChooseSourcesBodyWrapper>
       </Modal>
     </Container>
   );
