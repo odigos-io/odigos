@@ -23,4 +23,4 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /app
 COPY --from=backend /app/frontend/odigos-ui .
 USER 65532:65532
-ENTRYPOINT ["/app/odigos-ui"]
+ENTRYPOINT ["/app/odigos-ui", "--address", "0.0.0.0"]
