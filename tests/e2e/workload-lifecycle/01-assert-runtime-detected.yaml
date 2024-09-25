@@ -122,3 +122,23 @@ spec:
     - containerName: cpp-http-server
       language: unknown
 ---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-language-change
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: language-change
+spec:
+  runtimeDetails:
+    - containerName: language-change
+      envVars:
+      - name: NODE_OPTIONS
+        value: "--require /app/execute_before.js --max-old-space-size=256"
+      language: javascript
+      runtimeVersion: 20.17.0
+---

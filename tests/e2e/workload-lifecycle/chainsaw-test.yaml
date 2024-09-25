@@ -108,6 +108,13 @@ spec:
     try:
     - apply:
         file: 02-update-workload-manifests.yaml
+    - script:
+        timeout: 60s
+        content: |
+          # this is temporary and is here to trigger runtime detection after the language-change deployment is updated to simulate this scenario.
+          # after the migration to the new runtime detection mechanism, we will no longer need to restart the instrumentor.
+          kubectl rollout restart deployment odigos-instrumentor -n odigos-system
+          sleep 30
     - assert:
         file: 02-assert-workload-update.yaml
   
