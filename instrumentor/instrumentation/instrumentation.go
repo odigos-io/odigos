@@ -36,7 +36,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
 		if containerLanguage == nil || *containerLanguage == common.UnknownProgrammingLanguage || *containerLanguage == common.IgnoredProgrammingLanguage {
 			// always patch the env vars, even if the language is unknown or ignored.
-			// this is necessary we sync the envs to the detected language if changed for any reason.
+			// this is necessary to sync the existing envs with the missing language if changed for any reason.
 			err = patchEnvVarsForContainer(runtimeDetails, &container, nil, *containerLanguage, manifestEnvOriginal)
 			if err != nil {
 				return fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
