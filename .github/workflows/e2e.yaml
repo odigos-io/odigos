@@ -87,7 +87,7 @@ jobs:
           cluster_name: kind
 
       - name: Install FE
-        if: matrix.test-scenario == 'fe-synthetic'
+        if: matrix.test-scenario == 'multi-apps' || matrix.test-scenario == 'helm-chart'
         run: |
           cd frontend/webapp
           yarn install
