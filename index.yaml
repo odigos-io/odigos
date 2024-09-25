@@ -2,6 +2,17 @@ apiVersion: v1
 entries:
   odigos:
   - apiVersion: v2
+    appVersion: v1.0.108
+    created: "2024-09-25T08:31:36.630231287Z"
+    description: Instant Distributed Tracing
+    digest: fe256608190a168e1c0e0a302e08fc63d38280c2f1ff3755fd55dd88d08b7fed
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    name: odigos
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v1.0.108/helm-chart-odigos-1.0.108.tgz
+    version: 1.0.108
+  - apiVersion: v2
     appVersion: v1.0.107
     created: "2024-09-18T13:29:25.656967105Z"
     description: Instant Distributed Tracing
@@ -489,4 +500,4 @@ entries:
     urls:
     - https://github.com/keyval-dev/odigos-charts/releases/download/odigos-0.2.03/odigos-0.2.03.tgz
     version: 0.2.03
-generated: "2024-09-18T13:29:25.654919092Z"
+generated: "2024-09-25T08:31:36.628466997Z"
