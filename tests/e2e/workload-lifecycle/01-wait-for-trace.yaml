@@ -7,6 +7,8 @@ query: |
   { resource.service.name = "nodejs-dockerfile-env" } ||
   { resource.service.name = "nodejs-manifest-env" } ||
   { resource.service.name = "java-supported-version" } ||
+  { resource.service.name = "java-supported-docker-env" } ||
+  { resource.service.name = "java-supported-manifest-env" } ||
   { resource.service.name = "java-azul" }
 expected:
-  count: 6
+  count: 8

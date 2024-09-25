@@ -124,3 +124,31 @@ status:
       started: true
   phase: Running
 ---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-supported-docker-env
+  namespace: default
+status:
+  containerStatuses:
+    - name: java-supported-docker-env
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-supported-manifest-env
+  namespace: default
+status:
+  containerStatuses:
+    - name: java-supported-manifest-env
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---

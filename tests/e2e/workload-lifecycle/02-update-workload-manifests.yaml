@@ -226,3 +226,55 @@ spec:
           ports:
             - containerPort: 3000
 ---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: java-supported-docker-env
+  namespace: default
+  labels:
+    app: java-supported-docker-env
+spec:
+  selector:
+    matchLabels:
+      app: java-supported-docker-env
+  template:
+    metadata:
+      labels:
+        app: java-supported-docker-env
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: java-supported-docker-env
+          image: java-supported-docker-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: java-supported-manifest-env
+  namespace: default
+  labels:
+    app: java-supported-manifest-env
+spec:
+  selector:
+    matchLabels:
+      app: java-supported-manifest-env
+  template:
+    metadata:
+      labels:
+        app: java-supported-manifest-env
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: java-supported-manifest-env
+          image: java-supported-manifest-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+
+---

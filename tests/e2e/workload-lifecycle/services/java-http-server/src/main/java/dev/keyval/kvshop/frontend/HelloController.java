@@ -12,6 +12,7 @@ public class HelloController {
 @CrossOrigin(origins = "*")
 @GetMapping("/")
 public String printHello() {
+   System.out.println("Got Hello");
    return "Hello";
 }
 }

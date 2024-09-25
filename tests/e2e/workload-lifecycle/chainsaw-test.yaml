@@ -29,6 +29,10 @@ spec:
           kind load docker-image java-supported-version:v0.0.1
           docker build -t java-azul:v0.0.1 -f services/java-http-server/java-azul.Dockerfile services/java-http-server
           kind load docker-image java-azul:v0.0.1
+          docker build -t java-supported-docker-env:v0.0.1 -f services/java-http-server/java-supported-docker-env.Dockerfile services/java-http-server
+          kind load docker-image java-supported-docker-env:v0.0.1
+          docker build -t java-supported-manifest-env:v0.0.1 -f services/java-http-server/java-supported-manifest-env.Dockerfile services/java-http-server
+          kind load docker-image java-supported-manifest-env:v0.0.1
 
   - name: Prepare destination
     try:
@@ -87,10 +91,12 @@ spec:
     # send traffic to all services to verify they are working as expected and verify traces for instrumented ones
     try:
     - script:
-        timeout: 60s
+        timeout: 80s
         content: |
           set -e
-
+          
+          sleep 20
+          
           # Apply the job
           kubectl apply -f 01-generate-traffic.yaml
 
@@ -129,6 +135,9 @@ spec:
         timeout: 60s
         content: |
           set -e
+          
+          sleep 20
+          
           kubectl apply -f 01-generate-traffic.yaml
           job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
           kubectl wait --for=condition=complete job/$job_name
@@ -148,54 +157,3 @@ spec:
               ../../common/flush_traces.sh
             fi
           done
-
-
-  # - name: Verify Trace - Context Propagation
-  #   try:
-  #   - script:
-  #       content: |
-  #         ../../common/traceql_runner.sh tracesql/context-propagation.yaml
-  #   catch:
-  #   - podLogs:
-  #       name: odiglet
-  #       namespace: odigos-system
-  # - name: Verify Trace - Resource Attributes
-  #   try:
-  #   - script:
-  #       content: |
-  #         ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
-  #   catch:
-  #   - podLogs:
-  #       name: odiglet
-  #       namespace: odigos-system
-  # - name: Verify Trace - Span Attributes
-  #   try:
-  #     - script:
-  #         timeout: 60s
-  #         content: |
-  #           ../../common/traceql_runner.sh tracesql/span-attributes.yaml
-  #   catch:
-  #     - podLogs:
-  #         name: odiglet
-  #         namespace: odigos-system
-
-  # - name: Start Odigos UI in background
-  #   try:
-  #    - script:
-  #       timeout: 60s
-  #       content: |
-  #         ../../common/ui-tests/start_odigos_ui.sh
-
-  # - name: Run Cypress tests should pass
-  #   try:
-  #     - script:
-  #         timeout: 60s
-  #         content: |
-  #           ../../common/ui-tests/run_cypress_tests.sh
-
-  # - name: Stop Odigos UI
-  #   try:
-  #     - script:
-  #         timeout: 60s
-  #         content: |
-  #           ../../common/ui-tests/stop_ui_and_clean.sh

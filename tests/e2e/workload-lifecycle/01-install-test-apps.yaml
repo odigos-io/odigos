@@ -316,3 +316,78 @@ spec:
     - protocol: TCP
       port: 3000
 ---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-docker-env
+  namespace: default
+  labels:
+    app: java-supported-docker-env
+spec:
+  selector:
+    matchLabels:
+      app: java-supported-docker-env
+  template:
+    metadata:
+      labels:
+        app: java-supported-docker-env
+    spec:
+      containers:
+        - name: java-supported-docker-env
+          image: java-supported-docker-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-supported-docker-env
+  namespace: default
+spec:
+  selector:
+    app: java-supported-docker-env
+  ports:
+    - protocol: TCP
+      port: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-manifest-env
+  namespace: default
+  labels:
+    app: java-supported-manifest-env
+spec:
+  selector:
+    matchLabels:
+      app: java-supported-manifest-env
+  template:
+    metadata:
+      labels:
+        app: java-supported-manifest-env
+    spec:
+      containers:
+        - name: java-supported-manifest-env
+          image: java-supported-manifest-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: JAVA_OPTS
+              value: "-Dnot.work=true"
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-supported-manifest-env
+  namespace: default
+spec:
+  selector:
+    app: java-supported-manifest-env
+  ports:
+    - protocol: TCP
+      port: 3000
+---
