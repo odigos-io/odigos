@@ -95,7 +95,19 @@ spec:
         content: |
           set -e
           
-          sleep 20
+          NAMESPACE="default"
+          DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
+          
+          
+          for DEPLOYMENT in $DEPLOYMENTS; do
+          echo "Waiting for deployment $DEPLOYMENT to finish rollout..."
+          kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE
+          if [ $? -ne 0 ]; then
+          echo "Deployment $DEPLOYMENT failed to finish rollout."
+          exit 1
+          fi
+          done
+          
           
           # Apply the job
           kubectl apply -f 01-generate-traffic.yaml
@@ -136,8 +148,20 @@ spec:
         content: |
           set -e
           
-          sleep 20
+          NAMESPACE="default"
+          DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
           
+          
+          for DEPLOYMENT in $DEPLOYMENTS; do
+          echo "Waiting for deployment $DEPLOYMENT to finish rollout..."
+          kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE
+          if [ $? -ne 0 ]; then
+          echo "Deployment $DEPLOYMENT failed to finish rollout."
+          exit 1
+          fi
+          done
+
+
           kubectl apply -f 01-generate-traffic.yaml
           job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
           kubectl wait --for=condition=complete job/$job_name
