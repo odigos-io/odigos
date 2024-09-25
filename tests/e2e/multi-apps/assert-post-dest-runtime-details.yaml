@@ -1,0 +1,101 @@
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-coupon
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: coupon
+status:
+  observedWorkloadGeneration: 2 # pod has been restarted after destination was added
+  runtimeDetailsByContainer:
+    - containerName: coupon
+      envVars:
+      - name: NODE_OPTIONS
+        value: --require /var/odigos/nodejs/autoinstrumentation.js
+      language: javascript
+      runtimeVersion: 18.3.0
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-frontend
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: frontend
+status:
+  observedWorkloadGeneration: 2 # pod has been restarted after destination was added
+  runtimeDetailsByContainer:
+    - containerName: frontend
+      (sort_by(envVars, &name)):
+      - name: JAVA_OPTS
+        value: -javaagent:/var/odigos/java/javaagent.jar
+      - name: JAVA_TOOL_OPTIONS
+        value: -javaagent:/var/odigos/java/javaagent.jar
+      language: java
+      runtimeVersion: 17.0.11+9
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-inventory
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: inventory
+status:
+  observedWorkloadGeneration: 2 # pod has been restarted after destination was added
+  runtimeDetailsByContainer:
+    - containerName: inventory
+      envVars:
+      - name: PYTHONPATH
+        # The image contains /bar in PYTHONPATH so this is concatenated with odigos value
+        value: /bar:/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      language: python
+      runtimeVersion: 3.11.9
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-membership
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: membership
+status:
+  observedWorkloadGeneration: 2 # pod has been restarted after destination was added
+  runtimeDetailsByContainer:
+    - containerName: membership
+      language: go
+      runtimeVersion: 1.21.4
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-pricing
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: pricing
+status:
+  observedWorkloadGeneration: 2
+  runtimeDetailsByContainer:
+    - containerName: pricing
+      language: dotnet

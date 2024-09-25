@@ -165,6 +165,21 @@ func NewUIRole(ns string) *rbacv1.Role {
 					"pods",
 				},
 			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"patch",
+					"delete",
+					"create",
+					"update",
+				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{
+					"instrumentaitonrules",
+				},
+			},
 		},
 	}
 }
@@ -213,6 +228,11 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
 				Verbs:     []string{"get", "list", "watch", "patch", "create", "delete", "update"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list"},
 			},
 			{
 				APIGroups: []string{"apps"},

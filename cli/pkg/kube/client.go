@@ -29,6 +29,7 @@ import (
 
 type Client struct {
 	kubernetes.Interface
+	Clientset     *kubernetes.Clientset
 	Dynamic       *dynamic.DynamicClient
 	ApiExtensions apiextensionsclient.Interface
 	OdigosClient  v1alpha1.OdigosV1alpha1Interface
@@ -65,6 +66,7 @@ func CreateClient(cmd *cobra.Command) (*Client, error) {
 
 	return &Client{
 		Interface:     clientset,
+		Clientset:     clientset,
 		Dynamic:       dynamicClient,
 		ApiExtensions: extendClientset,
 		OdigosClient:  odigosClient,
