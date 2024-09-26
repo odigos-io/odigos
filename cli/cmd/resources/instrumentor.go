@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
@@ -9,6 +10,9 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -18,10 +22,12 @@ import (
 )
 
 const (
-	InstrumentorServiceName    = "instrumentor"
-	InstrumentorDeploymentName = "odigos-instrumentor"
-	InstrumentorAppLabelValue  = "odigos-instrumentor"
-	InstrumentorContainerName  = "manager"
+	InstrumentorServiceName       = "instrumentor"
+	InstrumentorDeploymentName    = "odigos-instrumentor"
+	InstrumentorAppLabelValue     = "odigos-instrumentor"
+	InstrumentorContainerName     = "manager"
+	InstrumentorWebhookSecretName = "instrumentor-webhook-cert"
+	InstrumentorWebhookVolumeName = "webhook-cert"
 )
 
 func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
@@ -219,7 +225,154 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string) *appsv1.Deployment {
+func isCertManagerInstalled(ctx context.Context, c *kube.Client) bool {
+	// Check if CRD is installed
+	_, err := c.ApiExtensions.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, "issuers.cert-manager.io", metav1.GetOptions{})
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+func NewInstrumentorIssuer(ns string) *certv1.Issuer {
+	return &certv1.Issuer{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Issuer",
+			APIVersion: "cert-manager.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "selfsigned-issuer",
+			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       "issuer",
+				"app.kubernetes.io/instance":   "selfsigned-issuer",
+				"app.kubernetes.io/component":  "certificate",
+				"app.kubernetes.io/created-by": "instrumentor",
+				"app.kubernetes.io/part-of":    "odigos",
+			},
+		},
+		Spec: certv1.IssuerSpec{
+			IssuerConfig: certv1.IssuerConfig{
+				SelfSigned: &certv1.SelfSignedIssuer{},
+			},
+		},
+	}
+}
+
+func NewInstrumentorCertificate(ns string) *certv1.Certificate {
+	return &certv1.Certificate{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Certificate",
+			APIVersion: "cert-manager.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "serving-cert",
+			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       "instrumentor-cert",
+				"app.kubernetes.io/instance":   "instrumentor-cert",
+				"app.kubernetes.io/component":  "certificate",
+				"app.kubernetes.io/created-by": "instrumentor",
+				"app.kubernetes.io/part-of":    "odigos",
+			},
+		},
+		Spec: certv1.CertificateSpec{
+			DNSNames: []string{
+				fmt.Sprintf("odigos-instrumentor.%s.svc", ns),
+				fmt.Sprintf("odigos-instrumentor.%s.svc.cluster.local", ns),
+			},
+			IssuerRef: cmmeta.ObjectReference{
+				Kind: "Issuer",
+				Name: "selfsigned-issuer",
+			},
+			SecretName: InstrumentorWebhookSecretName,
+		},
+	}
+}
+
+func NewInstrumentorService(ns string) *corev1.Service {
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-instrumentor",
+			Namespace: ns,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "webhook-server",
+					Port:       9443,
+					TargetPort: intstr.FromInt(9443),
+				},
+			},
+			Selector: map[string]string{
+				"app.kubernetes.io/name": InstrumentorAppLabelValue,
+			},
+		},
+	}
+}
+
+func NewMutatingWebhookConfiguration(ns string) *admissionregistrationv1.MutatingWebhookConfiguration {
+	return &admissionregistrationv1.MutatingWebhookConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "MutatingWebhookConfiguration",
+			APIVersion: "admissionregistration.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "mutating-webhook-configuration",
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       "pod-mutating-webhook",
+				"app.kubernetes.io/instance":   "mutating-webhook-configuration",
+				"app.kubernetes.io/component":  "webhook",
+				"app.kubernetes.io/created-by": "instrumentor",
+				"app.kubernetes.io/part-of":    "odigos",
+			},
+			Annotations: map[string]string{
+				"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/serving-cert", ns),
+			},
+		},
+		Webhooks: []admissionregistrationv1.MutatingWebhook{
+			{
+				Name: "pod-mutating-webhook.odigos.io",
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
+						Name:      "odigos-instrumentor",
+						Namespace: ns,
+						Path:      ptrString("/mutate--v1-pod"),
+						Port:      intPtr(9443),
+					},
+				},
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: []admissionregistrationv1.OperationType{
+							admissionregistrationv1.Create,
+							admissionregistrationv1.Update,
+						},
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   []string{""},
+							APIVersions: []string{"v1"},
+							Resources:   []string{"pods"},
+							Scope:       ptrGeneric(admissionregistrationv1.NamespacedScope),
+						},
+					},
+				},
+				FailurePolicy:      ptrGeneric(admissionregistrationv1.Ignore),
+				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.IfNeededReinvocationPolicy),
+				SideEffects:        ptrGeneric(admissionregistrationv1.SideEffectClassNone),
+				TimeoutSeconds:     intPtr(10),
+				AdmissionReviewVersions: []string{
+					"v1",
+				},
+			},
+		},
+	}
+}
+
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, isCertManagerInstalled bool) *appsv1.Deployment {
 	args := []string{
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=127.0.0.1:8080",
@@ -230,7 +383,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 		args = append(args, "--telemetry-disabled")
 	}
 
-	return &appsv1.Deployment{
+	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
@@ -330,6 +483,38 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 			MinReadySeconds: 0,
 		},
 	}
+
+	if isCertManagerInstalled {
+		spec := &dep.Spec.Template.Spec
+		spec.Containers[0].Ports = []corev1.ContainerPort{
+			{
+				Name:          "webhook-server",
+				ContainerPort: 9443,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		}
+		spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
+			{
+				Name:      InstrumentorWebhookVolumeName,
+				ReadOnly:  true,
+				MountPath: "/tmp/k8s-webhook-server/serving-certs",
+			},
+		}
+
+		spec.Volumes = []corev1.Volume{
+			{
+				Name: InstrumentorWebhookVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  InstrumentorWebhookSecretName,
+						DefaultMode: ptrint32(420),
+					},
+				},
+			},
+		}
+	}
+
+	return dep
 }
 
 func ptrint32(i int32) *int32 {
@@ -363,12 +548,23 @@ func NewInstrumentorResourceManager(client *kube.Client, ns string, config *comm
 func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
+	certManagerInstalled := isCertManagerInstalled(ctx, a.client)
 	resources := []client.Object{
 		NewInstrumentorServiceAccount(a.ns),
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.InstrumentorImage),
+		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.InstrumentorImage, certManagerInstalled),
 	}
+
+	if certManagerInstalled {
+		resources = append([]client.Object{NewInstrumentorIssuer(a.ns),
+			NewInstrumentorCertificate(a.ns),
+			NewInstrumentorService(a.ns),
+			NewMutatingWebhookConfiguration(a.ns),
+		},
+			resources...)
+	}
+
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
