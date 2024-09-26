@@ -176,6 +176,30 @@ apiVersion: odigos.io/v1alpha1
 kind: InstrumentedApplication
 metadata:
   namespace: default
+  name: deployment-language-change
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-language-change
+status:
+  healthy: true
+  # no need to verify all properties, as this is not the intent of this test
+---
+
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
   name: deployment-java-supported-version
 status:
   conditions:
