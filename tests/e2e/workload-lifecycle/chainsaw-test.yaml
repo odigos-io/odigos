@@ -91,7 +91,7 @@ spec:
     # send traffic to all services to verify they are working as expected and verify traces for instrumented ones
     try:
     - script:
-        timeout: 80s
+        timeout: 60s
         content: |
           set -e
           
