@@ -39,7 +39,8 @@ build-ui:
 
 .PHONY: build-images
 build-images:
-	make -j 3 build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor TAG=$(TAG)
+	# prefer to build timeconsuimg images first to make better use of parallelism
+	make -j 6 build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor TAG=$(TAG)
 
 .PHONY: push-odiglet
 push-odiglet:
