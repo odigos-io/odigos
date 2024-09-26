@@ -246,3 +246,38 @@ spec:
     - protocol: TCP
       port: 3000
 ---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: language-change
+  namespace: default
+  labels:
+    app: language-change
+spec:
+  selector:
+    matchLabels:
+      app: language-change
+  template:
+    metadata:
+      labels:
+        app: language-change
+    spec:
+      containers:
+        - name: language-change
+          image: nodejs-dockerfile-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: language-change
+  namespace: default
+spec:
+  selector:
+    app: language-change
+  ports:
+    - protocol: TCP
+      port: 3000
+---
