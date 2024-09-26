@@ -7,6 +7,7 @@ import { useActualSources, useOnClickOutside } from '@/hooks';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
 import { AddSourceModal } from '../../sources/choose-sources/choose-source-modal';
 import { AddDestinationModal } from '../../destinations/add-destination/add-destination-modal';
+import { AddActionModal } from '../../actions';
 
 // Styled components for the dropdown UI
 const Container = styled.div`
@@ -138,6 +139,10 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
       />
       <AddDestinationModal
         isModalOpen={currentModal === 'destinations'}
+        handleCloseModal={handleCloseModal}
+      />
+      <AddActionModal
+        isModalOpen={currentModal === 'actions'}
         handleCloseModal={handleCloseModal}
       />
     </Container>
