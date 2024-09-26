@@ -5,6 +5,7 @@ query: |
   { resource.service.name = "nodejs-minimum-version" } ||
   { resource.service.name = "nodejs-latest-version" } ||
   { resource.service.name = "nodejs-dockerfile-env" } ||
-  { resource.service.name = "nodejs-manifest-env" }
+  { resource.service.name = "nodejs-manifest-env" } ||
+  { resource.service.name = "language-change" }
 expected:
-  count: 4
+  count: 5
