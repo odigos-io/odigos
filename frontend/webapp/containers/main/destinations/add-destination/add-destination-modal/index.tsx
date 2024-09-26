@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { DestinationTypeItem } from '@/types';
 import { Modal, NavigationButtons } from '@/reuseable-components';
 import { ChooseDestinationModalBody } from '../choose-destination-modal-body';
@@ -9,54 +9,68 @@ interface AddDestinationModalProps {
   handleCloseModal: () => void;
 }
 
-function ModalActionComponent({
-  onNext,
-  onBack,
-  item,
-  isFormValid,
-}: {
+interface ModalActionComponentProps {
   onNext: () => void;
   onBack: () => void;
   isFormValid?: boolean;
-  item: DestinationTypeItem | undefined;
-}) {
-  return (
-    <NavigationButtons
-      buttons={
-        item
-          ? [
-              {
-                label: 'BACK',
-                iconSrc: '/icons/common/arrow-white.svg',
-                onClick: onBack,
-                variant: 'secondary',
-              },
-              {
-                label: 'DONE',
-                onClick: onNext,
-                variant: 'primary',
-                disabled: !isFormValid,
-              },
-            ]
-          : []
-      }
-    />
-  );
+  item?: DestinationTypeItem;
 }
 
-export function AddDestinationModal({
+const ModalActionComponent: React.FC<ModalActionComponentProps> = React.memo(
+  ({ onNext, onBack, isFormValid, item }) => {
+    if (!item) return null;
+
+    const buttons = [
+      {
+        label: 'BACK',
+        iconSrc: '/icons/common/arrow-white.svg',
+        onClick: onBack,
+        variant: 'secondary' as const,
+      },
+      {
+        label: 'DONE',
+        onClick: onNext,
+        variant: 'primary' as const,
+        disabled: !isFormValid,
+      },
+    ];
+
+    return <NavigationButtons buttons={buttons} />;
+  }
+);
+
+export const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
   isModalOpen,
   handleCloseModal,
-}: AddDestinationModalProps) {
-  const submitRef = useRef<() => void | null>(null);
-  const [selectedItem, setSelectedItem] = useState<DestinationTypeItem>();
-  const [isFormValid, setIsFormValid] = useState(false);
+}) => {
+  const submitRef = useRef<(() => void) | null>(null);
+  const [selectedItem, setSelectedItem] = useState<
+    DestinationTypeItem | undefined
+  >();
+  const [isFormValid, setIsFormValid] = useState<boolean>(false);
 
-  function handleNextStep(item: DestinationTypeItem) {
+  const handleNextStep = useCallback((item: DestinationTypeItem) => {
     setSelectedItem(item);
-  }
+  }, []);
 
-  function renderModalBody() {
+  const handleNext = useCallback(() => {
+    if (submitRef.current) {
+      submitRef.current();
+      setSelectedItem(undefined);
+      handleCloseModal();
+    }
+  }, [handleCloseModal]);
+
+  const handleBack = useCallback(() => {
+    setSelectedItem(undefined);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setSelectedItem(undefined);
+    handleCloseModal();
+  }, [handleCloseModal]);
+
+  const renderModalBody = () => {
     return selectedItem ? (
       <ConnectDestinationModalBody
         onSubmitRef={submitRef}
@@ -66,15 +80,7 @@ export function AddDestinationModal({
     ) : (
       <ChooseDestinationModalBody onSelect={handleNextStep} />
     );
-  }
-
-  function handleNext() {
-    if (submitRef.current) {
-      submitRef.current();
-      setSelectedItem(undefined);
-      handleCloseModal();
-    }
-  }
+  };
 
   return (
     <Modal
@@ -82,18 +88,15 @@ export function AddDestinationModal({
       actionComponent={
         <ModalActionComponent
           onNext={handleNext}
-          onBack={() => setSelectedItem(undefined)}
+          onBack={handleBack}
           isFormValid={isFormValid}
           item={selectedItem}
         />
       }
-      header={{ title: 'Add destination' }}
-      onClose={() => {
-        setSelectedItem(undefined);
-        handleCloseModal();
-      }}
+      header={{ title: 'Add Destination' }}
+      onClose={handleClose}
     >
       {renderModalBody()}
     </Modal>
   );
-}
+};

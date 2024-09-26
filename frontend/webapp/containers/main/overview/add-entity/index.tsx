@@ -1,25 +1,12 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import styled, { css } from 'styled-components';
 import theme from '@/styles/theme';
-import { ChooseSourcesBody } from '../../sources';
-import {
-  DropdownOption,
-  K8sActualSource,
-  PersistNamespaceItemInput,
-} from '@/types';
-import {
-  Button,
-  FadeLoader,
-  Modal,
-  NavigationButtons,
-  Text,
-} from '@/reuseable-components';
-import {
-  useActualSources,
-  useOnClickOutside,
-  useConnectSourcesMenuState,
-} from '@/hooks';
+import { DropdownOption } from '@/types';
+import styled, { css } from 'styled-components';
+import { useActualSources, useOnClickOutside } from '@/hooks';
+import { Button, FadeLoader, Text } from '@/reuseable-components';
+import { AddSourceModal } from '../../sources/choose-sources/choose-source-modal';
+import { AddDestinationModal } from '../../destinations/add-destination/add-destination-modal';
 
 // Styled components for the dropdown UI
 const Container = styled.div`
@@ -71,33 +58,12 @@ const ButtonText = styled(Text)`
   font-weight: 600;
 `;
 
-const ChooseSourcesBodyWrapper = styled.div`
-  width: 1080px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-`;
-
 // Default options for the dropdown
 const DEFAULT_OPTIONS: DropdownOption[] = [
   { id: 'sources', value: 'Source' },
   { id: 'actions', value: 'Action' },
   { id: 'destinations', value: 'Destination' },
 ];
-
-// Action component for the modal's footer
-const ModalActionComponent: React.FC<{ onNext: () => void }> = ({ onNext }) => (
-  <NavigationButtons
-    buttons={[
-      {
-        label: 'DONE',
-        onClick: onNext,
-        variant: 'primary',
-      },
-    ]}
-  />
-);
 
 interface AddEntityButtonDropdownProps {
   options?: DropdownOption[];
@@ -111,59 +77,24 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [currentModal, setCurrentModal] = useState<string>('');
-  const [sourcesList, setSourcesList] = useState<K8sActualSource[]>([]);
 
-  const { createSourcesForNamespace, persistNamespaceItems, isPolling } =
+  const { isPolling, createSourcesForNamespace, persistNamespaceItems } =
     useActualSources();
-  const { stateMenu, stateHandlers } = useConnectSourcesMenuState({
-    sourcesList,
-  });
 
   useOnClickOutside(dropdownRef, () => setIsOpen(false));
 
-  // Toggle dropdown open state
   const handleToggle = useCallback(() => {
     setIsOpen((prev) => !prev);
   }, []);
 
-  // Handle selection of dropdown items
   const handleSelect = useCallback((option: DropdownOption) => {
     setCurrentModal(option.id);
     setIsOpen(false);
   }, []);
 
-  // Handle next click action in the modal
-  const onNextClick = useCallback(async () => {
-    try {
-      // Prepare namespace items for persistence
-      const namespaceItems: PersistNamespaceItemInput[] = Object.entries(
-        stateMenu.futureAppsCheckbox
-      ).map(([namespaceName, futureSelected]) => ({
-        name: namespaceName,
-        futureSelected,
-      }));
-
-      await persistNamespaceItems(namespaceItems);
-
-      // Create sources for each namespace
-      await Promise.all(
-        Object.entries(stateMenu.selectedItems).map(
-          async ([namespaceName, sources]) => {
-            const formattedSources = sources.map((source) => ({
-              kind: source.kind,
-              name: source.name,
-              selected: true,
-            }));
-            await createSourcesForNamespace(namespaceName, formattedSources);
-          }
-        )
-      );
-
-      setCurrentModal('');
-    } catch (error) {
-      console.error('Error during onNextClick:', error);
-    }
-  }, [persistNamespaceItems, stateMenu, createSourcesForNamespace]);
+  const handleCloseModal = useCallback(() => {
+    setCurrentModal('');
+  }, []);
 
   return (
     <Container ref={dropdownRef}>
@@ -199,22 +130,16 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
           ))}
         </DropdownListContainer>
       )}
-      <Modal
+      <AddSourceModal
         isOpen={currentModal === 'sources'}
-        header={{ title: `ADD ${currentModal.toUpperCase()}` }}
-        actionComponent={<ModalActionComponent onNext={onNextClick} />}
-        onClose={() => setCurrentModal('')}
-      >
-        <ChooseSourcesBodyWrapper>
-          <ChooseSourcesBody
-            isModal
-            stateMenu={stateMenu}
-            sourcesList={sourcesList}
-            stateHandlers={stateHandlers}
-            setSourcesList={setSourcesList}
-          />
-        </ChooseSourcesBodyWrapper>
-      </Modal>
+        onClose={handleCloseModal}
+        createSourcesForNamespace={createSourcesForNamespace}
+        persistNamespaceItems={persistNamespaceItems}
+      />
+      <AddDestinationModal
+        isModalOpen={currentModal === 'destinations'}
+        handleCloseModal={handleCloseModal}
+      />
     </Container>
   );
 };
