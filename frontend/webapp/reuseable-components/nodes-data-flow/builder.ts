@@ -138,6 +138,25 @@ export const buildNodesAndEdges = ({
     }),
   ];
 
+  if (actionsNode.length === 1) {
+    actionsNode.push(
+      createNode(
+        `action-0`,
+        'addAction',
+        centerColumnX,
+        NODE_HEIGHT * (actions.length + 1),
+        {
+          type: 'addAction',
+          title: 'ADD ACTION',
+          subTitle: '',
+          imageUri: `${ACTION_ICON_PATH}add-action.svg`,
+          status: 'healthy',
+          onClick: () => console.log('Add Action'),
+        }
+      )
+    );
+  }
+
   // Combine all nodes
   const nodes = [...sourcesNode, ...destinationNode, ...actionsNode];
 
@@ -146,24 +165,36 @@ export const buildNodesAndEdges = ({
 
   // Connect sources to actions
   const sourceToActionEdges: Edge[] = sources.map((_, sourceIndex) => {
-    const actionIndex = sourceIndex % actions.length;
+    const actionIndex =
+      actionsNode.length === 2 ? 0 : sourceIndex % actions.length;
     return createEdge(
       `source-${sourceIndex}-to-action-${actionIndex}`,
       `source-${sourceIndex}`,
-      `action-${actionIndex}`
+      `action-${actionIndex}`,
+      false
     );
   });
-
   // Connect actions to destinations
-  const actionToDestinationEdges: Edge[] = actions.flatMap((_, actionIndex) =>
-    destinations.map((_, destinationIndex) =>
+  const actionToDestinationEdges: Edge[] = actions.flatMap((_, actionIndex) => {
+    return destinations.map((_, destinationIndex) =>
       createEdge(
         `action-${actionIndex}-to-destination-${destinationIndex}`,
         `action-${actionIndex}`,
         `destination-${destinationIndex}`
       )
-    )
-  );
+    );
+  });
+
+  if (actions.length === 0) {
+    actionToDestinationEdges.push(
+      createEdge(
+        `action-0-to-destination-0`,
+        `action-0`,
+        `destination-0`,
+        false
+      )
+    );
+  }
 
   // Combine all edges
   edges.push(...sourceToActionEdges, ...actionToDestinationEdges);

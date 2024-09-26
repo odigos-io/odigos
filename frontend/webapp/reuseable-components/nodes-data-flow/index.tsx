@@ -2,12 +2,14 @@
 import React from 'react';
 import '@xyflow/react/dist/style.css';
 import BaseNode from './nodes/base-node';
-import headerNode from './nodes/header-node';
 import { ReactFlow } from '@xyflow/react';
+import headerNode from './nodes/header-node';
+import AddActionNode from './nodes/add-action-node';
 
 const nodeTypes = {
   base: BaseNode,
   header: headerNode,
+  addAction: AddActionNode,
 };
 
 interface NodeBaseDataFlowProps {
