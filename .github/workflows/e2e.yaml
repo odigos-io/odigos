@@ -10,27 +10,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-odigos-images:
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+
+  build-cli:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "~1.22"
+          check-latest: true
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
 
       - name: Build CLI
         run: |
           cd cli
           go build -tags=embed_manifests -o odigos
 
-      - name: Build Odigos Images
-        run: |
-          TAG=e2e-test make build-images
-          docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
-
       - name: Upload CLI
         uses: actions/upload-artifact@v3
         with:
           name: odigos-cli
           path: cli/odigos
+
+  build-odigos-images:
+    runs-on: warp-ubuntu-latest-x64-8x-spot
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Odigos Images
+        run: |
+          TAG=e2e-test make build-images
+          docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
 
       - name: Upload Odigos Images
         uses: actions/upload-artifact@v3
@@ -39,7 +55,9 @@ jobs:
           path: odigos-images.tar
 
   kubernetes-test:
-    needs: build-odigos-images
+    needs: 
+      - build-odigos-images
+      - build-cli
     runs-on: warp-ubuntu-latest-x64-8x-spot
     strategy:
       fail-fast: false
@@ -52,6 +70,7 @@ jobs:
           - "helm-chart"
           - "fe-synthetic"
           - "cli-upgrade"
+          - "workload-lifecycle"
         include:
           - kube-version: "1.23"
             kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
@@ -86,6 +105,8 @@ jobs:
           cluster_name: kind
 
       - name: Install FE
+        # this is used for cypress tests which are not run in every scenario
+        if: matrix.test-scenario == 'multi-apps' || matrix.test-scenario == 'helm-chart' || matrix.test-scenario == 'fe-synthetic'
         run: |
           cd frontend/webapp
           yarn install

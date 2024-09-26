@@ -1,0 +1,197 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-nodejs-unsupported-version
+status:
+  conditions:
+    - message: "javascript runtime version not supported by OpenTelemetry SDK. Found:
+        8.17.0, supports: 14.0.0"
+      observedGeneration: 1
+      reason: RuntimeVersionNotSupported
+      status: "False"
+      type: AppliedInstrumentationDevice
+---
+# expecting injection of instrumentation device to be successful since the runtime version was not detected
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-nodejs-very-old-version
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+# expecting injection of instrumentation device to be successful since the runtime version is supported
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-nodejs-minimum-version
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-nodejs-minimum-version
+status:
+  healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: nodejs
+    - key: process.runtime.version
+      value: "14.0.0"
+    - key: telemetry.distro.version
+      value: e2e-test
+    - key: process.pid
+      (value != null): true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-nodejs-latest-version
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-nodejs-latest-version
+status:
+  healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: nodejs
+    - key: process.runtime.version
+      (value != null): true
+    - key: telemetry.distro.version
+      value: e2e-test
+    - key: process.pid
+      (value != null): true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-nodejs-dockerfile-env
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-nodejs-dockerfile-env
+status:
+  healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: nodejs
+    - key: process.runtime.version
+      value: "20.17.0"
+    - key: telemetry.distro.version
+      value: e2e-test
+    - key: process.pid
+      (value != null): true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-nodejs-manifest-env
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-nodejs-manifest-env
+status:
+  healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: nodejs
+    - key: process.runtime.version
+      value: "20.17.0"
+    - key: telemetry.distro.version
+      value: e2e-test
+    - key: process.pid
+      (value != null): true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-cpp-http-server
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-language-change
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-language-change
+status:
+  healthy: true
+  # no need to verify all properties, as this is not the intent of this test
+---
