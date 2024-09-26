@@ -176,3 +176,28 @@ spec:
           ports:
             - containerPort: 3000
 ---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: language-change
+  namespace: default
+  labels:
+    app: language-change
+spec:
+  selector:
+    matchLabels:
+      app: language-change
+  template:
+    metadata:
+      labels:
+        app: language-change
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: language-change
+          image: cpp-http-server:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
