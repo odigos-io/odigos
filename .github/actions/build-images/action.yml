@@ -1,16 +1,14 @@
 name: Build Odigos Images
 
-on:
-  workflow_call:
-    inputs:
-      tag:
-        description: 'The image tag to build'
-        required: true
-        type: string
-      push:
-        required: false
-        default: false
-        type: boolean
+inputs:
+  tag:
+    description: 'The image tag to build'
+    required: true
+    type: string
+  push:
+    required: false
+    default: false
+    type: boolean
 
 runs:
   using: "composite"
