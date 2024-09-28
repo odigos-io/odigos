@@ -1,0 +1,88 @@
+name: build
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-instrumentor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.0"
+      - name: run tests
+        working-directory: ./instrumentor
+        run: |
+          make test
+  test-odigos-collector:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: run tests
+        working-directory: ./collector
+        run: |
+          make test
+  test-odiglet:
+    runs-on: ubuntu-latest  
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev
+      - name: run tests
+        working-directory: ./odiglet
+        run: |
+          make test
+
+  build-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.0"
+      - name: Set up Goreleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          version: latest
+          args: build --snapshot --clean
+
+  test-k8sutils:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.0"
+      - name: Test k8sutils module
+        working-directory: ./k8sutils
+        run: |
+          go test -v ./...
+
+  test-common:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.0"
+      - name: Test common module
+        working-directory: ./common
+        run: |
+          make test
+
+  test-procdiscovery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.0"
+      - name: Test procdiscovery module
+        working-directory: ./procdiscovery
+        run: |
+          go test -v ./...

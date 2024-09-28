@@ -1,0 +1,56 @@
+name: Build Odigos Images
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'The image tag to build'
+        required: true
+        type: string
+      push:
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+    build-image:
+      strategy:
+        matrix:
+          include:
+            - service: autoscaler
+              runner: ubuntu-latest
+            - service: scheduler
+              runner: ubuntu-latest
+            - service: instrumentor
+              runner: ubuntu-latest
+            - service: collector
+              runner: large-runner
+            - service: odiglet
+              runner: ubuntu-latest
+            - service: ui
+              runner: ubuntu-latest
+      runs-on: ${{ matrix.runner }}
+      steps:
+          - name: Build and Push Docker Image for ${{ matrix.service }}
+            uses: docker/build-push-action@v6
+            with:
+              push: ${{ github.event.inputs.push }}
+              tags: keyval/odigos-${{ matrix.service }}:${{ github.event.inputs.tag }}
+              build-args: |
+                  SERVICE_NAME=${{ matrix.service }}
+                  ODIGOS_VERSION=${{ github.event.inputs.tag }}
+              platforms: linux/amd64,linux/arm64
+              file: >-
+                  ${{
+                  (matrix.service == 'odiglet' && 'odiglet/Dockerfile') ||
+                  (matrix.service == 'collector' && 'collector/Dockerfile') ||
+                  (matrix.service == 'ui' && 'frontend/Dockerfile') ||
+                  'Dockerfile'
+                  }}
+              context: >-
+                  ${{
+                  (matrix.service == 'collector' && 'collector') ||
+                  '.'
+                  }}
+              cache-from: type=gha
+              cache-to: type=gha,mode=max

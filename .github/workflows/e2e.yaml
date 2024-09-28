@@ -43,9 +43,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build Odigos Images
-        run: |
-          TAG=e2e-test make build-images
-          docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
+        uses: ./.github/workflows/build-images.yml
+        with:
+          tag: e2e-test
+          push: false
+      - name: Save Odigos images to tar
+        run: docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
       - name: Upload Odigos Images
         uses: actions/upload-artifact@v3
         with:
