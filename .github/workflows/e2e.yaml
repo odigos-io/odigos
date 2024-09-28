@@ -43,7 +43,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build Odigos Images
-        uses: ./.github/workflows/build-images.yml
+        uses: ./.github/actions/build-images
         with:
           tag: e2e-test
           push: false

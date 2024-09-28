@@ -1,0 +1,22 @@
+name: Build Odigos Images
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'The image tag to build'
+        required: true
+        type: string
+      push:
+        required: false
+        default: false
+        type: boolean
+
+runs:
+  using: "composite"
+    steps:
+        - name: Build Odigos Images
+          uses: ./.github/workflows/build-images.yml
+          with:
+            push: ${{ inputs.push }}
+            tag: ${{ inputs.tag }}
