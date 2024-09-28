@@ -42,24 +42,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        id: cache
-        with:
-          path: |
-            root-cache-go-build
-            go-pkg
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - name: inject cache into docker
-        uses: reproducible-containers/buildkit-cache-dance@v3.1.0
-        with:
-          cache-map: |
-            {
-              "root-cache-go-build": "/root/.cache/go-build",
-              "go-pkg": "/go/pkg"
-            }
-          skip-extraction: ${{ steps.cache.outputs.cache-hit }}
       - name: Build Odigos Images
         run: |
           TAG=e2e-test make build-images
