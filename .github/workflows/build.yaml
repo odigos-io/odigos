@@ -19,6 +19,8 @@ jobs:
           push: false
           tags: autoscaler:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=autoscaler
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
   build-scheduler:
     runs-on: ubuntu-latest
     steps:
@@ -32,6 +34,8 @@ jobs:
           push: false
           tags: scheduler:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=scheduler
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
   build-and-test-instrumentor:
     runs-on: ubuntu-latest
     steps:
@@ -48,6 +52,8 @@ jobs:
           push: false
           tags: instrumentor:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=instrumentor
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: run tests
         working-directory: ./instrumentor
         run: |
@@ -58,14 +64,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - name: build Odigos Collector Image
         uses: docker/build-push-action@v6
         with:
@@ -74,6 +72,8 @@ jobs:
           tags: odigos-collector:pr-${{ github.event.number }}
           context: ./collector
           file: collector/Dockerfile
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: run tests
         working-directory: ./collector
         run: |
@@ -117,6 +117,8 @@ jobs:
           context: .
           push: false
           tags: frontend:pr-${{ github.event.number }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   build-cli:
     runs-on: ubuntu-latest
