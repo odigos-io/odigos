@@ -13,6 +13,8 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Checkout
+      uses: actions/checkout@v4
     - name: Build Odigos Images
       uses: ./.github/workflows/build-images.yml
       with:
