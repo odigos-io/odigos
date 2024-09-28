@@ -14,9 +14,9 @@ on:
 
 runs:
   using: "composite"
-    steps:
-        - name: Build Odigos Images
-          uses: ./.github/workflows/build-images.yml
-          with:
-            push: ${{ inputs.push }}
-            tag: ${{ inputs.tag }}
+  steps:
+    - name: Build Odigos Images
+      uses: ./.github/workflows/build-images.yml
+      with:
+        push: ${{ inputs.push }}
+        tag: ${{ inputs.tag }}
