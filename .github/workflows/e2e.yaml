@@ -42,11 +42,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Build Odigos Images
-        run: |
-          TAG=e2e-test make build-images
-          docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
       - uses: actions/cache@v4
         id: cache
         with:
@@ -65,6 +60,10 @@ jobs:
               "go-pkg": "/go/pkg"
             }
           skip-extraction: ${{ steps.cache.outputs.cache-hit }}
+      - name: Build Odigos Images
+        run: |
+          TAG=e2e-test make build-images
+          docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
       - name: Upload Odigos Images
         uses: actions/upload-artifact@v3
         with:
