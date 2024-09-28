@@ -47,16 +47,24 @@ jobs:
         run: |
           TAG=e2e-test make build-images
           docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
-
       - uses: actions/cache@v4
+        id: cache
         with:
           path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
+            root-cache-go-build
+            go-pkg
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-
+      - name: inject cache into docker
+        uses: reproducible-containers/buildkit-cache-dance@v3.1.0
+        with:
+          cache-map: |
+            {
+              "root-cache-go-build": "/root/.cache/go-build",
+              "go-pkg": "/go/pkg"
+            }
+          skip-extraction: ${{ steps.cache.outputs.cache-hit }}
       - name: Upload Odigos Images
         uses: actions/upload-artifact@v3
         with:
