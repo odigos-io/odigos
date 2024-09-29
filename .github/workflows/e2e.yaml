@@ -121,7 +121,6 @@ jobs:
       - name: Download and Load Docker Images to Kind
         uses: actions/download-artifact@v3
         with:
-          name: "*"
           path: /tmp
       - run: |
           kind load image-archive /tmp/*.tar
