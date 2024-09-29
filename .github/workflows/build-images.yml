@@ -39,7 +39,7 @@ jobs:
           - name: Build and Push Docker Image for ${{ matrix.service }}
             uses: docker/build-push-action@v6
             with:
-              push: ${{ github.event.inputs.push }}
+              push: ${{ github.event.inputs.push == 'true' }}
               tags: keyval/odigos-${{ matrix.service }}:${{ github.event.inputs.tag }}
               build-args: |
                   SERVICE_NAME=${{ matrix.service }}
@@ -60,10 +60,10 @@ jobs:
               cache-from: type=gha
               cache-to: type=gha,mode=max
           - name: Save Odigos images to tar
-            if: ${{ github.event.inputs.save }}
+            if: always() && ${{ github.event.inputs.save == 'true' }}
             run: docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
           - name: Upload Odigos Images
-            if: ${{ github.event.inputs.save }}
+            if: always() && ${{ github.event.inputs.save == 'true' }}
             uses: actions/upload-artifact@v3
             with:
               name: odigos-images
