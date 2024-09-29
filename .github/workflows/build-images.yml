@@ -50,7 +50,7 @@ jobs:
             uses: docker/build-push-action@v6
             with:
               push: ${{ inputs.push == 'true' }}
-              outputs: type=docker,dest=/tmp/${{ matrix.service }}.tar
+              outputs: type=oci,dest=/tmp/${{ matrix.service }}.tar
               tags: keyval/odigos-${{ matrix.service }}:${{ inputs.tag }}
               build-args: |
                   SERVICE_NAME=${{ matrix.service }}
