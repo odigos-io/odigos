@@ -43,6 +43,7 @@ jobs:
       tag: e2e-test
       push: false
       save: true
+      runner: warp-ubuntu-latest-x64-8x-spot
 
     # runs-on: warp-ubuntu-latest-x64-8x-spot
     # steps:
