@@ -17,6 +17,7 @@ type PodsWebhook struct{}
 var _ webhook.CustomDefaulter = &PodsWebhook{}
 
 func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
+	// TODO(edenfed): add object selector to mutatingwebhookconfiguration
 	log := logf.FromContext(ctx)
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
