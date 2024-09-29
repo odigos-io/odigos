@@ -41,6 +41,8 @@ jobs:
               echo "Tag: ${{ inputs.tag }}"
               echo "Push: ${{ inputs.push }}"
               echo "Save: ${{ inputs.save }}"
+          - name: Checkout
+            uses: actions/checkout@v4
           - name: Set up Docker Buildx
             uses: docker/setup-buildx-action@v3
           - name: Build and Push Docker Image for ${{ matrix.service }}
