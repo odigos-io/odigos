@@ -38,22 +38,28 @@ jobs:
           path: cli/odigos
 
   build-odigos-images:
-    runs-on: warp-ubuntu-latest-x64-8x-spot
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build Odigos Images
-        uses: ./.github/actions/build-images
-        with:
-          tag: e2e-test
-          push: false
-      - name: Save Odigos images to tar
-        run: docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
-      - name: Upload Odigos Images
-        uses: actions/upload-artifact@v3
-        with:
-          name: odigos-images
-          path: odigos-images.tar
+    uses: ./.github/workflows/build-images.yml
+    with:
+      tag: e2e-test
+      push: false
+      save: true
+
+    # runs-on: warp-ubuntu-latest-x64-8x-spot
+    # steps:
+    #   - name: Checkout
+    #     uses: actions/checkout@v4
+    #   - name: Build Odigos Images
+    #     uses: ./.github/actions/build-images
+    #     with:
+    #       tag: e2e-test
+    #       push: false
+    #   - name: Save Odigos images to tar
+    #     run: docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
+    #   - name: Upload Odigos Images
+    #     uses: actions/upload-artifact@v3
+    #     with:
+    #       name: odigos-images
+    #       path: odigos-images.tar
 
   kubernetes-test:
     needs: 

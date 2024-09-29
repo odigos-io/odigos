@@ -11,6 +11,11 @@ on:
         required: false
         default: false
         type: boolean
+      save:
+        description: 'Optionaly save the images to odigos-images.tar to be used in a future job'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
     build-image:
@@ -54,3 +59,12 @@ jobs:
                   }}
               cache-from: type=gha
               cache-to: type=gha,mode=max
+          - name: Save Odigos images to tar
+            if: ${{ github.event.inputs.save }}
+            run: docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
+          - name: Upload Odigos Images
+            if: ${{ github.event.inputs.save }}
+            uses: actions/upload-artifact@v3
+            with:
+              name: odigos-images
+              path: odigos-images.tar
