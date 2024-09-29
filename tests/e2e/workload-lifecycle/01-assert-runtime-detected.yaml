@@ -217,3 +217,19 @@ spec:
       runtimeVersion: 17.0.12+7
 
 ---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-java-latest-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-latest-version
+spec:
+  runtimeDetails:
+    - containerName: java-latest-version
+      language: java
+---

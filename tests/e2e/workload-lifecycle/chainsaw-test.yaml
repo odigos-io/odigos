@@ -33,6 +33,8 @@ spec:
           kind load docker-image java-supported-docker-env:v0.0.1
           docker build -t java-supported-manifest-env:v0.0.1 -f services/java-http-server/java-supported-manifest-env.Dockerfile services/java-http-server
           kind load docker-image java-supported-manifest-env:v0.0.1
+          docker build -t java-latest-version:v0.0.1 -f services/java-http-server/java-latest-version.Dockerfile services/java-http-server
+          kind load docker-image java-latest-version:v0.0.1
 
   - name: Prepare destination
     try:

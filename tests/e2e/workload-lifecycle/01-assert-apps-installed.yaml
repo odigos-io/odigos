@@ -167,3 +167,17 @@ status:
       started: true
   phase: Running
 ---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-latest-version
+  namespace: default
+status:
+  containerStatuses:
+    - name: java-latest-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---

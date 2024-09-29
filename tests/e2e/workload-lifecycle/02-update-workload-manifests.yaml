@@ -319,3 +319,32 @@ spec:
             initialDelaySeconds: 20
 
 ---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: java-latest-version
+  namespace: default
+  labels:
+    app: java-latest-version
+spec:
+  selector:
+    matchLabels:
+      app: java-latest-version
+  template:
+    metadata:
+      labels:
+        app: java-latest-version
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: java-latest-version
+          image: java-latest-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+---
