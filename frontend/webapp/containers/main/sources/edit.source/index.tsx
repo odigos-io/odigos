@@ -113,6 +113,9 @@ export function EditSourceForm() {
             languages={
               currentSource.instrumented_application_details.languages || []
             }
+            conditions={
+              currentSource.instrumented_application_details.conditions
+            }
           />
           <FieldWrapper>
             <KeyvalInput
