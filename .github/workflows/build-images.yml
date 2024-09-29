@@ -36,6 +36,8 @@ jobs:
               runner: ubuntu-latest
       runs-on: ${{ matrix.runner }}
       steps:
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v3
           - name: Build and Push Docker Image for ${{ matrix.service }}
             uses: docker/build-push-action@v6
             with:
