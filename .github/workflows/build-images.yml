@@ -50,7 +50,7 @@ jobs:
             uses: docker/build-push-action@v6
             with:
               push: ${{ inputs.push == 'true' }}
-              load: ${{ inputs.save == 'true' }}
+              outputs: type=docker,dest=/tmp/${{ matrix.service }}.tar
               tags: keyval/odigos-${{ matrix.service }}:${{ inputs.tag }}
               build-args: |
                   SERVICE_NAME=${{ matrix.service }}
@@ -70,24 +70,31 @@ jobs:
                   }}
               cache-from: type=gha
               cache-to: type=gha,mode=max
-    save-images:
-      needs: 
-      - build-images
+          - name: Upload Odigos Images
+            if: always() && ${{ inputs.save == 'true' }}
+            uses: actions/upload-artifact@v3
+            with:
+              name: ${{ matrix.service }}
+              path: /tmp/${{ matrix.service }}.tar
+
+    combine-images:
+      needs: build-images
       runs-on: ubuntu-latest
-      if: always() && ${{ inputs.save == 'true' }}
+      if: ${{ inputs.save == 'true' }}
       steps:
-        - name: Set up Docker
-          uses: docker/setup-buildx-action@v3
-  
-        - name: Save all Odigos images to tar
+        - name: Download All Odigos Image Artifacts
+          uses: actions/download-artifact@v3
+          with:
+            name: "*"
+            path: /tmp
+        - name: Combine All Images into a Single Tar
           run: |
-            images=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
-            if [ -n "$images" ]; then
-              docker save -o odigos-images.tar $images
-            else
-              echo "No odigos images found to save."
-        
-        - name: Upload Odigos Images
+            cd /tmp
+            for file in *.tar; do
+              tar -xf "$file"
+            done
+            tar --exclude="*.tar" -cvf odigos-images.tar .
+        - name: Upload Combined Odigos Images Tar
           uses: actions/upload-artifact@v3
           with:
             name: odigos-images
