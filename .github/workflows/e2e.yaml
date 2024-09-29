@@ -43,7 +43,7 @@ jobs:
       tag: e2e-test
       push: false
       save: true
-      runner: warp-ubuntu-latest-x64-8x-spot
+      base-images-dir: odigos-images
 
     # runs-on: warp-ubuntu-latest-x64-8x-spot
     # steps:
@@ -122,11 +122,10 @@ jobs:
       - name: Download and Load Docker Images to Kind
         uses: actions/download-artifact@v3
         with:
-          name: odigos-images
+          name: "*"
+          path: /odigos-images
       - run: |
-          docker load -i odigos-images.tar
-          TAG=e2e-test make load-to-kind
-
+          kind load image-archive /odigos-images/*.tar
       - name: Download CLI binary
         uses: actions/download-artifact@v3
         with:

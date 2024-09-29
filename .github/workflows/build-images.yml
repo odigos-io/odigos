@@ -16,10 +16,10 @@ on:
         required: false
         default: false
         type: boolean
-      runner:
-        description: 'The runner to use for the job'
+      base-images-dir:
+        description: 'The directory where the base images are stored'
         required: false
-        default: 'ubuntu-latest'
+        default: 'tmp'
         type: string
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
             - service: collector
             - service: odiglet
             - service: ui
-      runs-on: ${{ inputs.runner }}
+      runs-on: warp-ubuntu-latest-x64-8x-spot
       steps:
           - name: Print Inputs
             run: |
@@ -46,11 +46,16 @@ jobs:
             uses: docker/setup-qemu-action@v3
           - name: Set up Docker Buildx
             uses: docker/setup-buildx-action@v3
+          - name: Cache Docker Layers
+            uses: WarpBuilds/cache@v1
+            with:
+              path: ${{ matrix.service }}-cache
+              key: ${{ matrix.service }}-cache-${{ github.head_ref }}
           - name: Build and Push Docker Image for ${{ matrix.service }}
             uses: docker/build-push-action@v6
             with:
               push: ${{ inputs.push == 'true' }}
-              outputs: type=docker,dest=/tmp/${{ matrix.service }}.tar
+              outputs: type=docker,dest=/${{ inputs.base-images-dir }}/${{ matrix.service }}.tar
               tags: keyval/odigos-${{ matrix.service }}:${{ inputs.tag }}
               build-args: |
                   SERVICE_NAME=${{ matrix.service }}
@@ -68,34 +73,11 @@ jobs:
                   (matrix.service == 'collector' && 'collector') ||
                   '.'
                   }}
-              cache-from: type=gha
-              cache-to: type=gha,mode=max
-          - name: Upload Odigos Images
+              cache-to: type=local,mode=max,dest=${{ matrix.service }}-cache
+              cache-from: type=local,src=${{ matrix.service }}-cache
+          - name: Upload artifact
             if: always() && ${{ inputs.save == 'true' }}
             uses: actions/upload-artifact@v3
             with:
               name: ${{ matrix.service }}
-              path: /tmp/${{ matrix.service }}.tar
-
-    combine-images:
-      needs: build-images
-      runs-on: ubuntu-latest
-      if: ${{ inputs.save == 'true' }}
-      steps:
-        - name: Download All Odigos Image Artifacts
-          uses: actions/download-artifact@v3
-          with:
-            name: "*"
-            path: /tmp
-        - name: Combine All Images into a Single Tar
-          run: |
-            cd /tmp
-            for file in *.tar; do
-              tar -xf "$file"
-            done
-            tar --exclude="*.tar" -cvf odigos-images.tar .
-        - name: Upload Combined Odigos Images Tar
-          uses: actions/upload-artifact@v3
-          with:
-            name: odigos-images
-            path: odigos-images.tar
+              path: /${{ inputs.base-images-dir }}/${{ matrix.service }}.tar
