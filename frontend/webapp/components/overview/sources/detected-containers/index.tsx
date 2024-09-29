@@ -1,6 +1,7 @@
 // DetectedContainers.tsx
 import { KeyvalText } from '@/design.system';
 import theme from '@/styles/palette';
+import { Condition } from '@/types';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -13,6 +14,7 @@ interface Language {
 
 interface DetectedContainersProps {
   languages: Language[];
+  conditions: Condition[];
 }
 
 const Container = styled.div`
@@ -34,9 +36,9 @@ const ListItem = styled.li`
 
 const DetectedContainers: React.FC<DetectedContainersProps> = ({
   languages,
+  conditions,
 }) => {
-  // Find the first language that is not ignored
-
+  const hasError = conditions.some((condition) => condition.status === 'False');
   return (
     <Container>
       <KeyvalText size={18} weight={600}>
@@ -57,11 +59,10 @@ const DetectedContainers: React.FC<DetectedContainersProps> = ({
                 ? `, Runtime: ${lang.runtime_version}`
                 : ''}
               )
-              <b>
-                {lang.language !== 'ignore' &&
-                  lang.language !== 'unknown' &&
-                  ' - Instrumented'}
-              </b>
+              {lang.language !== 'ignore' &&
+                lang.language !== 'unknown' &&
+                !hasError &&
+                ' - Instrumented'}
             </KeyvalText>
           </ListItem>
         ))}

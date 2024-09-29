@@ -34,7 +34,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 	var modifiedContainers []corev1.Container
 	for _, container := range original.Spec.Containers {
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
-		if containerLanguage == nil || *containerLanguage == common.UnknownProgrammingLanguage || *containerLanguage == common.IgnoredProgrammingLanguage {
+		if containerLanguage == nil || *containerLanguage == common.UnknownProgrammingLanguage || *containerLanguage == common.IgnoredProgrammingLanguage || *containerLanguage == common.NginxProgrammingLanguage {
 			// always patch the env vars, even if the language is unknown or ignored.
 			// this is necessary to sync the existing envs with the missing language if changed for any reason.
 			err = patchEnvVarsForContainer(runtimeDetails, &container, nil, *containerLanguage, manifestEnvOriginal)

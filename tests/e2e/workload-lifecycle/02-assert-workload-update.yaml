@@ -1,8 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "2"
   generation: 2 # on step 2, the manifest was updated
   labels:
     app: nodejs-unsupported-version
@@ -28,8 +26,6 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "4" 
   generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
   labels:
     app: nodejs-very-old-version
@@ -57,8 +53,6 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "4"
   generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
   labels:
     app: nodejs-minimum-version
@@ -85,8 +79,6 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "4"
   generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)    
   labels:
     app: nodejs-latest-version
@@ -113,8 +105,6 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "4"
   generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
   labels:
     app: nodejs-dockerfile-env
@@ -144,8 +134,6 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "4"
   generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
   labels:
     app: nodejs-manifest-env
@@ -175,8 +163,6 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "2"
   generation: 2 # on step 2, the manifest was updated (1->2)
   labels:
     app: cpp-http-server
@@ -203,7 +189,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "4"
     (odigos.io/manifest-env-original-val == null): true
   generation: 5 # started as 2, updated by test once, then by instrumentor and again after new runtime details updated
   labels:
