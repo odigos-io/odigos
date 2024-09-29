@@ -43,7 +43,6 @@ jobs:
       tag: e2e-test
       push: false
       save: true
-      base-images-dir: odigos-images
 
     # runs-on: warp-ubuntu-latest-x64-8x-spot
     # steps:
@@ -123,9 +122,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: "*"
-          path: /odigos-images
+          path: /tmp
       - run: |
-          kind load image-archive /odigos-images/*.tar
+          kind load image-archive /tmp/*.tar
       - name: Download CLI binary
         uses: actions/download-artifact@v3
         with:

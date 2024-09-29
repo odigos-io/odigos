@@ -16,11 +16,6 @@ on:
         required: false
         default: false
         type: boolean
-      base-images-dir:
-        description: 'The directory where the base images are stored'
-        required: false
-        default: 'tmp'
-        type: string
 
 jobs:
     build-images:
@@ -55,7 +50,7 @@ jobs:
             uses: docker/build-push-action@v6
             with:
               push: ${{ inputs.push == 'true' }}
-              outputs: type=docker,dest=/${{ inputs.base-images-dir }}/${{ matrix.service }}.tar
+              outputs: type=docker,dest=/tmp/${{ matrix.service }}.tar
               tags: keyval/odigos-${{ matrix.service }}:${{ inputs.tag }}
               build-args: |
                   SERVICE_NAME=${{ matrix.service }}
@@ -80,4 +75,4 @@ jobs:
             uses: actions/upload-artifact@v3
             with:
               name: ${{ matrix.service }}
-              path: /${{ inputs.base-images-dir }}/${{ matrix.service }}.tar
+              path: /tmp/${{ matrix.service }}.tar
