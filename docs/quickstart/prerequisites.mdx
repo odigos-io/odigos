@@ -1,0 +1,83 @@
+---
+title: "Prerequisites"
+sidebarTitle: "Prerequisites"
+---
+Before installing Odigos, you need to set up some tools on your computer. These are one-time installations that prepare your computer for running Odigos.
+
+
+
+<Tabs>
+  <Tab title="Mac OS">
+  
+  <Warning>
+   Please avoid using Docker Desktop built-in Kubernetes cluster as it [does not](https://docs.docker.com/storage/bind-mounts/#configure-bind-propagation) support bind propagation.
+  </Warning>
+
+  **Homebrew**: A tool that helps install other software.
+  * Open the Terminal app (find it in Applications > Utilities).
+  * Copy and paste this command, then press `Enter`:
+    ```
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    ```
+  * Follow the on-screen instructions.
+
+  **Docker Desktop**: Creates a space on your computer where Odigos can run.
+  * In the Terminal, type this command and press `Enter`:
+    ```
+    brew install --cask docker
+    ```
+  * Once installed, find and open Docker Desktop in your Applications folder.
+
+  **KinD**: Helps set up a test environment for Odigos.
+  * In the Terminal, type this command and press `Enter`:
+    ```
+    brew install kind
+    ```
+  </Tab>
+  
+  <Tab title="Linux">
+
+  **Docker**: Creates a space on your computer where Odigos can run.
+  - Open a terminal window.
+  - Copy and paste these commands, pressing `Enter` after each:
+    ```
+    sudo apt-get update
+    sudo apt-get install docker.io
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    ```
+  
+  **KinD**: Helps set up a test environment for Odigos.
+  - In the terminal, copy and paste these commands, pressing `Enter` after each:
+    ```
+    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
+    chmod +x ./kind
+    sudo mv ./kind /usr/local/bin/kind
+    ```
+  </Tab>
+
+
+  <Tab title="Windows">
+  **Docker Desktop**: Creates a space on your computer where Odigos can run.
+  - Download Docker Desktop from the [official website](https://www.docker.com/products/docker-desktop).
+  - Run the installer and follow the on-screen instructions.
+  - Once installed, start Docker Desktop from the Start menu.
+
+  **Windows Subsystem for Linux (WSL)**: Allows you to run Linux tools on Windows.
+  - Open PowerShell as Administrator (right-click on PowerShell in the Start menu and select "Run as administrator").
+  - Type this command and press `Enter`:
+    ```
+    wsl --install
+    ```
+  - Restart your computer when prompted.
+
+  **KinD**: Helps set up a test environment for Odigos.
+  - Open PowerShell.
+  - Type these commands and press `Enter` after each:
+    ```
+    curl.exe -Lo kind-windows-amd64.exe https://kind.sigs.k8s.io/dl/v0.11.1/kind-windows-amd64
+    move kind-windows-amd64.exe C:\Windows\system32\kind.exe
+    ```
+  </Tab>
+</Tabs>
+
