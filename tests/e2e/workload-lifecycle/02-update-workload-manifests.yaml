@@ -1,0 +1,203 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-unsupported-version
+  namespace: default
+  labels:
+    app: nodejs-unsupported-version
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-unsupported-version
+  template:
+    metadata:
+      labels:
+        app: nodejs-unsupported-version
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: nodejs-unsupported-version
+          image: nodejs-unsupported-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-very-old-version
+  namespace: default
+  labels:
+    app: nodejs-very-old-version
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-very-old-version
+  template:
+    metadata:
+      labels:
+        app: nodejs-very-old-version
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: nodejs-very-old-version
+          image: nodejs-very-old-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-minimum-version
+  namespace: default
+  labels:
+    app: nodejs-minimum-version
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-minimum-version
+  template:
+    metadata:
+      labels:
+        app: nodejs-minimum-version
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: nodejs-minimum-version
+          image: nodejs-minimum-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: nodejs-latest-version
+  namespace: default
+  labels:
+    app: nodejs-latest-version
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-latest-version
+  template:
+    metadata:
+      labels:
+        app: nodejs-latest-version
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: nodejs-latest-version
+          image: nodejs-latest-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: nodejs-dockerfile-env
+  namespace: default
+  labels:
+    app: nodejs-dockerfile-env
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-dockerfile-env
+  template:
+    metadata:
+      labels:
+        app: nodejs-dockerfile-env
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: nodejs-dockerfile-env
+          image: nodejs-dockerfile-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: nodejs-manifest-env
+  namespace: default
+  labels:
+    app: nodejs-manifest-env
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-manifest-env
+  template:
+    metadata:
+      labels:
+        app: nodejs-manifest-env
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: nodejs-manifest-env
+          image: nodejs-manifest-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_OPTIONS
+              value: "--require /app/execute_before.js --max-old-space-size=256"
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: cpp-http-server
+  namespace: default
+  labels:
+    app: cpp-http-server
+spec:
+  selector:
+    matchLabels:
+      app: cpp-http-server
+  template:
+    metadata:
+      labels:
+        app: cpp-http-server
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: cpp-http-server
+          image: cpp-http-server:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: language-change
+  namespace: default
+  labels:
+    app: language-change
+spec:
+  selector:
+    matchLabels:
+      app: language-change
+  template:
+    metadata:
+      labels:
+        app: language-change
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: language-change
+          image: cpp-http-server:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---

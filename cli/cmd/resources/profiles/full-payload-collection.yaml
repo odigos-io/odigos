@@ -1,0 +1,12 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: full-payload-collection
+spec:
+  ruleName: "full payload collection"
+  notes: "Auto generated rule from full-payload-collection profile. Do not edit."
+  payloadCollection:
+    httpRequest: {}
+    httpResponse: {}
+    dbQuery: {}
+    messaging: {}

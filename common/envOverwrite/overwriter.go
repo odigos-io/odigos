@@ -63,7 +63,7 @@ var EnvValuesMap = map[string]envValues{
 // the are 2 parts to the environment value: odigos part and user part.
 // either one can be set or empty.
 // so we have 4 cases to handle:
-func GetPatchedEnvValue(envName string, observedValue string, currentSdk common.OtelSdk, language common.ProgrammingLanguage) *string {
+func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common.OtelSdk, language common.ProgrammingLanguage) *string {
 	envMetadata, ok := EnvValuesMap[envName]
 	if !ok {
 		// Odigos does not manipulate this environment variable, so ignore it
@@ -75,7 +75,12 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk common.
 		return nil
 	}
 
-	desiredOdigosPart, ok := envMetadata.values[currentSdk]
+	if currentSdk == nil {
+		// When we have no sdk injected, we should not inject any odigos values.
+		return nil
+	}
+
+	desiredOdigosPart, ok := envMetadata.values[*currentSdk]
 	if !ok {
 		// No specific overwrite is required for this SDK
 		return nil

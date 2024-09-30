@@ -4,6 +4,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +37,11 @@ func (i *podPredicate) Update(e event.UpdateEvent) bool {
 		return true
 	}
 
-	return false
+	// Sum the restart counts for both oldPod and newPod containers, then compare them.
+	// If the newPod has a higher restart count than the oldPod, we need to re-instrument it.
+	// This happens because the pod was abruptly killed, which caused an increment in the restart count.
+	// This check is required because the pod will remain running during the process kill and re-launch.
+	return GetPodSumRestarts(newPod) > GetPodSumRestarts(oldPod)
 }
 
 func (i *podPredicate) Delete(e event.DeleteEvent) bool {
@@ -53,9 +58,24 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap) error {
 
 	err := builder.
 		ControllerManagedBy(mgr).
+		Named("PodReconciler_ebpf").
 		For(&corev1.Pod{}).
 		WithEventFilter(&podPredicate{}).
 		Complete(&PodsReconciler{
+			Client:    mgr.GetClient(),
+			Scheme:    mgr.GetScheme(),
+			Directors: ebpfDirectors,
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("InstrumentationConfigReconciler_ebpf").
+		For(&odigosv1.InstrumentationConfig{}).
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
+		Complete(&InstrumentationConfigReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
 			Directors: ebpfDirectors,

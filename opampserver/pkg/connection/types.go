@@ -17,6 +17,7 @@ type ConnectionInfo struct {
 	Pid                 int64
 	InstrumentedAppName string
 	LastMessageTime     time.Time
+	ProgrammingLanguage string
 
 	// config related fields
 	// AgentRemoteConfig is the full remote config opamp message to send to the agent when needed

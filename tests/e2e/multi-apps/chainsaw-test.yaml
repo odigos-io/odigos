@@ -59,6 +59,8 @@ spec:
         file: 04-add-destination.yaml
     - assert:
         file: assert-instrumented-and-pipeline.yaml
+    - assert:
+        file: assert-post-dest-runtime-details.yaml
   - name: Generate Traffic
     try:
     - script:
@@ -133,3 +135,4 @@ spec:
           timeout: 60s
           content: |
             ../../common/ui-tests/stop_ui_and_clean.sh
+ 

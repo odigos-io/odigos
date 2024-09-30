@@ -6,9 +6,6 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
-	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
-	"github.com/odigos-io/odigos/opampserver/protobufs"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,11 +22,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	err := i.Get(ctx, req.NamespacedName, instrumentationConfig)
 
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			instrumentationConfig = nil
-		} else {
-			return ctrl.Result{}, err
-		}
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name)
@@ -43,22 +36,9 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		Name:      workloadName,
 	}
 
-	instrumentationLibrariesConfig, err := configsections.CalcInstrumentationLibrariesRemoteConfig(ctx, i.Client, req.Name, req.Namespace)
-	if err != nil {
-		return ctrl.Result{}, err
+	for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
+		i.ConnectionCache.UpdateWorkloadRemoteConfig(podWorkload, &sdkConfig)
 	}
-	opampRemoteConfigInstrumentationLibraries, instrumentationLibrariesSectionName, err := configsections.InstrumentationLibrariesRemoteConfigToOpamp(instrumentationLibrariesConfig)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	updatedConfigMapEntries := protobufs.AgentConfigMap{
-		ConfigMap: map[string]*protobufs.AgentConfigFile{
-			instrumentationLibrariesSectionName: opampRemoteConfigInstrumentationLibraries,
-		},
-	}
-
-	i.ConnectionCache.UpdateWorkloadRemoteConfigByKeys(podWorkload, &updatedConfigMapEntries)
 
 	return ctrl.Result{}, nil
 }

@@ -4,7 +4,7 @@ import theme from '@/styles/palette';
 import { useKeyDown } from '@/hooks';
 import { ManagedSource } from '@/types';
 import { useMutation } from 'react-query';
-import { DeleteSource } from '@/components/overview';
+import { DeleteSource, DetectedContainers } from '@/components/overview';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { deleteSource, getSource, patchSources } from '@/services';
 import { ManageSourceHeader } from '@/components/overview/sources/manage.source.header/manage.source.header';
@@ -55,9 +55,12 @@ export function EditSourceForm() {
       currentSource?.namespace || '',
       currentSource?.kind || '',
       currentSource?.name || '',
-      { reported_name: inputValue }
+      {
+        reported_name: inputValue,
+      }
     )
   );
+
   useEffect(() => {
     onPageLoad();
   }, [searchParams]);
@@ -106,6 +109,14 @@ export function EditSourceForm() {
       {currentSource && <ManageSourceHeader source={currentSource} />}
       <div style={{ display: 'flex', gap: 60 }}>
         <div>
+          <DetectedContainers
+            languages={
+              currentSource.instrumented_application_details.languages || []
+            }
+            conditions={
+              currentSource.instrumented_application_details.conditions
+            }
+          />
           <FieldWrapper>
             <KeyvalInput
               label={OVERVIEW.REPORTED_NAME}
@@ -123,11 +134,7 @@ export function EditSourceForm() {
           <DeleteSource
             onDelete={onSourceDelete}
             name={currentSource?.name}
-            image_url={
-              LANGUAGES_LOGOS[
-                getMainContainerLanguage(currentSource)
-              ]
-            }
+            image_url={LANGUAGES_LOGOS[getMainContainerLanguage(currentSource)]}
           />
         </div>
         <Conditions

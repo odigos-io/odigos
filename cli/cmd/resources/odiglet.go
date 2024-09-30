@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"slices"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -185,6 +186,15 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 			},
 			{
 				Verbs: []string{
+					"get",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"replicasets",
+				},
+			},
+			{
+				Verbs: []string{
 					"create",
 					"get",
 					"list",
@@ -264,6 +274,18 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{
 					"instrumentationconfigs",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"patch",
+				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{
+					"instrumentationconfigs/status",
 				},
 			},
 		},
@@ -709,9 +731,18 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		resources = append(resources, NewResourceQuota(a.ns))
 	}
 
+	// temporary hack - check if the profiles named "code-attributes" or "kratos" are enabled.
+	// in the future, the go code attribute collection should be handled on an otel-sdk level
+	// instead of setting a global environment variable.
+	// once this is done, we can remove this check.
+	goAutoIncludeCodeAttributes := a.config.GoAutoIncludeCodeAttributes
+	if slices.Contains(a.config.Profiles, "code-attributes") || slices.Contains(a.config.Profiles, "kratos") {
+		goAutoIncludeCodeAttributes = true
+	}
+
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
 	resources = append(resources,
-		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled, a.config.GoAutoIncludeCodeAttributes))
+		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled, goAutoIncludeCodeAttributes))
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

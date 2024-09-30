@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	"go.opentelemetry.io/otel/attribute"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +16,19 @@ type InstrumentationConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec InstrumentationConfigSpec `json:"spec,omitempty"`
+	Spec   InstrumentationConfigSpec   `json:"spec,omitempty"`
+	Status InstrumentationConfigStatus `json:"status,omitempty"`
+}
+
+type InstrumentationConfigStatus struct {
+	// Capture Runtime Details for the workloads that this CR applies to.
+	RuntimeDetailsByContainer []RuntimeDetailsByContainer `json:"runtimeDetailsByContainer,omitempty"`
+
+	// Runtime detection is applied on pods.
+	// Pods run a specific workload template spec, so it's important to capture it do avoid
+	// unpredictable behavior when multiple generations co-exist,
+	// and to avoid running the detection when unnecessary.
+	ObservedWorkloadGeneration int64 `json:"observedWorkloadGeneration,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
@@ -41,12 +54,14 @@ type SdkConfig struct {
 	Language common.ProgrammingLanguage `json:"language"`
 
 	// configurations for the instrumentation libraries the the SDK should use
-	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs"`
+	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs,omitempty"`
 
 	// HeadSamplingConfig is a set sampling rules.
 	// This config currently only applies to root spans.
 	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
-	HeadSamplingConfig HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
+	HeadSamplingConfig *HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
+
+	DefaultPayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
@@ -105,6 +120,8 @@ type InstrumentationLibraryConfig struct {
 	InstrumentationLibraryId InstrumentationLibraryId `json:"libraryId"`
 
 	TraceConfig *InstrumentationLibraryConfigTraces `json:"traceConfig,omitempty"`
+
+	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 }
 
 type InstrumentationLibraryId struct {
@@ -166,4 +183,13 @@ type InstrumentationConfigList struct {
 
 func init() {
 	SchemeBuilder.Register(&InstrumentationConfig{}, &InstrumentationConfigList{})
+}
+
+// Languages returns the set of languages that this configuration applies to
+func (ic *InstrumentationConfig) Languages() map[common.ProgrammingLanguage]struct{} {
+	langs := make(map[common.ProgrammingLanguage]struct{})
+	for _, sdkConfig := range ic.Spec.SdkConfigs {
+		langs[sdkConfig.Language] = struct{}{}
+	}
+	return langs
 }

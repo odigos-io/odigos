@@ -81,6 +81,7 @@
             "cli/odigos_cloud",
             "cli/odigos_describe",
             "cli/odigos_install",
+            "cli/odigos_profile",
             "cli/odigos_ui",
             "cli/odigos_uninstall",
             "cli/odigos_upgrade",
@@ -118,6 +119,7 @@
         {
           "group": "Java",
           "pages": [
+            "instrumentations/java/java",
             "instrumentations/java/ebpf"
           ]
         }        
@@ -134,6 +136,13 @@
             "pipeline/sources/adding-sources",
             "pipeline/sources/source-configuration",
             "pipeline/sources/troubleshooting"
+          ]
+        },
+        {
+          "group": "Instrumentation Rules",
+          "pages": [
+            "pipeline/rules/overview",
+            "pipeline/rules/payloadcollection"
           ]
         },
         {
@@ -191,6 +200,7 @@
             "backends/s3",
             "backends/azureblob",
             "backends/causely",
+            "backends/chronosphere",
             "backends/coralogix",
             "backends/datadog",
             "backends/dynatrace",

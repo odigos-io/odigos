@@ -8,3 +8,4 @@ export * from './actions';
 export * from './useNotify';
 export * from './useSSE';
 export * from './useOverviewMetrics';
+export * from './instrumentation-rules';

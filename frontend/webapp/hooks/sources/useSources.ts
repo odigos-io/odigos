@@ -175,6 +175,51 @@ export function useSources() {
     setSortedSources(filtered);
   }
 
+  function filterByConditionMessage(message: string[]) {
+    const sourcesWithCondition = sources?.filter((deployment) =>
+      deployment.instrumented_application_details.conditions.some(
+        (condition) => condition.status === 'False'
+      )
+    );
+
+    const filteredSources = sourcesWithCondition?.filter((deployment) =>
+      deployment.instrumented_application_details.conditions.some((condition) =>
+        message.includes(condition.message)
+      )
+    );
+
+    setSortedSources(filteredSources || []);
+  }
+
+  const filterByConditionStatus = (status: 'All' | 'True' | 'False') => {
+    if (status === 'All') {
+      setSortedSources(sources);
+      return;
+    }
+
+    const filteredSources = sources?.filter((deployment) =>
+      deployment?.instrumented_application_details?.conditions.some(
+        (condition) => condition?.status === status
+      )
+    );
+
+    setSortedSources(filteredSources || []);
+  };
+
+  const groupErrorMessages = (): string[] => {
+    const errorMessagesSet: Set<string> = new Set();
+
+    sources?.forEach((deployment) => {
+      deployment.instrumented_application_details?.conditions
+        .filter((condition) => condition.status === 'False')
+        .forEach((condition) => {
+          errorMessagesSet.add(condition.message); // Using Set to avoid duplicates
+        });
+    });
+
+    return Array.from(errorMessagesSet);
+  };
+
   return {
     upsertSources,
     refetchSources,
@@ -187,5 +232,8 @@ export function useSources() {
     instrumentedNamespaces,
     namespaces: namespaces?.namespaces || [],
     deleteSourcesHandler,
+    filterByConditionStatus,
+    groupErrorMessages,
+    filterByConditionMessage,
   };
 }

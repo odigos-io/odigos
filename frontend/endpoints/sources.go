@@ -7,23 +7,26 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/endpoints/common"
 	"github.com/odigos-io/odigos/frontend/kube"
-
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"golang.org/x/sync/errgroup"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type SourceLanguage struct {
-	ContainerName string `json:"container_name"`
-	Language      string `json:"language"`
+	ContainerName  string `json:"container_name"`
+	Language       string `json:"language"`
+	RuntimeVersion string `json:"runtime_version,omitempty"`
 }
 
 type InstrumentedApplicationDetails struct {
-	Languages  []SourceLanguage   `json:"languages,omitempty"`
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	Languages              []SourceLanguage                         `json:"languages,omitempty"`
+	Conditions             []metav1.Condition                       `json:"conditions,omitempty"`
+	InstrumentationOptions []v1alpha1.WorkloadInstrumentationConfig `json:"instrumentation_options,omitempty"`
 }
 
 // this object contains only part of the source fields. It is used to display the sources in the frontend
@@ -35,11 +38,13 @@ type ThinSource struct {
 
 type Source struct {
 	ThinSource
-	ReportedName string `json:"reported_name,omitempty"`
+	ReportedName          string                                   `json:"reported_name,omitempty"`
+	InstrumentationConfig []v1alpha1.WorkloadInstrumentationConfig `json:"instrumentation_config,omitempty"`
 }
 
 type PatchSourceRequest struct {
-	ReportedName *string `json:"reported_name"`
+	ReportedName          *string                                  `json:"reported_name"`
+	InstrumentationConfig []v1alpha1.WorkloadInstrumentationConfig `json:"instrumentation_config,omitempty"`
 }
 
 func GetSources(c *gin.Context, odigosns string) {
@@ -143,6 +148,7 @@ func GetSource(c *gin.Context) {
 	}
 
 	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(c, k8sObjectName, metav1.GetOptions{})
+
 	if err == nil {
 		// valid instrumented application, grab the runtime details
 		ts.IaDetails = k8sInstrumentedAppToThinSource(instrumentedApplication).IaDetails
@@ -154,9 +160,18 @@ func GetSource(c *gin.Context) {
 		}
 	}
 
+	instrumentationConfig, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Get(context.Background(), instrumentedApplication.Name, metav1.GetOptions{})
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			returnError(c, err)
+			return
+		}
+	}
+
 	c.JSON(200, Source{
-		ThinSource:   ts,
-		ReportedName: reportedName,
+		ThinSource:            ts,
+		InstrumentationConfig: instrumentationConfig.Spec.Config,
+		ReportedName:          reportedName,
 	})
 }
 
@@ -167,6 +182,12 @@ func PatchSource(c *gin.Context) {
 
 	request := PatchSourceRequest{}
 	if err := c.ShouldBindJSON(&request); err != nil {
+		returnError(c, err)
+		return
+	}
+
+	tier, err := GetCurrentOdigosTier(c.Request.Context(), kube.DefaultClient, consts.DefaultOdigosNamespace)
+	if err != nil {
 		returnError(c, err)
 		return
 	}
@@ -218,6 +239,14 @@ func PatchSource(c *gin.Context) {
 		}
 	}
 
+	// Run instrumentation config logic only if the tier is "onprem"
+	if tier == odigoscommon.OnPremOdigosTier && request.InstrumentationConfig != nil {
+		if err := handleInstrumentationConfigRequest(c, ns, kind, name, request.InstrumentationConfig); err != nil {
+			returnError(c, err)
+			return
+		}
+	}
+
 	c.Status(200)
 }
 
@@ -242,14 +271,86 @@ func DeleteSource(c *gin.Context) {
 		return
 	}
 
+	// Fetch the existing InstrumentationConfig
+	k8sObjectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
+	instrumentationConfig, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Get(context.Background(), k8sObjectName, metav1.GetOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		returnError(c, err)
+		return
+	}
+
+	// Reset the InstrumentationConfig if it exists
+	if err == nil {
+		instrumentationConfig.Spec.Config = []v1alpha1.WorkloadInstrumentationConfig{}
+		_, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Update(c.Request.Context(), instrumentationConfig, metav1.UpdateOptions{})
+		if err != nil {
+			returnError(c, err)
+			return
+		}
+	}
+
 	instrumented := false
-	err := setWorkloadInstrumentationLabel(c, ns, name, kindAsEnum, &instrumented)
+	err = setWorkloadInstrumentationLabel(c, ns, name, kindAsEnum, &instrumented)
 	if err != nil {
 		returnError(c, err)
 		return
 	}
 
 	c.JSON(200, gin.H{"message": "ok"})
+}
+
+func handleInstrumentationConfigRequest(c *gin.Context, ns, kind, name string, configs []v1alpha1.WorkloadInstrumentationConfig) error {
+	k8sObjectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
+
+	instrumentationConfigResource, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Get(c.Request.Context(), k8sObjectName, metav1.GetOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	shouldInsert := apierrors.IsNotFound(err)
+
+	workloadOwner, _ := getWorkloadObject(c, ns, kind, name)
+
+	var workloadConfigs []v1alpha1.WorkloadInstrumentationConfig
+	for _, config := range configs {
+		workloadConfig := v1alpha1.WorkloadInstrumentationConfig{
+			OptionKey:                config.OptionKey,
+			OptionValueBoolean:       config.OptionValueBoolean,
+			SpanKind:                 config.SpanKind,
+			InstrumentationLibraries: config.InstrumentationLibraries,
+		}
+		workloadConfigs = append(workloadConfigs, workloadConfig)
+	}
+
+	newConfig := v1alpha1.InstrumentationConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sObjectName,
+			Namespace: ns,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "apps/v1",
+					Kind:       kind,
+					Name:       k8sObjectName,
+					UID:        workloadOwner.GetUID(),
+				},
+			},
+		},
+		Spec: v1alpha1.InstrumentationConfigSpec{
+			Config: workloadConfigs,
+		},
+	}
+
+	if !shouldInsert {
+		newConfig.ResourceVersion = instrumentationConfigResource.ResourceVersion
+	}
+
+	if shouldInsert {
+		_, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Create(c.Request.Context(), &newConfig, metav1.CreateOptions{})
+	} else {
+		_, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Update(c.Request.Context(), &newConfig, metav1.UpdateOptions{})
+	}
+
+	return err
 }
 
 func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinSource {
@@ -266,14 +367,36 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 			LastTransitionTime: condition.LastTransitionTime,
 		})
 	}
-	source.IaDetails = &InstrumentedApplicationDetails{
-		Languages:  []SourceLanguage{},
-		Conditions: conditions,
+
+	var instrumentationOptions []v1alpha1.WorkloadInstrumentationConfig
+
+	for _, option := range app.Spec.Options {
+		for _, libOptions := range option.InstrumentationLibraries {
+			for _, configOption := range libOptions.Options {
+				instrumentationOptions = append(instrumentationOptions, v1alpha1.WorkloadInstrumentationConfig{
+					OptionKey: configOption.OptionKey,
+					SpanKind:  configOption.SpanKind,
+					InstrumentationLibraries: []v1alpha1.InstrumentationLibrary{
+						{
+							InstrumentationLibraryName: libOptions.LibraryName,
+						},
+					},
+				})
+			}
+		}
 	}
+
+	source.IaDetails = &InstrumentedApplicationDetails{
+		Languages:              []SourceLanguage{},
+		Conditions:             conditions,
+		InstrumentationOptions: instrumentationOptions,
+	}
+
 	for _, language := range app.Spec.RuntimeDetails {
 		source.IaDetails.Languages = append(source.IaDetails.Languages, SourceLanguage{
-			ContainerName: language.ContainerName,
-			Language:      string(language.Language),
+			ContainerName:  language.ContainerName,
+			Language:       string(language.Language),
+			RuntimeVersion: language.RuntimeVersion,
 		})
 	}
 	return source

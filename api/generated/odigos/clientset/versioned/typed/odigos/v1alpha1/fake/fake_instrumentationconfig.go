@@ -107,6 +107,19 @@ func (c *FakeInstrumentationConfigs) Update(ctx context.Context, instrumentation
 	return obj.(*v1alpha1.InstrumentationConfig), err
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeInstrumentationConfigs) UpdateStatus(ctx context.Context, instrumentationConfig *v1alpha1.InstrumentationConfig, opts v1.UpdateOptions) (result *v1alpha1.InstrumentationConfig, err error) {
+	emptyResult := &v1alpha1.InstrumentationConfig{}
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(instrumentationconfigsResource, "status", c.ns, instrumentationConfig, opts), emptyResult)
+
+	if obj == nil {
+		return emptyResult, err
+	}
+	return obj.(*v1alpha1.InstrumentationConfig), err
+}
+
 // Delete takes name of the instrumentationConfig and deletes it. Returns an error if one occurs.
 func (c *FakeInstrumentationConfigs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
@@ -151,6 +164,30 @@ func (c *FakeInstrumentationConfigs) Apply(ctx context.Context, instrumentationC
 	emptyResult := &v1alpha1.InstrumentationConfig{}
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceActionWithOptions(instrumentationconfigsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
+
+	if obj == nil {
+		return emptyResult, err
+	}
+	return obj.(*v1alpha1.InstrumentationConfig), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakeInstrumentationConfigs) ApplyStatus(ctx context.Context, instrumentationConfig *odigosv1alpha1.InstrumentationConfigApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.InstrumentationConfig, err error) {
+	if instrumentationConfig == nil {
+		return nil, fmt.Errorf("instrumentationConfig provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(instrumentationConfig)
+	if err != nil {
+		return nil, err
+	}
+	name := instrumentationConfig.Name
+	if name == nil {
+		return nil, fmt.Errorf("instrumentationConfig.Name must be provided to Apply")
+	}
+	emptyResult := &v1alpha1.InstrumentationConfig{}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceActionWithOptions(instrumentationconfigsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
 
 	if obj == nil {
 		return emptyResult, err

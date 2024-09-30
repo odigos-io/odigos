@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
@@ -88,7 +89,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	err = kube.SetupWithManager(mgr, ebpfDirectors)
+	err = kube.SetupWithManager(mgr, ebpfDirectors, clientset)
 	if err != nil {
 		log.Logger.Error(err, "Failed to setup controller-runtime manager")
 		os.Exit(-1)
@@ -143,7 +144,7 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 }
 
 func initEbpf(ctx context.Context, client client.Client, scheme *runtime.Scheme) (ebpf.DirectorsMap, error) {
-	goInstrumentationFactory := ebpf.NewGoInstrumentationFactory()
+	goInstrumentationFactory := sdks.NewGoInstrumentationFactory(client)
 	goDirector := ebpf.NewEbpfDirector(ctx, client, scheme, common.GoProgrammingLanguage, goInstrumentationFactory)
 	goDirectorKey := ebpf.DirectorKey{
 		Language: common.GoProgrammingLanguage,

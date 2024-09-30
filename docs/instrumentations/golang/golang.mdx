@@ -9,6 +9,10 @@ Odigos uses the official [opentelemetry-go-instrumentation](https://github.com/o
 
 - Go runtime versions **1.17** and above are supported.
 
+<Info>
+  Odigos enterprise data collection is done using eBPF, so Odigos requires, at minimum, platforms that have underlying Linux kernel versions of 5.4.0.
+</Info>
+
 ## Traces
 
 Odigos will automatically instrument your golang services to record and collect spans for distributed tracing, by utilizing the OpenTelemetry go official auto Instrumentation Libraries.
@@ -19,11 +23,11 @@ The following go modules will be auto instrumented by Odigos:
 
 ### HTTP Frameworks
 
-<Warning>Please note that in order for the `http.route` parameter to be properly extracted by Go auto instrumentation, 
-you should use Go 1.22 or above.</Warning>
-
 - [`github.com/gin-gonic/gin`](https://pkg.go.dev/github.com/gin-gonic/gin) HTTP web framework ⭐️
 - [`net/http`](https://pkg.go.dev/net/http) go standard library for http server and client
+<Info>Please note that in order for the `http.route` parameter to be properly extracted by Go auto instrumentation, 
+you should use Go 1.22 or above and declare a template handler as described in [this article](https://go.dev/blog/routing-enhancements).</Info>
+
 
 ### HTTP Clients
 
@@ -46,4 +50,4 @@ you should use Go 1.22 or above.</Warning>
 
 - [`google.golang.org/grpc`](https://pkg.go.dev/google.golang.org/grpc) versions `>= v1.14.0`. rpc client and server for gRPC framework
 
-Modules marked with ⭐️ are available in Odigos Pro only.
+Please note that modules marked with ⭐️ are available in Odigos pro only.
