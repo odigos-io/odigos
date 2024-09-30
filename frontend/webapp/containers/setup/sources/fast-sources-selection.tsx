@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from 'react-query';
-import { KeyvalLoader, KeyvalText } from '@/design.system';
-import { QUERIES } from '@/utils';
+import { KeyvalButton, KeyvalLoader, KeyvalText } from '@/design.system';
+import { OVERVIEW, QUERIES, ROUTES } from '@/utils';
 import { getApplication, getNamespaces } from '@/services';
 import {
   LoaderWrapper,
@@ -9,9 +9,18 @@ import {
 } from './sources.section.styled';
 import { NamespaceAccordion } from './namespace-accordion';
 import styled from 'styled-components';
+import theme from '@/styles/palette';
+import { useSources } from '@/hooks';
+import { useRouter } from 'next/navigation';
 
 const TitleWrapper = styled.div`
   margin-bottom: 24px;
+`;
+
+const ButtonWrapper = styled.div`
+  position: absolute;
+  bottom: 24px;
+  width: 90%;
 `;
 
 interface AccordionItem {
@@ -31,11 +40,13 @@ interface AccordionData {
 
 export function FastSourcesSelection({ sectionData, setSectionData }) {
   const [accordionData, setAccordionData] = useState<AccordionData[]>([]);
-
+  const router = useRouter();
   const { isLoading, data: namespaces } = useQuery(
     [QUERIES.API_NAMESPACES],
     getNamespaces
   );
+
+  const { upsertSources } = useSources();
 
   useEffect(() => {
     if (namespaces) {
@@ -77,7 +88,7 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
         }))
         .filter((app) => !app.instrumentation_effective),
     }));
-    console.log({ accordionData });
+
     // Update both sectionData and accordionData
     setSectionData(updatedSectionData);
     setAccordionData(accordionData);
@@ -165,6 +176,21 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
         setCurrentNamespace={(data) => handleSetCurrentNamespace(data)}
         onSelectAllChange={onSelectAllChange}
       />
+      <ButtonWrapper>
+        <KeyvalButton
+          onClick={() =>
+            upsertSources({
+              sectionData,
+              onSuccess: () => router.push(`${ROUTES.SOURCES}?poll=true`),
+              onError: null,
+            })
+          }
+        >
+          <KeyvalText weight={600} color={theme.text.dark_button}>
+            {OVERVIEW.CONNECT}
+          </KeyvalText>
+        </KeyvalButton>
+      </ButtonWrapper>
     </SectionContainerWrapper>
   );
 }

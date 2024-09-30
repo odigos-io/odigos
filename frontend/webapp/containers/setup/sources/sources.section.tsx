@@ -175,14 +175,12 @@ export function SourcesSection({ sectionData, setSectionData }) {
 
   return (
     <SectionContainerWrapper>
-      <button onClick={toggleDrawer}>Toggle Drawer</button>
-
       {isDrawerOpen && (
         <Drawer
           isOpen={isDrawerOpen}
           onClose={toggleDrawer}
           position="right"
-          width="400px"
+          width="500px"
         >
           <FastSourcesSelection {...{ sectionData, setSectionData }} />
         </Drawer>
@@ -196,6 +194,7 @@ export function SourcesSection({ sectionData, setSectionData }) {
         onSelectAllChange={onSelectAllChange}
         selectedApplications={sectionData}
         onFutureApplyChange={onFutureApplyChange}
+        toggleFastSourcesSelection={toggleDrawer}
       />
       <SourcesList
         data={sourceData}
