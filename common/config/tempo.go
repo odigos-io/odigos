@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -11,6 +12,8 @@ import (
 const (
 	tempoUrlKey = "TEMPO_URL"
 )
+
+var urlPortExistRegex = regexp.MustCompile(`:\d+`)
 
 type Tempo struct{}
 
@@ -31,11 +34,15 @@ func (t *Tempo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 
 	if isTracingEnabled(dest) {
 		url = strings.TrimPrefix(url, "http://")
-		url = strings.TrimSuffix(url, ":4317")
+		endpoint := url
+
+		if !urlPortExistRegex.MatchString(url) {
+			endpoint = fmt.Sprintf("%s:4317", url)
+		}
 
 		tempoExporterName := "otlp/tempo-" + dest.GetID()
 		currentConfig.Exporters[tempoExporterName] = GenericMap{
-			"endpoint": fmt.Sprintf("%s:4317", url),
+			"endpoint": endpoint,
 			"tls": GenericMap{
 				"insecure": true,
 			},
