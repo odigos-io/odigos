@@ -68,8 +68,9 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
     const updatedSectionData = {
       ...sectionData,
       [selectedNs.title]: {
-        selected_all: false,
-        future_selected: false,
+        selected_all: sectionData[selectedNs.title]?.selected_all || false,
+        future_selected:
+          sectionData[selectedNs.title]?.future_selected || false,
         objects: currentNsApps.applications.map((app) => ({
           ...app,
           selected: sectionData[selectedNs.title]?.objects.find(
@@ -109,11 +110,17 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
       }
       return a_data;
     });
-
+    console.log({ accordionData });
     const updatedSectionData = {
       ...sectionData,
       [ns]: {
         ...sectionData[ns],
+        selected_all: accordionData[ns]
+          ?.find((a) => a.title === ns)
+          .items.every((i) => i.selected),
+        future_selected: accordionData[ns]
+          ?.find((a) => a.title === ns)
+          .items.some((i) => !i.selected),
         objects: sectionData[ns].objects.map((a) => {
           if (a.name === item.name) {
             return { ...a, selected: !a.selected };
