@@ -48,6 +48,7 @@
         {
           "group": "Quickstart",
           "pages": [
+            "quickstart/installation-guide-for-beginners",
             "quickstart/introduction",
             "quickstart/installation",
             "quickstart/building-a-pipeline",
