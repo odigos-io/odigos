@@ -1,0 +1,20 @@
+# Dockerfile.python310-slim
+FROM python
+WORKDIR /app
+COPY . /app
+
+# Install dependencies from requirements.txt
+COPY requirements.txt /app/requirements.txt
+
+RUN apt-get update && apt-get install sqlite3 -y
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Supress health check endpoint from tracing
+ENV OTEL_PYTHON_DJANGO_EXCLUDED_URLS=health/
+
+COPY entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
