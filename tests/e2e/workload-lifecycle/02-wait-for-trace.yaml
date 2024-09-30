@@ -12,6 +12,10 @@ query: |
   { resource.service.name = "java-old-version" } ||
   { resource.service.name = "java-supported-docker-env" } ||
   { resource.service.name = "java-supported-manifest-env" } ||
-  { resource.service.name = "java-azul" }
+  { resource.service.name = "java-azul" } ||
+  { resource.service.name = "python-latest-version" && span.http.route = "insert-random/" } ||
+  { resource.service.name = "python-alpine" && span.http.route = "insert-random/" } ||
+  { resource.service.name = "python-not-supported" && span.http.route = "insert-random/" } ||
+  { resource.service.name = "python-min-version" && span.http.route = "insert-random/" }
 expected:
-  count: 21 # 11 before +10 new ones
+  count: 24 # 11 before +10 new ones

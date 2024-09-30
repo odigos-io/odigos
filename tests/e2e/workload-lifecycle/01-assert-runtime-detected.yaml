@@ -249,3 +249,71 @@ spec:
     - containerName: java-old-version
       language: java
 ---
+## Python
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-python-alpine
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: python-alpine
+spec:
+  runtimeDetails:
+    - containerName: python-alpine
+      language: python
+      runtimeVersion: 3.10.15
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-python-latest-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: python-latest-version
+spec:
+  runtimeDetails:
+    - containerName: python-latest-version
+      language: python
+      runtimeVersion: 3.12.6
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-python-min-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: python-min-version
+spec:
+  runtimeDetails:
+    - containerName: python-min-version
+      language: python
+      runtimeVersion: 3.8.20
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-python-not-supported
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: python-not-supported
+spec:
+  runtimeDetails:
+    - containerName: python-not-supported
+      language: python
+      runtimeVersion: 3.6.15

@@ -133,8 +133,15 @@ When tests fail, and it's related to some traceql query not succeeding, it can b
 - Install grafana with helm:
 
 ```bash
-helm install -n traces grafana grafana/grafana --set adminPassword='odigos'
-```
+helm install -n traces grafana grafana/grafana \
+  --set "env.GF_AUTH_ANONYMOUS_ENABLED=true" \
+  --set "env.GF_AUTH_ANONYMOUS_ORG_ROLE=Admin" \
+  --set "datasources.datasources\.yaml.apiVersion=1" \
+  --set "datasources.datasources\.yaml.datasources[0].name=Tempo" \
+  --set "datasources.datasources\.yaml.datasources[0].type=tempo" \
+  --set "datasources.datasources\.yaml.datasources[0].url=http://e2e-tests-tempo:3100" \
+  --set "datasources.datasources\.yaml.datasources[0].access=proxy" \
+  --set "datasources.datasources\.yaml.datasources[0].isDefault=true"```
 
 - Port forward to the grafana service:
 
@@ -142,11 +149,9 @@ helm install -n traces grafana grafana/grafana --set adminPassword='odigos'
 kubectl port-forward svc/grafana 3080:80 -n traces
 ```
 
-- Browse to `http://localhost:3080` and login with `admin` and `odigos`.
+- Browse to `http://localhost:3080/explore`.
 
-- Add tempo as a datasource, by going to `Connections -> Data Sources -> Add data source` and selecting `Tempo` as the type. Set the URL to `http://e2e-tests-tempo:3100` and save.
-
-- In grafana left side menu, go to `Explore` and select the tempo datasource. You can now write queries, run them, and see the traces that are stored in tempo to troubleshoot your test issues. example query:
+- - You can now write queries, run them, and see the traces that are stored in tempo to troubleshoot your test issues. example query:
 
 ```
 {resource.service.name = "coupon"}
