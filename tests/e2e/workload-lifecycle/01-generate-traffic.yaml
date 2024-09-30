@@ -36,3 +36,4 @@ spec:
               curl -s --fail http://java-azul:3000
               curl -s --fail http://java-supported-manifest-env:3000
               curl -s --fail http://java-latest-version:3000
+              curl -s --fail http://java-old-version:3000

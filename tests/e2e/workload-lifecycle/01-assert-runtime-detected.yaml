@@ -233,3 +233,19 @@ spec:
     - containerName: java-latest-version
       language: java
 ---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-java-old-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-old-version
+spec:
+  runtimeDetails:
+    - containerName: java-old-version
+      language: java
+---

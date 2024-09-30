@@ -349,3 +349,30 @@ status:
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4 # on step 2, the manifest was updated (1->2)
+  labels:
+    app: java-old-version
+  name: java-old-version
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: java-old-version
+  template:
+    spec:
+      containers:
+        - image: java-old-version:v0.0.1
+          name: java-old-version
+          resources:
+            limits:
+              instrumentation.odigos.io/java-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

@@ -348,3 +348,32 @@ spec:
               port: 3000
             initialDelaySeconds: 20
 ---
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: java-old-version
+  namespace: default
+  labels:
+    app: java-old-version
+spec:
+  selector:
+    matchLabels:
+      app: java-old-version
+  template:
+    metadata:
+      labels:
+        app: java-old-version
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: java-old-version
+          image: java-old-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
