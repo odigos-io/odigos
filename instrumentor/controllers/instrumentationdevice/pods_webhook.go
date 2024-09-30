@@ -28,7 +28,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		pod.Annotations = map[string]string{}
 	}
 
-	pod.Annotations["odigos.io/instrumented-webhook"] = "true"
+	//pod.Annotations["odigos.io/instrumented-webhook"] = "true"
 	log.V(0).Info("Defaulted Pod", "name", pod.Name)
 	return nil
 }

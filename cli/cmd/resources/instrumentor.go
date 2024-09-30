@@ -362,6 +362,11 @@ func NewMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregis
 				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.IfNeededReinvocationPolicy),
 				SideEffects:        ptrGeneric(admissionregistrationv1.SideEffectClassNone),
 				TimeoutSeconds:     intPtr(10),
+				ObjectSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"odigos.io/inject-instrumentation": "true",
+					},
+				},
 				AdmissionReviewVersions: []string{
 					"v1",
 				},

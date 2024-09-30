@@ -38,6 +38,10 @@ webhooks:
     failurePolicy: Ignore
     reinvocationPolicy: IfNeeded
     sideEffects: None
+    objectSelector:
+      matchLabels:
+        odigos:
+          io/inject-instrumentation: "true"
     timeoutSeconds: 10
     admissionReviewVersions: ["v1"]
 ---
