@@ -35,7 +35,7 @@ status:
   observedWorkloadGeneration: 2 # pod has been restarted after destination was added
   runtimeDetailsByContainer:
     - containerName: frontend
-      envVars:
+      (sort_by(envVars, &name)):
       - name: JAVA_OPTS
         value: -javaagent:/var/odigos/java/javaagent.jar
       - name: JAVA_TOOL_OPTIONS
