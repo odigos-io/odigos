@@ -5,6 +5,13 @@ query: |
   { resource.service.name = "nodejs-minimum-version" } ||
   { resource.service.name = "nodejs-latest-version" } ||
   { resource.service.name = "nodejs-dockerfile-env" } ||
-  { resource.service.name = "nodejs-manifest-env" }
+  { resource.service.name = "nodejs-manifest-env" } ||
+  { resource.service.name = "java-supported-version" } ||   
+  { resource.service.name = "language-change" } ||
+  { resource.service.name = "java-latest-version" } ||
+  { resource.service.name = "java-old-version" } ||
+  { resource.service.name = "java-supported-docker-env" } ||
+  { resource.service.name = "java-supported-manifest-env" } ||
+  { resource.service.name = "java-azul" }
 expected:
-  count: 8 # 4 before +4 new ones
+  count: 21 # 11 before +10 new ones
