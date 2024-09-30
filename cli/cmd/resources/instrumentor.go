@@ -6,6 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
+	"github.com/odigos-io/odigos/cli/pkg/crypto"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -316,8 +317,8 @@ func NewInstrumentorService(ns string) *corev1.Service {
 	}
 }
 
-func NewMutatingWebhookConfiguration(ns string) *admissionregistrationv1.MutatingWebhookConfiguration {
-	return &admissionregistrationv1.MutatingWebhookConfiguration{
+func NewMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregistrationv1.MutatingWebhookConfiguration {
+	webhook := &admissionregistrationv1.MutatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "MutatingWebhookConfiguration",
 			APIVersion: "admissionregistration.k8s.io/v1",
@@ -330,9 +331,6 @@ func NewMutatingWebhookConfiguration(ns string) *admissionregistrationv1.Mutatin
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "instrumentor",
 				"app.kubernetes.io/part-of":    "odigos",
-			},
-			Annotations: map[string]string{
-				"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/serving-cert", ns),
 			},
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
@@ -370,9 +368,47 @@ func NewMutatingWebhookConfiguration(ns string) *admissionregistrationv1.Mutatin
 			},
 		},
 	}
+
+	if caBundle == nil {
+		webhook.Annotations = map[string]string{
+			"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/serving-cert", ns),
+		}
+	} else {
+		webhook.Webhooks[0].ClientConfig.CABundle = caBundle
+	}
+
+	return webhook
 }
 
-func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, isCertManagerInstalled bool) *appsv1.Deployment {
+func NewInstrumentorTLSSecret(ns string, cert *crypto.Certificate) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      InstrumentorWebhookSecretName,
+			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       "instrumentor-cert",
+				"app.kubernetes.io/instance":   "instrumentor-cert",
+				"app.kubernetes.io/component":  "certificate",
+				"app.kubernetes.io/created-by": "instrumentor",
+				"app.kubernetes.io/part-of":    "odigos",
+			},
+			Annotations: map[string]string{
+				"helm.sh/hook":               "pre-install,pre-upgrade",
+				"helm.sh/hook-delete-policy": "before-hook-creation",
+			},
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte(cert.Cert),
+			"tls.key": []byte(cert.Key),
+		},
+	}
+}
+
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string) *appsv1.Deployment {
 	args := []string{
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=127.0.0.1:8080",
@@ -443,6 +479,20 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 									},
 								},
 							},
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "webhook-server",
+									ContainerPort: 9443,
+									Protocol:      corev1.ProtocolTCP,
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      InstrumentorWebhookVolumeName,
+									ReadOnly:  true,
+									MountPath: "/tmp/k8s-webhook-server/serving-certs",
+								},
+							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									"cpu":    resource.MustParse("500m"),
@@ -477,41 +527,22 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
+					Volumes: []corev1.Volume{
+						{
+							Name: InstrumentorWebhookVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName:  InstrumentorWebhookSecretName,
+									DefaultMode: ptrint32(420),
+								},
+							},
+						},
+					},
 				},
 			},
 			Strategy:        appsv1.DeploymentStrategy{},
 			MinReadySeconds: 0,
 		},
-	}
-
-	if isCertManagerInstalled {
-		spec := &dep.Spec.Template.Spec
-		spec.Containers[0].Ports = []corev1.ContainerPort{
-			{
-				Name:          "webhook-server",
-				ContainerPort: 9443,
-				Protocol:      corev1.ProtocolTCP,
-			},
-		}
-		spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
-			{
-				Name:      InstrumentorWebhookVolumeName,
-				ReadOnly:  true,
-				MountPath: "/tmp/k8s-webhook-server/serving-certs",
-			},
-		}
-
-		spec.Volumes = []corev1.Volume{
-			{
-				Name: InstrumentorWebhookVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  InstrumentorWebhookSecretName,
-						DefaultMode: ptrint32(420),
-					},
-				},
-			},
-		}
 	}
 
 	return dep
@@ -554,14 +585,34 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.InstrumentorImage, certManagerInstalled),
+		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.InstrumentorImage),
+		NewInstrumentorService(a.ns),
 	}
 
 	if certManagerInstalled {
 		resources = append([]client.Object{NewInstrumentorIssuer(a.ns),
 			NewInstrumentorCertificate(a.ns),
-			NewInstrumentorService(a.ns),
-			NewMutatingWebhookConfiguration(a.ns),
+			NewMutatingWebhookConfiguration(a.ns, nil),
+		},
+			resources...)
+	} else {
+		ca, err := crypto.GenCA("odigos-instrumentor", 365)
+		if err != nil {
+			return fmt.Errorf("failed to generate CA: %w", err)
+		}
+
+		altNames := []string{
+			fmt.Sprintf("odigos-instrumentor.%s.svc", a.ns),
+			fmt.Sprintf("odigos-instrumentor.%s.svc.cluster.local", a.ns),
+		}
+
+		cert, err := crypto.GenerateSignedCertificate("serving-cert", nil, altNames, 365, ca)
+		if err != nil {
+			return fmt.Errorf("failed to generate signed certificate: %w", err)
+		}
+
+		resources = append([]client.Object{NewInstrumentorTLSSecret(a.ns, &cert),
+			NewMutatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
 		},
 			resources...)
 	}
