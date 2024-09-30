@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from 'react-query';
 import { KeyvalLoader, KeyvalText } from '@/design.system';
-import { NOTIFICATION, QUERIES } from '@/utils';
+import { QUERIES } from '@/utils';
 import { getApplication, getNamespaces } from '@/services';
 import {
   LoaderWrapper,
@@ -37,25 +37,19 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
     getNamespaces
   );
 
-  useEffect(() => {}, []);
-
   useEffect(() => {
     if (namespaces) {
       const accordionData = namespaces.namespaces.map((item, index) => ({
         title: item.name,
-        items: [],
+        items:
+          sectionData?.[item.name]?.objects.map((app) => ({
+            ...app,
+            selected: app.selected,
+          })) || [],
       }));
       setAccordionData(accordionData);
     }
   }, [namespaces]);
-
-  if (isLoading) {
-    return (
-      <LoaderWrapper>
-        <KeyvalLoader />
-      </LoaderWrapper>
-    );
-  }
 
   const handleSetCurrentNamespace = async (selectedNs) => {
     const currentNsApps = await getApplication(selectedNs.title);
@@ -76,17 +70,14 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
 
     const accordionData = namespaces.namespaces.map((item) => ({
       title: item.name,
-      items:
-        selectedNs.title === item.name
-          ? updatedSectionData[item.name]?.objects
-              .map((app) => ({
-                ...app,
-                selected: app.selected,
-              }))
-              .filter((app) => !app.instrumentation_effective)
-          : [],
+      items: updatedSectionData[item.name]?.objects
+        .map((app) => ({
+          ...app,
+          selected: app.selected,
+        }))
+        .filter((app) => !app.instrumentation_effective),
     }));
-
+    console.log({ accordionData });
     // Update both sectionData and accordionData
     setSectionData(updatedSectionData);
     setAccordionData(accordionData);
@@ -150,17 +141,24 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
       },
     };
 
-    setSectionData(updatedSectionData);
-
     // Update the accordion data state with the modified data
+    setSectionData(updatedSectionData);
     setAccordionData(updatedAccordionData);
   };
+
+  if (isLoading) {
+    return (
+      <LoaderWrapper>
+        <KeyvalLoader />
+      </LoaderWrapper>
+    );
+  }
+
   return (
     <SectionContainerWrapper>
       <TitleWrapper>
         <KeyvalText>Fast Sources Selection</KeyvalText>
       </TitleWrapper>
-
       <NamespaceAccordion
         data={accordionData}
         onSelectItem={onSelectItemChange}
