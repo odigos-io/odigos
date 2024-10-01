@@ -12,6 +12,8 @@ import styled from 'styled-components';
 import theme from '@/styles/palette';
 import { useSources } from '@/hooks';
 import { useRouter } from 'next/navigation';
+import { setSources } from '@/store';
+import { useDispatch } from 'react-redux';
 
 const TitleWrapper = styled.div`
   margin-bottom: 24px;
@@ -41,6 +43,7 @@ interface AccordionData {
 export function FastSourcesSelection({ sectionData, setSectionData }) {
   const [accordionData, setAccordionData] = useState<AccordionData[]>([]);
   const router = useRouter();
+  const dispatch = useDispatch();
   const { isLoading, data: namespaces } = useQuery(
     [QUERIES.API_NAMESPACES],
     getNamespaces
@@ -73,7 +76,7 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
           sectionData[selectedNs.title]?.future_selected || false,
         objects: currentNsApps.applications.map((app) => ({
           ...app,
-          selected: sectionData[selectedNs.title]?.objects.find(
+          selected: sectionData[selectedNs.title]?.objects?.find(
             (a) => a.name === app.name
           )?.selected,
         })),
@@ -153,7 +156,7 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
       ...sectionData,
       [ns]: {
         ...sectionData[ns],
-        objects: sectionData[ns].objects.map((a) => {
+        objects: sectionData[ns]?.objects?.map((a) => {
           return { ...a, selected: value };
         }),
       },
@@ -164,6 +167,22 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
     setAccordionData(updatedAccordionData);
   };
 
+  function onConnectClick() {
+    const isSetup = window.location.pathname.includes('choose-sources');
+
+    if (isSetup) {
+      dispatch(setSources(sectionData));
+      router.push(ROUTES.CHOOSE_DESTINATION);
+      return;
+    }
+
+    upsertSources({
+      sectionData,
+      onSuccess: () => router.push(`${ROUTES.SOURCES}?poll=true`),
+      onError: null,
+    });
+  }
+
   if (isLoading) {
     return (
       <LoaderWrapper>
@@ -171,7 +190,7 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
       </LoaderWrapper>
     );
   }
-
+  const isSetup = window.location.pathname.includes('choose-sources');
   return (
     <SectionContainerWrapper>
       <TitleWrapper>
@@ -186,17 +205,9 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
         />
       </div>
       <ButtonWrapper>
-        <KeyvalButton
-          onClick={() =>
-            upsertSources({
-              sectionData,
-              onSuccess: () => router.push(`${ROUTES.SOURCES}?poll=true`),
-              onError: null,
-            })
-          }
-        >
+        <KeyvalButton onClick={onConnectClick}>
           <KeyvalText weight={600} color={theme.text.dark_button}>
-            {OVERVIEW.CONNECT}
+            {isSetup ? 'Next' : OVERVIEW.CONNECT}
           </KeyvalText>
         </KeyvalButton>
       </ButtonWrapper>
