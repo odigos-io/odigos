@@ -195,7 +195,6 @@ status:
       started: true
   phase: Running
 ---
----
 apiVersion: v1
 kind: Pod
 metadata:
