@@ -1,0 +1,36 @@
+{{- $certManagerApiVersion := include "utils.certManagerApiVersion" . -}}
+{{- if $certManagerApiVersion }}
+apiVersion: {{ $certManagerApiVersion }}
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: issuer
+    app.kubernetes.io/instance: selfsigned-issuer
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: instrumentor
+    app.kubernetes.io/part-of: odigos
+spec:
+  selfSigned: {}
+---
+apiVersion: {{ $certManagerApiVersion }}
+kind: Certificate
+metadata:
+  name: serving-cert
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: instrumentor-cert
+    app.kubernetes.io/instance: instrumentor-cert
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: instrumentor
+    app.kubernetes.io/part-of: odigos
+spec:
+  dnsNames:
+    - "odigos-instrumentor.{{ .Release.Namespace }}.svc"
+    - "odigos-instrumentor.{{ .Release.Namespace }}.svc.cluster.local"
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: instrumentor-webhook-cert
+{{- end }}

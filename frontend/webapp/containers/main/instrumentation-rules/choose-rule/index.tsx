@@ -15,7 +15,7 @@ const ITEMS = [
   {
     id: 'payload-collection',
     title: 'Payload Collection',
-    description: 'Collect payloads from logs, metrics, and traces.',
+    description: 'Record operation payloads as span attributes where supported.',
     type: InstrumentationRuleType.PAYLOAD_COLLECTION,
     icon: InstrumentationRuleType.PAYLOAD_COLLECTION,
   },
