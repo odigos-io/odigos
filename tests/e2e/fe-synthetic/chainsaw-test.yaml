@@ -11,9 +11,12 @@ spec:
         - script:
             timeout: 60s
             content: |
-              helm repo add grafana https://grafana.github.io/helm-charts
-              helm repo update
-              helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 --version 1.10.1
+            helm repo add grafana https://grafana.github.io/helm-charts
+            helm repo update
+            helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 \
+            --set tempo.ingester.trace_idle_period=5s \
+            --set tempo.ingester.max_block_duration=20s \
+            --version 1.10.1
         - assert:
             file: assert-tempo-running.yaml
 
