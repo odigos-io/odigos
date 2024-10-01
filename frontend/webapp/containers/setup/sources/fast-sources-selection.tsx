@@ -110,7 +110,7 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
       }
       return a_data;
     });
-    console.log({ accordionData });
+
     const updatedSectionData = {
       ...sectionData,
       [ns]: {
@@ -177,12 +177,14 @@ export function FastSourcesSelection({ sectionData, setSectionData }) {
       <TitleWrapper>
         <KeyvalText>Fast Sources Selection</KeyvalText>
       </TitleWrapper>
-      <NamespaceAccordion
-        data={accordionData}
-        onSelectItem={onSelectItemChange}
-        setCurrentNamespace={(data) => handleSetCurrentNamespace(data)}
-        onSelectAllChange={onSelectAllChange}
-      />
+      <div style={{ height: '75vh' }}>
+        <NamespaceAccordion
+          data={accordionData}
+          onSelectItem={onSelectItemChange}
+          setCurrentNamespace={(data) => handleSetCurrentNamespace(data)}
+          onSelectAllChange={onSelectAllChange}
+        />
+      </div>
       <ButtonWrapper>
         <KeyvalButton
           onClick={() =>
