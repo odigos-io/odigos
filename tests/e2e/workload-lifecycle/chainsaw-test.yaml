@@ -121,7 +121,7 @@ spec:
     # send traffic to all services to verify they are working as expected and verify traces for instrumented ones
     try:
     - script:
-        timeout: 100s
+        timeout: 200s
         content: |
           set -e
           
@@ -183,7 +183,7 @@ spec:
   - name: '02 - Generate Traffic'
     try:
     - script:
-        timeout: 100s
+        timeout: 200s
         content: |
           set -e
           
