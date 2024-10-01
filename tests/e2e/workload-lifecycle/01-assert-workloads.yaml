@@ -481,6 +481,11 @@ spec:
         resources:
           limits:
             instrumentation.odigos.io/python-native-community: "1"
+        env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: "myapp.settings"             
+        - name: PYTHONPATH
+          value: "/app:/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation"
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added

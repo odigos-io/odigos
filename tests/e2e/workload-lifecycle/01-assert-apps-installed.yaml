@@ -226,6 +226,8 @@ spec:
   - env:
     - name: DJANGO_SETTINGS_MODULE
       (value != null): true
+    - name: PYTHONPATH
+      (value != null): true
 status:
   containerStatuses:
     - name: python-alpine

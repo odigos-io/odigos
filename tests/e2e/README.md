@@ -151,7 +151,7 @@ kubectl port-forward svc/grafana 3080:80 -n traces
 
 - Browse to `http://localhost:3080/explore`.
 
-- - You can now write queries, run them, and see the traces that are stored in tempo to troubleshoot your test issues. example query:
+- You can now write queries, run them, and see the traces that are stored in tempo to troubleshoot your test issues. example query:
 
 ```
 {resource.service.name = "coupon"}

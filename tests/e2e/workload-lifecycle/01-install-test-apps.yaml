@@ -594,6 +594,8 @@ spec:
           env:
             - name: DJANGO_SETTINGS_MODULE
               value: "myapp.settings"
+            - name: PYTHONPATH
+              value: "/app"              
           livenessProbe:
             httpGet:
               path: /health/
@@ -640,7 +642,7 @@ spec:
             - containerPort: 8000
           env:
             - name: DJANGO_SETTINGS_MODULE
-              value: "myapp.settings"
+              value: "myapp.settings"        
           livenessProbe:
             httpGet:
               path: /health/
