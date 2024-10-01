@@ -34,3 +34,4 @@ export { OdigosTable as Table } from './table';
 export { YMLEditor } from './yml.editor';
 export { CodeBlock } from './code-block';
 export { Conditions } from './condition.alert';
+export { Drawer } from './drawer';
