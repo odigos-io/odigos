@@ -42,6 +42,10 @@ func (o *OrigWorkloadEnvValues) GetContainerStoredEnvs(containerName string) env
 func (o *OrigWorkloadEnvValues) RemoveOriginalValue(containerName string, envName string) (*string, bool) {
 	if val, ok := o.origManifestValues[containerName][envName]; ok {
 		delete(o.origManifestValues[containerName], envName)
+		if len(o.origManifestValues[containerName]) == 0 {
+			delete(o.origManifestValues, containerName)
+		}
+		o.modifiedSinceCreated = true
 		return val, true
 	}
 	return nil, false
@@ -64,6 +68,12 @@ func (o *OrigWorkloadEnvValues) InsertOriginalValue(containerName string, envNam
 // by modifying the annotations map of the input argument
 func (o *OrigWorkloadEnvValues) SerializeToAnnotation(obj client.Object) error {
 	if !o.modifiedSinceCreated {
+		return nil
+	}
+
+	if len(o.origManifestValues) == 0 {
+		// delete the annotation is there are no original values to store
+		o.DeleteFromObj(obj)
 		return nil
 	}
 

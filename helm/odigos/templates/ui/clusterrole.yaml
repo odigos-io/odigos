@@ -25,6 +25,13 @@ rules:
       - delete
       - update
   - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+  - apiGroups:
       - apps
     resources:
       - deployments

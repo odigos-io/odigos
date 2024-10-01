@@ -67,6 +67,7 @@ export const OVERVIEW = {
     SOURCES: 'Sources',
     DESTINATIONS: 'Destinations',
     ACTIONS: 'Actions',
+    INSTRUMENTATION_RULES: 'Instrumentation Rules',
   },
   SEARCH_SOURCE: 'Search Source',
   ADD_NEW_SOURCE: 'Add New Source',
@@ -107,6 +108,10 @@ export const OVERVIEW = {
   EDIT_ACTION: 'Edit Action',
   ACTION_DESCRIPTION:
     'Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your Odigos Destinations.',
+  CREATE_INSTRUMENTATION_RULE: 'Create Instrumentation Rule',
+  EDIT_INSTRUMENTATION_RULE: 'Edit Instrumentation Rule',
+  INSTRUMENTATION_RULE_DESCRIPTION:
+    'Instrumentation Rules control how telemetry is recorded from your application.',
 };
 
 export const ACTION = {
@@ -171,6 +176,13 @@ export const ACTIONS = {
     DESCRIPTION: `The “PII Masking” Odigos Action is an Endpoint Action that masks PII (Personally Identifiable Information) attributes from telemetry signals.`,
   },
   SEARCH_ACTION: 'Search Action',
+};
+
+export const INSTRUMENTATION_RULES = {
+  'payload-collection': {
+    TITLE: 'Payload Collection',
+    DESCRIPTION: 'Collect span attributes containing payload data to traces.',
+  },
 };
 
 export const MONITORS = {
