@@ -7,7 +7,11 @@ This guide is perfect for you if:
 
 * You're new to tech tools but curious about ways to understand how your computer systems work. Maybe you've heard about "observability" and want to see what it's all about, without getting lost in technical jargon.
 * You're a software developer or work in IT, and while you're comfortable with computers, you're new to Odigos. You're looking for a clear, step-by-step guide that doesn't assume you're already an expert.
-* You're simply interested in Odigos and want to give it a try. This guide will walk you through the process without assuming any prior knowledge.
+* You're simply interested in Odigos and want to give it a try but don't have previous experience with CLI. This guide will walk you through the process without assuming any prior knowledge.
+
+<Info>
+  If you find this guide too basic for you please refer to the main [Quick Start guide](https://docs.odigos.io/quickstart/introduction) article. 
+</Info>
 
 Before installing Odigos, you need to set up some tools on your computer. These are one-time installations that prepare your computer for running Odigos.
 You will only need to install these tools once on your computer. Next time you want to run the demo, you can skip this step and go directly to the next one.
@@ -189,7 +193,7 @@ If you see a version number, Homebrew has been successfully installed.
 
     #### 5. Set up Odigos
 
-    a. In the Odigos control panel, you'll see a page titled "Select Sources". Sources are the things Odigos can monitor.
+    a. In the Odigos control panel, you'll see a page titled "Select Sources". Sources are the things Odigos can collect data from.
 
     b. Click the checkbox next to each Source you want to monitor. If you're not sure, you can select all of them.
 
@@ -206,6 +210,73 @@ If you see a version number, Homebrew has been successfully installed.
     h. You should now see an overview page showing your selected Sources and Destinations.
 
     Congratulations! You've now installed and set up Odigos on your Mac.
+
+### Setting Up Jaeger as a Destination in Odigos
+
+ After installing Odigos, we need to set up a destination for our observability data. For this demo, we'll use Jaeger, a popular open-source tool for tracing in distributed systems. Here's how to set it up:
+
+  #### 1. Install Jaeger
+
+    a. Open your Terminal application.
+
+    b. Run the following command to install a lightweight Jaeger instance in your Kubernetes cluster:
+
+      ```
+      kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/jaeger.yaml
+      ```
+
+    c. Wait for the Jaeger deployment to be ready by running:
+
+      ```
+      kubectl wait --for=condition=available --timeout=300s deployment jaeger -n tracing
+      ```
+
+  #### 2. Access the Jaeger UI
+
+    a. To access the Jaeger UI, run this command in your terminal:
+
+      ```
+      kubectl port-forward -n tracing svc/jaeger 16686:16686
+      ```
+
+    b. Open your web browser and go to: http://localhost:16686
+
+      You should see the Jaeger UI. Keep this terminal window open to maintain access to Jaeger.
+
+  #### 3. Configure Jaeger as a Destination in Odigos
+
+    a. Open a new terminal window.
+
+    b. Run the following command to open the Odigos UI:
+
+      ```
+      odigos ui
+      ```
+
+    c. In your web browser, a new tab will open with the Odigos UI (usually at http://localhost:3000).
+
+    d. In the Odigos UI, you'll see a "Select Sources" page. Click "Select All" to choose all available sources, then click "Next".
+
+    e. On the "Add Destinations" page, click on "Jaeger".
+
+    f. Fill in the following details:
+
+      - Destination Name: Enter "jaeger-demo" (or any name you prefer)
+      - Endpoint: Enter "jaeger.tracing"
+
+    g. Click the "Test Connection" button. If successful, you'll see a green checkmark.
+
+    h. Click "Create Destination".
+
+  #### 4. Verify the Setup
+
+    a. You should now see an overview page in the Odigos UI showing your selected sources and the Jaeger destination.
+
+    b. Go back to the Jaeger UI tab in your browser (http://localhost:16686).
+
+    c. After a few minutes, you should start seeing trace data appear in the Jaeger UI.
+
+    Congratulations! You've now set up Jaeger as a destination for your Odigos observability data. The system will now collect and send trace data to Jaeger, allowing you to visualize and analyze the behavior of your applications.
 
   </Tab>
   
@@ -255,3 +326,16 @@ If you see a version number, Homebrew has been successfully installed.
   </Tab>
 </Tabs>
 
+### Next Steps: Building Your First Observability Pipeline
+
+Congratulations! You've successfully installed Odigos and set up Jaeger as your observability destination. This is a great first step towards gaining deeper insights into your systems and applications.
+But the journey doesn't stop here. Now that you have the foundation in place, it's time to harness the full power of Odigos by building your first observability pipeline.
+
+In the next article, [Building a Pipeline](https://docs.odigos.io/quickstart/building-a-pipeline), you'll learn how to:
+
+* Configure data sources for your observability pipeline
+* Set up data processing and filtering
+* Direct your observability data to Jaeger and other potential destinations
+* Customize your pipeline to meet your specific needs
+
+By building a pipeline, you'll be able to collect, process, and analyze data from your applications more effectively, giving you a comprehensive view of your system's performance and behavior.
