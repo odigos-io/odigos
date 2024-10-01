@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -93,8 +95,14 @@ var _ = BeforeSuite(func() {
 	odigosConfiguration := testutil.NewMockOdigosConfig()
 	Expect(k8sClient.Create(testCtx, odigosConfiguration)).Should(Succeed())
 
+	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Host:    webhookInstallOptions.LocalServingHost,
+			Port:    webhookInstallOptions.LocalServingPort,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
 	})
 	Expect(err).ToNot(HaveOccurred())
 
