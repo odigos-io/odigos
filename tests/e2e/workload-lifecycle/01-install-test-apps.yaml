@@ -567,7 +567,8 @@ spec:
     app: python-latest-version
   ports:
     - protocol: TCP
-      port: 8000
+      port: 3000
+      targetPort: 8000
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -616,7 +617,8 @@ spec:
     app: python-alpine
   ports:
     - protocol: TCP
-      port: 8000
+      port: 3000
+      targetPort: 8000
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -663,7 +665,8 @@ spec:
     app: python-not-supported
   ports:
     - protocol: TCP
-      port: 8000
+      port: 3000
+      targetPort: 8000
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -710,4 +713,5 @@ spec:
     app: python-min-version
   ports:
     - protocol: TCP
-      port: 8000
+      port: 3000
+      targetPort: 8000

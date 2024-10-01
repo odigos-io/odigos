@@ -264,6 +264,9 @@ metadata:
 spec:
   runtimeDetails:
     - containerName: python-alpine
+      envVars:
+      - name: PYTHONPATH
+        value: "/app:/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation"    
       language: python
       runtimeVersion: 3.10.15
 ---
@@ -281,6 +284,9 @@ metadata:
 spec:
   runtimeDetails:
     - containerName: python-latest-version
+      envVars:
+      - name: PYTHONPATH
+        value: "/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation"          
       language: python
       runtimeVersion: 3.12.6
 ---
@@ -298,8 +304,11 @@ metadata:
 spec:
   runtimeDetails:
     - containerName: python-min-version
+      envVars:
+      - name: PYTHONPATH
+        value: "/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation"
       language: python
-      runtimeVersion: 3.8.20
+      runtimeVersion: 3.8.0
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentedApplication

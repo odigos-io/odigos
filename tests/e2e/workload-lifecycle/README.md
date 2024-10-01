@@ -83,19 +83,23 @@ This e2e test verify various scenarios related to the lifecycle of workloads in 
 ### python-latest-version
 - Runs on the latest Python version.
 - The instrumentation device should be added, and the agent must load and report traces as expected.
+- We ensure that odigos-opentelemetry-python does not conflict with or overwrite the application's dependencies.
 
 ### python-alpine
 - Runs Python 3.10 on the Alpine Linux distribution.
 - The instrumentation device should be added, and the agent must load and report traces as expected.
+- We ensure that odigos-opentelemetry-python does not conflict with or overwrite the application's dependencies.
 - The application utilizes the `PYTHONPATH` environment variable in the Kubernetes deployment manifest.
 
 ### python-minimum-supported-version
 - Runs Python 3.8 (minimum supported version).
 - The instrumentation device should be added, and the agent must load and report traces as expected.
+- We ensure that odigos-opentelemetry-python does not conflict with or overwrite the application's dependencies.
 
 ### python-not-supported-version
 - Runs Python 3.6.
 - This version is not supported for instrumentation.
+- We ensure that odigos-opentelemetry-python does not conflict with or overwrite the application's dependencies.
 
 ## CPP Workloads
 

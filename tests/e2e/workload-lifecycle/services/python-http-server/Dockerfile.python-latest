@@ -1,5 +1,5 @@
-# Dockerfile.python310-slim
 FROM python
+
 WORKDIR /app
 COPY . /app
 

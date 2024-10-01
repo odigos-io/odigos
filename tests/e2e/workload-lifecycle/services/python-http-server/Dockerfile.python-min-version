@@ -1,5 +1,5 @@
 # Dockerfile.python38-slim
-FROM python:3.8-slim
+FROM python:3.8.0-slim
 WORKDIR /app
 COPY . /app
 

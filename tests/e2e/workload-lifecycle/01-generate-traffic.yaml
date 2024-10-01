@@ -41,7 +41,7 @@ spec:
               curl -s --fail http://java-latest-version:3000
               curl -s --fail http://java-old-version:3000
 
-              curl -s --fail http://python-alpine:8000/insert-random/
-              curl -s --fail http://python-latest-version:8000/insert-random/
-              curl -s --fail http://python-min-version:8000/insert-random/
-              curl -s --fail http://python-not-supported:8000/insert-random/
+              curl -s --fail http://python-alpine:3000/insert-random/
+              curl -s --fail http://python-latest-version:3000/insert-random/
+              curl -s --fail http://python-min-version:3000/insert-random/
+              curl -s --fail http://python-not-supported:3000/insert-random/

@@ -17,6 +17,10 @@ if sys.version_info < (3, 8):
     from .proto import example_pb2_legacy as example_pb2
 else:
     from .proto import example_pb2
+    import google.protobuf
+    # Assert python protobuf version is the same as pinned in the requirements.txt
+    if google.protobuf.__version__ != '5.28.2':
+        raise ImportError(f"Expected protobuf version 5.28.2, got {google.protobuf.__version__}") 
 
 logger = logging.getLogger()
 
@@ -25,18 +29,19 @@ async def async_greeting():
     await asyncio.sleep(1)
     return "Hello from async!"
 
-# Create a view to insert a random row
+
 def insert_random_row(request):
     try:
-        # Uses some 3rd packages that conflict with odigosodigos-opentelemetry-python
+        # Uses some 3rd packages that conflict with odigos-opentelemetry-python
         # These few lines wont have business logic, but just to try to reproduce the conflicts
+        
         ### importlib_metadata
         package_name = "Django"
         metadata = importlib_metadata.metadata(package_name)
         django_version = metadata['Version']
         logger.info(f"Using Django version: {django_version}")
+        
         ### packaging
-        # Version comparison using packaging
         v1 = parse("3.1.4")
         v2 = parse(django_version)
         if v1 < v2:
@@ -44,27 +49,22 @@ def insert_random_row(request):
         else:
             version_comparison_result = f"v1 ({v1}) is newer than Django version ({v2})"
         logger.info(version_comparison_result)   
+        
         ### asgiref
         greeting = async_to_sync(async_greeting)()
         logger.info(f"Async greeting: {greeting}")        
         
-        # Create a random name
-        random_name = f"RandomName{random.randint(1, 1000)}"
         
         # Create a new entry in the database
-        new_entry = ExampleModel.objects.create(name=random_name)
+        new_entry = ExampleModel.objects.create(name=f"RandomName{random.randint(1, 1000)}")
         
-        # Create a Protobuf message
+        # google.protobuf
         message = example_pb2.ExampleMessage(
             name=new_entry.name,
             id=new_entry.id,
             created_at=str(new_entry.created_at)
         )
-
-        # Serialize the message to binary format
         serialized_message = message.SerializeToString()
-
-        # You can now store or send this serialized message
         logger.info(f"Serialized protobuf message: {serialized_message}")
         
         return HttpResponse(f"Inserted random row and serialized protobuf: {new_entry.name}")
