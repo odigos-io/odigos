@@ -16,15 +16,7 @@ This guide is perfect for you if:
 Before installing Odigos, you need to set up some tools on your computer. These are one-time installations that prepare your computer for running Odigos.
 You will only need to install these tools once on your computer. Next time you want to run the demo, you can skip this step and go directly to the next one.
 
-
-<Tabs>
-  <Tab title="Mac OS">
-  
-  <Warning>
-   Please avoid using Docker Desktop built-in Kubernetes cluster as it [does not](https://docs.docker.com/storage/bind-mounts/#configure-bind-propagation) support bind propagation.
-  </Warning>
-
-    1. Install Homebrew
+  ### 1. Install Homebrew
 
     Homebrew is a package manager for macOS that simplifies the installation of software packages. We will use Homebrew to install Docker Desktop, KinD (Kubernetes in Docker), and the Odigos CLI.
 
@@ -110,6 +102,10 @@ If you see a version number, Homebrew has been successfully installed.
     g. Wait until you see a green dot next to "Docker Desktop is running" in the Docker Dashboard.
 
     #### 3. Install KinD
+
+    <Warning>
+      **Mac users**: please avoid using Docker Desktop built-in Kubernetes cluster as it [does not](https://docs.docker.com/storage/bind-mounts/#configure-bind-propagation) support bind propagation.
+    </Warning>
 
     KinD (Kubernetes in Docker) helps set up a test environment for Odigos.
 
@@ -278,53 +274,6 @@ If you see a version number, Homebrew has been successfully installed.
 
     Congratulations! You've now set up Jaeger as a destination for your Odigos observability data. The system will now collect and send trace data to Jaeger, allowing you to visualize and analyze the behavior of your applications.
 
-  </Tab>
-  
-  <Tab title="Linux">
-
-  **Docker**: Creates a space on your computer where Odigos can run.
-  - Open a terminal window.
-  - Copy and paste these commands, pressing `Enter` after each:
-    ```
-    sudo apt-get update
-    sudo apt-get install docker.io
-    sudo systemctl start docker
-    sudo systemctl enable docker
-    ```
-  
-  **KinD**: Helps set up a test environment for Odigos.
-  - In the terminal, copy and paste these commands, pressing `Enter` after each:
-    ```
-    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
-    chmod +x ./kind
-    sudo mv ./kind /usr/local/bin/kind
-    ```
-  </Tab>
-
-
-  <Tab title="Windows">
-  **Docker Desktop**: Creates a space on your computer where Odigos can run.
-  - Download Docker Desktop from the [official website](https://www.docker.com/products/docker-desktop).
-  - Run the installer and follow the on-screen instructions.
-  - Once installed, start Docker Desktop from the Start menu.
-
-  **Windows Subsystem for Linux (WSL)**: Allows you to run Linux tools on Windows.
-  - Open PowerShell as Administrator (right-click on PowerShell in the Start menu and select "Run as administrator").
-  - Type this command and press `Enter`:
-    ```
-    wsl --install
-    ```
-  - Restart your computer when prompted.
-
-  **KinD**: Helps set up a test environment for Odigos.
-  - Open PowerShell.
-  - Type these commands and press `Enter` after each:
-    ```
-    curl.exe -Lo kind-windows-amd64.exe https://kind.sigs.k8s.io/dl/v0.11.1/kind-windows-amd64
-    move kind-windows-amd64.exe C:\Windows\system32\kind.exe
-    ```
-  </Tab>
-</Tabs>
 
 ### Next Steps: Building Your First Observability Pipeline
 
