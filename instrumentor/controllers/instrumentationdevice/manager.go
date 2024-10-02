@@ -165,5 +165,14 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = builder.
+		WebhookManagedBy(mgr).
+		For(&corev1.Pod{}).
+		WithDefaulter(&PodsWebhook{}).
+		Complete()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
