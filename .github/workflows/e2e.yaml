@@ -1,9 +1,11 @@
 name: E2E Tests
 
 on:
+  merge_group:
   pull_request:
     branches:
       - main
+      - stable
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
