@@ -148,6 +148,8 @@ spec:
 
           # Delete the job
           kubectl delete -f 01-generate-traffic.yaml
+          
+         
     
   - name: '01 - Wait for Traces'
     try:
@@ -155,7 +157,6 @@ spec:
         timeout: 60s
         content: |
           sleep 20
-
           while true; do
             ../../common/traceql_runner.sh 01-wait-for-trace.yaml
             if [ $? -eq 0 ]; then
@@ -205,7 +206,7 @@ spec:
           job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
           kubectl wait --for=condition=complete job/$job_name
           kubectl delete -f 01-generate-traffic.yaml
-    
+
   - name: '02 - Wait for Traces'
     try:
     - script:
