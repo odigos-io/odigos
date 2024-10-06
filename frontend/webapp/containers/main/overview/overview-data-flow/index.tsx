@@ -1,5 +1,6 @@
 'use client';
 import styled from 'styled-components';
+import { OverviewDrawer } from '../overview-drawer';
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
 import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
@@ -52,10 +53,15 @@ export function OverviewDataFlowContainer() {
     });
   }, [sources, actions, destinations, columnWidth, containerWidth]);
 
+  function onNodeClick(_, object: any) {
+    console.log(object);
+  }
+
   return (
     <OverviewDataFlowWrapper ref={containerRef}>
+      <OverviewDrawer />
       <OverviewActionMenuContainer />
-      <NodeBaseDataFlow nodes={nodes} edges={edges} />
+      <NodeBaseDataFlow nodes={nodes} edges={edges} onNodeClick={onNodeClick} />
     </OverviewDataFlowWrapper>
   );
 }

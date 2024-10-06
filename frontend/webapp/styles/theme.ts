@@ -13,6 +13,7 @@ const colors = {
   selected_hover: '#444AD93D',
   card: '#F9F9F90A',
   dropdown_bg: '#242424',
+  blank_background: '#11111100',
   white_opacity: {
     '004': 'rgba(249, 249, 249, 0.04)',
     '008': 'rgba(249, 249, 249, 0.08)',
