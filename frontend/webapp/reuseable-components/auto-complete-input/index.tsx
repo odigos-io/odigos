@@ -1,5 +1,5 @@
 import React, { useState, ChangeEvent, KeyboardEvent, FC } from 'react';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { Text } from '../text';
 import Image from 'next/image';
 
@@ -61,13 +61,26 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({
     }
   };
 
+  const flattenOptions = (options: Option[]): Option[] => {
+    return options.reduce<Option[]>((acc, option) => {
+      acc.push(option);
+      if (option.items) {
+        acc = acc.concat(flattenOptions(option.items));
+      }
+      return acc;
+    }, []);
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowDown' && activeIndex < filteredOptions.length - 1) {
+    // Flatten the options to handle keyboard navigation - TODO: Refactor this
+    return;
+    const flatOptions = flattenOptions(filteredOptions);
+    if (e.key === 'ArrowDown' && activeIndex < flatOptions.length - 1) {
       setActiveIndex(activeIndex + 1);
     } else if (e.key === 'ArrowUp' && activeIndex > 0) {
       setActiveIndex(activeIndex - 1);
     } else if (e.key === 'Enter' && activeIndex >= 0) {
-      handleOptionClick(filteredOptions[activeIndex]);
+      handleOptionClick(flatOptions[activeIndex]);
     }
   };
 
@@ -91,7 +104,7 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({
               key={option.id}
               option={option}
               isActive={index === activeIndex}
-              onClick={() => handleOptionClick(option)}
+              onClick={handleOptionClick}
             />
           ))}
         </OptionsList>
@@ -103,20 +116,22 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({
 interface OptionItemProps {
   option: Option;
   isActive: boolean;
-  onClick: () => void;
+  onClick: (option: Option) => void;
 }
 
 const OptionItem: FC<OptionItemProps> = ({ option, isActive, onClick }) => {
+  const hasSubItems = !!option.items && option.items.length > 0;
+
   return (
     <OptionItemContainer
       isActive={isActive}
-      isList={!!option.items && option.items.length > 0}
-      onMouseDown={onClick}
+      isList={hasSubItems}
+      onMouseDown={() => onClick(option)}
     >
       {option.icon && (
         <Image width={16} height={16} src={option.icon} alt={option.label} />
       )}
-      <div>
+      <OptionContent>
         <OptionLabelWrapper>
           <OptionLabel>{option.label}</OptionLabel>
           <OptionDescription>{option.description}</OptionDescription>
@@ -124,16 +139,18 @@ const OptionItem: FC<OptionItemProps> = ({ option, isActive, onClick }) => {
         {option.items && option.items.length > 0 && (
           <SubOptionsList>
             {option.items.map((subOption) => (
-              <OptionItem
-                key={subOption.id}
-                option={subOption}
-                isActive={false}
-                onClick={() => onClick()}
-              />
+              <SubOptionContainer key={subOption.id}>
+                <VerticalLine />
+                <OptionItem
+                  option={subOption}
+                  isActive={false}
+                  onClick={onClick}
+                />
+              </SubOptionContainer>
             ))}
           </SubOptionsList>
         )}
-      </div>
+      </OptionContent>
     </OptionItemContainer>
   );
 };
@@ -146,7 +163,7 @@ const AutocompleteContainer = styled.div`
   position: relative;
 `;
 
-const InputWrapper = styled.div<{}>`
+const InputWrapper = styled.div`
   width: calc(100% - 16px);
   display: flex;
   align-items: center;
@@ -180,7 +197,7 @@ const StyledInput = styled.input`
     opacity: 0.4;
     font-size: 14px;
     font-weight: 300;
-    line-height: 22px; /* 157.143% */
+    line-height: 22px;
   }
 
   &:disabled {
@@ -209,14 +226,35 @@ interface OptionItemContainerProps {
 
 const OptionItemContainer = styled.li<OptionItemContainerProps>`
   padding: 8px 12px;
-  cursor: pointer;
+  cursor: ${({ isList }) => (isList ? 'default' : 'pointer')};
   border-radius: 24px;
   gap: 8px;
   display: flex;
   align-items: ${({ isList }) => (isList ? 'flex-start' : 'center')};
+  background: ${({ isActive, theme }) =>
+    isActive ? theme.colors.activeBackground : 'transparent'};
+
   &:hover {
-    background: ${({ theme }) => theme.colors.white_opacity['008']};
+    background: ${({ theme, isList }) =>
+      !isList && theme.colors.white_opacity['008']};
   }
+`;
+
+const OptionContent = styled.div`
+  width: 100%;
+`;
+
+const SubOptionContainer = styled.div`
+  display: flex;
+  width: 100%;
+`;
+
+const VerticalLine = styled.div`
+  width: 1px;
+  height: 52px;
+  background-color: ${({ theme }) => theme.colors.white_opacity['008']};
+  position: absolute;
+  left: 33px;
 `;
 
 const OptionLabelWrapper = styled.div`
@@ -235,8 +273,9 @@ const OptionDescription = styled(Text)`
   font-size: 10px;
   line-height: 150%;
 `;
+
 const SubOptionsList = styled.ul`
-  padding-left: 16px;
+  padding-left: 0px;
   margin: 4px 0 0 0;
   list-style: none;
 `;
