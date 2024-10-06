@@ -41,6 +41,7 @@ The following Python modules will be auto instrumented by Odigos:
 ### HTTP Frameworks
 - [`asgi`](https://pypi.org/project/asgiref/) versions `asgiref >= 3.0.0, < 4.0.0`
 - [`django`](https://pypi.org/project/Django/) versions `django >= 1.10.0`
+<Info>Please note that for Django instrumentation to work, you need to set the [DJANGO_SETTINGS_MODULE](https://docs.djangoproject.com/en/5.1/topics/settings/#envvar-DJANGO_SETTINGS_MODULE) environment variable. Make sure to set this in your Kubernetes manifest or Dockerfile to ensure proper configuration.</Info>
 - [`fastapi`](https://pypi.org/project/fastapi/) versions `fastapi >= 0.58.0, < 0.59.0`, `fastapi-slim >= 0.111.0, < 0.112.0`
 - [`flask`](https://pypi.org/project/Flask/) versions `flask >= 1.0.0`
 - [`pyramid`](https://pypi.org/project/pyramid/) versions `pyramid >= 1.7.0`
