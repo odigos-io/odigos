@@ -285,7 +285,7 @@ spec:
   runtimeDetails:
     - containerName: python-latest-version        
       language: python
-      runtimeVersion: 3.12.6
+      (runtimeVersion != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentedApplication
