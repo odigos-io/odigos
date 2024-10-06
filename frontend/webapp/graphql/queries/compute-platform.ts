@@ -6,6 +6,7 @@ export const GET_COMPUTE_PLATFORM = gql`
       k8sActualSources {
         name
         kind
+        namespace
         numberOfInstances
         instrumentedApplicationDetails {
           containers {
@@ -20,6 +21,7 @@ export const GET_COMPUTE_PLATFORM = gql`
         }
       }
       destinations {
+        id
         name
         exportedSignals {
           logs

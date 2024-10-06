@@ -44,6 +44,7 @@ export function OverviewDataFlowContainer() {
 
   // Memoized node and edge builder to improve performance
   const { nodes, edges } = useMemo(() => {
+    console.log({ sources, actions, destinations });
     return buildNodesAndEdges({
       sources,
       actions,

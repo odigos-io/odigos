@@ -78,7 +78,11 @@ export const buildNodesAndEdges = ({
           subTitle: source.kind,
           imageUri: getMainContainerLanguageLogo(source),
           status: 'healthy',
-          onClick: () => setSelectedItem(source),
+          id: {
+            kind: source.kind,
+            name: source.name,
+            namespace: source.namespace,
+          },
         }
       )
     ),
@@ -104,7 +108,7 @@ export const buildNodesAndEdges = ({
           imageUri: destination.destinationType.imageUrl,
           status: 'healthy',
           monitors: extractMonitors(destination.exportedSignals),
-          onClick: () => setSelectedItem(destination),
+          id: destination.id,
         }
       )
     ),
@@ -135,7 +139,7 @@ export const buildNodesAndEdges = ({
           imageUri: `${ACTION_ICON_PATH}${action.type.toLowerCase()}.svg`,
           monitors: actionSpec.signals,
           status: 'healthy',
-          onClick: () => setSelectedItem(action),
+          id: action.id,
         }
       );
     }),
