@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from 'react-query';
-import { KeyvalLoader } from '@/design.system';
+import { Drawer, KeyvalLoader } from '@/design.system';
 import { NOTIFICATION, QUERIES } from '@/utils';
 import { getApplication, getNamespaces } from '@/services';
 import { SourcesList, SourcesOptionMenu } from '@/components/setup';
@@ -14,12 +14,14 @@ import {
   NamespaceConfiguration,
   SelectedSourcesConfiguration,
 } from '@/types';
+import { FastSourcesSelection } from './fast-sources-selection';
 
 const DEFAULT = 'default';
 
 export function SourcesSection({ sectionData, setSectionData }) {
   const [currentNamespace, setCurrentNamespace] = useState<Namespace>();
   const [searchFilter, setSearchFilter] = useState<string>('');
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
 
   const { isLoading, data, isError, error } = useQuery(
     [QUERIES.API_NAMESPACES],
@@ -64,6 +66,8 @@ export function SourcesSection({ sectionData, setSectionData }) {
       (item: SourceConfig) => !item.instrumentation_effective
     );
   }, [searchFilter, currentNamespace, sectionData]);
+
+  const toggleDrawer = () => setDrawerOpen(!isDrawerOpen);
 
   async function onNameSpaceChange() {
     if (!currentNamespace || sectionData[currentNamespace?.name]) return;
@@ -171,6 +175,16 @@ export function SourcesSection({ sectionData, setSectionData }) {
 
   return (
     <SectionContainerWrapper>
+      {isDrawerOpen && (
+        <Drawer
+          isOpen={isDrawerOpen}
+          onClose={toggleDrawer}
+          position="right"
+          width="500px"
+        >
+          <FastSourcesSelection {...{ sectionData, setSectionData }} />
+        </Drawer>
+      )}
       <SourcesOptionMenu
         currentNamespace={currentNamespace}
         setCurrentItem={setCurrentNamespace}
@@ -180,6 +194,7 @@ export function SourcesSection({ sectionData, setSectionData }) {
         onSelectAllChange={onSelectAllChange}
         selectedApplications={sectionData}
         onFutureApplyChange={onFutureApplyChange}
+        toggleFastSourcesSelection={toggleDrawer}
       />
       <SourcesList
         data={sourceData}

@@ -142,3 +142,110 @@ spec:
       language: javascript
       runtimeVersion: 20.17.0
 ---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-java-supported-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-supported-version
+spec:
+  runtimeDetails:
+    - containerName: java-supported-version
+      language: java
+      runtimeVersion: 17.0.12+7
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-java-azul
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-azul
+spec:
+  runtimeDetails:
+    - containerName: java-azul
+      language: java
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-java-supported-docker-env
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-supported-docker-env
+spec:
+  runtimeDetails:
+    - containerName: java-supported-docker-env
+      language: java
+      envVars:
+        - name: JAVA_OPTS
+          value: "-Dthis.does.not.exist=true"
+      runtimeVersion: 17.0.12+7
+
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-java-supported-manifest-env
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-supported-manifest-env
+spec:
+  runtimeDetails:
+    - containerName: java-supported-manifest-env
+      language: java
+      envVars:
+        - name: JAVA_OPTS
+          value: "-Dnot.work=true"
+      runtimeVersion: 17.0.12+7
+
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-java-latest-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-latest-version
+spec:
+  runtimeDetails:
+    - containerName: java-latest-version
+      language: java
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-java-old-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-old-version
+spec:
+  runtimeDetails:
+    - containerName: java-old-version
+      language: java
+---

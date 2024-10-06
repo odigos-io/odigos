@@ -42,6 +42,43 @@ This e2e test verify various scenarios related to the lifecycle of workloads in 
 - Application uses NODE_OPTIONS environment variable in the k8s deployment manifest to set one `--require` flag and another `--max-old-space-size` flag.
 - This workload verifies that after instrumentation is applied, those 2 options still works as expected.
 
+## Java Workloads
+
+### java-supported-version
+
+- Java version 17 (minimum support version is 8)
+- NODE_VERSION environment variable set in the image - detected by runtime inspection
+- Should not be instrumented
+
+### java-latest-version
+
+- Java latest version (minimum support version is 8)
+- This workload verifies that we support the latest version of Java
+
+### java-old-version
+
+- Java version 11 (minimum support version is 8)
+- Instrumentation device should be added, agent should load and report traces correctly.
+- This workload verifies that we support the old versions.
+
+### java-azul
+
+- Java version 17 (minimum support version is 8)
+- This workload checks a special JRE named Azul, which specialize at low-latency and high-throughput applications.
+
+### java-supported-docker-env
+
+- Java version 17 (minimum support version is 8)
+- Application uses JAVA_OPTS environment variable in the dockerfile.
+- This workload verifies that after instrumentation is applied, those 2 options still works as expected.
+
+### java-supported-manifest-env
+
+- Java version 17 (minimum support version is 8)
+- Application uses JAVA_OPTS environment variable in the k8s deployment manifest.
+- This workload verifies that after instrumentation is applied, those 2 options still works as expected.
+
+
 ## CPP Workloads
 
 - Workload with a language odigos does not support.
