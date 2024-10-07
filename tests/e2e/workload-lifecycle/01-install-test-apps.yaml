@@ -522,3 +522,196 @@ spec:
     - protocol: TCP
       port: 3000
 ---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: python-latest-version
+  namespace: default
+  labels:
+    app: python-latest-version
+spec:
+  selector:
+    matchLabels:
+      app: python-latest-version
+  template:
+    metadata:
+      labels:
+        app: python-latest-version
+    spec:
+      containers:
+        - name: python-latest-version
+          image: python-latest-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "myapp.settings"
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-latest-version
+  namespace: default
+spec:
+  selector:
+    app: python-latest-version
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 8000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: python-alpine
+  namespace: default
+  labels:
+    app: python-alpine
+spec:
+  selector:
+    matchLabels:
+      app: python-alpine
+  template:
+    metadata:
+      labels:
+        app: python-alpine
+    spec:
+      containers:
+        - name: python-alpine
+          image: python-alpine:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "myapp.settings"
+            - name: PYTHONPATH
+              value: "/app"              
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-alpine
+  namespace: default
+spec:
+  selector:
+    app: python-alpine
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 8000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: python-not-supported
+  namespace: default
+  labels:
+    app: python-not-supported
+spec:
+  selector:
+    matchLabels:
+      app: python-not-supported
+  template:
+    metadata:
+      labels:
+        app: python-not-supported
+    spec:
+      containers:
+        - name: python-not-supported
+          image: python-not-supported:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "myapp.settings"        
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-not-supported
+  namespace: default
+spec:
+  selector:
+    app: python-not-supported
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 8000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: python-min-version
+  namespace: default
+  labels:
+    app: python-min-version
+spec:
+  selector:
+    matchLabels:
+      app: python-min-version
+  template:
+    metadata:
+      labels:
+        app: python-min-version
+    spec:
+      containers:
+        - name: python-min-version
+          image: python-min-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "myapp.settings"
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-min-version
+  namespace: default
+spec:
+  selector:
+    app: python-min-version
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 8000
