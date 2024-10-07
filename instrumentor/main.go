@@ -35,6 +35,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
@@ -100,7 +101,7 @@ func main() {
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgrOptions := ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
@@ -178,7 +179,20 @@ func main() {
 				},
 			},
 		},
-	})
+	}
+
+	// Check if the environment variable `LOCAL_WEBHOOK_CERT_DIR` is set.
+	// If defined, add WebhookServer options with the specified certificate directory.
+	// This is used primarily for local development environments to provide a custom path for serving TLS certificates.
+	localCertDir := os.Getenv("LOCAL_MUTATING_WEBHOOK_CERT_DIR")
+	if localCertDir != "" {
+		mgrOptions.WebhookServer = webhook.NewServer(webhook.Options{
+			CertDir: localCertDir,
+		})
+	}
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
+
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
