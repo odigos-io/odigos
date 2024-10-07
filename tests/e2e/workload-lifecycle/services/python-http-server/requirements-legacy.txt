@@ -1,0 +1,5 @@
+django==3.2.25
+protobuf==3.19.6
+packaging
+importlib_metadata
+django-health-check
