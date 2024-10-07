@@ -8,7 +8,6 @@ import (
 	common "github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -42,17 +41,12 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 
 func injectOdigosEnvVars(pod *corev1.Pod) {
 	namespace := pod.Namespace
-	workloadKind := workload.GetWorkloadKind(pod)
 
 	// Common environment variables that do not change across containers
 	commonEnvVars := []corev1.EnvVar{
 		{
 			Name:  EnvVarNamespace,
 			Value: namespace,
-		},
-		{
-			Name:  EnvVarWorkloadKind,
-			Value: workloadKind,
 		},
 		{
 			Name: EnvVarPodName,
