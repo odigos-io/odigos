@@ -25,10 +25,16 @@ const EditIcon = styled.div`
 interface DrawerHeaderProps {
   title: string;
   onSave: (newTitle: string) => void;
+  isEditing: boolean;
+  setIsEditing: (isEditing: boolean) => void;
 }
 
-const DrawerHeader: React.FC<DrawerHeaderProps> = ({ title, onSave }) => {
-  const [isEditing, setIsEditing] = useState(false);
+const DrawerHeader: React.FC<DrawerHeaderProps> = ({
+  title,
+  onSave,
+  isEditing,
+  setIsEditing,
+}) => {
   const [inputValue, setInputValue] = useState(title);
 
   const handleSave = () => {
@@ -42,7 +48,6 @@ const DrawerHeader: React.FC<DrawerHeaderProps> = ({ title, onSave }) => {
         <Input
           initialValue={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onBlur={handleSave}
           autoFocus
         />
       ) : (

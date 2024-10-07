@@ -1,9 +1,9 @@
+import { useEffect, useState } from 'react';
 import { useDrawerStore } from '@/store';
-import { Drawer } from '@/reuseable-components';
-import { SourceDrawer } from '@/containers';
 import DrawerHeader from './drawer-header';
 import DrawerFooter from './drawer-footer';
-import { useEffect, useState } from 'react';
+import { Drawer } from '@/reuseable-components';
+import { SourceDrawer } from '../../sources';
 
 const componentMap = {
   source: SourceDrawer,
@@ -21,6 +21,7 @@ const OverviewDrawer = () => {
 
   useEffect(() => {
     console.log({ selectedItem });
+    setTitle(selectedItem?.item?.name || '');
   }, [selectedItem]);
 
   const handleSaveTitle = (newTitle: string) => {
@@ -48,16 +49,20 @@ const OverviewDrawer = () => {
   const SpecificComponent = componentMap[selectedItem.type];
 
   return SpecificComponent ? (
-    <Drawer isOpen onClose={() => setDrawerItem(null)}>
-      <DrawerHeader title={title} onSave={handleSaveTitle} />
-      <SpecificComponent />
-      <DrawerFooter
-        onSave={handleSave}
-        onCancel={handleCancel}
-        onDelete={handleDelete}
+    <Drawer isOpen onClose={() => setDrawerItem(null)} width="560px">
+      <DrawerHeader
+        title={title}
+        onSave={handleSaveTitle}
+        {...{ isEditing, setIsEditing }}
       />
-      {/* {isEditing && (
-      )} */}
+      <SpecificComponent />
+      {isEditing && (
+        <DrawerFooter
+          onSave={handleSave}
+          onCancel={handleCancel}
+          onDelete={handleDelete}
+        />
+      )}
     </Drawer>
   ) : null;
 };

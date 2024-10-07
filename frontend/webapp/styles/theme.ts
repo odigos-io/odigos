@@ -109,7 +109,7 @@ const colors = {
 
 const text = {
   primary: '#111',
-  secondary: '#0EE6F3',
+  secondary: '#F9F9F9',
   grey: '#B8B8B8',
   white: '#fff',
   light_grey: '#CCD0D2',
