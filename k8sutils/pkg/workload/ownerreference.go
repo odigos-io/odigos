@@ -11,12 +11,7 @@ import (
 // from the provided owner reference.
 func GetWorkloadFromOwnerReference(ownerReference metav1.OwnerReference) (workloadName string, workloadKind WorkloadKind, err error) {
 
-	workloadName, workloadKind, err = GetWorkloadNameAndKind(ownerReference.Name, ownerReference.Kind)
-	if err != nil {
-		return "", "", err
-	}
-
-	return workloadName, workloadKind, nil
+	return GetWorkloadNameAndKind(ownerReference.Name, ownerReference.Kind)
 }
 
 func GetWorkloadNameAndKind(ownerName, ownerKind string) (string, WorkloadKind, error) {

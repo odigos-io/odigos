@@ -109,3 +109,17 @@ func IsInstrumentationDisabledExplicitly(obj client.Object) bool {
 
 	return false
 }
+
+func GetWorkloadKind(pod *corev1.Pod) string {
+	for _, ownerRef := range pod.OwnerReferences {
+		switch ownerRef.Kind {
+		case "ReplicaSet":
+			return "Deployment"
+		case "StatefulSet":
+			return "StatefulSet"
+		case "DaemonSet":
+			return "DaemonSet"
+		}
+	}
+	return "Unknown"
+}

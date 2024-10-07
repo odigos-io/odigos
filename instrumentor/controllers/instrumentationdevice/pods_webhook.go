@@ -3,16 +3,18 @@ package instrumentationdevice
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	common "github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
-
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
-	EnvVarNamespace     = "ODIGOS_CONTAINER_NAMESPACE"
+	EnvVarNamespace     = "ODIGOS_WORKLOAD_NAMESPACE"
 	EnvVarWorkloadKind  = "ODIGOS_WORKLOAD_KIND"
 	EnvVarContainerName = "ODIGOS_CONTAINER_NAME"
 	EnvVarPodName       = "ODIGOS_POD_NAME"
@@ -39,51 +41,69 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 func injectOdigosEnvVars(pod *corev1.Pod) {
-
 	namespace := pod.Namespace
-	workloadKind := getWorkloadKind(pod)
+	workloadKind := workload.GetWorkloadKind(pod)
+
+	// Common environment variables that do not change across containers
+	commonEnvVars := []corev1.EnvVar{
+		{
+			Name:  EnvVarNamespace,
+			Value: namespace,
+		},
+		{
+			Name:  EnvVarWorkloadKind,
+			Value: workloadKind,
+		},
+		{
+			Name: EnvVarPodName,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+	}
 
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
 
-		envVars := []corev1.EnvVar{
-			{
-				Name:  EnvVarNamespace,
-				Value: namespace,
-			},
-			{
-				Name:  EnvVarWorkloadKind,
-				Value: workloadKind,
-			},
-			{
-				Name:  EnvVarContainerName,
-				Value: container.Name,
-			},
-			{
-				Name: EnvVarPodName,
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "metadata.name",
-					},
-				},
-			},
+		// Check if the container does NOT have device in conatiner limits. If so, skip the environment injection.
+		if !hasOdigosInstrumentationInLimits(container.Resources) {
+			continue
 		}
 
-		container.Env = append(container.Env, envVars...)
+		// Check if the environment variables are already present, if so skip inject them again.
+		if envVarsExist(container.Env, commonEnvVars) {
+			continue
+		}
+
+		container.Env = append(container.Env, append(commonEnvVars, corev1.EnvVar{
+			Name:  EnvVarContainerName,
+			Value: container.Name,
+		})...)
 	}
 }
 
-// We can assume ReplicaSet is Deployment because this come after we identify the workload is supported by Odigos
-func getWorkloadKind(pod *corev1.Pod) string {
-	for _, ownerRef := range pod.OwnerReferences {
-		switch ownerRef.Kind {
-		case "ReplicaSet":
-			return "Deployment"
-		case "StatefulSet":
-			return "StatefulSet"
-		case "DaemonSet":
-			return "DaemonSet"
+func envVarsExist(containerEnv []corev1.EnvVar, commonEnvVars []corev1.EnvVar) bool {
+	envMap := make(map[string]bool)
+	for _, envVar := range containerEnv {
+		envMap[envVar.Name] = true
+	}
+
+	for _, commonEnvVar := range commonEnvVars {
+		if envMap[commonEnvVar.Name] {
+			return true
 		}
 	}
-	return "Unknown"
+	return false
+}
+
+// Helper function to check if a container's resource limits have a key starting with the specified namespace
+func hasOdigosInstrumentationInLimits(resources corev1.ResourceRequirements) bool {
+	for resourceName := range resources.Limits {
+		if strings.HasPrefix(string(resourceName), common.OdigosResourceNamespace) {
+			return true
+		}
+	}
+	return false
 }

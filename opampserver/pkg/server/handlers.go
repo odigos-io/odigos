@@ -28,6 +28,7 @@ type ConnectionHandlers struct {
 	sdkConfig     *sdkconfig.SdkConfigManager
 	logger        logr.Logger
 	kubeclient    client.Client
+	kubeClientSet *kubernetes.Clientset
 	scheme        *runtime.Scheme // TODO: revisit this, we should not depend on controller runtime
 	nodeName      string
 }
@@ -36,11 +37,10 @@ type opampAgentAttributesKeys struct {
 	ProgrammingLanguage string
 	ContainerName       string
 	PodName             string
-	WorkloadKind        string
 	Namespace           string
 }
 
-func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId string, firstMessage *protobufs.AgentToServer, kubeClient *kubernetes.Clientset) (*connection.ConnectionInfo, *protobufs.ServerToAgent, error) {
+func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId string, firstMessage *protobufs.AgentToServer) (*connection.ConnectionInfo, *protobufs.ServerToAgent, error) {
 
 	if firstMessage.AgentDescription == nil {
 		// first message must be agent description.
@@ -64,13 +64,13 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, fmt.Errorf("missing pid in agent description")
 	}
 
-	attrs := extractOpampAgentAttributes(firstMessage.AgentDescription.IdentifyingAttributes)
+	attrs := extractOpampAgentAttributes(firstMessage.AgentDescription)
 
 	if attrs.ProgrammingLanguage == "" {
 		return nil, nil, fmt.Errorf("missing programming language in agent description")
 	}
 
-	k8sAttributes, pod, err := c.resolveK8sAttributes(ctx, attrs, deviceId, kubeClient, c.logger)
+	k8sAttributes, pod, err := c.resolveK8sAttributes(ctx, attrs, deviceId, c.logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to process k8s attributes: %w", err)
 	}
@@ -199,19 +199,19 @@ func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Con
 
 // resolveK8sAttributes resolves K8s resource attributes using either direct attributes from opamp agent or device cache
 func (c *ConnectionHandlers) resolveK8sAttributes(ctx context.Context, attrs opampAgentAttributesKeys,
-	deviceId string, kubeClient *kubernetes.Clientset, logger logr.Logger) (*di.K8sResourceAttributes, *corev1.Pod, error) {
+	deviceId string, logger logr.Logger) (*di.K8sResourceAttributes, *corev1.Pod, error) {
 
 	if attrs.hasRequiredAttributes() {
-		podInfoResolver := di.NewK8sPodInfoResolver(logger, kubeClient)
-		return resolveFromDirectAttributes(ctx, attrs, podInfoResolver, kubeClient)
+		podInfoResolver := di.NewK8sPodInfoResolver(logger, c.kubeClientSet)
+		return resolveFromDirectAttributes(ctx, attrs, podInfoResolver, c.kubeClientSet)
 	}
 	return c.deviceIdCache.GetAttributesFromDevice(ctx, deviceId)
 }
 
-func extractOpampAgentAttributes(attributes []*protobufs.KeyValue) opampAgentAttributesKeys {
+func extractOpampAgentAttributes(agentDescription *protobufs.AgentDescription) opampAgentAttributesKeys {
 	result := opampAgentAttributesKeys{}
 
-	for _, attr := range attributes {
+	for _, attr := range agentDescription.IdentifyingAttributes {
 		switch attr.Key {
 		case string(semconv.TelemetrySDKLanguageKey):
 			result.ProgrammingLanguage = attr.Value.GetStringValue()
@@ -221,8 +221,6 @@ func extractOpampAgentAttributes(attributes []*protobufs.KeyValue) opampAgentAtt
 			result.PodName = attr.Value.GetStringValue()
 		case string(semconv.K8SNamespaceNameKey):
 			result.Namespace = attr.Value.GetStringValue()
-		case "k8s.workload.kind":
-			result.WorkloadKind = attr.Value.GetStringValue()
 		}
 	}
 
@@ -230,31 +228,37 @@ func extractOpampAgentAttributes(attributes []*protobufs.KeyValue) opampAgentAtt
 }
 
 func (k opampAgentAttributesKeys) hasRequiredAttributes() bool {
-	return k.ContainerName != "" && k.PodName != "" && k.WorkloadKind != "" && k.Namespace != ""
+	return k.ContainerName != "" && k.PodName != "" && k.Namespace != ""
 }
 
 func resolveFromDirectAttributes(ctx context.Context, attrs opampAgentAttributesKeys,
 	podInfoResolver *di.K8sPodInfoResolver, kubeClient *kubernetes.Clientset) (*di.K8sResourceAttributes, *corev1.Pod, error) {
-
-	workloadName, _, err := workload.GetWorkloadNameAndKind(attrs.PodName, attrs.WorkloadKind)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get workload name and kind: %w", err)
-	}
-
-	serviceName := podInfoResolver.ResolveServiceName(ctx, attrs.PodName, attrs.WorkloadKind, &di.ContainerDetails{
-		PodName: attrs.PodName,
-	})
 
 	pod, err := kubeClient.CoreV1().Pods(attrs.Namespace).Get(ctx, attrs.PodName, metav1.GetOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
 
+	var workloadName string
+	var workloadKind workload.WorkloadKind
+
+	ownerRefs := pod.GetOwnerReferences()
+	for _, ownerRef := range ownerRefs {
+		workloadName, workloadKind, err = workload.GetWorkloadFromOwnerReference(ownerRef)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get workload from owner reference: %w", err)
+		}
+	}
+
+	serviceName := podInfoResolver.ResolveServiceName(ctx, attrs.PodName, workloadName, &di.ContainerDetails{
+		PodName: attrs.PodName,
+	})
+
 	k8sAttributes := &di.K8sResourceAttributes{
 		Namespace:       attrs.Namespace,
 		PodName:         attrs.PodName,
 		ContainerName:   attrs.ContainerName,
-		WorkloadKind:    attrs.WorkloadKind,
+		WorkloadKind:    string(workloadKind),
 		WorkloadName:    workloadName,
 		OtelServiceName: serviceName,
 	}
