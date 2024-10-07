@@ -20,6 +20,8 @@ import (
 	"flag"
 	"os"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
 
@@ -171,6 +173,9 @@ func main() {
 				},
 				&corev1.Namespace{}: {
 					Label: labels.Set{consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled}.AsSelector(),
+				},
+				&corev1.ConfigMap{}: {
+					Field: client.InNamespace(env.GetCurrentNamespace()).AsSelector(),
 				},
 			},
 		},

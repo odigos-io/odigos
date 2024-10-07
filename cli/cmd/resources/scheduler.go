@@ -259,7 +259,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									"cpu":    resource.MustParse("500m"),
-									"memory": *resource.NewQuantity(134217728, resource.BinarySI),
+									"memory": *resource.NewQuantity(536870912, resource.BinarySI),
 								},
 								Requests: corev1.ResourceList{
 									"cpu":    resource.MustParse("10m"),
