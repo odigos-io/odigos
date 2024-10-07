@@ -14,7 +14,6 @@ import (
 
 const (
 	EnvVarNamespace     = "ODIGOS_WORKLOAD_NAMESPACE"
-	EnvVarWorkloadKind  = "ODIGOS_WORKLOAD_KIND"
 	EnvVarContainerName = "ODIGOS_CONTAINER_NAME"
 	EnvVarPodName       = "ODIGOS_POD_NAME"
 )
