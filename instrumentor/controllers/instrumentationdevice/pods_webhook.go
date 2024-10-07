@@ -79,13 +79,13 @@ func injectOdigosEnvVars(pod *corev1.Pod) {
 }
 
 func envVarsExist(containerEnv []corev1.EnvVar, commonEnvVars []corev1.EnvVar) bool {
-	envMap := make(map[string]bool)
+	envMap := make(map[string]struct{})
 	for _, envVar := range containerEnv {
-		envMap[envVar.Name] = true
+		envMap[envVar.Name] = struct{}{} // Inserting empty struct as value
 	}
 
 	for _, commonEnvVar := range commonEnvVars {
-		if envMap[commonEnvVar.Name] {
+		if _, exists := envMap[commonEnvVar.Name]; exists { // Checking if key exists
 			return true
 		}
 	}
