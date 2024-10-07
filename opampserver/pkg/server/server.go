@@ -84,7 +84,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		var serverToAgent *protobufs.ServerToAgent
 		connectionInfo, exists := connectionCache.GetConnection(instanceUid)
 		if !exists {
-			connectionInfo, serverToAgent, err = handlers.OnNewConnection(ctx, deviceId, &agentToServer)
+			connectionInfo, serverToAgent, err = handlers.OnNewConnection(ctx, deviceId, &agentToServer, kubeClient)
 			if err != nil {
 				logger.Error(err, "Failed to process new connection")
 				w.WriteHeader(http.StatusInternalServerError)
