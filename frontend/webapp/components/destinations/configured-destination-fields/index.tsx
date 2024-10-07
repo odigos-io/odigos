@@ -10,7 +10,7 @@ type ConfiguredDestinationFieldsProps = {
 const ListContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 40px;
+  gap: 24px 40px;
 `;
 
 const ListItem = styled.div``;

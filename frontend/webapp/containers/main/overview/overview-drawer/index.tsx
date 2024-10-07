@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useDrawerStore } from '@/store';
+import { K8sActualSource } from '@/types';
 import DrawerHeader from './drawer-header';
 import DrawerFooter from './drawer-footer';
-import { Drawer } from '@/reuseable-components';
 import { SourceDrawer } from '../../sources';
+import { Drawer } from '@/reuseable-components';
+import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
+import styled from 'styled-components';
 
 const componentMap = {
   source: SourceDrawer,
@@ -52,10 +55,17 @@ const OverviewDrawer = () => {
     <Drawer isOpen onClose={() => setDrawerItem(null)} width="560px">
       <DrawerHeader
         title={title}
+        imageUri={
+          selectedItem?.item
+            ? getMainContainerLanguageLogo(selectedItem.item as K8sActualSource) //TODO: get image based on type
+            : ''
+        }
         onSave={handleSaveTitle}
         {...{ isEditing, setIsEditing }}
       />
-      <SpecificComponent />
+      <SpecificComponentWrapper>
+        <SpecificComponent />
+      </SpecificComponentWrapper>
       {isEditing && (
         <DrawerFooter
           onSave={handleSave}
@@ -68,3 +78,7 @@ const OverviewDrawer = () => {
 };
 
 export { OverviewDrawer };
+
+const SpecificComponentWrapper = styled.div`
+  padding: 20px 32px;
+`;
