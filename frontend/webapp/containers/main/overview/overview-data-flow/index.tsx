@@ -5,6 +5,7 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
 import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
 import { useActualDestination, useActualSources, useGetActions } from '@/hooks';
+import { useDrawerStore } from '@/store';
 
 export const OverviewDataFlowWrapper = styled.div`
   width: calc(100% - 64px);
@@ -19,7 +20,9 @@ export function OverviewDataFlowContainer() {
   const { actions } = useGetActions();
   const { sources } = useActualSources();
   const { destinations } = useActualDestination();
-
+  const setSelectedItem = useDrawerStore(
+    ({ setSelectedItem }) => setSelectedItem
+  );
   // Get the width of the container dynamically
   useEffect(() => {
     if (containerRef.current) {
@@ -44,7 +47,6 @@ export function OverviewDataFlowContainer() {
 
   // Memoized node and edge builder to improve performance
   const { nodes, edges } = useMemo(() => {
-    console.log({ sources, actions, destinations });
     return buildNodesAndEdges({
       sources,
       actions,
@@ -55,7 +57,27 @@ export function OverviewDataFlowContainer() {
   }, [sources, actions, destinations, columnWidth, containerWidth]);
 
   function onNodeClick(_, object: any) {
-    console.log(object);
+    if (object.data.type === 'source') {
+      const selectedDrawerItem = sources.find(
+        (source) =>
+          source.kind === object.data.id.kind &&
+          source.name === object.data.id.name &&
+          source.namespace === object.data.id.namespace
+      );
+      if (!selectedDrawerItem) {
+        return;
+      }
+
+      setSelectedItem({
+        id: {
+          kind: selectedDrawerItem.kind,
+          name: selectedDrawerItem.name,
+          namespace: selectedDrawerItem.namespace,
+        },
+        item: selectedDrawerItem,
+        type: 'source',
+      });
+    }
   }
 
   return (

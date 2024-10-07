@@ -34,7 +34,7 @@ const DrawerContainer = styled.div<{
   bottom: 0;
   ${({ position, width }) => position}: 0;
   width: ${({ width }) => width};
-  background-color: ${({ theme }) => theme.colors.blank_background};
+  background-color: ${({ theme }) => theme.colors.translucent_bg};
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   transform: translateX(
     ${({ isOpen, position }) =>

@@ -23,3 +23,4 @@ export * from './connection-status';
 export * from './nodes-data-flow';
 export * from './tab-list';
 export * from './auto-complete-input';
+export * from './drawer';

@@ -1,4 +1,5 @@
 import { useDrawerStore } from '@/store';
+import { Drawer } from '@/reuseable-components';
 
 const componentMap = {
   source: () => <div>Source</div>,
@@ -7,17 +8,20 @@ const componentMap = {
 };
 
 const OverviewDrawer = () => {
-  const selectedItem = useDrawerStore((state) => state.selectedItem);
+  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
+  const setDrawerItem = useDrawerStore(
+    ({ setSelectedItem }) => setSelectedItem
+  );
 
   if (!selectedItem) return null;
 
   const SpecificComponent = componentMap[selectedItem.type];
 
   return SpecificComponent ? (
-    <SpecificComponent />
-  ) : (
-    <div>Component not found</div>
-  );
+    <Drawer isOpen onClose={() => setDrawerItem(null)}>
+      <SpecificComponent />
+    </Drawer>
+  ) : null;
 };
 
 export { OverviewDrawer };
