@@ -7,3 +7,4 @@ cli/odigos
 .venv
 **/__pycache__/
 **/*.pyc
+serving-certs/
