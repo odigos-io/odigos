@@ -1,17 +1,19 @@
 'use client';
 import styled from 'styled-components';
+import { useDrawerStore } from '@/store';
 import { OverviewDrawer } from '../overview-drawer';
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
 import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
 import { useActualDestination, useActualSources, useGetActions } from '@/hooks';
-import { useDrawerStore } from '@/store';
 
 export const OverviewDataFlowWrapper = styled.div`
   width: calc(100% - 64px);
   height: calc(100vh - 176px);
   position: relative;
 `;
+
+const TYPE_SOURCE = 'source';
 
 export function OverviewDataFlowContainer() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -57,25 +59,20 @@ export function OverviewDataFlowContainer() {
   }, [sources, actions, destinations, columnWidth, containerWidth]);
 
   function onNodeClick(_, object: any) {
-    if (object.data.type === 'source') {
+    if (object.data.type === TYPE_SOURCE) {
+      const { id } = object.data;
       const selectedDrawerItem = sources.find(
-        (source) =>
-          source.kind === object.data.id.kind &&
-          source.name === object.data.id.name &&
-          source.namespace === object.data.id.namespace
+        ({ kind, name, namespace }) =>
+          kind === id.kind && name === id.name && namespace === id.namespace
       );
-      if (!selectedDrawerItem) {
-        return;
-      }
+      if (!selectedDrawerItem) return;
+
+      const { kind, name, namespace } = selectedDrawerItem;
 
       setSelectedItem({
-        id: {
-          kind: selectedDrawerItem.kind,
-          name: selectedDrawerItem.name,
-          namespace: selectedDrawerItem.namespace,
-        },
+        id: { kind, name, namespace },
         item: selectedDrawerItem,
-        type: 'source',
+        type: TYPE_SOURCE,
       });
     }
   }
