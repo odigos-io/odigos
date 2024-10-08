@@ -215,7 +215,7 @@ func extractOpampAgentAttributes(agentDescription *protobufs.AgentDescription) o
 		switch attr.Key {
 		case string(semconv.TelemetrySDKLanguageKey):
 			result.ProgrammingLanguage = attr.Value.GetStringValue()
-		case string(semconv.ContainerNameKey):
+		case string(semconv.K8SContainerNameKey):
 			result.ContainerName = attr.Value.GetStringValue()
 		case string(semconv.K8SPodNameKey):
 			result.PodName = attr.Value.GetStringValue()
