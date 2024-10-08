@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { K8sActualSource, PatchSourceRequestInput, WorkloadId } from '@/types';
+import { useActualSources } from '@/hooks';
 import DrawerHeader from './drawer-header';
 import DrawerFooter from './drawer-footer';
 import { SourceDrawer } from '../../sources';
 import { Drawer } from '@/reuseable-components';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
-import { useActualSources } from '@/hooks';
+import { K8sActualSource, PatchSourceRequestInput, WorkloadId } from '@/types';
 
 const componentMap = {
   source: SourceDrawer,
