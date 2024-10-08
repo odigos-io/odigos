@@ -25,7 +25,7 @@ const OverviewDrawer = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(selectedItem?.item?.name || '');
 
-  const { updateActualSource } = useActualSources();
+  const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
 
   const titleRef = useRef<HTMLInputElement>(null);
 
@@ -73,8 +73,22 @@ const OverviewDrawer = () => {
     initialTitle();
   };
 
-  const handleDelete = () => {
-    // Add delete logic here
+  const handleDelete = async () => {
+    if (selectedItem?.type === 'source' && selectedItem.item) {
+      const sourceItem = selectedItem.item as K8sActualSource;
+
+      try {
+        await deleteSourcesForNamespace(sourceItem.namespace, [
+          {
+            kind: sourceItem.kind,
+            name: sourceItem.name,
+            selected: false,
+          },
+        ]);
+      } catch (error) {
+        console.error('Error deleting source:', error);
+      }
+    }
     setDrawerItem(null); // Close the drawer on delete
   };
 
