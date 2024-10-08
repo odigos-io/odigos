@@ -1,8 +1,8 @@
 // DrawerFooter.tsx
-import React from 'react';
-import styled from 'styled-components';
-import { Button, Text } from '@/reuseable-components'; // Adjust the path if needed
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
+import styled, { css } from 'styled-components';
+import { Button, Text } from '@/reuseable-components';
 
 interface DrawerFooterProps {
   onSave: () => void;
@@ -14,36 +14,59 @@ const DrawerFooter: React.FC<DrawerFooterProps> = ({
   onSave,
   onCancel,
   onDelete,
-}) => (
-  <FooterContainer>
-    <LeftButtonsWrapper>
-      <FooterButton disabled variant="primary" onClick={onSave}>
-        <ButtonText variant="primary">Save</ButtonText>
+}) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Trigger animation on mount
+    setIsVisible(true);
+  }, []);
+
+  return (
+    <FooterContainer isVisible={isVisible}>
+      <LeftButtonsWrapper>
+        <FooterButton variant="primary" onClick={onSave}>
+          <ButtonText variant="primary">Save</ButtonText>
+        </FooterButton>
+        <FooterButton variant="secondary" onClick={onCancel}>
+          <ButtonText>Cancel</ButtonText>
+        </FooterButton>
+      </LeftButtonsWrapper>
+      <FooterButton
+        style={{ width: 100 }}
+        variant="tertiary"
+        onClick={onDelete}
+      >
+        <Image
+          src="/icons/common/trash.svg"
+          alt="Delete"
+          width={16}
+          height={16}
+        />
+        <ButtonText variant="tertiary">Delete</ButtonText>
       </FooterButton>
-      <FooterButton variant="secondary" onClick={onCancel}>
-        <ButtonText>Cancel</ButtonText>
-      </FooterButton>
-    </LeftButtonsWrapper>
-    <FooterButton variant="tertiary" onClick={onDelete}>
-      <Image
-        src="/icons/common/trash.svg"
-        alt="Delete"
-        width={16}
-        height={16}
-      />
-      <ButtonText variant="tertiary">Delete</ButtonText>
-    </FooterButton>
-  </FooterContainer>
-);
+    </FooterContainer>
+  );
+};
 
 export default DrawerFooter;
 
-const FooterContainer = styled.div`
+const FooterContainer = styled.div<{ isVisible: boolean }>`
   display: flex;
   justify-content: space-between;
-  padding: 16px;
+  padding: 24px 18px 24px 32px;
   background-color: ${({ theme }) => theme.colors.translucent_bg};
   border-top: 1px solid rgba(249, 249, 249, 0.24);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+
+  ${({ isVisible }) =>
+    isVisible &&
+    css`
+      opacity: 1;
+      transform: translateY(0);
+    `}
 `;
 
 const LeftButtonsWrapper = styled.div`

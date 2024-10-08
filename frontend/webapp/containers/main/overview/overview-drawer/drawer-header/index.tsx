@@ -1,8 +1,8 @@
 // DrawerHeader.tsx
-import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
-import { Button, Input, Text } from '@/reuseable-components'; // Adjust the path if needed
+import React, { useEffect, useState, forwardRef } from 'react';
 import Image from 'next/image';
+import styled from 'styled-components';
+import { Button, Input, Text } from '@/reuseable-components';
 
 const HeaderContainer = styled.section`
   display: flex;
@@ -14,10 +14,10 @@ const HeaderContainer = styled.section`
   border-bottom: 1px solid rgba(249, 249, 249, 0.24);
 `;
 
-const SectionItemsWrapper = styled.div`
+const SectionItemsWrapper = styled.div<{ gap?: number }>`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: ${({ gap }) => gap || 16}px;
 `;
 
 const InputWrapper = styled(SectionItemsWrapper)`
@@ -26,7 +26,7 @@ const InputWrapper = styled(SectionItemsWrapper)`
 
 const Title = styled(Text)`
   font-size: 18px;
-  font-weight: 600;
+  line-height: 26px;
 `;
 
 const DrawerItemImageWrapper = styled.div`
@@ -54,7 +54,6 @@ const ButtonText = styled(Text)`
   font-size: 14px;
   font-weight: 600;
   font-family: ${({ theme }) => theme.font_family.secondary};
-
   text-decoration-line: underline;
   text-transform: uppercase;
   width: fit-content;
@@ -64,64 +63,59 @@ interface DrawerHeaderProps {
   title: string;
   imageUri: string;
   isEditing: boolean;
-  onSave: (newTitle: string) => void;
   setIsEditing: (isEditing: boolean) => void;
 }
 
-const DrawerHeader: React.FC<DrawerHeaderProps> = ({
-  title,
-  imageUri,
-  isEditing,
-  onSave,
-  setIsEditing,
-}) => {
-  const [inputValue, setInputValue] = useState(title);
+const DrawerHeader = forwardRef<HTMLInputElement, DrawerHeaderProps>(
+  ({ title, imageUri, isEditing, setIsEditing }, ref) => {
+    const [inputValue, setInputValue] = useState(title);
 
-  useEffect(() => {
-    setInputValue(title);
-  }, [title]);
+    useEffect(() => {
+      setInputValue(title);
+    }, [title]);
 
-  const handleSave = () => {
-    onSave(inputValue);
-    setIsEditing(false);
-  };
-
-  return (
-    <HeaderContainer>
-      <SectionItemsWrapper>
-        <DrawerItemImageWrapper>
-          <Image src={imageUri} alt="Drawer Item" width={16} height={16} />
-        </DrawerItemImageWrapper>
-        {!isEditing && <Title>{title}</Title>}
-      </SectionItemsWrapper>
-      {isEditing && (
-        <InputWrapper>
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            autoFocus
-          />
-        </InputWrapper>
-      )}
-
-      <SectionItemsWrapper>
-        {!isEditing && (
-          <EditButton variant="tertiary" onClick={() => setIsEditing(true)}>
-            <Image
-              src="/icons/common/edit.svg"
-              alt="Edit"
-              width={16}
-              height={16}
+    return (
+      <HeaderContainer>
+        <SectionItemsWrapper>
+          <DrawerItemImageWrapper>
+            <Image src={imageUri} alt="Drawer Item" width={16} height={16} />
+          </DrawerItemImageWrapper>
+          {!isEditing && <Title>{title}</Title>}
+        </SectionItemsWrapper>
+        {isEditing && (
+          <InputWrapper>
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              autoFocus
+              ref={ref}
             />
-            <ButtonText>Edit</ButtonText>
-          </EditButton>
+          </InputWrapper>
         )}
-        <CloseButton variant="secondary" onClick={handleSave}>
-          <Image src="/icons/common/x.svg" alt="Edit" width={11} height={10} />
-        </CloseButton>
-      </SectionItemsWrapper>
-    </HeaderContainer>
-  );
-};
+        <SectionItemsWrapper gap={8}>
+          {!isEditing && (
+            <EditButton variant="tertiary" onClick={() => setIsEditing(true)}>
+              <Image
+                src="/icons/common/edit.svg"
+                alt="Edit"
+                width={16}
+                height={16}
+              />
+              <ButtonText>Edit</ButtonText>
+            </EditButton>
+          )}
+          <CloseButton variant="secondary" onClick={() => setIsEditing(false)}>
+            <Image
+              src="/icons/common/x.svg"
+              alt="Close"
+              width={11}
+              height={10}
+            />
+          </CloseButton>
+        </SectionItemsWrapper>
+      </HeaderContainer>
+    );
+  }
+);
 
 export default DrawerHeader;
