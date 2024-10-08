@@ -1,10 +1,14 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Text } from '@/reuseable-components';
-import { DestinationTypeDetail } from '@/types';
 
-type ConfiguredDestinationFieldsProps = {
-  details: DestinationTypeDetail[];
+type TypeDetail = {
+  title: string;
+  value: string;
+};
+
+type ConfiguredFieldsProps = {
+  details: TypeDetail[];
 };
 
 const ListContainer = styled.div`
@@ -27,9 +31,9 @@ const ItemValue = styled(Text)`
   line-height: 18px;
 `;
 
-export const ConfiguredDestinationFields: React.FC<
-  ConfiguredDestinationFieldsProps
-> = ({ details }) => {
+export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({
+  details,
+}) => {
   const parseValue = (value: any) => {
     try {
       const parsed = JSON.parse(value);

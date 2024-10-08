@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { ConfiguredDestinationFields } from '@/components';
+import { ConfiguredFields } from '@/components';
 import { Text } from '@/reuseable-components';
 interface CardDetailsProps {
   data: {
@@ -19,7 +19,7 @@ const CardDetails: React.FC<CardDetailsProps> = ({
       <TitleWrapper>
         <Text>{title}</Text>
       </TitleWrapper>
-      <ConfiguredDestinationFields details={data} />
+      <ConfiguredFields details={data} />
     </Container>
   );
 };

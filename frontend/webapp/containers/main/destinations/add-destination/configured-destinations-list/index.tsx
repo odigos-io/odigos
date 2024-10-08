@@ -1,9 +1,9 @@
 import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
+import { ConfiguredFields } from '@/components';
 import { ConfiguredDestination } from '@/types';
 import { Divider, Text } from '@/reuseable-components';
-import { ConfiguredDestinationFields } from '@/components';
 
 const Container = styled.div`
   display: flex;
@@ -177,7 +177,7 @@ function ConfiguredDestinationsListItem({
       {expand && (
         <ListItemBody>
           <Divider margin="0 0 16px 0" />
-          <ConfiguredDestinationFields details={item.destinationTypeDetails} />
+          <ConfiguredFields details={item.destinationTypeDetails} />
         </ListItemBody>
       )}
     </ListItem>
