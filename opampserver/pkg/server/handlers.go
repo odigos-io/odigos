@@ -250,8 +250,8 @@ func resolveFromDirectAttributes(ctx context.Context, attrs opampAgentAttributes
 		}
 	}
 
-	serviceName := podInfoResolver.ResolveServiceName(ctx, attrs.PodName, workloadName, &di.ContainerDetails{
-		PodName: attrs.PodName,
+	serviceName := podInfoResolver.ResolveServiceName(ctx, workloadName, string(workloadKind), &di.ContainerDetails{
+		PodNamespace: attrs.Namespace,
 	})
 
 	k8sAttributes := &di.K8sResourceAttributes{
