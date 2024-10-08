@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { K8sActualSource } from '@/types';
+import { K8sActualSource, PatchSourceRequestInput, WorkloadId } from '@/types';
 import DrawerHeader from './drawer-header';
 import DrawerFooter from './drawer-footer';
 import { SourceDrawer } from '../../sources';
 import { Drawer } from '@/reuseable-components';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
+import { useActualSources } from '@/hooks';
 
 const componentMap = {
   source: SourceDrawer,
@@ -24,24 +25,52 @@ const OverviewDrawer = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(selectedItem?.item?.name || '');
 
+  const { updateActualSource } = useActualSources();
+
   const titleRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setTitle(selectedItem?.item?.name || '');
-  }, [selectedItem]);
+  useEffect(initialTitle, [selectedItem]);
 
-  const handleSave = () => {
+  function initialTitle() {
+    if (selectedItem?.type === 'source' && selectedItem.item) {
+      const title = (selectedItem.item as K8sActualSource).reportedName;
+      setTitle(title || '');
+    } else {
+      setTitle('');
+    }
+  }
+
+  const handleSave = async () => {
     if (titleRef.current) {
       const newTitle = titleRef.current.value;
       setTitle(newTitle);
+      if (selectedItem?.type === 'source' && selectedItem.item) {
+        const sourceItem = selectedItem.item as K8sActualSource;
+
+        const sourceId: WorkloadId = {
+          namespace: sourceItem.namespace,
+          kind: sourceItem.kind,
+          name: sourceItem.name,
+        };
+
+        const patchRequest: PatchSourceRequestInput = {
+          reportedName: newTitle,
+        };
+
+        try {
+          await updateActualSource(sourceId, patchRequest);
+        } catch (error) {
+          console.error('Error updating source:', error);
+          // Optionally show error message to user
+        }
+      }
     }
-    // Add save logic here
     setIsEditing(false);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    setTitle(selectedItem?.item?.name || ''); // Revert to original title on cancel
+    initialTitle();
   };
 
   const handleDelete = () => {

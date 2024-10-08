@@ -161,6 +161,7 @@ type ComplexityRoot struct {
 		Name                           func(childComplexity int) int
 		Namespace                      func(childComplexity int) int
 		NumberOfInstances              func(childComplexity int) int
+		ReportedName                   func(childComplexity int) int
 		ServiceName                    func(childComplexity int) int
 	}
 
@@ -169,6 +170,7 @@ type ComplexityRoot struct {
 		PersistK8sNamespace          func(childComplexity int, namespace model.PersistNamespaceItemInput) int
 		PersistK8sSources            func(childComplexity int, namespace string, sources []*model.PersistNamespaceSourceInput) int
 		TestConnectionForDestination func(childComplexity int, destination model.DestinationInput) int
+		UpdateK8sActualSource        func(childComplexity int, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) int
 	}
 
 	ObservabilitySignalSupport struct {
@@ -226,6 +228,7 @@ type MutationResolver interface {
 	PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error)
 	PersistK8sSources(ctx context.Context, namespace string, sources []*model.PersistNamespaceSourceInput) (bool, error)
 	TestConnectionForDestination(ctx context.Context, destination model.DestinationInput) (*model.TestConnectionResponse, error)
+	UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error)
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
@@ -703,6 +706,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sActualSource.NumberOfInstances(childComplexity), true
 
+	case "K8sActualSource.reportedName":
+		if e.complexity.K8sActualSource.ReportedName == nil {
+			break
+		}
+
+		return e.complexity.K8sActualSource.ReportedName(childComplexity), true
+
 	case "K8sActualSource.serviceName":
 		if e.complexity.K8sActualSource.ServiceName == nil {
 			break
@@ -757,6 +767,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.TestConnectionForDestination(childComplexity, args["destination"].(model.DestinationInput)), true
+
+	case "Mutation.updateK8sActualSource":
+		if e.complexity.Mutation.UpdateK8sActualSource == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateK8sActualSource_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateK8sActualSource(childComplexity, args["sourceId"].(model.K8sSourceID), args["patchSourceRequest"].(model.PatchSourceRequestInput)), true
 
 	case "ObservabilitySignalSupport.supported":
 		if e.complexity.ObservabilitySignalSupport.Supported == nil {
@@ -890,6 +912,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputK8sDesiredSourceInput,
 		ec.unmarshalInputK8sNamespaceId,
 		ec.unmarshalInputK8sSourceId,
+		ec.unmarshalInputPatchSourceRequestInput,
 		ec.unmarshalInputPersistNamespaceItemInput,
 		ec.unmarshalInputPersistNamespaceSourceInput,
 	)
@@ -1137,6 +1160,30 @@ func (ec *executionContext) field_Mutation_testConnectionForDestination_args(ctx
 		}
 	}
 	args["destination"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateK8sActualSource_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.K8sSourceID
+	if tmp, ok := rawArgs["sourceId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceId"))
+		arg0, err = ec.unmarshalNK8sSourceId2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sourceId"] = arg0
+	var arg1 model.PatchSourceRequestInput
+	if tmp, ok := rawArgs["patchSourceRequest"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("patchSourceRequest"))
+		arg1, err = ec.unmarshalNPatchSourceRequestInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPatchSourceRequestInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["patchSourceRequest"] = arg1
 	return args, nil
 }
 
@@ -1410,6 +1457,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_k8sActualSource(ctx con
 				return ec.fieldContext_K8sActualSource_serviceName(ctx, field)
 			case "numberOfInstances":
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
+			case "reportedName":
+				return ec.fieldContext_K8sActualSource_reportedName(ctx, field)
 			case "autoInstrumented":
 				return ec.fieldContext_K8sActualSource_autoInstrumented(ctx, field)
 			case "autoInstrumentedDecision":
@@ -1483,6 +1532,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_k8sActualSources(_ cont
 				return ec.fieldContext_K8sActualSource_serviceName(ctx, field)
 			case "numberOfInstances":
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
+			case "reportedName":
+				return ec.fieldContext_K8sActualSource_reportedName(ctx, field)
 			case "autoInstrumented":
 				return ec.fieldContext_K8sActualSource_autoInstrumented(ctx, field)
 			case "autoInstrumentedDecision":
@@ -3799,6 +3850,8 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(ctx
 				return ec.fieldContext_K8sActualSource_serviceName(ctx, field)
 			case "numberOfInstances":
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
+			case "reportedName":
+				return ec.fieldContext_K8sActualSource_reportedName(ctx, field)
 			case "autoInstrumented":
 				return ec.fieldContext_K8sActualSource_autoInstrumented(ctx, field)
 			case "autoInstrumentedDecision":
@@ -4032,6 +4085,47 @@ func (ec *executionContext) fieldContext_K8sActualSource_numberOfInstances(_ con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sActualSource_reportedName(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sActualSource_reportedName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReportedName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sActualSource_reportedName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sActualSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4416,6 +4510,61 @@ func (ec *executionContext) fieldContext_Mutation_testConnectionForDestination(c
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_testConnectionForDestination_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateK8sActualSource(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateK8sActualSource(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateK8sActualSource(rctx, fc.Args["sourceId"].(model.K8sSourceID), fc.Args["patchSourceRequest"].(model.PatchSourceRequestInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateK8sActualSource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateK8sActualSource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -7318,6 +7467,33 @@ func (ec *executionContext) unmarshalInputK8sSourceId(ctx context.Context, obj i
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Context, obj interface{}) (model.PatchSourceRequestInput, error) {
+	var it model.PatchSourceRequestInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"reportedName"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "reportedName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportedName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReportedName = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputPersistNamespaceItemInput(ctx context.Context, obj interface{}) (model.PersistNamespaceItemInput, error) {
 	var it model.PersistNamespaceItemInput
 	asMap := map[string]interface{}{}
@@ -8524,6 +8700,8 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._K8sActualSource_serviceName(ctx, field, obj)
 		case "numberOfInstances":
 			out.Values[i] = ec._K8sActualSource_numberOfInstances(ctx, field, obj)
+		case "reportedName":
+			out.Values[i] = ec._K8sActualSource_reportedName(ctx, field, obj)
 		case "autoInstrumented":
 			out.Values[i] = ec._K8sActualSource_autoInstrumented(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8602,6 +8780,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "testConnectionForDestination":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_testConnectionForDestination(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateK8sActualSource":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateK8sActualSource(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -9916,8 +10101,18 @@ func (ec *executionContext) marshalNK8sResourceKind2githubᚗcomᚋodigosᚑio�
 	return v
 }
 
+func (ec *executionContext) unmarshalNK8sSourceId2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceID(ctx context.Context, v interface{}) (model.K8sSourceID, error) {
+	res, err := ec.unmarshalInputK8sSourceId(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNObservabilitySignalSupport2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐObservabilitySignalSupport(ctx context.Context, sel ast.SelectionSet, v model.ObservabilitySignalSupport) graphql.Marshaler {
 	return ec._ObservabilitySignalSupport(ctx, sel, &v)
+}
+
+func (ec *executionContext) unmarshalNPatchSourceRequestInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPatchSourceRequestInput(ctx context.Context, v interface{}) (model.PatchSourceRequestInput, error) {
+	res, err := ec.unmarshalInputPatchSourceRequestInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNPersistNamespaceItemInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPersistNamespaceItemInput(ctx context.Context, v interface{}) (model.PersistNamespaceItemInput, error) {

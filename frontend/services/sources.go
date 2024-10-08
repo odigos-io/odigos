@@ -64,7 +64,7 @@ type ThinSource struct {
 
 func GetActualSource(ctx context.Context, ns string, kind string, name string) (*Source, error) {
 	k8sObjectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
-	owner, numberOfRunningInstances := getWorkload(ctx, ns, kind, name)
+	owner, numberOfRunningInstances := GetWorkload(ctx, ns, kind, name)
 	if owner == nil {
 		return nil, fmt.Errorf("owner not found")
 	}
@@ -98,7 +98,7 @@ func GetActualSource(ctx context.Context, ns string, kind string, name string) (
 	}, nil
 }
 
-func getWorkload(c context.Context, ns string, kind string, name string) (metav1.Object, int) {
+func GetWorkload(c context.Context, ns string, kind string, name string) (metav1.Object, int) {
 	switch kind {
 	case "Deployment":
 		deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(c, name, metav1.GetOptions{})
@@ -333,4 +333,50 @@ func k8sKindToGql(k8sResourceKind string) model.K8sResourceKind {
 		return model.K8sResourceKindDaemonSet
 	}
 	return ""
+}
+
+func UpdateReportedName(
+	ctx context.Context,
+	ns, kind, name, reportedName string,
+) error {
+	switch kind {
+	case "Deployment":
+		deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("could not find deployment: %w", err)
+		}
+		deployment.SetAnnotations(updateAnnotations(deployment.GetAnnotations(), reportedName))
+		_, err = kube.DefaultClient.AppsV1().Deployments(ns).Update(ctx, deployment, metav1.UpdateOptions{})
+		return err
+	case "StatefulSet":
+		statefulSet, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("could not find statefulset: %w", err)
+		}
+		statefulSet.SetAnnotations(updateAnnotations(statefulSet.GetAnnotations(), reportedName))
+		_, err = kube.DefaultClient.AppsV1().StatefulSets(ns).Update(ctx, statefulSet, metav1.UpdateOptions{})
+		return err
+	case "DaemonSet":
+		daemonSet, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("could not find daemonset: %w", err)
+		}
+		daemonSet.SetAnnotations(updateAnnotations(daemonSet.GetAnnotations(), reportedName))
+		_, err = kube.DefaultClient.AppsV1().DaemonSets(ns).Update(ctx, daemonSet, metav1.UpdateOptions{})
+		return err
+	default:
+		return fmt.Errorf("unsupported kind: %s", kind)
+	}
+}
+
+func updateAnnotations(annotations map[string]string, reportedName string) map[string]string {
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	if reportedName == "" {
+		delete(annotations, consts.OdigosReportedNameAnnotation)
+	} else {
+		annotations[consts.OdigosReportedNameAnnotation] = reportedName
+	}
+	return annotations
 }

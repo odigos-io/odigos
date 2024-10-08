@@ -138,10 +138,10 @@ func instrumentedApplicationToActualSource(instrumentedApp v1alpha1.Instrumented
 		Namespace:                instrumentedApp.Namespace,
 		Kind:                     k8sKindToGql(instrumentedApp.OwnerReferences[0].Kind),
 		Name:                     instrumentedApp.OwnerReferences[0].Name,
-		ServiceName:              &instrumentedApp.Name, // Assuming serviceName is derived from the app name
-		NumberOfInstances:        nil,                   // Assuming this is handled separately; can be updated if needed
+		ServiceName:              &instrumentedApp.Name,
+		NumberOfInstances:        nil,
 		AutoInstrumented:         instrumentedApp.Spec.Options != nil,
-		AutoInstrumentedDecision: "", // Assuming this comes from another source, add if applicable
+		AutoInstrumentedDecision: "",
 		InstrumentedApplicationDetails: &gqlmodel.InstrumentedApplicationDetails{
 			Containers: containers,
 			Conditions: conditions,

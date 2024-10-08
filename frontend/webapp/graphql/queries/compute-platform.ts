@@ -8,6 +8,7 @@ export const GET_COMPUTE_PLATFORM = gql`
         kind
         namespace
         numberOfInstances
+        reportedName
         instrumentedApplicationDetails {
           containers {
             containerName

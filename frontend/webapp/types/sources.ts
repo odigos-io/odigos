@@ -82,6 +82,7 @@ export type K8sActualSource = {
   name: string;
   kind: string;
   namespace: string;
+  reportedName: string;
   numberOfInstances: number;
   selected?: boolean;
   instrumentedApplicationDetails: {
@@ -107,3 +108,7 @@ export type WorkloadId = {
   name: string;
   namespace: string;
 };
+
+export interface PatchSourceRequestInput {
+  reportedName?: string;
+}

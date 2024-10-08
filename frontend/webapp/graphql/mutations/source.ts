@@ -8,3 +8,15 @@ export const CREATE_SOURCE = gql`
     persistK8sSources(namespace: $namespace, sources: $sources)
   }
 `;
+
+export const UPDATE_K8S_ACTUAL_SOURCE = gql`
+  mutation UpdateK8sActualSource(
+    $sourceId: K8sSourceId!
+    $patchSourceRequest: PatchSourceRequestInput!
+  ) {
+    updateK8sActualSource(
+      sourceId: $sourceId
+      patchSourceRequest: $patchSourceRequest
+    )
+  }
+`;

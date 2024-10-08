@@ -1,15 +1,15 @@
+import { useState, useCallback } from 'react';
 import { useCreateSource } from '../sources';
 import { useNamespace } from '../compute-platform';
+import { useUpdateSource } from './useUpdateSource';
 import { useComputePlatform } from '../compute-platform';
-import { useState, useCallback } from 'react';
+import { PatchSourceRequestInput, WorkloadId } from '@/types';
 
 export function useActualSources() {
   const { data, refetch } = useComputePlatform();
-  const {
-    createSource,
-    success: sourceSuccess,
-    error: sourceError,
-  } = useCreateSource();
+  const { createSource, error: sourceError } = useCreateSource();
+  const { updateSource, error: updateError } = useUpdateSource();
+
   const { persistNamespace } = useNamespace(undefined);
   const [isPolling, setIsPolling] = useState(false);
 
@@ -37,6 +37,19 @@ export function useActualSources() {
     }
   };
 
+  const updateActualSource = async (
+    sourceId: WorkloadId,
+    patchRequest: PatchSourceRequestInput
+  ) => {
+    try {
+      await updateSource(sourceId, patchRequest);
+      refetch();
+    } catch (error) {
+      console.error('Error updating source:', error);
+      throw error;
+    }
+  };
+
   const persistNamespaceItems = async (namespaceItems) => {
     for (const namespace of namespaceItems) {
       await persistNamespace(namespace);
@@ -47,6 +60,7 @@ export function useActualSources() {
     sources: data?.computePlatform.k8sActualSources || [],
     createSourcesForNamespace,
     persistNamespaceItems,
+    updateActualSource,
     isPolling,
   };
 }
