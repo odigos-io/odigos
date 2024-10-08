@@ -1,14 +1,10 @@
-import React, { useEffect, useMemo } from 'react';
-import { CardDetails } from '@/components';
+import React, { useMemo } from 'react';
 import { useDrawerStore } from '@/store';
 import { K8sActualSource } from '@/types';
+import { CardDetails } from '@/components';
 
 const SourceDrawer: React.FC = () => {
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
-
-  useEffect(() => {
-    console.log({ selectedItem });
-  }, [selectedItem]);
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
