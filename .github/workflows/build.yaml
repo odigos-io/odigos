@@ -7,20 +7,30 @@ on:
       - main
       - stable
 
+permissions:
+  packages: write
+
 jobs:
   build-autoscaler:
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-2x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Cache Docker Layers
+        uses: WarpBuilds/cache@v1
+        with:
+          path: autoscaler-cache
+          key: autoscaler-cache-${{ github.head_ref }}
       - name: Build Autoscaler Image
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: autoscaler:pr-${{ github.event.number }}
+          tags: ghcr.io/odigos-io/odigos/autoscaler:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=autoscaler
+          cache-to: type=local,mode=max,dest=autoscaler-cache
+          cache-from: type=local,src=autoscaler-cache
   build-scheduler:
     runs-on: ubuntu-latest
     steps:
