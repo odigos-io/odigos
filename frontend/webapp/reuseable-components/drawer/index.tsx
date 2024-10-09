@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import styled, { css } from 'styled-components';
+import React, { useEffect } from 'react';
+import styled from 'styled-components';
 
 interface DrawerProps {
   isOpen: boolean;
+  width?: string;
   onClose: () => void;
-  position?: 'left' | 'right'; // Optional prop to specify the drawer opening side
-  width?: string; // Optional width control, defaults to 300px
+  closeOnEscape?: boolean;
+  position?: 'left' | 'right';
   children: React.ReactNode;
 }
 
@@ -51,11 +52,14 @@ export const Drawer: React.FC<DrawerProps> = ({
   position = 'right',
   width = '300px',
   children,
+  closeOnEscape = true,
 }) => {
   // Handle closing the drawer when escape key is pressed
   useEffect(() => {
+    if (!closeOnEscape) return;
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
+        event.stopPropagation();
         onClose();
       }
     };
@@ -63,7 +67,7 @@ export const Drawer: React.FC<DrawerProps> = ({
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, closeOnEscape]);
 
   return (
     <>

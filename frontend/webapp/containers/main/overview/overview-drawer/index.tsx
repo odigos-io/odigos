@@ -109,45 +109,53 @@ const OverviewDrawer = () => {
   const SpecificComponent = componentMap[selectedItem.type];
 
   return SpecificComponent ? (
-    <Drawer isOpen onClose={handleClose} width={DRAWER_WIDTH}>
-      <DrawerContent>
-        <DrawerHeader
-          ref={titleRef}
-          title={title}
-          imageUri={
-            selectedItem?.item
-              ? getMainContainerLanguageLogo(
-                  selectedItem.item as K8sActualSource
-                )
-              : ''
-          }
-          {...{ isEditing, setIsEditing }}
-        />
-        <ContentArea>
-          <SpecificComponent />
-        </ContentArea>
-        {isEditing && (
-          <>
-            <DrawerFooter
-              onSave={handleSave}
-              onCancel={handleCancel}
-              onDelete={() => setIsDeleteModalOpen(true)}
-            />
-            <DeleteEntityModal
-              title={title}
-              isModalOpen={isDeleteModalOpen}
-              handleDelete={handleDelete}
-              handleCloseModal={handleCloseDeleteModal}
-              description="Are you sure you want to delete this source?"
-            />
-          </>
-        )}
-      </DrawerContent>
-    </Drawer>
+    <>
+      <Drawer
+        isOpen
+        onClose={handleClose}
+        width={DRAWER_WIDTH}
+        closeOnEscape={!isDeleteModalOpen}
+      >
+        <DrawerContent>
+          <DrawerHeader
+            ref={titleRef}
+            title={title}
+            onClose={isEditing ? handleCancel : handleClose}
+            imageUri={
+              selectedItem?.item
+                ? getMainContainerLanguageLogo(
+                    selectedItem.item as K8sActualSource
+                  )
+                : ''
+            }
+            {...{ isEditing, setIsEditing }}
+          />
+          <ContentArea>
+            <SpecificComponent />
+          </ContentArea>
+          {isEditing && (
+            <>
+              <DrawerFooter
+                onSave={handleSave}
+                onCancel={handleCancel}
+                onDelete={() => setIsDeleteModalOpen(true)}
+              />
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
+      <DeleteEntityModal
+        title={title}
+        isModalOpen={isDeleteModalOpen}
+        handleDelete={handleDelete}
+        handleCloseModal={handleCloseDeleteModal}
+        description="Are you sure you want to delete this source?"
+      />
+    </>
   ) : null;
 };
 
-export { OverviewDrawer };
+export default OverviewDrawer;
 
 const DrawerContent = styled.div`
   display: flex;

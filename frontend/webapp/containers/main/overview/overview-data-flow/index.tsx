@@ -1,11 +1,15 @@
 'use client';
+import dynamic from 'next/dynamic';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { OverviewDrawer } from '../overview-drawer';
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
 import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
 import { useActualDestination, useActualSources, useGetActions } from '@/hooks';
+
+const OverviewDrawer = dynamic(() => import('../overview-drawer'), {
+  ssr: false,
+});
 
 export const OverviewDataFlowWrapper = styled.div`
   width: calc(100% - 64px);

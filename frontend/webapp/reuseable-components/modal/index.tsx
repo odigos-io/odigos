@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import { Text } from '../text';
 import ReactDOM from 'react-dom';
@@ -96,6 +96,17 @@ const Modal: React.FC<ModalProps> = ({
   children,
   actionComponent,
 }) => {
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
