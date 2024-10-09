@@ -2,7 +2,7 @@ import React, { ButtonHTMLAttributes } from 'react';
 import styled, { css } from 'styled-components';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'tertiary';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger';
   isDisabled?: boolean;
 }
 
@@ -23,7 +23,7 @@ const variantStyles = {
   secondary: css`
     background: rgba(249, 249, 249, 0);
     border: 1px solid rgba(82, 82, 82, 1);
-
+    color: ${({ theme }) => theme.colors.secondary};
     &:hover {
       border: 1px solid rgba(249, 249, 249, 0.32);
       background: rgba(249, 249, 249, 0.04);
@@ -49,6 +49,20 @@ const variantStyles = {
       background: rgba(249, 249, 249, 0);
     }
   `,
+  danger: css`
+    border-color: transparent;
+    background: ${({ theme }) => theme.colors.danger};
+    &:hover {
+      background: ${({ theme }) => theme.colors.danger};
+      opacity: 0.9;
+    }
+    &:active {
+      background: ${({ theme }) => theme.colors.danger};
+    }
+    &:focus {
+      background: ${({ theme }) => theme.colors.danger};
+    }
+  `,
 };
 
 const StyledButton = styled.button<ButtonProps>`
@@ -59,6 +73,10 @@ const StyledButton = styled.button<ButtonProps>`
   justify-content: center;
   align-items: center;
   padding: 0 12px;
+  font-family: ${({ theme }) => theme.font_family.secondary};
+  text-transform: uppercase;
+  text-decoration: underline;
+  font-weight: 600;
   ${({ variant }) => variant && variantStyles[variant]}
   ${({ isDisabled }) =>
     isDisabled &&
@@ -72,7 +90,7 @@ const StyledButton = styled.button<ButtonProps>`
 `;
 
 const ButtonContainer = styled.div<{
-  variant?: 'primary' | 'secondary' | 'tertiary';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger';
 }>`
   border: 2px solid transparent;
   padding: 2px;

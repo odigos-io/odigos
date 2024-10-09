@@ -6,6 +6,7 @@ import DrawerHeader from './drawer-header';
 import DrawerFooter from './drawer-footer';
 import { SourceDrawer } from '../../sources';
 import { Drawer } from '@/reuseable-components';
+import { DeleteEntityModal } from '@/components';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 import { K8sActualSource, PatchSourceRequestInput, WorkloadId } from '@/types';
 
@@ -24,6 +25,7 @@ const OverviewDrawer = () => {
   );
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(selectedItem?.item?.name || '');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
 
@@ -95,6 +97,11 @@ const OverviewDrawer = () => {
   const handleClose = () => {
     setIsEditing(false);
     setDrawerItem(null);
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
   };
 
   if (!selectedItem) return null;
@@ -120,11 +127,20 @@ const OverviewDrawer = () => {
           <SpecificComponent />
         </ContentArea>
         {isEditing && (
-          <DrawerFooter
-            onSave={handleSave}
-            onCancel={handleCancel}
-            onDelete={handleDelete}
-          />
+          <>
+            <DrawerFooter
+              onSave={handleSave}
+              onCancel={handleCancel}
+              onDelete={() => setIsDeleteModalOpen(true)}
+            />
+            <DeleteEntityModal
+              title={title}
+              isModalOpen={isDeleteModalOpen}
+              handleDelete={handleDelete}
+              handleCloseModal={handleCloseDeleteModal}
+              description="Are you sure you want to delete this source?"
+            />
+          </>
         )}
       </DrawerContent>
     </Drawer>

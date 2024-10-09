@@ -3,11 +3,10 @@ import Image from 'next/image';
 import { Text } from '../text';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
-import { Button } from '../button';
 
 interface ModalProps {
   isOpen: boolean;
-  header: {
+  header?: {
     title: string;
   };
   actionComponent?: React.ReactNode;
@@ -102,21 +101,23 @@ const Modal: React.FC<ModalProps> = ({
   return ReactDOM.createPortal(
     <Overlay>
       <ModalWrapper>
-        <ModalHeader>
-          <ModalCloseButton onClick={onClose}>
-            <Image
-              src="/icons/common/x.svg"
-              alt="close"
-              width={15}
-              height={12}
-            />
-            <CancelText>{'Cancel'}</CancelText>
-          </ModalCloseButton>
-          <ModalTitleContainer>
-            <ModalTitle>{header.title}</ModalTitle>
-          </ModalTitleContainer>
-          <HeaderActionsWrapper>{actionComponent}</HeaderActionsWrapper>
-        </ModalHeader>
+        {header && (
+          <ModalHeader>
+            <ModalCloseButton onClick={onClose}>
+              <Image
+                src="/icons/common/x.svg"
+                alt="close"
+                width={15}
+                height={12}
+              />
+              <CancelText>{'Cancel'}</CancelText>
+            </ModalCloseButton>
+            <ModalTitleContainer>
+              <ModalTitle>{header.title}</ModalTitle>
+            </ModalTitleContainer>
+            <HeaderActionsWrapper>{actionComponent}</HeaderActionsWrapper>
+          </ModalHeader>
+        )}
         <ModalContent>{children}</ModalContent>
       </ModalWrapper>
     </Overlay>,
