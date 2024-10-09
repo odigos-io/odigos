@@ -149,8 +149,6 @@ func main() {
 			},
 		},
 		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "f681cfed.odigos.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
