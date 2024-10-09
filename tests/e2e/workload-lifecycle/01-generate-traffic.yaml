@@ -29,11 +29,19 @@ spec:
               curl -s --fail http://nodejs-latest-version:3000
               curl -s --fail http://nodejs-dockerfile-env:3000
               curl -s --fail http://nodejs-manifest-env:3000
+
               curl -s --fail http://cpp-http-server:3000
+
               curl -s --fail http://language-change:3000
+
               curl -s --fail http://java-supported-version:3000
               curl -s --fail http://java-supported-docker-env:3000
               curl -s --fail http://java-azul:3000
               curl -s --fail http://java-supported-manifest-env:3000
               curl -s --fail http://java-latest-version:3000
               curl -s --fail http://java-old-version:3000
+
+              curl -s --fail http://python-alpine:3000/insert-random/
+              curl -s --fail http://python-latest-version:3000/insert-random/
+              curl -s --fail http://python-min-version:3000/insert-random/
+              curl -s --fail http://python-not-supported:3000/insert-random/

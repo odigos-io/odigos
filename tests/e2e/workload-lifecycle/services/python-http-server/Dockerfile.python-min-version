@@ -1,0 +1,21 @@
+# Dockerfile.python38-slim
+FROM python:3.8.0-slim
+WORKDIR /app
+COPY . /app
+
+# Install dependencies from requirements.txt
+COPY requirements.txt /app/requirements.txt
+# Install build tools for compiling packages with C extensions
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    sqlite3
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Supress health check endpoint from tracing
+ENV OTEL_PYTHON_DJANGO_EXCLUDED_URLS=health/
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
