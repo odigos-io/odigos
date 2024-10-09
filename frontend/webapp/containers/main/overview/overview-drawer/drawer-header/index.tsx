@@ -62,12 +62,13 @@ const ButtonText = styled(Text)`
 interface DrawerHeaderProps {
   title: string;
   imageUri: string;
+  onClose: () => void;
   isEditing: boolean;
   setIsEditing: (isEditing: boolean) => void;
 }
 
 const DrawerHeader = forwardRef<HTMLInputElement, DrawerHeaderProps>(
-  ({ title, imageUri, isEditing, setIsEditing }, ref) => {
+  ({ title, imageUri, isEditing, setIsEditing, onClose }, ref) => {
     const [inputValue, setInputValue] = useState(title);
 
     useEffect(() => {
@@ -104,7 +105,7 @@ const DrawerHeader = forwardRef<HTMLInputElement, DrawerHeaderProps>(
               <ButtonText>Edit</ButtonText>
             </EditButton>
           )}
-          <CloseButton variant="secondary" onClick={() => setIsEditing(false)}>
+          <CloseButton variant="secondary" onClick={onClose}>
             <Image
               src="/icons/common/x.svg"
               alt="Close"

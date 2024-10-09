@@ -91,7 +91,5 @@ const ButtonText = styled(Text)<{
   font-size: 14px;
   font-weight: 600;
   font-family: ${({ theme }) => theme.font_family.secondary};
-  text-decoration-line: underline;
-  text-transform: uppercase;
   width: fit-content;
 `;
