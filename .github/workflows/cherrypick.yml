@@ -1,0 +1,123 @@
+name: Release Bot
+
+on:
+  pull_request:
+    types: [closed, labeled]
+
+jobs:
+  backport:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyGithub
+
+      - name: Run release bot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat << EOF > release_bot.py
+          import os
+          from github import Github
+          from github.GithubException import GithubException
+          
+          github_token = os.environ["GITHUB_TOKEN"]
+          g = Github(github_token)
+          repo = g.get_repo(os.environ["GITHUB_REPOSITORY"])
+          
+          def backport_commit(pr, commit_sha, target_branch):
+              try:
+                  commit = repo.get_commit(commit_sha)
+                  change_name = commit.commit.message.split('\n')[0]
+                  new_branch = f"backport-{commit_sha[:7]}-to-{target_branch}"
+          
+                  # Add initial comment
+                  pr.create_issue_comment(f"Ok, backporting change '{change_name}' to {target_branch} branch. New PR will follow.")
+          
+                  # Create new branch
+                  base_branch = repo.get_branch(target_branch)
+                  repo.create_git_ref(ref=f"refs/heads/{new_branch}", sha=base_branch.commit.sha)
+          
+                  # Get the file changes from the original commit
+                  files = commit.files
+          
+                  # Apply changes to the new branch
+                  for file in files:
+                      if file.status == "added" or file.status == "modified":
+                          try:
+                              contents = repo.get_contents(file.filename, ref=target_branch)
+                              repo.update_file(
+                                  file.filename,
+                                  f"Backport: {change_name}",
+                                  file.patch,
+                                  contents.sha,
+                                  branch=new_branch
+                              )
+                          except:
+                              repo.create_file(
+                                  file.filename,
+                                  f"Backport: {change_name}",
+                                  file.patch,
+                                  branch=new_branch
+                              )
+                      elif file.status == "removed":
+                          contents = repo.get_contents(file.filename, ref=target_branch)
+                          repo.delete_file(
+                              file.filename,
+                              f"Backport: {change_name}",
+                              contents.sha,
+                              branch=new_branch
+                          )
+          
+                  # Create pull request
+                  title = f"Backport: {change_name}"
+                  body = f"Backporting commit {commit_sha} from main to {target_branch}\n\nOriginal commit message:\n{commit.commit.message}"
+                  new_pr = repo.create_pull(title=title, body=body, head=new_branch, base=target_branch)
+          
+                  # Add original PR author as reviewer
+                  new_pr.create_review_request(reviewers=[pr.user.login])
+          
+                  # Try to enable auto-merge
+                  try:
+                      new_pr.enable_automerge()
+                  except GithubException as e:
+                      print(f"Warning: Could not enable auto-merge for PR #{new_pr.number}. Error: {str(e)}")
+          
+                  pr.create_issue_comment(f"Backport to {target_branch} successful. New PR: #{new_pr.number}")
+                  print(f"Created PR #{new_pr.number} for backport to {target_branch}")
+              except GithubException as e:
+                  print(f"Error during backport to {target_branch}: {e}")
+                  pr.create_issue_comment(f"@{pr.user.login} An error occurred while attempting to backport to {target_branch}. Error: {str(e)}")
+          
+          def process_pull_request(pr_number):
+              pr = repo.get_pull(pr_number)
+              if pr.merged:
+                  labels = [label.name for label in pr.labels]
+          
+                  if "release/stable" in labels:
+                      backport_commit(pr, pr.merge_commit_sha, "stable")
+          
+                  if "release/beta" in labels:
+                      backport_commit(pr, pr.merge_commit_sha, "beta")
+              else:
+                  print(f"PR #{pr_number} is not merged. Skipping backport process.")
+          
+          if __name__ == "__main__":
+              event_name = os.environ["GITHUB_EVENT_NAME"]
+              event_path = os.environ["GITHUB_EVENT_PATH"]
+          
+              with open(event_path, 'r') as f:
+                  import json
+                  event = json.load(f)
+          
+              pr_number = event['pull_request']['number']
+              process_pull_request(pr_number)
+          EOF
+          
+          python release_bot.py
