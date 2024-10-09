@@ -24,6 +24,8 @@ export const ActionsTable: React.FC<TableProps> = ({
   toggleActionStatus,
 }) => {
   const [selectedCheckbox, setSelectedCheckbox] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const currentPageRef = React.useRef(1);
   function onSelectedCheckboxChange(id: string) {
@@ -74,6 +76,10 @@ export const ActionsTable: React.FC<TableProps> = ({
         renderTableHeader={renderTableHeader}
         onPaginate={onPaginate}
         renderEmptyResult={renderEmptyResult}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        setCurrentPage={setCurrentPage}
+        setItemsPerPage={setItemsPerPage}
         renderTableRows={(item, index) => (
           <ActionsTableRow
             onRowClick={onRowClick}
