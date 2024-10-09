@@ -167,3 +167,36 @@ make debug-odiglet
 
 Then, you can attach a debugger to the Odiglet pod. For example, if you are using Goland, you can follow the instructions [here](https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#step-3-create-the-remote-run-debug-configuration-on-the-client-computer) to attach to a remote process.
 For Visual Studio Code, you can use the `.vscode/launch.json` file in this repo to attach to the Odiglet pod.
+
+
+
+## Instrumentor
+
+### Debugging
+If the Mutating Webhook is enabled, follow these steps:
+
+1. Copy the TLS certificate and key:
+Create a local directory and extract the certificate and key by running the following command:  
+```
+mkdir -p serving-certs && kubectl get secret instrumentor-webhook-cert -n odigos-system -o jsonpath='{.data.tls\.crt}' | base64 -d > serving-certs/tls.crt && kubectl get secret instrumentor-webhook-cert -n odigos-system -o jsonpath='{.data.tls\.key}' | base64 -d > serving-certs/tls.key
+```
+
+
+2. Apply this service to the cluster, it will replace the existing `odigos-instrumentor` service:
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-instrumentor
+  namespace: odigos-system
+spec:
+  type: ExternalName
+  externalName: host.docker.internal
+  ports:
+    - name: webhook-server
+      port: 9443
+      protocol: TCP
+```
+
+Once this is done, you can use the .vscode/launch.json configuration and run instrumentor local for debugging.
