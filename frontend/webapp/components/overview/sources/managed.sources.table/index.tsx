@@ -91,6 +91,10 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
     setSelectedCheckbox([]);
   }
 
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
+
   function renderTableHeader() {
     return (
       <>
@@ -106,6 +110,7 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
           deleteSourcesHandler={() => setShowModal(true)}
           filterByConditionStatus={filterByConditionStatus}
           filterByConditionMessage={filterByConditionMessage}
+          currentItems={currentItems}
         />
         {showModal && (
           <KeyvalModal
