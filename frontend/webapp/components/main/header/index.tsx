@@ -8,7 +8,7 @@ interface MainHeaderProps {}
 
 const HeaderContainer = styled.div`
   display: flex;
-  padding: 10px 0;
+  padding: 12px 0;
   align-items: center;
   background-color: ${({ theme }) => theme.colors.dark_grey};
   border-bottom: 1px solid rgba(249, 249, 249, 0.16);
@@ -39,7 +39,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
       <PlatformTitleWrapper>
         <PlatformTitle type="k8s" />
       </PlatformTitleWrapper>
-      <ConnectionStatus title="Connection Status" status="alive" />
+      <ConnectionStatus title="Connection Alive" status="alive" />
     </HeaderContainer>
   );
 };

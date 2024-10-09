@@ -81,6 +81,8 @@ export type SourceContainer = {
 export type K8sActualSource = {
   name: string;
   kind: string;
+  namespace: string;
+  reportedName: string;
   numberOfInstances: number;
   selected?: boolean;
   instrumentedApplicationDetails: {
@@ -100,3 +102,19 @@ export interface InstrumentationConfigLibrary {
   language: string;
   selected?: boolean;
 }
+
+export type WorkloadId = {
+  kind: string;
+  name: string;
+  namespace: string;
+};
+
+export interface PatchSourceRequestInput {
+  reportedName?: string;
+}
+
+export type PersistSourcesArray = {
+  kind: string;
+  name: string;
+  selected: boolean;
+};

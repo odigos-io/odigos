@@ -15,9 +15,14 @@ const nodeTypes = {
 interface NodeBaseDataFlowProps {
   nodes: any[];
   edges: any[];
+  onNodeClick?: (event: React.MouseEvent, object: any) => void;
 }
 
-export function NodeBaseDataFlow({ nodes, edges }: NodeBaseDataFlowProps) {
+export function NodeBaseDataFlow({
+  nodes,
+  edges,
+  onNodeClick,
+}: NodeBaseDataFlowProps) {
   return (
     <div style={{ height: 'calc(100vh - 100px)' }}>
       <ReactFlow
@@ -25,6 +30,7 @@ export function NodeBaseDataFlow({ nodes, edges }: NodeBaseDataFlowProps) {
         nodes={nodes}
         edges={edges}
         zoomOnScroll={false}
+        onNodeClick={onNodeClick}
       />
     </div>
   );

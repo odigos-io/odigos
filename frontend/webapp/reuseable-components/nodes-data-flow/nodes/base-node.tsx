@@ -60,7 +60,6 @@ export interface NodeDataProps {
   imageUri: string;
   monitors?: string[];
   status: 'healthy' | 'unhealthy';
-  onClick: () => void;
 }
 
 interface BaseNodeProps {
@@ -69,7 +68,7 @@ interface BaseNodeProps {
 }
 
 export default memo(({ isConnectable, data }: BaseNodeProps) => {
-  const { title, subTitle, imageUri, status, onClick, type, monitors } = data;
+  const { title, subTitle, imageUri, type, monitors } = data;
 
   function renderHandles() {
     switch (type) {
@@ -145,7 +144,7 @@ export default memo(({ isConnectable, data }: BaseNodeProps) => {
   }
 
   return (
-    <BaseNodeContainer onClick={onClick}>
+    <BaseNodeContainer>
       <SourceIconWrapper>
         <Image
           src={imageUri || '/icons/common/folder.svg'}

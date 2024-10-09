@@ -180,7 +180,7 @@ func SyncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []mo
 		currWorkload := workload
 		g.Go(func() error {
 			// Only label selected sources, ignore the rest
-			if currWorkload.Selected != nil && *currWorkload.Selected {
+			if currWorkload.Selected != nil {
 				return setWorkloadInstrumentationLabel(ctx, nsName, currWorkload.Name, WorkloadKind(currWorkload.Kind.String()), currWorkload.Selected)
 			}
 			return nil

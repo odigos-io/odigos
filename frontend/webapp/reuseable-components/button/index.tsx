@@ -55,7 +55,9 @@ const StyledButton = styled.button<ButtonProps>`
   height: 36px;
   border-radius: 32px;
   cursor: pointer;
-
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 0 12px;
   ${({ variant }) => variant && variantStyles[variant]}
   ${({ isDisabled }) =>

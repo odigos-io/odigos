@@ -2,6 +2,7 @@ import { Node, Edge } from 'react-flow-renderer';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 import { ActionItem } from '@/types';
 import theme from '@/styles/theme';
+import { useDrawerStore } from '@/store';
 
 // Constants
 const NODE_HEIGHT = 80;
@@ -56,6 +57,8 @@ export const buildNodesAndEdges = ({
   const rightColumnX = containerWidth - columnWidth;
   const centerColumnX = (containerWidth - columnWidth) / 2;
 
+  const setSelectedItem = useDrawerStore((state) => state.setSelectedItem);
+
   // Build Source Nodes
   const sourcesNode: Node[] = [
     createNode('header-source', 'header', leftColumnX, 0, {
@@ -75,7 +78,11 @@ export const buildNodesAndEdges = ({
           subTitle: source.kind,
           imageUri: getMainContainerLanguageLogo(source),
           status: 'healthy',
-          onClick: () => console.log(source),
+          id: {
+            kind: source.kind,
+            name: source.name,
+            namespace: source.namespace,
+          },
         }
       )
     ),
@@ -101,7 +108,7 @@ export const buildNodesAndEdges = ({
           imageUri: destination.destinationType.imageUrl,
           status: 'healthy',
           monitors: extractMonitors(destination.exportedSignals),
-          onClick: () => console.log(destination),
+          id: destination.id,
         }
       )
     ),
@@ -132,7 +139,7 @@ export const buildNodesAndEdges = ({
           imageUri: `${ACTION_ICON_PATH}${action.type.toLowerCase()}.svg`,
           monitors: actionSpec.signals,
           status: 'healthy',
-          onClick: () => console.log(action),
+          id: action.id,
         }
       );
     }),

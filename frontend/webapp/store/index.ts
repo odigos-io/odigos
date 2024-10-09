@@ -16,3 +16,4 @@ export type AppDispatch = typeof store.dispatch;
 
 export * from './slices';
 export * from './useAppStore';
+export * from './useDrawerStore';

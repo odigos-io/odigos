@@ -13,6 +13,7 @@ const colors = {
   selected_hover: '#444AD93D',
   card: '#F9F9F90A',
   dropdown_bg: '#242424',
+  blank_background: '#11111100',
   white_opacity: {
     '004': 'rgba(249, 249, 249, 0.04)',
     '008': 'rgba(249, 249, 249, 0.08)',
@@ -108,7 +109,7 @@ const colors = {
 
 const text = {
   primary: '#111',
-  secondary: '#0EE6F3',
+  secondary: '#F9F9F9',
   grey: '#B8B8B8',
   white: '#fff',
   light_grey: '#CCD0D2',

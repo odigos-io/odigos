@@ -1,15 +1,19 @@
-import { useCreateSource } from '../sources';
-import { useNamespace } from '../compute-platform';
-import { useComputePlatform } from '../compute-platform';
 import { useState, useCallback } from 'react';
+import { usePersistSource } from '../sources';
+import { useNamespace } from '../compute-platform';
+import { useUpdateSource } from './useUpdateSource';
+import { useComputePlatform } from '../compute-platform';
+import {
+  PatchSourceRequestInput,
+  PersistSourcesArray,
+  WorkloadId,
+} from '@/types';
 
 export function useActualSources() {
   const { data, refetch } = useComputePlatform();
-  const {
-    createSource,
-    success: sourceSuccess,
-    error: sourceError,
-  } = useCreateSource();
+  const { persistSource, error: sourceError } = usePersistSource();
+  const { updateSource, error: updateError } = useUpdateSource();
+
   const { persistNamespace } = useNamespace(undefined);
   const [isPolling, setIsPolling] = useState(false);
 
@@ -28,12 +32,40 @@ export function useActualSources() {
     setIsPolling(false);
   }, [refetch]);
 
-  const createSourcesForNamespace = async (namespaceName, sources) => {
-    await createSource(namespaceName, sources);
+  const createSourcesForNamespace = async (
+    namespaceName: string,
+    sources: PersistSourcesArray[]
+  ) => {
+    await persistSource(namespaceName, sources);
 
     startPolling();
     if (sourceError) {
       throw new Error(`Error creating sources for namespace: ${namespaceName}`);
+    }
+  };
+
+  const deleteSourcesForNamespace = async (
+    namespaceName: string,
+    sources: PersistSourcesArray[]
+  ) => {
+    await persistSource(namespaceName, sources);
+
+    startPolling();
+    if (sourceError) {
+      throw new Error(`Error creating sources for namespace: ${namespaceName}`);
+    }
+  };
+
+  const updateActualSource = async (
+    sourceId: WorkloadId,
+    patchRequest: PatchSourceRequestInput
+  ) => {
+    try {
+      await updateSource(sourceId, patchRequest);
+      refetch();
+    } catch (error) {
+      console.error('Error updating source:', error);
+      throw error;
     }
   };
 
@@ -45,8 +77,10 @@ export function useActualSources() {
 
   return {
     sources: data?.computePlatform.k8sActualSources || [],
+    deleteSourcesForNamespace,
     createSourcesForNamespace,
     persistNamespaceItems,
+    updateActualSource,
     isPolling,
   };
 }

@@ -93,6 +93,7 @@ type K8sActualSource {
   name: String!
   serviceName: String
   numberOfInstances: Int
+  reportedName: String
   autoInstrumented: Boolean!
   autoInstrumentedDecision: String!
   instrumentedApplicationDetails: InstrumentedApplicationDetails
@@ -233,6 +234,10 @@ type IcaInstanceResponse {
   spec: String!
 }
 
+input PatchSourceRequestInput {
+  reportedName: String
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -251,4 +256,8 @@ type Mutation {
   testConnectionForDestination(
     destination: DestinationInput!
   ): TestConnectionResponse!
+  updateK8sActualSource(
+    sourceId: K8sSourceId!
+    patchSourceRequest: PatchSourceRequestInput!
+  ): Boolean!
 }

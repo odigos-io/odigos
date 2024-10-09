@@ -41,26 +41,13 @@ const SubTitle = styled(Text)`
   color: ${({ theme }) => theme.text.grey};
 `;
 
-export interface NodeDataProps {
-  type: 'source' | 'action' | 'destination';
-  title: string;
-  subTitle: string;
-  imageUri: string;
-  monitors?: string[];
-  status: 'healthy' | 'unhealthy';
-  onClick: () => void;
-}
-
 interface BaseNodeProps {
-  data: NodeDataProps;
   isConnectable: boolean;
 }
 
-export default memo(({ isConnectable, data }: BaseNodeProps) => {
-  const { onClick } = data;
-
+export default memo(({ isConnectable }: BaseNodeProps) => {
   return (
-    <BaseNodeContainer onClick={onClick}>
+    <BaseNodeContainer>
       <TitleWrapper>
         <Image
           src={'/icons/common/plus.svg'}

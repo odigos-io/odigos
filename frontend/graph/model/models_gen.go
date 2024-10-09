@@ -102,6 +102,7 @@ type K8sActualSource struct {
 	Name                           string                          `json:"name"`
 	ServiceName                    *string                         `json:"serviceName,omitempty"`
 	NumberOfInstances              *int                            `json:"numberOfInstances,omitempty"`
+	ReportedName                   *string                         `json:"reportedName,omitempty"`
 	AutoInstrumented               bool                            `json:"autoInstrumented"`
 	AutoInstrumentedDecision       string                          `json:"autoInstrumentedDecision"`
 	InstrumentedApplicationDetails *InstrumentedApplicationDetails `json:"instrumentedApplicationDetails,omitempty"`
@@ -127,6 +128,10 @@ type K8sSourceID struct {
 }
 
 type Mutation struct {
+}
+
+type PatchSourceRequestInput struct {
+	ReportedName *string `json:"reportedName,omitempty"`
 }
 
 type PersistNamespaceItemInput struct {

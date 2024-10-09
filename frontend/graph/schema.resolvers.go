@@ -99,6 +99,18 @@ func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *mod
 	// Convert each instrumented application to the K8sActualSource type
 	for _, app := range instrumentedApplications.Items {
 		actualSource := instrumentedApplicationToActualSource(app)
+
+		owner, _ := services.GetWorkload(ctx, actualSource.Namespace, string(actualSource.Kind), actualSource.Name)
+		if owner == nil {
+
+			continue
+		}
+		ownerAnnotations := owner.GetAnnotations()
+		var reportedName string
+		if ownerAnnotations != nil {
+			reportedName = ownerAnnotations[consts.OdigosReportedNameAnnotation]
+		}
+		actualSource.ReportedName = &reportedName
 		actualSources = append(actualSources, actualSource)
 	}
 
@@ -423,9 +435,26 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 	}, nil
 }
 
+// UpdateK8sActualSource is the resolver for the updateK8sActualSource field.
+func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error) {
+	ns := sourceID.Namespace
+	kind := string(sourceID.Kind)
+	name := sourceID.Name
+
+	request := patchSourceRequest
+
+	// Handle ReportedName update
+	if request.ReportedName != nil {
+		if err := services.UpdateReportedName(ctx, ns, kind, name, *request.ReportedName); err != nil {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
-
 	return &model.ComputePlatform{
 		ComputePlatformType: model.ComputePlatformTypeK8s,
 	}, nil
