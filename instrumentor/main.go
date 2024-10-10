@@ -107,8 +107,6 @@ func main() {
 			BindAddress: metricsAddr,
 		},
 		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "201bdfa0.odigos.io",
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
 			// Store minimum amount of data for every object type.
