@@ -8,6 +8,10 @@ type TableProps<T> = {
   renderTableRows: (item: T, index: number) => JSX.Element;
   renderEmptyResult: () => JSX.Element;
   onPaginate?: (pageNumber: number) => void;
+  currentPage: number;
+  itemsPerPage: number;
+  setCurrentPage: (page: number) => void;
+  setItemsPerPage: (itemsPerPage: number) => void;
 };
 
 export const OdigosTable = <T,>(props: TableProps<T>) => {
