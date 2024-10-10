@@ -5,6 +5,7 @@ import (
 	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,7 +19,7 @@ const (
 	syncDaemonsetRetry = 3
 )
 
-func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
+func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, tier common.OdigosTier) error {
 	logger := log.FromContext(ctx)
 
 	var instApps odigosv1.InstrumentedApplicationList
@@ -51,16 +52,16 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 		return err
 	}
 
-	return syncDataCollection(&instApps, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	return syncDataCollection(&instApps, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion, tier)
 }
 
 func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	dataCollection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client,
-	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
+	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, tier common.OdigosTier) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
-	_, err := SyncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme)
+	_, err := SyncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme, tier)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
