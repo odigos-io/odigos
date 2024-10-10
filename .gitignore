@@ -8,3 +8,7 @@ cli/odigos
 **/__pycache__/
 **/*.pyc
 serving-certs/
+
+**.tfstate
+**.tfstate.backup
+**.terraform**
