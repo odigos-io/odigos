@@ -75,7 +75,7 @@ export const OVERVIEW = {
   ADD_NEW_ACTION: 'Add New Action',
   EMPTY_DESTINATION: 'No destinations found',
   EMPTY_ACTION: 'No actions found',
-  EMPTY_SOURCE: 'No sources found',
+  EMPTY_SOURCE: 'No sources found in this namespace',
   DESTINATION_UPDATE_SUCCESS: 'Destination updated successfully',
   DESTINATION_CREATED_SUCCESS: 'Destination created successfully',
   DESTINATION_DELETED_SUCCESS: 'Destination deleted successfully',
