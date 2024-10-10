@@ -1,0 +1,117 @@
+name: Cross-Cloud Chainsaw Tests
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Nightly run at midnight
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  build-and-push-images:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Amazon ECR Public
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Build and Tag Docker Images
+        env:
+          COMMIT_HASH: ${{ github.sha }}
+        run: |
+          # Build images
+          make build-images TAG=${COMMIT_HASH}
+
+          # Tag images for public ECR
+          docker tag keyval/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/my-app:app1-${COMMIT_HASH}
+          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/my-app:app2-${COMMIT_HASH}
+          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/my-app:app2-${COMMIT_HASH}
+          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/my-app:app2-${COMMIT_HASH}
+          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/my-app:app2-${COMMIT_HASH}
+          
+
+      - name: Push Docker Images to Public ECR
+        run: |
+          docker push public.ecr.aws/y2v0v6s7/my-app:app1-${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/my-app:app2-${COMMIT_HASH}
+
+
+  test:
+    needs: build-and-push-images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cloud-provider: [aks] # Add or remove providers as needed [TODO: later add -> eks + gke]
+    env:
+      TEST_SCENARIO: multi-apps
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up OpenTofu
+        run: |
+          curl -LO https://releases.opentofu.io/downloads/opentofu
+          chmod +x opentofu
+          sudo mv opentofu /usr/local/bin
+
+      - name: Configure Cloud Provider
+        run: |
+          if [ "${{ matrix.cloud-provider }}" = "aks" ]; then
+            echo "Configuring for AKS"
+            
+            # Set environment variables for Azure provider
+            export ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}
+            export ARM_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }}
+            export ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}
+            export ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+            az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+            az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+            az aks get-credentials --resource-group tests-rg --name tests-aks
+          elif [ "${{ matrix.cloud-provider }}" = "eks" ]; then
+            echo "Configuring for EKS"
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set region us-east-1
+          elif [ "${{ matrix.cloud-provider }}" = "gke" ]; then
+            echo "Configuring for GKE"
+            echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" | base64 --decode > gcp-key.json
+            gcloud auth activate-service-account --key-file=gcp-key.json
+            gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+          else
+            echo "Unknown cloud provider: ${{ matrix.cloud-provider }}"
+            exit 1
+          fi
+
+      - name: Verify AKS Access
+        if: matrix.cloud-provider == 'aks'
+        run: |
+          kubectl get nodes
+
+      - name: Initialize OpenTofu
+        run: opentofu init
+
+      - name: Apply OpenTofu Configuration
+        run: opentofu apply -auto-approve
+
+      - name: Install Chainsaw
+        uses: kyverno/action-install-chainsaw@v0.2.8
+
+      - name: Run E2E Tests
+        run: |
+          echo "MODE=cross-cloud-tests" >> $GITHUB_ENV
+          chainsaw test tests/e2e/${{ env.TEST_SCENARIO }}
+
+      - name: Destroy Resources
+        if: always()
+        run: opentofu destroy -auto-approve
