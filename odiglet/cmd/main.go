@@ -78,7 +78,7 @@ func main() {
 	}
 
 	odigosNs := k8senv.GetCurrentNamespace()
-	err = server.StartOpAmpServer(ctx, log.Logger, mgr, clientset, env.Current.NodeName, odigosNs)
+	err = server.StartOpAmpServer(ctx, log.Logger, mgr, clientset, env.Current.NodeName, odigosNs, nil)
 	if err != nil {
 		log.Logger.Error(err, "Failed to start opamp server")
 	}

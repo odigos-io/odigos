@@ -23,4 +23,7 @@ type ConnectionInfo struct {
 	// AgentRemoteConfig is the full remote config opamp message to send to the agent when needed
 	AgentRemoteConfig        *protobufs.AgentRemoteConfig
 	RemoteResourceAttributes []configresolvers.ResourceAttribute
+
+	// can be nil or a cancel function to stop the eBPF program and release resources when closing the connection
+	EbpfCloseFunction func() error
 }

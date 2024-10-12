@@ -3,8 +3,19 @@ package server
 import (
 	"strconv"
 
+	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
+	"go.opentelemetry.io/otel/attribute"
 )
+
+func opampResourceAttributesToOtel(opampResourceAttributes []configresolvers.ResourceAttribute) []attribute.KeyValue {
+	otelAttributes := make([]attribute.KeyValue, 0, len(opampResourceAttributes))
+	for _, attr := range opampResourceAttributes {
+		// TODO: support any type, not just string
+		otelAttributes = append(otelAttributes, attribute.String(attr.Key, attr.Value))
+	}
+	return otelAttributes
+}
 
 func ConvertAnyValueToString(value *protobufs.AnyValue) string {
 	switch v := value.Value.(type) {

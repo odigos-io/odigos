@@ -17,7 +17,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string) error {
+func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string, ebpfcb EbpfHooks) error {
 
 	listenEndpoint := fmt.Sprintf("0.0.0.0:%d", OpAmpServerDefaultPort)
 	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
@@ -39,6 +39,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		kubeClientSet: kubeClientSet,
 		scheme:        mgr.GetScheme(),
 		nodeName:      nodeName,
+		ebpfcb:        ebpfcb,
 	}
 
 	http.HandleFunc("POST /v1/opamp", func(w http.ResponseWriter, req *http.Request) {
@@ -165,7 +166,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				if err := server.Shutdown(ctx); err != nil {
 					logger.Error(err, "Failed to shut down the http server for incoming connections")
 				}
-				logger.Info("Shutting down live connections timeout monitor")
+				logger.Info("Shutting down OpAMP server gracefully due to context cancellation")
 				return
 			case <-ticker.C:
 				// Clean up stale connections
