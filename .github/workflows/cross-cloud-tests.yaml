@@ -134,16 +134,34 @@ jobs:
             exit 1
           fi
 
+      - uses: opentofu/setup-opentofu@v1  # This installs the latest version of OpenTofu by default
+
+      - name: Set Terraform Directory Based on Cloud Provider
+        run: |
+          if [ "${{ matrix.cloud-provider }}" == "aks" ]; then
+            echo "TF_DIR=./tests-infrastructure/terraform/aks" >> $GITHUB_ENV
+          elif [ "${{ matrix.cloud-provider }}" == "eks" ]; then
+            echo "TF_DIR=./tests-infrastructure/terraform/eks" >> $GITHUB_ENV
+          elif [ "${{ matrix.cloud-provider }}" == "gke" ]; then
+            echo "TF_DIR=./tests-infrastructure/terraform/gke" >> $GITHUB_ENV
+          else
+            echo "Unknown cloud provider"
+            exit 1
+
+      - name: Initialize OpenTofu
+        run: tofu init -chdir=$TF_DIR
+
+      - name: Plan OpenTofu
+        run: tofu plan -chdir=$TF_DIR
+
+      - name: Apply OpenTofu Configuration
+        run: tofu apply -chdir=$TF_DIR -auto-approve
+
       - name: Verify AKS Access
         if: matrix.cloud-provider == 'aks'
         run: |
           kubectl get nodes
 
-      - name: Initialize OpenTofu
-        run: opentofu init
-
-      - name: Apply OpenTofu Configuration
-        run: opentofu apply -auto-approve
 
       - name: Install Chainsaw
         uses: kyverno/action-install-chainsaw@v0.2.8
