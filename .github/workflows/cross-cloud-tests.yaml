@@ -152,6 +152,12 @@ jobs:
       - name: Install Chainsaw
         uses: kyverno/action-install-chainsaw@v0.2.8
 
+      - name: Build CLI
+        run: |
+          cd cli
+          go build -tags=embed_manifests -o odigos
+          chmod +x odigos
+
       - name: Run E2E Tests
         run: |
           echo "MODE=cross-cloud-tests" >> $GITHUB_ENV
