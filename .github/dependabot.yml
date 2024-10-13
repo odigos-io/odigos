@@ -23,6 +23,15 @@ updates:
         exclude-patterns: # go auto instrumentations update is manually
           - "go.opentelemetry.io/auto"
   - package-ecosystem: gomod
+    directory: /odiglet
+    schedule:
+      day: sunday
+      interval: weekly
+    groups:
+      go-auto-instrumentations:
+        patterns:
+          - "go.opentelemetry.io/auto"
+  - package-ecosystem: gomod
     directory: /autoscaler
     schedule:
       day: sunday
