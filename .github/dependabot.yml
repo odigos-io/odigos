@@ -8,13 +8,16 @@ updates:
       interval: weekly
   - package-ecosystem: gomod
     directories:
+      - /api
       - /autoscaler
-      - /odiglet
-      - /scheduler
       - /cli
+      - /common
+      - /frontend
       - /instrumentor
+      - /odiglet
+      - /opampserver
     schedule:
-      day: sunday
+      day: monday
       interval: weekly
     groups:
       otel-dependencies:
@@ -25,7 +28,7 @@ updates:
   - package-ecosystem: gomod
     directory: /odiglet
     schedule:
-      day: sunday
+      day: monday
       interval: weekly
     groups:
       go-auto-instrumentations:
