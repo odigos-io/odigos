@@ -8,12 +8,15 @@ on:
     - cron: '0 0 * * *' # Nightly run at midnight
   workflow_dispatch: # Manual trigger
 
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read
+
 jobs:
   build-and-push-images:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write  # Required for OIDC authentication    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
