@@ -61,6 +61,8 @@ jobs:
 
 
       - name: Push Docker Images to Public ECR
+        env:
+          COMMIT_HASH: ${{ github.sha }}      
         run: |
           docker push public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
           docker push public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
@@ -70,6 +72,9 @@ jobs:
           docker push public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
 
   test:
+    permissions:
+      id-token: write
+      contents: read    
     needs: build-and-push-images
     runs-on: ubuntu-latest
     strategy:
