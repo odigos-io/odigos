@@ -20,6 +20,8 @@ updates:
       otel-dependencies:
         patterns:
           - "go.opentelemetry.io*"
+        exclude-patterns: # go auto instrumentations update is manually
+          - "go.opentelemetry.io/auto"
   - package-ecosystem: gomod
     directory: /autoscaler
     schedule:
