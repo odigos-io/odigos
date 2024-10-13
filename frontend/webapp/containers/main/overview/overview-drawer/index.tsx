@@ -7,6 +7,7 @@ import DrawerFooter from './drawer-footer';
 import { SourceDrawer } from '../../sources';
 import { Drawer } from '@/reuseable-components';
 import { DeleteEntityModal } from '@/components';
+import { DestinationDrawer } from '../../destinations';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 import {
   WorkloadId,
@@ -18,7 +19,7 @@ import {
 const componentMap = {
   source: SourceDrawer,
   action: () => <div>Action</div>,
-  destination: () => <div>Destination</div>,
+  destination: DestinationDrawer,
 };
 
 const DRAWER_WIDTH = '560px';
@@ -41,6 +42,9 @@ const OverviewDrawer = () => {
   function initialTitle() {
     if (selectedItem?.type === 'source' && selectedItem.item) {
       const title = (selectedItem.item as K8sActualSource).reportedName;
+      setTitle(title || '');
+    } else if (selectedItem?.type === 'destination' && selectedItem.item) {
+      const title = (selectedItem.item as ActualDestination).name;
       setTitle(title || '');
     } else {
       setTitle('');
