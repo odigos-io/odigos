@@ -141,13 +141,13 @@ jobs:
           fi
 
       - name: Initialize OpenTofu
-        run: tofu init -chdir=$TF_DIR
+        run: tofu -chdir=$TF_DIR init
 
       - name: Plan OpenTofu
-        run: tofu plan -chdir=$TF_DIR
+        run: tofu -chdir=$TF_DIR plan
 
       - name: Apply OpenTofu Configuration
-        run: tofu apply -chdir=$TF_DIR -auto-approve
+        run: tofu -chdir=$TF_DIR apply -auto-approve
 
       - name: Verify cluster Access
         run: |
@@ -163,4 +163,4 @@ jobs:
 
       - name: Destroy Resources
         if: always()  # Ensures this runs even if earlier steps fail
-        run: tofu destroy -chdir=$TF_DIR -auto-approve
+        run: tofu -chdir=$TF_DIR destroy -auto-approve
