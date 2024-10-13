@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package myapp_core;
+
+message ExampleMessage {
+    string name = 1;
+    int32 id = 2;
+    string created_at = 3;
+}

@@ -15,6 +15,8 @@ export const InstrumentationRulesTable: React.FC<TableProps> = ({
   onRowClick,
 }) => {
   const [selectedCheckbox, setSelectedCheckbox] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const currentPageRef = React.useRef(1);
 
@@ -38,6 +40,10 @@ export const InstrumentationRulesTable: React.FC<TableProps> = ({
         renderTableHeader={renderTableHeader}
         onPaginate={onPaginate}
         renderEmptyResult={renderEmptyResult}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        setCurrentPage={setCurrentPage}
+        setItemsPerPage={setItemsPerPage}
         renderTableRows={(item, index) => (
           <InstrumentationRulesTableRow
             item={item}

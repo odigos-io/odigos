@@ -3,6 +3,7 @@ package client
 import (
 	"os"
 
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -57,4 +58,17 @@ func GetCurrentClusterDetails(kc string) ClusterDetails {
 		ClusterName:    cluster,
 		ServerEndpoint: server,
 	}
+}
+
+func GetK8sClientset() (*kubernetes.Clientset, error) {
+	// Init Kubernetes API client
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return clientset, nil
 }

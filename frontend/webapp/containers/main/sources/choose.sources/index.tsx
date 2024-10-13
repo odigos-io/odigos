@@ -15,7 +15,7 @@ export function SelectSourcesContainer() {
   return (
     <div style={{ height: '100vh' }}>
       <OverviewHeader
-        title={OVERVIEW.MENU.SOURCES}
+        title={OVERVIEW.ADD_NEW_SOURCE}
         onBackClick={() => router.back()}
       />
       <NewSourcesList onSuccess={onNewSourceSuccess} />
