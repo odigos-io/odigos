@@ -16,13 +16,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Log in to Amazon ECR Public
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      - name: Configure AWS credentials from OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
         run: |
-          aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin public.ecr.aws
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 061717858829.dkr.ecr.us-east-1.amazonaws.com
 
       - name: Build and Tag Docker Images
         env:
@@ -32,18 +35,22 @@ jobs:
           make build-images TAG=${COMMIT_HASH}
 
           # Tag images for public ECR
-          docker tag keyval/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/my-app:app1-${COMMIT_HASH}
-          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/my-app:app2-${COMMIT_HASH}
-          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/my-app:app2-${COMMIT_HASH}
-          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/my-app:app2-${COMMIT_HASH}
-          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/my-app:app2-${COMMIT_HASH}
-          
+          docker tag keyval/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
+          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
+          docker tag keyval/odigos-ui:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
+          docker tag keyval/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
+          docker tag keyval/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
+          docker tag keyval/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
+
 
       - name: Push Docker Images to Public ECR
         run: |
-          docker push public.ecr.aws/y2v0v6s7/my-app:app1-${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/my-app:app2-${COMMIT_HASH}
-
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
 
   test:
     needs: build-and-push-images
@@ -55,6 +62,18 @@ jobs:
       TEST_SCENARIO: multi-apps
 
     steps:
+
+      - name: Configure AWS credentials from OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 061717858829.dkr.ecr.us-east-1.amazonaws.com
+          
+              
       - name: Checkout Code
         uses: actions/checkout@v3
 
