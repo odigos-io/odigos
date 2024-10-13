@@ -272,11 +272,6 @@ func (r *destinationResolver) Type(ctx context.Context, obj *model.Destination) 
 	panic(fmt.Errorf("not implemented: Type - type"))
 }
 
-// Fields is the resolver for the fields field.
-func (r *destinationResolver) Fields(ctx context.Context, obj *model.Destination) ([]string, error) {
-	panic(fmt.Errorf("not implemented: Fields - fields"))
-}
-
 // Conditions is the resolver for the conditions field.
 func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destination) ([]*model.Condition, error) {
 	panic(fmt.Errorf("not implemented: Conditions - conditions"))
@@ -553,3 +548,13 @@ type destinationResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *destinationResolver) Fields(ctx context.Context, obj *model.Destination) (string, error) {
+	panic(fmt.Errorf("not implemented: Fields - fields"))
+}

@@ -162,7 +162,7 @@ type Destination {
   name: String!
   type: String!
   exportedSignals: ExportedSignals!
-  fields: [String!]!
+  fields: String!
   destinationType: DestinationTypesCategoryItem!
   conditions: [Condition!]
 }

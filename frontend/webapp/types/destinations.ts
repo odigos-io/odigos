@@ -174,7 +174,7 @@ export interface ActualDestination {
     metrics: boolean;
     logs: boolean;
   };
-  fields: Record<string, any>;
+  fields: string;
   conditions: Condition[];
   destinationType: {
     type: string;
@@ -182,3 +182,6 @@ export interface ActualDestination {
     imageUrl: string;
   };
 }
+
+export const isActualDestination = (item: any): item is ActualDestination =>
+  item && 'destinationType' in item;
