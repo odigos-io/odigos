@@ -1,6 +1,9 @@
 name: Cross-Cloud Chainsaw Tests
 
 on:
+  pull_request:
+    branches:
+      - main
   schedule:
     - cron: '0 0 * * *' # Nightly run at midnight
   workflow_dispatch: # Manual trigger
@@ -72,8 +75,8 @@ jobs:
       - name: Login to Amazon ECR
         run: |
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 061717858829.dkr.ecr.us-east-1.amazonaws.com
-          
-              
+
+
       - name: Checkout Code
         uses: actions/checkout@v3
 
