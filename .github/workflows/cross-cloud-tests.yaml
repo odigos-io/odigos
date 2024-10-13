@@ -21,6 +21,11 @@ jobs:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
     steps:
+      - name: Debug Info
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Event Name: ${{ github.event_name }}"    
       - name: Checkout Code
         uses: actions/checkout@v3
 
