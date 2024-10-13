@@ -42,7 +42,8 @@ jobs:
 
       - name: Login to Amazon ECR
         run: |
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 061717858829.dkr.ecr.us-east-1.amazonaws.com
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
 
       - name: Build and Tag Docker Images
         env:
@@ -119,22 +120,25 @@ jobs:
             az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
             az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
             az aks get-credentials --resource-group tests-rg --name tests-aks
+
           elif [ "${{ matrix.cloud-provider }}" = "eks" ]; then
             echo "Configuring for EKS"
             aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
             aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
             aws configure set region us-east-1
+
           elif [ "${{ matrix.cloud-provider }}" = "gke" ]; then
             echo "Configuring for GKE"
             echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" | base64 --decode > gcp-key.json
             gcloud auth activate-service-account --key-file=gcp-key.json
             gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+
           else
             echo "Unknown cloud provider: ${{ matrix.cloud-provider }}"
             exit 1
           fi
 
-      - uses: opentofu/setup-opentofu@v1  # This installs the latest version of OpenTofu by default
+      - uses: opentofu/setup-opentofu@v1
 
       - name: Set Terraform Directory Based on Cloud Provider
         run: |
@@ -157,11 +161,9 @@ jobs:
       - name: Apply OpenTofu Configuration
         run: tofu apply -chdir=$TF_DIR -auto-approve
 
-      - name: Verify AKS Access
-        if: matrix.cloud-provider == 'aks'
+      - name: Verify cluster Access
         run: |
-          kubectl get nodes
-
+          kubectl get nodes || exit 1 
 
       - name: Install Chainsaw
         uses: kyverno/action-install-chainsaw@v0.2.8
@@ -172,5 +174,5 @@ jobs:
           chainsaw test tests/e2e/${{ env.TEST_SCENARIO }}
 
       - name: Destroy Resources
-        if: always()
-        run: opentofu destroy -auto-approve
+        if: always()  # Ensures this runs even if earlier steps fail
+        run: tofu destroy -chdir=$TF_DIR -auto-approve
