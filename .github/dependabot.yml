@@ -7,6 +7,20 @@ updates:
       day: sunday
       interval: weekly
   - package-ecosystem: gomod
+    directories:
+      - /autoscaler
+      - /odiglet
+      - /scheduler
+      - /cli
+      - /instrumentor
+    schedule:
+      day: sunday
+      interval: weekly
+    groups:
+      otel-dependencies:
+        patterns:
+          - "go.opentelemetry.io*"
+  - package-ecosystem: gomod
     directory: /autoscaler
     schedule:
       day: sunday
@@ -16,9 +30,6 @@ updates:
         patterns:
           - "k8s.io*"
           - "sigs.k8s.io*"
-      otel-dependencies:
-        patterns:
-          - "go.opentelemetry.io*"
   - package-ecosystem: gomod
     directory: /odiglet
     schedule:
@@ -29,9 +40,6 @@ updates:
         patterns:
           - "k8s.io*"
           - "sigs.k8s.io*"
-      otel-dependencies:
-        patterns:
-          - "go.opentelemetry.io*"
   - package-ecosystem: gomod
     directory: /scheduler
     schedule:
@@ -42,9 +50,6 @@ updates:
         patterns:
           - "k8s.io*"
           - "sigs.k8s.io*"
-      otel-dependencies:
-        patterns:
-          - "go.opentelemetry.io*"
   - package-ecosystem: gomod
     directory: /cli
     schedule:
@@ -55,9 +60,6 @@ updates:
         patterns:
           - "k8s.io*"
           - "sigs.k8s.io*"
-      otel-dependencies:
-        patterns:
-          - "go.opentelemetry.io*"
   - package-ecosystem: gomod
     directory: /instrumentor
     schedule:
@@ -68,9 +70,6 @@ updates:
         patterns:
           - "k8s.io*"
           - "sigs.k8s.io*"
-      otel-dependencies:
-        patterns:
-          - "go.opentelemetry.io*"
   - package-ecosystem: pip
     directory: /odiglet/agents/python
     schedule:
