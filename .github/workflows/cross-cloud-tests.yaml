@@ -8,12 +8,12 @@ on:
     - cron: '0 0 * * *' # Nightly run at midnight
   workflow_dispatch: # Manual trigger
 
-permissions:
-  id-token: write
-  contents: read
 
 jobs:
   build-and-push-images:  
+    permissions:
+      id-token: write
+      contents: read  
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
     steps:
