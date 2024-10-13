@@ -18,6 +18,7 @@ export const OverviewDataFlowWrapper = styled.div`
 `;
 
 const TYPE_SOURCE = 'source';
+const TYPE_DESTINATION = 'destination';
 
 export function OverviewDataFlowContainer() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -77,6 +78,20 @@ export function OverviewDataFlowContainer() {
         id: { kind, name, namespace },
         item: selectedDrawerItem,
         type: TYPE_SOURCE,
+      });
+    }
+
+    if (object.data.type === TYPE_DESTINATION) {
+      const { id } = object.data;
+
+      const selectedDrawerItem = destinations.find(
+        (destination) => destination.id === id
+      );
+
+      setSelectedItem({
+        id,
+        item: selectedDrawerItem,
+        type: TYPE_DESTINATION,
       });
     }
   }

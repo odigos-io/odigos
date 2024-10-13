@@ -8,7 +8,12 @@ import { SourceDrawer } from '../../sources';
 import { Drawer } from '@/reuseable-components';
 import { DeleteEntityModal } from '@/components';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
-import { K8sActualSource, PatchSourceRequestInput, WorkloadId } from '@/types';
+import {
+  WorkloadId,
+  K8sActualSource,
+  ActualDestination,
+  PatchSourceRequestInput,
+} from '@/types';
 
 const componentMap = {
   source: SourceDrawer,
@@ -122,11 +127,7 @@ const OverviewDrawer = () => {
             title={title}
             onClose={isEditing ? handleCancel : handleClose}
             imageUri={
-              selectedItem?.item
-                ? getMainContainerLanguageLogo(
-                    selectedItem.item as K8sActualSource
-                  )
-                : ''
+              selectedItem?.item ? getItemImageByType(selectedItem.item) : ''
             }
             {...{ isEditing, setIsEditing }}
           />
@@ -154,6 +155,16 @@ const OverviewDrawer = () => {
     </>
   ) : null;
 };
+
+function getItemImageByType(item: K8sActualSource | ActualDestination): string {
+  if ('destinationType' in item) {
+    // item is of type ActualDestination
+    return item.destinationType.imageUrl;
+  } else {
+    // item is of type K8sActualSource
+    return getMainContainerLanguageLogo(item as K8sActualSource);
+  }
+}
 
 export default OverviewDrawer;
 

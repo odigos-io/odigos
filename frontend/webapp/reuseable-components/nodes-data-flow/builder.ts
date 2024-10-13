@@ -1,8 +1,12 @@
+import theme from '@/styles/theme';
 import { Node, Edge } from 'react-flow-renderer';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
-import { ActionItem } from '@/types';
-import theme from '@/styles/theme';
-import { useDrawerStore } from '@/store';
+import {
+  ActionData,
+  ActionItem,
+  ActualDestination,
+  K8sActualSource,
+} from '@/types';
 
 // Constants
 const NODE_HEIGHT = 80;
@@ -51,13 +55,17 @@ export const buildNodesAndEdges = ({
   destinations,
   columnWidth,
   containerWidth,
+}: {
+  sources: K8sActualSource[];
+  actions: ActionData[];
+  destinations: ActualDestination[];
+  columnWidth: number;
+  containerWidth: number;
 }) => {
   // Calculate x positions for each column
   const leftColumnX = 0;
   const rightColumnX = containerWidth - columnWidth;
   const centerColumnX = (containerWidth - columnWidth) / 2;
-
-  const setSelectedItem = useDrawerStore((state) => state.setSelectedItem);
 
   // Build Source Nodes
   const sourcesNode: Node[] = [
