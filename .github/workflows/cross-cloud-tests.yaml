@@ -9,6 +9,10 @@ on:
   workflow_dispatch: # Manual trigger
 
 
+permissions:
+  id-token: write
+  contents: read  
+
 jobs:
   build-and-push-images:  
     permissions:
@@ -29,6 +33,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
           aws-region: us-east-1
+
 
       - name: Login to Amazon ECR
         run: |
