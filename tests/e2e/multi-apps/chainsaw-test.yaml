@@ -29,7 +29,7 @@ spec:
     - script:
         content: |
           if [ "$MODE" != "cross-cloud-tests" ]; then
-            ../../../cli/odigos install --version e2e-test --image-prefix=public.ecr.aws/y2v0v6s7
+            ../../../cli/odigos install --version 304e3b08d6346f9c16aa4440ff82178191c8d94a --image-prefix=public.ecr.aws/y2v0v6s7
           else
             ../../../cli/odigos install --version e2e-test
           fi
