@@ -60,11 +60,6 @@ jobs:
           docker tag keyval/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
           docker tag keyval/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
 
-
-      - name: Push Docker Images to Public ECR
-        env:
-          COMMIT_HASH: ${{ github.sha }}      
-        run: |
           docker push public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
           docker push public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
           docker push public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
@@ -94,17 +89,10 @@ jobs:
 
       - name: Login to Amazon ECR
         run: |
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 061717858829.dkr.ecr.us-east-1.amazonaws.com
-
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
       - name: Checkout Code
         uses: actions/checkout@v3
-
-      - name: Set Up OpenTofu
-        run: |
-          curl -LO https://releases.opentofu.io/downloads/opentofu
-          chmod +x opentofu
-          sudo mv opentofu /usr/local/bin
 
       - name: Configure Cloud Provider
         run: |
