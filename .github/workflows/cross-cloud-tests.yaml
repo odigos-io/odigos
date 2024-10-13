@@ -21,7 +21,7 @@ jobs:
 
 
       - name: Configure AWS credentials from OIDC
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
           aws-region: us-east-1
@@ -67,7 +67,7 @@ jobs:
     steps:
 
       - name: Configure AWS credentials from OIDC
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
           aws-region: us-east-1
