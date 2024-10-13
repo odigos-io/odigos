@@ -195,3 +195,186 @@ status:
   healthy: true
   # no need to verify all properties, as this is not the intent of this test
 ---
+
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-java-supported-version
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-java-azul
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-java-supported-docker-env
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-java-supported-manifest-env
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-java-latest-version
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-java-old-version
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-python-alpine
+spec:
+  runtimeDetails:
+    - containerName: python-alpine
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-python-latest-version
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-python-min-version
+status:
+  conditions:
+    - message: "Instrumentation device applied successfully"
+      observedGeneration: 1
+      reason: InstrumentationDeviceApplied
+      status: "True"
+      type: AppliedInstrumentationDevice
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-python-not-supported
+status:
+  conditions:
+    - message: "python runtime version not supported by OpenTelemetry SDK. Found: 3.6.15, supports: 3.8.0"
+      observedGeneration: 1
+      reason: RuntimeVersionNotSupported
+      status: "False"
+      type: AppliedInstrumentationDevice
+
+
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-python-alpine
+status:
+  healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: process.pid
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: python      
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-python-latest-version
+status:
+  healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: process.pid
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: python      
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-python-min-version
+status:
+  healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: process.pid
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: python      

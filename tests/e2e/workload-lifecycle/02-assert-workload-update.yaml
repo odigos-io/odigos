@@ -212,3 +212,273 @@ status:
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4 # on step 2, the manifest was updated (1->2)
+  labels:
+    app: java-supported-version
+  name: java-supported-version
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: java-supported-version
+  template:
+    spec:
+      containers:
+        - image: java-supported-version:v0.0.1
+          name: java-supported-version
+          resources:
+            limits:
+              instrumentation.odigos.io/java-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4 # on step 2, the manifest was updated (1->2)
+  labels:
+    app: java-azul
+  name: java-azul
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: java-azul
+  template:
+    spec:
+      containers:
+        - image: java-azul:v0.0.1
+          name: java-azul
+          resources:
+            limits:
+              instrumentation.odigos.io/java-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4 # on step 2, the manifest was updated (1->2)
+  labels:
+    app: java-supported-docker-env
+  name: java-supported-docker-env
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: java-supported-docker-env
+  template:
+    spec:
+      containers:
+        - image: java-supported-docker-env:v0.0.1
+          name: java-supported-docker-env
+          resources:
+            limits:
+              instrumentation.odigos.io/java-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4 # on step 2, the manifest was updated (1->2)
+  labels:
+    app: java-supported-manifest-env
+  name: java-supported-manifest-env
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: java-supported-manifest-env
+  template:
+    spec:
+      containers:
+        - image: java-supported-manifest-env:v0.0.1
+          name: java-supported-manifest-env
+          resources:
+            limits:
+              instrumentation.odigos.io/java-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4 # on step 2, the manifest was updated (1->2)
+  labels:
+    app: java-latest-version
+  name: java-latest-version
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: java-latest-version
+  template:
+    spec:
+      containers:
+        - image: java-latest-version:v0.0.1
+          name: java-latest-version
+          resources:
+            limits:
+              instrumentation.odigos.io/java-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4 # on step 2, the manifest was updated (1->2)
+  labels:
+    app: java-old-version
+  name: java-old-version
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: java-old-version
+  template:
+    spec:
+      containers:
+        - image: java-old-version:v0.0.1
+          name: java-old-version
+          resources:
+            limits:
+              instrumentation.odigos.io/java-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4 # on step 2, the manifest was updated (1->2)
+  labels:
+    app: python-latest-version
+  name: python-latest-version
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: python-latest-version
+  template:
+    spec:
+      containers:
+      - image: python-latest-version:v0.0.1
+        name: python-latest-version
+        resources:
+          limits:
+            instrumentation.odigos.io/python-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4 # on step 2, the manifest was updated (1->2)
+  labels:
+    app: python-alpine
+  name: python-alpine
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: python-alpine
+  template:
+    spec:
+      containers: 
+      - image: python-alpine:v0.0.1
+        name: python-alpine
+        resources:
+          limits:
+            instrumentation.odigos.io/python-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4 # on step 2, the manifest was updated (1->2)
+  labels:
+    app: python-min-version
+  name: python-min-version
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: python-min-version
+  template:
+    spec:
+      containers:
+      - image: python-min-version:v0.0.1
+        name: python-min-version
+        resources:
+          limits:
+            instrumentation.odigos.io/python-native-community: "1"
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 2 # on step 2, the manifest was updated (1->2)
+  labels:
+    app: python-not-supported
+  name: python-not-supported
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: python-not-supported
+  template:
+    spec:
+      containers:
+      - image: python-not-supported:v0.0.1
+        name: python-not-supported
+        resources: {}
+status:
+  availableReplicas: 1
+  observedGeneration: 2
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

@@ -17,7 +17,10 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/instrumentor",
-            "cwd": "${workspaceFolder}/instrumentor"
+            "cwd": "${workspaceFolder}/instrumentor",
+            "env": {
+                "LOCAL_MUTATING_WEBHOOK_CERT_DIR": "${workspaceFolder}/serving-certs"
+            }            
         },
         {
             "name": "frontend",

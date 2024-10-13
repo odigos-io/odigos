@@ -29,6 +29,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	k8sClient "github.com/odigos-io/odigos/k8sutils/pkg/client"
+	k8sUtils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	"github.com/go-logr/zapr"
@@ -163,6 +165,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	client, err := k8sClient.GetK8sClientset()
+	if err != nil {
+		setupLog.Error(err, "unable to create k8s clientset")
+	}
+
+	tier, err := k8sUtils.GetCurrentOdigosTier(context.Background(), odigosNs, client)
+	if err != nil {
+		setupLog.Error(err, "unable to get current odigos tier")
+	}
+
 	if err = (&controllers.DestinationReconciler{
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
@@ -178,6 +190,7 @@ func main() {
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
+		OdigosTier:       tier,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Processor")
 		os.Exit(1)
@@ -187,6 +200,7 @@ func main() {
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
+		OdigosTier:       tier,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
 		os.Exit(1)
@@ -196,6 +210,7 @@ func main() {
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
+		OdigosTier:       tier,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
 		os.Exit(1)

@@ -110,3 +110,166 @@ status:
       started: true
   phase: Running
 ---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-supported-version
+  namespace: default
+status:
+  containerStatuses:
+    - name: java-supported-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-azul
+  namespace: default
+status:
+  containerStatuses:
+    - name: java-azul
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-supported-docker-env
+  namespace: default
+status:
+  containerStatuses:
+    - name: java-supported-docker-env
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-supported-manifest-env
+  namespace: default
+status:
+  containerStatuses:
+    - name: java-supported-manifest-env
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-latest-version
+  namespace: default
+status:
+  containerStatuses:
+    - name: java-latest-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-old-version
+  namespace: default
+status:
+  containerStatuses:
+    - name: java-old-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: python-latest-version
+  namespace: default
+spec:
+  containers:
+  - env:
+    - name: DJANGO_SETTINGS_MODULE
+      (value != null): true
+status:
+  containerStatuses:
+    - name: python-latest-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: python-alpine
+  namespace: default
+spec:
+  containers:
+  - env:
+    - name: DJANGO_SETTINGS_MODULE
+      (value != null): true
+    - name: PYTHONPATH
+      (value != null): true
+status:
+  containerStatuses:
+    - name: python-alpine
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: python-min-version
+  namespace: default
+spec:
+  containers:
+  - env:
+    - name: DJANGO_SETTINGS_MODULE
+      (value != null): true  
+status:
+  containerStatuses:
+    - name: python-min-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: python-not-supported
+  namespace: default
+spec:
+  containers:
+  - env:
+    - name: DJANGO_SETTINGS_MODULE
+      (value != null): true  
+status:
+  containerStatuses:
+    - name: python-not-supported
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---

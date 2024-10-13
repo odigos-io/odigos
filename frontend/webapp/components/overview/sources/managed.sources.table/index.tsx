@@ -37,6 +37,8 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
 }) => {
   const [selectedCheckbox, setSelectedCheckbox] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const modalConfig = {
     title: OVERVIEW.DELETE_SOURCE,
@@ -64,8 +66,8 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
   }
 
   function onSelectedCheckboxChange(id: string) {
-    const start = (currentPageRef.current - 1) * 10;
-    const end = currentPageRef.current * 10;
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = currentPage * itemsPerPage;
     const slicedData = data.slice(start, end);
     if (id === SELECT_ALL_CHECKBOX) {
       if (selectedCheckbox.length === slicedData.length) {
@@ -89,6 +91,10 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
     setSelectedCheckbox([]);
   }
 
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
+
   function renderTableHeader() {
     return (
       <>
@@ -104,6 +110,7 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
           deleteSourcesHandler={() => setShowModal(true)}
           filterByConditionStatus={filterByConditionStatus}
           filterByConditionMessage={filterByConditionMessage}
+          currentItems={currentItems}
         />
         {showModal && (
           <KeyvalModal
@@ -137,6 +144,10 @@ export const ManagedSourcesTable: React.FC<TableProps> = ({
             onSelectedCheckboxChange={onSelectedCheckboxChange}
           />
         )}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        setCurrentPage={setCurrentPage}
+        setItemsPerPage={setItemsPerPage}
       />
     </>
   );

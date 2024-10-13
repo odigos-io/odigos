@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -175,6 +176,11 @@ var IsProcessExists = func(pid int) bool {
 	return false
 }
 
+// Since OtelEbpfSdk is a generic type, we can't simply check it is nil with inst == nil
+func isNil[T OtelEbpfSdk](inst T) bool {
+	return reflect.ValueOf(&inst).Elem().IsZero()
+}
+
 func (d *EbpfDirector[T]) periodicCleanup(ctx context.Context) {
 	ticker := time.NewTicker(CleanupInterval)
 	defer ticker.Stop()
@@ -189,7 +195,10 @@ func (d *EbpfDirector[T]) periodicCleanup(ctx context.Context) {
 				newInstrumentedProcesses := make([]*InstrumentedProcess[T], 0, len(details.InstrumentedProcesses))
 				for i := range details.InstrumentedProcesses {
 					ip := details.InstrumentedProcesses[i]
-					if !IsProcessExists(ip.PID) && any(ip.inst) != nil {
+					// if the process does not exist, we should make sure we clean the instrumentation resources.
+					// Also making sure the instrumentation itself is not nil to avoid closing it here.
+					// This can happen if the process exits while the instrumentation is initializing.
+					if !IsProcessExists(ip.PID) && !isNil(ip.inst) {
 						log.Logger.V(0).Info("Instrumented process does not exist, cleaning up", "pid", ip.PID)
 						d.cleanProcess(ctx, pod, ip)
 					} else {
@@ -428,7 +437,7 @@ func (d *EbpfDirector[T]) GetWorkloadInstrumentations(workload *workload.PodWork
 		}
 
 		for _, ip := range details.InstrumentedProcesses {
-			if any(ip.inst) != nil {
+			if !isNil(ip.inst) {
 				insts = append(insts, ip.inst)
 			}
 		}

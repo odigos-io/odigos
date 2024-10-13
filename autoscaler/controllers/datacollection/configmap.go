@@ -7,14 +7,13 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
-
 	"github.com/ghodss/yaml"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/common/consts"
 	constsK8s "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "k8s.io/api/core/v1"
@@ -30,7 +29,7 @@ import (
 
 func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme) (string, error) {
+	c client.Client, scheme *runtime.Scheme, tier common.OdigosTier) (string, error) {
 	logger := log.FromContext(ctx)
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
@@ -39,7 +38,7 @@ func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 	SamplingExists := commonconf.FindFirstProcessorByType(allProcessors, "odigossampling")
 	setTracesLoadBalancer := SamplingExists != nil
 
-	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme, setTracesLoadBalancer)
+	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme, setTracesLoadBalancer, tier)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return "", err
@@ -98,8 +97,8 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 }
 
 func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
-	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool) (*v1.ConfigMap, error) {
-	cmData, err := calculateConfigMapData(apps, dests, processors, setTracesLoadBalancer)
+	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool, tier common.OdigosTier) (*v1.ConfigMap, error) {
+	cmData, err := calculateConfigMapData(apps, dests, processors, setTracesLoadBalancer, tier)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +125,7 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 }
 
 func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
-	setTracesLoadBalancer bool) (string, error) {
+	setTracesLoadBalancer bool, tier common.OdigosTier) (string, error) {
 
 	empty := struct{}{}
 
@@ -136,8 +135,12 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			log.Log.V(0).Info(err.Error(), "processor", name)
 		}
 	}
+
+	if tier != common.OnPremOdigosTier {
+		processorsCfg["odigosresourcename"] = empty
+	}
+
 	processorsCfg["batch"] = empty
-	processorsCfg["odigosresourcename"] = empty
 	processorsCfg["resource"] = config.GenericMap{
 		"attributes": []config.GenericMap{{
 			"key":    "k8s.node.name",
@@ -207,7 +210,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 				"config": config.GenericMap{
 					"scrape_configs": []config.GenericMap{
 						{
-							"job_name": "otelcol",
+							"job_name":        "otelcol",
 							"scrape_interval": "10s",
 							"static_configs": []config.GenericMap{
 								{
@@ -217,8 +220,8 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 							"metric_relabel_configs": []config.GenericMap{
 								{
 									"source_labels": []string{"__name__"},
-									"regex": "(.*odigos.*|^otelcol_processor_accepted.*)",
-									"action": "keep",
+									"regex":         "(.*odigos.*|^otelcol_processor_accepted.*)",
+									"action":        "keep",
 								},
 							},
 						},
@@ -234,11 +237,11 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			},
 		},
 		Service: config.Service{
-			Pipelines:  map[string]config.Pipeline{
+			Pipelines: map[string]config.Pipeline{
 				"metrics/otelcol": {
-					Receivers: []string{"prometheus/self-metrics"},
+					Receivers:  []string{"prometheus/self-metrics"},
 					Processors: []string{"resource/pod-name"},
-					Exporters: []string{"otlp/odigos-own-telemetry-ui"},
+					Exporters:  []string{"otlp/odigos-own-telemetry-ui"},
 				},
 			},
 			Extensions: []string{"health_check"},
@@ -249,7 +252,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 				Resource: map[string]*string{
 					// The collector add "otelcol" as a service name, so we need to remove it
 					// to avoid duplication, since we are interested in the instrumented services.
-					string(semconv.ServiceNameKey):    nil,
+					string(semconv.ServiceNameKey): nil,
 					// The collector adds its own version as a service version, which is not needed currently.
 					string(semconv.ServiceVersionKey): nil,
 				},
@@ -273,6 +276,8 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			}
 		}
 	}
+
+	commonProcessors := getCommonProcessorsByTier(tier)
 
 	if collectLogs {
 		includes := make([]string, 0)
@@ -313,7 +318,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
-			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, logsProcessors...),
+			Processors: append(commonProcessors, logsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -321,7 +326,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
 			Receivers:  []string{"otlp"},
-			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, tracesProcessors...),
+			Processors: append(commonProcessors, tracesProcessors...),
 			Exporters:  tracesPipelineExporter,
 		}
 	}
@@ -336,7 +341,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 
 		cfg.Service.Pipelines["metrics"] = config.Pipeline{
 			Receivers:  []string{"otlp", "kubeletstats"},
-			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, metricsProcessors...),
+			Processors: append(commonProcessors, metricsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -395,4 +400,13 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]common.Observab
 	}
 
 	return signals, nil
+}
+
+func getCommonProcessorsByTier(tier common.OdigosTier) []string {
+	processors := []string{"batch"}
+	if tier != common.OnPremOdigosTier {
+		processors = append(processors, "odigosresourcename")
+	}
+	processors = append(processors, "resource", "resourcedetection", "odigostrafficmetrics")
+	return processors
 }
