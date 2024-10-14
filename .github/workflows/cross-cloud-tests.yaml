@@ -130,7 +130,6 @@ jobs:
         run: |
           if [ "${{ matrix.cloud-provider }}" == "aks" ]; then
             echo "TF_DIR=./tests-infrastructure/terraform/aks" >> $GITHUB_ENV
-            az aks get-credentials --resource-group tests-rg --name $CLUSTER_NAME
           elif [ "${{ matrix.cloud-provider }}" == "eks" ]; then
             echo "TF_DIR=./tests-infrastructure/terraform/eks" >> $GITHUB_ENV
           elif [ "${{ matrix.cloud-provider }}" == "gke" ]; then
@@ -149,6 +148,20 @@ jobs:
       - name: Apply OpenTofu Configuration
         run: |
           tofu -chdir=$TF_DIR apply -auto-approve
+
+      - name: Get kubeconfig for AKS/EKS/GKE
+        run: |
+          if [ "${{ matrix.cloud-provider }}" == "aks" ]; then
+            echo "Fetching AKS kubeconfig..."
+            az aks get-credentials --resource-group tests-rg --name $CLUSTER_NAME
+          elif [ "${{ matrix.cloud-provider }}" == "eks" ]; then
+            echo "Fetching EKS kubeconfig..."
+          elif [ "${{ matrix.cloud-provider }}" == "gke" ]; then
+            echo "Fetching GKE kubeconfig..."
+          else
+            echo "Unknown cloud provider"
+            exit 1
+          fi
 
       - name: Verify cluster Access
         run: |
