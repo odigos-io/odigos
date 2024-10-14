@@ -19,8 +19,8 @@ import {
 const componentMap = {
   source: SourceDrawer,
   action: () => <div>Action</div>,
-  destination: (props: { isEditing: boolean }) => (
-    <DestinationDrawer isEditing={props.isEditing} />
+  destination: ({ isEditing }: { isEditing: boolean }) => (
+    <DestinationDrawer isEditing={isEditing} />
   ),
 };
 
@@ -70,14 +70,6 @@ const OverviewDrawer = () => {
         } catch (error) {
           console.error('Error updating destination:', error);
         }
-
-        try {
-          // Replace this with your actual save logic
-          // await updateDestination(destinationData);
-        } catch (error) {
-          console.error('Error updating destination:', error);
-          // Optionally show error message to user
-        }
         setIsEditing(false);
       }
     }
@@ -103,7 +95,6 @@ const OverviewDrawer = () => {
             await updateActualSource(sourceId, patchRequest);
           } catch (error) {
             console.error('Error updating source:', error);
-            // Optionally show error message to user
           }
         }
       }
