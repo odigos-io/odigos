@@ -139,10 +139,10 @@ jobs:
       # - name: Plan OpenTofu
       #   run: tofu -chdir=$TF_DIR plan
 
-      # - name: Apply OpenTofu Configuration
-      #   run: |
-      #     tofu -chdir=$TF_DIR apply -auto-approve
-      #     az aks get-credentials --resource-group tests-rg --name tests-aks
+      - name: Apply OpenTofu Configuration
+        run: |
+# tofu -chdir=$TF_DIR apply -auto-approve
+          az aks get-credentials --resource-group tests-rg --name tests-aks
 
       - name: Verify cluster Access
         run: |
