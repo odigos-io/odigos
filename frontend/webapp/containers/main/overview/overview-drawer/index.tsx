@@ -170,7 +170,7 @@ const OverviewDrawer = () => {
           <ContentArea>
             {selectedItem.type === 'destination' ? (
               <DestinationDrawer
-                ref={destinationDrawerRef} // Pass the ref to DestinationDrawer
+                ref={destinationDrawerRef}
                 isEditing={isEditing}
               />
             ) : (
