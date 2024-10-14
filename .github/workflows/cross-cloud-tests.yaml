@@ -133,16 +133,16 @@ jobs:
             exit 1
           fi
 
-      - name: Initialize OpenTofu
-        run: tofu -chdir=$TF_DIR init
+      # - name: Initialize OpenTofu
+      #   run: tofu -chdir=$TF_DIR init
 
-      - name: Plan OpenTofu
-        run: tofu -chdir=$TF_DIR plan
+      # - name: Plan OpenTofu
+      #   run: tofu -chdir=$TF_DIR plan
 
-      - name: Apply OpenTofu Configuration
-        run: |
-          tofu -chdir=$TF_DIR apply -auto-approve
-          az aks get-credentials --resource-group tests-rg --name tests-aks
+      # - name: Apply OpenTofu Configuration
+      #   run: |
+      #     tofu -chdir=$TF_DIR apply -auto-approve
+      #     az aks get-credentials --resource-group tests-rg --name tests-aks
 
       - name: Verify cluster Access
         run: |
