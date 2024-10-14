@@ -189,6 +189,6 @@ jobs:
           export MODE=cross-cloud-tests
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
 
-      # - name: Destroy Resources
-      #   if: always()  # Ensures this runs even if earlier steps fail
-      #   run: tofu -chdir=$TF_DIR destroy -auto-approve
+      - name: Destroy Resources
+        if: always()  # Ensures this runs even if earlier steps fail
+        run: tofu -chdir=$TF_DIR destroy -auto-approve
