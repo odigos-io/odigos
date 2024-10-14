@@ -62,11 +62,10 @@ const OverviewDrawer = () => {
           name,
         };
         try {
-          const res = await updateExistingDestination(
+          await updateExistingDestination(
             selectedItem.id as string,
             destinationData
           );
-          console.log({ res });
         } catch (error) {
           console.error('Error updating destination:', error);
         }
