@@ -70,7 +70,7 @@ jobs:
     strategy:
       matrix:
         cloud-provider: [aks] # Add or remove providers as needed [TODO: later add -> eks + gke]
-        test-scenario: [multi-apps] # Add or remove scenarios as needed
+        test-scenario: [multi-apps, helm-chart] # Add or remove scenarios as needed
 
     steps:
 
@@ -89,6 +89,12 @@ jobs:
 
       - name: Configure Cloud Provider
         run: |
+          
+          # Set environment variable for cluster name to use in Terraform
+          CLUSTER_NAME="${{ matrix.test-scenario }}-${{ github.run_id }}"
+          echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
+          echo "TF_VAR_cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
+
           if [ "${{ matrix.cloud-provider }}" = "aks" ]; then
             echo "Configuring for AKS"
             
@@ -100,7 +106,6 @@ jobs:
 
             az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
             az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-            az aks get-credentials --resource-group tests-rg --name tests-aks
 
           elif [ "${{ matrix.cloud-provider }}" = "eks" ]; then
             echo "Configuring for EKS"
@@ -125,6 +130,7 @@ jobs:
         run: |
           if [ "${{ matrix.cloud-provider }}" == "aks" ]; then
             echo "TF_DIR=./tests-infrastructure/terraform/aks" >> $GITHUB_ENV
+            az aks get-credentials --resource-group tests-rg --name $CLUSTER_NAME
           elif [ "${{ matrix.cloud-provider }}" == "eks" ]; then
             echo "TF_DIR=./tests-infrastructure/terraform/eks" >> $GITHUB_ENV
           elif [ "${{ matrix.cloud-provider }}" == "gke" ]; then
@@ -134,15 +140,15 @@ jobs:
             exit 1
           fi
 
-      # - name: Initialize OpenTofu
-      #   run: tofu -chdir=$TF_DIR init
+      - name: Initialize OpenTofu
+        run: tofu -chdir=$TF_DIR init
 
-      # - name: Plan OpenTofu
-      #   run: tofu -chdir=$TF_DIR plan
+      - name: Plan OpenTofu
+        run: tofu -chdir=$TF_DIR plan
 
-      # - name: Apply OpenTofu Configuration
-      #   run: |
-      #     tofu -chdir=$TF_DIR apply -auto-approve
+      - name: Apply OpenTofu Configuration
+        run: |
+          tofu -chdir=$TF_DIR apply -auto-approve
 
       - name: Verify cluster Access
         run: |
@@ -163,7 +169,7 @@ jobs:
         run: |
           cd frontend/webapp
           yarn install
-          
+
       - name: Run E2E Tests
         run: |
           echo "MODE=cross-cloud-tests" >> $GITHUB_ENV

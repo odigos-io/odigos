@@ -32,7 +32,11 @@ spec:
           P="../../.."
           # "build" complete helm chart by copying CRDs into the template folder
           cp -r $P/api/config/crd/bases/* $P/helm/odigos/templates/crds/
-          helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test
+          if [ "$MODE" = "cross-cloud-tests" ]; then
+            helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=304e3b08d6346f9c16aa4440ff82178191c8d94a --set imagePrefix=public.ecr.aws/y2v0v6s7
+          else
+            helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test
+          fi
           kubectl label namespace odigos-test-ns odigos.io/system-object="true"
         timeout: 60s
   - name: Verify Odigos Installation
