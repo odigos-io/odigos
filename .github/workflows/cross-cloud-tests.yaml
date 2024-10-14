@@ -190,8 +190,13 @@ jobs:
 
       - name: Run E2E Tests
         run: |
-          echo "MODE=cross-cloud-tests" >> $GITHUB_ENV
+          
+          # This uses in chainsaw to split e2e tests from cross cloud tests
           export MODE=cross-cloud-tests
+          
+          # This uses in chainsaw to verify the odigos version is equal to the commit version
+          export COMMIT_HASH=${{ github.sha }}
+
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
 
       - name: Destroy Resources

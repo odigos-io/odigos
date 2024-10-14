@@ -44,9 +44,16 @@ spec:
     - script:
         content: |
           export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
-          if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
-            echo "Odigos version is not e2e-test, got $ACTUAL_VERSION"
-            exit 1
+          if [ "$MODE" = "cross-cloud-tests" ]; then
+            if [ "$ACTUAL_VERSION" != "$COMMIT_HASH" ]; then
+              echo "Odigos version is not the expected commit hash, got $ACTUAL_VERSION"
+              exit 1
+            fi
+          else
+            if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
+              echo "Odigos version is not e2e-test, got $ACTUAL_VERSION"
+              exit 1
+            fi
           fi
     - assert:
         file: assert-odigos-installed.yaml
