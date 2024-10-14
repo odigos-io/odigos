@@ -157,6 +157,13 @@ jobs:
           go build -tags=embed_manifests -o odigos
           chmod +x odigos
 
+      - name: Install FE
+        # this is used for cypress tests which are not run in every scenario
+        if: matrix.test-scenario == 'multi-apps' || matrix.test-scenario == 'helm-chart' || matrix.test-scenario == 'fe-synthetic'
+        run: |
+          cd frontend/webapp
+          yarn install
+          
       - name: Run E2E Tests
         run: |
           echo "MODE=cross-cloud-tests" >> $GITHUB_ENV
