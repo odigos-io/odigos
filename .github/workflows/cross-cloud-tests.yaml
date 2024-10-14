@@ -87,10 +87,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Configure Cloud Provider
+      - name: Set Environment Variables for Terraform
         run: |
-          
-          # Set environment variable for cluster name to use in Terraform
           CLUSTER_NAME="${{ matrix.test-scenario }}-${{ github.run_id }}"
           echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
           echo "TF_VAR_cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
@@ -98,6 +96,9 @@ jobs:
           echo "TF_VAR_test_scenario=${{ matrix.test-scenario }}" >> $GITHUB_ENV
           echo "TF_VAR_run_id=${{ github.run_id }}" >> $GITHUB_ENV
 
+
+      - name: Configure Cloud Provider
+        run: |
           if [ "${{ matrix.cloud-provider }}" = "aks" ]; then
             echo "Configuring for AKS"
             
@@ -157,7 +158,7 @@ jobs:
         run: |
           if [ "${{ matrix.cloud-provider }}" == "aks" ]; then
             echo "Fetching AKS kubeconfig..."
-            az aks get-credentials --resource-group tests-rg --name $CLUSTER_NAME
+            az aks get-credentials --resource-group $CLUSTER_NAME --name $CLUSTER_NAME
           elif [ "${{ matrix.cloud-provider }}" == "eks" ]; then
             echo "Fetching EKS kubeconfig..."
           elif [ "${{ matrix.cloud-provider }}" == "gke" ]; then
