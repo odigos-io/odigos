@@ -161,6 +161,7 @@ jobs:
       - name: Run E2E Tests
         run: |
           echo "MODE=cross-cloud-tests" >> $GITHUB_ENV
+          export MODE=cross-cloud-tests
           chainsaw test tests/e2e/${{ env.TEST_SCENARIO }}
 
       - name: Destroy Resources
