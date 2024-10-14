@@ -70,8 +70,7 @@ jobs:
     strategy:
       matrix:
         cloud-provider: [aks] # Add or remove providers as needed [TODO: later add -> eks + gke]
-    env:
-      TEST_SCENARIO: multi-apps
+        test-scenario: [multi-apps] # Add or remove scenarios as needed
 
     steps:
 
@@ -162,7 +161,7 @@ jobs:
         run: |
           echo "MODE=cross-cloud-tests" >> $GITHUB_ENV
           export MODE=cross-cloud-tests
-          chainsaw test tests/e2e/${{ env.TEST_SCENARIO }}
+          chainsaw test tests/e2e/${{ matrix.test-scenario }}
 
       # - name: Destroy Resources
       #   if: always()  # Ensures this runs even if earlier steps fail
