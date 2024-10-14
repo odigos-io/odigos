@@ -100,6 +100,7 @@ jobs:
 
             az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
             az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+            az aks get-credentials --resource-group tests-rg --name tests-aks
 
           elif [ "${{ matrix.cloud-provider }}" = "eks" ]; then
             echo "Configuring for EKS"
@@ -139,10 +140,9 @@ jobs:
       # - name: Plan OpenTofu
       #   run: tofu -chdir=$TF_DIR plan
 
-      - name: Apply OpenTofu Configuration
-        run: |
-# tofu -chdir=$TF_DIR apply -auto-approve
-          az aks get-credentials --resource-group tests-rg --name tests-aks
+      # - name: Apply OpenTofu Configuration
+      #   run: |
+      #     tofu -chdir=$TF_DIR apply -auto-approve
 
       - name: Verify cluster Access
         run: |
