@@ -448,6 +448,111 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 	return true, nil
 }
 
+// UpdateDestination is the resolver for the updateDestination field.
+func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, input model.DestinationInput) (*model.Destination, error) {
+	odigosns := consts.DefaultOdigosNamespace
+
+	destType := common.DestinationType(input.Type)
+	destName := input.Name
+
+	// Get the destination type configuration
+	destTypeConfig, err := services.GetDestinationTypeConfig(destType)
+	if err != nil {
+		return nil, fmt.Errorf("destination type %s not found: %v", destType, err)
+	}
+
+	// Convert fields from input to map[string]string
+	fields := make(map[string]string)
+	for _, field := range input.Fields {
+		fields[field.Key] = field.Value
+	}
+
+	// Validate the destination data schema
+	validationErrors := services.VerifyDestinationDataScheme(destType, destTypeConfig, fields)
+	if len(validationErrors) > 0 {
+		var errMsg string
+		for _, e := range validationErrors {
+			errMsg += e.Error() + "; "
+		}
+		return nil, fmt.Errorf("validation errors: %s", errMsg)
+	}
+
+	// Separate data fields and secret fields
+	dataFields, secretFields := services.TransformFieldsToDataAndSecrets(destTypeConfig, fields)
+
+	// Retrieve the existing destination
+	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Get(ctx, id, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get destination: %v", err)
+	}
+
+	// Handle secrets
+	destUpdateHasSecrets := len(secretFields) > 0
+	destCurrentlyHasSecrets := dest.Spec.SecretRef != nil
+
+	if !destUpdateHasSecrets && destCurrentlyHasSecrets {
+		// Delete the secret if it's not needed anymore
+		err := kube.DefaultClient.CoreV1().Secrets(odigosns).Delete(ctx, dest.Spec.SecretRef.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete secret: %v", err)
+		}
+		dest.Spec.SecretRef = nil
+	} else if destUpdateHasSecrets && !destCurrentlyHasSecrets {
+		// Create the secret if it was added in this update
+		secretRef, err := services.CreateDestinationSecret(ctx, destType, secretFields, odigosns)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create secret: %v", err)
+		}
+		dest.Spec.SecretRef = secretRef
+		// Add owner reference to the secret
+		err = services.AddDestinationOwnerReferenceToSecret(ctx, odigosns, dest)
+		if err != nil {
+			return nil, fmt.Errorf("failed to add owner reference to secret: %v", err)
+		}
+	} else if destUpdateHasSecrets && destCurrentlyHasSecrets {
+		// Update the secret in case it is modified
+		secret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Get(ctx, dest.Spec.SecretRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get secret: %v", err)
+		}
+		origSecret := secret.DeepCopy()
+
+		secret.StringData = secretFields
+		_, err = kube.DefaultClient.CoreV1().Secrets(odigosns).Update(ctx, secret, metav1.UpdateOptions{})
+		if err != nil {
+			// Rollback secret if needed
+			_, rollbackErr := kube.DefaultClient.CoreV1().Secrets(odigosns).Update(ctx, origSecret, metav1.UpdateOptions{})
+			if rollbackErr != nil {
+				fmt.Printf("Failed to rollback secret: %v\n", rollbackErr)
+			}
+			return nil, fmt.Errorf("failed to update secret: %v", err)
+		}
+	}
+
+	// Update the destination specification
+	dest.Spec.Type = destType
+	dest.Spec.DestinationName = destName
+	dest.Spec.Data = dataFields
+	dest.Spec.Signals = services.ExportedSignalsObjectToSlice(input.ExportedSignals)
+
+	// Update the destination in Kubernetes
+	updatedDest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Update(ctx, dest, metav1.UpdateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update destination: %v", err)
+	}
+
+	// Get the secret fields for the updated destination
+	secretFields, err = services.GetDestinationSecretFields(ctx, odigosns, updatedDest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get secret fields: %v", err)
+	}
+
+	// Convert the updated destination to the GraphQL model
+	resp := services.K8sDestinationToEndpointFormat(*updatedDest, secretFields)
+
+	return &resp, nil
+}
+
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
 	return &model.ComputePlatform{
@@ -548,13 +653,3 @@ type destinationResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *destinationResolver) Fields(ctx context.Context, obj *model.Destination) (string, error) {
-	panic(fmt.Errorf("not implemented: Fields - fields"))
-}

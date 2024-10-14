@@ -260,4 +260,5 @@ type Mutation {
     sourceId: K8sSourceId!
     patchSourceRequest: PatchSourceRequestInput!
   ): Boolean!
+  updateDestination(id: ID!, destination: DestinationInput!): Destination!
 }

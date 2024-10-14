@@ -5,21 +5,21 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import styled from 'styled-components';
 import { safeJsonParse } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { useQuery } from '@apollo/client';
-import { CardDetails, DestinationForm } from '@/components';
+import { useConnectDestinationForm } from '@/hooks';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
+import { CardDetails, DestinationForm } from '@/components';
 import {
+  DynamicField,
+  ExportedSignals,
   ActualDestination,
   isActualDestination,
   DestinationDetailsResponse,
-  ExportedSignals,
-  DynamicField,
   SupportedDestinationSignals,
 } from '@/types';
-import styled from 'styled-components';
-import { useConnectDestinationForm } from '@/hooks';
 
 export type DestinationDrawerHandle = {
   getCurrentData: () => {
@@ -67,18 +67,21 @@ const DestinationDrawer = forwardRef<
 
   const { buildFormDynamicFields } = useConnectDestinationForm();
 
-  const { data: destinationFields, error } =
-    useQuery<DestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
+  const { data: destinationFields } = useQuery<DestinationDetailsResponse>(
+    GET_DESTINATION_TYPE_DETAILS,
+    {
       variables: { type: destinationType },
       skip: shouldSkip,
-    });
+    }
+  );
 
   useImperativeHandle(ref, () => ({
     getCurrentData: () => {
       const fields = processFormFields(dynamicFields);
+      const { destinationType } = destination?.item as ActualDestination;
       const newDestination = {
         name: destinationName,
-        type: destination?.type || '',
+        type: destinationType?.type || '',
         exportedSignals,
         fields,
       };

@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { useActualSources } from '@/hooks';
 import DrawerHeader from './drawer-header';
 import DrawerFooter from './drawer-footer';
 import { SourceDrawer } from '../../sources';
 import { Drawer } from '@/reuseable-components';
 import { DeleteEntityModal } from '@/components';
+import { useActualSources, useUpdateDestination } from '@/hooks';
 import { DestinationDrawer, DestinationDrawerHandle } from '../../destinations';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 import {
@@ -35,8 +35,8 @@ const OverviewDrawer = () => {
   const [title, setTitle] = useState(selectedItem?.item?.name || '');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
+  const { updateExistingDestination } = useUpdateDestination();
   const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
-
   const titleRef = useRef<HTMLInputElement>(null);
   const destinationDrawerRef = useRef<DestinationDrawerHandle>(null);
   useEffect(initialTitle, [selectedItem]);
@@ -61,8 +61,16 @@ const OverviewDrawer = () => {
           ...destinationDrawerRef.current.getCurrentData(),
           name,
         };
+        try {
+          const res = await updateExistingDestination(
+            selectedItem.id as string,
+            destinationData
+          );
+          console.log({ res });
+        } catch (error) {
+          console.error('Error updating destination:', error);
+        }
 
-        console.log({ id: selectedItem.id, destinationData });
         try {
           // Replace this with your actual save logic
           // await updateDestination(destinationData);
@@ -70,6 +78,7 @@ const OverviewDrawer = () => {
           console.error('Error updating destination:', error);
           // Optionally show error message to user
         }
+        setIsEditing(false);
       }
     }
 
