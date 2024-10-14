@@ -140,8 +140,7 @@ jobs:
           fi
 
       - name: Initialize OpenTofu
-        run: tofu -chdir=$TF_DIR init \
-              -backend-config="path=terraform-${{ matrix.test-scenario }}-${{ github.run_id }}.tfstate"
+        run: tofu -chdir=$TF_DIR init 
 
 
       - name: Plan OpenTofu
