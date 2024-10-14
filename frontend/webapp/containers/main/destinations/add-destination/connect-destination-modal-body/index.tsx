@@ -1,29 +1,26 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/store';
-import styled from 'styled-components';
 import { SideMenu } from '@/components';
 import { useQuery } from '@apollo/client';
+import { FormContainer } from './form-container';
 import { TestConnection } from '../test-connection';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { Body, Container, SideMenuWrapper } from '../styled';
-import { useConnectDestinationForm, useConnectEnv } from '@/hooks';
-import { DynamicConnectDestinationFormFields } from '../dynamic-form-fields';
+import { Divider, SectionTitle } from '@/reuseable-components';
+import { ConnectionNotification } from './connection-notification';
+import {
+  useConnectDestinationForm,
+  useConnectEnv,
+  useDestinationFormData,
+  useEditDestinationFormHandlers,
+} from '@/hooks';
 import {
   StepProps,
-  DynamicField,
-  ExportedSignals,
   DestinationInput,
   DestinationTypeItem,
   DestinationDetailsResponse,
   ConfiguredDestination,
 } from '@/types';
-import {
-  CheckboxList,
-  Divider,
-  Input,
-  NotificationNote,
-  SectionTitle,
-} from '@/reuseable-components';
 
 const SIDE_MENU_DATA: StepProps[] = [
   {
@@ -38,28 +35,6 @@ const SIDE_MENU_DATA: StepProps[] = [
   },
 ];
 
-const FormContainer = styled.div`
-  display: flex;
-  width: 100%;
-  max-width: 500px;
-  flex-direction: column;
-  gap: 24px;
-  height: 443px;
-  overflow-y: auto;
-  padding-right: 16px;
-  box-sizing: border-box;
-  overflow: overlay;
-  max-height: calc(100vh - 410px);
-
-  @media (height < 768px) {
-    max-height: calc(100vh - 350px);
-  }
-`;
-
-const NotificationNoteWrapper = styled.div`
-  margin-top: 24px;
-`;
-
 interface ConnectDestinationModalBodyProps {
   destination: DestinationTypeItem | undefined;
   onSubmitRef: React.MutableRefObject<(() => void) | null>;
@@ -73,15 +48,18 @@ export function ConnectDestinationModalBody({
 }: ConnectDestinationModalBodyProps) {
   const [destinationName, setDestinationName] = useState<string>('');
   const [showConnectionError, setShowConnectionError] = useState(false);
-  const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
-  const [exportedSignals, setExportedSignals] = useState<ExportedSignals>({
-    logs: false,
-    metrics: false,
-    traces: false,
-  });
+
+  const {
+    dynamicFields,
+    exportedSignals,
+    setExportedSignals,
+    setDynamicFields,
+  } = useDestinationFormData();
 
   const { connectEnv } = useConnectEnv();
   const { buildFormDynamicFields } = useConnectDestinationForm();
+  const { handleDynamicFieldChange, handleSignalChange } =
+    useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
   const addConfiguredDestination = useAppStore(
     ({ addConfiguredDestination }) => addConfiguredDestination
   );
@@ -96,7 +74,6 @@ export function ConnectDestinationModalBody({
 
   const monitors = useMemo(() => {
     if (!destination) return [];
-
     const { logs, metrics, traces } = destination.supportedSignals;
 
     setExportedSignals({
@@ -143,20 +120,9 @@ export function ConnectDestinationModalBody({
     onFormValidChange(isFormValid);
   }, [dynamicFields]);
 
-  function handleDynamicFieldChange(name: string, value: any) {
+  function onDynamicFieldChange(name: string, value: any) {
     setShowConnectionError(false);
-    setDynamicFields((prev) => {
-      return prev.map((field) => {
-        if (field.name === name) {
-          return { ...field, value };
-        }
-        return field;
-      });
-    });
-  }
-
-  function handleSignalChange(signal: string, value: boolean) {
-    setExportedSignals((prev) => ({ ...prev, [signal]: value }));
+    handleDynamicFieldChange(name, value);
   }
 
   function processFormFields() {
@@ -259,43 +225,20 @@ export function ConnectDestinationModalBody({
             )
           }
         />
-        {showConnectionError && (
-          <NotificationNoteWrapper>
-            <NotificationNote
-              type="error"
-              text={
-                'Connection failed. Please check your input and try once again.'
-              }
-            />
-          </NotificationNoteWrapper>
-        )}
-        {destination.fields && !showConnectionError && (
-          <NotificationNoteWrapper>
-            <NotificationNote
-              type="info"
-              text={`Odigos autocompleted ${destination.displayName} connection details.`}
-            />
-          </NotificationNoteWrapper>
-        )}
+        <ConnectionNotification
+          showConnectionError={showConnectionError}
+          destination={destination}
+        />
         <Divider margin="24px 0" />
-        <FormContainer>
-          <CheckboxList
-            monitors={monitors as []}
-            title="This connection will monitor:"
-            exportedSignals={exportedSignals}
-            handleSignalChange={handleSignalChange}
-          />
-          <Input
-            title="Destination name"
-            placeholder="Enter destination name"
-            value={destinationName}
-            onChange={(e) => setDestinationName(e.target.value)}
-          />
-          <DynamicConnectDestinationFormFields
-            fields={dynamicFields}
-            onChange={handleDynamicFieldChange}
-          />
-        </FormContainer>
+        <FormContainer
+          monitors={monitors}
+          dynamicFields={dynamicFields}
+          exportedSignals={exportedSignals}
+          destinationName={destinationName}
+          handleDynamicFieldChange={onDynamicFieldChange}
+          handleSignalChange={handleSignalChange}
+          setDestinationName={setDestinationName}
+        />
       </Body>
     </Container>
   );

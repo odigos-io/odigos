@@ -1,28 +1,24 @@
 import React from 'react';
-import { CheckboxList, Input } from '@/reuseable-components';
+import { CheckboxList } from '@/reuseable-components';
+import { DynamicConnectDestinationFormFields } from '@/containers/main/destinations/add-destination/dynamic-form-fields';
 import {
   DynamicField,
   ExportedSignals,
   SupportedDestinationSignals,
 } from '@/types';
-import { DynamicConnectDestinationFormFields } from '@/containers/main/destinations/add-destination/dynamic-form-fields';
 
 interface DestinationFormProps {
-  destinationName: string;
   dynamicFields: DynamicField[];
   exportedSignals: ExportedSignals;
   supportedSignals: SupportedDestinationSignals;
-  setDestinationName: (name: string) => void;
   handleDynamicFieldChange: (name: string, value: any) => void;
   handleSignalChange: (signal: keyof ExportedSignals, value: boolean) => void;
 }
 
-export const DestinationForm: React.FC<DestinationFormProps> = ({
+export const EditDestinationForm: React.FC<DestinationFormProps> = ({
   dynamicFields,
-  destinationName,
   exportedSignals,
   supportedSignals,
-  setDestinationName,
   handleSignalChange,
   handleDynamicFieldChange,
 }) => {
@@ -34,12 +30,6 @@ export const DestinationForm: React.FC<DestinationFormProps> = ({
 
   return (
     <>
-      <Input
-        title="Destination Name"
-        placeholder="Enter destination name"
-        value={destinationName}
-        onChange={(e) => setDestinationName(e.target.value)}
-      />
       <CheckboxList
         monitors={monitors as []}
         title="This connection will monitor:"
