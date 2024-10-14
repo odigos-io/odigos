@@ -197,4 +197,4 @@ jobs:
         if: always()  # Ensures this runs even if earlier steps fail
         run: |
         tofu -chdir=$TF_DIR destroy -auto-approve \
-        -state="terraform-${{ matrix.test-scenario }}-${{ github.run_id }}.tfstate"
+          -state="terraform-${{ matrix.test-scenario }}-${{ github.run_id }}.tfstate"
