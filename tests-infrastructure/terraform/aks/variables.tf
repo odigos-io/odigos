@@ -12,3 +12,13 @@ variable "node_count" {
   description = "Number of nodes in the cluster"
   default     = 1
 }
+
+variable "test_scenario" {
+  description = "Test scenario to differentiate state files"
+  type        = string
+}
+
+variable "run_id" {
+  description = "GitHub run ID for uniquely identifying state files"
+  type        = string
+}

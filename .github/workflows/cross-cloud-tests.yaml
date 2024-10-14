@@ -95,7 +95,7 @@ jobs:
           echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
           echo "TF_VAR_cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
           echo "TF_VAR_test_scenario=${{ matrix.test-scenario }}" >> $GITHUB_ENV
-          echo "TF_VAR_run_id=${{ github.run_id }}" >> $GITHUB_ENV          
+          echo "TF_VAR_run_id=${{ github.run_id }}" >> $GITHUB_ENV
 
           if [ "${{ matrix.cloud-provider }}" = "aks" ]; then
             echo "Configuring for AKS"
