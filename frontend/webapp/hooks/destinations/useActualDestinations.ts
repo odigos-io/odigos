@@ -13,6 +13,7 @@ const mapToActualDestination = (data: any): ActualDestination => ({
     type: data.destinationType.type,
     displayName: data.destinationType.displayName,
     imageUrl: data.destinationType.imageUrl,
+    supportedSignals: data.destinationType.supportedSignals,
   },
 });
 

@@ -104,7 +104,7 @@ interface SupportedSignal {
   supported: boolean;
 }
 
-interface SupportedSignals {
+export interface SupportedDestinationSignals {
   traces: SupportedSignal;
   metrics: SupportedSignal;
   logs: SupportedSignal;
@@ -114,7 +114,7 @@ export interface SelectedDestination {
   type: string;
   display_name: string;
   image_url: string;
-  supported_signals: SupportedSignals;
+  supported_signals: SupportedDestinationSignals;
   test_connection_supported: boolean;
 }
 
@@ -133,17 +133,7 @@ export interface Destination {
     type: string;
     display_name: string;
     image_url: string;
-    supported_signals: {
-      traces: {
-        supported: boolean;
-      };
-      metrics: {
-        supported: boolean;
-      };
-      logs: {
-        supported: boolean;
-      };
-    };
+    supported_signals: SupportedDestinationSignals;
   };
 }
 
@@ -159,7 +149,7 @@ export interface Field {
 export interface DestinationConfig {
   type: string;
   name: string;
-  signals: SupportedSignals;
+  signals: SupportedDestinationSignals;
   fields: {
     [key: string]: string;
   };
@@ -180,6 +170,7 @@ export interface ActualDestination {
     type: string;
     displayName: string;
     imageUrl: string;
+    supportedSignals: SupportedDestinationSignals;
   };
 }
 

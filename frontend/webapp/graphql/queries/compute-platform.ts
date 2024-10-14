@@ -34,6 +34,17 @@ export const GET_COMPUTE_PLATFORM = gql`
           type
           imageUrl
           displayName
+          supportedSignals {
+            logs {
+              supported
+            }
+            metrics {
+              supported
+            }
+            traces {
+              supported
+            }
+          }
         }
       }
       actions {

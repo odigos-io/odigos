@@ -7,7 +7,7 @@ import DrawerFooter from './drawer-footer';
 import { SourceDrawer } from '../../sources';
 import { Drawer } from '@/reuseable-components';
 import { DeleteEntityModal } from '@/components';
-import { DestinationDrawer } from '../../destinations';
+import { DestinationDrawer, DestinationDrawerHandle } from '../../destinations';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 import {
   WorkloadId,
@@ -19,7 +19,9 @@ import {
 const componentMap = {
   source: SourceDrawer,
   action: () => <div>Action</div>,
-  destination: DestinationDrawer,
+  destination: (props: { isEditing: boolean }) => (
+    <DestinationDrawer isEditing={props.isEditing} />
+  ),
 };
 
 const DRAWER_WIDTH = '560px';
@@ -36,7 +38,7 @@ const OverviewDrawer = () => {
   const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
 
   const titleRef = useRef<HTMLInputElement>(null);
-
+  const destinationDrawerRef = useRef<DestinationDrawerHandle>(null);
   useEffect(initialTitle, [selectedItem]);
 
   function initialTitle() {
@@ -52,31 +54,52 @@ const OverviewDrawer = () => {
   }
 
   const handleSave = async () => {
-    if (titleRef.current) {
-      const newTitle = titleRef.current.value;
-      setTitle(newTitle);
-      if (selectedItem?.type === 'source' && selectedItem.item) {
-        const sourceItem = selectedItem.item as K8sActualSource;
-
-        const sourceId: WorkloadId = {
-          namespace: sourceItem.namespace,
-          kind: sourceItem.kind,
-          name: sourceItem.name,
+    if (selectedItem?.type === 'destination') {
+      if (destinationDrawerRef.current && titleRef.current) {
+        const name = titleRef.current.value;
+        const destinationData = {
+          ...destinationDrawerRef.current.getCurrentData(),
+          name,
         };
 
-        const patchRequest: PatchSourceRequestInput = {
-          reportedName: newTitle,
-        };
-
+        console.log({ id: selectedItem.id, destinationData });
         try {
-          await updateActualSource(sourceId, patchRequest);
+          // Replace this with your actual save logic
+          // await updateDestination(destinationData);
         } catch (error) {
-          console.error('Error updating source:', error);
+          console.error('Error updating destination:', error);
           // Optionally show error message to user
         }
       }
     }
-    setIsEditing(false);
+
+    if (selectedItem?.type === 'source') {
+      if (titleRef.current) {
+        const newTitle = titleRef.current.value;
+        setTitle(newTitle);
+        if (selectedItem?.type === 'source' && selectedItem.item) {
+          const sourceItem = selectedItem.item as K8sActualSource;
+
+          const sourceId: WorkloadId = {
+            namespace: sourceItem.namespace,
+            kind: sourceItem.kind,
+            name: sourceItem.name,
+          };
+
+          const patchRequest: PatchSourceRequestInput = {
+            reportedName: newTitle,
+          };
+
+          try {
+            await updateActualSource(sourceId, patchRequest);
+          } catch (error) {
+            console.error('Error updating source:', error);
+            // Optionally show error message to user
+          }
+        }
+      }
+      setIsEditing(false);
+    }
   };
 
   const handleCancel = () => {
@@ -129,14 +152,21 @@ const OverviewDrawer = () => {
           <DrawerHeader
             ref={titleRef}
             title={title}
-            onClose={isEditing ? handleCancel : handleClose}
+            onClose={handleClose}
             imageUri={
-              selectedItem?.item ? getItemImageByType(selectedItem.item) : ''
+              selectedItem?.item ? getItemImageByType(selectedItem?.item) : ''
             }
             {...{ isEditing, setIsEditing }}
           />
           <ContentArea>
-            <SpecificComponent />
+            {selectedItem.type === 'destination' ? (
+              <DestinationDrawer
+                ref={destinationDrawerRef} // Pass the ref to DestinationDrawer
+                isEditing={isEditing}
+              />
+            ) : (
+              <SpecificComponent isEditing={isEditing} />
+            )}
           </ContentArea>
           {isEditing && (
             <>
