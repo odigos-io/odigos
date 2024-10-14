@@ -1,3 +1,9 @@
+terraform {
+  backend "local" {
+    path = "terraform-${var.test_scenario}-${var.run_id}.tfstate"
+  }
+}
+
 resource "azurerm_kubernetes_cluster" "aks" {
   name                = var.cluster_name
   location            = azurerm_resource_group.rg.location

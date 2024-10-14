@@ -94,6 +94,8 @@ jobs:
           CLUSTER_NAME="${{ matrix.test-scenario }}-${{ github.run_id }}"
           echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
           echo "TF_VAR_cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
+          echo "TF_VAR_test_scenario=${{ matrix.test-scenario }}" >> $GITHUB_ENV
+          echo "TF_VAR_run_id=${{ github.run_id }}" >> $GITHUB_ENV          
 
           if [ "${{ matrix.cloud-provider }}" = "aks" ]; then
             echo "Configuring for AKS"
@@ -144,13 +146,11 @@ jobs:
 
 
       - name: Plan OpenTofu
-        run: tofu -chdir=$TF_DIR plan \
-            -state="terraform-${{ matrix.test-scenario }}-${{ github.run_id }}.tfstate"
+        run: tofu -chdir=$TF_DIR plan
 
       - name: Apply OpenTofu Configuration
         run: |
-          tofu -chdir=$TF_DIR apply -auto-approve \
-            -state="terraform-${{ matrix.test-scenario }}-${{ github.run_id }}.tfstate"
+          tofu -chdir=$TF_DIR apply -auto-approve
 
       - name: Get kubeconfig for AKS/EKS/GKE
         run: |
@@ -195,5 +195,4 @@ jobs:
       - name: Destroy Resources
         if: always()  # Ensures this runs even if earlier steps fail
         run: |
-          tofu -chdir=$TF_DIR destroy -auto-approve \
-            -state="terraform-${{ matrix.test-scenario }}-${{ github.run_id }}.tfstate"
+          tofu -chdir=$TF_DIR destroy -auto-approve
