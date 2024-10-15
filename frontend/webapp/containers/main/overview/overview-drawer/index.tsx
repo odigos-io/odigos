@@ -41,6 +41,8 @@ const OverviewDrawer = () => {
   const destinationDrawerRef = useRef<DestinationDrawerHandle>(null);
   useEffect(initialTitle, [selectedItem]);
 
+  //TODO: split file to separate components by type: source, destination, action
+
   function initialTitle() {
     if (selectedItem?.type === 'source' && selectedItem.item) {
       const title = (selectedItem.item as K8sActualSource).reportedName;

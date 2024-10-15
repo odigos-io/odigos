@@ -37,8 +37,10 @@ const CheckboxList: React.FC<CheckboxListProps> = ({
       (value) => value
     );
 
+    const trueValues = Object.values(exportedSignals).filter(Boolean);
+
     return (
-      monitors.length === 1 ||
+      (monitors.length === 1 && trueValues.length === 1) ||
       (selectedItems.length === 1 && exportedSignals[item.id])
     );
   }
