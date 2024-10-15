@@ -1,4 +1,9 @@
-import React, { forwardRef, useImperativeHandle } from 'react';
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useState,
+} from 'react';
 import styled from 'styled-components';
 import { ExportedSignals } from '@/types';
 import { CardDetails, EditDestinationForm } from '@/components';
@@ -23,18 +28,37 @@ const DestinationDrawer = forwardRef<
   DestinationDrawerHandle,
   DestinationDrawerProps
 >(({ isEditing }, ref) => {
+  const [isFormDirty, setIsFormDirty] = useState(false);
   const {
     cardData,
     dynamicFields,
     exportedSignals,
     supportedSignals,
     destinationType,
+    resetFormData,
     setDynamicFields,
     setExportedSignals,
   } = useDestinationFormData();
 
   const { handleSignalChange, handleDynamicFieldChange } =
     useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
+
+  useEffect(() => {
+    if (!isEditing && isFormDirty) {
+      setIsFormDirty(false);
+      resetFormData();
+    }
+  }, [isEditing]);
+
+  const onDynamicFieldChange = (name: string, value: any) => {
+    handleDynamicFieldChange(name, value);
+    setIsFormDirty(true);
+  };
+
+  const onSignalChange = (signal: keyof ExportedSignals, value: boolean) => {
+    handleSignalChange(signal, value);
+    setIsFormDirty(true);
+  };
 
   useImperativeHandle(ref, () => ({
     getCurrentData: () => ({
@@ -50,8 +74,8 @@ const DestinationDrawer = forwardRef<
         dynamicFields={dynamicFields}
         exportedSignals={exportedSignals}
         supportedSignals={supportedSignals}
-        handleSignalChange={handleSignalChange}
-        handleDynamicFieldChange={handleDynamicFieldChange}
+        handleSignalChange={onSignalChange}
+        handleDynamicFieldChange={onDynamicFieldChange}
       />
     </FormContainer>
   ) : (

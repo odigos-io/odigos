@@ -37,8 +37,10 @@ const OverviewDrawer = () => {
 
   const { updateExistingDestination } = useUpdateDestination();
   const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
+
   const titleRef = useRef<HTMLInputElement>(null);
   const destinationDrawerRef = useRef<DestinationDrawerHandle>(null);
+
   useEffect(initialTitle, [selectedItem]);
 
   //TODO: split file to separate components by type: source, destination, action

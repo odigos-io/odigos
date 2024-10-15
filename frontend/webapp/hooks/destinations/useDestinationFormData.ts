@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { safeJsonParse } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { useQuery } from '@apollo/client';
@@ -47,6 +47,16 @@ export function useDestinationFormData() {
     []
   );
 
+  const initialDynamicFieldsRef = useRef<DynamicField[]>([]);
+  const initialExportedSignalsRef = useRef({
+    logs: false,
+    metrics: false,
+    traces: false,
+  });
+  const initialSupportedSignalsRef = useRef<SupportedDestinationSignals>(
+    DEFAULT_SUPPORTED_SIGNALS
+  );
+
   useEffect(() => {
     if (destinationFields && isActualDestination(destination?.item)) {
       const { fields, exportedSignals, destinationType } = destination.item;
@@ -55,16 +65,18 @@ export function useDestinationFormData() {
         destinationTypeDetails?.fields || []
       );
       const parsedFields = safeJsonParse<Record<string, string>>(fields, {});
+      const df = formFields.map((field) => ({
+        ...field,
+        value: parsedFields[field.name] || '',
+      }));
 
-      setDynamicFields(
-        formFields.map((field) => ({
-          ...field,
-          value: parsedFields[field.name] || '',
-        }))
-      );
-
+      setDynamicFields(df);
       setExportedSignals(exportedSignals);
       setSupportedSignals(destinationType.supportedSignals);
+
+      initialDynamicFieldsRef.current = df;
+      initialExportedSignalsRef.current = exportedSignals;
+      initialSupportedSignalsRef.current = destinationType.supportedSignals;
     }
   }, [destinationFields, destination, memoizedBuildFormDynamicFields]);
 
@@ -94,6 +106,13 @@ export function useDestinationFormData() {
     ];
   }, [shouldSkip, destination, destinationFields]);
 
+  // Reset function using initial values from refs
+  const resetFormData = useCallback(() => {
+    setDynamicFields(initialDynamicFieldsRef.current);
+    setExportedSignals(initialExportedSignalsRef.current);
+    setSupportedSignals(initialSupportedSignalsRef.current);
+  }, []);
+
   return {
     cardData,
     dynamicFields,
@@ -102,6 +121,7 @@ export function useDestinationFormData() {
     supportedSignals,
     setExportedSignals,
     setDynamicFields,
+    resetFormData,
   };
 }
 
