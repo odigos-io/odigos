@@ -151,7 +151,7 @@ const OverviewDrawer = () => {
           <DrawerHeader
             ref={titleRef}
             title={title}
-            onClose={handleClose}
+            onClose={isEditing ? handleCancel : handleClose}
             imageUri={
               selectedItem?.item ? getItemImageByType(selectedItem?.item) : ''
             }

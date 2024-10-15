@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { safeJsonParse } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { useQuery } from '@apollo/client';
@@ -33,6 +33,7 @@ export function useDestinationFormData() {
   const destinationType = isActualDestination(destination?.item)
     ? destination.item.destinationType.type
     : null;
+
   const { buildFormDynamicFields } = useConnectDestinationForm();
 
   const { data: destinationFields } = useQuery<DestinationDetailsResponse>(
@@ -40,11 +41,17 @@ export function useDestinationFormData() {
     { variables: { type: destinationType }, skip: shouldSkip }
   );
 
+  // Memoize the buildFormDynamicFields to ensure it's stable across renders
+  const memoizedBuildFormDynamicFields = useCallback(
+    buildFormDynamicFields,
+    []
+  );
+
   useEffect(() => {
     if (destinationFields && isActualDestination(destination?.item)) {
       const { fields, exportedSignals, destinationType } = destination.item;
       const destinationTypeDetails = destinationFields.destinationTypeDetails;
-      const formFields = buildFormDynamicFields(
+      const formFields = memoizedBuildFormDynamicFields(
         destinationTypeDetails?.fields || []
       );
       const parsedFields = safeJsonParse<Record<string, string>>(fields, {});
@@ -59,7 +66,7 @@ export function useDestinationFormData() {
       setExportedSignals(exportedSignals);
       setSupportedSignals(destinationType.supportedSignals);
     }
-  }, [destinationFields, destination, buildFormDynamicFields]);
+  }, [destinationFields, destination, memoizedBuildFormDynamicFields]);
 
   const cardData = useMemo(() => {
     if (
