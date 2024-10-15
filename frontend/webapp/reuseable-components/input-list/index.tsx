@@ -11,6 +11,7 @@ interface InputListProps {
   title?: string;
   tooltip?: string;
   required?: boolean;
+  value?: string[];
   onChange: (values: string[]) => void;
 }
 
@@ -71,8 +72,9 @@ const InputList: React.FC<InputListProps> = ({
   tooltip,
   required,
   onChange,
+  value = [''],
 }) => {
-  const [inputs, setInputs] = useState<string[]>(initialValues);
+  const [inputs, setInputs] = useState<string[]>(value || initialValues);
 
   useEffect(() => {
     if (initialValues.length > 0) {
@@ -101,15 +103,15 @@ const InputList: React.FC<InputListProps> = ({
   return (
     <Container>
       {title && (
-        <Tooltip text={tooltip || ''}>
-          <HeaderWrapper>
-            <Title>{title}</Title>
-            {!required && (
-              <Text color="#7A7A7A" size={14} weight={300} opacity={0.8}>
-                (optional)
-              </Text>
-            )}
-            {tooltip && (
+        <HeaderWrapper>
+          <Title>{title}</Title>
+          {!required && (
+            <Text color="#7A7A7A" size={14} weight={300} opacity={0.8}>
+              (optional)
+            </Text>
+          )}
+          {tooltip && (
+            <Tooltip text={tooltip || ''}>
               <Image
                 src="/icons/common/info.svg"
                 alt=""
@@ -117,9 +119,9 @@ const InputList: React.FC<InputListProps> = ({
                 height={16}
                 style={{ marginBottom: 4 }}
               />
-            )}
-          </HeaderWrapper>
-        </Tooltip>
+            </Tooltip>
+          )}
+        </HeaderWrapper>
       )}
       {inputs.map((value, index) => (
         <InputRow key={index}>

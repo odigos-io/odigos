@@ -61,14 +61,32 @@ export function useDestinationFormData() {
     if (destinationFields && isActualDestination(destination?.item)) {
       const { fields, exportedSignals, destinationType } = destination.item;
       const destinationTypeDetails = destinationFields.destinationTypeDetails;
+
+      const parsedFields = safeJsonParse<Record<string, string>>(fields, {});
       const formFields = memoizedBuildFormDynamicFields(
         destinationTypeDetails?.fields || []
       );
-      const parsedFields = safeJsonParse<Record<string, string>>(fields, {});
-      const df = formFields.map((field) => ({
-        ...field,
-        value: parsedFields[field.name] || '',
-      }));
+
+      const df = formFields.map((field) => {
+        let fieldValue: any = parsedFields[field.name] || '';
+
+        // Check if fieldValue is a JSON string that needs stringifying
+        try {
+          const parsedValue = JSON.parse(fieldValue);
+          console.log({ parsedValue });
+          if (Array.isArray(parsedValue)) {
+            // If it's an array, stringify it for setting the value
+            fieldValue = parsedValue;
+          }
+        } catch (e) {
+          // If parsing fails, it's not JSON, so we keep it as is
+        }
+
+        return {
+          ...field,
+          value: fieldValue,
+        };
+      });
 
       setDynamicFields(df);
       setExportedSignals(exportedSignals);

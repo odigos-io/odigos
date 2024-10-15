@@ -8,6 +8,7 @@ import { Tooltip } from '../tooltip';
 
 interface KeyValueInputsListProps {
   initialKeyValuePairs?: { key: string; value: string }[];
+  value?: { key: string; value: string }[];
   title?: string;
   tooltip?: string;
   required?: boolean;
@@ -67,13 +68,15 @@ const Title = styled(Text)`
 
 export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
   initialKeyValuePairs = [{ key: '', value: '' }],
+  value = [{ key: '', value: '' }],
   title,
   tooltip,
   required,
   onChange,
 }) => {
-  const [keyValuePairs, setKeyValuePairs] =
-    useState<{ key: string; value: string }[]>(initialKeyValuePairs);
+  const [keyValuePairs, setKeyValuePairs] = useState<
+    { key: string; value: string }[]
+  >(value || initialKeyValuePairs);
 
   const validPairsRef = useRef<{ key: string; value: string }[]>([]);
 
