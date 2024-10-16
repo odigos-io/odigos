@@ -47,7 +47,7 @@ metadata:
   namespace: odigos-system
 spec:
   data:
-    QRYN_URL: <API Url>
+    QRYN_OSS_URL: <API Url>
   destinationName: qryn
   secretRef:
     name: qryn-secret
@@ -60,8 +60,8 @@ spec:
 ---
 apiVersion: v1
 data:
-  QRYN_USERNAME: <base64 API Username>
-  QRYN_PASSWORD: <base64 API Password>
+  QRYN_OSS_USERNAME: <base64 API Username>
+  QRYN_OSS_PASSWORD: <base64 API Password>
 kind: Secret
 metadata:
   name: qryn-secret
