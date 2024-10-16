@@ -1,14 +1,15 @@
 ---
-title: "Qryn"
+title: "qryn"
 ---
 
-## Configuring Qryn Backend
+## Configuring the **qryn** polyglot backend
 
-Fill in the following information using your relevant qryn details:
+Enter the following account details in Odigos UI:
 
-- **Tempo URL**: https://qryn.host/tempo/api/push
-- **Prometheus URL**: https://qryn.host/api/prom/remote/write
-- **Loki URL**: https://qryn.host/loki/api/v1/push
+- **Name**: Choose a name for this backend _(e.g. qryn)_
+- **API Username**: The HTTP Basic Auth username for your qryn instance
+- **API Password**: The HTTP Basic Auth password for your qryn instance
+- **API URL**: The API Endpoint for for your qryn instance _(e.g. https://qryn.local:3100)_
 
 
 ## Adding a Destination to Odigos
@@ -25,7 +26,7 @@ Odigos makes it simple to add and configure destinations, allowing you to select
 
 - Click `Add New Destination`
 
-- Select `Qryn` and follow the on-screen instructions.
+- Select `qryn` and follow the on-screen instructions.
 
 
 
@@ -59,8 +60,8 @@ spec:
 ---
 apiVersion: v1
 data:
-  QRYN_API_KEY: <base64 API Key>
-  QRYN_API_SECRET: <base64 API Secret>
+  QRYN_USERNAME: <base64 API Username>
+  QRYN_PASSWORD: <base64 API Password>
 kind: Secret
 metadata:
   name: qryn-secret
