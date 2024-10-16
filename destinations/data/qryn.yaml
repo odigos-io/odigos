@@ -5,7 +5,7 @@ metadata:
   displayName: Gigapipe
   category: managed
 spec:
-  image: qryn.svg
+  image: gigapipe.svg
   signals:
     traces:
       supported: true
