@@ -2,6 +2,8 @@ package gateway
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 
@@ -11,6 +13,7 @@ import (
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,6 +26,42 @@ var (
 	}
 )
 
+func getCollectorsGroupDeployedConditionsPatch(err error) string {
+
+	status := metav1.ConditionTrue
+	if err != nil {
+		status = metav1.ConditionFalse
+	}
+
+	message := "Gateway collector is deployed in the cluster"
+	if err != nil {
+		message = err.Error()
+	}
+
+	reason := "GatewayDeployedCreatedSuccessfully"
+	if err != nil {
+		// in the future, we can be more specific and break it down to
+		// more detailed reasons about what exactly failed
+		reason = "GatewayDeployedCreationFailed"
+	}
+
+	patch := map[string]interface{}{
+		"status": map[string]interface{}{
+			"conditions": []metav1.Condition{{
+				Type:               "Deployed",
+				Status:             status,
+				Reason:             reason,
+				Message:            message,
+				LastTransitionTime: metav1.NewTime(time.Now()),
+			}},
+		},
+	}
+
+	patchData, _ := json.Marshal(patch)
+	// marshal error is ignored as it is not expected to happen
+	return string(patchData)
+}
+
 func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
 
@@ -30,6 +69,8 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 	var gatewayCollectorGroup odigosv1.CollectorsGroup
 	err := k8sClient.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosClusterCollectorConfigMapName}, &gatewayCollectorGroup)
 	if err != nil {
+		// collectors group is created by the scheduler, after the first destination is added.
+		// it is however possible that some reconciler (like deployment) triggered and the collectors group will be created shortly.
 		return client.IgnoreNotFound(err)
 	}
 
@@ -53,7 +94,14 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 		return err
 	}
 
-	return syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion, &odigosConfig)
+	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion, &odigosConfig)
+	statusPatchString := getCollectorsGroupDeployedConditionsPatch(err)
+	statusErr := k8sClient.Status().Patch(ctx, &gatewayCollectorGroup, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
+	if statusErr != nil {
+		logger.Error(statusErr, "Failed to patch collectors group status")
+		// just log the error, do not fail the reconciliation
+	}
+	return err
 }
 
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
