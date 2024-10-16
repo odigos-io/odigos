@@ -1,0 +1,78 @@
+---
+title: "Gigapipe"
+---
+
+## Obtaining an API Key
+
+Access your Gigapipe account and generate a **Scoped Token** for Odigos
+
+<Frame>
+    <img src="https://i.imgur.com/zzmufhk.png" alt="Gigapipe Token" />
+</Frame>
+
+## Configuring the Gigapipe Backend
+
+Enter the following account details in Odigos UI:
+
+- **Name**: Choose a name for this backend _(e.g. Gigapipe Cloud)_
+- **API Secret**: The API Secret for your Gigapipe Account
+- **API Key**: The API Token for your Gigapipe Account
+- **API URL**: The API Endpoint for your Gigapipe Account _(e.g. https://your-account.gigapipe.com)_
+
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `Gigapipe` and follow the on-screen instructions.
+
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: gigapipe-example
+  namespace: odigos-system
+spec:
+  data:
+    GIGAPIPE_URL: <API Url>
+  destinationName: gigapipe
+  secretRef:
+    name: gigapipe-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: gigapipe
+
+---
+apiVersion: v1
+data:
+  GIGAPIPE_API_KEY: <base64 API Key>
+  GIGAPIPE_API_SECRET: <base64 API Secret>
+kind: Secret
+metadata:
+  name: gigapipe-secret
+  namespace: odigos-system
+type: Opaque
+```
