@@ -55,7 +55,7 @@ metadata:
   namespace: odigos-system
 spec:
   data:
-    GIGAPIPE_URL: <API Url>
+    QRYN_URL: <API Url>
   destinationName: gigapipe
   secretRef:
     name: gigapipe-secret
@@ -68,8 +68,8 @@ spec:
 ---
 apiVersion: v1
 data:
-  GIGAPIPE_API_KEY: <base64 API Key>
-  GIGAPIPE_API_SECRET: <base64 API Secret>
+  QRYN_API_KEY: <base64 API Key>
+  QRYN_API_SECRET: <base64 API Secret>
 kind: Secret
 metadata:
   name: gigapipe-secret
