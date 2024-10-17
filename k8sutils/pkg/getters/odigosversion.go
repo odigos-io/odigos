@@ -16,7 +16,7 @@ var (
 
 // Return the Odigos version installed in the cluster.
 // The function assumes odigos is installed, and will return an error if it is not or if the version cannot be detected (not expected in normal operation).
-func GetOdigosVersionInClusterFromConfigMap(ctx context.Context, client *kubernetes.Clientset, ns string) (string, error) {
+func GetOdigosVersionInClusterFromConfigMap(ctx context.Context, client kubernetes.Interface, ns string) (string, error) {
 	cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return "", ErrNoOdigosDeploymentConfigMap

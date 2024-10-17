@@ -169,6 +169,16 @@ func NewUIRole(ns string) *rbacv1.Role {
 				Verbs: []string{
 					"get",
 					"list",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"replicasets",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
 					"watch",
 					"patch",
 					"delete",

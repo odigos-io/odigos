@@ -194,7 +194,7 @@ func printDescribeOdigos(odigosVersion string, clusterCollector clusterCollector
 	return sb.String()
 }
 
-func DescribeOdigos(ctx context.Context, kubeClient *kubernetes.Clientset, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) string {
+func DescribeOdigos(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) string {
 
 	odigosVersion, err := getters.GetOdigosVersionInClusterFromConfigMap(ctx, kubeClient, odigosNs)
 	if err != nil {
