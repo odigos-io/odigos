@@ -7,7 +7,6 @@ import (
 const (
 	qrynOssHost                          = "QRYN_OSS_URL"
 	qrynOssUsername                      = "QRYN_OSS_USERNAME"
-	qrynOssPassword                      = "QRYN_OSS_PASSWORD"
 	qrynOssresourceToTelemetryConversion = "QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION"
 	qrynOssAddExporterName               = "QRYN_OSS_ADD_EXPORTER_NAME"
 )
@@ -24,10 +23,10 @@ func (d QrynOssDest) GetConfig() map[string]string {
 	conf := d.ExporterConfigurer.GetConfig()
 	conf[qrynHost] = conf[qrynOssHost]
 	conf[qrynAPIKey] = conf[qrynOssUsername]
-	conf[qrynAPISecret] = conf[qrynOssPassword]
 	conf[resourceToTelemetryConversion] = conf[qrynOssresourceToTelemetryConversion]
 	conf[qrynSecretsOptional] = "1"
 	conf[qrynAddExporterName] = conf[qrynOssAddExporterName]
+	conf[qrynPasswordFieldName] = "QRYN_OSS_PASSWORD"
 	return conf
 }
 

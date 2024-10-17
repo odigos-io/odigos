@@ -19,6 +19,7 @@ spec:
       componentType: input
       componentProps:
         type: password
+      secret: true
     - name: QRYN_OSS_USERNAME
       displayName: Basic auth username
       componentType: input
