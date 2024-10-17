@@ -18,7 +18,7 @@ jobs:
         args: >-
           -v -n "*.md" "**/*.md" "**/*.mdx"
           --exclude "http://localhost*"
-          --exclude "^https://.*grafana.net/loki/api/v1.*"
+          --exclude "^https://logs-prod.*"
           --exclude ".*your-account.*"
           --exclude ".*qryn.local.*"
         fail: true
