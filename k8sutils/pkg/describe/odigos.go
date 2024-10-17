@@ -27,6 +27,13 @@ type nodeCollectorResources struct {
 	DaemonSet       *appsv1.DaemonSet
 }
 
+type odigosResources struct {
+	ClusterCollector       clusterCollectorResources
+	NodeCollector          nodeCollectorResources
+	Destinations           *odigosv1.DestinationList
+	InstrumentationConfigs *odigosv1.InstrumentationConfigList
+}
+
 func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (clusterCollector clusterCollectorResources, err error) {
 
 	clusterCollector = clusterCollectorResources{}
@@ -99,24 +106,24 @@ func getNodeCollectorResources(ctx context.Context, kubeClient kubernetes.Interf
 	return
 }
 
-func getRelevantOdigosResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (clusterCollector clusterCollectorResources, nodeCollector nodeCollectorResources, destinations *odigosv1.DestinationList, instrumentationConfigs *odigosv1.InstrumentationConfigList, err error) {
+func getRelevantOdigosResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (odigos odigosResources, err error) {
 
-	clusterCollector, err = getClusterCollectorResources(ctx, kubeClient, odigosClient, odigosNs)
+	odigos.ClusterCollector, err = getClusterCollectorResources(ctx, kubeClient, odigosClient, odigosNs)
 	if err != nil {
 		return
 	}
 
-	nodeCollector, err = getNodeCollectorResources(ctx, kubeClient, odigosClient, odigosNs)
+	odigos.NodeCollector, err = getNodeCollectorResources(ctx, kubeClient, odigosClient, odigosNs)
 	if err != nil {
 		return
 	}
 
-	destinations, err = odigosClient.Destinations(odigosNs).List(ctx, metav1.ListOptions{})
+	odigos.Destinations, err = odigosClient.Destinations(odigosNs).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return
 	}
 
-	instrumentationConfigs, err = odigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
+	odigos.InstrumentationConfigs, err = odigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return
 	}
@@ -247,26 +254,26 @@ func printNodeCollectorStatus(nodeCollector nodeCollectorResources, expectingNod
 	describeText(sb, 2, "Pods Status:\t%d Running / %d Waiting / %d Succeeded / %d Failed", nodeCollector.DaemonSet.Status.CurrentNumberScheduled, nodeCollector.DaemonSet.Status.NumberAvailable, nodeCollector.DaemonSet.Status.NumberAvailable, nodeCollector.DaemonSet.Status.NumberMisscheduled)
 }
 
-func printOdigosPipeline(clusterCollector clusterCollectorResources, nodeCollector nodeCollectorResources, destinations *odigosv1.DestinationList, instrumentationConfigs *odigosv1.InstrumentationConfigList, sb *strings.Builder) {
+func printOdigosPipeline(odigosResources odigosResources, sb *strings.Builder) {
 	describeText(sb, 0, "Odigos Pipeline:")
-	numDestinations := len(destinations.Items)
-	numInstrumentationConfigs := len(instrumentationConfigs.Items)
+	numDestinations := len(odigosResources.Destinations.Items)
+	numInstrumentationConfigs := len(odigosResources.InstrumentationConfigs.Items)
 	// odigos will only initiate pipeline if there are any sources or destinations
 	expectingPipeline := numDestinations > 0 || numInstrumentationConfigs > 0
 
 	printOdigosPipelineStatus(numInstrumentationConfigs, numDestinations, expectingPipeline, sb)
-	printClusterCollectorStatus(clusterCollector, expectingPipeline, sb)
+	printClusterCollectorStatus(odigosResources.ClusterCollector, expectingPipeline, sb)
 	sb.WriteString("\n")
-	expectingNodeCollector := clusterCollector.CollectorsGroup != nil && clusterCollector.CollectorsGroup.Status.Ready && numInstrumentationConfigs > 0
-	printNodeCollectorStatus(nodeCollector, expectingNodeCollector, sb)
+	expectingNodeCollector := odigosResources.ClusterCollector.CollectorsGroup != nil && odigosResources.ClusterCollector.CollectorsGroup.Status.Ready && numInstrumentationConfigs > 0
+	printNodeCollectorStatus(odigosResources.NodeCollector, expectingNodeCollector, sb)
 }
 
-func printDescribeOdigos(odigosVersion string, clusterCollector clusterCollectorResources, nodeCollector nodeCollectorResources, destinations *odigosv1.DestinationList, instrumentationConfigs *odigosv1.InstrumentationConfigList) string {
+func printDescribeOdigos(odigosVersion string, odigosResources odigosResources) string {
 	var sb strings.Builder
 
 	printOdigosVersion(odigosVersion, &sb)
 	sb.WriteString("\n")
-	printOdigosPipeline(clusterCollector, nodeCollector, destinations, instrumentationConfigs, &sb)
+	printOdigosPipeline(odigosResources, &sb)
 
 	return sb.String()
 }
@@ -278,10 +285,10 @@ func DescribeOdigos(ctx context.Context, kubeClient kubernetes.Interface, odigos
 		return fmt.Sprintf("Error: %v\n", err)
 	}
 
-	clusterCollector, nodeCollector, destinations, instrumentationConfigs, err := getRelevantOdigosResources(ctx, kubeClient, odigosClient, odigosNs)
+	odigosResources, err := getRelevantOdigosResources(ctx, kubeClient, odigosClient, odigosNs)
 	if err != nil {
 		return fmt.Sprintf("Error: %v\n", err)
 	}
 
-	return printDescribeOdigos(odigosVersion, clusterCollector, nodeCollector, destinations, instrumentationConfigs)
+	return printDescribeOdigos(odigosVersion, odigosResources)
 }
