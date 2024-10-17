@@ -26,3 +26,10 @@ func describeText(sb *strings.Builder, indent int, printftext string, args ...in
 	lineText := fmt.Sprintf(printftext, args...)
 	sb.WriteString(fmt.Sprintf("%s%s\n", indentText, lineText))
 }
+
+func boolToText(b bool) string {
+	if b {
+		return "True"
+	}
+	return "False"
+}
