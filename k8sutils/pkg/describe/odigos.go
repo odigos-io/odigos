@@ -232,6 +232,19 @@ func printNodeCollectorStatus(nodeCollector nodeCollectorResources, expectingNod
 
 	ready := nodeCollector.CollectorsGroup.Status.Ready
 	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Ready: %s", boolToText(ready)), ready))
+
+	// this is copied from k8sutils/pkg/describe/describe.go
+	// I hope the info is accurate since there can be many edge cases
+	describeText(sb, 2, "Desired Number of Nodes Scheduled: %d", nodeCollector.DaemonSet.Status.DesiredNumberScheduled)
+	currentMeetsDesired := nodeCollector.DaemonSet.Status.DesiredNumberScheduled == nodeCollector.DaemonSet.Status.CurrentNumberScheduled
+	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Current Number of Nodes Scheduled: %d", nodeCollector.DaemonSet.Status.CurrentNumberScheduled), currentMeetsDesired))
+	updatedMeetsDesired := nodeCollector.DaemonSet.Status.DesiredNumberScheduled == nodeCollector.DaemonSet.Status.UpdatedNumberScheduled
+	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Number of Nodes Scheduled with Up-to-date Pods: %d", nodeCollector.DaemonSet.Status.UpdatedNumberScheduled), updatedMeetsDesired))
+	availableMeetsDesired := nodeCollector.DaemonSet.Status.DesiredNumberScheduled == nodeCollector.DaemonSet.Status.NumberAvailable
+	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Number of Nodes Scheduled with Available Pods: %d", nodeCollector.DaemonSet.Status.NumberAvailable), availableMeetsDesired))
+	noMisscheduled := nodeCollector.DaemonSet.Status.NumberMisscheduled == 0
+	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Number of Nodes Misscheduled: %d", nodeCollector.DaemonSet.Status.NumberMisscheduled), noMisscheduled))
+	describeText(sb, 2, "Pods Status:\t%d Running / %d Waiting / %d Succeeded / %d Failed", nodeCollector.DaemonSet.Status.CurrentNumberScheduled, nodeCollector.DaemonSet.Status.NumberAvailable, nodeCollector.DaemonSet.Status.NumberAvailable, nodeCollector.DaemonSet.Status.NumberMisscheduled)
 }
 
 func printOdigosPipeline(clusterCollector clusterCollectorResources, nodeCollector nodeCollectorResources, destinations *odigosv1.DestinationList, instrumentationConfigs *odigosv1.InstrumentationConfigList, sb *strings.Builder) {
