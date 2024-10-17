@@ -3,7 +3,7 @@ kind: Destination
 metadata:
   type: qryn-oss
   displayName: qryn
-  category: managed
+  category: self hosted
 spec:
   image: qryn.svg
   signals:
