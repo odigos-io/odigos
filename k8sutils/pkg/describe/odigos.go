@@ -156,15 +156,15 @@ func printClusterCollectorStatus(clusterCollector clusterCollectorResources, exp
 		describeText(sb, 2, wrapTextInRed("Deployed: Status Unavailable"))
 	} else {
 		if deployedCondition.Status == metav1.ConditionTrue {
-			describeText(sb, 2, wrapTextInGreen("Deployed: True"))
+			describeText(sb, 2, wrapTextInGreen("Deployed: true"))
 		} else {
-			describeText(sb, 2, wrapTextInRed("Deployed: False"))
+			describeText(sb, 2, wrapTextInRed("Deployed: false"))
 			describeText(sb, 2, wrapTextInRed(fmt.Sprintf("Reason: %s", deployedCondition.Message)))
 		}
 	}
 
 	ready := clusterCollector.CollectorsGroup.Status.Ready
-	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Ready: %s", boolToText(ready)), ready))
+	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Ready: %t", ready), ready))
 
 	if clusterCollector.LatestRevisionPods == nil || clusterCollector.Deployment == nil {
 		describeText(sb, 2, wrapTextInRed("Number of Replicas: Status Unavailable"))
@@ -231,7 +231,7 @@ func printNodeCollectorStatus(nodeCollector nodeCollectorResources, expectingNod
 	}
 
 	ready := nodeCollector.CollectorsGroup.Status.Ready
-	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Ready: %s", boolToText(ready)), ready))
+	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Ready: %t", ready), ready))
 
 	// this is copied from k8sutils/pkg/describe/describe.go
 	// I hope the info is accurate since there can be many edge cases
