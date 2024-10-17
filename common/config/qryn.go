@@ -45,7 +45,7 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 	}
 	baseURL, err := parseURL(dest.GetConfig()[qrynHost], conf.key, passwordPlaceholder)
 	if err != nil {
-		return errors.New("API host is not a valid")
+		return errors.Join(err, errors.New("invalid qryn endpoint. gateway will not be configured with qryn"))
 	}
 
 	if isMetricsEnabled(dest) {
