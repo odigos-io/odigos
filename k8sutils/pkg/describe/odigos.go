@@ -251,7 +251,6 @@ func printNodeCollectorStatus(nodeCollector nodeCollectorResources, expectingNod
 	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Number of Nodes Scheduled with Available Pods: %d", nodeCollector.DaemonSet.Status.NumberAvailable), availableMeetsDesired))
 	noMisscheduled := nodeCollector.DaemonSet.Status.NumberMisscheduled == 0
 	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Number of Nodes Misscheduled: %d", nodeCollector.DaemonSet.Status.NumberMisscheduled), noMisscheduled))
-	describeText(sb, 2, "Pods Status:\t%d Running / %d Waiting / %d Succeeded / %d Failed", nodeCollector.DaemonSet.Status.CurrentNumberScheduled, nodeCollector.DaemonSet.Status.NumberAvailable, nodeCollector.DaemonSet.Status.NumberAvailable, nodeCollector.DaemonSet.Status.NumberMisscheduled)
 }
 
 func printOdigosPipeline(odigosResources odigosResources, sb *strings.Builder) {
