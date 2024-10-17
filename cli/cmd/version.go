@@ -4,13 +4,12 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -20,7 +19,7 @@ const (
 
 var (
 	OdigosVersion        string
-	OdigosClusterVersion string
+	odigosClusterVersion string
 	OdigosCommit         string
 	OdigosDate           string
 )
@@ -37,7 +36,7 @@ var versionCmd = &cobra.Command{
 			fmt.Printf("%s\n", OdigosVersion)
 		}
 
-		OdigosClusterVersion, err := getOdigosVersionInCluster(cmd, clusterFlag)
+		OdigosClusterVersion, err := getOdigosVersionInCluster(cmd)
 
 		if clusterFlag && err == nil {
 			fmt.Printf("%s\n", OdigosClusterVersion)
@@ -57,32 +56,13 @@ var versionCmd = &cobra.Command{
 	},
 }
 
-func getOdigosVersionInCluster(cmd *cobra.Command, flag bool) (string, error) {
+func getOdigosVersionInCluster(cmd *cobra.Command) (string, error) {
 	client, ns, err := getOdigosKubeClientAndNamespace(cmd)
 	if err != nil {
 		return "", err
 	}
 
-	OdigosClusterVersion, err = getOdigosVersionInClusterFromConfigMap(cmd.Context(), client, ns)
-	if err != nil {
-		return "", err
-	}
-
-	return OdigosClusterVersion, nil
-}
-
-func getOdigosVersionInClusterFromConfigMap(ctx context.Context, client *kube.Client, ns string) (string, error) {
-	cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-	if err != nil {
-		return "", fmt.Errorf("error detecting Odigos version in the current cluster")
-	}
-
-	odigosVersion, ok := cm.Data["ODIGOS_VERSION"]
-	if !ok || odigosVersion == "" {
-		return "", fmt.Errorf("error detecting Odigos version in the current cluster")
-	}
-
-	return odigosVersion, nil
+	return getters.GetOdigosVersionInClusterFromConfigMap(cmd.Context(), client.Clientset, ns)
 }
 
 func getOdigosKubeClientAndNamespace(cmd *cobra.Command) (*kube.Client, string, error) {

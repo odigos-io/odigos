@@ -20,6 +20,33 @@ var describeCmd = &cobra.Command{
 	Use:   "describe",
 	Short: "Show details of a specific odigos entity",
 	Long:  `Print detailed description of a specific odigos entity, which can be used to troubleshoot issues`,
+	Run: func(cmd *cobra.Command, args []string) {
+
+		client, err := kube.CreateClient(cmd)
+		if err != nil {
+			kube.PrintClientErrorAndExit(err)
+		}
+		ctx := cmd.Context()
+
+		odigosNs, err := resources.GetOdigosNamespace(client, ctx)
+		if err != nil {
+			if resources.IsErrNoOdigosNamespaceFound(err) {
+				fmt.Println("\033[31mERROR\033[0m Odigos is NOT yet installed in the current cluster")
+			} else {
+				fmt.Println("\033[31mERROR\033[0m Error detecting Odigos namespace in the current cluster")
+			}
+			return
+		}
+
+		var describeText string
+		if describeRemoteFlag {
+			// TODO: remote flag support
+			// describeText = executeRemoteDescribe(ctx, client, "odigos", "", "")
+		} else {
+			describeText = describe.DescribeOdigos(ctx, client.Clientset, client.OdigosClient, odigosNs)
+		}
+		fmt.Println(describeText)
+	},
 }
 
 var describeSourceCmd = &cobra.Command{

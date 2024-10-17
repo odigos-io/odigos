@@ -25,22 +25,6 @@ type K8sSourceObject struct {
 	LabelSelector   *metav1.LabelSelector
 }
 
-func wrapTextInRed(text string) string {
-	return "\033[31m" + text + "\033[0m"
-}
-
-func wrapTextInGreen(text string) string {
-	return "\033[32m" + text + "\033[0m"
-}
-
-func wrapTextSuccessOfFailure(text string, success bool) string {
-	if success {
-		return wrapTextInGreen(text)
-	} else {
-		return wrapTextInRed(text)
-	}
-}
-
 func getInstrumentationLabelTexts(workload *K8sSourceObject, ns *corev1.Namespace) (workloadText, nsText, decisionText string, instrumented bool) {
 	workloadLabel, workloadFound := workload.GetLabels()[consts.OdigosInstrumentationLabel]
 	nsLabel, nsFound := ns.GetLabels()[consts.OdigosInstrumentationLabel]
@@ -80,7 +64,7 @@ func getInstrumentationLabelTexts(workload *K8sSourceObject, ns *corev1.Namespac
 	return
 }
 
-func getRelevantResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *K8sSourceObject) (namespace *corev1.Namespace, instrumentationConfig *odigosv1.InstrumentationConfig, instrumentedApplication *odigosv1.InstrumentedApplication, instrumentationInstances *odigosv1.InstrumentationInstanceList, pods *corev1.PodList, err error) {
+func getRelevantSourceResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *K8sSourceObject) (namespace *corev1.Namespace, instrumentationConfig *odigosv1.InstrumentationConfig, instrumentedApplication *odigosv1.InstrumentedApplication, instrumentationInstances *odigosv1.InstrumentationInstanceList, pods *corev1.PodList, err error) {
 
 	ns := workloadObj.GetNamespace()
 	namespace, err = kubeClient.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
@@ -427,7 +411,7 @@ func printPodsInfo(pods *corev1.PodList, instrumentationInstances *odigosv1.Inst
 func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *K8sSourceObject) string {
 	var sb strings.Builder
 
-	namespace, instrumentationConfig, instrumentedApplication, instrumentationInstances, pods, err := getRelevantResources(ctx, kubeClient, odigosClient, workloadObj)
+	namespace, instrumentationConfig, instrumentedApplication, instrumentationInstances, pods, err := getRelevantSourceResources(ctx, kubeClient, odigosClient, workloadObj)
 	if err != nil {
 		sb.WriteString(fmt.Sprintf("Error: %v\n", err))
 		return sb.String()
