@@ -636,6 +636,13 @@ spec:
             IsMatch(instrumentation_scope.name, "io.opentelemetry.elasticsearch-*")
 
 
+        # Add this fallback after all your trace_statements:
+        - set(attributes["odigos.category"], "Unknown") where attributes["odigos.category"] == nil
+        - set(attributes["odigos.sub_category"], "Unknown") where attributes["odigos.sub_category"] == nil
+        - set(attributes["odigos.transaction.type"], "Unknown") where attributes["odigos.transaction.type"] == nil
+
+        
+        
   signals:
     - TRACES
   collectorRoles:
