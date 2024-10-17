@@ -15,17 +15,16 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/consts"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"go.opentelemetry.io/auto"
-	goAutoConfig "go.opentelemetry.io/auto/config"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 )
 
 type GoOtelEbpfSdk struct {
 	inst *auto.Instrumentation
-	cp   *ebpf.ConfigProvider[goAutoConfig.InstrumentationConfig]
+	cp   *ebpf.ConfigProvider[auto.InstrumentationConfig]
 }
 
-// compile-time check that configProvider[goAutoConfig.InstrumentationConfig] implements goAutoConfig.Provider
-var _ goAutoConfig.Provider = (*ebpf.ConfigProvider[goAutoConfig.InstrumentationConfig])(nil)
+// compile-time check that configProvider[auto.InstrumentationConfig] implements auto.Provider
+var _ auto.ConfigProvider = (*ebpf.ConfigProvider[auto.InstrumentationConfig])(nil)
 
 // compile-time check that GoOtelEbpfSdk implements ConfigurableOtelEbpfSdk
 var _ ebpf.ConfigurableOtelEbpfSdk = (*GoOtelEbpfSdk)(nil)
@@ -53,7 +52,7 @@ func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context
 
 	// Fetch initial config based on the InstrumentationConfig CR
 	instrumentationConfig := &odigosv1.InstrumentationConfig{}
-	initialConfig := goAutoConfig.InstrumentationConfig{}
+	initialConfig := auto.InstrumentationConfig{}
 	instrumentationConfigKey := client.ObjectKey{
 		Namespace: podWorkload.Namespace,
 		Name:      workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind),
@@ -95,15 +94,15 @@ func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, instConfig *odigosv1.In
 	return g.cp.SendConfig(ctx, convertToGoInstrumentationConfig(instConfig))
 }
 
-func convertToGoInstrumentationConfig(instConfig *odigosv1.InstrumentationConfig) goAutoConfig.InstrumentationConfig {
-	ic := goAutoConfig.InstrumentationConfig{}
-	ic.InstrumentationLibraryConfigs = make(map[goAutoConfig.InstrumentationLibraryID]goAutoConfig.InstrumentationLibrary)
+func convertToGoInstrumentationConfig(instConfig *odigosv1.InstrumentationConfig) auto.InstrumentationConfig {
+	ic := auto.InstrumentationConfig{}
+	ic.InstrumentationLibraryConfigs = make(map[auto.InstrumentationLibraryID]auto.InstrumentationLibrary)
 	for _, sdkConfig := range instConfig.Spec.SdkConfigs {
 		if sdkConfig.Language != common.GoProgrammingLanguage {
 			continue
 		}
 		for _, ilc := range sdkConfig.InstrumentationLibraryConfigs {
-			libID := goAutoConfig.InstrumentationLibraryID{
+			libID := auto.InstrumentationLibraryID{
 				InstrumentedPkg: ilc.InstrumentationLibraryId.InstrumentationLibraryName,
 				SpanKind:        common.SpanKindOdigosToOtel(ilc.InstrumentationLibraryId.SpanKind),
 			}
@@ -111,7 +110,7 @@ func convertToGoInstrumentationConfig(instConfig *odigosv1.InstrumentationConfig
 			if ilc.TraceConfig != nil {
 				tracesEnabled = ilc.TraceConfig.Enabled
 			}
-			ic.InstrumentationLibraryConfigs[libID] = goAutoConfig.InstrumentationLibrary{
+			ic.InstrumentationLibraryConfigs[libID] = auto.InstrumentationLibrary{
 				TracesEnabled: tracesEnabled,
 			}
 		}
