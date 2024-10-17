@@ -1,14 +1,15 @@
 ---
-title: "Qryn"
+title: "qryn"
 ---
 
-## Configuring Qryn Backend
+## Configuring the **qryn** polyglot backend
 
-Fill in the following information using your relevant qryn details:
+Enter the following account details in Odigos UI:
 
-- **Tempo URL**: https://qryn.host/tempo/api/push
-- **Prometheus URL**: https://qryn.host/api/prom/remote/write
-- **Loki URL**: https://qryn.host/loki/api/v1/push
+- **Name**: Choose a name for this backend _(e.g. qryn)_
+- **API Username**: The HTTP Basic Auth username for your qryn instance
+- **API Password**: The HTTP Basic Auth password for your qryn instance
+- **API URL**: The API Endpoint for for your qryn instance _(e.g. http://qryn.local:3100)_
 
 
 ## Adding a Destination to Odigos
@@ -25,7 +26,7 @@ Odigos makes it simple to add and configure destinations, allowing you to select
 
 - Click `Add New Destination`
 
-- Select `Qryn` and follow the on-screen instructions.
+- Select `qryn` and follow the on-screen instructions.
 
 
 
@@ -42,28 +43,34 @@ kubectl apply -f destination.yaml
 apiVersion: odigos.io/v1alpha1
 kind: Destination
 metadata:
-  name: qryn-example
+  name: qryn-oss-example
   namespace: odigos-system
 spec:
   data:
-    QRYN_URL: <API Url>
-  destinationName: qryn
-  secretRef:
-    name: qryn-secret
+    QRYN_OSS_URL: <API Url>
+    # QRYN_OSS_USERNAME: <Basic auth username>
+    # QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION: <Convert container attributes to labels [Yes, No]>
+    # QRYN_OSS_ADD_EXPORTER_NAME: <Add exporter name to labels [Yes, No]>
+    # Note: The commented fields above are optional.
+  destinationName: qryn-oss
+  # Uncomment the secretRef below if you are using the optional Secret.
+  # secretRef:
+  #   name: qryn-oss-secret
+
   signals:
   - TRACES
   - METRICS
   - LOGS
-  type: qryn
+  type: qryn-oss
 
 ---
-apiVersion: v1
-data:
-  QRYN_API_KEY: <base64 API Key>
-  QRYN_API_SECRET: <base64 API Secret>
-kind: Secret
-metadata:
-  name: qryn-secret
-  namespace: odigos-system
-type: Opaque
+# The following Secret is optional. Uncomment the entire block if you need to use it.
+# apiVersion: v1
+# data:
+#   QRYN_OSS_PASSWORD: <base64 Basic auth password>
+# kind: Secret
+# metadata:
+#   name: qryn-oss-secret
+#   namespace: odigos-system
+# type: Opaque
 ```
