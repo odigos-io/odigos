@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -459,7 +460,7 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: OdigosDeploymentConfigMapName,
+											Name: consts.OdigosDeploymentConfigMapName,
 										},
 									},
 								},

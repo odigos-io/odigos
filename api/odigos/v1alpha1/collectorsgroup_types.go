@@ -45,6 +45,14 @@ type CollectorsGroupStatus struct {
 	// this is used to determine if a workload should export each signal or not.
 	// this list is calculated based on the odigos destinations that were configured
 	ReceiverSignals []common.ObservabilitySignal `json:"receiverSignals,omitempty"`
+
+	// Represents the observations of a collectorsroup's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=type
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 //+genclient

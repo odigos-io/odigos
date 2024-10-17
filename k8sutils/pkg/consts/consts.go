@@ -11,6 +11,10 @@ const (
 const OdigosCollectorRoleLabel = "odigos.io/collector-role"
 
 const (
+	OdigosDeploymentConfigMapName = "odigos-deployment"
+)
+
+const (
 	OdigosClusterCollectorDeploymentName = "odigos-gateway"
 	OdigosClusterCollectorConfigMapName  = OdigosClusterCollectorDeploymentName
 	OdigosClusterCollectorServiceName    = OdigosClusterCollectorDeploymentName
