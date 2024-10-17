@@ -6,9 +6,10 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"errors"
+
 	"github.com/odigos-io/odigos/autoscaler/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
-	"github.com/pkg/errors"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
@@ -38,34 +39,34 @@ func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Collector
 
 	secretsVersionHash, err := destinationsSecretsVersionsHash(ctx, c, dests)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get secrets hash")
+		return nil, errors.Join(err, errors.New("failed to get secrets hash"))
 	}
 
 	// Calculate the hash of the config data and the secrets version hash, this is used to make sure the gateway will restart when the config changes
 	configDataHash := common.Sha256Hash(fmt.Sprintf("%s-%s", configData, secretsVersionHash))
 	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, memConfig)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get desired deployment")
+		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
 	}
 
 	existingDeployment := &appsv1.Deployment{}
 	getError := c.Get(ctx, client.ObjectKey{Name: gateway.Name, Namespace: gateway.Namespace}, existingDeployment)
 	if getError != nil && !apierrors.IsNotFound(getError) {
-		return nil, errors.Wrap(getError, "failed to get gateway deployment")
+		return nil, errors.Join(getError, errors.New("failed to get gateway deployment"))
 	}
 
 	if apierrors.IsNotFound(getError) {
 		logger.V(0).Info("Creating new gateway deployment")
 		err := c.Create(ctx, desiredDeployment)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create gateway deployment")
+			return nil, errors.Join(err, errors.New("failed to create gateway deployment"))
 		}
 		return desiredDeployment, nil
 	} else {
 		logger.V(0).Info("Patching existing gateway deployment")
 		newDep, err := patchDeployment(existingDeployment, desiredDeployment, ctx, c)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to patch gateway deployment")
+			return nil, errors.Join(err, errors.New("failed to patch gateway deployment"))
 		}
 		return newDep, nil
 	}
