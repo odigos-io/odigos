@@ -18,8 +18,8 @@ var (
 
 var describeCmd = &cobra.Command{
 	Use:   "describe",
-	Short: "Show details of a specific odigos entity",
-	Long:  `Print detailed description of a specific odigos entity, which can be used to troubleshoot issues`,
+	Short: "Show details on odigos deployment",
+	Long:  `Print detailed description odigos deployment, which can be used to troubleshoot issues`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		client, err := kube.CreateClient(cmd)
