@@ -11,19 +11,19 @@ import (
 const (
 	qrynHost                      = "QRYN_URL"
 	qrynAPIKey                    = "QRYN_API_KEY"
-	qrynAPISecret                 = "QRYN_API_SECRET"
 	qrynAddExporterName           = "QRYN_ADD_EXPORTER_NAME"
 	resourceToTelemetryConversion = "QRYN_RESOURCE_TO_TELEMETRY_CONVERSION"
 	qrynSecretsOptional           = "__QRYN_SECRETS_OPTIONAL__"
+	qrynPasswordFieldName         = "__QRYN_PASSWORD_FIELD_NAME__"
 )
 
 type qrynConf struct {
 	host                          string
 	key                           string
-	secret                        string
 	addExporterName               bool
 	resourceToTelemetryConversion bool
 	secretsOptional               bool
+	passwordFieldName             string
 }
 
 type Qryn struct{}
@@ -39,7 +39,11 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 		return err
 	}
 
-	baseURL, err := parseURL(dest.GetConfig()[qrynHost], conf.key, conf.secret)
+	passwordPlaceholder := "${QRYN_API_SECRET}"
+	if conf.passwordFieldName != "" {
+		passwordPlaceholder = "${" + conf.passwordFieldName + "}"
+	}
+	baseURL, err := parseURL(dest.GetConfig()[qrynHost], conf.key, passwordPlaceholder)
 	if err != nil {
 		return errors.New("API host is not a valid")
 	}
@@ -120,10 +124,10 @@ func (g *Qryn) getConfigs(dest ExporterConfigurer) qrynConf {
 	return qrynConf{
 		host:                          dest.GetConfig()[qrynHost],
 		key:                           dest.GetConfig()[qrynAPIKey],
-		secret:                        dest.GetConfig()[qrynAPISecret],
 		addExporterName:               dest.GetConfig()[qrynAddExporterName] == "Yes",
 		resourceToTelemetryConversion: dest.GetConfig()[resourceToTelemetryConversion] == "Yes",
 		secretsOptional:               dest.GetConfig()[qrynSecretsOptional] == "1",
+		passwordFieldName:             dest.GetConfig()[qrynPasswordFieldName],
 	}
 }
 
@@ -133,9 +137,6 @@ func (g *Qryn) checkConfigs(conf *qrynConf) error {
 	}
 	if !conf.secretsOptional && conf.key == "" {
 		return errors.New("missing API key")
-	}
-	if !conf.secretsOptional && conf.secret == "" {
-		return errors.New("missing API secret")
 	}
 	return nil
 }
