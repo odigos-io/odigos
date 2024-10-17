@@ -55,7 +55,10 @@ metadata:
   namespace: odigos-system
 spec:
   data:
-    QRYN_URL: <API Url>
+    QRYN_URL: API Url
+    QRYN_API_KEY: API Key from Gigapipe
+    QRYN_RESOURCE_TO_TELEMETRY_CONVERSION: "Yes" if you want to see container attrs in the prometheus metrics
+    QRYN_ADD_EXPORTER_NAME: "Yes" if you want to see special label {"qryn_exporter": "odigos-qryn-traces/metrics/logs"}
   destinationName: gigapipe
   secretRef:
     name: gigapipe-secret
@@ -64,12 +67,10 @@ spec:
   - METRICS
   - LOGS
   type: gigapipe
-
 ---
 apiVersion: v1
 data:
-  QRYN_API_KEY: <base64 API Key>
-  QRYN_API_SECRET: <base64 API Secret>
+  QRYN_API_SECRET: base64 API Secret
 kind: Secret
 metadata:
   name: gigapipe-secret

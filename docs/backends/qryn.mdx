@@ -47,21 +47,22 @@ metadata:
   namespace: odigos-system
 spec:
   data:
-    QRYN_OSS_URL: <API Url>
-  destinationName: qryn
+    QRYN_OSS_URL: API Url
+    QRYN_OSS_USERNAME: Basic Auth Username
+    QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION: "Yes" if you want to see container attrs in the prometheus metrics
+    QRYN_OSS_ADD_EXPORTER_NAME: "Yes" if you want to see special label {"qryn_exporter": "odigos-qryn-traces/metrics/logs"}
+  destinationName: gigapipe
   secretRef:
-    name: qryn-secret
+    name: gigapipe-secret
   signals:
   - TRACES
   - METRICS
   - LOGS
-  type: qryn
-
+  type: gigapipe
 ---
 apiVersion: v1
 data:
-  QRYN_OSS_USERNAME: <base64 API Username>
-  QRYN_OSS_PASSWORD: <base64 API Password>
+  QRYN_OSS_PASSWORD: base64 Basic Auth password
 kind: Secret
 metadata:
   name: qryn-secret
