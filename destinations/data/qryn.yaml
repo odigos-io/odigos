@@ -1,11 +1,11 @@
 apiVersion: internal.odigos.io/v1beta1
 kind: Destination
 metadata:
-  type: qryn
-  displayName: Gigapipe
-  category: managed
+  type: qryn-oss
+  displayName: qryn
+  category: self-hosted
 spec:
-  image: gigapipe.svg
+  image: qryn.svg
   signals:
     traces:
       supported: true
@@ -14,40 +14,38 @@ spec:
     logs:
       supported: true
   fields:
-    - name: QRYN_API_SECRET
-      displayName: API Secret
+    - name: QRYN_OSS_PASSWORD
+      displayName: Basic auth password
       componentType: input
       componentProps:
         type: password
-        required: true
       secret: true
-    - name: QRYN_API_KEY
-      displayName: API Key
+    - name: QRYN_OSS_USERNAME
+      displayName: Basic auth username
       componentType: input
       componentProps:
-        type: password
-        required: true
-    - name: QRYN_URL
+        type: text
+    - name: QRYN_OSS_URL
       displayName: API Url
       componentType: input
       componentProps:
         type: text
         required: true
-    - name: QRYN_RESOURCE_TO_TELEMETRY_CONVERSION
+    - name: QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION
       displayName: Convert container attributes to labels
       componentType: dropdown
       componentProps:
         values:
-          - Yes
-          - No
+          - "Yes"
+          - "No"
         required: false
       initialValue: Yes
-    - name: QRYN_ADD_EXPORTER_NAME
+    - name: QRYN_OSS_ADD_EXPORTER_NAME
       displayName: Add exporter name to labels
       componentType: dropdown
       componentProps:
         values:
-          - Yes
-          - No
+          - "Yes"
+          - "No"
         required: false
       initialValue: Yes

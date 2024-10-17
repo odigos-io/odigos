@@ -51,29 +51,31 @@ kubectl apply -f destination.yaml
 apiVersion: odigos.io/v1alpha1
 kind: Destination
 metadata:
-  name: gigapipe-example
+  name: qryn-example
   namespace: odigos-system
 spec:
   data:
-    QRYN_URL: API Url
-    QRYN_API_KEY: API Key from Gigapipe
-    QRYN_RESOURCE_TO_TELEMETRY_CONVERSION: "Yes" if you want to see container attrs in the prometheus metrics
-    QRYN_ADD_EXPORTER_NAME: "Yes" if you want to see special label {"qryn_exporter": "odigos-qryn-traces/metrics/logs"}
-  destinationName: gigapipe
+    QRYN_API_KEY: <API Key>
+    # QRYN_RESOURCE_TO_TELEMETRY_CONVERSION: <Convert container attributes to labels [Yes, No]>
+    # QRYN_ADD_EXPORTER_NAME: <Add exporter name to labels [Yes, No]>
+    # Note: The commented fields above are optional.
+    QRYN_URL: <API Url>
+  destinationName: qryn
   secretRef:
-    name: gigapipe-secret
+    name: qryn-secret
   signals:
   - TRACES
   - METRICS
   - LOGS
-  type: gigapipe
+  type: qryn
+
 ---
 apiVersion: v1
 data:
-  QRYN_API_SECRET: base64 API Secret
+  QRYN_API_SECRET: <base64 API Secret>
 kind: Secret
 metadata:
-  name: gigapipe-secret
+  name: qryn-secret
   namespace: odigos-system
 type: Opaque
 ```

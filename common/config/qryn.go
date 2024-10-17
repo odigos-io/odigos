@@ -3,7 +3,9 @@ package config
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/url"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 )
@@ -142,15 +144,23 @@ func (g *Qryn) checkConfigs(conf *qrynConf) error {
 }
 
 func parseURL(rawURL, apiKey, apiSecret string) (string, error) {
+	rawURL = strings.TrimSpace(rawURL)
+	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
+		rawURL = "https://" + rawURL
+	}
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return "", err
 	}
-	if u.Scheme == "" {
-		return parseURL(fmt.Sprintf("https://%s", rawURL), apiKey, apiSecret)
+	apiSecretPlaceholder := fmt.Sprintf("____%d_SECRET_PLACEHOLDER_%[1]d____", rand.Uint64())
+	if apiKey != "" {
+		u.User = url.UserPassword(apiKey, apiSecretPlaceholder)
 	}
-
-	return fmt.Sprintf("%s://%s:%s@%s", u.Scheme, apiKey, apiSecret, u.Host), nil
+	res := u.String()
+	if apiKey != "" {
+		res = strings.ReplaceAll(res, ":"+apiSecretPlaceholder+"@", ":"+apiSecret+"@")
+	}
+	return res, nil
 }
 
 func (g *Qryn) maybeAddExporterName(conf *qrynConf, currentConfig *Config, processorName string, name string,
