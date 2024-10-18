@@ -14,6 +14,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -47,7 +48,7 @@ and apply any required migrations and adaptations.`,
 		skipVersionCheckFlag := cmd.Flag("skip-version-check")
 		if skipVersionCheckFlag == nil || !cmd.Flag("skip-version-check").Changed {
 
-			cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+			cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 			if err != nil {
 				fmt.Println("Odigos upgrade failed - unable to read the current Odigos version for migration")
 				os.Exit(1)

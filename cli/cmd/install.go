@@ -15,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -62,7 +63,7 @@ This command will install k8s components that will auto-instrument your applicat
 		ns := cmd.Flag("namespace").Value.String()
 
 		// Check if Odigos already installed
-		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 		if err == nil && cm != nil {
 			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace\n")
 			os.Exit(1)
