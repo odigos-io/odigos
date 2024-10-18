@@ -107,3 +107,66 @@ These are optional, keep empty if your ClickHouse server does not require authen
 - Database Name (Required) - The name of the Clickhouse Database where the telemetry data will be stored. The default is `otel`. The Database will not be created when not exists, so make sure you have created it before.
 - Table Names - Allows you to customize the names of the tables where the telemetry data will be stored. The default is `otel_traces` for traces and `otel_metrics` for metrics.
 
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `ClickHouse` and follow the on-screen instructions.
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: clickhouse-example
+  namespace: odigos-system
+spec:
+  data:
+    CLICKHOUSE_CREATE_SCHEME: <Create Scheme [Create, Skip]>
+    # CLICKHOUSE_USERNAME: <Username>
+    # Note: The commented fields above are optional.
+    CLICKHOUSE_DATABASE_NAME: <Database Name>
+    CLICKHOUSE_ENDPOINT: <Endpoint>
+    CLICKHOUSE_LOGS_TABLE: <Logs Table>
+    CLICKHOUSE_METRICS_TABLE: <Metrics Table>
+    CLICKHOUSE_TRACES_TABLE: <Traces Table>
+  destinationName: clickhouse
+  # Uncomment the secretRef below if you are using the optional Secret.
+  # secretRef:
+  #   name: clickhouse-secret
+
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: clickhouse
+
+---
+# The following Secret is optional. Uncomment the entire block if you need to use it.
+# apiVersion: v1
+# data:
+#   CLICKHOUSE_PASSWORD: <base64 Password>
+# kind: Secret
+# metadata:
+#   name: clickhouse-secret
+#   namespace: odigos-system
+# type: Opaque
+```
