@@ -207,6 +207,7 @@
             "backends/dynatrace",
             "backends/elasticsearch",
             "backends/gcs",
+            "backends/gigapipe",
             "backends/googlecloud",
             "backends/grafanacloudloki",
             "backends/grafanacloudprometheus",
