@@ -161,7 +161,7 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 					"watch",
 				},
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications"},
+				Resources: []string{"instrumentationconfigs"},
 			},
 		},
 	}

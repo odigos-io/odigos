@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -14,27 +15,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// InstrumentedApplicationReconciler reconciles a InstrumentedApplication object
-type InstrumentedApplicationReconciler struct {
+type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme           *runtime.Scheme
 	ImagePullSecrets []string
 	OdigosVersion    string
 }
 
-func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling InstrumentedApps")
+	logger.V(0).Info("Reconciling InstrumentationConfig")
 
 	namespace := env.GetCurrentNamespace()
 
-	var instrumentedApps odigosv1.InstrumentedApplicationList
-	err := r.List(ctx, &instrumentedApps)
+	var instrumentedConfigs odigosv1.InstrumentationConfigList
+	err := r.List(ctx, &instrumentedConfigs)
 	if err != nil {
-		logger.Error(err, "failed to list InstrumentedApplications")
+		logger.Error(err, "failed to list InstrumentationConfigs")
 		return ctrl.Result{}, err
 	}
-	numberOfInstrumentedApps := len(instrumentedApps.Items)
+	numberOfInstrumentedApps := len(instrumentedConfigs.Items)
 
 	if numberOfInstrumentedApps == 0 {
 		if err = utils.DeleteCollectorGroup(ctx, r.Client, namespace, consts.OdigosNodeCollectorCollectorGroupName); err != nil {
@@ -74,9 +74,8 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *InstrumentedApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *InstrumentationConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&odigosv1.InstrumentedApplication{}).
+		For(&odigosv1.InstrumentationConfig{}).
 		Complete(r)
 }

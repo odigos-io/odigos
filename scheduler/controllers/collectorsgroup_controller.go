@@ -88,9 +88,9 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	var instApps odigosv1.InstrumentedApplicationList
+	var instApps odigosv1.InstrumentationConfigList
 	if err = r.List(ctx, &instApps); err != nil {
-		logger.Error(err, "failed to list InstrumentedApps")
+		logger.Error(err, "failed to list InstrumentationConfigs")
 		return ctrl.Result{}, err
 	}
 
