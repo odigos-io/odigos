@@ -65,7 +65,7 @@ jobs:
       id-token: write
       contents: read    
     needs: build-and-push-images
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-8x-spot
     strategy:
       matrix:
         cloud-provider: [aks] # Add or remove providers as needed [TODO: later add -> eks + gke]
