@@ -120,6 +120,12 @@ const OverviewDrawer = () => {
     initialTitle();
   };
 
+  const handleClose = () => {
+    setIsEditing(false);
+    setDrawerItem(null);
+    setIsDeleteModalOpen(false);
+  };
+
   const handleDelete = async () => {
     if (
       selectedItem?.type === OVERVIEW_ENTITY_TYPES.SOURCE &&
@@ -135,17 +141,12 @@ const OverviewDrawer = () => {
             selected: false,
           },
         ]);
+        handleClose();
       } catch (error) {
         console.error('Error deleting source:', error);
       }
     }
     setDrawerItem(null); // Close the drawer on delete
-  };
-
-  const handleClose = () => {
-    setIsEditing(false);
-    setDrawerItem(null);
-    setIsDeleteModalOpen(false);
   };
 
   const handleCloseDeleteModal = () => {
