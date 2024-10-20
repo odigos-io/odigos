@@ -44,23 +44,23 @@ jobs:
           COMMIT_HASH: ${{ github.sha }}
         run: |
           # Build images
-      make build-images TAG=${COMMIT_HASH}
-      # Tag images for public ECR
-      docker tag keyval/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
-      docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
-      docker tag keyval/odigos-ui:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
-      docker tag keyval/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
-      docker tag keyval/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
-      docker tag keyval/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
+          make build-images TAG=${COMMIT_HASH}
+          # Tag images for public ECR
+          docker tag keyval/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
+          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
+          docker tag keyval/odigos-ui:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
+          docker tag keyval/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
+          docker tag keyval/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
+          docker tag keyval/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
 
-      docker push public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
-      docker push public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
-      docker push public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
-      docker push public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
-      docker push public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
-      docker push public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
 
-      exit
+          exit
 
   test:
     permissions:
