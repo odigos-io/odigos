@@ -36,7 +36,7 @@ Odigos is roughly divided into 3 main segments:
 
 - The pipeline
   - offload any common or heavy task from the instrumented application runtime
-  - apply any odigos actions on the telemetry data, modify it to fit the user's needs.
+  - apply any odigos actions on the telemetry data and modify it to fit the user's needs.
   - batch and send the telemetry data to the configured destinations in a reliable way.
 
 - Odigos Management
@@ -84,7 +84,7 @@ Odigos is roughly divided into 3 main segments:
 - Add node-level attributes to the telemetry data (`k8s.node.name`)
 - Batches and sends the telemetry data to the cluster collector, offloading any network overhead from the instrumented application runtime.
 
-The Node Collector will is also responsible for recording some k8s metrics, and collecting the generated logs from the node fs. Read more Under the [Instrumentation](#instrumentation) section.
+The Node Collector is also responsible for recording some k8s metrics, and collecting the generated logs from the node fs. Read more Under the [Instrumentation](#instrumentation) section.
 
 ## Instrumentation
 
