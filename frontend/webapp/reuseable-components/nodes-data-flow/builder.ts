@@ -203,14 +203,16 @@ export const buildNodesAndEdges = ({
   });
 
   if (actions.length === 0) {
-    actionToDestinationEdges.push(
-      createEdge(
-        `action-0-to-destination-0`,
-        `action-0`,
-        `destination-0`,
-        false
-      )
-    );
+    for (let i = 0; i < destinations.length; i++) {
+      actionToDestinationEdges.push(
+        createEdge(
+          `action-0-to-destination-${i}`,
+          `action-0`,
+          `destination-${i}`,
+          false
+        )
+      );
+    }
   }
 
   // Combine all edges
