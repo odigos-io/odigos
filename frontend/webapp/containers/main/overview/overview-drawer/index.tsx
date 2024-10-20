@@ -13,6 +13,7 @@ import {
   WorkloadId,
   K8sActualSource,
   ActualDestination,
+  isActualDestination,
   OVERVIEW_ENTITY_TYPES,
   PatchSourceRequestInput,
 } from '@/types';
@@ -208,7 +209,7 @@ const OverviewDrawer = () => {
 };
 
 function getItemImageByType(item: K8sActualSource | ActualDestination): string {
-  if ('destinationType' in item) {
+  if (isActualDestination(item)) {
     // item is of type ActualDestination
     return item.destinationType.imageUrl;
   } else {
