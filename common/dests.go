@@ -32,6 +32,7 @@ const (
 	OtlpHttpDestinationType               DestinationType = "otlphttp"
 	PrometheusDestinationType             DestinationType = "prometheus"
 	QrynDestinationType                   DestinationType = "qryn"
+	QrynOSSDestinationType                DestinationType = "qryn-oss"
 	QuickwitDestinationType               DestinationType = "quickwit"
 	SentryDestinationType                 DestinationType = "sentry"
 	SignozDestinationType                 DestinationType = "signoz"

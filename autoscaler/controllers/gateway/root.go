@@ -7,7 +7,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
-	"github.com/odigos-io/odigos/common"
+	odigoscommon "github.com/odigos-io/odigos/common"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -30,6 +30,8 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 	var gatewayCollectorGroup odigosv1.CollectorsGroup
 	err := k8sClient.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosClusterCollectorConfigMapName}, &gatewayCollectorGroup)
 	if err != nil {
+		// collectors group is created by the scheduler, after the first destination is added.
+		// it is however possible that some reconciler (like deployment) triggered and the collectors group will be created shortly.
 		return client.IgnoreNotFound(err)
 	}
 
@@ -53,12 +55,19 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 		return err
 	}
 
-	return syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion, &odigosConfig)
+	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion, &odigosConfig)
+	statusPatchString := commonconf.GetCollectorsGroupDeployedConditionsPatch(err)
+	statusErr := k8sClient.Status().Patch(ctx, &gatewayCollectorGroup, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
+	if statusErr != nil {
+		logger.Error(statusErr, "Failed to patch collectors group status")
+		// just log the error, do not fail the reconciliation
+	}
+	return err
 }
 
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigosConfig *common.OdigosConfiguration) error {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigosConfig *odigoscommon.OdigosConfiguration) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing gateway")
 
