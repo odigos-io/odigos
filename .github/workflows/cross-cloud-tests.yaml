@@ -1,9 +1,6 @@
 name: Cross-Cloud Chainsaw Tests
 
 on:
-  pull_request:
-    branches:
-      - main
   schedule:
     - cron: '0 0 * * *' # Nightly run at midnight
   workflow_dispatch: # Manual trigger
@@ -202,7 +199,7 @@ jobs:
         if: always()  # Ensures this runs even if earlier steps fail
         run: |
           tofu -chdir=$TF_DIR destroy -auto-approve
-          
+
       - name: Extract Tag
         id: extract_tag
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
