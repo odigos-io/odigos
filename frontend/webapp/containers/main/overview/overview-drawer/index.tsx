@@ -13,6 +13,7 @@ import {
   WorkloadId,
   K8sActualSource,
   ActualDestination,
+  OVERVIEW_ENTITY_TYPES,
   PatchSourceRequestInput,
 } from '@/types';
 
@@ -46,10 +47,16 @@ const OverviewDrawer = () => {
   //TODO: split file to separate components by type: source, destination, action
 
   function initialTitle() {
-    if (selectedItem?.type === 'source' && selectedItem.item) {
+    if (
+      selectedItem?.type === OVERVIEW_ENTITY_TYPES.SOURCE &&
+      selectedItem.item
+    ) {
       const title = (selectedItem.item as K8sActualSource).reportedName;
       setTitle(title || '');
-    } else if (selectedItem?.type === 'destination' && selectedItem.item) {
+    } else if (
+      selectedItem?.type === OVERVIEW_ENTITY_TYPES.DESTINATION &&
+      selectedItem.item
+    ) {
       const title = (selectedItem.item as ActualDestination).name;
       setTitle(title || '');
     } else {
@@ -58,7 +65,7 @@ const OverviewDrawer = () => {
   }
 
   const handleSave = async () => {
-    if (selectedItem?.type === 'destination') {
+    if (selectedItem?.type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
       if (destinationDrawerRef.current && titleRef.current) {
         const name = titleRef.current.value;
         const destinationData = {
@@ -77,11 +84,14 @@ const OverviewDrawer = () => {
       }
     }
 
-    if (selectedItem?.type === 'source') {
+    if (selectedItem?.type === OVERVIEW_ENTITY_TYPES.SOURCE) {
       if (titleRef.current) {
         const newTitle = titleRef.current.value;
         setTitle(newTitle);
-        if (selectedItem?.type === 'source' && selectedItem.item) {
+        if (
+          selectedItem?.type === OVERVIEW_ENTITY_TYPES.SOURCE &&
+          selectedItem.item
+        ) {
           const sourceItem = selectedItem.item as K8sActualSource;
 
           const sourceId: WorkloadId = {
@@ -111,7 +121,10 @@ const OverviewDrawer = () => {
   };
 
   const handleDelete = async () => {
-    if (selectedItem?.type === 'source' && selectedItem.item) {
+    if (
+      selectedItem?.type === OVERVIEW_ENTITY_TYPES.SOURCE &&
+      selectedItem.item
+    ) {
       const sourceItem = selectedItem.item as K8sActualSource;
 
       try {
@@ -162,7 +175,7 @@ const OverviewDrawer = () => {
             {...{ isEditing, setIsEditing }}
           />
           <ContentArea>
-            {selectedItem.type === 'destination' ? (
+            {selectedItem.type === OVERVIEW_ENTITY_TYPES.DESTINATION ? (
               <DestinationDrawer
                 ref={destinationDrawerRef}
                 isEditing={isEditing}

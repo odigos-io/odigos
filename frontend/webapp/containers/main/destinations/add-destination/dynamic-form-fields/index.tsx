@@ -1,6 +1,5 @@
 import React from 'react';
-
-import { INPUT_TYPES } from '@/utils/constants/string';
+import { INPUT_TYPES } from '@/utils';
 import {
   Dropdown,
   Input,
