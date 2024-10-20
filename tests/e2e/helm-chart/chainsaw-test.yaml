@@ -49,12 +49,15 @@ spec:
               echo "Odigos version is not the expected commit hash, got $ACTUAL_VERSION"
               exit 1
             fi
+            # Sleep to allow odigos to start on the cluster, it is take some time for AKS to start the pods.
+            sleep 10
           else
             if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
               echo "Odigos version is not e2e-test, got $ACTUAL_VERSION"
               exit 1
             fi
           fi
+
     - assert:
         file: assert-odigos-installed.yaml
   - name: Install Demo App
@@ -78,6 +81,14 @@ spec:
           fi
     - apply:
         file: 02-install-simple-demo.yaml
+    - script:
+        content: |
+          # Wait for the pods to be ready
+          kubectl wait --for=condition=ready pod -l app=frontend --timeout=20s
+          kubectl wait --for=condition=ready pod -l app=coupon --timeout=20s
+          kubectl wait --for=condition=ready pod -l app=inventory --timeout=20s
+          kubectl wait --for=condition=ready pod -l app=membership --timeout=20s
+
     - assert:
         file: assert-apps-installed.yaml
   - name: Detect Languages
