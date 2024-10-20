@@ -39,26 +39,26 @@ jobs:
         run: |
           aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
-      # - name: Build and Tag Docker Images
-      #   env:
-      #     COMMIT_HASH: ${{ github.sha }}
-      #   run: |
-      #     # Build images
-      # make build-images TAG=${COMMIT_HASH}
-      # # Tag images for public ECR
-      # docker tag keyval/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
-      # docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
-      # docker tag keyval/odigos-ui:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
-      # docker tag keyval/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
-      # docker tag keyval/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
-      # docker tag keyval/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
+      - name: Build and Tag Docker Images
+        env:
+          COMMIT_HASH: ${{ github.sha }}
+        run: |
+          # Build images
+          make build-images TAG=${COMMIT_HASH}
+          # Tag images for public ECR
+          docker tag keyval/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
+          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
+          docker tag keyval/odigos-ui:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
+          docker tag keyval/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
+          docker tag keyval/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
+          docker tag keyval/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
 
-      # docker push public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
-      # docker push public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
-      # docker push public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
-      # docker push public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
-      # docker push public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
-      # docker push public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
 
   test:
     permissions:
@@ -189,27 +189,26 @@ jobs:
 
       - name: Run E2E Tests
         run: |
-          
+
           # This uses in chainsaw to split e2e tests from cross cloud tests
           export MODE=cross-cloud-tests
           
           # This uses in chainsaw to verify the odigos version is equal to the commit version
-          # export COMMIT_HASH=${{ github.sha }}
-          export COMMIT_HASH=3885bfa0213d47e49b90ca00e9a0e1e7ab58688d
+          export COMMIT_HASH=${{ github.sha }}
 
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
 
-      # - name: Destroy Resources
-      #   if: always()  # Ensures this runs even if earlier steps fail
-      #   run: |
-      #     tofu -chdir=$TF_DIR destroy -auto-approve
+      - name: Destroy Resources
+        if: always()  # Ensures this runs even if earlier steps fail
+        run: |
+          tofu -chdir=$TF_DIR destroy -auto-approve
 
 
       # Notify Slack on Failure or Cancellation
       - name: Notify Slack on Failure or Cancellation
         if: ${{ failure() || cancelled() }}
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
@@ -221,7 +220,7 @@ jobs:
       - name: Notify Slack on Success
         if: ${{ success() }}
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
