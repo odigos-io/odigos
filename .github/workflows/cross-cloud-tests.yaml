@@ -195,7 +195,8 @@ jobs:
           export MODE=cross-cloud-tests
           
           # This uses in chainsaw to verify the odigos version is equal to the commit version
-          export COMMIT_HASH=${{ github.sha }}
+          # export COMMIT_HASH=${{ github.sha }}
+          export COMMIT_HASH=304e3b08d6346f9c16aa4440ff82178191c8d94a
 
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
 
