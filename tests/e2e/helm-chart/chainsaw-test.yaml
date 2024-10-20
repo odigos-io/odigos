@@ -54,12 +54,7 @@ spec:
               exit 1
             fi
 
-          echo "Sleeping for 35 seconds to allow Odigos to start"
-          
-          for i in {1..35}; do
-            echo "Waiting... $i seconds elapsed"
-            sleep 1
-          done
+          kubectl wait --for=condition=ready pods --all -n odigos-test-ns --timeout=35s
 
           else
             if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
