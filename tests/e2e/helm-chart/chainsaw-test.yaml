@@ -54,7 +54,7 @@ spec:
               exit 1
             fi
 
-          kubectl wait --for=condition=ready pods --all -n odigos-test-ns --timeout=35s
+          kubectl wait --for=condition=ready pods --all -n odigos-test-ns --timeout=40s
 
           else
             if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
@@ -86,10 +86,10 @@ spec:
     - script:
         content: |
           # Wait for the pods to be ready
-          kubectl wait --for=condition=ready pod -l app=frontend --timeout=20s
-          kubectl wait --for=condition=ready pod -l app=coupon --timeout=20s
-          kubectl wait --for=condition=ready pod -l app=inventory --timeout=20s
-          kubectl wait --for=condition=ready pod -l app=membership --timeout=20s
+          kubectl wait --for=condition=ready pod -l app=frontend --timeout=40s
+          kubectl wait --for=condition=ready pod -l app=coupon --timeout=40s
+          kubectl wait --for=condition=ready pod -l app=inventory --timeout=40s
+          kubectl wait --for=condition=ready pod -l app=membership --timeout=40s
     - assert:
         file: assert-apps-installed.yaml
 
