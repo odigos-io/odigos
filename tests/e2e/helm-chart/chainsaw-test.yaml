@@ -42,6 +42,7 @@ spec:
   - name: Verify Odigos Installation
     try:
     - script:
+        timeout: 200s
         content: |
           echo "Starting Odigos version check..."
           export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
@@ -53,11 +54,12 @@ spec:
               exit 1
             fi
 
-            echo "Sleeping for 35 seconds to allow Odigos to start"
-            for i in {1..7}; do
-              sleep 5
-              echo "Still waiting... Slept for $((i*5)) seconds"
-            done
+          echo "Sleeping for 35 seconds to allow Odigos to start"
+          
+          for i in {1..35}; do
+            echo "Waiting... $i seconds elapsed"
+            sleep 1
+          done
 
           else
             if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
