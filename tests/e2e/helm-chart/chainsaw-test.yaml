@@ -33,7 +33,7 @@ spec:
           # "build" complete helm chart by copying CRDs into the template folder
           cp -r $P/api/config/crd/bases/* $P/helm/odigos/templates/crds/
           if [ "$MODE" = "cross-cloud-tests" ]; then
-            helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=304e3b08d6346f9c16aa4440ff82178191c8d94a --set imagePrefix=public.ecr.aws/y2v0v6s7
+            helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=3885bfa0213d47e49b90ca00e9a0e1e7ab58688d --set imagePrefix=public.ecr.aws/y2v0v6s7
           else
             helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test
           fi

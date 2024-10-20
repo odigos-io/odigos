@@ -39,28 +39,26 @@ jobs:
         run: |
           aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
-      - name: Build and Tag Docker Images
-        env:
-          COMMIT_HASH: ${{ github.sha }}
-        run: |
-          # Build images
-          make build-images TAG=${COMMIT_HASH}
-          # Tag images for public ECR
-          docker tag keyval/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
-          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
-          docker tag keyval/odigos-ui:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
-          docker tag keyval/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
-          docker tag keyval/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
-          docker tag keyval/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
+      # - name: Build and Tag Docker Images
+      #   env:
+      #     COMMIT_HASH: ${{ github.sha }}
+      #   run: |
+      #     # Build images
+      # make build-images TAG=${COMMIT_HASH}
+      # # Tag images for public ECR
+      # docker tag keyval/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
+      # docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
+      # docker tag keyval/odigos-ui:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
+      # docker tag keyval/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
+      # docker tag keyval/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
+      # docker tag keyval/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
 
-          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
-
-          exit
+      # docker push public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
+      # docker push public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
+      # docker push public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
+      # docker push public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
+      # docker push public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
+      # docker push public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
 
   test:
     permissions:
@@ -196,8 +194,8 @@ jobs:
           export MODE=cross-cloud-tests
           
           # This uses in chainsaw to verify the odigos version is equal to the commit version
-          export COMMIT_HASH=${{ github.sha }}
-          # export COMMIT_HASH=304e3b08d6346f9c16aa4440ff82178191c8d94a
+          # export COMMIT_HASH=${{ github.sha }}
+          export COMMIT_HASH=3885bfa0213d47e49b90ca00e9a0e1e7ab58688d
 
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
 
