@@ -19,7 +19,7 @@ jobs:
       id-token: write
       contents: read  
     name: Build and Push Docker Images
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-8x-spot
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
