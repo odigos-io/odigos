@@ -1,4 +1,4 @@
-import { safeJsonParse } from '@/utils';
+import { safeJsonParse, INPUT_TYPES } from '@/utils';
 import { DestinationDetailsField, DynamicField } from '@/types';
 
 export function useConnectDestinationForm() {
@@ -18,7 +18,7 @@ export function useConnectDestinationForm() {
         let componentPropertiesJson;
         let initialValuesJson;
         switch (componentType) {
-          case 'dropdown':
+          case INPUT_TYPES.DROPDOWN:
             componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(
               componentProperties,
               {}
@@ -41,8 +41,8 @@ export function useConnectDestinationForm() {
               ...componentPropertiesJson,
             };
 
-          case 'input':
-          case 'textarea':
+          case INPUT_TYPES.INPUT:
+          case INPUT_TYPES.TEXTAREA:
             componentPropertiesJson = safeJsonParse<string[]>(
               componentProperties,
               []
@@ -54,7 +54,7 @@ export function useConnectDestinationForm() {
               ...componentPropertiesJson,
             };
 
-          case 'multiInput':
+          case INPUT_TYPES.MULTI_INPUT:
             componentPropertiesJson = safeJsonParse<string[]>(
               componentProperties,
               []
@@ -66,9 +66,10 @@ export function useConnectDestinationForm() {
               componentType,
               title: displayName,
               initialValues: initialValuesJson,
+              value: initialValuesJson,
               ...componentPropertiesJson,
             };
-          case 'keyValuePairs':
+          case INPUT_TYPES.KEY_VALUE_PAIR:
             return {
               name,
               componentType,

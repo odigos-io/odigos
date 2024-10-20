@@ -42,7 +42,7 @@ type Destination struct {
 	Name            string                       `json:"name"`
 	Type            common.DestinationType       `json:"type"`
 	ExportedSignals ExportedSignals              `json:"signals"`
-	Fields          map[string]string            `json:"fields"`
+	Fields          string                       `json:"fields"`
 	DestinationType DestinationTypesCategoryItem `json:"destination_type"`
 	Conditions      []metav1.Condition           `json:"conditions,omitempty"`
 }

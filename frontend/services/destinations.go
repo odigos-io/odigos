@@ -160,6 +160,13 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 	mergedFields := mergeDataAndSecrets(k8sDest.Spec.Data, secretFields)
 	destTypeConfig := DestinationTypeConfigToCategoryItem(destinations.GetDestinationByType(string(destType)))
 
+	fieldsJSON, err := json.Marshal(mergedFields)
+	if err != nil {
+		// Handle JSON encoding error
+		fmt.Printf("Error marshaling fields to JSON: %v\n", err)
+		fieldsJSON = []byte("{}") // Set to an empty JSON object in case of error
+	}
+
 	var conditions []metav1.Condition
 	for _, condition := range k8sDest.Status.Conditions {
 		conditions = append(conditions, metav1.Condition{
@@ -179,7 +186,7 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),
 			Logs:    isSignalExported(k8sDest, common.LogsObservabilitySignal),
 		},
-		Fields:          mergedFields,
+		Fields:          string(fieldsJSON),
 		DestinationType: destTypeConfig,
 		Conditions:      conditions,
 	}

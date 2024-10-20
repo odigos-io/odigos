@@ -35,3 +35,9 @@ export interface StepProps {
   state: 'finish' | 'active' | 'disabled';
   stepNumber: number;
 }
+
+export enum OVERVIEW_ENTITY_TYPES {
+  SOURCE = 'source',
+  DESTINATION = 'destination',
+  ACTION = 'action',
+}

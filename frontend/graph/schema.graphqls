@@ -162,7 +162,7 @@ type Destination {
   name: String!
   type: String!
   exportedSignals: ExportedSignals!
-  fields: [String!]!
+  fields: String!
   destinationType: DestinationTypesCategoryItem!
   conditions: [Condition!]
 }
@@ -260,4 +260,5 @@ type Mutation {
     sourceId: K8sSourceId!
     patchSourceRequest: PatchSourceRequestInput!
   ): Boolean!
+  updateDestination(id: ID!, destination: DestinationInput!): Destination!
 }

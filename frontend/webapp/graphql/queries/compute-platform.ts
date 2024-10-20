@@ -24,14 +24,27 @@ export const GET_COMPUTE_PLATFORM = gql`
       destinations {
         id
         name
+        fields
         exportedSignals {
           logs
           metrics
           traces
         }
         destinationType {
+          type
           imageUrl
           displayName
+          supportedSignals {
+            logs {
+              supported
+            }
+            metrics {
+              supported
+            }
+            traces {
+              supported
+            }
+          }
         }
       }
       actions {

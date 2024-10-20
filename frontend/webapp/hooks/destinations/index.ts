@@ -4,3 +4,6 @@ export * from './useConnectDestinationForm';
 export * from './useCreateDestination';
 export * from './usePotentialDestinations';
 export * from './useActualDestinations';
+export * from './useUpdateDestination';
+export * from './useDestinationFormData';
+export * from './useEditDestinationFormHandlers';
