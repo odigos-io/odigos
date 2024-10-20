@@ -82,7 +82,9 @@ export const buildNodesAndEdges = ({
         NODE_HEIGHT * (index + 1),
         {
           type: 'source',
-          title: source.name,
+          title:
+            source.name +
+            (source.reportedName ? ` (${source.reportedName})` : ''),
           subTitle: source.kind,
           imageUri: getMainContainerLanguageLogo(source),
           status: 'healthy',
