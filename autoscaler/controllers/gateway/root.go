@@ -2,18 +2,15 @@ package gateway
 
 import (
 	"context"
-	"encoding/json"
-	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
-	"github.com/odigos-io/odigos/common"
+	odigoscommon "github.com/odigos-io/odigos/common"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,42 +22,6 @@ var (
 		k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
 	}
 )
-
-func getCollectorsGroupDeployedConditionsPatch(err error) string {
-
-	status := metav1.ConditionTrue
-	if err != nil {
-		status = metav1.ConditionFalse
-	}
-
-	message := "Gateway collector is deployed in the cluster"
-	if err != nil {
-		message = err.Error()
-	}
-
-	reason := "GatewayDeployedCreatedSuccessfully"
-	if err != nil {
-		// in the future, we can be more specific and break it down to
-		// more detailed reasons about what exactly failed
-		reason = "GatewayDeployedCreationFailed"
-	}
-
-	patch := map[string]interface{}{
-		"status": map[string]interface{}{
-			"conditions": []metav1.Condition{{
-				Type:               "Deployed",
-				Status:             status,
-				Reason:             reason,
-				Message:            message,
-				LastTransitionTime: metav1.NewTime(time.Now()),
-			}},
-		},
-	}
-
-	patchData, _ := json.Marshal(patch)
-	// marshal error is ignored as it is not expected to happen
-	return string(patchData)
-}
 
 func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
@@ -95,7 +56,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 	}
 
 	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion, &odigosConfig)
-	statusPatchString := getCollectorsGroupDeployedConditionsPatch(err)
+	statusPatchString := commonconf.GetCollectorsGroupDeployedConditionsPatch(err)
 	statusErr := k8sClient.Status().Patch(ctx, &gatewayCollectorGroup, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
 	if statusErr != nil {
 		logger.Error(statusErr, "Failed to patch collectors group status")
@@ -106,7 +67,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigosConfig *common.OdigosConfiguration) error {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigosConfig *odigoscommon.OdigosConfiguration) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing gateway")
 

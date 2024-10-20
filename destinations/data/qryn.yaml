@@ -3,7 +3,7 @@ kind: Destination
 metadata:
   type: qryn-oss
   displayName: qryn
-  category: self-hosted
+  category: self hosted
 spec:
   image: qryn.svg
   signals:
@@ -14,6 +14,12 @@ spec:
     logs:
       supported: true
   fields:
+    - name: QRYN_OSS_URL
+      displayName: API Url
+      componentType: input
+      componentProps:
+        type: text
+        required: true
     - name: QRYN_OSS_PASSWORD
       displayName: Basic auth password
       componentType: input
@@ -25,12 +31,6 @@ spec:
       componentType: input
       componentProps:
         type: text
-    - name: QRYN_OSS_URL
-      displayName: API Url
-      componentType: input
-      componentProps:
-        type: text
-        required: true
     - name: QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION
       displayName: Convert container attributes to labels
       componentType: dropdown
