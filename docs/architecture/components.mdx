@@ -5,13 +5,13 @@ sidebarTitle: "Components"
 
 ## Goals
 
-Odigos acts as a control plane for all the observability needs in a kubernetes cluster. It is responsible for:
+Odigos acts as a control plane for all the observability needs in a Kubernetes cluster. It is responsible for:
 
 - Automatic instrumentation of applications
 - Automatic configuration and deployment of collectors
 - Infrastructure observability (Kubernetes nodes, databases, etc)
 
-Odigos achieves it's goal by deploying a set of components that work together to collect, process, and export telemetry data.
+Odigos achieves its goals by deploying a set of components that work together to collect, process, and export telemetry data.
 
 ## High Level Architecture
 
@@ -27,27 +27,27 @@ Odigos achieves it's goal by deploying a set of components that work together to
 
 ### Component Segments
 
-Odigos is roughly divided into 3 main segments:
+Odigos is divided into three main segments:
 
 - The instrumentation
-  - inject OpenTelemetry agents to record / collect the instrumentation data from the sources
-  - record and report any relevant runtime data that is available in the process environment.
+  - inject OpenTelemetry agents to record / collect the instrumentation data from the sources,
+  - record and report any relevant runtime data that is available in the process environment,
   - export the collected data to the pipeline.
 
 - The pipeline
-  - offload any common or heavy task from the instrumented application runtime
-  - apply any odigos actions on the telemetry data and modify it to fit the user's needs.
+  - offload any common or heavy task from the instrumented application runtime,
+  - apply any odigos actions on the telemetry data and modify it to fit the user's needs,
   - batch and send the telemetry data to the configured destinations in a reliable way.
 
 - Odigos Management
-  - Orchestrate the pipeline and the instrumentation based on the user's configuration and cluster state.
-  - Provide a UI for the odigos control plane.
+  - orchestrate the pipeline and the instrumentation based on the user's configuration and cluster state,
+  - provide a UI for the odigos control plane.
 
 ## Pipeline
 
 ### Auto Scaler (Pipeline manager)
 
-**Type**: The auto scaler is a kubernetes operator
+**Type**: The auto scaler is a Kubernetes operator
 
 **Role**: The auto scaler is responsible for managing the OpenTelemetry Collectors which implements the OpenTelemetry pipeline.
 
@@ -90,15 +90,15 @@ The Node Collector is also responsible for recording some k8s metrics, and colle
 
 ### Instrumentor (Auto Instrumentation Agent Manager)
 
-**Type**: The instrumentor is a kubernetes operator
+**Type**: The instrumentor is a Kubernetes operator
 
 **K8s Resource**: Deployment / `odigos-instrumentor`
 
-**Role**: The instrumentor is responsible for managing the auto instrumentation agents which are collect the telemetry data from the selected sources.
+**Role**: The instrumentor is responsible for managing the auto instrumentation agents which collect the telemetry data from the selected sources.
 
 - Create and manage the `instrumentationconfig.odigos.io` objects
   - Triggers the `odiglet` to inspect runtime details of the workload.
-  - Triggers the schedular to deploy the Odigos pipeline.
+  - Triggers the scheduler to deploy the Odigos pipeline.
   - Merge the Odigos instrumentation rules and odigos config to a per-workload configuration to be used by the agent.
 - Inject the instrumentation device into the workload manifest resource as virtual device.
 - Monitor the `odigos-enabled` label and cleanup any instrumentation related resources when a source is removed.
@@ -137,13 +137,13 @@ The Node Collector is also responsible for recording some k8s metrics, and colle
 
 **Role**: The Odigos UI is a web application that allows users to configure the Odigos pipeline.
 
-- Serve as web server for the Odigos UI, to load the control plain in the browser and interact with the Odigos API.
+- Serve as web server for the Odigos UI, to load the control plane in the browser and interact with the Odigos API.
 - Provide a user interface for monitoring and managing the Odigos installation, including the sources, destinations, actions, and instrumentation rules.
 - Examine the current state of odigos, show any errors.
 
 ### Scheduler
 
-**Type**: The scheduler is a kubernetes operator
+**Type**: The scheduler is a Kubernetes operator
 
 **K8s Resource**: Deployment / `odigos-scheduler`
 
