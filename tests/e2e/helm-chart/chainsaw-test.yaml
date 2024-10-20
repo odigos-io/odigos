@@ -67,7 +67,7 @@ spec:
   - name: Install Demo App
     try:
     - script:
-        timeout: 200s
+        timeout: 100s
         content: |
           if [ "$MODE" != "cross-cloud-tests" ]; then
             docker pull keyval/odigos-demo-inventory:v0.1
@@ -84,6 +84,7 @@ spec:
     - apply:
         file: 02-install-simple-demo.yaml
     - script:
+        timeout: 100s
         content: |
           # Wait for the pods to be ready
           kubectl wait --for=condition=ready pod -l app=frontend --timeout=50s
