@@ -43,15 +43,22 @@ spec:
     try:
     - script:
         content: |
+          echo "Starting Odigos version check..."
           export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
+          echo "Actual Version: $ACTUAL_VERSION"
+
           if [ "$MODE" = "cross-cloud-tests" ]; then
             if [ "$ACTUAL_VERSION" != "$COMMIT_HASH" ]; then
               echo "Odigos version is not the expected commit hash, got $ACTUAL_VERSION"
               exit 1
             fi
-            # Sleep to allow odigos to start on the cluster, it is take some time for AKS to start the pods.
-            echo "Sleeping for 20 seconds to allow Odigos to start"
-            sleep 20
+
+            echo "Sleeping for 35 seconds to allow Odigos to start"
+            for i in {1..7}; do
+              sleep 5
+              echo "Still waiting... Slept for $((i*5)) seconds"
+            done
+
           else
             if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
               echo "Odigos version is not e2e-test, got $ACTUAL_VERSION"
