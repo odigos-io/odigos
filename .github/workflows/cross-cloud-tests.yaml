@@ -39,7 +39,6 @@ jobs:
         run: |
           aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
-
       # - name: Build and Tag Docker Images
       #   env:
       #     COMMIT_HASH: ${{ github.sha }}
@@ -204,3 +203,28 @@ jobs:
         if: always()  # Ensures this runs even if earlier steps fail
         run: |
           tofu -chdir=$TF_DIR destroy -auto-approve
+
+
+      # Notify Slack on Failure or Cancellation
+      - name: Notify Slack on Failure or Cancellation
+        if: ${{ failure() || cancelled() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: Providers tests fail", "tag":"${{ env.TAG }}"}' \
+            ${{ env.SLACK_WEBHOOK_URL }}
+
+      # Notify Slack on Success
+      - name: Notify Slack on Success
+        if: ${{ success() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"SUCCESS: Providers tests succeed", "test": "${{ matrix.cloud-provider }} - ${{ matrix.test-scenario }} " "tag":"${{ env.TAG }}"}' \
+            ${{ env.SLACK_WEBHOOK_URL }}          

@@ -62,16 +62,20 @@ spec:
     - script:
         timeout: 100s
         content: |
-          docker pull keyval/odigos-demo-inventory:v0.1
-          docker pull keyval/odigos-demo-membership:v0.1
-          docker pull keyval/odigos-demo-coupon:v0.1
-          docker pull keyval/odigos-demo-inventory:v0.1
-          docker pull keyval/odigos-demo-frontend:v0.2
-          kind load docker-image keyval/odigos-demo-inventory:v0.1
-          kind load docker-image keyval/odigos-demo-membership:v0.1
-          kind load docker-image keyval/odigos-demo-coupon:v0.1
-          kind load docker-image keyval/odigos-demo-inventory:v0.1
-          kind load docker-image keyval/odigos-demo-frontend:v0.2
+          if [ "$MODE" != "cross-cloud-tests" ]; then
+            docker pull keyval/odigos-demo-inventory:v0.1
+            docker pull keyval/odigos-demo-membership:v0.1
+            docker pull keyval/odigos-demo-coupon:v0.1
+            docker pull keyval/odigos-demo-inventory:v0.1
+            docker pull keyval/odigos-demo-frontend:v0.2
+            kind load docker-image keyval/odigos-demo-inventory:v0.1
+            kind load docker-image keyval/odigos-demo-membership:v0.1
+            kind load docker-image keyval/odigos-demo-coupon:v0.1
+            kind load docker-image keyval/odigos-demo-inventory:v0.1
+            kind load docker-image keyval/odigos-demo-frontend:v0.2
+          else
+            echo "Skipping docker pull and kind load for cross-cloud-tests mode"
+          fi
     - apply:
         file: 02-install-simple-demo.yaml
     - assert:
