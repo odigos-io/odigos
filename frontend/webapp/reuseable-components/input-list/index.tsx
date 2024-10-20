@@ -87,7 +87,9 @@ const InputList: React.FC<InputListProps> = ({
   };
 
   const handleDeleteInput = (index: number) => {
-    setInputs(inputs.filter((_, i) => i !== index));
+    const newInputs = inputs.filter((_, i) => i !== index);
+    setInputs(newInputs);
+    onChange(newInputs);
   };
 
   const handleInputChange = (value: string, index: number) => {
