@@ -199,10 +199,10 @@ jobs:
 
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
 
-      - name: Destroy Resources
-        if: always()  # Ensures this runs even if earlier steps fail
-        run: |
-          tofu -chdir=$TF_DIR destroy -auto-approve
+      # - name: Destroy Resources
+      #   if: always()  # Ensures this runs even if earlier steps fail
+      #   run: |
+      #     tofu -chdir=$TF_DIR destroy -auto-approve
 
 
       # Notify Slack on Failure or Cancellation
@@ -214,7 +214,7 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           curl -X POST -H 'Content-type: application/json' \
-            --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: Providers tests fail", "tag":"${{ env.TAG }}"}' \
+            --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: Providers tests fail","test": "${{ matrix.cloud-provider }} - ${{ matrix.test-scenario }}", "tag":"${{ env.TAG }}"}' \
             ${{ env.SLACK_WEBHOOK_URL }}
 
       # Notify Slack on Success
@@ -226,5 +226,5 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           curl -X POST -H 'Content-type: application/json' \
-            --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"SUCCESS: Providers tests succeed", "test": "${{ matrix.cloud-provider }} - ${{ matrix.test-scenario }} " "tag":"${{ env.TAG }}"}' \
+            --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"SUCCESS: Providers tests succeed", "test": "${{ matrix.cloud-provider }} - ${{ matrix.test-scenario }}", "tag":"${{ env.TAG }}"}' \
             ${{ env.SLACK_WEBHOOK_URL }}          
