@@ -16,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
+	actionservices "github.com/odigos-io/odigos/frontend/services/actions"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -449,11 +450,11 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 }
 
 // UpdateDestination is the resolver for the updateDestination field.
-func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, input model.DestinationInput) (*model.Destination, error) {
+func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error) {
 	odigosns := consts.DefaultOdigosNamespace
 
-	destType := common.DestinationType(input.Type)
-	destName := input.Name
+	destType := common.DestinationType(destination.Type)
+	destName := destination.Name
 
 	// Get the destination type configuration
 	destTypeConfig, err := services.GetDestinationTypeConfig(destType)
@@ -463,7 +464,7 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, inp
 
 	// Convert fields from input to map[string]string
 	fields := make(map[string]string)
-	for _, field := range input.Fields {
+	for _, field := range destination.Fields {
 		fields[field.Key] = field.Value
 	}
 
@@ -533,7 +534,7 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, inp
 	dest.Spec.Type = destType
 	dest.Spec.DestinationName = destName
 	dest.Spec.Data = dataFields
-	dest.Spec.Signals = services.ExportedSignalsObjectToSlice(input.ExportedSignals)
+	dest.Spec.Signals = services.ExportedSignalsObjectToSlice(destination.ExportedSignals)
 
 	// Update the destination in Kubernetes
 	updatedDest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Update(ctx, dest, metav1.UpdateOptions{})
@@ -551,6 +552,39 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, inp
 	resp := services.K8sDestinationToEndpointFormat(*updatedDest, secretFields)
 
 	return &resp, nil
+}
+
+// CreateAction is the resolver for the createAction field.
+func (r *mutationResolver) CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error) {
+	switch action.Type {
+	case "AddClusterInfo":
+		res, err := actionservices.CreateAddClusterInfo(ctx, action)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to create AddClusterInfo: %v", err)
+		}
+
+		return res, nil
+
+	case "DeleteAttribute":
+
+	// Handle other action types...
+
+	default:
+		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
+	}
+
+	return nil, nil
+}
+
+// UpdateAction is the resolver for the updateAction field.
+func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action model.ActionInput) (model.Action, error) {
+	panic(fmt.Errorf("not implemented: UpdateAction - updateAction"))
+}
+
+// DeleteAction is the resolver for the deleteAction field.
+func (r *mutationResolver) DeleteAction(ctx context.Context, id string) (bool, error) {
+	panic(fmt.Errorf("not implemented: DeleteAction - deleteAction"))
 }
 
 // ComputePlatform is the resolver for the computePlatform field.
