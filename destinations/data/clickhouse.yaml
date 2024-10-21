@@ -20,19 +20,23 @@ spec:
       componentProps:
         type: text
         required: true
+        placeholder: "http://host:port"
+        tooltip: 'Clickhouse server address'
     - name: CLICKHOUSE_USERNAME
       displayName: Username
       componentType: input
       componentProps:
         type: text
         required: false
+        tooltip: 'If Clickhouse Authentication is used, provide the username'
     - name: CLICKHOUSE_PASSWORD
       displayName: Password
       componentType: input
       secret: true
       componentProps:
-          type: password
-          required: false
+        type: password
+        required: false
+        tooltip: 'If Clickhouse Authentication is used, provide the password'
     - name: CLICKHOUSE_CREATE_SCHEME
       displayName: Create Scheme
       componentType: dropdown
@@ -41,32 +45,37 @@ spec:
           - Create
           - Skip
         required: true
+        tooltip: 'Should the destination create the schema for you?'
       initialValue: Create
     - name: CLICKHOUSE_DATABASE_NAME
       displayName: Database Name
       componentType: input
       componentProps:
-          type: text
-          required: true
+        type: text
+        required: true
+        tooltip: 'Name of the ClickHouse Database to use, which you should have created already'
       initialValue: otel
     - name: CLICKHOUSE_TRACES_TABLE
       displayName: Traces Table
       componentType: input
       componentProps:
-          type: text
-          required: true
+        type: text
+        required: true
+        tooltip: 'Name of the ClickHouse Table to use for storing trace spans. This name should be used in span queries'
       initialValue: otel_traces
     - name: CLICKHOUSE_METRICS_TABLE
       displayName: Metrics Table
       componentType: input
       componentProps:
-          type: text
-          required: true
+        type: text
+        required: true
+        tooltip: 'Name of the ClickHouse Table to use for storing metrics. This name should be used in metric queries'
       initialValue: otel_metrics
     - name: CLICKHOUSE_LOGS_TABLE
       displayName: Logs Table
       componentType: input
       componentProps:
-          type: text
-          required: true
+        type: text
+        required: true
+        tooltip: 'Name of the ClickHouse Table to use for storing logs. This name should be used in log queries'
       initialValue: otel_logs
