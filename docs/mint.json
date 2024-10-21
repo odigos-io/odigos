@@ -70,6 +70,7 @@
         {
           "group": "Architecture",
           "pages": [
+            "architecture/components",
             "architecture/sources",
             "architecture/troubleshooting"
           ]
@@ -236,7 +237,6 @@
     {
       "group": "Concepts",
       "pages": [
-        "architecture",
         "telemetry-types",
         "custom-resources",
         "uninstall",
