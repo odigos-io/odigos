@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/store';
+import { INPUT_TYPES } from '@/utils';
 import { SideMenu } from '@/components';
 import { useQuery } from '@apollo/client';
 import { FormContainer } from './form-container';
@@ -21,7 +22,6 @@ import {
   DestinationDetailsResponse,
   ConfiguredDestination,
 } from '@/types';
-import { INPUT_TYPES } from '@/utils';
 
 const SIDE_MENU_DATA: StepProps[] = [
   {
@@ -59,8 +59,10 @@ export function ConnectDestinationModalBody({
 
   const { connectEnv } = useConnectEnv();
   const { buildFormDynamicFields } = useConnectDestinationForm();
+
   const { handleDynamicFieldChange, handleSignalChange } =
     useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
+
   const addConfiguredDestination = useAppStore(
     ({ addConfiguredDestination }) => addConfiguredDestination
   );
@@ -146,7 +148,7 @@ export function ConnectDestinationModalBody({
     // Prepare fields for the request body
     const fields = processFormFields();
 
-    // Function to store configured destination
+    // Function to store configured destination to display in the UI
     function storeConfiguredDestination() {
       const destinationTypeDetails = dynamicFields.map((field) => ({
         title: field.title,
