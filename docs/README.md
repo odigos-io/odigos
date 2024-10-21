@@ -12,8 +12,8 @@ The documentation is build on [Mintlify](https://www.npmjs.com/package/mintlify)
 
 ```
 # make sure you're in `/docs` folder, where `mint.json` and `package.json` files are
-npm ci
-npm run dev
+npm i -g mintlify
+mintlify dev
 ```
 
 ### 😎 Publishing Changes
