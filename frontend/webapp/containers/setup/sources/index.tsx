@@ -1,18 +1,17 @@
 'use client';
 import React, { useEffect } from 'react';
 import { ROUTES } from '@/utils';
-import { setSources } from '@/store';
+import { useAppStore } from '@/store';
 import { useSectionData } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { KeyvalCard } from '@/design.system';
 import { SourcesSection } from './sources.section';
-import { useDispatch, useSelector } from 'react-redux';
 import { ChooseSourcesHeader } from '@/components/setup/headers';
 export function ChooseSourcesContainer() {
   const router = useRouter();
 
-  const dispatch = useDispatch();
-  const selectedSources = useSelector(({ app }) => app.sources);
+  const selectedSources = useAppStore((state) => state.sources);
+  const setSources = useAppStore((state) => state.setSources);
 
   const { sectionData, setSectionData, totalSelected } = useSectionData({});
 
@@ -23,7 +22,7 @@ export function ChooseSourcesContainer() {
   }
 
   async function onNextClick() {
-    dispatch(setSources(sectionData));
+    setSources(sectionData);
     router.push(ROUTES.CHOOSE_DESTINATION);
   }
 
