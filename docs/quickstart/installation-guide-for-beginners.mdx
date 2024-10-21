@@ -140,8 +140,7 @@ This is the end of the one-time installations and the following steps will be re
     kind create cluster --name odigos-demo
     ```
 
-    This command creates a new Kubernetes cluster named "odigos-demo".<br />
-    You'll see a lot of text appear in the Terminal. This is normal. Wait until you see a message that says "Your Kubernetes control-plane has initialized successfully!" and the command prompt appears again.
+    This command creates a new Kubernetes cluster named "odigos-demo". You'll see a lot of text appear in the Terminal. This is normal. Wait until you see a message that says "Your Kubernetes control-plane has initialized successfully!" and the command prompt appears again.
 
     3. Verify that the cluster is running:
 
@@ -177,19 +176,17 @@ This is the end of the one-time installations and the following steps will be re
 
     You should see a list of services including frontend, inventory, membership, coupon, and pricing.
 
-    ### To access the demo application:
+    4. Set up port forwarding to the frontend service:
 
-      1. Set up port forwarding to the frontend service:
+    ```bash
+    kubectl port-forward svc/frontend 8080:8080
+    ```
 
-        ```bash
-        kubectl port-forward svc/frontend 8080:8080
-        ```
+    This command forwards local port 8080 to port 8080 of the frontend service in the cluster.
 
-      This command forwards local port 8080 to port 8080 of the frontend service in the cluster.
+    5. Open your web browser and navigate to http://localhost:8080
 
-      2. Open your web browser and navigate to http://localhost:8080
-
-        You should now see the demo application running in your browser. You can interact with it to generate some traffic and data for Odigos to observe.
+    You should now see the demo application running in your browser. You can interact with it to generate some traffic and data for Odigos to observe.
 
     ### Setting Up Jaeger as a Destination in Odigos
 
@@ -284,7 +281,10 @@ This is the end of the one-time installations and the following steps will be re
 
     e. Click on one of the destination options (for example, "Jaeger").
 
-    f. Fill in any required information. If you're not sure what to enter, consult the Odigos documentation or ask for help.
+    f. If you're using "Jaeger", fill in the following details:
+
+      - Destination Name: Enter "jaeger-demo" (or any name you prefer)
+      - Endpoint: Enter "jaeger.tracing"
 
     g. Click the blue "Create Destination" button.
 
