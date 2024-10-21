@@ -42,7 +42,6 @@ export const ACTION_DOCS_LINK =
   'https://docs.odigos.io/pipeline/actions/introduction';
 export const ACTION_ITEM_DOCS_LINK = 'https://docs.odigos.io/pipeline/actions';
 
+export { API, QUERIES, SLACK_INVITE_LINK, BASE_URL };
 export const INSTRUMENTATION_RULES_DOCS_LINK =
   'https://docs.odigos.io/pipeline/rules/overview';
-
-export { API, QUERIES, SLACK_INVITE_LINK };
