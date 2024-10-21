@@ -90,6 +90,7 @@ spec:
           kubectl wait --for=condition=ready pod -l app=frontend --timeout=50s
           kubectl wait --for=condition=ready pod -l app=coupon --timeout=50s
           kubectl wait --for=condition=ready pod -l app=inventory --timeout=50s
+          kubectl wait --for=condition=ready pod -l app=pricing --timeout=50s
           kubectl wait --for=condition=ready pod -l app=membership --timeout=50s
     - assert:
         file: assert-apps-installed.yaml
