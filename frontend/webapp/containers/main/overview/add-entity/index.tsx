@@ -1,13 +1,13 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import theme from '@/styles/theme';
-import { DropdownOption } from '@/types';
+import { AddActionModal } from '../../actions';
 import styled, { css } from 'styled-components';
 import { useActualSources, useOnClickOutside } from '@/hooks';
+import { DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
 import { AddSourceModal } from '../../sources/choose-sources/choose-source-modal';
 import { AddDestinationModal } from '../../destinations/add-destination/add-destination-modal';
-import { AddActionModal } from '../../actions';
 
 // Styled components for the dropdown UI
 const Container = styled.div`
@@ -61,9 +61,9 @@ const ButtonText = styled(Text)`
 
 // Default options for the dropdown
 const DEFAULT_OPTIONS: DropdownOption[] = [
-  { id: 'sources', value: 'Source' },
-  { id: 'actions', value: 'Action' },
-  { id: 'destinations', value: 'Destination' },
+  { id: 'source', value: 'Source' },
+  { id: 'action', value: 'Action' },
+  { id: 'destination', value: 'Destination' },
 ];
 
 interface AddEntityButtonDropdownProps {
@@ -121,7 +121,7 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
               onClick={() => handleSelect(option)}
             >
               <Image
-                src={`/icons/overview/${option.id}.svg`}
+                src={`/icons/overview/${option.id}s.svg`}
                 width={16}
                 height={16}
                 alt={`Add ${option.value}`}
@@ -132,17 +132,17 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
         </DropdownListContainer>
       )}
       <AddSourceModal
-        isOpen={currentModal === 'sources'}
+        isOpen={currentModal === OVERVIEW_ENTITY_TYPES.SOURCE}
         onClose={handleCloseModal}
         createSourcesForNamespace={createSourcesForNamespace}
         persistNamespaceItems={persistNamespaceItems}
       />
       <AddDestinationModal
-        isModalOpen={currentModal === 'destinations'}
+        isModalOpen={currentModal === OVERVIEW_ENTITY_TYPES.DESTINATION}
         handleCloseModal={handleCloseModal}
       />
       <AddActionModal
-        isModalOpen={currentModal === 'actions'}
+        isModalOpen={currentModal === OVERVIEW_ENTITY_TYPES.ACTION}
         handleCloseModal={handleCloseModal}
       />
     </Container>
