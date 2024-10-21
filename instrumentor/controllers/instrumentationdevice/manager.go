@@ -2,6 +2,7 @@ package instrumentationdevice
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -11,15 +12,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-type workloadEnvChangePredicate struct {
+func countOdigosResources(resources corev1.ResourceList) int {
+	numOdigosResources := 0
+	for resourceName := range resources {
+		if common.IsResourceNameOdigosInstrumentation(resourceName.String()) {
+			numOdigosResources = numOdigosResources + 1
+		}
+	}
+	return numOdigosResources
+}
+
+type workloadPodTemplatePredicate struct {
 	predicate.Funcs
 }
 
-func (w workloadEnvChangePredicate) Create(e event.CreateEvent) bool {
+func (w workloadPodTemplatePredicate) Create(e event.CreateEvent) bool {
 	return false
 }
 
-func (w workloadEnvChangePredicate) Update(e event.UpdateEvent) bool {
+func (w workloadPodTemplatePredicate) Update(e event.UpdateEvent) bool {
 
 	if e.ObjectOld == nil || e.ObjectNew == nil {
 		return false
@@ -49,16 +60,23 @@ func (w workloadEnvChangePredicate) Update(e event.UpdateEvent) bool {
 				return true
 			}
 		}
+
+		// user might apply a change to workload which will overwrite odigos injected resources
+		prevNumOdigosResources := countOdigosResources(oldPodSpec.Spec.Containers[i].Resources.Limits)
+		newNumOdigosResources := countOdigosResources(newPodSpec.Spec.Containers[i].Resources.Limits)
+		if prevNumOdigosResources != newNumOdigosResources {
+			return true
+		}
 	}
 
 	return false
 }
 
-func (w workloadEnvChangePredicate) Delete(e event.DeleteEvent) bool {
+func (w workloadPodTemplatePredicate) Delete(e event.DeleteEvent) bool {
 	return false
 }
 
-func (w workloadEnvChangePredicate) Generic(e event.GenericEvent) bool {
+func (w workloadPodTemplatePredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
@@ -104,7 +122,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentationdevice-deployment").
 		For(&appsv1.Deployment{}).
-		WithEventFilter(workloadEnvChangePredicate{}).
+		WithEventFilter(workloadPodTemplatePredicate{}).
 		Complete(&DeploymentReconciler{
 			Client: mgr.GetClient(),
 		})
@@ -116,7 +134,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentationdevice-daemonset").
 		For(&appsv1.DaemonSet{}).
-		WithEventFilter(workloadEnvChangePredicate{}).
+		WithEventFilter(workloadPodTemplatePredicate{}).
 		Complete(&DaemonSetReconciler{
 			Client: mgr.GetClient(),
 		})
@@ -127,7 +145,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&appsv1.StatefulSet{}).
-		WithEventFilter(workloadEnvChangePredicate{}).
+		WithEventFilter(workloadPodTemplatePredicate{}).
 		Complete(&StatefulSetReconciler{
 			Client: mgr.GetClient(),
 		})
@@ -143,6 +161,15 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Complete(&InstrumentationRuleReconciler{
 			Client: mgr.GetClient(),
 		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		WebhookManagedBy(mgr).
+		For(&corev1.Pod{}).
+		WithDefaulter(&PodsWebhook{}).
+		Complete()
 	if err != nil {
 		return err
 	}

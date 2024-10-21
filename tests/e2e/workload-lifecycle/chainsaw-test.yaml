@@ -1,0 +1,226 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: workflow-lifecycle
+spec:
+  description: This e2e test runs various scenarios to test the lifecycle of the workload
+  skipDelete: true
+  steps:
+  - name: Build and Load Test App Images
+    try:
+    - script:
+        timeout: 350s
+        content: |
+          docker build -t nodejs-unsupported-version:v0.0.1 -f services/nodejs-http-server/unsupported-version.Dockerfile services/nodejs-http-server
+          kind load docker-image nodejs-unsupported-version:v0.0.1
+          docker build -t nodejs-very-old-version:v0.0.1 -f services/nodejs-http-server/very-old-version.Dockerfile services/nodejs-http-server
+          kind load docker-image nodejs-very-old-version:v0.0.1
+          docker build -t nodejs-minimum-version:v0.0.1 -f services/nodejs-http-server/minimum-version.Dockerfile services/nodejs-http-server
+          kind load docker-image nodejs-minimum-version:v0.0.1
+          docker build -t nodejs-latest-version:v0.0.1 -f services/nodejs-http-server/latest-version.Dockerfile services/nodejs-http-server
+          kind load docker-image nodejs-latest-version:v0.0.1
+          docker build -t nodejs-dockerfile-env:v0.0.1 -f services/nodejs-http-server/dockerfile-env.Dockerfile services/nodejs-http-server
+          kind load docker-image nodejs-dockerfile-env:v0.0.1
+          docker build -t nodejs-manifest-env:v0.0.1 -f services/nodejs-http-server/manifest-env.Dockerfile services/nodejs-http-server
+          kind load docker-image nodejs-manifest-env:v0.0.1
+          
+          docker build -t cpp-http-server:v0.0.1 -f services/cpp-http-server/Dockerfile services/cpp-http-server
+          kind load docker-image cpp-http-server:v0.0.1
+
+          docker build -t java-supported-version:v0.0.1 -f services/java-http-server/java-supported-version.Dockerfile services/java-http-server
+          kind load docker-image java-supported-version:v0.0.1
+          docker build -t java-azul:v0.0.1 -f services/java-http-server/java-azul.Dockerfile services/java-http-server
+          kind load docker-image java-azul:v0.0.1
+          docker build -t java-supported-docker-env:v0.0.1 -f services/java-http-server/java-supported-docker-env.Dockerfile services/java-http-server
+          kind load docker-image java-supported-docker-env:v0.0.1
+          docker build -t java-supported-manifest-env:v0.0.1 -f services/java-http-server/java-supported-manifest-env.Dockerfile services/java-http-server
+          kind load docker-image java-supported-manifest-env:v0.0.1
+          docker build -t java-latest-version:v0.0.1 -f services/java-http-server/java-latest-version.Dockerfile services/java-http-server
+          kind load docker-image java-latest-version:v0.0.1
+          docker build -t java-old-version:v0.0.1 -f services/java-http-server/java-old-version.Dockerfile services/java-http-server
+          kind load docker-image java-old-version:v0.0.1
+
+          docker build -t python-latest-version:v0.0.1 -f services/python-http-server/Dockerfile.python-latest services/python-http-server
+          kind load docker-image python-latest-version:v0.0.1
+          docker build -t python-alpine:v0.0.1 -f services/python-http-server/Dockerfile.python-alpine services/python-http-server
+          kind load docker-image python-alpine:v0.0.1
+          docker build -t python-not-supported:v0.0.1 -f services/python-http-server/Dockerfile.python-not-supported-version services/python-http-server
+          kind load docker-image python-not-supported:v0.0.1
+          docker build -t python-min-version:v0.0.1 -f services/python-http-server/Dockerfile.python-min-version services/python-http-server
+          kind load docker-image python-min-version:v0.0.1
+
+  - name: Prepare destination
+    try:
+    - script:
+        timeout: 60s
+        content: |
+            helm repo add grafana https://grafana.github.io/helm-charts
+            helm repo update
+            helm install e2e-tests grafana/tempo \
+            -n traces --create-namespace \
+            --set tempo.storage.trace.block.version=vParquet4 \
+            --set tempo.ingester.trace_idle_period=5s \
+            --set tempo.ingester.max_block_duration=20s \
+            --version 1.10.1
+    - assert:
+        file: assert-tempo-running.yaml
+  - name: Wait for destination to be ready
+    try:
+      - script:
+          timeout: 60s
+          content: ../../common/wait_for_dest.sh
+  - name: Install Odigos
+    try:
+    - script:
+        content: ../../../cli/odigos install --version e2e-test
+        timeout: 60s
+    - assert:
+        file: assert-odigos-installed.yaml
+  - name: '01 - Install Test Apps'
+    try:
+    - apply:
+        file: 01-install-test-apps.yaml
+
+  - name: '01 - Assert Apps installed'
+    try:
+    - assert:
+        file: 01-assert-apps-installed.yaml
+
+  - name: '01 Instrument Namespaces'
+    try:  
+    - apply:
+        file: 01-instrument-ns.yaml
+
+  - name: '01 Assert runtime detection'
+    try: 
+    - assert:
+        file: 01-assert-runtime-detected.yaml
+
+  - name: '01 Add Destination'
+    try:
+    - apply:
+        file: 01-add-destination.yaml
+
+  - name: "01 Assert Pipeline"
+    try:
+    - assert:
+        file: 01-assert-pipeline.yaml
+
+  - name: "01 Assert Instrumented"
+    try:
+    - assert:
+        file: 01-assert-instrumented.yaml
+
+  - name: "01 Assert Workloads"
+    try:
+    - assert:
+        file: 01-assert-workloads.yaml
+
+  - name: '01 - Generate Traffic'
+    # at this point, we know the expected services are instrumented because we asserted the instrumentation instance
+    # send traffic to all services to verify they are working as expected and verify traces for instrumented ones
+    try:
+    - script:
+        timeout: 200s
+        content: |
+          set -e
+          
+          NAMESPACE="default"
+          DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
+          
+          
+          for DEPLOYMENT in $DEPLOYMENTS; do
+          echo "Waiting for deployment $DEPLOYMENT to finish rollout..."
+          kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE
+          if [ $? -ne 0 ]; then
+          echo "Deployment $DEPLOYMENT failed to finish rollout."
+          exit 1
+          fi
+          done
+          
+          
+          # Apply the job
+          kubectl apply -f 01-generate-traffic.yaml
+
+          # Wait for the job to complete
+          job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+          kubectl wait --for=condition=complete job/$job_name
+
+          # Delete the job
+          kubectl delete -f 01-generate-traffic.yaml
+          
+         
+    
+  - name: '01 - Wait for Traces'
+    try:
+    - script:
+        timeout: 60s
+        content: |
+          sleep 20
+          while true; do
+            ../../common/traceql_runner.sh 01-wait-for-trace.yaml
+            if [ $? -eq 0 ]; then
+              break
+            else
+              sleep 3
+              ../../common/flush_traces.sh
+            fi
+          done
+
+  - name: '02 - Update workload manifest template spec'
+    try:
+    - apply:
+        file: 02-update-workload-manifests.yaml
+    - script:
+        timeout: 60s
+        content: |
+          # this is temporary and is here to trigger runtime detection after the language-change deployment is updated to simulate this scenario.
+          # after the migration to the new runtime detection mechanism, we will no longer need to restart the instrumentor.
+          kubectl rollout restart deployment odigos-instrumentor -n odigos-system
+          sleep 30
+    - assert:
+        file: 02-assert-workload-update.yaml
+  
+  - name: '02 - Generate Traffic'
+    try:
+    - script:
+        timeout: 200s
+        content: |
+          set -e
+          
+          NAMESPACE="default"
+          DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
+          
+          
+          for DEPLOYMENT in $DEPLOYMENTS; do
+          echo "Waiting for deployment $DEPLOYMENT to finish rollout..."
+          kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE
+          if [ $? -ne 0 ]; then
+          echo "Deployment $DEPLOYMENT failed to finish rollout."
+          exit 1
+          fi
+          done
+
+
+          kubectl apply -f 01-generate-traffic.yaml
+          job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+          kubectl wait --for=condition=complete job/$job_name
+          kubectl delete -f 01-generate-traffic.yaml
+
+  - name: '02 - Wait for Traces'
+    try:
+    - script:
+        timeout: 60s
+        content: |
+          
+          sleep 20
+
+          while true; do
+            ../../common/traceql_runner.sh 02-wait-for-trace.yaml
+            if [ $? -eq 0 ]; then
+              break
+            else
+              sleep 3
+              ../../common/flush_traces.sh
+            fi
+          done

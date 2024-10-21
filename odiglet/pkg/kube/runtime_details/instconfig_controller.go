@@ -19,12 +19,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-type InstrumentationConfigReconciler struct {
+// replaced by odiglet/pkg/kube/runtime_details/instrumentationconfigs_controller.go
+// which does not rely on the RuntimeDetailsInvalidated flag
+// left here until the migration is complete
+// Deprecated: the new runtime inspection logic is found in odiglet/pkg/kube/runtime_details/instrumentationconfigs_controller.go
+type DeprecatedInstrumentationConfigReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (i *DeprecatedInstrumentationConfigReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := log.FromContext(ctx)
 	var instConfig odigosv1.InstrumentationConfig
 	err := i.Get(ctx, request.NamespacedName, &instConfig)

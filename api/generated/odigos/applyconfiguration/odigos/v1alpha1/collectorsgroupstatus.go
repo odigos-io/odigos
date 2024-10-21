@@ -19,13 +19,15 @@ package v1alpha1
 
 import (
 	common "github.com/odigos-io/odigos/common"
+	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
 // CollectorsGroupStatusApplyConfiguration represents a declarative configuration of the CollectorsGroupStatus type for use
 // with apply.
 type CollectorsGroupStatusApplyConfiguration struct {
-	Ready           *bool                        `json:"ready,omitempty"`
-	ReceiverSignals []common.ObservabilitySignal `json:"receiverSignals,omitempty"`
+	Ready           *bool                            `json:"ready,omitempty"`
+	ReceiverSignals []common.ObservabilitySignal     `json:"receiverSignals,omitempty"`
+	Conditions      []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
 // CollectorsGroupStatusApplyConfiguration constructs a declarative configuration of the CollectorsGroupStatus type for use with
@@ -48,6 +50,19 @@ func (b *CollectorsGroupStatusApplyConfiguration) WithReady(value bool) *Collect
 func (b *CollectorsGroupStatusApplyConfiguration) WithReceiverSignals(values ...common.ObservabilitySignal) *CollectorsGroupStatusApplyConfiguration {
 	for i := range values {
 		b.ReceiverSignals = append(b.ReceiverSignals, values[i])
+	}
+	return b
+}
+
+// WithConditions adds the given value to the Conditions field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Conditions field.
+func (b *CollectorsGroupStatusApplyConfiguration) WithConditions(values ...*v1.ConditionApplyConfiguration) *CollectorsGroupStatusApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithConditions")
+		}
+		b.Conditions = append(b.Conditions, *values[i])
 	}
 	return b
 }

@@ -15,46 +15,53 @@ RUN echo "VERSION = \"$ODIGOS_VERSION\";" > /python-instrumentation/workspace/in
 # The implemntation is based on the following blog post:
 # https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
 
-# The first build stage 'nodejs-agent-native-community-clone' clones the agent sources from github main branch.
-FROM alpine AS nodejs-agent-native-community-clone
+# The first build stage 'nodejs-agent-clone' clones the agent sources from github main branch.
+FROM alpine AS nodejs-agent-clone
 RUN apk add git
 WORKDIR /src
 ARG NODEJS_AGENT_VERSION=main
 RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentelemetry-node && git checkout $NODEJS_AGENT_VERSION
 
-# The second build stage 'nodejs-agent-native-community-src' prepares the actual code we are going to compile and embed in odiglet.
-# By default, it uses the previous 'nodejs-agent-native-community-src' stage, but one can override it by setting the 
-# --build-context nodejs-agent-native-community-src=../opentelemetry-node flag in the docker build command.
+# The second build stage 'nodejs-agent-src' prepares the actual code we are going to compile and embed in odiglet.
+# By default, it uses the previous 'nodejs-agent-src' stage, but one can override it by setting the 
+# --build-context nodejs-agent-src=../opentelemetry-node flag in the docker build command.
 # This allows us to nobe the agent sources and test changes during development.
 # The output of this stage is the resolved source code to be used in the next stage.
-FROM scratch AS nodejs-agent-native-community-src
-COPY --from=nodejs-agent-native-community-clone /src/opentelemetry-node /
+FROM scratch AS nodejs-agent-src
+COPY --from=nodejs-agent-clone /src/opentelemetry-node /
 
-# The third build stage 'nodejs-agent-native-community-builder' compiles the agent sources and prepares the final output.
-# it COPY from the previous 'nodejs-agent-native-community-src' stage, so it can be used with either the upstream or local sources.
+# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for 
+# being dependency of the native-community agent.
+FROM node:18 AS nodejs-agent-build
+ARG ODIGOS_VERSION
+WORKDIR /opentelemetry-node
+COPY --from=nodejs-agent-src package.json yarn.lock ./
+# install dependencies with dev so we can build the agent
+RUN yarn --frozen-lockfile
+COPY --from=nodejs-agent-src / .
+RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
+RUN yarn compile
+
+
+# The fourth step 'nodejs-agent-native-community-src' prepares the agent sources for the native-community agent.
+# it COPY the nodejs agent source from 'nodejs-agent-build' stage and then build the agent in the 'agents/nodejs-native-community' directory.
 # The output of this stage is the compiled agent code in:
 #    - package source code in '/nodejs-instrumentation/build/src' directory.
 #    - all required dependencies in '/nodejs-instrumentation/prod_node_modules' directory.
 # These artifacts are later copied into the odiglet final image to be mounted into auto-instrumented pods at runtime.
 FROM node:18 AS nodejs-agent-native-community-builder
 ARG ODIGOS_VERSION
-WORKDIR /nodejs-instrumentation
-COPY --from=nodejs-agent-native-community-src /package.json /yarn.lock ./
+WORKDIR /repos
+COPY ./agents/nodejs-native-community ./odigos/agents/nodejs-native-community
+COPY --from=nodejs-agent-build /opentelemetry-node opentelemetry-node
 # prepare the production node_modules content in a separate directory
-RUN yarn --production --frozen-lockfile
-RUN mv node_modules ./prod_node_modules
-# install all dependencies including dev so we can yarn compile
-RUN yarn --frozen-lockfile
-COPY --from=nodejs-agent-native-community-src / ./
-# inject the actual version into the agent code
-RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
-RUN yarn compile
+RUN yarn --cwd ./odigos/agents/nodejs-native-community --production --frozen-lockfile
 
 
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
-ARG DOTNET_OTEL_VERSION=v1.7.0
+ARG DOTNET_OTEL_VERSION=v1.8.0
 ARG TARGETARCH
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         echo "arm64" > /tmp/arch_suffix; \
@@ -86,7 +93,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 WORKDIR /instrumentations
 
 # Java
-ARG JAVA_OTEL_VERSION=v2.7.0
+ARG JAVA_OTEL_VERSION=v2.8.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
@@ -94,8 +101,7 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
-COPY --from=nodejs-agent-native-community-builder /nodejs-instrumentation/build/src /instrumentations/nodejs
-COPY --from=nodejs-agent-native-community-builder /nodejs-instrumentation/prod_node_modules /instrumentations/nodejs/node_modules
+COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-native-community /instrumentations/nodejs
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet

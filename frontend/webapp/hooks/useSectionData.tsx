@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState } from 'react';
 
 export function useSectionData(initialData) {
   const [sectionData, setSectionData] = useState(initialData);
@@ -7,9 +7,12 @@ export function useSectionData(initialData) {
     let total = 0;
     for (const key in sectionData) {
       const apps = sectionData[key]?.objects;
-      const counter = apps?.filter((item) => item.selected)?.length;
+      const counter = apps?.filter(
+        (item) => item.selected && !item.app_instrumentation_labeled
+      )?.length;
       total += counter;
     }
+
     return total;
   }, [JSON.stringify(sectionData)]);
 

@@ -13,7 +13,7 @@
     "@apollo/client": "^3.11.0-rc.2",
     "@apollo/experimental-nextjs-app-support": "^0.11.3",
     "@focus-reactive/react-yaml": "^1.1.2",
-    "@keyval-dev/design-system": "^2.3.1",
+    "@keyval-dev/design-system": "^2.3.3",
     "@next/font": "^13.4.7",
     "@reduxjs/toolkit": "^2.2.1",
     "@svgr/webpack": "^6.2.1",

@@ -18,8 +18,9 @@ import (
 )
 
 type SourceLanguage struct {
-	ContainerName string `json:"container_name"`
-	Language      string `json:"language"`
+	ContainerName  string `json:"container_name"`
+	Language       string `json:"language"`
+	RuntimeVersion string `json:"runtime_version,omitempty"`
 }
 
 type InstrumentedApplicationDetails struct {
@@ -387,8 +388,9 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 
 	for _, language := range app.Spec.RuntimeDetails {
 		source.IaDetails.Languages = append(source.IaDetails.Languages, SourceLanguage{
-			ContainerName: language.ContainerName,
-			Language:      string(language.Language),
+			ContainerName:  language.ContainerName,
+			Language:       string(language.Language),
+			RuntimeVersion: language.RuntimeVersion,
 		})
 	}
 	return source

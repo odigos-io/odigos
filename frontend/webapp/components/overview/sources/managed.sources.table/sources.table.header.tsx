@@ -63,6 +63,7 @@ interface ActionsTableHeaderProps {
   filterSourcesByLanguage?: (languages: string[]) => void;
   filterByConditionStatus?: (status: 'All' | 'True' | 'False') => void;
   filterByConditionMessage: (message: string[]) => void;
+  currentItems: ManagedSource[];
 }
 
 export function SourcesTableHeader({
@@ -77,6 +78,7 @@ export function SourcesTableHeader({
   onSelectedCheckboxChange,
   filterByConditionStatus,
   filterByConditionMessage,
+  currentItems,
 }: ActionsTableHeaderProps) {
   const [currentSortId, setCurrentSortId] = useState('');
   const [groupNamespaces, setGroupNamespaces] = useState<string[]>([]);
@@ -107,7 +109,7 @@ export function SourcesTableHeader({
     showSourcesWithIssues
       ? filterByConditionStatus('False')
       : filterByConditionStatus('All');
-  }, [showSourcesWithIssues, data]);
+  }, [showSourcesWithIssues]);
 
   useEffect(() => {
     if (namespaces) {
@@ -383,7 +385,10 @@ export function SourcesTableHeader({
     <StyledThead>
       <StyledMainTh>
         <KeyvalCheckbox
-          value={selectedCheckbox.length === data.length && data.length > 0}
+          value={
+            selectedCheckbox.length === currentItems.length &&
+            currentItems.length > 0
+          }
           onChange={() => onSelectedCheckboxChange(SELECT_ALL_CHECKBOX)}
         />
         <UnFocusSourcesIcon size={18} />

@@ -94,7 +94,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Depl
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									"cpu":    resource.MustParse("500m"),
-									"memory": *resource.NewQuantity(134217728, resource.BinarySI),
+									"memory": *resource.NewQuantity(536870912, resource.BinarySI),
 								},
 								Requests: corev1.ResourceList{
 									"cpu":    resource.MustParse("10m"),
@@ -165,6 +165,31 @@ func NewUIRole(ns string) *rbacv1.Role {
 					"pods",
 				},
 			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"replicasets",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"patch",
+					"delete",
+					"create",
+					"update",
+				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{
+					"instrumentaitonrules",
+				},
+			},
 		},
 	}
 }
@@ -213,6 +238,11 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
 				Verbs:     []string{"get", "list", "watch", "patch", "create", "delete", "update"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list"},
 			},
 			{
 				APIGroups: []string{"apps"},

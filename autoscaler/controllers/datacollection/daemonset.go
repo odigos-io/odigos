@@ -16,6 +16,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,10 +57,20 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 
 	// Finish the function execution after the delay
 	time.AfterFunc(delay, func() {
+		var err error
+		logger := log.FromContext(ctx)
+
 		dm.mu.Lock()
 		defer dm.mu.Unlock()
 		defer dm.finishProgress()
-		var err error
+		defer func() {
+			statusPatchString := common.GetCollectorsGroupDeployedConditionsPatch(err)
+			statusErr := c.Status().Patch(ctx, collection, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
+			if statusErr != nil {
+				logger.Error(statusErr, "Failed to patch collectors group status")
+				// just log the error, do not fail the reconciliation
+			}
+		}()
 
 		for i := 0; i < retries; i++ {
 			_, err = syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version)
@@ -67,6 +78,7 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 				return
 			}
 		}
+
 		log.FromContext(ctx).Error(err, "Failed to sync DaemonSet")
 	})
 }

@@ -12,3 +12,4 @@ export * from './compute-platform';
 export * from './useOverviewMetrics';
 export * from './overview';
 export * from './common';
+export * from './instrumentation-rules';

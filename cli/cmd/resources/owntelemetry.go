@@ -250,6 +250,14 @@ func int64Ptr(n int64) *int64 {
 	return &n
 }
 
+func ptrString(s string) *string {
+	return &s
+}
+
+func ptrGeneric[T any](v T) *T {
+	return &v
+}
+
 type ownTelemetryResourceManager struct {
 	client        *kube.Client
 	ns            string

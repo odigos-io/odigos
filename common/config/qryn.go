@@ -3,16 +3,30 @@ package config
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/url"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 )
 
 const (
-	qrynHost      = "QRYN_URL"
-	qrynAPIKey    = "QRYN_API_KEY"
-	qrynAPISecret = "${QRYN_API_SECRET}"
+	qrynHost                      = "QRYN_URL"
+	qrynAPIKey                    = "QRYN_API_KEY"
+	qrynAddExporterName           = "QRYN_ADD_EXPORTER_NAME"
+	resourceToTelemetryConversion = "QRYN_RESOURCE_TO_TELEMETRY_CONVERSION"
+	qrynSecretsOptional           = "__QRYN_SECRETS_OPTIONAL__"
+	qrynPasswordFieldName         = "__QRYN_PASSWORD_FIELD_NAME__"
 )
+
+type qrynConf struct {
+	host                          string
+	key                           string
+	addExporterName               bool
+	resourceToTelemetryConversion bool
+	secretsOptional               bool
+	passwordFieldName             string
+}
 
 type Qryn struct{}
 
@@ -21,85 +35,147 @@ func (g *Qryn) DestType() common.DestinationType {
 }
 
 func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-	if !g.requiredVarsExists(dest) {
-		return errors.New("Qryn config is missing required variables")
-	}
-	apiKey, apiSecret := g.authData(dest)
-	if apiKey == "" || apiSecret == "" {
-		return errors.New("Qryn API key or secret not set")
+	conf := g.getConfigs(dest)
+	err := g.checkConfigs(&conf)
+	if err != nil {
+		return err
 	}
 
-	baseURL, err := parseURL(dest.GetConfig()[qrynHost], apiKey, apiSecret)
+	passwordPlaceholder := "${QRYN_API_SECRET}"
+	if conf.passwordFieldName != "" {
+		passwordPlaceholder = "${" + conf.passwordFieldName + "}"
+	}
+	baseURL, err := parseURL(dest.GetConfig()[qrynHost], conf.key, passwordPlaceholder)
 	if err != nil {
-		return errors.New("Qryn API host is not a valid")
+		return errors.Join(err, errors.New("invalid qryn endpoint. gateway will not be configured with qryn"))
 	}
 
 	if isMetricsEnabled(dest) {
 		rwExporterName := "prometheusremotewrite/qryn-" + dest.GetID()
 		currentConfig.Exporters[rwExporterName] = GenericMap{
 			"endpoint": fmt.Sprintf("%s/api/v1/prom/remote/write", baseURL),
+			"resource_to_telemetry_conversion": GenericMap{
+				"enabled": dest.GetConfig()[resourceToTelemetryConversion] == "Yes",
+			},
 		}
 		metricsPipelineName := "metrics/qryn-" + dest.GetID()
-		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
+		ppl := Pipeline{
 			Exporters: []string{rwExporterName},
 		}
+		g.maybeAddExporterName(
+			&conf,
+			currentConfig,
+			"resource/qryn-metrics-name-"+dest.GetID(),
+			"odigos-qryn-metrics",
+			&ppl,
+		)
+		currentConfig.Service.Pipelines[metricsPipelineName] = ppl
+
 	}
 
+	otlpHttpExporterName := ""
+	otlpHttpExporter := GenericMap{}
 	if isTracingEnabled(dest) {
-		exporterName := "otlp/qryn-" + dest.GetID()
-		currentConfig.Exporters[exporterName] = GenericMap{
-			"endpoint": fmt.Sprintf("%s/tempo/spans", baseURL),
-		}
+		otlpHttpExporterName = "otlphttp/qryn-" + dest.GetID()
+		otlpHttpExporter["traces_endpoint"] = fmt.Sprintf("%s/v1/traces", baseURL)
+		otlpHttpExporter["encoding"] = "proto"
+		otlpHttpExporter["compression"] = "none"
 		tracesPipelineName := "traces/qryn-" + dest.GetID()
-		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
-			Exporters: []string{exporterName},
+		ppl := Pipeline{
+			Exporters: []string{otlpHttpExporterName},
 		}
+		g.maybeAddExporterName(
+			&conf,
+			currentConfig,
+			"resource/qryn-traces-name-"+dest.GetID(),
+			"odigos-qryn-traces",
+			&ppl,
+		)
+		currentConfig.Service.Pipelines[tracesPipelineName] = ppl
+
 	}
 
 	if isLoggingEnabled(dest) {
-		lokiExporterName := "loki/qryn-" + dest.GetID()
-		currentConfig.Exporters[lokiExporterName] = GenericMap{
-			"endpoint": fmt.Sprintf("%s/loki/api/v1/push", baseURL),
-			"labels": GenericMap{
-				"attributes": GenericMap{
-					"k8s.container.name": "k8s_container_name",
-					"k8s.pod.name":       "k8s_pod_name",
-					"k8s.namespace.name": "k8s_namespace_name",
-				},
-			},
-		}
+		otlpHttpExporterName = "otlphttp/qryn-" + dest.GetID()
+		otlpHttpExporter["logs_endpoint"] = fmt.Sprintf("%s/v1/logs", baseURL)
 		logsPipelineName := "logs/qryn-" + dest.GetID()
-		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
-			Exporters: []string{lokiExporterName},
+		otlpHttpExporter["encoding"] = "proto"
+		otlpHttpExporter["compression"] = "none"
+		ppl := Pipeline{
+			Exporters: []string{otlpHttpExporterName},
 		}
+		g.maybeAddExporterName(
+			&conf,
+			currentConfig,
+			"resource/qryn-logs-name-"+dest.GetID(),
+			"odigos-qryn-logs",
+			&ppl,
+		)
+		currentConfig.Service.Pipelines[logsPipelineName] = ppl
+
+	}
+
+	if otlpHttpExporterName != "" {
+		currentConfig.Exporters[otlpHttpExporterName] = otlpHttpExporter
 	}
 
 	return nil
 }
 
-func (g *Qryn) requiredVarsExists(dest ExporterConfigurer) bool {
-	if _, ok := dest.GetConfig()[qrynHost]; !ok {
-		return false
+func (g *Qryn) getConfigs(dest ExporterConfigurer) qrynConf {
+	return qrynConf{
+		host:                          dest.GetConfig()[qrynHost],
+		key:                           dest.GetConfig()[qrynAPIKey],
+		addExporterName:               dest.GetConfig()[qrynAddExporterName] == "Yes",
+		resourceToTelemetryConversion: dest.GetConfig()[resourceToTelemetryConversion] == "Yes",
+		secretsOptional:               dest.GetConfig()[qrynSecretsOptional] == "1",
+		passwordFieldName:             dest.GetConfig()[qrynPasswordFieldName],
 	}
-	return true
 }
 
-func (g *Qryn) authData(dest ExporterConfigurer) (string, string) {
-	var key string
-	if k, ok := dest.GetConfig()[qrynAPIKey]; ok {
-		key = k
+func (g *Qryn) checkConfigs(conf *qrynConf) error {
+	if conf.host == "" {
+		return errors.New("missing URL")
 	}
-	return key, qrynAPISecret
+	if !conf.secretsOptional && conf.key == "" {
+		return errors.New("missing API key")
+	}
+	return nil
 }
 
 func parseURL(rawURL, apiKey, apiSecret string) (string, error) {
+	rawURL = strings.TrimSpace(rawURL)
+	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
+		rawURL = "https://" + rawURL
+	}
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return "", err
 	}
-	if u.Scheme == "" {
-		return parseURL(fmt.Sprintf("https://%s", rawURL), apiKey, apiSecret)
+	apiSecretPlaceholder := fmt.Sprintf("____%d_SECRET_PLACEHOLDER_%[1]d____", rand.Uint64())
+	if apiKey != "" {
+		u.User = url.UserPassword(apiKey, apiSecretPlaceholder)
 	}
+	res := u.String()
+	if apiKey != "" {
+		res = strings.ReplaceAll(res, ":"+apiSecretPlaceholder+"@", ":"+apiSecret+"@")
+	}
+	return res, nil
+}
 
-	return fmt.Sprintf("https://%s:%s@%s", apiKey, apiSecret, u.Host), nil
+func (g *Qryn) maybeAddExporterName(conf *qrynConf, currentConfig *Config, processorName string, name string,
+	pipeline *Pipeline) {
+	if !conf.addExporterName {
+		return
+	}
+	currentConfig.Processors[processorName] = GenericMap{
+		"attributes": []GenericMap{
+			{
+				"action": "upsert",
+				"key":    "qryn_exporter",
+				"value":  name,
+			},
+		},
+	}
+	pipeline.Processors = append(pipeline.Processors, processorName)
 }

@@ -257,7 +257,7 @@ export function CreateConnectionForm({
               <KeyvalLoader width={9} height={9} />
             ) : isConnectionTested.enabled === null ? (
               <KeyvalText color={theme.text.secondary} size={14} weight={600}>
-                {'Check Connection'}
+                {'Test Connection'}
               </KeyvalText>
             ) : isConnectionTested.enabled ? (
               <KeyvalText color={theme.colors.success} size={14} weight={600}>

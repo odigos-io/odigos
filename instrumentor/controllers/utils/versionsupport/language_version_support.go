@@ -3,6 +3,7 @@ package versionsupport
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -69,6 +70,10 @@ func getRuntimeVersionCheck(language common.ProgrammingLanguage) RuntimeVersionC
 		return &NginxVersionCheck{}
 	case common.MySQLProgrammingLanguage:
 		return &MySQLVersionCheck{}
+	case common.UnknownProgrammingLanguage:
+		return &UnknownVersionCheck{}
+	case common.IgnoredProgrammingLanguage:
+		return &IgnoredVersionCheck{}
 	default:
 		return nil
 	}

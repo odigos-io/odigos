@@ -7,6 +7,34 @@ updates:
       day: sunday
       interval: weekly
   - package-ecosystem: gomod
+    directories:
+      - /api
+      - /autoscaler
+      - /cli
+      - /common
+      - /frontend
+      - /instrumentor
+      - /odiglet
+      - /opampserver
+    schedule:
+      day: monday
+      interval: weekly
+    groups:
+      otel-dependencies:
+        patterns:
+          - "go.opentelemetry.io*"
+        exclude-patterns: # go auto instrumentations update is manually
+          - "go.opentelemetry.io/auto"
+  - package-ecosystem: gomod
+    directory: /odiglet
+    schedule:
+      day: monday
+      interval: weekly
+    groups:
+      go-auto-instrumentations:
+        patterns:
+          - "go.opentelemetry.io/auto"
+  - package-ecosystem: gomod
     directory: /autoscaler
     schedule:
       day: sunday
@@ -16,9 +44,6 @@ updates:
         patterns:
           - "k8s.io*"
           - "sigs.k8s.io*"
-      otel-dependencies:
-        patterns:
-          - "go.opentelemetry.io*"
   - package-ecosystem: gomod
     directory: /odiglet
     schedule:
@@ -29,9 +54,6 @@ updates:
         patterns:
           - "k8s.io*"
           - "sigs.k8s.io*"
-      otel-dependencies:
-        patterns:
-          - "go.opentelemetry.io*"
   - package-ecosystem: gomod
     directory: /scheduler
     schedule:
@@ -42,9 +64,6 @@ updates:
         patterns:
           - "k8s.io*"
           - "sigs.k8s.io*"
-      otel-dependencies:
-        patterns:
-          - "go.opentelemetry.io*"
   - package-ecosystem: gomod
     directory: /cli
     schedule:
@@ -55,9 +74,6 @@ updates:
         patterns:
           - "k8s.io*"
           - "sigs.k8s.io*"
-      otel-dependencies:
-        patterns:
-          - "go.opentelemetry.io*"
   - package-ecosystem: gomod
     directory: /instrumentor
     schedule:
@@ -68,9 +84,6 @@ updates:
         patterns:
           - "k8s.io*"
           - "sigs.k8s.io*"
-      otel-dependencies:
-        patterns:
-          - "go.opentelemetry.io*"
   - package-ecosystem: pip
     directory: /odiglet/agents/python
     schedule:

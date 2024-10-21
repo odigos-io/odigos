@@ -26,6 +26,16 @@ var (
 		ShortDescription: "Collect any payload from the cluster where supported with default settings",
 		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
 	}
+	dbPayloadCollectionProfile = Profile{
+		ProfileName:      common.ProfileName("db-payload-collection"),
+		ShortDescription: "Collect db payload from the cluster where supported with default settings",
+		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
+	}
+	queryOperationDetector = Profile{
+		ProfileName:      common.ProfileName("query-operation-detector"),
+		ShortDescription: "Detect the SQL operation name from the query text",
+		ClientObject:     &odigosv1alpha1.Processor{},
+	}
 	semconvUpgraderProfile = Profile{
 		ProfileName:      common.ProfileName("semconv"),
 		ShortDescription: "Upgrade and align some attribute names to a newer version of the OpenTelemetry semantic conventions",
@@ -55,11 +65,10 @@ var (
 		ProfileName:      common.ProfileName("code-attributes"),
 		ShortDescription: "Record span attributes in 'code' namespace where supported",
 	}
-
 	kratosProfile = Profile{
 		ProfileName:      common.ProfileName("kratos"),
-		ShortDescription: "Bundle profile that includes full-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes",
-		Dependencies:     []common.ProfileName{"full-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes"},
+		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes, query-operation-detector",
+		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector"},
 	}
 )
 
@@ -68,7 +77,7 @@ func GetAvailableCommunityProfiles() []Profile {
 }
 
 func GetAvailableOnPremProfiles() []Profile {
-	return append([]Profile{fullPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile, javaNativeInstrumentationsProfile, kratosProfile},
+	return append([]Profile{fullPayloadCollectionProfile, dbPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile, javaNativeInstrumentationsProfile, kratosProfile, queryOperationDetector},
 		GetAvailableCommunityProfiles()...)
 }
 

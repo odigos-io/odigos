@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/scheduler/controllers/collectorgroups"
@@ -87,9 +88,9 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	var instApps odigosv1.InstrumentedApplicationList
+	var instApps odigosv1.InstrumentationConfigList
 	if err = r.List(ctx, &instApps); err != nil {
-		logger.Error(err, "failed to list InstrumentedApps")
+		logger.Error(err, "failed to list InstrumentationConfigs")
 		return ctrl.Result{}, err
 	}
 

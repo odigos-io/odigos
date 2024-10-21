@@ -5,3 +5,4 @@ export * from './sources';
 export * from './common';
 export * from './compute-platform';
 export * from './namespace';
+export * from './instrumentation-rules';

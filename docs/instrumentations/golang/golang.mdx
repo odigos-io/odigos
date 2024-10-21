@@ -9,6 +9,10 @@ Odigos uses the official [opentelemetry-go-instrumentation](https://github.com/o
 
 - Go runtime versions **1.17** and above are supported.
 
+<Info>
+  Odigos enterprise data collection is done using eBPF, so Odigos requires, at minimum, platforms that have underlying Linux kernel versions of 5.4.0.
+</Info>
+
 ## Traces
 
 Odigos will automatically instrument your golang services to record and collect spans for distributed tracing, by utilizing the OpenTelemetry go official auto Instrumentation Libraries.
