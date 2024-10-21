@@ -93,7 +93,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 WORKDIR /instrumentations
 
 # Java
-ARG JAVA_OTEL_VERSION=v2.8.0
+ARG JAVA_OTEL_VERSION=v2.9.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
