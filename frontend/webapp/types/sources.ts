@@ -74,6 +74,23 @@ export interface SelectedSources {
   };
 }
 
+export type SourceContainer = {
+  containerName: string;
+  language: string;
+};
+
+export type K8sActualSource = {
+  name: string;
+  kind: string;
+  namespace: string;
+  reportedName: string;
+  numberOfInstances: number;
+  selected?: boolean;
+  instrumentedApplicationDetails: {
+    containers: Array<SourceContainer>;
+    conditions: Array<Condition>;
+  };
+};
 export interface InstrumentationConfig {
   optionKey: string;
   optionValueBoolean?: boolean;
@@ -86,3 +103,19 @@ export interface InstrumentationConfigLibrary {
   language: string;
   selected?: boolean;
 }
+
+export type WorkloadId = {
+  kind: string;
+  name: string;
+  namespace: string;
+};
+
+export interface PatchSourceRequestInput {
+  reportedName?: string;
+}
+
+export type PersistSourcesArray = {
+  kind: string;
+  name: string;
+  selected: boolean;
+};

@@ -1,0 +1,264 @@
+enum ComputePlatformType {
+  K8S
+  VM
+}
+
+enum K8sResourceKind {
+  Deployment
+  DaemonSet
+  StatefulSet
+}
+
+enum ConditionStatus {
+  True
+  False
+  Unknown
+}
+
+enum ProgrammingLanguage {
+  Unspecified
+  Java
+  Go
+  JavaScript
+  Python
+  DotNet
+}
+
+enum SignalType {
+  TRACES
+  METRICS
+  LOGS
+}
+
+enum SpanKind {
+  Internal
+  Server
+  Client
+  Producer
+  Consumer
+}
+
+enum InstallationStatus {
+  NEW
+  APPS_SELECTED
+  FINISHED
+}
+
+type SourceContainerRuntimeDetails {
+  containerName: String!
+  language: String!
+}
+
+type InstrumentationOption {
+  optionKey: String!
+  spanKind: SpanKind!
+}
+
+type InstrumentationLibrary {
+  libraryName: String!
+  options: [InstrumentationOption!]!
+}
+
+type InstrumentedApplicationDetails {
+  containers: [SourceContainerRuntimeDetails!]
+  conditions: [Condition!]
+  instrumentationOptions: [InstrumentationLibrary!]!
+}
+
+type Condition {
+  type: String!
+  status: ConditionStatus!
+  lastTransitionTime: String
+  reason: String
+  message: String
+}
+
+type K8sActualNamespace {
+  name: String!
+  instrumentationLabelEnabled: Boolean
+  k8sActualSources(instrumentationLabeled: Boolean): [K8sActualSource]!
+}
+
+input K8sDesiredNamespaceInput {
+  autoInstrument: Boolean
+}
+
+input K8sNamespaceId {
+  name: String!
+}
+
+type K8sActualSource {
+  namespace: String!
+  kind: K8sResourceKind!
+  name: String!
+  serviceName: String
+  numberOfInstances: Int
+  reportedName: String
+  autoInstrumented: Boolean!
+  autoInstrumentedDecision: String!
+  instrumentedApplicationDetails: InstrumentedApplicationDetails
+}
+
+input K8sDesiredSourceInput {
+  serviceName: String
+  autoInstrument: Boolean
+}
+
+input K8sSourceId {
+  namespace: String!
+  kind: K8sResourceKind!
+  name: String!
+}
+
+type ComputePlatform {
+  computePlatformType: ComputePlatformType!
+  k8sActualNamespace(name: String!): K8sActualNamespace
+  k8sActualNamespaces: [K8sActualNamespace]!
+  k8sActualSource(
+    name: String
+    namespace: String
+    kind: String
+  ): K8sActualSource
+  k8sActualSources: [K8sActualSource]!
+  destinations: [Destination!]!
+  actions: [IcaInstanceResponse!]!
+}
+
+type SupportedSignals {
+  traces: ObservabilitySignalSupport!
+  metrics: ObservabilitySignalSupport!
+  logs: ObservabilitySignalSupport!
+}
+
+type ObservabilitySignalSupport {
+  supported: Boolean!
+}
+
+type DestinationTypesCategoryItem {
+  type: String!
+  displayName: String!
+  imageUrl: String!
+  supportedSignals: SupportedSignals!
+  testConnectionSupported: Boolean!
+}
+
+type DestinationsCategory {
+  name: String!
+  items: [DestinationTypesCategoryItem!]!
+}
+
+type GetDestinationTypesResponse {
+  categories: [DestinationsCategory!]!
+}
+
+type ExportedSignals {
+  traces: Boolean!
+  metrics: Boolean!
+  logs: Boolean!
+}
+
+type Destination {
+  id: ID!
+  name: String!
+  type: String!
+  exportedSignals: ExportedSignals!
+  fields: String!
+  destinationType: DestinationTypesCategoryItem!
+  conditions: [Condition!]
+}
+
+type GetConfigResponse {
+  installation: InstallationStatus!
+}
+
+type Field {
+  name: String!
+  displayName: String!
+  componentType: String!
+  componentProperties: String! # Using String to store JSON data as a string
+  videoUrl: String
+  thumbnailURL: String
+  initialValue: String
+}
+
+type GetDestinationDetailsResponse {
+  fields: [Field!]!
+}
+
+input DestinationInput {
+  name: String!
+  type: String!
+  exportedSignals: ExportedSignalsInput!
+  fields: [FieldInput!]!
+}
+
+input FieldInput {
+  key: String!
+  value: String!
+}
+
+input ExportedSignalsInput {
+  traces: Boolean!
+  metrics: Boolean!
+  logs: Boolean!
+}
+
+input PersistNamespaceItemInput {
+  name: String!
+  futureSelected: Boolean
+}
+
+input PersistNamespaceSourceInput {
+  name: String!
+  kind: K8sResourceKind!
+  selected: Boolean
+}
+
+type TestConnectionResponse {
+  succeeded: Boolean!
+  statusCode: Int!
+  destinationType: String
+  message: String
+  reason: String
+}
+
+type DestinationDetails {
+  type: String!
+  urlString: String!
+  fields: String!
+}
+
+type IcaInstanceResponse {
+  id: String!
+  type: String!
+  spec: String!
+}
+
+input PatchSourceRequestInput {
+  reportedName: String
+}
+
+type Query {
+  computePlatform: ComputePlatform
+  config: GetConfigResponse
+  destinationTypes: GetDestinationTypesResponse
+  destinationTypeDetails(type: String!): GetDestinationDetailsResponse
+  potentialDestinations: [DestinationDetails!]!
+}
+
+type Mutation {
+  createNewDestination(destination: DestinationInput!): Destination!
+  persistK8sNamespace(namespace: PersistNamespaceItemInput!): Boolean!
+  persistK8sSources(
+    namespace: String!
+    sources: [PersistNamespaceSourceInput!]!
+  ): Boolean!
+  testConnectionForDestination(
+    destination: DestinationInput!
+  ): TestConnectionResponse!
+  updateK8sActualSource(
+    sourceId: K8sSourceId!
+    patchSourceRequest: PatchSourceRequestInput!
+  ): Boolean!
+  updateDestination(id: ID!, destination: DestinationInput!): Destination!
+}

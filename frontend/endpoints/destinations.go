@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/odigos-io/odigos/frontend/endpoints/destination_recognition"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
