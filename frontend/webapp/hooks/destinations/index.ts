@@ -7,3 +7,4 @@ export * from './useActualDestinations';
 export * from './useUpdateDestination';
 export * from './useDestinationFormData';
 export * from './useEditDestinationFormHandlers';
+export * from './useDestinationTypes';

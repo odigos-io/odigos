@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/store';
+import { INPUT_TYPES } from '@/utils';
 import { SideMenu } from '@/components';
 import { useQuery } from '@apollo/client';
 import { FormContainer } from './form-container';
@@ -52,14 +53,16 @@ export function ConnectDestinationModalBody({
   const {
     dynamicFields,
     exportedSignals,
-    setExportedSignals,
     setDynamicFields,
+    setExportedSignals,
   } = useDestinationFormData();
 
   const { connectEnv } = useConnectEnv();
   const { buildFormDynamicFields } = useConnectDestinationForm();
+
   const { handleDynamicFieldChange, handleSignalChange } =
     useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
+
   const addConfiguredDestination = useAppStore(
     ({ addConfiguredDestination }) => addConfiguredDestination
   );
@@ -72,22 +75,15 @@ export function ConnectDestinationModalBody({
     }
   );
 
-  const monitors = useMemo(() => {
-    if (!destination) return [];
+  useLayoutEffect(() => {
+    if (!destination) return;
     const { logs, metrics, traces } = destination.supportedSignals;
-
     setExportedSignals({
       logs: logs.supported,
       metrics: metrics.supported,
       traces: traces.supported,
     });
-
-    return [
-      logs.supported && { id: 'logs', title: 'Logs' },
-      metrics.supported && { id: 'metrics', title: 'Metrics' },
-      traces.supported && { id: 'traces', title: 'Traces' },
-    ].filter(Boolean);
-  }, [destination]);
+  }, [destination, setExportedSignals]);
 
   useEffect(() => {
     if (data && destination) {
@@ -116,22 +112,31 @@ export function ConnectDestinationModalBody({
     const isFormValid = dynamicFields.every((field) =>
       field.required ? field.value : true
     );
-
     onFormValidChange(isFormValid);
   }, [dynamicFields]);
+
+  const monitors = useMemo(() => {
+    if (!destination) return [];
+    const { logs, metrics, traces } = destination.supportedSignals;
+
+    return [
+      logs.supported && { id: 'logs', title: 'Logs' },
+      metrics.supported && { id: 'metrics', title: 'Metrics' },
+      traces.supported && { id: 'traces', title: 'Traces' },
+    ].filter(Boolean);
+  }, [destination]);
 
   function onDynamicFieldChange(name: string, value: any) {
     setShowConnectionError(false);
     handleDynamicFieldChange(name, value);
   }
+  function processFieldValue(field) {
+    return field.componentType === INPUT_TYPES.DROPDOWN
+      ? field.value.value
+      : field.value;
+  }
 
   function processFormFields() {
-    function processFieldValue(field) {
-      return field.componentType === 'dropdown'
-        ? field.value.value
-        : field.value;
-    }
-
     // Prepare fields for the request body
     return dynamicFields.map((field) => ({
       key: field.name,
@@ -140,17 +145,10 @@ export function ConnectDestinationModalBody({
   }
 
   async function handleSubmit() {
-    // Helper function to process field values
-    function processFieldValue(field) {
-      return field.componentType === 'dropdown'
-        ? field.value.value
-        : field.value;
-    }
-
     // Prepare fields for the request body
     const fields = processFormFields();
 
-    // Function to store configured destination
+    // Function to store configured destination to display in the UI
     function storeConfiguredDestination() {
       const destinationTypeDetails = dynamicFields.map((field) => ({
         title: field.title,
@@ -196,6 +194,32 @@ export function ConnectDestinationModalBody({
 
   if (!destination) return null;
 
+  const actionButton = useMemo(() => {
+    if (destination.testConnectionSupported) {
+      return (
+        <TestConnection
+          onError={() => {
+            setShowConnectionError(true);
+            onFormValidChange(false);
+          }}
+          destination={{
+            name: destinationName,
+            type: destination?.type || '',
+            exportedSignals,
+            fields: processFormFields(),
+          }}
+        />
+      );
+    }
+    return null;
+  }, [
+    destination,
+    destinationName,
+    exportedSignals,
+    processFormFields,
+    onFormValidChange,
+  ]);
+
   return (
     <Container>
       <SideMenuWrapper>
@@ -206,24 +230,7 @@ export function ConnectDestinationModalBody({
         <SectionTitle
           title="Create connection"
           description="Connect selected destination with Odigos."
-          actionButton={
-            destination.testConnectionSupported ? (
-              <TestConnection // TODO: refactor this after add form validation
-                onError={() => {
-                  setShowConnectionError(true);
-                  onFormValidChange(false);
-                }}
-                destination={{
-                  name: destinationName,
-                  type: destination?.type || '',
-                  exportedSignals,
-                  fields: processFormFields(),
-                }}
-              />
-            ) : (
-              <></>
-            )
-          }
+          actionButton={actionButton}
         />
         <ConnectionNotification
           showConnectionError={showConnectionError}
