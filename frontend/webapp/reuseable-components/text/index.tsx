@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-interface TextProps {
+interface TextProps extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
   children: React.ReactNode;
   color?: string;
   size?: number;

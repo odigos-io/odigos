@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { KeyvalCard, KeyvalImage, KeyvalText } from '@/design.system';
 import { TapList } from '../tap.list/tap.list';
-import { MONITORING_OPTIONS } from '../utils';
+import { MONITORING_OPTIONS } from '../../../../utils/constants/monitors';
 import {
   ApplicationNameWrapper,
   DestinationCardContentWrapper,

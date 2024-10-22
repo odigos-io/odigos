@@ -1,9 +1,9 @@
 import React, { useState, ChangeEvent, KeyboardEvent, FC } from 'react';
 import styled from 'styled-components';
-import { Text } from '../text';
 import Image from 'next/image';
+import { Text } from '../text';
 
-interface Option {
+export interface Option {
   id: string;
   label: string;
   description?: string;
@@ -17,13 +17,23 @@ interface AutocompleteInputProps {
   onOptionSelect?: (option: Option) => void;
 }
 
-const AutocompleteInput: FC<AutocompleteInputProps> = ({
-  options,
-  placeholder = 'Type to search...',
-  onOptionSelect,
-}) => {
+const filterOptions = (optionsList: Option[], input: string): Option[] => {
+  return optionsList.reduce<Option[]>((acc, option) => {
+    if (option.items) {
+      const filteredSubItems = filterOptions(option.items, input);
+      if (filteredSubItems.length) {
+        acc.push({ ...option, items: filteredSubItems });
+      }
+    } else if (option.label.toLowerCase().includes(input.toLowerCase())) {
+      acc.push(option);
+    }
+    return acc;
+  }, []);
+};
+
+const AutocompleteInput: FC<AutocompleteInputProps> = ({ options, placeholder = 'Type to search...', onOptionSelect }) => {
   const [query, setQuery] = useState('');
-  const [filteredOptions, setFilteredOptions] = useState<Option[]>([]);
+  const [filteredOptions, setFilteredOptions] = useState<Option[]>(filterOptions(options, ''));
   const [showOptions, setShowOptions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
@@ -37,20 +47,6 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({
     } else {
       setShowOptions(false);
     }
-  };
-
-  const filterOptions = (optionsList: Option[], input: string): Option[] => {
-    return optionsList.reduce<Option[]>((acc, option) => {
-      if (option.items) {
-        const filteredSubItems = filterOptions(option.items, input);
-        if (filteredSubItems.length) {
-          acc.push({ ...option, items: filteredSubItems });
-        }
-      } else if (option.label.toLowerCase().includes(input.toLowerCase())) {
-        acc.push(option);
-      }
-      return acc;
-    }, []);
   };
 
   const handleOptionClick = (option: Option) => {
@@ -88,24 +84,19 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({
     <AutocompleteContainer>
       <InputWrapper>
         <StyledInput
-          type="text"
+          type='text'
           value={query}
           placeholder={placeholder}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onBlur={() => setShowOptions(false)}
-          onFocus={() => query && setShowOptions(true)}
+          onFocus={() => setShowOptions(true)}
         />
       </InputWrapper>
       {showOptions && (
         <OptionsList>
           {filteredOptions.map((option, index) => (
-            <OptionItem
-              key={option.id}
-              option={option}
-              isActive={index === activeIndex}
-              onClick={handleOptionClick}
-            />
+            <OptionItem key={option.id} option={option} isActive={index === activeIndex} onClick={handleOptionClick} />
           ))}
         </OptionsList>
       )}
@@ -123,29 +114,21 @@ const OptionItem: FC<OptionItemProps> = ({ option, isActive, onClick }) => {
   const hasSubItems = !!option.items && option.items.length > 0;
 
   return (
-    <OptionItemContainer
-      isActive={isActive}
-      isList={hasSubItems}
-      onMouseDown={() => onClick(option)}
-    >
-      {option.icon && (
-        <Image width={16} height={16} src={option.icon} alt={option.label} />
-      )}
+    <OptionItemContainer isActive={isActive} isList={hasSubItems} onMouseDown={() => (hasSubItems ? null : onClick(option))}>
+      {option.icon && <Image width={16} height={16} src={option.icon} alt={option.label} />}
+
       <OptionContent>
         <OptionLabelWrapper>
           <OptionLabel>{option.label}</OptionLabel>
           <OptionDescription>{option.description}</OptionDescription>
         </OptionLabelWrapper>
-        {option.items && option.items.length > 0 && (
+
+        {hasSubItems && (
           <SubOptionsList>
-            {option.items.map((subOption) => (
+            {option.items?.map((subOption) => (
               <SubOptionContainer key={subOption.id}>
                 <VerticalLine />
-                <OptionItem
-                  option={subOption}
-                  isActive={false}
-                  onClick={onClick}
-                />
+                <OptionItem option={subOption} isActive={false} onClick={onClick} />
               </SubOptionContainer>
             ))}
           </SubOptionsList>
@@ -225,18 +208,17 @@ interface OptionItemContainerProps {
 }
 
 const OptionItemContainer = styled.li<OptionItemContainerProps>`
+  width: 100%;
   padding: 8px 12px;
   cursor: ${({ isList }) => (isList ? 'default' : 'pointer')};
   border-radius: 24px;
   gap: 8px;
   display: flex;
   align-items: ${({ isList }) => (isList ? 'flex-start' : 'center')};
-  background: ${({ isActive, theme }) =>
-    isActive ? theme.colors.activeBackground : 'transparent'};
+  background: ${({ isActive, theme }) => (isActive ? theme.colors.activeBackground : 'transparent')};
 
   &:hover {
-    background: ${({ theme, isList }) =>
-      !isList && theme.colors.white_opacity['008']};
+    background: ${({ theme, isList }) => !isList && theme.colors.white_opacity['008']};
   }
 `;
 
@@ -278,4 +260,5 @@ const SubOptionsList = styled.ul`
   padding-left: 0px;
   margin: 4px 0 0 0;
   list-style: none;
+  width: 100%;
 `;
