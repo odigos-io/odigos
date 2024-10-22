@@ -276,6 +276,16 @@ type DeleteAttributeAction implements Action {
   details: [String!]!
 }
 
+type PiiMaskingAction implements Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: [String!]
+}
+
 input ActionInput {
   type: String!
   name: String
