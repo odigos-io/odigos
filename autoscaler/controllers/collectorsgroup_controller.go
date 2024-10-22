@@ -23,7 +23,6 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
 
-	"github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,10 +33,10 @@ import (
 // CollectorsGroupReconciler reconciles a CollectorsGroup object
 type CollectorsGroupReconciler struct {
 	client.Client
-	Scheme           *runtime.Scheme
-	ImagePullSecrets []string
-	OdigosVersion    string
-	OdigosTier       common.OdigosTier
+	Scheme               *runtime.Scheme
+	ImagePullSecrets     []string
+	OdigosVersion        string
+	DisableNameProcessor bool
 }
 
 //+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectorsgroups,verbs=get;list;watch;create;update;patch;delete
@@ -67,7 +66,7 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.OdigosTier)
+	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.DisableNameProcessor)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
