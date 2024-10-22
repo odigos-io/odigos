@@ -1,10 +1,10 @@
-import React, { Fragment, useEffect } from 'react';
 import styled from 'styled-components';
-import { CheckboxList, DocsButton, Input, Text, TextArea } from '@/reuseable-components';
-import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
-import { useActionFormData } from '@/hooks/actions/useActionFormData';
+import React, { useEffect } from 'react';
 import ActionCustomFields from './action-custom-fields';
+import { useActionFormData } from '@/hooks/actions/useActionFormData';
+import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
 import { type ActionOption } from '../choose-action-modal/action-options';
+import { CheckboxList, DocsButton, Input, Text, TextArea } from '@/reuseable-components';
 
 const Description = styled(Text)`
   color: ${({ theme }) => theme.text.grey};
@@ -35,7 +35,7 @@ const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action }) => {
   }, []);
 
   return (
-    <Fragment>
+    <>
       <Description>
         {action.docsDescription}
         <DocsButton endpoint={action.docsEndpoint} />
@@ -72,7 +72,7 @@ const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action }) => {
         <FieldTitle>Notes</FieldTitle>
         <TextArea value={formData.notes} onChange={({ target: { value } }) => handleFormChange('notes', value)} />
       </FieldWrapper>
-    </Fragment>
+    </>
   );
 };
 
