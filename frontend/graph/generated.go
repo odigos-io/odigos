@@ -197,7 +197,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateAction                 func(childComplexity int, action model.ActionInput) int
 		CreateNewDestination         func(childComplexity int, destination model.DestinationInput) int
-		DeleteAction                 func(childComplexity int, id string) int
+		DeleteAction                 func(childComplexity int, id string, actionType string) int
 		PersistK8sNamespace          func(childComplexity int, namespace model.PersistNamespaceItemInput) int
 		PersistK8sSources            func(childComplexity int, namespace string, sources []*model.PersistNamespaceSourceInput) int
 		TestConnectionForDestination func(childComplexity int, destination model.DestinationInput) int
@@ -208,6 +208,16 @@ type ComplexityRoot struct {
 
 	ObservabilitySignalSupport struct {
 		Supported func(childComplexity int) int
+	}
+
+	PiiMaskingAction struct {
+		Details func(childComplexity int) int
+		Disable func(childComplexity int) int
+		ID      func(childComplexity int) int
+		Name    func(childComplexity int) int
+		Notes   func(childComplexity int) int
+		Signals func(childComplexity int) int
+		Type    func(childComplexity int) int
 	}
 
 	Query struct {
@@ -263,7 +273,7 @@ type MutationResolver interface {
 	UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error)
 	CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error)
 	UpdateAction(ctx context.Context, id string, action model.ActionInput) (model.Action, error)
-	DeleteAction(ctx context.Context, id string) (bool, error)
+	DeleteAction(ctx context.Context, id string, actionType string) (bool, error)
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
@@ -908,7 +918,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteAction(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.DeleteAction(childComplexity, args["id"].(string), args["actionType"].(string)), true
 
 	case "Mutation.persistK8sNamespace":
 		if e.complexity.Mutation.PersistK8sNamespace == nil {
@@ -988,6 +998,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ObservabilitySignalSupport.Supported(childComplexity), true
+
+	case "PiiMaskingAction.details":
+		if e.complexity.PiiMaskingAction.Details == nil {
+			break
+		}
+
+		return e.complexity.PiiMaskingAction.Details(childComplexity), true
+
+	case "PiiMaskingAction.disable":
+		if e.complexity.PiiMaskingAction.Disable == nil {
+			break
+		}
+
+		return e.complexity.PiiMaskingAction.Disable(childComplexity), true
+
+	case "PiiMaskingAction.id":
+		if e.complexity.PiiMaskingAction.ID == nil {
+			break
+		}
+
+		return e.complexity.PiiMaskingAction.ID(childComplexity), true
+
+	case "PiiMaskingAction.name":
+		if e.complexity.PiiMaskingAction.Name == nil {
+			break
+		}
+
+		return e.complexity.PiiMaskingAction.Name(childComplexity), true
+
+	case "PiiMaskingAction.notes":
+		if e.complexity.PiiMaskingAction.Notes == nil {
+			break
+		}
+
+		return e.complexity.PiiMaskingAction.Notes(childComplexity), true
+
+	case "PiiMaskingAction.signals":
+		if e.complexity.PiiMaskingAction.Signals == nil {
+			break
+		}
+
+		return e.complexity.PiiMaskingAction.Signals(childComplexity), true
+
+	case "PiiMaskingAction.type":
+		if e.complexity.PiiMaskingAction.Type == nil {
+			break
+		}
+
+		return e.complexity.PiiMaskingAction.Type(childComplexity), true
 
 	case "Query.computePlatform":
 		if e.complexity.Query.ComputePlatform == nil {
@@ -1339,6 +1398,15 @@ func (ec *executionContext) field_Mutation_deleteAction_args(ctx context.Context
 		}
 	}
 	args["id"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["actionType"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actionType"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["actionType"] = arg1
 	return args, nil
 }
 
@@ -2872,9 +2940,9 @@ func (ec *executionContext) _DeleteAttributeAction_details(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.DeleteAttribute)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNDeleteAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDeleteAttributeᚄ(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_DeleteAttributeAction_details(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2884,11 +2952,7 @@ func (ec *executionContext) fieldContext_DeleteAttributeAction_details(_ context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "attributeName":
-				return ec.fieldContext_DeleteAttribute_attributeName(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type DeleteAttribute", field.Name)
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5790,7 +5854,7 @@ func (ec *executionContext) _Mutation_deleteAction(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteAction(rctx, fc.Args["id"].(string))
+		return ec.resolvers.Mutation().DeleteAction(rctx, fc.Args["id"].(string), fc.Args["actionType"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5870,6 +5934,305 @@ func (ec *executionContext) fieldContext_ObservabilitySignalSupport_supported(_ 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PiiMaskingAction_id(ctx context.Context, field graphql.CollectedField, obj *model.PiiMaskingAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PiiMaskingAction_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PiiMaskingAction_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PiiMaskingAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PiiMaskingAction_type(ctx context.Context, field graphql.CollectedField, obj *model.PiiMaskingAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PiiMaskingAction_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PiiMaskingAction_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PiiMaskingAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PiiMaskingAction_name(ctx context.Context, field graphql.CollectedField, obj *model.PiiMaskingAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PiiMaskingAction_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PiiMaskingAction_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PiiMaskingAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PiiMaskingAction_notes(ctx context.Context, field graphql.CollectedField, obj *model.PiiMaskingAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PiiMaskingAction_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PiiMaskingAction_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PiiMaskingAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PiiMaskingAction_disable(ctx context.Context, field graphql.CollectedField, obj *model.PiiMaskingAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PiiMaskingAction_disable(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Disable, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PiiMaskingAction_disable(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PiiMaskingAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PiiMaskingAction_signals(ctx context.Context, field graphql.CollectedField, obj *model.PiiMaskingAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PiiMaskingAction_signals(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signals, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.SignalType)
+	fc.Result = res
+	return ec.marshalNSignalType2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSignalTypeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PiiMaskingAction_signals(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PiiMaskingAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type SignalType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PiiMaskingAction_details(ctx context.Context, field graphql.CollectedField, obj *model.PiiMaskingAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PiiMaskingAction_details(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Details, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PiiMaskingAction_details(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PiiMaskingAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -8913,6 +9276,13 @@ func (ec *executionContext) _Action(ctx context.Context, sel ast.SelectionSet, o
 			return graphql.Null
 		}
 		return ec._DeleteAttributeAction(ctx, sel, obj)
+	case model.PiiMaskingAction:
+		return ec._PiiMaskingAction(ctx, sel, &obj)
+	case *model.PiiMaskingAction:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._PiiMaskingAction(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -10401,6 +10771,66 @@ func (ec *executionContext) _ObservabilitySignalSupport(ctx context.Context, sel
 	return out
 }
 
+var piiMaskingActionImplementors = []string{"PiiMaskingAction", "Action"}
+
+func (ec *executionContext) _PiiMaskingAction(ctx context.Context, sel ast.SelectionSet, obj *model.PiiMaskingAction) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, piiMaskingActionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PiiMaskingAction")
+		case "id":
+			out.Values[i] = ec._PiiMaskingAction_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "type":
+			out.Values[i] = ec._PiiMaskingAction_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._PiiMaskingAction_name(ctx, field, obj)
+		case "notes":
+			out.Values[i] = ec._PiiMaskingAction_notes(ctx, field, obj)
+		case "disable":
+			out.Values[i] = ec._PiiMaskingAction_disable(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "signals":
+			out.Values[i] = ec._PiiMaskingAction_signals(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "details":
+			out.Values[i] = ec._PiiMaskingAction_details(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -11130,60 +11560,6 @@ func (ec *executionContext) unmarshalNConditionStatus2githubᚗcomᚋodigosᚑio
 
 func (ec *executionContext) marshalNConditionStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConditionStatus(ctx context.Context, sel ast.SelectionSet, v model.ConditionStatus) graphql.Marshaler {
 	return v
-}
-
-func (ec *executionContext) marshalNDeleteAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDeleteAttributeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.DeleteAttribute) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNDeleteAttribute2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDeleteAttribute(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNDeleteAttribute2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDeleteAttribute(ctx context.Context, sel ast.SelectionSet, v *model.DeleteAttribute) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._DeleteAttribute(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNDestination2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDestination(ctx context.Context, sel ast.SelectionSet, v model.Destination) graphql.Marshaler {
@@ -11919,6 +12295,38 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNSupportedSignals2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSupportedSignals(ctx context.Context, sel ast.SelectionSet, v model.SupportedSignals) graphql.Marshaler {
 	return ec._SupportedSignals(ctx, sel, &v)
 }
@@ -12365,6 +12773,44 @@ func (ec *executionContext) marshalOSourceContainerRuntimeDetails2ᚕᚖgithub�
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
 
 	for _, e := range ret {
 		if e == graphql.Null {

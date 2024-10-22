@@ -273,7 +273,17 @@ type DeleteAttributeAction implements Action {
   notes: String
   disable: Boolean!
   signals: [SignalType!]!
-  details: [DeleteAttribute!]!
+  details: [String!]!
+}
+
+type PiiMaskingAction implements Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: [String!]
 }
 
 input ActionInput {
@@ -311,5 +321,5 @@ type Mutation {
 
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
-  deleteAction(id: ID!): Boolean!
+  deleteAction(id: ID!, actionType: String!): Boolean!
 }

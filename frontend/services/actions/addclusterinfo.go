@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -143,4 +144,19 @@ func UpdateAddClusterInfo(ctx context.Context, id string, action model.ActionInp
 	}
 
 	return response, nil
+}
+
+func DeleteAddClusterInfo(ctx context.Context, id string) error {
+	odigosns := consts.DefaultOdigosNamespace
+
+	// Delete the action by its ID from Kubernetes
+	err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).Delete(ctx, id, metav1.DeleteOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return fmt.Errorf("AddClusterInfo action with ID %s not found", id)
+		}
+		return fmt.Errorf("failed to delete AddClusterInfo action: %v", err)
+	}
+
+	return nil
 }

@@ -82,13 +82,13 @@ type DeleteAttribute struct {
 }
 
 type DeleteAttributeAction struct {
-	ID      string             `json:"id"`
-	Type    string             `json:"type"`
-	Name    *string            `json:"name,omitempty"`
-	Notes   *string            `json:"notes,omitempty"`
-	Disable bool               `json:"disable"`
-	Signals []SignalType       `json:"signals"`
-	Details []*DeleteAttribute `json:"details"`
+	ID      string       `json:"id"`
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details []string     `json:"details"`
 }
 
 func (DeleteAttributeAction) IsAction()              {}
@@ -225,6 +225,33 @@ type PersistNamespaceSourceInput struct {
 	Name     string          `json:"name"`
 	Kind     K8sResourceKind `json:"kind"`
 	Selected *bool           `json:"selected,omitempty"`
+}
+
+type PiiMaskingAction struct {
+	ID      string       `json:"id"`
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details []string     `json:"details,omitempty"`
+}
+
+func (PiiMaskingAction) IsAction()              {}
+func (this PiiMaskingAction) GetID() string     { return this.ID }
+func (this PiiMaskingAction) GetType() string   { return this.Type }
+func (this PiiMaskingAction) GetName() *string  { return this.Name }
+func (this PiiMaskingAction) GetNotes() *string { return this.Notes }
+func (this PiiMaskingAction) GetDisable() bool  { return this.Disable }
+func (this PiiMaskingAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
 }
 
 type Query struct {
