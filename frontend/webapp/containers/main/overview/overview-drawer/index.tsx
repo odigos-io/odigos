@@ -26,7 +26,7 @@ const componentMap = {
   ),
 };
 
-const DRAWER_WIDTH = '560px';
+const DRAWER_WIDTH = '640px';
 
 const OverviewDrawer = () => {
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);

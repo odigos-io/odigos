@@ -14,27 +14,23 @@ export const FormContainer = ({
   <StyledFormContainer>
     <CheckboxList
       monitors={monitors}
-      title="This connection will monitor:"
+      title='This connection will monitor:'
       exportedSignals={exportedSignals}
       handleSignalChange={handleSignalChange}
     />
     <Input
-      title="Destination name"
-      placeholder="Enter destination name"
+      title='Destination name'
+      placeholder='Enter destination name'
       value={destinationName}
       onChange={(e) => setDestinationName(e.target.value)}
     />
-    <DynamicConnectDestinationFormFields
-      fields={dynamicFields}
-      onChange={handleDynamicFieldChange}
-    />
+    <DynamicConnectDestinationFormFields fields={dynamicFields} onChange={handleDynamicFieldChange} />
   </StyledFormContainer>
 );
 
 const StyledFormContainer = styled.div`
   display: flex;
   width: 100%;
-  max-width: 500px;
   flex-direction: column;
   gap: 24px;
   height: 443px;
