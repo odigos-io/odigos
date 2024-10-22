@@ -5,7 +5,7 @@ import { Checkbox } from '../checkbox';
 import { ExportedSignals } from '@/types';
 
 interface Monitor {
-  id: string;
+  id: string | number;
   title: string;
   tooltip?: string;
 }
@@ -14,7 +14,7 @@ interface CheckboxListProps {
   monitors: Monitor[];
   title?: string;
   exportedSignals: ExportedSignals;
-  handleSignalChange: (signal: string, value: boolean) => void;
+  handleSignalChange: (signal: Monitor['id'], value: boolean) => void;
 }
 
 const ListContainer = styled.div`
@@ -26,23 +26,12 @@ const TextWrapper = styled.div`
   margin-bottom: 14px;
 `;
 
-const CheckboxList: React.FC<CheckboxListProps> = ({
-  monitors,
-  title,
-  exportedSignals,
-  handleSignalChange,
-}) => {
+const CheckboxList: React.FC<CheckboxListProps> = ({ monitors, title, exportedSignals, handleSignalChange }) => {
   function isItemDisabled(item: Monitor) {
-    const selectedItems = Object.values(exportedSignals).filter(
-      (value) => value
-    );
-
+    const selectedItems = Object.values(exportedSignals).filter((value) => value);
     const trueValues = Object.values(exportedSignals).filter(Boolean);
 
-    return (
-      (monitors.length === 1 && trueValues.length === 1) ||
-      (selectedItems.length === 1 && exportedSignals[item.id])
-    );
+    return (monitors.length === 1 && trueValues.length === 1) || (selectedItems.length === 1 && exportedSignals[item.id]);
   }
 
   return (
@@ -54,6 +43,7 @@ const CheckboxList: React.FC<CheckboxListProps> = ({
           </Text>
         </TextWrapper>
       )}
+
       <ListContainer>
         {monitors.map((monitor) => (
           <Checkbox

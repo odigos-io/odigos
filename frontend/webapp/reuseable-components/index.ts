@@ -1,5 +1,6 @@
 export * from './text';
 export * from './button';
+export * from './button/docs-button';
 export * from './section-title';
 export * from './input';
 export * from './tooltip';

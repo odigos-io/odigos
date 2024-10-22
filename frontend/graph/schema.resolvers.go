@@ -559,10 +559,10 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 	switch action.Type {
 	case actionservices.ActionTypeAddClusterInfo:
 		return actionservices.CreateAddClusterInfo(ctx, action)
-
 	case actionservices.ActionTypeDeleteAttribute:
 		return actionservices.CreateDeleteAttribute(ctx, action)
-
+	case actionservices.ActionTypePiiMasking:
+		return actionservices.CreatePiiMasking(ctx, action)
 	default:
 		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
 	}
@@ -574,10 +574,10 @@ func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action m
 	switch action.Type {
 	case actionservices.ActionTypeAddClusterInfo:
 		return actionservices.UpdateAddClusterInfo(ctx, id, action)
-
 	case actionservices.ActionTypeDeleteAttribute:
 		return actionservices.UpdateDeleteAttribute(ctx, id, action)
-
+	case actionservices.ActionTypePiiMasking:
+		return actionservices.UpdatePiiMasking(ctx, id, action)
 	default:
 		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
 	}
@@ -598,7 +598,11 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 		if err != nil {
 			return false, fmt.Errorf("failed to delete DeleteAttribute: %v", err)
 		}
-
+	case actionservices.ActionTypePiiMasking:
+		err := actionservices.DeletePiiMasking(ctx, id)
+		if err != nil {
+			return false, fmt.Errorf("failed to delete PiiMasking: %v", err)
+		}
 	default:
 		return false, fmt.Errorf("unsupported action type: %s", actionType)
 	}

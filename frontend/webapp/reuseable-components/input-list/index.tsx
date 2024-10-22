@@ -66,15 +66,14 @@ const HeaderWrapper = styled.div`
   margin-bottom: 4px;
 `;
 
-const InputList: React.FC<InputListProps> = ({
-  initialValues = [''],
-  title,
-  tooltip,
-  required,
-  onChange,
-  value = [''],
-}) => {
+const INITIAL = [''];
+
+const InputList: React.FC<InputListProps> = ({ initialValues = INITIAL, value = INITIAL, onChange, title, tooltip, required }) => {
   const [inputs, setInputs] = useState<string[]>(value || initialValues);
+
+  useEffect(() => {
+    if (!inputs.length) setInputs(INITIAL);
+  }, []);
 
   useEffect(() => {
     if (initialValues.length > 0) {
@@ -108,45 +107,27 @@ const InputList: React.FC<InputListProps> = ({
         <HeaderWrapper>
           <Title>{title}</Title>
           {!required && (
-            <Text color="#7A7A7A" size={14} weight={300} opacity={0.8}>
+            <Text color='#7A7A7A' size={14} weight={300} opacity={0.8}>
               (optional)
             </Text>
           )}
           {tooltip && (
             <Tooltip text={tooltip || ''}>
-              <Image
-                src="/icons/common/info.svg"
-                alt=""
-                width={16}
-                height={16}
-                style={{ marginBottom: 4 }}
-              />
+              <Image src='/icons/common/info.svg' alt='' width={16} height={16} style={{ marginBottom: 4 }} />
             </Tooltip>
           )}
         </HeaderWrapper>
       )}
       {inputs.map((value, index) => (
         <InputRow key={index}>
-          <Input
-            value={value}
-            onChange={(e) => handleInputChange(e.target.value, index)}
-          />
+          <Input value={value} onChange={(e) => handleInputChange(e.target.value, index)} />
           <DeleteButton onClick={() => handleDeleteInput(index)}>
-            <Image
-              src="/icons/common/trash.svg"
-              alt="Delete"
-              width={16}
-              height={16}
-            />
+            <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
           </DeleteButton>
         </InputRow>
       ))}
-      <AddButton
-        disabled={isAddButtonDisabled}
-        variant={'tertiary'}
-        onClick={handleAddInput}
-      >
-        <Image src="/icons/common/plus.svg" alt="Add" width={16} height={16} />
+      <AddButton disabled={isAddButtonDisabled} variant={'tertiary'} onClick={handleAddInput}>
+        <Image src='/icons/common/plus.svg' alt='Add' width={16} height={16} />
         <ButtonText>ADD ATTRIBUTE</ButtonText>
       </AddButton>
     </Container>

@@ -51,6 +51,11 @@ func CreatePiiMasking(ctx context.Context, action model.ActionInput) (model.Acti
 		return nil, fmt.Errorf("failed to create PiiMasking: %v", err)
 	}
 
+	piiCategories := make([]string, len(details.PiiCategories))
+	for i, category := range details.PiiCategories {
+		piiCategories[i] = string(category)
+	}
+
 	response := &model.PiiMaskingAction{
 		ID:      generatedAction.Name,
 		Type:    ActionTypePiiMasking,
@@ -58,7 +63,7 @@ func CreatePiiMasking(ctx context.Context, action model.ActionInput) (model.Acti
 		Notes:   action.Notes,
 		Disable: action.Disable,
 		Signals: action.Signals,
-		Details: details.PiiCategories,
+		Details: piiCategories,
 	}
 
 	return response, nil
@@ -95,6 +100,11 @@ func UpdatePiiMasking(ctx context.Context, id string, action model.ActionInput) 
 		return nil, fmt.Errorf("failed to update PiiMasking: %v", err)
 	}
 
+	piiCategories := make([]string, len(details.PiiCategories))
+	for i, category := range details.PiiCategories {
+		piiCategories[i] = string(category)
+	}
+
 	response := &model.PiiMaskingAction{
 		ID:      updatedAction.Name,
 		Type:    ActionTypePiiMasking,
@@ -102,7 +112,7 @@ func UpdatePiiMasking(ctx context.Context, id string, action model.ActionInput) 
 		Notes:   action.Notes,
 		Disable: action.Disable,
 		Signals: action.Signals,
-		Details: details.PiiCategories,
+		Details: piiCategories,
 	}
 
 	return response, nil

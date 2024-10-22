@@ -1,7 +1,7 @@
 import React, { ButtonHTMLAttributes } from 'react';
 import styled, { css } from 'styled-components';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'tertiary' | 'danger';
   isDisabled?: boolean;
 }
@@ -102,20 +102,10 @@ const ButtonContainer = styled.div<{
   }
 `;
 
-export const Button: React.FC<ButtonProps> = ({
-  children,
-  variant = 'primary',
-  isDisabled = false,
-  ...props
-}) => {
+export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', isDisabled = false, ...props }) => {
   return (
     <ButtonContainer variant={variant}>
-      <StyledButton
-        variant={variant}
-        disabled={isDisabled}
-        isDisabled={isDisabled}
-        {...props}
-      >
+      <StyledButton variant={variant} disabled={isDisabled} isDisabled={isDisabled} {...props}>
         {children}
       </StyledButton>
     </ButtonContainer>
