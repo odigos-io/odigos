@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import ActionCustomFields from './action-custom-fields';
+import ActionCustomFields from './custom-fields';
 import { ActionFormData } from '@/hooks/actions/useActionFormData';
 import { type ActionOption } from '../choose-action-modal/action-options';
 import { DocsButton, Input, Text, TextArea } from '@/reuseable-components';
@@ -52,11 +52,7 @@ const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action, formData
         />
       </FieldWrapper>
 
-      <ActionCustomFields
-        actionType={action.type}
-        value={formData.details ? JSON.parse(formData.details) : undefined}
-        setValue={(val) => handleFormChange('details', JSON.stringify(val))}
-      />
+      <ActionCustomFields actionType={action.type} value={formData.details} setValue={(val) => handleFormChange('details', val)} />
 
       <FieldWrapper>
         <FieldTitle>Notes</FieldTitle>
