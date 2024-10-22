@@ -311,5 +311,5 @@ type Mutation {
 
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
-  deleteAction(id: ID!): Boolean!
+  deleteAction(id: ID!, actionType: String!): Boolean!
 }

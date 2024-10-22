@@ -600,8 +600,24 @@ func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action m
 }
 
 // DeleteAction is the resolver for the deleteAction field.
-func (r *mutationResolver) DeleteAction(ctx context.Context, id string) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteAction - deleteAction"))
+func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionType string) (bool, error) {
+
+	switch actionType {
+	case actionservices.ActionTypeAddClusterInfo:
+		err := actionservices.DeleteAddClusterInfo(ctx, id)
+		if err != nil {
+			return false, fmt.Errorf("failed to delete AddClusterInfo: %v", err)
+		}
+
+	case actionservices.ActionTypeDeleteAttribute:
+		// Handle other action types...
+
+	default:
+		return false, fmt.Errorf("unsupported action type: %s", actionType)
+	}
+
+	// Return true if the deletion was successful
+	return true, nil
 }
 
 // ComputePlatform is the resolver for the computePlatform field.
