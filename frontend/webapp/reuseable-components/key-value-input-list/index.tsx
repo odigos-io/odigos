@@ -82,39 +82,39 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
     if (!keyValuePairs.length) setKeyValuePairs(INITIAL)
   }, [])
 
-  const validPairsRef = useRef<{ key: string; value: string }[]>([])
+  const recordedPairs = useRef('')
 
   useEffect(() => {
     // Filter out rows where either key or value is empty
     const validKeyValuePairs = keyValuePairs.filter((pair) => pair.key.trim() !== '' && pair.value.trim() !== '')
+    const stringified = JSON.stringify(validKeyValuePairs)
 
     // Only trigger onChange if valid key-value pairs have changed
-    if (JSON.stringify(validPairsRef.current) !== JSON.stringify(validKeyValuePairs)) {
-      validPairsRef.current = validKeyValuePairs
-      if (onChange) {
-        onChange(validKeyValuePairs)
-      }
+    if (recordedPairs.current !== stringified) {
+      recordedPairs.current = stringified
+
+      if (onChange) onChange(validKeyValuePairs)
     }
   }, [keyValuePairs, onChange])
 
   const handleAddRow = () => {
-    setKeyValuePairs([...keyValuePairs, { key: '', value: '' }])
+    setKeyValuePairs((prev) => {
+      const payload = [...prev]
+      payload.push({ key: '', value: '' })
+      return payload
+    })
   }
 
-  const handleDeleteRow = (index: number) => {
-    setKeyValuePairs(keyValuePairs.filter((_, i) => i !== index))
+  const handleDeleteRow = (idx: number) => {
+    setKeyValuePairs((prev) => prev.filter((_, i) => i !== idx))
   }
 
-  const handleKeyChange = (key: string, index: number) => {
-    const newKeyValuePairs = [...keyValuePairs]
-    newKeyValuePairs[index].key = key
-    setKeyValuePairs(newKeyValuePairs)
-  }
-
-  const handleValueChange = (value: string, index: number) => {
-    const newKeyValuePairs = [...keyValuePairs]
-    newKeyValuePairs[index].value = value
-    setKeyValuePairs(newKeyValuePairs)
+  const handleChange = (key: 'key' | 'value', val: string, idx: number) => {
+    setKeyValuePairs((prev) => {
+      const payload = [...prev]
+      payload[idx][key] = val
+      return payload
+    })
   }
 
   // Check if any key or value field is empty
@@ -137,9 +137,9 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
       )}
       {keyValuePairs.map((pair, index) => (
         <Row key={index}>
-          <Input value={pair.key} onChange={(e) => handleKeyChange(e.target.value, index)} placeholder='Define attribute' />
+          <Input value={pair.key} onChange={(e) => handleChange('key', e.target.value, index)} placeholder='Define attribute' />
           <Image src='/icons/common/arrow-right.svg' alt='Arrow' width={16} height={16} />
-          <Input value={pair.value} onChange={(e) => handleValueChange(e.target.value, index)} placeholder='Define value' />
+          <Input value={pair.value} onChange={(e) => handleChange('value', e.target.value, index)} placeholder='Define value' />
           <DeleteButton onClick={() => handleDeleteRow(index)}>
             <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
           </DeleteButton>
