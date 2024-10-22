@@ -557,7 +557,7 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 // CreateAction is the resolver for the createAction field.
 func (r *mutationResolver) CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error) {
 	switch action.Type {
-	case "AddClusterInfo":
+	case actionservices.ActionTypeAddClusterInfo:
 		res, err := actionservices.CreateAddClusterInfo(ctx, action)
 
 		if err != nil {
@@ -566,7 +566,7 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 
 		return res, nil
 
-	case "DeleteAttribute":
+	case actionservices.ActionTypeDeleteAttribute:
 
 	// Handle other action types...
 
@@ -579,7 +579,24 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 
 // UpdateAction is the resolver for the updateAction field.
 func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action model.ActionInput) (model.Action, error) {
-	panic(fmt.Errorf("not implemented: UpdateAction - updateAction"))
+	switch action.Type {
+	case actionservices.ActionTypeAddClusterInfo:
+		res, err := actionservices.UpdateAddClusterInfo(ctx, id, action)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to update AddClusterInfo: %v", err)
+		}
+
+		return res, nil
+
+	case actionservices.ActionTypeDeleteAttribute:
+		// Handle other action types...
+
+	default:
+		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
+	}
+
+	return nil, nil
 }
 
 // DeleteAction is the resolver for the deleteAction field.
