@@ -82,13 +82,13 @@ type DeleteAttribute struct {
 }
 
 type DeleteAttributeAction struct {
-	ID      string             `json:"id"`
-	Type    string             `json:"type"`
-	Name    *string            `json:"name,omitempty"`
-	Notes   *string            `json:"notes,omitempty"`
-	Disable bool               `json:"disable"`
-	Signals []SignalType       `json:"signals"`
-	Details []*DeleteAttribute `json:"details"`
+	ID      string       `json:"id"`
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details []string     `json:"details"`
 }
 
 func (DeleteAttributeAction) IsAction()              {}

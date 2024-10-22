@@ -273,7 +273,7 @@ type DeleteAttributeAction implements Action {
   notes: String
   disable: Boolean!
   signals: [SignalType!]!
-  details: [DeleteAttribute!]!
+  details: [String!]!
 }
 
 type PiiMaskingAction implements Action {
