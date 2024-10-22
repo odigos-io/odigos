@@ -27,29 +27,40 @@ spec:
   - name: Install Odigos
     try:
     - script:
-        content: ../../../cli/odigos install --version e2e-test
+        content: |
+          if [ "$MODE" = "cross-cloud-tests" ]; then
+            ../../../cli/odigos install --version "$COMMIT_HASH" --image-prefix=public.ecr.aws/y2v0v6s7
+          else
+            ../../../cli/odigos install --version e2e-test
+          fi
         timeout: 60s
     - assert:
         file: assert-odigos-installed.yaml
+
   - name: Install Demo App
     try:
     - script:
-        timeout: 100s
+        timeout: 200s
         content: |
-          docker pull keyval/odigos-demo-inventory:v0.1
-          docker pull keyval/odigos-demo-membership:v0.1
-          docker pull keyval/odigos-demo-coupon:v0.1
-          docker pull keyval/odigos-demo-inventory:v0.1
-          docker pull keyval/odigos-demo-frontend:v0.2
-          kind load docker-image keyval/odigos-demo-inventory:v0.1
-          kind load docker-image keyval/odigos-demo-membership:v0.1
-          kind load docker-image keyval/odigos-demo-coupon:v0.1
-          kind load docker-image keyval/odigos-demo-inventory:v0.1
-          kind load docker-image keyval/odigos-demo-frontend:v0.2
+          if [ "$MODE" != "cross-cloud-tests" ]; then
+            docker pull keyval/odigos-demo-inventory:v0.1
+            docker pull keyval/odigos-demo-membership:v0.1
+            docker pull keyval/odigos-demo-coupon:v0.1
+            docker pull keyval/odigos-demo-inventory:v0.1
+            docker pull keyval/odigos-demo-frontend:v0.2
+            kind load docker-image keyval/odigos-demo-inventory:v0.1
+            kind load docker-image keyval/odigos-demo-membership:v0.1
+            kind load docker-image keyval/odigos-demo-coupon:v0.1
+            kind load docker-image keyval/odigos-demo-inventory:v0.1
+            kind load docker-image keyval/odigos-demo-frontend:v0.2
+          else
+            echo "Skipping docker pull and kind load for cross-cloud-tests mode"
+          fi
     - apply:
         file: 02-install-simple-demo.yaml
     - assert:
         file: assert-apps-installed.yaml
+        
   - name: Detect Languages
     try:
     - apply:
