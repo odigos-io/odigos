@@ -1,15 +1,15 @@
-import { ActionsType } from '@/types'
+import { ActionsType } from '@/types';
 
 export type ActionOption = {
-  id: string
-  type?: ActionsType
-  label: string
-  description?: string
-  docsEndpoint?: string
-  docsDescription?: string
-  icon?: string
-  items?: ActionOption[]
-}
+  id: string;
+  type?: ActionsType;
+  label: string;
+  description?: string;
+  docsEndpoint?: string;
+  docsDescription?: string;
+  icon?: string;
+  items?: ActionOption[];
+};
 
 export const ACTION_OPTIONS: ActionOption[] = [
   {
@@ -83,4 +83,4 @@ export const ACTION_OPTIONS: ActionOption[] = [
       },
     ],
   },
-]
+];

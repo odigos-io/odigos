@@ -1,9 +1,9 @@
-import React, { ButtonHTMLAttributes } from 'react'
-import styled, { css } from 'styled-components'
+import React, { ButtonHTMLAttributes } from 'react';
+import styled, { css } from 'styled-components';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger'
-  isDisabled?: boolean
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger';
+  isDisabled?: boolean;
 }
 
 const variantStyles = {
@@ -63,7 +63,7 @@ const variantStyles = {
       background: ${({ theme }) => theme.colors.danger};
     }
   `,
-}
+};
 
 const StyledButton = styled.button<ButtonProps>`
   height: 36px;
@@ -87,10 +87,10 @@ const StyledButton = styled.button<ButtonProps>`
         background-color: #eaeaea;
       }
     `}
-`
+`;
 
 const ButtonContainer = styled.div<{
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger'
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger';
 }>`
   border: 2px solid transparent;
   padding: 2px;
@@ -100,7 +100,7 @@ const ButtonContainer = styled.div<{
   &:focus-within {
     border-color: ${({ theme }) => theme.colors.secondary};
   }
-`
+`;
 
 export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', isDisabled = false, ...props }) => {
   return (
@@ -109,5 +109,5 @@ export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', i
         {children}
       </StyledButton>
     </ButtonContainer>
-  )
-}
+  );
+};

@@ -1,68 +1,68 @@
-import styled from 'styled-components'
-import { InputList, KeyValueInputsList, Text } from '@/reuseable-components'
-import type { ActionsType } from '@/types'
+import styled from 'styled-components';
+import { InputList, KeyValueInputsList, Text } from '@/reuseable-components';
+import { ActionsType } from '@/types';
 
 interface ActionCustomFieldsProps {
-  actionType?: ActionsType
-  value: any
-  setValue: (value: any) => void
+  actionType?: ActionsType;
+  value: any;
+  setValue: (value: any) => void;
 }
 
 const FieldWrapper = styled.div`
   width: 100%;
   margin: 8px 0;
-`
+`;
 
 const FieldTitle = styled(Text)`
   margin-bottom: 12px;
-`
+`;
 
 const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, value, setValue }) => {
   switch (actionType) {
-    case 'AddClusterInfo':
+    case ActionsType.ADD_CLUSTER_INFO:
       return (
         <FieldWrapper>
           <FieldTitle>Attributes to add</FieldTitle>
           <KeyValueInputsList required value={value} onChange={(arr) => setValue(arr)} />
         </FieldWrapper>
-      )
+      );
 
-    case 'DeleteAttribute':
+    case ActionsType.DELETE_ATTRIBUTES:
       return (
         <FieldWrapper>
           <FieldTitle>Attributes to delete</FieldTitle>
           <InputList required value={value} onChange={(arr) => setValue(arr)} />
         </FieldWrapper>
-      )
+      );
 
-    case 'RenameAttribute':
+    case ActionsType.RENAME_ATTRIBUTES:
       return (
         <FieldWrapper>
           <FieldTitle>Attributes to rename</FieldTitle>
           <KeyValueInputsList required value={value} onChange={(arr) => setValue(arr)} />
         </FieldWrapper>
-      )
+      );
 
-    case 'PiiMasking':
+    case ActionsType.PII_MASKING:
       return (
         <FieldWrapper>
           <FieldTitle>Attributes to mask</FieldTitle>
           <InputList required value={value} onChange={(arr) => setValue(arr)} />
         </FieldWrapper>
-      )
+      );
 
-    case 'ErrorSampler':
-      return null
+    case ActionsType.ERROR_SAMPLER:
+      return null;
 
-    case 'ProbabilisticSampler':
-      return null
+    case ActionsType.PROBABILISTIC_SAMPLER:
+      return null;
 
-    case 'LatencySampler':
-      return null
+    case ActionsType.LATENCY_SAMPLER:
+      return null;
 
     default:
-      return null
+      return null;
   }
-}
+};
 
-export default ActionCustomFields
+export default ActionCustomFields;

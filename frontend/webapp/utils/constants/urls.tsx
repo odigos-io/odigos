@@ -13,15 +13,12 @@ const API = {
   CHECK_CONNECTION: `${BASE_URL}/destinations/testConnection`,
   SOURCES: `${BASE_URL}/sources`,
   SET_ACTION: (type: string) => `${BASE_URL}/actions/types/${type}`,
-  PUT_ACTION: (type: string, id: string) =>
-    `${BASE_URL}/actions/types/${type}/${id}`,
+  PUT_ACTION: (type: string, id: string) => `${BASE_URL}/actions/types/${type}/${id}`,
   ACTIONS: `${BASE_URL}/actions`,
-  DELETE_ACTION: (type: string, id: string) =>
-    `${BASE_URL}/actions/types/${type}/${id}`,
+  DELETE_ACTION: (type: string, id: string) => `${BASE_URL}/actions/types/${type}/${id}`,
   OVERVIEW_METRICS: `${BASE_URL}/metrics/overview`,
   INSTRUMENTATION_RULES: `${BASE_URL}/instrumentation-rules`,
-  INSTRUMENTATION_RULE: (id: string) =>
-    `${BASE_URL}/instrumentation-rules/${id}`,
+  INSTRUMENTATION_RULE: (id: string) => `${BASE_URL}/instrumentation-rules/${id}`,
 };
 
 const QUERIES = {
@@ -35,13 +32,11 @@ const QUERIES = {
   API_ACTIONS: 'apiActions',
 };
 
-const SLACK_INVITE_LINK =
-  'https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email';
+const SLACK_INVITE_LINK = 'https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email';
 
-export const ACTION_DOCS_LINK =
-  'https://docs.odigos.io/pipeline/actions/introduction';
-export const ACTION_ITEM_DOCS_LINK = 'https://docs.odigos.io/pipeline/actions';
+export const DOCS_LINK = 'https://docs.odigos.io';
+export const ACTION_DOCS_LINK = `${DOCS_LINK}/pipeline/actions/introduction`;
+export const ACTION_ITEM_DOCS_LINK = `${DOCS_LINK}/pipeline/actions`;
+export const INSTRUMENTATION_RULES_DOCS_LINK = `${DOCS_LINK}/pipeline/rules/overview`;
 
 export { API, QUERIES, SLACK_INVITE_LINK, BASE_URL };
-export const INSTRUMENTATION_RULES_DOCS_LINK =
-  'https://docs.odigos.io/pipeline/rules/overview';

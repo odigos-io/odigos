@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { KeyvalImage, KeyvalText } from '@/design.system';
 import theme from '@/styles/palette';
 import { LinkIcon } from '@keyval-dev/design-system';
+import { DOCS_LINK } from '@/utils';
 
 const ManageDestinationHeaderWrapper = styled.div`
   display: flex;
@@ -10,11 +11,7 @@ const ManageDestinationHeaderWrapper = styled.div`
   align-items: center;
   border-radius: 25px;
   margin: 24px 0;
-  background: radial-gradient(
-      78.09% 72.18% at 100% -0%,
-      rgba(150, 242, 255, 0.4) 0%,
-      rgba(150, 242, 255, 0) 61.91%
-    ),
+  background: radial-gradient(78.09% 72.18% at 100% -0%, rgba(150, 242, 255, 0.4) 0%, rgba(150, 242, 255, 0) 61.91%),
     linear-gradient(180deg, #2e4c55 0%, #303355 100%);
 `;
 
@@ -27,9 +24,7 @@ const IMAGE_STYLE: React.CSSProperties = {
   marginLeft: 16,
 };
 
-export function ManageDestinationHeader({
-  data: { image_url, display_name, type },
-}) {
+export function ManageDestinationHeader({ data: { image_url, display_name, type } }) {
   return (
     <ManageDestinationHeaderWrapper>
       <KeyvalImage src={image_url} style={IMAGE_STYLE} />
@@ -37,15 +32,9 @@ export function ManageDestinationHeader({
         <KeyvalText size={24} weight={700}>
           {display_name}
         </KeyvalText>
-        <div
-          style={{ cursor: 'pointer' }}
-          onClick={() =>
-            window.open(`https://docs.odigos.io/backends/${type}`, '_blank')
-          }
-        >
+        <div style={{ cursor: 'pointer' }} onClick={() => window.open(`${DOCS_LINK}/backends/${type}`, '_blank')}>
           <KeyvalText style={{ display: 'flex', gap: 3 }}>
-            find out more about {display_name} in{' '}
-            <a style={{ color: theme.colors.torquiz_light }}>our docs</a>
+            find out more about {display_name} in <a style={{ color: theme.colors.torquiz_light }}>our docs</a>
             <LinkIcon style={{ marginTop: 2 }} />
           </KeyvalText>
         </div>

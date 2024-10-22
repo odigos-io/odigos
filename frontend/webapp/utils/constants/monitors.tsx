@@ -1,12 +1,5 @@
 import { SETUP } from '@/utils/constants';
-import {
-  LogsFocusIcon,
-  LogsIcon,
-  MetricsFocusIcon,
-  MetricsIcon,
-  TraceFocusIcon,
-  TraceIcon,
-} from '@keyval-dev/design-system';
+import { LogsFocusIcon, LogsIcon, MetricsFocusIcon, MetricsIcon, TraceFocusIcon, TraceIcon } from '@keyval-dev/design-system';
 
 export type MonitoringOption = {
   title: string;
@@ -45,5 +38,20 @@ export const MONITORING_OPTIONS = [
     title: SETUP.MONITORS.TRACES,
     type: 'traces',
     tapped: true,
+  },
+];
+
+export const MONITORS_OPTIONS = [
+  {
+    id: 'logs',
+    value: 'Logs',
+  },
+  {
+    id: 'metrics',
+    value: 'Metrics',
+  },
+  {
+    id: 'traces',
+    value: 'Traces',
   },
 ];
