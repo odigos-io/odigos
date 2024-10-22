@@ -1,18 +1,16 @@
 'use client';
 import React from 'react';
-import { StepsList } from '@/components';
-import { ChooseDestinationContainer } from '@/containers';
-import { CardWrapper, PageContainer, StepListWrapper } from '../styled';
+import { SideMenu } from '@/components';
+import { SideMenuWrapper } from '../styled';
+import { ChooseDestinationContainer } from '@/containers/main';
 
 export default function ChooseDestinationPage() {
   return (
-    <PageContainer>
-      <StepListWrapper>
-        <StepsList currentStepIndex={1} />
-      </StepListWrapper>
-      <CardWrapper>
-        <ChooseDestinationContainer />
-      </CardWrapper>
-    </PageContainer>
+    <>
+      <SideMenuWrapper>
+        <SideMenu currentStep={3} />
+      </SideMenuWrapper>
+      <ChooseDestinationContainer />
+    </>
   );
 }

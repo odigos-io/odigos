@@ -6,7 +6,7 @@ import styled, { css } from 'styled-components';
 import { KeyvalCheckbox, KeyvalText } from '@/design.system';
 import ActionRowDynamicContent from './action.row.dynamic.content';
 import { TapList } from '@/components/setup/destination/tap.list/tap.list';
-import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
+import { MONITORING_OPTIONS } from '@/utils/constants/monitors';
 import { ActionIcon } from '../action.icon';
 
 const StyledTr = styled.tr`

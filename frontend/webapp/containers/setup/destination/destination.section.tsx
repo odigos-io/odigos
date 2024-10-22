@@ -5,7 +5,7 @@ import { KeyvalLoader } from '@/design.system';
 import { EmptyList } from '@/components/lists';
 import { OVERVIEW, QUERIES, SETUP } from '@/utils';
 import { getDestinationsTypes } from '@/services';
-import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
+import { MONITORING_OPTIONS } from '@/utils/constants/monitors';
 import { DestinationList, DestinationOptionMenu } from '@/components/setup';
 import {
   LoaderWrapper,

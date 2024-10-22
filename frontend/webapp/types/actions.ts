@@ -34,7 +34,7 @@ export interface ActionItem {
 export interface ActionData {
   id: string;
   type: string;
-  spec: ActionItem;
+  spec: ActionItem | string;
 }
 
 interface Monitor {

@@ -3,7 +3,7 @@ import theme from '@/styles/palette';
 import { Destination } from '@/types';
 import styled, { css } from 'styled-components';
 import { KeyvalImage, KeyvalText } from '@/design.system';
-import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
+import { MONITORING_OPTIONS } from '@/utils/constants/monitors';
 import { TapList } from '@/components/setup/destination/tap.list/tap.list';
 import { ConditionCheck } from '@/components/common';
 
