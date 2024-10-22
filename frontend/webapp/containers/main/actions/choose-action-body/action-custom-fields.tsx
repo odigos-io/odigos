@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { InputList, KeyValueInputsList, Text } from '@/reuseable-components';
-import type { ActionsType } from '@/types';
+import { ActionsType } from '@/types';
 
 interface ActionCustomFieldsProps {
   actionType?: ActionsType;
@@ -19,7 +19,7 @@ const FieldTitle = styled(Text)`
 
 const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, value, setValue }) => {
   switch (actionType) {
-    case 'AddClusterInfo':
+    case ActionsType.ADD_CLUSTER_INFO:
       return (
         <FieldWrapper>
           <FieldTitle>Attributes to add</FieldTitle>
@@ -27,7 +27,7 @@ const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, val
         </FieldWrapper>
       );
 
-    case 'DeleteAttribute':
+    case ActionsType.DELETE_ATTRIBUTES:
       return (
         <FieldWrapper>
           <FieldTitle>Attributes to delete</FieldTitle>
@@ -35,7 +35,7 @@ const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, val
         </FieldWrapper>
       );
 
-    case 'RenameAttribute':
+    case ActionsType.RENAME_ATTRIBUTES:
       return (
         <FieldWrapper>
           <FieldTitle>Attributes to rename</FieldTitle>
@@ -43,7 +43,7 @@ const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, val
         </FieldWrapper>
       );
 
-    case 'PiiMasking':
+    case ActionsType.PII_MASKING:
       return (
         <FieldWrapper>
           <FieldTitle>Attributes to mask</FieldTitle>
@@ -51,13 +51,13 @@ const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, val
         </FieldWrapper>
       );
 
-    case 'ErrorSampler':
+    case ActionsType.ERROR_SAMPLER:
       return null;
 
-    case 'ProbabilisticSampler':
+    case ActionsType.PROBABILISTIC_SAMPLER:
       return null;
 
-    case 'LatencySampler':
+    case ActionsType.LATENCY_SAMPLER:
       return null;
 
     default:
