@@ -197,7 +197,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateAction                 func(childComplexity int, action model.ActionInput) int
 		CreateNewDestination         func(childComplexity int, destination model.DestinationInput) int
-		DeleteAction                 func(childComplexity int, id string) int
+		DeleteAction                 func(childComplexity int, id string, actionType string) int
 		PersistK8sNamespace          func(childComplexity int, namespace model.PersistNamespaceItemInput) int
 		PersistK8sSources            func(childComplexity int, namespace string, sources []*model.PersistNamespaceSourceInput) int
 		TestConnectionForDestination func(childComplexity int, destination model.DestinationInput) int
@@ -263,7 +263,7 @@ type MutationResolver interface {
 	UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error)
 	CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error)
 	UpdateAction(ctx context.Context, id string, action model.ActionInput) (model.Action, error)
-	DeleteAction(ctx context.Context, id string) (bool, error)
+	DeleteAction(ctx context.Context, id string, actionType string) (bool, error)
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
@@ -908,7 +908,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteAction(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.DeleteAction(childComplexity, args["id"].(string), args["actionType"].(string)), true
 
 	case "Mutation.persistK8sNamespace":
 		if e.complexity.Mutation.PersistK8sNamespace == nil {
@@ -1339,6 +1339,15 @@ func (ec *executionContext) field_Mutation_deleteAction_args(ctx context.Context
 		}
 	}
 	args["id"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["actionType"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("actionType"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["actionType"] = arg1
 	return args, nil
 }
 
@@ -5790,7 +5799,7 @@ func (ec *executionContext) _Mutation_deleteAction(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteAction(rctx, fc.Args["id"].(string))
+		return ec.resolvers.Mutation().DeleteAction(rctx, fc.Args["id"].(string), fc.Args["actionType"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
