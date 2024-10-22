@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import React, { useEffect } from 'react';
 import ActionCustomFields from './action-custom-fields';
 import { useActionFormData } from '@/hooks/actions/useActionFormData';
-import { MONITORING_OPTIONS } from '@/components/setup/destination/utils';
+import { MONITORING_OPTIONS } from '@/utils/constants/monitors';
 import { type ActionOption } from '../choose-action-modal/action-options';
 import { CheckboxList, DocsButton, Input, Text, TextArea } from '@/reuseable-components';
 
