@@ -1,8 +1,9 @@
-import React, { useRef, useCallback, useState } from 'react';
 import styled from 'styled-components';
-import { AutocompleteInput, Modal, NavigationButtons, Text, Divider } from '@/reuseable-components';
+import React, { useRef, useState } from 'react';
+import { useActionFormData } from '@/hooks/actions';
 import { ChooseActionBody } from '../choose-action-body';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
+import { AutocompleteInput, Modal, NavigationButtons, Text, Divider, Option } from '@/reuseable-components';
 
 const DefineActionContainer = styled.section`
   height: 640px;
@@ -51,17 +52,23 @@ const ModalActionComponent: React.FC<ModalActionComponentProps> = React.memo(({ 
 export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, handleCloseModal }) => {
   const submitRef = useRef<(() => void) | null>(null);
   const [selectedItem, setSelectedItem] = useState<ActionOption | null>(null);
+  const { formData, handleFormChange, resetFormData } = useActionFormData();
 
-  const handleNext = useCallback(() => {
+  const handleNext = () => {
     if (submitRef.current) {
       handleCloseModal();
     }
-  }, [handleCloseModal]);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     handleCloseModal();
     setSelectedItem(null);
-  }, [handleCloseModal]);
+  };
+
+  const handleSelect = (item: Option) => {
+    resetFormData();
+    setSelectedItem(item);
+  };
 
   return (
     <Modal isOpen={isModalOpen} actionComponent={<ModalActionComponent onNext={handleNext} />} header={{ title: 'Add Action' }} onClose={handleClose}>
@@ -75,12 +82,12 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
           </SubTitle>
         </WidthConstraint>
 
-        <AutocompleteInput options={ACTION_OPTIONS} onOptionSelect={(item) => setSelectedItem(item)} />
+        <AutocompleteInput options={ACTION_OPTIONS} onOptionSelect={handleSelect} />
 
         {!!selectedItem?.type ? (
           <WidthConstraint>
             <Divider margin='16px 0' />
-            <ChooseActionBody action={selectedItem} />
+            <ChooseActionBody action={selectedItem} formData={formData} handleFormChange={handleFormChange} />
           </WidthConstraint>
         ) : null}
       </DefineActionContainer>

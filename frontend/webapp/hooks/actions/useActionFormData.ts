@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { SignalUppercase } from '@/utils';
 
-type Signal = 'TRACES' | 'METRICS' | 'LOGS';
-type FormData = {
+export type ActionFormData = {
   type: string;
   name: string;
   notes: string;
   disable: boolean;
-  signals: Signal[];
+  signals: SignalUppercase[];
   details: string;
 };
 
-const INITIAL: FormData = {
+const INITIAL: ActionFormData = {
   type: '',
   name: '',
   notes: '',
@@ -21,45 +21,21 @@ const INITIAL: FormData = {
 
 export function useActionFormData() {
   const [formData, setFormData] = useState({ ...INITIAL });
-  const [exportedSignals, setExportedSignals] = useState({
-    logs: false,
-    metrics: false,
-    traces: false,
-  });
 
   const resetFormData = () => {
     setFormData({ ...INITIAL });
   };
 
   const handleFormChange = (key: keyof typeof INITIAL, val: any) => {
-    setFormData((prev) => {
-      const prevVal = prev[key];
-
-      if (Array.isArray(prevVal)) {
-      }
-
-      return {
-        ...prev,
-        [key]: val,
-      };
-    });
+    setFormData((prev) => ({
+      ...prev,
+      [key]: val,
+    }));
   };
-
-  useEffect(() => {
-    const signals: (typeof INITIAL)['signals'] = [];
-
-    Object.entries(exportedSignals).forEach(([k, v]) => {
-      if (v) signals.push(k.toUpperCase() as Signal);
-    });
-
-    handleFormChange('signals', signals);
-  }, [exportedSignals]);
 
   return {
     formData,
     handleFormChange,
     resetFormData,
-    exportedSignals,
-    setExportedSignals,
   };
 }

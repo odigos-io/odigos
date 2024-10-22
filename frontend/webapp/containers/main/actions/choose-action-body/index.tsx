@@ -1,10 +1,10 @@
+import React from 'react';
 import styled from 'styled-components';
-import React, { useEffect } from 'react';
 import ActionCustomFields from './action-custom-fields';
-import { useActionFormData } from '@/hooks/actions/useActionFormData';
-import { MONITORING_OPTIONS } from '@/utils/constants/monitors';
+import { ActionFormData } from '@/hooks/actions/useActionFormData';
 import { type ActionOption } from '../choose-action-modal/action-options';
-import { CheckboxList, DocsButton, Input, Text, TextArea } from '@/reuseable-components';
+import { DocsButton, Input, Text, TextArea } from '@/reuseable-components';
+import { MonitoringCheckboxes } from '@/reuseable-components/monitoring-checkboxes';
 
 const Description = styled(Text)`
   color: ${({ theme }) => theme.text.grey};
@@ -23,17 +23,11 @@ const FieldTitle = styled(Text)`
 
 interface ChooseActionContentProps {
   action: ActionOption;
+  formData: ActionFormData;
+  handleFormChange: (key: keyof ActionFormData, val: any) => void;
 }
 
-const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action }) => {
-  const { formData, handleFormChange, resetFormData, exportedSignals, setExportedSignals } = useActionFormData();
-
-  useEffect(() => {
-    return () => {
-      resetFormData();
-    };
-  }, []);
-
+const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action, formData, handleFormChange }) => {
   return (
     <>
       <Description>
@@ -42,14 +36,10 @@ const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action }) => {
       </Description>
 
       <FieldWrapper>
-        <FieldTitle>Monitoring</FieldTitle>
-        <CheckboxList
-          monitors={MONITORING_OPTIONS}
-          exportedSignals={exportedSignals}
-          handleSignalChange={(id, val) => {
-            const found = MONITORING_OPTIONS.find((item) => item.id === id);
-            if (found) setExportedSignals((prev) => ({ ...prev, [found.type]: val }));
-          }}
+        <MonitoringCheckboxes
+          allowedSignals={action.allowedSignals}
+          selectedSignals={formData.signals}
+          setSelectedSignals={(value) => handleFormChange('signals', value)}
         />
       </FieldWrapper>
 
