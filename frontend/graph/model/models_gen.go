@@ -8,6 +8,57 @@ import (
 	"strconv"
 )
 
+type Action interface {
+	IsAction()
+	GetID() string
+	GetType() string
+	GetName() *string
+	GetNotes() *string
+	GetDisable() bool
+	GetSignals() []SignalType
+}
+
+type ActionInput struct {
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details string       `json:"details"`
+}
+
+type AddClusterInfoAction struct {
+	ID      string         `json:"id"`
+	Type    string         `json:"type"`
+	Name    *string        `json:"name,omitempty"`
+	Notes   *string        `json:"notes,omitempty"`
+	Disable bool           `json:"disable"`
+	Signals []SignalType   `json:"signals"`
+	Details []*ClusterInfo `json:"details"`
+}
+
+func (AddClusterInfoAction) IsAction()              {}
+func (this AddClusterInfoAction) GetID() string     { return this.ID }
+func (this AddClusterInfoAction) GetType() string   { return this.Type }
+func (this AddClusterInfoAction) GetName() *string  { return this.Name }
+func (this AddClusterInfoAction) GetNotes() *string { return this.Notes }
+func (this AddClusterInfoAction) GetDisable() bool  { return this.Disable }
+func (this AddClusterInfoAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+
+type ClusterInfo struct {
+	AttributeName        string  `json:"attributeName"`
+	AttributeStringValue *string `json:"attributeStringValue,omitempty"`
+}
+
 type ComputePlatform struct {
 	ComputePlatformType ComputePlatformType    `json:"computePlatformType"`
 	K8sActualNamespace  *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
@@ -24,6 +75,37 @@ type Condition struct {
 	LastTransitionTime *string         `json:"lastTransitionTime,omitempty"`
 	Reason             *string         `json:"reason,omitempty"`
 	Message            *string         `json:"message,omitempty"`
+}
+
+type DeleteAttribute struct {
+	AttributeName string `json:"attributeName"`
+}
+
+type DeleteAttributeAction struct {
+	ID      string             `json:"id"`
+	Type    string             `json:"type"`
+	Name    *string            `json:"name,omitempty"`
+	Notes   *string            `json:"notes,omitempty"`
+	Disable bool               `json:"disable"`
+	Signals []SignalType       `json:"signals"`
+	Details []*DeleteAttribute `json:"details"`
+}
+
+func (DeleteAttributeAction) IsAction()              {}
+func (this DeleteAttributeAction) GetID() string     { return this.ID }
+func (this DeleteAttributeAction) GetType() string   { return this.Type }
+func (this DeleteAttributeAction) GetName() *string  { return this.Name }
+func (this DeleteAttributeAction) GetNotes() *string { return this.Notes }
+func (this DeleteAttributeAction) GetDisable() bool  { return this.Disable }
+func (this DeleteAttributeAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
 }
 
 type DestinationDetails struct {
