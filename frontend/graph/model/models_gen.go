@@ -34,7 +34,7 @@ type AddClusterInfoAction struct {
 	Notes   *string        `json:"notes,omitempty"`
 	Disable bool           `json:"disable"`
 	Signals []SignalType   `json:"signals"`
-	Spec    []*ClusterInfo `json:"spec"`
+	Details []*ClusterInfo `json:"details"`
 }
 
 func (AddClusterInfoAction) IsAction()              {}
@@ -88,7 +88,7 @@ type DeleteAttributeAction struct {
 	Notes   *string            `json:"notes,omitempty"`
 	Disable bool               `json:"disable"`
 	Signals []SignalType       `json:"signals"`
-	Spec    []*DeleteAttribute `json:"spec"`
+	Details []*DeleteAttribute `json:"details"`
 }
 
 func (DeleteAttributeAction) IsAction()              {}

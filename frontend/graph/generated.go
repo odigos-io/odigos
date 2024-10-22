@@ -51,12 +51,12 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	AddClusterInfoAction struct {
+		Details func(childComplexity int) int
 		Disable func(childComplexity int) int
 		ID      func(childComplexity int) int
 		Name    func(childComplexity int) int
 		Notes   func(childComplexity int) int
 		Signals func(childComplexity int) int
-		Spec    func(childComplexity int) int
 		Type    func(childComplexity int) int
 	}
 
@@ -88,12 +88,12 @@ type ComplexityRoot struct {
 	}
 
 	DeleteAttributeAction struct {
+		Details func(childComplexity int) int
 		Disable func(childComplexity int) int
 		ID      func(childComplexity int) int
 		Name    func(childComplexity int) int
 		Notes   func(childComplexity int) int
 		Signals func(childComplexity int) int
-		Spec    func(childComplexity int) int
 		Type    func(childComplexity int) int
 	}
 
@@ -292,6 +292,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "AddClusterInfoAction.details":
+		if e.complexity.AddClusterInfoAction.Details == nil {
+			break
+		}
+
+		return e.complexity.AddClusterInfoAction.Details(childComplexity), true
+
 	case "AddClusterInfoAction.disable":
 		if e.complexity.AddClusterInfoAction.Disable == nil {
 			break
@@ -326,13 +333,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AddClusterInfoAction.Signals(childComplexity), true
-
-	case "AddClusterInfoAction.spec":
-		if e.complexity.AddClusterInfoAction.Spec == nil {
-			break
-		}
-
-		return e.complexity.AddClusterInfoAction.Spec(childComplexity), true
 
 	case "AddClusterInfoAction.type":
 		if e.complexity.AddClusterInfoAction.Type == nil {
@@ -456,6 +456,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DeleteAttribute.AttributeName(childComplexity), true
 
+	case "DeleteAttributeAction.details":
+		if e.complexity.DeleteAttributeAction.Details == nil {
+			break
+		}
+
+		return e.complexity.DeleteAttributeAction.Details(childComplexity), true
+
 	case "DeleteAttributeAction.disable":
 		if e.complexity.DeleteAttributeAction.Disable == nil {
 			break
@@ -490,13 +497,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DeleteAttributeAction.Signals(childComplexity), true
-
-	case "DeleteAttributeAction.spec":
-		if e.complexity.DeleteAttributeAction.Spec == nil {
-			break
-		}
-
-		return e.complexity.DeleteAttributeAction.Spec(childComplexity), true
 
 	case "DeleteAttributeAction.type":
 		if e.complexity.DeleteAttributeAction.Type == nil {
@@ -1794,8 +1794,8 @@ func (ec *executionContext) fieldContext_AddClusterInfoAction_signals(_ context.
 	return fc, nil
 }
 
-func (ec *executionContext) _AddClusterInfoAction_spec(ctx context.Context, field graphql.CollectedField, obj *model.AddClusterInfoAction) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AddClusterInfoAction_spec(ctx, field)
+func (ec *executionContext) _AddClusterInfoAction_details(ctx context.Context, field graphql.CollectedField, obj *model.AddClusterInfoAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AddClusterInfoAction_details(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1808,7 +1808,7 @@ func (ec *executionContext) _AddClusterInfoAction_spec(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Spec, nil
+		return obj.Details, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1825,7 +1825,7 @@ func (ec *executionContext) _AddClusterInfoAction_spec(ctx context.Context, fiel
 	return ec.marshalNClusterInfo2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐClusterInfoᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AddClusterInfoAction_spec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AddClusterInfoAction_details(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AddClusterInfoAction",
 		Field:      field,
@@ -2846,8 +2846,8 @@ func (ec *executionContext) fieldContext_DeleteAttributeAction_signals(_ context
 	return fc, nil
 }
 
-func (ec *executionContext) _DeleteAttributeAction_spec(ctx context.Context, field graphql.CollectedField, obj *model.DeleteAttributeAction) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DeleteAttributeAction_spec(ctx, field)
+func (ec *executionContext) _DeleteAttributeAction_details(ctx context.Context, field graphql.CollectedField, obj *model.DeleteAttributeAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DeleteAttributeAction_details(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2860,7 +2860,7 @@ func (ec *executionContext) _DeleteAttributeAction_spec(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Spec, nil
+		return obj.Details, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2877,7 +2877,7 @@ func (ec *executionContext) _DeleteAttributeAction_spec(ctx context.Context, fie
 	return ec.marshalNDeleteAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDeleteAttributeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DeleteAttributeAction_spec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DeleteAttributeAction_details(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DeleteAttributeAction",
 		Field:      field,
@@ -8957,8 +8957,8 @@ func (ec *executionContext) _AddClusterInfoAction(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "spec":
-			out.Values[i] = ec._AddClusterInfoAction_spec(ctx, field, obj)
+		case "details":
+			out.Values[i] = ec._AddClusterInfoAction_details(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -9399,8 +9399,8 @@ func (ec *executionContext) _DeleteAttributeAction(ctx context.Context, sel ast.
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "spec":
-			out.Values[i] = ec._DeleteAttributeAction_spec(ctx, field, obj)
+		case "details":
+			out.Values[i] = ec._DeleteAttributeAction_details(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

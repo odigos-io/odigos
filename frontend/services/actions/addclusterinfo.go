@@ -57,9 +57,9 @@ func CreateAddClusterInfo(ctx context.Context, action model.ActionInput) (model.
 		return nil, fmt.Errorf("failed to create AddClusterInfo: %v", err)
 	}
 
-	spec := make([]*model.ClusterInfo, len(details.ClusterAttributes))
+	resDetails := make([]*model.ClusterInfo, len(details.ClusterAttributes))
 	for i, attr := range details.ClusterAttributes {
-		spec[i] = &model.ClusterInfo{
+		resDetails[i] = &model.ClusterInfo{
 			AttributeName:        attr.AttributeName,
 			AttributeStringValue: attr.AttributeStringValue,
 		}
@@ -72,7 +72,7 @@ func CreateAddClusterInfo(ctx context.Context, action model.ActionInput) (model.
 		Notes:   action.Notes,
 		Disable: action.Disable,
 		Signals: action.Signals,
-		Spec:    spec,
+		Details: resDetails,
 	}
 
 	return response, nil

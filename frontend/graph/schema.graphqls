@@ -259,7 +259,7 @@ type AddClusterInfoAction implements Action {
   notes: String
   disable: Boolean!
   signals: [SignalType!]!
-  spec: [ClusterInfo!]!
+  details: [ClusterInfo!]!
 }
 
 type DeleteAttribute {
@@ -273,7 +273,7 @@ type DeleteAttributeAction implements Action {
   notes: String
   disable: Boolean!
   signals: [SignalType!]!
-  spec: [DeleteAttribute!]!
+  details: [DeleteAttribute!]!
 }
 
 input ActionInput {
