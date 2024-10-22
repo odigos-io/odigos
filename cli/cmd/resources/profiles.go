@@ -65,15 +65,19 @@ var (
 		ProfileName:      common.ProfileName("code-attributes"),
 		ShortDescription: "Record span attributes in 'code' namespace where supported",
 	}
+	disableNameProcessorProfile = Profile{
+		ProfileName:      common.ProfileName("disable-name-processor"),
+		ShortDescription: "If not using dotnet or java native instrumentations, disable the name processor which is not needed",
+	}
 	kratosProfile = Profile{
 		ProfileName:      common.ProfileName("kratos"),
 		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes, query-operation-detector",
-		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector"},
+		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector", "disableNameProcessorProfile"},
 	}
 )
 
 func GetAvailableCommunityProfiles() []Profile {
-	return []Profile{semconvUpgraderProfile, copyScopeProfile}
+	return []Profile{semconvUpgraderProfile, copyScopeProfile, disableNameProcessorProfile}
 }
 
 func GetAvailableOnPremProfiles() []Profile {
