@@ -238,6 +238,53 @@ input PatchSourceRequestInput {
   reportedName: String
 }
 
+interface Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+}
+
+type ClusterInfo {
+  attributeName: String!
+  attributeStringValue: String
+}
+
+type AddClusterInfoAction implements Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: [ClusterInfo!]!
+}
+
+type DeleteAttribute {
+  attributeName: String!
+}
+
+type DeleteAttributeAction implements Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: [DeleteAttribute!]!
+}
+
+input ActionInput {
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -261,4 +308,8 @@ type Mutation {
     patchSourceRequest: PatchSourceRequestInput!
   ): Boolean!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
+
+  createAction(action: ActionInput!): Action!
+  updateAction(id: ID!, action: ActionInput!): Action!
+  deleteAction(id: ID!): Boolean!
 }
