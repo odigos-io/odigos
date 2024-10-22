@@ -1,45 +1,45 @@
-import Image from 'next/image'
-import React, { useState, useEffect, useRef } from 'react'
-import styled from 'styled-components'
-import { Input } from '../input'
-import { Button } from '../button'
-import { Text } from '../text'
-import { Tooltip } from '../tooltip'
+import Image from 'next/image';
+import React, { useState, useEffect, useRef } from 'react';
+import styled from 'styled-components';
+import { Input } from '../input';
+import { Button } from '../button';
+import { Text } from '../text';
+import { Tooltip } from '../tooltip';
 
 interface KeyValueInputsListProps {
-  initialKeyValuePairs?: { key: string; value: string }[]
-  value?: { key: string; value: string }[]
-  title?: string
-  tooltip?: string
-  required?: boolean
-  onChange?: (validKeyValuePairs: { key: string; value: string }[]) => void
+  initialKeyValuePairs?: { key: string; value: string }[];
+  value?: { key: string; value: string }[];
+  title?: string;
+  tooltip?: string;
+  required?: boolean;
+  onChange?: (validKeyValuePairs: { key: string; value: string }[]) => void;
 }
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-`
+`;
 
 const HeaderWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
   margin-bottom: 4px;
-`
+`;
 
 const Row = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
   margin-bottom: 12px;
-`
+`;
 
 const DeleteButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-`
+`;
 
 const AddButton = styled(Button)<{ disabled: boolean }>`
   color: white;
@@ -51,22 +51,22 @@ const AddButton = styled(Button)<{ disabled: boolean }>`
   align-self: flex-start;
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
   transition: opacity 0.3s;
-`
+`;
 
 const ButtonText = styled(Text)`
   font-size: 14px;
   font-weight: 500;
   font-family: ${({ theme }) => theme.font_family.secondary};
   text-decoration-line: underline;
-`
+`;
 
 const Title = styled(Text)`
   font-size: 14px;
   opacity: 0.8;
   line-height: 22px;
-`
+`;
 
-const INITIAL = [{ key: '', value: '' }]
+const INITIAL = [{ key: '', value: '' }];
 
 export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
   initialKeyValuePairs = INITIAL,
@@ -76,49 +76,49 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
   tooltip,
   required,
 }) => {
-  const [keyValuePairs, setKeyValuePairs] = useState<{ key: string; value: string }[]>(value || initialKeyValuePairs)
+  const [keyValuePairs, setKeyValuePairs] = useState<{ key: string; value: string }[]>(value || initialKeyValuePairs);
 
   useEffect(() => {
-    if (!keyValuePairs.length) setKeyValuePairs(INITIAL)
-  }, [])
+    if (!keyValuePairs.length) setKeyValuePairs(INITIAL);
+  }, []);
 
-  const recordedPairs = useRef('')
+  const recordedPairs = useRef('');
 
   useEffect(() => {
     // Filter out rows where either key or value is empty
-    const validKeyValuePairs = keyValuePairs.filter((pair) => pair.key.trim() !== '' && pair.value.trim() !== '')
-    const stringified = JSON.stringify(validKeyValuePairs)
+    const validKeyValuePairs = keyValuePairs.filter((pair) => pair.key.trim() !== '' && pair.value.trim() !== '');
+    const stringified = JSON.stringify(validKeyValuePairs);
 
     // Only trigger onChange if valid key-value pairs have changed
     if (recordedPairs.current !== stringified) {
-      recordedPairs.current = stringified
+      recordedPairs.current = stringified;
 
-      if (onChange) onChange(validKeyValuePairs)
+      if (onChange) onChange(validKeyValuePairs);
     }
-  }, [keyValuePairs, onChange])
+  }, [keyValuePairs, onChange]);
 
   const handleAddRow = () => {
     setKeyValuePairs((prev) => {
-      const payload = [...prev]
-      payload.push({ key: '', value: '' })
-      return payload
-    })
-  }
+      const payload = [...prev];
+      payload.push({ key: '', value: '' });
+      return payload;
+    });
+  };
 
   const handleDeleteRow = (idx: number) => {
-    setKeyValuePairs((prev) => prev.filter((_, i) => i !== idx))
-  }
+    setKeyValuePairs((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   const handleChange = (key: 'key' | 'value', val: string, idx: number) => {
     setKeyValuePairs((prev) => {
-      const payload = [...prev]
-      payload[idx][key] = val
-      return payload
-    })
-  }
+      const payload = [...prev];
+      payload[idx][key] = val;
+      return payload;
+    });
+  };
 
   // Check if any key or value field is empty
-  const isAddButtonDisabled = keyValuePairs.some((pair) => pair.key.trim() === '' || pair.value.trim() === '')
+  const isAddButtonDisabled = keyValuePairs.some((pair) => pair.key.trim() === '' || pair.value.trim() === '');
 
   return (
     <Container>
@@ -150,7 +150,7 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
         <ButtonText>ADD ATTRIBUTE</ButtonText>
       </AddButton>
     </Container>
-  )
-}
+  );
+};
 
-export default KeyValueInputsList
+export default KeyValueInputsList;

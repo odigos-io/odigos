@@ -1,21 +1,21 @@
-import styled from 'styled-components'
-import { InputList, KeyValueInputsList, Text } from '@/reuseable-components'
-import type { ActionsType } from '@/types'
+import styled from 'styled-components';
+import { InputList, KeyValueInputsList, Text } from '@/reuseable-components';
+import type { ActionsType } from '@/types';
 
 interface ActionCustomFieldsProps {
-  actionType?: ActionsType
-  value: any
-  setValue: (value: any) => void
+  actionType?: ActionsType;
+  value: any;
+  setValue: (value: any) => void;
 }
 
 const FieldWrapper = styled.div`
   width: 100%;
   margin: 8px 0;
-`
+`;
 
 const FieldTitle = styled(Text)`
   margin-bottom: 12px;
-`
+`;
 
 const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, value, setValue }) => {
   switch (actionType) {
@@ -25,7 +25,7 @@ const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, val
           <FieldTitle>Attributes to add</FieldTitle>
           <KeyValueInputsList required value={value} onChange={(arr) => setValue(arr)} />
         </FieldWrapper>
-      )
+      );
 
     case 'DeleteAttribute':
       return (
@@ -33,7 +33,7 @@ const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, val
           <FieldTitle>Attributes to delete</FieldTitle>
           <InputList required value={value} onChange={(arr) => setValue(arr)} />
         </FieldWrapper>
-      )
+      );
 
     case 'RenameAttribute':
       return (
@@ -41,7 +41,7 @@ const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, val
           <FieldTitle>Attributes to rename</FieldTitle>
           <KeyValueInputsList required value={value} onChange={(arr) => setValue(arr)} />
         </FieldWrapper>
-      )
+      );
 
     case 'PiiMasking':
       return (
@@ -49,20 +49,20 @@ const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, val
           <FieldTitle>Attributes to mask</FieldTitle>
           <InputList required value={value} onChange={(arr) => setValue(arr)} />
         </FieldWrapper>
-      )
+      );
 
     case 'ErrorSampler':
-      return null
+      return null;
 
     case 'ProbabilisticSampler':
-      return null
+      return null;
 
     case 'LatencySampler':
-      return null
+      return null;
 
     default:
-      return null
+      return null;
   }
-}
+};
 
-export default ActionCustomFields
+export default ActionCustomFields;
