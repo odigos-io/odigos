@@ -4,6 +4,8 @@ import type { ActionsType } from '@/types'
 
 interface ActionCustomFieldsProps {
   actionType?: ActionsType
+  value: any
+  setValue: (value: any) => void
 }
 
 const FieldWrapper = styled.div`
@@ -15,13 +17,13 @@ const FieldTitle = styled(Text)`
   margin-bottom: 12px;
 `
 
-const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType }) => {
+const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, value, setValue }) => {
   switch (actionType) {
     case 'AddClusterInfo':
       return (
         <FieldWrapper>
           <FieldTitle>Attributes to add</FieldTitle>
-          <KeyValueInputsList required value={[]} onChange={(arr) => console.log(arr)} />
+          <KeyValueInputsList required value={value} onChange={(arr) => setValue(arr)} />
         </FieldWrapper>
       )
 
@@ -29,7 +31,7 @@ const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType }) =
       return (
         <FieldWrapper>
           <FieldTitle>Attributes to delete</FieldTitle>
-          <InputList required value={[]} onChange={(arr) => console.log(arr)} />
+          <InputList required value={value} onChange={(arr) => setValue(arr)} />
         </FieldWrapper>
       )
 
@@ -37,7 +39,7 @@ const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType }) =
       return (
         <FieldWrapper>
           <FieldTitle>Attributes to rename</FieldTitle>
-          <KeyValueInputsList required value={[]} onChange={(arr) => console.log(arr)} />
+          <KeyValueInputsList required value={value} onChange={(arr) => setValue(arr)} />
         </FieldWrapper>
       )
 
@@ -45,7 +47,7 @@ const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType }) =
       return (
         <FieldWrapper>
           <FieldTitle>Attributes to mask</FieldTitle>
-          <InputList required value={[]} onChange={(arr) => console.log(arr)} />
+          <InputList required value={value} onChange={(arr) => setValue(arr)} />
         </FieldWrapper>
       )
 

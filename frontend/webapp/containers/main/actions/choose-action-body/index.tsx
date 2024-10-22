@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React, { Fragment, useEffect, useMemo } from 'react'
 import styled from 'styled-components'
 import { CheckboxList, DocsButton, Input, Text, TextArea } from '@/reuseable-components'
 import { MONITORING_OPTIONS } from '@/components/setup/destination/utils'
@@ -26,7 +26,13 @@ interface ChooseActionContentProps {
 }
 
 const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action }) => {
-  const { actionName, setActionName, actionNotes, setActionNotes, exportedSignals, setExportedSignals } = useActionFormData()
+  const { formData, handleFormChange, resetFormData, exportedSignals, setExportedSignals } = useActionFormData()
+
+  useEffect(() => {
+    return () => {
+      resetFormData()
+    }
+  }, [])
 
   return (
     <Fragment>
@@ -49,14 +55,22 @@ const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action }) => {
 
       <FieldWrapper>
         <FieldTitle>Action name</FieldTitle>
-        <Input placeholder='Use a name that describes the action' value={actionName} onChange={({ target: { value } }) => setActionName(value)} />
+        <Input
+          placeholder='Use a name that describes the action'
+          value={formData.name}
+          onChange={({ target: { value } }) => handleFormChange('name', value)}
+        />
       </FieldWrapper>
 
-      <ActionCustomFields actionType={action.type} />
+      <ActionCustomFields
+        actionType={action.type}
+        value={formData.details ? JSON.parse(formData.details) : undefined}
+        setValue={(val) => handleFormChange('details', JSON.stringify(val))}
+      />
 
       <FieldWrapper>
         <FieldTitle>Notes</FieldTitle>
-        <TextArea value={actionNotes} onChange={({ target: { value } }) => setActionNotes(value)} />
+        <TextArea value={formData.notes} onChange={({ target: { value } }) => handleFormChange('notes', value)} />
       </FieldWrapper>
     </Fragment>
   )
