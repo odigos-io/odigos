@@ -67,7 +67,74 @@ func CreateAddClusterInfo(ctx context.Context, action model.ActionInput) (model.
 
 	response := &model.AddClusterInfoAction{
 		ID:      generatedAction.Name,
-		Type:    "AddClusterInfo",
+		Type:    ActionTypeAddClusterInfo,
+		Name:    action.Name,
+		Notes:   action.Notes,
+		Disable: action.Disable,
+		Signals: action.Signals,
+		Details: resDetails,
+	}
+
+	return response, nil
+}
+
+func UpdateAddClusterInfo(ctx context.Context, id string, action model.ActionInput) (model.Action, error) {
+	odigosns := consts.DefaultOdigosNamespace
+
+	// Fetch the existing action
+	existingAction, err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).Get(ctx, id, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch AddClusterInfo: %v", err)
+	}
+
+	// Parse the details from action.Details
+	var details AddClusterInfoDetails
+	err = json.Unmarshal([]byte(action.Details), &details)
+	if err != nil {
+		return nil, fmt.Errorf("invalid details for AddClusterInfo: %v", err)
+	}
+
+	// Convert signals from action input
+	signals, err := services.ConvertSignals(action.Signals)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert signals: %v", err)
+	}
+
+	// Convert ClusterAttributes from model to v1alpha1
+	clusterAttributes := make([]v1alpha1.OtelAttributeWithValue, len(details.ClusterAttributes))
+	for i, attr := range details.ClusterAttributes {
+		clusterAttributes[i] = v1alpha1.OtelAttributeWithValue{
+			AttributeName:        attr.AttributeName,
+			AttributeStringValue: attr.AttributeStringValue,
+		}
+	}
+
+	// Update the existing action with new values
+	existingAction.Spec.ActionName = services.DerefString(action.Name)
+	existingAction.Spec.Notes = services.DerefString(action.Notes)
+	existingAction.Spec.Disabled = action.Disable
+	existingAction.Spec.Signals = signals
+	existingAction.Spec.ClusterAttributes = clusterAttributes
+
+	// Update the action in Kubernetes
+	updatedAction, err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).Update(ctx, existingAction, metav1.UpdateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update AddClusterInfo: %v", err)
+	}
+
+	// Prepare the response model
+	resDetails := make([]*model.ClusterInfo, len(details.ClusterAttributes))
+	for i, attr := range details.ClusterAttributes {
+		resDetails[i] = &model.ClusterInfo{
+			AttributeName:        attr.AttributeName,
+			AttributeStringValue: attr.AttributeStringValue,
+		}
+	}
+
+	// Return the updated model as the response
+	response := &model.AddClusterInfoAction{
+		ID:      updatedAction.Name,
+		Type:    ActionTypeAddClusterInfo,
 		Name:    action.Name,
 		Notes:   action.Notes,
 		Disable: action.Disable,
