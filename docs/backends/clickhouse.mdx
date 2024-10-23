@@ -1,0 +1,172 @@
+---
+title: "ClickHouse"
+---
+
+ClickHouse is very popular database for storing telemetry data and running efficient queries on it.
+
+## Use Cases
+
+- Clickhouse can handle all 3 signals (metrics, logs, traces) in one single database. less overhead to manage multiple databases.
+- Clickhouse is a columnar database, which is optimized for time-series immutable data like OpenTelemetry telemetry data.
+- Clickhouse is a distributed database, which can scale horizontally and handle large amounts of data with efficient storage and query performance.
+- Clickhouse is open-source and has a large community.
+
+## Prerequisites
+
+- To use ClickHouse as a destination in Odigos, you need to have a ClickHouse deployment running somewhere and accessible from cluster where Odigos is running.
+- You should know the service endpoint where ClickHouse listens for incoming client connections.
+- If you haven't already, create a database in ClickHouse where you want to store the telemetry data. the default database name is `otel` (configurable). To create it, run the following SQL command: `CREATE DATABASE otel;`
+- Understanding of how to maintain, scale, and optimize your self-hosted ClickHouse deployment, as well as how to fine tune setting based on your queries and use case.
+
+## Schema
+
+When using the ClickHouse destination with Odigos, logs metrics and traces are going to be "INSERT INTO" the ClickHouse database.
+
+It is important to understand what schema is used, e.g. what table names are used, column names, data types, etc.
+Then you can run queries on this data, or modify and optimize it for your specific use case.
+
+There are 2 modes of operation for ClickHouse destination in Odigos:
+
+### Create Schema
+
+In this option, the schema will be automatically created by odigos with reasonable defaults.
+
+The benefit of this option is that you can see the value fast, without needing to apply and manage any schema yourself.
+The downside is that the schema may not be optimized for your specific use case, and may make changes more complicated.
+
+To use it:
+- Odigos UI - When adding a new ClickHouse destination, select the `Create` Option under the `Create Scheme` field.
+- Destination K8s Manifest - Set the `CLICKHOUSE_CREATE_SCHEME` setting to value `Create`.
+
+The schema which will be used by default can be found [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/clickhouseexporter/example/default_ddl).
+
+- Indexes - The default schema includes indexes for the data, including trace_id, resource and scope attributes, span/metric/log attributes etc.
+- TTL is set to 180 days. This means data will be kept in the database for this period of time and then deleted.
+- Partitioning - The default schema includes partitioning by day, which means data is stored in separate partitions for each day.
+- Order By - Optimized for trace queries on service_name + span_name + time, for logs on service_name + time, and for metrics on service_name + metric_name + attributes + time.
+
+This option is not recommended for production workloads:
+- You may want to adjust the settings to better fit your use case, scale performance requirements, and costs.
+- Each new exporter will attempt to create the schema, which is less robust and harder to manage than a pre-created schema.
+
+### Self Managed Schema
+
+With this option, you are responsible for creating and managing the schema yourself.
+
+To use it:
+- Odigos UI - In `Create Scheme` field, select the the `Skip` Option.
+- Destination K8s Manifest - Set the `CLICKHOUSE_CREATE_SCHEME` setting to value `Skip`.
+
+The benefit of this option is that you have full control over the schema, and can optimize it for your specific use case.
+
+How it works?
+- Browse to the [default DDL example](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/clickhouseexporter/example/default_ddl).
+- Copy the `sql` files to your local machine.
+- Make any changes you need to the schema.
+- Run the SQL files in your ClickHouse database to create the schema.
+
+This option is recommended for production workloads:
+- You can optimize the schema for your specific use case, scale performance requirements, and costs.
+- You can manage the schema in a version control system, and apply changes in a controlled way.
+- Applying changes to the schema is more robust and easier to manage than attempting to create it on the fly with each new connection.
+
+Important Settings:
+- Indexes - You may want to add or remove indexes based on your queries, to optimize performance and costs.
+- TTL - You may want to adjust the TTL based on your retention policy. If you need traces for auditing purposes, you may extend it to 365 days. For high-throughput, low-latency systems, you might want to reduce it to 90 days or even less.
+- Partitioning - partitioning by day is a good default, but in high throughput systems you may want to partition by hour or even minute. You may also consider partitioning by service_name, or other attributes.
+- Order By - You may want to adjust the order by clause based on your queries, so that common columns are used first in the query, to optimize performance.
+
+## Configuration
+
+### Endpoint
+
+The ClickHouse endpoint is the URL where the ClickHouse server is listening for incoming connections.
+This is a required setting.
+
+- You can use http, tcp or clickhouse protocols
+- You can use insecure or secure connections (`https://` or `tcp://addr1:port?secure=true`)
+- Can specify multiple host with port: `http://addr1:port,addr2:port`
+- Specify ClickHouse options with query parameters: `http://addr1:port?dial_timeout=5s&compress=lz4`
+
+Please note you are using the correct port for your protocol, defaults are:
+
+- http: 8123
+- tcp: 9000
+- https: 9440
+
+If you are not sure, use the `http` / `https` protocol, as they are more versatile and easier to configure.
+
+### Credentials
+
+If your ClickHouse server requires authentication, you can specify the username and password in the configuration.
+These are optional, keep empty if your ClickHouse server does not require authentication.
+
+### Schema
+
+- Create Schema - Set to `Skip` if you manage your own schema, or `Create` to have Odigos create the schema for you. See [Create Schema](#create-schema) for more details.
+- Database Name (Required) - The name of the Clickhouse Database where the telemetry data will be stored. The default is `otel`. The Database will not be created when not exists, so make sure you have created it before.
+- Table Names - Allows you to customize the names of the tables where the telemetry data will be stored. The default is `otel_traces` for traces and `otel_metrics` for metrics.
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**  
+   To add a destination via the UI, follow these steps:
+   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
+   ```bash
+   odigos ui
+    ```
+- In the left sidebar, navigate to the `Destination` page.
+
+- Click `Add New Destination`
+
+- Select `ClickHouse` and follow the on-screen instructions.
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: clickhouse-example
+  namespace: odigos-system
+spec:
+  data:
+    CLICKHOUSE_CREATE_SCHEME: <Create Scheme [Create, Skip]>
+    # CLICKHOUSE_USERNAME: <Username>
+    # Note: The commented fields above are optional.
+    CLICKHOUSE_DATABASE_NAME: <Database Name>
+    CLICKHOUSE_ENDPOINT: <Endpoint>
+    CLICKHOUSE_LOGS_TABLE: <Logs Table>
+    CLICKHOUSE_METRICS_TABLE: <Metrics Table>
+    CLICKHOUSE_TRACES_TABLE: <Traces Table>
+  destinationName: clickhouse
+  # Uncomment the secretRef below if you are using the optional Secret.
+  # secretRef:
+  #   name: clickhouse-secret
+
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: clickhouse
+
+---
+# The following Secret is optional. Uncomment the entire block if you need to use it.
+# apiVersion: v1
+# data:
+#   CLICKHOUSE_PASSWORD: <base64 Password>
+# kind: Secret
+# metadata:
+#   name: clickhouse-secret
+#   namespace: odigos-system
+# type: Opaque
+```
