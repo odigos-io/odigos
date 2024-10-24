@@ -32,8 +32,7 @@ const (
 
 // CollectorsGroupSpec defines the desired state of Collector
 type CollectorsGroupSpec struct {
-	InputSvc string              `json:"inputSvc,omitempty"`
-	Role     CollectorsGroupRole `json:"role"`
+	Role CollectorsGroupRole `json:"role"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector
