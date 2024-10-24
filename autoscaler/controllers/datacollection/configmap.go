@@ -140,7 +140,10 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 		processorsCfg["odigosresourcename"] = empty
 	}
 
-	processorsCfg["batch"] = empty
+	processorsCfg["batch"] = config.GenericMap{
+		"send_batch_size":     "1800",
+		"send_batch_max_size": "2048",
+	}
 	processorsCfg["resource"] = config.GenericMap{
 		"attributes": []config.GenericMap{{
 			"key":    "k8s.node.name",
