@@ -42,8 +42,6 @@ spec:
           spec:
             description: CollectorsGroupSpec defines the desired state of Collector
             properties:
-              inputSvc:
-                type: string
               role:
                 enum:
                 - CLUSTER_GATEWAY
