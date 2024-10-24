@@ -22,6 +22,8 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -29,6 +31,28 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type onlyCreatePredicate struct {
+	predicate.Funcs
+}
+
+func (i *onlyCreatePredicate) Create(e event.CreateEvent) bool {
+	return true
+}
+
+func (i *onlyCreatePredicate) Update(e event.UpdateEvent) bool {
+	return false
+}
+
+func (i *onlyCreatePredicate) Delete(e event.DeleteEvent) bool {
+	return false
+}
+
+func (i *onlyCreatePredicate) Generic(e event.GenericEvent) bool {
+	return false
+}
+
+var _ predicate.Predicate = &onlyCreatePredicate{}
 
 // CollectorsGroupReconciler reconciles a CollectorsGroup object
 type CollectorsGroupReconciler struct {
@@ -78,5 +102,6 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 func (r *CollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.CollectorsGroup{}).
+		WithEventFilter(&onlyCreatePredicate{}).
 		Complete(r)
 }
