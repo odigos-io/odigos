@@ -1,0 +1,15 @@
+apiVersion: odigos.io/v1alpha1
+kind: Processor
+metadata:
+  name: small-batches
+  namespace: odigos-system
+spec:
+  type: batch
+  processorConfig:
+    send_batch_size: 600
+    send_batch_max_size: 800
+  orderHint: 100 # Should be after the default batch with orderHint 0, preferably after other processors
+  signals:
+    - TRACES
+  collectorRoles:
+    - CLUSTER_GATEWAY
