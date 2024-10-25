@@ -89,8 +89,14 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	odigosConfig, err := utils.GetCurrentOdigosConfig(ctx, r.Client)
+	if err != nil {
+		logger.Error(err, "failed to get odigos config")
+		return ctrl.Result{}, err
+	}
+
 	if collectorgroups.ShouldHaveNodeCollectorGroup(gatewayReady, len(instApps.Items)) {
-		err = utils.ApplyCollectorGroup(ctx, r.Client, collectorgroups.NewNodeCollectorGroup())
+		err = utils.ApplyCollectorGroup(ctx, r.Client, collectorgroups.NewNodeCollectorGroup(odigosConfig))
 		if err != nil {
 			logger.Error(err, "failed to apply node collector group")
 			return ctrl.Result{}, err

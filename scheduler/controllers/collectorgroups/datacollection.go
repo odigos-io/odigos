@@ -2,14 +2,21 @@ package collectorgroups
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const NodeCollectorDefaultOwnMetricsPort = 55682
+const NodeCollectorDefaultOwnMetricsPort = int32(55682)
 
-func NewNodeCollectorGroup() *odigosv1.CollectorsGroup {
+func NewNodeCollectorGroup(odigosConfig common.OdigosConfiguration) *odigosv1.CollectorsGroup {
+
+	ownMetricsPort := NodeCollectorDefaultOwnMetricsPort
+	if odigosConfig.CollectorNode != nil && odigosConfig.CollectorNode.CollectorOwnMetricsPort != 0 {
+		ownMetricsPort = odigosConfig.CollectorNode.CollectorOwnMetricsPort
+	}
+
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -21,7 +28,7 @@ func NewNodeCollectorGroup() *odigosv1.CollectorsGroup {
 		},
 		Spec: odigosv1.CollectorsGroupSpec{
 			Role:                    odigosv1.CollectorsGroupRoleNodeCollector,
-			CollectorOwnMetricsPort: NodeCollectorDefaultOwnMetricsPort,
+			CollectorOwnMetricsPort: ownMetricsPort,
 		},
 	}
 }

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -19,6 +20,7 @@ func GetCurrentOdigosConfig(ctx context.Context, k8sClient client.Client) (commo
 	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: odigosSystemNamespaceName, Name: consts.OdigosConfigurationName}, &configMap); err != nil {
 		return odigosConfig, err
 	}
+	fmt.Println(configMap.Data[consts.OdigosConfigurationFileName])
 	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
 		return odigosConfig, err
 	}
