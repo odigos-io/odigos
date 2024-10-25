@@ -71,6 +71,9 @@ func main() {
 
 	go startDeviceManager(clientset)
 
+	procEvents := make(chan detector.ProcessEvent)
+	runtimeDetector, err := detector.NewDetector(ctx, procEvents)
+
 	mgr, err := kube.CreateManager()
 	if err != nil {
 		log.Logger.Error(err, "Failed to create controller-runtime manager")

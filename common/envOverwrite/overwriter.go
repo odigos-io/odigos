@@ -58,6 +58,15 @@ var EnvValuesMap = map[string]envValues{
 	},
 }
 
+func GetRelevantEnvVarsKeys() []string {
+	keys := make([]string, 0, len(EnvValuesMap))
+	for key := range EnvValuesMap {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+
 // returns the current value that should be populated in a specific environment variable.
 // if we should not patch the value, returns nil.
 // the are 2 parts to the environment value: odigos part and user part.
