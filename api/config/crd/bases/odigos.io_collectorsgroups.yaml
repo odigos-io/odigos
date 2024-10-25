@@ -43,8 +43,9 @@ spec:
             description: CollectorsGroupSpec defines the desired state of Collector
             properties:
               collectorOwnMetricsPort:
-                description: The port to use for exposing the collector's own metrics
-                  as a prometheus endpoint.
+                description: |-
+                  The port to use for exposing the collector's own metrics as a prometheus endpoint.
+                  This can be used to resolve conflicting ports when a collector is using the host network.
                 format: int32
                 type: integer
               role:
