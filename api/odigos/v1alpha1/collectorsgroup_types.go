@@ -35,8 +35,7 @@ type CollectorsGroupSpec struct {
 	Role CollectorsGroupRole `json:"role"`
 
 	// The port to use for exposing the collector's own metrics as a prometheus endpoint.
-	// Default when unset is 55682.
-	CollectorOwnMetricsPort int32 `json:"collectorOwnMetricsPort,omitempty"`
+	CollectorOwnMetricsPort int32 `json:"collectorOwnMetricsPort"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

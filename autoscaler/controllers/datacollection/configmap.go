@@ -127,11 +127,7 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 func calculateConfigMapData(collectorsGroup *odigosv1.CollectorsGroup, apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
 	setTracesLoadBalancer bool, disableNameProcessor bool) (string, error) {
 
-	// TODO: make collectorsGroup.Spec.CollectorOwnMetricsPort required and concile default values elsewhere
-	ownMetricsPort := int32(55682)
-	if collectorsGroup.Spec.CollectorOwnMetricsPort != 0 {
-		ownMetricsPort = collectorsGroup.Spec.CollectorOwnMetricsPort
-	}
+	ownMetricsPort := collectorsGroup.Spec.CollectorOwnMetricsPort
 
 	empty := struct{}{}
 

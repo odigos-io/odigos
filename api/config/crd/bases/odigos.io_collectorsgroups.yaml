@@ -43,9 +43,8 @@ spec:
             description: CollectorsGroupSpec defines the desired state of Collector
             properties:
               collectorOwnMetricsPort:
-                description: |-
-                  The port to use for exposing the collector's own metrics as a prometheus endpoint.
-                  Default when unset is 55682.
+                description: The port to use for exposing the collector's own metrics
+                  as a prometheus endpoint.
                 format: int32
                 type: integer
               role:
@@ -54,6 +53,7 @@ spec:
                 - NODE_COLLECTOR
                 type: string
             required:
+            - collectorOwnMetricsPort
             - role
             type: object
           status:
