@@ -8,11 +8,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const NodeCollectorDefaultOwnMetricsPort = int32(55682)
-
 func NewNodeCollectorGroup(odigosConfig common.OdigosConfiguration) *odigosv1.CollectorsGroup {
 
-	ownMetricsPort := NodeCollectorDefaultOwnMetricsPort
+	ownMetricsPort := consts.OdigosNodeCollectorOwnTelemetryPortDefault
 	if odigosConfig.CollectorNode != nil && odigosConfig.CollectorNode.CollectorOwnMetricsPort != 0 {
 		ownMetricsPort = odigosConfig.CollectorNode.CollectorOwnMetricsPort
 	}
