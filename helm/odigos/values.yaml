@@ -38,6 +38,14 @@ collectorGateway:
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
   goMemLimitMiB: 340
 
+collectorNode:
+  # Each node collector, running as a daemonset, uses the host network
+	# and exposes prometheus metrics endpoint on a dedicated port.
+	# Because it shares the port network with the host (k8s node),
+	# if some other process is using the port, the node collector will fail to start.
+	# Use this option to set a specific port for the node collector to control the port it will bind to.
+  collectorOwnMetricsPort: 55682
+
 autoscaler:
   image:
     repository: keyval/odigos-autoscaler

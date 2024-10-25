@@ -104,13 +104,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.CollectorsGroupReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
-		os.Exit(1)
-	}
 	if err = (&controllers.DestinationReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -118,7 +111,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Destination")
 		os.Exit(1)
 	}
-	if err = (&controllers.InstrumentationConfigReconciler{
+	if err = (&controllers.NodeCollectorsGroupReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
