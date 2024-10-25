@@ -102,6 +102,8 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 func (r *CollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.CollectorsGroup{}).
-		WithEventFilter(&onlyCreatePredicate{}).
+		// we assume everything in the collectorsgroup spec is the configuration for the collectors to generate.
+		// thus, we need to monitor any change to the spec which is what the generation field is for.
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(r)
 }
