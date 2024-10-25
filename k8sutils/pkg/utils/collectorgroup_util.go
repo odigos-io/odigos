@@ -10,7 +10,7 @@ import (
 )
 
 func ApplyCollectorGroup(ctx context.Context, c client.Client, collectorGroup *odigosv1.CollectorsGroup) error {
-	logger := log.FromContext(ctx).WithValues("collectorGroupName", collectorGroup.Name)
+	logger := log.FromContext(ctx)
 	logger.Info("Applying collector group", "collectorGroupName", collectorGroup.Name)
 
 	err := c.Patch(ctx, collectorGroup, client.Apply, client.ForceOwnership, client.FieldOwner("scheduler"))

@@ -109,7 +109,6 @@ var _ predicate.Predicate = &clusterCollectorBecomesReadyPredicate{}
 
 func (r *NodeCollectorsGroupReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling NodeCollectorsGroup controller")
 
 	namespace := env.GetCurrentNamespace()
 
