@@ -2,6 +2,17 @@ package common
 
 type ProfileName string
 
+type CollectorNodeConfiguration struct {
+
+	// Each node collector, running as a daemonset, runs on the host network,
+	// and exposes prometheus metrics endpoint on this a dedicated port.
+	// When unset, the default port is 55682.
+	// Because it shares the port network with the host,
+	// if some other process is using the port, the node collector will not start.
+	// This option allows to set a different port for the node collector to overcome this issue if encountered.
+	CollectorOwnMetricsPort int `json:"collectorOwnMetricsPort,omitempty"`
+}
+
 type CollectorGatewayConfiguration struct {
 	// RequestMemoryMiB is the memory request for the cluster gateway collector deployment.
 	// it will be embedded in the deployment as a resource request of the form "memory: <value>Mi"
@@ -38,6 +49,7 @@ type OdigosConfiguration struct {
 	AutoscalerImage   string                          `json:"autoscalerImage,omitempty"`
 	DefaultSDKs       map[ProgrammingLanguage]OtelSdk `json:"defaultSDKs,omitempty"`
 	CollectorGateway  *CollectorGatewayConfiguration  `json:"collectorGateway,omitempty"`
+	CollectorNode     *CollectorNodeConfiguration     `json:"collectorNode,omitempty"`
 	Profiles          []ProfileName                   `json:"profiles,omitempty"`
 
 	// this is internal currently, and is not exposed on the CLI / helm

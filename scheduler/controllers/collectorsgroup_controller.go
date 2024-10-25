@@ -71,7 +71,6 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	gatewayReady := false
-	dataCollectionExists := false
 	for _, collectorGroup := range collectorGroups.Items {
 		err := r.applyNewCollectorRoleNames(ctx, &collectorGroup)
 		if err != nil {
@@ -82,10 +81,6 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleClusterGateway && collectorGroup.Status.Ready {
 			gatewayReady = true
 		}
-
-		if collectorGroup.Spec.Role == odigosv1.CollectorsGroupRoleNodeCollector {
-			dataCollectionExists = true
-		}
 	}
 
 	var instApps odigosv1.InstrumentationConfigList
@@ -94,10 +89,10 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	if collectorgroups.ShouldCreateNodeCollectorGroup(gatewayReady, dataCollectionExists, len(instApps.Items)) {
-		err = utils.CreateCollectorGroup(ctx, r.Client, collectorgroups.NewNodeCollectorGroup())
+	if collectorgroups.ShouldHaveNodeCollectorGroup(gatewayReady, len(instApps.Items)) {
+		err = utils.ApplyCollectorGroup(ctx, r.Client, collectorgroups.NewNodeCollectorGroup())
 		if err != nil {
-			logger.Error(err, "failed to create data collection collector group")
+			logger.Error(err, "failed to apply node collector group")
 			return ctrl.Result{}, err
 		}
 	}

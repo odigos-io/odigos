@@ -52,19 +52,8 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	dataCollectionExists := true
-	_, err = utils.GetCollectorGroup(ctx, r.Client, namespace, consts.OdigosNodeCollectorDaemonSetName)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			dataCollectionExists = false
-		} else {
-			logger.Error(err, "failed to get collector group", "collectorGroupName", consts.OdigosNodeCollectorCollectorGroupName)
-			return ctrl.Result{}, err
-		}
-	}
-
-	if nodeCollectorGroupUtil.ShouldCreateNodeCollectorGroup(clusterCollectorGroup.Status.Ready, dataCollectionExists, numberOfInstrumentedApps) {
-		err = utils.CreateCollectorGroup(ctx, r.Client, nodeCollectorGroupUtil.NewNodeCollectorGroup())
+	if nodeCollectorGroupUtil.ShouldHaveNodeCollectorGroup(clusterCollectorGroup.Status.Ready, numberOfInstrumentedApps) {
+		err = utils.ApplyCollectorGroup(ctx, r.Client, nodeCollectorGroupUtil.NewNodeCollectorGroup())
 		if err != nil {
 			logger.Error(err, "failed to create data collection collector group")
 			return ctrl.Result{}, err

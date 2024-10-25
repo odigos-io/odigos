@@ -12,7 +12,7 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 	cases := []struct {
 		name string
 		cfg  *config.Config
-		err error
+		err  error
 	}{
 		{
 			name: "no pipeline",
@@ -66,7 +66,7 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 				},
 				Processors: config.GenericMap{
 					"memory_limiter": config.GenericMap{
-						"check_interval":  "1s",
+						"check_interval": "1s",
 					},
 					"resource/odigos-version": config.GenericMap{
 						"attributes": []config.GenericMap{
@@ -98,7 +98,7 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 			},
 		},
 	}
-	
+
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			c := tc.cfg
@@ -115,12 +115,12 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 			assert.Equal(t, []string{"prometheus"}, c.Service.Pipelines["metrics/otelcol"].Receivers)
 			assert.Equal(t, []string{"resource/pod-name"}, c.Service.Pipelines["metrics/otelcol"].Processors)
 			assert.Equal(t, []string{"otlp/ui"}, c.Service.Pipelines["metrics/otelcol"].Exporters)
-			assert.Equal(t, "0.0.0.0:8888", c.Service.Telemetry.Metrics["address"])
+			assert.Equal(t, "0.0.0.0:55682", c.Service.Telemetry.Metrics["address"])
 			for pipelineName, pipeline := range c.Service.Pipelines {
 				if pipelineName == "metrics/otelcol" {
 					assert.NotContains(t, pipeline.Processors, "odigostrafficmetrics")
 				} else {
-					assert.Equal(t, pipeline.Processors[len(pipeline.Processors) - 1], "odigostrafficmetrics")
+					assert.Equal(t, pipeline.Processors[len(pipeline.Processors)-1], "odigostrafficmetrics")
 				}
 
 			}

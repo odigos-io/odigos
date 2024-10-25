@@ -42,6 +42,12 @@ spec:
           spec:
             description: CollectorsGroupSpec defines the desired state of Collector
             properties:
+              collectorOwnMetricsPort:
+                description: |-
+                  The port to use for exposing the collector's own metrics as a prometheus endpoint.
+                  Default when unset is 55682.
+                format: int32
+                type: integer
               role:
                 enum:
                 - CLUSTER_GATEWAY

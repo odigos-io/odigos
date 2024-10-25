@@ -98,7 +98,7 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 
 func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
 	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool, disableNameProcessor bool) (*v1.ConfigMap, error) {
-	cmData, err := calculateConfigMapData(apps, dests, processors, setTracesLoadBalancer, disableNameProcessor)
+	cmData, err := calculateConfigMapData(datacollection, apps, dests, processors, setTracesLoadBalancer, disableNameProcessor)
 	if err != nil {
 		return nil, err
 	}
@@ -124,16 +124,20 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 	return &desired, nil
 }
 
-func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
+func calculateConfigMapData(collectorsGroup *odigosv1.CollectorsGroup, apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
 	setTracesLoadBalancer bool, disableNameProcessor bool) (string, error) {
+
+	// TODO: make collectorsGroup.Spec.CollectorOwnMetricsPort required and concile default values elsewhere
+	ownMetricsPort := int32(55682)
+	if collectorsGroup.Spec.CollectorOwnMetricsPort != 0 {
+		ownMetricsPort = collectorsGroup.Spec.CollectorOwnMetricsPort
+	}
 
 	empty := struct{}{}
 
 	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(commonconf.ToProcessorConfigurerArray(processors))
-	if errs != nil {
-		for name, err := range errs {
-			log.Log.V(0).Info(err.Error(), "processor", name)
-		}
+	for name, err := range errs {
+		log.Log.V(0).Info(err.Error(), "processor", name)
 	}
 
 	if !disableNameProcessor {
@@ -214,7 +218,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 							"scrape_interval": "10s",
 							"static_configs": []config.GenericMap{
 								{
-									"targets": []string{"127.0.0.1:8888"},
+									"targets": []string{fmt.Sprintf("127.0.0.1:%d", ownMetricsPort)},
 								},
 							},
 							"metric_relabel_configs": []config.GenericMap{
@@ -247,7 +251,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			Extensions: []string{"health_check"},
 			Telemetry: config.Telemetry{
 				Metrics: config.GenericMap{
-					"address": "0.0.0.0:8888",
+					"address": fmt.Sprintf("0.0.0.0:%d", ownMetricsPort),
 				},
 				Resource: map[string]*string{
 					// The collector add "otelcol" as a service name, so we need to remove it
