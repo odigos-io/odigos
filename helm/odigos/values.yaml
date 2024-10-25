@@ -39,11 +39,8 @@ collectorGateway:
   goMemLimitMiB: 340
 
 collectorNode:
-  # Each node collector, running as a daemonset, uses the host network
-  # and exposes prometheus metrics endpoint on a dedicated port.
-  # Because it shares the port network with the host (k8s node),
-  # if some other process is using the port, the node collector will fail to start.
-  # Use this option to set a specific port for the node collector to control the port it will bind to.
+  # The port to use for exposing the collector's own metrics as a prometheus endpoint.
+	# This can be used to resolve conflicting ports when a collector is using the host network.
   collectorOwnMetricsPort: 55682
 
 autoscaler:
