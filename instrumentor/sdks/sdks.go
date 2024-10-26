@@ -43,7 +43,7 @@ func otelSdkConfigOnPrem() map[common.ProgrammingLanguage]common.OtelSdk {
 	}
 }
 
-func SetDefaultSDKs(ctx context.Context, clientset *kubernetes.Clientset)  error {
+func SetDefaultSDKs(ctx context.Context, clientset *kubernetes.Clientset) error {
 	odigosTier, err := k8sutils.GetCurrentOdigosTier(ctx, env.GetCurrentNamespace(), clientset)
 	if err != nil {
 		return err

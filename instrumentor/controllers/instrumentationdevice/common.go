@@ -35,6 +35,11 @@ const (
 	appliedInstrumentationDeviceType = "AppliedInstrumentationDevice"
 )
 
+var (
+	// can be overridden in tests
+	GetDefaultSDKs = sdks.GetDefaultSDKs
+)
+
 func clearInstrumentationEbpf(obj client.Object) {
 	annotations := obj.GetAnnotations()
 	if annotations == nil {
@@ -91,7 +96,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 	}
 
 	// default otel sdk map according to Odigos tier
-	otelSdkToUse := sdks.GetDefaultSDKs()
+	otelSdkToUse := GetDefaultSDKs()
 
 	for i := range instrumentationRules.Items {
 		instrumentationRule := &instrumentationRules.Items[i]
