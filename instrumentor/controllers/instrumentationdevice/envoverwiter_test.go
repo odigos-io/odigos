@@ -61,7 +61,6 @@ var _ = Describe("envoverwrite", func() {
 		var odigosConfig common.OdigosConfiguration
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultOdigosNamespace, Name: consts.OdigosConfigurationName}, &cm)).Should(Succeed())
 		GetOdigosConfig(&cm, &odigosConfig)
-		odigosConfig.DefaultSDKs[testProgrammingLanguagePython] = common.OtelSdkNativeCommunity
 		SetOdigosConfig(&cm, &odigosConfig)
 		Expect(k8sClient.Update(ctx, &cm)).Should(Succeed())
 	})
@@ -154,7 +153,6 @@ var _ = Describe("envoverwrite", func() {
 			var odigosConfig common.OdigosConfiguration
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultOdigosNamespace, Name: consts.OdigosConfigurationName}, &cm)).Should(Succeed())
 			GetOdigosConfig(&cm, &odigosConfig)
-			odigosConfig.DefaultSDKs[common.JavaProgrammingLanguage] = common.OtelSdkEbpfEnterprise
 			SetOdigosConfig(&cm, &odigosConfig)
 			Expect(k8sClient.Update(ctx, &cm)).Should(Succeed())
 
@@ -236,7 +234,6 @@ var _ = Describe("envoverwrite", func() {
 				var odigosConfig common.OdigosConfiguration
 				Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultOdigosNamespace, Name: consts.OdigosConfigurationName}, &cm)).Should(Succeed())
 				GetOdigosConfig(&cm, &odigosConfig)
-				odigosConfig.DefaultSDKs[testProgrammingLanguagePython] = newSdk
 				SetOdigosConfig(&cm, &odigosConfig)
 				Expect(k8sClient.Update(ctx, &cm)).Should(Succeed())
 			})
