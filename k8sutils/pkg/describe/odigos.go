@@ -34,23 +34,27 @@ type odigosResources struct {
 	InstrumentationConfigs *odigosv1.InstrumentationConfigList
 }
 
-func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (clusterCollector clusterCollectorResources, err error) {
+func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (clusterCollectorResources, error) {
 
-	clusterCollector = clusterCollectorResources{}
+	clusterCollector := clusterCollectorResources{}
 
-	clusterCollector.CollectorsGroup, err = odigosClient.CollectorsGroups(odigosNs).Get(ctx, consts.OdigosClusterCollectorCollectorGroupName, metav1.GetOptions{})
-	if err != nil && !apierrors.IsNotFound(err) {
-		return
+	cg, err := odigosClient.CollectorsGroups(odigosNs).Get(ctx, consts.OdigosClusterCollectorCollectorGroupName, metav1.GetOptions{})
+	if err == nil {
+		clusterCollector.CollectorsGroup = cg
+	} else if !apierrors.IsNotFound(err) {
+		return clusterCollectorResources{}, err
 	}
 
-	clusterCollector.Deployment, err = kubeClient.AppsV1().Deployments(odigosNs).Get(ctx, consts.OdigosClusterCollectorDeploymentName, metav1.GetOptions{})
-	if err != nil && !apierrors.IsNotFound(err) {
-		return
+	dep, err := kubeClient.AppsV1().Deployments(odigosNs).Get(ctx, consts.OdigosClusterCollectorDeploymentName, metav1.GetOptions{})
+	if err == nil {
+		clusterCollector.Deployment = dep
+	} else if !apierrors.IsNotFound(err) {
+		return clusterCollectorResources{}, err
 	}
 
 	var clusterRoleRevision string
-	if clusterCollector.Deployment != nil {
-		revisionAnnotation, found := clusterCollector.Deployment.Annotations["deployment.kubernetes.io/revision"]
+	if dep != nil {
+		revisionAnnotation, found := dep.Annotations["deployment.kubernetes.io/revision"]
 		if found {
 			clusterRoleRevision = revisionAnnotation
 		}
@@ -62,8 +66,7 @@ func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Int
 			LabelSelector: metav1.FormatLabelSelector(clusterCollector.Deployment.Spec.Selector),
 		})
 		if errRs != nil {
-			err = errRs
-			return
+			return clusterCollectorResources{}, errRs
 		}
 
 		var latestRevisionReplicaSet *appsv1.ReplicaSet
@@ -81,29 +84,33 @@ func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Int
 				LabelSelector: fmt.Sprintf("pod-template-hash=%s", podTemplateHash),
 			})
 			if err != nil {
-				return
+				return clusterCollectorResources{}, err
 			}
 		}
 	}
 
-	return
+	return clusterCollector, nil
 }
 
-func getNodeCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (nodeCollector nodeCollectorResources, err error) {
+func getNodeCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (nodeCollectorResources, error) {
 
-	nodeCollector = nodeCollectorResources{}
+	nodeCollector := nodeCollectorResources{}
 
-	nodeCollector.CollectorsGroup, err = odigosClient.CollectorsGroups(odigosNs).Get(ctx, consts.OdigosNodeCollectorCollectorGroupName, metav1.GetOptions{})
-	if err != nil && !apierrors.IsNotFound(err) {
-		return
+	cg, err := odigosClient.CollectorsGroups(odigosNs).Get(ctx, consts.OdigosNodeCollectorCollectorGroupName, metav1.GetOptions{})
+	if err == nil {
+		nodeCollector.CollectorsGroup = cg
+	} else if !apierrors.IsNotFound(err) {
+		return nodeCollectorResources{}, err
 	}
 
-	nodeCollector.DaemonSet, err = kubeClient.AppsV1().DaemonSets(odigosNs).Get(ctx, consts.OdigosNodeCollectorDaemonSetName, metav1.GetOptions{})
-	if err != nil && !apierrors.IsNotFound(err) {
-		return
+	ds, err := kubeClient.AppsV1().DaemonSets(odigosNs).Get(ctx, consts.OdigosNodeCollectorDaemonSetName, metav1.GetOptions{})
+	if err == nil {
+		nodeCollector.DaemonSet = ds
+	} else if !apierrors.IsNotFound(err) {
+		return nodeCollectorResources{}, err
 	}
 
-	return
+	return nodeCollector, nil
 }
 
 func getRelevantOdigosResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (odigos odigosResources, err error) {
@@ -147,35 +154,41 @@ func printClusterCollectorStatus(clusterCollector clusterCollectorResources, exp
 	describeText(sb, 1, "Cluster Collector:")
 	if clusterCollector.CollectorsGroup == nil {
 		describeText(sb, 2, wrapTextSuccessOfFailure("Collectors Group Not Created", !expectingPipeline))
-		return
-	}
-
-	describeText(sb, 2, wrapTextSuccessOfFailure("Collectors Group Created", expectingPipeline))
-
-	var deployedCondition *metav1.Condition
-	for _, condition := range clusterCollector.CollectorsGroup.Status.Conditions {
-		if condition.Type == "Deployed" {
-			deployedCondition = &condition
-			break
-		}
-	}
-	if deployedCondition == nil {
-		describeText(sb, 2, wrapTextInRed("Deployed: Status Unavailable"))
 	} else {
-		if deployedCondition.Status == metav1.ConditionTrue {
-			describeText(sb, 2, wrapTextInGreen("Deployed: true"))
+		describeText(sb, 2, wrapTextSuccessOfFailure("Collectors Group Created", expectingPipeline))
+
+		var deployedCondition *metav1.Condition
+		for _, condition := range clusterCollector.CollectorsGroup.Status.Conditions {
+			if condition.Type == "Deployed" {
+				deployedCondition = &condition
+				break
+			}
+		}
+		if deployedCondition == nil {
+			describeText(sb, 2, wrapTextInRed("Deployed: Status Unavailable"))
 		} else {
-			describeText(sb, 2, wrapTextInRed("Deployed: false"))
-			describeText(sb, 2, wrapTextInRed(fmt.Sprintf("Reason: %s", deployedCondition.Message)))
+			if deployedCondition.Status == metav1.ConditionTrue {
+				describeText(sb, 2, wrapTextInGreen("Deployed: true"))
+			} else {
+				describeText(sb, 2, wrapTextInRed("Deployed: false"))
+				describeText(sb, 2, wrapTextInRed(fmt.Sprintf("Reason: %s", deployedCondition.Message)))
+			}
 		}
+
+		ready := clusterCollector.CollectorsGroup.Status.Ready
+		describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Ready: %t", ready), ready))
 	}
 
-	ready := clusterCollector.CollectorsGroup.Status.Ready
-	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Ready: %t", ready), ready))
-
-	if clusterCollector.LatestRevisionPods == nil || clusterCollector.Deployment == nil {
-		describeText(sb, 2, wrapTextInRed("Number of Replicas: Status Unavailable"))
+	expectedReplicas := int32(0)
+	if clusterCollector.Deployment == nil {
+		describeText(sb, 2, wrapTextSuccessOfFailure("Deployment: Not Found", !expectingPipeline))
 	} else {
+		describeText(sb, 2, wrapTextSuccessOfFailure("Deployment: Found", expectingPipeline))
+		expectedReplicas = *clusterCollector.Deployment.Spec.Replicas
+		describeText(sb, 2, fmt.Sprintf("Expected Replicas: %d", expectedReplicas))
+	}
+
+	if clusterCollector.LatestRevisionPods != nil {
 		runningReplicas := 0
 		failureReplicas := 0
 		var failureText string
@@ -199,58 +212,62 @@ func printClusterCollectorStatus(clusterCollector clusterCollectorResources, exp
 				}
 			}
 		}
-		desiredReplicas := *clusterCollector.Deployment.Spec.Replicas
-		describeText(sb, 2, fmt.Sprintf("Desired Replicas: %d", desiredReplicas))
 		podReplicasText := fmt.Sprintf("Actual Replicas: %d running, %d failed", runningReplicas, failureReplicas)
-		deploymentSuccessful := runningReplicas == int(desiredReplicas)
+		deploymentSuccessful := runningReplicas == int(expectedReplicas) && failureReplicas == 0
 		describeText(sb, 2, wrapTextSuccessOfFailure(podReplicasText, deploymentSuccessful))
 		if !deploymentSuccessful {
 			describeText(sb, 2, wrapTextInRed(fmt.Sprintf("Replicas Not Ready Reason: %s", failureText)))
 		}
 	}
+
 }
 
 func printNodeCollectorStatus(nodeCollector nodeCollectorResources, expectingNodeCollector bool, sb *strings.Builder) {
 	describeText(sb, 1, "Node Collector:")
 	if nodeCollector.CollectorsGroup == nil {
 		describeText(sb, 2, wrapTextSuccessOfFailure("Collectors Group Not Created", !expectingNodeCollector))
-		return
-	}
-
-	describeText(sb, 2, wrapTextSuccessOfFailure("Collectors Group Created", expectingNodeCollector))
-
-	var deployedCondition *metav1.Condition
-	for _, condition := range nodeCollector.CollectorsGroup.Status.Conditions {
-		if condition.Type == "Deployed" {
-			deployedCondition = &condition
-			break
-		}
-	}
-	if deployedCondition == nil {
-		describeText(sb, 2, wrapTextInRed("Deployed: Status Unavailable"))
 	} else {
-		if deployedCondition.Status == metav1.ConditionTrue {
-			describeText(sb, 2, wrapTextInGreen("Deployed: True"))
-		} else {
-			describeText(sb, 2, wrapTextInRed("Deployed: False"))
-			describeText(sb, 2, wrapTextInRed(fmt.Sprintf("Reason: %s", deployedCondition.Message)))
+		describeText(sb, 2, wrapTextSuccessOfFailure("Collectors Group Created", expectingNodeCollector))
+
+		var deployedCondition *metav1.Condition
+		for _, condition := range nodeCollector.CollectorsGroup.Status.Conditions {
+			if condition.Type == "Deployed" {
+				deployedCondition = &condition
+				break
+			}
 		}
+		if deployedCondition == nil {
+			describeText(sb, 2, wrapTextInRed("Deployed: Status Unavailable"))
+		} else {
+			if deployedCondition.Status == metav1.ConditionTrue {
+				describeText(sb, 2, wrapTextInGreen("Deployed: True"))
+			} else {
+				describeText(sb, 2, wrapTextInRed("Deployed: False"))
+				describeText(sb, 2, wrapTextInRed(fmt.Sprintf("Reason: %s", deployedCondition.Message)))
+			}
+		}
+
+		ready := nodeCollector.CollectorsGroup.Status.Ready
+		describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Ready: %t", ready), ready))
 	}
 
-	ready := nodeCollector.CollectorsGroup.Status.Ready
-	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Ready: %t", ready), ready))
+	if nodeCollector.DaemonSet == nil {
+		describeText(sb, 2, wrapTextSuccessOfFailure("DaemonSet: Not Found", !expectingNodeCollector))
+	} else {
+		describeText(sb, 2, wrapTextSuccessOfFailure("DaemonSet: Found", expectingNodeCollector))
 
-	// this is copied from k8sutils/pkg/describe/describe.go
-	// I hope the info is accurate since there can be many edge cases
-	describeText(sb, 2, "Desired Number of Nodes Scheduled: %d", nodeCollector.DaemonSet.Status.DesiredNumberScheduled)
-	currentMeetsDesired := nodeCollector.DaemonSet.Status.DesiredNumberScheduled == nodeCollector.DaemonSet.Status.CurrentNumberScheduled
-	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Current Number of Nodes Scheduled: %d", nodeCollector.DaemonSet.Status.CurrentNumberScheduled), currentMeetsDesired))
-	updatedMeetsDesired := nodeCollector.DaemonSet.Status.DesiredNumberScheduled == nodeCollector.DaemonSet.Status.UpdatedNumberScheduled
-	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Number of Nodes Scheduled with Up-to-date Pods: %d", nodeCollector.DaemonSet.Status.UpdatedNumberScheduled), updatedMeetsDesired))
-	availableMeetsDesired := nodeCollector.DaemonSet.Status.DesiredNumberScheduled == nodeCollector.DaemonSet.Status.NumberAvailable
-	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Number of Nodes Scheduled with Available Pods: %d", nodeCollector.DaemonSet.Status.NumberAvailable), availableMeetsDesired))
-	noMisscheduled := nodeCollector.DaemonSet.Status.NumberMisscheduled == 0
-	describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Number of Nodes Misscheduled: %d", nodeCollector.DaemonSet.Status.NumberMisscheduled), noMisscheduled))
+		// this is copied from k8sutils/pkg/describe/describe.go
+		// I hope the info is accurate since there can be many edge cases
+		describeText(sb, 2, "Desired Number of Nodes Scheduled: %d", nodeCollector.DaemonSet.Status.DesiredNumberScheduled)
+		currentMeetsDesired := nodeCollector.DaemonSet.Status.DesiredNumberScheduled == nodeCollector.DaemonSet.Status.CurrentNumberScheduled
+		describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Current Number of Nodes Scheduled: %d", nodeCollector.DaemonSet.Status.CurrentNumberScheduled), currentMeetsDesired))
+		updatedMeetsDesired := nodeCollector.DaemonSet.Status.DesiredNumberScheduled == nodeCollector.DaemonSet.Status.UpdatedNumberScheduled
+		describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Number of Nodes Scheduled with Up-to-date Pods: %d", nodeCollector.DaemonSet.Status.UpdatedNumberScheduled), updatedMeetsDesired))
+		availableMeetsDesired := nodeCollector.DaemonSet.Status.DesiredNumberScheduled == nodeCollector.DaemonSet.Status.NumberAvailable
+		describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Number of Nodes Scheduled with Available Pods: %d", nodeCollector.DaemonSet.Status.NumberAvailable), availableMeetsDesired))
+		noMisscheduled := nodeCollector.DaemonSet.Status.NumberMisscheduled == 0
+		describeText(sb, 2, wrapTextSuccessOfFailure(fmt.Sprintf("Number of Nodes Misscheduled: %d", nodeCollector.DaemonSet.Status.NumberMisscheduled), noMisscheduled))
+	}
 }
 
 func printOdigosPipeline(odigosResources odigosResources, sb *strings.Builder) {
