@@ -10,7 +10,6 @@ import (
 // GetWorkloadFromOwnerReference retrieves both the workload name and workload kind
 // from the provided owner reference.
 func GetWorkloadFromOwnerReference(ownerReference metav1.OwnerReference) (workloadName string, workloadKind WorkloadKind, err error) {
-
 	return GetWorkloadNameAndKind(ownerReference.Name, ownerReference.Kind)
 }
 
