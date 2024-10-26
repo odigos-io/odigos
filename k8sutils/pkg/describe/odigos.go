@@ -142,20 +142,23 @@ func printOdigosVersion(odigosVersion string, sb *strings.Builder) {
 	describeText(sb, 0, "Odigos Version: %s", odigosVersion)
 }
 
-func printOdigosPipelineStatus(numInstrumentationConfigs, numDestinations int, expectingPipeline bool, sb *strings.Builder) {
-	if expectingPipeline {
-		describeText(sb, 1, "Status: there are %d sources and %d destinations so pipeline will be deployed\n", numInstrumentationConfigs, numDestinations)
-	} else {
-		describeText(sb, 1, "Status: no sources or destinations found so pipeline will not be deployed")
-	}
-}
+func printClusterCollectorStatus(odigosResources odigosResources, destinations *odigosv1.DestinationList, sb *strings.Builder) {
 
-func printClusterCollectorStatus(clusterCollector clusterCollectorResources, expectingPipeline bool, sb *strings.Builder) {
+	expectingClusterCollector := len(destinations.Items) > 0
+
 	describeText(sb, 1, "Cluster Collector:")
-	if clusterCollector.CollectorsGroup == nil {
-		describeText(sb, 2, wrapTextSuccessOfFailure("Collectors Group Not Created", !expectingPipeline))
+	clusterCollector := odigosResources.ClusterCollector
+
+	if expectingClusterCollector {
+		describeText(sb, 2, "Status: Cluster Collector is expected to be created because there are destinations")
 	} else {
-		describeText(sb, 2, wrapTextSuccessOfFailure("Collectors Group Created", expectingPipeline))
+		describeText(sb, 2, "Status: Cluster Collector is not expected to be created because there are no destinations")
+	}
+
+	if clusterCollector.CollectorsGroup == nil {
+		describeText(sb, 2, wrapTextSuccessOfFailure("Collectors Group Not Created", !expectingClusterCollector))
+	} else {
+		describeText(sb, 2, wrapTextSuccessOfFailure("Collectors Group Created", expectingClusterCollector))
 
 		var deployedCondition *metav1.Condition
 		for _, condition := range clusterCollector.CollectorsGroup.Status.Conditions {
@@ -181,9 +184,9 @@ func printClusterCollectorStatus(clusterCollector clusterCollectorResources, exp
 
 	expectedReplicas := int32(0)
 	if clusterCollector.Deployment == nil {
-		describeText(sb, 2, wrapTextSuccessOfFailure("Deployment: Not Found", !expectingPipeline))
+		describeText(sb, 2, wrapTextSuccessOfFailure("Deployment: Not Found", !expectingClusterCollector))
 	} else {
-		describeText(sb, 2, wrapTextSuccessOfFailure("Deployment: Found", expectingPipeline))
+		describeText(sb, 2, wrapTextSuccessOfFailure("Deployment: Found", expectingClusterCollector))
 		expectedReplicas = *clusterCollector.Deployment.Spec.Replicas
 		describeText(sb, 2, fmt.Sprintf("Expected Replicas: %d", expectedReplicas))
 	}
@@ -222,8 +225,35 @@ func printClusterCollectorStatus(clusterCollector clusterCollectorResources, exp
 
 }
 
-func printNodeCollectorStatus(nodeCollector nodeCollectorResources, expectingNodeCollector bool, sb *strings.Builder) {
+func printAndCalculateIsNodeCollectorStatus(odigosResources *odigosResources, sb *strings.Builder) bool {
+
+	numInstrumentationConfigs := len(odigosResources.InstrumentationConfigs.Items)
+	if numInstrumentationConfigs == 0 {
+		describeText(sb, 2, "Status: Node Collectors not expected as there are no sources")
+		return false
+	}
+
+	if odigosResources.ClusterCollector.CollectorsGroup == nil {
+		describeText(sb, 2, "Status: Node Collectors not expected as there are no destinations")
+		return false
+	}
+
+	if !odigosResources.ClusterCollector.CollectorsGroup.Status.Ready {
+		describeText(sb, 2, "Status: Node Collectors not expected as the Cluster Collector is not ready")
+		return false
+	}
+
+	describeText(sb, 2, "Status: Node Collectors expected as cluster collector is ready and there are sources")
+	return true
+}
+
+func printNodeCollectorStatus(odigosResources odigosResources, sb *strings.Builder) {
+
 	describeText(sb, 1, "Node Collector:")
+	nodeCollector := odigosResources.NodeCollector
+
+	expectingNodeCollector := printAndCalculateIsNodeCollectorStatus(&odigosResources, sb)
+
 	if nodeCollector.CollectorsGroup == nil {
 		describeText(sb, 2, wrapTextSuccessOfFailure("Collectors Group Not Created", !expectingNodeCollector))
 	} else {
@@ -274,14 +304,11 @@ func printOdigosPipeline(odigosResources odigosResources, sb *strings.Builder) {
 	describeText(sb, 0, "Odigos Pipeline:")
 	numDestinations := len(odigosResources.Destinations.Items)
 	numInstrumentationConfigs := len(odigosResources.InstrumentationConfigs.Items)
-	// odigos will only initiate pipeline if there are any sources or destinations
-	expectingPipeline := numDestinations > 0
 
-	printOdigosPipelineStatus(numInstrumentationConfigs, numDestinations, expectingPipeline, sb)
-	printClusterCollectorStatus(odigosResources.ClusterCollector, expectingPipeline, sb)
+	describeText(sb, 1, "Status: there are %d sources and %d destinations\n", numInstrumentationConfigs, numDestinations)
+	printClusterCollectorStatus(odigosResources, odigosResources.Destinations, sb)
 	sb.WriteString("\n")
-	expectingNodeCollector := odigosResources.ClusterCollector.CollectorsGroup != nil && odigosResources.ClusterCollector.CollectorsGroup.Status.Ready && numInstrumentationConfigs > 0
-	printNodeCollectorStatus(odigosResources.NodeCollector, expectingNodeCollector, sb)
+	printNodeCollectorStatus(odigosResources, sb)
 }
 
 func printDescribeOdigos(odigosVersion string, odigosResources odigosResources) string {
