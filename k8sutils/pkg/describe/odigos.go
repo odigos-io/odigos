@@ -275,7 +275,7 @@ func printOdigosPipeline(odigosResources odigosResources, sb *strings.Builder) {
 	numDestinations := len(odigosResources.Destinations.Items)
 	numInstrumentationConfigs := len(odigosResources.InstrumentationConfigs.Items)
 	// odigos will only initiate pipeline if there are any sources or destinations
-	expectingPipeline := numDestinations > 0 || numInstrumentationConfigs > 0
+	expectingPipeline := numDestinations > 0
 
 	printOdigosPipelineStatus(numInstrumentationConfigs, numDestinations, expectingPipeline, sb)
 	printClusterCollectorStatus(odigosResources.ClusterCollector, expectingPipeline, sb)
