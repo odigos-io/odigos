@@ -9,23 +9,14 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
-type K8sSourceObject struct {
-	metav1.ObjectMeta
-	Kind            string
-	PodTemplateSpec *corev1.PodTemplateSpec
-	LabelSelector   *metav1.LabelSelector
-}
-
-func getInstrumentationLabelTexts(workload *K8sSourceObject, ns *corev1.Namespace) (workloadText, nsText, decisionText string, instrumented bool) {
+func getInstrumentationLabelTexts(workload *source.K8sSourceObject, ns *corev1.Namespace) (workloadText, nsText, decisionText string, instrumented bool) {
 	workloadLabel, workloadFound := workload.GetLabels()[consts.OdigosInstrumentationLabel]
 	nsLabel, nsFound := ns.GetLabels()[consts.OdigosInstrumentationLabel]
 
@@ -64,61 +55,7 @@ func getInstrumentationLabelTexts(workload *K8sSourceObject, ns *corev1.Namespac
 	return
 }
 
-func getRelevantSourceResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *K8sSourceObject) (namespace *corev1.Namespace, instrumentationConfig *odigosv1.InstrumentationConfig, instrumentedApplication *odigosv1.InstrumentedApplication, instrumentationInstances *odigosv1.InstrumentationInstanceList, pods *corev1.PodList, err error) {
-
-	ns := workloadObj.GetNamespace()
-	namespace, err = kubeClient.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
-	if err != nil {
-		return
-	}
-
-	runtimeObjectName := workload.CalculateWorkloadRuntimeObjectName(workloadObj.GetName(), workloadObj.Kind)
-	instrumentationConfig, err = odigosClient.InstrumentationConfigs(ns).Get(ctx, runtimeObjectName, metav1.GetOptions{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			// it is ok if the instrumentation config is not found
-			err = nil
-			instrumentationConfig = nil
-		} else {
-			return
-		}
-	}
-
-	instrumentedApplication, err = odigosClient.InstrumentedApplications(ns).Get(ctx, runtimeObjectName, metav1.GetOptions{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			// it is ok if the instrumented application is not found
-			err = nil
-			instrumentedApplication = nil
-		} else {
-			return
-		}
-	}
-
-	instrumentedAppSelector := labels.SelectorFromSet(labels.Set{
-		"instrumented-app": runtimeObjectName,
-	})
-	instrumentationInstances, err = odigosClient.InstrumentationInstances(ns).List(ctx, metav1.ListOptions{LabelSelector: instrumentedAppSelector.String()})
-	if err != nil {
-		// if no instrumentation instances are found, it should not error, so any error is returned
-		return
-	}
-
-	podLabelSelector := metav1.FormatLabelSelector(workloadObj.LabelSelector)
-	if err != nil {
-		// if pod info cannot be extracted, it is an unrecoverable error
-		return
-	}
-	pods, err = kubeClient.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{LabelSelector: podLabelSelector})
-	if err != nil {
-		// if no pods are found, it should not error, so any error is returned
-		return
-	}
-
-	return
-}
-
-func printWorkloadManifestInfo(workloadObj *K8sSourceObject, namespace *corev1.Namespace, sb *strings.Builder) bool {
+func printWorkloadManifestInfo(workloadObj *source.K8sSourceObject, namespace *corev1.Namespace, sb *strings.Builder) bool {
 	sb.WriteString(fmt.Sprintf("Name: %s\n", workloadObj.GetName()))
 	sb.WriteString(fmt.Sprintf("Kind: %s\n", workloadObj.Kind))
 	sb.WriteString(fmt.Sprintf("Namespace: %s\n\n", workloadObj.GetNamespace()))
@@ -242,7 +179,7 @@ func printInstrumentedApplicationInfo(instrumentedApplication *odigosv1.Instrume
 	}
 }
 
-func printAppliedInstrumentationDeviceInfo(workloadObj *K8sSourceObject, instrumentedApplication *odigosv1.InstrumentedApplication, instrumented bool, sb *strings.Builder) map[string][]string {
+func printAppliedInstrumentationDeviceInfo(workloadObj *source.K8sSourceObject, instrumentedApplication *odigosv1.InstrumentedApplication, instrumented bool, sb *strings.Builder) map[string][]string {
 	appliedInstrumentationDeviceStatusMessage := "Unknown"
 	if !instrumented {
 		// if the workload is not instrumented, the instrumentation device expected
@@ -408,21 +345,21 @@ func printPodsInfo(pods *corev1.PodList, instrumentationInstances *odigosv1.Inst
 	}
 }
 
-func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *K8sSourceObject) string {
+func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *source.K8sSourceObject) string {
 	var sb strings.Builder
 
-	namespace, instrumentationConfig, instrumentedApplication, instrumentationInstances, pods, err := getRelevantSourceResources(ctx, kubeClient, odigosClient, workloadObj)
+	resources, err := source.GetRelevantSourceResources(ctx, kubeClient, odigosClient, workloadObj)
 	if err != nil {
 		sb.WriteString(fmt.Sprintf("Error: %v\n", err))
 		return sb.String()
 	}
 
-	instrumented := printWorkloadManifestInfo(workloadObj, namespace, &sb)
-	printInstrumentationConfigInfo(instrumentationConfig, instrumented, &sb)
-	printRuntimeDetails(instrumentationConfig, instrumented, &sb)
-	printInstrumentedApplicationInfo(instrumentedApplication, instrumented, &sb)
-	containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(workloadObj, instrumentedApplication, instrumented, &sb)
-	printPodsInfo(pods, instrumentationInstances, containerNameToExpectedDevices, &sb)
+	instrumented := printWorkloadManifestInfo(workloadObj, resources.Namespace, &sb)
+	printInstrumentationConfigInfo(resources.InstrumentationConfig, instrumented, &sb)
+	printRuntimeDetails(resources.InstrumentationConfig, instrumented, &sb)
+	printInstrumentedApplicationInfo(resources.InstrumentedApplication, instrumented, &sb)
+	containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(workloadObj, resources.InstrumentedApplication, instrumented, &sb)
+	printPodsInfo(resources.Pods, resources.InstrumentationInstances, containerNameToExpectedDevices, &sb)
 
 	return sb.String()
 }
@@ -432,7 +369,7 @@ func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, od
 	if err != nil {
 		return fmt.Sprintf("Error: %v\n", err)
 	}
-	workloadObj := &K8sSourceObject{
+	workloadObj := &source.K8sSourceObject{
 		Kind:            "deployment",
 		ObjectMeta:      deployment.ObjectMeta,
 		PodTemplateSpec: &deployment.Spec.Template,
@@ -446,7 +383,7 @@ func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odi
 	if err != nil {
 		return fmt.Sprintf("Error: %v\n", err)
 	}
-	workloadObj := &K8sSourceObject{
+	workloadObj := &source.K8sSourceObject{
 		Kind:            "daemonset",
 		ObjectMeta:      ds.ObjectMeta,
 		PodTemplateSpec: &ds.Spec.Template,
@@ -460,7 +397,7 @@ func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, o
 	if err != nil {
 		return fmt.Sprintf("Error: %v\n", err)
 	}
-	workloadObj := &K8sSourceObject{
+	workloadObj := &source.K8sSourceObject{
 		Kind:            "statefulset",
 		ObjectMeta:      ss.ObjectMeta,
 		PodTemplateSpec: &ss.Spec.Template,
