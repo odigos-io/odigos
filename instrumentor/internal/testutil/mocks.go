@@ -165,12 +165,7 @@ func NewMockDataCollection() *odigosv1.CollectorsGroup {
 }
 
 func NewMockOdigosConfig() *v1.ConfigMap {
-	config, _ := json.Marshal(common.OdigosConfiguration{
-		DefaultSDKs: map[common.ProgrammingLanguage]common.OtelSdk{
-			common.PythonProgrammingLanguage: common.OtelSdkNativeCommunity,
-			common.GoProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		},
-	})
+	config, _ := json.Marshal(common.OdigosConfiguration{})
 
 	return &v1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
