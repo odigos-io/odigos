@@ -1,12 +1,12 @@
-import { useNotify } from '@/hooks';
 import { ActionInput } from '@/types';
 import styled from 'styled-components';
 import { useMutation } from 'react-query';
 import React, { useMemo, useState } from 'react';
+import { useComputePlatform, useNotify } from '@/hooks';
 import { ChooseActionBody } from '../choose-action-body';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
 import { useActionFormData, useCreateAction } from '@/hooks/actions';
-import { AutocompleteInput, Modal, NavigationButtons, Text, Divider } from '@/reuseable-components';
+import { AutocompleteInput, Modal, NavigationButtons, Text, Divider, FadeLoader } from '@/reuseable-components';
 
 const DefineActionContainer = styled.section`
   height: 640px;
@@ -31,6 +31,14 @@ const SubTitle = styled(Text)`
   line-height: 150%;
 `;
 
+const Center = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+`;
+
 interface AddActionModalProps {
   isModalOpen: boolean;
   handleCloseModal: () => void;
@@ -39,19 +47,17 @@ interface AddActionModalProps {
 export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, handleCloseModal }) => {
   const { formData, handleFormChange, resetFormData, validateForm } = useActionFormData();
   const { createNewAction } = useCreateAction();
+  const { refetch } = useComputePlatform();
   const notify = useNotify();
 
   const [selectedItem, setSelectedItem] = useState<ActionOption | null>(null);
 
-  const { mutate: create } = useMutation((data: ActionInput) => createNewAction(data), {
-    onSuccess: (data, variables, context) => {
-      console.log('Successfully submitted action configuration:', data, variables, context);
-
-      // TODO: add action to global state
-
-      handleCloseModal();
+  const { mutate: create, isLoading } = useMutation((data: ActionInput) => createNewAction(data), {
+    onSuccess: () => {
+      refetch();
+      handleClose();
     },
-    onError: (error, variables, context) => {
+    onError: (error, variables) => {
       notify({
         message: (error as any)?.message || `Failed to create ${variables.type}: unknown error`,
         title: 'Create Error',
@@ -123,7 +129,14 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
         {!!selectedItem?.type ? (
           <WidthConstraint>
             <Divider margin='16px 0' />
-            <ChooseActionBody action={selectedItem} formData={formData} handleFormChange={handleFormChange} />
+
+            {isLoading ? (
+              <Center>
+                <FadeLoader cssOverride={{ scale: 2 }} />
+              </Center>
+            ) : (
+              <ChooseActionBody action={selectedItem} formData={formData} handleFormChange={handleFormChange} />
+            )}
           </WidthConstraint>
         ) : null}
       </DefineActionContainer>
