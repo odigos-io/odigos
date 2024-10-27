@@ -5,7 +5,6 @@ import { FieldTitle, FieldWrapper } from './styled';
 import styled from 'styled-components';
 
 type Props = {
-  isVertical?: boolean;
   value: string;
   setValue: (value: string) => void;
 };
@@ -31,7 +30,7 @@ const isSelected = (id: string, selected: string[]) => {
   return !!selected?.find((str) => str === id);
 };
 
-const PiiMasking: React.FC<Props> = ({ isVertical, value, setValue }) => {
+const PiiMasking: React.FC<Props> = ({ value, setValue }) => {
   const mappedValue = useMemo(() => safeJsonParse<Parsed>(value, { piiCategories: [] }).piiCategories, [value]);
 
   const [isLastSelection, setIsLastSelection] = useState(false);
