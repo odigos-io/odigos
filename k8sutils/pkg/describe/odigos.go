@@ -68,7 +68,7 @@ func printOdigosPipeline(analyze *odigos.OdigosAnalyze, sb *strings.Builder) {
 	printNodeCollectorStatus(analyze, sb)
 }
 
-func printDescribeOdigos(analyze *odigos.OdigosAnalyze) string {
+func DescribeOdigosToText(analyze *odigos.OdigosAnalyze) string {
 	var sb strings.Builder
 
 	printOdigosVersion(analyze.OdigosVersion, &sb)
@@ -78,14 +78,12 @@ func printDescribeOdigos(analyze *odigos.OdigosAnalyze) string {
 	return sb.String()
 }
 
-func DescribeOdigos(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) string {
+func DescribeOdigos(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*odigos.OdigosAnalyze, error) {
 
 	odigosResources, err := odigos.GetRelevantOdigosResources(ctx, kubeClient, odigosClient, odigosNs)
 	if err != nil {
-		return fmt.Sprintf("Error: %v\n", err)
+		return nil, err
 	}
 
-	odigosAnalyze := odigos.AnalyzeOdigos(odigosResources)
-
-	return printDescribeOdigos(odigosAnalyze)
+	return odigos.AnalyzeOdigos(odigosResources), nil
 }
