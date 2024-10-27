@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import { KeyValueInputsList, Text } from '@/reuseable-components';
+import { safeJsonParse } from '@/utils';
 
 const FieldWrapper = styled.div`
   width: 100%;
@@ -26,7 +27,10 @@ type Parsed = {
 const AddClusterInfo: React.FC<Props> = ({ value, setValue }) => {
   const mappedValue = useMemo(
     () =>
-      value ? (JSON.parse(value) as Parsed).clusterAttributes.map((obj) => ({ key: obj.attributeName, value: obj.attributeStringValue })) : undefined,
+      safeJsonParse<Parsed>(value, { clusterAttributes: [] }).clusterAttributes.map((obj) => ({
+        key: obj.attributeName,
+        value: obj.attributeStringValue,
+      })),
     [value]
   );
 
@@ -37,15 +41,11 @@ const AddClusterInfo: React.FC<Props> = ({ value, setValue }) => {
     }[]
   ) => {
     const payload: Parsed = {
-      clusterAttributes: [],
-    };
-
-    arr.forEach((obj) => {
-      payload.clusterAttributes.push({
+      clusterAttributes: arr.map((obj) => ({
         attributeName: obj.key,
         attributeStringValue: obj.value,
-      });
-    });
+      })),
+    };
 
     setValue(JSON.stringify(payload));
   };

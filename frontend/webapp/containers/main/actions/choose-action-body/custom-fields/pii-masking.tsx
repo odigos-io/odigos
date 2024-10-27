@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import { InputList, Text } from '@/reuseable-components';
+import { safeJsonParse } from '@/utils';
 
 const FieldWrapper = styled.div`
   width: 100%;
@@ -21,7 +22,7 @@ type Parsed = {
 };
 
 const PiiMasking: React.FC<Props> = ({ value, setValue }) => {
-  const mappedValue = useMemo(() => (value ? (JSON.parse(value) as Parsed).piiCategories : undefined), [value]);
+  const mappedValue = useMemo(() => safeJsonParse<Parsed>(value, { piiCategories: [] }).piiCategories, [value]);
 
   const handleChange = (arr: string[]) => {
     const payload: Parsed = {
