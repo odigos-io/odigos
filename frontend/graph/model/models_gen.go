@@ -308,6 +308,33 @@ func (this PiiMaskingAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type ProbabilisticSamplerAction struct {
+	ID      string       `json:"id"`
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details string       `json:"details"`
+}
+
+func (ProbabilisticSamplerAction) IsAction()              {}
+func (this ProbabilisticSamplerAction) GetID() string     { return this.ID }
+func (this ProbabilisticSamplerAction) GetType() string   { return this.Type }
+func (this ProbabilisticSamplerAction) GetName() *string  { return this.Name }
+func (this ProbabilisticSamplerAction) GetNotes() *string { return this.Notes }
+func (this ProbabilisticSamplerAction) GetDisable() bool  { return this.Disable }
+func (this ProbabilisticSamplerAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+
 type Query struct {
 }
 
