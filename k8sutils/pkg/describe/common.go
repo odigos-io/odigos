@@ -13,6 +13,10 @@ func wrapTextInGreen(text string) string {
 	return "\033[32m" + text + "\033[0m"
 }
 
+func wrapTextInYellow(text string) string {
+	return "\033[33m" + text + "\033[0m"
+}
+
 func wrapTextSuccessOfFailure(text string, success bool) string {
 	if success {
 		return wrapTextInGreen(text)
