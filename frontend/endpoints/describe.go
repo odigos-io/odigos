@@ -10,8 +10,32 @@ import (
 func DescribeOdigos(c *gin.Context) {
 	ctx := c.Request.Context()
 	odiogosNs := env.GetCurrentNamespace()
-	describeText := describe.DescribeOdigos(ctx, kube.DefaultClient, kube.DefaultClient.OdigosClient, odiogosNs)
-	c.Writer.WriteString(describeText)
+	desc, err := describe.DescribeOdigos(ctx, kube.DefaultClient, kube.DefaultClient.OdigosClient, odiogosNs)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// construct the http response code based on the status of the odigos
+	returnCode := 200
+	if desc.HasErrors {
+		returnCode = 500
+	} else if !desc.IsSettled {
+		returnCode = 202
+	}
+
+	// Check for the Accept header
+	acceptHeader := c.GetHeader("Accept")
+
+	if acceptHeader == "application/json" {
+		// Return JSON response if Accept header is "application/json"
+		c.JSON(returnCode, desc)
+	} else {
+		describeText := describe.DescribeOdigosToText(desc)
+		c.String(returnCode, describeText)
+	}
 }
 
 func DescribeSource(c *gin.Context, ns string, kind string, name string) {
