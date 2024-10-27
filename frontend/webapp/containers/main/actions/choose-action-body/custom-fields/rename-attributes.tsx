@@ -1,15 +1,7 @@
 import React, { useMemo } from 'react';
-import styled from 'styled-components';
-import { KeyValueInputsList, Text } from '@/reuseable-components';
-
-const FieldWrapper = styled.div`
-  width: 100%;
-  margin: 8px 0;
-`;
-
-const FieldTitle = styled(Text)`
-  margin-bottom: 12px;
-`;
+import { safeJsonParse } from '@/utils';
+import { FieldTitle, FieldWrapper } from './styled';
+import { KeyValueInputsList } from '@/reuseable-components';
 
 type Props = {
   value: string;
@@ -24,7 +16,7 @@ type Parsed = {
 
 const RenameAttributes: React.FC<Props> = ({ value, setValue }) => {
   const mappedValue = useMemo(
-    () => (value ? Object.entries((JSON.parse(value) as Parsed).renames).map(([k, v]) => ({ key: k, value: v })) : undefined),
+    () => Object.entries(safeJsonParse<Parsed>(value, { renames: {} }).renames).map(([k, v]) => ({ key: k, value: v })),
     [value]
   );
 

@@ -1,15 +1,7 @@
 import React, { useMemo } from 'react';
-import styled from 'styled-components';
-import { InputList, Text } from '@/reuseable-components';
-
-const FieldWrapper = styled.div`
-  width: 100%;
-  margin: 8px 0;
-`;
-
-const FieldTitle = styled(Text)`
-  margin-bottom: 12px;
-`;
+import { safeJsonParse } from '@/utils';
+import { InputList } from '@/reuseable-components';
+import { FieldTitle, FieldWrapper } from './styled';
 
 type Props = {
   value: string;
@@ -21,7 +13,7 @@ type Parsed = {
 };
 
 const DeleteAttributes: React.FC<Props> = ({ value, setValue }) => {
-  const mappedValue = useMemo(() => (value ? (JSON.parse(value) as Parsed).attributeNamesToDelete : undefined), [value]);
+  const mappedValue = useMemo(() => safeJsonParse<Parsed>(value, { attributeNamesToDelete: [] }).attributeNamesToDelete, [value]);
 
   const handleChange = (arr: string[]) => {
     const payload: Parsed = {
