@@ -121,6 +121,33 @@ type DestinationInput struct {
 	Fields          []*FieldInput         `json:"fields"`
 }
 
+type ErrorSamplerAction struct {
+	ID      string       `json:"id"`
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details string       `json:"details"`
+}
+
+func (ErrorSamplerAction) IsAction()              {}
+func (this ErrorSamplerAction) GetID() string     { return this.ID }
+func (this ErrorSamplerAction) GetType() string   { return this.Type }
+func (this ErrorSamplerAction) GetName() *string  { return this.Name }
+func (this ErrorSamplerAction) GetNotes() *string { return this.Notes }
+func (this ErrorSamplerAction) GetDisable() bool  { return this.Disable }
+func (this ErrorSamplerAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+
 type ExportedSignalsInput struct {
 	Traces  bool `json:"traces"`
 	Metrics bool `json:"metrics"`
