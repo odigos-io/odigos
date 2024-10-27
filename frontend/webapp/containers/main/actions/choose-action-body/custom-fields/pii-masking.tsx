@@ -14,10 +14,10 @@ type Parsed = {
   piiCategories: string[];
 };
 
-const ListContainer = styled.div<{ isVertical?: boolean }>`
+const ListContainer = styled.div`
   display: flex;
-  flex-direction: ${({ isVertical }) => (isVertical ? 'column' : 'row')};
-  gap: ${({ isVertical }) => (isVertical ? '16px' : '32px')};
+  flex-direction: row;
+  gap: 32px;
 `;
 
 const strictPicklist = [
@@ -62,9 +62,8 @@ const PiiMasking: React.FC<Props> = ({ isVertical, value, setValue }) => {
   return (
     <FieldWrapper>
       <FieldTitle>Attributes to mask</FieldTitle>
-      {/* <InputList value={mappedValue} onChange={handleChange} /> */}
 
-      <ListContainer isVertical={isVertical}>
+      <ListContainer>
         {strictPicklist.map(({ id, label }) => {
           const selected = isSelected(id, mappedValue);
 
