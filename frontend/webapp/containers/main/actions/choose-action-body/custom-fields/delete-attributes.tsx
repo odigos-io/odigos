@@ -1,16 +1,7 @@
 import React, { useMemo } from 'react';
-import styled from 'styled-components';
-import { InputList, Text } from '@/reuseable-components';
 import { safeJsonParse } from '@/utils';
-
-const FieldWrapper = styled.div`
-  width: 100%;
-  margin: 8px 0;
-`;
-
-const FieldTitle = styled(Text)`
-  margin-bottom: 12px;
-`;
+import { InputList } from '@/reuseable-components';
+import { FieldTitle, FieldWrapper } from './styled';
 
 type Props = {
   value: string;
