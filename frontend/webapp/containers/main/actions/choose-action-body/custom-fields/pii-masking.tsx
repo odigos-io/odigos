@@ -70,7 +70,7 @@ const PiiMasking: React.FC<Props> = ({ value, setValue }) => {
             <Checkbox
               key={id}
               title={label}
-              disabled={isLastSelection && selected}
+              disabled={isLastSelection && mappedValue.includes(id)}
               initialValue={mappedValue.includes(id)}
               onChange={(bool) => handleChange(id, bool)}
             />
