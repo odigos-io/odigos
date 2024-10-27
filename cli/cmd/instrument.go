@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/odigos-io/odigos/common/consts"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -72,6 +74,7 @@ Odigos CLI and monitor the instrumentation status.`,
 }
 
 func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, excludedApps map[string]struct{}) {
+	systemNs := sliceToMap(consts.SystemNamespaces)
 	nsList, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("\033[31mERROR\033[0m Cannot list namespaces: %s\n", err)
@@ -80,6 +83,31 @@ func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, exc
 
 	for _, ns := range nsList.Items {
 		fmt.Printf("Instrumenting namespace: %s\n", ns.Name)
+		_, excluded := excludedNs[ns.Name]
+		_, system := systemNs[ns.Name]
+		if excluded || system {
+			fmt.Printf("  - Skipping namespace due to exclusion file or system namespace\n")
+			continue
+		}
+
+		instrumentNamespace(ctx, client, ns.Name, excludedApps)
+	}
+}
+
+func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, excludedApps map[string]struct{}) {
+	deps, err := client.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("  - \033[31mERROR\033[0m Cannot list deployments: %s\n", err)
+		return
+	}
+
+	for _, dep := range deps.Items {
+		fmt.Printf("  - Instrumenting deployment: %s\n", dep.Name)
+		_, excluded := excludedApps[dep.Name]
+		if excluded {
+			fmt.Printf("    - Skipping deployment due to exclusion file\n")
+			continue
+		}
 	}
 }
 
@@ -134,4 +162,12 @@ func init() {
 	clusterCmd.Flags().String(excludeNamespacesFileFlag, "", "File containing namespaces to exclude from instrumentation. Each namespace should be on a new line.")
 	clusterCmd.Flags().String(excludeAppsFileFlag, "", "File containing applications to exclude from instrumentation. Each application should be on a new line.")
 	clusterCmd.Flags().Bool(skipPreflightCheckFlag, false, "Skip preflight checks")
+}
+
+func sliceToMap(slice []string) map[string]struct{} {
+	m := make(map[string]struct{})
+	for _, s := range slice {
+		m[s] = struct{}{}
+	}
+	return m
 }
