@@ -1,8 +1,5 @@
-import { ActionInput } from '@/types';
 import styled from 'styled-components';
-import { useMutation } from 'react-query';
-import React, { useMemo, useState } from 'react';
-import { useComputePlatform, useNotify } from '@/hooks';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ChooseActionBody } from '../choose-action-body';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
 import { useActionFormData, useCreateAction } from '@/hooks/actions';
@@ -46,42 +43,17 @@ interface AddActionModalProps {
 
 export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, handleCloseModal }) => {
   const { formData, handleFormChange, resetFormData, validateForm } = useActionFormData();
-  const { createNewAction } = useCreateAction();
-  const { refetch } = useComputePlatform();
-  const notify = useNotify();
-
+  const { createAction, loading, done } = useCreateAction();
   const [selectedItem, setSelectedItem] = useState<ActionOption | null>(null);
 
-  const { mutate: create, isLoading } = useMutation((data: ActionInput) => createNewAction(data), {
-    onSuccess: () => {
-      refetch();
-      handleClose();
-    },
-    onError: (error, variables) => {
-      notify({
-        message: (error as any)?.message || `Failed to create ${variables.type}: unknown error`,
-        title: 'Create Error',
-        type: 'error',
-        target: 'notification',
-        crdType: 'notification',
-      });
-    },
-  });
+  useEffect(() => {
+    if (done) handleClose();
+  }, [done]);
 
   const isFormOk = useMemo(() => !!selectedItem && validateForm(), [selectedItem, formData]);
 
   const handleSubmit = async () => {
-    if (!isFormOk) {
-      notify({
-        message: 'Required fields are incomplete!',
-        title: 'Create Error',
-        type: 'error',
-        target: 'notification',
-        crdType: 'notification',
-      });
-    } else {
-      create(formData);
-    }
+    createAction(formData);
   };
 
   const handleClose = () => {
@@ -108,7 +80,7 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
               variant: 'primary',
               label: 'DONE',
               onClick: handleSubmit,
-              disabled: !isFormOk,
+              disabled: !isFormOk || loading,
             },
           ]}
         />
@@ -130,7 +102,7 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
           <WidthConstraint>
             <Divider margin='16px 0' />
 
-            {isLoading ? (
+            {loading ? (
               <Center>
                 <FadeLoader cssOverride={{ scale: 2 }} />
               </Center>

@@ -1,8 +1,8 @@
+import styled from 'styled-components';
 import { safeJsonParse } from '@/utils';
-import React, { useEffect, useMemo, useState } from 'react';
 import { Checkbox } from '@/reuseable-components';
 import { FieldTitle, FieldWrapper } from './styled';
-import styled from 'styled-components';
+import React, { useEffect, useMemo, useState } from 'react';
 
 type Props = {
   value: string;
@@ -26,13 +26,8 @@ const strictPicklist = [
   },
 ];
 
-const isSelected = (id: string, selected: string[]) => {
-  return !!selected?.find((str) => str === id);
-};
-
 const PiiMasking: React.FC<Props> = ({ value, setValue }) => {
   const mappedValue = useMemo(() => safeJsonParse<Parsed>(value, { piiCategories: [] }).piiCategories, [value]);
-
   const [isLastSelection, setIsLastSelection] = useState(mappedValue.length === 1);
 
   useEffect(() => {
@@ -63,19 +58,15 @@ const PiiMasking: React.FC<Props> = ({ value, setValue }) => {
       <FieldTitle>Attributes to mask</FieldTitle>
 
       <ListContainer>
-        {strictPicklist.map(({ id, label }) => {
-          const selected = isSelected(id, mappedValue);
-
-          return (
-            <Checkbox
-              key={id}
-              title={label}
-              disabled={isLastSelection && mappedValue.includes(id)}
-              initialValue={mappedValue.includes(id)}
-              onChange={(bool) => handleChange(id, bool)}
-            />
-          );
-        })}
+        {strictPicklist.map(({ id, label }) => (
+          <Checkbox
+            key={id}
+            title={label}
+            disabled={isLastSelection && mappedValue.includes(id)}
+            initialValue={mappedValue.includes(id)}
+            onChange={(bool) => handleChange(id, bool)}
+          />
+        ))}
       </ListContainer>
     </FieldWrapper>
   );

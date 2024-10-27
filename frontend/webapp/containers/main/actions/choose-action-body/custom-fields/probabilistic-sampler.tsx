@@ -19,11 +19,7 @@ const ProbabilisticSampler: React.FC<Props> = ({ value, setValue }) => {
   const mappedValue = useMemo(() => safeJsonParse<Parsed>(value, { sampling_percentage: '0' }).sampling_percentage, [value]);
 
   const handleChange = (val: string) => {
-    let num = Number(val);
-
-    if (Number.isNaN(num) || num < MIN || num > MAX) {
-      num = MIN;
-    }
+    const num = Math.max(MIN, Math.min(Number(val), MAX)) || MIN;
 
     const payload: Parsed = {
       sampling_percentage: String(num),

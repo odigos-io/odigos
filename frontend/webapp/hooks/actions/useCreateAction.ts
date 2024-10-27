@@ -1,21 +1,39 @@
+import { useNotify } from '../useNotify';
 import type { ActionInput } from '@/types';
+import { useEffect, useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { CREATE_ACTION } from '@/graphql/mutations/action';
+import { useComputePlatform } from '../compute-platform';
 
 export const useCreateAction = () => {
-  const [createAction] = useMutation(CREATE_ACTION);
+  const [done, setDone] = useState(false);
+  const [createAction, { data, loading, error }] = useMutation(CREATE_ACTION);
 
-  const createNewAction = async (action: ActionInput) => {
-    try {
-      const { data } = await createAction({
-        variables: { action },
+  const { refetch } = useComputePlatform();
+  const notify = useNotify();
+
+  useEffect(() => {
+    if (error) {
+      notify({
+        message: error.message,
+        title: 'Create Action Error',
+        type: 'error',
+        target: 'notification',
+        crdType: 'notification',
       });
-      return data?.createAction?.id;
-    } catch (error) {
-      console.error('Error creating new action:', error);
-      throw error;
     }
-  };
+  }, [error]);
 
-  return { createNewAction };
+  useEffect(() => {
+    if (data) {
+      refetch();
+      setDone(true);
+    }
+  }, [data]);
+
+  return {
+    createAction: (action: ActionInput) => createAction({ variables: { action } }),
+    loading,
+    done,
+  };
 };
