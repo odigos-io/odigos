@@ -18,15 +18,23 @@ func DescribeOdigos(c *gin.Context) {
 		return
 	}
 
+	// construct the http response code based on the status of the odigos
+	returnCode := 200
+	if desc.HasErrors {
+		returnCode = 500
+	} else if !desc.IsSettled {
+		returnCode = 202
+	}
+
 	// Check for the Accept header
 	acceptHeader := c.GetHeader("Accept")
 
 	if acceptHeader == "application/json" {
 		// Return JSON response if Accept header is "application/json"
-		c.JSON(200, desc)
+		c.JSON(returnCode, desc)
 	} else {
 		describeText := describe.DescribeOdigosToText(desc)
-		c.Writer.WriteString(describeText)
+		c.String(returnCode, describeText)
 	}
 }
 

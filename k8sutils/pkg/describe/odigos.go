@@ -15,7 +15,7 @@ func printOdigosVersion(odigosVersion string, sb *strings.Builder) {
 	describeText(sb, 0, "Odigos Version: %s", odigosVersion)
 }
 
-func printProperty[T string | bool | int](sb *strings.Builder, indent int, property *properties.EntityProperty[T]) {
+func printProperty(sb *strings.Builder, indent int, property *properties.EntityProperty) {
 	if property == nil {
 		return
 	}

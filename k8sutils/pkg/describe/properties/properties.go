@@ -15,13 +15,13 @@ const (
 	PropertyStatusError PropertyStatus = "error"
 )
 
-type EntityProperty[T string | bool | int] struct {
+type EntityProperty struct {
 
 	// The name of the property being described
 	Name string `json:"name"`
 
 	// The value to display for this property
-	Value T `json:"value"`
+	Value interface{} `json:"value"`
 
 	// The status of the property actual state
 	Status PropertyStatus `json:"status,omitempty"`

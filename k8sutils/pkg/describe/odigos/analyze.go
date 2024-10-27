@@ -9,29 +9,29 @@ import (
 )
 
 type ClusterCollectorAnalyze struct {
-	Enabled              properties.EntityProperty[bool]    `json:"enabled"`
-	CollectorGroup       properties.EntityProperty[string]  `json:"collectorGroup"`
-	Deployed             *properties.EntityProperty[bool]   `json:"deployed,omitempty"`
-	DeployedError        *properties.EntityProperty[string] `json:"deployedError,omitempty"`
-	CollectorReady       *properties.EntityProperty[bool]   `json:"collectorReady,omitempty"`
-	DeploymentCreated    properties.EntityProperty[string]  `json:"deployment,omitempty"`
-	ExpectedReplicas     *properties.EntityProperty[int]    `json:"expectedReplicas,omitempty"`
-	HealthyReplicas      *properties.EntityProperty[int]    `json:"healthyReplicas,omitempty"`
-	FailedReplicas       *properties.EntityProperty[int]    `json:"failedReplicas,omitempty"`
-	FailedReplicasReason *properties.EntityProperty[string] `json:"failedReplicasReason,omitempty"`
+	Enabled              properties.EntityProperty  `json:"enabled"`
+	CollectorGroup       properties.EntityProperty  `json:"collectorGroup"`
+	Deployed             *properties.EntityProperty `json:"deployed,omitempty"`
+	DeployedError        *properties.EntityProperty `json:"deployedError,omitempty"`
+	CollectorReady       *properties.EntityProperty `json:"collectorReady,omitempty"`
+	DeploymentCreated    properties.EntityProperty  `json:"deployment,omitempty"`
+	ExpectedReplicas     *properties.EntityProperty `json:"expectedReplicas,omitempty"`
+	HealthyReplicas      *properties.EntityProperty `json:"healthyReplicas,omitempty"`
+	FailedReplicas       *properties.EntityProperty `json:"failedReplicas,omitempty"`
+	FailedReplicasReason *properties.EntityProperty `json:"failedReplicasReason,omitempty"`
 }
 
 type NodeCollectorAnalyze struct {
-	Enabled        properties.EntityProperty[bool]    `json:"enabled"`
-	CollectorGroup properties.EntityProperty[string]  `json:"collectorGroup"`
-	Deployed       *properties.EntityProperty[bool]   `json:"deployed,omitempty"`
-	DeployedError  *properties.EntityProperty[string] `json:"deployedError,omitempty"`
-	CollectorReady *properties.EntityProperty[bool]   `json:"collectorReady,omitempty"`
-	DaemonSet      properties.EntityProperty[string]  `json:"daemonSet,omitempty"`
-	DesiredNodes   *properties.EntityProperty[int]    `json:"desiredNodes,omitempty"`
-	CurrentNodes   *properties.EntityProperty[int]    `json:"currentNodes,omitempty"`
-	UpdatedNodes   *properties.EntityProperty[int]    `json:"updatedNodes,omitempty"`
-	AvailableNodes *properties.EntityProperty[int]    `json:"availableNodes,omitempty"`
+	Enabled        properties.EntityProperty  `json:"enabled"`
+	CollectorGroup properties.EntityProperty  `json:"collectorGroup"`
+	Deployed       *properties.EntityProperty `json:"deployed,omitempty"`
+	DeployedError  *properties.EntityProperty `json:"deployedError,omitempty"`
+	CollectorReady *properties.EntityProperty `json:"collectorReady,omitempty"`
+	DaemonSet      properties.EntityProperty  `json:"daemonSet,omitempty"`
+	DesiredNodes   *properties.EntityProperty `json:"desiredNodes,omitempty"`
+	CurrentNodes   *properties.EntityProperty `json:"currentNodes,omitempty"`
+	UpdatedNodes   *properties.EntityProperty `json:"updatedNodes,omitempty"`
+	AvailableNodes *properties.EntityProperty `json:"availableNodes,omitempty"`
 }
 
 type OdigosAnalyze struct {
@@ -40,9 +40,13 @@ type OdigosAnalyze struct {
 	NumberOfSources      int                     `json:"numberOfSources"`
 	ClusterCollector     ClusterCollectorAnalyze `json:"clusterCollector"`
 	NodeCollector        NodeCollectorAnalyze    `json:"nodeCollector"`
+
+	// is settled is true if all resources are created and ready
+	IsSettled bool `json:"isSettled"`
+	HasErrors bool `json:"hasErrors"`
 }
 
-func analyzeDeployed(cg *odigosv1.CollectorsGroup) (*properties.EntityProperty[bool], *properties.EntityProperty[string]) {
+func analyzeDeployed(cg *odigosv1.CollectorsGroup) (*properties.EntityProperty, *properties.EntityProperty) {
 	if cg == nil {
 		return nil, nil
 	}
@@ -56,11 +60,11 @@ func analyzeDeployed(cg *odigosv1.CollectorsGroup) (*properties.EntityProperty[b
 	}
 	if deployedCondition == nil {
 		// scheduler created the cg but autoscaler did not reconcile it yet
-		return &properties.EntityProperty[bool]{
+		return &properties.EntityProperty{
 				Name:   "Deployed",
 				Value:  false,
 				Status: properties.PropertyStatusTransitioning,
-			}, &properties.EntityProperty[string]{
+			}, &properties.EntityProperty{
 				Name:   "Deployed Error",
 				Value:  "waiting for reconciliation",
 				Status: properties.PropertyStatusTransitioning,
@@ -69,18 +73,18 @@ func analyzeDeployed(cg *odigosv1.CollectorsGroup) (*properties.EntityProperty[b
 
 	if deployedCondition.Status == metav1.ConditionTrue {
 		// successfully reconciled to collectors deployment
-		return &properties.EntityProperty[bool]{
+		return &properties.EntityProperty{
 			Name:   "Deployed",
 			Value:  true,
 			Status: properties.PropertyStatusSuccess,
 		}, nil
 	} else {
 		// had an error during reconciliation to k8s deployment
-		return &properties.EntityProperty[bool]{
+		return &properties.EntityProperty{
 				Name:   "Deployed",
 				Value:  false,
 				Status: properties.PropertyStatusError,
-			}, &properties.EntityProperty[string]{
+			}, &properties.EntityProperty{
 				Name:   "Deployed Error",
 				Value:  deployedCondition.Message,
 				Status: properties.PropertyStatusError,
@@ -88,7 +92,7 @@ func analyzeDeployed(cg *odigosv1.CollectorsGroup) (*properties.EntityProperty[b
 	}
 }
 
-func analyzeCollectorReady(cg *odigosv1.CollectorsGroup) *properties.EntityProperty[bool] {
+func analyzeCollectorReady(cg *odigosv1.CollectorsGroup) *properties.EntityProperty {
 	if cg == nil {
 		return nil
 	}
@@ -97,16 +101,16 @@ func analyzeCollectorReady(cg *odigosv1.CollectorsGroup) *properties.EntityPrope
 	// but there is no difference between deployment starting and deployment failed to start
 	ready := cg.Status.Ready
 
-	return &properties.EntityProperty[bool]{
+	return &properties.EntityProperty{
 		Name:   "Ready",
 		Value:  ready,
 		Status: properties.GetSuccessOrTransitioning(ready),
 	}
 }
 
-func analyzeDeployment(dep *appsv1.Deployment, enabled bool) (properties.EntityProperty[string], *properties.EntityProperty[int], int) {
+func analyzeDeployment(dep *appsv1.Deployment, enabled bool) (properties.EntityProperty, *properties.EntityProperty, int) {
 	depFound := dep != nil
-	deployment := properties.EntityProperty[string]{
+	deployment := properties.EntityProperty{
 		Name:   "Deployment",
 		Value:  properties.GetTextCreated(depFound),
 		Status: properties.GetSuccessOrTransitioning(depFound == enabled),
@@ -115,23 +119,23 @@ func analyzeDeployment(dep *appsv1.Deployment, enabled bool) (properties.EntityP
 		return deployment, nil, 0
 	} else {
 		expectedReplicas := int(*dep.Spec.Replicas)
-		return deployment, &properties.EntityProperty[int]{
+		return deployment, &properties.EntityProperty{
 			Name:  "Expected Replicas",
 			Value: expectedReplicas,
 		}, expectedReplicas
 	}
 }
 
-func analyzeDaemonSet(ds *appsv1.DaemonSet, enabled bool) properties.EntityProperty[string] {
+func analyzeDaemonSet(ds *appsv1.DaemonSet, enabled bool) properties.EntityProperty {
 	dsFound := ds != nil
-	return properties.EntityProperty[string]{
+	return properties.EntityProperty{
 		Name:   "DaemonSet",
 		Value:  properties.GetTextCreated(dsFound),
 		Status: properties.GetSuccessOrTransitioning(dsFound == enabled),
 	}
 }
 
-func analyzeDsReplicas(ds *appsv1.DaemonSet) (*properties.EntityProperty[int], *properties.EntityProperty[int], *properties.EntityProperty[int], *properties.EntityProperty[int]) {
+func analyzeDsReplicas(ds *appsv1.DaemonSet) (*properties.EntityProperty, *properties.EntityProperty, *properties.EntityProperty, *properties.EntityProperty) {
 	if ds == nil {
 		return nil, nil, nil, nil
 	}
@@ -140,13 +144,13 @@ func analyzeDsReplicas(ds *appsv1.DaemonSet) (*properties.EntityProperty[int], *
 	currentReplicas := int(ds.Status.CurrentNumberScheduled)
 	updatedReplicas := int(ds.Status.UpdatedNumberScheduled)
 	availableNodes := int(ds.Status.NumberAvailable)
-	return &properties.EntityProperty[int]{
+	return &properties.EntityProperty{
 			// The total number of nodes that should be running this daemon.
 			// Regardless of what is actually running (0, 1, or more), rollouts, failures, etc.
 			// this number can be less than the number of nodes in the cluster if affinity rules and node selectors are used.
 			Name:  "Desired Nodes",
 			Value: desiredNodes,
-		}, &properties.EntityProperty[int]{
+		}, &properties.EntityProperty{
 			// The number of nodes that are running at least 1
 			// daemon pod and are supposed to run the daemon pod.
 			// if this number is less than the desired number, the daemonset is not fully scheduled.
@@ -155,7 +159,7 @@ func analyzeDsReplicas(ds *appsv1.DaemonSet) (*properties.EntityProperty[int], *
 			Name:   "Current Nodes",
 			Value:  currentReplicas,
 			Status: properties.GetSuccessOrTransitioning(currentReplicas == desiredNodes),
-		}, &properties.EntityProperty[int]{
+		}, &properties.EntityProperty{
 			// The number of nodes that are running pods from the latest version of the daemonset and do not have old pods from previous versions.
 			// if this number is less than the desired number, the daemonset is not fully updated.
 			// it can be due to an active rollout (which is ok), or due to a problem with the nodes / pods
@@ -164,7 +168,7 @@ func analyzeDsReplicas(ds *appsv1.DaemonSet) (*properties.EntityProperty[int], *
 			Name:   "Updated Nodes",
 			Value:  updatedReplicas,
 			Status: properties.GetSuccessOrTransitioning(updatedReplicas == desiredNodes),
-		}, &properties.EntityProperty[int]{
+		}, &properties.EntityProperty{
 			// available nodes are the nodes for which the oldest pod is ready and available.
 			// it can count nodes that are running an old version of the daemonset,
 			// so it alone cannot be used to determine if the daemonset is updated and healthy.
@@ -174,7 +178,7 @@ func analyzeDsReplicas(ds *appsv1.DaemonSet) (*properties.EntityProperty[int], *
 		}
 }
 
-func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.EntityProperty[int], *properties.EntityProperty[int], *properties.EntityProperty[string]) {
+func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.EntityProperty, *properties.EntityProperty, *properties.EntityProperty) {
 	if pods == nil { // should not happen, but check just in case
 		return nil, nil, nil
 	}
@@ -203,12 +207,12 @@ func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.
 		}
 	}
 
-	healthyReplicas := properties.EntityProperty[int]{
+	healthyReplicas := properties.EntityProperty{
 		Name:   "Healthy Replicas",
 		Value:  runningReplicas,
 		Status: properties.GetSuccessOrTransitioning(runningReplicas == expectedReplicas),
 	}
-	unhealthyReplicas := properties.EntityProperty[int]{
+	unhealthyReplicas := properties.EntityProperty{
 		Name:   "Failed Replicas",
 		Value:  failureReplicas,
 		Status: properties.GetSuccessOrError(failureReplicas == 0),
@@ -216,7 +220,7 @@ func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.
 	if failureText == "" {
 		return &healthyReplicas, &unhealthyReplicas, nil
 	} else {
-		return &healthyReplicas, &unhealthyReplicas, &properties.EntityProperty[string]{
+		return &healthyReplicas, &unhealthyReplicas, &properties.EntityProperty{
 			Name:   "Failed Replicas Reason",
 			Value:  failureText,
 			Status: properties.PropertyStatusError,
@@ -228,14 +232,14 @@ func analyzeClusterCollector(resources *OdigosResources) ClusterCollectorAnalyze
 
 	isEnabled := len(resources.Destinations.Items) > 0
 
-	enabled := properties.EntityProperty[bool]{
+	enabled := properties.EntityProperty{
 		Name:  "Enabled",
 		Value: isEnabled,
 		// There is no expected state for this property, so not status is set
 	}
 
 	hasCg := resources.ClusterCollector.CollectorsGroup != nil
-	cg := properties.EntityProperty[string]{
+	cg := properties.EntityProperty{
 		Name:   "Collector Group",
 		Value:  properties.GetTextCreated(hasCg),
 		Status: properties.GetSuccessOrTransitioning(hasCg == isEnabled),
@@ -267,14 +271,14 @@ func analyzeNodeCollector(resources *OdigosResources) NodeCollectorAnalyze {
 	hasInstrumentedSources := len(resources.InstrumentationConfigs.Items) > 0
 	isEnabled := hasClusterCollector && isClusterCollectorReady && hasInstrumentedSources
 
-	enabled := properties.EntityProperty[bool]{
+	enabled := properties.EntityProperty{
 		Name:  "Enabled",
 		Value: isEnabled,
 		// There is no expected state for this property, so not status is set
 	}
 
 	hasCg := resources.ClusterCollector.CollectorsGroup != nil
-	cg := properties.EntityProperty[string]{
+	cg := properties.EntityProperty{
 		Name:   "Collector Group",
 		Value:  properties.GetTextCreated(hasCg),
 		Status: properties.GetSuccessOrTransitioning(hasCg == isEnabled),
@@ -300,12 +304,60 @@ func analyzeNodeCollector(resources *OdigosResources) NodeCollectorAnalyze {
 	}
 }
 
+func summarizeStatus(clusterCollector ClusterCollectorAnalyze, nodeCollector NodeCollectorAnalyze) (bool, bool) {
+	isSettled := true  // everything is settled, unless we find property with status transitioning
+	hasErrors := false // there is no error, unless we find property with status error
+
+	var allProperties = []*properties.EntityProperty{
+		&clusterCollector.Enabled,
+		&clusterCollector.CollectorGroup,
+		clusterCollector.Deployed,
+		clusterCollector.DeployedError,
+		clusterCollector.CollectorReady,
+		&clusterCollector.DeploymentCreated,
+		clusterCollector.ExpectedReplicas,
+		clusterCollector.HealthyReplicas,
+		clusterCollector.FailedReplicas,
+		clusterCollector.FailedReplicasReason,
+		&nodeCollector.Enabled,
+		&nodeCollector.CollectorGroup,
+		nodeCollector.Deployed,
+		nodeCollector.DeployedError,
+		nodeCollector.CollectorReady,
+		&nodeCollector.DaemonSet,
+		nodeCollector.DesiredNodes,
+		nodeCollector.CurrentNodes,
+		nodeCollector.UpdatedNodes,
+		nodeCollector.AvailableNodes,
+	}
+
+	for _, property := range allProperties {
+		if property == nil {
+			continue
+		}
+		switch property.Status {
+		case properties.PropertyStatusError:
+			hasErrors = true
+		case properties.PropertyStatusTransitioning:
+			isSettled = false
+		}
+	}
+
+	return isSettled, hasErrors
+}
+
 func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
+	clusterCollector := analyzeClusterCollector(resources)
+	nodeCollector := analyzeNodeCollector(resources)
+	isSettled, hasErrors := summarizeStatus(clusterCollector, nodeCollector)
 	return &OdigosAnalyze{
 		OdigosVersion:        resources.OdigosVersion,
 		NumberOfDestinations: len(resources.Destinations.Items),
 		NumberOfSources:      len(resources.InstrumentationConfigs.Items),
-		ClusterCollector:     analyzeClusterCollector(resources),
-		NodeCollector:        analyzeNodeCollector(resources),
+		ClusterCollector:     clusterCollector,
+		NodeCollector:        nodeCollector,
+
+		IsSettled: isSettled,
+		HasErrors: hasErrors,
 	}
 }
