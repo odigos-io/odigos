@@ -258,6 +258,16 @@ type ComplexityRoot struct {
 		PotentialDestinations  func(childComplexity int) int
 	}
 
+	RenameAttributeAction struct {
+		Details func(childComplexity int) int
+		Disable func(childComplexity int) int
+		ID      func(childComplexity int) int
+		Name    func(childComplexity int) int
+		Notes   func(childComplexity int) int
+		Signals func(childComplexity int) int
+		Type    func(childComplexity int) int
+	}
+
 	SourceContainerRuntimeDetails struct {
 		ContainerName func(childComplexity int) int
 		Language      func(childComplexity int) int
@@ -1264,6 +1274,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.PotentialDestinations(childComplexity), true
+
+	case "RenameAttributeAction.details":
+		if e.complexity.RenameAttributeAction.Details == nil {
+			break
+		}
+
+		return e.complexity.RenameAttributeAction.Details(childComplexity), true
+
+	case "RenameAttributeAction.disable":
+		if e.complexity.RenameAttributeAction.Disable == nil {
+			break
+		}
+
+		return e.complexity.RenameAttributeAction.Disable(childComplexity), true
+
+	case "RenameAttributeAction.id":
+		if e.complexity.RenameAttributeAction.ID == nil {
+			break
+		}
+
+		return e.complexity.RenameAttributeAction.ID(childComplexity), true
+
+	case "RenameAttributeAction.name":
+		if e.complexity.RenameAttributeAction.Name == nil {
+			break
+		}
+
+		return e.complexity.RenameAttributeAction.Name(childComplexity), true
+
+	case "RenameAttributeAction.notes":
+		if e.complexity.RenameAttributeAction.Notes == nil {
+			break
+		}
+
+		return e.complexity.RenameAttributeAction.Notes(childComplexity), true
+
+	case "RenameAttributeAction.signals":
+		if e.complexity.RenameAttributeAction.Signals == nil {
+			break
+		}
+
+		return e.complexity.RenameAttributeAction.Signals(childComplexity), true
+
+	case "RenameAttributeAction.type":
+		if e.complexity.RenameAttributeAction.Type == nil {
+			break
+		}
+
+		return e.complexity.RenameAttributeAction.Type(childComplexity), true
 
 	case "SourceContainerRuntimeDetails.containerName":
 		if e.complexity.SourceContainerRuntimeDetails.ContainerName == nil {
@@ -7705,6 +7764,308 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _RenameAttributeAction_id(ctx context.Context, field graphql.CollectedField, obj *model.RenameAttributeAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RenameAttributeAction_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RenameAttributeAction_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RenameAttributeAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RenameAttributeAction_type(ctx context.Context, field graphql.CollectedField, obj *model.RenameAttributeAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RenameAttributeAction_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RenameAttributeAction_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RenameAttributeAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RenameAttributeAction_name(ctx context.Context, field graphql.CollectedField, obj *model.RenameAttributeAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RenameAttributeAction_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RenameAttributeAction_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RenameAttributeAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RenameAttributeAction_notes(ctx context.Context, field graphql.CollectedField, obj *model.RenameAttributeAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RenameAttributeAction_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RenameAttributeAction_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RenameAttributeAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RenameAttributeAction_disable(ctx context.Context, field graphql.CollectedField, obj *model.RenameAttributeAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RenameAttributeAction_disable(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Disable, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RenameAttributeAction_disable(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RenameAttributeAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RenameAttributeAction_signals(ctx context.Context, field graphql.CollectedField, obj *model.RenameAttributeAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RenameAttributeAction_signals(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signals, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.SignalType)
+	fc.Result = res
+	return ec.marshalNSignalType2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSignalTypeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RenameAttributeAction_signals(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RenameAttributeAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type SignalType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RenameAttributeAction_details(ctx context.Context, field graphql.CollectedField, obj *model.RenameAttributeAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RenameAttributeAction_details(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Details, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RenameAttributeAction_details(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RenameAttributeAction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _SourceContainerRuntimeDetails_containerName(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainerRuntimeDetails) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SourceContainerRuntimeDetails_containerName(ctx, field)
 	if err != nil {
@@ -10387,6 +10748,13 @@ func (ec *executionContext) _Action(ctx context.Context, sel ast.SelectionSet, o
 			return graphql.Null
 		}
 		return ec._ProbabilisticSamplerAction(ctx, sel, obj)
+	case model.RenameAttributeAction:
+		return ec._RenameAttributeAction(ctx, sel, &obj)
+	case *model.RenameAttributeAction:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RenameAttributeAction(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -12249,6 +12617,69 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var renameAttributeActionImplementors = []string{"RenameAttributeAction", "Action"}
+
+func (ec *executionContext) _RenameAttributeAction(ctx context.Context, sel ast.SelectionSet, obj *model.RenameAttributeAction) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, renameAttributeActionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RenameAttributeAction")
+		case "id":
+			out.Values[i] = ec._RenameAttributeAction_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "type":
+			out.Values[i] = ec._RenameAttributeAction_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._RenameAttributeAction_name(ctx, field, obj)
+		case "notes":
+			out.Values[i] = ec._RenameAttributeAction_notes(ctx, field, obj)
+		case "disable":
+			out.Values[i] = ec._RenameAttributeAction_disable(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "signals":
+			out.Values[i] = ec._RenameAttributeAction_signals(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "details":
+			out.Values[i] = ec._RenameAttributeAction_details(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

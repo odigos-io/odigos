@@ -7,4 +7,5 @@ const (
 	ActionTypeErrorSampler         = "ErrorSampler"
 	ActionTypeLatencySampler       = "LatencySampler"
 	ActionTypeProbabilisticSampler = "ProbabilisticSampler"
+	ActionTypeRenameAttribute      = "RenameAttribute"
 )
