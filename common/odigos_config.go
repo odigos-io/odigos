@@ -42,7 +42,6 @@ type OdigosConfiguration struct {
 	OdigletImage      string                          `json:"odigletImage,omitempty"`
 	InstrumentorImage string                          `json:"instrumentorImage,omitempty"`
 	AutoscalerImage   string                          `json:"autoscalerImage,omitempty"`
-	DefaultSDKs       map[ProgrammingLanguage]OtelSdk `json:"defaultSDKs,omitempty"`
 	CollectorGateway  *CollectorGatewayConfiguration  `json:"collectorGateway,omitempty"`
 	CollectorNode     *CollectorNodeConfiguration     `json:"collectorNode,omitempty"`
 	Profiles          []ProfileName                   `json:"profiles,omitempty"`

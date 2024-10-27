@@ -11,10 +11,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func printOdigosVersion(odigosVersion string, sb *strings.Builder) {
-	describeText(sb, 0, "Odigos Version: %s", odigosVersion)
-}
-
 func printProperty(sb *strings.Builder, indent int, property *properties.EntityProperty) {
 	if property == nil {
 		return
@@ -71,7 +67,7 @@ func printOdigosPipeline(analyze *odigos.OdigosAnalyze, sb *strings.Builder) {
 func DescribeOdigosToText(analyze *odigos.OdigosAnalyze) string {
 	var sb strings.Builder
 
-	printOdigosVersion(analyze.OdigosVersion, &sb)
+	printProperty(&sb, 0, &analyze.OdigosVersion)
 	sb.WriteString("\n")
 	printOdigosPipeline(analyze, &sb)
 

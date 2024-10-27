@@ -35,11 +35,11 @@ type NodeCollectorAnalyze struct {
 }
 
 type OdigosAnalyze struct {
-	OdigosVersion        string                  `json:"odigosVersion"`
-	NumberOfDestinations int                     `json:"numberOfDestinations"`
-	NumberOfSources      int                     `json:"numberOfSources"`
-	ClusterCollector     ClusterCollectorAnalyze `json:"clusterCollector"`
-	NodeCollector        NodeCollectorAnalyze    `json:"nodeCollector"`
+	OdigosVersion        properties.EntityProperty `json:"odigosVersion"`
+	NumberOfDestinations int                       `json:"numberOfDestinations"`
+	NumberOfSources      int                       `json:"numberOfSources"`
+	ClusterCollector     ClusterCollectorAnalyze   `json:"clusterCollector"`
+	NodeCollector        NodeCollectorAnalyze      `json:"nodeCollector"`
 
 	// is settled is true if all resources are created and ready
 	IsSettled bool `json:"isSettled"`
@@ -350,8 +350,13 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 	clusterCollector := analyzeClusterCollector(resources)
 	nodeCollector := analyzeNodeCollector(resources)
 	isSettled, hasErrors := summarizeStatus(clusterCollector, nodeCollector)
+	odigosVersion := properties.EntityProperty{
+		Name:  "Odigos Version",
+		Value: resources.OdigosVersion,
+	}
+
 	return &OdigosAnalyze{
-		OdigosVersion:        resources.OdigosVersion,
+		OdigosVersion:        odigosVersion,
 		NumberOfDestinations: len(resources.Destinations.Items),
 		NumberOfSources:      len(resources.InstrumentationConfigs.Items),
 		ClusterCollector:     clusterCollector,

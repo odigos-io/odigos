@@ -5,7 +5,7 @@ type PropertyStatus string
 const (
 
 	// the property is in it's desired state
-	PropertyStatusSuccess PropertyStatus = "enabled"
+	PropertyStatusSuccess PropertyStatus = "success"
 
 	// the property is not in it's desired state, but it's state might be temporary
 	// if wait some time, it might reconcile to the desired state (or not)
