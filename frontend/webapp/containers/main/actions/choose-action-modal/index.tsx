@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ChooseActionBody } from '../choose-action-body';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
 import { useActionFormData, useCreateAction } from '@/hooks/actions';
@@ -43,12 +43,8 @@ interface AddActionModalProps {
 
 export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, handleCloseModal }) => {
   const { formData, handleFormChange, resetFormData, validateForm } = useActionFormData();
-  const { createAction, loading, done } = useCreateAction();
+  const { createAction, loading } = useCreateAction({ onSuccess: handleClose });
   const [selectedItem, setSelectedItem] = useState<ActionOption | null>(null);
-
-  useEffect(() => {
-    if (done) handleClose();
-  }, [done]);
 
   const isFormOk = useMemo(() => !!selectedItem && validateForm(), [selectedItem, formData]);
 
@@ -56,11 +52,11 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
     createAction(formData);
   };
 
-  const handleClose = () => {
+  function handleClose() {
     resetFormData();
     setSelectedItem(null);
     handleCloseModal();
-  };
+  }
 
   const handleSelect = (item: ActionOption) => {
     resetFormData();
