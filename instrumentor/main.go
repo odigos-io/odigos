@@ -24,6 +24,7 @@ import (
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
+	"github.com/odigos-io/odigos/instrumentor/sdks"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -35,6 +36,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -51,7 +53,9 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -198,6 +202,26 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Init Kubernetes API client
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		setupLog.Error(err, "Failed to init Kubernetes API client")
+		os.Exit(-1)
+	}
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		setupLog.Error(err, "Failed to init Kubernetes API client")
+		os.Exit(-1)
+	}
+
+	ctx := signals.SetupSignalHandler()
+
+	err = sdks.SetDefaultSDKs(ctx, clientset)
+	if err != nil {
+		setupLog.Error(err, "Failed to set default SDKs")
+		os.Exit(-1)
+	}
+
 	err = instrumentationdevice.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller")
@@ -240,7 +264,7 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
