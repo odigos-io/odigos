@@ -128,6 +128,9 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 		apis.PUT("/instrumentation-rules/:id", func(c *gin.Context) { endpoints.UpdateInstrumentationRule(c, flags.Namespace, c.Param("id")) })
 
 		// Describe
+		apis.GET("/describe/odigos", func(c *gin.Context) {
+			endpoints.DescribeOdigos(c)
+		})
 		apis.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", func(c *gin.Context) {
 			endpoints.DescribeSource(c, c.Param("namespace"), c.Param("kind"), c.Param("name"))
 		})

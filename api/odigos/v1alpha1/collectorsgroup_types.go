@@ -32,8 +32,11 @@ const (
 
 // CollectorsGroupSpec defines the desired state of Collector
 type CollectorsGroupSpec struct {
-	InputSvc string              `json:"inputSvc,omitempty"`
-	Role     CollectorsGroupRole `json:"role"`
+	Role CollectorsGroupRole `json:"role"`
+
+	// The port to use for exposing the collector's own metrics as a prometheus endpoint.
+	// This can be used to resolve conflicting ports when a collector is using the host network.
+	CollectorOwnMetricsPort int32 `json:"collectorOwnMetricsPort"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector
@@ -45,6 +48,14 @@ type CollectorsGroupStatus struct {
 	// this is used to determine if a workload should export each signal or not.
 	// this list is calculated based on the odigos destinations that were configured
 	ReceiverSignals []common.ObservabilitySignal `json:"receiverSignals,omitempty"`
+
+	// Represents the observations of a collectorsroup's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=type
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 //+genclient

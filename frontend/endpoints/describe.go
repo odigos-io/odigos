@@ -4,7 +4,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
+
+func DescribeOdigos(c *gin.Context) {
+	ctx := c.Request.Context()
+	odiogosNs := env.GetCurrentNamespace()
+	describeText := describe.DescribeOdigos(ctx, kube.DefaultClient, kube.DefaultClient.OdigosClient, odiogosNs)
+	c.Writer.WriteString(describeText)
+}
 
 func DescribeSource(c *gin.Context, ns string, kind string, name string) {
 	ctx := c.Request.Context()

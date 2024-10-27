@@ -15,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -62,7 +63,7 @@ This command will install k8s components that will auto-instrument your applicat
 		ns := cmd.Flag("namespace").Value.String()
 
 		// Check if Odigos already installed
-		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 		if err == nil && cm != nil {
 			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace\n")
 			os.Exit(1)
@@ -178,51 +179,9 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	return nil
 }
 
-func otelSdkConfigCommunity() map[common.ProgrammingLanguage]common.OtelSdk {
-	return map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavaProgrammingLanguage:       common.OtelSdkNativeCommunity,
-		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.GoProgrammingLanguage:         common.OtelSdkEbpfCommunity,
-		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
-	}
-}
-
-func otelSdkConfigCloud() map[common.ProgrammingLanguage]common.OtelSdk {
-	return map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavaProgrammingLanguage:       common.OtelSdkNativeCommunity,
-		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
-		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
-	}
-}
-
-func otelSdkConfigOnPrem() map[common.ProgrammingLanguage]common.OtelSdk {
-	return map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavaProgrammingLanguage:       common.OtelSdkEbpfEnterprise, // Notice - for onprem, the default for java is eBPF
-		common.PythonProgrammingLanguage:     common.OtelSdkEbpfEnterprise,
-		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
-		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.JavascriptProgrammingLanguage: common.OtelSdkEbpfEnterprise,
-		common.MySQLProgrammingLanguage:      common.OtelSdkEbpfEnterprise,
-		common.NginxProgrammingLanguage:      common.OtelSdkNativeCommunity,
-	}
-}
-
 func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
 	fullIgnoredNamespaces := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredNamespaces, consts.SystemNamespaces)
 	fullIgnoredContainers := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredContainers, consts.IgnoredContainers)
-
-	var defaultOtelSdkPerLanguage map[common.ProgrammingLanguage]common.OtelSdk
-	switch odigosTier {
-	case common.CommunityOdigosTier:
-		defaultOtelSdkPerLanguage = otelSdkConfigCommunity()
-	case common.CloudOdigosTier:
-		defaultOtelSdkPerLanguage = otelSdkConfigCloud()
-	case common.OnPremOdigosTier:
-		defaultOtelSdkPerLanguage = otelSdkConfigOnPrem()
-	}
 
 	selectedProfiles := []common.ProfileName{}
 	profiles := resources.GetAvailableProfilesForTier(odigosTier)
@@ -252,7 +211,6 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		OdigletImage:      odigletImage,
 		InstrumentorImage: instrumentorImage,
 		AutoscalerImage:   autoScalerImage,
-		DefaultSDKs:       defaultOtelSdkPerLanguage,
 		Profiles:          selectedProfiles,
 	}
 }

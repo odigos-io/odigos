@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -60,7 +61,7 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	currentOdigosVersion, err := getOdigosVersionInClusterFromConfigMap(ctx, client, ns)
+	currentOdigosVersion, err := getters.GetOdigosVersionInClusterFromConfigMap(ctx, client.Clientset, ns)
 	if err != nil {
 		fmt.Println("Odigos cloud login failed - unable to read the current Odigos version.")
 		os.Exit(1)

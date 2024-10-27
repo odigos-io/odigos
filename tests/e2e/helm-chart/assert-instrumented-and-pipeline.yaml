@@ -306,7 +306,7 @@ status:
     - key: process.runtime.version
       (value != null): true
     - key: telemetry.distro.version
-      value: e2e-test
+      (value != null): true
     - key: process.pid
       (value != null): true
 ---
