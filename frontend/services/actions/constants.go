@@ -5,5 +5,5 @@ const (
 	ActionTypeDeleteAttribute = "DeleteAttribute"
 	ActionTypePiiMasking      = "PiiMasking"
 	ActionTypeErrorSampler    = "ErrorSampler"
-	// Add more action types as needed
+	ActionLatencySampler      = "LatencySampler"
 )
