@@ -74,3 +74,7 @@ func DerefString(s *string) string {
 	}
 	return ""
 }
+
+func StringPtr(s string) *string {
+	return &s
+}
