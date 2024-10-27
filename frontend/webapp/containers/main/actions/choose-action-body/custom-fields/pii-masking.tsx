@@ -33,7 +33,7 @@ const isSelected = (id: string, selected: string[]) => {
 const PiiMasking: React.FC<Props> = ({ value, setValue }) => {
   const mappedValue = useMemo(() => safeJsonParse<Parsed>(value, { piiCategories: [] }).piiCategories, [value]);
 
-  const [isLastSelection, setIsLastSelection] = useState(false);
+  const [isLastSelection, setIsLastSelection] = useState(mappedValue.length === 1);
 
   useEffect(() => {
     if (!mappedValue.length) {
