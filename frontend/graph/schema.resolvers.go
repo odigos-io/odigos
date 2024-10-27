@@ -563,10 +563,11 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 		return actionservices.CreateDeleteAttribute(ctx, action)
 	case actionservices.ActionTypePiiMasking:
 		return actionservices.CreatePiiMasking(ctx, action)
+	case actionservices.ActionTypeErrorSampler:
+		return actionservices.CreateErrorSampler(ctx, action)
 	default:
 		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
 	}
-
 }
 
 // UpdateAction is the resolver for the updateAction field.
@@ -578,10 +579,11 @@ func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action m
 		return actionservices.UpdateDeleteAttribute(ctx, id, action)
 	case actionservices.ActionTypePiiMasking:
 		return actionservices.UpdatePiiMasking(ctx, id, action)
+	case actionservices.ActionTypeErrorSampler:
+		return actionservices.UpdateErrorSampler(ctx, id, action)
 	default:
 		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
 	}
-
 }
 
 // DeleteAction is the resolver for the deleteAction field.
@@ -602,6 +604,11 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 		err := actionservices.DeletePiiMasking(ctx, id)
 		if err != nil {
 			return false, fmt.Errorf("failed to delete PiiMasking: %v", err)
+		}
+	case actionservices.ActionTypeErrorSampler:
+		err := actionservices.DeleteErrorSampler(ctx, id)
+		if err != nil {
+			return false, fmt.Errorf("failed to delete ErrorSampler: %v", err)
 		}
 	default:
 		return false, fmt.Errorf("unsupported action type: %s", actionType)
