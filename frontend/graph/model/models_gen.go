@@ -121,6 +121,33 @@ type DestinationInput struct {
 	Fields          []*FieldInput         `json:"fields"`
 }
 
+type ErrorSamplerAction struct {
+	ID      string       `json:"id"`
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details string       `json:"details"`
+}
+
+func (ErrorSamplerAction) IsAction()              {}
+func (this ErrorSamplerAction) GetID() string     { return this.ID }
+func (this ErrorSamplerAction) GetType() string   { return this.Type }
+func (this ErrorSamplerAction) GetName() *string  { return this.Name }
+func (this ErrorSamplerAction) GetNotes() *string { return this.Notes }
+func (this ErrorSamplerAction) GetDisable() bool  { return this.Disable }
+func (this ErrorSamplerAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+
 type ExportedSignalsInput struct {
 	Traces  bool `json:"traces"`
 	Metrics bool `json:"metrics"`
@@ -209,6 +236,33 @@ type K8sSourceID struct {
 	Name      string          `json:"name"`
 }
 
+type LatencySamplerAction struct {
+	ID      string       `json:"id"`
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details []*string    `json:"details"`
+}
+
+func (LatencySamplerAction) IsAction()              {}
+func (this LatencySamplerAction) GetID() string     { return this.ID }
+func (this LatencySamplerAction) GetType() string   { return this.Type }
+func (this LatencySamplerAction) GetName() *string  { return this.Name }
+func (this LatencySamplerAction) GetNotes() *string { return this.Notes }
+func (this LatencySamplerAction) GetDisable() bool  { return this.Disable }
+func (this LatencySamplerAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+
 type Mutation struct {
 }
 
@@ -254,7 +308,61 @@ func (this PiiMaskingAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type ProbabilisticSamplerAction struct {
+	ID      string       `json:"id"`
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details string       `json:"details"`
+}
+
+func (ProbabilisticSamplerAction) IsAction()              {}
+func (this ProbabilisticSamplerAction) GetID() string     { return this.ID }
+func (this ProbabilisticSamplerAction) GetType() string   { return this.Type }
+func (this ProbabilisticSamplerAction) GetName() *string  { return this.Name }
+func (this ProbabilisticSamplerAction) GetNotes() *string { return this.Notes }
+func (this ProbabilisticSamplerAction) GetDisable() bool  { return this.Disable }
+func (this ProbabilisticSamplerAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+
 type Query struct {
+}
+
+type RenameAttributeAction struct {
+	ID      string       `json:"id"`
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details string       `json:"details"`
+}
+
+func (RenameAttributeAction) IsAction()              {}
+func (this RenameAttributeAction) GetID() string     { return this.ID }
+func (this RenameAttributeAction) GetType() string   { return this.Type }
+func (this RenameAttributeAction) GetName() *string  { return this.Name }
+func (this RenameAttributeAction) GetNotes() *string { return this.Notes }
+func (this RenameAttributeAction) GetDisable() bool  { return this.Disable }
+func (this RenameAttributeAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
 }
 
 type SourceContainerRuntimeDetails struct {

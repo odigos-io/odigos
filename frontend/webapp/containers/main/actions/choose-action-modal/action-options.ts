@@ -1,5 +1,5 @@
 import { ActionsType } from '@/types';
-import { SignalLowercase } from '@/utils';
+import { SignalUppercase } from '@/utils';
 
 export type ActionOption = {
   id: string;
@@ -10,7 +10,7 @@ export type ActionOption = {
   docsDescription?: string;
   icon?: string;
   items?: ActionOption[];
-  allowedSignals?: SignalLowercase[];
+  allowedSignals?: SignalUppercase[];
 };
 
 export const ACTION_OPTIONS: ActionOption[] = [
@@ -23,7 +23,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
     docsEndpoint: '/pipeline/actions/attributes/addclusterinfo',
     docsDescription:
       'The “Add Cluster Info” Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.',
-    allowedSignals: ['traces', 'metrics', 'logs'],
+    allowedSignals: ['TRACES', 'METRICS', 'LOGS'],
   },
   {
     id: 'delete_attribute',
@@ -33,7 +33,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
     icon: '/icons/actions/deleteattribute.svg',
     docsEndpoint: '/pipeline/actions/attributes/deleteattribute',
     docsDescription: 'The “Delete Attribute” Odigos Action can be used to delete attributes from logs, metrics, and traces.',
-    allowedSignals: ['traces', 'metrics', 'logs'],
+    allowedSignals: ['TRACES', 'METRICS', 'LOGS'],
   },
   {
     id: 'rename_attribute',
@@ -44,7 +44,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
     docsEndpoint: '/pipeline/actions/attributes/rename-attribute',
     docsDescription:
       'The “Rename Attribute” Odigos Action can be used to rename attributes from logs, metrics, and traces. Different instrumentations might use different attribute names for similar information. This action let’s you to consolidate the names across your cluster.',
-    allowedSignals: ['traces', 'metrics', 'logs'],
+    allowedSignals: ['TRACES', 'METRICS', 'LOGS'],
   },
   {
     id: 'pii-masking',
@@ -54,7 +54,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
     icon: '/icons/actions/piimasking.svg',
     docsEndpoint: '/pipeline/actions/attributes/piimasking',
     docsDescription: 'The “PII Masking” Odigos Action can be used to mask PII data from span attribute values.',
-    allowedSignals: ['traces'],
+    allowedSignals: ['TRACES'],
   },
   {
     id: 'sampler',
@@ -68,7 +68,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
         type: ActionsType.ERROR_SAMPLER,
         docsEndpoint: '/pipeline/actions/sampling/errorsampler',
         docsDescription: 'The “Error Sampler” Odigos Action is a Global Action that supports error sampling by filtering out non-error traces.',
-        allowedSignals: ['traces'],
+        allowedSignals: ['TRACES'],
       },
       {
         id: 'probabilistic-sampler',
@@ -78,7 +78,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
         docsEndpoint: '/pipeline/actions/sampling/probabilisticsampler',
         docsDescription:
           'The “Probabilistic Sampler” Odigos Action supports probabilistic sampling based on a configured sampling percentage applied to the TraceID.',
-        allowedSignals: ['traces'],
+        allowedSignals: ['TRACES'],
       },
       {
         id: 'latency-action',
@@ -88,7 +88,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
         docsEndpoint: '/pipeline/actions/sampling/latencysampler',
         docsDescription:
           'The “Latency Sampler” Odigos Action is an Endpoint Action that samples traces based on their duration for a specific service and endpoint (HTTP route) filter.',
-        allowedSignals: ['traces'],
+        allowedSignals: ['TRACES'],
       },
     ],
   },
