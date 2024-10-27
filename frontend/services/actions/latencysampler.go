@@ -60,7 +60,7 @@ func CreateLatencySampler(ctx context.Context, action model.ActionInput) (model.
 
 	response := &model.LatencySamplerAction{
 		ID:      generatedAction.Name,
-		Type:    ActionLatencySampler,
+		Type:    ActionTypeLatencySampler,
 		Name:    action.Name,
 		Notes:   action.Notes,
 		Disable: action.Disable,
@@ -112,7 +112,7 @@ func UpdateLatencySampler(ctx context.Context, id string, action model.ActionInp
 
 	response := &model.LatencySamplerAction{
 		ID:      updatedAction.Name,
-		Type:    ActionLatencySampler,
+		Type:    ActionTypeLatencySampler,
 		Name:    action.Name,
 		Notes:   action.Notes,
 		Disable: action.Disable,
