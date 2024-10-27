@@ -338,6 +338,33 @@ func (this ProbabilisticSamplerAction) GetSignals() []SignalType {
 type Query struct {
 }
 
+type RenameAttributeAction struct {
+	ID      string       `json:"id"`
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details string       `json:"details"`
+}
+
+func (RenameAttributeAction) IsAction()              {}
+func (this RenameAttributeAction) GetID() string     { return this.ID }
+func (this RenameAttributeAction) GetType() string   { return this.Type }
+func (this RenameAttributeAction) GetName() *string  { return this.Name }
+func (this RenameAttributeAction) GetNotes() *string { return this.Notes }
+func (this RenameAttributeAction) GetDisable() bool  { return this.Disable }
+func (this RenameAttributeAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+
 type SourceContainerRuntimeDetails struct {
 	ContainerName string `json:"containerName"`
 	Language      string `json:"language"`
