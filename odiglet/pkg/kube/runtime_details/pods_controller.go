@@ -5,6 +5,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
@@ -34,18 +35,10 @@ func (p *podPredicate) Create(e event.CreateEvent) bool {
 		return false
 	}
 
-	// Iterate over all containers in the pod
-	// Return false if any container is:
-	// 1. Not Ready
-	// 2. Started is nil or false
-	for _, containerStatus := range pod.Status.ContainerStatuses {
-		if !containerStatus.Ready || containerStatus.Started == nil || !*containerStatus.Started {
-			return false
-		}
-	}
-
-	// All conditions met - pod is running and all containers are ready and started
-	return true
+	allContainersReady := k8scontainer.AllContainersReady(pod)
+	// If all containers are not ready, return false.
+	// Otherwise, return true
+	return allContainersReady
 }
 
 func (p *podPredicate) Update(e event.UpdateEvent) bool {
@@ -62,13 +55,7 @@ func (p *podPredicate) Update(e event.UpdateEvent) bool {
 	}
 
 	// First check if all containers in newPod are ready and started
-	allNewContainersReady := true
-	for _, containerStatus := range newPod.Status.ContainerStatuses {
-		if !containerStatus.Ready || containerStatus.Started == nil || !*containerStatus.Started {
-			allNewContainersReady = false
-			break
-		}
-	}
+	allNewContainersReady := k8scontainer.AllContainersReady(newPod)
 
 	// If new containers aren't all ready, return false
 	if !allNewContainersReady {
@@ -76,13 +63,7 @@ func (p *podPredicate) Update(e event.UpdateEvent) bool {
 	}
 
 	// Now check if any container in oldPod was not ready or not started
-	allOldContainersReady := true
-	for _, containerStatus := range oldPod.Status.ContainerStatuses {
-		if !containerStatus.Ready || containerStatus.Started == nil || !*containerStatus.Started {
-			allOldContainersReady = false
-			break
-		}
-	}
+	allOldContainersReady := k8scontainer.AllContainersReady(oldPod)
 
 	// Return true only if old pods had at least one container not ready/not started
 	// and new pod has all containers ready/started
