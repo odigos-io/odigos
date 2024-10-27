@@ -236,6 +236,33 @@ type K8sSourceID struct {
 	Name      string          `json:"name"`
 }
 
+type LatencySamplerAction struct {
+	ID      string       `json:"id"`
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details []*string    `json:"details"`
+}
+
+func (LatencySamplerAction) IsAction()              {}
+func (this LatencySamplerAction) GetID() string     { return this.ID }
+func (this LatencySamplerAction) GetType() string   { return this.Type }
+func (this LatencySamplerAction) GetName() *string  { return this.Name }
+func (this LatencySamplerAction) GetNotes() *string { return this.Notes }
+func (this LatencySamplerAction) GetDisable() bool  { return this.Disable }
+func (this LatencySamplerAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+
 type Mutation struct {
 }
 

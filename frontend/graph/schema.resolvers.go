@@ -565,6 +565,8 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 		return actionservices.CreatePiiMasking(ctx, action)
 	case actionservices.ActionTypeErrorSampler:
 		return actionservices.CreateErrorSampler(ctx, action)
+	case actionservices.ActionLatencySampler:
+		return actionservices.CreateLatencySampler(ctx, action)
 	default:
 		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
 	}
@@ -581,6 +583,8 @@ func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action m
 		return actionservices.UpdatePiiMasking(ctx, id, action)
 	case actionservices.ActionTypeErrorSampler:
 		return actionservices.UpdateErrorSampler(ctx, id, action)
+	case actionservices.ActionLatencySampler:
+		return actionservices.UpdateLatencySampler(ctx, id, action)
 	default:
 		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
 	}
@@ -609,6 +613,11 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 		err := actionservices.DeleteErrorSampler(ctx, id)
 		if err != nil {
 			return false, fmt.Errorf("failed to delete ErrorSampler: %v", err)
+		}
+	case actionservices.ActionLatencySampler:
+		err := actionservices.DeleteLatencySampler(ctx, id)
+		if err != nil {
+			return false, fmt.Errorf("failed to delete LatencySampler: %v", err)
 		}
 	default:
 		return false, fmt.Errorf("unsupported action type: %s", actionType)
