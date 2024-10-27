@@ -1,12 +1,7 @@
 import theme from '@/styles/theme';
 import { Node, Edge } from 'react-flow-renderer';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
-import {
-  ActionData,
-  ActionItem,
-  ActualDestination,
-  K8sActualSource,
-} from '@/types';
+import { ActionData, ActionItem, ActualDestination, K8sActualSource } from '@/types';
 
 // Constants
 const NODE_HEIGHT = 80;
@@ -16,13 +11,7 @@ const ACTION_ICON_PATH = '/icons/actions/';
 const HEADER_ICON_PATH = '/icons/overview/';
 
 // Helper to create a node
-const createNode = (
-  id: string,
-  type: string,
-  x: number,
-  y: number,
-  data: Record<string, any>
-): Node => ({
+const createNode = (id: string, type: string, x: number, y: number, data: Record<string, any>): Node => ({
   id,
   type,
   position: { x, y },
@@ -30,12 +19,7 @@ const createNode = (
 });
 
 // Helper to create an edge
-const createEdge = (
-  id: string,
-  source: string,
-  target: string,
-  animated = true
-): Edge => ({
+const createEdge = (id: string, source: string, target: string, animated = true): Edge => ({
   id,
   source,
   target,
@@ -45,9 +29,7 @@ const createEdge = (
 
 // Extract the monitors from exported signals
 const extractMonitors = (exportedSignals: Record<string, boolean>) =>
-  Object.keys(exportedSignals).filter(
-    (signal) => exportedSignals[signal] === true
-  );
+  Object.keys(exportedSignals).filter((signal) => exportedSignals[signal] === true);
 
 export const buildNodesAndEdges = ({
   sources,
@@ -75,26 +57,18 @@ export const buildNodesAndEdges = ({
       tagValue: sources.length,
     }),
     ...sources.map((source, index) =>
-      createNode(
-        `source-${index}`,
-        'base',
-        leftColumnX,
-        NODE_HEIGHT * (index + 1),
-        {
-          type: 'source',
-          title:
-            source.name +
-            (source.reportedName ? ` (${source.reportedName})` : ''),
-          subTitle: source.kind,
-          imageUri: getMainContainerLanguageLogo(source),
-          status: 'healthy',
-          id: {
-            kind: source.kind,
-            name: source.name,
-            namespace: source.namespace,
-          },
-        }
-      )
+      createNode(`source-${index}`, 'base', leftColumnX, NODE_HEIGHT * (index + 1), {
+        type: 'source',
+        title: source.name + (source.reportedName ? ` (${source.reportedName})` : ''),
+        subTitle: source.kind,
+        imageUri: getMainContainerLanguageLogo(source),
+        status: 'healthy',
+        id: {
+          kind: source.kind,
+          name: source.name,
+          namespace: source.namespace,
+        },
+      })
     ),
   ];
 
@@ -106,21 +80,15 @@ export const buildNodesAndEdges = ({
       tagValue: destinations.length,
     }),
     ...destinations.map((destination, index) =>
-      createNode(
-        `destination-${index}`,
-        'base',
-        rightColumnX,
-        NODE_HEIGHT * (index + 1),
-        {
-          type: 'destination',
-          title: destination.name,
-          subTitle: destination.destinationType.displayName,
-          imageUri: destination.destinationType.imageUrl,
-          status: 'healthy',
-          monitors: extractMonitors(destination.exportedSignals),
-          id: destination.id,
-        }
-      )
+      createNode(`destination-${index}`, 'base', rightColumnX, NODE_HEIGHT * (index + 1), {
+        type: 'destination',
+        title: destination.name,
+        subTitle: destination.destinationType.displayName,
+        imageUri: destination.destinationType.imageUrl,
+        status: 'healthy',
+        monitors: extractMonitors(destination.exportedSignals),
+        id: destination.id,
+      })
     ),
   ];
 
@@ -132,45 +100,32 @@ export const buildNodesAndEdges = ({
       tagValue: actions.length,
     }),
     ...actions.map((action, index) => {
-      const actionSpec: ActionItem =
-        typeof action.spec === 'string'
-          ? JSON.parse(action.spec)
-          : (action.spec as ActionItem);
+      const actionSpec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
+      const typeLowerCased = action.type.toLowerCase();
+      const isSampler = typeLowerCased.indexOf('sampler') === action.type.length - 7;
 
-      return createNode(
-        `action-${index}`,
-        'base',
-        centerColumnX,
-        NODE_HEIGHT * (index + 1),
-        {
-          type: 'action',
-          title: actionSpec.actionName,
-          subTitle: action.type,
-          imageUri: `${ACTION_ICON_PATH}${action.type.toLowerCase()}.svg`,
-          monitors: actionSpec.signals,
-          status: 'healthy',
-          id: action.id,
-        }
-      );
+      return createNode(`action-${index}`, 'base', centerColumnX, NODE_HEIGHT * (index + 1), {
+        type: 'action',
+        title: actionSpec.actionName,
+        subTitle: action.type,
+        imageUri: `${ACTION_ICON_PATH}${isSampler ? 'sampler' : typeLowerCased}.svg`,
+        monitors: actionSpec.signals,
+        status: 'healthy',
+        id: action.id,
+      });
     }),
   ];
 
   if (actionsNode.length === 1) {
     actionsNode.push(
-      createNode(
-        `action-0`,
-        'addAction',
-        centerColumnX,
-        NODE_HEIGHT * (actions.length + 1),
-        {
-          type: 'addAction',
-          title: 'ADD ACTION',
-          subTitle: '',
-          imageUri: `${ACTION_ICON_PATH}add-action.svg`,
-          status: 'healthy',
-          onClick: () => console.log('Add Action'),
-        }
-      )
+      createNode(`action-0`, 'addAction', centerColumnX, NODE_HEIGHT * (actions.length + 1), {
+        type: 'addAction',
+        title: 'ADD ACTION',
+        subTitle: '',
+        imageUri: `${ACTION_ICON_PATH}add-action.svg`,
+        status: 'healthy',
+        onClick: () => console.log('Add Action'),
+      })
     );
   }
 
@@ -182,36 +137,19 @@ export const buildNodesAndEdges = ({
 
   // Connect sources to actions
   const sourceToActionEdges: Edge[] = sources.map((_, sourceIndex) => {
-    const actionIndex =
-      actionsNode.length === 2 ? 0 : sourceIndex % actions.length;
-    return createEdge(
-      `source-${sourceIndex}-to-action-${actionIndex}`,
-      `source-${sourceIndex}`,
-      `action-${actionIndex}`,
-      false
-    );
+    const actionIndex = actionsNode.length === 2 ? 0 : sourceIndex % actions.length;
+    return createEdge(`source-${sourceIndex}-to-action-${actionIndex}`, `source-${sourceIndex}`, `action-${actionIndex}`, false);
   });
   // Connect actions to destinations
   const actionToDestinationEdges: Edge[] = actions.flatMap((_, actionIndex) => {
     return destinations.map((_, destinationIndex) =>
-      createEdge(
-        `action-${actionIndex}-to-destination-${destinationIndex}`,
-        `action-${actionIndex}`,
-        `destination-${destinationIndex}`
-      )
+      createEdge(`action-${actionIndex}-to-destination-${destinationIndex}`, `action-${actionIndex}`, `destination-${destinationIndex}`)
     );
   });
 
   if (actions.length === 0) {
     for (let i = 0; i < destinations.length; i++) {
-      actionToDestinationEdges.push(
-        createEdge(
-          `action-0-to-destination-${i}`,
-          `action-0`,
-          `destination-${i}`,
-          false
-        )
-      );
+      actionToDestinationEdges.push(createEdge(`action-0-to-destination-${i}`, `action-0`, `destination-${i}`, false));
     }
   }
 
