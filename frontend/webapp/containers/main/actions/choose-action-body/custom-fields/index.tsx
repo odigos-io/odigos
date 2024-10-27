@@ -3,6 +3,8 @@ import AddClusterInfo from './add-cluster-info';
 import DeleteAttributes from './delete-attributes';
 import RenameAttributes from './rename-attributes';
 import PiiMasking from './pii-masking';
+import ErrorSampler from './error-sampler';
+import ProbabilisticSampler from './probabilistic-sampler';
 
 interface ActionCustomFieldsProps {
   actionType?: ActionsType;
@@ -29,10 +31,10 @@ const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, val
     }
 
     case ActionsType.ERROR_SAMPLER:
-      return null;
+      return <ErrorSampler value={value} setValue={setValue} />;
 
     case ActionsType.PROBABILISTIC_SAMPLER:
-      return null;
+      return <ProbabilisticSampler value={value} setValue={setValue} />;
 
     case ActionsType.LATENCY_SAMPLER:
       return null;
