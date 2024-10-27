@@ -1,9 +1,12 @@
+import { useNotify } from '@/hooks';
+import { ActionInput } from '@/types';
 import styled from 'styled-components';
-import React, { useRef, useState } from 'react';
-import { useActionFormData } from '@/hooks/actions';
+import { useMutation } from 'react-query';
+import React, { useMemo, useState } from 'react';
 import { ChooseActionBody } from '../choose-action-body';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
-import { AutocompleteInput, Modal, NavigationButtons, Text, Divider, Option } from '@/reuseable-components';
+import { useActionFormData, useCreateAction } from '@/hooks/actions';
+import { AutocompleteInput, Modal, NavigationButtons, Text, Divider } from '@/reuseable-components';
 
 const DefineActionContainer = styled.section`
   height: 640px;
@@ -33,45 +36,78 @@ interface AddActionModalProps {
   handleCloseModal: () => void;
 }
 
-interface ModalActionComponentProps {
-  onNext: () => void;
-}
-
-const ModalActionComponent: React.FC<ModalActionComponentProps> = React.memo(({ onNext }) => {
-  const buttons = [
-    {
-      label: 'DONE',
-      onClick: onNext,
-      variant: 'primary' as const,
-    },
-  ];
-
-  return <NavigationButtons buttons={buttons} />;
-});
-
 export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, handleCloseModal }) => {
-  const submitRef = useRef<(() => void) | null>(null);
-  const [selectedItem, setSelectedItem] = useState<ActionOption | null>(null);
-  const { formData, handleFormChange, resetFormData } = useActionFormData();
+  const { formData, handleFormChange, resetFormData, validateForm } = useActionFormData();
+  const { createNewAction } = useCreateAction();
+  const notify = useNotify();
 
-  const handleNext = () => {
-    if (submitRef.current) {
+  const [selectedItem, setSelectedItem] = useState<ActionOption | null>(null);
+
+  const { mutate: create } = useMutation((data: ActionInput) => createNewAction(data), {
+    onSuccess: (data, variables, context) => {
+      console.log('Successfully submitted action configuration:', data, variables, context);
+
+      // TODO: add action to global state
+
       handleCloseModal();
+    },
+    onError: (error, variables, context) => {
+      notify({
+        message: (error as any)?.message || `Failed to create ${variables.type}: unknown error`,
+        title: 'Create Error',
+        type: 'error',
+        target: 'notification',
+        crdType: 'notification',
+      });
+    },
+  });
+
+  const isFormOk = useMemo(() => !!selectedItem && validateForm(), [selectedItem, formData]);
+
+  const handleSubmit = async () => {
+    if (!isFormOk) {
+      notify({
+        message: 'Required fields are incomplete!',
+        title: 'Create Error',
+        type: 'error',
+        target: 'notification',
+        crdType: 'notification',
+      });
+    } else {
+      create(formData);
     }
   };
 
   const handleClose = () => {
-    handleCloseModal();
+    resetFormData();
     setSelectedItem(null);
+    handleCloseModal();
   };
 
-  const handleSelect = (item: Option) => {
+  const handleSelect = (item: ActionOption) => {
     resetFormData();
+    handleFormChange('type', item.type);
     setSelectedItem(item);
   };
 
   return (
-    <Modal isOpen={isModalOpen} actionComponent={<ModalActionComponent onNext={handleNext} />} header={{ title: 'Add Action' }} onClose={handleClose}>
+    <Modal
+      isOpen={isModalOpen}
+      onClose={handleClose}
+      header={{ title: 'Add Action' }}
+      actionComponent={
+        <NavigationButtons
+          buttons={[
+            {
+              variant: 'primary',
+              label: 'DONE',
+              onClick: handleSubmit,
+              disabled: !isFormOk,
+            },
+          ]}
+        />
+      }
+    >
       <DefineActionContainer>
         <WidthConstraint>
           <Text size={20}>{'Define Action'}</Text>

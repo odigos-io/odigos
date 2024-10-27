@@ -1,3 +1,5 @@
+import { type SignalUppercase } from '@/utils';
+
 export enum ActionsType {
   ADD_CLUSTER_INFO = 'AddClusterInfo',
   DELETE_ATTRIBUTES = 'DeleteAttribute',
@@ -52,3 +54,12 @@ export interface ActionState {
   disabled: boolean;
   type: string;
 }
+
+export type ActionInput = {
+  type: string;
+  name: string;
+  notes: string;
+  disable: boolean;
+  signals: SignalUppercase[];
+  details: string;
+};
