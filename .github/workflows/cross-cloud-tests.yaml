@@ -199,7 +199,8 @@ jobs:
         if: always()
         run: |
           ./cli/odigos diagnose
-
+        continue-on-error: true
+        
       - name: Upload run details artifact
         if: always()
         uses: actions/upload-artifact@v4
