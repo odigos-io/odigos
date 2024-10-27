@@ -7,6 +7,7 @@ import (
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,6 +27,7 @@ type NodeCollectorResources struct {
 }
 
 type OdigosResources struct {
+	OdigosVersion          string
 	ClusterCollector       ClusterCollectorResources
 	NodeCollector          NodeCollectorResources
 	Destinations           *odigosv1.DestinationList
@@ -114,6 +116,12 @@ func getNodeCollectorResources(ctx context.Context, kubeClient kubernetes.Interf
 func GetRelevantOdigosResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*OdigosResources, error) {
 
 	odigos := OdigosResources{}
+
+	odigosVersion, err := getters.GetOdigosVersionInClusterFromConfigMap(ctx, kubeClient, odigosNs)
+	if err != nil {
+		return nil, err
+	}
+	odigos.OdigosVersion = odigosVersion
 
 	cc, err := getClusterCollectorResources(ctx, kubeClient, odigosClient, odigosNs)
 	if err != nil {

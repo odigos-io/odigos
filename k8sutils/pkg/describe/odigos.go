@@ -8,7 +8,6 @@ import (
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	odigos "github.com/odigos-io/odigos/k8sutils/pkg/describe/odigos"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
-	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -61,33 +60,25 @@ func printNodeCollectorStatus(analyze *odigos.OdigosAnalyze, sb *strings.Builder
 	printProperty(sb, 2, analyze.NodeCollector.AvailableNodes)
 }
 
-func printOdigosPipeline(resources *odigos.OdigosResources, analyze *odigos.OdigosAnalyze, sb *strings.Builder) {
+func printOdigosPipeline(analyze *odigos.OdigosAnalyze, sb *strings.Builder) {
 	describeText(sb, 0, "Odigos Pipeline:")
-	numDestinations := len(resources.Destinations.Items)
-	numInstrumentationConfigs := len(resources.InstrumentationConfigs.Items)
-
-	describeText(sb, 1, "Status: there are %d sources and %d destinations\n", numInstrumentationConfigs, numDestinations)
+	describeText(sb, 1, "Status: there are %d sources and %d destinations\n", analyze.NumberOfSources, analyze.NumberOfDestinations)
 	printClusterCollectorStatus(analyze, sb)
 	sb.WriteString("\n")
 	printNodeCollectorStatus(analyze, sb)
 }
 
-func printDescribeOdigos(odigosVersion string, resources *odigos.OdigosResources, analyze *odigos.OdigosAnalyze) string {
+func printDescribeOdigos(analyze *odigos.OdigosAnalyze) string {
 	var sb strings.Builder
 
-	printOdigosVersion(odigosVersion, &sb)
+	printOdigosVersion(analyze.OdigosVersion, &sb)
 	sb.WriteString("\n")
-	printOdigosPipeline(resources, analyze, &sb)
+	printOdigosPipeline(analyze, &sb)
 
 	return sb.String()
 }
 
 func DescribeOdigos(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) string {
-
-	odigosVersion, err := getters.GetOdigosVersionInClusterFromConfigMap(ctx, kubeClient, odigosNs)
-	if err != nil {
-		return fmt.Sprintf("Error: %v\n", err)
-	}
 
 	odigosResources, err := odigos.GetRelevantOdigosResources(ctx, kubeClient, odigosClient, odigosNs)
 	if err != nil {
@@ -96,5 +87,5 @@ func DescribeOdigos(ctx context.Context, kubeClient kubernetes.Interface, odigos
 
 	odigosAnalyze := odigos.AnalyzeOdigos(odigosResources)
 
-	return printDescribeOdigos(odigosVersion, odigosResources, odigosAnalyze)
+	return printDescribeOdigos(odigosAnalyze)
 }

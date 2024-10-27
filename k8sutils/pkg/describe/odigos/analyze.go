@@ -35,8 +35,11 @@ type NodeCollectorAnalyze struct {
 }
 
 type OdigosAnalyze struct {
-	ClusterCollector ClusterCollectorAnalyze `json:"clusterCollector"`
-	NodeCollector    NodeCollectorAnalyze    `json:"nodeCollector"`
+	OdigosVersion        string                  `json:"odigosVersion"`
+	NumberOfDestinations int                     `json:"numberOfDestinations"`
+	NumberOfSources      int                     `json:"numberOfSources"`
+	ClusterCollector     ClusterCollectorAnalyze `json:"clusterCollector"`
+	NodeCollector        NodeCollectorAnalyze    `json:"nodeCollector"`
 }
 
 func analyzeDeployed(cg *odigosv1.CollectorsGroup) (*properties.EntityProperty[bool], *properties.EntityProperty[string]) {
@@ -299,7 +302,10 @@ func analyzeNodeCollector(resources *OdigosResources) NodeCollectorAnalyze {
 
 func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 	return &OdigosAnalyze{
-		ClusterCollector: analyzeClusterCollector(resources),
-		NodeCollector:    analyzeNodeCollector(resources),
+		OdigosVersion:        resources.OdigosVersion,
+		NumberOfDestinations: len(resources.Destinations.Items),
+		NumberOfSources:      len(resources.InstrumentationConfigs.Items),
+		ClusterCollector:     analyzeClusterCollector(resources),
+		NodeCollector:        analyzeNodeCollector(resources),
 	}
 }
