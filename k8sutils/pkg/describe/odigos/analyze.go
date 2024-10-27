@@ -9,9 +9,6 @@ import (
 )
 
 type ClusterCollectorAnalyze struct {
-
-	// enable means we should have cluster collector in the cluster
-	// cluster collectors are enabled if there are destinations
 	Enabled              properties.EntityProperty[bool]    `json:"enabled"`
 	CollectorGroup       properties.EntityProperty[string]  `json:"collectorGroup"`
 	Deployed             *properties.EntityProperty[bool]   `json:"deployed,omitempty"`
@@ -25,6 +22,16 @@ type ClusterCollectorAnalyze struct {
 }
 
 type NodeCollectorAnalyze struct {
+	Enabled        properties.EntityProperty[bool]    `json:"enabled"`
+	CollectorGroup properties.EntityProperty[string]  `json:"collectorGroup"`
+	Deployed       *properties.EntityProperty[bool]   `json:"deployed,omitempty"`
+	DeployedError  *properties.EntityProperty[string] `json:"deployedError,omitempty"`
+	CollectorReady *properties.EntityProperty[bool]   `json:"collectorReady,omitempty"`
+	DaemonSet      properties.EntityProperty[string]  `json:"daemonSet,omitempty"`
+	DesiredNodes   *properties.EntityProperty[int]    `json:"desiredNodes,omitempty"`
+	CurrentNodes   *properties.EntityProperty[int]    `json:"currentNodes,omitempty"`
+	UpdatedNodes   *properties.EntityProperty[int]    `json:"updatedNodes,omitempty"`
+	AvailableNodes *properties.EntityProperty[int]    `json:"availableNodes,omitempty"`
 }
 
 type OdigosAnalyze struct {
@@ -110,6 +117,58 @@ func analyzeDeployment(dep *appsv1.Deployment, enabled bool) (properties.EntityP
 			Value: expectedReplicas,
 		}, expectedReplicas
 	}
+}
+
+func analyzeDaemonSet(ds *appsv1.DaemonSet, enabled bool) properties.EntityProperty[string] {
+	dsFound := ds != nil
+	return properties.EntityProperty[string]{
+		Name:   "DaemonSet",
+		Value:  properties.GetTextCreated(dsFound),
+		Status: properties.GetSuccessOrTransitioning(dsFound == enabled),
+	}
+}
+
+func analyzeDsReplicas(ds *appsv1.DaemonSet) (*properties.EntityProperty[int], *properties.EntityProperty[int], *properties.EntityProperty[int], *properties.EntityProperty[int]) {
+	if ds == nil {
+		return nil, nil, nil, nil
+	}
+
+	desiredNodes := int(ds.Status.DesiredNumberScheduled)
+	currentReplicas := int(ds.Status.CurrentNumberScheduled)
+	updatedReplicas := int(ds.Status.UpdatedNumberScheduled)
+	availableNodes := int(ds.Status.NumberAvailable)
+	return &properties.EntityProperty[int]{
+			// The total number of nodes that should be running this daemon.
+			// Regardless of what is actually running (0, 1, or more), rollouts, failures, etc.
+			// this number can be less than the number of nodes in the cluster if affinity rules and node selectors are used.
+			Name:  "Desired Nodes",
+			Value: desiredNodes,
+		}, &properties.EntityProperty[int]{
+			// The number of nodes that are running at least 1
+			// daemon pod and are supposed to run the daemon pod.
+			// if this number is less than the desired number, the daemonset is not fully scheduled.
+			// it can be due to an active rollout (which is ok), or due to a problem with the nodes / pods
+			// this prevents the daemonset pod from being scheduled.
+			Name:   "Current Nodes",
+			Value:  currentReplicas,
+			Status: properties.GetSuccessOrTransitioning(currentReplicas == desiredNodes),
+		}, &properties.EntityProperty[int]{
+			// The number of nodes that are running pods from the latest version of the daemonset and do not have old pods from previous versions.
+			// if this number is less than the desired number, the daemonset is not fully updated.
+			// it can be due to an active rollout (which is ok), or due to a problem with the nodes / pods
+			// this prevents the daemonset pod from being updated.
+			// this number does not indicate if the pods are indeed running and healthy, only that the only pods scheduled to them is only the latest.
+			Name:   "Updated Nodes",
+			Value:  updatedReplicas,
+			Status: properties.GetSuccessOrTransitioning(updatedReplicas == desiredNodes),
+		}, &properties.EntityProperty[int]{
+			// available nodes are the nodes for which the oldest pod is ready and available.
+			// it can count nodes that are running an old version of the daemonset,
+			// so it alone cannot be used to determine if the daemonset is updated and healthy.
+			Name:   "Available Nodes",
+			Value:  availableNodes,
+			Status: properties.GetSuccessOrTransitioning(availableNodes == desiredNodes),
+		}
 }
 
 func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.EntityProperty[int], *properties.EntityProperty[int], *properties.EntityProperty[string]) {
@@ -198,9 +257,49 @@ func analyzeClusterCollector(resources *OdigosResources) ClusterCollectorAnalyze
 	}
 }
 
+func analyzeNodeCollector(resources *OdigosResources) NodeCollectorAnalyze {
+
+	hasClusterCollector := resources.ClusterCollector.CollectorsGroup != nil
+	isClusterCollectorReady := hasClusterCollector && resources.ClusterCollector.CollectorsGroup.Status.Ready
+	hasInstrumentedSources := len(resources.InstrumentationConfigs.Items) > 0
+	isEnabled := hasClusterCollector && isClusterCollectorReady && hasInstrumentedSources
+
+	enabled := properties.EntityProperty[bool]{
+		Name:  "Enabled",
+		Value: isEnabled,
+		// There is no expected state for this property, so not status is set
+	}
+
+	hasCg := resources.ClusterCollector.CollectorsGroup != nil
+	cg := properties.EntityProperty[string]{
+		Name:   "Collector Group",
+		Value:  properties.GetTextCreated(hasCg),
+		Status: properties.GetSuccessOrTransitioning(hasCg == isEnabled),
+	}
+
+	deployed, deployedError := analyzeDeployed(resources.ClusterCollector.CollectorsGroup)
+	ready := analyzeCollectorReady(resources.ClusterCollector.CollectorsGroup)
+	ds := analyzeDaemonSet(resources.NodeCollector.DaemonSet, isEnabled)
+	// TODO: implement our oun pod lister to figure out how many are updated and ready which isn't available in the daemonset status
+	desiredNodes, currentNodes, updatedNodes, availableNodes := analyzeDsReplicas(resources.NodeCollector.DaemonSet)
+
+	return NodeCollectorAnalyze{
+		Enabled:        enabled,
+		CollectorGroup: cg,
+		Deployed:       deployed,
+		DeployedError:  deployedError,
+		CollectorReady: ready,
+		DaemonSet:      ds,
+		DesiredNodes:   desiredNodes,
+		CurrentNodes:   currentNodes,
+		UpdatedNodes:   updatedNodes,
+		AvailableNodes: availableNodes,
+	}
+}
+
 func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
-	clusterCollector := analyzeClusterCollector(resources)
 	return &OdigosAnalyze{
-		ClusterCollector: clusterCollector,
+		ClusterCollector: analyzeClusterCollector(resources),
+		NodeCollector:    analyzeNodeCollector(resources),
 	}
 }
