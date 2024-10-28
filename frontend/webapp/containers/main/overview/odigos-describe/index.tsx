@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Describe } from '@/assets';
+import { Describe, Refresh } from '@/assets'; // Assume RefreshIcon is the refresh icon component
 import theme from '@/styles/palette';
 import { useDescribe } from '@/hooks';
 import styled from 'styled-components';
@@ -23,7 +23,6 @@ export const OdigosDescriptionDrawer: React.FC<
 
   useEffect(() => {
     if (odigosDescription) {
-      // Evaluate statuses to set badge based on current data
       const statuses = extractStatuses(odigosDescription);
       if (statuses.includes('error')) setBadgeStatus('error');
       else if (statuses.includes('transitioning'))
@@ -33,10 +32,8 @@ export const OdigosDescriptionDrawer: React.FC<
   }, [odigosDescription]);
 
   useEffect(() => {
-    if (isOpen) {
-      refetchOdigosDescription();
-    }
-  }, [isOpen, refetchOdigosDescription]);
+    refetchOdigosDescription();
+  }, [refetchOdigosDescription]);
 
   return (
     <>
@@ -70,7 +67,10 @@ export const OdigosDescriptionDrawer: React.FC<
         ) : (
           <DescriptionContent>
             {odigosDescription
-              ? formatOdigosDescription(odigosDescription)
+              ? formatOdigosDescription(
+                  odigosDescription,
+                  refetchOdigosDescription
+                )
               : 'No description available.'}
           </DescriptionContent>
         )}
@@ -92,14 +92,19 @@ function extractStatuses(description: any): string[] {
 }
 
 // Render the description with status-specific styling
-function formatOdigosDescription(description: any) {
+function formatOdigosDescription(description: any, refetch: () => void) {
   return (
     <div>
-      {/* Display Odigos Version */}
+      {/* Display Odigos Version with Refresh Button */}
       {description.odigosVersion && (
-        <VersionText>
-          {description.odigosVersion.name}: {description.odigosVersion.value}
-        </VersionText>
+        <VersionHeader>
+          <VersionText>
+            {description.odigosVersion.name}: {description.odigosVersion.value}
+          </VersionText>
+          <IconWrapper onClick={refetch}>
+            <Refresh size={16} />
+          </IconWrapper>
+        </VersionHeader>
       )}
 
       {/* Display Destinations and Sources Count */}
@@ -161,8 +166,14 @@ const CollectorItem: React.FC<{
   );
 };
 
-const VersionText = styled(KeyvalText)`
+const VersionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 10px;
+`;
+
+const VersionText = styled(KeyvalText)`
   font-size: 24px;
 `;
 
@@ -199,18 +210,17 @@ const IconWrapper = styled.div`
   border: 1px solid ${theme.colors.blue_grey};
   display: flex;
   align-items: center;
+  cursor: pointer;
   &:hover {
     background-color: ${theme.colors.dark};
   }
 `;
 
-// Styled component for loading message
 const LoadingMessage = styled.p`
   font-size: 1rem;
   color: #555;
 `;
 
-// Styled component for description content
 const DescriptionContent = styled(KeyvalText)`
   white-space: pre-wrap;
   line-height: 1.6;
