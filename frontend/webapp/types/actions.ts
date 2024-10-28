@@ -16,6 +16,44 @@ export enum ActionsSortType {
   TYPE = 'type',
 }
 
+export type AddClusterInfoSpec = {
+  clusterAttributes: {
+    attributeName: string;
+    attributeStringValue: string;
+  }[];
+};
+
+export type DeleteAttributesSpec = {
+  attributeNamesToDelete: string[];
+};
+
+export type RenameAttributesSpec = {
+  renames: {
+    [oldKey: string]: string;
+  };
+};
+
+export type PiiMaskingSpec = {
+  piiCategories: string[];
+};
+
+export type ErrorSamplerSpec = {
+  fallback_sampling_ratio: number;
+};
+
+export type ProbabilisticSamplerSpec = {
+  sampling_percentage: string;
+};
+
+export type LatencySamplerSpec = {
+  endpoints_filters: {
+    service_name: string;
+    http_route: string;
+    minimum_latency_threshold: number;
+    fallback_sampling_ratio: number;
+  }[];
+};
+
 export interface ActionItemCard {
   id: string;
   title: string;
@@ -29,14 +67,23 @@ export interface ActionItem {
   notes: string;
   signals: string[];
   disabled?: boolean;
-  type: string;
-  [key: string]: any;
+  clusterAttributes?: AddClusterInfoSpec['clusterAttributes'];
+  attributeNamesToDelete?: DeleteAttributesSpec['attributeNamesToDelete'];
+  renames?: RenameAttributesSpec['renames'];
+  piiCategories?: PiiMaskingSpec['piiCategories'];
+  fallback_sampling_ratio?: ErrorSamplerSpec['fallback_sampling_ratio'];
+  sampling_percentage?: ProbabilisticSamplerSpec['sampling_percentage'];
+  endpoints_filters?: LatencySamplerSpec['endpoints_filters'];
 }
 
 export interface ActionData {
   id: string;
   type: string;
   spec: ActionItem | string;
+}
+
+export interface ActionDataParsed extends ActionData {
+  spec: ActionItem;
 }
 
 interface Monitor {

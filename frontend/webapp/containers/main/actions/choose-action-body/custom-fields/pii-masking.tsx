@@ -3,15 +3,14 @@ import { safeJsonParse } from '@/utils';
 import { Checkbox } from '@/reuseable-components';
 import { FieldTitle, FieldWrapper } from './styled';
 import React, { useEffect, useMemo, useState } from 'react';
+import type { PiiMaskingSpec } from '@/types';
 
 type Props = {
   value: string;
   setValue: (value: string) => void;
 };
 
-type Parsed = {
-  piiCategories: string[];
-};
+type Parsed = PiiMaskingSpec;
 
 const ListContainer = styled.div`
   display: flex;

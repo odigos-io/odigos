@@ -2,20 +2,14 @@ import React, { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
 import { FieldWrapper } from './styled';
 import { InputTable } from '@/reuseable-components';
+import type { LatencySamplerSpec } from '@/types';
 
 type Props = {
   value: string;
   setValue: (value: string) => void;
 };
 
-type Parsed = {
-  endpoints_filters: {
-    service_name: string;
-    http_route: string;
-    minimum_latency_threshold: number;
-    fallback_sampling_ratio: number;
-  }[];
-};
+type Parsed = LatencySamplerSpec;
 
 const LatencySampler: React.FC<Props> = ({ value, setValue }) => {
   const mappedValue = useMemo(() => safeJsonParse<Parsed>(value, { endpoints_filters: [] }).endpoints_filters, [value]);
