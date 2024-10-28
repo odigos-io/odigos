@@ -168,9 +168,11 @@ func printPodsInfo(analyze *source.SourceAnalyze, pods *corev1.PodList, instrume
 			for _, ii := range container.InstrumentationInstances {
 				printProperty(sb, 3, &ii.Healthy)
 				printProperty(sb, 3, ii.Message)
-				describeText(sb, 3, "Identifying Attributes:")
-				for _, attr := range ii.IdentifyingAttributes {
-					printProperty(sb, 4, &attr)
+				if len(ii.IdentifyingAttributes) > 0 {
+					describeText(sb, 3, "Identifying Attributes:")
+					for _, attr := range ii.IdentifyingAttributes {
+						printProperty(sb, 4, &attr)
+					}
 				}
 			}
 		}
