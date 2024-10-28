@@ -30,13 +30,13 @@ func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builde
 }
 
 func printInstrumentationConfigInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
-	describeText(sb, 0, "Instrumentation Config:")
+	describeText(sb, 0, "\nInstrumentation Config:")
 	printProperty(sb, 1, &analyze.InstrumentationConfig.Created)
 	printProperty(sb, 1, analyze.InstrumentationConfig.CreateTime)
 }
 
 func printRuntimeDetails(analyze *source.SourceAnalyze, sb *strings.Builder) {
-	describeText(sb, 0, "Runtime Inspection Details (new):")
+	describeText(sb, 0, "\nRuntime Inspection Details (new):")
 
 	if analyze.RuntimeInfo == nil {
 		describeText(sb, 1, "No runtime details")
@@ -46,62 +46,36 @@ func printRuntimeDetails(analyze *source.SourceAnalyze, sb *strings.Builder) {
 	printProperty(sb, 1, &analyze.RuntimeInfo.Generation)
 	describeText(sb, 1, "Detected Containers:")
 	for _, container := range analyze.RuntimeInfo.Containers {
-		describeText(sb, 1, fmt.Sprintf("- Container Name: %v", container.ContainerName.Value))
-		describeText(sb, 2, fmt.Sprintf("Language: %v", container.Language.Value))
-		describeText(sb, 2, fmt.Sprintf("Runtime Version: %v", container.RuntimeVersion.Value))
+		printProperty(sb, 2, &container.ContainerName)
+		printProperty(sb, 3, &container.Language)
+		printProperty(sb, 3, &container.RuntimeVersion)
 		if len(container.EnvVars) > 0 {
-			describeText(sb, 2, "Relevant Environment Variables:")
+			describeText(sb, 3, "Relevant Environment Variables:")
 			for _, envVar := range container.EnvVars {
-				describeText(sb, 2, fmt.Sprintf("- %s: %s", envVar.Name, envVar.Value))
+				describeText(sb, 4, fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
 			}
 		}
 	}
 }
 
-func printInstrumentedApplicationInfo(instrumentedApplication *odigosv1.InstrumentedApplication, instrumented bool, sb *strings.Builder) {
-	instrumentedApplicationNotFound := instrumentedApplication == nil
-	statusAsExpected := instrumentedApplicationNotFound == !instrumented
-	sb.WriteString("\nRuntime inspection details (old):\n")
-	if instrumentedApplicationNotFound {
-		if instrumented {
-			sb.WriteString("  Not yet created\n")
-		} else {
-			sb.WriteString(wrapTextInGreen("  Workload not instrumented, no runtime details\n"))
-		}
-	} else {
-		createdAtText := "  Created at " + instrumentedApplication.GetCreationTimestamp().String()
-		sb.WriteString(wrapTextSuccessOfFailure(createdAtText, statusAsExpected) + "\n")
-		sb.WriteString("  Detected Containers:\n")
-		for _, container := range instrumentedApplication.Spec.RuntimeDetails {
-			sb.WriteString(fmt.Sprintf("    - Container Name: %s\n", container.ContainerName))
-			colorfulLanguage := string(container.Language)
-			isUnknown := container.Language == common.UnknownProgrammingLanguage
-			if isUnknown {
-				colorfulLanguage = wrapTextInRed(string(container.Language))
-			} else if container.Language != common.IgnoredProgrammingLanguage {
-				colorfulLanguage = wrapTextInGreen(string(container.Language))
-			}
-			sb.WriteString("      Language:      " + colorfulLanguage + "\n")
-			if isUnknown {
-				sb.WriteString("      Troubleshooting: http://localhost:3000/architecture/troubleshooting#4-language-not-detected\n")
-			}
-			if container.RuntimeVersion != "" {
-				sb.WriteString("      Runtime Version: " + container.RuntimeVersion + "\n")
-			} else {
-				sb.WriteString("      Runtime Version: not detected\n")
-			}
+func printInstrumentedApplicationInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
 
-			// calculate env vars for this container
-			if container.EnvVars != nil && len(container.EnvVars) > 0 {
-				sb.WriteString("      Relevant Environment Variables:\n")
-				for _, envVar := range container.EnvVars {
-					sb.WriteString(fmt.Sprintf("        - %s: %s\n", envVar.Name, envVar.Value))
-				}
+	describeText(sb, 0, "\nRuntime Inspection Details (old):")
+	printProperty(sb, 1, &analyze.InstrumentedApplication.Created)
+	printProperty(sb, 1, analyze.InstrumentedApplication.CreateTime)
+
+	printProperty(sb, 1, &analyze.RuntimeInfo.Generation)
+	describeText(sb, 1, "Detected Containers:")
+	for _, container := range analyze.RuntimeInfo.Containers {
+		printProperty(sb, 2, &container.ContainerName)
+		printProperty(sb, 3, &container.Language)
+		printProperty(sb, 3, &container.RuntimeVersion)
+		if len(container.EnvVars) > 0 {
+			describeText(sb, 3, "Relevant Environment Variables:")
+			for _, envVar := range container.EnvVars {
+				describeText(sb, 4, fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
 			}
 		}
-	}
-	if !statusAsExpected {
-		sb.WriteString("  Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#3-odigos-instrumented-application\n")
 	}
 }
 
@@ -281,15 +255,11 @@ func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, o
 	}
 
 	analyze := source.AnalyzeSource(resources, workloadObj)
-	if err != nil {
-		sb.WriteString(fmt.Sprintf("Error: %v\n", err))
-		return sb.String()
-	}
 
 	instrumented := printWorkloadManifestInfo(analyze, &sb)
 	printInstrumentationConfigInfo(analyze, &sb)
 	printRuntimeDetails(analyze, &sb)
-	printInstrumentedApplicationInfo(resources.InstrumentedApplication, instrumented, &sb)
+	printInstrumentedApplicationInfo(analyze, &sb)
 	containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(workloadObj, resources.InstrumentedApplication, instrumented, &sb)
 	printPodsInfo(resources.Pods, resources.InstrumentationInstances, containerNameToExpectedDevices, &sb)
 

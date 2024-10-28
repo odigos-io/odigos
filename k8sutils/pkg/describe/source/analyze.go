@@ -3,6 +3,7 @@ package source
 import (
 	"fmt"
 
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
@@ -20,7 +21,7 @@ type InstrumentationConfigAnalyze struct {
 	CreateTime *properties.EntityProperty `json:"createTime"`
 }
 
-type ContainerRuntimeInfo struct {
+type ContainerRuntimeInfoAnalyze struct {
 	ContainerName  properties.EntityProperty   `json:"containerName"`
 	Language       properties.EntityProperty   `json:"language"`
 	RuntimeVersion properties.EntityProperty   `json:"runtimeVersion"`
@@ -28,8 +29,14 @@ type ContainerRuntimeInfo struct {
 }
 
 type RuntimeInfoAnalyze struct {
-	Generation properties.EntityProperty `json:"generation"`
-	Containers []ContainerRuntimeInfo    `json:"containers"`
+	Generation properties.EntityProperty     `json:"generation"`
+	Containers []ContainerRuntimeInfoAnalyze `json:"containers"`
+}
+
+type InstrumentedApplicationAnalyze struct {
+	Created    properties.EntityProperty     `json:"created"`
+	CreateTime *properties.EntityProperty    `json:"createTime"`
+	Containers []ContainerRuntimeInfoAnalyze `json:"containers"`
 }
 
 type SourceAnalyze struct {
@@ -38,8 +45,9 @@ type SourceAnalyze struct {
 	Namespace properties.EntityProperty    `json:"namespace"`
 	Labels    InstrumentationLabelsAnalyze `json:"labels"`
 
-	InstrumentationConfig InstrumentationConfigAnalyze `json:"instrumentationConfig"`
-	RuntimeInfo           *RuntimeInfoAnalyze          `json:"runtimeInfo"`
+	InstrumentationConfig   InstrumentationConfigAnalyze   `json:"instrumentationConfig"`
+	RuntimeInfo             *RuntimeInfoAnalyze            `json:"runtimeInfo"`
+	InstrumentedApplication InstrumentedApplicationAnalyze `json:"instrumentedApplication"`
 }
 
 func analyzeInstrumentationLabels(resource *OdigosSourceResources, workloadObj *K8sSourceObject) (InstrumentationLabelsAnalyze, bool) {
@@ -101,24 +109,6 @@ func analyzeInstrumentationConfig(resources *OdigosSourceResources, instrumented
 
 	instrumentationConfigCreated := resources.InstrumentationConfig != nil
 
-	// instrumentationConfigNotFound := instrumentationConfig == nil
-	// statusAsExpected := instrumentationConfigNotFound == !instrumented
-	// sb.WriteString("\nInstrumentation Config:\n")
-	// if instrumentationConfigNotFound {
-	// 	if statusAsExpected {
-	// 		sb.WriteString(wrapTextInGreen("  Workload not instrumented, no instrumentation config\n"))
-	// 	} else {
-	// 		sb.WriteString("  Not yet created\n")
-	// 	}
-	// } else {
-	// 	createAtText := "  Created at " + instrumentationConfig.GetCreationTimestamp().String()
-	// 	sb.WriteString(wrapTextSuccessOfFailure(createAtText, statusAsExpected) + "\n")
-	// }
-
-	// if !statusAsExpected {
-	// 	sb.WriteString("  Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#2-odigos-instrumentation-config\n")
-	// }
-
 	created := properties.EntityProperty{
 		Name:   "Created",
 		Value:  properties.GetTextCreated(instrumentationConfigCreated),
@@ -139,19 +129,10 @@ func analyzeInstrumentationConfig(resources *OdigosSourceResources, instrumented
 	}
 }
 
-func analyzeRuntimeInfo(resources *OdigosSourceResources) *RuntimeInfoAnalyze {
-	if resources.InstrumentationConfig == nil {
-		return nil
-	}
+func analyzeRuntimeDetails(runtimeDetailsByContainer []odigosv1.RuntimeDetailsByContainer) []ContainerRuntimeInfoAnalyze {
+	containers := make([]ContainerRuntimeInfoAnalyze, 0, len(runtimeDetailsByContainer))
 
-	generation := properties.EntityProperty{
-		Name:  "Workload Generation",
-		Value: resources.InstrumentationConfig.Status.ObservedWorkloadGeneration,
-	}
-
-	containers := make([]ContainerRuntimeInfo, 0, len(resources.InstrumentationConfig.Status.RuntimeDetailsByContainer))
-
-	for _, container := range resources.InstrumentationConfig.Status.RuntimeDetailsByContainer {
+	for _, container := range runtimeDetailsByContainer {
 
 		containerName := properties.EntityProperty{
 			Name:  "Container Name",
@@ -180,7 +161,7 @@ func analyzeRuntimeInfo(resources *OdigosSourceResources) *RuntimeInfoAnalyze {
 			})
 		}
 
-		containers = append(containers, ContainerRuntimeInfo{
+		containers = append(containers, ContainerRuntimeInfoAnalyze{
 			ContainerName:  containerName,
 			Language:       language,
 			RuntimeVersion: runtimeVersion,
@@ -188,9 +169,46 @@ func analyzeRuntimeInfo(resources *OdigosSourceResources) *RuntimeInfoAnalyze {
 		})
 	}
 
+	return containers
+}
+
+func analyzeRuntimeInfo(resources *OdigosSourceResources) *RuntimeInfoAnalyze {
+	if resources.InstrumentationConfig == nil {
+		return nil
+	}
+
+	generation := properties.EntityProperty{
+		Name:  "Workload Generation",
+		Value: resources.InstrumentationConfig.Status.ObservedWorkloadGeneration,
+	}
+
 	return &RuntimeInfoAnalyze{
 		Generation: generation,
-		Containers: containers,
+		Containers: analyzeRuntimeDetails(resources.InstrumentationConfig.Status.RuntimeDetailsByContainer),
+	}
+}
+
+func analyzeInstrumentedApplication(resources *OdigosSourceResources) InstrumentedApplicationAnalyze {
+	instrumentedApplicationCreated := resources.InstrumentedApplication != nil
+
+	created := properties.EntityProperty{
+		Name:   "Created",
+		Value:  properties.GetTextCreated(instrumentedApplicationCreated),
+		Status: properties.GetSuccessOrTransitioning(instrumentedApplicationCreated),
+	}
+
+	var createdTime *properties.EntityProperty
+	if instrumentedApplicationCreated {
+		createdTime = &properties.EntityProperty{
+			Name:  "create time",
+			Value: resources.InstrumentedApplication.GetCreationTimestamp().String(),
+		}
+	}
+
+	return InstrumentedApplicationAnalyze{
+		Created:    created,
+		CreateTime: createdTime,
+		Containers: analyzeRuntimeDetails(resources.InstrumentedApplication.Spec.RuntimeDetails),
 	}
 }
 
@@ -198,7 +216,8 @@ func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObjec
 
 	labelsAnalysis, instrumented := analyzeInstrumentationLabels(resources, workloadObj)
 	icAnalysis := analyzeInstrumentationConfig(resources, instrumented)
-	runtimeAnalysis := analyzeRuntimeInfo(resources, instrumented)
+	runtimeAnalysis := analyzeRuntimeInfo(resources)
+	instrumentedApplication := analyzeInstrumentedApplication(resources)
 
 	return &SourceAnalyze{
 		Name:      properties.EntityProperty{Name: "Name", Value: workloadObj.GetName()},
@@ -206,7 +225,8 @@ func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObjec
 		Namespace: properties.EntityProperty{Name: "Namespace", Value: workloadObj.GetNamespace()},
 		Labels:    labelsAnalysis,
 
-		InstrumentationConfig: icAnalysis,
-		RuntimeInfo:           runtimeAnalysis,
+		InstrumentationConfig:   icAnalysis,
+		RuntimeInfo:             runtimeAnalysis,
+		InstrumentedApplication: instrumentedApplication,
 	}
 }
