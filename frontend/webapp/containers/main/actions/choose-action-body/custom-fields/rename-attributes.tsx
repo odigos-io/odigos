@@ -2,17 +2,14 @@ import React, { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
 import { FieldTitle, FieldWrapper } from './styled';
 import { KeyValueInputsList } from '@/reuseable-components';
+import type { RenameAttributesSpec } from '@/types';
 
 type Props = {
   value: string;
   setValue: (value: string) => void;
 };
 
-type Parsed = {
-  renames: {
-    [oldKey: string]: string;
-  };
-};
+type Parsed = RenameAttributesSpec;
 
 const RenameAttributes: React.FC<Props> = ({ value, setValue }) => {
   const mappedValue = useMemo(
