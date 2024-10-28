@@ -2,6 +2,7 @@ package source
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -9,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -60,14 +62,15 @@ type InstrumentationInstanceAnalyze struct {
 }
 
 type PodContainerAnalyze struct {
-	ContainerName properties.EntityProperty `json:"containerName"`
-	// InstrumentationDevices properties.EntityProperty `json:"instrumentationDevices"`
+	ContainerName            properties.EntityProperty        `json:"containerName"`
+	ActualDevices            properties.EntityProperty        `json:"actualDevices"`
 	InstrumentationInstances []InstrumentationInstanceAnalyze `json:"instrumentationInstances"`
 }
 
 type PodAnalyze struct {
 	PodName    properties.EntityProperty `json:"podName"`
 	NodeName   properties.EntityProperty `json:"nodeName"`
+	Phase      properties.EntityProperty `json:"phase"`
 	Containers []PodContainerAnalyze     `json:"containers"`
 }
 
@@ -82,7 +85,9 @@ type SourceAnalyze struct {
 	InstrumentedApplication InstrumentedApplicationAnalyze `json:"instrumentedApplication"`
 	InstrumentationDevice   InstrumentationDeviceAnalyze   `json:"instrumentationDevice"`
 
-	Pods []PodAnalyze `json:"pods"`
+	TotalPods       int          `json:"totalPods"`
+	PodsPhasesCount string       `json:"podsPhasesCount"`
+	Pods            []PodAnalyze `json:"pods"`
 }
 
 func analyzeInstrumentationLabels(resource *OdigosSourceResources, workloadObj *K8sSourceObject) (InstrumentationLabelsAnalyze, bool) {
@@ -303,18 +308,9 @@ func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj 
 			}
 		}
 
-		var devicesNames interface{}
-		switch len(odigosDevices) {
-		case 0:
-			devicesNames = "No instrumentation devices"
-		case 1:
-			devicesNames = odigosDevices[0]
-		default:
-			devicesNames = odigosDevices
-		}
 		devices := properties.EntityProperty{
 			Name:  "Devices",
-			Value: devicesNames,
+			Value: odigosDevices,
 		}
 
 		originalContainerEnvs := origWorkloadEnvValues.GetContainerStoredEnvs(container.Name)
@@ -386,9 +382,24 @@ func analyzeInstrumentationInstance(instrumentationInstance *odigosv1.Instrument
 	}
 }
 
-func analyzePods(resources *OdigosSourceResources) []PodAnalyze {
+func podPhaseToStatus(phase corev1.PodPhase) properties.PropertyStatus {
+	switch phase {
+	case corev1.PodSucceeded, corev1.PodRunning:
+		return properties.PropertyStatusSuccess
+	case corev1.PodPending:
+		return properties.PropertyStatusTransitioning
+	case corev1.PodFailed:
+		return properties.PropertyStatusError
+	default:
+		return properties.PropertyStatusError
+	}
+}
+
+func analyzePods(resources *OdigosSourceResources, expectedDevices InstrumentationDeviceAnalyze) ([]PodAnalyze, string) {
 	pods := make([]PodAnalyze, 0, len(resources.Pods.Items))
+	podsStatuses := make(map[corev1.PodPhase]int)
 	for _, pod := range resources.Pods.Items {
+		podsStatuses[pod.Status.Phase]++
 
 		name := properties.EntityProperty{
 			Name:  "Pod Name",
@@ -398,6 +409,11 @@ func analyzePods(resources *OdigosSourceResources) []PodAnalyze {
 			Name:  "Node Name",
 			Value: pod.Spec.NodeName,
 		}
+		phase := properties.EntityProperty{
+			Name:   "Phase",
+			Value:  pod.Status.Phase,
+			Status: podPhaseToStatus(pod.Status.Phase),
+		}
 
 		containers := make([]PodContainerAnalyze, 0, len(pod.Spec.Containers))
 		for _, container := range pod.Spec.Containers {
@@ -406,24 +422,27 @@ func analyzePods(resources *OdigosSourceResources) []PodAnalyze {
 				Value: container.Name,
 			}
 
-			// deviceNames := make([]string, 0)
-			// for resourceName := range container.Resources.Limits {
-			// 	deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
-			// 	if found {
-			// 		deviceNames = append(deviceNames, deviceName)
-			// 	}
-			// }
-			// instrumentationDevices := properties.EntityProperty{
-			// 	Name:  "Instrumentation Devices",
-			// }
-			// switch len(deviceNames) {
-			// case 0:
-			// 	deviceNamesText = "No instrumentation devices"
-			// case 1:
-			// 	deviceNamesText = deviceNames[0]
-			// default
-			// 	deviceNamesText = dedeviceNames
-			// }
+			deviceNames := make([]string, 0)
+			for resourceName := range container.Resources.Limits {
+				deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
+				if found {
+					deviceNames = append(deviceNames, deviceName)
+				}
+			}
+
+			var expectedContainer *ContainerWorkloadManifestAnalyze
+			for _, c := range expectedDevices.Containers {
+				if c.ContainerName.Value == container.Name {
+					expectedContainer = &c
+					break
+				}
+			}
+			devicesStatus := properties.GetSuccessOrError(expectedContainer != nil && reflect.DeepEqual(deviceNames, expectedContainer.Devices.Value))
+			actualDevices := properties.EntityProperty{
+				Name:   "Actual Devices",
+				Value:  deviceNames,
+				Status: devicesStatus,
+			}
 
 			// find the instrumentation instances for this pod
 			thisPodInstrumentationInstances := make([]InstrumentationInstanceAnalyze, 0)
@@ -443,6 +462,7 @@ func analyzePods(resources *OdigosSourceResources) []PodAnalyze {
 
 			containers = append(containers, PodContainerAnalyze{
 				ContainerName:            containerName,
+				ActualDevices:            actualDevices,
 				InstrumentationInstances: thisPodInstrumentationInstances,
 			})
 		}
@@ -450,10 +470,18 @@ func analyzePods(resources *OdigosSourceResources) []PodAnalyze {
 		pods = append(pods, PodAnalyze{
 			PodName:    name,
 			NodeName:   nodeName,
+			Phase:      phase,
 			Containers: containers,
 		})
 	}
-	return pods
+
+	podPhasesTexts := make([]string, 0)
+	for phase, count := range podsStatuses {
+		podPhasesTexts = append(podPhasesTexts, fmt.Sprintf("%s %d", phase, count))
+	}
+	podPhasesText := strings.Join(podPhasesTexts, ", ")
+
+	return pods, podPhasesText
 }
 
 func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObject) *SourceAnalyze {
@@ -463,6 +491,7 @@ func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObjec
 	runtimeAnalysis := analyzeRuntimeInfo(resources)
 	instrumentedApplication := analyzeInstrumentedApplication(resources)
 	device := analyzeInstrumentationDevice(resources, workloadObj, instrumented)
+	pods, podsText := analyzePods(resources, device)
 
 	return &SourceAnalyze{
 		Name:      properties.EntityProperty{Name: "Name", Value: workloadObj.GetName()},
@@ -475,6 +504,8 @@ func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObjec
 		InstrumentedApplication: instrumentedApplication,
 		InstrumentationDevice:   device,
 
-		Pods: analyzePods(resources),
+		TotalPods:       len(pods),
+		PodsPhasesCount: podsText,
+		Pods:            pods,
 	}
 }

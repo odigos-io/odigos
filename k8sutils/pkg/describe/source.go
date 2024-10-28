@@ -6,10 +6,7 @@ import (
 	"strings"
 
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -78,7 +75,7 @@ func printInstrumentedApplicationInfo(analyze *source.SourceAnalyze, sb *strings
 	}
 }
 
-func printAppliedInstrumentationDeviceInfo(analyze *source.SourceAnalyze, workloadObj *source.K8sSourceObject, instrumented bool, sb *strings.Builder) map[string][]string {
+func printAppliedInstrumentationDeviceInfo(analyze *source.SourceAnalyze, workloadObj *source.K8sSourceObject, instrumented bool, sb *strings.Builder) {
 
 	describeText(sb, 0, "\nInstrumentation Device:")
 	printProperty(sb, 1, &analyze.InstrumentationDevice.StatusText)
@@ -93,93 +90,34 @@ func printAppliedInstrumentationDeviceInfo(analyze *source.SourceAnalyze, worklo
 			}
 		}
 	}
-
-	containerNameToExpectedDevices := make(map[string][]string)
-	for _, container := range workloadObj.PodTemplateSpec.Spec.Containers {
-		odigosDevices := make([]string, 0)
-		for resourceName := range container.Resources.Limits {
-			deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
-			if found {
-				odigosDevices = append(odigosDevices, deviceName)
-			}
-		}
-		containerNameToExpectedDevices[container.Name] = odigosDevices
-	}
-
-	return containerNameToExpectedDevices
 }
 
-func printPodContainerInfo(pod *corev1.Pod, container *corev1.Container, instrumentationInstances *odigosv1.InstrumentationInstanceList, containerNameToExpectedDevices map[string][]string, sb *strings.Builder) {
-	instrumentationDevices := make([]string, 0)
-	for resourceName := range container.Resources.Limits {
-		deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
-		if found {
-			instrumentationDevices = append(instrumentationDevices, deviceName)
-		}
-	}
-	expectedDevices, foundExpectedDevices := containerNameToExpectedDevices[container.Name]
-	if len(instrumentationDevices) == 0 {
-		isMatch := !foundExpectedDevices || len(expectedDevices) == 0
-		sb.WriteString(wrapTextSuccessOfFailure("    No instrumentation devices", isMatch) + "\n")
-		if !isMatch {
-			sb.WriteString("      Expected Devices: " + strings.Join(expectedDevices, ", ") + "\n")
-			sb.WriteString("      Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#6-pods-instrumentation-devices-not-matching-manifest\n")
-		}
-	} else {
-		actualDevicesText := strings.Join(instrumentationDevices, ", ")
-		expectedDevicesText := strings.Join(expectedDevices, ", ")
-		isMatch := actualDevicesText == expectedDevicesText
-		sb.WriteString("    Instrumentation Devices: " + wrapTextSuccessOfFailure(actualDevicesText, isMatch) + "\n")
-		if !isMatch {
-			sb.WriteString("      Expected Devices: " + expectedDevicesText + "\n")
-			sb.WriteString("      Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#6-pods-instrumentation-devices-not-matching-manifest\n")
-		}
-	}
-}
+func printPodsInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
 
-func printSinglePodInfo(pod *corev1.Pod, instrumentationInstances *odigosv1.InstrumentationInstanceList, containerNameToExpectedDevices map[string][]string, sb *strings.Builder) {
-	sb.WriteString("  Containers:\n")
-	for _, container := range pod.Spec.Containers {
-		printPodContainerInfo(pod, &container, instrumentationInstances, containerNameToExpectedDevices, sb)
-	}
-}
-
-func printPodsInfo(analyze *source.SourceAnalyze, pods *corev1.PodList, instrumentationInstances *odigosv1.InstrumentationInstanceList, containerNameToExpectedDevices map[string][]string, sb *strings.Builder) {
-
-	podsStatuses := make(map[corev1.PodPhase]int)
-	for _, pod := range pods.Items {
-		podsStatuses[pod.Status.Phase]++
-	}
-	podPhasesTexts := make([]string, 0)
-	for phase, count := range podsStatuses {
-		podPhasesTexts = append(podPhasesTexts, fmt.Sprintf("%s %d", phase, count))
-	}
-	podPhasesText := strings.Join(podPhasesTexts, ", ")
-	describeText(sb, 0, "\nPods (Total %d, %s):", len(pods.Items), podPhasesText)
+	describeText(sb, 0, "\nPods (Total %d, %s):", analyze.TotalPods, analyze.PodsPhasesCount)
 
 	for _, pod := range analyze.Pods {
 		describeText(sb, 0, "")
 		printProperty(sb, 1, &pod.PodName)
 		printProperty(sb, 1, &pod.NodeName)
+		printProperty(sb, 1, &pod.Phase)
 		describeText(sb, 1, "Containers:")
 		for _, container := range pod.Containers {
 			printProperty(sb, 2, &container.ContainerName)
-			describeText(sb, 2, "Instrumentation Instances:")
+			printProperty(sb, 3, &container.ActualDevices)
+			describeText(sb, 3, "")
+			describeText(sb, 3, "Instrumentation Instances:")
 			for _, ii := range container.InstrumentationInstances {
-				printProperty(sb, 3, &ii.Healthy)
-				printProperty(sb, 3, ii.Message)
+				printProperty(sb, 4, &ii.Healthy)
+				printProperty(sb, 4, ii.Message)
 				if len(ii.IdentifyingAttributes) > 0 {
-					describeText(sb, 3, "Identifying Attributes:")
+					describeText(sb, 4, "Identifying Attributes:")
 					for _, attr := range ii.IdentifyingAttributes {
-						printProperty(sb, 4, &attr)
+						printProperty(sb, 5, &attr)
 					}
 				}
 			}
 		}
-	}
-
-	for _, pod := range pods.Items {
-		printSinglePodInfo(&pod, instrumentationInstances, containerNameToExpectedDevices, sb)
 	}
 }
 
@@ -198,8 +136,8 @@ func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, o
 	printInstrumentationConfigInfo(analyze, &sb)
 	printRuntimeDetails(analyze, &sb)
 	printInstrumentedApplicationInfo(analyze, &sb)
-	containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(analyze, workloadObj, instrumented, &sb)
-	printPodsInfo(analyze, resources.Pods, resources.InstrumentationInstances, containerNameToExpectedDevices, &sb)
+	printAppliedInstrumentationDeviceInfo(analyze, workloadObj, instrumented, &sb)
+	printPodsInfo(analyze, &sb)
 
 	return sb.String()
 }
