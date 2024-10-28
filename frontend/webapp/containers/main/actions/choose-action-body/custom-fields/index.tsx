@@ -6,6 +6,7 @@ import RenameAttributes from './rename-attributes';
 import PiiMasking from './pii-masking';
 import ErrorSampler from './error-sampler';
 import ProbabilisticSampler from './probabilistic-sampler';
+import LatencySampler from './latency-sampler';
 
 interface ActionCustomFieldsProps {
   actionType?: ActionsType;
@@ -27,7 +28,7 @@ const componentsMap: Record<ActionsType, ComponentType> = {
   [ActionsType.PII_MASKING]: PiiMasking,
   [ActionsType.ERROR_SAMPLER]: ErrorSampler,
   [ActionsType.PROBABILISTIC_SAMPLER]: ProbabilisticSampler,
-  [ActionsType.LATENCY_SAMPLER]: null,
+  [ActionsType.LATENCY_SAMPLER]: LatencySampler,
 };
 
 const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, value, setValue }) => {
