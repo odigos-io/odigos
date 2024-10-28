@@ -8,7 +8,6 @@ import (
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 	corev1 "k8s.io/api/core/v1"
@@ -16,63 +15,18 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func getInstrumentationLabelTexts(workload *source.K8sSourceObject, ns *corev1.Namespace) (workloadText, nsText, decisionText string, instrumented bool) {
-	workloadLabel, workloadFound := workload.GetLabels()[consts.OdigosInstrumentationLabel]
-	nsLabel, nsFound := ns.GetLabels()[consts.OdigosInstrumentationLabel]
-
-	if workloadFound {
-		workloadText = consts.OdigosInstrumentationLabel + "=" + workloadLabel
-	} else {
-		workloadText = consts.OdigosInstrumentationLabel + " label not set"
-	}
-
-	if nsFound {
-		nsText = consts.OdigosInstrumentationLabel + "=" + nsLabel
-	} else {
-		nsText = consts.OdigosInstrumentationLabel + " label not set"
-	}
-
-	if workloadFound {
-		instrumented = workloadLabel == consts.InstrumentationEnabled
-		if instrumented {
-			decisionText = "Workload is instrumented because the " + workload.Kind + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
-		} else {
-			decisionText = "Workload is NOT instrumented because the " + workload.Kind + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
-		}
-	} else {
-		instrumented = nsLabel == consts.InstrumentationEnabled
-		if instrumented {
-			decisionText = "Workload is instrumented because the " + workload.Kind + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
-		} else {
-			if nsFound {
-				decisionText = "Workload is NOT instrumented because the " + workload.Kind + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
-			} else {
-				decisionText = "Workload is NOT instrumented because neither the workload nor the namespace has the '" + consts.OdigosInstrumentationLabel + "' label set"
-			}
-		}
-	}
-
-	return
-}
-
-func printWorkloadManifestInfo(workloadObj *source.K8sSourceObject, namespace *corev1.Namespace, sb *strings.Builder) bool {
-	sb.WriteString(fmt.Sprintf("Name: %s\n", workloadObj.GetName()))
-	sb.WriteString(fmt.Sprintf("Kind: %s\n", workloadObj.Kind))
-	sb.WriteString(fmt.Sprintf("Namespace: %s\n\n", workloadObj.GetNamespace()))
+func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builder) bool {
+	printProperty(sb, 0, &analyze.Name)
+	printProperty(sb, 0, &analyze.Kind)
+	printProperty(sb, 0, &analyze.Namespace)
 
 	sb.WriteString("Labels:\n")
-	workloadText, nsText, decisionText, instrumented := getInstrumentationLabelTexts(workloadObj, namespace)
-	if instrumented {
-		sb.WriteString("  Instrumented: " + wrapTextInGreen("true") + "\n")
-	} else {
-		sb.WriteString("  Instrumented: " + wrapTextInRed("false") + "\n")
-	}
-	sb.WriteString("  Workload: " + workloadText + "\n")
-	sb.WriteString("  Namespace: " + nsText + "\n")
-	sb.WriteString("  Decision: " + decisionText + "\n")
-	sb.WriteString("  Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#1-odigos-instrumentation-label\n")
+	printProperty(sb, 1, &analyze.Labels.Instrumented)
+	printProperty(sb, 1, analyze.Labels.Workload)
+	printProperty(sb, 1, analyze.Labels.Namespace)
+	printProperty(sb, 1, &analyze.Labels.InstrumentedText)
 
-	return instrumented
+	return analyze.Labels.Instrumented.Value.(bool)
 }
 
 func printInstrumentationConfigInfo(instrumentationConfig *odigosv1.InstrumentationConfig, instrumented bool, sb *strings.Builder) {
@@ -354,7 +308,13 @@ func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, o
 		return sb.String()
 	}
 
-	instrumented := printWorkloadManifestInfo(workloadObj, resources.Namespace, &sb)
+	analyze := source.AnalyzeSource(resources, workloadObj)
+	if err != nil {
+		sb.WriteString(fmt.Sprintf("Error: %v\n", err))
+		return sb.String()
+	}
+
+	instrumented := printWorkloadManifestInfo(analyze, &sb)
 	printInstrumentationConfigInfo(resources.InstrumentationConfig, instrumented, &sb)
 	printRuntimeDetails(resources.InstrumentationConfig, instrumented, &sb)
 	printInstrumentedApplicationInfo(resources.InstrumentedApplication, instrumented, &sb)
