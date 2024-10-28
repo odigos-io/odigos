@@ -1,8 +1,12 @@
+import React from 'react';
 import { ActionsType } from '@/types';
 import AddClusterInfo from './add-cluster-info';
 import DeleteAttributes from './delete-attributes';
 import RenameAttributes from './rename-attributes';
 import PiiMasking from './pii-masking';
+import ErrorSampler from './error-sampler';
+import ProbabilisticSampler from './probabilistic-sampler';
+import LatencySampler from './latency-sampler';
 
 interface ActionCustomFieldsProps {
   actionType?: ActionsType;
@@ -10,36 +14,29 @@ interface ActionCustomFieldsProps {
   setValue: (value: string) => void;
 }
 
+type ComponentProps = {
+  value: string;
+  setValue: (value: string) => void;
+};
+
+type ComponentType = React.FC<ComponentProps> | null;
+
+const componentsMap: Record<ActionsType, ComponentType> = {
+  [ActionsType.ADD_CLUSTER_INFO]: AddClusterInfo,
+  [ActionsType.DELETE_ATTRIBUTES]: DeleteAttributes,
+  [ActionsType.RENAME_ATTRIBUTES]: RenameAttributes,
+  [ActionsType.PII_MASKING]: PiiMasking,
+  [ActionsType.ERROR_SAMPLER]: ErrorSampler,
+  [ActionsType.PROBABILISTIC_SAMPLER]: ProbabilisticSampler,
+  [ActionsType.LATENCY_SAMPLER]: LatencySampler,
+};
+
 const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, value, setValue }) => {
-  switch (actionType) {
-    case ActionsType.ADD_CLUSTER_INFO: {
-      return <AddClusterInfo value={value} setValue={setValue} />;
-    }
+  if (!actionType) return null;
 
-    case ActionsType.DELETE_ATTRIBUTES: {
-      return <DeleteAttributes value={value} setValue={setValue} />;
-    }
+  const Component = componentsMap[actionType];
 
-    case ActionsType.RENAME_ATTRIBUTES: {
-      return <RenameAttributes value={value} setValue={setValue} />;
-    }
-
-    case ActionsType.PII_MASKING: {
-      return <PiiMasking value={value} setValue={setValue} />;
-    }
-
-    case ActionsType.ERROR_SAMPLER:
-      return null;
-
-    case ActionsType.PROBABILISTIC_SAMPLER:
-      return null;
-
-    case ActionsType.LATENCY_SAMPLER:
-      return null;
-
-    default:
-      return null;
-  }
+  return Component ? <Component value={value} setValue={setValue} /> : null;
 };
 
 export default ActionCustomFields;

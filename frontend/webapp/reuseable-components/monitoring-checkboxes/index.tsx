@@ -6,8 +6,8 @@ import { MONITORING_OPTIONS, SignalLowercase, SignalUppercase } from '@/utils';
 
 interface MonitoringCheckboxesProps {
   isVertical?: boolean;
-  allowedSignals?: (SignalUppercase | SignalLowercase)[];
-  selectedSignals: (SignalUppercase | SignalLowercase)[];
+  allowedSignals?: SignalUppercase[];
+  selectedSignals: SignalUppercase[];
   setSelectedSignals: (value: SignalUppercase[]) => void;
 }
 
@@ -22,45 +22,38 @@ const TextWrapper = styled.div`
 `;
 
 const monitors = MONITORING_OPTIONS;
-const initialStatuses: Record<SignalLowercase, boolean> = {
-  logs: false,
-  metrics: false,
-  traces: false,
+
+const isAllowed = (type: SignalLowercase, allowedSignals: MonitoringCheckboxesProps['allowedSignals']) => {
+  return !allowedSignals?.length || !!allowedSignals?.find((str) => str === type.toUpperCase());
+};
+
+const isSelected = (type: SignalLowercase, selectedSignals: MonitoringCheckboxesProps['selectedSignals']) => {
+  return !!selectedSignals?.find((str) => str === type.toUpperCase());
 };
 
 const MonitoringCheckboxes: React.FC<MonitoringCheckboxesProps> = ({ isVertical, allowedSignals, selectedSignals, setSelectedSignals }) => {
-  const [signalStatuses, setSignalStatuses] = useState({ ...initialStatuses });
+  const [isLastSelection, setIsLastSelection] = useState(false);
 
   useEffect(() => {
-    const payload = { ...initialStatuses };
+    const payload: SignalUppercase[] = [];
 
-    selectedSignals.forEach((str) => {
-      payload[str.toLowerCase()] = true;
+    monitors.forEach(({ type }) => {
+      if (isAllowed(type, allowedSignals)) {
+        payload.push(type.toUpperCase() as SignalUppercase);
+      }
     });
 
-    if (JSON.stringify(payload) !== JSON.stringify(signalStatuses)) {
-      setSignalStatuses(payload);
-    }
-  }, [selectedSignals]);
+    setSelectedSignals(payload);
+    setIsLastSelection(payload.length === 1);
+    // eslint-disable-next-line
+  }, [allowedSignals]);
 
-  const handleChange = (key: keyof typeof signalStatuses, value: boolean) => {
-    const selected: SignalUppercase[] = [];
+  const handleChange = (key: SignalLowercase, isAdd: boolean) => {
+    const keyUpper = key.toUpperCase() as SignalUppercase;
+    const payload = isAdd ? [...selectedSignals, keyUpper] : selectedSignals.filter((str) => str !== keyUpper);
 
-    setSignalStatuses((prev) => {
-      const payload = { ...prev, [key]: value };
-
-      Object.entries(payload).forEach(([sig, bool]) => {
-        if (bool) selected.push(sig.toUpperCase() as SignalUppercase);
-      });
-
-      return payload;
-    });
-
-    setSelectedSignals(selected);
-  };
-
-  const isDisabled = (item: (typeof MONITORING_OPTIONS)[0]) => {
-    return !!allowedSignals && !allowedSignals.find((str) => str.toLowerCase() === item.type);
+    setSelectedSignals(payload);
+    setIsLastSelection(payload.length === 1);
   };
 
   return (
@@ -70,15 +63,22 @@ const MonitoringCheckboxes: React.FC<MonitoringCheckboxesProps> = ({ isVertical,
       </TextWrapper>
 
       <ListContainer isVertical={isVertical}>
-        {monitors.map((monitor) => (
-          <Checkbox
-            key={monitor.id}
-            title={monitor.title}
-            initialValue={signalStatuses[monitor.type]}
-            onChange={(value) => handleChange(monitor.type, value)}
-            disabled={isDisabled(monitor)}
-          />
-        ))}
+        {monitors.map((monitor) => {
+          const allowed = isAllowed(monitor.type, allowedSignals);
+          const selected = isSelected(monitor.type, selectedSignals);
+
+          if (!allowed) return null;
+
+          return (
+            <Checkbox
+              key={monitor.id}
+              title={monitor.title}
+              disabled={!allowed || (isLastSelection && selected)}
+              initialValue={selected}
+              onChange={(value) => handleChange(monitor.type, value)}
+            />
+          );
+        })}
       </ListContainer>
     </div>
   );

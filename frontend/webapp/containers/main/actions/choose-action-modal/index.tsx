@@ -1,9 +1,9 @@
 import styled from 'styled-components';
-import React, { useRef, useState } from 'react';
-import { useActionFormData } from '@/hooks/actions';
+import React, { useMemo, useState } from 'react';
 import { ChooseActionBody } from '../choose-action-body';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
-import { AutocompleteInput, Modal, NavigationButtons, Text, Divider, Option } from '@/reuseable-components';
+import { useActionFormData, useCreateAction } from '@/hooks/actions';
+import { AutocompleteInput, Modal, NavigationButtons, Text, Divider, FadeLoader } from '@/reuseable-components';
 
 const DefineActionContainer = styled.section`
   height: 640px;
@@ -28,50 +28,60 @@ const SubTitle = styled(Text)`
   line-height: 150%;
 `;
 
+const Center = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+`;
+
 interface AddActionModalProps {
   isModalOpen: boolean;
   handleCloseModal: () => void;
 }
 
-interface ModalActionComponentProps {
-  onNext: () => void;
-}
-
-const ModalActionComponent: React.FC<ModalActionComponentProps> = React.memo(({ onNext }) => {
-  const buttons = [
-    {
-      label: 'DONE',
-      onClick: onNext,
-      variant: 'primary' as const,
-    },
-  ];
-
-  return <NavigationButtons buttons={buttons} />;
-});
-
 export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, handleCloseModal }) => {
-  const submitRef = useRef<(() => void) | null>(null);
+  const { formData, handleFormChange, resetFormData, validateForm } = useActionFormData();
+  const { createAction, loading } = useCreateAction({ onSuccess: handleClose });
   const [selectedItem, setSelectedItem] = useState<ActionOption | null>(null);
-  const { formData, handleFormChange, resetFormData } = useActionFormData();
 
-  const handleNext = () => {
-    if (submitRef.current) {
-      handleCloseModal();
-    }
+  const isFormOk = useMemo(() => !!selectedItem && validateForm(), [selectedItem, formData]);
+
+  const handleSubmit = async () => {
+    createAction(formData);
   };
 
-  const handleClose = () => {
-    handleCloseModal();
-    setSelectedItem(null);
-  };
-
-  const handleSelect = (item: Option) => {
+  function handleClose() {
     resetFormData();
+    setSelectedItem(null);
+    handleCloseModal();
+  }
+
+  const handleSelect = (item: ActionOption) => {
+    resetFormData();
+    handleFormChange('type', item.type);
     setSelectedItem(item);
   };
 
   return (
-    <Modal isOpen={isModalOpen} actionComponent={<ModalActionComponent onNext={handleNext} />} header={{ title: 'Add Action' }} onClose={handleClose}>
+    <Modal
+      isOpen={isModalOpen}
+      onClose={handleClose}
+      header={{ title: 'Add Action' }}
+      actionComponent={
+        <NavigationButtons
+          buttons={[
+            {
+              variant: 'primary',
+              label: 'DONE',
+              onClick: handleSubmit,
+              disabled: !isFormOk || loading,
+            },
+          ]}
+        />
+      }
+    >
       <DefineActionContainer>
         <WidthConstraint>
           <Text size={20}>{'Define Action'}</Text>
@@ -87,7 +97,14 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
         {!!selectedItem?.type ? (
           <WidthConstraint>
             <Divider margin='16px 0' />
-            <ChooseActionBody action={selectedItem} formData={formData} handleFormChange={handleFormChange} />
+
+            {loading ? (
+              <Center>
+                <FadeLoader cssOverride={{ scale: 2 }} />
+              </Center>
+            ) : (
+              <ChooseActionBody action={selectedItem} formData={formData} handleFormChange={handleFormChange} />
+            )}
           </WidthConstraint>
         ) : null}
       </DefineActionContainer>

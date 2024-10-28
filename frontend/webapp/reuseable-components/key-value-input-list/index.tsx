@@ -135,8 +135,9 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
           </HeaderWrapper>
         </Tooltip>
       )}
+
       {keyValuePairs.map((pair, index) => (
-        <Row key={index}>
+        <Row key={`key-value-pair-${title}-${index}`}>
           <Input value={pair.key} onChange={(e) => handleChange('key', e.target.value, index)} placeholder='Define attribute' />
           <Image src='/icons/common/arrow-right.svg' alt='Arrow' width={16} height={16} />
           <Input value={pair.value} onChange={(e) => handleChange('value', e.target.value, index)} placeholder='Define value' />

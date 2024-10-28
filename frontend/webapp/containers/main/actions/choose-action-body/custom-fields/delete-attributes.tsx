@@ -2,15 +2,14 @@ import React, { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
 import { InputList } from '@/reuseable-components';
 import { FieldTitle, FieldWrapper } from './styled';
+import type { DeleteAttributesSpec } from '@/types';
 
 type Props = {
   value: string;
   setValue: (value: string) => void;
 };
 
-type Parsed = {
-  attributeNamesToDelete: string[];
-};
+type Parsed = DeleteAttributesSpec;
 
 const DeleteAttributes: React.FC<Props> = ({ value, setValue }) => {
   const mappedValue = useMemo(() => safeJsonParse<Parsed>(value, { attributeNamesToDelete: [] }).attributeNamesToDelete, [value]);

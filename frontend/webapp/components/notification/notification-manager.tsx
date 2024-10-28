@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-
-import Notification from './notification';
+// import Notification from './notification';
 import styled from 'styled-components';
 import { RootState } from '@/store';
 
@@ -16,17 +15,20 @@ const NotificationsWrapper = styled.div`
 `;
 
 export const NotificationManager: React.FC = () => {
-  const notifications = useSelector(
-    (state: RootState) => state.notification.notifications
-  );
+  const notifications = useSelector((state: RootState) => state.notification.notifications);
+
+  // temporary - until we fix the "theme" error on import from "design.system"
+  useEffect(() => {
+    if (notifications.length) alert(notifications[notifications.length - 1].message);
+  }, [notifications.length]);
 
   return (
     <NotificationsWrapper>
-      {notifications
+      {/* {notifications
         .filter((notification) => notification.isNew)
         .map((notification) => (
           <Notification key={notification.id} {...notification} />
-        ))}
+        ))} */}
     </NotificationsWrapper>
   );
 };

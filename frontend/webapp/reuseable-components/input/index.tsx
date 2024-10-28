@@ -62,13 +62,13 @@ const InputWrapper = styled.div<{
 `;
 
 const StyledInput = styled.input<{ hasIcon?: string }>`
+  padding-left: ${({ hasIcon }) => (hasIcon ? '0' : '16px')};
   flex: 1;
   border: none;
   outline: none;
   background: none;
   color: ${({ theme }) => theme.colors.text};
   font-size: 14px;
-  padding-left: ${({ hasIcon }) => (hasIcon ? '0' : '16px')};
   font-family: ${({ theme }) => theme.font_family.primary};
   font-weight: 300;
   &::placeholder {
@@ -82,6 +82,11 @@ const StyledInput = styled.input<{ hasIcon?: string }>`
   &:disabled {
     background-color: #555;
     cursor: not-allowed;
+  }
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
 `;
 
@@ -137,21 +142,7 @@ const HeaderWrapper = styled.div`
 
 // Wrap Input with forwardRef to handle the ref prop
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  (
-    {
-      icon,
-      buttonLabel,
-      onButtonClick,
-      errorMessage,
-      title,
-      tooltip,
-      required,
-      initialValue,
-      onChange,
-      ...props
-    },
-    ref
-  ) => {
+  ({ icon, buttonLabel, onButtonClick, errorMessage, title, tooltip, required, initialValue, onChange, ...props }, ref) => {
     const [value, setValue] = useState<string>(initialValue || '');
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,32 +158,20 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           <HeaderWrapper>
             <Title>{title}</Title>
             {!required && (
-              <Text color="#7A7A7A" size={14} weight={300} opacity={0.8}>
+              <Text color='#7A7A7A' size={14} weight={300} opacity={0.8}>
                 (optional)
               </Text>
             )}
             <Tooltip text={tooltip || ''}>
-              {tooltip && (
-                <Image
-                  src="/icons/common/info.svg"
-                  alt=""
-                  width={16}
-                  height={16}
-                  style={{ marginBottom: 4 }}
-                />
-              )}
+              {tooltip && <Image src='/icons/common/info.svg' alt='' width={16} height={16} style={{ marginBottom: 4 }} />}
             </Tooltip>
           </HeaderWrapper>
         )}
 
-        <InputWrapper
-          isDisabled={props.disabled}
-          hasError={!!errorMessage}
-          isActive={!!props.autoFocus}
-        >
+        <InputWrapper isDisabled={props.disabled} hasError={!!errorMessage} isActive={!!props.autoFocus}>
           {icon && (
             <IconWrapper>
-              <Image src={icon} alt="" width={14} height={14} />
+              <Image src={icon} alt='' width={14} height={14} />
             </IconWrapper>
           )}
           <StyledInput

@@ -3,6 +3,7 @@ import { Text } from '@/reuseable-components';
 
 export const FieldWrapper = styled.div`
   width: 100%;
+  max-width: 640px;
   margin: 8px 0;
 `;
 
