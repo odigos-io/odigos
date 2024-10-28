@@ -1,6 +1,6 @@
 const ACTION_ICON_PATH = '/icons/actions/';
 
-const getActionIcon = (actionType?: string) => {
+export const getActionIcon = (actionType?: string) => {
   if (!actionType) {
     return `${ACTION_ICON_PATH}add-action.svg`;
   }
@@ -10,5 +10,3 @@ const getActionIcon = (actionType?: string) => {
 
   return `${ACTION_ICON_PATH}${isSampler ? 'sampler' : typeLowerCased}.svg`;
 };
-
-export default getActionIcon;

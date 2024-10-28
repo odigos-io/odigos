@@ -1,6 +1,5 @@
 import { ActionsType } from '@/types';
-import { SignalUppercase } from '@/utils';
-import getActionIcon from '@/utils/functions/get-action-icon';
+import { getActionIcon, SignalUppercase } from '@/utils';
 
 export type ActionOption = {
   id: string;

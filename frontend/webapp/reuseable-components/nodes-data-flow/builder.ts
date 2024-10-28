@@ -1,6 +1,6 @@
 import theme from '@/styles/theme';
+import { getActionIcon } from '@/utils';
 import { Node, Edge } from 'react-flow-renderer';
-import getActionIcon from '@/utils/functions/get-action-icon';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 import type { ActionData, ActionItem, ActualDestination, K8sActualSource } from '@/types';
 

@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { LANGUAGES_LOGOS } from '@/utils';
+import { getActionIcon, LANGUAGES_LOGOS } from '@/utils';
 import DrawerHeader from './drawer-header';
 import DrawerFooter from './drawer-footer';
 import { SourceDrawer } from '../../sources';
 import { ActionDrawer } from '../../actions';
 import { Drawer } from '@/reuseable-components';
 import { DeleteEntityModal } from '@/components';
-import getActionIcon from '@/utils/functions/get-action-icon';
 import { useActualSources, useUpdateDestination } from '@/hooks';
 import { DestinationDrawer, DestinationDrawerHandle } from '../../destinations';
 import { getMainContainerLanguageLogo, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils/constants/programming-languages';
@@ -197,10 +196,7 @@ const OverviewDrawer = () => {
   ) : null;
 };
 
-function getItemImageByType(
-  type: OVERVIEW_ENTITY_TYPES.SOURCE | OVERVIEW_ENTITY_TYPES.ACTION | OVERVIEW_ENTITY_TYPES.DESTINATION,
-  item: K8sActualSource | ActionDataParsed | ActualDestination
-): string {
+function getItemImageByType(type: string, item: K8sActualSource | ActionDataParsed | ActualDestination): string {
   let src = '';
 
   switch (type) {
