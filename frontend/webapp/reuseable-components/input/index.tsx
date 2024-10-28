@@ -61,9 +61,8 @@ const InputWrapper = styled.div<{
   }
 `;
 
-const StyledInput = styled.input<{ hasIcon?: string } & React.CSSProperties>`
-  max-width: ${({ maxWidth }) => maxWidth || 'unset'};
-  padding-left: ${({ hasIcon, paddingLeft }) => (hasIcon ? '0' : paddingLeft || '16px')};
+const StyledInput = styled.input<{ hasIcon?: string }>`
+  padding-left: ${({ hasIcon }) => (hasIcon ? '0' : '16px')};
   flex: 1;
   border: none;
   outline: none;

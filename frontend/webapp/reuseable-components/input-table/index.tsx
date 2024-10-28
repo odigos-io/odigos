@@ -133,13 +133,15 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
           <tr>
             {columns.map(({ title, tooltip, required }) => (
               <th key={`input-table-head-${title}`} style={{ maxWidth }}>
-                <Tooltip text={tooltip || ''}>
-                  <HeaderWrapper>
-                    <Title>{title}</Title>
-                    {!required && <OptionalText>(optional)</OptionalText>}
-                    {tooltip && <Image src='/icons/common/info.svg' alt='' width={16} height={16} style={{ marginBottom: 4 }} />}
-                  </HeaderWrapper>
-                </Tooltip>
+                <HeaderWrapper>
+                  <Title>{title}</Title>
+                  {!required && <OptionalText>(optional)</OptionalText>}
+                  {tooltip && (
+                    <Tooltip text={tooltip || ''}>
+                      <Image src='/icons/common/info.svg' alt='' width={16} height={16} style={{ marginBottom: 4 }} />
+                    </Tooltip>
+                  )}
+                </HeaderWrapper>
               </th>
             ))}
 
