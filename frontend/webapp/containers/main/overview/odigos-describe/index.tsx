@@ -12,11 +12,25 @@ export const OdigosDescriptionDrawer: React.FC<
   OdigosDescriptionDrawerProps
 > = ({}) => {
   const [isOpen, setDrawerOpen] = useState(false);
+  const [badgeStatus, setBadgeStatus] = useState<
+    'error' | 'transitioning' | 'success'
+  >('success');
 
   const toggleDrawer = () => setDrawerOpen(!isOpen);
 
   const { odigosDescription, isOdigosLoading, refetchOdigosDescription } =
     useDescribe();
+
+  useEffect(() => {
+    if (odigosDescription) {
+      // Evaluate statuses to set badge based on current data
+      const statuses = extractStatuses(odigosDescription);
+      if (statuses.includes('error')) setBadgeStatus('error');
+      else if (statuses.includes('transitioning'))
+        setBadgeStatus('transitioning');
+      else setBadgeStatus('success');
+    }
+  }, [odigosDescription]);
 
   useEffect(() => {
     if (isOpen) {
@@ -32,13 +46,24 @@ export const OdigosDescriptionDrawer: React.FC<
           size={10}
           onClick={toggleDrawer}
         />
+        {!isOdigosLoading && (
+          <NotificationBadge status={badgeStatus}>
+            <KeyvalText size={10}>
+              {badgeStatus === 'transitioning'
+                ? '...'
+                : badgeStatus === 'error'
+                ? '!'
+                : ''}
+            </KeyvalText>
+          </NotificationBadge>
+        )}
       </IconWrapper>
 
       <Drawer
         isOpen={isOpen}
         onClose={() => setDrawerOpen(false)}
         position="right"
-        width="auto"
+        width="500px"
       >
         {isOdigosLoading ? (
           <LoadingMessage>Loading description...</LoadingMessage>
@@ -53,6 +78,118 @@ export const OdigosDescriptionDrawer: React.FC<
     </>
   );
 };
+
+// Function to extract statuses from the odigosDescription response
+function extractStatuses(description: any): string[] {
+  const statuses: string[] = [];
+  Object.values(description.clusterCollector).forEach((item: any) => {
+    if (item.status) statuses.push(item.status);
+  });
+  Object.values(description.nodeCollector).forEach((item: any) => {
+    if (item.status) statuses.push(item.status);
+  });
+  return statuses;
+}
+
+// Render the description with status-specific styling
+function formatOdigosDescription(description: any) {
+  return (
+    <div>
+      {/* Display Odigos Version */}
+      {description.odigosVersion && (
+        <VersionText>
+          {description.odigosVersion.name}: {description.odigosVersion.value}
+        </VersionText>
+      )}
+
+      {/* Display Destinations and Sources Count */}
+      <p>Destinations: {description.numberOfDestinations}</p>
+      <p>Sources: {description.numberOfSources}</p>
+
+      {/* Display Cluster Collector */}
+      <CollectorSection
+        title="Cluster Collector"
+        collector={description.clusterCollector}
+      />
+
+      {/* Display Node Collector */}
+      <CollectorSection
+        title="Node Collector"
+        collector={description.nodeCollector}
+      />
+    </div>
+  );
+}
+
+// Component to handle collector data (cluster and node collectors)
+const CollectorSection: React.FC<{ title: string; collector: any }> = ({
+  title,
+  collector,
+}) => (
+  <section style={{ marginTop: 24 }}>
+    <CollectorTitle>{title}</CollectorTitle>
+    {Object.entries(collector).map(([key, value]: [string, any]) => (
+      <CollectorItem
+        key={key}
+        label={value.name}
+        value={value.value}
+        status={value.status}
+      />
+    ))}
+  </section>
+);
+
+// Component to handle individual collector items with conditional styling based on status
+const CollectorItem: React.FC<{
+  label: string;
+  value: any;
+  status?: string;
+}> = ({ label, value, status }) => {
+  const color =
+    status === 'error'
+      ? 'red'
+      : status === 'transitioning'
+      ? 'orange'
+      : status === 'success'
+      ? 'green'
+      : 'inherit';
+
+  return (
+    <StatusText color={color}>
+      {label}: {String(value)} {status && <StatusBadge>{status}</StatusBadge>}
+    </StatusText>
+  );
+};
+
+const VersionText = styled(KeyvalText)`
+  margin-bottom: 10px;
+  font-size: 24px;
+`;
+
+const CollectorTitle = styled(KeyvalText)`
+  font-size: 20px;
+  margin-bottom: 10px;
+`;
+
+const NotificationBadge = styled.div<{ status: string }>`
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: ${({ status }) =>
+    status === 'error'
+      ? theme.colors.error
+      : status === 'transitioning'
+      ? theme.colors.orange_brown
+      : theme.colors.success};
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+`;
 
 const IconWrapper = styled.div`
   position: relative;
@@ -80,47 +217,15 @@ const DescriptionContent = styled(KeyvalText)`
   padding: 20px;
 `;
 
-function formatOdigosDescription(description: string) {
-  const lines = description.split('\n');
-  return (
-    <div>
-      {lines.map((line, index) => (
-        <div key={index}>{applyStatusColor(line)}</div>
-      ))}
-    </div>
-  );
-}
-
-function applyStatusColor(line: string) {
-  if (line.includes('Odigos Version')) return <h3>{line}</h3>;
-
-  if (line.includes('Collectors Group Created')) {
-    return (
-      <StatusText color="green">{line.replace(/\[32m|\[0m/g, '')}</StatusText>
-    );
-  }
-  if (
-    line.includes('Deployed: Status Unavailable') ||
-    line.includes('Failed')
-  ) {
-    return (
-      <StatusText color="red">{line.replace(/\[31m|\[0m/g, '')}</StatusText>
-    );
-  }
-  if (
-    line.includes('Ready: true') ||
-    line.includes('Deployment: Found') ||
-    line.includes('Current Number')
-  ) {
-    return (
-      <StatusText color="green">{line.replace(/\[32m|\[0m/g, '')}</StatusText>
-    );
-  }
-
-  return <span>{line}</span>;
-}
-
-const StatusText = styled.span<{ color: string }>`
+const StatusText = styled.div<{ color: string }>`
   color: ${({ color }) => color};
   font-weight: bold;
+  margin-bottom: 8px;
+`;
+
+const StatusBadge = styled.span`
+  font-size: 0.8rem;
+  font-weight: normal;
+  margin-left: 4px;
+  color: inherit;
 `;

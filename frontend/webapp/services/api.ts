@@ -1,10 +1,19 @@
 import axios from 'axios';
 
-export async function get(url: string) {
-  const { data, status } = await axios.get(url);
-  if (status === 200) {
-    return data;
+export async function get(url: string, headers: Record<string, string> = {}) {
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      ...headers,
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch data from ${url}`);
   }
+
+  return response.json();
 }
 
 export async function post(url: string, body: any) {

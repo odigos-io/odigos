@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from 'react-query';
 import { getOdigosDescription, getSourceDescription } from '@/services';
 
@@ -12,8 +12,8 @@ export function useDescribe() {
     data: odigosDescription,
     isLoading: isOdigosLoading,
     refetch: refetchOdigosDescription,
-  } = useQuery([], getOdigosDescription, {
-    // enabled: false,
+  } = useQuery(['odigosDescription'], getOdigosDescription, {
+    enabled: false,
   });
 
   // Fetch source description based on namespace, kind, and name
