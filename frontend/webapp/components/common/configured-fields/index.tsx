@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import styled from 'styled-components';
 import { Text } from '@/reuseable-components';
 
@@ -31,9 +31,7 @@ const ItemValue = styled(Text)`
   line-height: 18px;
 `;
 
-export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({
-  details,
-}) => {
+export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({ details }) => {
   const parseValue = (value: any) => {
     try {
       const parsed = JSON.parse(value);
@@ -70,7 +68,16 @@ export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({
       {details.map((detail, index) => (
         <ListItem key={index}>
           <ItemTitle>{detail.title}</ItemTitle>
-          <ItemValue>{parseValue(detail.value)}</ItemValue>
+          <ItemValue>
+            {parseValue(detail.value)
+              .split('\n')
+              .map((str) => (
+                <Fragment key={detail.title + str}>
+                  {str}
+                  <br />
+                </Fragment>
+              ))}
+          </ItemValue>
         </ListItem>
       ))}
     </ListContainer>
