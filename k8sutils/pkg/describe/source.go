@@ -9,7 +9,6 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
-	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -79,31 +78,24 @@ func printInstrumentedApplicationInfo(analyze *source.SourceAnalyze, sb *strings
 	}
 }
 
-func printAppliedInstrumentationDeviceInfo(workloadObj *source.K8sSourceObject, instrumentedApplication *odigosv1.InstrumentedApplication, instrumented bool, sb *strings.Builder) map[string][]string {
-	appliedInstrumentationDeviceStatusMessage := "Unknown"
-	if !instrumented {
-		// if the workload is not instrumented, the instrumentation device expected
-		appliedInstrumentationDeviceStatusMessage = "No instrumentation devices expected"
-	}
-	if instrumentedApplication != nil && instrumentedApplication.Status.Conditions != nil {
-		for _, condition := range instrumentedApplication.Status.Conditions {
-			if condition.Type == "AppliedInstrumentationDevice" { // TODO: share this constant with instrumentor
-				if condition.ObservedGeneration == instrumentedApplication.GetGeneration() {
-					appliedInstrumentationDeviceStatusMessage = wrapTextSuccessOfFailure(condition.Message, condition.Status == metav1.ConditionTrue)
-				} else {
-					appliedInstrumentationDeviceStatusMessage = "Not yet reconciled"
-				}
-				break
+func printAppliedInstrumentationDeviceInfo(analyze *source.SourceAnalyze, workloadObj *source.K8sSourceObject, instrumented bool, sb *strings.Builder) map[string][]string {
+
+	describeText(sb, 0, "\nInstrumentation Device:")
+	printProperty(sb, 1, &analyze.InstrumentationDevice.StatusText)
+	describeText(sb, 1, "Containers:")
+	for _, container := range analyze.InstrumentationDevice.Containers {
+		printProperty(sb, 2, &container.ContainerName)
+		printProperty(sb, 3, &container.Devices)
+		if len(container.OriginalEnv) > 0 {
+			describeText(sb, 3, "Original Environment Variables:")
+			for _, envVar := range container.OriginalEnv {
+				printProperty(sb, 4, &envVar)
 			}
 		}
 	}
-	// get original env vars:
-	origWorkloadEnvValues, _ := envoverwrite.NewOrigWorkloadEnvValues(workloadObj.GetAnnotations())
-	sb.WriteString("\nInstrumentation Device:\n")
-	sb.WriteString("  Status: " + appliedInstrumentationDeviceStatusMessage + "\n")
+
 	containerNameToExpectedDevices := make(map[string][]string)
 	for _, container := range workloadObj.PodTemplateSpec.Spec.Containers {
-		sb.WriteString(fmt.Sprintf("  - Container Name: %s\n", container.Name))
 		odigosDevices := make([]string, 0)
 		for resourceName := range container.Resources.Limits {
 			deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
@@ -111,33 +103,7 @@ func printAppliedInstrumentationDeviceInfo(workloadObj *source.K8sSourceObject, 
 				odigosDevices = append(odigosDevices, deviceName)
 			}
 		}
-		if len(odigosDevices) == 0 {
-			if !instrumented {
-				sb.WriteString(wrapTextInGreen("    No instrumentation devices\n"))
-			} else {
-				sb.WriteString("    No instrumentation devices\n")
-				sb.WriteString("    Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#5-odigos-instrumentation-devices-not-added\n")
-			}
-		} else {
-			sb.WriteString("    Instrumentation Devices: " + wrapTextSuccessOfFailure(strings.Join(odigosDevices, ", "), instrumented) + "\n")
-			if !instrumented {
-				sb.WriteString("	 Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#5-odigos-instrumentation-devices-not-added\n")
-			}
-		}
 		containerNameToExpectedDevices[container.Name] = odigosDevices
-
-		// override environment variables
-		originalContainerEnvs := origWorkloadEnvValues.GetContainerStoredEnvs(container.Name)
-		if originalContainerEnvs != nil && len(originalContainerEnvs) > 0 {
-			sb.WriteString("    Original Environment Variables:\n")
-			for envName, envVarOriginalValue := range originalContainerEnvs {
-				if envVarOriginalValue == nil {
-					sb.WriteString("    - " + envName + "=null (not set in manifest)\n")
-				} else {
-					sb.WriteString("    - " + envName + "=" + *envVarOriginalValue + "\n")
-				}
-			}
-		}
 	}
 
 	return containerNameToExpectedDevices
@@ -260,7 +226,7 @@ func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, o
 	printInstrumentationConfigInfo(analyze, &sb)
 	printRuntimeDetails(analyze, &sb)
 	printInstrumentedApplicationInfo(analyze, &sb)
-	containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(workloadObj, resources.InstrumentedApplication, instrumented, &sb)
+	containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(analyze, workloadObj, instrumented, &sb)
 	printPodsInfo(resources.Pods, resources.InstrumentationInstances, containerNameToExpectedDevices, &sb)
 
 	return sb.String()
