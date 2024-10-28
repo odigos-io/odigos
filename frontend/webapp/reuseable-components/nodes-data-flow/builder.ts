@@ -102,7 +102,7 @@ export const buildNodesAndEdges = ({
     ...actions.map((action, index) => {
       const actionSpec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
       const typeLowerCased = action.type.toLowerCase();
-      const isSampler = typeLowerCased.indexOf('sampler') === action.type.length - 7;
+      const isSampler = typeLowerCased.includes('sampler');
 
       return createNode(`action-${index}`, 'base', centerColumnX, NODE_HEIGHT * (index + 1), {
         type: 'action',
