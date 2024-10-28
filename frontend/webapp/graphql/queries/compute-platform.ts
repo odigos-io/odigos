@@ -48,6 +48,7 @@ export const GET_COMPUTE_PLATFORM = gql`
         }
       }
       actions {
+        id
         type
         spec
       }

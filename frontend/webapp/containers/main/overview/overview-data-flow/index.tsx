@@ -4,13 +4,7 @@ import dynamic from 'next/dynamic';
 import styled from 'styled-components';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
 import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
-import {
-  useGetActions,
-  useActualSources,
-  useContainerWidth,
-  useActualDestination,
-  useNodeDataFlowHandlers,
-} from '@/hooks';
+import { useGetActions, useActualSources, useContainerWidth, useActualDestination, useNodeDataFlowHandlers } from '@/hooks';
 
 const OverviewDrawer = dynamic(() => import('../overview-drawer'), {
   ssr: false,
@@ -27,7 +21,7 @@ export function OverviewDataFlowContainer() {
   const { sources } = useActualSources();
   const { destinations } = useActualDestination();
   const { containerRef, containerWidth } = useContainerWidth();
-  const { handleNodeClick } = useNodeDataFlowHandlers(sources, destinations);
+  const { handleNodeClick } = useNodeDataFlowHandlers({ sources, actions, destinations });
 
   const columnWidth = 296;
 
@@ -46,11 +40,7 @@ export function OverviewDataFlowContainer() {
     <OverviewDataFlowWrapper ref={containerRef}>
       <OverviewDrawer />
       <OverviewActionMenuContainer />
-      <NodeBaseDataFlow
-        nodes={nodes}
-        edges={edges}
-        onNodeClick={handleNodeClick}
-      />
+      <NodeBaseDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} />
     </OverviewDataFlowWrapper>
   );
 }

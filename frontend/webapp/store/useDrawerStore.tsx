@@ -1,12 +1,12 @@
 // drawerStore.ts
 import { create } from 'zustand';
-import { ActualDestination, K8sActualSource, WorkloadId } from '@/types';
+import { ActionDataParsed, ActualDestination, K8sActualSource, WorkloadId } from '@/types';
 
 type ItemType = 'source' | 'action' | 'destination';
 
-interface BaseItem {
+export interface BaseItem {
   id: string | WorkloadId;
-  item?: K8sActualSource | ActualDestination;
+  item?: K8sActualSource | ActionDataParsed | ActualDestination;
   type: ItemType;
   // Add common properties here
 }
