@@ -77,6 +77,7 @@ const StyledButton = styled.button<ButtonProps>`
   text-transform: uppercase;
   text-decoration: underline;
   font-weight: 600;
+  outline: none;
   ${({ variant }) => variant && variantStyles[variant]}
   ${({ isDisabled }) =>
     isDisabled &&
@@ -92,6 +93,7 @@ const StyledButton = styled.button<ButtonProps>`
 const ButtonContainer = styled.div<{
   variant?: 'primary' | 'secondary' | 'tertiary' | 'danger';
 }>`
+  height: fit-content;
   border: 2px solid transparent;
   padding: 2px;
   border-radius: 32px;
