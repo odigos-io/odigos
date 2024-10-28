@@ -68,6 +68,7 @@ func newDetector(ctx context.Context, logger logr.Logger, events chan ProcessEve
 }
 
 func readProcEventsLoop(l logr.Logger, events chan ProcessEvent) {
+	l = l.WithName("process detector")
 	for e := range events {
 		switch e.EventType {
 		case detector.ProcessExecEvent:
