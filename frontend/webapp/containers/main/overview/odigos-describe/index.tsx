@@ -37,12 +37,8 @@ export const OdigosDescriptionDrawer: React.FC<
 
   return (
     <>
-      <IconWrapper>
-        <Describe
-          style={{ cursor: 'pointer' }}
-          size={10}
-          onClick={toggleDrawer}
-        />
+      <IconWrapper onClick={toggleDrawer}>
+        <Describe style={{ cursor: 'pointer' }} size={10} />
         {!isOdigosLoading && (
           <NotificationBadge status={badgeStatus}>
             <KeyvalText size={10}>
@@ -60,7 +56,7 @@ export const OdigosDescriptionDrawer: React.FC<
         isOpen={isOpen}
         onClose={() => setDrawerOpen(false)}
         position="right"
-        width="500px"
+        width="fit-content"
       >
         {isOdigosLoading ? (
           <LoadingMessage>Loading description...</LoadingMessage>
@@ -150,18 +146,11 @@ const CollectorItem: React.FC<{
   value: any;
   status?: string;
 }> = ({ label, value, status }) => {
-  const color =
-    status === 'error'
-      ? 'red'
-      : status === 'transitioning'
-      ? 'orange'
-      : status === 'success'
-      ? 'green'
-      : 'inherit';
+  const color = status === 'error' ? theme.colors.error : theme.text.light_grey;
 
   return (
     <StatusText color={color}>
-      {label}: {String(value)} {status && <StatusBadge>{status}</StatusBadge>}
+      - {label}: {String(value)}
     </StatusText>
   );
 };
@@ -231,6 +220,7 @@ const StatusText = styled.div<{ color: string }>`
   color: ${({ color }) => color};
   font-weight: bold;
   margin-bottom: 8px;
+  padding-left: 16px;
 `;
 
 const StatusBadge = styled.span`
