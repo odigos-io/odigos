@@ -2,7 +2,10 @@ package detector
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common/envOverwrite"
@@ -11,14 +14,44 @@ import (
 	"github.com/odigos-io/runtime-detector"
 )
 
+type ProcessEvent = detector.ProcessEvent
+
 type Detector struct {
 	detector *detector.Detector
-	events   chan detector.ProcessEvent
+	wg       sync.WaitGroup
+	runError error
 }
 
-func NewDetector(ctx context.Context, logger logr.Logger) (*Detector, error) {
-	events := make(chan detector.ProcessEvent)
+func StartRuntimeDetector(ctx context.Context, logger logr.Logger, events chan ProcessEvent) (*Detector, error) {
+	detector, err := newDetector(ctx, logger, events)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create runtime detector: %w", err)
+	}
 
+	d := &Detector{detector: detector}
+
+	d.wg.Add(1)
+	go func() {
+		defer d.wg.Done()
+		readProcEventsLoop(logger, events)
+	}()
+
+	d.wg.Add(1)
+	go func() {
+		defer d.wg.Done()
+		d.runError = detector.Run(ctx)
+	}()
+
+	return d, nil
+}
+
+func (d *Detector) Stop() error {
+	err := d.detector.Stop()
+	d.wg.Wait()
+	return errors.Join(d.runError, err)
+}
+
+func newDetector(ctx context.Context, logger logr.Logger, events chan ProcessEvent) (*detector.Detector, error) {
 	sLogger := slog.New(logr.ToSlogHandler(logger))
 
 	opts := []detector.DetectorOption{
@@ -31,10 +64,27 @@ func NewDetector(ctx context.Context, logger logr.Logger) (*Detector, error) {
 		return nil, err
 	}
 
-	return &Detector{
-		detector: detector,
-		events:   events,
-	}, nil
+	return detector, nil
+}
+
+func readProcEventsLoop(l logr.Logger, events chan ProcessEvent) {
+	for e := range events {
+		switch e.EventType {
+		case detector.ProcessExecEvent:
+			l.Info("detected new process",
+				"pid", e.PID,
+				"cmd", e.ExecDetails.CmdLine,
+				"exeName", e.ExecDetails.ExeName,
+				"exeLink", e.ExecDetails.ExeLink,
+				"envs", e.ExecDetails.Environments,
+				"container PID", e.ExecDetails.ContainerProcessID,
+			)
+		case detector.ProcessExitEvent:
+			l.Info("detected process exit",
+				"pid", e.PID,
+			)
+		}
+	}
 }
 
 func relevantEnvVars() []string {
