@@ -14,15 +14,21 @@ type InstrumentationLabelsAnalyze struct {
 	InstrumentedText properties.EntityProperty  `json:"instrumentedText"`
 }
 
-type SourceAnalyze struct {
-	Name      properties.EntityProperty `json:"name"`
-	Kind      properties.EntityProperty `json:"kind"`
-	Namespace properties.EntityProperty `json:"namespace"`
-
-	Labels InstrumentationLabelsAnalyze `json:"labels"`
+type InstrumentationConfigAnalyze struct {
+	Created    properties.EntityProperty  `json:"created"`
+	CreateTime *properties.EntityProperty `json:"createTime"`
 }
 
-func analyzeInstrumentationLabels(resource *OdigosSourceResources, workloadObj *K8sSourceObject) InstrumentationLabelsAnalyze {
+type SourceAnalyze struct {
+	Name      properties.EntityProperty    `json:"name"`
+	Kind      properties.EntityProperty    `json:"kind"`
+	Namespace properties.EntityProperty    `json:"namespace"`
+	Labels    InstrumentationLabelsAnalyze `json:"labels"`
+
+	InstrumentationConfig InstrumentationConfigAnalyze `json:"instrumentationConfig"`
+}
+
+func analyzeInstrumentationLabels(resource *OdigosSourceResources, workloadObj *K8sSourceObject) (InstrumentationLabelsAnalyze, bool) {
 
 	workloadLabel, workloadFound := workloadObj.GetLabels()[consts.OdigosInstrumentationLabel]
 	nsLabel, nsFound := resource.Namespace.GetLabels()[consts.OdigosInstrumentationLabel]
@@ -74,14 +80,62 @@ func analyzeInstrumentationLabels(resource *OdigosSourceResources, workloadObj *
 		Workload:         workload,
 		Namespace:        ns,
 		InstrumentedText: decisionTextProperty,
+	}, instrumented
+}
+
+func analyzeInstrumentationConfig(resources *OdigosSourceResources, instrumented bool) InstrumentationConfigAnalyze {
+
+	instrumentationConfigCreated := resources.InstrumentationConfig != nil
+
+	// instrumentationConfigNotFound := instrumentationConfig == nil
+	// statusAsExpected := instrumentationConfigNotFound == !instrumented
+	// sb.WriteString("\nInstrumentation Config:\n")
+	// if instrumentationConfigNotFound {
+	// 	if statusAsExpected {
+	// 		sb.WriteString(wrapTextInGreen("  Workload not instrumented, no instrumentation config\n"))
+	// 	} else {
+	// 		sb.WriteString("  Not yet created\n")
+	// 	}
+	// } else {
+	// 	createAtText := "  Created at " + instrumentationConfig.GetCreationTimestamp().String()
+	// 	sb.WriteString(wrapTextSuccessOfFailure(createAtText, statusAsExpected) + "\n")
+	// }
+
+	// if !statusAsExpected {
+	// 	sb.WriteString("  Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#2-odigos-instrumentation-config\n")
+	// }
+
+	created := properties.EntityProperty{
+		Name:   "Created",
+		Value:  properties.GetTextCreated(instrumentationConfigCreated),
+		Status: properties.GetSuccessOrTransitioning(instrumentationConfigCreated == instrumented),
+	}
+
+	var createdTime *properties.EntityProperty
+	if instrumentationConfigCreated {
+		createdTime = &properties.EntityProperty{
+			Name:  "create time",
+			Value: resources.InstrumentationConfig.GetCreationTimestamp().String(),
+		}
+	}
+
+	return InstrumentationConfigAnalyze{
+		Created:    created,
+		CreateTime: createdTime,
 	}
 }
 
 func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObject) *SourceAnalyze {
+
+	labelsAnalysis, instrumented := analyzeInstrumentationLabels(resources, workloadObj)
+	icAnalysis := analyzeInstrumentationConfig(resources, instrumented)
+
 	return &SourceAnalyze{
 		Name:      properties.EntityProperty{Name: "Name", Value: workloadObj.GetName()},
 		Kind:      properties.EntityProperty{Name: "Kind", Value: workloadObj.Kind},
 		Namespace: properties.EntityProperty{Name: "Namespace", Value: workloadObj.GetNamespace()},
-		Labels:    analyzeInstrumentationLabels(resources, workloadObj),
+		Labels:    labelsAnalysis,
+
+		InstrumentationConfig: icAnalysis,
 	}
 }

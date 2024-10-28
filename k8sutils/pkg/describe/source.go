@@ -29,24 +29,10 @@ func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builde
 	return analyze.Labels.Instrumented.Value.(bool)
 }
 
-func printInstrumentationConfigInfo(instrumentationConfig *odigosv1.InstrumentationConfig, instrumented bool, sb *strings.Builder) {
-	instrumentationConfigNotFound := instrumentationConfig == nil
-	statusAsExpected := instrumentationConfigNotFound == !instrumented
+func printInstrumentationConfigInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
 	sb.WriteString("\nInstrumentation Config:\n")
-	if instrumentationConfigNotFound {
-		if statusAsExpected {
-			sb.WriteString(wrapTextInGreen("  Workload not instrumented, no instrumentation config\n"))
-		} else {
-			sb.WriteString("  Not yet created\n")
-		}
-	} else {
-		createAtText := "  Created at " + instrumentationConfig.GetCreationTimestamp().String()
-		sb.WriteString(wrapTextSuccessOfFailure(createAtText, statusAsExpected) + "\n")
-	}
-
-	if !statusAsExpected {
-		sb.WriteString("  Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#2-odigos-instrumentation-config\n")
-	}
+	printProperty(sb, 1, &analyze.InstrumentationConfig.Created)
+	printProperty(sb, 1, analyze.InstrumentationConfig.CreateTime)
 }
 
 func printRuntimeDetails(instrumentationConfig *odigosv1.InstrumentationConfig, instrumented bool, sb *strings.Builder) {
@@ -315,7 +301,7 @@ func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, o
 	}
 
 	instrumented := printWorkloadManifestInfo(analyze, &sb)
-	printInstrumentationConfigInfo(resources.InstrumentationConfig, instrumented, &sb)
+	printInstrumentationConfigInfo(analyze, &sb)
 	printRuntimeDetails(resources.InstrumentationConfig, instrumented, &sb)
 	printInstrumentedApplicationInfo(resources.InstrumentedApplication, instrumented, &sb)
 	containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(workloadObj, resources.InstrumentedApplication, instrumented, &sb)
