@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
+import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
-import { ActionFormData } from '@/hooks/actions/useActionFormData';
 import { type ActionOption } from '../choose-action-modal/action-options';
 import { DocsButton, Input, Text, TextArea } from '@/reuseable-components';
 import { MonitoringCheckboxes } from '@/reuseable-components/monitoring-checkboxes';
@@ -23,8 +23,8 @@ const FieldTitle = styled(Text)`
 
 interface ChooseActionContentProps {
   action: ActionOption;
-  formData: ActionFormData;
-  handleFormChange: (key: keyof ActionFormData, val: any) => void;
+  formData: ActionInput;
+  handleFormChange: (key: keyof ActionInput, val: any) => void;
 }
 
 const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action, formData, handleFormChange }) => {

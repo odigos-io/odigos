@@ -8,7 +8,7 @@ import { ThemeProvider } from 'styled-components';
 import { NotificationManager } from '@/components';
 import ReduxProvider from '@/store/redux-provider';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { ThemeProviderWrapper } from '@keyval-dev/design-system';
+// import { ThemeProviderWrapper } from '@keyval-dev/design-system';
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
@@ -18,11 +18,7 @@ const LAYOUT_STYLE: React.CSSProperties = {
   height: '100vh',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -35,7 +31,7 @@ export default function RootLayout({
   useSSE();
 
   return (
-    <html lang="en">
+    <html lang='en'>
       <ReduxProvider>
         <ApolloWrapper>
           <QueryClientProvider client={queryClient}>
@@ -43,7 +39,7 @@ export default function RootLayout({
               {/* <ThemeProviderWrapper> */}
               <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
                 {children}
-                {/* <NotificationManager /> */}
+                <NotificationManager />
               </body>
               {/* </ThemeProviderWrapper> */}
             </ThemeProvider>
