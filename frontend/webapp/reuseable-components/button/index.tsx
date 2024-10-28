@@ -77,6 +77,7 @@ const StyledButton = styled.button<ButtonProps>`
   text-transform: uppercase;
   text-decoration: underline;
   font-weight: 600;
+  outline: none;
   ${({ variant }) => variant && variantStyles[variant]}
   ${({ isDisabled }) =>
     isDisabled &&
@@ -92,11 +93,15 @@ const StyledButton = styled.button<ButtonProps>`
 const ButtonContainer = styled.div<{
   variant?: 'primary' | 'secondary' | 'tertiary' | 'danger';
 }>`
-  border: 0;
-  padding: 0;
+  height: fit-content;
+  border: 2px solid transparent;
+  padding: 2px;
   border-radius: 32px;
   background-color: transparent;
   transition: border-color 0.3s ease;
+  &:focus-within {
+    border-color: ${({ theme }) => theme.colors.secondary};
+  }
 `;
 
 export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', isDisabled = false, ...props }) => {
