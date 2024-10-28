@@ -13,6 +13,7 @@ generate:
 	go mod download
 	@for lib in $(LIBRARIES); do \
 		LIB_PATH=$$(go list -m -f '{{.Dir}}' $${lib%@*}) && \
+		chmod -R +w $$LIB_PATH && \
 		make -C "$$LIB_PATH" generate; \
 	done
 
