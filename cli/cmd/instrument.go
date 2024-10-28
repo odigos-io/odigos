@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/odigos-io/odigos/cli/pkg/lifecycle"
+
 	"github.com/odigos-io/odigos/common/consts"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,6 +83,12 @@ func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, exc
 		os.Exit(1)
 	}
 
+	orchestrator, err := lifecycle.NewOrchestrator(client, ctx)
+	if err != nil {
+		fmt.Printf("\033[31mERROR\033[0m Cannot create orchestrator: %s\n", err)
+		os.Exit(1)
+	}
+
 	for _, ns := range nsList.Items {
 		fmt.Printf("Instrumenting namespace: %s\n", ns.Name)
 		_, excluded := excludedNs[ns.Name]
@@ -90,11 +98,11 @@ func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, exc
 			continue
 		}
 
-		instrumentNamespace(ctx, client, ns.Name, excludedApps)
+		instrumentNamespace(ctx, client, ns.Name, excludedApps, orchestrator)
 	}
 }
 
-func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, excludedApps map[string]struct{}) {
+func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, excludedApps map[string]struct{}, orchestrator *lifecycle.Orchestrator) {
 	deps, err := client.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("  - \033[31mERROR\033[0m Cannot list deployments: %s\n", err)
@@ -102,12 +110,14 @@ func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, ex
 	}
 
 	for _, dep := range deps.Items {
-		fmt.Printf("  - Instrumenting deployment: %s\n", dep.Name)
+		fmt.Printf("  - Inspecting Deployment: %s\n", dep.Name)
 		_, excluded := excludedApps[dep.Name]
 		if excluded {
 			fmt.Printf("    - Skipping deployment due to exclusion file\n")
 			continue
 		}
+
+		orchestrator.Apply(ctx, &dep, &dep.Spec.Template)
 	}
 }
 
