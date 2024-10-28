@@ -2,15 +2,14 @@ import React, { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
 import { Input } from '@/reuseable-components';
 import { FieldTitle, FieldWrapper } from './styled';
+import type { ProbabilisticSamplerSpec } from '@/types';
 
 type Props = {
   value: string;
   setValue: (value: string) => void;
 };
 
-type Parsed = {
-  sampling_percentage: string;
-};
+type Parsed = ProbabilisticSamplerSpec;
 
 const MIN = 0,
   MAX = 100;

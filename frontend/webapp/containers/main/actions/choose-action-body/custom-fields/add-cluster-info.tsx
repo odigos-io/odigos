@@ -2,18 +2,14 @@ import React, { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
 import { FieldTitle, FieldWrapper } from './styled';
 import { KeyValueInputsList } from '@/reuseable-components';
+import type { AddClusterInfoSpec } from '@/types';
 
 type Props = {
   value: string;
   setValue: (value: string) => void;
 };
 
-type Parsed = {
-  clusterAttributes: {
-    attributeName: string;
-    attributeStringValue: string;
-  }[];
-};
+type Parsed = AddClusterInfoSpec;
 
 const AddClusterInfo: React.FC<Props> = ({ value, setValue }) => {
   const mappedValue = useMemo(

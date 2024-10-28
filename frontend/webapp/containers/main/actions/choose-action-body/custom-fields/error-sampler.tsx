@@ -2,15 +2,14 @@ import React, { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
 import { Input } from '@/reuseable-components';
 import { FieldTitle, FieldWrapper } from './styled';
+import type { ErrorSamplerSpec } from '@/types';
 
 type Props = {
   value: string;
   setValue: (value: string) => void;
 };
 
-type Parsed = {
-  fallback_sampling_ratio: number;
-};
+type Parsed = ErrorSamplerSpec;
 
 const MIN = 0,
   MAX = 100;
