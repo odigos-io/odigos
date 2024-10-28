@@ -33,14 +33,14 @@ const ItemValue = styled(Text)`
 
 export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({ details }) => {
   const parseValue = (value: any) => {
+    let str = '';
+
     try {
       const parsed = JSON.parse(value);
-      if (typeof parsed === 'string') {
-        return parsed;
-      }
 
+      // Handle arrays
       if (Array.isArray(parsed)) {
-        return parsed
+        str = parsed
           .map((item) => {
             if (typeof item === 'object' && item !== null) {
               return `${item.key}: ${item.value}`;
@@ -52,15 +52,28 @@ export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({ details }) =
       }
 
       // Handle objects (non-array JSON objects)
-      if (typeof parsed === 'object' && parsed !== null) {
-        return Object.entries(parsed)
+      else if (typeof parsed === 'object' && parsed !== null) {
+        str = Object.entries(parsed)
           .map(([key, val]) => `${key}: ${val}`)
           .join(', ');
       }
+
+      // Should never reach this if it's a string (it will throw)
+      else {
+        str = value;
+      }
     } catch (error) {
-      return value;
+      str = value;
     }
-    return value;
+
+    const strSplitted = str.split('\n');
+
+    return strSplitted.map((str, idx) => (
+      <Fragment key={`str-br-${str}-${idx}`}>
+        {str}
+        {idx < strSplitted.length - 1 ? <br /> : null}
+      </Fragment>
+    ));
   };
 
   return (
@@ -68,16 +81,7 @@ export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({ details }) =
       {details.map((detail, index) => (
         <ListItem key={index}>
           <ItemTitle>{detail.title}</ItemTitle>
-          <ItemValue>
-            {parseValue(detail.value)
-              .split('\n')
-              .map((str) => (
-                <Fragment key={detail.title + str}>
-                  {str}
-                  <br />
-                </Fragment>
-              ))}
-          </ItemValue>
+          <ItemValue>{parseValue(detail.value)}</ItemValue>
         </ListItem>
       ))}
     </ListContainer>

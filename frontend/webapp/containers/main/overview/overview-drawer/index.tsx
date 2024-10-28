@@ -1,24 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { BaseItem, useDrawerStore } from '@/store';
+import { useDrawerStore } from '@/store';
+import { LANGUAGES_LOGOS } from '@/utils';
 import DrawerHeader from './drawer-header';
 import DrawerFooter from './drawer-footer';
 import { SourceDrawer } from '../../sources';
 import { ActionDrawer } from '../../actions';
 import { Drawer } from '@/reuseable-components';
 import { DeleteEntityModal } from '@/components';
+import getActionIcon from '@/utils/functions/get-action-icon';
 import { useActualSources, useUpdateDestination } from '@/hooks';
 import { DestinationDrawer, DestinationDrawerHandle } from '../../destinations';
-import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
-import {
-  WorkloadId,
-  K8sActualSource,
-  ActualDestination,
-  isActualDestination,
-  OVERVIEW_ENTITY_TYPES,
-  PatchSourceRequestInput,
-  ActionDataParsed,
-} from '@/types';
+import { getMainContainerLanguageLogo, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils/constants/programming-languages';
+import { WorkloadId, K8sActualSource, ActualDestination, OVERVIEW_ENTITY_TYPES, PatchSourceRequestInput, ActionDataParsed } from '@/types';
 
 const componentMap = {
   source: SourceDrawer,
@@ -112,9 +106,9 @@ const OverviewDrawer = () => {
         const { namespace, name, kind } = item as K8sActualSource;
 
         const sourceId: WorkloadId = {
-          namespace: namespace,
-          kind: kind,
-          name: name,
+          namespace,
+          kind,
+          name,
         };
 
         const patchRequest: PatchSourceRequestInput = {
@@ -133,7 +127,7 @@ const OverviewDrawer = () => {
 
   const handleDelete = async () => {
     if (!selectedItem?.item) return null;
-    const { type, id, item } = selectedItem;
+    const { type, item } = selectedItem;
 
     if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
       const { namespace, name, kind } = item as K8sActualSource;
@@ -141,8 +135,8 @@ const OverviewDrawer = () => {
       try {
         await deleteSourcesForNamespace(namespace, [
           {
-            kind: kind,
-            name: name,
+            kind,
+            name,
             selected: false,
           },
         ]);
@@ -175,7 +169,7 @@ const OverviewDrawer = () => {
             ref={titleRef}
             title={title}
             onClose={isEditing ? handleCancel : handleClose}
-            imageUri={item ? getItemImageByType(item) : ''}
+            imageUri={item ? getItemImageByType(type, item) : ''}
             isEditing={isEditing}
             setIsEditing={setIsEditing}
           />
@@ -203,14 +197,30 @@ const OverviewDrawer = () => {
   ) : null;
 };
 
-function getItemImageByType(item: K8sActualSource | ActionDataParsed | ActualDestination): string {
-  if (isActualDestination(item)) {
-    // item is of type ActualDestination
-    return item.destinationType.imageUrl;
-  } else {
-    // item is of type K8sActualSource
-    return getMainContainerLanguageLogo(item as K8sActualSource);
+function getItemImageByType(
+  type: OVERVIEW_ENTITY_TYPES.SOURCE | OVERVIEW_ENTITY_TYPES.ACTION | OVERVIEW_ENTITY_TYPES.DESTINATION,
+  item: K8sActualSource | ActionDataParsed | ActualDestination
+): string {
+  let src = '';
+
+  switch (type) {
+    case OVERVIEW_ENTITY_TYPES.SOURCE:
+      src = getMainContainerLanguageLogo(item as K8sActualSource);
+      break;
+
+    case OVERVIEW_ENTITY_TYPES.ACTION:
+      src = getActionIcon((item as ActionDataParsed).type);
+      break;
+
+    case OVERVIEW_ENTITY_TYPES.DESTINATION:
+      src = (item as ActualDestination).destinationType.imageUrl;
+      break;
+
+    default:
+      break;
   }
+
+  return src || LANGUAGES_LOGOS[WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN];
 }
 
 export default OverviewDrawer;

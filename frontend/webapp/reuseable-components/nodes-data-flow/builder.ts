@@ -1,13 +1,13 @@
 import theme from '@/styles/theme';
 import { Node, Edge } from 'react-flow-renderer';
+import getActionIcon from '@/utils/functions/get-action-icon';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
-import { ActionData, ActionItem, ActualDestination, K8sActualSource } from '@/types';
+import type { ActionData, ActionItem, ActualDestination, K8sActualSource } from '@/types';
 
 // Constants
 const NODE_HEIGHT = 80;
 
 const STROKE_COLOR = theme.colors.border;
-const ACTION_ICON_PATH = '/icons/actions/';
 const HEADER_ICON_PATH = '/icons/overview/';
 
 // Helper to create a node
@@ -101,14 +101,12 @@ export const buildNodesAndEdges = ({
     }),
     ...actions.map((action, index) => {
       const actionSpec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
-      const typeLowerCased = action.type.toLowerCase();
-      const isSampler = typeLowerCased.includes('sampler');
 
       return createNode(`action-${index}`, 'base', centerColumnX, NODE_HEIGHT * (index + 1), {
         type: 'action',
         title: actionSpec.actionName,
         subTitle: action.type,
-        imageUri: `${ACTION_ICON_PATH}${isSampler ? 'sampler' : typeLowerCased}.svg`,
+        imageUri: getActionIcon(action.type),
         monitors: actionSpec.signals,
         status: 'healthy',
         id: action.id,
@@ -122,7 +120,7 @@ export const buildNodesAndEdges = ({
         type: 'addAction',
         title: 'ADD ACTION',
         subTitle: '',
-        imageUri: `${ACTION_ICON_PATH}add-action.svg`,
+        imageUri: getActionIcon(),
         status: 'healthy',
         onClick: () => console.log('Add Action'),
       })

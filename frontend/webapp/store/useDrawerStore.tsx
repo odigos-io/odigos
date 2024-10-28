@@ -4,7 +4,7 @@ import { ActionDataParsed, ActualDestination, K8sActualSource, WorkloadId } from
 
 type ItemType = 'source' | 'action' | 'destination';
 
-export interface BaseItem {
+interface BaseItem {
   id: string | WorkloadId;
   item?: K8sActualSource | ActionDataParsed | ActualDestination;
   type: ItemType;
