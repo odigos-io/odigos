@@ -109,40 +109,8 @@ func printAppliedInstrumentationDeviceInfo(analyze *source.SourceAnalyze, worklo
 	return containerNameToExpectedDevices
 }
 
-func printPodContainerInstrumentationInstancesInfo(instances []*odigosv1.InstrumentationInstance, sb *strings.Builder) {
-	if len(instances) == 0 {
-		sb.WriteString("    No instrumentation instances\n")
-		return
-	}
-
-	sb.WriteString("    Instrumentation Instances:\n")
-	for _, instance := range instances {
-		unhealthy := false
-		healthyText := "unknown"
-		if instance.Status.Healthy != nil {
-			if *instance.Status.Healthy {
-				healthyText = wrapTextInGreen("true")
-			} else {
-				healthyText = wrapTextInRed("false")
-				unhealthy = true
-			}
-		}
-		sb.WriteString(fmt.Sprintf("    - Healthy: %s\n", healthyText))
-		if instance.Status.Message != "" {
-			sb.WriteString(fmt.Sprintf("      Message: %s\n", instance.Status.Message))
-		}
-		if instance.Status.Reason != "" && instance.Status.Reason != string(common.AgentHealthStatusHealthy) {
-			sb.WriteString(fmt.Sprintf("      Reason: %s\n", instance.Status.Reason))
-		}
-		if unhealthy {
-			sb.WriteString("      Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#7-instrumentation-instance-unhealthy\n")
-		}
-	}
-}
-
 func printPodContainerInfo(pod *corev1.Pod, container *corev1.Container, instrumentationInstances *odigosv1.InstrumentationInstanceList, containerNameToExpectedDevices map[string][]string, sb *strings.Builder) {
 	instrumentationDevices := make([]string, 0)
-	sb.WriteString(fmt.Sprintf("  - Container Name: %s\n", container.Name))
 	for resourceName := range container.Resources.Limits {
 		deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
 		if found {
@@ -167,35 +135,17 @@ func printPodContainerInfo(pod *corev1.Pod, container *corev1.Container, instrum
 			sb.WriteString("      Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#6-pods-instrumentation-devices-not-matching-manifest\n")
 		}
 	}
-
-	// find the instrumentation instances for this pod
-	thisPodInstrumentationInstances := make([]*odigosv1.InstrumentationInstance, 0)
-	for _, instance := range instrumentationInstances.Items {
-		if len(instance.OwnerReferences) != 1 || instance.OwnerReferences[0].Kind != "Pod" {
-			continue
-		}
-		if instance.OwnerReferences[0].Name != pod.GetName() {
-			continue
-		}
-		if instance.Spec.ContainerName != container.Name {
-			continue
-		}
-		thisPodInstrumentationInstances = append(thisPodInstrumentationInstances, &instance)
-	}
-	printPodContainerInstrumentationInstancesInfo(thisPodInstrumentationInstances, sb)
 }
 
 func printSinglePodInfo(pod *corev1.Pod, instrumentationInstances *odigosv1.InstrumentationInstanceList, containerNameToExpectedDevices map[string][]string, sb *strings.Builder) {
-	sb.WriteString(fmt.Sprintf("\n  Pod Name: %s\n", pod.GetName()))
-	sb.WriteString(fmt.Sprintf("  Pod Phase: %s\n", pod.Status.Phase))
-	sb.WriteString(fmt.Sprintf("  Pod Node Name: %s\n", pod.Spec.NodeName))
 	sb.WriteString("  Containers:\n")
 	for _, container := range pod.Spec.Containers {
 		printPodContainerInfo(pod, &container, instrumentationInstances, containerNameToExpectedDevices, sb)
 	}
 }
 
-func printPodsInfo(pods *corev1.PodList, instrumentationInstances *odigosv1.InstrumentationInstanceList, containerNameToExpectedDevices map[string][]string, sb *strings.Builder) {
+func printPodsInfo(analyze *source.SourceAnalyze, pods *corev1.PodList, instrumentationInstances *odigosv1.InstrumentationInstanceList, containerNameToExpectedDevices map[string][]string, sb *strings.Builder) {
+
 	podsStatuses := make(map[corev1.PodPhase]int)
 	for _, pod := range pods.Items {
 		podsStatuses[pod.Status.Phase]++
@@ -205,7 +155,27 @@ func printPodsInfo(pods *corev1.PodList, instrumentationInstances *odigosv1.Inst
 		podPhasesTexts = append(podPhasesTexts, fmt.Sprintf("%s %d", phase, count))
 	}
 	podPhasesText := strings.Join(podPhasesTexts, ", ")
-	sb.WriteString(fmt.Sprintf("\nPods (Total %d, %s):\n", len(pods.Items), podPhasesText))
+	describeText(sb, 0, "\nPods (Total %d, %s):", len(pods.Items), podPhasesText)
+
+	for _, pod := range analyze.Pods {
+		describeText(sb, 0, "")
+		printProperty(sb, 1, &pod.PodName)
+		printProperty(sb, 1, &pod.NodeName)
+		describeText(sb, 1, "Containers:")
+		for _, container := range pod.Containers {
+			printProperty(sb, 2, &container.ContainerName)
+			describeText(sb, 2, "Instrumentation Instances:")
+			for _, ii := range container.InstrumentationInstances {
+				printProperty(sb, 3, &ii.Healthy)
+				printProperty(sb, 3, ii.Message)
+				describeText(sb, 3, "Identifying Attributes:")
+				for _, attr := range ii.IdentifyingAttributes {
+					printProperty(sb, 4, &attr)
+				}
+			}
+		}
+	}
+
 	for _, pod := range pods.Items {
 		printSinglePodInfo(&pod, instrumentationInstances, containerNameToExpectedDevices, sb)
 	}
@@ -227,7 +197,7 @@ func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, o
 	printRuntimeDetails(analyze, &sb)
 	printInstrumentedApplicationInfo(analyze, &sb)
 	containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(analyze, workloadObj, instrumented, &sb)
-	printPodsInfo(resources.Pods, resources.InstrumentationInstances, containerNameToExpectedDevices, &sb)
+	printPodsInfo(analyze, resources.Pods, resources.InstrumentationInstances, containerNameToExpectedDevices, &sb)
 
 	return sb.String()
 }
