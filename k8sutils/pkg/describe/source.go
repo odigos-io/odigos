@@ -121,31 +121,32 @@ func printPodsInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
 	}
 }
 
-func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *source.K8sSourceObject) string {
+func DescribeSourceToText(analyze *source.SourceAnalyze) string {
 	var sb strings.Builder
-
-	resources, err := source.GetRelevantSourceResources(ctx, kubeClient, odigosClient, workloadObj)
-	if err != nil {
-		sb.WriteString(fmt.Sprintf("Error: %v\n", err))
-		return sb.String()
-	}
-
-	analyze := source.AnalyzeSource(resources, workloadObj)
 
 	instrumented := printWorkloadManifestInfo(analyze, &sb)
 	printInstrumentationConfigInfo(analyze, &sb)
 	printRuntimeDetails(analyze, &sb)
 	printInstrumentedApplicationInfo(analyze, &sb)
-	printAppliedInstrumentationDeviceInfo(analyze, workloadObj, instrumented, &sb)
+	printAppliedInstrumentationDeviceInfo(analyze, nil, instrumented, &sb)
 	printPodsInfo(analyze, &sb)
 
 	return sb.String()
 }
 
-func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) string {
+func DescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *source.K8sSourceObject) (*source.SourceAnalyze, error) {
+	resources, err := source.GetRelevantSourceResources(ctx, kubeClient, odigosClient, workloadObj)
+	if err != nil {
+		return nil, err
+	}
+	analyze := source.AnalyzeSource(resources, workloadObj)
+	return analyze, nil
+}
+
+func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
 	deployment, err := kubeClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Sprintf("Error: %v\n", err)
+		return nil, err
 	}
 	workloadObj := &source.K8sSourceObject{
 		Kind:            "deployment",
@@ -153,13 +154,13 @@ func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, od
 		PodTemplateSpec: &deployment.Spec.Template,
 		LabelSelector:   deployment.Spec.Selector,
 	}
-	return PrintDescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
 }
 
-func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) string {
+func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
 	ds, err := kubeClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Sprintf("Error: %v\n", err)
+		return nil, err
 	}
 	workloadObj := &source.K8sSourceObject{
 		Kind:            "daemonset",
@@ -167,13 +168,13 @@ func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odi
 		PodTemplateSpec: &ds.Spec.Template,
 		LabelSelector:   ds.Spec.Selector,
 	}
-	return PrintDescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
 }
 
-func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) string {
+func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
 	ss, err := kubeClient.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Sprintf("Error: %v\n", err)
+		return nil, err
 	}
 	workloadObj := &source.K8sSourceObject{
 		Kind:            "statefulset",
@@ -181,5 +182,5 @@ func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, o
 		PodTemplateSpec: &ss.Spec.Template,
 		LabelSelector:   ss.Spec.Selector,
 	}
-	return PrintDescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
 }
