@@ -13,17 +13,14 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   tooltip?: string;
   required?: boolean;
   initialValue?: string;
-  maxWidth?: string;
-  paddingLeft?: string;
 }
 
 // Styled components remain the same as before
-const Container = styled.div<{ maxWidth?: string }>`
+const Container = styled.div`
   display: flex;
   flex-direction: column;
   position: relative;
   width: 100%;
-  max-width: ${({ maxWidth }) => maxWidth || 'unset'};
 `;
 
 const InputWrapper = styled.div<{
@@ -64,7 +61,7 @@ const InputWrapper = styled.div<{
   }
 `;
 
-const StyledInput = styled.input<{ hasIcon?: string; maxWidth?: string; paddingLeft?: string }>`
+const StyledInput = styled.input<{ hasIcon?: string } & React.CSSProperties>`
   max-width: ${({ maxWidth }) => maxWidth || 'unset'};
   padding-left: ${({ hasIcon, paddingLeft }) => (hasIcon ? '0' : paddingLeft || '16px')};
   flex: 1;
@@ -146,7 +143,7 @@ const HeaderWrapper = styled.div`
 
 // Wrap Input with forwardRef to handle the ref prop
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon, buttonLabel, onButtonClick, errorMessage, title, tooltip, required, initialValue, onChange, maxWidth, paddingLeft, ...props }, ref) => {
+  ({ icon, buttonLabel, onButtonClick, errorMessage, title, tooltip, required, initialValue, onChange, ...props }, ref) => {
     const [value, setValue] = useState<string>(initialValue || '');
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,7 +154,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     };
 
     return (
-      <Container maxWidth={maxWidth}>
+      <Container>
         {title && (
           <HeaderWrapper>
             <Title>{title}</Title>
@@ -180,8 +177,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
           <StyledInput
             ref={ref} // Pass ref to the StyledInput
-            maxWidth={maxWidth}
-            paddingLeft={paddingLeft}
             hasIcon={icon}
             value={value}
             onChange={handleInputChange}

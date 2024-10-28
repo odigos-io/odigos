@@ -33,6 +33,11 @@ const HeaderWrapper = styled.div`
   margin-bottom: 4px;
 `;
 
+const OptionalText = styled(Text)`
+  color: #7a7a7a;
+  opacity: 0.8;
+`;
+
 const DeleteButton = styled.button`
   background: none;
   border: none;
@@ -131,11 +136,7 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
                 <Tooltip text={tooltip || ''}>
                   <HeaderWrapper>
                     <Title>{title}</Title>
-                    {!required && (
-                      <Text color='#7A7A7A' size={14} weight={300} opacity={0.8}>
-                        (optional)
-                      </Text>
-                    )}
+                    {!required && <OptionalText>(optional)</OptionalText>}
                     {tooltip && <Image src='/icons/common/info.svg' alt='' width={16} height={16} style={{ marginBottom: 4 }} />}
                   </HeaderWrapper>
                 </Tooltip>
@@ -156,8 +157,10 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
                     value={row[keyName]}
                     onChange={({ target: { value: val } }) => handleChange(keyName, type === 'number' ? Number(val) : val, idx)}
                     placeholder={placeholder}
-                    maxWidth={maxWidth}
-                    paddingLeft='6px'
+                    style={{
+                      maxWidth,
+                      paddingLeft: '6px',
+                    }}
                   />
                 </td>
               ))}
