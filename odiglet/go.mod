@@ -1,8 +1,6 @@
 module github.com/odigos-io/odigos/odiglet
 
-go 1.22.5
-
-toolchain go1.22.6
+go 1.22.0
 
 require (
 	github.com/go-logr/logr v1.4.2
@@ -16,7 +14,7 @@ require (
 	github.com/odigos-io/odigos/opampserver v0.0.0
 	github.com/odigos-io/odigos/procdiscovery v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
-	github.com/odigos-io/runtime-detector v0.0.1
+	github.com/odigos-io/runtime-detector v0.0.2
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/auto v0.15.0-alpha
 	go.opentelemetry.io/otel v1.30.0
