@@ -42,7 +42,12 @@ var describeCmd = &cobra.Command{
 		if describeRemoteFlag {
 			describeText = executeRemoteOdigosDescribe(ctx, client, odigosNs)
 		} else {
-			describeText = describe.DescribeOdigos(ctx, client, client.OdigosClient, odigosNs)
+			describeAnalyze, err := describe.DescribeOdigos(ctx, client, client.OdigosClient, odigosNs)
+			if err != nil {
+				describeText = fmt.Sprintf("Failed to describe odigos: %s", err)
+			} else {
+				describeText = describe.DescribeOdigosToText(describeAnalyze)
+			}
 		}
 		fmt.Println(describeText)
 	},

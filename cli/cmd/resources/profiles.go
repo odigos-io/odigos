@@ -65,19 +65,28 @@ var (
 		ProfileName:      common.ProfileName("code-attributes"),
 		ShortDescription: "Record span attributes in 'code' namespace where supported",
 	}
+	disableNameProcessorProfile = Profile{
+		ProfileName:      common.ProfileName("disable-name-processor"),
+		ShortDescription: "If not using dotnet or java native instrumentations, disable the name processor which is not needed",
+	}
+	smallBatchesProfile = Profile{
+		ProfileName:      common.ProfileName("small-batches"),
+		ShortDescription: "Reduce the batch size for exports",
+		ClientObject:     &odigosv1alpha1.Processor{},
+	}
 	kratosProfile = Profile{
 		ProfileName:      common.ProfileName("kratos"),
 		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes, query-operation-detector",
-		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector"},
+		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector", "disableNameProcessorProfile", "small-batches"},
 	}
 )
 
 func GetAvailableCommunityProfiles() []Profile {
-	return []Profile{semconvUpgraderProfile, copyScopeProfile}
+	return []Profile{semconvUpgraderProfile, copyScopeProfile, disableNameProcessorProfile}
 }
 
 func GetAvailableOnPremProfiles() []Profile {
-	return append([]Profile{fullPayloadCollectionProfile, dbPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile, javaNativeInstrumentationsProfile, kratosProfile, queryOperationDetector},
+	return append([]Profile{fullPayloadCollectionProfile, dbPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile, javaNativeInstrumentationsProfile, kratosProfile, queryOperationDetector, smallBatchesProfile},
 		GetAvailableCommunityProfiles()...)
 }
 
