@@ -32,7 +32,7 @@ const ItemValue = styled(Text)`
 `;
 
 export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({ details }) => {
-  const parseValue = (value: any) => {
+  const parseValue = (value: string) => {
     let str = '';
 
     try {
