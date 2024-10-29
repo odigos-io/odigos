@@ -104,10 +104,107 @@ input K8sDesiredSourceInput {
   autoInstrument: Boolean
 }
 
+type PodWorkload {
+  namespace: String!
+  kind: K8sResourceKind!
+  name: String!
+}
+
+input PodWorkloadInput {
+  namespace: String!
+  kind: K8sResourceKind!
+  name: String!
+}
+
 input K8sSourceId {
   namespace: String!
   kind: K8sResourceKind!
   name: String!
+}
+
+type OtelSdks {
+  sdkLanguage: ProgrammingLanguage
+}
+
+input OtelSdksInput {
+  sdkLanguage: ProgrammingLanguage
+}
+
+type InstrumentationRule {
+  ruleId: ID!
+  ruleName: String
+  notes: String
+  disabled: Boolean
+  workloads: [PodWorkload!]
+  instrumentationLibraries: [InstrumentationLibraryGlobalId!]
+  payloadCollection: PayloadCollection
+}
+
+input InstrumentationRuleInput {
+  ruleName: String
+  notes: String
+  disabled: Boolean
+  workloads: [PodWorkloadInput!]
+  instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
+  payloadCollection: PayloadCollectionInput
+}
+
+type InstrumentationLibraryGlobalId {
+  name: String!
+  spanKind: SpanKind
+  language: ProgrammingLanguage
+}
+
+input InstrumentationLibraryGlobalIdInput {
+  name: String!
+  spanKind: SpanKind
+  language: ProgrammingLanguage
+}
+
+type PayloadCollection {
+  httpRequest: HttpPayloadCollection
+  httpResponse: HttpPayloadCollection
+  dbQuery: DbQueryPayloadCollection
+  messaging: MessagingPayloadCollection
+}
+
+input PayloadCollectionInput {
+  httpRequest: HttpPayloadCollectionInput
+  httpResponse: HttpPayloadCollectionInput
+  dbQuery: DbQueryPayloadCollectionInput
+  messaging: MessagingPayloadCollectionInput
+}
+
+type HttpPayloadCollection {
+  mimeTypes: [String]
+  maxPayloadLength: Int
+  dropPartialPayloads: Boolean
+}
+
+input HttpPayloadCollectionInput {
+  mimeTypes: [String]
+  maxPayloadLength: Int
+  dropPartialPayloads: Boolean
+}
+
+type DbQueryPayloadCollection {
+  maxPayloadLength: Int
+  dropPartialPayloads: Boolean
+}
+
+input DbQueryPayloadCollectionInput {
+  maxPayloadLength: Int
+  dropPartialPayloads: Boolean
+}
+
+type MessagingPayloadCollection {
+  maxPayloadLength: Int
+  dropPartialPayloads: Boolean
+}
+
+input MessagingPayloadCollectionInput {
+  maxPayloadLength: Int
+  dropPartialPayloads: Boolean
 }
 
 type ComputePlatform {
@@ -122,6 +219,7 @@ type ComputePlatform {
   k8sActualSources: [K8sActualSource]!
   destinations: [Destination!]!
   actions: [IcaInstanceResponse!]!
+  instrumentationRules: [InstrumentationRule!]!
 }
 
 type SupportedSignals {
