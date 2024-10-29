@@ -1,5 +1,5 @@
+import React from 'react';
 import Image from 'next/image';
-import React, { memo } from 'react';
 import styled from 'styled-components';
 import { Text } from '@/reuseable-components';
 import { Handle, Position } from '@xyflow/react';
@@ -42,36 +42,41 @@ const SubTitle = styled(Text)`
 `;
 
 interface BaseNodeProps {
+  data: Record<string, any>;
+
+  id: string;
+  parentId?: any;
+  type: string;
+
   isConnectable: boolean;
+  selectable: boolean;
+  selected?: any;
+  deletable: boolean;
+  draggable: boolean;
+  dragging: boolean;
+  dragHandle?: any;
+
+  width: number;
+  height: number;
+  zIndex: number;
+  positionAbsoluteX: number;
+  positionAbsoluteY: number;
+  sourcePosition?: any;
+  targetPosition?: any;
 }
 
-export default memo(({ isConnectable }: BaseNodeProps) => {
+const AddNode = ({ isConnectable, data }: BaseNodeProps) => {
   return (
     <BaseNodeContainer>
       <TitleWrapper>
-        <Image
-          src={'/icons/common/plus.svg'}
-          width={16}
-          height={16}
-          alt="plus"
-        />
-        <Title>{'ADD ACTION'}</Title>
+        <Image src='/icons/common/plus.svg' width={16} height={16} alt='plus' />
+        <Title>{data.title}</Title>
       </TitleWrapper>
-      <SubTitle>{'Add first action to modify the OpenTelemetry data'}</SubTitle>
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="action-input"
-        isConnectable={isConnectable}
-        style={{ visibility: 'hidden' }}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="action-output"
-        isConnectable={isConnectable}
-        style={{ visibility: 'hidden' }}
-      />
+      <SubTitle>{data.subTitle}</SubTitle>
+      <Handle type='target' position={Position.Left} id='add-node-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
+      <Handle type='source' position={Position.Right} id='add-node-output' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
     </BaseNodeContainer>
   );
-});
+};
+
+export default AddNode;
