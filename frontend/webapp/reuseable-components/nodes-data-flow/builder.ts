@@ -2,7 +2,7 @@ import theme from '@/styles/theme';
 import { getActionIcon } from '@/utils';
 import { Node, Edge } from 'react-flow-renderer';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
-import type { ActionData, ActionItem, ActualDestination, K8sActualSource } from '@/types';
+import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, type ActionData, type ActionItem, type ActualDestination, type K8sActualSource } from '@/types';
 
 // Constants
 const NODE_HEIGHT = 80;
@@ -56,20 +56,30 @@ export const buildNodesAndEdges = ({
       title: 'Sources',
       tagValue: sources.length,
     }),
-    ...sources.map((source, index) =>
-      createNode(`source-${index}`, 'base', leftColumnX, NODE_HEIGHT * (index + 1), {
-        type: 'source',
-        title: source.name + (source.reportedName ? ` (${source.reportedName})` : ''),
-        subTitle: source.kind,
-        imageUri: getMainContainerLanguageLogo(source),
-        status: 'healthy',
-        id: {
-          kind: source.kind,
-          name: source.name,
-          namespace: source.namespace,
-        },
-      })
-    ),
+    ...(!sources.length
+      ? [
+          createNode(`source-0`, 'add', leftColumnX, NODE_HEIGHT, {
+            type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
+            title: 'ADD SOURCE',
+            subTitle: 'Add first source to collect OpenTelemetry data',
+            imageUri: '',
+            status: 'healthy',
+          }),
+        ]
+      : sources.map((source, index) =>
+          createNode(`source-${index}`, 'base', leftColumnX, NODE_HEIGHT * (index + 1), {
+            type: OVERVIEW_ENTITY_TYPES.SOURCE,
+            title: source.name + (source.reportedName ? ` (${source.reportedName})` : ''),
+            subTitle: source.kind,
+            imageUri: getMainContainerLanguageLogo(source),
+            status: 'healthy',
+            id: {
+              kind: source.kind,
+              name: source.name,
+              namespace: source.namespace,
+            },
+          })
+        )),
   ];
 
   // Build Destination Nodes
@@ -79,17 +89,27 @@ export const buildNodesAndEdges = ({
       title: 'Destinations',
       tagValue: destinations.length,
     }),
-    ...destinations.map((destination, index) =>
-      createNode(`destination-${index}`, 'base', rightColumnX, NODE_HEIGHT * (index + 1), {
-        type: 'destination',
-        title: destination.name,
-        subTitle: destination.destinationType.displayName,
-        imageUri: destination.destinationType.imageUrl,
-        status: 'healthy',
-        monitors: extractMonitors(destination.exportedSignals),
-        id: destination.id,
-      })
-    ),
+    ...(!destinations.length
+      ? [
+          createNode(`destination-0`, 'add', rightColumnX, NODE_HEIGHT, {
+            type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
+            title: 'ADD DESTIONATION',
+            subTitle: 'Add first destination to monitor OpenTelemetry data',
+            imageUri: '',
+            status: 'healthy',
+          }),
+        ]
+      : destinations.map((destination, index) =>
+          createNode(`destination-${index}`, 'base', rightColumnX, NODE_HEIGHT * (index + 1), {
+            type: OVERVIEW_ENTITY_TYPES.DESTINATION,
+            title: destination.name,
+            subTitle: destination.destinationType.displayName,
+            imageUri: destination.destinationType.imageUrl,
+            status: 'healthy',
+            monitors: extractMonitors(destination.exportedSignals),
+            id: destination.id,
+          })
+        )),
   ];
 
   // Build Action Nodes
@@ -99,33 +119,30 @@ export const buildNodesAndEdges = ({
       title: 'Actions',
       tagValue: actions.length,
     }),
-    ...actions.map((action, index) => {
-      const actionSpec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
+    ...(!actions.length
+      ? [
+          createNode(`action-0`, 'add', centerColumnX, NODE_HEIGHT, {
+            type: OVERVIEW_NODE_TYPES.ADD_ACTION,
+            title: 'ADD ACTION',
+            subTitle: 'Add first action to modify the OpenTelemetry data',
+            imageUri: '',
+            status: 'healthy',
+          }),
+        ]
+      : actions.map((action, index) => {
+          const actionSpec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
 
-      return createNode(`action-${index}`, 'base', centerColumnX, NODE_HEIGHT * (index + 1), {
-        type: 'action',
-        title: actionSpec.actionName,
-        subTitle: action.type,
-        imageUri: getActionIcon(action.type),
-        monitors: actionSpec.signals,
-        status: 'healthy',
-        id: action.id,
-      });
-    }),
+          return createNode(`action-${index}`, 'base', centerColumnX, NODE_HEIGHT * (index + 1), {
+            type: OVERVIEW_ENTITY_TYPES.ACTION,
+            title: actionSpec.actionName,
+            subTitle: action.type,
+            imageUri: getActionIcon(action.type),
+            monitors: actionSpec.signals,
+            status: 'healthy',
+            id: action.id,
+          });
+        })),
   ];
-
-  if (actionsNode.length === 1) {
-    actionsNode.push(
-      createNode(`action-0`, 'addAction', centerColumnX, NODE_HEIGHT * (actions.length + 1), {
-        type: 'addAction',
-        title: 'ADD ACTION',
-        subTitle: '',
-        imageUri: getActionIcon(),
-        status: 'healthy',
-        onClick: () => console.log('Add Action'),
-      })
-    );
-  }
 
   // Combine all nodes
   const nodes = [...sourcesNode, ...destinationNode, ...actionsNode];

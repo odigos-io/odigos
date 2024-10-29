@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import theme from '@/styles/theme';
+import { useModalStore } from '@/store';
 import { AddActionModal } from '../../actions';
 import styled, { css } from 'styled-components';
 import { useActualSources, useOnClickOutside } from '@/hooks';
@@ -61,9 +62,9 @@ const ButtonText = styled(Text)`
 
 // Default options for the dropdown
 const DEFAULT_OPTIONS: DropdownOption[] = [
-  { id: 'source', value: 'Source' },
-  { id: 'action', value: 'Action' },
-  { id: 'destination', value: 'Destination' },
+  { id: OVERVIEW_ENTITY_TYPES.SOURCE, value: 'Source' },
+  { id: OVERVIEW_ENTITY_TYPES.ACTION, value: 'Action' },
+  { id: OVERVIEW_ENTITY_TYPES.DESTINATION, value: 'Destination' },
 ];
 
 interface AddEntityButtonDropdownProps {
@@ -71,80 +72,53 @@ interface AddEntityButtonDropdownProps {
   placeholder?: string;
 }
 
-const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({
-  options = DEFAULT_OPTIONS,
-  placeholder = 'ADD...',
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
+const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
+  const { currentModal, setCurrentModal } = useModalStore();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [currentModal, setCurrentModal] = useState<string>('');
 
-  const { isPolling, createSourcesForNamespace, persistNamespaceItems } =
-    useActualSources();
+  const { isPolling, createSourcesForNamespace, persistNamespaceItems } = useActualSources();
 
-  useOnClickOutside(dropdownRef, () => setIsOpen(false));
+  useOnClickOutside(dropdownRef, () => setIsDropdownOpen(false));
 
-  const handleToggle = useCallback(() => {
-    setIsOpen((prev) => !prev);
-  }, []);
+  const handleToggle = () => {
+    setIsDropdownOpen((prev) => !prev);
+  };
 
-  const handleSelect = useCallback((option: DropdownOption) => {
+  const handleSelect = (option: DropdownOption) => {
     setCurrentModal(option.id);
-    setIsOpen(false);
-  }, []);
+    setIsDropdownOpen(false);
+  };
 
-  const handleCloseModal = useCallback(() => {
+  const handleCloseModal = () => {
     setCurrentModal('');
-  }, []);
+  };
 
   return (
     <Container ref={dropdownRef}>
       <StyledButton onClick={handleToggle}>
-        {isPolling ? (
-          <FadeLoader color={theme.colors.primary} />
-        ) : (
-          <Image
-            src="/icons/common/plus-black.svg"
-            width={16}
-            height={16}
-            alt="Add"
-          />
-        )}
+        {isPolling ? <FadeLoader color={theme.colors.primary} /> : <Image src='/icons/common/plus-black.svg' width={16} height={16} alt='Add' />}
         <ButtonText size={14}>{placeholder}</ButtonText>
       </StyledButton>
-      {isOpen && (
+      {isDropdownOpen && (
         <DropdownListContainer>
           {options.map((option) => (
-            <DropdownItem
-              key={option.id}
-              isSelected={false}
-              onClick={() => handleSelect(option)}
-            >
-              <Image
-                src={`/icons/overview/${option.id}s.svg`}
-                width={16}
-                height={16}
-                alt={`Add ${option.value}`}
-              />
+            <DropdownItem key={option.id} isSelected={false} onClick={() => handleSelect(option)}>
+              <Image src={`/icons/overview/${option.id}s.svg`} width={16} height={16} alt={`Add ${option.value}`} />
               <Text size={14}>{option.value}</Text>
             </DropdownItem>
           ))}
         </DropdownListContainer>
       )}
+
       <AddSourceModal
         isOpen={currentModal === OVERVIEW_ENTITY_TYPES.SOURCE}
         onClose={handleCloseModal}
         createSourcesForNamespace={createSourcesForNamespace}
         persistNamespaceItems={persistNamespaceItems}
       />
-      <AddDestinationModal
-        isModalOpen={currentModal === OVERVIEW_ENTITY_TYPES.DESTINATION}
-        handleCloseModal={handleCloseModal}
-      />
-      <AddActionModal
-        isModalOpen={currentModal === OVERVIEW_ENTITY_TYPES.ACTION}
-        handleCloseModal={handleCloseModal}
-      />
+      <AddDestinationModal isModalOpen={currentModal === OVERVIEW_ENTITY_TYPES.DESTINATION} handleCloseModal={handleCloseModal} />
+      <AddActionModal isModalOpen={currentModal === OVERVIEW_ENTITY_TYPES.ACTION} handleCloseModal={handleCloseModal} />
     </Container>
   );
 };

@@ -38,6 +38,12 @@ export interface StepProps {
 
 export enum OVERVIEW_ENTITY_TYPES {
   SOURCE = 'source',
-  DESTINATION = 'destination',
   ACTION = 'action',
+  DESTINATION = 'destination',
+}
+
+export enum OVERVIEW_NODE_TYPES {
+  ADD_SOURCE = 'addSource',
+  ADD_ACTION = 'addAction',
+  ADD_DESTIONATION = 'addDestination',
 }
