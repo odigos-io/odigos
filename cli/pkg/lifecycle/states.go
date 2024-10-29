@@ -135,8 +135,11 @@ func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object, t
 	}
 
 	if !instDeviceFound {
-		return InstrumentationInProgress
+		return LangDetectedState
 	}
+
+	// If there is device + no (inst instace / all pods restarted) = InstrumentationInProgress
+	// If all pods restarted && inst instance = Instrumented
 
 	return UnknownState
 }
