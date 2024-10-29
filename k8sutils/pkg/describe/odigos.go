@@ -2,31 +2,12 @@ package describe
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	odigos "github.com/odigos-io/odigos/k8sutils/pkg/describe/odigos"
-	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
 	"k8s.io/client-go/kubernetes"
 )
-
-func printProperty(sb *strings.Builder, indent int, property *properties.EntityProperty) {
-	if property == nil {
-		return
-	}
-	text := fmt.Sprintf("%s: %v", property.Name, property.Value)
-	switch property.Status {
-	case properties.PropertyStatusSuccess:
-		text = wrapTextInGreen(text)
-	case properties.PropertyStatusError:
-		text = wrapTextInRed(text)
-	case properties.PropertyStatusTransitioning:
-		text = wrapTextInYellow(text)
-	}
-
-	describeText(sb, indent, text)
-}
 
 func printClusterCollectorStatus(analyze *odigos.OdigosAnalyze, sb *strings.Builder) {
 	describeText(sb, 1, "Cluster Collector:")
