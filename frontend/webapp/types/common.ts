@@ -40,4 +40,5 @@ export enum OVERVIEW_ENTITY_TYPES {
   SOURCE = 'source',
   DESTINATION = 'destination',
   ACTION = 'action',
+  ADD_ACTION = 'addAction',
 }

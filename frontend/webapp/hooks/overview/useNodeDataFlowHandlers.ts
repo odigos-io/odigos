@@ -54,6 +54,10 @@ export function useNodeDataFlowHandlers({
           item: selectedDrawerItem,
         });
       }
+
+      if (type === OVERVIEW_ENTITY_TYPES.ADD_ACTION) {
+        object.data.onClick();
+      }
     },
     [sources, actions, destinations, setSelectedItem]
   );

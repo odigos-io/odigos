@@ -1,8 +1,9 @@
 import theme from '@/styles/theme';
 import { getActionIcon } from '@/utils';
+import { useModalStore } from '@/store';
 import { Node, Edge } from 'react-flow-renderer';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
-import type { ActionData, ActionItem, ActualDestination, K8sActualSource } from '@/types';
+import { OVERVIEW_ENTITY_TYPES, type ActionData, type ActionItem, type ActualDestination, type K8sActualSource } from '@/types';
 
 // Constants
 const NODE_HEIGHT = 80;
@@ -44,6 +45,9 @@ export const buildNodesAndEdges = ({
   columnWidth: number;
   containerWidth: number;
 }) => {
+  // eslint-disable-next-line
+  const { setCurrentModal } = useModalStore();
+
   // Calculate x positions for each column
   const leftColumnX = 0;
   const rightColumnX = containerWidth - columnWidth;
@@ -122,7 +126,7 @@ export const buildNodesAndEdges = ({
         subTitle: '',
         imageUri: getActionIcon(),
         status: 'healthy',
-        onClick: () => console.log('Add Action'),
+        onClick: () => setCurrentModal(OVERVIEW_ENTITY_TYPES.ACTION),
       })
     );
   }
