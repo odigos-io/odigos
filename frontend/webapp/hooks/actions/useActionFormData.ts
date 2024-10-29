@@ -47,32 +47,37 @@ export function useActionFormData() {
   const loadFormWithDrawerItem = (drawerItem: DrawerBaseItem) => {
     const { type, spec } = drawerItem.item as ActionDataParsed;
 
-    handleFormChange('type', type);
+    const updatedData: ActionInput = {
+      ...INITIAL,
+      type,
+    };
 
     Object.entries(spec).forEach(([k, v]) => {
       switch (k) {
         case 'actionName': {
-          handleFormChange('name', v);
+          updatedData['name'] = v;
           break;
         }
 
         case 'disabled': {
-          handleFormChange('disable', v);
+          updatedData['disable'] = v;
           break;
         }
 
         case 'notes':
         case 'signals': {
-          handleFormChange(k, v);
+          updatedData[k] = v;
           break;
         }
 
         default: {
-          handleFormChange('details', JSON.stringify({ [k]: v }));
+          updatedData['details'] = JSON.stringify({ [k]: v });
           break;
         }
       }
     });
+
+    setFormData(updatedData);
   };
 
   return {

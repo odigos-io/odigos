@@ -13,6 +13,7 @@ export * from './modal';
 export * from './navigation-buttons';
 export * from './tag';
 export * from './checkbox-list';
+export * from './monitoring-checkboxes';
 export * from './notification-note';
 export * from './fade-loader';
 export * from './textarea';

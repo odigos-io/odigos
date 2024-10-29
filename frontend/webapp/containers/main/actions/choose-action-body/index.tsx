@@ -3,8 +3,7 @@ import styled from 'styled-components';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
 import { type ActionOption } from '../choose-action-modal/action-options';
-import { Checkbox, DocsButton, Input, Text, TextArea, Toggle } from '@/reuseable-components';
-import { MonitoringCheckboxes } from '@/reuseable-components/monitoring-checkboxes';
+import { DocsButton, Input, Text, TextArea, Toggle, MonitoringCheckboxes } from '@/reuseable-components';
 
 const Description = styled(Text)`
   color: ${({ theme }) => theme.text.grey};
