@@ -1,7 +1,7 @@
 // src/hooks/useNodeDataFlowHandlers.ts
 import { useCallback } from 'react';
-import { useDrawerStore } from '@/store';
-import { K8sActualSource, ActualDestination, ActionDataParsed, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { useDrawerStore, useModalStore } from '@/store';
+import { K8sActualSource, ActualDestination, ActionDataParsed, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES } from '@/types';
 
 export function useNodeDataFlowHandlers({
   sources,
@@ -12,6 +12,7 @@ export function useNodeDataFlowHandlers({
   actions: ActionDataParsed[];
   destinations: ActualDestination[];
 }) {
+  const { setCurrentModal } = useModalStore();
   const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
 
   const handleNodeClick = useCallback(
@@ -31,9 +32,7 @@ export function useNodeDataFlowHandlers({
           type,
           item: selectedDrawerItem,
         });
-      }
-
-      if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
+      } else if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
         const selectedDrawerItem = actions.find((action) => action.id === id);
         if (!selectedDrawerItem) return;
 
@@ -42,9 +41,7 @@ export function useNodeDataFlowHandlers({
           type,
           item: selectedDrawerItem,
         });
-      }
-
-      if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
+      } else if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
         const selectedDrawerItem = destinations.find((destination) => destination.id === id);
         if (!selectedDrawerItem) return;
 
@@ -53,6 +50,12 @@ export function useNodeDataFlowHandlers({
           type,
           item: selectedDrawerItem,
         });
+      } else if (type === OVERVIEW_NODE_TYPES.ADD_SOURCE) {
+        setCurrentModal(OVERVIEW_ENTITY_TYPES.SOURCE);
+      } else if (type === OVERVIEW_NODE_TYPES.ADD_ACTION) {
+        setCurrentModal(OVERVIEW_ENTITY_TYPES.ACTION);
+      } else if (type === OVERVIEW_NODE_TYPES.ADD_DESTIONATION) {
+        setCurrentModal(OVERVIEW_ENTITY_TYPES.DESTINATION);
       }
     },
     [sources, actions, destinations, setSelectedItem]
