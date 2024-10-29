@@ -19,7 +19,9 @@ const DeleteAttributes: React.FC<Props> = ({ value, setValue }) => {
       attributeNamesToDelete: arr,
     };
 
-    setValue(JSON.stringify(payload));
+    const str = !!payload.attributeNamesToDelete.length ? JSON.stringify(payload) : '';
+
+    setValue(str);
   };
 
   return (

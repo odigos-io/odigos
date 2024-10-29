@@ -34,7 +34,9 @@ const AddClusterInfo: React.FC<Props> = ({ value, setValue }) => {
       })),
     };
 
-    setValue(JSON.stringify(payload));
+    const str = !!payload.clusterAttributes.length ? JSON.stringify(payload) : '';
+
+    setValue(str);
   };
 
   return (
