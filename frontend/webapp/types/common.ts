@@ -47,3 +47,7 @@ export enum OVERVIEW_NODE_TYPES {
   ADD_ACTION = 'addAction',
   ADD_DESTIONATION = 'addDestination',
 }
+
+export enum STATUSES {
+  HEALTHY = 'healthy',
+}

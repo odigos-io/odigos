@@ -21,7 +21,7 @@ const buildCardFromActionSpec = (action: ActionDataParsed) => {
 
   const arr = [
     { title: 'Type', value: type || 'N/A' },
-    { title: 'Enabled', value: String(!disabled) },
+    { title: 'Status', value: String(!disabled) },
     { title: 'Name', value: actionName || 'N/A' },
     { title: 'Notes', value: notes || 'N/A' },
     { title: 'Monitors', value: signals.map((str) => str.toLowerCase()).join(', ') },

@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react';
 import styled from 'styled-components';
-import { Text } from '@/reuseable-components';
+import { Text, Status } from '@/reuseable-components';
 
 type TypeDetail = {
   title: string;
@@ -81,7 +81,12 @@ export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({ details }) =
       {details.map((detail, index) => (
         <ListItem key={index}>
           <ItemTitle>{detail.title}</ItemTitle>
-          <ItemValue>{parseValue(detail.value)}</ItemValue>
+
+          {detail.title === 'Status' ? (
+            <Status isActive={detail.value == 'true'} withIcon withBorder withSmaller withSpecialFont />
+          ) : (
+            <ItemValue>{parseValue(detail.value)}</ItemValue>
+          )}
         </ListItem>
       ))}
     </ListContainer>
