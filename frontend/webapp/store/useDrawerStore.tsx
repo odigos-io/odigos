@@ -4,7 +4,7 @@ import { ActionDataParsed, ActualDestination, K8sActualSource, WorkloadId } from
 
 type ItemType = 'source' | 'action' | 'destination';
 
-interface BaseItem {
+export interface DrawerBaseItem {
   id: string | WorkloadId;
   item?: K8sActualSource | ActionDataParsed | ActualDestination;
   type: ItemType;
@@ -12,8 +12,8 @@ interface BaseItem {
 }
 
 interface DrawerStoreState {
-  selectedItem: BaseItem | null;
-  setSelectedItem: (item: BaseItem | null) => void;
+  selectedItem: DrawerBaseItem | null;
+  setSelectedItem: (item: DrawerBaseItem | null) => void;
   isDrawerOpen: boolean;
   openDrawer: () => void;
   closeDrawer: () => void;

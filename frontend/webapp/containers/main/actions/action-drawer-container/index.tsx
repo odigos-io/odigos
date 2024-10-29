@@ -18,7 +18,7 @@ interface Props {
 
 const ActionDrawer = forwardRef<ActionDrawerHandle, Props>(({ isEditing }, ref) => {
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
-  const { formData, handleFormChange, resetFormData, validateForm } = useActionFormData();
+  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
@@ -42,30 +42,7 @@ const ActionDrawer = forwardRef<ActionDrawerHandle, Props>(({ isEditing }, ref) 
 
     if (!found) return undefined;
 
-    handleFormChange('type', item.type);
-    Object.entries(item.spec).forEach(([k, v]) => {
-      switch (k) {
-        case 'actionName': {
-          handleFormChange('name', v);
-          break;
-        }
-
-        case 'type':
-        case 'name':
-        case 'notes':
-        case 'signals':
-        case 'disable':
-        case 'details': {
-          if (v !== undefined) handleFormChange(k, v);
-          break;
-        }
-
-        default: {
-          if (v !== undefined) handleFormChange('details', JSON.stringify({ [k]: v }));
-          break;
-        }
-      }
-    });
+    loadFormWithDrawerItem(selectedItem);
 
     return found;
   }, [selectedItem, isEditing]);
