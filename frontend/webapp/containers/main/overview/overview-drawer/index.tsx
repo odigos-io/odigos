@@ -5,18 +5,19 @@ import { getActionIcon, LANGUAGES_LOGOS } from '@/utils';
 import DrawerHeader from './drawer-header';
 import DrawerFooter from './drawer-footer';
 import { SourceDrawer } from '../../sources';
-import { ActionDrawer } from '../../actions';
 import { Drawer } from '@/reuseable-components';
 import { DeleteEntityModal } from '@/components';
-import { useActualSources, useUpdateDestination } from '@/hooks';
-import { DestinationDrawer, DestinationDrawerHandle } from '../../destinations';
+import { useActualSources, useNotify, useUpdateDestination } from '@/hooks';
+import { ActionDrawer, type ActionDrawerHandle } from '../../actions';
+import { DestinationDrawer, type DestinationDrawerHandle } from '../../destinations';
 import { getMainContainerLanguageLogo, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils/constants/programming-languages';
 import { WorkloadId, K8sActualSource, ActualDestination, OVERVIEW_ENTITY_TYPES, PatchSourceRequestInput, ActionDataParsed } from '@/types';
+import { useUpdateAction } from '@/hooks/actions/useUpdateAction';
 
 const componentMap = {
   source: SourceDrawer,
   action: ActionDrawer,
-  destination: ({ isEditing }: { isEditing: boolean }) => <DestinationDrawer isEditing={isEditing} />,
+  destination: DestinationDrawer,
 };
 
 const DRAWER_WIDTH = '640px';
@@ -29,11 +30,20 @@ const OverviewDrawer = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [title, setTitle] = useState('');
 
+  const notify = useNotify();
+  const { updateAction } = useUpdateAction();
   const { updateExistingDestination } = useUpdateDestination();
   const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
 
   const titleRef = useRef<HTMLInputElement>(null);
+  const actionDrawerRef = useRef<ActionDrawerHandle>(null);
   const destinationDrawerRef = useRef<DestinationDrawerHandle>(null);
+
+  const refMap = {
+    source: undefined,
+    action: actionDrawerRef,
+    destination: destinationDrawerRef,
+  };
 
   useEffect(initialTitle, [selectedItem]);
 
@@ -79,13 +89,14 @@ const OverviewDrawer = () => {
     if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
       if (destinationDrawerRef.current && titleRef.current) {
         const newTitle = titleRef.current.value;
-        const destinationData = {
-          ...destinationDrawerRef.current.getCurrentData(),
+        const formData = destinationDrawerRef.current.getCurrentData();
+        const payload = {
+          ...formData,
           name: newTitle,
         };
 
         try {
-          await updateExistingDestination(id as string, destinationData);
+          await updateExistingDestination(id as string, payload);
         } catch (error) {
           console.error('Error updating destination:', error);
         }
@@ -94,7 +105,28 @@ const OverviewDrawer = () => {
     }
 
     if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
-      alert('TODO !');
+      if (actionDrawerRef.current && titleRef.current) {
+        const newTitle = titleRef.current.value;
+        const formData = actionDrawerRef.current.getCurrentData();
+
+        if (!formData) {
+          notify({
+            message: 'Required fields are missing!',
+            title: 'Update Action Error',
+            type: 'error',
+            target: 'notification',
+            crdType: 'notification',
+          });
+        } else {
+          const payload = {
+            ...formData,
+            name: newTitle,
+          };
+
+          await updateAction(id as string, payload);
+          setIsEditing(false);
+        }
+      }
     }
 
     if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
@@ -159,6 +191,7 @@ const OverviewDrawer = () => {
 
   const { type, item } = selectedItem;
   const SpecificComponent = componentMap[type];
+  const specificRef = refMap[type];
 
   return SpecificComponent ? (
     <>
@@ -174,11 +207,8 @@ const OverviewDrawer = () => {
           />
 
           <ContentArea>
-            {type === OVERVIEW_ENTITY_TYPES.DESTINATION ? (
-              <DestinationDrawer ref={destinationDrawerRef} isEditing={isEditing} />
-            ) : (
-              <SpecificComponent isEditing={isEditing} />
-            )}
+            {/* @ts-ignore (because of ref) */}
+            <SpecificComponent ref={specificRef} isEditing={isEditing} />
           </ContentArea>
 
           {isEditing && <DrawerFooter onSave={handleSave} onCancel={handleCancel} onDelete={() => setIsDeleteModalOpen(true)} />}

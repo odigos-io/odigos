@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { ActionInput } from '@/types';
+import type { ActionDataParsed, ActionInput } from '@/types';
+import { DrawerBaseItem } from '@/store';
 
 const INITIAL: ActionInput = {
   type: '',
@@ -43,10 +44,47 @@ export function useActionFormData() {
     return ok;
   };
 
+  const loadFormWithDrawerItem = (drawerItem: DrawerBaseItem) => {
+    const { type, spec } = drawerItem.item as ActionDataParsed;
+
+    const updatedData: ActionInput = {
+      ...INITIAL,
+      type,
+    };
+
+    Object.entries(spec).forEach(([k, v]) => {
+      switch (k) {
+        case 'actionName': {
+          updatedData['name'] = v;
+          break;
+        }
+
+        case 'disabled': {
+          updatedData['disable'] = v;
+          break;
+        }
+
+        case 'notes':
+        case 'signals': {
+          updatedData[k] = v;
+          break;
+        }
+
+        default: {
+          updatedData['details'] = JSON.stringify({ [k]: v });
+          break;
+        }
+      }
+    });
+
+    setFormData(updatedData);
+  };
+
   return {
     formData,
     handleFormChange,
     resetFormData,
     validateForm,
+    loadFormWithDrawerItem,
   };
 }

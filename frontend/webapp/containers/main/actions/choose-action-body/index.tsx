@@ -3,8 +3,7 @@ import styled from 'styled-components';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
 import { type ActionOption } from '../choose-action-modal/action-options';
-import { DocsButton, Input, Text, TextArea } from '@/reuseable-components';
-import { MonitoringCheckboxes } from '@/reuseable-components/monitoring-checkboxes';
+import { DocsButton, Input, Text, TextArea, Toggle, MonitoringCheckboxes } from '@/reuseable-components';
 
 const Description = styled(Text)`
   color: ${({ theme }) => theme.text.grey};
@@ -22,18 +21,32 @@ const FieldTitle = styled(Text)`
 `;
 
 interface ChooseActionContentProps {
+  isUpdate?: boolean;
   action: ActionOption;
   formData: ActionInput;
   handleFormChange: (key: keyof ActionInput, val: any) => void;
 }
 
-const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action, formData, handleFormChange }) => {
+const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ isUpdate, action, formData, handleFormChange }) => {
   return (
     <>
-      <Description>
-        {action.docsDescription}
-        <DocsButton endpoint={action.docsEndpoint} />
-      </Description>
+      {isUpdate && (
+        <FieldWrapper>
+          <FieldTitle>Status</FieldTitle>
+          <Toggle
+            title={!formData.disable ? 'Active' : 'Inactive'}
+            initialValue={!formData.disable}
+            onChange={(bool) => handleFormChange('disable', !bool)}
+          />
+        </FieldWrapper>
+      )}
+
+      {!isUpdate && (
+        <Description>
+          {action.docsDescription}
+          <DocsButton endpoint={action.docsEndpoint} />
+        </Description>
+      )}
 
       <FieldWrapper>
         <MonitoringCheckboxes
@@ -43,14 +56,16 @@ const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action, formData
         />
       </FieldWrapper>
 
-      <FieldWrapper>
-        <FieldTitle>Action name</FieldTitle>
-        <Input
-          placeholder='Use a name that describes the action'
-          value={formData.name}
-          onChange={({ target: { value } }) => handleFormChange('name', value)}
-        />
-      </FieldWrapper>
+      {!isUpdate && (
+        <FieldWrapper>
+          <FieldTitle>Action name</FieldTitle>
+          <Input
+            placeholder='Use a name that describes the action'
+            value={formData.name}
+            onChange={({ target: { value } }) => handleFormChange('name', value)}
+          />
+        </FieldWrapper>
+      )}
 
       <ActionCustomFields actionType={action.type} value={formData.details} setValue={(val) => handleFormChange('details', val)} />
 
