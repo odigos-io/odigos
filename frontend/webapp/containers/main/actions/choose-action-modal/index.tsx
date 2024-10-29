@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import React, { useMemo, useState } from 'react';
-import { ChooseActionBody } from '../choose-action-body';
+import { ChooseActionBody } from '../';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
 import { useActionFormData, useCreateAction } from '@/hooks/actions';
 import { AutocompleteInput, Modal, NavigationButtons, Text, Divider, FadeLoader } from '@/reuseable-components';

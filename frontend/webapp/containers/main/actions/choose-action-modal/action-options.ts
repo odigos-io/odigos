@@ -1,5 +1,5 @@
 import { ActionsType } from '@/types';
-import { SignalUppercase } from '@/utils';
+import { getActionIcon, SignalUppercase } from '@/utils';
 
 export type ActionOption = {
   id: string;
@@ -19,7 +19,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
     label: 'Add Cluster Info',
     description: 'Add static cluster-scoped attributes to your data.',
     type: ActionsType.ADD_CLUSTER_INFO,
-    icon: '/icons/actions/addclusterinfo.svg',
+    icon: getActionIcon(ActionsType.ADD_CLUSTER_INFO),
     docsEndpoint: '/pipeline/actions/attributes/addclusterinfo',
     docsDescription:
       'The “Add Cluster Info” Odigos Action can be used to add resource attributes to telemetry signals originated from the k8s cluster where the Odigos is running.',
@@ -30,7 +30,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
     label: 'Delete Attribute',
     description: 'Delete attributes from logs, metrics, and traces.',
     type: ActionsType.DELETE_ATTRIBUTES,
-    icon: '/icons/actions/deleteattribute.svg',
+    icon: getActionIcon(ActionsType.DELETE_ATTRIBUTES),
     docsEndpoint: '/pipeline/actions/attributes/deleteattribute',
     docsDescription: 'The “Delete Attribute” Odigos Action can be used to delete attributes from logs, metrics, and traces.',
     allowedSignals: ['TRACES', 'METRICS', 'LOGS'],
@@ -40,7 +40,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
     label: 'Rename Attribute',
     description: 'Rename attributes in logs, metrics, and traces.',
     type: ActionsType.RENAME_ATTRIBUTES,
-    icon: '/icons/actions/renameattribute.svg',
+    icon: getActionIcon(ActionsType.RENAME_ATTRIBUTES),
     docsEndpoint: '/pipeline/actions/attributes/rename-attribute',
     docsDescription:
       'The “Rename Attribute” Odigos Action can be used to rename attributes from logs, metrics, and traces. Different instrumentations might use different attribute names for similar information. This action let’s you to consolidate the names across your cluster.',
@@ -51,7 +51,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
     label: 'PII Masking',
     description: 'Mask PII data in your traces.',
     type: ActionsType.PII_MASKING,
-    icon: '/icons/actions/piimasking.svg',
+    icon: getActionIcon(ActionsType.PII_MASKING),
     docsEndpoint: '/pipeline/actions/attributes/piimasking',
     docsDescription: 'The “PII Masking” Odigos Action can be used to mask PII data from span attribute values.',
     allowedSignals: ['TRACES'],
@@ -59,7 +59,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
   {
     id: 'sampler',
     label: 'Samplers',
-    icon: '/icons/actions/sampler.svg',
+    icon: getActionIcon('sampler'),
     items: [
       {
         id: 'error-sampler',

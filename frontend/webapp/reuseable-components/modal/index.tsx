@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { Text } from '../text';
 import ReactDOM from 'react-dom';
+import { useKeyDown } from '@/hooks';
 import styled from 'styled-components';
 
 interface ModalProps {
@@ -33,10 +34,8 @@ const ModalWrapper = styled.div`
   border-radius: 40px;
   max-height: 84vh;
   border: ${({ theme }) => `1px solid ${theme.colors.border}`};
-  box-shadow: 0px 1px 1px 0px rgba(17, 17, 17, 0.8),
-    0px 2px 2px 0px rgba(17, 17, 17, 0.8), 0px 5px 5px 0px rgba(17, 17, 17, 0.8),
-    0px 10px 10px 0px rgba(17, 17, 17, 0.8),
-    0px 0px 8px 0px rgba(17, 17, 17, 0.8);
+  box-shadow: 0px 1px 1px 0px rgba(17, 17, 17, 0.8), 0px 2px 2px 0px rgba(17, 17, 17, 0.8), 0px 5px 5px 0px rgba(17, 17, 17, 0.8),
+    0px 10px 10px 0px rgba(17, 17, 17, 0.8), 0px 0px 8px 0px rgba(17, 17, 17, 0.8);
 `;
 
 const ModalHeader = styled.div`
@@ -89,24 +88,11 @@ const CancelText = styled(Text)`
   cursor: pointer;
 `;
 
-const Modal: React.FC<ModalProps> = ({
-  isOpen,
-  header,
-  onClose,
-  children,
-  actionComponent,
-}) => {
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isOpen, onClose]);
+const Modal: React.FC<ModalProps> = ({ isOpen, header, onClose, children, actionComponent }) => {
+  useKeyDown(isOpen ? 'Escape' : null, () => {
+    onClose();
+  });
+
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
@@ -115,12 +101,7 @@ const Modal: React.FC<ModalProps> = ({
         {header && (
           <ModalHeader>
             <ModalCloseButton onClick={onClose}>
-              <Image
-                src="/icons/common/x.svg"
-                alt="close"
-                width={15}
-                height={12}
-              />
+              <Image src='/icons/common/x.svg' alt='close' width={15} height={12} />
               <CancelText>{'Cancel'}</CancelText>
             </ModalCloseButton>
             <ModalTitleContainer>
