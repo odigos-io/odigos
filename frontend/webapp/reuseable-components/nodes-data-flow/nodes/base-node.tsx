@@ -65,8 +65,6 @@ interface BaseNodeProps {
 }
 
 export default memo(({ isConnectable, data }: BaseNodeProps) => {
-  console.log('data', data);
-
   const { title, subTitle, imageUri, type, monitors, isActive } = data;
 
   function renderHandles() {

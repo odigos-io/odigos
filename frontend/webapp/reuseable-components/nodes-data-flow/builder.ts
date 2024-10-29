@@ -2,7 +2,15 @@ import theme from '@/styles/theme';
 import { getActionIcon } from '@/utils';
 import { Node, Edge } from 'react-flow-renderer';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
-import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, type ActionData, type ActionItem, type ActualDestination, type K8sActualSource } from '@/types';
+import {
+  OVERVIEW_ENTITY_TYPES,
+  OVERVIEW_NODE_TYPES,
+  STATUSES,
+  type ActionData,
+  type ActionItem,
+  type ActualDestination,
+  type K8sActualSource,
+} from '@/types';
 
 // Constants
 const NODE_HEIGHT = 80;
@@ -63,7 +71,7 @@ export const buildNodesAndEdges = ({
             title: 'ADD SOURCE',
             subTitle: 'Add first source to collect OpenTelemetry data',
             imageUri: '',
-            status: 'healthy',
+            status: STATUSES.HEALTHY,
           }),
         ]
       : sources.map((source, index) =>
@@ -72,7 +80,7 @@ export const buildNodesAndEdges = ({
             title: source.name + (source.reportedName ? ` (${source.reportedName})` : ''),
             subTitle: source.kind,
             imageUri: getMainContainerLanguageLogo(source),
-            status: 'healthy',
+            status: STATUSES.HEALTHY,
             id: {
               kind: source.kind,
               name: source.name,
@@ -96,7 +104,7 @@ export const buildNodesAndEdges = ({
             title: 'ADD DESTIONATION',
             subTitle: 'Add first destination to monitor OpenTelemetry data',
             imageUri: '',
-            status: 'healthy',
+            status: STATUSES.HEALTHY,
           }),
         ]
       : destinations.map((destination, index) =>
@@ -105,7 +113,7 @@ export const buildNodesAndEdges = ({
             title: destination.name,
             subTitle: destination.destinationType.displayName,
             imageUri: destination.destinationType.imageUrl,
-            status: 'healthy',
+            status: STATUSES.HEALTHY,
             monitors: extractMonitors(destination.exportedSignals),
             id: destination.id,
           })
@@ -126,7 +134,7 @@ export const buildNodesAndEdges = ({
             title: 'ADD ACTION',
             subTitle: 'Add first action to modify the OpenTelemetry data',
             imageUri: '',
-            status: 'healthy',
+            status: STATUSES.HEALTHY,
           }),
         ]
       : actions.map((action, index) => {
@@ -135,7 +143,7 @@ export const buildNodesAndEdges = ({
           return createNode(`action-${index}`, 'base', centerColumnX, NODE_HEIGHT * (index + 1), {
             id: action.id,
             type: OVERVIEW_ENTITY_TYPES.ACTION,
-            status: 'healthy',
+            status: STATUSES.HEALTHY,
             title: actionSpec.actionName || action.type,
             subTitle: action.type,
             imageUri: getActionIcon(action.type),
