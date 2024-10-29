@@ -65,7 +65,7 @@ interface BaseNodeProps {
   targetPosition?: any;
 }
 
-const AddNode = ({ isConnectable, data }: BaseNodeProps) => {
+const AddNode = ({ id, isConnectable, data }: BaseNodeProps) => {
   return (
     <BaseNodeContainer>
       <TitleWrapper>
@@ -73,8 +73,8 @@ const AddNode = ({ isConnectable, data }: BaseNodeProps) => {
         <Title>{data.title}</Title>
       </TitleWrapper>
       <SubTitle>{data.subTitle}</SubTitle>
-      <Handle type='target' position={Position.Left} id='add-node-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
-      <Handle type='source' position={Position.Right} id='add-node-output' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
+      <Handle type='target' position={Position.Left} id={`${id}-input`} isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
+      <Handle type='source' position={Position.Right} id={`${id}-output`} isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
     </BaseNodeContainer>
   );
 };
