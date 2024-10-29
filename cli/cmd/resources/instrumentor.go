@@ -13,6 +13,7 @@ import (
 
 	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -64,54 +65,6 @@ func NewInstrumentorLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
 			Name:     "odigos-leader-election-role",
-		},
-	}
-}
-
-func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
-	return &rbacv1.RoleBinding{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "RoleBinding",
-			APIVersion: "rbac.authorization.k8s.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-instrumentor",
-			Namespace: ns,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind: "ServiceAccount",
-				Name: "odigos-instrumentor",
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
-			Name:     "odigos-instrumentor",
-		},
-	}
-}
-
-func NewInstrumentorRole(ns string) *rbacv1.Role {
-	return &rbacv1.Role{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Role",
-			APIVersion: "rbac.authorization.k8s.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-instrumentor",
-			Namespace: ns,
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{""},
-				Resources: []string{
-					"secrets",
-				},
-			},
 		},
 	}
 }
@@ -526,7 +479,15 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: consts.OdigosDeploymentConfigMapName,
+										},
+									},
+								},
 							},
+
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "webhook-server",
@@ -630,8 +591,6 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	certManagerInstalled := isCertManagerInstalled(ctx, a.client)
 	resources := []client.Object{
 		NewInstrumentorServiceAccount(a.ns),
-		NewInstrumentorRole(a.ns),
-		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorLeaderElectionRoleBinding(a.ns),
 		NewInstrumentorClusterRole(),
 		NewInstrumentorClusterRoleBinding(a.ns),
