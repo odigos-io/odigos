@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
+
 	"github.com/odigos-io/odigos/common"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -138,10 +140,13 @@ func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object, t
 		return LangDetectedState
 	}
 
-	// If there is device + no (inst instace / all pods restarted) = InstrumentationInProgress
-	// If all pods restarted && inst instance = Instrumented
+	if !k8sutils.IsRolloutCompleted(obj) {
+		return InstrumentationInProgress
+	}
 
-	return UnknownState
+	// TODO(edenfed): If relevant language + InstrumentationInstance does not exists = InstrumentationInProgress
+
+	return InstrumentedState
 }
 
 func (o *Orchestrator) log(str string) {
