@@ -1,8 +1,8 @@
 import styled from 'styled-components';
-import React, { useMemo, useState } from 'react';
 import { ChooseActionBody } from '../';
+import React, { useMemo, useState } from 'react';
+import { useActionCRUD, useActionFormData } from '@/hooks/actions';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
-import { useActionFormData, useCreateAction } from '@/hooks/actions';
 import { AutocompleteInput, Modal, NavigationButtons, Text, Divider, FadeLoader } from '@/reuseable-components';
 
 const DefineActionContainer = styled.section`
@@ -43,7 +43,7 @@ interface AddActionModalProps {
 
 export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, handleCloseModal }) => {
   const { formData, handleFormChange, resetFormData, validateForm } = useActionFormData();
-  const { createAction, loading } = useCreateAction({ onSuccess: handleClose });
+  const { createAction, loading } = useActionCRUD({ onSuccess: handleClose });
   const [selectedItem, setSelectedItem] = useState<ActionOption | null>(null);
 
   const isFormOk = useMemo(() => !!selectedItem && validateForm(), [selectedItem, formData]);

@@ -3,7 +3,7 @@ import { useNotify } from '../useNotify';
 import { useMutation } from '@apollo/client';
 import type { ActionInput, ActionsType } from '@/types';
 import { useComputePlatform } from '../compute-platform';
-import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations/action';
+import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
 
 interface UseActionCrudParams {
   onSuccess?: () => void;

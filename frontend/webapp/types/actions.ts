@@ -78,7 +78,7 @@ export interface ActionItem {
 
 export interface ActionData {
   id: string;
-  type: string;
+  type: ActionsType;
   spec: ActionItem | string;
 }
 
