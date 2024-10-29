@@ -3,6 +3,9 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/odigos-io/odigos/common"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,6 +93,49 @@ func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object, t
 
 		o.log(fmt.Sprintf("Error getting instrumentation config: %s, skipping", err))
 		return UnknownState
+	}
+
+	ia, err := o.Client.OdigosClient.InstrumentedApplications(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return LangDetectionInProgress
+		}
+
+		o.log(fmt.Sprintf("Error getting instrumented application: %s, skipping", err))
+		return UnknownState
+	}
+
+	if ia.Spec.RuntimeDetails == nil || len(ia.Spec.RuntimeDetails) == 0 {
+		return LangDetectionInProgress
+	}
+
+	langFound := false
+	for _, rd := range ia.Spec.RuntimeDetails {
+		if rd.Language != common.UnknownProgrammingLanguage && rd.Language != common.IgnoredProgrammingLanguage {
+			langFound = true
+			break
+		}
+	}
+
+	if !langFound {
+		o.log("Failed to deetect language, skipping")
+		return UnknownState
+	}
+
+	instDeviceFound := false
+	for _, c := range templateSpec.Spec.Containers {
+		if c.Resources.Limits != nil {
+			for val := range c.Resources.Limits {
+				if strings.HasPrefix(val.String(), common.OdigosResourceNamespace) {
+					instDeviceFound = true
+					break
+				}
+			}
+		}
+	}
+
+	if !instDeviceFound {
+		return InstrumentationInProgress
 	}
 
 	return UnknownState
