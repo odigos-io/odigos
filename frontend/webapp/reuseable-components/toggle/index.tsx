@@ -28,8 +28,7 @@ const ToggleSwitch = styled.div<{ isActive: boolean; disabled?: boolean }>`
   display: flex;
   align-items: center;
   padding: 2px;
-  background-color: ${({ isActive, theme }) =>
-    isActive ? theme.colors.primary : 'transparent'};
+  background-color: ${({ isActive, theme }) => (isActive ? theme.colors.primary : 'transparent')};
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
   cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
   opacity: ${({ isActive }) => (isActive ? 1 : 0.4)};
@@ -40,19 +39,12 @@ const ToggleSwitch = styled.div<{ isActive: boolean; disabled?: boolean }>`
     height: 12px;
     border-radius: 50%;
     background-color: ${({ theme }) => theme.colors.secondary};
-    transform: ${({ isActive }) =>
-      isActive ? 'translateX(12px)' : 'translateX(0)'};
+    transform: ${({ isActive }) => (isActive ? 'translateX(12px)' : 'translateX(0)')};
     transition: transform 0.3s;
   }
 `;
 
-const Toggle: React.FC<ToggleProps> = ({
-  title,
-  tooltip,
-  initialValue = false,
-  onChange,
-  disabled,
-}) => {
+const Toggle: React.FC<ToggleProps> = ({ title, tooltip, initialValue = false, onChange, disabled }) => {
   const [isActive, setIsActive] = useState(initialValue);
 
   useEffect(() => {
@@ -74,9 +66,7 @@ const Toggle: React.FC<ToggleProps> = ({
       <Container disabled={disabled} onClick={handleToggle}>
         <ToggleSwitch isActive={isActive} disabled={disabled} />
         <Text size={14}>{title}</Text>
-        {tooltip && (
-          <Image src="/icons/common/info.svg" alt="" width={16} height={16} />
-        )}
+        {tooltip && <Image src='/icons/common/info.svg' alt='' width={16} height={16} />}
       </Container>
     </Tooltip>
   );
