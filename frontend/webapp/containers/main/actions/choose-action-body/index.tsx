@@ -22,18 +22,21 @@ const FieldTitle = styled(Text)`
 `;
 
 interface ChooseActionContentProps {
+  isUpdate?: boolean;
   action: ActionOption;
   formData: ActionInput;
   handleFormChange: (key: keyof ActionInput, val: any) => void;
 }
 
-const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action, formData, handleFormChange }) => {
+const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ isUpdate, action, formData, handleFormChange }) => {
   return (
     <>
-      <Description>
-        {action.docsDescription}
-        <DocsButton endpoint={action.docsEndpoint} />
-      </Description>
+      {!isUpdate && (
+        <Description>
+          {action.docsDescription}
+          <DocsButton endpoint={action.docsEndpoint} />
+        </Description>
+      )}
 
       <FieldWrapper>
         <MonitoringCheckboxes
@@ -43,14 +46,16 @@ const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ action, formData
         />
       </FieldWrapper>
 
-      <FieldWrapper>
-        <FieldTitle>Action name</FieldTitle>
-        <Input
-          placeholder='Use a name that describes the action'
-          value={formData.name}
-          onChange={({ target: { value } }) => handleFormChange('name', value)}
-        />
-      </FieldWrapper>
+      {!isUpdate && (
+        <FieldWrapper>
+          <FieldTitle>Action name</FieldTitle>
+          <Input
+            placeholder='Use a name that describes the action'
+            value={formData.name}
+            onChange={({ target: { value } }) => handleFormChange('name', value)}
+          />
+        </FieldWrapper>
+      )}
 
       <ActionCustomFields actionType={action.type} value={formData.details} setValue={(val) => handleFormChange('details', val)} />
 
