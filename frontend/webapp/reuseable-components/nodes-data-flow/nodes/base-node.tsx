@@ -1,4 +1,4 @@
-import { Text } from '@/reuseable-components';
+import { Status, Text } from '@/reuseable-components';
 import { Handle, Position } from '@xyflow/react';
 import Image from 'next/image';
 import React, { memo } from 'react';
@@ -28,11 +28,7 @@ const SourceIconWrapper = styled.div`
   align-items: center;
   gap: 8px;
   border-radius: 8px;
-  background: linear-gradient(
-    180deg,
-    rgba(249, 249, 249, 0.06) 0%,
-    rgba(249, 249, 249, 0.02) 100%
-  );
+  background: linear-gradient(180deg, rgba(249, 249, 249, 0.06) 0%, rgba(249, 249, 249, 0.02) 100%);
 `;
 
 const BodyWrapper = styled.div`
@@ -55,11 +51,12 @@ const FooterText = styled(Text)`
 
 export interface NodeDataProps {
   type: 'source' | 'action' | 'destination';
+  status: 'healthy' | 'unhealthy';
   title: string;
   subTitle: string;
   imageUri: string;
   monitors?: string[];
-  status: 'healthy' | 'unhealthy';
+  isActive?: boolean;
 }
 
 interface BaseNodeProps {
@@ -68,7 +65,9 @@ interface BaseNodeProps {
 }
 
 export default memo(({ isConnectable, data }: BaseNodeProps) => {
-  const { title, subTitle, imageUri, type, monitors } = data;
+  console.log('data', data);
+
+  const { title, subTitle, imageUri, type, monitors, isActive } = data;
 
   function renderHandles() {
     switch (type) {
@@ -76,46 +75,22 @@ export default memo(({ isConnectable, data }: BaseNodeProps) => {
         return (
           <>
             {/* Source nodes have an output handle */}
-            <Handle
-              type="source"
-              position={Position.Right}
-              id="source-output"
-              style={{ visibility: 'hidden' }}
-              isConnectable={isConnectable}
-            />
+            <Handle type='source' position={Position.Right} id='source-output' style={{ visibility: 'hidden' }} isConnectable={isConnectable} />
           </>
         );
       case 'action':
         return (
           <>
             {/* Action nodes have both input and output handles */}
-            <Handle
-              type="target"
-              position={Position.Left}
-              id="action-input"
-              isConnectable={isConnectable}
-              style={{ visibility: 'hidden' }}
-            />
-            <Handle
-              type="source"
-              position={Position.Right}
-              id="action-output"
-              isConnectable={isConnectable}
-              style={{ visibility: 'hidden' }}
-            />
+            <Handle type='target' position={Position.Left} id='action-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
+            <Handle type='source' position={Position.Right} id='action-output' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
           </>
         );
       case 'destination':
         return (
           <>
             {/* Destination nodes only have an input handle */}
-            <Handle
-              style={{ visibility: 'hidden' }}
-              type="target"
-              position={Position.Left}
-              id="destination-input"
-              isConnectable={isConnectable}
-            />
+            <Handle style={{ visibility: 'hidden' }} type='target' position={Position.Left} id='destination-input' isConnectable={isConnectable} />
           </>
         );
       default:
@@ -124,34 +99,37 @@ export default memo(({ isConnectable, data }: BaseNodeProps) => {
   }
 
   function renderMonitors() {
-    if (monitors) {
-      return (
-        <FooterWrapper>
-          <FooterText>{'·'}</FooterText>
-          {monitors.map((monitor, index) => (
-            <Image
-              key={index}
-              src={`/icons/monitors/${monitor}.svg`}
-              width={10}
-              height={10}
-              alt={monitor}
-            />
-          ))}
-        </FooterWrapper>
-      );
+    if (!monitors) {
+      return null;
     }
-    return null;
+
+    return (
+      <FooterWrapper>
+        <FooterText>{'·'}</FooterText>
+        {monitors.map((monitor, index) => (
+          <Image key={index} src={`/icons/monitors/${monitor}.svg`} width={10} height={10} alt={monitor} />
+        ))}
+      </FooterWrapper>
+    );
+  }
+
+  function renderStatus() {
+    if (typeof isActive !== 'boolean') {
+      return null;
+    }
+
+    return (
+      <FooterWrapper>
+        <FooterText>{'·'}</FooterText>
+        <Status isActive={isActive} withSmaller withSpecialFont />
+      </FooterWrapper>
+    );
   }
 
   return (
     <BaseNodeContainer>
       <SourceIconWrapper>
-        <Image
-          src={imageUri || '/icons/common/folder.svg'}
-          width={20}
-          height={20}
-          alt="source"
-        />
+        <Image src={imageUri || '/icons/common/folder.svg'} width={20} height={20} alt='source' />
       </SourceIconWrapper>
       <BodyWrapper>
         <Text>{title}</Text>
@@ -159,6 +137,7 @@ export default memo(({ isConnectable, data }: BaseNodeProps) => {
           <FooterText>{subTitle}</FooterText>
 
           {renderMonitors()}
+          {renderStatus()}
         </FooterWrapper>
       </BodyWrapper>
       {renderHandles()}

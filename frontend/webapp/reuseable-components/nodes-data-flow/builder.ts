@@ -133,13 +133,14 @@ export const buildNodesAndEdges = ({
           const actionSpec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
 
           return createNode(`action-${index}`, 'base', centerColumnX, NODE_HEIGHT * (index + 1), {
+            id: action.id,
             type: OVERVIEW_ENTITY_TYPES.ACTION,
-            title: actionSpec.actionName,
+            status: 'healthy',
+            title: actionSpec.actionName || action.type,
             subTitle: action.type,
             imageUri: getActionIcon(action.type),
             monitors: actionSpec.signals,
-            status: 'healthy',
-            id: action.id,
+            isActive: !actionSpec.disabled,
           });
         })),
   ];
