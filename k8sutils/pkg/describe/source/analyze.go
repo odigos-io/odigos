@@ -255,10 +255,15 @@ func analyzeInstrumentedApplication(resources *OdigosSourceResources) Instrument
 		}
 	}
 
+	containers := make([]ContainerRuntimeInfoAnalyze, 0)
+	if resources.InstrumentedApplication != nil {
+		containers = analyzeRuntimeDetails(resources.InstrumentedApplication.Spec.RuntimeDetails)
+	}
+
 	return InstrumentedApplicationAnalyze{
 		Created:    created,
 		CreateTime: createdTime,
-		Containers: analyzeRuntimeDetails(resources.InstrumentedApplication.Spec.RuntimeDetails),
+		Containers: containers,
 	}
 }
 
