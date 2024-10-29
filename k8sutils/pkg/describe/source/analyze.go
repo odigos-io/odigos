@@ -95,12 +95,12 @@ func analyzeInstrumentationLabels(resource *OdigosSourceResources, workloadObj *
 	workloadLabel, workloadFound := workloadObj.GetLabels()[consts.OdigosInstrumentationLabel]
 	nsLabel, nsFound := resource.Namespace.GetLabels()[consts.OdigosInstrumentationLabel]
 
-	workload := &properties.EntityProperty{Name: "Workload", Value: "unset"}
+	workload := &properties.EntityProperty{Name: "Workload", Value: "unset", Explain: "the value of the odigos-instrumentation label on the workload object in k8s"}
 	if workloadFound {
 		workload.Value = fmt.Sprintf("%s=%s", consts.OdigosInstrumentationLabel, workloadLabel)
 	}
 
-	ns := &properties.EntityProperty{Name: "Namespace", Value: "unset"}
+	ns := &properties.EntityProperty{Name: "Namespace", Value: "unset", Explain: "the value of the odigos-instrumentation label on the namespace object in k8s"}
 	if nsFound {
 		ns.Value = fmt.Sprintf("%s=%s", consts.OdigosInstrumentationLabel, nsLabel)
 	}
@@ -129,12 +129,14 @@ func analyzeInstrumentationLabels(resource *OdigosSourceResources, workloadObj *
 	}
 
 	instrumentedProperty := properties.EntityProperty{
-		Name:  "Instrumented",
-		Value: instrumented,
+		Name:    "Instrumented",
+		Value:   instrumented,
+		Explain: "whether this workload is considered for instrumentation based on the presence of the odigos-instrumentation label",
 	}
 	decisionTextProperty := properties.EntityProperty{
-		Name:  "DecisionText",
-		Value: decisionText,
+		Name:    "DecisionText",
+		Value:   decisionText,
+		Explain: "a human readable explanation of the decision to instrument or not instrument this workload",
 	}
 
 	return InstrumentationLabelsAnalyze{
@@ -150,16 +152,18 @@ func analyzeInstrumentationConfig(resources *OdigosSourceResources, instrumented
 	instrumentationConfigCreated := resources.InstrumentationConfig != nil
 
 	created := properties.EntityProperty{
-		Name:   "Created",
-		Value:  properties.GetTextCreated(instrumentationConfigCreated),
-		Status: properties.GetSuccessOrTransitioning(instrumentationConfigCreated == instrumented),
+		Name:    "Created",
+		Value:   properties.GetTextCreated(instrumentationConfigCreated),
+		Status:  properties.GetSuccessOrTransitioning(instrumentationConfigCreated == instrumented),
+		Explain: "whether the instrumentation config object exists in the cluster. When a workload is labeled for instrumentation, an instrumentation config object is created",
 	}
 
 	var createdTime *properties.EntityProperty
 	if instrumentationConfigCreated {
 		createdTime = &properties.EntityProperty{
-			Name:  "create time",
-			Value: resources.InstrumentationConfig.GetCreationTimestamp().String(),
+			Name:    "create time",
+			Value:   resources.InstrumentationConfig.GetCreationTimestamp().String(),
+			Explain: "the time when the instrumentation config object was created",
 		}
 	}
 
@@ -175,19 +179,22 @@ func analyzeRuntimeDetails(runtimeDetailsByContainer []odigosv1.RuntimeDetailsBy
 	for _, container := range runtimeDetailsByContainer {
 
 		containerName := properties.EntityProperty{
-			Name:  "Container Name",
-			Value: container.ContainerName,
+			Name:    "Container Name",
+			Value:   container.ContainerName,
+			Explain: "the unique name of the container in the k8s pod",
 		}
 
 		language := properties.EntityProperty{
-			Name:   "Programming Language",
-			Value:  container.Language,
-			Status: properties.GetSuccessOrError(container.Language != common.UnknownProgrammingLanguage),
+			Name:    "Programming Language",
+			Value:   container.Language,
+			Status:  properties.GetSuccessOrError(container.Language != common.UnknownProgrammingLanguage),
+			Explain: "the programming language detected by odigos to be running in this container",
 		}
 
 		runtimeVersion := properties.EntityProperty{
-			Name:  "Runtime Version",
-			Value: container.RuntimeVersion,
+			Name:    "Runtime Version",
+			Value:   container.RuntimeVersion,
+			Explain: "the version of the runtime detected by odigos to be running in this container",
 		}
 		if container.RuntimeVersion == "" {
 			runtimeVersion.Value = "not available"
@@ -218,8 +225,9 @@ func analyzeRuntimeInfo(resources *OdigosSourceResources) *RuntimeInfoAnalyze {
 	}
 
 	generation := properties.EntityProperty{
-		Name:  "Workload Generation",
-		Value: resources.InstrumentationConfig.Status.ObservedWorkloadGeneration,
+		Name:    "Workload Generation",
+		Value:   resources.InstrumentationConfig.Status.ObservedWorkloadGeneration,
+		Explain: "the k8s object generation of the workload object that this instrumentation config is associated with",
 	}
 
 	return &RuntimeInfoAnalyze{
@@ -232,16 +240,18 @@ func analyzeInstrumentedApplication(resources *OdigosSourceResources) Instrument
 	instrumentedApplicationCreated := resources.InstrumentedApplication != nil
 
 	created := properties.EntityProperty{
-		Name:   "Created",
-		Value:  properties.GetTextCreated(instrumentedApplicationCreated),
-		Status: properties.GetSuccessOrTransitioning(instrumentedApplicationCreated),
+		Name:    "Created",
+		Value:   properties.GetTextCreated(instrumentedApplicationCreated),
+		Status:  properties.GetSuccessOrTransitioning(instrumentedApplicationCreated),
+		Explain: "whether the instrumented application object exists in the cluster. When a workload is labeled for instrumentation, an instrumented application object is created",
 	}
 
 	var createdTime *properties.EntityProperty
 	if instrumentedApplicationCreated {
 		createdTime = &properties.EntityProperty{
-			Name:  "create time",
-			Value: resources.InstrumentedApplication.GetCreationTimestamp().String(),
+			Name:    "create time",
+			Value:   resources.InstrumentedApplication.GetCreationTimestamp().String(),
+			Explain: "the time when the instrumented application object was created",
 		}
 	}
 
@@ -283,9 +293,10 @@ func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj 
 	}
 
 	statusText := properties.EntityProperty{
-		Name:   "Status",
-		Value:  appliedInstrumentationDeviceStatusMessage,
-		Status: appliedDeviceStatus,
+		Name:    "Status",
+		Value:   appliedInstrumentationDeviceStatusMessage,
+		Status:  appliedDeviceStatus,
+		Explain: "the result of applying the instrumentation device to the workload manifest",
 	}
 
 	// get original env vars:
@@ -296,8 +307,9 @@ func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj 
 	for _, container := range templateContainers {
 
 		containerName := properties.EntityProperty{
-			Name:  "Container Name",
-			Value: container.Name,
+			Name:    "Container Name",
+			Value:   container.Name,
+			Explain: "the unique name of the container in the k8s pod",
 		}
 
 		odigosDevices := make([]string, 0)
@@ -309,8 +321,9 @@ func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj 
 		}
 
 		devices := properties.EntityProperty{
-			Name:  "Devices",
-			Value: odigosDevices,
+			Name:    "Devices",
+			Value:   odigosDevices,
+			Explain: "the odigos instrumentation devices that were added to the workload manifest",
 		}
 
 		originalContainerEnvs := origWorkloadEnvValues.GetContainerStoredEnvs(container.Name)
@@ -318,13 +331,15 @@ func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj 
 		for envName, envValue := range originalContainerEnvs {
 			if envValue == nil {
 				originalEnv = append(originalEnv, properties.EntityProperty{
-					Name:  envName,
-					Value: "unset",
+					Name:    envName,
+					Value:   "unset",
+					Explain: "the original value of the environment variable in the workload manifest, before it was patched by odigos",
 				})
 			} else {
 				originalEnv = append(originalEnv, properties.EntityProperty{
-					Name:  envName,
-					Value: *envValue,
+					Name:    envName,
+					Value:   *envValue,
+					Explain: "the original value of the environment variable in the workload manifest, before it was patched by odigos",
 				})
 			}
 		}
@@ -347,23 +362,26 @@ func analyzeInstrumentationInstance(instrumentationInstance *odigosv1.Instrument
 	var healthy properties.EntityProperty
 	if instrumentationInstance.Status.Healthy == nil {
 		healthy = properties.EntityProperty{
-			Name:   "Healthy",
-			Value:  "Not Reported",
-			Status: properties.PropertyStatusTransitioning,
+			Name:    "Healthy",
+			Value:   "Not Reported",
+			Status:  properties.PropertyStatusTransitioning,
+			Explain: "health indication for the instrumentation running for this process",
 		}
 	} else {
 		healthy = properties.EntityProperty{
-			Name:   "Healthy",
-			Value:  *instrumentationInstance.Status.Healthy,
-			Status: properties.GetSuccessOrError(*instrumentationInstance.Status.Healthy),
+			Name:    "Healthy",
+			Value:   *instrumentationInstance.Status.Healthy,
+			Status:  properties.GetSuccessOrError(*instrumentationInstance.Status.Healthy),
+			Explain: "health indication for the instrumentation running for this process",
 		}
 	}
 
 	var message *properties.EntityProperty
 	if instrumentationInstance.Status.Message != "" {
 		message = &properties.EntityProperty{
-			Name:  "Message",
-			Value: instrumentationInstance.Status.Message,
+			Name:    "Message",
+			Value:   instrumentationInstance.Status.Message,
+			Explain: "a human readable message from the instrumentation indicating the health of the instrumentation running for this process",
 		}
 	}
 
@@ -402,24 +420,28 @@ func analyzePods(resources *OdigosSourceResources, expectedDevices Instrumentati
 		podsStatuses[pod.Status.Phase]++
 
 		name := properties.EntityProperty{
-			Name:  "Pod Name",
-			Value: pod.GetName(),
+			Name:    "Pod Name",
+			Value:   pod.GetName(),
+			Explain: "the name of the k8s pod object that is part of the source workload",
 		}
 		nodeName := properties.EntityProperty{
-			Name:  "Node Name",
-			Value: pod.Spec.NodeName,
+			Name:    "Node Name",
+			Value:   pod.Spec.NodeName,
+			Explain: "the name of the k8s node where the current pod being described is scheduled",
 		}
 		phase := properties.EntityProperty{
-			Name:   "Phase",
-			Value:  pod.Status.Phase,
-			Status: podPhaseToStatus(pod.Status.Phase),
+			Name:    "Phase",
+			Value:   pod.Status.Phase,
+			Status:  podPhaseToStatus(pod.Status.Phase),
+			Explain: "the current pod phase for the pod being described",
 		}
 
 		containers := make([]PodContainerAnalyze, 0, len(pod.Spec.Containers))
 		for _, container := range pod.Spec.Containers {
 			containerName := properties.EntityProperty{
-				Name:  "Container Name",
-				Value: container.Name,
+				Name:    "Container Name",
+				Value:   container.Name,
+				Explain: "the unique name of a container being described in the pod",
 			}
 
 			deviceNames := make([]string, 0)
@@ -439,9 +461,10 @@ func analyzePods(resources *OdigosSourceResources, expectedDevices Instrumentati
 			}
 			devicesStatus := properties.GetSuccessOrError(expectedContainer != nil && reflect.DeepEqual(deviceNames, expectedContainer.Devices.Value))
 			actualDevices := properties.EntityProperty{
-				Name:   "Actual Devices",
-				Value:  deviceNames,
-				Status: devicesStatus,
+				Name:    "Actual Devices",
+				Value:   deviceNames,
+				Status:  devicesStatus,
+				Explain: "the odigos instrumentation devices that were found on this pod container instance",
 			}
 
 			// find the instrumentation instances for this pod
@@ -494,9 +517,9 @@ func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObjec
 	pods, podsText := analyzePods(resources, device)
 
 	return &SourceAnalyze{
-		Name:      properties.EntityProperty{Name: "Name", Value: workloadObj.GetName()},
-		Kind:      properties.EntityProperty{Name: "Kind", Value: workloadObj.Kind},
-		Namespace: properties.EntityProperty{Name: "Namespace", Value: workloadObj.GetNamespace()},
+		Name:      properties.EntityProperty{Name: "Name", Value: workloadObj.GetName(), Explain: "the name of the k8s workload object that this source describes"},
+		Kind:      properties.EntityProperty{Name: "Kind", Value: workloadObj.Kind, Explain: "the kind of the k8s workload object that this source describes (deployment/daemonset/statefulset)"},
+		Namespace: properties.EntityProperty{Name: "Namespace", Value: workloadObj.GetNamespace(), Explain: "the namespace of the k8s workload object that this source describes"},
 		Labels:    labelsAnalysis,
 
 		InstrumentationConfig:   icAnalysis,
