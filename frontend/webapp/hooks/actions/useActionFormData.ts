@@ -56,9 +56,13 @@ export function useActionFormData() {
           break;
         }
 
+        case 'disabled': {
+          handleFormChange('disable', v);
+          break;
+        }
+
         case 'notes':
-        case 'signals':
-        case 'disable': {
+        case 'signals': {
           handleFormChange(k, v);
           break;
         }

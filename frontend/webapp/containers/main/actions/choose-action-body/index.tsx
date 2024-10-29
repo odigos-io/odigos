@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
 import { type ActionOption } from '../choose-action-modal/action-options';
-import { DocsButton, Input, Text, TextArea } from '@/reuseable-components';
+import { Checkbox, DocsButton, Input, Text, TextArea } from '@/reuseable-components';
 import { MonitoringCheckboxes } from '@/reuseable-components/monitoring-checkboxes';
 
 const Description = styled(Text)`
@@ -31,6 +31,13 @@ interface ChooseActionContentProps {
 const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ isUpdate, action, formData, handleFormChange }) => {
   return (
     <>
+      {isUpdate && (
+        <FieldWrapper>
+          <FieldTitle>Status</FieldTitle>
+          <Checkbox title='Active' initialValue={!formData.disable} onChange={(bool) => handleFormChange('disable', !bool)} />
+        </FieldWrapper>
+      )}
+
       {!isUpdate && (
         <Description>
           {action.docsDescription}
