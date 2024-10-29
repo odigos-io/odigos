@@ -1,16 +1,8 @@
-import React, {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useState,
-} from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import styled from 'styled-components';
 import { ExportedSignals } from '@/types';
 import { CardDetails, EditDestinationForm } from '@/components';
-import {
-  useDestinationFormData,
-  useEditDestinationFormHandlers,
-} from '@/hooks';
+import { useDestinationFormData, useEditDestinationFormHandlers } from '@/hooks';
 
 export type DestinationDrawerHandle = {
   getCurrentData: () => {
@@ -24,24 +16,12 @@ interface DestinationDrawerProps {
   isEditing: boolean;
 }
 
-const DestinationDrawer = forwardRef<
-  DestinationDrawerHandle,
-  DestinationDrawerProps
->(({ isEditing }, ref) => {
+const DestinationDrawer = forwardRef<DestinationDrawerHandle, DestinationDrawerProps>(({ isEditing }, ref) => {
   const [isFormDirty, setIsFormDirty] = useState(false);
-  const {
-    cardData,
-    dynamicFields,
-    exportedSignals,
-    supportedSignals,
-    destinationType,
-    resetFormData,
-    setDynamicFields,
-    setExportedSignals,
-  } = useDestinationFormData();
+  const { cardData, dynamicFields, exportedSignals, supportedSignals, destinationType, resetFormData, setDynamicFields, setExportedSignals } =
+    useDestinationFormData();
 
-  const { handleSignalChange, handleDynamicFieldChange } =
-    useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
+  const { handleSignalChange, handleDynamicFieldChange } = useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
 
   useEffect(() => {
     if (!isEditing && isFormDirty) {
@@ -82,6 +62,8 @@ const DestinationDrawer = forwardRef<
     <CardDetails data={cardData} />
   );
 });
+
+DestinationDrawer.displayName = 'DestinationDrawer';
 
 export { DestinationDrawer };
 

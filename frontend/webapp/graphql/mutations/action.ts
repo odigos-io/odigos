@@ -7,3 +7,11 @@ export const CREATE_ACTION = gql`
     }
   }
 `;
+
+export const UPDATE_ACTION = gql`
+  mutation UpdateAction($id: ID!, $action: ActionInput!) {
+    updateAction(id: $id, action: $action) {
+      id
+    }
+  }
+`;
