@@ -1,8 +1,8 @@
 import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { ConnectionStatus } from '@/reuseable-components';
 import { PlatformTitle } from './cp-title';
+import { Status } from '@/reuseable-components';
 
 interface MainHeaderProps {}
 
@@ -29,17 +29,12 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
   return (
     <HeaderContainer>
       <Logo>
-        <Image
-          src="/brand/transparent-logo-white.svg"
-          alt="logo"
-          width={84}
-          height={20}
-        />
+        <Image src='/brand/transparent-logo-white.svg' alt='logo' width={84} height={20} />
       </Logo>
       <PlatformTitleWrapper>
-        <PlatformTitle type="k8s" />
+        <PlatformTitle type='k8s' />
       </PlatformTitleWrapper>
-      <ConnectionStatus title="Connection Alive" status="alive" />
+      <Status title='Connection Alive' isActive withIcon withBackground />
     </HeaderContainer>
   );
 };
