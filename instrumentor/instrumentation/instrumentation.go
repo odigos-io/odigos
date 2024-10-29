@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -217,4 +218,23 @@ func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, 
 	container.Env = newEnvs
 
 	return nil
+}
+
+func SetInjectInstrumentationLabel(original *corev1.PodTemplateSpec) {
+	odigosTier := env.GetOdigosTierFromEnv()
+
+	// inject the instrumentation annotation for oss tier only
+	if odigosTier == common.CommunityOdigosTier {
+		if original.Labels == nil {
+			original.Labels = make(map[string]string)
+		}
+		original.Labels["odigos.io/inject-instrumentation"] = "true"
+	}
+}
+
+// RemoveInjectInstrumentationLabel removes the "odigos.io/inject-instrumentation" label if it exists.
+func RemoveInjectInstrumentationLabel(original *corev1.PodTemplateSpec) {
+	if original.Labels != nil {
+		delete(original.Labels, "odigos.io/inject-instrumentation")
+	}
 }
