@@ -19,7 +19,9 @@ const LatencySampler: React.FC<Props> = ({ value, setValue }) => {
       endpoints_filters: arr,
     };
 
-    setValue(JSON.stringify(payload));
+    const str = !!payload.endpoints_filters.length ? JSON.stringify(payload) : '';
+
+    setValue(str);
   };
 
   return (

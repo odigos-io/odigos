@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { Input } from '../input';
 import { Button } from '../button';
@@ -75,27 +75,39 @@ const InputList: React.FC<InputListProps> = ({ initialValues = INITIAL, value = 
     if (!inputs.length) setInputs(INITIAL);
   }, []);
 
+  const recordedValues = useRef('');
+
   useEffect(() => {
-    if (initialValues.length > 0) {
-      onChange(initialValues);
+    // Filter out rows where either key or value is empty
+    const validValues = inputs.filter((val) => val.trim() !== '');
+    const stringified = JSON.stringify(validValues);
+
+    // Only trigger onChange if valid key-value pairs have changed
+    if (recordedValues.current !== stringified) {
+      recordedValues.current = stringified;
+
+      if (onChange) onChange(validValues);
     }
-  }, [initialValues]);
+  }, [inputs, onChange]);
 
   const handleAddInput = () => {
-    setInputs([...inputs, '']);
+    setInputs((prev) => {
+      const payload = [...prev];
+      payload.push('');
+      return payload;
+    });
   };
 
-  const handleDeleteInput = (index: number) => {
-    const newInputs = inputs.filter((_, i) => i !== index);
-    setInputs(newInputs);
-    onChange(newInputs);
+  const handleDeleteInput = (idx: number) => {
+    setInputs((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleInputChange = (value: string, index: number) => {
-    const newInputs = [...inputs];
-    newInputs[index] = value;
-    setInputs(newInputs);
-    onChange(newInputs);
+  const handleInputChange = (val: string, idx: number) => {
+    setInputs((prev) => {
+      const payload = [...prev];
+      payload[idx] = val;
+      return payload;
+    });
   };
 
   // Check if any input field is empty

@@ -48,7 +48,9 @@ const PiiMasking: React.FC<Props> = ({ value, setValue }) => {
       piiCategories: arr,
     };
 
-    setValue(JSON.stringify(payload));
+    const str = !!arr.length ? JSON.stringify(payload) : '';
+
+    setValue(str);
     setIsLastSelection(arr.length === 1);
   };
 

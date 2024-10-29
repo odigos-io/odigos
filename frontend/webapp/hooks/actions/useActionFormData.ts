@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActionInput } from '@/types';
+import type { ActionInput } from '@/types';
 
 const INITIAL: ActionInput = {
   type: '',
