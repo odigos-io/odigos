@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewOdigosDeploymentConfigMap(ns string, odigosVersion string) *corev1.ConfigMap {
+func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -27,6 +27,7 @@ func NewOdigosDeploymentConfigMap(ns string, odigosVersion string) *corev1.Confi
 		},
 		Data: map[string]string{
 			"ODIGOS_VERSION": odigosVersion,
+			"ODIGOS_TIER":    odigosTier,
 		},
 	}
 }
@@ -104,7 +105,7 @@ func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployme
 
 func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []client.Object{
-		NewOdigosDeploymentConfigMap(a.ns, a.odigosVersion),
+		NewOdigosDeploymentConfigMap(a.ns, a.odigosVersion, string(a.odigosTier)),
 		NewLeaderElectionRole(a.ns),
 	}
 
