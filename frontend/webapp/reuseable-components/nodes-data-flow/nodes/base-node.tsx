@@ -1,8 +1,9 @@
-import { Status, Text } from '@/reuseable-components';
-import { Handle, Position } from '@xyflow/react';
+import React from 'react';
 import Image from 'next/image';
-import React, { memo } from 'react';
 import styled from 'styled-components';
+import type { STATUSES } from '@/types';
+import { Handle, Position } from '@xyflow/react';
+import { Status, Text } from '@/reuseable-components';
 
 const BaseNodeContainer = styled.div`
   display: flex;
@@ -50,8 +51,9 @@ const FooterText = styled(Text)`
 `;
 
 export interface NodeDataProps {
+  id: string;
   type: 'source' | 'action' | 'destination';
-  status: 'healthy' | 'unhealthy';
+  status: STATUSES;
   title: string;
   subTitle: string;
   imageUri: string;
@@ -60,11 +62,12 @@ export interface NodeDataProps {
 }
 
 interface BaseNodeProps {
-  data: NodeDataProps;
+  id: string;
   isConnectable: boolean;
+  data: NodeDataProps;
 }
 
-export default memo(({ isConnectable, data }: BaseNodeProps) => {
+const BaseNode = ({ isConnectable, data }: BaseNodeProps) => {
   const { title, subTitle, imageUri, type, monitors, isActive } = data;
 
   function renderHandles() {
@@ -88,7 +91,7 @@ export default memo(({ isConnectable, data }: BaseNodeProps) => {
         return (
           <>
             {/* Destination nodes only have an input handle */}
-            <Handle style={{ visibility: 'hidden' }} type='target' position={Position.Left} id='destination-input' isConnectable={isConnectable} />
+            <Handle type='target' position={Position.Left} id='destination-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
           </>
         );
       default:
@@ -141,4 +144,6 @@ export default memo(({ isConnectable, data }: BaseNodeProps) => {
       {renderHandles()}
     </BaseNodeContainer>
   );
-});
+};
+
+export default BaseNode;
