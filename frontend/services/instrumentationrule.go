@@ -207,49 +207,19 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		payloadCollection = &instrumentationrules.PayloadCollection{}
 
 		if input.PayloadCollection.HTTPRequest != nil {
-
-			mineTypes := make([]string, len(input.PayloadCollection.HTTPRequest.MimeTypes))
-			for i, mt := range input.PayloadCollection.HTTPRequest.MimeTypes {
-				mineTypes[i] = *mt
-			}
-
-			maxPayloadLength := int64(*input.PayloadCollection.HTTPRequest.MaxPayloadLength)
-
-			payloadCollection.HttpRequest = &instrumentationrules.HttpPayloadCollection{
-				MimeTypes:           &mineTypes,
-				MaxPayloadLength:    &maxPayloadLength,
-				DropPartialPayloads: input.PayloadCollection.HTTPRequest.DropPartialPayloads,
-			}
+			payloadCollection.HttpRequest = &instrumentationrules.HttpPayloadCollection{}
 		}
 
 		if input.PayloadCollection.HTTPResponse != nil {
-			mimeTypes := make([]string, len(input.PayloadCollection.HTTPResponse.MimeTypes))
-			for i, mt := range input.PayloadCollection.HTTPResponse.MimeTypes {
-				mimeTypes[i] = *mt
-			}
-			maxPayloadLength := int64(*input.PayloadCollection.HTTPResponse.MaxPayloadLength)
-
-			payloadCollection.HttpResponse = &instrumentationrules.HttpPayloadCollection{
-				MimeTypes:           &mimeTypes,
-				MaxPayloadLength:    &maxPayloadLength,
-				DropPartialPayloads: input.PayloadCollection.HTTPResponse.DropPartialPayloads,
-			}
+			payloadCollection.HttpResponse = &instrumentationrules.HttpPayloadCollection{}
 		}
 
 		if input.PayloadCollection.DbQuery != nil {
-			maxPayloadLength := int64(*input.PayloadCollection.DbQuery.MaxPayloadLength)
-			payloadCollection.DbQuery = &instrumentationrules.DbQueryPayloadCollection{
-				MaxPayloadLength:    &maxPayloadLength,
-				DropPartialPayloads: input.PayloadCollection.DbQuery.DropPartialPayloads,
-			}
+			payloadCollection.DbQuery = &instrumentationrules.DbQueryPayloadCollection{}
 		}
 
 		if input.PayloadCollection.Messaging != nil {
-			maxPayloadLength := int64(*input.PayloadCollection.Messaging.MaxPayloadLength)
-			payloadCollection.Messaging = &instrumentationrules.MessagingPayloadCollection{
-				MaxPayloadLength:    &maxPayloadLength,
-				DropPartialPayloads: input.PayloadCollection.Messaging.DropPartialPayloads,
-			}
+			payloadCollection.Messaging = &instrumentationrules.MessagingPayloadCollection{}
 		}
 	}
 

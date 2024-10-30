@@ -652,7 +652,7 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 
 // CreateInstrumentationRule is the resolver for the createInstrumentationRule field.
 func (r *mutationResolver) CreateInstrumentationRule(ctx context.Context, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
-	panic(fmt.Errorf("not implemented: CreateInstrumentationRule - createInstrumentationRule"))
+	return services.CreateInstrumentationRule(ctx, instrumentationRule)
 }
 
 // UpdateInstrumentationRule is the resolver for the updateInstrumentationRule field.
