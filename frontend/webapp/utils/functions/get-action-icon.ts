@@ -1,12 +1,10 @@
-const ACTION_ICON_PATH = '/icons/actions/';
+import type { ActionsType } from '@/types';
 
-export const getActionIcon = (actionType?: string) => {
-  if (!actionType) {
-    return `${ACTION_ICON_PATH}add-action.svg`;
-  }
+const ICON_PATH = '/icons/actions/';
 
-  const typeLowerCased = actionType.toLowerCase();
+export const getActionIcon = (type: ActionsType | 'sampler') => {
+  const typeLowerCased = type.toLowerCase();
   const isSampler = typeLowerCased.includes('sampler');
 
-  return `${ACTION_ICON_PATH}${isSampler ? 'sampler' : typeLowerCased}.svg`;
+  return `${ICON_PATH}${isSampler ? 'sampler' : typeLowerCased}.svg`;
 };

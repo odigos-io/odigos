@@ -1,6 +1,7 @@
 import theme from '@/styles/theme';
 import { getActionIcon } from '@/utils';
 import { Node, Edge } from 'react-flow-renderer';
+import { getRuleIcon } from '@/utils/functions/get-rule-icon';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 import {
   OVERVIEW_ENTITY_TYPES,
@@ -75,7 +76,6 @@ export const buildNodesAndEdges = ({
             type: OVERVIEW_NODE_TYPES.ADD_RULE,
             title: 'ADD RULE',
             subTitle: 'Add first rule to modify the OpenTelemetry data',
-            imageUri: '',
             status: STATUSES.HEALTHY,
           }),
         ]
@@ -86,7 +86,7 @@ export const buildNodesAndEdges = ({
             status: STATUSES.HEALTHY,
             title: rule.actionName || rule.type,
             subTitle: rule.type,
-            imageUri: '',
+            imageUri: getRuleIcon(rule.type),
             isActive: false,
           })
         )),
@@ -105,7 +105,6 @@ export const buildNodesAndEdges = ({
             type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
             title: 'ADD SOURCE',
             subTitle: 'Add first source to collect OpenTelemetry data',
-            imageUri: '',
             status: STATUSES.HEALTHY,
           }),
         ]
@@ -138,7 +137,6 @@ export const buildNodesAndEdges = ({
             type: OVERVIEW_NODE_TYPES.ADD_ACTION,
             title: 'ADD ACTION',
             subTitle: 'Add first action to modify the OpenTelemetry data',
-            imageUri: '',
             status: STATUSES.HEALTHY,
           }),
         ]
@@ -171,7 +169,6 @@ export const buildNodesAndEdges = ({
             type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
             title: 'ADD DESTIONATION',
             subTitle: 'Add first destination to monitor OpenTelemetry data',
-            imageUri: '',
             status: STATUSES.HEALTHY,
           }),
         ]

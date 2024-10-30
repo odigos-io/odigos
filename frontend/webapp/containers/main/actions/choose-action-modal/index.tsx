@@ -10,7 +10,7 @@ const Container = styled.section`
   max-width: 640px;
   height: 640px;
   margin: 0 15vw;
-  padding-top: 64px;
+  padding: 64px 12px 0 12px;
   display: flex;
   flex-direction: column;
   overflow-y: scroll;
@@ -18,6 +18,7 @@ const Container = styled.section`
 
 const Center = styled.div`
   width: 100%;
+  margin-top: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -32,7 +33,7 @@ interface AddActionModalProps {
 export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, handleCloseModal }) => {
   const { formData, handleFormChange, resetFormData, validateForm } = useActionFormData();
   const { createAction, loading } = useActionCRUD({ onSuccess: handleClose });
-  const [selectedItem, setSelectedItem] = useState<ActionOption | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ActionOption | undefined>(undefined);
 
   const isFormOk = useMemo(() => !!selectedItem && validateForm(), [selectedItem, formData]);
 
@@ -42,7 +43,7 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
 
   function handleClose() {
     resetFormData();
-    setSelectedItem(null);
+    setSelectedItem(undefined);
     handleCloseModal();
   }
 
@@ -75,7 +76,7 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
           title='Define Action'
           description='Actions are a way to modify the OpenTelemetry data recorded by Odigos sources before it is exported to your Odigos destinations. Choose an action type and provide necessary information.'
         />
-        <AutocompleteInput options={ACTION_OPTIONS} onOptionSelect={handleSelect} />
+        <AutocompleteInput options={ACTION_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: '24px' }} />
 
         {!!selectedItem?.type ? (
           <div>
