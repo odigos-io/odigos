@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
-import { FieldTitle, FieldWrapper } from './styled';
-import { KeyValueInputsList } from '@/reuseable-components';
 import type { RenameAttributesSpec } from '@/types';
+import { KeyValueInputsList } from '@/reuseable-components';
 
 type Props = {
   value: string;
@@ -36,12 +35,7 @@ const RenameAttributes: React.FC<Props> = ({ value, setValue }) => {
     setValue(str);
   };
 
-  return (
-    <FieldWrapper>
-      <FieldTitle>Attributes to rename</FieldTitle>
-      <KeyValueInputsList value={mappedValue} onChange={handleChange} />
-    </FieldWrapper>
-  );
+  return <KeyValueInputsList title='Attributes to rename' required value={mappedValue} onChange={handleChange} />;
 };
 
 export default RenameAttributes;

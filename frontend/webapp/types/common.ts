@@ -37,12 +37,14 @@ export interface StepProps {
 }
 
 export enum OVERVIEW_ENTITY_TYPES {
+  RULE = 'rule',
   SOURCE = 'source',
   ACTION = 'action',
   DESTINATION = 'destination',
 }
 
 export enum OVERVIEW_NODE_TYPES {
+  ADD_RULE = 'addRule',
   ADD_SOURCE = 'addSource',
   ADD_ACTION = 'addAction',
   ADD_DESTIONATION = 'addDestination',
@@ -50,4 +52,5 @@ export enum OVERVIEW_NODE_TYPES {
 
 export enum STATUSES {
   HEALTHY = 'healthy',
+  UNHEALTHY = 'unhealthy',
 }

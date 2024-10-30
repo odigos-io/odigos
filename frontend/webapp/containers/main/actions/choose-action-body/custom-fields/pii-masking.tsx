@@ -1,9 +1,8 @@
 import styled from 'styled-components';
 import { safeJsonParse } from '@/utils';
-import { Checkbox } from '@/reuseable-components';
-import { FieldTitle, FieldWrapper } from './styled';
-import React, { useEffect, useMemo, useState } from 'react';
 import type { PiiMaskingSpec } from '@/types';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Checkbox, FieldLabel } from '@/reuseable-components';
 
 type Props = {
   value: string;
@@ -55,8 +54,8 @@ const PiiMasking: React.FC<Props> = ({ value, setValue }) => {
   };
 
   return (
-    <FieldWrapper>
-      <FieldTitle>Attributes to mask</FieldTitle>
+    <>
+      <FieldLabel title='Attributes to mask' required />
 
       <ListContainer>
         {strictPicklist.map(({ id, label }) => (
@@ -69,7 +68,7 @@ const PiiMasking: React.FC<Props> = ({ value, setValue }) => {
           />
         ))}
       </ListContainer>
-    </FieldWrapper>
+    </>
   );
 };
 

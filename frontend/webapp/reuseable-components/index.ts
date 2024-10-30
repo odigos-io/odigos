@@ -27,3 +27,4 @@ export * from './auto-complete-input';
 export * from './drawer';
 export * from './input-table';
 export * from './status';
+export * from './field-label';

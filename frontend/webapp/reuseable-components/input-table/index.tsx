@@ -1,10 +1,10 @@
 import Image from 'next/image';
-import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components';
+import { Text } from '../text';
 import { Input } from '../input';
 import { Button } from '../button';
-import { Text } from '../text';
-import { Tooltip } from '../tooltip';
+import styled from 'styled-components';
+import { FieldLabel } from '../field-label';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface Props {
   columns: {
@@ -24,18 +24,6 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-`;
-
-const HeaderWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-`;
-
-const OptionalText = styled(Text)`
-  color: #7a7a7a;
-  opacity: 0.8;
 `;
 
 const DeleteButton = styled.button`
@@ -61,15 +49,6 @@ const ButtonText = styled(Text)`
   font-weight: 500;
   font-family: ${({ theme }) => theme.font_family.secondary};
   text-decoration-line: underline;
-`;
-
-const Title = styled(Text)`
-  font-size: 14px;
-  opacity: 0.8;
-  line-height: 22px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 `;
 
 export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value = [], onChange }) => {
@@ -133,15 +112,7 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
           <tr>
             {columns.map(({ title, tooltip, required }) => (
               <th key={`input-table-head-${title}`} style={{ maxWidth }}>
-                <HeaderWrapper>
-                  <Title>{title}</Title>
-                  {!required && <OptionalText>(optional)</OptionalText>}
-                  {tooltip && (
-                    <Tooltip text={tooltip || ''}>
-                      <Image src='/icons/common/info.svg' alt='' width={16} height={16} style={{ marginBottom: 4 }} />
-                    </Tooltip>
-                  )}
-                </HeaderWrapper>
+                <FieldLabel title={title} required={required} tooltip={tooltip} />
               </th>
             ))}
 

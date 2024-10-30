@@ -4,10 +4,10 @@ import styled from 'styled-components';
 import { Text } from '@/reuseable-components';
 import { Handle, Position } from '@xyflow/react';
 
-const BaseNodeContainer = styled.div`
-  display: flex;
-  width: 296px;
+const BaseNodeContainer = styled.div<{ columnWidth: number }>`
+  width: ${({ columnWidth }) => `${columnWidth}px`};
   padding: 16px 24px 16px 16px;
+  display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -39,6 +39,7 @@ const Title = styled(Text)`
 const SubTitle = styled(Text)`
   font-size: 12px;
   color: ${({ theme }) => theme.text.grey};
+  text-align: center;
 `;
 
 interface BaseNodeProps {
@@ -63,11 +64,13 @@ interface BaseNodeProps {
   positionAbsoluteY: number;
   sourcePosition?: any;
   targetPosition?: any;
+
+  columnWidth: number;
 }
 
-const AddNode = ({ id, isConnectable, data }: BaseNodeProps) => {
+const AddNode = ({ id, isConnectable, data, columnWidth }: BaseNodeProps) => {
   return (
-    <BaseNodeContainer>
+    <BaseNodeContainer columnWidth={columnWidth}>
       <TitleWrapper>
         <Image src='/icons/common/plus.svg' width={16} height={16} alt='plus' />
         <Title>{data.title}</Title>

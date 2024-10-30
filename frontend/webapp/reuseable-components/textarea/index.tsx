@@ -1,11 +1,9 @@
 import React from 'react';
-import Image from 'next/image';
 import { Text } from '../text';
-import { Tooltip } from '../tooltip';
+import { FieldLabel } from '../field-label';
 import styled, { css } from 'styled-components';
 
-interface TextAreaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   errorMessage?: string;
   title?: string;
   tooltip?: string;
@@ -99,52 +97,15 @@ const ErrorMessage = styled(Text)`
   margin-top: 4px;
 `;
 
-const Title = styled(Text)`
-  font-size: 14px;
-  opacity: 0.8;
-  line-height: 22px;
-  margin-bottom: 4px;
-`;
-
-const HeaderWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-`;
-
-const TextArea: React.FC<TextAreaProps> = ({
-  errorMessage,
-  title,
-  tooltip,
-  ...props
-}) => {
+const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, required, ...props }) => {
   return (
     <Container>
-      {title && (
-        <HeaderWrapper>
-          <Title>{title}</Title>
-          <Tooltip text={tooltip || ''}>
-            {tooltip && (
-              <Image
-                src="/icons/common/info.svg"
-                alt=""
-                width={16}
-                height={16}
-                style={{ marginBottom: 4 }}
-              />
-            )}
-          </Tooltip>
-        </HeaderWrapper>
-      )}
+      <FieldLabel title={title} required={required} tooltip={tooltip} />
 
-      <InputWrapper
-        isDisabled={props.disabled}
-        hasError={!!errorMessage}
-        isActive={!!props.autoFocus}
-      >
+      <InputWrapper isDisabled={props.disabled} hasError={!!errorMessage} isActive={!!props.autoFocus}>
         <StyledTextArea {...props} />
       </InputWrapper>
+
       {errorMessage && (
         <ErrorWrapper>
           <ErrorMessage>{errorMessage}</ErrorMessage>

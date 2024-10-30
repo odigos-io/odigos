@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Text } from '../text';
 
 // Define the notification types
-type NotificationType = 'warning' | 'error' | 'success' | 'info';
+type NotificationType = 'warning' | 'error' | 'success' | 'info' | 'default';
 
 interface NotificationProps {
   type: NotificationType;
@@ -13,6 +13,7 @@ interface NotificationProps {
     label: string;
     onClick: () => void;
   };
+  style?: React.CSSProperties;
 }
 
 const NotificationContainer = styled.div<{ type: NotificationType }>`
@@ -31,9 +32,10 @@ const NotificationContainer = styled.div<{ type: NotificationType }>`
       case 'success':
         return '#28A745'; // Green
       case 'info':
-        return '#181944'; // Blue
+        return '#F9F9F90A'; // Default to info color
+      case 'default':
       default:
-        return '#2B2D66'; // Default to info color
+        return '#181944'; // Blue
     }
   }};
 `;
@@ -56,9 +58,10 @@ const Title = styled(Text)<{ type: NotificationType }>`
       case 'success':
         return '#28A745';
       case 'info':
-        return '#AABEF7';
+        return '#B8B8B8';
+      case 'default':
       default:
-        return '#2B2D66';
+        return '#AABEF7';
     }
   }};
 `;
@@ -86,47 +89,21 @@ const ActionButton = styled(Text)`
 const NotificationIcon = ({ type }: { type: NotificationType }) => {
   switch (type) {
     case 'warning':
-      return (
-        <Image
-          src="/icons/notification/warning-icon.svg"
-          alt="warning"
-          width={16}
-          height={16}
-        />
-      );
+      return <Image src='/icons/notification/warning-icon.svg' alt='warning' width={16} height={16} />;
     case 'error':
-      return (
-        <Image
-          src="/icons/notification/error-icon.svg"
-          alt="error"
-          width={16}
-          height={16}
-        />
-      );
+      return <Image src='/icons/notification/error-icon.svg' alt='error' width={16} height={16} />;
     case 'success':
-      return (
-        <Image
-          src="/icons/notification/success-icon.svg"
-          alt="success"
-          width={16}
-          height={16}
-        />
-      );
+      return <Image src='/icons/notification/success-icon.svg' alt='success' width={16} height={16} />;
     case 'info':
+      return <Image src='/icons/common/info.svg' alt='info' width={16} height={16} />;
     default:
-      return (
-        <Image src="/brand/odigos-icon.svg" alt="info" width={16} height={16} />
-      );
+      return <Image src='/brand/odigos-icon.svg' alt='info' width={16} height={16} />;
   }
 };
 
-const NotificationNote: React.FC<NotificationProps> = ({
-  type,
-  text,
-  action,
-}) => {
+const NotificationNote: React.FC<NotificationProps> = ({ type, text, action, style }) => {
   return (
-    <NotificationContainer type={type}>
+    <NotificationContainer type={type} style={style}>
       <TitleWrapper>
         <IconWrapper>
           <NotificationIcon type={type} />
@@ -135,7 +112,7 @@ const NotificationNote: React.FC<NotificationProps> = ({
       </TitleWrapper>
       {action && (
         <ActionButtonWrapper onClick={action.onClick}>
-          <ActionButton decoration="under">{action.label}</ActionButton>
+          <ActionButton decoration='under'>{action.label}</ActionButton>
         </ActionButtonWrapper>
       )}
     </NotificationContainer>

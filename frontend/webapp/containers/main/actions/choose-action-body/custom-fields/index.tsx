@@ -1,12 +1,12 @@
 import React from 'react';
 import { ActionsType } from '@/types';
+import PiiMasking from './pii-masking';
+import ErrorSampler from './error-sampler';
+import LatencySampler from './latency-sampler';
 import AddClusterInfo from './add-cluster-info';
 import DeleteAttributes from './delete-attributes';
 import RenameAttributes from './rename-attributes';
-import PiiMasking from './pii-masking';
-import ErrorSampler from './error-sampler';
 import ProbabilisticSampler from './probabilistic-sampler';
-import LatencySampler from './latency-sampler';
 
 interface ActionCustomFieldsProps {
   actionType?: ActionsType;

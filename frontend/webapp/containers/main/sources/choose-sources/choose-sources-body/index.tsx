@@ -16,7 +16,10 @@ import {
 } from '../choose-sources-menu/type';
 
 const ContentWrapper = styled.div`
-  width: 660px;
+  width: 100%;
+  max-width: 640px;
+  height: 640px;
+  margin: 0 15vw;
   padding-top: 64px;
 `;
 

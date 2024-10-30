@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
 import { InputList } from '@/reuseable-components';
-import { FieldTitle, FieldWrapper } from './styled';
 import type { DeleteAttributesSpec } from '@/types';
 
 type Props = {
@@ -24,12 +23,7 @@ const DeleteAttributes: React.FC<Props> = ({ value, setValue }) => {
     setValue(str);
   };
 
-  return (
-    <FieldWrapper>
-      <FieldTitle>Attributes to delete</FieldTitle>
-      <InputList value={mappedValue} onChange={handleChange} />
-    </FieldWrapper>
-  );
+  return <InputList title='Attributes to delete' required value={mappedValue} onChange={handleChange} />;
 };
 
 export default DeleteAttributes;

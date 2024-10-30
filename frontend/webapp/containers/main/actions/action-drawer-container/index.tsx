@@ -65,11 +65,10 @@ ActionDrawer.displayName = 'ActionDrawer';
 export { ActionDrawer };
 
 const FormContainer = styled.div`
-  display: flex;
   width: 100%;
-  flex-direction: column;
-  gap: 24px;
   height: 100%;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   padding-right: 16px;
   box-sizing: border-box;

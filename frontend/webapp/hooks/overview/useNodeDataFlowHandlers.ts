@@ -4,10 +4,12 @@ import { useDrawerStore, useModalStore } from '@/store';
 import { K8sActualSource, ActualDestination, ActionDataParsed, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES } from '@/types';
 
 export function useNodeDataFlowHandlers({
+  rules,
   sources,
   actions,
   destinations,
 }: {
+  rules: any[];
   sources: K8sActualSource[];
   actions: ActionDataParsed[];
   destinations: ActualDestination[];
@@ -50,6 +52,8 @@ export function useNodeDataFlowHandlers({
           type,
           item: selectedDrawerItem,
         });
+      } else if (type === OVERVIEW_NODE_TYPES.ADD_RULE) {
+        setCurrentModal(OVERVIEW_ENTITY_TYPES.RULE);
       } else if (type === OVERVIEW_NODE_TYPES.ADD_SOURCE) {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.SOURCE);
       } else if (type === OVERVIEW_NODE_TYPES.ADD_ACTION) {

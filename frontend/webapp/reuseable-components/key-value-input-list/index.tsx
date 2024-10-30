@@ -1,10 +1,10 @@
 import Image from 'next/image';
-import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components';
+import { Text } from '../text';
 import { Input } from '../input';
 import { Button } from '../button';
-import { Text } from '../text';
-import { Tooltip } from '../tooltip';
+import styled from 'styled-components';
+import { FieldLabel } from '../field-label';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface KeyValueInputsListProps {
   initialKeyValuePairs?: { key: string; value: string }[];
@@ -19,13 +19,6 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-`;
-
-const HeaderWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
 `;
 
 const Row = styled.div`
@@ -58,12 +51,6 @@ const ButtonText = styled(Text)`
   font-weight: 500;
   font-family: ${({ theme }) => theme.font_family.secondary};
   text-decoration-line: underline;
-`;
-
-const Title = styled(Text)`
-  font-size: 14px;
-  opacity: 0.8;
-  line-height: 22px;
 `;
 
 const INITIAL = [{ key: '', value: '' }];
@@ -122,19 +109,7 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
 
   return (
     <Container>
-      {title && (
-        <Tooltip text={tooltip || ''}>
-          <HeaderWrapper>
-            <Title>{title}</Title>
-            {!required && (
-              <Text color='#7A7A7A' size={14} weight={300} opacity={0.8}>
-                (optional)
-              </Text>
-            )}
-            {tooltip && <Image src='/icons/common/info.svg' alt='' width={16} height={16} style={{ marginBottom: 4 }} />}
-          </HeaderWrapper>
-        </Tooltip>
-      )}
+      <FieldLabel title={title} required={required} tooltip={tooltip} />
 
       {keyValuePairs.map((pair, index) => (
         <Row key={`key-value-pair-${title}-${index}`}>
@@ -146,6 +121,7 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
           </DeleteButton>
         </Row>
       ))}
+
       <AddButton disabled={isAddButtonDisabled} variant={'tertiary'} onClick={handleAddRow}>
         <Image src='/icons/common/plus.svg' alt='Add' width={16} height={16} />
         <ButtonText>ADD ATTRIBUTE</ButtonText>
