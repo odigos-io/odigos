@@ -26,69 +26,14 @@ func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule
 	var gqlRules []*model.InstrumentationRule
 	for _, rule := range instrumentationRules.Items {
 
-		var gqlWorkloads []*model.PodWorkload
-		if rule.Spec.Workloads != nil {
-			for _, workload := range *rule.Spec.Workloads {
-				gqlWorkloads = append(gqlWorkloads, &model.PodWorkload{
-					Namespace: workload.Namespace,
-					Kind:      model.K8sResourceKind(workload.Kind),
-					Name:      workload.Name,
-				})
-			}
-		}
-
-		var gqlLibraries []*model.InstrumentationLibraryGlobalID
-		if rule.Spec.InstrumentationLibraries != nil {
-			for _, library := range *rule.Spec.InstrumentationLibraries {
-
-				spanKind := model.SpanKind(library.SpanKind)
-				language := model.ProgrammingLanguage(library.Language)
-				gqlLibraries = append(gqlLibraries, &model.InstrumentationLibraryGlobalID{
-					Name:     library.Name,
-					SpanKind: &spanKind,
-					Language: &language,
-				})
-			}
-		}
-
-		var gqlPayloadCollection *model.PayloadCollection
-		if rule.Spec.PayloadCollection != nil {
-			var gqlHttpRequest *model.HTTPPayloadCollection
-			if rule.Spec.PayloadCollection.HttpRequest != nil {
-				gqlHttpRequest = &model.HTTPPayloadCollection{}
-			}
-
-			var gqlHttpResponse *model.HTTPPayloadCollection
-			if rule.Spec.PayloadCollection.HttpResponse != nil {
-				gqlHttpResponse = &model.HTTPPayloadCollection{}
-			}
-
-			var gqlDbQuery *model.DbQueryPayloadCollection
-			if rule.Spec.PayloadCollection.DbQuery != nil {
-				gqlDbQuery = &model.DbQueryPayloadCollection{}
-			}
-
-			var gqlMessaging *model.MessagingPayloadCollection
-			if rule.Spec.PayloadCollection.Messaging != nil {
-				gqlMessaging = &model.MessagingPayloadCollection{}
-			}
-
-			gqlPayloadCollection = &model.PayloadCollection{
-				HTTPRequest:  gqlHttpRequest,
-				HTTPResponse: gqlHttpResponse,
-				DbQuery:      gqlDbQuery,
-				Messaging:    gqlMessaging,
-			}
-		}
-
 		gqlRules = append(gqlRules, &model.InstrumentationRule{
 			RuleID:                   rule.Name,
 			RuleName:                 &rule.Spec.RuleName,
 			Notes:                    &rule.Spec.Notes,
 			Disabled:                 &rule.Spec.Disabled,
-			Workloads:                gqlWorkloads,
-			InstrumentationLibraries: gqlLibraries,
-			PayloadCollection:        gqlPayloadCollection,
+			Workloads:                convertWorkloads(rule.Spec.Workloads),
+			InstrumentationLibraries: convertInstrumentationLibraries(rule.Spec.InstrumentationLibraries),
+			PayloadCollection:        convertPayloadCollection(rule.Spec.PayloadCollection),
 		})
 	}
 	return gqlRules, nil
@@ -99,63 +44,7 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 
 	rule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil, fmt.Errorf("instrumentation rule with ID %s not found", id)
-		}
-		return nil, fmt.Errorf("error getting instrumentation rule: %w", err)
-	}
-	var gqlWorkloads []*model.PodWorkload
-	if rule.Spec.Workloads != nil {
-		for _, workload := range *rule.Spec.Workloads {
-			gqlWorkloads = append(gqlWorkloads, &model.PodWorkload{
-				Namespace: workload.Namespace,
-				Kind:      model.K8sResourceKind(workload.Kind),
-				Name:      workload.Name,
-			})
-		}
-	}
-
-	var gqlLibraries []*model.InstrumentationLibraryGlobalID
-	if rule.Spec.InstrumentationLibraries != nil {
-		for _, library := range *rule.Spec.InstrumentationLibraries {
-			spanKind := model.SpanKind(library.SpanKind)
-			language := model.ProgrammingLanguage(library.Language)
-			gqlLibraries = append(gqlLibraries, &model.InstrumentationLibraryGlobalID{
-				Name:     library.Name,
-				SpanKind: &spanKind,
-				Language: &language,
-			})
-		}
-	}
-
-	var gqlPayloadCollection *model.PayloadCollection
-	if rule.Spec.PayloadCollection != nil {
-		var gqlHttpRequest *model.HTTPPayloadCollection
-		if rule.Spec.PayloadCollection.HttpRequest != nil {
-			gqlHttpRequest = &model.HTTPPayloadCollection{}
-		}
-
-		var gqlHttpResponse *model.HTTPPayloadCollection
-		if rule.Spec.PayloadCollection.HttpResponse != nil {
-			gqlHttpResponse = &model.HTTPPayloadCollection{}
-		}
-
-		var gqlDbQuery *model.DbQueryPayloadCollection
-		if rule.Spec.PayloadCollection.DbQuery != nil {
-			gqlDbQuery = &model.DbQueryPayloadCollection{}
-		}
-
-		var gqlMessaging *model.MessagingPayloadCollection
-		if rule.Spec.PayloadCollection.Messaging != nil {
-			gqlMessaging = &model.MessagingPayloadCollection{}
-		}
-
-		gqlPayloadCollection = &model.PayloadCollection{
-			HTTPRequest:  gqlHttpRequest,
-			HTTPResponse: gqlHttpResponse,
-			DbQuery:      gqlDbQuery,
-			Messaging:    gqlMessaging,
-		}
+		return nil, handleNotFoundError(err, id, "instrumentation rule")
 	}
 
 	return &model.InstrumentationRule{
@@ -163,9 +52,9 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		RuleName:                 &rule.Spec.RuleName,
 		Notes:                    &rule.Spec.Notes,
 		Disabled:                 &rule.Spec.Disabled,
-		Workloads:                gqlWorkloads,
-		InstrumentationLibraries: gqlLibraries,
-		PayloadCollection:        gqlPayloadCollection,
+		Workloads:                convertWorkloads(rule.Spec.Workloads),
+		InstrumentationLibraries: convertInstrumentationLibraries(rule.Spec.InstrumentationLibraries),
+		PayloadCollection:        convertPayloadCollection(rule.Spec.PayloadCollection),
 	}, nil
 }
 
@@ -175,12 +64,8 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	// Retrieve existing rule
 	existingRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil, fmt.Errorf("instrumentation rule with ID %s not found", id)
-		}
-		return nil, fmt.Errorf("error getting instrumentation rule: %w", err)
+		return nil, handleNotFoundError(err, id, "instrumentation rule")
 	}
-
 	// Update the existing rule's specification
 	existingRule.Spec.RuleName = *input.RuleName
 	existingRule.Spec.Notes = *input.Notes
@@ -243,65 +128,14 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		return nil, fmt.Errorf("error updating instrumentation rule: %w", err)
 	}
 
-	var gqlWorkloads []*model.PodWorkload
-	if input.Workloads != nil {
-		for _, w := range input.Workloads {
-			gqlWorkloads = append(gqlWorkloads, &model.PodWorkload{
-				Name:      w.Name,
-				Namespace: w.Namespace,
-				Kind:      model.K8sResourceKind(w.Kind),
-			})
-		}
-	}
-
-	var gqlLibraries []*model.InstrumentationLibraryGlobalID
-	if input.InstrumentationLibraries != nil {
-		for _, lib := range input.InstrumentationLibraries {
-			spanKind := model.SpanKind(*lib.SpanKind)
-			language := model.ProgrammingLanguage(*lib.Language)
-			gqlLibraries = append(gqlLibraries, &model.InstrumentationLibraryGlobalID{
-				Name:     lib.Name,
-				SpanKind: &spanKind,
-				Language: &language,
-			})
-		}
-	}
-
-	var gqlPayloadCollection *model.PayloadCollection
-	if input.PayloadCollection != nil {
-		var gqlHTTPRequest, gqlHTTPResponse *model.HTTPPayloadCollection
-		var gqlDbQuery *model.DbQueryPayloadCollection
-		var gqlMessaging *model.MessagingPayloadCollection
-
-		if input.PayloadCollection.HTTPRequest != nil {
-			gqlHTTPRequest = &model.HTTPPayloadCollection{}
-		}
-		if input.PayloadCollection.HTTPResponse != nil {
-			gqlHTTPResponse = &model.HTTPPayloadCollection{}
-		}
-		if input.PayloadCollection.DbQuery != nil {
-			gqlDbQuery = &model.DbQueryPayloadCollection{}
-		}
-		if input.PayloadCollection.Messaging != nil {
-			gqlMessaging = &model.MessagingPayloadCollection{}
-		}
-
-		gqlPayloadCollection = &model.PayloadCollection{
-			HTTPRequest:  gqlHTTPRequest,
-			HTTPResponse: gqlHTTPResponse,
-			DbQuery:      gqlDbQuery,
-			Messaging:    gqlMessaging,
-		}
-	}
-
 	return &model.InstrumentationRule{
 		RuleID:                   updatedRule.Name,
 		RuleName:                 &updatedRule.Spec.RuleName,
 		Notes:                    &updatedRule.Spec.Notes,
 		Disabled:                 &updatedRule.Spec.Disabled,
-		Workloads:                gqlWorkloads,
-		InstrumentationLibraries: gqlLibraries,
-		PayloadCollection:        gqlPayloadCollection,
+		Workloads:                convertWorkloads(updatedRule.Spec.Workloads),
+		InstrumentationLibraries: convertInstrumentationLibraries(updatedRule.Spec.InstrumentationLibraries),
+		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
 	}, nil
 }
 
@@ -310,10 +144,7 @@ func DeleteInstrumentationRule(ctx context.Context, id string) (bool, error) {
 
 	err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Delete(ctx, id, metav1.DeleteOptions{})
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return false, fmt.Errorf("instrumentation rule with ID %s not found", id)
-		}
-		return false, fmt.Errorf("error deleting instrumentation rule: %w", err)
+		return false, handleNotFoundError(err, id, "instrumentation rule")
 	}
 
 	return true, nil
@@ -396,4 +227,79 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	return &model.InstrumentationRule{
 		RuleID: createdRule.Name,
 	}, nil
+}
+
+func handleNotFoundError(err error, id string, entity string) error {
+	if apierrors.IsNotFound(err) {
+		return fmt.Errorf("%s with ID %s not found", entity, id)
+	}
+	return fmt.Errorf("error getting %s: %w", entity, err)
+}
+
+// Converts Workloads to GraphQL-compatible format
+func convertWorkloads(workloads *[]workload.PodWorkload) []*model.PodWorkload {
+	var gqlWorkloads []*model.PodWorkload
+	if workloads != nil {
+		for _, w := range *workloads {
+			gqlWorkloads = append(gqlWorkloads, &model.PodWorkload{
+				Namespace: w.Namespace,
+				Kind:      model.K8sResourceKind(w.Kind),
+				Name:      w.Name,
+			})
+		}
+	}
+	return gqlWorkloads
+}
+
+// Converts InstrumentationLibraries to GraphQL-compatible format
+func convertInstrumentationLibraries(libraries *[]v1alpha1.InstrumentationLibraryGlobalId) []*model.InstrumentationLibraryGlobalID {
+	var gqlLibraries []*model.InstrumentationLibraryGlobalID
+	if libraries != nil {
+		for _, lib := range *libraries {
+			spanKind := model.SpanKind(lib.SpanKind)
+			language := model.ProgrammingLanguage(lib.Language)
+			gqlLibraries = append(gqlLibraries, &model.InstrumentationLibraryGlobalID{
+				Name:     lib.Name,
+				SpanKind: &spanKind,
+				Language: &language,
+			})
+		}
+	}
+	return gqlLibraries
+}
+
+// Converts PayloadCollection to GraphQL-compatible format
+func convertPayloadCollection(payload *instrumentationrules.PayloadCollection) *model.PayloadCollection {
+	if payload == nil {
+		return nil
+	}
+
+	return &model.PayloadCollection{
+		HTTPRequest:  toHTTPPayload(payload.HttpRequest),
+		HTTPResponse: toHTTPPayload(payload.HttpResponse),
+		DbQuery:      toDbQueryPayload(payload.DbQuery),
+		Messaging:    toMessagingPayload(payload.Messaging),
+	}
+}
+
+// Helpers to create empty payloads if they exist
+func toHTTPPayload(payload *instrumentationrules.HttpPayloadCollection) *model.HTTPPayloadCollection {
+	if payload == nil {
+		return nil
+	}
+	return &model.HTTPPayloadCollection{}
+}
+
+func toDbQueryPayload(payload *instrumentationrules.DbQueryPayloadCollection) *model.DbQueryPayloadCollection {
+	if payload == nil {
+		return nil
+	}
+	return &model.DbQueryPayloadCollection{}
+}
+
+func toMessagingPayload(payload *instrumentationrules.MessagingPayloadCollection) *model.MessagingPayloadCollection {
+	if payload == nil {
+		return nil
+	}
+	return &model.MessagingPayloadCollection{}
 }
