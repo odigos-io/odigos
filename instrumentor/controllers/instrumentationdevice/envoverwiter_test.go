@@ -4,7 +4,6 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
@@ -15,7 +14,24 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
+
+func GetOdigosConfig(configMap *corev1.ConfigMap, odigosConfig *common.OdigosConfiguration) error {
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
+		return err
+	}
+	return nil
+}
+
+func SetOdigosConfig(configMap *corev1.ConfigMap, odigosConfig *common.OdigosConfiguration) error {
+	data, err := yaml.Marshal(odigosConfig)
+	if err != nil {
+		return err
+	}
+	configMap.Data[consts.OdigosConfigurationFileName] = string(data)
+	return nil
+}
 
 var _ = Describe("envoverwrite", func() {
 	ctx := context.Background()
@@ -40,8 +56,14 @@ var _ = Describe("envoverwrite", func() {
 	})
 
 	AfterEach(func() {
-		// restore to the default SDK
-		testutil.SetDefaultSDK(testProgrammingLanguagePython, common.OtelSdkNativeCommunity)
+		// restore odigos config to it's original state
+		var cm corev1.ConfigMap
+		var odigosConfig common.OdigosConfiguration
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultOdigosNamespace, Name: consts.OdigosConfigurationName}, &cm)).Should(Succeed())
+		GetOdigosConfig(&cm, &odigosConfig)
+		odigosConfig.DefaultSDKs[testProgrammingLanguagePython] = common.OtelSdkNativeCommunity
+		SetOdigosConfig(&cm, &odigosConfig)
+		Expect(k8sClient.Update(ctx, &cm)).Should(Succeed())
 	})
 
 	Describe("User did not set env in manifest or docker image", func() {
@@ -128,7 +150,13 @@ var _ = Describe("envoverwrite", func() {
 
 		It("Should not add the unrelated env vars with different otel SDKs", func() {
 			// make the SDK for python and java different
-			testutil.SetDefaultSDK(common.JavaProgrammingLanguage, common.OtelSdkEbpfEnterprise)
+			var cm corev1.ConfigMap
+			var odigosConfig common.OdigosConfiguration
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultOdigosNamespace, Name: consts.OdigosConfigurationName}, &cm)).Should(Succeed())
+			GetOdigosConfig(&cm, &odigosConfig)
+			odigosConfig.DefaultSDKs[common.JavaProgrammingLanguage] = common.OtelSdkEbpfEnterprise
+			SetOdigosConfig(&cm, &odigosConfig)
+			Expect(k8sClient.Update(ctx, &cm)).Should(Succeed())
 
 			instrumentedApplication = testutil.SetInstrumentedApplicationContainer(testutil.NewMockInstrumentedApplication(deployment), &testEnvVarPythonPath, &userEnvValue, common.JavaProgrammingLanguage)
 			Expect(k8sClient.Create(ctx, instrumentedApplication)).Should(Succeed())
@@ -202,25 +230,15 @@ var _ = Describe("envoverwrite", func() {
 
 		When("Default SDK changes to another SDK", func() {
 			newSdk := common.OtelSdkEbpfEnterprise
-			const ruleName = "test-instrumentation-rule"
 
 			BeforeEach(func() {
-				// change the default SDK to another SDK by creating a rule
-				rule := testutil.NewMockEmptyInstrumentationRule(ruleName, consts.DefaultOdigosNamespace)
-				Expect(k8sClient.Create(ctx, rule)).Should(Succeed())
-				rule.Spec.OtelSdks = &instrumentationrules.OtelSdks{
-					OtelSdkByLanguage: map[common.ProgrammingLanguage]common.OtelSdk{
-						testProgrammingLanguagePython: newSdk,
-					},
-				}
-				Expect(k8sClient.Update(ctx, rule)).Should(Succeed())
-			})
-
-			AfterEach(func() {
-				// revert the default SDK back to the original value by deleting the rule
-				var rule odigosv1.InstrumentationRule
-				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: ruleName, Namespace: consts.DefaultOdigosNamespace}, &rule)).Should(Succeed())
-				Expect(k8sClient.Delete(ctx, &rule)).Should(Succeed())
+				var cm corev1.ConfigMap
+				var odigosConfig common.OdigosConfiguration
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: consts.DefaultOdigosNamespace, Name: consts.OdigosConfigurationName}, &cm)).Should(Succeed())
+				GetOdigosConfig(&cm, &odigosConfig)
+				odigosConfig.DefaultSDKs[testProgrammingLanguagePython] = newSdk
+				SetOdigosConfig(&cm, &odigosConfig)
+				Expect(k8sClient.Update(ctx, &cm)).Should(Succeed())
 			})
 
 			It("Should update the manifest with new odigos env value", func() {
@@ -228,7 +246,7 @@ var _ = Describe("envoverwrite", func() {
 				Expect(found).Should(BeTrue())
 				newMergedEnvValue := userEnvValue + ":" + newOdigosValue
 
-				// after the SDK is updated, the deployment should be updated with the new odigos value
+				// after the odigos config is updated, the deployment should be updated with the new odigos value
 				testutil.AssertDepContainerSingleEnv(ctx, k8sClient, deployment, testEnvVarPythonPath, newMergedEnvValue)
 
 				// when uninstrumented, the value should be reverted to the original value which was in the manifest

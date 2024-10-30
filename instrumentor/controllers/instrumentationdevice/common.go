@@ -9,9 +9,9 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils/versionsupport"
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
-	"github.com/odigos-io/odigos/instrumentor/sdks"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -33,11 +33,6 @@ const (
 
 const (
 	appliedInstrumentationDeviceType = "AppliedInstrumentationDevice"
-)
-
-var (
-	// can be overridden in tests
-	GetDefaultSDKs = sdks.GetDefaultSDKs
 )
 
 func clearInstrumentationEbpf(obj client.Object) {
@@ -87,6 +82,11 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		Kind:      workload.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
 	}
 
+	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, kubeClient)
+	if err != nil {
+		return err
+	}
+
 	// build an otel sdk map from instrumentation rules first, and merge it with the default otel sdk map
 	// this way, we can override the default otel sdk with the instrumentation rules
 	instrumentationRules := odigosv1.InstrumentationRuleList{}
@@ -95,8 +95,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		return err
 	}
 
-	// default otel sdk map according to Odigos tier
-	otelSdkToUse := GetDefaultSDKs()
+	otelSdkToUse := odigosConfig.DefaultSDKs
 
 	for i := range instrumentationRules.Items {
 		instrumentationRule := &instrumentationRules.Items[i]

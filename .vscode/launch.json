@@ -59,16 +59,6 @@
             "cwd": "${workspaceFolder}/cli",
             "args": ["uninstall", "--yes"],
             "buildFlags": "-tags=embed_manifests"
-        },
-        {
-            "name": "cli describe",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/cli",
-            "cwd": "${workspaceFolder}/cli",
-            "args": ["describe source deployment membership"],
-            "buildFlags": "-tags=embed_manifests"
         }
     ]
 }

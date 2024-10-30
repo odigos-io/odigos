@@ -17,6 +17,10 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	common "github.com/odigos-io/odigos/common"
+)
+
 // OdigosConfigurationSpecApplyConfiguration represents a declarative configuration of the OdigosConfigurationSpec type for use
 // with apply.
 type OdigosConfigurationSpecApplyConfiguration struct {
@@ -31,6 +35,8 @@ type OdigosConfigurationSpecApplyConfiguration struct {
 	OdigletImage                *string                                          `json:"odigletImage,omitempty"`
 	InstrumentorImage           *string                                          `json:"instrumentorImage,omitempty"`
 	AutoscalerImage             *string                                          `json:"autoscalerImage,omitempty"`
+	SupportedSDKs               map[common.ProgrammingLanguage][]common.OtelSdk  `json:"supportedSDKs,omitempty"`
+	DefaultSDKs                 map[common.ProgrammingLanguage]common.OtelSdk    `json:"defaultSDKs,omitempty"`
 	CollectorGateway            *CollectorGatewayConfigurationApplyConfiguration `json:"collectorGateway,omitempty"`
 	GoAutoIncludeCodeAttributes *bool                                            `json:"goAutoIncludeCodeAttributes,omitempty"`
 }
@@ -130,6 +136,34 @@ func (b *OdigosConfigurationSpecApplyConfiguration) WithInstrumentorImage(value 
 // If called multiple times, the AutoscalerImage field is set to the value of the last call.
 func (b *OdigosConfigurationSpecApplyConfiguration) WithAutoscalerImage(value string) *OdigosConfigurationSpecApplyConfiguration {
 	b.AutoscalerImage = &value
+	return b
+}
+
+// WithSupportedSDKs puts the entries into the SupportedSDKs field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the SupportedSDKs field,
+// overwriting an existing map entries in SupportedSDKs field with the same key.
+func (b *OdigosConfigurationSpecApplyConfiguration) WithSupportedSDKs(entries map[common.ProgrammingLanguage][]common.OtelSdk) *OdigosConfigurationSpecApplyConfiguration {
+	if b.SupportedSDKs == nil && len(entries) > 0 {
+		b.SupportedSDKs = make(map[common.ProgrammingLanguage][]common.OtelSdk, len(entries))
+	}
+	for k, v := range entries {
+		b.SupportedSDKs[k] = v
+	}
+	return b
+}
+
+// WithDefaultSDKs puts the entries into the DefaultSDKs field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the DefaultSDKs field,
+// overwriting an existing map entries in DefaultSDKs field with the same key.
+func (b *OdigosConfigurationSpecApplyConfiguration) WithDefaultSDKs(entries map[common.ProgrammingLanguage]common.OtelSdk) *OdigosConfigurationSpecApplyConfiguration {
+	if b.DefaultSDKs == nil && len(entries) > 0 {
+		b.DefaultSDKs = make(map[common.ProgrammingLanguage]common.OtelSdk, len(entries))
+	}
+	for k, v := range entries {
+		b.DefaultSDKs[k] = v
+	}
 	return b
 }
 

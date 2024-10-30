@@ -2,12 +2,6 @@ package common
 
 type ProfileName string
 
-type CollectorNodeConfiguration struct {
-	// The port to use for exposing the collector's own metrics as a prometheus endpoint.
-	// This can be used to resolve conflicting ports when a collector is using the host network.
-	CollectorOwnMetricsPort int32 `json:"collectorOwnMetricsPort,omitempty"`
-}
-
 type CollectorGatewayConfiguration struct {
 	// RequestMemoryMiB is the memory request for the cluster gateway collector deployment.
 	// it will be embedded in the deployment as a resource request of the form "memory: <value>Mi"
@@ -42,8 +36,8 @@ type OdigosConfiguration struct {
 	OdigletImage      string                          `json:"odigletImage,omitempty"`
 	InstrumentorImage string                          `json:"instrumentorImage,omitempty"`
 	AutoscalerImage   string                          `json:"autoscalerImage,omitempty"`
+	DefaultSDKs       map[ProgrammingLanguage]OtelSdk `json:"defaultSDKs,omitempty"`
 	CollectorGateway  *CollectorGatewayConfiguration  `json:"collectorGateway,omitempty"`
-	CollectorNode     *CollectorNodeConfiguration     `json:"collectorNode,omitempty"`
 	Profiles          []ProfileName                   `json:"profiles,omitempty"`
 
 	// this is internal currently, and is not exposed on the CLI / helm

@@ -45,6 +45,8 @@ type OdigosConfigurationSpec struct {
 	OdigletImage      string                                          `json:"odigletImage,omitempty"`
 	InstrumentorImage string                                          `json:"instrumentorImage,omitempty"`
 	AutoscalerImage   string                                          `json:"autoscalerImage,omitempty"`
+	SupportedSDKs     map[common.ProgrammingLanguage][]common.OtelSdk `json:"supportedSDKs,omitempty"`
+	DefaultSDKs       map[common.ProgrammingLanguage]common.OtelSdk   `json:"defaultSDKs,omitempty"`
 	CollectorGateway  *CollectorGatewayConfiguration                  `json:"collectorGateway,omitempty"`
 
 	// this is internal currently, and is not exposed on the CLI / helm
@@ -101,6 +103,7 @@ func (odigosConfig *OdigosConfiguration) ToCommonConfig() *common.OdigosConfigur
 		OdigletImage:                odigosConfig.Spec.OdigletImage,
 		InstrumentorImage:           odigosConfig.Spec.InstrumentorImage,
 		AutoscalerImage:             odigosConfig.Spec.AutoscalerImage,
+		DefaultSDKs:                 odigosConfig.Spec.DefaultSDKs,
 		CollectorGateway:            &collectorGateway,
 		GoAutoIncludeCodeAttributes: odigosConfig.Spec.GoAutoIncludeCodeAttributes,
 	}

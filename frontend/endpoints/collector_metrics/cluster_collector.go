@@ -199,7 +199,7 @@ func (dm *destinationsMetrics) updateDestinationMetricsByExporter(dp pmetric.Num
 
 	// From this point on, we are updating the existing destination metrics
 	var throughputPtr *int64
-	var dataSentInInterval float64
+	var dataSentInInterval int64
 	dtm := currentVal.clusterCollectorsTraffic[clusterCollectorID]
 
 	// the metric data in 'dp' represent the number of spans/metrics/logs sent by the exporter
@@ -208,20 +208,20 @@ func (dm *destinationsMetrics) updateDestinationMetricsByExporter(dp pmetric.Num
 	case exporterSentSpansMetricName:
 		throughputPtr = &dtm.tracesThroughput
 		spansInInterval := int64(dp.DoubleValue()) - dtm.sentSpans
-		dataSentInInterval = float64(spansInInterval) * dm.avgCalculator.lastCalculatedAvgSpanSize()
-		dtm.tracesDataSent += int64(dataSentInInterval)
+		dataSentInInterval = int64(float64(spansInInterval) * dm.avgCalculator.lastCalculatedAvgSpanSize())
+		dtm.tracesDataSent += dataSentInInterval
 		dtm.sentSpans = int64(dp.DoubleValue())
 	case exporterSentMetricsMetricName:
 		throughputPtr = &dtm.metricsThroughput
 		metricsInInterval := int64(dp.DoubleValue()) - dtm.sentMetrics
-		dataSentInInterval = float64(metricsInInterval) * dm.avgCalculator.lastCalculatedAvgMetricSize()
-		dtm.metricsDataSent += int64(dataSentInInterval)
+		dataSentInInterval = int64(float64(metricsInInterval) * dm.avgCalculator.lastCalculatedAvgMetricSize())
+		dtm.metricsDataSent += dataSentInInterval
 		dtm.sentMetrics = int64(dp.DoubleValue())
 	case exporterSentLogsMetricName:
 		throughputPtr = &dtm.logsThroughput
 		logsInInterval := int64(dp.DoubleValue()) - dtm.sentLogs
-		dataSentInInterval = float64(logsInInterval) * dm.avgCalculator.lastCalculatedAvgLogSize()
-		dtm.logsDataSent += int64(dataSentInInterval)
+		dataSentInInterval = int64(float64(logsInInterval) * dm.avgCalculator.lastCalculatedAvgLogSize())
+		dtm.logsDataSent += dataSentInInterval
 		dtm.sentLogs = int64(dp.DoubleValue())
 	}
 
@@ -235,7 +235,14 @@ func (dm *destinationsMetrics) updateDestinationMetricsByExporter(dp pmetric.Num
 		return
 	}
 
-	throughput := calculateThroughput(dataSentInInterval, newTime, oldTime)
+	timeDiff := newTime.Sub(oldTime).Seconds()
+
+	var throughput int64
+	// calculate throughput only if the new value is greater than the old value and the time difference is positive
+	// otherwise, the throughput is set to 0
+	if dataSentInInterval > 0 && timeDiff > 0 {
+		throughput = (dataSentInInterval) / int64(timeDiff)
+	}
 
 	*throughputPtr = throughput
 }

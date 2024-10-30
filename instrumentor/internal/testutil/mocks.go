@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -11,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,10 +24,6 @@ const (
 	mockDeploymentName  = "test-deployment"
 	mockDaemonSetName   = "test-daemonset"
 	mockStatefulSetName = "test-statefulset"
-)
-
-var (
-	mockDefaultSDKs = map[common.ProgrammingLanguage]common.OtelSdk{}
 )
 
 func NewOdigosSystemNamespace() *corev1.Namespace {
@@ -154,16 +152,6 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
 	}
 }
 
-func NewMockEmptyInstrumentationRule(name, ns string) *odigosv1.InstrumentationRule {
-	return &odigosv1.InstrumentationRule{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-		},
-		Spec: odigosv1.InstrumentationRuleSpec{},
-	}
-}
-
 func NewMockDataCollection() *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		ObjectMeta: metav1.ObjectMeta{
@@ -176,16 +164,31 @@ func NewMockDataCollection() *odigosv1.CollectorsGroup {
 	}
 }
 
+func NewMockOdigosConfig() *v1.ConfigMap {
+	config, _ := json.Marshal(common.OdigosConfiguration{
+		DefaultSDKs: map[common.ProgrammingLanguage]common.OtelSdk{
+			common.PythonProgrammingLanguage: common.OtelSdkNativeCommunity,
+			common.GoProgrammingLanguage:     common.OtelSdkNativeCommunity,
+		},
+	})
+
+	return &v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.OdigosConfigurationName,
+			Namespace: consts.DefaultOdigosNamespace,
+		},
+		Data: map[string]string{
+			consts.OdigosConfigurationFileName: string(config),
+		},
+	}
+}
+
 // this helps to avoid the "already exists" error when creating a new namespace.
 // it promotes test isolation and avoid conflicts between tests.
 func generateUUIDNamespace(baseName string) string {
 	return fmt.Sprintf("%s-%s", baseName, uuid.New().String())
-}
-
-func MockGetDefaultSDKs() map[common.ProgrammingLanguage]common.OtelSdk {
-	return mockDefaultSDKs
-}
-
-func SetDefaultSDK(language common.ProgrammingLanguage, sdk common.OtelSdk) {
-	mockDefaultSDKs[language] = sdk
 }

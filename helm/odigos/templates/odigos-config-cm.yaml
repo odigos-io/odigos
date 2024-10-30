@@ -30,12 +30,6 @@ data:
       goMemLimitMiB: {{ . }}
       {{- end }}
     {{- end }}
-    {{- if .Values.collectorNode }}
-    collectorNode:
-      {{- with .Values.collectorNode.collectorOwnMetricsPort }}
-      collectorOwnMetricsPort: {{ . }}
-      {{- end }}
-    {{- end }}
     instrumentorImage: {{ .Values.instrumentor.image.repository }}
     telemetryEnabled: {{ .Values.telemetry.enabled }}
     openshiftEnabled: {{ .Values.openshift.enabled }}

@@ -194,23 +194,9 @@ jobs:
           export COMMIT_HASH=${{ github.sha }}
 
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
-      
-      - name: Run diagnose command
-        if: always()
-        run: |
-          ./cli/odigos diagnose
-        continue-on-error: true
-        
-      - name: Upload run details artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: run-details
-          path: odigos_debug*.tar.gz
-        continue-on-error: true
 
       - name: Destroy Resources
-        if: always()
+        if: always()  # Ensures this runs even if earlier steps fail
         run: |
           tofu -chdir=$TF_DIR destroy -auto-approve
 

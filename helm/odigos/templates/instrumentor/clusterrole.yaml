@@ -58,6 +58,7 @@ rules:
     resources:
       - collectorsgroups
       - instrumentedapplications
+      - odigosconfigurations
       - destinations
     verbs:
       - create

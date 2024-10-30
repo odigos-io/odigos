@@ -44,7 +44,7 @@ func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
 	}
 }
 
-func NewInstrumentorLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
+func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "RoleBinding",
@@ -64,54 +64,6 @@ func NewInstrumentorLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
 			Name:     "odigos-leader-election-role",
-		},
-	}
-}
-
-func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
-	return &rbacv1.RoleBinding{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "RoleBinding",
-			APIVersion: "rbac.authorization.k8s.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-instrumentor",
-			Namespace: ns,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind: "ServiceAccount",
-				Name: "odigos-instrumentor",
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
-			Name:     "odigos-instrumentor",
-		},
-	}
-}
-
-func NewInstrumentorRole(ns string) *rbacv1.Role {
-	return &rbacv1.Role{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Role",
-			APIVersion: "rbac.authorization.k8s.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-instrumentor",
-			Namespace: ns,
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{""},
-				Resources: []string{
-					"secrets",
-				},
-			},
 		},
 	}
 }
@@ -215,6 +167,11 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentedapplications/status"},
 				Verbs:     []string{"get", "patch", "update"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"odigosconfigurations"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
 				APIGroups: []string{"odigos.io"},
@@ -630,9 +587,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	certManagerInstalled := isCertManagerInstalled(ctx, a.client)
 	resources := []client.Object{
 		NewInstrumentorServiceAccount(a.ns),
-		NewInstrumentorRole(a.ns),
 		NewInstrumentorRoleBinding(a.ns),
-		NewInstrumentorLeaderElectionRoleBinding(a.ns),
 		NewInstrumentorClusterRole(),
 		NewInstrumentorClusterRoleBinding(a.ns),
 		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.InstrumentorImage),

@@ -179,9 +179,51 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	return nil
 }
 
+func otelSdkConfigCommunity() map[common.ProgrammingLanguage]common.OtelSdk {
+	return map[common.ProgrammingLanguage]common.OtelSdk{
+		common.JavaProgrammingLanguage:       common.OtelSdkNativeCommunity,
+		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
+		common.GoProgrammingLanguage:         common.OtelSdkEbpfCommunity,
+		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
+		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+	}
+}
+
+func otelSdkConfigCloud() map[common.ProgrammingLanguage]common.OtelSdk {
+	return map[common.ProgrammingLanguage]common.OtelSdk{
+		common.JavaProgrammingLanguage:       common.OtelSdkNativeCommunity,
+		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
+		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
+		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
+		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+	}
+}
+
+func otelSdkConfigOnPrem() map[common.ProgrammingLanguage]common.OtelSdk {
+	return map[common.ProgrammingLanguage]common.OtelSdk{
+		common.JavaProgrammingLanguage:       common.OtelSdkEbpfEnterprise, // Notice - for onprem, the default for java is eBPF
+		common.PythonProgrammingLanguage:     common.OtelSdkEbpfEnterprise,
+		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
+		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
+		common.JavascriptProgrammingLanguage: common.OtelSdkEbpfEnterprise,
+		common.MySQLProgrammingLanguage:      common.OtelSdkEbpfEnterprise,
+		common.NginxProgrammingLanguage:      common.OtelSdkNativeCommunity,
+	}
+}
+
 func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
 	fullIgnoredNamespaces := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredNamespaces, consts.SystemNamespaces)
 	fullIgnoredContainers := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredContainers, consts.IgnoredContainers)
+
+	var defaultOtelSdkPerLanguage map[common.ProgrammingLanguage]common.OtelSdk
+	switch odigosTier {
+	case common.CommunityOdigosTier:
+		defaultOtelSdkPerLanguage = otelSdkConfigCommunity()
+	case common.CloudOdigosTier:
+		defaultOtelSdkPerLanguage = otelSdkConfigCloud()
+	case common.OnPremOdigosTier:
+		defaultOtelSdkPerLanguage = otelSdkConfigOnPrem()
+	}
 
 	selectedProfiles := []common.ProfileName{}
 	profiles := resources.GetAvailableProfilesForTier(odigosTier)
@@ -211,6 +253,7 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		OdigletImage:      odigletImage,
 		InstrumentorImage: instrumentorImage,
 		AutoscalerImage:   autoScalerImage,
+		DefaultSDKs:       defaultOtelSdkPerLanguage,
 		Profiles:          selectedProfiles,
 	}
 }

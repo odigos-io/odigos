@@ -6,8 +6,8 @@ metadata:
 spec:
   type: batch
   processorConfig:
-    send_batch_size: 1 # This processor is after batching happened, and is only to split large ones into smaller ones
-    send_batch_max_size: 256
+    send_batch_size: 600
+    send_batch_max_size: 800
   orderHint: 100 # Should be after the default batch with orderHint 0, preferably after other processors
   signals:
     - TRACES

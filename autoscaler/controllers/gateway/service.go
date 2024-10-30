@@ -54,7 +54,7 @@ func syncService(gateway *odigosv1.CollectorsGroup, ctx context.Context, c clien
 	}
 
 	result, err := controllerutil.CreateOrPatch(ctx, c, gatewaySvc, func() error {
-		updateGatewaySvc(gatewaySvc, gateway)
+		updateGatewaySvc(gatewaySvc)
 		return nil
 	})
 
@@ -67,7 +67,7 @@ func syncService(gateway *odigosv1.CollectorsGroup, ctx context.Context, c clien
 	return gatewaySvc, nil
 }
 
-func updateGatewaySvc(svc *v1.Service, collectorsGroup *odigosv1.CollectorsGroup) {
+func updateGatewaySvc(svc *v1.Service) {
 	svc.Spec.Ports = []v1.ServicePort{
 		{
 			Name:       "otlp",
@@ -83,7 +83,7 @@ func updateGatewaySvc(svc *v1.Service, collectorsGroup *odigosv1.CollectorsGroup
 		},
 		{
 			Name: "metrics",
-			Port: collectorsGroup.Spec.CollectorOwnMetricsPort,
+			Port: 8888,
 		},
 	}
 

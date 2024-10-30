@@ -24,8 +24,7 @@ import (
 // CollectorsGroupSpecApplyConfiguration represents a declarative configuration of the CollectorsGroupSpec type for use
 // with apply.
 type CollectorsGroupSpecApplyConfiguration struct {
-	Role                    *v1alpha1.CollectorsGroupRole `json:"role,omitempty"`
-	CollectorOwnMetricsPort *int32                        `json:"collectorOwnMetricsPort,omitempty"`
+	Role *v1alpha1.CollectorsGroupRole `json:"role,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -39,13 +38,5 @@ func CollectorsGroupSpec() *CollectorsGroupSpecApplyConfiguration {
 // If called multiple times, the Role field is set to the value of the last call.
 func (b *CollectorsGroupSpecApplyConfiguration) WithRole(value v1alpha1.CollectorsGroupRole) *CollectorsGroupSpecApplyConfiguration {
 	b.Role = &value
-	return b
-}
-
-// WithCollectorOwnMetricsPort sets the CollectorOwnMetricsPort field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the CollectorOwnMetricsPort field is set to the value of the last call.
-func (b *CollectorsGroupSpecApplyConfiguration) WithCollectorOwnMetricsPort(value int32) *CollectorsGroupSpecApplyConfiguration {
-	b.CollectorOwnMetricsPort = &value
 	return b
 }

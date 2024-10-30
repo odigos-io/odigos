@@ -42,12 +42,7 @@ var describeCmd = &cobra.Command{
 		if describeRemoteFlag {
 			describeText = executeRemoteOdigosDescribe(ctx, client, odigosNs)
 		} else {
-			describeAnalyze, err := describe.DescribeOdigos(ctx, client, client.OdigosClient, odigosNs)
-			if err != nil {
-				describeText = fmt.Sprintf("Failed to describe odigos: %s", err)
-			} else {
-				describeText = describe.DescribeOdigosToText(describeAnalyze)
-			}
+			describeText = describe.DescribeOdigos(ctx, client, client.OdigosClient, odigosNs)
 		}
 		fmt.Println(describeText)
 	},
@@ -78,12 +73,7 @@ var describeSourceDeploymentCmd = &cobra.Command{
 		if describeRemoteFlag {
 			describeText = executeRemoteSourceDescribe(ctx, client, "deployment", ns, name)
 		} else {
-			desc, err := describe.DescribeDeployment(ctx, client.Interface, client.OdigosClient, ns, name)
-			if err != nil {
-				describeText = fmt.Sprintf("Failed to describe deployment: %s", err)
-			} else {
-				describeText = describe.DescribeSourceToText(desc)
-			}
+			describeText = describe.DescribeDeployment(ctx, client.Interface, client.OdigosClient, ns, name)
 		}
 		fmt.Println(describeText)
 	},
@@ -109,12 +99,7 @@ var describeSourceDaemonSetCmd = &cobra.Command{
 		if describeRemoteFlag {
 			describeText = executeRemoteSourceDescribe(ctx, client, "daemonset", ns, name)
 		} else {
-			desc, err := describe.DescribeDaemonSet(ctx, client.Interface, client.OdigosClient, ns, name)
-			if err != nil {
-				describeText = fmt.Sprintf("Failed to describe daemonset: %s", err)
-			} else {
-				describeText = describe.DescribeSourceToText(desc)
-			}
+			describeText = describe.DescribeDaemonSet(ctx, client.Interface, client.OdigosClient, ns, name)
 		}
 		fmt.Println(describeText)
 	},
@@ -140,12 +125,7 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 		if describeRemoteFlag {
 			describeText = executeRemoteSourceDescribe(ctx, client, "statefulset", ns, name)
 		} else {
-			desc, err := describe.DescribeStatefulSet(ctx, client.Interface, client.OdigosClient, ns, name)
-			if err != nil {
-				describeText = fmt.Sprintf("Failed to describe statefulset: %s", err)
-			} else {
-				describeText = describe.DescribeSourceToText(desc)
-			}
+			describeText = describe.DescribeStatefulSet(ctx, client.Interface, client.OdigosClient, ns, name)
 		}
 		fmt.Println(describeText)
 	},

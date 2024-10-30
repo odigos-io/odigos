@@ -23,7 +23,6 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -42,12 +41,11 @@ import (
 )
 
 var (
-	cfg                *rest.Config
-	k8sClient          client.Client
-	testEnv            *envtest.Environment
-	testCtx            context.Context
-	cancel             context.CancelFunc
-	origGetDefaultSDKs func() map[common.ProgrammingLanguage]common.OtelSdk
+	cfg       *rest.Config
+	k8sClient client.Client
+	testEnv   *envtest.Environment
+	testCtx   context.Context
+	cancel    context.CancelFunc
 )
 
 func TestControllers(t *testing.T) {
@@ -94,8 +92,8 @@ var _ = BeforeSuite(func() {
 	Expect(k8sClient.Status().Update(testCtx, datacollection)).Should(Succeed())
 
 	// create odigos configuration with default sdks
-	origGetDefaultSDKs = instrumentationdevice.GetDefaultSDKs
-	instrumentationdevice.GetDefaultSDKs = testutil.MockGetDefaultSDKs
+	odigosConfiguration := testutil.NewMockOdigosConfig()
+	Expect(k8sClient.Create(testCtx, odigosConfiguration)).Should(Succeed())
 
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -124,5 +122,4 @@ var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
-	instrumentationdevice.GetDefaultSDKs = origGetDefaultSDKs
 })

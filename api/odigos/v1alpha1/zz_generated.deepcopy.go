@@ -1029,6 +1029,29 @@ func (in *OdigosConfigurationSpec) DeepCopyInto(out *OdigosConfigurationSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.SupportedSDKs != nil {
+		in, out := &in.SupportedSDKs, &out.SupportedSDKs
+		*out = make(map[common.ProgrammingLanguage][]common.OtelSdk, len(*in))
+		for key, val := range *in {
+			var outVal []common.OtelSdk
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				inVal := (*in)[key]
+				in, out := &inVal, &outVal
+				*out = make([]common.OtelSdk, len(*in))
+				copy(*out, *in)
+			}
+			(*out)[key] = outVal
+		}
+	}
+	if in.DefaultSDKs != nil {
+		in, out := &in.DefaultSDKs, &out.DefaultSDKs
+		*out = make(map[common.ProgrammingLanguage]common.OtelSdk, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.CollectorGateway != nil {
 		in, out := &in.CollectorGateway, &out.CollectorGateway
 		*out = new(CollectorGatewayConfiguration)
