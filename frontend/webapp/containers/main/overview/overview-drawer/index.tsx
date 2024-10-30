@@ -7,12 +7,11 @@ import DrawerFooter from './drawer-footer';
 import { SourceDrawer } from '../../sources';
 import { Drawer } from '@/reuseable-components';
 import { DeleteEntityModal } from '@/components';
-import { useActualSources, useNotify, useUpdateDestination } from '@/hooks';
 import { ActionDrawer, type ActionDrawerHandle } from '../../actions';
 import { DestinationDrawer, type DestinationDrawerHandle } from '../../destinations';
+import { useActionCRUD, useActualSources, useNotify, useUpdateDestination } from '@/hooks';
 import { getMainContainerLanguageLogo, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils/constants/programming-languages';
 import { WorkloadId, K8sActualSource, ActualDestination, OVERVIEW_ENTITY_TYPES, PatchSourceRequestInput, ActionDataParsed } from '@/types';
-import { useUpdateAction } from '@/hooks/actions/useUpdateAction';
 
 const componentMap = {
   source: SourceDrawer,
@@ -31,7 +30,7 @@ const OverviewDrawer = () => {
   const [title, setTitle] = useState('');
 
   const notify = useNotify();
-  const { updateAction } = useUpdateAction();
+  const { updateAction, deleteAction } = useActionCRUD();
   const { updateExistingDestination } = useUpdateDestination();
   const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
 
@@ -177,7 +176,9 @@ const OverviewDrawer = () => {
     }
 
     if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
-      alert('TODO !');
+      const { id, type } = item as ActionDataParsed;
+
+      await deleteAction(id, type);
     }
 
     if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {

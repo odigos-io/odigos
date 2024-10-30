@@ -15,3 +15,9 @@ export const UPDATE_ACTION = gql`
     }
   }
 `;
+
+export const DELETE_ACTION = gql`
+  mutation DeleteAction($id: ID!, $actionType: String!) {
+    deleteAction(id: $id, actionType: $actionType)
+  }
+`;
