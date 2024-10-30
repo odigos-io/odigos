@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { Text } from '../text';
 import styled from 'styled-components';
-import React, { useState, ChangeEvent, KeyboardEvent, FC } from 'react';
+import React, { useState, ChangeEvent, KeyboardEvent, FC, useEffect } from 'react';
 
 export interface Option {
   id: string;
@@ -14,7 +14,9 @@ export interface Option {
 interface AutocompleteInputProps {
   options: Option[];
   placeholder?: string;
+  selectedOption?: Option;
   onOptionSelect?: (option: Option) => void;
+  style?: React.CSSProperties;
 }
 
 const filterOptions = (optionsList: Option[], input: string): Option[] => {
@@ -31,15 +33,24 @@ const filterOptions = (optionsList: Option[], input: string): Option[] => {
   }, []);
 };
 
-const AutocompleteInput: FC<AutocompleteInputProps> = ({ options, placeholder = 'Type to search...', onOptionSelect }) => {
+const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to search...', options, selectedOption, onOptionSelect, style }) => {
   const [query, setQuery] = useState('');
+  const [icon, setIcon] = useState('');
   const [filteredOptions, setFilteredOptions] = useState<Option[]>(filterOptions(options, ''));
   const [showOptions, setShowOptions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
+  useEffect(() => {
+    if (!!selectedOption && !query) {
+      setQuery(selectedOption.label);
+      setIcon(selectedOption.icon || '');
+    }
+  }, [selectedOption, query]);
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
     setQuery(input);
+    setIcon('');
     if (input) {
       const filtered = filterOptions(options, input);
       setFilteredOptions(filtered);
@@ -50,6 +61,7 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ options, placeholder = 
   };
 
   const handleOptionClick = (option: Option) => {
+    setIcon(option.icon || '');
     setQuery(option.label);
     setShowOptions(false);
     if (onOptionSelect) {
@@ -81,8 +93,9 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ options, placeholder = 
   };
 
   return (
-    <AutocompleteContainer>
+    <AutocompleteContainer style={style}>
       <InputWrapper>
+        {icon && <Icon src={icon} />}
         <StyledInput
           type='text'
           value={query}
@@ -93,6 +106,7 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ options, placeholder = 
           onFocus={() => setShowOptions(true)}
         />
       </InputWrapper>
+
       {showOptions && (
         <OptionsList>
           {filteredOptions.map((option, index) => (
@@ -107,15 +121,16 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ options, placeholder = 
 interface OptionItemProps {
   option: Option;
   isActive: boolean;
+  renderIcon?: boolean;
   onClick: (option: Option) => void;
 }
 
-const OptionItem: FC<OptionItemProps> = ({ option, isActive, onClick }) => {
+const OptionItem: FC<OptionItemProps> = ({ option, isActive, renderIcon = true, onClick }) => {
   const hasSubItems = !!option.items && option.items.length > 0;
 
   return (
     <OptionItemContainer isActive={isActive} isList={hasSubItems} onMouseDown={() => (hasSubItems ? null : onClick(option))}>
-      {option.icon && <Image width={16} height={16} src={option.icon} alt={option.label} />}
+      {option.icon && renderIcon && <Icon src={option.icon} alt={option.label} />}
 
       <OptionContent>
         <OptionLabelWrapper>
@@ -128,7 +143,7 @@ const OptionItem: FC<OptionItemProps> = ({ option, isActive, onClick }) => {
             {option.items?.map((subOption) => (
               <SubOptionContainer key={subOption.id}>
                 <VerticalLine />
-                <OptionItem option={subOption} isActive={false} onClick={onClick} />
+                <OptionItem option={subOption} renderIcon={false} isActive={false} onClick={onClick} />
               </SubOptionContainer>
             ))}
           </SubOptionsList>
@@ -138,13 +153,16 @@ const OptionItem: FC<OptionItemProps> = ({ option, isActive, onClick }) => {
   );
 };
 
+const Icon = ({ src, alt = '' }: { src: string; alt?: string }) => {
+  return <Image width={16} height={16} src={src} alt={alt} />;
+};
+
 export { AutocompleteInput };
 
 /** Styled Components */
 
 const AutocompleteContainer = styled.div`
   position: relative;
-  margin-top: 24px;
 `;
 
 const InputWrapper = styled.div`
@@ -152,8 +170,8 @@ const InputWrapper = styled.div`
   display: flex;
   align-items: center;
   height: 36px;
-  gap: 12px;
-  padding: 0 8px;
+  gap: 8px;
+  padding-left: 12px;
   transition: border-color 0.3s;
   border-radius: 32px;
   border: 1px solid rgba(249, 249, 249, 0.24);
@@ -195,7 +213,7 @@ const OptionsList = styled.ul`
   max-height: 348px;
   top: 32px;
   border-radius: 24px;
-  width: calc(100% - 16px);
+  width: calc(100% - 24px);
   overflow-y: auto;
   background-color: ${({ theme }) => theme.colors.dropdown_bg};
   border: 1px solid ${({ theme }) => theme.colors.border};
@@ -209,7 +227,7 @@ interface OptionItemContainerProps {
 }
 
 const OptionItemContainer = styled.li<OptionItemContainerProps>`
-  width: 100%;
+  width: calc(100% - 24px);
   padding: 8px 12px;
   cursor: ${({ isList }) => (isList ? 'default' : 'pointer')};
   border-radius: 24px;

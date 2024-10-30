@@ -1,15 +1,15 @@
 'use client';
-import React, { memo } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { Text } from '@/reuseable-components';
 
-const ColumnContainer = styled.div`
+const ColumnContainer = styled.div<{ columnWidth: number }>`
+  width: ${({ columnWidth }) => `${columnWidth + 40}px`};
+  padding: 12px 0px 16px 0px;
+  gap: 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 0px 16px 0px;
-  width: 336px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
@@ -39,11 +39,12 @@ interface Column {
 
 interface HeaderNodeProps {
   data: Column;
+  columnWidth: number;
 }
 
-export default memo(({ data }: HeaderNodeProps) => {
+const HeaderNode = ({ data, columnWidth }: HeaderNodeProps) => {
   return (
-    <ColumnContainer>
+    <ColumnContainer columnWidth={columnWidth}>
       <Image src={data.icon} width={16} height={16} alt={data.title} />
       <Title size={14}>{data.title}</Title>
       <TagValueContainer>
@@ -51,4 +52,6 @@ export default memo(({ data }: HeaderNodeProps) => {
       </TagValueContainer>
     </ColumnContainer>
   );
-});
+};
+
+export default HeaderNode;

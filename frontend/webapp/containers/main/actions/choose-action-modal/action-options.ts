@@ -66,6 +66,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
         label: 'Error Sampler',
         description: 'Sample errors based on percentage.',
         type: ActionsType.ERROR_SAMPLER,
+        icon: getActionIcon('sampler'),
         docsEndpoint: '/pipeline/actions/sampling/errorsampler',
         docsDescription: 'The “Error Sampler” Odigos Action is a Global Action that supports error sampling by filtering out non-error traces.',
         allowedSignals: ['TRACES'],
@@ -75,6 +76,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
         label: 'Probabilistic Sampler',
         description: 'Sample traces based on percentage.',
         type: ActionsType.PROBABILISTIC_SAMPLER,
+        icon: getActionIcon('sampler'),
         docsEndpoint: '/pipeline/actions/sampling/probabilisticsampler',
         docsDescription:
           'The “Probabilistic Sampler” Odigos Action supports probabilistic sampling based on a configured sampling percentage applied to the TraceID.',
@@ -85,6 +87,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
         label: 'Latency Action',
         description: 'Add latency to your traces.',
         type: ActionsType.LATENCY_SAMPLER,
+        icon: getActionIcon('sampler'),
         docsEndpoint: '/pipeline/actions/sampling/latencysampler',
         docsDescription:
           'The “Latency Sampler” Odigos Action is an Endpoint Action that samples traces based on their duration for a specific service and endpoint (HTTP route) filter.',
