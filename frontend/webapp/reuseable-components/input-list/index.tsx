@@ -1,10 +1,10 @@
 import Image from 'next/image';
-import React, { useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
+import { Text } from '../text';
 import { Input } from '../input';
 import { Button } from '../button';
-import { Text } from '../text';
-import { Tooltip } from '../tooltip';
+import styled from 'styled-components';
+import { FieldLabel } from '../field-label';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface InputListProps {
   initialValues?: string[];
@@ -51,19 +51,6 @@ const ButtonText = styled(Text)`
   font-weight: 500;
   font-family: ${({ theme }) => theme.font_family.secondary};
   text-decoration-line: underline;
-`;
-
-const Title = styled(Text)`
-  font-size: 14px;
-  opacity: 0.8;
-  line-height: 22px;
-`;
-
-const HeaderWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
 `;
 
 const INITIAL = [''];
@@ -115,21 +102,8 @@ const InputList: React.FC<InputListProps> = ({ initialValues = INITIAL, value = 
 
   return (
     <Container>
-      {title && (
-        <HeaderWrapper>
-          <Title>{title}</Title>
-          {!required && (
-            <Text color='#7A7A7A' size={14} weight={300} opacity={0.8}>
-              (optional)
-            </Text>
-          )}
-          {tooltip && (
-            <Tooltip text={tooltip || ''}>
-              <Image src='/icons/common/info.svg' alt='' width={16} height={16} style={{ marginBottom: 4 }} />
-            </Tooltip>
-          )}
-        </HeaderWrapper>
-      )}
+      <FieldLabel title={title} required={required} tooltip={tooltip} />
+
       {inputs.map((value, index) => (
         <InputRow key={index}>
           <Input value={value} onChange={(e) => handleInputChange(e.target.value, index)} />
@@ -138,6 +112,7 @@ const InputList: React.FC<InputListProps> = ({ initialValues = INITIAL, value = 
           </DeleteButton>
         </InputRow>
       ))}
+
       <AddButton disabled={isAddButtonDisabled} variant={'tertiary'} onClick={handleAddInput}>
         <Image src='/icons/common/plus.svg' alt='Add' width={16} height={16} />
         <ButtonText>ADD ATTRIBUTE</ButtonText>

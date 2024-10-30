@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
 import { Input } from '@/reuseable-components';
-import { FieldTitle, FieldWrapper } from './styled';
 import type { ErrorSamplerSpec } from '@/types';
 
 type Props = {
@@ -34,10 +33,15 @@ const ErrorSampler: React.FC<Props> = ({ value, setValue }) => {
   };
 
   return (
-    <FieldWrapper>
-      <FieldTitle>Fallback sampling ratio</FieldTitle>
-      <Input type='number' min={MIN} max={MAX} value={mappedValue} onChange={({ target: { value: v } }) => handleChange(v)} />
-    </FieldWrapper>
+    <Input
+      title='Fallback sampling ratio'
+      required
+      type='number'
+      min={MIN}
+      max={MAX}
+      value={mappedValue}
+      onChange={({ target: { value: v } }) => handleChange(v)}
+    />
   );
 };
 

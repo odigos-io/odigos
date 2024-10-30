@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
-import { FieldTitle, FieldWrapper } from './styled';
-import { KeyValueInputsList } from '@/reuseable-components';
 import type { AddClusterInfoSpec } from '@/types';
+import { KeyValueInputsList } from '@/reuseable-components';
 
 type Props = {
   value: string;
@@ -39,12 +38,7 @@ const AddClusterInfo: React.FC<Props> = ({ value, setValue }) => {
     setValue(str);
   };
 
-  return (
-    <FieldWrapper>
-      <FieldTitle>Attributes to add</FieldTitle>
-      <KeyValueInputsList value={mappedValue} onChange={handleChange} />
-    </FieldWrapper>
-  );
+  return <KeyValueInputsList title='Attributes to add' required value={mappedValue} onChange={handleChange} />;
 };
 
 export default AddClusterInfo;
