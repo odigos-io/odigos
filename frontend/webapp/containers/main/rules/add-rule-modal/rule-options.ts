@@ -1,5 +1,5 @@
 import { InstrumentationRuleType } from '@/types';
-import { getRuleIcon } from '@/utils/functions/get-rule-icon';
+import { getRuleIcon } from '@/utils/functions';
 
 export type RuleOption = {
   id: string;

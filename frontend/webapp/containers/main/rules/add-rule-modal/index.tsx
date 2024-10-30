@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { AutocompleteInput, Divider, FadeLoader, Modal, NavigationButtons, SectionTitle } from '@/reuseable-components';
+import React, { useEffect, useState } from 'react';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
-import Disclaimer from '@/reuseable-components/disclaimer';
+import { AutocompleteInput, Divider, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@/reuseable-components';
 
 const Container = styled.section`
   width: 100%;
@@ -79,7 +78,11 @@ export const AddRuleModal: React.FC<Props> = ({ isModalOpen, handleCloseModal })
           title='Define Instrumentation Rule'
           description='Instrumentation rules control how telemetry is recorded from your application. Choose a rule type and provide necessary information.'
         />
-        <Disclaimer text='We currently support one rule. We’ll be adding new rule types in the near future.' style={{ marginTop: '24px' }} />
+        <NotificationNote
+          type='info'
+          text='We currently support one rule. We’ll be adding new rule types in the near future.'
+          style={{ marginTop: '24px' }}
+        />
         <AutocompleteInput options={RULE_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: '12px' }} />
 
         {!!selectedItem?.type ? (

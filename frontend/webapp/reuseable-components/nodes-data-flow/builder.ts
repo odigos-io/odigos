@@ -1,7 +1,7 @@
 import theme from '@/styles/theme';
 import { getActionIcon } from '@/utils';
 import { Node, Edge } from 'react-flow-renderer';
-import { getRuleIcon } from '@/utils/functions/get-rule-icon';
+import { getRuleIcon } from '@/utils/functions';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 import {
   OVERVIEW_ENTITY_TYPES,

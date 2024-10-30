@@ -1,6 +1,6 @@
 // Enumeration of possible Instrumentation Rule Types
 export enum InstrumentationRuleType {
-  PAYLOAD_COLLECTION = 'payload-collection',
+  PAYLOAD_COLLECTION = 'PayloadCollection',
 }
 
 export enum RulesType {
