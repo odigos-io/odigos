@@ -324,13 +324,7 @@ status:
     - key: process.pid
       (value != null): true
     - key: telemetry.sdk.language
-      value: python
-    - key: k8s.namespace.name
-      (value != null): true
-    - key: k8s.container.name
-      (value != null): true
-    - key: k8s.pod.name
-      (value != null): true        
+      value: python     
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
