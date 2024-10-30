@@ -21,15 +21,17 @@ var (
 	ErrPatchEnvVars = errors.New("failed to patch env vars")
 )
 
-func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) error {
+func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) (error, bool) {
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
 	// and we need to cleanup the community device before adding the enterprise one.
 	RevertInstrumentationDevices(original)
 
+	deviceApplied := false
+
 	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(targetObj.GetAnnotations())
 	if err != nil {
-		return err
+		return err, deviceApplied
 	}
 
 	var modifiedContainers []corev1.Container
@@ -40,7 +42,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 			// this is necessary to sync the existing envs with the missing language if changed for any reason.
 			err = patchEnvVarsForContainer(runtimeDetails, &container, nil, *containerLanguage, manifestEnvOriginal)
 			if err != nil {
-				return fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
+				return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied
 			}
 			modifiedContainers = append(modifiedContainers, container)
 			continue
@@ -48,7 +50,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 
 		otelSdk, found := defaultSdks[*containerLanguage]
 		if !found {
-			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, *containerLanguage, container.Name)
+			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, *containerLanguage, container.Name), deviceApplied
 		}
 
 		instrumentationDeviceName := common.InstrumentationDeviceName(*containerLanguage, otelSdk)
@@ -58,19 +60,22 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 		}
 		container.Resources.Limits[corev1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
 
+		deviceApplied = true
+
 		err = patchEnvVarsForContainer(runtimeDetails, &container, &otelSdk, *containerLanguage, manifestEnvOriginal)
 		if err != nil {
-			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
+			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied
 		}
 
 		modifiedContainers = append(modifiedContainers, container)
+
 	}
 
 	original.Spec.Containers = modifiedContainers
 
 	// persist the original values if changed
 	manifestEnvOriginal.SerializeToAnnotation(targetObj)
-	return nil
+	return nil, deviceApplied
 }
 
 // this function restores a workload manifest env vars to their original values.

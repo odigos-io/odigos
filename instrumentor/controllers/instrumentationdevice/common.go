@@ -125,13 +125,15 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 			return err
 		}
 
-		err = instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj)
+		err, deviceApplied := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj)
 		if err != nil {
 			return err
 		}
 
 		// If instrumentation device is applied successfully, add odigos.io/inject-instrumentation label to enable the webhook
-		instrumentation.SetInjectInstrumentationLabel(podSpec)
+		if deviceApplied {
+			instrumentation.SetInjectInstrumentationLabel(podSpec)
+		}
 
 		return nil
 	})
