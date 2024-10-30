@@ -324,7 +324,7 @@ status:
     - key: process.pid
       (value != null): true
     - key: telemetry.sdk.language
-      value: python
+      value: python     
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance

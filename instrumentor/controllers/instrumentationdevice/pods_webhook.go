@@ -39,13 +39,16 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 func injectOdigosEnvVars(pod *corev1.Pod) {
-	namespace := pod.Namespace
 
 	// Common environment variables that do not change across containers
 	commonEnvVars := []corev1.EnvVar{
 		{
-			Name:  EnvVarNamespace,
-			Value: namespace,
+			Name: EnvVarNamespace,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.namespace",
+				},
+			},
 		},
 		{
 			Name: EnvVarPodName,
