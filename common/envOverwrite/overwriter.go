@@ -123,7 +123,7 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 						}
 						specialFound = true
 					}
-					if part == "" {
+					if strings.TrimSpace(part) == "" {
 						continue
 					}
 					newValues = append(newValues, part)
