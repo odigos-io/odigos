@@ -15,57 +15,33 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
   const { refetch } = useComputePlatform();
   const notify = useNotify();
 
-  const handleError = (title: string, message: string) => {
-    notify({
-      title,
-      message,
-      type: 'error',
-      target: 'notification',
-      crdType: 'notification',
-    });
+  const notifyUser = (title: string, message: string, type: 'error' | 'success') => {
+    notify({ title, message, type, target: 'notification', crdType: 'notification' });
+  };
 
-    if (params?.onError) params.onError();
+  const handleError = (title: string, message: string) => {
+    notifyUser(title, message, 'error');
+    params?.onError?.();
   };
 
   const handleComplete = (title: string, message: string) => {
+    notifyUser(title, message, 'success');
     setDrawerItem(null);
     refetch();
-    notify({
-      title,
-      message,
-      type: 'success',
-      target: 'notification',
-      crdType: 'notification',
-    });
-
-    if (params?.onSuccess) params.onSuccess();
+    params?.onSuccess?.();
   };
 
   const [createAction, cState] = useMutation(CREATE_ACTION, {
-    onError: (error) => {
-      handleError('Create Action', error.message);
-    },
-    onCompleted: () => {
-      handleComplete('Create Action', 'successfully created');
-    },
+    onError: (error) => handleError('Create Action', error.message),
+    onCompleted: () => handleComplete('Create Action', 'successfully created'),
   });
-
   const [updateAction, uState] = useMutation(UPDATE_ACTION, {
-    onError: (error) => {
-      handleError('Update Action', error.message);
-    },
-    onCompleted: () => {
-      handleComplete('Update Action', 'successfully updated');
-    },
+    onError: (error) => handleError('Update Action', error.message),
+    onCompleted: () => handleComplete('Update Action', 'successfully updated'),
   });
-
   const [deleteAction, dState] = useMutation(DELETE_ACTION, {
-    onError: (error) => {
-      handleError('Delete Action', error.message);
-    },
-    onCompleted: () => {
-      handleComplete('Delete Action', 'successfully deleted');
-    },
+    onError: (error) => handleError('Delete Action', error.message),
+    onCompleted: () => handleComplete('Delete Action', 'successfully deleted'),
   });
 
   return {
