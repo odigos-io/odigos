@@ -98,6 +98,14 @@ func TestGetPatchedEnvValue(t *testing.T) {
 			programmingLanguage:  common.JavaProgrammingLanguage,
 			patchedValueExpected: specialEnvValueJava + " " + javaToolsNativeCommunity,
 		},
+		{
+			name:                 "multiple spaces in special env value",
+			envName:              "JAVA_TOOL_OPTIONS",
+			observedValue:        fmt.Sprintf("%s %s              %s", specialEnvValueJava, specialEnvValueJava, javaToolsNativeCommunity),
+			sdk:                  &common.OtelSdkNativeCommunity,
+			programmingLanguage:  common.JavaProgrammingLanguage,
+			patchedValueExpected: specialEnvValueJava + " " + javaToolsNativeCommunity,
+		},
 	}
 
 	for _, tt := range tests {

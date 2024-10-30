@@ -123,6 +123,9 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 						}
 						specialFound = true
 					}
+					if part == "" {
+						continue
+					}
 					newValues = append(newValues, part)
 				}
 				observedValue = strings.Join(newValues, envMetadata.delim)
