@@ -17,7 +17,7 @@ export const ConnectionNotification = ({
     {destination?.fields && !showConnectionError && (
       <NotificationNoteWrapper>
         <NotificationNote
-          type="info"
+          type="default"
           text={`Odigos autocompleted ${destination.displayName} connection details.`}
         />
       </NotificationNoteWrapper>
