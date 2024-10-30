@@ -1,6 +1,6 @@
-import { Text } from '../text';
-import { Checkbox } from '../checkbox';
 import styled from 'styled-components';
+import { Checkbox } from '../checkbox';
+import { FieldLabel } from '../field-label';
 import React, { useEffect, useState } from 'react';
 import { MONITORING_OPTIONS, SignalLowercase, SignalUppercase } from '@/utils';
 
@@ -15,10 +15,6 @@ const ListContainer = styled.div<{ isVertical?: boolean }>`
   display: flex;
   flex-direction: ${({ isVertical }) => (isVertical ? 'column' : 'row')};
   gap: ${({ isVertical }) => (isVertical ? '16px' : '32px')};
-`;
-
-const TextWrapper = styled.div`
-  margin-bottom: 14px;
 `;
 
 const monitors = MONITORING_OPTIONS;
@@ -58,9 +54,7 @@ const MonitoringCheckboxes: React.FC<MonitoringCheckboxesProps> = ({ isVertical,
 
   return (
     <div>
-      <TextWrapper>
-        <Text>Monitoring</Text>
-      </TextWrapper>
+      <FieldLabel title='Monitoring' required />
 
       <ListContainer isVertical={isVertical}>
         {monitors.map((monitor) => {

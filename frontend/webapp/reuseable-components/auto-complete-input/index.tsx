@@ -1,7 +1,7 @@
-import React, { useState, ChangeEvent, KeyboardEvent, FC } from 'react';
-import styled from 'styled-components';
 import Image from 'next/image';
 import { Text } from '../text';
+import styled from 'styled-components';
+import React, { useState, ChangeEvent, KeyboardEvent, FC } from 'react';
 
 export interface Option {
   id: string;
@@ -144,6 +144,7 @@ export { AutocompleteInput };
 
 const AutocompleteContainer = styled.div`
   position: relative;
+  margin-top: 24px;
 `;
 
 const InputWrapper = styled.div`

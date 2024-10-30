@@ -50,4 +50,5 @@ export enum OVERVIEW_NODE_TYPES {
 
 export enum STATUSES {
   HEALTHY = 'healthy',
+  UNHEALTHY = 'unhealthy',
 }

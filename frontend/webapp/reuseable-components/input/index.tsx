@@ -1,8 +1,8 @@
 import Image from 'next/image';
-import React, { useState, forwardRef } from 'react';
 import { Text } from '../text';
+import { FieldLabel } from '../field-label';
 import styled, { css } from 'styled-components';
-import { Tooltip } from '../tooltip';
+import React, { useState, forwardRef } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: string;
@@ -126,20 +126,6 @@ const ErrorMessage = styled(Text)`
   margin-top: 4px;
 `;
 
-const Title = styled(Text)`
-  font-size: 14px;
-  opacity: 0.8;
-  line-height: 22px;
-  margin-bottom: 4px;
-`;
-
-const HeaderWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-`;
-
 // Wrap Input with forwardRef to handle the ref prop
 const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ icon, buttonLabel, onButtonClick, errorMessage, title, tooltip, required, initialValue, onChange, ...props }, ref) => {
@@ -154,19 +140,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <Container>
-        {title && (
-          <HeaderWrapper>
-            <Title>{title}</Title>
-            {!required && (
-              <Text color='#7A7A7A' size={14} weight={300} opacity={0.8}>
-                (optional)
-              </Text>
-            )}
-            <Tooltip text={tooltip || ''}>
-              {tooltip && <Image src='/icons/common/info.svg' alt='' width={16} height={16} style={{ marginBottom: 4 }} />}
-            </Tooltip>
-          </HeaderWrapper>
-        )}
+        <FieldLabel title={title} required={required} tooltip={tooltip} />
 
         <InputWrapper isDisabled={props.disabled} hasError={!!errorMessage} isActive={!!props.autoFocus}>
           {icon && (
@@ -187,6 +161,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             </Button>
           )}
         </InputWrapper>
+
         {errorMessage && (
           <ErrorWrapper>
             <ErrorMessage>{errorMessage}</ErrorMessage>
