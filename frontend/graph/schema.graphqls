@@ -460,4 +460,13 @@ type Mutation {
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
   deleteAction(id: ID!, actionType: String!): Boolean!
+
+  createInstrumentationRule(
+    instrumentationRule: InstrumentationRuleInput!
+  ): InstrumentationRule!
+  updateInstrumentationRule(
+    ruleId: ID!
+    instrumentationRule: InstrumentationRuleInput!
+  ): InstrumentationRule!
+  deleteInstrumentationRule(ruleId: ID!): Boolean!
 }

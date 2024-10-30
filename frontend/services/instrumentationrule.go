@@ -11,32 +11,88 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// // ListInstrumentationRules fetches all instrumentation rules
-// func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule, error) {
-// 	odigosns := consts.DefaultOdigosNamespace
-// 	instrumentationRules, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).List(ctx, metav1.ListOptions{})
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error getting instrumentation rules: %w", err)
-// 	}
+// ListInstrumentationRules fetches all instrumentation rules
+func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule, error) {
+	odigosns := consts.DefaultOdigosNamespace
+	instrumentationRules, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("error getting instrumentation rules: %w", err)
+	}
 
-// 	var gqlRules []*model.InstrumentationRule
-// 	for _, rule := range instrumentationRules.Items {
-// 		gqlRules = append(gqlRules, &model.InstrumentationRule{
-// 			RuleId:                   rule.Name,
-// 			RuleName:                 rule.Spec.RuleName,
-// 			Notes:                    rule.Spec.Notes,
-// 			Disabled:                 rule.Spec.Disabled,
-// 			Workloads:                rule.Spec.Workloads,
-// 			InstrumentationLibraries: rule.Spec.InstrumentationLibraries,
-// 			PayloadCollection:        rule.Spec.PayloadCollection,
-// 			OtelSdks:                 rule.Spec.OtelSdks,
-// 		})
-// 	}
-// 	return gqlRules, nil
-// }
+	var gqlRules []*model.InstrumentationRule
+	for _, rule := range instrumentationRules.Items {
+
+		var gqlWorkloads []*model.PodWorkload
+		if rule.Spec.Workloads != nil {
+			for _, workload := range *rule.Spec.Workloads {
+				gqlWorkloads = append(gqlWorkloads, &model.PodWorkload{
+					Namespace: workload.Namespace,
+					Kind:      model.K8sResourceKind(workload.Kind),
+					Name:      workload.Name,
+				})
+			}
+		}
+
+		var gqlLibraries []*model.InstrumentationLibraryGlobalID
+		if rule.Spec.InstrumentationLibraries != nil {
+			for _, library := range *rule.Spec.InstrumentationLibraries {
+
+				spanKind := model.SpanKind(library.SpanKind)
+				language := model.ProgrammingLanguage(library.Language)
+				gqlLibraries = append(gqlLibraries, &model.InstrumentationLibraryGlobalID{
+					Name:     library.Name,
+					SpanKind: &spanKind,
+					Language: &language,
+				})
+			}
+		}
+
+		var gqlPayloadCollection *model.PayloadCollection
+		if rule.Spec.PayloadCollection != nil {
+			var gqlHttpRequest *model.HTTPPayloadCollection
+			if rule.Spec.PayloadCollection.HttpRequest != nil {
+				gqlHttpRequest = &model.HTTPPayloadCollection{}
+			}
+
+			var gqlHttpResponse *model.HTTPPayloadCollection
+			if rule.Spec.PayloadCollection.HttpResponse != nil {
+				gqlHttpResponse = &model.HTTPPayloadCollection{}
+			}
+
+			var gqlDbQuery *model.DbQueryPayloadCollection
+			if rule.Spec.PayloadCollection.DbQuery != nil {
+				gqlDbQuery = &model.DbQueryPayloadCollection{}
+			}
+
+			var gqlMessaging *model.MessagingPayloadCollection
+			if rule.Spec.PayloadCollection.Messaging != nil {
+				gqlMessaging = &model.MessagingPayloadCollection{}
+			}
+
+			gqlPayloadCollection = &model.PayloadCollection{
+				HTTPRequest:  gqlHttpRequest,
+				HTTPResponse: gqlHttpResponse,
+				DbQuery:      gqlDbQuery,
+				Messaging:    gqlMessaging,
+			}
+		}
+
+		gqlRules = append(gqlRules, &model.InstrumentationRule{
+			RuleID:                   rule.Name,
+			RuleName:                 &rule.Spec.RuleName,
+			Notes:                    &rule.Spec.Notes,
+			Disabled:                 &rule.Spec.Disabled,
+			Workloads:                gqlWorkloads,
+			InstrumentationLibraries: gqlLibraries,
+			PayloadCollection:        gqlPayloadCollection,
+		})
+	}
+	return gqlRules, nil
+}
 
 // func GetInstrumentationRule(ctx context.Context, id string) (*model.InstrumentationRule, error) {
 // 	odigosns := consts.DefaultOdigosNamespace
@@ -100,19 +156,19 @@ import (
 // 	}, nil
 // }
 
-// func DeleteInstrumentationRule(ctx context.Context, id string) (bool, error) {
-// 	odigosns := consts.DefaultOdigosNamespace
+func DeleteInstrumentationRule(ctx context.Context, id string) (bool, error) {
+	odigosns := consts.DefaultOdigosNamespace
 
-// 	err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Delete(ctx, id, metav1.DeleteOptions{})
-// 	if err != nil {
-// 		if apierrors.IsNotFound(err) {
-// 			return false, fmt.Errorf("instrumentation rule with ID %s not found", id)
-// 		}
-// 		return false, fmt.Errorf("error deleting instrumentation rule: %w", err)
-// 	}
+	err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Delete(ctx, id, metav1.DeleteOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, fmt.Errorf("instrumentation rule with ID %s not found", id)
+		}
+		return false, fmt.Errorf("error deleting instrumentation rule: %w", err)
+	}
 
-// 	return true, nil
-// }
+	return true, nil
+}
 
 func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
 	odigosns := consts.DefaultOdigosNamespace
@@ -217,7 +273,8 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	if err != nil {
 		return nil, fmt.Errorf("error creating instrumentation rule: %w", err)
 	}
-	println(createdRule.Name)
 	// Convert to GraphQL model and return
-	return &model.InstrumentationRule{}, nil
+	return &model.InstrumentationRule{
+		RuleID: createdRule.Name,
+	}, nil
 }

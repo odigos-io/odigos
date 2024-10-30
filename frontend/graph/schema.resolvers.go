@@ -268,6 +268,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	return response, nil
 }
 
+// InstrumentationRules is the resolver for the instrumentationRules field.
+func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj *model.ComputePlatform) ([]*model.InstrumentationRule, error) {
+	return services.ListInstrumentationRules(ctx)
+}
+
 // Type is the resolver for the type field.
 func (r *destinationResolver) Type(ctx context.Context, obj *model.Destination) (string, error) {
 	panic(fmt.Errorf("not implemented: Type - type"))
@@ -642,6 +647,26 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 	}
 
 	// Return true if the deletion was successful
+	return true, nil
+}
+
+// CreateInstrumentationRule is the resolver for the createInstrumentationRule field.
+func (r *mutationResolver) CreateInstrumentationRule(ctx context.Context, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
+	panic(fmt.Errorf("not implemented: CreateInstrumentationRule - createInstrumentationRule"))
+}
+
+// UpdateInstrumentationRule is the resolver for the updateInstrumentationRule field.
+func (r *mutationResolver) UpdateInstrumentationRule(ctx context.Context, ruleID string, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
+	panic(fmt.Errorf("not implemented: UpdateInstrumentationRule - updateInstrumentationRule"))
+}
+
+// DeleteInstrumentationRule is the resolver for the deleteInstrumentationRule field.
+func (r *mutationResolver) DeleteInstrumentationRule(ctx context.Context, ruleID string) (bool, error) {
+	_, err := services.DeleteInstrumentationRule(ctx, ruleID)
+	if err != nil {
+		return false, err
+	}
+
 	return true, nil
 }
 
