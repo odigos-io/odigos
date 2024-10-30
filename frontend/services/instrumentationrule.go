@@ -94,67 +94,163 @@ func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule
 	return gqlRules, nil
 }
 
-// func GetInstrumentationRule(ctx context.Context, id string) (*model.InstrumentationRule, error) {
-// 	odigosns := consts.DefaultOdigosNamespace
+func GetInstrumentationRule(ctx context.Context, id string) (*model.InstrumentationRule, error) {
+	odigosns := consts.DefaultOdigosNamespace
 
-// 	rule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Get(ctx, id, metav1.GetOptions{})
-// 	if err != nil {
-// 		if apierrors.IsNotFound(err) {
-// 			return nil, fmt.Errorf("instrumentation rule with ID %s not found", id)
-// 		}
-// 		return nil, fmt.Errorf("error getting instrumentation rule: %w", err)
-// 	}
+	rule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Get(ctx, id, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, fmt.Errorf("instrumentation rule with ID %s not found", id)
+		}
+		return nil, fmt.Errorf("error getting instrumentation rule: %w", err)
+	}
 
-// 	return &model.InstrumentationRule{
-// 		RuleId:                   rule.Name,
-// 		RuleName:                 rule.Spec.RuleName,
-// 		Notes:                    rule.Spec.Notes,
-// 		Disabled:                 rule.Spec.Disabled,
-// 		Workloads:                rule.Spec.Workloads,
-// 		InstrumentationLibraries: rule.Spec.InstrumentationLibraries,
-// 		PayloadCollection:        rule.Spec.PayloadCollection,
-// 		OtelSdks:                 rule.Spec.OtelSdks,
-// 	}, nil
-// }
+	return &model.InstrumentationRule{
+		RuleID:   rule.Name,
+		RuleName: &rule.Spec.RuleName,
+		Notes:    &rule.Spec.Notes,
+		Disabled: &rule.Spec.Disabled,
+		// Workloads:                rule.Spec.Workloads,
+		// InstrumentationLibraries: rule.Spec.InstrumentationLibraries,
+		// PayloadCollection:        rule.Spec.PayloadCollection,
+	}, nil
+}
 
-// func UpdateInstrumentationRule(ctx context.Context, id string, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
-// 	odigosns := consts.DefaultOdigosNamespace
+func UpdateInstrumentationRule(ctx context.Context, id string, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
+	odigosns := consts.DefaultOdigosNamespace
 
-// 	// Retrieve existing rule
-// 	existingRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Get(ctx, id, metav1.GetOptions{})
-// 	if err != nil {
-// 		if apierrors.IsNotFound(err) {
-// 			return nil, fmt.Errorf("instrumentation rule with ID %s not found", id)
-// 		}
-// 		return nil, fmt.Errorf("error getting instrumentation rule: %w", err)
-// 	}
+	// Retrieve existing rule
+	existingRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Get(ctx, id, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, fmt.Errorf("instrumentation rule with ID %s not found", id)
+		}
+		return nil, fmt.Errorf("error getting instrumentation rule: %w", err)
+	}
 
-// 	// Update the existing rule's specification
-// 	existingRule.Spec.RuleName = input.RuleName
-// 	existingRule.Spec.Notes = input.Notes
-// 	existingRule.Spec.Disabled = input.Disabled
-// 	existingRule.Spec.Workloads = input.Workloads
-// 	existingRule.Spec.InstrumentationLibraries = input.InstrumentationLibraries
-// 	existingRule.Spec.PayloadCollection = input.PayloadCollection
-// 	existingRule.Spec.OtelSdks = input.OtelSdks
+	// Update the existing rule's specification
+	existingRule.Spec.RuleName = *input.RuleName
+	existingRule.Spec.Notes = *input.Notes
+	existingRule.Spec.Disabled = *input.Disabled
+	if input.Workloads != nil {
+		convertedWorkloads := make([]workload.PodWorkload, len(input.Workloads))
+		for i, w := range input.Workloads {
+			convertedWorkloads[i] = workload.PodWorkload{
+				Name:      w.Name,
+				Namespace: w.Namespace,
+				Kind:      workload.WorkloadKind(w.Kind),
+			}
+		}
+		existingRule.Spec.Workloads = &convertedWorkloads
+	} else {
+		existingRule.Spec.Workloads = nil
+	}
 
-// 	// Update rule in Kubernetes
-// 	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Update(ctx, existingRule, metav1.UpdateOptions{})
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error updating instrumentation rule: %w", err)
-// 	}
+	if input.InstrumentationLibraries != nil {
+		convertedLibraries := make([]v1alpha1.InstrumentationLibraryGlobalId, len(input.InstrumentationLibraries))
+		for i, lib := range input.InstrumentationLibraries {
+			convertedLibraries[i] = v1alpha1.InstrumentationLibraryGlobalId{
+				Name:     lib.Name,
+				SpanKind: common.SpanKind(*lib.SpanKind),
+				Language: common.ProgrammingLanguage(*lib.Language),
+			}
+		}
+		existingRule.Spec.InstrumentationLibraries = &convertedLibraries
+	} else {
+		existingRule.Spec.InstrumentationLibraries = nil
+	}
 
-// 	return &model.InstrumentationRule{
-// 		RuleId:                   updatedRule.Name,
-// 		RuleName:                 updatedRule.Spec.RuleName,
-// 		Notes:                    updatedRule.Spec.Notes,
-// 		Disabled:                 updatedRule.Spec.Disabled,
-// 		Workloads:                updatedRule.Spec.Workloads,
-// 		InstrumentationLibraries: updatedRule.Spec.InstrumentationLibraries,
-// 		PayloadCollection:        updatedRule.Spec.PayloadCollection,
-// 		OtelSdks:                 updatedRule.Spec.OtelSdks,
-// 	}, nil
-// }
+	if input.PayloadCollection != nil {
+		payloadCollection := &instrumentationrules.PayloadCollection{}
+
+		if input.PayloadCollection.HTTPRequest != nil {
+			payloadCollection.HttpRequest = &instrumentationrules.HttpPayloadCollection{}
+		}
+
+		if input.PayloadCollection.HTTPResponse != nil {
+			payloadCollection.HttpResponse = &instrumentationrules.HttpPayloadCollection{}
+		}
+
+		if input.PayloadCollection.DbQuery != nil {
+			payloadCollection.DbQuery = &instrumentationrules.DbQueryPayloadCollection{}
+		}
+
+		if input.PayloadCollection.Messaging != nil {
+			payloadCollection.Messaging = &instrumentationrules.MessagingPayloadCollection{}
+		}
+
+		existingRule.Spec.PayloadCollection = payloadCollection
+	} else {
+		existingRule.Spec.PayloadCollection = nil
+	}
+
+	// Update rule in Kubernetes
+	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Update(ctx, existingRule, metav1.UpdateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("error updating instrumentation rule: %w", err)
+	}
+
+	var gqlWorkloads []*model.PodWorkload
+	if input.Workloads != nil {
+		for _, w := range input.Workloads {
+			gqlWorkloads = append(gqlWorkloads, &model.PodWorkload{
+				Name:      w.Name,
+				Namespace: w.Namespace,
+				Kind:      model.K8sResourceKind(w.Kind),
+			})
+		}
+	}
+
+	var gqlLibraries []*model.InstrumentationLibraryGlobalID
+	if input.InstrumentationLibraries != nil {
+		for _, lib := range input.InstrumentationLibraries {
+			spanKind := model.SpanKind(*lib.SpanKind)
+			language := model.ProgrammingLanguage(*lib.Language)
+			gqlLibraries = append(gqlLibraries, &model.InstrumentationLibraryGlobalID{
+				Name:     lib.Name,
+				SpanKind: &spanKind,
+				Language: &language,
+			})
+		}
+	}
+
+	var gqlPayloadCollection *model.PayloadCollection
+	if input.PayloadCollection != nil {
+		var gqlHTTPRequest, gqlHTTPResponse *model.HTTPPayloadCollection
+		var gqlDbQuery *model.DbQueryPayloadCollection
+		var gqlMessaging *model.MessagingPayloadCollection
+
+		if input.PayloadCollection.HTTPRequest != nil {
+			gqlHTTPRequest = &model.HTTPPayloadCollection{}
+		}
+		if input.PayloadCollection.HTTPResponse != nil {
+			gqlHTTPResponse = &model.HTTPPayloadCollection{}
+		}
+		if input.PayloadCollection.DbQuery != nil {
+			gqlDbQuery = &model.DbQueryPayloadCollection{}
+		}
+		if input.PayloadCollection.Messaging != nil {
+			gqlMessaging = &model.MessagingPayloadCollection{}
+		}
+
+		gqlPayloadCollection = &model.PayloadCollection{
+			HTTPRequest:  gqlHTTPRequest,
+			HTTPResponse: gqlHTTPResponse,
+			DbQuery:      gqlDbQuery,
+			Messaging:    gqlMessaging,
+		}
+	}
+
+	return &model.InstrumentationRule{
+		RuleID:                   updatedRule.Name,
+		RuleName:                 &updatedRule.Spec.RuleName,
+		Notes:                    &updatedRule.Spec.Notes,
+		Disabled:                 &updatedRule.Spec.Disabled,
+		Workloads:                gqlWorkloads,
+		InstrumentationLibraries: gqlLibraries,
+		PayloadCollection:        gqlPayloadCollection,
+	}, nil
+}
 
 func DeleteInstrumentationRule(ctx context.Context, id string) (bool, error) {
 	odigosns := consts.DefaultOdigosNamespace
