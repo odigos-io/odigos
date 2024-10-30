@@ -60,13 +60,14 @@ type ClusterInfo struct {
 }
 
 type ComputePlatform struct {
-	ComputePlatformType ComputePlatformType    `json:"computePlatformType"`
-	K8sActualNamespace  *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
-	K8sActualNamespaces []*K8sActualNamespace  `json:"k8sActualNamespaces"`
-	K8sActualSource     *K8sActualSource       `json:"k8sActualSource,omitempty"`
-	K8sActualSources    []*K8sActualSource     `json:"k8sActualSources"`
-	Destinations        []*Destination         `json:"destinations"`
-	Actions             []*IcaInstanceResponse `json:"actions"`
+	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
+	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
+	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
+	K8sActualSource      *K8sActualSource       `json:"k8sActualSource,omitempty"`
+	K8sActualSources     []*K8sActualSource     `json:"k8sActualSources"`
+	Destinations         []*Destination         `json:"destinations"`
+	Actions              []*IcaInstanceResponse `json:"actions"`
+	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
 }
 
 type Condition struct {
@@ -75,6 +76,16 @@ type Condition struct {
 	LastTransitionTime *string         `json:"lastTransitionTime,omitempty"`
 	Reason             *string         `json:"reason,omitempty"`
 	Message            *string         `json:"message,omitempty"`
+}
+
+type DbQueryPayloadCollection struct {
+	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
+	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
+}
+
+type DbQueryPayloadCollectionInput struct {
+	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
+	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 }
 
 type DeleteAttribute struct {
@@ -177,6 +188,18 @@ type GetDestinationDetailsResponse struct {
 	Fields []*Field `json:"fields"`
 }
 
+type HTTPPayloadCollection struct {
+	MimeTypes           []*string `json:"mimeTypes,omitempty"`
+	MaxPayloadLength    *int      `json:"maxPayloadLength,omitempty"`
+	DropPartialPayloads *bool     `json:"dropPartialPayloads,omitempty"`
+}
+
+type HTTPPayloadCollectionInput struct {
+	MimeTypes           []*string `json:"mimeTypes,omitempty"`
+	MaxPayloadLength    *int      `json:"maxPayloadLength,omitempty"`
+	DropPartialPayloads *bool     `json:"dropPartialPayloads,omitempty"`
+}
+
 type IcaInstanceResponse struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
@@ -188,9 +211,40 @@ type InstrumentationLibrary struct {
 	Options     []*InstrumentationOption `json:"options"`
 }
 
+type InstrumentationLibraryGlobalID struct {
+	Name     string               `json:"name"`
+	SpanKind *SpanKind            `json:"spanKind,omitempty"`
+	Language *ProgrammingLanguage `json:"language,omitempty"`
+}
+
+type InstrumentationLibraryGlobalIDInput struct {
+	Name     string               `json:"name"`
+	SpanKind *SpanKind            `json:"spanKind,omitempty"`
+	Language *ProgrammingLanguage `json:"language,omitempty"`
+}
+
 type InstrumentationOption struct {
 	OptionKey string   `json:"optionKey"`
 	SpanKind  SpanKind `json:"spanKind"`
+}
+
+type InstrumentationRule struct {
+	RuleID                   string                            `json:"ruleId"`
+	RuleName                 *string                           `json:"ruleName,omitempty"`
+	Notes                    *string                           `json:"notes,omitempty"`
+	Disabled                 *bool                             `json:"disabled,omitempty"`
+	Workloads                []*PodWorkload                    `json:"workloads,omitempty"`
+	InstrumentationLibraries []*InstrumentationLibraryGlobalID `json:"instrumentationLibraries,omitempty"`
+	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
+}
+
+type InstrumentationRuleInput struct {
+	RuleName                 *string                                `json:"ruleName,omitempty"`
+	Notes                    *string                                `json:"notes,omitempty"`
+	Disabled                 *bool                                  `json:"disabled,omitempty"`
+	Workloads                []*PodWorkloadInput                    `json:"workloads,omitempty"`
+	InstrumentationLibraries []*InstrumentationLibraryGlobalIDInput `json:"instrumentationLibraries,omitempty"`
+	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
 }
 
 type InstrumentedApplicationDetails struct {
@@ -263,11 +317,35 @@ func (this LatencySamplerAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type MessagingPayloadCollection struct {
+	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
+	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
+}
+
+type MessagingPayloadCollectionInput struct {
+	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
+	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
+}
+
 type Mutation struct {
 }
 
 type PatchSourceRequestInput struct {
 	ReportedName *string `json:"reportedName,omitempty"`
+}
+
+type PayloadCollection struct {
+	HTTPRequest  *HTTPPayloadCollection      `json:"httpRequest,omitempty"`
+	HTTPResponse *HTTPPayloadCollection      `json:"httpResponse,omitempty"`
+	DbQuery      *DbQueryPayloadCollection   `json:"dbQuery,omitempty"`
+	Messaging    *MessagingPayloadCollection `json:"messaging,omitempty"`
+}
+
+type PayloadCollectionInput struct {
+	HTTPRequest  *HTTPPayloadCollectionInput      `json:"httpRequest,omitempty"`
+	HTTPResponse *HTTPPayloadCollectionInput      `json:"httpResponse,omitempty"`
+	DbQuery      *DbQueryPayloadCollectionInput   `json:"dbQuery,omitempty"`
+	Messaging    *MessagingPayloadCollectionInput `json:"messaging,omitempty"`
 }
 
 type PersistNamespaceItemInput struct {
@@ -306,6 +384,18 @@ func (this PiiMaskingAction) GetSignals() []SignalType {
 		interfaceSlice = append(interfaceSlice, concrete)
 	}
 	return interfaceSlice
+}
+
+type PodWorkload struct {
+	Namespace string          `json:"namespace"`
+	Kind      K8sResourceKind `json:"kind"`
+	Name      string          `json:"name"`
+}
+
+type PodWorkloadInput struct {
+	Namespace string          `json:"namespace"`
+	Kind      K8sResourceKind `json:"kind"`
+	Name      string          `json:"name"`
 }
 
 type ProbabilisticSamplerAction struct {
