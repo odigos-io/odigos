@@ -28,7 +28,9 @@ const ErrorSampler: React.FC<Props> = ({ value, setValue }) => {
       fallback_sampling_ratio: num,
     };
 
-    setValue(JSON.stringify(payload));
+    const str = !!payload.fallback_sampling_ratio ? JSON.stringify(payload) : '';
+
+    setValue(str);
   };
 
   return (

@@ -31,7 +31,9 @@ const RenameAttributes: React.FC<Props> = ({ value, setValue }) => {
       payload.renames[obj.key] = obj.value;
     });
 
-    setValue(JSON.stringify(payload));
+    const str = !!arr.length ? JSON.stringify(payload) : '';
+
+    setValue(str);
   };
 
   return (

@@ -24,7 +24,9 @@ const ProbabilisticSampler: React.FC<Props> = ({ value, setValue }) => {
       sampling_percentage: String(num),
     };
 
-    setValue(JSON.stringify(payload));
+    const str = !!payload.sampling_percentage ? JSON.stringify(payload) : '';
+
+    setValue(str);
   };
 
   return (
