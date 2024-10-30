@@ -6,7 +6,6 @@ import (
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
-	"github.com/odigos-io/odigos/common"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -15,10 +14,10 @@ import (
 
 type ProcessorReconciler struct {
 	client.Client
-	Scheme           *runtime.Scheme
-	ImagePullSecrets []string
-	OdigosVersion    string
-	OdigosTier       common.OdigosTier
+	Scheme               *runtime.Scheme
+	ImagePullSecrets     []string
+	OdigosVersion        string
+	DisableNameProcessor bool
 }
 
 func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -31,7 +30,7 @@ func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.OdigosTier)
+	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.DisableNameProcessor)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
