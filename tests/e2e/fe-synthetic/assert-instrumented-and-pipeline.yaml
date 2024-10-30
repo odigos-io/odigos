@@ -309,7 +309,6 @@ status:
       value: e2e-test
     - key: process.pid
       (value != null): true
-      (value != null): true
     - key: k8s.namespace.name
       (value != null): true
     - key: k8s.container.name
