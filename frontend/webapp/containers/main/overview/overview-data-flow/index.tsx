@@ -21,13 +21,19 @@ export function OverviewDataFlowContainer() {
   const { sources } = useActualSources();
   const { destinations } = useActualDestination();
   const { containerRef, containerWidth } = useContainerWidth();
-  const { handleNodeClick } = useNodeDataFlowHandlers({ sources, actions, destinations });
+  const { handleNodeClick } = useNodeDataFlowHandlers({
+    rules: [],
+    sources,
+    actions,
+    destinations,
+  });
 
-  const columnWidth = 296;
+  const columnWidth = 255;
 
   // Memoized node and edge builder to improve performance
   const { nodes, edges } = useMemo(() => {
     return buildNodesAndEdges({
+      rules: [],
       sources,
       actions,
       destinations,
@@ -40,7 +46,7 @@ export function OverviewDataFlowContainer() {
     <OverviewDataFlowWrapper ref={containerRef}>
       <OverviewDrawer />
       <OverviewActionMenuContainer />
-      <NodeBaseDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} />
+      <NodeBaseDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} columnWidth={columnWidth} />
     </OverviewDataFlowWrapper>
   );
 }

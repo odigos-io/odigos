@@ -5,14 +5,14 @@ import type { STATUSES } from '@/types';
 import { Handle, Position } from '@xyflow/react';
 import { Status, Text } from '@/reuseable-components';
 
-const BaseNodeContainer = styled.div`
-  display: flex;
+const BaseNodeContainer = styled.div<{ columnWidth: number }>`
+  width: ${({ columnWidth }) => `${columnWidth}px`};
   padding: 16px 24px 16px 16px;
-  align-items: center;
   gap: 8px;
+  display: flex;
+  align-items: center;
   align-self: stretch;
   border-radius: 16px;
-  width: 296px;
   cursor: pointer;
   background-color: ${({ theme }) => theme.colors.white_opacity['004']};
 
@@ -45,6 +45,13 @@ const FooterWrapper = styled.div`
   align-items: center;
 `;
 
+const Title = styled(Text)<{ columnWidth: number }>`
+  width: ${({ columnWidth }) => `${columnWidth - 42}px`};
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+`;
+
 const FooterText = styled(Text)`
   color: ${({ theme }) => theme.text.grey};
   font-size: 10px;
@@ -65,9 +72,10 @@ interface BaseNodeProps {
   id: string;
   isConnectable: boolean;
   data: NodeDataProps;
+  columnWidth: number;
 }
 
-const BaseNode = ({ isConnectable, data }: BaseNodeProps) => {
+const BaseNode = ({ isConnectable, data, columnWidth }: BaseNodeProps) => {
   const { title, subTitle, imageUri, type, monitors, isActive } = data;
 
   function renderHandles() {
@@ -128,15 +136,14 @@ const BaseNode = ({ isConnectable, data }: BaseNodeProps) => {
   }
 
   return (
-    <BaseNodeContainer>
+    <BaseNodeContainer columnWidth={columnWidth}>
       <SourceIconWrapper>
         <Image src={imageUri || '/icons/common/folder.svg'} width={20} height={20} alt='source' />
       </SourceIconWrapper>
       <BodyWrapper>
-        <Text>{title}</Text>
+        <Title columnWidth={columnWidth}>{title}</Title>
         <FooterWrapper>
           <FooterText>{subTitle}</FooterText>
-
           {renderMonitors()}
           {renderStatus()}
         </FooterWrapper>
