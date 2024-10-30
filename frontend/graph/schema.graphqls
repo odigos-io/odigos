@@ -122,14 +122,6 @@ input K8sSourceId {
   name: String!
 }
 
-type OtelSdks {
-  sdkLanguage: ProgrammingLanguage
-}
-
-input OtelSdksInput {
-  sdkLanguage: ProgrammingLanguage
-}
-
 type InstrumentationRule {
   ruleId: ID!
   ruleName: String

@@ -266,10 +266,6 @@ type ComplexityRoot struct {
 		Supported func(childComplexity int) int
 	}
 
-	OtelSdks struct {
-		SdkLanguage func(childComplexity int) int
-	}
-
 	PayloadCollection struct {
 		DbQuery      func(childComplexity int) int
 		HTTPRequest  func(childComplexity int) int
@@ -1356,13 +1352,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ObservabilitySignalSupport.Supported(childComplexity), true
 
-	case "OtelSdks.sdkLanguage":
-		if e.complexity.OtelSdks.SdkLanguage == nil {
-			break
-		}
-
-		return e.complexity.OtelSdks.SdkLanguage(childComplexity), true
-
 	case "PayloadCollection.dbQuery":
 		if e.complexity.PayloadCollection.DbQuery == nil {
 			break
@@ -1690,7 +1679,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputK8sNamespaceId,
 		ec.unmarshalInputK8sSourceId,
 		ec.unmarshalInputMessagingPayloadCollectionInput,
-		ec.unmarshalInputOtelSdksInput,
 		ec.unmarshalInputPatchSourceRequestInput,
 		ec.unmarshalInputPayloadCollectionInput,
 		ec.unmarshalInputPersistNamespaceItemInput,
@@ -8102,47 +8090,6 @@ func (ec *executionContext) fieldContext_ObservabilitySignalSupport_supported(_ 
 	return fc, nil
 }
 
-func (ec *executionContext) _OtelSdks_sdkLanguage(ctx context.Context, field graphql.CollectedField, obj *model.OtelSdks) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OtelSdks_sdkLanguage(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SdkLanguage, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.ProgrammingLanguage)
-	fc.Result = res
-	return ec.marshalOProgrammingLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguage(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OtelSdks_sdkLanguage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OtelSdks",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ProgrammingLanguage does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _PayloadCollection_httpRequest(ctx context.Context, field graphql.CollectedField, obj *model.PayloadCollection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PayloadCollection_httpRequest(ctx, field)
 	if err != nil {
@@ -12498,33 +12445,6 @@ func (ec *executionContext) unmarshalInputMessagingPayloadCollectionInput(ctx co
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputOtelSdksInput(ctx context.Context, obj interface{}) (model.OtelSdksInput, error) {
-	var it model.OtelSdksInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"sdkLanguage"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "sdkLanguage":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sdkLanguage"))
-			data, err := ec.unmarshalOProgrammingLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguage(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.SdkLanguage = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Context, obj interface{}) (model.PatchSourceRequestInput, error) {
 	var it model.PatchSourceRequestInput
 	asMap := map[string]interface{}{}
@@ -14631,42 +14551,6 @@ func (ec *executionContext) _ObservabilitySignalSupport(ctx context.Context, sel
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var otelSdksImplementors = []string{"OtelSdks"}
-
-func (ec *executionContext) _OtelSdks(ctx context.Context, sel ast.SelectionSet, obj *model.OtelSdks) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, otelSdksImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("OtelSdks")
-		case "sdkLanguage":
-			out.Values[i] = ec._OtelSdks_sdkLanguage(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

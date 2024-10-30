@@ -330,14 +330,6 @@ type MessagingPayloadCollectionInput struct {
 type Mutation struct {
 }
 
-type OtelSdks struct {
-	SdkLanguage *ProgrammingLanguage `json:"sdkLanguage,omitempty"`
-}
-
-type OtelSdksInput struct {
-	SdkLanguage *ProgrammingLanguage `json:"sdkLanguage,omitempty"`
-}
-
 type PatchSourceRequestInput struct {
 	ReportedName *string `json:"reportedName,omitempty"`
 }
