@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { Text } from '../text';
 import styled from 'styled-components';
-import React, { useState, ChangeEvent, KeyboardEvent, FC, useEffect } from 'react';
+import React, { useState, ChangeEvent, KeyboardEvent, FC } from 'react';
 
 export interface Option {
   id: string;
@@ -15,8 +15,9 @@ interface AutocompleteInputProps {
   options: Option[];
   placeholder?: string;
   selectedOption?: Option;
-  onOptionSelect?: (option: Option) => void;
+  onOptionSelect?: (option?: Option) => void;
   style?: React.CSSProperties;
+  disabled?: boolean;
 }
 
 const filterOptions = (optionsList: Option[], input: string): Option[] => {
@@ -33,40 +34,35 @@ const filterOptions = (optionsList: Option[], input: string): Option[] => {
   }, []);
 };
 
-const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to search...', options, selectedOption, onOptionSelect, style }) => {
-  const [query, setQuery] = useState('');
-  const [icon, setIcon] = useState('');
+const AutocompleteInput: FC<AutocompleteInputProps> = ({
+  placeholder = 'Type to search...',
+  options,
+  selectedOption,
+  onOptionSelect,
+  style,
+  disabled,
+}) => {
+  const [query, setQuery] = useState(selectedOption?.label || '');
+  const [icon, setIcon] = useState(selectedOption?.icon || '');
   const [filteredOptions, setFilteredOptions] = useState<Option[]>(filterOptions(options, ''));
   const [showOptions, setShowOptions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
-  useEffect(() => {
-    if (!!selectedOption && !query) {
-      setQuery(selectedOption.label);
-      setIcon(selectedOption.icon || '');
-    }
-  }, [selectedOption, query]);
-
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
+    const filtered = filterOptions(options, input);
+    const matched = filtered.length === 1 && filtered[0].label === input ? filtered[0] : undefined;
+
     setQuery(input);
-    setIcon('');
-    if (input) {
-      const filtered = filterOptions(options, input);
-      setFilteredOptions(filtered);
-      setShowOptions(true);
-    } else {
-      setShowOptions(false);
-    }
+    setFilteredOptions(filtered);
+    handleOptionClick(matched);
   };
 
-  const handleOptionClick = (option: Option) => {
-    setIcon(option.icon || '');
-    setQuery(option.label);
-    setShowOptions(false);
-    if (onOptionSelect) {
-      onOptionSelect(option);
-    }
+  const handleOptionClick = (option?: Option) => {
+    if (!!option) setQuery(option.label);
+    setIcon(option?.icon || '');
+    setShowOptions(!option);
+    onOptionSelect?.(option);
   };
 
   const flattenOptions = (options: Option[]): Option[] => {
@@ -102,8 +98,9 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to 
           placeholder={placeholder}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          onBlur={() => setShowOptions(false)}
-          onFocus={() => setShowOptions(true)}
+          disabled={disabled}
+          onBlur={() => !disabled && setShowOptions(false)}
+          onFocus={() => !disabled && setShowOptions(true)}
         />
       </InputWrapper>
 
@@ -203,7 +200,6 @@ const StyledInput = styled.input`
   }
 
   &:disabled {
-    background-color: #555;
     cursor: not-allowed;
   }
 `;

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { getActionIcon, LANGUAGES_LOGOS } from '@/utils';
+import { getActionIcon, getRuleIcon, LANGUAGES_LOGOS } from '@/utils';
 import DrawerHeader from './drawer-header';
 import DrawerFooter from './drawer-footer';
 import { SourceDrawer } from '../../sources';
@@ -9,14 +9,24 @@ import { Drawer } from '@/reuseable-components';
 import { DeleteEntityModal } from '@/components';
 import { ActionDrawer, type ActionDrawerHandle } from '../../actions';
 import { DestinationDrawer, type DestinationDrawerHandle } from '../../destinations';
-import { useActionCRUD, useActualSources, useNotify, useUpdateDestination } from '@/hooks';
+import { RuleDrawer, RuleDrawerHandle } from '../../instrumentation-rules/rule-drawer-container';
+import { useActionCRUD, useActualSources, useInstrumentationRuleCRUD, useUpdateDestination } from '@/hooks';
 import { getMainContainerLanguageLogo, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils/constants/programming-languages';
-import { WorkloadId, K8sActualSource, ActualDestination, OVERVIEW_ENTITY_TYPES, PatchSourceRequestInput, ActionDataParsed } from '@/types';
+import {
+  WorkloadId,
+  K8sActualSource,
+  ActualDestination,
+  OVERVIEW_ENTITY_TYPES,
+  PatchSourceRequestInput,
+  ActionDataParsed,
+  InstrumentationRuleSpec,
+} from '@/types';
 
 const componentMap = {
-  source: SourceDrawer,
-  action: ActionDrawer,
-  destination: DestinationDrawer,
+  [OVERVIEW_ENTITY_TYPES.RULE]: RuleDrawer,
+  [OVERVIEW_ENTITY_TYPES.SOURCE]: SourceDrawer,
+  [OVERVIEW_ENTITY_TYPES.ACTION]: ActionDrawer,
+  [OVERVIEW_ENTITY_TYPES.DESTINATION]: DestinationDrawer,
 };
 
 const DRAWER_WIDTH = '640px';
@@ -29,19 +39,21 @@ const OverviewDrawer = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [title, setTitle] = useState('');
 
-  const notify = useNotify();
   const { updateAction, deleteAction } = useActionCRUD();
   const { updateExistingDestination } = useUpdateDestination();
   const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
+  const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   const titleRef = useRef<HTMLInputElement>(null);
+  const ruleDrawerRef = useRef<RuleDrawerHandle>(null);
   const actionDrawerRef = useRef<ActionDrawerHandle>(null);
   const destinationDrawerRef = useRef<DestinationDrawerHandle>(null);
 
   const refMap = {
-    source: undefined,
-    action: actionDrawerRef,
-    destination: destinationDrawerRef,
+    [OVERVIEW_ENTITY_TYPES.RULE]: ruleDrawerRef,
+    [OVERVIEW_ENTITY_TYPES.SOURCE]: undefined,
+    [OVERVIEW_ENTITY_TYPES.ACTION]: actionDrawerRef,
+    [OVERVIEW_ENTITY_TYPES.DESTINATION]: destinationDrawerRef,
   };
 
   useEffect(initialTitle, [selectedItem]);
@@ -54,7 +66,9 @@ const OverviewDrawer = () => {
     if (!!selectedItem?.item) {
       const { type, item } = selectedItem;
 
-      if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
+      if (type === OVERVIEW_ENTITY_TYPES.RULE) {
+        str = (item as InstrumentationRuleSpec).ruleName;
+      } else if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
         str = (item as K8sActualSource).reportedName;
       } else if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
         str = (item as ActionDataParsed).spec.actionName;
@@ -85,44 +99,20 @@ const OverviewDrawer = () => {
     if (!selectedItem?.item) return null;
     const { type, id, item } = selectedItem;
 
-    if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
-      if (destinationDrawerRef.current && titleRef.current) {
+    if (type === OVERVIEW_ENTITY_TYPES.RULE) {
+      const thisRef = refMap[type];
+
+      if (thisRef.current && titleRef.current) {
         const newTitle = titleRef.current.value;
-        const formData = destinationDrawerRef.current.getCurrentData();
-        const payload = {
-          ...formData,
-          name: newTitle,
-        };
+        const formData = thisRef.current.getCurrentData();
 
-        try {
-          await updateExistingDestination(id as string, payload);
-        } catch (error) {
-          console.error('Error updating destination:', error);
-        }
-        setIsEditing(false);
-      }
-    }
-
-    if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
-      if (actionDrawerRef.current && titleRef.current) {
-        const newTitle = titleRef.current.value;
-        const formData = actionDrawerRef.current.getCurrentData();
-
-        if (!formData) {
-          notify({
-            message: 'Required fields are missing!',
-            title: 'Update Action Error',
-            type: 'error',
-            target: 'notification',
-            crdType: 'notification',
-          });
-        } else {
+        if (formData) {
           const payload = {
             ...formData,
-            name: newTitle,
+            ruleName: newTitle,
           };
 
-          await updateAction(id as string, payload);
+          await updateInstrumentationRule(id as string, payload);
           setIsEditing(false);
         }
       }
@@ -153,11 +143,56 @@ const OverviewDrawer = () => {
       }
       setIsEditing(false);
     }
+
+    if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
+      const thisRef = refMap[type];
+
+      if (thisRef.current && titleRef.current) {
+        const newTitle = titleRef.current.value;
+        const formData = thisRef.current.getCurrentData();
+
+        if (formData) {
+          const payload = {
+            ...formData,
+            name: newTitle,
+          };
+
+          await updateAction(id as string, payload);
+          setIsEditing(false);
+        }
+      }
+    }
+
+    if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
+      const thisRef = refMap[type];
+
+      if (thisRef.current && titleRef.current) {
+        const newTitle = titleRef.current.value;
+        const formData = thisRef.current.getCurrentData();
+        const payload = {
+          ...formData,
+          name: newTitle,
+        };
+
+        try {
+          await updateExistingDestination(id as string, payload);
+        } catch (error) {
+          console.error('Error updating destination:', error);
+        }
+        setIsEditing(false);
+      }
+    }
   };
 
   const handleDelete = async () => {
     if (!selectedItem?.item) return null;
     const { type, item } = selectedItem;
+
+    if (type === OVERVIEW_ENTITY_TYPES.RULE) {
+      const { ruleId } = item as InstrumentationRuleSpec;
+
+      await deleteInstrumentationRule(ruleId);
+    }
 
     if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
       const { namespace, name, kind } = item as K8sActualSource;
@@ -227,10 +262,17 @@ const OverviewDrawer = () => {
   ) : null;
 };
 
-function getItemImageByType(type: string, item: K8sActualSource | ActionDataParsed | ActualDestination): string {
+function getItemImageByType(
+  type: OVERVIEW_ENTITY_TYPES,
+  item: InstrumentationRuleSpec | K8sActualSource | ActionDataParsed | ActualDestination
+): string {
   let src = '';
 
   switch (type) {
+    case OVERVIEW_ENTITY_TYPES.RULE:
+      src = getRuleIcon((item as InstrumentationRuleSpec).type);
+      break;
+
     case OVERVIEW_ENTITY_TYPES.SOURCE:
       src = getMainContainerLanguageLogo(item as K8sActualSource);
       break;
