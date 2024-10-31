@@ -17,7 +17,13 @@ interface Props {
 
 const RuleDrawer = forwardRef<RuleDrawerHandle, Props>(({ isEditing }, ref) => {
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
-  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
+  const {
+    formData,
+    handleFormChange,
+    resetFormData,
+    validateForm,
+    // loadFormWithDrawerItem
+  } = useInstrumentationRuleFormData();
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
@@ -39,7 +45,7 @@ const RuleDrawer = forwardRef<RuleDrawerHandle, Props>(({ isEditing }, ref) => {
 
     if (!found) return undefined;
 
-    loadFormWithDrawerItem(selectedItem);
+    // loadFormWithDrawerItem(selectedItem);
 
     return found;
   }, [selectedItem, isEditing]);
