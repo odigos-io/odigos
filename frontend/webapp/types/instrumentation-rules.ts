@@ -72,9 +72,10 @@ export enum RulesSortType {
 
 export interface InstrumentationRuleSpec {
   ruleId: string;
-  ruleName?: string;
-  notes?: string;
-  disabled?: boolean;
+  type?: InstrumentationRuleType; // does not come from backend, it's derived during GET
+  ruleName: string;
+  notes: string;
+  disabled: boolean;
   workloads?: PodWorkload[];
   instrumentationLibraries?: InstrumentationLibraryGlobalId[];
   payloadCollection?: PayloadCollection;

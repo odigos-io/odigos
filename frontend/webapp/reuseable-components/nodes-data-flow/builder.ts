@@ -83,13 +83,12 @@ export const buildNodesAndEdges = ({
         ]
       : rules.map((rule, index) =>
           createNode(`rule-${index}`, 'base', columnPostions['rules'], NODE_HEIGHT * (index + 1), {
-            // TODO: replace "InstrumentationRuleType.PAYLOAD_COLLECTION" with a dynamic type
             id: rule.ruleId,
             type: OVERVIEW_ENTITY_TYPES.RULE,
             status: STATUSES.HEALTHY,
-            title: rule.ruleName || InstrumentationRuleType.PAYLOAD_COLLECTION,
-            subTitle: InstrumentationRuleType.PAYLOAD_COLLECTION,
-            imageUri: getRuleIcon(InstrumentationRuleType.PAYLOAD_COLLECTION),
+            title: rule.ruleName || rule.type,
+            subTitle: rule.type,
+            imageUri: getRuleIcon(rule.type),
             isActive: !rule.disabled,
           })
         )),

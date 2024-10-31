@@ -1,6 +1,6 @@
 import { useState } from 'react';
-// import { DrawerBaseItem } from '@/store';
-import type { InstrumentationRuleInput } from '@/types';
+import type { DrawerBaseItem } from '@/store';
+import type { InstrumentationRuleInput, InstrumentationRuleSpec } from '@/types';
 
 const INITIAL: InstrumentationRuleInput = {
   ruleName: '',
@@ -48,47 +48,33 @@ export function useInstrumentationRuleFormData() {
     return ok;
   };
 
-  // const loadFormWithDrawerItem = (drawerItem: DrawerBaseItem) => {
-  //   const { type, spec } = drawerItem.item as ActionDataParsed;
+  const loadFormWithDrawerItem = (drawerItem: DrawerBaseItem) => {
+    const { ruleName, notes, disabled, payloadCollection } = drawerItem.item as InstrumentationRuleSpec;
 
-  //   const updatedData: ActionInput = {
-  //     ...INITIAL,
-  //     type,
-  //   };
+    const updatedData: InstrumentationRuleInput = {
+      ...INITIAL,
+      ruleName,
+      notes,
+      disabled,
+    };
 
-  //   Object.entries(spec).forEach(([k, v]) => {
-  //     switch (k) {
-  //       case 'actionName': {
-  //         updatedData['name'] = v;
-  //         break;
-  //       }
+    if (payloadCollection) {
+      updatedData['payloadCollection'] = {
+        httpRequest: !!payloadCollection.httpRequest ? {} : null,
+        httpResponse: !!payloadCollection.httpResponse ? {} : null,
+        dbQuery: !!payloadCollection.dbQuery ? {} : null,
+        messaging: !!payloadCollection.messaging ? {} : null,
+      };
+    }
 
-  //       case 'disabled': {
-  //         updatedData['disable'] = v;
-  //         break;
-  //       }
-
-  //       case 'notes':
-  //       case 'signals': {
-  //         updatedData[k] = v;
-  //         break;
-  //       }
-
-  //       default: {
-  //         updatedData['details'] = JSON.stringify({ [k]: v });
-  //         break;
-  //       }
-  //     }
-  //   });
-
-  //   setFormData(updatedData);
-  // };
+    setFormData(updatedData);
+  };
 
   return {
     formData,
     handleFormChange,
     resetFormData,
     validateForm,
-    // loadFormWithDrawerItem,
+    loadFormWithDrawerItem,
   };
 }

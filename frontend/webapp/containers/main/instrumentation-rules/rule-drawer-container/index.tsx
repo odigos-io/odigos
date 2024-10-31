@@ -4,6 +4,7 @@ import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import { ChooseRuleBody } from '../choose-rule-body';
 import { RULE_OPTIONS } from '../add-rule-modal/rule-options';
+import buildCardFromRuleSpec from './build-card-from-rule-spec';
 import type { InstrumentationRuleInput, InstrumentationRuleSpec } from '@/types';
 import { useInstrumentationRuleFormData } from '@/hooks/instrumentation-rules/useInstrumentationRuleFormData';
 
@@ -17,21 +18,15 @@ interface Props {
 
 const RuleDrawer = forwardRef<RuleDrawerHandle, Props>(({ isEditing }, ref) => {
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
-  const {
-    formData,
-    handleFormChange,
-    resetFormData,
-    validateForm,
-    // loadFormWithDrawerItem
-  } = useInstrumentationRuleFormData();
+  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
 
-    // const { item } = selectedItem as { item: InstrumentationRuleSpec };
-    // const arr = buildCardFromActionSpec(item);
+    const { item } = selectedItem as { item: InstrumentationRuleSpec };
+    const arr = buildCardFromRuleSpec(item);
 
-    return [];
+    return arr;
   }, [selectedItem]);
 
   const thisRule = useMemo(() => {
@@ -40,12 +35,12 @@ const RuleDrawer = forwardRef<RuleDrawerHandle, Props>(({ isEditing }, ref) => {
       return undefined;
     }
 
-    // TODO: add support for multi rules
-    const found = RULE_OPTIONS[0];
+    const { item } = selectedItem as { item: InstrumentationRuleSpec };
+    const found = RULE_OPTIONS.find(({ type }) => type === item.type);
 
     if (!found) return undefined;
 
-    // loadFormWithDrawerItem(selectedItem);
+    loadFormWithDrawerItem(selectedItem);
 
     return found;
   }, [selectedItem, isEditing]);

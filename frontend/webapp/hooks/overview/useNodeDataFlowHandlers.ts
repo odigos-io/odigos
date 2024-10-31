@@ -58,7 +58,7 @@ export function useNodeDataFlowHandlers(params: {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.DESTINATION);
       }
     },
-    [params, setSelectedItem]
+    [params, setSelectedItem, setCurrentModal]
   );
 
   return {

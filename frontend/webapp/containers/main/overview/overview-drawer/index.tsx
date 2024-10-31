@@ -22,6 +22,7 @@ import {
   InstrumentationRuleType,
 } from '@/types';
 import { RuleDrawer, RuleDrawerHandle } from '../../instrumentation-rules/rule-drawer-container';
+import { useInstrumentationRuleCRUD } from '@/hooks/instrumentation-rules/useInstrumentationRuleCRUD';
 
 const componentMap = {
   [OVERVIEW_ENTITY_TYPES.RULE]: RuleDrawer,
@@ -42,6 +43,7 @@ const OverviewDrawer = () => {
 
   const notify = useNotify();
   const { updateAction, deleteAction } = useActionCRUD();
+  const { updateInstrumentationRule } = useInstrumentationRuleCRUD();
   const { updateExistingDestination } = useUpdateDestination();
   const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
 
@@ -99,7 +101,28 @@ const OverviewDrawer = () => {
     const { type, id, item } = selectedItem;
 
     if (type === OVERVIEW_ENTITY_TYPES.RULE) {
-      alert('TODO !');
+      if (ruleDrawerRef.current && titleRef.current) {
+        const newTitle = titleRef.current.value;
+        const formData = ruleDrawerRef.current.getCurrentData();
+
+        if (!formData) {
+          notify({
+            message: 'Required fields are missing!',
+            title: 'Update Rule Error',
+            type: 'error',
+            target: 'notification',
+            crdType: 'notification',
+          });
+        } else {
+          const payload = {
+            ...formData,
+            ruleName: newTitle,
+          };
+
+          await updateInstrumentationRule(id as string, payload);
+          setIsEditing(false);
+        }
+      }
     }
 
     if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
@@ -256,8 +279,7 @@ function getItemImageByType(
 
   switch (type) {
     case OVERVIEW_ENTITY_TYPES.RULE:
-      // TODO: add support for multi rules
-      src = getRuleIcon(InstrumentationRuleType.PAYLOAD_COLLECTION);
+      src = getRuleIcon((item as InstrumentationRuleSpec).type);
       break;
 
     case OVERVIEW_ENTITY_TYPES.SOURCE:
