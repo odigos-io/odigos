@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -76,6 +77,10 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 	pods, err := kubeutils.GetRunningPods(ctx, labels, workload.GetNamespace(), r.Client)
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if len(pods) == 0 {
+		return reconcile.Result{RequeueAfter: consts.DefaultRequeueAfter}, nil
 	}
 
 	// we need to apply runtime detection for just one pod with newer generation

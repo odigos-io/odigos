@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -56,7 +56,11 @@ func (i *DeprecatedInstrumentationConfigReconciler) Reconcile(ctx context.Contex
 	}
 	err = inspectRuntimesOfRunningPods(ctx, &logger, labels, i.Client, i.Scheme, workload)
 	if err != nil {
-		return reconcile.Result{}, ignoreNoPodsFoundError(err)
+		// If no pods are found, requeue the request. This can happen because not AllContainersReady for the workload
+		if ignoreNoPodsFoundError(err) == nil {
+			return reconcile.Result{RequeueAfter: consts.DefaultRequeueAfter}, ignoreNoPodsFoundError(err)
+		}
+		return reconcile.Result{}, err
 	}
 
 	// Patch RuntimeDetailsInvalidated to false after runtime details have been recalculated

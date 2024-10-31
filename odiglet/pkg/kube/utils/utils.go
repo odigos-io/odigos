@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"go.opentelemetry.io/otel/attribute"
@@ -25,8 +26,10 @@ func GetRunningPods(ctx context.Context, labels map[string]string, ns string, ku
 
 	var filteredPods []corev1.Pod
 	for _, pod := range podList.Items {
-		if IsPodInCurrentNode(&pod) && pod.Status.Phase == corev1.PodRunning && pod.DeletionTimestamp == nil {
-			filteredPods = append(filteredPods, pod)
+		if IsPodInCurrentNode(&pod) && pod.DeletionTimestamp == nil {
+			if k8scontainer.AllContainersReady(&pod) {
+				filteredPods = append(filteredPods, pod)
+			}
 		}
 	}
 
