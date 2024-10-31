@@ -78,7 +78,12 @@ var describeSourceDeploymentCmd = &cobra.Command{
 		if describeRemoteFlag {
 			describeText = executeRemoteSourceDescribe(ctx, client, "deployment", ns, name)
 		} else {
-			describeText = describe.DescribeDeployment(ctx, client.Interface, client.OdigosClient, ns, name)
+			desc, err := describe.DescribeDeployment(ctx, client.Interface, client.OdigosClient, ns, name)
+			if err != nil {
+				describeText = fmt.Sprintf("Failed to describe deployment: %s", err)
+			} else {
+				describeText = describe.DescribeSourceToText(desc)
+			}
 		}
 		fmt.Println(describeText)
 	},
@@ -104,7 +109,12 @@ var describeSourceDaemonSetCmd = &cobra.Command{
 		if describeRemoteFlag {
 			describeText = executeRemoteSourceDescribe(ctx, client, "daemonset", ns, name)
 		} else {
-			describeText = describe.DescribeDaemonSet(ctx, client.Interface, client.OdigosClient, ns, name)
+			desc, err := describe.DescribeDaemonSet(ctx, client.Interface, client.OdigosClient, ns, name)
+			if err != nil {
+				describeText = fmt.Sprintf("Failed to describe daemonset: %s", err)
+			} else {
+				describeText = describe.DescribeSourceToText(desc)
+			}
 		}
 		fmt.Println(describeText)
 	},
@@ -130,7 +140,12 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 		if describeRemoteFlag {
 			describeText = executeRemoteSourceDescribe(ctx, client, "statefulset", ns, name)
 		} else {
-			describeText = describe.DescribeStatefulSet(ctx, client.Interface, client.OdigosClient, ns, name)
+			desc, err := describe.DescribeStatefulSet(ctx, client.Interface, client.OdigosClient, ns, name)
+			if err != nil {
+				describeText = fmt.Sprintf("Failed to describe statefulset: %s", err)
+			} else {
+				describeText = describe.DescribeSourceToText(desc)
+			}
 		}
 		fmt.Println(describeText)
 	},
