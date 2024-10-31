@@ -3,6 +3,7 @@ import { Text } from '../text';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
 import React, { useEffect, useState } from 'react';
+import theme from '@/styles/theme';
 
 interface CheckboxProps {
   title?: string;
@@ -55,8 +56,11 @@ const Checkbox: React.FC<CheckboxProps> = ({ title, tooltip, initialValue = fals
       <CheckboxWrapper isChecked={isChecked} disabled={disabled}>
         {isChecked && <Image src='/icons/common/check.svg' alt='' width={12} height={12} />}
       </CheckboxWrapper>
-
-      {title && <Text size={14}>{title}</Text>}
+      {title && (
+        <Text size={12} color={theme.text.grey}>
+          {title}
+        </Text>
+      )}
       {tooltip && (
         <Tooltip text={tooltip || ''}>
           <Image src='/icons/common/info.svg' alt='' width={16} height={16} />

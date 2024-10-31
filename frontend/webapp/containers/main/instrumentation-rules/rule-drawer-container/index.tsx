@@ -2,44 +2,42 @@ import React, { forwardRef, useImperativeHandle, useMemo } from 'react';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
-import { useActionFormData, useNotify } from '@/hooks';
-import { ChooseActionBody } from '../choose-action-body';
-import type { ActionDataParsed, ActionInput } from '@/types';
-import buildCardFromActionSpec from './build-card-from-action-spec';
-import { ACTION_OPTIONS } from '../choose-action-modal/action-options';
+import { ChooseRuleBody } from '../choose-rule-body';
+import { RULE_OPTIONS } from '../add-rule-modal/rule-options';
+import buildCardFromRuleSpec from './build-card-from-rule-spec';
+import { useInstrumentationRuleFormData, useNotify } from '@/hooks';
+import type { InstrumentationRuleInput, InstrumentationRuleSpec } from '@/types';
 
-export type ActionDrawerHandle = {
-  getCurrentData: () => ActionInput | null;
+export type RuleDrawerHandle = {
+  getCurrentData: () => InstrumentationRuleInput | null;
 };
 
 interface Props {
   isEditing: boolean;
 }
 
-const ActionDrawer = forwardRef<ActionDrawerHandle, Props>(({ isEditing }, ref) => {
+const RuleDrawer = forwardRef<RuleDrawerHandle, Props>(({ isEditing }, ref) => {
   const notify = useNotify();
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
-  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
+  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
 
-    const { item } = selectedItem as { item: ActionDataParsed };
-    const arr = buildCardFromActionSpec(item);
+    const { item } = selectedItem as { item: InstrumentationRuleSpec };
+    const arr = buildCardFromRuleSpec(item);
 
     return arr;
   }, [selectedItem]);
 
-  const thisAction = useMemo(() => {
+  const thisRule = useMemo(() => {
     if (!selectedItem || !isEditing) {
       resetFormData();
       return undefined;
     }
 
-    const { item } = selectedItem as { item: ActionDataParsed };
-    const found =
-      ACTION_OPTIONS.find(({ type }) => type === item.type) ||
-      ACTION_OPTIONS.find(({ id }) => id === 'sampler')?.items?.find(({ type }) => type === item.type);
+    const { item } = selectedItem as { item: InstrumentationRuleSpec };
+    const found = RULE_OPTIONS.find(({ type }) => type === item.type);
 
     if (!found) return undefined;
 
@@ -55,7 +53,7 @@ const ActionDrawer = forwardRef<ActionDrawerHandle, Props>(({ isEditing }, ref) 
       } else {
         notify({
           message: 'Required fields are missing!',
-          title: 'Update Action Error',
+          title: 'Update Rule Error',
           type: 'error',
           target: 'notification',
           crdType: 'notification',
@@ -65,18 +63,18 @@ const ActionDrawer = forwardRef<ActionDrawerHandle, Props>(({ isEditing }, ref) 
     },
   }));
 
-  return isEditing && thisAction ? (
+  return isEditing && thisRule ? (
     <FormContainer>
-      <ChooseActionBody isUpdate action={thisAction} formData={formData} handleFormChange={handleFormChange} />
+      <ChooseRuleBody isUpdate rule={thisRule} formData={formData} handleFormChange={handleFormChange} />
     </FormContainer>
   ) : (
     <CardDetails data={cardData} />
   );
 });
 
-ActionDrawer.displayName = 'ActionDrawer';
+RuleDrawer.displayName = 'RuleDrawer';
 
-export { ActionDrawer };
+export { RuleDrawer };
 
 const FormContainer = styled.div`
   width: 100%;

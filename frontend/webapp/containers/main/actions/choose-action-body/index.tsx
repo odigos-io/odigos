@@ -68,24 +68,3 @@ const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ isUpdate, action
 };
 
 export { ChooseActionBody };
-
-/* <CheckboxList
-        monitors={[
-          { id: 'logs', title: 'Logs' },
-          { id: 'traces', title: 'Traces' },
-          { id: 'metrics', title: 'Metrics' },
-        ]}
-        title='Monitoring'
-        exportedSignals={{
-          logs: formData.signals.includes('LOGS'),
-          traces: formData.signals.includes('TRACES'),
-          metrics: formData.signals.includes('METRICS'),
-        }}
-        handleSignalChange={(key, isAdd) => {
-          const selectedSignals = [];
-          const keyUpper = (key as string).toUpperCase() as SignalUppercase;
-          const payload = isAdd ? [...selectedSignals, keyUpper] : selectedSignals.filter((str) => str !== keyUpper);
-
-          handleFormChange('signals', payload);
-        }}
-      /> */

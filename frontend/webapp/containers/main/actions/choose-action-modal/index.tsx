@@ -1,29 +1,8 @@
-import styled from 'styled-components';
 import { ChooseActionBody } from '../';
 import React, { useMemo, useState } from 'react';
 import { useActionCRUD, useActionFormData } from '@/hooks/actions';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
-import { AutocompleteInput, Modal, NavigationButtons, Text, Divider, FadeLoader, SectionTitle } from '@/reuseable-components';
-
-const Container = styled.section`
-  width: 100%;
-  max-width: 640px;
-  height: 640px;
-  margin: 0 15vw;
-  padding: 64px 12px 0 12px;
-  display: flex;
-  flex-direction: column;
-  overflow-y: scroll;
-`;
-
-const Center = styled.div`
-  width: 100%;
-  margin-top: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-`;
+import { AutocompleteInput, Modal, NavigationButtons, Divider, FadeLoader, SectionTitle, ModalContent, Center } from '@/reuseable-components';
 
 interface AddActionModalProps {
   isModalOpen: boolean;
@@ -47,9 +26,9 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
     handleCloseModal();
   }
 
-  const handleSelect = (item: ActionOption) => {
+  const handleSelect = (item?: ActionOption) => {
     resetFormData();
-    handleFormChange('type', item.type);
+    handleFormChange('type', item?.type || '');
     setSelectedItem(item);
   };
 
@@ -71,7 +50,7 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
         />
       }
     >
-      <Container>
+      <ModalContent>
         <SectionTitle
           title='Define Action'
           description='Actions are a way to modify the OpenTelemetry data recorded by Odigos sources before it is exported to your Odigos destinations. Choose an action type and provide necessary information.'
@@ -91,7 +70,7 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
             )}
           </div>
         ) : null}
-      </Container>
+      </ModalContent>
     </Modal>
   );
 };

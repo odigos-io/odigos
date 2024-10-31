@@ -1,10 +1,10 @@
 import Image from 'next/image';
 import theme from '@/styles/theme';
 import { useModalStore } from '@/store';
-import { AddRuleModal } from '../../rules';
-import { AddActionModal } from '../../actions';
 import React, { useState, useRef } from 'react';
 import styled, { css } from 'styled-components';
+import { AddActionModal } from '../../actions';
+import { AddRuleModal } from '../../instrumentation-rules';
 import { useActualSources, useOnClickOutside } from '@/hooks';
 import { DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
