@@ -1,5 +1,5 @@
 import theme from '@/styles/theme';
-import { getActionIcon } from '@/utils';
+import { getActionIcon, INSTRUMENTATION_RULES } from '@/utils';
 import { Node, Edge } from 'react-flow-renderer';
 import { getRuleIcon } from '@/utils/functions';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
@@ -7,10 +7,12 @@ import {
   OVERVIEW_ENTITY_TYPES,
   OVERVIEW_NODE_TYPES,
   STATUSES,
+  type InstrumentationRuleSpec,
   type ActionData,
   type ActionItem,
   type ActualDestination,
   type K8sActualSource,
+  InstrumentationRuleType,
 } from '@/types';
 
 // Constants
@@ -48,7 +50,7 @@ export const buildNodesAndEdges = ({
   columnWidth,
   containerWidth,
 }: {
-  rules: any[];
+  rules: InstrumentationRuleSpec[];
   sources: K8sActualSource[];
   actions: ActionData[];
   destinations: ActualDestination[];
@@ -81,13 +83,14 @@ export const buildNodesAndEdges = ({
         ]
       : rules.map((rule, index) =>
           createNode(`rule-${index}`, 'base', columnPostions['rules'], NODE_HEIGHT * (index + 1), {
-            id: rule.id,
+            // TODO: replace "InstrumentationRuleType.PAYLOAD_COLLECTION" with a dynamic type
+            id: rule.ruleId,
             type: OVERVIEW_ENTITY_TYPES.RULE,
             status: STATUSES.HEALTHY,
-            title: rule.actionName || rule.type,
-            subTitle: rule.type,
-            imageUri: getRuleIcon(rule.type),
-            isActive: false,
+            title: rule.ruleName || InstrumentationRuleType.PAYLOAD_COLLECTION,
+            subTitle: InstrumentationRuleType.PAYLOAD_COLLECTION,
+            imageUri: getRuleIcon(InstrumentationRuleType.PAYLOAD_COLLECTION),
+            isActive: !rule.disabled,
           })
         )),
   ];

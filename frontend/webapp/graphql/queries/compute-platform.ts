@@ -52,6 +52,34 @@ export const GET_COMPUTE_PLATFORM = gql`
         type
         spec
       }
+      instrumentationRules {
+        ruleId
+        ruleName
+        notes
+        disabled
+        # workloads {}
+        # instrumentationLibraries {}
+        payloadCollection {
+          httpRequest {
+            mimeTypes
+            maxPayloadLength
+            dropPartialPayloads
+          }
+          httpResponse {
+            mimeTypes
+            maxPayloadLength
+            dropPartialPayloads
+          }
+          dbQuery {
+            maxPayloadLength
+            dropPartialPayloads
+          }
+          messaging {
+            maxPayloadLength
+            dropPartialPayloads
+          }
+        }
+      }
       k8sActualNamespaces {
         name
       }
@@ -60,10 +88,7 @@ export const GET_COMPUTE_PLATFORM = gql`
 `;
 
 export const GET_NAMESPACES = gql`
-  query GetK8sActualNamespace(
-    $namespaceName: String!
-    $instrumentationLabeled: Boolean
-  ) {
+  query GetK8sActualNamespace($namespaceName: String!, $instrumentationLabeled: Boolean) {
     computePlatform {
       k8sActualNamespace(name: $namespaceName) {
         name
