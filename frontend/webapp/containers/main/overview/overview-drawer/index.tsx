@@ -40,9 +40,9 @@ const OverviewDrawer = () => {
   const [title, setTitle] = useState('');
 
   const { updateAction, deleteAction } = useActionCRUD();
-  const { updateInstrumentationRule } = useInstrumentationRuleCRUD();
   const { updateExistingDestination } = useUpdateDestination();
   const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
+  const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   const titleRef = useRef<HTMLInputElement>(null);
   const ruleDrawerRef = useRef<RuleDrawerHandle>(null);
@@ -98,7 +98,7 @@ const OverviewDrawer = () => {
     const { type, id, item } = selectedItem;
 
     if (type === OVERVIEW_ENTITY_TYPES.RULE) {
-      const thisRef = refMap[OVERVIEW_ENTITY_TYPES.RULE];
+      const thisRef = refMap[type];
 
       if (thisRef.current && titleRef.current) {
         const newTitle = titleRef.current.value;
@@ -111,41 +111,6 @@ const OverviewDrawer = () => {
           };
 
           await updateInstrumentationRule(id as string, payload);
-          setIsEditing(false);
-        }
-      }
-    }
-
-    if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
-      if (destinationDrawerRef.current && titleRef.current) {
-        const newTitle = titleRef.current.value;
-        const formData = destinationDrawerRef.current.getCurrentData();
-        const payload = {
-          ...formData,
-          name: newTitle,
-        };
-
-        try {
-          await updateExistingDestination(id as string, payload);
-        } catch (error) {
-          console.error('Error updating destination:', error);
-        }
-        setIsEditing(false);
-      }
-    }
-
-    if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
-      if (actionDrawerRef.current && titleRef.current) {
-        const newTitle = titleRef.current.value;
-        const formData = actionDrawerRef.current.getCurrentData();
-
-        if (formData) {
-          const payload = {
-            ...formData,
-            name: newTitle,
-          };
-
-          await updateAction(id as string, payload);
           setIsEditing(false);
         }
       }
@@ -176,6 +141,45 @@ const OverviewDrawer = () => {
       }
       setIsEditing(false);
     }
+
+    if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
+      const thisRef = refMap[type];
+
+      if (thisRef.current && titleRef.current) {
+        const newTitle = titleRef.current.value;
+        const formData = thisRef.current.getCurrentData();
+
+        if (formData) {
+          const payload = {
+            ...formData,
+            name: newTitle,
+          };
+
+          await updateAction(id as string, payload);
+          setIsEditing(false);
+        }
+      }
+    }
+
+    if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
+      const thisRef = refMap[type];
+
+      if (thisRef.current && titleRef.current) {
+        const newTitle = titleRef.current.value;
+        const formData = thisRef.current.getCurrentData();
+        const payload = {
+          ...formData,
+          name: newTitle,
+        };
+
+        try {
+          await updateExistingDestination(id as string, payload);
+        } catch (error) {
+          console.error('Error updating destination:', error);
+        }
+        setIsEditing(false);
+      }
+    }
   };
 
   const handleDelete = async () => {
@@ -183,7 +187,9 @@ const OverviewDrawer = () => {
     const { type, item } = selectedItem;
 
     if (type === OVERVIEW_ENTITY_TYPES.RULE) {
-      alert('TODO !');
+      const { ruleId } = item as InstrumentationRuleSpec;
+
+      await deleteInstrumentationRule(ruleId);
     }
 
     if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
