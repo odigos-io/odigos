@@ -47,9 +47,9 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
     handleCloseModal();
   }
 
-  const handleSelect = (item: ActionOption) => {
+  const handleSelect = (item?: ActionOption) => {
     resetFormData();
-    handleFormChange('type', item.type);
+    handleFormChange('type', item?.type || '');
     setSelectedItem(item);
   };
 

@@ -3,6 +3,60 @@ export enum InstrumentationRuleType {
   PAYLOAD_COLLECTION = 'PayloadCollection',
 }
 
+enum SpanKind {
+  Internal = 'Internal',
+  Server = 'Server',
+  Client = 'Client',
+  Producer = 'Producer',
+  Consumer = 'Consumer',
+}
+
+enum ProgrammingLanguage {
+  Unspecified = 'Unspecified',
+  Java = 'Java',
+  Go = 'Go',
+  JavaScript = 'JavaScript',
+  Python = 'Python',
+  DotNet = 'DotNet',
+}
+
+enum K8sResourceKind {
+  Deployment = 'Deployment',
+  DaemonSet = 'DaemonSet',
+  StatefulSet = 'StatefulSet',
+}
+
+interface PayloadCollectionInput {
+  httpRequest: {
+    // mimeTypes: string[];
+    // maxPayloadLength: number;
+    // dropPartialPayloads: boolean;
+  } | null;
+  httpResponse: {
+    // mimeTypes: string[];
+    // maxPayloadLength: number;
+    // dropPartialPayloads: boolean;
+  } | null;
+  dbQuery: {
+    // maxPayloadLength: number;
+    // dropPartialPayloads: boolean;
+  } | null;
+  messaging: {
+    // maxPayloadLength: number;
+    // dropPartialPayloads: boolean;
+  } | null;
+}
+
+export interface InstrumentationRuleInput {
+  ruleName: string;
+  notes: string;
+  disabled: boolean;
+  workloads: PodWorkload[] | null;
+  instrumentationLibraries: InstrumentationLibraryInput[] | null;
+  payloadCollection: PayloadCollectionInput;
+}
+
+// delete this ? (used by old-UI)
 export enum RulesType {
   ADD_METADATA = 'add-metadata',
   ERROR_SAMPLING = 'error-sampling',
@@ -16,10 +70,9 @@ export enum RulesSortType {
   STATUS = 'status',
 }
 
-// Define the types for the Instrumentation Rule Spec
 export interface InstrumentationRuleSpec {
-  ruleId?: string;
-  ruleName: string;
+  ruleId: string;
+  ruleName?: string;
   notes?: string;
   disabled?: boolean;
   workloads?: PodWorkload[];
@@ -31,13 +84,19 @@ export interface InstrumentationRuleSpec {
 export interface PodWorkload {
   name: string;
   namespace: string;
-  kind: string;
+  kind: K8sResourceKind;
 }
 
 // Definition of Instrumentation Library Global ID
 export interface InstrumentationLibraryGlobalId {
   language: string;
   library: string;
+}
+
+export interface InstrumentationLibraryInput {
+  name: string;
+  spanKind?: SpanKind;
+  language?: ProgrammingLanguage;
 }
 
 // Payload Collection Interface for Instrumentation Rules

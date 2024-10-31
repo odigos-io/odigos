@@ -15,7 +15,7 @@ interface AutocompleteInputProps {
   options: Option[];
   placeholder?: string;
   selectedOption?: Option;
-  onOptionSelect?: (option: Option) => void;
+  onOptionSelect?: (option?: Option) => void;
   style?: React.CSSProperties;
 }
 
@@ -41,11 +41,9 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to 
   const [activeIndex, setActiveIndex] = useState(-1);
 
   useEffect(() => {
-    if (!!selectedOption && !query) {
-      setQuery(selectedOption.label);
-      setIcon(selectedOption.icon || '');
-    }
-  }, [selectedOption, query]);
+    setQuery(selectedOption?.label || '');
+    setIcon(selectedOption?.icon || '');
+  }, [selectedOption]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
@@ -58,15 +56,14 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to 
     } else {
       setShowOptions(false);
     }
+    onOptionSelect?.(undefined);
   };
 
   const handleOptionClick = (option: Option) => {
     setIcon(option.icon || '');
     setQuery(option.label);
     setShowOptions(false);
-    if (onOptionSelect) {
-      onOptionSelect(option);
-    }
+    onOptionSelect?.(option);
   };
 
   const flattenOptions = (options: Option[]): Option[] => {

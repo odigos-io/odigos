@@ -1,6 +1,9 @@
 import styled from 'styled-components';
-import React, { useEffect, useState } from 'react';
+import { ChooseRuleBody } from '../choose-rule-body';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useInstrumentationRuleCRUD } from '@/hooks/instrumentation-rules/useInstrumentationRuleCRUD';
+import { useInstrumentationRuleFormData } from '@/hooks/instrumentation-rules/useInstrumentationRuleFormData';
 import { AutocompleteInput, Divider, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@/reuseable-components';
 
 const Container = styled.section`
@@ -29,29 +32,29 @@ interface Props {
 }
 
 export const AddRuleModal: React.FC<Props> = ({ isModalOpen, handleCloseModal }) => {
-  // const { formData, handleFormChange, resetFormData, validateForm } = useRuleFormData();
-  // const { createRule, loading } = useRuleCRUD({ onSuccess: handleClose });
+  const { formData, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
+  const { createInstrumentationRule, loading } = useInstrumentationRuleCRUD({ onSuccess: handleClose });
   const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(undefined);
 
   useEffect(() => {
     if (!selectedItem) handleSelect(RULE_OPTIONS[0]);
   }, [selectedItem]);
 
-  // const isFormOk = useMemo(() => !!selectedItem && validateForm(), [selectedItem, formData]);
+  const isFormOk = useMemo(() => !!selectedItem && validateForm(), [selectedItem, formData]);
 
   const handleSubmit = async () => {
-    // createRule(formData);
+    createInstrumentationRule(formData);
   };
 
   function handleClose() {
-    // resetFormData();
+    resetFormData();
     setSelectedItem(undefined);
     handleCloseModal();
   }
 
-  const handleSelect = (item: RuleOption) => {
-    // resetFormData();
-    // handleFormChange('type', item.type);
+  const handleSelect = (item?: RuleOption) => {
+    resetFormData();
+    // handleFormChange('type', item?.type || '');
     setSelectedItem(item);
   };
 
@@ -67,7 +70,7 @@ export const AddRuleModal: React.FC<Props> = ({ isModalOpen, handleCloseModal })
               variant: 'primary',
               label: 'DONE',
               onClick: handleSubmit,
-              disabled: true,
+              disabled: !isFormOk || loading,
             },
           ]}
         />
@@ -89,13 +92,13 @@ export const AddRuleModal: React.FC<Props> = ({ isModalOpen, handleCloseModal })
           <div>
             <Divider margin='16px 0' />
 
-            {/* {loading ? ( */}
-            <Center>
-              <FadeLoader cssOverride={{ scale: 2 }} />
-            </Center>
-            {/* ) : (
+            {loading ? (
+              <Center>
+                <FadeLoader cssOverride={{ scale: 2 }} />
+              </Center>
+            ) : (
               <ChooseRuleBody rule={selectedItem} formData={formData} handleFormChange={handleFormChange} />
-            )} */}
+            )}
           </div>
         ) : null}
       </Container>
