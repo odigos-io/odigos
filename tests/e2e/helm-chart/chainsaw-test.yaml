@@ -84,14 +84,14 @@ spec:
     - apply:
         file: 02-install-simple-demo.yaml
     - script:
-        timeout: 100s
+        timeout: 70s
         content: |
           # Wait for the pods to be ready
-          kubectl wait --for=condition=ready pod -l app=frontend --timeout=50s
-          kubectl wait --for=condition=ready pod -l app=coupon --timeout=50s
-          kubectl wait --for=condition=ready pod -l app=inventory --timeout=50s
-          kubectl wait --for=condition=ready pod -l app=pricing --timeout=50s
-          kubectl wait --for=condition=ready pod -l app=membership --timeout=50s
+          kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
+          kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
+          kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
+          kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
+          kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
     - assert:
         file: assert-apps-installed.yaml
 

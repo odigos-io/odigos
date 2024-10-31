@@ -5,3 +5,4 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   ODIGOS_VERSION: {{ .Values.image.tag | default .Chart.AppVersion }}
+  ODIGOS_TIER: "{{- if .Values.onPremToken }}onprem{{- else }}community{{- end }}"

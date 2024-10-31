@@ -6,6 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
+	detector "github.com/odigos-io/odigos/odiglet/pkg/detector"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
@@ -71,6 +72,13 @@ func main() {
 
 	go startDeviceManager(clientset)
 
+	procEvents := make(chan detector.ProcessEvent)
+	runtimeDetector, err := detector.StartRuntimeDetector(ctx, log.Logger, procEvents)
+	if err != nil {
+		log.Logger.Error(err, "Failed to start runtime detector")
+		os.Exit(-1)
+	}
+
 	mgr, err := kube.CreateManager()
 	if err != nil {
 		log.Logger.Error(err, "Failed to create controller-runtime manager")
@@ -105,6 +113,12 @@ func main() {
 	for _, director := range ebpfDirectors {
 		director.Shutdown()
 	}
+	err = runtimeDetector.Stop()
+	if err != nil {
+		log.Logger.Error(err, "Failed to stop runtime detector")
+		os.Exit(-1)
+	}
+	log.Logger.V(0).Info("odiglet exiting")
 }
 
 func startDeviceManager(clientset *kubernetes.Clientset) {

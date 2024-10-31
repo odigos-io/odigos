@@ -20,6 +20,11 @@ type EntityProperty struct {
 	// The name of the property being described
 	Name string `json:"name"`
 
+	// Explain is a human readable explanation of the property
+	// it is static describe the property itself and not the current value.
+	// this is optional and can be empty
+	Explain string `json:"explain,omitempty"`
+
 	// The value to display for this property
 	Value interface{} `json:"value"`
 

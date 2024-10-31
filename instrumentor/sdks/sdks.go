@@ -5,8 +5,6 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	"k8s.io/client-go/kubernetes"
 )
 
 var defaultOtelSdkPerLanguage = map[common.ProgrammingLanguage]common.OtelSdk{}
@@ -43,11 +41,8 @@ func otelSdkConfigOnPrem() map[common.ProgrammingLanguage]common.OtelSdk {
 	}
 }
 
-func SetDefaultSDKs(ctx context.Context, clientset *kubernetes.Clientset) error {
-	odigosTier, err := k8sutils.GetCurrentOdigosTier(ctx, env.GetCurrentNamespace(), clientset)
-	if err != nil {
-		return err
-	}
+func SetDefaultSDKs(ctx context.Context) error {
+	odigosTier := env.GetOdigosTierFromEnv()
 
 	switch odigosTier {
 	case common.CommunityOdigosTier:

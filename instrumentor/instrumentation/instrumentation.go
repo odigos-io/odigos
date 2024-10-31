@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -20,15 +21,17 @@ var (
 	ErrPatchEnvVars = errors.New("failed to patch env vars")
 )
 
-func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) error {
+func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) (error, bool) {
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
 	// and we need to cleanup the community device before adding the enterprise one.
 	RevertInstrumentationDevices(original)
 
+	deviceApplied := false
+
 	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(targetObj.GetAnnotations())
 	if err != nil {
-		return err
+		return err, deviceApplied
 	}
 
 	var modifiedContainers []corev1.Container
@@ -39,7 +42,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 			// this is necessary to sync the existing envs with the missing language if changed for any reason.
 			err = patchEnvVarsForContainer(runtimeDetails, &container, nil, *containerLanguage, manifestEnvOriginal)
 			if err != nil {
-				return fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
+				return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied
 			}
 			modifiedContainers = append(modifiedContainers, container)
 			continue
@@ -47,7 +50,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 
 		otelSdk, found := defaultSdks[*containerLanguage]
 		if !found {
-			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, *containerLanguage, container.Name)
+			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, *containerLanguage, container.Name), deviceApplied
 		}
 
 		instrumentationDeviceName := common.InstrumentationDeviceName(*containerLanguage, otelSdk)
@@ -57,19 +60,22 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 		}
 		container.Resources.Limits[corev1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
 
+		deviceApplied = true
+
 		err = patchEnvVarsForContainer(runtimeDetails, &container, &otelSdk, *containerLanguage, manifestEnvOriginal)
 		if err != nil {
-			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
+			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied
 		}
 
 		modifiedContainers = append(modifiedContainers, container)
+
 	}
 
 	original.Spec.Containers = modifiedContainers
 
 	// persist the original values if changed
 	manifestEnvOriginal.SerializeToAnnotation(targetObj)
-	return nil
+	return nil, deviceApplied
 }
 
 // this function restores a workload manifest env vars to their original values.
@@ -217,4 +223,23 @@ func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, 
 	container.Env = newEnvs
 
 	return nil
+}
+
+func SetInjectInstrumentationLabel(original *corev1.PodTemplateSpec) {
+	odigosTier := env.GetOdigosTierFromEnv()
+
+	// inject the instrumentation annotation for oss tier only
+	if odigosTier == common.CommunityOdigosTier {
+		if original.Labels == nil {
+			original.Labels = make(map[string]string)
+		}
+		original.Labels["odigos.io/inject-instrumentation"] = "true"
+	}
+}
+
+// RemoveInjectInstrumentationLabel removes the "odigos.io/inject-instrumentation" label if it exists.
+func RemoveInjectInstrumentationLabel(original *corev1.PodTemplateSpec) {
+	if original.Labels != nil {
+		delete(original.Labels, "odigos.io/inject-instrumentation")
+	}
 }

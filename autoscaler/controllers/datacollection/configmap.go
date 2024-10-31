@@ -173,6 +173,7 @@ func calculateConfigMapData(collectorsGroup *odigosv1.CollectorsGroup, apps *odi
 			"tls": config.GenericMap{
 				"insecure": true,
 			},
+			"balancer_name": "round_robin",
 		},
 		"otlp/odigos-own-telemetry-ui": config.GenericMap{
 			"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), consts.OTLPPort),

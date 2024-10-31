@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func GetLanguageAndOtelSdk(container v1.Container) (common.ProgrammingLanguage, common.OtelSdk, bool) {
@@ -30,4 +30,17 @@ func podContainerDeviceName(container v1.Container) *string {
 	}
 
 	return nil
+}
+
+func AllContainersReady(pod *v1.Pod) bool {
+	// Iterate over all containers in the pod
+	// Return false if any container is:
+	// 1. Not Ready
+	// 2. Started is nil or false
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if !containerStatus.Ready || containerStatus.Started == nil || !*containerStatus.Started {
+			return false
+		}
+	}
+	return true
 }
