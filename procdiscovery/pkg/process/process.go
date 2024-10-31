@@ -14,8 +14,8 @@ const NodeVersionConst = "NODE_VERSION"
 const PythonVersionConst = "PYTHON_VERSION"
 const JavaVersionConst = "JAVA_VERSION"
 
-// envDetailsMap is a map of environment variables and their separators
-var envDetailsMap = map[string]struct{}{NodeVersionConst: {}, PythonVersionConst: {}, JavaVersionConst: {}}
+// LangsVersionEnvs is a map of environment variables used for detecting the versions of different languages
+var LangsVersionEnvs = map[string]struct{}{NodeVersionConst: {}, PythonVersionConst: {}, JavaVersionConst: {}}
 
 type Details struct {
 	ProcessID    int
@@ -158,7 +158,7 @@ func getRelevantEnvVars(pid int) ProcessEnvs {
 			overWriteEnvsResult[envParts[0]] = envParts[1]
 		}
 
-		if _, ok := envDetailsMap[envParts[0]]; ok {
+		if _, ok := LangsVersionEnvs[envParts[0]]; ok {
 			detailedEnvsResult[envParts[0]] = envParts[1]
 		}
 
