@@ -9,7 +9,8 @@ import { Drawer } from '@/reuseable-components';
 import { DeleteEntityModal } from '@/components';
 import { ActionDrawer, type ActionDrawerHandle } from '../../actions';
 import { DestinationDrawer, type DestinationDrawerHandle } from '../../destinations';
-import { useActionCRUD, useActualSources, useNotify, useUpdateDestination } from '@/hooks';
+import { RuleDrawer, RuleDrawerHandle } from '../../instrumentation-rules/rule-drawer-container';
+import { useActionCRUD, useActualSources, useInstrumentationRuleCRUD, useUpdateDestination } from '@/hooks';
 import { getMainContainerLanguageLogo, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils/constants/programming-languages';
 import {
   WorkloadId,
@@ -19,10 +20,7 @@ import {
   PatchSourceRequestInput,
   ActionDataParsed,
   InstrumentationRuleSpec,
-  InstrumentationRuleType,
 } from '@/types';
-import { RuleDrawer, RuleDrawerHandle } from '../../instrumentation-rules/rule-drawer-container';
-import { useInstrumentationRuleCRUD } from '@/hooks/instrumentation-rules/useInstrumentationRuleCRUD';
 
 const componentMap = {
   [OVERVIEW_ENTITY_TYPES.RULE]: RuleDrawer,
@@ -41,7 +39,6 @@ const OverviewDrawer = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [title, setTitle] = useState('');
 
-  const notify = useNotify();
   const { updateAction, deleteAction } = useActionCRUD();
   const { updateInstrumentationRule } = useInstrumentationRuleCRUD();
   const { updateExistingDestination } = useUpdateDestination();
@@ -101,19 +98,13 @@ const OverviewDrawer = () => {
     const { type, id, item } = selectedItem;
 
     if (type === OVERVIEW_ENTITY_TYPES.RULE) {
-      if (ruleDrawerRef.current && titleRef.current) {
-        const newTitle = titleRef.current.value;
-        const formData = ruleDrawerRef.current.getCurrentData();
+      const thisRef = refMap[OVERVIEW_ENTITY_TYPES.RULE];
 
-        if (!formData) {
-          notify({
-            message: 'Required fields are missing!',
-            title: 'Update Rule Error',
-            type: 'error',
-            target: 'notification',
-            crdType: 'notification',
-          });
-        } else {
+      if (thisRef.current && titleRef.current) {
+        const newTitle = titleRef.current.value;
+        const formData = thisRef.current.getCurrentData();
+
+        if (formData) {
           const payload = {
             ...formData,
             ruleName: newTitle,
@@ -148,15 +139,7 @@ const OverviewDrawer = () => {
         const newTitle = titleRef.current.value;
         const formData = actionDrawerRef.current.getCurrentData();
 
-        if (!formData) {
-          notify({
-            message: 'Required fields are missing!',
-            title: 'Update Action Error',
-            type: 'error',
-            target: 'notification',
-            crdType: 'notification',
-          });
-        } else {
+        if (formData) {
           const payload = {
             ...formData,
             name: newTitle,
