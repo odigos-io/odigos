@@ -35,7 +35,7 @@ func (d *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	var collectorsGroup odigosv1.CollectorsGroup
 	err := d.Client.Get(ctx, req.NamespacedName, &collectorsGroup)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	tracesEnabled := slices.Contains(collectorsGroup.Status.ReceiverSignals, common.TracesObservabilitySignal)

@@ -119,12 +119,23 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 	}
 
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
+
 		podSpec, err := getPodSpecFromObject(obj)
 		if err != nil {
 			return err
 		}
 
-		return instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj)
+		err, deviceApplied := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj)
+		if err != nil {
+			return err
+		}
+
+		// If instrumentation device is applied successfully, add odigos.io/inject-instrumentation label to enable the webhook
+		if deviceApplied {
+			instrumentation.SetInjectInstrumentationLabel(podSpec)
+		}
+
+		return nil
 	})
 
 	if err != nil {
@@ -162,12 +173,16 @@ func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient cli
 		if err != nil {
 			return err
 		}
+		// If instrumentation device is removed successfully, remove odigos.io/inject-instrumentation label to disable the webhook
+		instrumentation.RemoveInjectInstrumentationLabel(podSpec)
 
 		instrumentation.RevertInstrumentationDevices(podSpec)
+
 		err = instrumentation.RevertEnvOverwrites(workloadObj, podSpec)
 		if err != nil {
 			return err
 		}
+
 		return nil
 	})
 
