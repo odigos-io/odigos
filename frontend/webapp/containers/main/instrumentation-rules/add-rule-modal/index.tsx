@@ -86,7 +86,13 @@ export const AddRuleModal: React.FC<Props> = ({ isModalOpen, handleCloseModal })
           text='We currently support one rule. We’ll be adding new rule types in the near future.'
           style={{ marginTop: '24px' }}
         />
-        <AutocompleteInput options={RULE_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: '12px' }} />
+        <AutocompleteInput
+          disabled
+          options={RULE_OPTIONS}
+          selectedOption={selectedItem}
+          onOptionSelect={handleSelect}
+          style={{ marginTop: '12px' }}
+        />
 
         {!!selectedItem?.type ? (
           <div>

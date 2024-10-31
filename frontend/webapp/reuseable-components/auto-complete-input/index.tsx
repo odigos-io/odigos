@@ -17,6 +17,7 @@ interface AutocompleteInputProps {
   selectedOption?: Option;
   onOptionSelect?: (option?: Option) => void;
   style?: React.CSSProperties;
+  disabled?: boolean;
 }
 
 const filterOptions = (optionsList: Option[], input: string): Option[] => {
@@ -33,7 +34,14 @@ const filterOptions = (optionsList: Option[], input: string): Option[] => {
   }, []);
 };
 
-const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to search...', options, selectedOption, onOptionSelect, style }) => {
+const AutocompleteInput: FC<AutocompleteInputProps> = ({
+  placeholder = 'Type to search...',
+  options,
+  selectedOption,
+  onOptionSelect,
+  style,
+  disabled,
+}) => {
   const [query, setQuery] = useState(selectedOption?.label || '');
   const [icon, setIcon] = useState(selectedOption?.icon || '');
   const [filteredOptions, setFilteredOptions] = useState<Option[]>(filterOptions(options, ''));
@@ -90,8 +98,9 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to 
           placeholder={placeholder}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          onBlur={() => setShowOptions(false)}
-          onFocus={() => setShowOptions(true)}
+          disabled={disabled}
+          onBlur={() => !disabled && setShowOptions(false)}
+          onFocus={() => !disabled && setShowOptions(true)}
         />
       </InputWrapper>
 
@@ -191,7 +200,6 @@ const StyledInput = styled.input`
   }
 
   &:disabled {
-    background-color: #555;
     cursor: not-allowed;
   }
 `;
