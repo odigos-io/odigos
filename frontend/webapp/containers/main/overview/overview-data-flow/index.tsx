@@ -24,7 +24,7 @@ export function OverviewDataFlowContainer() {
   const { instrumentationRules } = useGetInstrumentationRules();
   const { containerRef, containerWidth } = useContainerWidth();
   const { handleNodeClick } = useNodeDataFlowHandlers({
-    rules: [],
+    rules: instrumentationRules,
     sources,
     actions,
     destinations,

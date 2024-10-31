@@ -40,7 +40,7 @@ export function useNodeDataFlowHandlers(params: {
           item: selectedDrawerItem,
         });
       } else if ([OVERVIEW_ENTITY_TYPES.RULE, OVERVIEW_ENTITY_TYPES.ACTION, OVERVIEW_ENTITY_TYPES.DESTINATION].includes(type)) {
-        const selectedDrawerItem = params[`${type}s`].find((action) => action.id === id);
+        const selectedDrawerItem = params[`${type}s`].find((item) => id && [item.id, item.ruleId].includes(id));
         if (!selectedDrawerItem) return;
 
         setSelectedItem({
