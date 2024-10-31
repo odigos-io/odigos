@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { Text } from '../text';
 import styled from 'styled-components';
-import React, { useState, ChangeEvent, KeyboardEvent, FC, useEffect } from 'react';
+import React, { useState, ChangeEvent, KeyboardEvent, FC } from 'react';
 
 export interface Option {
   id: string;
@@ -34,35 +34,26 @@ const filterOptions = (optionsList: Option[], input: string): Option[] => {
 };
 
 const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to search...', options, selectedOption, onOptionSelect, style }) => {
-  const [query, setQuery] = useState('');
-  const [icon, setIcon] = useState('');
+  const [query, setQuery] = useState(selectedOption?.label || '');
+  const [icon, setIcon] = useState(selectedOption?.icon || '');
   const [filteredOptions, setFilteredOptions] = useState<Option[]>(filterOptions(options, ''));
   const [showOptions, setShowOptions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
-  useEffect(() => {
-    setQuery(selectedOption?.label || '');
-    setIcon(selectedOption?.icon || '');
-  }, [selectedOption]);
-
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
+    const filtered = filterOptions(options, input);
+    const matched = filtered.length === 1 && filtered[0].label === input ? filtered[0] : undefined;
+
     setQuery(input);
-    setIcon('');
-    if (input) {
-      const filtered = filterOptions(options, input);
-      setFilteredOptions(filtered);
-      setShowOptions(true);
-    } else {
-      setShowOptions(false);
-    }
-    onOptionSelect?.(undefined);
+    setFilteredOptions(filtered);
+    handleOptionClick(matched);
   };
 
-  const handleOptionClick = (option: Option) => {
-    setIcon(option.icon || '');
-    setQuery(option.label);
-    setShowOptions(false);
+  const handleOptionClick = (option?: Option) => {
+    if (!!option) setQuery(option.label);
+    setIcon(option?.icon || '');
+    setShowOptions(!option);
     onOptionSelect?.(option);
   };
 
