@@ -66,7 +66,9 @@ const OverviewDrawer = () => {
     if (!!selectedItem?.item) {
       const { type, item } = selectedItem;
 
-      if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
+      if (type === OVERVIEW_ENTITY_TYPES.RULE) {
+        str = (item as InstrumentationRuleSpec).ruleName;
+      } else if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
         str = (item as K8sActualSource).reportedName;
       } else if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
         str = (item as ActionDataParsed).spec.actionName;
