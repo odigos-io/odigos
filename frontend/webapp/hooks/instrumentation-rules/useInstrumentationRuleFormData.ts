@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { DrawerBaseItem } from '@/store';
-import type { InstrumentationRuleInput, InstrumentationRuleSpec } from '@/types';
+import { PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
 
 const INITIAL: InstrumentationRuleInput = {
   ruleName: '',
@@ -9,10 +9,10 @@ const INITIAL: InstrumentationRuleInput = {
   workloads: null,
   instrumentationLibraries: null,
   payloadCollection: {
-    httpRequest: null,
-    httpResponse: null,
-    dbQuery: null,
-    messaging: null,
+    [PayloadCollectionType.HTTP_REQUEST]: null,
+    [PayloadCollectionType.HTTP_RESPONSE]: null,
+    [PayloadCollectionType.DB_QUERY]: null,
+    [PayloadCollectionType.MESSAGING]: null,
   },
 };
 
@@ -60,10 +60,10 @@ export function useInstrumentationRuleFormData() {
 
     if (payloadCollection) {
       updatedData['payloadCollection'] = {
-        httpRequest: !!payloadCollection.httpRequest ? {} : null,
-        httpResponse: !!payloadCollection.httpResponse ? {} : null,
-        dbQuery: !!payloadCollection.dbQuery ? {} : null,
-        messaging: !!payloadCollection.messaging ? {} : null,
+        [PayloadCollectionType.HTTP_REQUEST]: !!payloadCollection[PayloadCollectionType.HTTP_REQUEST] ? {} : null,
+        [PayloadCollectionType.HTTP_RESPONSE]: !!payloadCollection[PayloadCollectionType.HTTP_RESPONSE] ? {} : null,
+        [PayloadCollectionType.DB_QUERY]: !!payloadCollection[PayloadCollectionType.DB_QUERY] ? {} : null,
+        [PayloadCollectionType.MESSAGING]: !!payloadCollection[PayloadCollectionType.MESSAGING] ? {} : null,
       };
     }
 

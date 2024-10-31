@@ -100,12 +100,19 @@ export interface InstrumentationLibraryInput {
   language?: ProgrammingLanguage;
 }
 
+export enum PayloadCollectionType {
+  HTTP_REQUEST = 'httpRequest',
+  HTTP_RESPONSE = 'httpResponse',
+  DB_QUERY = 'dbQuery',
+  MESSAGING = 'messaging',
+}
+
 // Payload Collection Interface for Instrumentation Rules
 export interface PayloadCollection {
-  httpRequest?: HttpPayloadCollection;
-  httpResponse?: HttpPayloadCollection;
-  dbQuery?: DbQueryPayloadCollection;
-  messaging?: MessagingPayloadCollection;
+  [PayloadCollectionType.HTTP_REQUEST]?: HttpPayloadCollection;
+  [PayloadCollectionType.HTTP_RESPONSE]?: HttpPayloadCollection;
+  [PayloadCollectionType.DB_QUERY]?: DbQueryPayloadCollection;
+  [PayloadCollectionType.MESSAGING]?: MessagingPayloadCollection;
 }
 
 // Messaging Payload Collection Interface

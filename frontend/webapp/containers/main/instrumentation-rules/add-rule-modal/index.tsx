@@ -1,30 +1,18 @@
-import styled from 'styled-components';
 import { ChooseRuleBody } from '../choose-rule-body';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
 import React, { useEffect, useMemo, useState } from 'react';
-import { useInstrumentationRuleCRUD } from '@/hooks/instrumentation-rules/useInstrumentationRuleCRUD';
-import { useInstrumentationRuleFormData } from '@/hooks/instrumentation-rules/useInstrumentationRuleFormData';
-import { AutocompleteInput, Divider, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@/reuseable-components';
-
-const Container = styled.section`
-  width: 100%;
-  max-width: 640px;
-  height: 640px;
-  margin: 0 15vw;
-  padding: 64px 12px 0 12px;
-  display: flex;
-  flex-direction: column;
-  overflow-y: scroll;
-`;
-
-const Center = styled.div`
-  width: 100%;
-  margin-top: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-`;
+import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
+import {
+  AutocompleteInput,
+  Center,
+  Divider,
+  FadeLoader,
+  Modal,
+  ModalContent,
+  NavigationButtons,
+  NotificationNote,
+  SectionTitle,
+} from '@/reuseable-components';
 
 interface Props {
   isModalOpen: boolean;
@@ -54,7 +42,6 @@ export const AddRuleModal: React.FC<Props> = ({ isModalOpen, handleCloseModal })
 
   const handleSelect = (item?: RuleOption) => {
     resetFormData();
-    // handleFormChange('type', item?.type || '');
     setSelectedItem(item);
   };
 
@@ -76,7 +63,7 @@ export const AddRuleModal: React.FC<Props> = ({ isModalOpen, handleCloseModal })
         />
       }
     >
-      <Container>
+      <ModalContent>
         <SectionTitle
           title='Define Instrumentation Rule'
           description='Instrumentation rules control how telemetry is recorded from your application. Choose a rule type and provide necessary information.'
@@ -107,7 +94,7 @@ export const AddRuleModal: React.FC<Props> = ({ isModalOpen, handleCloseModal })
             )}
           </div>
         ) : null}
-      </Container>
+      </ModalContent>
     </Modal>
   );
 };

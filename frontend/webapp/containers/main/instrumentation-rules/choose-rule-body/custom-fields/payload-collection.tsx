@@ -1,7 +1,7 @@
 import styled from 'styled-components';
-import type { InstrumentationRuleInput } from '@/types';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Checkbox, FieldLabel } from '@/reuseable-components';
+import { PayloadCollectionType, type InstrumentationRuleInput } from '@/types';
 
 type Props = {
   value: InstrumentationRuleInput;
@@ -19,19 +19,19 @@ const ListContainer = styled.div`
 
 const strictPicklist = [
   {
-    id: 'httpRequest',
+    id: PayloadCollectionType.HTTP_REQUEST,
     label: 'Collect HTTP Request',
   },
   {
-    id: 'httpResponse',
+    id: PayloadCollectionType.HTTP_RESPONSE,
     label: 'Collect HTTP Response',
   },
   {
-    id: 'dbQuery',
+    id: PayloadCollectionType.DB_QUERY,
     label: 'Collect DB Query',
   },
   {
-    id: 'messaging',
+    id: PayloadCollectionType.MESSAGING,
     label: 'Collect Messaging',
   },
 ];
@@ -50,10 +50,10 @@ const PayloadCollection: React.FC<Props> = ({ value, setValue }) => {
   useEffect(() => {
     if (!mappedValue.length) {
       const payload: Parsed = {
-        httpRequest: {},
-        httpResponse: {},
-        dbQuery: {},
-        messaging: {},
+        [PayloadCollectionType.HTTP_REQUEST]: {},
+        [PayloadCollectionType.HTTP_RESPONSE]: {},
+        [PayloadCollectionType.DB_QUERY]: {},
+        [PayloadCollectionType.MESSAGING]: {},
       };
 
       setValue('payloadCollection', payload);
@@ -66,10 +66,10 @@ const PayloadCollection: React.FC<Props> = ({ value, setValue }) => {
     const arr = isAdd ? [...mappedValue, id] : mappedValue.filter((str) => str !== id);
 
     const payload: Parsed = {
-      httpRequest: arr.includes('httpRequest') ? {} : null,
-      httpResponse: arr.includes('httpResponse') ? {} : null,
-      dbQuery: arr.includes('dbQuery') ? {} : null,
-      messaging: arr.includes('messaging') ? {} : null,
+      [PayloadCollectionType.HTTP_REQUEST]: arr.includes(PayloadCollectionType.HTTP_REQUEST) ? {} : null,
+      [PayloadCollectionType.HTTP_RESPONSE]: arr.includes(PayloadCollectionType.HTTP_RESPONSE) ? {} : null,
+      [PayloadCollectionType.DB_QUERY]: arr.includes(PayloadCollectionType.DB_QUERY) ? {} : null,
+      [PayloadCollectionType.MESSAGING]: arr.includes(PayloadCollectionType.MESSAGING) ? {} : null,
     };
 
     setValue('payloadCollection', payload);
