@@ -9,7 +9,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/crypto"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
@@ -589,7 +588,7 @@ func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
 	certManagerInstalled := isCertManagerInstalled(ctx, a.client)
-	resources := []client.Object{
+	resources := []kube.Object{
 		NewInstrumentorServiceAccount(a.ns),
 		NewInstrumentorLeaderElectionRoleBinding(a.ns),
 		NewInstrumentorClusterRole(),
@@ -599,7 +598,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	}
 
 	if certManagerInstalled {
-		resources = append([]client.Object{NewInstrumentorIssuer(a.ns),
+		resources = append([]kube.Object{NewInstrumentorIssuer(a.ns),
 			NewInstrumentorCertificate(a.ns),
 			NewMutatingWebhookConfiguration(a.ns, nil),
 		},
@@ -620,7 +619,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 			return fmt.Errorf("failed to generate signed certificate: %w", err)
 		}
 
-		resources = append([]client.Object{NewInstrumentorTLSSecret(a.ns, &cert),
+		resources = append([]kube.Object{NewInstrumentorTLSSecret(a.ns, &cert),
 			NewMutatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
 		},
 			resources...)
