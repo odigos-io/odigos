@@ -559,6 +559,18 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	return &resp, nil
 }
 
+// DeleteDestination is the resolver for the deleteDestination field.
+func (r *mutationResolver) DeleteDestination(ctx context.Context, id string) (bool, error) {
+	odigosns := consts.DefaultOdigosNamespace
+	err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Delete(ctx, id, metav1.DeleteOptions{})
+
+	if err != nil {
+		return false, fmt.Errorf("failed to delete destination: %w", err)
+	}
+
+	return true, nil
+}
+
 // CreateAction is the resolver for the createAction field.
 func (r *mutationResolver) CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error) {
 	switch action.Type {

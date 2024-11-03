@@ -448,7 +448,7 @@ type Mutation {
     patchSourceRequest: PatchSourceRequestInput!
   ): Boolean!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
-
+  deleteDestination(id: ID!): Boolean!
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
   deleteAction(id: ID!, actionType: String!): Boolean!
