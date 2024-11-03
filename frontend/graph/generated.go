@@ -252,6 +252,7 @@ type ComplexityRoot struct {
 		CreateInstrumentationRule    func(childComplexity int, instrumentationRule model.InstrumentationRuleInput) int
 		CreateNewDestination         func(childComplexity int, destination model.DestinationInput) int
 		DeleteAction                 func(childComplexity int, id string, actionType string) int
+		DeleteDestination            func(childComplexity int, id string) int
 		DeleteInstrumentationRule    func(childComplexity int, ruleID string) int
 		PersistK8sNamespace          func(childComplexity int, namespace model.PersistNamespaceItemInput) int
 		PersistK8sSources            func(childComplexity int, namespace string, sources []*model.PersistNamespaceSourceInput) int
@@ -264,6 +265,11 @@ type ComplexityRoot struct {
 
 	ObservabilitySignalSupport struct {
 		Supported func(childComplexity int) int
+	}
+
+	OverviewMetricsResponse struct {
+		Destinations func(childComplexity int) int
+		Sources      func(childComplexity int) int
 	}
 
 	PayloadCollection struct {
@@ -304,6 +310,7 @@ type ComplexityRoot struct {
 		Config                 func(childComplexity int) int
 		DestinationTypeDetails func(childComplexity int, typeArg string) int
 		DestinationTypes       func(childComplexity int) int
+		GetOverviewMetrics     func(childComplexity int) int
 		PotentialDestinations  func(childComplexity int) int
 	}
 
@@ -315,6 +322,20 @@ type ComplexityRoot struct {
 		Notes   func(childComplexity int) int
 		Signals func(childComplexity int) int
 		Type    func(childComplexity int) int
+	}
+
+	SingleDestinationMetricsResponse struct {
+		ID            func(childComplexity int) int
+		Throughput    func(childComplexity int) int
+		TotalDataSent func(childComplexity int) int
+	}
+
+	SingleSourceMetricsResponse struct {
+		Kind          func(childComplexity int) int
+		Name          func(childComplexity int) int
+		Namespace     func(childComplexity int) int
+		Throughput    func(childComplexity int) int
+		TotalDataSent func(childComplexity int) int
 	}
 
 	SourceContainerRuntimeDetails struct {
@@ -361,6 +382,7 @@ type MutationResolver interface {
 	TestConnectionForDestination(ctx context.Context, destination model.DestinationInput) (*model.TestConnectionResponse, error)
 	UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error)
 	UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error)
+	DeleteDestination(ctx context.Context, id string) (bool, error)
 	CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error)
 	UpdateAction(ctx context.Context, id string, action model.ActionInput) (model.Action, error)
 	DeleteAction(ctx context.Context, id string, actionType string) (bool, error)
@@ -374,6 +396,7 @@ type QueryResolver interface {
 	DestinationTypes(ctx context.Context) (*model.GetDestinationTypesResponse, error)
 	DestinationTypeDetails(ctx context.Context, typeArg string) (*model.GetDestinationDetailsResponse, error)
 	PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error)
+	GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error)
 }
 
 type executableSchema struct {
@@ -1249,6 +1272,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteAction(childComplexity, args["id"].(string), args["actionType"].(string)), true
 
+	case "Mutation.deleteDestination":
+		if e.complexity.Mutation.DeleteDestination == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteDestination_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteDestination(childComplexity, args["id"].(string)), true
+
 	case "Mutation.deleteInstrumentationRule":
 		if e.complexity.Mutation.DeleteInstrumentationRule == nil {
 			break
@@ -1351,6 +1386,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ObservabilitySignalSupport.Supported(childComplexity), true
+
+	case "OverviewMetricsResponse.destinations":
+		if e.complexity.OverviewMetricsResponse.Destinations == nil {
+			break
+		}
+
+		return e.complexity.OverviewMetricsResponse.Destinations(childComplexity), true
+
+	case "OverviewMetricsResponse.sources":
+		if e.complexity.OverviewMetricsResponse.Sources == nil {
+			break
+		}
+
+		return e.complexity.OverviewMetricsResponse.Sources(childComplexity), true
 
 	case "PayloadCollection.dbQuery":
 		if e.complexity.PayloadCollection.DbQuery == nil {
@@ -1532,6 +1581,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.DestinationTypes(childComplexity), true
 
+	case "Query.getOverviewMetrics":
+		if e.complexity.Query.GetOverviewMetrics == nil {
+			break
+		}
+
+		return e.complexity.Query.GetOverviewMetrics(childComplexity), true
+
 	case "Query.potentialDestinations":
 		if e.complexity.Query.PotentialDestinations == nil {
 			break
@@ -1587,6 +1643,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RenameAttributeAction.Type(childComplexity), true
+
+	case "SingleDestinationMetricsResponse.id":
+		if e.complexity.SingleDestinationMetricsResponse.ID == nil {
+			break
+		}
+
+		return e.complexity.SingleDestinationMetricsResponse.ID(childComplexity), true
+
+	case "SingleDestinationMetricsResponse.throughput":
+		if e.complexity.SingleDestinationMetricsResponse.Throughput == nil {
+			break
+		}
+
+		return e.complexity.SingleDestinationMetricsResponse.Throughput(childComplexity), true
+
+	case "SingleDestinationMetricsResponse.totalDataSent":
+		if e.complexity.SingleDestinationMetricsResponse.TotalDataSent == nil {
+			break
+		}
+
+		return e.complexity.SingleDestinationMetricsResponse.TotalDataSent(childComplexity), true
+
+	case "SingleSourceMetricsResponse.kind":
+		if e.complexity.SingleSourceMetricsResponse.Kind == nil {
+			break
+		}
+
+		return e.complexity.SingleSourceMetricsResponse.Kind(childComplexity), true
+
+	case "SingleSourceMetricsResponse.name":
+		if e.complexity.SingleSourceMetricsResponse.Name == nil {
+			break
+		}
+
+		return e.complexity.SingleSourceMetricsResponse.Name(childComplexity), true
+
+	case "SingleSourceMetricsResponse.namespace":
+		if e.complexity.SingleSourceMetricsResponse.Namespace == nil {
+			break
+		}
+
+		return e.complexity.SingleSourceMetricsResponse.Namespace(childComplexity), true
+
+	case "SingleSourceMetricsResponse.throughput":
+		if e.complexity.SingleSourceMetricsResponse.Throughput == nil {
+			break
+		}
+
+		return e.complexity.SingleSourceMetricsResponse.Throughput(childComplexity), true
+
+	case "SingleSourceMetricsResponse.totalDataSent":
+		if e.complexity.SingleSourceMetricsResponse.TotalDataSent == nil {
+			break
+		}
+
+		return e.complexity.SingleSourceMetricsResponse.TotalDataSent(childComplexity), true
 
 	case "SourceContainerRuntimeDetails.containerName":
 		if e.complexity.SourceContainerRuntimeDetails.ContainerName == nil {
@@ -1929,6 +2041,21 @@ func (ec *executionContext) field_Mutation_deleteAction_args(ctx context.Context
 		}
 	}
 	args["actionType"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteDestination_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -7684,6 +7811,61 @@ func (ec *executionContext) fieldContext_Mutation_updateDestination(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_deleteDestination(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteDestination(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteDestination(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteDestination(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteDestination_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createAction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createAction(ctx, field)
 	if err != nil {
@@ -8085,6 +8267,114 @@ func (ec *executionContext) fieldContext_ObservabilitySignalSupport_supported(_ 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OverviewMetricsResponse_sources(ctx context.Context, field graphql.CollectedField, obj *model.OverviewMetricsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OverviewMetricsResponse_sources(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sources, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.SingleSourceMetricsResponse)
+	fc.Result = res
+	return ec.marshalNSingleSourceMetricsResponse2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSingleSourceMetricsResponseᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OverviewMetricsResponse_sources(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OverviewMetricsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "namespace":
+				return ec.fieldContext_SingleSourceMetricsResponse_namespace(ctx, field)
+			case "kind":
+				return ec.fieldContext_SingleSourceMetricsResponse_kind(ctx, field)
+			case "name":
+				return ec.fieldContext_SingleSourceMetricsResponse_name(ctx, field)
+			case "totalDataSent":
+				return ec.fieldContext_SingleSourceMetricsResponse_totalDataSent(ctx, field)
+			case "throughput":
+				return ec.fieldContext_SingleSourceMetricsResponse_throughput(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SingleSourceMetricsResponse", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OverviewMetricsResponse_destinations(ctx context.Context, field graphql.CollectedField, obj *model.OverviewMetricsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OverviewMetricsResponse_destinations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Destinations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.SingleDestinationMetricsResponse)
+	fc.Result = res
+	return ec.marshalNSingleDestinationMetricsResponse2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSingleDestinationMetricsResponseᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OverviewMetricsResponse_destinations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OverviewMetricsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_SingleDestinationMetricsResponse_id(ctx, field)
+			case "totalDataSent":
+				return ec.fieldContext_SingleDestinationMetricsResponse_totalDataSent(ctx, field)
+			case "throughput":
+				return ec.fieldContext_SingleDestinationMetricsResponse_throughput(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SingleDestinationMetricsResponse", field.Name)
 		},
 	}
 	return fc, nil
@@ -9272,6 +9562,56 @@ func (ec *executionContext) fieldContext_Query_potentialDestinations(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_getOverviewMetrics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getOverviewMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetOverviewMetrics(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.OverviewMetricsResponse)
+	fc.Result = res
+	return ec.marshalNOverviewMetricsResponse2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOverviewMetricsResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getOverviewMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "sources":
+				return ec.fieldContext_OverviewMetricsResponse_sources(ctx, field)
+			case "destinations":
+				return ec.fieldContext_OverviewMetricsResponse_destinations(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type OverviewMetricsResponse", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query___type(ctx, field)
 	if err != nil {
@@ -9698,6 +10038,358 @@ func (ec *executionContext) fieldContext_RenameAttributeAction_details(_ context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SingleDestinationMetricsResponse_id(ctx context.Context, field graphql.CollectedField, obj *model.SingleDestinationMetricsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SingleDestinationMetricsResponse_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SingleDestinationMetricsResponse_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SingleDestinationMetricsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SingleDestinationMetricsResponse_totalDataSent(ctx context.Context, field graphql.CollectedField, obj *model.SingleDestinationMetricsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SingleDestinationMetricsResponse_totalDataSent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalDataSent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SingleDestinationMetricsResponse_totalDataSent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SingleDestinationMetricsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SingleDestinationMetricsResponse_throughput(ctx context.Context, field graphql.CollectedField, obj *model.SingleDestinationMetricsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SingleDestinationMetricsResponse_throughput(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Throughput, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SingleDestinationMetricsResponse_throughput(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SingleDestinationMetricsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SingleSourceMetricsResponse_namespace(ctx context.Context, field graphql.CollectedField, obj *model.SingleSourceMetricsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SingleSourceMetricsResponse_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SingleSourceMetricsResponse_namespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SingleSourceMetricsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SingleSourceMetricsResponse_kind(ctx context.Context, field graphql.CollectedField, obj *model.SingleSourceMetricsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SingleSourceMetricsResponse_kind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Kind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SingleSourceMetricsResponse_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SingleSourceMetricsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SingleSourceMetricsResponse_name(ctx context.Context, field graphql.CollectedField, obj *model.SingleSourceMetricsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SingleSourceMetricsResponse_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SingleSourceMetricsResponse_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SingleSourceMetricsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SingleSourceMetricsResponse_totalDataSent(ctx context.Context, field graphql.CollectedField, obj *model.SingleSourceMetricsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SingleSourceMetricsResponse_totalDataSent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalDataSent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SingleSourceMetricsResponse_totalDataSent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SingleSourceMetricsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SingleSourceMetricsResponse_throughput(ctx context.Context, field graphql.CollectedField, obj *model.SingleSourceMetricsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SingleSourceMetricsResponse_throughput(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Throughput, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SingleSourceMetricsResponse_throughput(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SingleSourceMetricsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -14470,6 +15162,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "deleteDestination":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteDestination(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createAction":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createAction(ctx, field)
@@ -14548,6 +15247,50 @@ func (ec *executionContext) _ObservabilitySignalSupport(ctx context.Context, sel
 			out.Values[i] = graphql.MarshalString("ObservabilitySignalSupport")
 		case "supported":
 			out.Values[i] = ec._ObservabilitySignalSupport_supported(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var overviewMetricsResponseImplementors = []string{"OverviewMetricsResponse"}
+
+func (ec *executionContext) _OverviewMetricsResponse(ctx context.Context, sel ast.SelectionSet, obj *model.OverviewMetricsResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, overviewMetricsResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OverviewMetricsResponse")
+		case "sources":
+			out.Values[i] = ec._OverviewMetricsResponse_sources(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "destinations":
+			out.Values[i] = ec._OverviewMetricsResponse_destinations(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -14905,6 +15648,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getOverviewMetrics":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getOverviewMetrics(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -14973,6 +15738,114 @@ func (ec *executionContext) _RenameAttributeAction(ctx context.Context, sel ast.
 			}
 		case "details":
 			out.Values[i] = ec._RenameAttributeAction_details(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var singleDestinationMetricsResponseImplementors = []string{"SingleDestinationMetricsResponse"}
+
+func (ec *executionContext) _SingleDestinationMetricsResponse(ctx context.Context, sel ast.SelectionSet, obj *model.SingleDestinationMetricsResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, singleDestinationMetricsResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SingleDestinationMetricsResponse")
+		case "id":
+			out.Values[i] = ec._SingleDestinationMetricsResponse_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalDataSent":
+			out.Values[i] = ec._SingleDestinationMetricsResponse_totalDataSent(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "throughput":
+			out.Values[i] = ec._SingleDestinationMetricsResponse_throughput(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var singleSourceMetricsResponseImplementors = []string{"SingleSourceMetricsResponse"}
+
+func (ec *executionContext) _SingleSourceMetricsResponse(ctx context.Context, sel ast.SelectionSet, obj *model.SingleSourceMetricsResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, singleSourceMetricsResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SingleSourceMetricsResponse")
+		case "namespace":
+			out.Values[i] = ec._SingleSourceMetricsResponse_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "kind":
+			out.Values[i] = ec._SingleSourceMetricsResponse_kind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._SingleSourceMetricsResponse_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalDataSent":
+			out.Values[i] = ec._SingleSourceMetricsResponse_totalDataSent(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "throughput":
+			out.Values[i] = ec._SingleSourceMetricsResponse_throughput(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -16255,6 +17128,20 @@ func (ec *executionContext) marshalNObservabilitySignalSupport2githubᚗcomᚋod
 	return ec._ObservabilitySignalSupport(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalNOverviewMetricsResponse2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOverviewMetricsResponse(ctx context.Context, sel ast.SelectionSet, v model.OverviewMetricsResponse) graphql.Marshaler {
+	return ec._OverviewMetricsResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOverviewMetricsResponse2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOverviewMetricsResponse(ctx context.Context, sel ast.SelectionSet, v *model.OverviewMetricsResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._OverviewMetricsResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNPatchSourceRequestInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPatchSourceRequestInput(ctx context.Context, v interface{}) (model.PatchSourceRequestInput, error) {
 	res, err := ec.unmarshalInputPatchSourceRequestInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -16371,6 +17258,114 @@ func (ec *executionContext) marshalNSignalType2ᚕgithubᚗcomᚋodigosᚑioᚋo
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalNSingleDestinationMetricsResponse2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSingleDestinationMetricsResponseᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SingleDestinationMetricsResponse) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSingleDestinationMetricsResponse2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSingleDestinationMetricsResponse(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNSingleDestinationMetricsResponse2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSingleDestinationMetricsResponse(ctx context.Context, sel ast.SelectionSet, v *model.SingleDestinationMetricsResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SingleDestinationMetricsResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSingleSourceMetricsResponse2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSingleSourceMetricsResponseᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SingleSourceMetricsResponse) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSingleSourceMetricsResponse2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSingleSourceMetricsResponse(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNSingleSourceMetricsResponse2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSingleSourceMetricsResponse(ctx context.Context, sel ast.SelectionSet, v *model.SingleSourceMetricsResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SingleSourceMetricsResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNSourceContainerRuntimeDetails2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerRuntimeDetails(ctx context.Context, sel ast.SelectionSet, v *model.SourceContainerRuntimeDetails) graphql.Marshaler {
