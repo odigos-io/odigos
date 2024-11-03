@@ -6,16 +6,11 @@ import (
 	"strings"
 
 	common "github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-)
-
-const (
-	EnvVarNamespace     = "ODIGOS_WORKLOAD_NAMESPACE"
-	EnvVarContainerName = "ODIGOS_CONTAINER_NAME"
-	EnvVarPodName       = "ODIGOS_POD_NAME"
 )
 
 type PodsWebhook struct{}
@@ -43,7 +38,7 @@ func injectOdigosEnvVars(pod *corev1.Pod) {
 	// Common environment variables that do not change across containers
 	commonEnvVars := []corev1.EnvVar{
 		{
-			Name: EnvVarNamespace,
+			Name:  consts.OdigosEnvVarNamespace,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.namespace",
@@ -51,7 +46,7 @@ func injectOdigosEnvVars(pod *corev1.Pod) {
 			},
 		},
 		{
-			Name: EnvVarPodName,
+			Name: consts.OdigosEnvVarPodName,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.name",
@@ -74,7 +69,7 @@ func injectOdigosEnvVars(pod *corev1.Pod) {
 		}
 
 		container.Env = append(container.Env, append(commonEnvVars, corev1.EnvVar{
-			Name:  EnvVarContainerName,
+			Name:  consts.OdigosEnvVarContainerName,
 			Value: container.Name,
 		})...)
 	}

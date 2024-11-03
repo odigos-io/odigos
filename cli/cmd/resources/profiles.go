@@ -10,13 +10,12 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Profile struct {
 	ProfileName      common.ProfileName
 	ShortDescription string
-	ClientObject     client.Object        // used to read it from the embedded YAML file
+	KubeObject       kube.Object          // used to read it from the embedded YAML file
 	Dependencies     []common.ProfileName // other profiles that are applied by the current profile
 }
 
@@ -24,42 +23,42 @@ var (
 	fullPayloadCollectionProfile = Profile{
 		ProfileName:      common.ProfileName("full-payload-collection"),
 		ShortDescription: "Collect any payload from the cluster where supported with default settings",
-		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
+		KubeObject:       &odigosv1alpha1.InstrumentationRule{},
 	}
 	dbPayloadCollectionProfile = Profile{
 		ProfileName:      common.ProfileName("db-payload-collection"),
 		ShortDescription: "Collect db payload from the cluster where supported with default settings",
-		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
+		KubeObject:       &odigosv1alpha1.InstrumentationRule{},
 	}
 	queryOperationDetector = Profile{
 		ProfileName:      common.ProfileName("query-operation-detector"),
 		ShortDescription: "Detect the SQL operation name from the query text",
-		ClientObject:     &odigosv1alpha1.Processor{},
+		KubeObject:       &odigosv1alpha1.Processor{},
 	}
 	semconvUpgraderProfile = Profile{
 		ProfileName:      common.ProfileName("semconv"),
 		ShortDescription: "Upgrade and align some attribute names to a newer version of the OpenTelemetry semantic conventions",
-		ClientObject:     &actions.RenameAttribute{},
+		KubeObject:       &actions.RenameAttribute{},
 	}
 	categoryAttributesProfile = Profile{
 		ProfileName:      common.ProfileName("category-attributes"),
 		ShortDescription: "Add category attributes to the spans",
-		ClientObject:     &odigosv1alpha1.Processor{},
+		KubeObject:       &odigosv1alpha1.Processor{},
 	}
 	copyScopeProfile = Profile{
 		ProfileName:      common.ProfileName("copy-scope"),
 		ShortDescription: "Copy the scope name into a separate attribute for backends that do not support scopes",
-		ClientObject:     &odigosv1alpha1.Processor{},
+		KubeObject:       &odigosv1alpha1.Processor{},
 	}
 	hostnameAsPodNameProfile = Profile{
 		ProfileName:      common.ProfileName("hostname-as-podname"),
 		ShortDescription: "Populate the spans resource `host.name` attribute with value of `k8s.pod.name`",
-		ClientObject:     &odigosv1alpha1.Processor{},
+		KubeObject:       &odigosv1alpha1.Processor{},
 	}
 	javaNativeInstrumentationsProfile = Profile{
 		ProfileName:      common.ProfileName("java-native-instrumentations"),
 		ShortDescription: "Instrument Java applications using native instrumentation and eBPF enterprise processing",
-		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
+		KubeObject:       &odigosv1alpha1.InstrumentationRule{},
 	}
 	codeAttributesProfile = Profile{
 		ProfileName:      common.ProfileName("code-attributes"),
@@ -72,7 +71,7 @@ var (
 	smallBatchesProfile = Profile{
 		ProfileName:      common.ProfileName("small-batches"),
 		ShortDescription: "Reduce the batch size for exports",
-		ClientObject:     &odigosv1alpha1.Processor{},
+		KubeObject:       &odigosv1alpha1.Processor{},
 	}
 	kratosProfile = Profile{
 		ProfileName:      common.ProfileName("kratos"),
@@ -90,16 +89,16 @@ func GetAvailableOnPremProfiles() []Profile {
 		GetAvailableCommunityProfiles()...)
 }
 
-func GetResourcesForProfileName(profileName common.ProfileName, tier common.OdigosTier) ([]client.Object, error) {
+func GetResourcesForProfileName(profileName common.ProfileName, tier common.OdigosTier) ([]kube.Object, error) {
 	allAvailableProfiles := GetAvailableProfilesForTier(tier)
 	for _, p := range allAvailableProfiles {
 		if p.ProfileName == common.ProfileName(profileName) {
-			if p.ClientObject != nil {
+			if p.KubeObject != nil {
 				filename := fmt.Sprintf("%s.yaml", profileName)
-				return profiles.GetEmbeddedYAMLFileAsObjects(filename, p.ClientObject)
+				return profiles.GetEmbeddedYAMLFileAsObjects(filename, p.KubeObject)
 			}
 			if len(p.Dependencies) > 0 {
-				allResources := []client.Object{}
+				allResources := []kube.Object{}
 				for _, dep := range p.Dependencies {
 					resources, err := GetResourcesForProfileName(dep, tier)
 					if err != nil {
@@ -141,7 +140,7 @@ func NewProfilesResourceManager(client *kube.Client, ns string, config *common.O
 func (a *profilesResourceManager) Name() string { return "Profiles" }
 
 func (a *profilesResourceManager) InstallFromScratch(ctx context.Context) error {
-	allResources := []client.Object{}
+	allResources := []kube.Object{}
 	for _, profile := range a.config.Profiles {
 		profileResources, err := GetResourcesForProfileName(profile, a.tier)
 		if err != nil {

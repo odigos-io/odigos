@@ -12,7 +12,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier string) *corev1.ConfigMap {
@@ -104,7 +103,7 @@ func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *
 func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployment" }
 
 func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context) error {
-	resources := []client.Object{
+	resources := []kube.Object{
 		NewOdigosDeploymentConfigMap(a.ns, a.odigosVersion, string(a.odigosTier)),
 		NewLeaderElectionRole(a.ns),
 	}
