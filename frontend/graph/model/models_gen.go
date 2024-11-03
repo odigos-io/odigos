@@ -330,6 +330,11 @@ type MessagingPayloadCollectionInput struct {
 type Mutation struct {
 }
 
+type OverviewMetricsResponse struct {
+	Sources      []*SingleSourceMetricsResponse      `json:"sources"`
+	Destinations []*SingleDestinationMetricsResponse `json:"destinations"`
+}
+
 type PatchSourceRequestInput struct {
 	ReportedName *string `json:"reportedName,omitempty"`
 }
@@ -453,6 +458,20 @@ func (this RenameAttributeAction) GetSignals() []SignalType {
 		interfaceSlice = append(interfaceSlice, concrete)
 	}
 	return interfaceSlice
+}
+
+type SingleDestinationMetricsResponse struct {
+	ID            string `json:"id"`
+	TotalDataSent int    `json:"totalDataSent"`
+	Throughput    int    `json:"throughput"`
+}
+
+type SingleSourceMetricsResponse struct {
+	Namespace     string `json:"namespace"`
+	Kind          string `json:"kind"`
+	Name          string `json:"name"`
+	TotalDataSent int    `json:"totalDataSent"`
+	Throughput    int    `json:"throughput"`
 }
 
 type SourceContainerRuntimeDetails struct {

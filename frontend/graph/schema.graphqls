@@ -425,12 +425,32 @@ input ActionInput {
   details: String!
 }
 
+type OverviewMetricsResponse {
+  sources: [SingleSourceMetricsResponse!]!
+  destinations: [SingleDestinationMetricsResponse!]!
+}
+
+type SingleSourceMetricsResponse {
+  namespace: String!
+  kind: String!
+  name: String!
+  totalDataSent: Int!
+  throughput: Int!
+}
+
+type SingleDestinationMetricsResponse {
+  id: String!
+  totalDataSent: Int!
+  throughput: Int!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
   destinationTypes: GetDestinationTypesResponse
   destinationTypeDetails(type: String!): GetDestinationDetailsResponse
   potentialDestinations: [DestinationDetails!]!
+  getOverviewMetrics: OverviewMetricsResponse!
 }
 
 type Mutation {
