@@ -31,6 +31,3 @@ const (
 
 	OdigosNodeCollectorConfigMapKey = "conf" // this key is different than the cluster collector value. not sure why
 )
-
-// DefaultRequeueAfter is the default requeue time (In seconds) for the controller
-const DefaultRequeueAfter = 15
