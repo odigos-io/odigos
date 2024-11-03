@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Button, ButtonProps, Modal, Text } from '@/reuseable-components';
+import { useKeyDown } from '@/hooks';
 
 interface ButtonParams {
   text: string;
@@ -49,6 +50,10 @@ const FooterButton = styled(Button)`
 `;
 
 export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', description = '', approveButton, denyButton }) => {
+  useKeyDown(isOpen ? 'Enter' : null, () => {
+    approveButton.onClick();
+  });
+
   return (
     <Modal isOpen={isOpen} noOverlay={noOverlay} onClose={denyButton.onClick}>
       <Container>

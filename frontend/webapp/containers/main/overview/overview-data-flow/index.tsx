@@ -11,6 +11,10 @@ const AllDrawers = dynamic(() => import('../all-drawers'), {
   ssr: false,
 });
 
+const AllModals = dynamic(() => import('../all-modals'), {
+  ssr: false,
+});
+
 export const OverviewDataFlowWrapper = styled.div`
   width: calc(100% - 64px);
   height: calc(100vh - 176px);
@@ -50,6 +54,7 @@ export function OverviewDataFlowContainer() {
       <NodeBaseDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} columnWidth={columnWidth} />
 
       <AllDrawers />
+      <AllModals />
     </OverviewDataFlowWrapper>
   );
 }

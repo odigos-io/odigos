@@ -15,11 +15,11 @@ import {
 } from '@/reuseable-components';
 
 interface Props {
-  isModalOpen: boolean;
-  handleCloseModal: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export const AddRuleModal: React.FC<Props> = ({ isModalOpen, handleCloseModal }) => {
+export const AddRuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { formData, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
   const { createInstrumentationRule, loading } = useInstrumentationRuleCRUD({ onSuccess: handleClose });
   const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(undefined);
@@ -37,7 +37,7 @@ export const AddRuleModal: React.FC<Props> = ({ isModalOpen, handleCloseModal })
   function handleClose() {
     resetFormData();
     setSelectedItem(undefined);
-    handleCloseModal();
+    onClose();
   }
 
   const handleSelect = (item?: RuleOption) => {
@@ -47,7 +47,7 @@ export const AddRuleModal: React.FC<Props> = ({ isModalOpen, handleCloseModal })
 
   return (
     <Modal
-      isOpen={isModalOpen}
+      isOpen={isOpen}
       onClose={handleClose}
       header={{ title: 'Add Instrumentation Rule' }}
       actionComponent={

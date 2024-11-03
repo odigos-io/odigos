@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import Image from 'next/image';
 import { Text } from '../text';
 import ReactDOM from 'react-dom';
-import { useKeyDown } from '@/hooks';
 import styled from 'styled-components';
 import { fade, Overlay } from '@/styles';
+import { useKeyDown, useOnClickOutside } from '@/hooks';
 
 interface ModalProps {
   isOpen: boolean;
@@ -88,12 +88,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, onClose, child
     onClose();
   });
 
+  const ref = useRef(null);
+  useOnClickOutside(ref, () => onClose());
+
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
     <>
-      {!noOverlay ? <Overlay hidden={!isOpen} onClick={onClose} /> : null}
-      <ModalWrapper isOpen={isOpen}>
+      <Overlay hideOverlay={noOverlay} />
+
+      <ModalWrapper ref={ref} isOpen={isOpen}>
         {header && (
           <ModalHeader>
             <ModalCloseButton onClick={onClose}>

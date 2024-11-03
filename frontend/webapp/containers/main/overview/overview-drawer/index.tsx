@@ -1,9 +1,11 @@
 import { PropsWithChildren, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
 import DrawerFooter from './drawer-footer';
-import { Drawer, WarningModal } from '@/reuseable-components';
+import { Drawer } from '@/reuseable-components';
+import DeleteWarning from '@/components/modals/delete-warning';
+import CancelWarning from '@/components/modals/cancel-warning';
+import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
 
 const DRAWER_WIDTH = '640px';
 
@@ -81,43 +83,25 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({
         </DrawerContent>
       </Drawer>
 
-      <WarningModal
+      <DeleteWarning
         isOpen={isDeleteModalOpen}
-        noOverlay
-        title={`Delete ${title}`}
-        description={`Are you sure you want to delete this ${selectedItem?.type}?`}
-        approveButton={{
-          text: 'Delete',
-          variant: 'danger',
-          onClick: () => {
-            clickDelete();
-            closeWarningModals();
-          },
+        name={`${selectedItem?.type}${title ? ` (${title})` : ''}`}
+        onApprove={() => {
+          clickDelete();
+          closeWarningModals();
         }}
-        denyButton={{
-          text: 'Cancel',
-          onClick: closeWarningModals,
-        }}
+        onDeny={closeWarningModals}
       />
 
-      <WarningModal
+      <CancelWarning
         isOpen={isCancelModalOpen}
-        noOverlay
-        title='Cancel edit mode'
-        description='Are you sure you want to cancel?'
-        approveButton={{
-          text: 'Cancel',
-          variant: 'warning',
-          onClick: () => {
-            titleRef.current?.clearTitle();
-            clickCancel();
-            closeWarningModals();
-          },
+        name='edit mode'
+        onApprove={() => {
+          titleRef.current?.clearTitle();
+          clickCancel();
+          closeWarningModals();
         }}
-        denyButton={{
-          text: 'Go Back',
-          onClick: closeWarningModals,
-        }}
+        onDeny={closeWarningModals}
       />
     </>
   );
