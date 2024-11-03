@@ -760,6 +760,41 @@ func (r *queryResolver) PotentialDestinations(ctx context.Context) ([]*model.Des
 	return result, nil
 }
 
+// GetOverviewMetrics is the resolver for the getOverviewMetrics field.
+func (r *queryResolver) GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error) {
+	if r.MetricsConsumer == nil {
+		return nil, fmt.Errorf("metrics consumer not initialized")
+	}
+
+	sourcesMetrics := r.MetricsConsumer.GetSourcesMetrics()
+	destinationsMetrics := r.MetricsConsumer.GetDestinationsMetrics()
+
+	var sourcesResp []*model.SingleSourceMetricsResponse
+	for sID, metric := range sourcesMetrics {
+		sourcesResp = append(sourcesResp, &model.SingleSourceMetricsResponse{
+			Namespace:     sID.Namespace,
+			Kind:          string(sID.Kind),
+			Name:          sID.Name,
+			TotalDataSent: int(metric.TotalDataSent()),
+			Throughput:    int(metric.TotalThroughput()),
+		})
+	}
+
+	var destinationsResp []*model.SingleDestinationMetricsResponse
+	for destId, metric := range destinationsMetrics {
+		destinationsResp = append(destinationsResp, &model.SingleDestinationMetricsResponse{
+			ID:            destId,
+			TotalDataSent: int(metric.TotalDataSent()),
+			Throughput:    int(metric.TotalThroughput()),
+		})
+	}
+
+	return &model.OverviewMetricsResponse{
+		Sources:      sourcesResp,
+		Destinations: destinationsResp,
+	}, nil
+}
+
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 
