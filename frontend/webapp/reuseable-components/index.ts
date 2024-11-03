@@ -10,6 +10,7 @@ export * from './counter';
 export * from './toggle';
 export * from './checkbox';
 export * from './modal';
+export * from './modal/warning-modal';
 export * from './modal/styled';
 export * from './navigation-buttons';
 export * from './tag';

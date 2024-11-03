@@ -5,8 +5,7 @@ import { getActionIcon, getRuleIcon, LANGUAGES_LOGOS } from '@/utils';
 import DrawerHeader from './drawer-header';
 import DrawerFooter from './drawer-footer';
 import { SourceDrawer } from '../../sources';
-import { Drawer } from '@/reuseable-components';
-import { DeleteEntityModal } from '@/components';
+import { Drawer, WarningModal } from '@/reuseable-components';
 import { ActionDrawer, type ActionDrawerHandle } from '../../actions';
 import { DestinationDrawer, type DestinationDrawerHandle } from '../../destinations';
 import { RuleDrawer, RuleDrawerHandle } from '../../instrumentation-rules/rule-drawer-container';
@@ -37,6 +36,7 @@ const OverviewDrawer = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [title, setTitle] = useState('');
 
   const { updateAction, deleteAction } = useActionCRUD();
@@ -80,22 +80,74 @@ const OverviewDrawer = () => {
     setTitle(str);
   }
 
-  const handleCancel = () => {
-    setIsEditing(false);
-    initialTitle();
-  };
-
   const handleClose = () => {
-    setIsEditing(false);
     setSelectedItem(null);
+    setIsEditing(false);
     setIsDeleteModalOpen(false);
+    setIsCancelModalOpen(false);
   };
 
-  const handleCloseDeleteModal = () => {
+  const handleCloseMiniModal = () => {
     setIsDeleteModalOpen(false);
+    setIsCancelModalOpen(false);
   };
 
-  const handleSave = async () => {
+  const handleCancel = () => {
+    setIsCancelModalOpen(true);
+  };
+
+  const onCancel = () => {
+    initialTitle();
+    setIsEditing(false);
+    setIsCancelModalOpen(false);
+  };
+
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const onDelete = async () => {
+    if (!selectedItem?.item) return null;
+    const { type, item } = selectedItem;
+
+    if (type === OVERVIEW_ENTITY_TYPES.RULE) {
+      const { ruleId } = item as InstrumentationRuleSpec;
+
+      await deleteInstrumentationRule(ruleId);
+    }
+
+    if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
+      const { namespace, name, kind } = item as K8sActualSource;
+
+      try {
+        await deleteSourcesForNamespace(namespace, [
+          {
+            kind,
+            name,
+            selected: false,
+          },
+        ]);
+      } catch (error) {
+        console.error('Error deleting source:', error);
+      }
+    }
+
+    if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
+      const { id, type } = item as ActionDataParsed;
+
+      await deleteAction(id, type);
+    }
+
+    if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
+      const { id } = item as ActualDestination;
+
+      await deleteDestination(id);
+    }
+
+    handleClose();
+  };
+
+  const onSave = async () => {
     if (!selectedItem?.item) return null;
     const { type, id, item } = selectedItem;
 
@@ -184,54 +236,13 @@ const OverviewDrawer = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (!selectedItem?.item) return null;
-    const { type, item } = selectedItem;
-
-    if (type === OVERVIEW_ENTITY_TYPES.RULE) {
-      const { ruleId } = item as InstrumentationRuleSpec;
-
-      await deleteInstrumentationRule(ruleId);
-    }
-
-    if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
-      const { namespace, name, kind } = item as K8sActualSource;
-
-      try {
-        await deleteSourcesForNamespace(namespace, [
-          {
-            kind,
-            name,
-            selected: false,
-          },
-        ]);
-      } catch (error) {
-        console.error('Error deleting source:', error);
-      }
-    }
-
-    if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
-      const { id, type } = item as ActionDataParsed;
-
-      await deleteAction(id, type);
-    }
-
-    if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
-      const { id } = item as ActualDestination;
-
-      await deleteDestination(id);
-    }
-
-    handleClose();
-  };
-
   if (!selectedItem?.item) return null;
 
   const { type, item } = selectedItem;
   const SpecificComponent = componentMap[type];
   const specificRef = refMap[type];
 
-  return SpecificComponent ? (
+  return (
     <>
       <Drawer isOpen onClose={handleClose} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen}>
         <DrawerContent>
@@ -246,22 +257,43 @@ const OverviewDrawer = () => {
 
           <ContentArea>
             {/* @ts-ignore (because of ref) */}
-            <SpecificComponent ref={specificRef} isEditing={isEditing} />
+            {SpecificComponent ? <SpecificComponent ref={specificRef} isEditing={isEditing} /> : null}
           </ContentArea>
 
-          {isEditing && <DrawerFooter onSave={handleSave} onCancel={handleCancel} onDelete={() => setIsDeleteModalOpen(true)} />}
+          {isEditing && <DrawerFooter onSave={onSave} onCancel={handleCancel} onDelete={handleDelete} />}
         </DrawerContent>
       </Drawer>
 
-      <DeleteEntityModal
-        title={title}
-        isModalOpen={isDeleteModalOpen}
-        handleDelete={handleDelete}
-        handleCloseModal={handleCloseDeleteModal}
-        description='Are you sure you want to delete this?'
+      <WarningModal
+        isOpen={isDeleteModalOpen}
+        title={`Delete ${title}`}
+        description={`Are you sure you want to delete this ${type}?`}
+        approveButton={{
+          text: 'Delete',
+          variant: 'danger',
+          onClick: onDelete,
+        }}
+        denyButton={{
+          text: 'Cancel',
+          onClick: handleCloseMiniModal,
+        }}
+      />
+      <WarningModal
+        isOpen={isCancelModalOpen}
+        title='Cancel edit mode'
+        description='Are you sure you want to cancel?'
+        approveButton={{
+          text: 'Cancel',
+          variant: 'warning',
+          onClick: onCancel,
+        }}
+        denyButton={{
+          text: 'Go Back',
+          onClick: handleCloseMiniModal,
+        }}
       />
     </>
-  ) : null;
+  );
 };
 
 function getItemImageByType(

@@ -6,4 +6,3 @@ export * from './notification/notification-manager';
 export * from './notification/notification-list';
 export * from './destinations';
 export * from './main';
-export * from './modals';
