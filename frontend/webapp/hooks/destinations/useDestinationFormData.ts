@@ -130,7 +130,7 @@ function buildDestinationFieldData(parsedFields: Record<string, string>, fieldDe
     const found = fieldDetails?.find((field) => field.name === key);
 
     const { type } = safeJsonParse(found?.componentProperties, { type: '' });
-    const secret = type === 'password' ? new Array(value.length).fill('*').join('') : '';
+    const secret = type === 'password' ? new Array(value.length).fill('•').join('') : '';
 
     return {
       title: found?.displayName || key,
