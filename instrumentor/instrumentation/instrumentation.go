@@ -48,12 +48,12 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 			continue
 		}
 
-		otelSdk, found := defaultSdks[*containerLanguage]
+		otelSdk, found := defaultSdks[containerLanguage]
 		if !found {
-			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, *containerLanguage, container.Name), deviceApplied
+			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, containerLanguage, container.Name), deviceApplied
 		}
 
-		instrumentationDeviceName := common.InstrumentationDeviceName(*containerLanguage, otelSdk)
+		instrumentationDeviceName := common.InstrumentationDeviceName(containerLanguage, otelSdk)
 
 		if container.Resources.Limits == nil {
 			container.Resources.Limits = make(map[corev1.ResourceName]resource.Quantity)
@@ -62,7 +62,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 
 		deviceApplied = true
 
-		err = patchEnvVarsForContainer(runtimeDetails, &container, &otelSdk, *containerLanguage, manifestEnvOriginal)
+		err = patchEnvVarsForContainer(runtimeDetails, &container, &otelSdk, containerLanguage, manifestEnvOriginal)
 		if err != nil {
 			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied
 		}
