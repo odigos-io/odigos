@@ -35,7 +35,7 @@ export function useKeyDown(
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [key, active, callback]);
+  }, [key, active, withAltKey, withCtrlKey, withShiftKey, withMetaKey, callback]);
 
   return null;
 }
