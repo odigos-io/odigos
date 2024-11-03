@@ -190,7 +190,12 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 	}
 
 	// GraphQL handlers
-	gqlHandler := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+	gqlHandler := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
+		Resolvers: &graph.Resolver{
+			MetricsConsumer: odigosMetrics,
+		},
+	}))
+
 	r.POST("/graphql", func(c *gin.Context) {
 		gqlHandler.ServeHTTP(c.Writer, c.Request)
 	})

@@ -4,6 +4,7 @@ import { Text } from '../text';
 import ReactDOM from 'react-dom';
 import { useKeyDown } from '@/hooks';
 import styled from 'styled-components';
+import { fade, Overlay } from '@/styles';
 
 interface ModalProps {
   isOpen: boolean;
@@ -15,27 +16,20 @@ interface ModalProps {
   children: React.ReactNode;
 }
 
-const Overlay = styled.div`
+const ModalWrapper = styled.div<{ isOpen: ModalProps['isOpen'] }>`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(17, 17, 17, 0.8);
-  backdrop-filter: blur(1px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 1000;
-`;
-
-const ModalWrapper = styled.div`
-  background: ${({ theme }) => theme.colors.translucent_bg};
-  border-radius: 40px;
+  width: fit-content;
   max-height: 84vh;
+  background: ${({ theme }) => theme.colors.translucent_bg};
   border: ${({ theme }) => `1px solid ${theme.colors.border}`};
+  border-radius: 40px;
   box-shadow: 0px 1px 1px 0px rgba(17, 17, 17, 0.8), 0px 2px 2px 0px rgba(17, 17, 17, 0.8), 0px 5px 5px 0px rgba(17, 17, 17, 0.8),
     0px 10px 10px 0px rgba(17, 17, 17, 0.8), 0px 0px 8px 0px rgba(17, 17, 17, 0.8);
+  animation: ${({ isOpen }) => (isOpen ? fade.in['center'] : fade.out['center'])} 0.3s ease;
 `;
 
 const ModalHeader = styled.div`
@@ -96,8 +90,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, header, onClose, children, action
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
-    <Overlay>
-      <ModalWrapper>
+    <>
+      <Overlay hidden={!isOpen} onClick={onClose} />
+      <ModalWrapper isOpen={isOpen}>
         {header && (
           <ModalHeader>
             <ModalCloseButton onClick={onClose}>
@@ -112,7 +107,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, header, onClose, children, action
         )}
         <ModalContent>{children}</ModalContent>
       </ModalWrapper>
-    </Overlay>,
+    </>,
     document.body
   );
 };

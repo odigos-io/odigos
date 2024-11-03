@@ -24,29 +24,12 @@ export const UPDATE_DESTINATION = gql`
   mutation UpdateDestination($id: ID!, $destination: DestinationInput!) {
     updateDestination(id: $id, destination: $destination) {
       id
-      name
-      exportedSignals {
-        traces
-        metrics
-        logs
-      }
-      fields
-      destinationType {
-        type
-        displayName
-        imageUrl
-        supportedSignals {
-          traces {
-            supported
-          }
-          metrics {
-            supported
-          }
-          logs {
-            supported
-          }
-        }
-      }
     }
+  }
+`;
+
+export const DELETE_DESTINATION = gql`
+  mutation DeleteDestination($id: ID!) {
+    deleteDestination(id: $id)
   }
 `;

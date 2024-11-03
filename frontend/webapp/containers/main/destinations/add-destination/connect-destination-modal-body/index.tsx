@@ -9,19 +9,8 @@ import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { Body, Container, SideMenuWrapper } from '../styled';
 import { Divider, SectionTitle } from '@/reuseable-components';
 import { ConnectionNotification } from './connection-notification';
-import {
-  useConnectDestinationForm,
-  useConnectEnv,
-  useDestinationFormData,
-  useEditDestinationFormHandlers,
-} from '@/hooks';
-import {
-  StepProps,
-  DestinationInput,
-  DestinationTypeItem,
-  DestinationDetailsResponse,
-  ConfiguredDestination,
-} from '@/types';
+import { useComputePlatform, useConnectDestinationForm, useConnectEnv, useDestinationFormData, useEditDestinationFormHandlers } from '@/hooks';
+import { StepProps, DestinationInput, DestinationTypeItem, DestinationDetailsResponse, ConfiguredDestination } from '@/types';
 
 const SIDE_MENU_DATA: StepProps[] = [
   {
@@ -42,38 +31,24 @@ interface ConnectDestinationModalBodyProps {
   onFormValidChange: (isValid: boolean) => void;
 }
 
-export function ConnectDestinationModalBody({
-  destination,
-  onSubmitRef,
-  onFormValidChange,
-}: ConnectDestinationModalBodyProps) {
+export function ConnectDestinationModalBody({ destination, onSubmitRef, onFormValidChange }: ConnectDestinationModalBodyProps) {
   const [destinationName, setDestinationName] = useState<string>('');
   const [showConnectionError, setShowConnectionError] = useState(false);
 
-  const {
-    dynamicFields,
-    exportedSignals,
-    setDynamicFields,
-    setExportedSignals,
-  } = useDestinationFormData();
+  const { dynamicFields, exportedSignals, setDynamicFields, setExportedSignals } = useDestinationFormData();
 
   const { connectEnv } = useConnectEnv();
+  const { refetch } = useComputePlatform();
   const { buildFormDynamicFields } = useConnectDestinationForm();
 
-  const { handleDynamicFieldChange, handleSignalChange } =
-    useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
+  const { handleDynamicFieldChange, handleSignalChange } = useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
 
-  const addConfiguredDestination = useAppStore(
-    ({ addConfiguredDestination }) => addConfiguredDestination
-  );
+  const addConfiguredDestination = useAppStore(({ addConfiguredDestination }) => addConfiguredDestination);
 
-  const { data } = useQuery<DestinationDetailsResponse>(
-    GET_DESTINATION_TYPE_DETAILS,
-    {
-      variables: { type: destination?.type },
-      skip: !destination,
-    }
-  );
+  const { data } = useQuery<DestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
+    variables: { type: destination?.type },
+    skip: !destination,
+  });
 
   useLayoutEffect(() => {
     if (!destination) return;
@@ -109,9 +84,7 @@ export function ConnectDestinationModalBody({
   }, [dynamicFields, destinationName, exportedSignals]);
 
   useEffect(() => {
-    const isFormValid = dynamicFields.every((field) =>
-      field.required ? field.value : true
-    );
+    const isFormValid = dynamicFields.every((field) => (field.required ? field.value : true));
     onFormValidChange(isFormValid);
   }, [dynamicFields]);
 
@@ -131,9 +104,7 @@ export function ConnectDestinationModalBody({
     handleDynamicFieldChange(name, value);
   }
   function processFieldValue(field) {
-    return field.componentType === INPUT_TYPES.DROPDOWN
-      ? field.value.value
-      : field.value;
+    return field.componentType === INPUT_TYPES.DROPDOWN ? field.value.value : field.value;
   }
 
   function processFormFields() {
@@ -185,17 +156,16 @@ export function ConnectDestinationModalBody({
 
     try {
       // Await connection and store the configured destination if successful
-      await connectEnv(body, storeConfiguredDestination);
+      // await connectEnv(body, storeConfiguredDestination);
+      await connectEnv(body, refetch);
     } catch (error) {
       console.error('Failed to submit destination configuration:', error);
       // Handle error (e.g., show notification or alert)
     }
   }
 
-  if (!destination) return null;
-
   const actionButton = useMemo(() => {
-    if (destination.testConnectionSupported) {
+    if (!!destination?.testConnectionSupported) {
       return (
         <TestConnection
           onError={() => {
@@ -212,13 +182,9 @@ export function ConnectDestinationModalBody({
       );
     }
     return null;
-  }, [
-    destination,
-    destinationName,
-    exportedSignals,
-    processFormFields,
-    onFormValidChange,
-  ]);
+  }, [destination, destinationName, exportedSignals, processFormFields, onFormValidChange]);
+
+  if (!destination) return null;
 
   return (
     <Container>
@@ -227,16 +193,9 @@ export function ConnectDestinationModalBody({
       </SideMenuWrapper>
 
       <Body>
-        <SectionTitle
-          title="Create connection"
-          description="Connect selected destination with Odigos."
-          actionButton={actionButton}
-        />
-        <ConnectionNotification
-          showConnectionError={showConnectionError}
-          destination={destination}
-        />
-        <Divider margin="24px 0" />
+        <SectionTitle title='Create connection' description='Connect selected destination with Odigos.' actionButton={actionButton} />
+        <ConnectionNotification showConnectionError={showConnectionError} destination={destination} />
+        <Divider margin='24px 0' />
         <FormContainer
           monitors={monitors}
           dynamicFields={dynamicFields}

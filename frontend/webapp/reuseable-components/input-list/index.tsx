@@ -31,7 +31,8 @@ const InputRow = styled.div`
 const DeleteButton = styled.button`
   background: none;
   border: none;
-  cursor: pointer;
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
 `;
 
 const AddButton = styled(Button)<{ disabled: boolean }>`
@@ -78,11 +79,7 @@ const InputList: React.FC<InputListProps> = ({ initialValues = INITIAL, value = 
   }, [inputs, onChange]);
 
   const handleAddInput = () => {
-    setInputs((prev) => {
-      const payload = [...prev];
-      payload.push('');
-      return payload;
-    });
+    setInputs((prev) => [...prev, '']);
   };
 
   const handleDeleteInput = (idx: number) => {
@@ -99,15 +96,16 @@ const InputList: React.FC<InputListProps> = ({ initialValues = INITIAL, value = 
 
   // Check if any input field is empty
   const isAddButtonDisabled = inputs.some((input) => input.trim() === '');
+  const isDelButtonDisabled = inputs.length <= 1;
 
   return (
     <Container>
       <FieldLabel title={title} required={required} tooltip={tooltip} />
 
-      {inputs.map((value, index) => (
-        <InputRow key={index}>
-          <Input value={value} onChange={(e) => handleInputChange(e.target.value, index)} />
-          <DeleteButton onClick={() => handleDeleteInput(index)}>
+      {inputs.map((val, idx) => (
+        <InputRow key={`input-list-${idx}`}>
+          <Input value={val} onChange={(e) => handleInputChange(e.target.value, idx)} autoFocus={inputs.length > 1 && idx === inputs.length - 1} />
+          <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteInput(idx)}>
             <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
           </DeleteButton>
         </InputRow>

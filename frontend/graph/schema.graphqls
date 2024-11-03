@@ -425,12 +425,32 @@ input ActionInput {
   details: String!
 }
 
+type OverviewMetricsResponse {
+  sources: [SingleSourceMetricsResponse!]!
+  destinations: [SingleDestinationMetricsResponse!]!
+}
+
+type SingleSourceMetricsResponse {
+  namespace: String!
+  kind: String!
+  name: String!
+  totalDataSent: Int!
+  throughput: Int!
+}
+
+type SingleDestinationMetricsResponse {
+  id: String!
+  totalDataSent: Int!
+  throughput: Int!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
   destinationTypes: GetDestinationTypesResponse
   destinationTypeDetails(type: String!): GetDestinationDetailsResponse
   potentialDestinations: [DestinationDetails!]!
+  getOverviewMetrics: OverviewMetricsResponse!
 }
 
 type Mutation {
@@ -448,7 +468,7 @@ type Mutation {
     patchSourceRequest: PatchSourceRequestInput!
   ): Boolean!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
-
+  deleteDestination(id: ID!): Boolean!
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
   deleteAction(id: ID!, actionType: String!): Boolean!
