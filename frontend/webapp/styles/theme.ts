@@ -1,4 +1,3 @@
-import { drop } from 'cypress/types/lodash';
 import { DefaultTheme } from 'styled-components';
 
 // Define your color palette
