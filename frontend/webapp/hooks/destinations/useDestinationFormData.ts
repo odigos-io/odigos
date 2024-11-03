@@ -90,8 +90,6 @@ export function useDestinationFormData() {
   }, [destinationFields, destination, memoizedBuildFormDynamicFields]);
 
   const cardData = useMemo(() => {
-    console.log('test', dynamicFields, destinationFields);
-
     if (shouldSkip || !isActualDestination(destination?.item) || !destinationFields) {
       return [{ title: 'Error', value: 'No destination selected or data missing' }];
     }
