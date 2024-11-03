@@ -31,15 +31,15 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
     params?.onSuccess?.();
   };
 
-  const [createAction, cState] = useMutation(CREATE_ACTION, {
+  const [createAction, cState] = useMutation<{ createAction: { id: string } }>(CREATE_ACTION, {
     onError: (error) => handleError('Create Action', error.message),
     onCompleted: () => handleComplete('Create Action', 'successfully created'),
   });
-  const [updateAction, uState] = useMutation(UPDATE_ACTION, {
+  const [updateAction, uState] = useMutation<{ updateAction: { id: string } }>(UPDATE_ACTION, {
     onError: (error) => handleError('Update Action', error.message),
     onCompleted: () => handleComplete('Update Action', 'successfully updated'),
   });
-  const [deleteAction, dState] = useMutation(DELETE_ACTION, {
+  const [deleteAction, dState] = useMutation<{ deleteAction: boolean }>(DELETE_ACTION, {
     onError: (error) => handleError('Delete Action', error.message),
     onCompleted: () => handleComplete('Delete Action', 'successfully deleted'),
   });
