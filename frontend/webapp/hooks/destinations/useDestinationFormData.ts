@@ -4,7 +4,14 @@ import { useDrawerStore } from '@/store';
 import { useQuery } from '@apollo/client';
 import { useConnectDestinationForm } from '@/hooks';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
-import { DynamicField, ActualDestination, isActualDestination, DestinationDetailsResponse, SupportedDestinationSignals } from '@/types';
+import {
+  DynamicField,
+  ActualDestination,
+  isActualDestination,
+  DestinationDetailsResponse,
+  SupportedDestinationSignals,
+  DestinationDetailsField,
+} from '@/types';
 
 const DEFAULT_SUPPORTED_SIGNALS: SupportedDestinationSignals = {
   logs: { supported: false },
@@ -118,11 +125,18 @@ export function useDestinationFormData() {
   };
 }
 
-function buildDestinationFieldData(parsedFields: Record<string, string>, fieldDetails?: { name: string; displayName: string }[]) {
-  return Object.entries(parsedFields).map(([key, value]) => ({
-    title: fieldDetails?.find((field) => field.name === key)?.displayName || key,
-    value: value || 'N/A',
-  }));
+function buildDestinationFieldData(parsedFields: Record<string, string>, fieldDetails?: DestinationDetailsField[]) {
+  return Object.entries(parsedFields).map(([key, value]) => {
+    const found = fieldDetails?.find((field) => field.name === key);
+
+    const { type } = safeJsonParse(found?.componentProperties, { type: '' });
+    const secret = type === 'password' ? new Array(value.length).fill('•').join('') : '';
+
+    return {
+      title: found?.displayName || key,
+      value: secret || value || 'N/A',
+    };
+  });
 }
 
 function buildMonitorsList(exportedSignals: ActualDestination['exportedSignals']): string {
