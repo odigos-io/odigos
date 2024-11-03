@@ -26,11 +26,11 @@ const OptionalText = styled(Text)`
   opacity: 0.8;
 `;
 
-const FieldLabel = ({ title, required, tooltip }: { title?: string; required?: boolean; tooltip?: string }) => {
+const FieldLabel = ({ title, required, tooltip, style }: { title?: string; required?: boolean; tooltip?: string; style?: React.CSSProperties }) => {
   if (!title) return null;
 
   return (
-    <Wrapper>
+    <Wrapper style={style}>
       <Title>{title}</Title>
       {!required && <OptionalText>(optional)</OptionalText>}
       {tooltip && (
