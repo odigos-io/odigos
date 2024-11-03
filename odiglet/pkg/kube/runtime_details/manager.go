@@ -2,6 +2,7 @@ package runtime_details
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	k8sreconcile "github.com/odigos-io/odigos/k8sutils/pkg/reconcile"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -14,8 +15,9 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset) error {
 		For(&odigosv1.InstrumentationConfig{}).
 		Owns(&odigosv1.InstrumentedApplication{}).
 		Complete(&DeprecatedInstrumentationConfigReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
+			Client:      mgr.GetClient(),
+			Scheme:      mgr.GetScheme(),
+			timeTracker: k8sreconcile.NewTimeTracker(),
 		})
 	if err != nil {
 		return err
@@ -41,9 +43,10 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset) error {
 		For(&odigosv1.InstrumentationConfig{}).
 		WithEventFilter(&instrumentationConfigPredicate{}).
 		Complete(&InstrumentationConfigReconciler{
-			Client:    mgr.GetClient(),
-			Scheme:    mgr.GetScheme(),
-			Clientset: clientset,
+			Client:      mgr.GetClient(),
+			Scheme:      mgr.GetScheme(),
+			Clientset:   clientset,
+			timeTracker: k8sreconcile.NewTimeTracker(),
 		})
 	if err != nil {
 		return err
