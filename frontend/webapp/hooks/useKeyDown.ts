@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 
-export function useKeyDown(key: Key | null, callback: (e: KeyboardEvent) => void) {
+export function useKeyDown(key: Key, { active }: { active: boolean }, callback: (e: KeyboardEvent) => void) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (key && key === e.key) {
+      if (active && key === e.key) {
         e.preventDefault();
         e.stopPropagation();
 
@@ -16,7 +16,7 @@ export function useKeyDown(key: Key | null, callback: (e: KeyboardEvent) => void
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [key, callback]);
+  }, [key, active, callback]);
 
   return null;
 }

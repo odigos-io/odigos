@@ -84,12 +84,9 @@ const CancelText = styled(Text)`
 `;
 
 const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, onClose, children, actionComponent }) => {
-  useKeyDown(isOpen ? 'Escape' : null, () => {
-    onClose();
-  });
-
   const ref = useRef(null);
   useOnClickOutside(ref, () => onClose());
+  useKeyDown('Escape', { active: isOpen }, () => onClose());
 
   if (!isOpen) return null;
 

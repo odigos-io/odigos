@@ -50,9 +50,8 @@ const FooterButton = styled(Button)`
 `;
 
 export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', description = '', approveButton, denyButton }) => {
-  useKeyDown(isOpen ? 'Enter' : null, () => {
-    approveButton.onClick();
-  });
+  useKeyDown('Enter', { active: isOpen }, () => approveButton.onClick());
+  useKeyDown('Escape', { active: isOpen }, () => denyButton.onClick());
 
   return (
     <Modal isOpen={isOpen} noOverlay={noOverlay} onClose={denyButton.onClick}>

@@ -65,7 +65,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({
 
   return (
     <>
-      <Drawer isOpen onClose={closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen}>
+      <Drawer isOpen onClose={closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen && !isCancelModalOpen}>
         <DrawerContent>
           <DrawerHeader
             ref={titleRef}
