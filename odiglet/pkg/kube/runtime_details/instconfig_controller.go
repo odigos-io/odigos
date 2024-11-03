@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
-	k8sreconcile "github.com/odigos-io/odigos/k8sutils/pkg/reconcile"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -26,63 +24,39 @@ import (
 // Deprecated: the new runtime inspection logic is found in odiglet/pkg/kube/runtime_details/instrumentationconfigs_controller.go
 type DeprecatedInstrumentationConfigReconciler struct {
 	client.Client
-	Scheme      *runtime.Scheme
-	timeTracker *k8sreconcile.TimeTracker
+	Scheme *runtime.Scheme
 }
 
 func (i *DeprecatedInstrumentationConfigReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := log.FromContext(ctx)
-
-	i.timeTracker.Start(request.NamespacedName)
 
 	var instConfig odigosv1.InstrumentationConfig
 	err := i.Get(ctx, request.NamespacedName, &instConfig)
 	if err != nil {
 		if client.IgnoreNotFound(err) != nil {
 			logger.Error(err, "Failed to get InstrumentationConfig")
-			i.timeTracker.Clear(request.NamespacedName)
 			return reconcile.Result{}, err
 		}
-		i.timeTracker.Clear(request.NamespacedName)
 		return reconcile.Result{}, nil
 	}
 
 	// This reconciler is only interested in InstrumentationConfig objects that have their RuntimeDetailsInvalidated field set to true
 	if !instConfig.Spec.RuntimeDetailsInvalidated {
-		i.timeTracker.Clear(request.NamespacedName)
 		return reconcile.Result{}, nil
 	}
 
 	if len(instConfig.OwnerReferences) != 1 {
-		i.timeTracker.Clear(request.NamespacedName)
 		return reconcile.Result{}, fmt.Errorf("InstrumentationConfig %s/%s has %d owner references, expected 1", instConfig.Namespace, instConfig.Name, len(instConfig.OwnerReferences))
 	}
 
 	workload, labels, err := getWorkloadAndLabelsfromOwner(ctx, i.Client, instConfig.Namespace, instConfig.OwnerReferences[0])
 	if err != nil {
 		logger.Error(err, "Failed to get workload and labels from owner")
-		i.timeTracker.Clear(request.NamespacedName)
 		return reconcile.Result{}, err
 	}
 	err = inspectRuntimesOfRunningPods(ctx, &logger, labels, i.Client, i.Scheme, workload)
 	if err != nil {
-		// If no pods are found, requeue the request. This can happen because not AllContainersReady for the workload
-		if ignoreNoPodsFoundError(err) == nil {
-
-			if i.timeTracker.ShouldContinue(request.NamespacedName) {
-				return reconcile.Result{RequeueAfter: consts.DefaultRequeueAfter}, ignoreNoPodsFoundError(err)
-			}
-			logger.Info("Time limit reached waiting for pods",
-				"namespace", request.Namespace,
-				"name", request.Name,
-				"timeLimit", k8sreconcile.MaxReconcileTime)
-
-			i.timeTracker.Clear(request.NamespacedName)
-			return reconcile.Result{}, nil
-		}
-
-		i.timeTracker.Clear(request.NamespacedName)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, ignoreNoPodsFoundError(err)
 	}
 
 	// Patch RuntimeDetailsInvalidated to false after runtime details have been recalculated
@@ -90,8 +64,6 @@ func (i *DeprecatedInstrumentationConfigReconciler) Reconcile(ctx context.Contex
 	updated.Spec.RuntimeDetailsInvalidated = false
 	patch := client.MergeFrom(&instConfig)
 	err = i.Patch(ctx, updated, patch)
-
-	i.timeTracker.Clear(request.NamespacedName)
 	return reconcile.Result{}, err
 }
 
