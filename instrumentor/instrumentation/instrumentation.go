@@ -37,15 +37,10 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 	var modifiedContainers []corev1.Container
 	for _, container := range original.Spec.Containers {
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
-		if containerLanguage == nil || *containerLanguage == common.UnknownProgrammingLanguage || *containerLanguage == common.IgnoredProgrammingLanguage || *containerLanguage == common.NginxProgrammingLanguage {
+		if containerLanguage == common.UnknownProgrammingLanguage || containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.NginxProgrammingLanguage {
 			// always patch the env vars, even if the language is unknown or ignored.
 			// this is necessary to sync the existing envs with the missing language if changed for any reason.
-			// containerLanguage should not be nil, but if it somehow is, treat it as unknown.
-			if containerLanguage == nil {
-				var unknownProgrammingLanguage common.ProgrammingLanguage = common.UnknownProgrammingLanguage
-				containerLanguage = &unknownProgrammingLanguage
-			}
-			err = patchEnvVarsForContainer(runtimeDetails, &container, nil, *containerLanguage, manifestEnvOriginal)
+			err = patchEnvVarsForContainer(runtimeDetails, &container, nil, containerLanguage, manifestEnvOriginal)
 			if err != nil {
 				return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied
 			}
@@ -135,14 +130,14 @@ func RevertInstrumentationDevices(original *corev1.PodTemplateSpec) {
 	}
 }
 
-func getLanguageOfContainer(instrumentation *odigosv1.InstrumentedApplication, containerName string) *common.ProgrammingLanguage {
+func getLanguageOfContainer(instrumentation *odigosv1.InstrumentedApplication, containerName string) common.ProgrammingLanguage {
 	for _, l := range instrumentation.Spec.RuntimeDetails {
 		if l.ContainerName == containerName {
-			return &l.Language
+			return l.Language
 		}
 	}
 
-	return nil
+	return common.UnknownProgrammingLanguage
 }
 
 // getEnvVarsOfContainer returns the env vars which are defined for the given container and are used for instrumentation purposes.
