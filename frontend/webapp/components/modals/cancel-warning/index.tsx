@@ -28,4 +28,4 @@ const CancelWarning: React.FC<Props> = ({ isOpen, name, onApprove, onDeny }) => 
   );
 };
 
-export default CancelWarning;
+export { CancelWarning };

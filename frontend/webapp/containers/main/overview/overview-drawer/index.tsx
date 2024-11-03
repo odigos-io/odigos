@@ -3,9 +3,8 @@ import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import DrawerFooter from './drawer-footer';
 import { Drawer } from '@/reuseable-components';
-import DeleteWarning from '@/components/modals/delete-warning';
-import CancelWarning from '@/components/modals/cancel-warning';
 import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
+import { CancelWarning, DeleteWarning } from '@/components/modals';
 
 const DRAWER_WIDTH = '640px';
 

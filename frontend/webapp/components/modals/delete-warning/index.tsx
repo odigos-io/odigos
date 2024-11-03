@@ -28,4 +28,4 @@ const DeleteWarning: React.FC<Props> = ({ isOpen, name, onApprove, onDeny }) => 
   );
 };
 
-export default DeleteWarning;
+export { DeleteWarning };
