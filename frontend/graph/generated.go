@@ -252,6 +252,7 @@ type ComplexityRoot struct {
 		CreateInstrumentationRule    func(childComplexity int, instrumentationRule model.InstrumentationRuleInput) int
 		CreateNewDestination         func(childComplexity int, destination model.DestinationInput) int
 		DeleteAction                 func(childComplexity int, id string, actionType string) int
+		DeleteDestination            func(childComplexity int, id string) int
 		DeleteInstrumentationRule    func(childComplexity int, ruleID string) int
 		PersistK8sNamespace          func(childComplexity int, namespace model.PersistNamespaceItemInput) int
 		PersistK8sSources            func(childComplexity int, namespace string, sources []*model.PersistNamespaceSourceInput) int
@@ -361,6 +362,7 @@ type MutationResolver interface {
 	TestConnectionForDestination(ctx context.Context, destination model.DestinationInput) (*model.TestConnectionResponse, error)
 	UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error)
 	UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error)
+	DeleteDestination(ctx context.Context, id string) (bool, error)
 	CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error)
 	UpdateAction(ctx context.Context, id string, action model.ActionInput) (model.Action, error)
 	DeleteAction(ctx context.Context, id string, actionType string) (bool, error)
@@ -1249,6 +1251,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteAction(childComplexity, args["id"].(string), args["actionType"].(string)), true
 
+	case "Mutation.deleteDestination":
+		if e.complexity.Mutation.DeleteDestination == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteDestination_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteDestination(childComplexity, args["id"].(string)), true
+
 	case "Mutation.deleteInstrumentationRule":
 		if e.complexity.Mutation.DeleteInstrumentationRule == nil {
 			break
@@ -1929,6 +1943,21 @@ func (ec *executionContext) field_Mutation_deleteAction_args(ctx context.Context
 		}
 	}
 	args["actionType"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteDestination_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -7678,6 +7707,61 @@ func (ec *executionContext) fieldContext_Mutation_updateDestination(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateDestination_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteDestination(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteDestination(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteDestination(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteDestination(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteDestination_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -14466,6 +14550,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateDestination":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateDestination(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteDestination":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteDestination(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
