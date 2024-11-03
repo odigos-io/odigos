@@ -83,6 +83,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({
 
       <WarningModal
         isOpen={isDeleteModalOpen}
+        noOverlay
         title={`Delete ${title}`}
         description={`Are you sure you want to delete this ${selectedItem?.type}?`}
         approveButton={{
@@ -101,6 +102,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({
 
       <WarningModal
         isOpen={isCancelModalOpen}
+        noOverlay
         title='Cancel edit mode'
         description='Are you sure you want to cancel?'
         approveButton={{

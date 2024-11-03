@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button, ButtonProps, Modal, Text } from '@/reuseable-components';
 import styled from 'styled-components';
+import { Button, ButtonProps, Modal, Text } from '@/reuseable-components';
 
 interface ButtonParams {
   text: string;
@@ -10,6 +10,7 @@ interface ButtonParams {
 
 interface Props {
   isOpen: boolean;
+  noOverlay?: boolean;
   title: string;
   description: string;
   approveButton: ButtonParams;
@@ -47,9 +48,9 @@ const FooterButton = styled(Button)`
   width: 224px;
 `;
 
-export const WarningModal: React.FC<Props> = ({ isOpen, title = '', description = '', approveButton, denyButton }) => {
+export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', description = '', approveButton, denyButton }) => {
   return (
-    <Modal isOpen={isOpen} onClose={denyButton.onClick}>
+    <Modal isOpen={isOpen} noOverlay={noOverlay} onClose={denyButton.onClick}>
       <Container>
         <Title>{title}</Title>
 

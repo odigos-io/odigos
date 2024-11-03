@@ -8,6 +8,7 @@ import { fade, Overlay } from '@/styles';
 
 interface ModalProps {
   isOpen: boolean;
+  noOverlay?: boolean;
   header?: {
     title: string;
   };
@@ -82,7 +83,7 @@ const CancelText = styled(Text)`
   cursor: pointer;
 `;
 
-const Modal: React.FC<ModalProps> = ({ isOpen, header, onClose, children, actionComponent }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, onClose, children, actionComponent }) => {
   useKeyDown(isOpen ? 'Escape' : null, () => {
     onClose();
   });
@@ -91,7 +92,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, header, onClose, children, action
 
   return ReactDOM.createPortal(
     <>
-      <Overlay hidden={!isOpen} onClick={onClose} />
+      {!noOverlay ? <Overlay hidden={!isOpen} onClick={onClose} /> : null}
       <ModalWrapper isOpen={isOpen}>
         {header && (
           <ModalHeader>
