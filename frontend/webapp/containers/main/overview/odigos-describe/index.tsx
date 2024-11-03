@@ -52,25 +52,27 @@ export const OdigosDescriptionDrawer: React.FC<
         )}
       </IconWrapper>
 
-      <Drawer
-        isOpen={isOpen}
-        onClose={() => setDrawerOpen(false)}
-        position="right"
-        width="fit-content"
-      >
-        {isOdigosLoading ? (
-          <LoadingMessage>Loading description...</LoadingMessage>
-        ) : (
-          <DescriptionContent>
-            {odigosDescription
-              ? formatOdigosDescription(
-                  odigosDescription,
-                  refetchOdigosDescription
-                )
-              : 'No description available.'}
-          </DescriptionContent>
-        )}
-      </Drawer>
+      {isOpen && (
+        <Drawer
+          isOpen={isOpen}
+          onClose={() => setDrawerOpen(false)}
+          position="right"
+          width="fit-content"
+        >
+          {isOdigosLoading ? (
+            <LoadingMessage>Loading description...</LoadingMessage>
+          ) : (
+            <DescriptionContent>
+              {odigosDescription
+                ? formatOdigosDescription(
+                    odigosDescription,
+                    refetchOdigosDescription
+                  )
+                : 'No description available.'}
+            </DescriptionContent>
+          )}
+        </Drawer>
+      )}
     </>
   );
 };

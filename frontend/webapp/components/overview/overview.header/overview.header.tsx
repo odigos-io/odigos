@@ -54,7 +54,7 @@ export function OverviewHeader({ title, onBackClick }: OverviewHeaderProps) {
       </HeaderTop>
       <div style={{ display: 'flex', gap: 8 }}>
         {!onBackClick && <NotificationList />}
-        <OdigosDescriptionDrawer />
+        {title === 'Overview' && <OdigosDescriptionDrawer />}
       </div>
     </OverviewHeaderContainer>
   );
