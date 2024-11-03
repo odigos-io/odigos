@@ -31,15 +31,15 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
     params?.onSuccess?.();
   };
 
-  const [createInstrumentationRule, cState] = useMutation(CREATE_INSTRUMENTATION_RULE, {
+  const [createInstrumentationRule, cState] = useMutation<{ createInstrumentationRule: { ruleId: string } }>(CREATE_INSTRUMENTATION_RULE, {
     onError: (error) => handleError('Create Rule', error.message),
     onCompleted: () => handleComplete('Create Rule', 'successfully created'),
   });
-  const [updateInstrumentationRule, uState] = useMutation(UPDATE_INSTRUMENTATION_RULE, {
+  const [updateInstrumentationRule, uState] = useMutation<{ updateInstrumentationRule: { ruleId: string } }>(UPDATE_INSTRUMENTATION_RULE, {
     onError: (error) => handleError('Update Rule', error.message),
     onCompleted: () => handleComplete('Update Rule', 'successfully updated'),
   });
-  const [deleteInstrumentationRule, dState] = useMutation(DELETE_INSTRUMENTATION_RULE, {
+  const [deleteInstrumentationRule, dState] = useMutation<{ deleteInstrumentationRule: boolean }>(DELETE_INSTRUMENTATION_RULE, {
     onError: (error) => handleError('Delete Rule', error.message),
     onCompleted: () => handleComplete('Delete Rule', 'successfully deleted'),
   });
