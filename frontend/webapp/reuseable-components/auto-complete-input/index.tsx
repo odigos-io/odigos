@@ -1,7 +1,7 @@
-import React, { useState, ChangeEvent, KeyboardEvent, FC } from 'react';
-import styled from 'styled-components';
 import Image from 'next/image';
 import { Text } from '../text';
+import styled from 'styled-components';
+import React, { useState, ChangeEvent, KeyboardEvent, FC } from 'react';
 
 export interface Option {
   id: string;
@@ -14,7 +14,10 @@ export interface Option {
 interface AutocompleteInputProps {
   options: Option[];
   placeholder?: string;
-  onOptionSelect?: (option: Option) => void;
+  selectedOption?: Option;
+  onOptionSelect?: (option?: Option) => void;
+  style?: React.CSSProperties;
+  disabled?: boolean;
 }
 
 const filterOptions = (optionsList: Option[], input: string): Option[] => {
@@ -31,30 +34,35 @@ const filterOptions = (optionsList: Option[], input: string): Option[] => {
   }, []);
 };
 
-const AutocompleteInput: FC<AutocompleteInputProps> = ({ options, placeholder = 'Type to search...', onOptionSelect }) => {
-  const [query, setQuery] = useState('');
+const AutocompleteInput: FC<AutocompleteInputProps> = ({
+  placeholder = 'Type to search...',
+  options,
+  selectedOption,
+  onOptionSelect,
+  style,
+  disabled,
+}) => {
+  const [query, setQuery] = useState(selectedOption?.label || '');
+  const [icon, setIcon] = useState(selectedOption?.icon || '');
   const [filteredOptions, setFilteredOptions] = useState<Option[]>(filterOptions(options, ''));
   const [showOptions, setShowOptions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
+    const filtered = filterOptions(options, input);
+    const matched = filtered.length === 1 && filtered[0].label === input ? filtered[0] : undefined;
+
     setQuery(input);
-    if (input) {
-      const filtered = filterOptions(options, input);
-      setFilteredOptions(filtered);
-      setShowOptions(true);
-    } else {
-      setShowOptions(false);
-    }
+    setFilteredOptions(filtered);
+    handleOptionClick(matched);
   };
 
-  const handleOptionClick = (option: Option) => {
-    setQuery(option.label);
-    setShowOptions(false);
-    if (onOptionSelect) {
-      onOptionSelect(option);
-    }
+  const handleOptionClick = (option?: Option) => {
+    if (!!option) setQuery(option.label);
+    setIcon(option?.icon || '');
+    setShowOptions(!option);
+    onOptionSelect?.(option);
   };
 
   const flattenOptions = (options: Option[]): Option[] => {
@@ -81,18 +89,21 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ options, placeholder = 
   };
 
   return (
-    <AutocompleteContainer>
+    <AutocompleteContainer style={style}>
       <InputWrapper>
+        {icon && <Icon src={icon} />}
         <StyledInput
           type='text'
           value={query}
           placeholder={placeholder}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          onBlur={() => setShowOptions(false)}
-          onFocus={() => setShowOptions(true)}
+          disabled={disabled}
+          onBlur={() => !disabled && setShowOptions(false)}
+          onFocus={() => !disabled && setShowOptions(true)}
         />
       </InputWrapper>
+
       {showOptions && (
         <OptionsList>
           {filteredOptions.map((option, index) => (
@@ -107,15 +118,16 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ options, placeholder = 
 interface OptionItemProps {
   option: Option;
   isActive: boolean;
+  renderIcon?: boolean;
   onClick: (option: Option) => void;
 }
 
-const OptionItem: FC<OptionItemProps> = ({ option, isActive, onClick }) => {
+const OptionItem: FC<OptionItemProps> = ({ option, isActive, renderIcon = true, onClick }) => {
   const hasSubItems = !!option.items && option.items.length > 0;
 
   return (
     <OptionItemContainer isActive={isActive} isList={hasSubItems} onMouseDown={() => (hasSubItems ? null : onClick(option))}>
-      {option.icon && <Image width={16} height={16} src={option.icon} alt={option.label} />}
+      {option.icon && renderIcon && <Icon src={option.icon} alt={option.label} />}
 
       <OptionContent>
         <OptionLabelWrapper>
@@ -128,7 +140,7 @@ const OptionItem: FC<OptionItemProps> = ({ option, isActive, onClick }) => {
             {option.items?.map((subOption) => (
               <SubOptionContainer key={subOption.id}>
                 <VerticalLine />
-                <OptionItem option={subOption} isActive={false} onClick={onClick} />
+                <OptionItem option={subOption} renderIcon={false} isActive={false} onClick={onClick} />
               </SubOptionContainer>
             ))}
           </SubOptionsList>
@@ -136,6 +148,10 @@ const OptionItem: FC<OptionItemProps> = ({ option, isActive, onClick }) => {
       </OptionContent>
     </OptionItemContainer>
   );
+};
+
+const Icon = ({ src, alt = '' }: { src: string; alt?: string }) => {
+  return <Image width={16} height={16} src={src} alt={alt} />;
 };
 
 export { AutocompleteInput };
@@ -151,8 +167,8 @@ const InputWrapper = styled.div`
   display: flex;
   align-items: center;
   height: 36px;
-  gap: 12px;
-  padding: 0 8px;
+  gap: 8px;
+  padding-left: 12px;
   transition: border-color 0.3s;
   border-radius: 32px;
   border: 1px solid rgba(249, 249, 249, 0.24);
@@ -184,7 +200,6 @@ const StyledInput = styled.input`
   }
 
   &:disabled {
-    background-color: #555;
     cursor: not-allowed;
   }
 `;
@@ -194,7 +209,7 @@ const OptionsList = styled.ul`
   max-height: 348px;
   top: 32px;
   border-radius: 24px;
-  width: calc(100% - 16px);
+  width: calc(100% - 24px);
   overflow-y: auto;
   background-color: ${({ theme }) => theme.colors.dropdown_bg};
   border: 1px solid ${({ theme }) => theme.colors.border};
@@ -208,7 +223,7 @@ interface OptionItemContainerProps {
 }
 
 const OptionItemContainer = styled.li<OptionItemContainerProps>`
-  width: 100%;
+  width: calc(100% - 24px);
   padding: 8px 12px;
   cursor: ${({ isList }) => (isList ? 'default' : 'pointer')};
   border-radius: 24px;

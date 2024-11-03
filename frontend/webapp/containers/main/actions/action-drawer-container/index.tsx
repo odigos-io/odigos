@@ -2,7 +2,7 @@ import React, { forwardRef, useImperativeHandle, useMemo } from 'react';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
-import { useActionFormData } from '@/hooks';
+import { useActionFormData, useNotify } from '@/hooks';
 import { ChooseActionBody } from '../choose-action-body';
 import type { ActionDataParsed, ActionInput } from '@/types';
 import buildCardFromActionSpec from './build-card-from-action-spec';
@@ -17,6 +17,7 @@ interface Props {
 }
 
 const ActionDrawer = forwardRef<ActionDrawerHandle, Props>(({ isEditing }, ref) => {
+  const notify = useNotify();
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
 
@@ -48,7 +49,20 @@ const ActionDrawer = forwardRef<ActionDrawerHandle, Props>(({ isEditing }, ref) 
   }, [selectedItem, isEditing]);
 
   useImperativeHandle(ref, () => ({
-    getCurrentData: () => (validateForm() ? formData : null),
+    getCurrentData: () => {
+      if (validateForm()) {
+        return formData;
+      } else {
+        notify({
+          message: 'Required fields are missing!',
+          title: 'Update Action Error',
+          type: 'error',
+          target: 'notification',
+          crdType: 'notification',
+        });
+        return null;
+      }
+    },
   }));
 
   return isEditing && thisAction ? (
@@ -65,11 +79,10 @@ ActionDrawer.displayName = 'ActionDrawer';
 export { ActionDrawer };
 
 const FormContainer = styled.div`
-  display: flex;
   width: 100%;
-  flex-direction: column;
-  gap: 24px;
   height: 100%;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   padding-right: 16px;
   box-sizing: border-box;

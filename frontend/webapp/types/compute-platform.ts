@@ -1,6 +1,8 @@
 import { ActionData } from './actions';
-import { ActualDestination } from './destinations';
 import { K8sActualSource } from './sources';
+import { ActualDestination } from './destinations';
+import { InstrumentationRuleSpec } from './instrumentation-rules';
+
 export type K8sActualNamespace = {
   name: string;
   k8sActualSources?: K8sActualSource[];
@@ -15,6 +17,7 @@ type ComputePlatformData = {
   actions: ActionData[];
   k8sActualSources: K8sActualSource[];
   destinations: ActualDestination[];
+  instrumentationRules: InstrumentationRuleSpec[];
 };
 
 export type ComputePlatform = {

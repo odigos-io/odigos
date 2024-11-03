@@ -1,15 +1,18 @@
 import theme from '@/styles/theme';
-import { getActionIcon } from '@/utils';
+import { getActionIcon, INSTRUMENTATION_RULES } from '@/utils';
 import { Node, Edge } from 'react-flow-renderer';
+import { getRuleIcon } from '@/utils/functions';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 import {
   OVERVIEW_ENTITY_TYPES,
   OVERVIEW_NODE_TYPES,
   STATUSES,
+  type InstrumentationRuleSpec,
   type ActionData,
   type ActionItem,
   type ActualDestination,
   type K8sActualSource,
+  InstrumentationRuleType,
 } from '@/types';
 
 // Constants
@@ -40,12 +43,14 @@ const extractMonitors = (exportedSignals: Record<string, boolean>) =>
   Object.keys(exportedSignals).filter((signal) => exportedSignals[signal] === true);
 
 export const buildNodesAndEdges = ({
+  rules,
   sources,
   actions,
   destinations,
   columnWidth,
   containerWidth,
 }: {
+  rules: InstrumentationRuleSpec[];
   sources: K8sActualSource[];
   actions: ActionData[];
   destinations: ActualDestination[];
@@ -53,29 +58,60 @@ export const buildNodesAndEdges = ({
   containerWidth: number;
 }) => {
   // Calculate x positions for each column
-  const leftColumnX = 0;
-  const rightColumnX = containerWidth - columnWidth;
-  const centerColumnX = (containerWidth - columnWidth) / 2;
+  const columnPostions = {
+    rules: 0,
+    sources: (containerWidth - columnWidth) / 3,
+    actions: (containerWidth - columnWidth) / 1.5,
+    destinations: containerWidth - columnWidth,
+  };
+
+  // Build Rules Nodes
+  const ruleNodes: Node[] = [
+    createNode('header-rule', 'header', columnPostions['rules'], 0, {
+      icon: `${HEADER_ICON_PATH}rules.svg`,
+      title: 'Instrumentation Rules',
+      tagValue: rules.length,
+    }),
+    ...(!rules.length
+      ? [
+          createNode(`rule-0`, 'add', columnPostions['rules'], NODE_HEIGHT, {
+            type: OVERVIEW_NODE_TYPES.ADD_RULE,
+            title: 'ADD RULE',
+            subTitle: 'Add first rule to modify the OpenTelemetry data',
+            status: STATUSES.HEALTHY,
+          }),
+        ]
+      : rules.map((rule, index) =>
+          createNode(`rule-${index}`, 'base', columnPostions['rules'], NODE_HEIGHT * (index + 1), {
+            id: rule.ruleId,
+            type: OVERVIEW_ENTITY_TYPES.RULE,
+            status: STATUSES.HEALTHY,
+            title: rule.ruleName || rule.type,
+            subTitle: rule.type,
+            imageUri: getRuleIcon(rule.type),
+            isActive: !rule.disabled,
+          })
+        )),
+  ];
 
   // Build Source Nodes
-  const sourcesNode: Node[] = [
-    createNode('header-source', 'header', leftColumnX, 0, {
+  const sourceNodes: Node[] = [
+    createNode('header-source', 'header', columnPostions['sources'], 0, {
       icon: `${HEADER_ICON_PATH}sources.svg`,
       title: 'Sources',
       tagValue: sources.length,
     }),
     ...(!sources.length
       ? [
-          createNode(`source-0`, 'add', leftColumnX, NODE_HEIGHT, {
+          createNode(`source-0`, 'add', columnPostions['sources'], NODE_HEIGHT, {
             type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
             title: 'ADD SOURCE',
             subTitle: 'Add first source to collect OpenTelemetry data',
-            imageUri: '',
             status: STATUSES.HEALTHY,
           }),
         ]
       : sources.map((source, index) =>
-          createNode(`source-${index}`, 'base', leftColumnX, NODE_HEIGHT * (index + 1), {
+          createNode(`source-${index}`, 'base', columnPostions['sources'], NODE_HEIGHT * (index + 1), {
             type: OVERVIEW_ENTITY_TYPES.SOURCE,
             title: source.name + (source.reportedName ? ` (${source.reportedName})` : ''),
             subTitle: source.kind,
@@ -90,57 +126,26 @@ export const buildNodesAndEdges = ({
         )),
   ];
 
-  // Build Destination Nodes
-  const destinationNode: Node[] = [
-    createNode('header-destination', 'header', rightColumnX, 0, {
-      icon: `${HEADER_ICON_PATH}destinations.svg`,
-      title: 'Destinations',
-      tagValue: destinations.length,
-    }),
-    ...(!destinations.length
-      ? [
-          createNode(`destination-0`, 'add', rightColumnX, NODE_HEIGHT, {
-            type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
-            title: 'ADD DESTIONATION',
-            subTitle: 'Add first destination to monitor OpenTelemetry data',
-            imageUri: '',
-            status: STATUSES.HEALTHY,
-          }),
-        ]
-      : destinations.map((destination, index) =>
-          createNode(`destination-${index}`, 'base', rightColumnX, NODE_HEIGHT * (index + 1), {
-            type: OVERVIEW_ENTITY_TYPES.DESTINATION,
-            title: destination.name,
-            subTitle: destination.destinationType.displayName,
-            imageUri: destination.destinationType.imageUrl,
-            status: STATUSES.HEALTHY,
-            monitors: extractMonitors(destination.exportedSignals),
-            id: destination.id,
-          })
-        )),
-  ];
-
   // Build Action Nodes
-  const actionsNode: Node[] = [
-    createNode('header-action', 'header', centerColumnX, 0, {
+  const actionNodes: Node[] = [
+    createNode('header-action', 'header', columnPostions['actions'], 0, {
       icon: `${HEADER_ICON_PATH}actions.svg`,
       title: 'Actions',
       tagValue: actions.length,
     }),
     ...(!actions.length
       ? [
-          createNode(`action-0`, 'add', centerColumnX, NODE_HEIGHT, {
+          createNode(`action-0`, 'add', columnPostions['actions'], NODE_HEIGHT, {
             type: OVERVIEW_NODE_TYPES.ADD_ACTION,
             title: 'ADD ACTION',
             subTitle: 'Add first action to modify the OpenTelemetry data',
-            imageUri: '',
             status: STATUSES.HEALTHY,
           }),
         ]
       : actions.map((action, index) => {
           const actionSpec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
 
-          return createNode(`action-${index}`, 'base', centerColumnX, NODE_HEIGHT * (index + 1), {
+          return createNode(`action-${index}`, 'base', columnPostions['actions'], NODE_HEIGHT * (index + 1), {
             id: action.id,
             type: OVERVIEW_ENTITY_TYPES.ACTION,
             status: STATUSES.HEALTHY,
@@ -153,32 +158,60 @@ export const buildNodesAndEdges = ({
         })),
   ];
 
+  // Build Destination Nodes
+  const destinationNodes: Node[] = [
+    createNode('header-destination', 'header', columnPostions['destinations'], 0, {
+      icon: `${HEADER_ICON_PATH}destinations.svg`,
+      title: 'Destinations',
+      tagValue: destinations.length,
+    }),
+    ...(!destinations.length
+      ? [
+          createNode(`destination-0`, 'add', columnPostions['destinations'], NODE_HEIGHT, {
+            type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
+            title: 'ADD DESTIONATION',
+            subTitle: 'Add first destination to monitor OpenTelemetry data',
+            status: STATUSES.HEALTHY,
+          }),
+        ]
+      : destinations.map((destination, index) =>
+          createNode(`destination-${index}`, 'base', columnPostions['destinations'], NODE_HEIGHT * (index + 1), {
+            type: OVERVIEW_ENTITY_TYPES.DESTINATION,
+            title: destination.name,
+            subTitle: destination.destinationType.displayName,
+            imageUri: destination.destinationType.imageUrl,
+            status: STATUSES.HEALTHY,
+            monitors: extractMonitors(destination.exportedSignals),
+            id: destination.id,
+          })
+        )),
+  ];
+
   // Combine all nodes
-  const nodes = [...sourcesNode, ...destinationNode, ...actionsNode];
+  const nodes = [...ruleNodes, ...sourceNodes, ...actionNodes, ...destinationNodes];
 
   // Build edges - connecting sources to actions, and actions to destinations
   const edges: Edge[] = [];
 
   // Connect sources to actions
-  const sourceToActionEdges: Edge[] = sources.map((_, sourceIndex) => {
-    const actionIndex = actionsNode.length === 2 ? 0 : sourceIndex % actions.length;
-    return createEdge(`source-${sourceIndex}-to-action-${actionIndex}`, `source-${sourceIndex}`, `action-${actionIndex}`, false);
-  });
-  // Connect actions to destinations
-  const actionToDestinationEdges: Edge[] = actions.flatMap((_, actionIndex) => {
-    return destinations.map((_, destinationIndex) =>
-      createEdge(`action-${actionIndex}-to-destination-${destinationIndex}`, `action-${actionIndex}`, `destination-${destinationIndex}`)
-    );
-  });
-
-  if (actions.length === 0) {
-    for (let i = 0; i < destinations.length; i++) {
-      actionToDestinationEdges.push(createEdge(`action-0-to-destination-${i}`, `action-0`, `destination-${i}`, false));
-    }
+  if (!sources.length) {
+    edges.push(createEdge('source-0-to-action-0', 'source-0', 'action-0', false));
+  } else {
+    sources.forEach((_, sourceIndex) => {
+      const actionIndex = 0;
+      edges.push(createEdge(`source-${sourceIndex}-to-action-${actionIndex}`, `source-${sourceIndex}`, `action-${actionIndex}`, false));
+    });
   }
 
-  // Combine all edges
-  edges.push(...sourceToActionEdges, ...actionToDestinationEdges);
+  // Connect actions to destinations
+  if (!destinations.length) {
+    edges.push(createEdge('action-0-to-destination-0', 'action-0', 'destination-0'));
+  } else {
+    destinations.forEach((_, destinationIndex) => {
+      const actionIndex = !actions.length ? 0 : actions.length - 1;
+      edges.push(createEdge(`action-${actionIndex}-to-destination-${destinationIndex}`, `action-${actionIndex}`, `destination-${destinationIndex}`));
+    });
+  }
 
   return { nodes, edges };
 };

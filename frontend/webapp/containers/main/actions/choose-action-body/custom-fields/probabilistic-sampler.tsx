@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
 import { Input } from '@/reuseable-components';
-import { FieldTitle, FieldWrapper } from './styled';
 import type { ProbabilisticSamplerSpec } from '@/types';
 
 type Props = {
@@ -30,10 +29,15 @@ const ProbabilisticSampler: React.FC<Props> = ({ value, setValue }) => {
   };
 
   return (
-    <FieldWrapper>
-      <FieldTitle>Sampling percentage</FieldTitle>
-      <Input type='number' min={MIN} max={MAX} value={mappedValue} onChange={({ target: { value: v } }) => handleChange(v)} />
-    </FieldWrapper>
+    <Input
+      title='Sampling percentage'
+      required
+      type='number'
+      min={MIN}
+      max={MAX}
+      value={mappedValue}
+      onChange={({ target: { value: v } }) => handleChange(v)}
+    />
   );
 };
 

@@ -1,9 +1,10 @@
-import React, { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import theme from '@/styles/theme';
 import { useModalStore } from '@/store';
-import { AddActionModal } from '../../actions';
+import React, { useState, useRef } from 'react';
 import styled, { css } from 'styled-components';
+import { AddActionModal } from '../../actions';
+import { AddRuleModal } from '../../instrumentation-rules';
 import { useActualSources, useOnClickOutside } from '@/hooks';
 import { DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
@@ -29,7 +30,7 @@ const DropdownListContainer = styled.div`
   right: 0;
   top: 48px;
   border-radius: 24px;
-  width: 131px;
+  width: 200px;
   overflow-y: auto;
   background-color: ${({ theme }) => theme.colors.dropdown_bg};
   border: 1px solid ${({ theme }) => theme.colors.border};
@@ -62,6 +63,7 @@ const ButtonText = styled(Text)`
 
 // Default options for the dropdown
 const DEFAULT_OPTIONS: DropdownOption[] = [
+  { id: OVERVIEW_ENTITY_TYPES.RULE, value: 'Instrumentation Rule' },
   { id: OVERVIEW_ENTITY_TYPES.SOURCE, value: 'Source' },
   { id: OVERVIEW_ENTITY_TYPES.ACTION, value: 'Action' },
   { id: OVERVIEW_ENTITY_TYPES.DESTINATION, value: 'Destination' },
@@ -100,6 +102,7 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({ optio
         {isPolling ? <FadeLoader color={theme.colors.primary} /> : <Image src='/icons/common/plus-black.svg' width={16} height={16} alt='Add' />}
         <ButtonText size={14}>{placeholder}</ButtonText>
       </StyledButton>
+
       {isDropdownOpen && (
         <DropdownListContainer>
           {options.map((option) => (
@@ -111,14 +114,15 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({ optio
         </DropdownListContainer>
       )}
 
+      <AddRuleModal isModalOpen={currentModal === OVERVIEW_ENTITY_TYPES.RULE} handleCloseModal={handleCloseModal} />
       <AddSourceModal
         isOpen={currentModal === OVERVIEW_ENTITY_TYPES.SOURCE}
         onClose={handleCloseModal}
         createSourcesForNamespace={createSourcesForNamespace}
         persistNamespaceItems={persistNamespaceItems}
       />
-      <AddDestinationModal isModalOpen={currentModal === OVERVIEW_ENTITY_TYPES.DESTINATION} handleCloseModal={handleCloseModal} />
       <AddActionModal isModalOpen={currentModal === OVERVIEW_ENTITY_TYPES.ACTION} handleCloseModal={handleCloseModal} />
+      <AddDestinationModal isModalOpen={currentModal === OVERVIEW_ENTITY_TYPES.DESTINATION} handleCloseModal={handleCloseModal} />
     </Container>
   );
 };

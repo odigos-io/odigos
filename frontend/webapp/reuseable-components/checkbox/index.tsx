@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
-import { Tooltip } from '../tooltip';
 import Image from 'next/image';
 import { Text } from '../text';
+import { Tooltip } from '../tooltip';
+import styled from 'styled-components';
+import React, { useEffect, useState } from 'react';
+import theme from '@/styles/theme';
 
 interface CheckboxProps {
   title?: string;
@@ -24,26 +25,16 @@ const CheckboxWrapper = styled.div<{ isChecked: boolean; disabled?: boolean }>`
   width: 18px;
   height: 18px;
   border-radius: 6px;
-  border: ${({ isChecked }) =>
-    isChecked
-      ? '1px dashed transparent'
-      : '1px dashed rgba(249, 249, 249, 0.4)'};
+  border: ${({ isChecked }) => (isChecked ? '1px dashed transparent' : '1px dashed rgba(249, 249, 249, 0.4)')};
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: ${({ isChecked, theme }) =>
-    isChecked ? theme.colors.majestic_blue : 'transparent'};
+  background-color: ${({ isChecked, theme }) => (isChecked ? theme.colors.majestic_blue : 'transparent')};
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
   transition: border 0.3s, background-color 0.3s;
 `;
 
-const Checkbox: React.FC<CheckboxProps> = ({
-  title,
-  tooltip,
-  initialValue = false,
-  onChange,
-  disabled,
-}) => {
+const Checkbox: React.FC<CheckboxProps> = ({ title, tooltip, initialValue = false, onChange, disabled }) => {
   const [isChecked, setIsChecked] = useState(initialValue);
 
   useEffect(() => {
@@ -63,14 +54,16 @@ const Checkbox: React.FC<CheckboxProps> = ({
   return (
     <Container disabled={disabled} onClick={handleToggle}>
       <CheckboxWrapper isChecked={isChecked} disabled={disabled}>
-        {isChecked && (
-          <Image src="/icons/common/check.svg" alt="" width={12} height={12} />
-        )}
+        {isChecked && <Image src='/icons/common/check.svg' alt='' width={12} height={12} />}
       </CheckboxWrapper>
-      {title && <Text size={14}>{title}</Text>}
+      {title && (
+        <Text size={12} color={theme.text.grey}>
+          {title}
+        </Text>
+      )}
       {tooltip && (
         <Tooltip text={tooltip || ''}>
-          <Image src="/icons/common/info.svg" alt="" width={16} height={16} />
+          <Image src='/icons/common/info.svg' alt='' width={16} height={16} />
         </Tooltip>
       )}
     </Container>

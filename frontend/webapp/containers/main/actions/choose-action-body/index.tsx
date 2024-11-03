@@ -3,17 +3,11 @@ import styled from 'styled-components';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
 import { type ActionOption } from '../choose-action-modal/action-options';
-import { DocsButton, Input, Text, TextArea, Toggle, MonitoringCheckboxes } from '@/reuseable-components';
-
-const Description = styled(Text)`
-  color: ${({ theme }) => theme.text.grey};
-  line-height: 150%;
-  display: flex;
-`;
+import { DocsButton, Input, Text, TextArea, Toggle, MonitoringCheckboxes, SectionTitle } from '@/reuseable-components';
 
 const FieldWrapper = styled.div`
   width: 100%;
-  margin: 8px 0;
+  margin: 24px 0;
 `;
 
 const FieldTitle = styled(Text)`
@@ -42,10 +36,7 @@ const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ isUpdate, action
       )}
 
       {!isUpdate && (
-        <Description>
-          {action.docsDescription}
-          <DocsButton endpoint={action.docsEndpoint} />
-        </Description>
+        <SectionTitle title='' description={action.docsDescription as string} actionButton={<DocsButton endpoint={action.docsEndpoint} />} />
       )}
 
       <FieldWrapper>
@@ -58,8 +49,8 @@ const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ isUpdate, action
 
       {!isUpdate && (
         <FieldWrapper>
-          <FieldTitle>Action name</FieldTitle>
           <Input
+            title='Action name'
             placeholder='Use a name that describes the action'
             value={formData.name}
             onChange={({ target: { value } }) => handleFormChange('name', value)}
@@ -70,8 +61,7 @@ const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ isUpdate, action
       <ActionCustomFields actionType={action.type} value={formData.details} setValue={(val) => handleFormChange('details', val)} />
 
       <FieldWrapper>
-        <FieldTitle>Notes</FieldTitle>
-        <TextArea value={formData.notes} onChange={({ target: { value } }) => handleFormChange('notes', value)} />
+        <TextArea title='Notes' value={formData.notes} onChange={({ target: { value } }) => handleFormChange('notes', value)} />
       </FieldWrapper>
     </>
   );

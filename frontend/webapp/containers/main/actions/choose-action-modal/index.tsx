@@ -1,40 +1,8 @@
-import styled from 'styled-components';
-import React, { useMemo, useState } from 'react';
 import { ChooseActionBody } from '../';
+import React, { useMemo, useState } from 'react';
+import { useActionCRUD, useActionFormData } from '@/hooks/actions';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
-import { useActionFormData, useCreateAction } from '@/hooks/actions';
-import { AutocompleteInput, Modal, NavigationButtons, Text, Divider, FadeLoader } from '@/reuseable-components';
-
-const DefineActionContainer = styled.section`
-  height: 640px;
-  padding: 0px 220px;
-  display: flex;
-  flex-direction: column;
-  overflow-y: scroll;
-`;
-
-const WidthConstraint = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
-  gap: 16px;
-  max-width: 640px;
-  margin: 32px 0 24px 0;
-`;
-
-const SubTitle = styled(Text)`
-  color: ${({ theme }) => theme.text.grey};
-  line-height: 150%;
-`;
-
-const Center = styled.div`
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-`;
+import { AutocompleteInput, Modal, NavigationButtons, Divider, FadeLoader, SectionTitle, ModalContent, Center } from '@/reuseable-components';
 
 interface AddActionModalProps {
   isModalOpen: boolean;
@@ -43,8 +11,8 @@ interface AddActionModalProps {
 
 export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, handleCloseModal }) => {
   const { formData, handleFormChange, resetFormData, validateForm } = useActionFormData();
-  const { createAction, loading } = useCreateAction({ onSuccess: handleClose });
-  const [selectedItem, setSelectedItem] = useState<ActionOption | null>(null);
+  const { createAction, loading } = useActionCRUD({ onSuccess: handleClose });
+  const [selectedItem, setSelectedItem] = useState<ActionOption | undefined>(undefined);
 
   const isFormOk = useMemo(() => !!selectedItem && validateForm(), [selectedItem, formData]);
 
@@ -54,13 +22,13 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
 
   function handleClose() {
     resetFormData();
-    setSelectedItem(null);
+    setSelectedItem(undefined);
     handleCloseModal();
   }
 
-  const handleSelect = (item: ActionOption) => {
+  const handleSelect = (item?: ActionOption) => {
     resetFormData();
-    handleFormChange('type', item.type);
+    handleFormChange('type', item?.type || '');
     setSelectedItem(item);
   };
 
@@ -82,20 +50,15 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
         />
       }
     >
-      <DefineActionContainer>
-        <WidthConstraint>
-          <Text size={20}>{'Define Action'}</Text>
-          <SubTitle>
-            {
-              'Actions are a way to modify the OpenTelemetry data recorded by Odigos sources before it is exported to your Odigos destinations. Choose an action type and provide necessary information.'
-            }
-          </SubTitle>
-        </WidthConstraint>
-
-        <AutocompleteInput options={ACTION_OPTIONS} onOptionSelect={handleSelect} />
+      <ModalContent>
+        <SectionTitle
+          title='Define Action'
+          description='Actions are a way to modify the OpenTelemetry data recorded by Odigos sources before it is exported to your Odigos destinations. Choose an action type and provide necessary information.'
+        />
+        <AutocompleteInput options={ACTION_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: '24px' }} />
 
         {!!selectedItem?.type ? (
-          <WidthConstraint>
+          <div>
             <Divider margin='16px 0' />
 
             {loading ? (
@@ -105,9 +68,9 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isModalOpen, han
             ) : (
               <ChooseActionBody action={selectedItem} formData={formData} handleFormChange={handleFormChange} />
             )}
-          </WidthConstraint>
+          </div>
         ) : null}
-      </DefineActionContainer>
+      </ModalContent>
     </Modal>
   );
 };
