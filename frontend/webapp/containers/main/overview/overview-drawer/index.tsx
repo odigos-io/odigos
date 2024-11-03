@@ -10,7 +10,7 @@ import { DeleteEntityModal } from '@/components';
 import { ActionDrawer, type ActionDrawerHandle } from '../../actions';
 import { DestinationDrawer, type DestinationDrawerHandle } from '../../destinations';
 import { RuleDrawer, RuleDrawerHandle } from '../../instrumentation-rules/rule-drawer-container';
-import { useActionCRUD, useActualSources, useInstrumentationRuleCRUD, useUpdateDestination } from '@/hooks';
+import { useActionCRUD, useActualSources, useDestinationCRUD, useInstrumentationRuleCRUD } from '@/hooks';
 import { getMainContainerLanguageLogo, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils/constants/programming-languages';
 import {
   WorkloadId,
@@ -40,7 +40,7 @@ const OverviewDrawer = () => {
   const [title, setTitle] = useState('');
 
   const { updateAction, deleteAction } = useActionCRUD();
-  const { updateExistingDestination } = useUpdateDestination();
+  const { updateDestination, deleteDestination } = useDestinationCRUD();
   const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
   const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
@@ -175,7 +175,7 @@ const OverviewDrawer = () => {
         };
 
         try {
-          await updateExistingDestination(id as string, payload);
+          await updateDestination(id as string, payload);
         } catch (error) {
           console.error('Error updating destination:', error);
         }
@@ -217,7 +217,9 @@ const OverviewDrawer = () => {
     }
 
     if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
-      alert('TODO !');
+      const { id } = item as ActualDestination;
+
+      await deleteDestination(id);
     }
 
     handleClose();
@@ -256,7 +258,7 @@ const OverviewDrawer = () => {
         isModalOpen={isDeleteModalOpen}
         handleDelete={handleDelete}
         handleCloseModal={handleCloseDeleteModal}
-        description='Are you sure you want to delete this source?'
+        description='Are you sure you want to delete this?'
       />
     </>
   ) : null;
