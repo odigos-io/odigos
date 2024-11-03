@@ -30,6 +30,8 @@ const DeleteButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
 `;
 
 const AddButton = styled(Button)<{ disabled: boolean }>`
@@ -100,6 +102,7 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
 
   // Check if any key or value field is empty
   const isAddButtonDisabled = rows.some((row) => !!Object.values(row).filter((val) => !val).length);
+  const isDelButtonDisabled = rows.length <= 1;
 
   // adjust cell-width based on the amount of inputs on-screen,
   // the "0.4" is to consider the delete button
@@ -107,12 +110,12 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
 
   return (
     <Container>
-      <table style={{ marginBottom: '12px' }}>
+      <table style={{ marginBottom: '12px', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
             {columns.map(({ title, tooltip, required }) => (
-              <th key={`input-table-head-${title}`} style={{ maxWidth }}>
-                <FieldLabel title={title} required={required} tooltip={tooltip} />
+              <th key={`input-table-head-${title}`} style={{ maxWidth, paddingLeft: 10 }}>
+                <FieldLabel title={title} required={required} tooltip={tooltip} style={{ marginBottom: 0 }} />
               </th>
             ))}
 
@@ -123,23 +126,21 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
         <tbody>
           {rows.map((row, idx) => (
             <tr key={`input-table-row-${idx}`} style={{ height: '50px' }}>
-              {columns.map(({ type, keyName, placeholder }) => (
-                <td key={`input-table-row-${idx}-${keyName}`} style={{ maxWidth, padding: '0 2px' }}>
+              {columns.map(({ type, keyName, placeholder }, innerIdx) => (
+                <td key={`input-table-${idx}-${keyName}`} style={{ maxWidth, padding: '0 2px' }}>
                   <Input
                     type={type}
+                    placeholder={placeholder}
                     value={row[keyName]}
                     onChange={({ target: { value: val } }) => handleChange(keyName, type === 'number' ? Number(val) : val, idx)}
-                    placeholder={placeholder}
-                    style={{
-                      maxWidth,
-                      paddingLeft: '6px',
-                    }}
+                    autoFocus={rows.length > 1 && idx === rows.length - 1 && innerIdx === 0}
+                    style={{ maxWidth, paddingLeft: 10 }}
                   />
                 </td>
               ))}
 
               <td>
-                <DeleteButton onClick={() => handleDeleteRow(idx)}>
+                <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteRow(idx)}>
                   <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
                 </DeleteButton>
               </td>
