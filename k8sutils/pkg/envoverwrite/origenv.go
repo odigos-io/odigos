@@ -6,7 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // original manifest values for the env vars of a workload
@@ -66,7 +66,7 @@ func (o *OrigWorkloadEnvValues) InsertOriginalValue(containerName string, envNam
 
 // stores the original values back into the manifest annotations
 // by modifying the annotations map of the input argument
-func (o *OrigWorkloadEnvValues) SerializeToAnnotation(obj client.Object) error {
+func (o *OrigWorkloadEnvValues) SerializeToAnnotation(obj metav1.Object) error {
 	if !o.modifiedSinceCreated {
 		return nil
 	}
@@ -95,7 +95,7 @@ func (o *OrigWorkloadEnvValues) SerializeToAnnotation(obj client.Object) error {
 	return nil
 }
 
-func (o *OrigWorkloadEnvValues) DeleteFromObj(obj client.Object) {
+func (o *OrigWorkloadEnvValues) DeleteFromObj(obj metav1.Object) {
 	currentAnnotations := obj.GetAnnotations()
 	if currentAnnotations == nil {
 		return

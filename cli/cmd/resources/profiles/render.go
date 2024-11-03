@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"sigs.k8s.io/yaml"
 )
 
@@ -13,7 +13,7 @@ import (
 var embeddedFiles embed.FS
 
 // GetEmbeddedYAMLFileAsObjects is a generic function to read embedded YAML files and convert them into runtime.Object
-func GetEmbeddedYAMLFileAsObjects(filename string, obj client.Object) ([]client.Object, error) {
+func GetEmbeddedYAMLFileAsObjects(filename string, obj kube.Object) ([]kube.Object, error) {
 
 	// Read the embedded YAML file content
 	yamlBytes, err := embeddedFiles.ReadFile(filename)
@@ -32,5 +32,5 @@ func GetEmbeddedYAMLFileAsObjects(filename string, obj client.Object) ([]client.
 	}
 
 	// Return the object wrapped in a slice
-	return []client.Object{newObj.(client.Object)}, nil
+	return []kube.Object{newObj.(kube.Object)}, nil
 }
