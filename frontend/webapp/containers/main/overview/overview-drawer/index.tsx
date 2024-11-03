@@ -1,332 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
+import { PropsWithChildren, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { getActionIcon, getRuleIcon, LANGUAGES_LOGOS } from '@/utils';
-import DrawerHeader from './drawer-header';
+import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
 import DrawerFooter from './drawer-footer';
-import { SourceDrawer } from '../../sources';
 import { Drawer, WarningModal } from '@/reuseable-components';
-import { ActionDrawer, type ActionDrawerHandle } from '../../actions';
-import { DestinationDrawer, type DestinationDrawerHandle } from '../../destinations';
-import { RuleDrawer, RuleDrawerHandle } from '../../instrumentation-rules/rule-drawer-container';
-import { useActionCRUD, useActualSources, useDestinationCRUD, useInstrumentationRuleCRUD } from '@/hooks';
-import { getMainContainerLanguageLogo, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils/constants/programming-languages';
-import {
-  WorkloadId,
-  K8sActualSource,
-  ActualDestination,
-  OVERVIEW_ENTITY_TYPES,
-  PatchSourceRequestInput,
-  ActionDataParsed,
-  InstrumentationRuleSpec,
-} from '@/types';
-
-const componentMap = {
-  [OVERVIEW_ENTITY_TYPES.RULE]: RuleDrawer,
-  [OVERVIEW_ENTITY_TYPES.SOURCE]: SourceDrawer,
-  [OVERVIEW_ENTITY_TYPES.ACTION]: ActionDrawer,
-  [OVERVIEW_ENTITY_TYPES.DESTINATION]: DestinationDrawer,
-};
 
 const DRAWER_WIDTH = '640px';
 
-const OverviewDrawer = () => {
-  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
-  const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [title, setTitle] = useState('');
-
-  const { updateAction, deleteAction } = useActionCRUD();
-  const { updateDestination, deleteDestination } = useDestinationCRUD();
-  const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
-  const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
-
-  const titleRef = useRef<HTMLInputElement>(null);
-  const ruleDrawerRef = useRef<RuleDrawerHandle>(null);
-  const actionDrawerRef = useRef<ActionDrawerHandle>(null);
-  const destinationDrawerRef = useRef<DestinationDrawerHandle>(null);
-
-  const refMap = {
-    [OVERVIEW_ENTITY_TYPES.RULE]: ruleDrawerRef,
-    [OVERVIEW_ENTITY_TYPES.SOURCE]: undefined,
-    [OVERVIEW_ENTITY_TYPES.ACTION]: actionDrawerRef,
-    [OVERVIEW_ENTITY_TYPES.DESTINATION]: destinationDrawerRef,
-  };
-
-  useEffect(initialTitle, [selectedItem]);
-
-  //TODO: split file to separate components by type: source, destination, action
-
-  function initialTitle() {
-    let str = '';
-
-    if (!!selectedItem?.item) {
-      const { type, item } = selectedItem;
-
-      if (type === OVERVIEW_ENTITY_TYPES.RULE) {
-        str = (item as InstrumentationRuleSpec).ruleName;
-      } else if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
-        str = (item as K8sActualSource).reportedName;
-      } else if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
-        str = (item as ActionDataParsed).spec.actionName;
-      } else if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
-        str = (item as ActualDestination).name;
-      }
-    }
-
-    setTitle(str);
-  }
-
-  const handleClose = () => {
-    setSelectedItem(null);
-    setIsEditing(false);
-    setIsDeleteModalOpen(false);
-    setIsCancelModalOpen(false);
-  };
-
-  const handleCloseMiniModal = () => {
-    setIsDeleteModalOpen(false);
-    setIsCancelModalOpen(false);
-  };
-
-  const handleCancel = () => {
-    setIsCancelModalOpen(true);
-  };
-
-  const onCancel = () => {
-    initialTitle();
-    setIsEditing(false);
-    setIsCancelModalOpen(false);
-  };
-
-  const handleDelete = () => {
-    setIsDeleteModalOpen(true);
-  };
-
-  const onDelete = async () => {
-    if (!selectedItem?.item) return null;
-    const { type, item } = selectedItem;
-
-    if (type === OVERVIEW_ENTITY_TYPES.RULE) {
-      const { ruleId } = item as InstrumentationRuleSpec;
-
-      await deleteInstrumentationRule(ruleId);
-    }
-
-    if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
-      const { namespace, name, kind } = item as K8sActualSource;
-
-      try {
-        await deleteSourcesForNamespace(namespace, [
-          {
-            kind,
-            name,
-            selected: false,
-          },
-        ]);
-      } catch (error) {
-        console.error('Error deleting source:', error);
-      }
-    }
-
-    if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
-      const { id, type } = item as ActionDataParsed;
-
-      await deleteAction(id, type);
-    }
-
-    if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
-      const { id } = item as ActualDestination;
-
-      await deleteDestination(id);
-    }
-
-    handleClose();
-  };
-
-  const onSave = async () => {
-    if (!selectedItem?.item) return null;
-    const { type, id, item } = selectedItem;
-
-    if (type === OVERVIEW_ENTITY_TYPES.RULE) {
-      const thisRef = refMap[type];
-
-      if (thisRef.current && titleRef.current) {
-        const newTitle = titleRef.current.value;
-        const formData = thisRef.current.getCurrentData();
-
-        if (formData) {
-          const payload = {
-            ...formData,
-            ruleName: newTitle,
-          };
-
-          await updateInstrumentationRule(id as string, payload);
-          setIsEditing(false);
-        }
-      }
-    }
-
-    if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
-      if (titleRef.current) {
-        const newTitle = titleRef.current.value;
-        setTitle(newTitle);
-
-        const { namespace, name, kind } = item as K8sActualSource;
-
-        const sourceId: WorkloadId = {
-          namespace,
-          kind,
-          name,
-        };
-
-        const patchRequest: PatchSourceRequestInput = {
-          reportedName: newTitle,
-        };
-
-        try {
-          await updateActualSource(sourceId, patchRequest);
-        } catch (error) {
-          console.error('Error updating source:', error);
-        }
-      }
-      setIsEditing(false);
-    }
-
-    if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
-      const thisRef = refMap[type];
-
-      if (thisRef.current && titleRef.current) {
-        const newTitle = titleRef.current.value;
-        const formData = thisRef.current.getCurrentData();
-
-        if (formData) {
-          const payload = {
-            ...formData,
-            name: newTitle,
-          };
-
-          await updateAction(id as string, payload);
-          setIsEditing(false);
-        }
-      }
-    }
-
-    if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
-      const thisRef = refMap[type];
-
-      if (thisRef.current && titleRef.current) {
-        const newTitle = titleRef.current.value;
-        const formData = thisRef.current.getCurrentData();
-        const payload = {
-          ...formData,
-          name: newTitle,
-        };
-
-        try {
-          await updateDestination(id as string, payload);
-        } catch (error) {
-          console.error('Error updating destination:', error);
-        }
-        setIsEditing(false);
-      }
-    }
-  };
-
-  if (!selectedItem?.item) return null;
-
-  const { type, item } = selectedItem;
-  const SpecificComponent = componentMap[type];
-  const specificRef = refMap[type];
-
-  return (
-    <>
-      <Drawer isOpen onClose={handleClose} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen}>
-        <DrawerContent>
-          <DrawerHeader
-            ref={titleRef}
-            title={title}
-            onClose={isEditing ? handleCancel : handleClose}
-            imageUri={item ? getItemImageByType(type, item) : ''}
-            isEditing={isEditing}
-            setIsEditing={setIsEditing}
-          />
-
-          <ContentArea>
-            {/* @ts-ignore (because of ref) */}
-            {SpecificComponent ? <SpecificComponent ref={specificRef} isEditing={isEditing} /> : null}
-          </ContentArea>
-
-          {isEditing && <DrawerFooter onSave={onSave} onCancel={handleCancel} onDelete={handleDelete} />}
-        </DrawerContent>
-      </Drawer>
-
-      <WarningModal
-        isOpen={isDeleteModalOpen}
-        title={`Delete ${title}`}
-        description={`Are you sure you want to delete this ${type}?`}
-        approveButton={{
-          text: 'Delete',
-          variant: 'danger',
-          onClick: onDelete,
-        }}
-        denyButton={{
-          text: 'Cancel',
-          onClick: handleCloseMiniModal,
-        }}
-      />
-      <WarningModal
-        isOpen={isCancelModalOpen}
-        title='Cancel edit mode'
-        description='Are you sure you want to cancel?'
-        approveButton={{
-          text: 'Cancel',
-          variant: 'warning',
-          onClick: onCancel,
-        }}
-        denyButton={{
-          text: 'Go Back',
-          onClick: handleCloseMiniModal,
-        }}
-      />
-    </>
-  );
-};
-
-function getItemImageByType(
-  type: OVERVIEW_ENTITY_TYPES,
-  item: InstrumentationRuleSpec | K8sActualSource | ActionDataParsed | ActualDestination
-): string {
-  let src = '';
-
-  switch (type) {
-    case OVERVIEW_ENTITY_TYPES.RULE:
-      src = getRuleIcon((item as InstrumentationRuleSpec).type);
-      break;
-
-    case OVERVIEW_ENTITY_TYPES.SOURCE:
-      src = getMainContainerLanguageLogo(item as K8sActualSource);
-      break;
-
-    case OVERVIEW_ENTITY_TYPES.ACTION:
-      src = getActionIcon((item as ActionDataParsed).type);
-      break;
-
-    case OVERVIEW_ENTITY_TYPES.DESTINATION:
-      src = (item as ActualDestination).destinationType.imageUrl;
-      break;
-
-    default:
-      break;
-  }
-
-  return src || LANGUAGES_LOGOS[WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN];
+interface Props {
+  title: string;
+  imageUri: string;
+  isEdit: boolean;
+  clickEdit: (bool?: boolean) => void;
+  clickSave: (newTitle: string) => void;
+  clickDelete: () => void;
+  clickCancel: () => void;
 }
-
-export default OverviewDrawer;
 
 const DrawerContent = styled.div`
   display: flex;
@@ -339,3 +28,97 @@ const ContentArea = styled.div`
   padding: 24px 32px;
   overflow-y: auto;
 `;
+
+const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({
+  children,
+  title,
+  imageUri,
+  isEdit,
+  clickEdit,
+  clickSave,
+  clickDelete,
+  clickCancel,
+}) => {
+  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
+  const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
+  const titleRef = useRef<DrawerHeaderRef>(null);
+
+  const closeDrawer = () => {
+    setSelectedItem(null);
+    clickEdit(false);
+    setIsDeleteModalOpen(false);
+    setIsCancelModalOpen(false);
+  };
+
+  const closeWarningModals = () => {
+    setIsDeleteModalOpen(false);
+    setIsCancelModalOpen(false);
+  };
+
+  const handleCancel = () => setIsCancelModalOpen(true);
+  const handleDelete = () => setIsDeleteModalOpen(true);
+
+  return (
+    <>
+      <Drawer isOpen onClose={closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen}>
+        <DrawerContent>
+          <DrawerHeader
+            ref={titleRef}
+            title={title}
+            imageUri={imageUri}
+            isEdit={isEdit}
+            onEdit={() => clickEdit(true)}
+            onClose={isEdit ? handleCancel : closeDrawer}
+          />
+
+          <ContentArea>{children}</ContentArea>
+
+          {isEdit && <DrawerFooter onSave={() => clickSave(titleRef.current?.getTitle() || '')} onCancel={handleCancel} onDelete={handleDelete} />}
+        </DrawerContent>
+      </Drawer>
+
+      <WarningModal
+        isOpen={isDeleteModalOpen}
+        title={`Delete ${title}`}
+        description={`Are you sure you want to delete this ${selectedItem?.type}?`}
+        approveButton={{
+          text: 'Delete',
+          variant: 'danger',
+          onClick: () => {
+            clickDelete();
+            closeWarningModals();
+          },
+        }}
+        denyButton={{
+          text: 'Cancel',
+          onClick: closeWarningModals,
+        }}
+      />
+
+      <WarningModal
+        isOpen={isCancelModalOpen}
+        title='Cancel edit mode'
+        description='Are you sure you want to cancel?'
+        approveButton={{
+          text: 'Cancel',
+          variant: 'warning',
+          onClick: () => {
+            titleRef.current?.clearTitle();
+            clickCancel();
+            closeWarningModals();
+          },
+        }}
+        denyButton={{
+          text: 'Go Back',
+          onClick: closeWarningModals,
+        }}
+      />
+    </>
+  );
+};
+
+export default OverviewDrawer;

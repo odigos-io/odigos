@@ -1,25 +1,24 @@
-import React, { forwardRef, useImperativeHandle, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { getActionIcon } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
-import { useActionFormData, useNotify } from '@/hooks';
+import type { ActionDataParsed } from '@/types';
 import { ChooseActionBody } from '../choose-action-body';
-import type { ActionDataParsed, ActionInput } from '@/types';
+import OverviewDrawer from '../../overview/overview-drawer';
 import buildCardFromActionSpec from './build-card-from-action-spec';
+import { useActionCRUD, useActionFormData, useNotify } from '@/hooks';
 import { ACTION_OPTIONS } from '../choose-action-modal/action-options';
 
-export type ActionDrawerHandle = {
-  getCurrentData: () => ActionInput | null;
-};
+interface Props {}
 
-interface Props {
-  isEditing: boolean;
-}
-
-const ActionDrawer = forwardRef<ActionDrawerHandle, Props>(({ isEditing }, ref) => {
+const ActionDrawer: React.FC<Props> = () => {
   const notify = useNotify();
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
+  const [isEditing, setIsEditing] = useState(false);
+
   const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
+  const { updateAction, deleteAction } = useActionCRUD();
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
@@ -48,33 +47,65 @@ const ActionDrawer = forwardRef<ActionDrawerHandle, Props>(({ isEditing }, ref) 
     return found;
   }, [selectedItem, isEditing]);
 
-  useImperativeHandle(ref, () => ({
-    getCurrentData: () => {
-      if (validateForm()) {
-        return formData;
-      } else {
-        notify({
-          message: 'Required fields are missing!',
-          title: 'Update Action Error',
-          type: 'error',
-          target: 'notification',
-          crdType: 'notification',
-        });
-        return null;
-      }
-    },
-  }));
+  if (!selectedItem?.item) return null;
+  const { id, item } = selectedItem;
 
-  return isEditing && thisAction ? (
-    <FormContainer>
-      <ChooseActionBody isUpdate action={thisAction} formData={formData} handleFormChange={handleFormChange} />
-    </FormContainer>
-  ) : (
-    <CardDetails data={cardData} />
+  const handleEdit = (bool?: boolean) => {
+    if (typeof bool === 'boolean') {
+      setIsEditing(bool);
+    } else {
+      setIsEditing(true);
+    }
+  };
+
+  const handleCancel = () => {
+    resetFormData();
+    setIsEditing(false);
+  };
+
+  const handleDelete = async () => {
+    await deleteAction(id as string, (item as ActionDataParsed).type);
+  };
+
+  const handleSave = async (newTitle: string) => {
+    if (!validateForm()) {
+      notify({
+        message: 'Required fields are missing!',
+        title: 'Update Action Error',
+        type: 'error',
+        target: 'notification',
+        crdType: 'notification',
+      });
+    } else {
+      const payload = {
+        ...formData,
+        name: newTitle,
+      };
+
+      await updateAction(id as string, payload);
+    }
+  };
+
+  return (
+    <OverviewDrawer
+      title={(item as ActionDataParsed).spec.actionName}
+      imageUri={getActionIcon((item as ActionDataParsed).type)}
+      isEdit={isEditing}
+      clickEdit={handleEdit}
+      clickSave={handleSave}
+      clickDelete={handleDelete}
+      clickCancel={handleCancel}
+    >
+      {isEditing && thisAction ? (
+        <FormContainer>
+          <ChooseActionBody isUpdate action={thisAction} formData={formData} handleFormChange={handleFormChange} />
+        </FormContainer>
+      ) : (
+        <CardDetails data={cardData} />
+      )}
+    </OverviewDrawer>
   );
-});
-
-ActionDrawer.displayName = 'ActionDrawer';
+};
 
 export { ActionDrawer };
 

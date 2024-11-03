@@ -14,7 +14,7 @@ const colors = {
   dropdown_bg: '#242424',
   blank_background: '#11111100',
   danger: '#EF7676',
-  warning: '#EFEF76',
+  warning: '#E9CF35',
   white_opacity: {
     '004': 'rgba(249, 249, 249, 0.04)',
     '008': 'rgba(249, 249, 249, 0.08)',

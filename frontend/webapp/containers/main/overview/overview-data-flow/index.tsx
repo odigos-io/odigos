@@ -7,7 +7,7 @@ import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
 import { useGetActions, useActualSources, useContainerWidth, useActualDestination, useNodeDataFlowHandlers } from '@/hooks';
 import { useGetInstrumentationRules } from '@/hooks/instrumentation-rules/useGetInstrumentationRules';
 
-const OverviewDrawer = dynamic(() => import('../overview-drawer'), {
+const AllDrawers = dynamic(() => import('../all-drawers'), {
   ssr: false,
 });
 
@@ -46,9 +46,10 @@ export function OverviewDataFlowContainer() {
 
   return (
     <OverviewDataFlowWrapper ref={containerRef}>
-      <OverviewDrawer />
       <OverviewActionMenuContainer />
       <NodeBaseDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} columnWidth={columnWidth} />
+
+      <AllDrawers />
     </OverviewDataFlowWrapper>
   );
 }
