@@ -32,7 +32,13 @@ const DrawerContainer = styled.div<{
 `;
 
 export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, position = 'right', width = '300px', children, closeOnEscape = true }) => {
-  useKeyDown('Escape', { active: isOpen && closeOnEscape }, () => onClose());
+  useKeyDown(
+    {
+      key: 'Escape',
+      active: isOpen && closeOnEscape,
+    },
+    () => onClose()
+  );
 
   if (!isOpen) return null;
 

@@ -69,7 +69,7 @@ export function EditSourceForm() {
     setInputValue(currentSource?.reported_name || '');
   }, [currentSource]);
 
-  useKeyDown('Enter', { active: true }, handleKeyPress);
+  useKeyDown({ key: 'Enter', active: true }, handleKeyPress);
 
   function handleKeyPress(e: any) {
     onSaveClick();
