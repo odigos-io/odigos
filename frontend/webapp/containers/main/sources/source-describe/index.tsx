@@ -28,15 +28,19 @@ export const SourceDescriptionDrawer: React.FC<
 
   const toggleDrawer = () => setDrawerOpen(!isOpen);
 
-  const { sourceDescription, isSourceLoading, fetchSourceDescription } =
-    useDescribe();
+  const {
+    sourceDescription,
+    isSourceLoading,
+    fetchSourceDescription,
+    setNamespaceKindName,
+  } = useDescribe();
 
   useEffect(() => {
     isOpen &&
       namespace &&
       kind &&
       name &&
-      fetchSourceDescription(namespace, kind, name);
+      setNamespaceKindName(namespace, kind, name);
   }, [isOpen, namespace, kind, name]);
 
   useEffect(() => {
@@ -79,7 +83,7 @@ export const SourceDescriptionDrawer: React.FC<
             <DescriptionContent>
               {sourceDescription
                 ? formatDescription(sourceDescription, () =>
-                    fetchSourceDescription(namespace, kind, name)
+                    fetchSourceDescription()
                   )
                 : 'No source details available.'}
             </DescriptionContent>

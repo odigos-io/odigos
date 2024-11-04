@@ -45,7 +45,11 @@ export function useDescribe() {
   }, [sourceDescription]);
 
   // Function to set parameters for source description and refetch
-  function fetchSourceDescription(
+  function fetchSourceDescription() {
+    refetchSourceDescription();
+  }
+
+  function setNamespaceKindName(
     newNamespace: string,
     newKind: string,
     newName: string
@@ -53,7 +57,6 @@ export function useDescribe() {
     setNamespace(newNamespace);
     setKind(newKind);
     setName(newName);
-    // refetchSourceDescription();
   }
 
   return {
@@ -63,5 +66,6 @@ export function useDescribe() {
     isSourceLoading,
     refetchOdigosDescription,
     fetchSourceDescription,
+    setNamespaceKindName,
   };
 }
