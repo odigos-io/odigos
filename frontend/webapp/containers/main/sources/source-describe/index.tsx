@@ -12,6 +12,12 @@ interface SourceDescriptionDrawerProps {
   name: string;
 }
 
+interface DescribeItem {
+  name: string;
+  value: string;
+  explain?: string;
+}
+
 export const SourceDescriptionDrawer: React.FC<
   SourceDescriptionDrawerProps
 > = ({ namespace, kind, name }) => {
@@ -98,12 +104,17 @@ function extractSourceStatuses(description: any): string[] {
 // Generic function to format any description data
 function formatDescription(description: any, refetch: () => void) {
   const renderObjectProperties = (obj: any) => {
-    return Object.entries(obj).map(([key, item]) => {
-      if (typeof item === 'object' && item !== null && 'value' in item) {
+    return Object.entries(obj).map(([key, item]: [string, DescribeItem]) => {
+      if (
+        typeof item === 'object' &&
+        item !== null &&
+        item.hasOwnProperty('value') &&
+        item.hasOwnProperty('name')
+      ) {
         return (
           <div key={key}>
             <p>
-              <strong>{item?.name}:</strong> {String(item.value)}
+              <strong>- {item?.name}:</strong> {String(item.value)}
             </p>
             {item.explain && <ExplanationText>{item.explain}</ExplanationText>}
           </div>
@@ -111,10 +122,7 @@ function formatDescription(description: any, refetch: () => void) {
       } else if (typeof item === 'object' && item !== null) {
         return (
           <div key={key} style={{ marginLeft: '16px' }}>
-            {Number.isNaN(key) && <strong>- {key}:</strong>}
-            <div style={{ marginLeft: '16px' }}>
-              {renderObjectProperties(item)}
-            </div>
+            {renderObjectProperties(item)}
           </div>
         );
       } else if (Array.isArray(item)) {
