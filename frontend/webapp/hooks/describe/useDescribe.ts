@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { getOdigosDescription, getSourceDescription } from '@/services';
-import { use } from 'chai';
 
 export function useDescribe() {
   const [namespace, setNamespace] = useState<string>('');

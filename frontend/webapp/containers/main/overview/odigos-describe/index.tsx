@@ -12,6 +12,7 @@ export const OdigosDescriptionDrawer: React.FC<
   OdigosDescriptionDrawerProps
 > = ({}) => {
   const [isOpen, setDrawerOpen] = useState(false);
+
   const [badgeStatus, setBadgeStatus] = useState<
     'error' | 'transitioning' | 'success'
   >('success');
@@ -137,6 +138,7 @@ const CollectorSection: React.FC<{ title: string; collector: any }> = ({
         label={value.name}
         value={value.value}
         status={value.status}
+        explain={value.explain}
       />
     ))}
   </section>
@@ -147,13 +149,26 @@ const CollectorItem: React.FC<{
   label: string;
   value: any;
   status?: string;
-}> = ({ label, value, status }) => {
+  explain?: string;
+}> = ({ label, value, status, explain }) => {
+  const [showExplanation, setShowExplanation] = useState(false);
   const color = status === 'error' ? theme.colors.error : theme.text.light_grey;
 
   return (
-    <StatusText color={color}>
-      - {label}: {String(value)}
-    </StatusText>
+    <div
+      style={{
+        paddingLeft: '16px',
+        marginBottom: '8px',
+      }}
+    >
+      <StatusText
+        color={color}
+        onClick={() => setShowExplanation(!showExplanation)}
+      >
+        - {label}: {String(value)}
+      </StatusText>
+      {showExplanation && <StatusBadge>{explain}</StatusBadge>}
+    </div>
   );
 };
 
@@ -216,13 +231,13 @@ const DescriptionContent = styled(KeyvalText)`
   white-space: pre-wrap;
   line-height: 1.6;
   padding: 20px;
+  max-width: 650px;
 `;
 
 const StatusText = styled.div<{ color: string }>`
   color: ${({ color }) => color};
   font-weight: bold;
-  margin-bottom: 8px;
-  padding-left: 16px;
+  cursor: pointer;
 `;
 
 const StatusBadge = styled.span`
