@@ -246,7 +246,7 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			{
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments", "statefulsets", "daemonsets"},
-				Verbs:     []string{"get", "list", "watch", "patch"},
+				Verbs:     []string{"get", "list", "watch", "patch", "update"},
 			},
 			{
 				APIGroups: []string{"odigos.io"},
