@@ -30,6 +30,7 @@ import {
   Conditions,
 } from '@/design.system';
 import { BackIcon } from '@keyval-dev/design-system';
+import { SourceDescriptionDrawer } from '../source-describe';
 
 const NAME = 'name';
 const KIND = 'kind';
@@ -106,6 +107,11 @@ export function EditSourceForm() {
         <BackIcon size={14} />
         <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
       </BackButtonWrapper>
+      <SourceDescriptionDrawer
+        namespace={currentSource.namespace}
+        kind={currentSource.kind}
+        name={currentSource.name}
+      />
       {currentSource && <ManageSourceHeader source={currentSource} />}
       <div style={{ display: 'flex', gap: 60 }}>
         <div>

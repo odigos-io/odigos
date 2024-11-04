@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { getOdigosDescription, getSourceDescription } from '@/services';
 
@@ -6,6 +6,12 @@ export function useDescribe() {
   const [namespace, setNamespace] = useState<string>('');
   const [kind, setKind] = useState<string>('');
   const [name, setName] = useState<string>('');
+
+  useEffect(() => {
+    if (namespace && kind && name) {
+      refetchSourceDescription();
+    }
+  }, [namespace, kind, name]);
 
   // Fetch Odigos description
   const {
@@ -38,7 +44,16 @@ export function useDescribe() {
     setNamespace(newNamespace);
     setKind(newKind);
     setName(newName);
-    refetchSourceDescription();
+    console.log({ newNamespace, newKind, newName });
+    try {
+      if (newNamespace && newKind && newName) {
+        console.log('object');
+        // refetchSourceDescription();
+      }
+    } catch (error) {
+      console.error('Error fetching source description:', error);
+    }
+    // refetchSourceDescription();
   }
 
   return {
