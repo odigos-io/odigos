@@ -69,7 +69,6 @@ var CRDsList = []map[string]string{
 	},
 }
 
-// /// Fetching Odigos Components Logs  /////
 func FetchOdigosCRs(ctx context.Context, kubeClient *kube.Client, crdDir string) error {
 	var wg sync.WaitGroup
 
