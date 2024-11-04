@@ -3,6 +3,7 @@ package diagnose_util
 import (
 	"context"
 	"fmt"
+	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -106,7 +107,7 @@ func fetchSingleResource(ctx context.Context, kubeClient *kube.Client, crdDataDi
 
 	err := client.ListWithPages(client.DefaultPageSize, kubeClient.Dynamic.Resource(gvr).List, ctx, metav1.ListOptions{}, func(crds *unstructured.UnstructuredList) error {
 		for _, crd := range crds.Items {
-			if err := saveCrdToFile(crd, crdDataDirPath); err != nil {
+			if err := saveCrdToFile(crd, crdDataDirPath, crd.GetName()); err != nil {
 				fmt.Printf("Fetching Resource %s Failed because: %s\n", resourceData[CRDName], err)
 			}
 		}
@@ -121,8 +122,8 @@ func fetchSingleResource(ctx context.Context, kubeClient *kube.Client, crdDataDi
 	return nil
 }
 
-func saveCrdToFile(crd unstructured.Unstructured, crdDataDirPath string) error {
-	crdDirPath := filepath.Join(crdDataDirPath, crd.GetName()+".yaml.gz")
+func saveCrdToFile(crd interface{}, crdDataDirPath string, crdName string) error {
+	crdDirPath := filepath.Join(crdDataDirPath, crdName+".yaml")
 	crdFile, err := os.OpenFile(crdDirPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		return err
@@ -140,6 +141,30 @@ func saveCrdToFile(crd unstructured.Unstructured, crdDataDirPath string) error {
 	}
 	if err = crdFile.Sync(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func FetchDestinationsCRDs(ctx context.Context, client *kube.Client, CRDsDir string) error {
+	odigosNamespace, err := resources.GetOdigosNamespace(client, ctx)
+	if err != nil {
+		return err
+	}
+
+	destinations, err := client.OdigosClient.Destinations(odigosNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	crdDestinationPath := filepath.Join(CRDsDir, "destinations")
+	err = os.Mkdir(crdDestinationPath, os.ModePerm)
+
+	for _, destination := range destinations.Items {
+		if err := saveCrdToFile(destination, crdDestinationPath, destination.Name); err != nil {
+			fmt.Printf("Fetching Resource %s Failed because: %s\n", destination.Name, err)
+		}
+
 	}
 
 	return nil

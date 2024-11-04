@@ -79,6 +79,15 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 		}
 	}()
 
+	// Fetch Odigos Destinations
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err = diagnose_util.FetchDestinationsCRDs(ctx, client, filepath.Join(mainTempDir, CRDsDir)); err != nil {
+			fmt.Printf("Error fetching Odigos CRDs: %v\n", err)
+		}
+	}()
+
 	wg.Wait()
 
 	// Package the results into a tar.gz file
