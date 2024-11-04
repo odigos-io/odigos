@@ -2,7 +2,7 @@ import React, { ButtonHTMLAttributes } from 'react';
 import styled, { css } from 'styled-components';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger' | 'warning';
   isDisabled?: boolean;
 }
 
@@ -63,6 +63,20 @@ const variantStyles = {
       background: ${({ theme }) => theme.colors.danger};
     }
   `,
+  warning: css`
+    border-color: transparent;
+    background: ${({ theme }) => theme.colors.warning};
+    &:hover {
+      background: ${({ theme }) => theme.colors.warning};
+      opacity: 0.9;
+    }
+    &:active {
+      background: ${({ theme }) => theme.colors.warning};
+    }
+    &:focus {
+      background: ${({ theme }) => theme.colors.warning};
+    }
+  `,
 };
 
 const StyledButton = styled.button<ButtonProps>`
@@ -91,7 +105,7 @@ const StyledButton = styled.button<ButtonProps>`
 `;
 
 const ButtonContainer = styled.div<{
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger';
+  variant: ButtonProps['variant'];
 }>`
   height: fit-content;
   border: 2px solid transparent;
