@@ -83,7 +83,6 @@ const TABS = [
   },
 ];
 
-// TabList component
 const TabList: React.FC<TabListProps> = ({ tabs = TABS }) => {
   return (
     <TabListContainer>
