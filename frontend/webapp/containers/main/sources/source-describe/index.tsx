@@ -22,6 +22,9 @@ export const SourceDescriptionDrawer: React.FC<
   SourceDescriptionDrawerProps
 > = ({ namespace, kind, name }) => {
   const [isOpen, setDrawerOpen] = useState(false);
+  const [showExplanation, setShowExplanation] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [badgeStatus, setBadgeStatus] = useState<
     'error' | 'transitioning' | 'success'
   >('success');
@@ -53,6 +56,13 @@ export const SourceDescriptionDrawer: React.FC<
     }
   }, [sourceDescription]);
 
+  const handleToggleExplanation = (key: string) => {
+    setShowExplanation((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
   return (
     <>
       <IconWrapper onClick={toggleDrawer}>
@@ -82,8 +92,11 @@ export const SourceDescriptionDrawer: React.FC<
           ) : (
             <DescriptionContent>
               {sourceDescription
-                ? formatDescription(sourceDescription, () =>
-                    fetchSourceDescription()
+                ? formatDescription(
+                    sourceDescription,
+                    fetchSourceDescription,
+                    handleToggleExplanation,
+                    showExplanation
                   )
                 : 'No source details available.'}
             </DescriptionContent>
@@ -106,9 +119,16 @@ function extractSourceStatuses(description: any): string[] {
 }
 
 // Generic function to format any description data
-function formatDescription(description: any, refetch: () => void) {
-  const renderObjectProperties = (obj: any) => {
+function formatDescription(
+  description: any,
+  refetch: () => void,
+  handleToggleExplanation: (key: string) => void,
+  showExplanation: { [key: string]: boolean }
+) {
+  const renderObjectProperties = (obj: any, parentKey = '') => {
     return Object.entries(obj).map(([key, item]: [string, DescribeItem]) => {
+      const uniqueKey = `${parentKey}.${key}.${JSON.stringify(item)}`;
+
       if (
         typeof item === 'object' &&
         item !== null &&
@@ -116,11 +136,16 @@ function formatDescription(description: any, refetch: () => void) {
         item.hasOwnProperty('name')
       ) {
         return (
-          <div key={key}>
-            <p>
-              <strong>- {item?.name}:</strong> {String(item.value)}
+          <div key={uniqueKey}>
+            <p
+              onClick={() => handleToggleExplanation(uniqueKey)}
+              style={{ cursor: 'pointer' }}
+            >
+              <strong>{item.name}:</strong> {String(item.value)}
             </p>
-            {item.explain && <ExplanationText>{item.explain}</ExplanationText>}
+            {showExplanation[uniqueKey] && item.explain && (
+              <ExplanationText>{item.explain}</ExplanationText>
+            )}
           </div>
         );
       } else if (typeof item === 'object' && item !== null) {
