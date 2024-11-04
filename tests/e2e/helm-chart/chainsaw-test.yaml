@@ -116,6 +116,17 @@ spec:
     - assert:
         file: assert-instrumented-and-pipeline.yaml
 
+  - name: Verify InstrumentationConfig Generation Status
+    try:
+    - script:
+        timeout: 65s
+        content: |
+          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-frontend --timeout=60s
+          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-coupon --timeout=60s
+          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-inventory --timeout=60s
+          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-pricing --timeout=60s
+          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-membership --timeout=60s
+
   - name: Assert Post Destination Runtime Details
     try:
     - assert:
