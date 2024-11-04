@@ -161,7 +161,6 @@ func FetchDestinationsCRDs(ctx context.Context, client *kube.Client, CRDsDir str
 	err = os.Mkdir(crdDestinationPath, os.ModePerm)
 
 	for _, destination := range destinations.Items {
-		//crdDataDirPath := filepath.Join(crdDestinationPath, destination.Name)
 		if err := saveCrdToFile(destination, crdDestinationPath, destination.Name); err != nil {
 			fmt.Printf("Fetching Resource %s Failed because: %s\n", destination.Name, err)
 		}
