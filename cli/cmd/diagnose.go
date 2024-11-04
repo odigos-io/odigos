@@ -88,6 +88,15 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 		}
 	}()
 
+	// Fetch Odigos Profile
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err = diagnose_util.FetchOdigosProfiles(ctx, client, filepath.Join(mainTempDir, ProfileDir)); err != nil {
+			fmt.Printf("Error calculating Odigos Profile: %v\n", err)
+		}
+	}()
+
 	wg.Wait()
 
 	// Package the results into a tar.gz file

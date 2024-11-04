@@ -37,10 +37,10 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 	var modifiedContainers []corev1.Container
 	for _, container := range original.Spec.Containers {
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
-		if containerLanguage == nil || *containerLanguage == common.UnknownProgrammingLanguage || *containerLanguage == common.IgnoredProgrammingLanguage || *containerLanguage == common.NginxProgrammingLanguage {
+		if containerLanguage == common.UnknownProgrammingLanguage || containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.NginxProgrammingLanguage {
 			// always patch the env vars, even if the language is unknown or ignored.
 			// this is necessary to sync the existing envs with the missing language if changed for any reason.
-			err = patchEnvVarsForContainer(runtimeDetails, &container, nil, *containerLanguage, manifestEnvOriginal)
+			err = patchEnvVarsForContainer(runtimeDetails, &container, nil, containerLanguage, manifestEnvOriginal)
 			if err != nil {
 				return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied
 			}
@@ -48,12 +48,12 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 			continue
 		}
 
-		otelSdk, found := defaultSdks[*containerLanguage]
+		otelSdk, found := defaultSdks[containerLanguage]
 		if !found {
-			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, *containerLanguage, container.Name), deviceApplied
+			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, containerLanguage, container.Name), deviceApplied
 		}
 
-		instrumentationDeviceName := common.InstrumentationDeviceName(*containerLanguage, otelSdk)
+		instrumentationDeviceName := common.InstrumentationDeviceName(containerLanguage, otelSdk)
 
 		if container.Resources.Limits == nil {
 			container.Resources.Limits = make(map[corev1.ResourceName]resource.Quantity)
@@ -62,7 +62,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 
 		deviceApplied = true
 
-		err = patchEnvVarsForContainer(runtimeDetails, &container, &otelSdk, *containerLanguage, manifestEnvOriginal)
+		err = patchEnvVarsForContainer(runtimeDetails, &container, &otelSdk, containerLanguage, manifestEnvOriginal)
 		if err != nil {
 			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied
 		}
@@ -130,14 +130,14 @@ func RevertInstrumentationDevices(original *corev1.PodTemplateSpec) {
 	}
 }
 
-func getLanguageOfContainer(instrumentation *odigosv1.InstrumentedApplication, containerName string) *common.ProgrammingLanguage {
+func getLanguageOfContainer(instrumentation *odigosv1.InstrumentedApplication, containerName string) common.ProgrammingLanguage {
 	for _, l := range instrumentation.Spec.RuntimeDetails {
 		if l.ContainerName == containerName {
-			return &l.Language
+			return l.Language
 		}
 	}
 
-	return nil
+	return common.UnknownProgrammingLanguage
 }
 
 // getEnvVarsOfContainer returns the env vars which are defined for the given container and are used for instrumentation purposes.
