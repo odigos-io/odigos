@@ -111,8 +111,9 @@ const colors = {
 const text = {
   primary: '#111',
   secondary: '#F9F9F9',
-  grey: '#B8B8B8',
   white: '#fff',
+  grey: '#B8B8B8',
+  dark_grey: '#7A7A7A',
   light_grey: '#CCD0D2',
   dark_button: '#0A1824',
   success: '#81AF65',

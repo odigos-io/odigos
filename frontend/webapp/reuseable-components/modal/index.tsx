@@ -1,10 +1,10 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { Text } from '../text';
 import ReactDOM from 'react-dom';
+import { useKeyDown } from '@/hooks';
 import styled from 'styled-components';
 import { fade, Overlay } from '@/styles';
-import { useKeyDown, useOnClickOutside } from '@/hooks';
 
 interface ModalProps {
   isOpen: boolean;
@@ -84,8 +84,6 @@ const CancelText = styled(Text)`
 `;
 
 const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, onClose, children, actionComponent }) => {
-  const ref = useRef(null);
-  useOnClickOutside(ref, () => onClose());
   useKeyDown(
     {
       key: 'Escape',
@@ -98,9 +96,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, onClose, child
 
   return ReactDOM.createPortal(
     <>
-      <Overlay hideOverlay={noOverlay} />
+      <Overlay hideOverlay={noOverlay} onClick={onClose} />
 
-      <ModalWrapper ref={ref} isOpen={isOpen}>
+      <ModalWrapper isOpen={isOpen}>
         {header && (
           <ModalHeader>
             <ModalCloseButton onClick={onClose}>

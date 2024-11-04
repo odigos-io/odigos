@@ -70,7 +70,7 @@ interface AddEntityButtonDropdownProps {
   placeholder?: string;
 }
 
-const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
+const AddEntity: React.FC<AddEntityButtonDropdownProps> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
   const { setCurrentModal } = useModalStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -109,4 +109,4 @@ const AddEntityButtonDropdown: React.FC<AddEntityButtonDropdownProps> = ({ optio
   );
 };
 
-export { AddEntityButtonDropdown };
+export { AddEntity };

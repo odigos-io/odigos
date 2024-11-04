@@ -6,10 +6,13 @@ export type SignalLowercase = 'traces' | 'metrics' | 'logs';
 
 export type MonitoringOption = {
   id: number;
-  title: string;
-  icons: object;
   type: SignalLowercase;
+  title: string;
   tapped: boolean;
+  icons: {
+    notFocus: () => JSX.Element;
+    focus: () => JSX.Element;
+  };
 };
 
 export const MONITORING_OPTIONS: MonitoringOption[] = [
