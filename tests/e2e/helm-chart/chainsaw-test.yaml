@@ -95,20 +95,32 @@ spec:
     - assert:
         file: assert-apps-installed.yaml
 
-  - name: Detect Languages
+  - name: Instrument Namespace
     try:
     - apply:
         file: 03-instrument-ns.yaml
+  
+  - name: Assert Runtime Detected
+    try:
     - assert:
+        timeout: 2m
         file: assert-runtime-detected.yaml
+
   - name: Add Destination
     try:
     - apply:
         file: 04-add-destination.yaml
+
+  - name: Assert Instrumented and Pipeline
+    try:
     - assert:
         file: assert-instrumented-and-pipeline.yaml
+
+  - name: Assert Post Destination Runtime Details
+    try:
     - assert:
         file: assert-post-dest-runtime-details.yaml
+
   - name: Generate Traffic
     try:
       - script:
