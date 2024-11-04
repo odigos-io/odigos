@@ -25,8 +25,7 @@ const TabContainer = styled.div<{ selected: boolean }>`
   padding: 0px 12px;
   border-radius: 32px;
   cursor: pointer;
-  background-color: ${({ selected, theme }) =>
-    selected ? theme.colors.selected_hover : theme.colors.card};
+  background-color: ${({ selected, theme }) => (selected ? theme.colors.selected_hover : theme.colors.card)};
   transition: background-color 0.3s, color 0.3s;
 
   &:hover {
@@ -60,6 +59,18 @@ const TABS = [
     selected: true,
     onClick: () => {},
   },
+  {
+    title: 'Service map',
+    icon: '/icons/overview/service-map.svg',
+    selected: false,
+    onClick: () => {},
+  },
+  {
+    title: 'Trace view',
+    icon: '/icons/overview/trace-view.svg',
+    selected: false,
+    onClick: () => {},
+  },
 ];
 
 // TabList component
@@ -67,13 +78,7 @@ const TabList: React.FC<TabListProps> = ({ tabs = TABS }) => {
   return (
     <TabListContainer>
       {tabs.map((tab, index) => (
-        <Tab
-          key={index}
-          title={tab.title}
-          icon={tab.icon}
-          selected={tab.selected}
-          onClick={tab.onClick}
-        />
+        <Tab key={index} title={tab.title} icon={tab.icon} selected={tab.selected} onClick={tab.onClick} />
       ))}
     </TabListContainer>
   );

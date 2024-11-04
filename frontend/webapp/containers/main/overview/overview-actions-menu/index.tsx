@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
+import Filters from './filters';
+import Monitors from './monitors';
 import styled from 'styled-components';
+import { AddEntityButtonDropdown } from './add-entity';
 import { Input, TabList } from '@/reuseable-components';
-import { AddEntityButtonDropdown } from '../add-entity';
-import { DropdownOption } from '@/types';
 
 const MenuContainer = styled.div`
   display: flex;
   align-items: center;
   margin: 20px 0;
-`;
-
-const SearchInputContainer = styled.div`
-  width: 200px;
 `;
 
 const DividerContainer = styled.div`
@@ -27,28 +24,46 @@ const Divider = styled.div`
   margin: 0 16px;
 `;
 
+const SearchContainer = styled.div`
+  width: 200px;
+`;
+
+const FilterContainer = styled.div`
+  margin-left: 12px;
+`;
+
+const MonitorsContainer = styled.div`
+  margin: 0 24px;
+`;
+
 // Aligns the AddEntityButtonDropdown to the right
 const StyledAddEntityButtonDropdownWrapper = styled.div`
   margin-left: auto;
 `;
 
 export function OverviewActionMenuContainer() {
-  const [searchFilter, setSearchFilter] = useState<string>('');
+  const [search, setSearch] = useState<string>('');
 
   return (
     <MenuContainer>
       <TabList />
+
       <DividerContainer>
         <Divider />
       </DividerContainer>
-      <SearchInputContainer>
-        <Input
-          placeholder="Search "
-          icon={'/icons/common/search.svg'}
-          value={searchFilter}
-          onChange={(e) => setSearchFilter(e.target.value)}
-        />
-      </SearchInputContainer>
+
+      <SearchContainer>
+        <Input placeholder='Search' icon='/icons/common/search.svg' value={search} onChange={(e) => setSearch(e.target.value)} />
+      </SearchContainer>
+
+      <FilterContainer>
+        <Filters />
+      </FilterContainer>
+
+      <MonitorsContainer>
+        <Monitors />
+      </MonitorsContainer>
+
       <StyledAddEntityButtonDropdownWrapper>
         <AddEntityButtonDropdown />
       </StyledAddEntityButtonDropdownWrapper>
