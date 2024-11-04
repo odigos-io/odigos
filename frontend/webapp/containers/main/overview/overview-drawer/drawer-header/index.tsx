@@ -1,5 +1,5 @@
 // DrawerHeader.tsx
-import React, { useEffect, useState, forwardRef } from 'react';
+import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { Button, Input, Text } from '@/reuseable-components';
@@ -37,11 +37,7 @@ const DrawerItemImageWrapper = styled.div`
   align-items: center;
   gap: 8px;
   border-radius: 8px;
-  background: linear-gradient(
-    180deg,
-    rgba(249, 249, 249, 0.06) 0%,
-    rgba(249, 249, 249, 0.02) 100%
-  );
+  background: linear-gradient(180deg, rgba(249, 249, 249, 0.06) 0%, rgba(249, 249, 249, 0.02) 100%);
 `;
 
 const EditButton = styled(Button)`
@@ -59,64 +55,61 @@ const ButtonText = styled(Text)`
   width: fit-content;
 `;
 
+export interface DrawerHeaderRef {
+  getTitle: () => string;
+  clearTitle: () => void;
+}
+
 interface DrawerHeaderProps {
   title: string;
   imageUri: string;
+  isEdit: boolean;
+  onEdit: () => void;
   onClose: () => void;
-  isEditing: boolean;
-  setIsEditing: (isEditing: boolean) => void;
 }
 
-const DrawerHeader = forwardRef<HTMLInputElement, DrawerHeaderProps>(
-  ({ title, imageUri, isEditing, setIsEditing, onClose }, ref) => {
-    const [inputValue, setInputValue] = useState(title);
+const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, imageUri, isEdit, onEdit, onClose }, ref) => {
+  const [inputValue, setInputValue] = useState(title);
 
-    useEffect(() => {
-      setInputValue(title);
-    }, [title]);
+  useEffect(() => {
+    setInputValue(title);
+  }, [title]);
 
-    return (
-      <HeaderContainer>
-        <SectionItemsWrapper>
-          <DrawerItemImageWrapper>
-            <Image src={imageUri} alt="Drawer Item" width={16} height={16} />
-          </DrawerItemImageWrapper>
-          {!isEditing && <Title>{title}</Title>}
-        </SectionItemsWrapper>
-        {isEditing && (
-          <InputWrapper>
-            <Input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              autoFocus
-              ref={ref}
-            />
-          </InputWrapper>
+  useImperativeHandle(ref, () => ({
+    getTitle: () => inputValue,
+    clearTitle: () => setInputValue(title),
+  }));
+
+  return (
+    <HeaderContainer>
+      <SectionItemsWrapper>
+        <DrawerItemImageWrapper>
+          <Image src={imageUri} alt='Drawer Item' width={16} height={16} />
+        </DrawerItemImageWrapper>
+        {!isEdit && <Title>{title}</Title>}
+      </SectionItemsWrapper>
+
+      {isEdit && (
+        <InputWrapper>
+          <Input autoFocus value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+        </InputWrapper>
+      )}
+
+      <SectionItemsWrapper gap={8}>
+        {!isEdit && (
+          <EditButton variant='tertiary' onClick={onEdit}>
+            <Image src='/icons/common/edit.svg' alt='Edit' width={16} height={16} />
+            <ButtonText>Edit</ButtonText>
+          </EditButton>
         )}
-        <SectionItemsWrapper gap={8}>
-          {!isEditing && (
-            <EditButton variant="tertiary" onClick={() => setIsEditing(true)}>
-              <Image
-                src="/icons/common/edit.svg"
-                alt="Edit"
-                width={16}
-                height={16}
-              />
-              <ButtonText>Edit</ButtonText>
-            </EditButton>
-          )}
-          <CloseButton variant="secondary" onClick={onClose}>
-            <Image
-              src="/icons/common/x.svg"
-              alt="Close"
-              width={11}
-              height={10}
-            />
-          </CloseButton>
-        </SectionItemsWrapper>
-      </HeaderContainer>
-    );
-  }
-);
+        <CloseButton variant='secondary' onClick={onClose}>
+          <Image src='/icons/common/x.svg' alt='Close' width={11} height={10} />
+        </CloseButton>
+      </SectionItemsWrapper>
+    </HeaderContainer>
+  );
+});
+
+DrawerHeader.displayName = 'DrawerHeader';
 
 export default DrawerHeader;

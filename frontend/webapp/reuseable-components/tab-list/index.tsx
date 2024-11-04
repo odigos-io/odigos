@@ -1,13 +1,16 @@
 import Image from 'next/image';
 import React from 'react';
-import styled from 'styled-components';
 import { Text } from '../text';
+import { Tooltip } from '../tooltip';
+import styled from 'styled-components';
 
 // Define types for the Tab component props
 interface TabProps {
   title: string;
+  tooltip?: string;
   icon: string;
   selected: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }
 
@@ -17,20 +20,20 @@ interface TabListProps {
 }
 
 // Styled-components for Tab and TabList
-const TabContainer = styled.div<{ selected: boolean }>`
+const TabContainer = styled.div<{ selected: TabProps['selected']; disabled: TabProps['disabled'] }>`
   display: flex;
   align-items: center;
   gap: 8px;
   height: 36px;
   padding: 0px 12px;
   border-radius: 32px;
-  cursor: pointer;
-  background-color: ${({ selected, theme }) =>
-    selected ? theme.colors.selected_hover : theme.colors.card};
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
+  background-color: ${({ selected, theme }) => (selected ? theme.colors.selected_hover : theme.colors.card)};
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
   transition: background-color 0.3s, color 0.3s;
 
   &:hover {
-    background-color: ${({ theme }) => theme.colors.selected_hover};
+    background-color: ${({ disabled, theme }) => (disabled ? 'none' : theme.colors.selected_hover)};
   }
 
   svg {
@@ -44,12 +47,14 @@ const TabListContainer = styled.div`
 `;
 
 // Tab component
-const Tab: React.FC<TabProps> = ({ title, icon, selected, onClick }) => {
+const Tab: React.FC<TabProps> = ({ title, tooltip, icon, selected, disabled, onClick }) => {
   return (
-    <TabContainer selected={selected} onClick={onClick}>
-      <Image src={icon} width={14} height={14} alt={title} />
-      <Text size={14}>{title}</Text>
-    </TabContainer>
+    <Tooltip text={tooltip || ''}>
+      <TabContainer selected={selected} disabled={disabled} onClick={onClick}>
+        <Image src={icon} width={14} height={14} alt={title} />
+        <Text size={14}>{title}</Text>
+      </TabContainer>
+    </Tooltip>
   );
 };
 
@@ -60,20 +65,29 @@ const TABS = [
     selected: true,
     onClick: () => {},
   },
+  {
+    title: 'Service map',
+    icon: '/icons/overview/service-map.svg',
+    selected: false,
+    onClick: () => {},
+    disabled: true,
+    tooltip: 'Coming soon',
+  },
+  {
+    title: 'Trace view',
+    icon: '/icons/overview/trace-view.svg',
+    selected: false,
+    onClick: () => {},
+    disabled: true,
+    tooltip: 'Coming soon',
+  },
 ];
 
-// TabList component
 const TabList: React.FC<TabListProps> = ({ tabs = TABS }) => {
   return (
     <TabListContainer>
-      {tabs.map((tab, index) => (
-        <Tab
-          key={index}
-          title={tab.title}
-          icon={tab.icon}
-          selected={tab.selected}
-          onClick={tab.onClick}
-        />
+      {tabs.map((tab) => (
+        <Tab key={`tab-${tab.title}`} {...tab} />
       ))}
     </TabListContainer>
   );

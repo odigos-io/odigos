@@ -73,8 +73,8 @@ export function ChooseDestinationContainer() {
       </HeaderWrapper>
       <ContentWrapper>
         <SectionTitle
-          title="Configure destinations"
-          description="Add backend destinations where collected data will be sent and configure their settings."
+          title='Configure destinations'
+          description='Add backend destinations where collected data will be sent and configure their settings.'
         />
         {isSourcesListEmpty() && destinations.length === 0 && (
           <NotificationNoteWrapper>
@@ -92,10 +92,7 @@ export function ChooseDestinationContainer() {
           <AddDestinationButton onClick={() => handleOpenModal()} />
         </AddDestinationButtonWrapper>
         <ConfiguredDestinationsList data={destinations} />
-        <AddDestinationModal
-          isModalOpen={isModalOpen}
-          handleCloseModal={handleCloseModal}
-        />
+        <AddDestinationModal isOpen={isModalOpen} onClose={handleCloseModal} />
       </ContentWrapper>
     </>
   );

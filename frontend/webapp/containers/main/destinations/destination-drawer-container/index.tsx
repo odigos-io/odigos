@@ -1,69 +1,79 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-import { ExportedSignals } from '@/types';
+import { useDrawerStore } from '@/store';
+import { ActualDestination } from '@/types';
+import OverviewDrawer from '../../overview/overview-drawer';
 import { CardDetails, EditDestinationForm } from '@/components';
-import { useDestinationFormData, useEditDestinationFormHandlers } from '@/hooks';
+import { useDestinationCRUD, useDestinationFormData, useEditDestinationFormHandlers } from '@/hooks';
 
-export type DestinationDrawerHandle = {
-  getCurrentData: () => {
-    type: string;
-    exportedSignals: ExportedSignals;
-    fields: { key: string; value: any }[];
-  };
-};
+interface Props {}
 
-interface DestinationDrawerProps {
-  isEditing: boolean;
-}
+const DestinationDrawer: React.FC<Props> = () => {
+  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
+  const [isEditing, setIsEditing] = useState(false);
 
-const DestinationDrawer = forwardRef<DestinationDrawerHandle, DestinationDrawerProps>(({ isEditing }, ref) => {
-  const [isFormDirty, setIsFormDirty] = useState(false);
   const { cardData, dynamicFields, exportedSignals, supportedSignals, destinationType, resetFormData, setDynamicFields, setExportedSignals } =
     useDestinationFormData();
-
   const { handleSignalChange, handleDynamicFieldChange } = useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
+  const { updateDestination, deleteDestination } = useDestinationCRUD();
 
-  useEffect(() => {
-    if (!isEditing && isFormDirty) {
-      setIsFormDirty(false);
-      resetFormData();
+  if (!selectedItem?.item) return null;
+  const { id, item } = selectedItem;
+
+  const handleEdit = (bool?: boolean) => {
+    if (typeof bool === 'boolean') {
+      setIsEditing(bool);
+    } else {
+      setIsEditing(true);
     }
-  }, [isEditing]);
-
-  const onDynamicFieldChange = (name: string, value: any) => {
-    handleDynamicFieldChange(name, value);
-    setIsFormDirty(true);
   };
 
-  const onSignalChange = (signal: keyof ExportedSignals, value: boolean) => {
-    handleSignalChange(signal, value);
-    setIsFormDirty(true);
+  const handleCancel = () => {
+    resetFormData();
+    setIsEditing(false);
   };
 
-  useImperativeHandle(ref, () => ({
-    getCurrentData: () => ({
+  const handleDelete = async () => {
+    await deleteDestination(id as string);
+  };
+
+  const handleSave = async (newTitle: string) => {
+    const payload = {
       type: destinationType,
+      name: newTitle,
       exportedSignals,
       fields: dynamicFields.map(({ name, value }) => ({ key: name, value })),
-    }),
-  }));
+    };
 
-  return isEditing ? (
-    <FormContainer>
-      <EditDestinationForm
-        dynamicFields={dynamicFields}
-        exportedSignals={exportedSignals}
-        supportedSignals={supportedSignals}
-        handleSignalChange={onSignalChange}
-        handleDynamicFieldChange={onDynamicFieldChange}
-      />
-    </FormContainer>
-  ) : (
-    <CardDetails data={cardData} />
+    await updateDestination(id as string, payload);
+  };
+
+  return (
+    <OverviewDrawer
+      title={(item as ActualDestination).name}
+      imageUri={(item as ActualDestination).destinationType.imageUrl}
+      isEdit={isEditing}
+      clickEdit={handleEdit}
+      clickSave={handleSave}
+      clickDelete={handleDelete}
+      clickCancel={handleCancel}
+    >
+      {isEditing ? (
+        <FormContainer>
+          <EditDestinationForm
+            dynamicFields={dynamicFields}
+            exportedSignals={exportedSignals}
+            supportedSignals={supportedSignals}
+            handleSignalChange={handleSignalChange}
+            handleDynamicFieldChange={handleDynamicFieldChange}
+          />
+        </FormContainer>
+      ) : (
+        <CardDetails data={cardData} />
+      )}
+    </OverviewDrawer>
   );
-});
-
-DestinationDrawer.displayName = 'DestinationDrawer';
+};
 
 export { DestinationDrawer };
 

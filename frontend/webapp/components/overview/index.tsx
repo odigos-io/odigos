@@ -6,3 +6,6 @@ export * from './add.item.menu';
 export * from './actions';
 export * from './sources';
 export * from './destination';
+export * from './add-entity';
+export * from './filters';
+export * from './monitors-legend';

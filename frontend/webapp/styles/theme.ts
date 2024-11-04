@@ -14,6 +14,7 @@ const colors = {
   dropdown_bg: '#242424',
   blank_background: '#11111100',
   danger: '#EF7676',
+  warning: '#E9CF35',
   white_opacity: {
     '004': 'rgba(249, 249, 249, 0.04)',
     '008': 'rgba(249, 249, 249, 0.08)',
@@ -110,8 +111,9 @@ const colors = {
 const text = {
   primary: '#111',
   secondary: '#F9F9F9',
-  grey: '#B8B8B8',
   white: '#fff',
+  grey: '#B8B8B8',
+  dark_grey: '#7A7A7A',
   light_grey: '#CCD0D2',
   dark_button: '#0A1824',
   success: '#81AF65',

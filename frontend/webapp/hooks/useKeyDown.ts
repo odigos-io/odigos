@@ -1,9 +1,28 @@
 import { useEffect } from 'react';
 
-export function useKeyDown(key: Key | null, callback: (e: KeyboardEvent) => void) {
+interface KeyDownOptions {
+  active: boolean;
+  key: Key;
+  withAltKey?: boolean;
+  withCtrlKey?: boolean;
+  withShiftKey?: boolean;
+  withMetaKey?: boolean;
+}
+
+export function useKeyDown(
+  { active, key, withAltKey, withCtrlKey, withShiftKey, withMetaKey }: KeyDownOptions,
+  callback: (e: KeyboardEvent) => void
+) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (key && key === e.key) {
+      if (
+        active &&
+        key === e.key &&
+        (!withAltKey || (withAltKey && e.altKey)) &&
+        (!withCtrlKey || (withCtrlKey && e.ctrlKey)) &&
+        (!withShiftKey || (withShiftKey && e.shiftKey)) &&
+        (!withMetaKey || (withMetaKey && e.metaKey))
+      ) {
         e.preventDefault();
         e.stopPropagation();
 
@@ -16,7 +35,7 @@ export function useKeyDown(key: Key | null, callback: (e: KeyboardEvent) => void
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [key, callback]);
+  }, [key, active, withAltKey, withCtrlKey, withShiftKey, withMetaKey, callback]);
 
   return null;
 }

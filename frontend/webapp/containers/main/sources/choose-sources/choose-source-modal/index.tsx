@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import React, { useState, useCallback } from 'react';
-import { useConnectSourcesMenuState } from '@/hooks';
+import { useActualSources, useConnectSourcesMenuState } from '@/hooks';
 import { ChooseSourcesBody } from '../choose-sources-body';
 import { Modal, NavigationButtons } from '@/reuseable-components';
 import { K8sActualSource, PersistNamespaceItemInput } from '@/types';
@@ -15,15 +15,12 @@ const ChooseSourcesBodyWrapper = styled.div`
 interface AddSourceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  createSourcesForNamespace: (namespaceName: string, sources: { kind: string; name: string; selected: boolean }[]) => Promise<void>;
-  persistNamespaceItems: (namespaceItems: PersistNamespaceItemInput[]) => Promise<void>;
 }
 
-export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose, createSourcesForNamespace, persistNamespaceItems }) => {
+export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose }) => {
   const [sourcesList, setSourcesList] = useState<K8sActualSource[]>([]);
-  const { stateMenu, stateHandlers } = useConnectSourcesMenuState({
-    sourcesList,
-  });
+  const { stateMenu, stateHandlers } = useConnectSourcesMenuState({ sourcesList });
+  const { createSourcesForNamespace, persistNamespaceItems } = useActualSources();
 
   const handleNextClick = useCallback(async () => {
     try {
@@ -49,22 +46,25 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose,
     } catch (error) {
       console.error('Error during handleNextClick:', error);
     }
-  }, [createSourcesForNamespace, persistNamespaceItems, stateMenu, onClose]);
-
-  const ModalActionComponent = (
-    <NavigationButtons
-      buttons={[
-        {
-          label: 'DONE',
-          onClick: handleNextClick,
-          variant: 'primary',
-        },
-      ]}
-    />
-  );
+  }, [stateMenu, onClose, createSourcesForNamespace, persistNamespaceItems]);
 
   return (
-    <Modal isOpen={isOpen} header={{ title: 'Add Source' }} actionComponent={ModalActionComponent} onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      header={{ title: 'Add Source' }}
+      actionComponent={
+        <NavigationButtons
+          buttons={[
+            {
+              label: 'DONE',
+              onClick: handleNextClick,
+              variant: 'primary',
+            },
+          ]}
+        />
+      }
+    >
       <ChooseSourcesBodyWrapper>
         <ChooseSourcesBody isModal stateMenu={stateMenu} sourcesList={sourcesList} stateHandlers={stateHandlers} setSourcesList={setSourcesList} />
       </ChooseSourcesBodyWrapper>
