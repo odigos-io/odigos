@@ -15,7 +15,7 @@ export const Overlay = styled.div<{ hideOverlay?: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 999;
+  z-index: 1000;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(1px);
   opacity: ${({ hideOverlay }) => (hideOverlay ? 0 : 1)};
