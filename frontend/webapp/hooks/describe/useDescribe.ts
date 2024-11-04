@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { getOdigosDescription, getSourceDescription } from '@/services';
+import { use } from 'chai';
 
 export function useDescribe() {
   const [namespace, setNamespace] = useState<string>('');
   const [kind, setKind] = useState<string>('');
   const [name, setName] = useState<string>('');
-
-  useEffect(() => {
-    if (namespace && kind && name) {
-      refetchSourceDescription();
-    }
-  }, [namespace, kind, name]);
 
   // Fetch Odigos description
   const {
@@ -28,12 +23,26 @@ export function useDescribe() {
     isLoading: isSourceLoading,
     refetch: refetchSourceDescription,
   } = useQuery(
-    ['sourceDescription', namespace, kind, name],
-    () => getSourceDescription(namespace, kind, name),
+    ['sourceDescription'],
+    () => getSourceDescription(namespace, kind.toLowerCase(), name),
+
     {
+      onError: (error) => {
+        console.log(error);
+      },
       enabled: false,
     }
   );
+
+  useEffect(() => {
+    if (namespace && kind && name) {
+      refetchSourceDescription();
+    }
+  }, [namespace, kind, name]);
+
+  useEffect(() => {
+    console.log({ sourceDescription });
+  }, [sourceDescription]);
 
   // Function to set parameters for source description and refetch
   function fetchSourceDescription(
@@ -44,15 +53,6 @@ export function useDescribe() {
     setNamespace(newNamespace);
     setKind(newKind);
     setName(newName);
-    console.log({ newNamespace, newKind, newName });
-    try {
-      if (newNamespace && newKind && newName) {
-        console.log('object');
-        // refetchSourceDescription();
-      }
-    } catch (error) {
-      console.error('Error fetching source description:', error);
-    }
     // refetchSourceDescription();
   }
 

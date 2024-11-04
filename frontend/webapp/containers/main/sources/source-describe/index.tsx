@@ -1,4 +1,6 @@
+'use client';
 import React, { useEffect, useState } from 'react';
+import { Describe, Refresh } from '@/assets';
 import theme from '@/styles/palette';
 import { useDescribe } from '@/hooks';
 import styled from 'styled-components';
@@ -14,235 +16,212 @@ export const SourceDescriptionDrawer: React.FC<
   SourceDescriptionDrawerProps
 > = ({ namespace, kind, name }) => {
   const [isOpen, setDrawerOpen] = useState(false);
+  const [badgeStatus, setBadgeStatus] = useState<
+    'error' | 'transitioning' | 'success'
+  >('success');
 
-  const toggleDrawer = () => setDrawerOpen((prev) => !prev);
+  const toggleDrawer = () => setDrawerOpen(!isOpen);
 
   const { sourceDescription, isSourceLoading, fetchSourceDescription } =
     useDescribe();
 
   useEffect(() => {
-    if (!sourceDescription && isOpen) {
+    isOpen &&
+      namespace &&
+      kind &&
+      name &&
       fetchSourceDescription(namespace, kind, name);
+  }, [isOpen, namespace, kind, name]);
+
+  useEffect(() => {
+    if (sourceDescription) {
+      const statuses = extractSourceStatuses(sourceDescription);
+      if (statuses.includes('error')) setBadgeStatus('error');
+      else if (statuses.includes('transitioning'))
+        setBadgeStatus('transitioning');
+      else setBadgeStatus('success');
     }
-  }, [sourceDescription, isOpen]);
+  }, [sourceDescription]);
 
   return (
     <>
       <IconWrapper onClick={toggleDrawer}>
-        <KeyvalText size={14} color={theme.colors.dark_blue}>
-          View Source
-        </KeyvalText>
+        <Describe style={{ cursor: 'pointer' }} size={10} />
+        {!isSourceLoading && (
+          <NotificationBadge status={badgeStatus}>
+            <KeyvalText size={10}>
+              {badgeStatus === 'transitioning'
+                ? '...'
+                : badgeStatus === 'error'
+                ? '!'
+                : ''}
+            </KeyvalText>
+          </NotificationBadge>
+        )}
       </IconWrapper>
 
-      <Drawer
-        isOpen={isOpen}
-        onClose={() => setDrawerOpen(false)}
-        position="right"
-        width="fit-content"
-      >
-        {isSourceLoading ? (
-          <LoadingMessage>Loading source description...</LoadingMessage>
-        ) : (
-          <DescriptionContent>
-            {sourceDescription
-              ? formatSourceDescription(sourceDescription)
-              : 'No description available.'}
-          </DescriptionContent>
-        )}
-      </Drawer>
+      {isOpen && (
+        <Drawer
+          isOpen={isOpen}
+          onClose={() => setDrawerOpen(false)}
+          position="right"
+          width="fit-content"
+        >
+          {isSourceLoading ? (
+            <LoadingMessage>Loading source details...</LoadingMessage>
+          ) : (
+            <DescriptionContent>
+              {sourceDescription
+                ? formatDescription(sourceDescription, () =>
+                    fetchSourceDescription(namespace, kind, name)
+                  )
+                : 'No source details available.'}
+            </DescriptionContent>
+          )}
+        </Drawer>
+      )}
     </>
   );
 };
 
-// Function to render the source description with relevant details
-function formatSourceDescription(description: any) {
+function extractSourceStatuses(description: any): string[] {
+  const statuses: string[] = [];
+  if (description.instrumentationConfig?.status) {
+    statuses.push(description.instrumentationConfig.status);
+  }
+  description.pods?.forEach((pod: any) => {
+    if (pod.phase.status) statuses.push(pod.phase.status);
+  });
+  return statuses;
+}
+
+// Generic function to format any description data
+function formatDescription(description: any, refetch: () => void) {
+  const renderObjectProperties = (obj: any) => {
+    return Object.entries(obj).map(([key, item]) => {
+      if (typeof item === 'object' && item !== null && 'value' in item) {
+        return (
+          <div key={key}>
+            <p>
+              <strong>{item?.name}:</strong> {String(item.value)}
+            </p>
+            {item.explain && <ExplanationText>{item.explain}</ExplanationText>}
+          </div>
+        );
+      } else if (typeof item === 'object' && item !== null) {
+        return (
+          <div key={key} style={{ marginLeft: '16px' }}>
+            {Number.isNaN(key) && <strong>- {key}:</strong>}
+            <div style={{ marginLeft: '16px' }}>
+              {renderObjectProperties(item)}
+            </div>
+          </div>
+        );
+      } else if (Array.isArray(item)) {
+        return <CollectorSection key={key} title={key} collector={item} />;
+      }
+      return null;
+    });
+  };
+
   return (
     <div>
-      <Section>
-        <KeyvalText>
-          <strong>{description.name.name}:</strong> {description.name.value}
-        </KeyvalText>
-        <ToggleExplanation text={description.name.explain} />
-      </Section>
-      <Section>
-        <KeyvalText>
-          <strong>{description.kind.name}:</strong> {description.kind.value}
-        </KeyvalText>
-        <ToggleExplanation text={description.kind.explain} />
-      </Section>
-      <Section>
-        <KeyvalText>
-          <strong>{description.namespace.name}:</strong>{' '}
-          {description.namespace.value}
-        </KeyvalText>
-        <ToggleExplanation text={description.namespace.explain} />
-      </Section>
-
-      <LabelsSection title="Labels" labels={description.labels} />
-      <InstrumentationSection
-        title="Instrumentation Config"
-        config={description.instrumentationConfig}
-      />
-      <RuntimeInfoSection runtimeInfo={description.runtimeInfo} />
-      <PodsSection
-        pods={description.pods}
-        podsPhasesCount={description.podsPhasesCount}
-        totalPods={description.totalPods}
-      />
+      <VersionHeader>
+        <VersionText>{description.name?.value || 'Unnamed'}</VersionText>
+        <IconWrapper onClick={refetch}>
+          <Refresh size={16} />
+        </IconWrapper>
+      </VersionHeader>
+      {renderObjectProperties(description)}
     </div>
   );
 }
+// Component to handle pod data display
+const CollectorSection: React.FC<{ title: string; collector: any[] }> = ({
+  title,
+  collector,
+}) => (
+  <section style={{ marginTop: 24 }}>
+    <CollectorTitle>{title}</CollectorTitle>
+    {collector.map((item: any, index: number) => (
+      <CollectorItem
+        key={index}
+        label={item.podName.value}
+        value={item.phase.value}
+        status={item.phase.status}
+      />
+    ))}
+  </section>
+);
 
-// ToggleExplanation component to handle the show/hide logic
-const ToggleExplanation: React.FC<{ text: string }> = ({ text }) => {
-  const [isVisible, setVisible] = useState(false);
+// Component to handle individual pod items with conditional styling based on status
+const CollectorItem: React.FC<{
+  label: string;
+  value: any;
+  status?: string;
+}> = ({ label, value, status }) => {
+  const color = status === 'error' ? theme.colors.error : theme.text.light_grey;
 
   return (
-    <div>
-      <SeeMoreButton onClick={() => setVisible((prev) => !prev)}>
-        {isVisible ? 'See Less' : 'See More'}
-      </SeeMoreButton>
-      {isVisible && <Explanation>{text}</Explanation>}
-    </div>
+    <StatusText color={color}>
+      - {label}: {String(value)}
+    </StatusText>
   );
 };
 
-// Component to render labels
-const LabelsSection: React.FC<{ title: string; labels: any }> = ({
-  title,
-  labels,
-}) => (
-  <DetailsSection>
-    <KeyvalText>
-      <strong>{title}:</strong>
-    </KeyvalText>
-    {Object.entries(labels).map(([key, label]: [string, any]) => (
-      <Section key={key}>
-        <KeyvalText>
-          {label.name}: {String(label.value)}
-        </KeyvalText>
-        <ToggleExplanation text={label.explain} />
-      </Section>
-    ))}
-  </DetailsSection>
-);
-
-// Component to render instrumentation config
-const InstrumentationSection: React.FC<{ title: string; config: any }> = ({
-  title,
-  config,
-}) => (
-  <DetailsSection>
-    <KeyvalText>
-      <strong>{title}:</strong>
-    </KeyvalText>
-    {Object.entries(config).map(([key, item]: [string, any]) => (
-      <Section key={key}>
-        <KeyvalText>
-          {item.name}: {item.value}
-        </KeyvalText>
-        <ToggleExplanation text={item.explain} />
-      </Section>
-    ))}
-  </DetailsSection>
-);
-
-// Component to render runtime info
-const RuntimeInfoSection: React.FC<{ runtimeInfo: any }> = ({
-  runtimeInfo,
-}) => (
-  <DetailsSection>
-    <KeyvalText>
-      <strong>Runtime Info:</strong>
-    </KeyvalText>
-    {runtimeInfo.containers.map((container: any, index: number) => (
-      <ContainerSection key={index} container={container} />
-    ))}
-  </DetailsSection>
-);
-
-// Component for each container in runtime info
-const ContainerSection: React.FC<{ container: any }> = ({ container }) => (
-  <DetailsSection>
-    <KeyvalText>
-      <strong>Container Name:</strong> {container.containerName.value}
-    </KeyvalText>
-    <ToggleExplanation text={container.containerName.explain} />
-    <KeyvalText>
-      <strong>Language:</strong> {container.language?.value}
-    </KeyvalText>
-    <ToggleExplanation text={container.language?.explain} />
-    <KeyvalText>
-      <strong>Runtime Version:</strong> {container.runtimeVersion?.value}
-    </KeyvalText>
-    <ToggleExplanation text={container.runtimeVersion?.explain} />
-  </DetailsSection>
-);
-
-// Component to render pods section
-const PodsSection: React.FC<{
-  pods: any[];
-  podsPhasesCount: string;
-  totalPods: number;
-}> = ({ pods, podsPhasesCount, totalPods }) => (
-  <DetailsSection>
-    <KeyvalText>
-      <strong>Pods:</strong>
-    </KeyvalText>
-    <KeyvalText>Total Pods: {totalPods}</KeyvalText>
-    <KeyvalText>Phases Count: {podsPhasesCount}</KeyvalText>
-    {pods.map((pod, index) => (
-      <PodSection key={index} pod={pod} />
-    ))}
-  </DetailsSection>
-);
-
-// Component for each pod
-const PodSection: React.FC<{ pod: any }> = ({ pod }) => (
-  <DetailsSection>
-    <KeyvalText>
-      <strong>Pod Name:</strong> {pod.podName.value}
-    </KeyvalText>
-    <ToggleExplanation text={pod.podName.explain} />
-    <KeyvalText>
-      <strong>Node Name:</strong> {pod.nodeName.value}
-    </KeyvalText>
-    <ToggleExplanation text={pod.nodeName.explain} />
-    <KeyvalText>
-      <strong>Phase:</strong> {pod.phase.value}
-    </KeyvalText>
-    <ToggleExplanation text={pod.phase.explain} />
-    {pod.containers.map((container: any, index: number) => (
-      <ContainerSection key={index} container={container} />
-    ))}
-  </DetailsSection>
-);
-
-const Explanation = styled.p`
-  font-size: 0.85rem;
-  color: ${theme.colors.light_grey};
+const VersionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 10px;
 `;
 
-const Section = styled.div`
-  margin-bottom: 20px;
+const VersionText = styled(KeyvalText)`
+  font-size: 24px;
+`;
+
+const CollectorTitle = styled(KeyvalText)`
+  font-size: 20px;
+  margin-bottom: 10px;
+`;
+
+const NotificationBadge = styled.div<{ status: string }>`
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: ${({ status }) =>
+    status === 'error'
+      ? theme.colors.error
+      : status === 'transitioning'
+      ? theme.colors.orange_brown
+      : theme.colors.success};
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
 `;
 
 const IconWrapper = styled.div`
   position: relative;
   padding: 8px;
+  width: 16px;
   border-radius: 8px;
+  border: 1px solid ${theme.colors.blue_grey};
   display: flex;
   align-items: center;
   cursor: pointer;
   &:hover {
-    background-color: ${theme.colors.light_grey};
+    background-color: ${theme.colors.dark};
   }
 `;
 
 const LoadingMessage = styled.p`
   font-size: 1rem;
-  color: ${theme.colors.light_grey};
+  color: #555;
 `;
 
 const DescriptionContent = styled(KeyvalText)`
@@ -251,8 +230,16 @@ const DescriptionContent = styled(KeyvalText)`
   padding: 20px;
 `;
 
-const DetailsSection = styled.div`
-  margin-top: 16px;
+const StatusText = styled.div<{ color: string }>`
+  color: ${({ color }) => color};
+  font-weight: bold;
+  margin-bottom: 8px;
+  padding-left: 16px;
 `;
 
-const SeeMoreButton = styled.button``;
+const ExplanationText = styled.p`
+  font-size: 0.9rem;
+  color: ${theme.text.light_grey};
+  margin-top: -5px;
+  margin-bottom: 10px;
+`;
