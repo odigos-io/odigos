@@ -21,7 +21,8 @@ const StatusWrapper = styled.div<Props>`
   width: fit-content;
   padding: ${({ withIcon, withBorder, withSmaller }) => (withIcon || withBorder ? (withSmaller ? '4px 8px' : '8px 24px') : '0')};
   border-radius: 32px;
-  border: 1px solid ${({ withBorder, isActive, theme }) => (withBorder ? (isActive ? '#2d4323' : '#802828') : 'transparent')};
+  border: 1px solid
+    ${({ withBorder, isActive, theme }) => (withBorder ? (isActive ? theme.colors.dark_green : theme.colors.dark_red) : 'transparent')};
   background: ${({ withBackground, isActive }) =>
     withBackground
       ? isActive
