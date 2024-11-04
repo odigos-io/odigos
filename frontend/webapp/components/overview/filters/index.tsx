@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { Button, Dropdown, Text } from '@/reuseable-components';
-import { Namespace } from '../../../../../types/sources';
 import { DropdownOption } from '@/types';
+import { Button, Dropdown, Text } from '@/reuseable-components';
 
 const Container = styled.div`
   position: relative;
@@ -83,4 +82,4 @@ const Filters = () => {
   );
 };
 
-export default Filters;
+export { Filters };

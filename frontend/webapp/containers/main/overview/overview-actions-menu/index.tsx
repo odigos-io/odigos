@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import Filters from './filters';
-import Monitors from './monitors';
 import styled from 'styled-components';
-import { AddEntityButtonDropdown } from './add-entity';
 import { Input, TabList } from '@/reuseable-components';
+import { AddEntity, Filters, MonitorsLegend } from '@/components';
 
 const MenuContainer = styled.div`
   display: flex;
@@ -61,11 +59,11 @@ export function OverviewActionMenuContainer() {
       </FilterContainer>
 
       <MonitorsContainer>
-        <Monitors />
+        <MonitorsLegend />
       </MonitorsContainer>
 
       <StyledAddEntityButtonDropdownWrapper>
-        <AddEntityButtonDropdown />
+        <AddEntity />
       </StyledAddEntityButtonDropdownWrapper>
     </MenuContainer>
   );

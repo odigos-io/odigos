@@ -17,7 +17,7 @@ const ListItem = styled.div`
   gap: 4px;
 `;
 
-const Monitors = () => {
+const MonitorsLegend = () => {
   return (
     <List>
       {MONITORS_OPTIONS.map(({ id, value }) => (
@@ -39,4 +39,4 @@ const Monitors = () => {
   );
 };
 
-export default Monitors;
+export { MonitorsLegend };
