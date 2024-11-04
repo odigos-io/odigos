@@ -209,32 +209,32 @@ jobs:
           path: odigos_debug*.tar.gz
         continue-on-error: true
 
-      - name: Destroy Resources
-        if: always()
-        run: |
-          tofu -chdir=$TF_DIR destroy -auto-approve
+      # - name: Destroy Resources
+      #   if: always()
+      #   run: |
+      #     tofu -chdir=$TF_DIR destroy -auto-approve
 
       - name: Extract Tag
         id: extract_tag
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
-      # Notify Slack on Failure or Cancellation
-      - name: Notify Slack on Failure or Cancellation
-        if: ${{ failure() || cancelled() }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"*ERROR*: Providers tests fail > `${{ matrix.cloud-provider }} - ${{ matrix.test-scenario }}`"}},{"type":"section","fields":[{"type":"mrkdwn","text":"*Link:*\n<https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}|View the GitHub Run>"},{"type":"mrkdwn","text":"*Tag:*\n`${{ steps.extract_tag.outputs.tag }}`"}]}]}' ${{ env.SLACK_WEBHOOK_URL }}
+      # # Notify Slack on Failure or Cancellation
+      # - name: Notify Slack on Failure or Cancellation
+      #   if: ${{ failure() || cancelled() }}
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
+      #     GITHUB_REPOSITORY: ${{ github.repository }}
+      #     GITHUB_RUN_ID: ${{ github.run_id }}
+      #   run: |
+      #     curl -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"*ERROR*: Providers tests fail > `${{ matrix.cloud-provider }} - ${{ matrix.test-scenario }}`"}},{"type":"section","fields":[{"type":"mrkdwn","text":"*Link:*\n<https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}|View the GitHub Run>"},{"type":"mrkdwn","text":"*Tag:*\n`${{ steps.extract_tag.outputs.tag }}`"}]}]}' ${{ env.SLACK_WEBHOOK_URL }}
 
-      # Notify Slack on Success
-      - name: Notify Slack on Success
-        if: ${{ success() }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"*SUCCESS*: Providers tests succeed > `${{ matrix.cloud-provider }} - ${{ matrix.test-scenario }}`"}},{"type":"section","fields":[{"type":"mrkdwn","text":"*Link:*\n<https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}|View the GitHub Run>"},{"type":"mrkdwn","text":"*Tag:*\n`${{ steps.extract_tag.outputs.tag }}`"}]}]}' ${{ env.SLACK_WEBHOOK_URL }}
+      # # Notify Slack on Success
+      # - name: Notify Slack on Success
+      #   if: ${{ success() }}
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
+      #     GITHUB_REPOSITORY: ${{ github.repository }}
+      #     GITHUB_RUN_ID: ${{ github.run_id }}
+      #   run: |
+      #     curl -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"*SUCCESS*: Providers tests succeed > `${{ matrix.cloud-provider }} - ${{ matrix.test-scenario }}`"}},{"type":"section","fields":[{"type":"mrkdwn","text":"*Link:*\n<https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}|View the GitHub Run>"},{"type":"mrkdwn","text":"*Tag:*\n`${{ steps.extract_tag.outputs.tag }}`"}]}]}' ${{ env.SLACK_WEBHOOK_URL }}
 
