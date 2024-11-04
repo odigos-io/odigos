@@ -13,6 +13,8 @@ import (
 	"sync"
 )
 
+var ProfilingMetricsFunctions = []ProfileInterface{CPUProfiler{}, HeapProfiler{}, GoRoutineProfiler{}, AllocsProfiler{}}
+
 type ProfileInterface interface {
 	GetFileName() string
 	GetUrlSuffix() string
@@ -59,7 +61,6 @@ func (h AllocsProfiler) GetUrlSuffix() string {
 }
 
 func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir string) error {
-	ProfilingMetricsFunctions := []ProfileInterface{CPUProfiler{}, HeapProfiler{}, GoRoutineProfiler{}, AllocsProfiler{}}
 
 	odigosNamespace, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {
