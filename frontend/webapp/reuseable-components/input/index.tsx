@@ -61,7 +61,7 @@ const InputWrapper = styled.div<{
   }
 `;
 
-const StyledInput = styled.input<{ hasIcon?: string }>`
+const StyledInput = styled.input<{ hasIcon: boolean }>`
   padding-left: ${({ hasIcon }) => (hasIcon ? '0' : '16px')};
   flex: 1;
   border: none;
@@ -96,6 +96,10 @@ const IconWrapper = styled.div`
   margin-left: 12px;
 `;
 
+const IconWrapperClickable = styled(IconWrapper)`
+  cursor: pointer;
+`;
+
 const Button = styled.button`
   background-color: ${({ theme }) => theme.colors.primary};
   border: none;
@@ -128,7 +132,9 @@ const ErrorMessage = styled(Text)`
 
 // Wrap Input with forwardRef to handle the ref prop
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon, buttonLabel, onButtonClick, errorMessage, title, tooltip, required, initialValue, onChange, ...props }, ref) => {
+  ({ icon, buttonLabel, onButtonClick, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', ...props }, ref) => {
+    const isSecret = type === 'password';
+    const [revealSecret, setRevealSecret] = useState(false);
     const [value, setValue] = useState<string>(initialValue || '');
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,18 +149,25 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <FieldLabel title={title} required={required} tooltip={tooltip} />
 
         <InputWrapper isDisabled={props.disabled} hasError={!!errorMessage} isActive={!!props.autoFocus}>
-          {icon && (
+          {isSecret ? (
+            <IconWrapperClickable onClick={() => setRevealSecret((prev) => !prev)}>
+              <Image src={revealSecret ? '/icons/common/eye-closed.svg' : '/icons/common/eye-open.svg'} alt='' width={14} height={14} />
+            </IconWrapperClickable>
+          ) : icon ? (
             <IconWrapper>
               <Image src={icon} alt='' width={14} height={14} />
             </IconWrapper>
-          )}
+          ) : null}
+
           <StyledInput
             ref={ref} // Pass ref to the StyledInput
-            hasIcon={icon}
+            hasIcon={!!icon || isSecret}
             value={value}
             onChange={handleInputChange}
+            type={revealSecret ? 'text' : type}
             {...props}
           />
+
           {buttonLabel && onButtonClick && (
             <Button onClick={onButtonClick} disabled={props.disabled}>
               {buttonLabel}
