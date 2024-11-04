@@ -1,7 +1,6 @@
 package diagnose_util
 
 import (
-	"compress/gzip"
 	"context"
 	"fmt"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -130,19 +129,16 @@ func saveCrdToFile(crd unstructured.Unstructured, crdDataDirPath string) error {
 	}
 	defer crdFile.Close()
 
-	gzipWriter := gzip.NewWriter(crdFile)
-	defer gzipWriter.Close()
-
 	crdYAML, err := yaml.Marshal(crd)
 	if err != nil {
 		return err
 	}
 
-	_, err = gzipWriter.Write(crdYAML)
+	_, err = crdFile.Write(crdYAML)
 	if err != nil {
 		return err
 	}
-	if err = gzipWriter.Flush(); err != nil {
+	if err = crdFile.Sync(); err != nil {
 		return err
 	}
 

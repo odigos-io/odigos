@@ -77,6 +77,7 @@ func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir st
 	var wg sync.WaitGroup
 
 	for _, odigletPod := range odigletPods.Items {
+		fmt.Printf("Fetching profile for node: %v", odigletPod.Spec.NodeName)
 		nodeFilePath := filepath.Join(profileDir, odigletPod.Spec.NodeName)
 		err := os.Mkdir(nodeFilePath, os.ModePerm)
 		if err != nil {
