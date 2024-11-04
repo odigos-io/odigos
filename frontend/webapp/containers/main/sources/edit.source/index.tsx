@@ -31,6 +31,7 @@ import {
 } from '@/design.system';
 import { BackIcon } from '@keyval-dev/design-system';
 import { SourceDescriptionDrawer } from '../source-describe';
+import styled from 'styled-components';
 
 const NAME = 'name';
 const KIND = 'kind';
@@ -107,11 +108,13 @@ export function EditSourceForm() {
         <BackIcon size={14} />
         <KeyvalText size={14}>{SETUP.BACK}</KeyvalText>
       </BackButtonWrapper>
-      <SourceDescriptionDrawer
-        namespace={currentSource.namespace}
-        kind={currentSource.kind}
-        name={currentSource.name}
-      />
+      <DrawerContainer>
+        <SourceDescriptionDrawer
+          namespace={currentSource.namespace}
+          kind={currentSource.kind}
+          name={currentSource.name}
+        />
+      </DrawerContainer>
       {currentSource && <ManageSourceHeader source={currentSource} />}
       <div style={{ display: 'flex', gap: 60 }}>
         <div>
@@ -152,3 +155,9 @@ export function EditSourceForm() {
     </ManageSourcePageContainer>
   );
 }
+
+const DrawerContainer = styled.div`
+  position: absolute;
+  right: 32px;
+  top: 16px;
+`;
