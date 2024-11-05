@@ -6,8 +6,8 @@ import { Handle, Position } from '@xyflow/react';
 import { Status, Text } from '@/reuseable-components';
 import { getStatusIcon } from '@/utils';
 
-const BaseNodeContainer = styled.div<{ columnWidth: number; isError?: boolean }>`
-  width: ${({ columnWidth }) => `${columnWidth}px`};
+const BaseNodeContainer = styled.div<{ nodeWidth: number; isError?: boolean }>`
+  width: ${({ nodeWidth }) => `${nodeWidth}px`};
   padding: 16px 24px 16px 16px;
   gap: 8px;
   display: flex;
@@ -49,8 +49,8 @@ const FooterWrapper = styled.div`
   align-items: center;
 `;
 
-const Title = styled(Text)<{ columnWidth: number }>`
-  width: ${({ columnWidth }) => `${columnWidth - 75}px`};
+const Title = styled(Text)<{ nodeWidth: number }>`
+  width: ${({ nodeWidth }) => `${nodeWidth - 75}px`};
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -74,12 +74,12 @@ export interface NodeDataProps {
 
 interface BaseNodeProps {
   id: string;
-  columnWidth: number;
+  nodeWidth: number;
   isConnectable: boolean;
   data: NodeDataProps;
 }
 
-const BaseNode = ({ columnWidth, isConnectable, data }: BaseNodeProps) => {
+const BaseNode = ({ nodeWidth, isConnectable, data }: BaseNodeProps) => {
   const { type, status, title, subTitle, imageUri, monitors, isActive } = data;
 
   function renderHandles() {
@@ -129,12 +129,12 @@ const BaseNode = ({ columnWidth, isConnectable, data }: BaseNodeProps) => {
   const isError = status === STATUSES.UNHEALTHY;
 
   return (
-    <BaseNodeContainer columnWidth={columnWidth} isError={isError}>
+    <BaseNodeContainer nodeWidth={nodeWidth} isError={isError}>
       <SourceIconWrapper>
         <Image src={imageUri || '/icons/common/folder.svg'} width={20} height={20} alt='source' />
       </SourceIconWrapper>
       <BodyWrapper>
-        <Title columnWidth={columnWidth}>{title}</Title>
+        <Title nodeWidth={nodeWidth}>{title}</Title>
         <FooterWrapper>
           <FooterText>{subTitle}</FooterText>
           {renderMonitors()}
