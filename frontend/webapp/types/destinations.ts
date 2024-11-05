@@ -1,4 +1,4 @@
-import { Condition } from './common';
+import type { Condition, ExportedSignals } from './common';
 
 export enum DestinationsSortType {
   NAME = 'name',
@@ -59,12 +59,6 @@ export interface DestinationDetailsResponse {
   destinationTypeDetails: {
     fields: DestinationDetailsField[];
   };
-}
-
-export interface ExportedSignals {
-  logs: boolean;
-  metrics: boolean;
-  traces: boolean;
 }
 
 interface FieldInput {
@@ -174,5 +168,4 @@ export interface ActualDestination {
   };
 }
 
-export const isActualDestination = (item: any): item is ActualDestination =>
-  item && 'destinationType' in item;
+export const isActualDestination = (item: any): item is ActualDestination => item && 'destinationType' in item;

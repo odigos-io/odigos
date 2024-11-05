@@ -1,4 +1,4 @@
-import { deriveTypeFromRule } from '@/utils/functions/derive-type-from-rule';
+import { deriveTypeFromRule } from '@/utils';
 import { useComputePlatform } from '../compute-platform';
 
 export const useGetInstrumentationRules = () => {
