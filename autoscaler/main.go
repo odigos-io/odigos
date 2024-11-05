@@ -31,6 +31,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
+	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 
@@ -40,6 +41,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,6 +55,7 @@ import (
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
+	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
 	nameutils "github.com/odigos-io/odigos/autoscaler/utils"
 
@@ -169,11 +172,16 @@ func main() {
 	// at the time of writing (2024-10-22) only dotnet and java native agent are using the name processor.
 	_, disableNameProcessor := os.LookupEnv("DISABLE_NAME_PROCESSOR")
 
+	config := &controllerconfig.ControllerConfig{
+		MetricsServerEnabled: isMetricsServerInstalled(mgr, setupLog),
+	}
+
 	if err = (&controllers.DestinationReconciler{
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
+		Config:           config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Destination")
 		os.Exit(1)
@@ -185,6 +193,7 @@ func main() {
 		ImagePullSecrets:     imagePullSecrets,
 		OdigosVersion:        odigosVersion,
 		DisableNameProcessor: disableNameProcessor,
+		Config:               config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Processor")
 		os.Exit(1)
@@ -195,6 +204,7 @@ func main() {
 		ImagePullSecrets:     imagePullSecrets,
 		OdigosVersion:        odigosVersion,
 		DisableNameProcessor: disableNameProcessor,
+		Config:               config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
 		os.Exit(1)
@@ -214,6 +224,7 @@ func main() {
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
+		Config:           config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OdigosConfig")
 		os.Exit(1)
@@ -223,6 +234,7 @@ func main() {
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
+		Config:           config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Secret")
 		os.Exit(1)
@@ -261,4 +273,24 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func isMetricsServerInstalled(mgr ctrl.Manager, logger logr.Logger) bool {
+	var metricsServerDeployment appsv1.Deployment
+
+	// Use APIReader (uncached client) for direct access to the API server
+	// uses because mgr not cache the metrics-server deployment
+	err := mgr.GetAPIReader().Get(context.TODO(), types.NamespacedName{Name: "metrics-server", Namespace: "kube-system"}, &metricsServerDeployment)
+	if err != nil {
+		if client.IgnoreNotFound(err) != nil {
+			logger.Error(err, "Failed to get metrics-server deployment")
+			return false
+		}
+
+		logger.Error(err, "Metrics-server deployment not found")
+		return false
+	}
+
+	logger.V(0).Info("Metrics server found")
+	return true
 }
