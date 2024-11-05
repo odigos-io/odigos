@@ -22,6 +22,8 @@ import (
 	"os"
 	"strings"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	corev1 "k8s.io/api/core/v1"
@@ -277,17 +279,15 @@ func main() {
 
 func isMetricsServerInstalled(mgr ctrl.Manager, logger logr.Logger) bool {
 	var metricsServerDeployment appsv1.Deployment
-
 	// Use APIReader (uncached client) for direct access to the API server
 	// uses because mgr not cache the metrics-server deployment
 	err := mgr.GetAPIReader().Get(context.TODO(), types.NamespacedName{Name: "metrics-server", Namespace: "kube-system"}, &metricsServerDeployment)
 	if err != nil {
-		if client.IgnoreNotFound(err) != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Info("Metrics-server deployment not found")
+		} else {
 			logger.Error(err, "Failed to get metrics-server deployment")
-			return false
 		}
-
-		logger.Error(err, "Metrics-server deployment not found")
 		return false
 	}
 
