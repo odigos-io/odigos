@@ -95,7 +95,7 @@ export function CreateConnectionForm({
     filterSupportedMonitors();
   }, [destination]);
 
-  useKeyDown('Enter', handleKeyPress);
+  useKeyDown({ key: 'Enter', active: true }, handleKeyPress);
 
   function handleKeyPress(e: any) {
     if (!isCreateButtonDisabled) {

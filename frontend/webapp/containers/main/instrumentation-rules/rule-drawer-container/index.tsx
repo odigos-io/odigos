@@ -1,25 +1,24 @@
-import React, { forwardRef, useImperativeHandle, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { getRuleIcon } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import { ChooseRuleBody } from '../choose-rule-body';
+import type { InstrumentationRuleSpec } from '@/types';
+import OverviewDrawer from '../../overview/overview-drawer';
 import { RULE_OPTIONS } from '../add-rule-modal/rule-options';
 import buildCardFromRuleSpec from './build-card-from-rule-spec';
-import { useInstrumentationRuleFormData, useNotify } from '@/hooks';
-import type { InstrumentationRuleInput, InstrumentationRuleSpec } from '@/types';
+import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useNotify } from '@/hooks';
 
-export type RuleDrawerHandle = {
-  getCurrentData: () => InstrumentationRuleInput | null;
-};
+interface Props {}
 
-interface Props {
-  isEditing: boolean;
-}
-
-const RuleDrawer = forwardRef<RuleDrawerHandle, Props>(({ isEditing }, ref) => {
+const RuleDrawer: React.FC<Props> = () => {
   const notify = useNotify();
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
+  const [isEditing, setIsEditing] = useState(false);
+
   const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
+  const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
@@ -46,33 +45,65 @@ const RuleDrawer = forwardRef<RuleDrawerHandle, Props>(({ isEditing }, ref) => {
     return found;
   }, [selectedItem, isEditing]);
 
-  useImperativeHandle(ref, () => ({
-    getCurrentData: () => {
-      if (validateForm()) {
-        return formData;
-      } else {
-        notify({
-          message: 'Required fields are missing!',
-          title: 'Update Rule Error',
-          type: 'error',
-          target: 'notification',
-          crdType: 'notification',
-        });
-        return null;
-      }
-    },
-  }));
+  if (!selectedItem?.item) return null;
+  const { id, item } = selectedItem;
 
-  return isEditing && thisRule ? (
-    <FormContainer>
-      <ChooseRuleBody isUpdate rule={thisRule} formData={formData} handleFormChange={handleFormChange} />
-    </FormContainer>
-  ) : (
-    <CardDetails data={cardData} />
+  const handleEdit = (bool?: boolean) => {
+    if (typeof bool === 'boolean') {
+      setIsEditing(bool);
+    } else {
+      setIsEditing(true);
+    }
+  };
+
+  const handleCancel = () => {
+    resetFormData();
+    setIsEditing(false);
+  };
+
+  const handleDelete = async () => {
+    await deleteInstrumentationRule(id as string);
+  };
+
+  const handleSave = async (newTitle: string) => {
+    if (!validateForm()) {
+      notify({
+        message: 'Required fields are missing!',
+        title: 'Update Rule Error',
+        type: 'error',
+        target: 'notification',
+        crdType: 'notification',
+      });
+    } else {
+      const payload = {
+        ...formData,
+        ruleName: newTitle,
+      };
+
+      await updateInstrumentationRule(id as string, payload);
+    }
+  };
+
+  return (
+    <OverviewDrawer
+      title={(item as InstrumentationRuleSpec).ruleName}
+      imageUri={getRuleIcon((item as InstrumentationRuleSpec).type)}
+      isEdit={isEditing}
+      clickEdit={handleEdit}
+      clickSave={handleSave}
+      clickDelete={handleDelete}
+      clickCancel={handleCancel}
+    >
+      {isEditing && thisRule ? (
+        <FormContainer>
+          <ChooseRuleBody isUpdate rule={thisRule} formData={formData} handleFormChange={handleFormChange} />
+        </FormContainer>
+      ) : (
+        <CardDetails data={cardData} />
+      )}
+    </OverviewDrawer>
   );
-});
-
-RuleDrawer.displayName = 'RuleDrawer';
+};
 
 export { RuleDrawer };
 
