@@ -133,3 +133,66 @@ func captureProfile(ctx context.Context, client *kube.Client, podName string, na
 
 	return nil
 }
+
+func FetchOdigosCollectorMetrics(ctx context.Context, client *kube.Client, metricsDir string) error {
+	odigosNamespace, err := resources.GetOdigosNamespace(client, ctx)
+	if err != nil {
+		return nil
+	}
+
+	clusterCollectorPods, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
+		LabelSelector: "odigos.io/collector-role=CLUSTER_GATEWAY",
+	})
+	if err != nil {
+		return err
+	}
+
+	var wg sync.WaitGroup
+
+	for _, clusterCollectorPod := range clusterCollectorPods.Items {
+		fmt.Printf("Fetching metrics for pod: %v", clusterCollectorPod.Name)
+		metricFilePath := filepath.Join(metricsDir, clusterCollectorPod.Name)
+		metricFile, err := os.OpenFile(metricFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+		if err != nil {
+			fmt.Printf("Error creating file: %v, because: %v", metricFilePath, err)
+			continue
+		}
+		defer metricFile.Close()
+
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			err = captureMetrics(ctx, client, clusterCollectorPod.Name, odigosNamespace, metricFile)
+			if err != nil {
+				fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", metricFile, err)
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	return nil
+}
+
+func captureMetrics(ctx context.Context, client *kube.Client, podName string, namespace string, metricFile *os.File) error {
+	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:8888/proxy/metrics", namespace, podName)
+
+	// Make the HTTP GET request via the API server proxy
+	request := client.Clientset.CoreV1().RESTClient().
+		Get().
+		AbsPath(proxyURL).
+		Do(ctx)
+
+	response, err := request.Raw()
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(metricFile, bytes.NewReader(response))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
