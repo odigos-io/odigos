@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 )
 
@@ -204,9 +205,9 @@ func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace st
 func captureMetrics(ctx context.Context, client *kube.Client, podName string, namespace string, metricFile *os.File, collectorRole consts.CollectorRole) error {
 	portNumber := ""
 	if collectorRole == consts.CollectorsRoleClusterGateway {
-		portNumber = "8888"
+		portNumber = strconv.Itoa(int(consts.OdigosClusterCollectorOwnTelemetryPortDefault))
 	} else if collectorRole == consts.CollectorsRoleNodeCollector {
-		portNumber = "55682"
+		portNumber = strconv.Itoa(int(consts.OdigosNodeCollectorOwnTelemetryPortDefault))
 	} else {
 		return nil
 	}
