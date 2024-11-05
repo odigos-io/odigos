@@ -48,6 +48,8 @@ spec:
           - configMapRef:
               name: odigos-own-telemetry-otel-config
               optional: true
+          - configMapRef:
+              name: odigos-deployment
         livenessProbe:
           httpGet:
             path: /healthz
