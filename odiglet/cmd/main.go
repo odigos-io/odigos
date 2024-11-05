@@ -18,10 +18,8 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	_ "net/http/pprof"
@@ -85,19 +83,27 @@ func main() {
 		os.Exit(-1)
 	}
 
+	instrumentationManager := ebpf.NewManager(
+		mgr.GetClient(),
+		log.Logger,
+		map[ebpf.FactoryID]ebpf.Factory{
+			ebpf.FactoryID{
+				Language: common.GoProgrammingLanguage,
+				OtelSdk:  common.OtelSdkEbpfCommunity,
+			}: sdks.NewGoInstrumentationFactory(),
+		},
+		procEvents,
+	)
+
+	go instrumentationManager.Run(ctx)
+
 	odigosNs := k8senv.GetCurrentNamespace()
 	err = server.StartOpAmpServer(ctx, log.Logger, mgr, clientset, env.Current.NodeName, odigosNs)
 	if err != nil {
 		log.Logger.Error(err, "Failed to start opamp server")
 	}
 
-	ebpfDirectors, err := initEbpf(ctx, mgr.GetClient(), mgr.GetScheme())
-	if err != nil {
-		log.Logger.Error(err, "Failed to init eBPF director")
-		os.Exit(-1)
-	}
-
-	err = kube.SetupWithManager(mgr, ebpfDirectors, clientset)
+	err = kube.SetupWithManager(mgr, nil, clientset)
 	if err != nil {
 		log.Logger.Error(err, "Failed to setup controller-runtime manager")
 		os.Exit(-1)
@@ -110,14 +116,12 @@ func main() {
 	}
 
 	<-ctx.Done()
-	for _, director := range ebpfDirectors {
-		director.Shutdown()
-	}
 	err = runtimeDetector.Stop()
 	if err != nil {
 		log.Logger.Error(err, "Failed to stop runtime detector")
 		os.Exit(-1)
 	}
+	instrumentationManager.Stop()
 	log.Logger.V(0).Info("odiglet exiting")
 }
 
@@ -157,15 +161,15 @@ func startDeviceManager(clientset *kubernetes.Clientset) {
 	manager.Run()
 }
 
-func initEbpf(ctx context.Context, client client.Client, scheme *runtime.Scheme) (ebpf.DirectorsMap, error) {
-	goInstrumentationFactory := sdks.NewGoInstrumentationFactory(client)
-	goDirector := ebpf.NewEbpfDirector(ctx, client, scheme, common.GoProgrammingLanguage, goInstrumentationFactory)
-	goDirectorKey := ebpf.DirectorKey{
-		Language: common.GoProgrammingLanguage,
-		OtelSdk:  common.OtelSdkEbpfCommunity,
-	}
+// func initEbpf(ctx context.Context, client client.Client, scheme *runtime.Scheme) (ebpf.DirectorsMap, error) {
+// 	goInstrumentationFactory := sdks.NewGoInstrumentationFactory(client)
+// 	goDirector := ebpf.NewEbpfDirector(ctx, client, scheme, common.GoProgrammingLanguage, goInstrumentationFactory)
+// 	goDirectorKey := ebpf.DirectorKey{
+// 		Language: common.GoProgrammingLanguage,
+// 		OtelSdk:  common.OtelSdkEbpfCommunity,
+// 	}
 
-	return ebpf.DirectorsMap{
-		goDirectorKey: goDirector,
-	}, nil
-}
+// 	return ebpf.DirectorsMap{
+// 		goDirectorKey: goDirector,
+// 	}, nil
+// }

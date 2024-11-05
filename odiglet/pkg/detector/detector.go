@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sync"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common/envOverwrite"
@@ -16,9 +15,14 @@ import (
 
 type ProcessEvent = detector.ProcessEvent
 
+const (
+	ProcessExecEvent = detector.ProcessExecEvent
+	ProcessExitEvent = detector.ProcessExitEvent
+)
+
 type Detector struct {
 	detector *detector.Detector
-	wg       sync.WaitGroup
+	done    chan struct{}
 	runError error
 }
 
@@ -28,17 +32,12 @@ func StartRuntimeDetector(ctx context.Context, logger logr.Logger, events chan P
 		return nil, fmt.Errorf("failed to create runtime detector: %w", err)
 	}
 
-	d := &Detector{detector: detector}
+	done := make(chan struct{})
 
-	d.wg.Add(1)
-	go func() {
-		defer d.wg.Done()
-		readProcEventsLoop(logger, events)
-	}()
+	d := &Detector{detector: detector, done: done}
 
-	d.wg.Add(1)
 	go func() {
-		defer d.wg.Done()
+		defer close(d.done)
 		d.runError = detector.Run(ctx)
 	}()
 
@@ -47,7 +46,7 @@ func StartRuntimeDetector(ctx context.Context, logger logr.Logger, events chan P
 
 func (d *Detector) Stop() error {
 	err := d.detector.Stop()
-	d.wg.Wait()
+	<-d.done
 	return errors.Join(d.runError, err)
 }
 
@@ -65,27 +64,6 @@ func newDetector(ctx context.Context, logger logr.Logger, events chan ProcessEve
 	}
 
 	return detector, nil
-}
-
-func readProcEventsLoop(l logr.Logger, events chan ProcessEvent) {
-	l = l.WithName("process detector")
-	for e := range events {
-		switch e.EventType {
-		case detector.ProcessExecEvent:
-			l.Info("detected new process",
-				"pid", e.PID,
-				"cmd", e.ExecDetails.CmdLine,
-				"exeName", e.ExecDetails.ExeName,
-				"exeLink", e.ExecDetails.ExeLink,
-				"envs", e.ExecDetails.Environments,
-				"container PID", e.ExecDetails.ContainerProcessID,
-			)
-		case detector.ProcessExitEvent:
-			l.Info("detected process exit",
-				"pid", e.PID,
-			)
-		}
-	}
 }
 
 func relevantEnvVars() []string {

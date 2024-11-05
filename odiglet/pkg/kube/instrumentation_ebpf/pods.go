@@ -68,7 +68,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	podWorkload, err := p.getPodWorkloadObject(ctx, &pod)
+	podWorkload, err := workload.PodWorkloadObject(ctx, &pod)
 	if err != nil {
 		logger.Error(err, "error getting pod workload object")
 		return ctrl.Result{}, err
@@ -104,24 +104,6 @@ func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod
 	}
 
 	return instrumentPodWithEbpf(ctx, pod, p.Directors, runtimeDetails, podWorkload)
-}
-
-func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*workload.PodWorkload, error) {
-	for _, owner := range pod.OwnerReferences {
-		workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(owner)
-		if err != nil {
-			return nil, workload.IgnoreErrorKindNotSupported(err)
-		}
-
-		return &workload.PodWorkload{
-			Name:      workloadName,
-			Kind:      workloadKind,
-			Namespace: pod.Namespace,
-		}, nil
-	}
-
-	// Pod does not necessarily have to be managed by a controller
-	return nil, nil
 }
 
 func GetPodSumRestarts(pod *corev1.Pod) int {
