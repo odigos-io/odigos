@@ -91,11 +91,11 @@ export const buildNodesAndEdges = ({
   const startX = 0;
   const endX = (containerWidth <= 1500 ? 1500 : containerWidth) - nodeWidth;
   const postions = {
-    rule: {
+    rules: {
       x: startX,
       y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
     },
-    source: {
+    sources: {
       x: getValueForRange(containerWidth, [
         [0, 1500, endX / 3.5],
         [1500, 1600, endX / 4],
@@ -103,7 +103,7 @@ export const buildNodesAndEdges = ({
       ]),
       y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
     },
-    action: {
+    actions: {
       x: getValueForRange(containerWidth, [
         [0, 1500, endX / 1.55],
         [1500, 1600, endX / 1.6],
@@ -111,7 +111,7 @@ export const buildNodesAndEdges = ({
       ]),
       y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
     },
-    destination: {
+    destinations: {
       x: endX,
       y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
     },
@@ -119,28 +119,28 @@ export const buildNodesAndEdges = ({
 
   const tempNodes = {
     rules: [
-      createNode('rule-header', 'header', postions['rule']['x'], 0, {
+      createNode('rule-header', 'header', postions['rules']['x'], 0, {
         icon: `${HEADER_ICON_PATH}rules.svg`,
         title: 'Instrumentation Rules',
         tagValue: rules.length,
       }),
     ],
     sources: [
-      createNode('source-header', 'header', postions['source']['x'], 0, {
+      createNode('source-header', 'header', postions['sources']['x'], 0, {
         icon: `${HEADER_ICON_PATH}sources.svg`,
         title: 'Sources',
         tagValue: sources.length,
       }),
     ],
     actions: [
-      createNode('action-header', 'header', postions['action']['x'], 0, {
+      createNode('action-header', 'header', postions['actions']['x'], 0, {
         icon: `${HEADER_ICON_PATH}actions.svg`,
         title: 'Actions',
         tagValue: actions.length,
       }),
     ],
     destinations: [
-      createNode('destination-header', 'header', postions['destination']['x'], 0, {
+      createNode('destination-header', 'header', postions['destinations']['x'], 0, {
         icon: `${HEADER_ICON_PATH}destinations.svg`,
         title: 'Destinations',
         tagValue: destinations.length,
@@ -151,7 +151,7 @@ export const buildNodesAndEdges = ({
   // Build Rules Nodes
   if (!rules.length) {
     tempNodes['rules'].push(
-      createNode('rule-0', 'add', postions['rule']['x'], postions['rule']['y'](), {
+      createNode('rule-0', 'add', postions['rules']['x'], postions['rules']['y'](), {
         type: OVERVIEW_NODE_TYPES.ADD_RULE,
         status: STATUSES.HEALTHY,
         title: 'ADD RULE',
@@ -161,7 +161,7 @@ export const buildNodesAndEdges = ({
   } else {
     rules.forEach((rule, idx) => {
       tempNodes['rules'].push(
-        createNode(`rule-${idx}`, 'base', postions['rule']['x'], postions['rule']['y'](idx), {
+        createNode(`rule-${idx}`, 'base', postions['rules']['x'], postions['rules']['y'](idx), {
           id: rule.ruleId,
           type: OVERVIEW_ENTITY_TYPES.RULE,
           status: STATUSES.HEALTHY,
@@ -177,7 +177,7 @@ export const buildNodesAndEdges = ({
   // Build Source Nodes
   if (!sources.length) {
     tempNodes['sources'].push(
-      createNode('source-0', 'add', postions['source']['x'], postions['rule']['y'](), {
+      createNode('source-0', 'add', postions['sources']['x'], postions['rules']['y'](), {
         type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
         status: STATUSES.HEALTHY,
         title: 'ADD SOURCE',
@@ -191,7 +191,7 @@ export const buildNodesAndEdges = ({
       );
 
       tempNodes['sources'].push(
-        createNode(`source-${idx}`, 'base', postions['source']['x'], postions['rule']['y'](idx), {
+        createNode(`source-${idx}`, 'base', postions['sources']['x'], postions['rules']['y'](idx), {
           id: { kind: source.kind, name: source.name, namespace: source.namespace },
           type: OVERVIEW_ENTITY_TYPES.SOURCE,
           status: getHealthStatus(source),
@@ -207,7 +207,7 @@ export const buildNodesAndEdges = ({
   // Build Action Nodes
   if (!actions.length) {
     tempNodes['actions'].push(
-      createNode('action-0', 'add', postions['action']['x'], postions['rule']['y'](), {
+      createNode('action-0', 'add', postions['actions']['x'], postions['rules']['y'](), {
         type: OVERVIEW_NODE_TYPES.ADD_ACTION,
         status: STATUSES.HEALTHY,
         title: 'ADD ACTION',
@@ -219,7 +219,7 @@ export const buildNodesAndEdges = ({
       const spec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
 
       tempNodes['actions'].push(
-        createNode(`action-${idx}`, 'base', postions['action']['x'], postions['rule']['y'](idx), {
+        createNode(`action-${idx}`, 'base', postions['actions']['x'], postions['rules']['y'](idx), {
           id: action.id,
           type: OVERVIEW_ENTITY_TYPES.ACTION,
           status: STATUSES.HEALTHY,
@@ -241,8 +241,8 @@ export const buildNodesAndEdges = ({
       createNode(
         'action-group',
         'group',
-        postions['action']['x'] - padding,
-        postions['rule']['y']() - padding,
+        postions['actions']['x'] - padding,
+        postions['rules']['y']() - padding,
         {},
         {
           width: nodeWidth + padding * widthMultiplier,
@@ -259,7 +259,7 @@ export const buildNodesAndEdges = ({
   // Build Destination Nodes
   if (!destinations.length) {
     tempNodes['destinations'].push(
-      createNode('destination-0', 'add', postions['destination']['x'], postions['rule']['y'](), {
+      createNode('destination-0', 'add', postions['destinations']['x'], postions['rules']['y'](), {
         type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
         status: STATUSES.HEALTHY,
         title: 'ADD DESTIONATION',
@@ -271,7 +271,7 @@ export const buildNodesAndEdges = ({
       const metric = metrics?.destinations.find(({ id }) => id === destination.id);
 
       tempNodes['destinations'].push(
-        createNode(`destination-${idx}`, 'base', postions['destination']['x'], postions['rule']['y'](idx), {
+        createNode(`destination-${idx}`, 'base', postions['destinations']['x'], postions['rules']['y'](idx), {
           id: destination.id,
           type: OVERVIEW_ENTITY_TYPES.DESTINATION,
           status: getHealthStatus(destination),
