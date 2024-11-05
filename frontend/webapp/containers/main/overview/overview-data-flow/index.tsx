@@ -6,6 +6,7 @@ import { OverviewActionMenuContainer } from '../overview-actions-menu';
 import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
 import { useGetActions, useActualSources, useContainerWidth, useActualDestination, useNodeDataFlowHandlers } from '@/hooks';
 import { useGetInstrumentationRules } from '@/hooks/instrumentation-rules/useGetInstrumentationRules';
+import { useMetrics } from '@/hooks/overview/useMetrics';
 
 const AllDrawers = dynamic(() => import('../all-drawers'), {
   ssr: false,
@@ -34,6 +35,8 @@ export function OverviewDataFlowContainer() {
     destinations,
   });
 
+  // TODO: remove mockup data from "useMetrics"
+  const { metrics } = useMetrics({ sources, destinations });
   const columnWidth = 255;
 
   // Memoized node and edge builder to improve performance
@@ -43,10 +46,11 @@ export function OverviewDataFlowContainer() {
       sources,
       actions,
       destinations,
+      metrics,
       columnWidth,
       containerWidth,
     });
-  }, [instrumentationRules, sources, actions, destinations, columnWidth, containerWidth]);
+  }, [instrumentationRules, sources, actions, destinations, metrics, columnWidth, containerWidth]);
 
   return (
     <OverviewDataFlowWrapper ref={containerRef}>

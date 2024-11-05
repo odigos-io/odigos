@@ -46,6 +46,11 @@ export const GET_COMPUTE_PLATFORM = gql`
             }
           }
         }
+        conditions {
+          type
+          status
+          message
+        }
       }
       actions {
         id
