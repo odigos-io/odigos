@@ -28,11 +28,21 @@ data:
     - /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1dotnet-native-community
 ```
 
+If you are using the ***Odigos Enterprise version***, replace the `containers` ignore paths with the following entries:  
+```yaml
+- /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1dotnet-native-community
+- /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1java-ebpf-enterprise
+- /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1python-ebpf-enterprise
+- /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1go-ebpf-enterprise
+- /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1javascript-ebpf-enterprise
+- /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1mysql-ebpf-enterprise
+- /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1nginx-native-community
+```
+
 
 These paths specify fields added by Odigos that you want Argo CD to ignore during synchronization.
 
 If your workloads contain multiple containers with instrumentation applied, you will need to add entries for each container individually, based on the maximum number of containers within any instrumented workload.   
-For each container, include the appropriate containers/X paths, where X is the container index.
 
 For example:
 
