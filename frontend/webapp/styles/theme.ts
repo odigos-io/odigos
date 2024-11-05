@@ -13,8 +13,10 @@ const colors = {
   card: '#F9F9F90A',
   dropdown_bg: '#242424',
   blank_background: '#11111100',
-  danger: '#EF7676',
   warning: '#E9CF35',
+  danger: '#EF7676',
+  dark_red: '#802828',
+  dark_green: '#2d4323',
   white_opacity: {
     '004': 'rgba(249, 249, 249, 0.04)',
     '008': 'rgba(249, 249, 249, 0.08)',

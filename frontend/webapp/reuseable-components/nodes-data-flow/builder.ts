@@ -1,5 +1,5 @@
 import theme from '@/styles/theme';
-import { getActionIcon, INSTRUMENTATION_RULES } from '@/utils';
+import { getActionIcon } from '@/utils';
 import { Node, Edge } from 'react-flow-renderer';
 import { getRuleIcon } from '@/utils/functions';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
@@ -12,31 +12,45 @@ import {
   type ActionItem,
   type ActualDestination,
   type K8sActualSource,
-  InstrumentationRuleType,
 } from '@/types';
 
-// Constants
 const NODE_HEIGHT = 80;
-
-const STROKE_COLOR = theme.colors.border;
 const HEADER_ICON_PATH = '/icons/overview/';
 
-// Helper to create a node
-const createNode = (id: string, type: string, x: number, y: number, data: Record<string, any>): Node => ({
-  id,
-  type,
-  position: { x, y },
-  data,
-});
+const createNode = (nodeId: string, nodeType: string, x: number, y: number, data: Record<string, any>, style?: React.CSSProperties): Node => {
+  // const [columnType] = id.split('-');
 
-// Helper to create an edge
-const createEdge = (id: string, source: string, target: string, animated = true): Edge => ({
-  id,
-  source,
-  target,
-  animated,
-  style: { stroke: STROKE_COLOR },
-});
+  return {
+    id: nodeId,
+    type: nodeType,
+    data,
+    style,
+    position: { x, y },
+  };
+};
+
+const createEdge = (
+  edgeId: string,
+  params?: {
+    label?: string;
+    isMultiTarget?: boolean;
+    isError?: boolean;
+    animated?: boolean;
+  }
+): Edge => {
+  const { label, isMultiTarget, isError, animated } = params || {};
+  const [sourceNodeId, targetNodeId] = edgeId.split('-to-');
+
+  return {
+    id: edgeId,
+    type: !!label ? 'labeled' : 'default',
+    source: sourceNodeId,
+    target: targetNodeId,
+    animated,
+    data: { label, isMultiTarget, isError },
+    style: { stroke: isError ? theme.colors.dark_red : theme.colors.border },
+  };
+};
 
 // Extract the monitors from exported signals
 const extractMonitors = (exportedSignals: Record<string, boolean>) =>
@@ -60,25 +74,25 @@ export const buildNodesAndEdges = ({
   // Calculate x positions for each column
   const columnPostions = {
     rules: 0,
-    sources: (containerWidth - columnWidth) / 3,
-    actions: (containerWidth - columnWidth) / 1.5,
+    sources: (containerWidth - columnWidth) / 4,
+    actions: (containerWidth - columnWidth) / 1.6,
     destinations: containerWidth - columnWidth,
   };
 
   // Build Rules Nodes
   const ruleNodes: Node[] = [
-    createNode('header-rule', 'header', columnPostions['rules'], 0, {
+    createNode('rule-header', 'header', columnPostions['rules'], 0, {
       icon: `${HEADER_ICON_PATH}rules.svg`,
       title: 'Instrumentation Rules',
       tagValue: rules.length,
     }),
     ...(!rules.length
       ? [
-          createNode(`rule-0`, 'add', columnPostions['rules'], NODE_HEIGHT, {
+          createNode('rule-0', 'add', columnPostions['rules'], NODE_HEIGHT, {
             type: OVERVIEW_NODE_TYPES.ADD_RULE,
+            status: STATUSES.HEALTHY,
             title: 'ADD RULE',
             subTitle: 'Add first rule to modify the OpenTelemetry data',
-            status: STATUSES.HEALTHY,
           }),
         ]
       : rules.map((rule, index) =>
@@ -96,50 +110,46 @@ export const buildNodesAndEdges = ({
 
   // Build Source Nodes
   const sourceNodes: Node[] = [
-    createNode('header-source', 'header', columnPostions['sources'], 0, {
+    createNode('source-header', 'header', columnPostions['sources'], 0, {
       icon: `${HEADER_ICON_PATH}sources.svg`,
       title: 'Sources',
       tagValue: sources.length,
     }),
     ...(!sources.length
       ? [
-          createNode(`source-0`, 'add', columnPostions['sources'], NODE_HEIGHT, {
+          createNode('source-0', 'add', columnPostions['sources'], NODE_HEIGHT, {
             type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
+            status: STATUSES.HEALTHY,
             title: 'ADD SOURCE',
             subTitle: 'Add first source to collect OpenTelemetry data',
-            status: STATUSES.HEALTHY,
           }),
         ]
       : sources.map((source, index) =>
           createNode(`source-${index}`, 'base', columnPostions['sources'], NODE_HEIGHT * (index + 1), {
+            id: { kind: source.kind, name: source.name, namespace: source.namespace },
             type: OVERVIEW_ENTITY_TYPES.SOURCE,
+            status: index === 0 ? STATUSES.UNHEALTHY : STATUSES.HEALTHY,
             title: source.name + (source.reportedName ? ` (${source.reportedName})` : ''),
             subTitle: source.kind,
             imageUri: getMainContainerLanguageLogo(source),
-            status: STATUSES.HEALTHY,
-            id: {
-              kind: source.kind,
-              name: source.name,
-              namespace: source.namespace,
-            },
           })
         )),
   ];
 
   // Build Action Nodes
   const actionNodes: Node[] = [
-    createNode('header-action', 'header', columnPostions['actions'], 0, {
+    createNode('action-header', 'header', columnPostions['actions'], 0, {
       icon: `${HEADER_ICON_PATH}actions.svg`,
       title: 'Actions',
       tagValue: actions.length,
     }),
     ...(!actions.length
       ? [
-          createNode(`action-0`, 'add', columnPostions['actions'], NODE_HEIGHT, {
+          createNode('action-0', 'add', columnPostions['actions'], NODE_HEIGHT, {
             type: OVERVIEW_NODE_TYPES.ADD_ACTION,
+            status: STATUSES.HEALTHY,
             title: 'ADD ACTION',
             subTitle: 'Add first action to modify the OpenTelemetry data',
-            status: STATUSES.HEALTHY,
           }),
         ]
       : actions.map((action, index) => {
@@ -158,31 +168,59 @@ export const buildNodesAndEdges = ({
         })),
   ];
 
+  // Create group for actions
+  if (actions.length) {
+    const padding = 15;
+    const getDifference = (x: number) => {
+      const a = 23.24; // coefficient
+      const b = -0.589; // exponent
+      return a * Math.pow(x, b);
+    };
+
+    actionNodes.push(
+      createNode(
+        'action-group',
+        'group',
+        columnPostions['actions'] - padding,
+        NODE_HEIGHT - padding,
+        {},
+        {
+          width: columnWidth + padding * getDifference(padding),
+          height: NODE_HEIGHT * actions.length + padding,
+          background: 'transparent',
+          border: `1px dashed ${theme.colors.border}`,
+          borderRadius: 24,
+          zIndex: -1,
+        }
+      )
+    );
+  }
+
   // Build Destination Nodes
   const destinationNodes: Node[] = [
-    createNode('header-destination', 'header', columnPostions['destinations'], 0, {
+    createNode('destination-header', 'header', columnPostions['destinations'], 0, {
       icon: `${HEADER_ICON_PATH}destinations.svg`,
       title: 'Destinations',
       tagValue: destinations.length,
     }),
     ...(!destinations.length
       ? [
-          createNode(`destination-0`, 'add', columnPostions['destinations'], NODE_HEIGHT, {
+          createNode('destination-0', 'add', columnPostions['destinations'], NODE_HEIGHT, {
             type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
+            status: STATUSES.HEALTHY,
             title: 'ADD DESTIONATION',
             subTitle: 'Add first destination to monitor OpenTelemetry data',
-            status: STATUSES.HEALTHY,
           }),
         ]
       : destinations.map((destination, index) =>
           createNode(`destination-${index}`, 'base', columnPostions['destinations'], NODE_HEIGHT * (index + 1), {
+            id: destination.id,
             type: OVERVIEW_ENTITY_TYPES.DESTINATION,
+            status: index === 0 ? STATUSES.UNHEALTHY : STATUSES.HEALTHY,
             title: destination.name,
             subTitle: destination.destinationType.displayName,
             imageUri: destination.destinationType.imageUrl,
-            status: STATUSES.HEALTHY,
             monitors: extractMonitors(destination.exportedSignals),
-            id: destination.id,
           })
         )),
   ];
@@ -195,21 +233,41 @@ export const buildNodesAndEdges = ({
 
   // Connect sources to actions
   if (!sources.length) {
-    edges.push(createEdge('source-0-to-action-0', 'source-0', 'action-0', false));
+    edges.push(createEdge('source-0-to-action-0'));
   } else {
     sources.forEach((_, sourceIndex) => {
-      const actionIndex = 0;
-      edges.push(createEdge(`source-${sourceIndex}-to-action-${actionIndex}`, `source-${sourceIndex}`, `action-${actionIndex}`, false));
+      const actionIndex = actions.length ? 'group' : 0;
+      edges.push(
+        createEdge(`source-${sourceIndex}-to-action-${actionIndex}`, {
+          label: `${sourceIndex === 0 ? 0 : (Math.random() * 50).toFixed(1)} kb/s`,
+          isMultiTarget: false,
+          isError: sourceIndex === 0,
+        })
+      );
+    });
+  }
+
+  // Connect actions to actions
+  if (!!actions.length) {
+    actions.forEach((_, sourceActionIndex) => {
+      const targetActionIndex = sourceActionIndex + 1;
+      edges.push(createEdge(`action-${sourceActionIndex}-to-action-${targetActionIndex}`));
     });
   }
 
   // Connect actions to destinations
   if (!destinations.length) {
-    edges.push(createEdge('action-0-to-destination-0', 'action-0', 'destination-0'));
+    edges.push(createEdge('action-0-to-destination-0'));
   } else {
     destinations.forEach((_, destinationIndex) => {
-      const actionIndex = !actions.length ? 0 : actions.length - 1;
-      edges.push(createEdge(`action-${actionIndex}-to-destination-${destinationIndex}`, `action-${actionIndex}`, `destination-${destinationIndex}`));
+      const actionIndex = actions.length ? 'group' : 0;
+      edges.push(
+        createEdge(`action-${actionIndex}-to-destination-${destinationIndex}`, {
+          label: `${destinationIndex === 0 ? 0 : (Math.random() * 10).toFixed(1)} kb/s`,
+          isMultiTarget: true,
+          isError: destinationIndex === 0,
+        })
+      );
     });
   }
 
