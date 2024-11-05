@@ -1,11 +1,12 @@
 import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import type { STATUSES } from '@/types';
+import { STATUSES } from '@/types';
 import { Handle, Position } from '@xyflow/react';
 import { Status, Text } from '@/reuseable-components';
+import { getStatusIcon } from '@/utils';
 
-const BaseNodeContainer = styled.div<{ columnWidth: number }>`
+const BaseNodeContainer = styled.div<{ columnWidth: number; isError?: boolean }>`
   width: ${({ columnWidth }) => `${columnWidth}px`};
   padding: 16px 24px 16px 16px;
   gap: 8px;
@@ -14,14 +15,14 @@ const BaseNodeContainer = styled.div<{ columnWidth: number }>`
   align-self: stretch;
   border-radius: 16px;
   cursor: pointer;
-  background-color: ${({ theme }) => theme.colors.white_opacity['004']};
+  background-color: ${({ isError, theme }) => (isError ? '#281515' : theme.colors.white_opacity['004'])};
 
   &:hover {
-    background-color: ${({ theme }) => theme.colors.white_opacity['008']};
+    background-color: ${({ isError, theme }) => (isError ? '#351515' : theme.colors.white_opacity['008'])};
   }
 `;
 
-const SourceIconWrapper = styled.div`
+const SourceIconWrapper = styled.div<{ isError?: boolean }>`
   display: flex;
   width: 36px;
   height: 36px;
@@ -29,7 +30,10 @@ const SourceIconWrapper = styled.div`
   align-items: center;
   gap: 8px;
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(249, 249, 249, 0.06) 0%, rgba(249, 249, 249, 0.02) 100%);
+  background: ${({ isError }) =>
+    `linear-gradient(180deg, ${isError ? 'rgba(237, 124, 124, 0.08)' : 'rgba(249, 249, 249, 0.06)'} 0%, ${
+      isError ? 'rgba(237, 124, 124, 0.02)' : 'rgba(249, 249, 249, 0.02)'
+    } 100%)`};
 `;
 
 const BodyWrapper = styled.div`
@@ -46,7 +50,7 @@ const FooterWrapper = styled.div`
 `;
 
 const Title = styled(Text)<{ columnWidth: number }>`
-  width: ${({ columnWidth }) => `${columnWidth - 42}px`};
+  width: ${({ columnWidth }) => `${columnWidth - 75}px`};
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -70,37 +74,28 @@ export interface NodeDataProps {
 
 interface BaseNodeProps {
   id: string;
+  columnWidth: number;
   isConnectable: boolean;
   data: NodeDataProps;
-  columnWidth: number;
 }
 
-const BaseNode = ({ isConnectable, data, columnWidth }: BaseNodeProps) => {
-  const { title, subTitle, imageUri, type, monitors, isActive } = data;
+const BaseNode = ({ columnWidth, isConnectable, data }: BaseNodeProps) => {
+  const { type, status, title, subTitle, imageUri, monitors, isActive } = data;
 
   function renderHandles() {
     switch (type) {
       case 'source':
-        return (
-          <>
-            {/* Source nodes have an output handle */}
-            <Handle type='source' position={Position.Right} id='source-output' style={{ visibility: 'hidden' }} isConnectable={isConnectable} />
-          </>
-        );
+        return <Handle type='source' position={Position.Right} id='source-output' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />;
       case 'action':
         return (
           <>
-            {/* Action nodes have both input and output handles */}
-            <Handle type='target' position={Position.Left} id='action-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
-            <Handle type='source' position={Position.Right} id='action-output' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
+            <Handle type='target' position={Position.Top} id='action-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
+            <Handle type='source' position={Position.Bottom} id='action-output' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
           </>
         );
       case 'destination':
         return (
-          <>
-            {/* Destination nodes only have an input handle */}
-            <Handle type='target' position={Position.Left} id='destination-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
-          </>
+          <Handle type='target' position={Position.Left} id='destination-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
         );
       default:
         return null;
@@ -108,9 +103,7 @@ const BaseNode = ({ isConnectable, data, columnWidth }: BaseNodeProps) => {
   }
 
   function renderMonitors() {
-    if (!monitors) {
-      return null;
-    }
+    if (!monitors) return null;
 
     return (
       <FooterWrapper>
@@ -123,9 +116,7 @@ const BaseNode = ({ isConnectable, data, columnWidth }: BaseNodeProps) => {
   }
 
   function renderStatus() {
-    if (typeof isActive !== 'boolean') {
-      return null;
-    }
+    if (typeof isActive !== 'boolean') return null;
 
     return (
       <FooterWrapper>
@@ -135,8 +126,10 @@ const BaseNode = ({ isConnectable, data, columnWidth }: BaseNodeProps) => {
     );
   }
 
+  const isError = status === STATUSES.UNHEALTHY;
+
   return (
-    <BaseNodeContainer columnWidth={columnWidth}>
+    <BaseNodeContainer columnWidth={columnWidth} isError={isError}>
       <SourceIconWrapper>
         <Image src={imageUri || '/icons/common/folder.svg'} width={20} height={20} alt='source' />
       </SourceIconWrapper>
@@ -148,6 +141,7 @@ const BaseNode = ({ isConnectable, data, columnWidth }: BaseNodeProps) => {
           {renderStatus()}
         </FooterWrapper>
       </BodyWrapper>
+      {isError ? <Image src={getStatusIcon(false)} alt='' width={20} height={20} /> : null}
       {renderHandles()}
     </BaseNodeContainer>
   );
