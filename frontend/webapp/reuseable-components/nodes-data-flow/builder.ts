@@ -23,17 +23,10 @@ const extractMonitors = (exportedSignals: Record<string, boolean>) => {
   return filtered;
 };
 
-const getDifference = (containerWidth: number, nodeWidth: number) => {
-  const minWidth = 1500;
-  const diff = (containerWidth <= minWidth ? minWidth : containerWidth) - nodeWidth;
-
-  return diff;
-};
-
 const getValueForRange = (current: number, matrix: (number | null)[][]) => {
-  const found = matrix.find(([val, min, max]) => (min === null || current >= min) && (max === null || current <= max));
+  const found = matrix.find(([min, max]) => (min === null || current >= min) && (max === null || current <= max));
 
-  return found?.[0] || 0;
+  return found?.[2] || 0;
 };
 
 const formatBytes = (bytes?: number) => {
@@ -43,7 +36,7 @@ const formatBytes = (bytes?: number) => {
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   const value = bytes / Math.pow(1024, i);
 
-  return `${value.toFixed(2)} ${sizes[i]}`;
+  return `${value.toFixed(1)} ${sizes[i]}`;
 };
 
 const getHealthStatus = (item: K8sActualSource | ActualDestination) => {
@@ -54,7 +47,7 @@ const getHealthStatus = (item: K8sActualSource | ActualDestination) => {
 };
 
 const createNode = (nodeId: string, nodeType: string, x: number, y: number, data: Record<string, any>, style?: React.CSSProperties): Node => {
-  // const [columnType] = id.split('-');
+  // const [columnType] = nodeId.split('-');
 
   return {
     id: nodeId,
@@ -117,135 +110,162 @@ export const buildNodesAndEdges = ({
     };
   }
 
-  // Calculate x positions for each column
-  const difference = getDifference(containerWidth, nodeWidth);
-  const columnPostions = {
-    rules: 0,
-    sources:
-      difference /
-      getValueForRange(containerWidth, [
-        [3.5, 0, 1500],
-        [4, 1500, 1600],
-        [4.5, 1600, null],
+  // Calculate positions for each node
+  const startX = 0;
+  const endX = (containerWidth <= 1500 ? 1500 : containerWidth) - nodeWidth;
+  const postions = {
+    rule: {
+      x: startX,
+      y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
+    },
+    source: {
+      x: getValueForRange(containerWidth, [
+        [0, 1500, endX / 3.5],
+        [1500, 1600, endX / 4],
+        [1600, null, endX / 4.5],
       ]),
-    actions:
-      difference /
-      getValueForRange(containerWidth, [
-        [1.55, 0, 1500],
-        [1.6, 1500, 1600],
-        [1.65, 1600, null],
+      y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
+    },
+    action: {
+      x: getValueForRange(containerWidth, [
+        [0, 1500, endX / 1.55],
+        [1500, 1600, endX / 1.6],
+        [1600, null, endX / 1.65],
       ]),
-    destinations: difference,
+      y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
+    },
+    destination: {
+      x: endX,
+      y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
+    },
+  };
+
+  const tempNodes = {
+    rules: [
+      createNode('rule-header', 'header', postions['rule']['x'], 0, {
+        icon: `${HEADER_ICON_PATH}rules.svg`,
+        title: 'Instrumentation Rules',
+        tagValue: rules.length,
+      }),
+    ],
+    sources: [
+      createNode('source-header', 'header', postions['source']['x'], 0, {
+        icon: `${HEADER_ICON_PATH}sources.svg`,
+        title: 'Sources',
+        tagValue: sources.length,
+      }),
+    ],
+    actions: [
+      createNode('action-header', 'header', postions['action']['x'], 0, {
+        icon: `${HEADER_ICON_PATH}actions.svg`,
+        title: 'Actions',
+        tagValue: actions.length,
+      }),
+    ],
+    destinations: [
+      createNode('destination-header', 'header', postions['destination']['x'], 0, {
+        icon: `${HEADER_ICON_PATH}destinations.svg`,
+        title: 'Destinations',
+        tagValue: destinations.length,
+      }),
+    ],
   };
 
   // Build Rules Nodes
-  const ruleNodes: Node[] = [
-    createNode('rule-header', 'header', columnPostions['rules'], 0, {
-      icon: `${HEADER_ICON_PATH}rules.svg`,
-      title: 'Instrumentation Rules',
-      tagValue: rules.length,
-    }),
-    ...(!rules.length
-      ? [
-          createNode('rule-0', 'add', columnPostions['rules'], nodeHeight, {
-            type: OVERVIEW_NODE_TYPES.ADD_RULE,
-            status: STATUSES.HEALTHY,
-            title: 'ADD RULE',
-            subTitle: 'Add first rule to modify the OpenTelemetry data',
-          }),
-        ]
-      : rules.map((rule, idx) =>
-          createNode(`rule-${idx}`, 'base', columnPostions['rules'], nodeHeight * (idx + 1), {
-            id: rule.ruleId,
-            type: OVERVIEW_ENTITY_TYPES.RULE,
-            status: STATUSES.HEALTHY,
-            title: rule.ruleName || rule.type,
-            subTitle: rule.type,
-            imageUri: getRuleIcon(rule.type),
-            isActive: !rule.disabled,
-          })
-        )),
-  ];
-  nodes.push(...ruleNodes);
+  if (!rules.length) {
+    tempNodes['rules'].push(
+      createNode('rule-0', 'add', postions['rule']['x'], postions['rule']['y'](), {
+        type: OVERVIEW_NODE_TYPES.ADD_RULE,
+        status: STATUSES.HEALTHY,
+        title: 'ADD RULE',
+        subTitle: 'Add first rule to modify the OpenTelemetry data',
+      })
+    );
+  } else {
+    rules.forEach((rule, idx) => {
+      tempNodes['rules'].push(
+        createNode(`rule-${idx}`, 'base', postions['rule']['x'], postions['rule']['y'](idx), {
+          id: rule.ruleId,
+          type: OVERVIEW_ENTITY_TYPES.RULE,
+          status: STATUSES.HEALTHY,
+          title: rule.ruleName || rule.type,
+          subTitle: rule.type,
+          imageUri: getRuleIcon(rule.type),
+          isActive: !rule.disabled,
+        })
+      );
+    });
+  }
 
   // Build Source Nodes
-  const sourceNodes: Node[] = [
-    createNode('source-header', 'header', columnPostions['sources'], 0, {
-      icon: `${HEADER_ICON_PATH}sources.svg`,
-      title: 'Sources',
-      tagValue: sources.length,
-    }),
-    ...(!sources.length
-      ? [
-          createNode('source-0', 'add', columnPostions['sources'], nodeHeight, {
-            type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
-            status: STATUSES.HEALTHY,
-            title: 'ADD SOURCE',
-            subTitle: 'Add first source to collect OpenTelemetry data',
-          }),
-        ]
-      : sources.map((source, idx) => {
-          const metric = metrics?.sources.find(
-            ({ kind, name, namespace }) => kind === source.kind && name === source.name && namespace === source.namespace
-          );
+  if (!sources.length) {
+    tempNodes['sources'].push(
+      createNode('source-0', 'add', postions['source']['x'], postions['rule']['y'](), {
+        type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
+        status: STATUSES.HEALTHY,
+        title: 'ADD SOURCE',
+        subTitle: 'Add first source to collect OpenTelemetry data',
+      })
+    );
+  } else {
+    sources.forEach((source, idx) => {
+      const metric = metrics?.sources.find(
+        ({ kind, name, namespace }) => kind === source.kind && name === source.name && namespace === source.namespace
+      );
 
-          return createNode(`source-${idx}`, 'base', columnPostions['sources'], nodeHeight * (idx + 1), {
-            id: { kind: source.kind, name: source.name, namespace: source.namespace },
-            type: OVERVIEW_ENTITY_TYPES.SOURCE,
-            status: getHealthStatus(source),
-            title: source.name + (source.reportedName ? ` (${source.reportedName})` : ''),
-            subTitle: source.kind,
-            imageUri: getMainContainerLanguageLogo(source),
-            metric,
-          });
-        })),
-  ];
-  nodes.push(...sourceNodes);
+      tempNodes['sources'].push(
+        createNode(`source-${idx}`, 'base', postions['source']['x'], postions['rule']['y'](idx), {
+          id: { kind: source.kind, name: source.name, namespace: source.namespace },
+          type: OVERVIEW_ENTITY_TYPES.SOURCE,
+          status: getHealthStatus(source),
+          title: source.name + (source.reportedName ? ` (${source.reportedName})` : ''),
+          subTitle: source.kind,
+          imageUri: getMainContainerLanguageLogo(source),
+          metric,
+        })
+      );
+    });
+  }
 
   // Build Action Nodes
-  const actionNodes: Node[] = [
-    createNode('action-header', 'header', columnPostions['actions'], 0, {
-      icon: `${HEADER_ICON_PATH}actions.svg`,
-      title: 'Actions',
-      tagValue: actions.length,
-    }),
-    ...(!actions.length
-      ? [
-          createNode('action-0', 'add', columnPostions['actions'], nodeHeight, {
-            type: OVERVIEW_NODE_TYPES.ADD_ACTION,
-            status: STATUSES.HEALTHY,
-            title: 'ADD ACTION',
-            subTitle: 'Add first action to modify the OpenTelemetry data',
-          }),
-        ]
-      : actions.map((action, idx) => {
-          const actionSpec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
+  if (!actions.length) {
+    tempNodes['actions'].push(
+      createNode('action-0', 'add', postions['action']['x'], postions['rule']['y'](), {
+        type: OVERVIEW_NODE_TYPES.ADD_ACTION,
+        status: STATUSES.HEALTHY,
+        title: 'ADD ACTION',
+        subTitle: 'Add first action to modify the OpenTelemetry data',
+      })
+    );
+  } else {
+    actions.forEach((action, idx) => {
+      const spec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
 
-          return createNode(`action-${idx}`, 'base', columnPostions['actions'], nodeHeight * (idx + 1), {
-            id: action.id,
-            type: OVERVIEW_ENTITY_TYPES.ACTION,
-            status: STATUSES.HEALTHY,
-            title: actionSpec.actionName || action.type,
-            subTitle: action.type,
-            imageUri: getActionIcon(action.type),
-            monitors: actionSpec.signals,
-            isActive: !actionSpec.disabled,
-          });
-        })),
-  ];
+      tempNodes['actions'].push(
+        createNode(`action-${idx}`, 'base', postions['action']['x'], postions['rule']['y'](idx), {
+          id: action.id,
+          type: OVERVIEW_ENTITY_TYPES.ACTION,
+          status: STATUSES.HEALTHY,
+          title: spec.actionName || action.type,
+          subTitle: action.type,
+          imageUri: getActionIcon(action.type),
+          monitors: spec.signals,
+          isActive: !spec.disabled,
+        })
+      );
+    });
 
-  // Create group for actions
-  if (actions.length) {
+    // Create group
     const padding = 15;
     const widthMultiplier = 4.5;
     const heightMultiplier = 1.5;
 
-    actionNodes.push(
+    tempNodes['actions'].push(
       createNode(
         'action-group',
         'group',
-        columnPostions['actions'] - padding,
-        nodeHeight - padding,
+        postions['action']['x'] - padding,
+        postions['rule']['y']() - padding,
         {},
         {
           width: nodeWidth + padding * widthMultiplier,
@@ -258,46 +278,41 @@ export const buildNodesAndEdges = ({
       )
     );
   }
-  nodes.push(...actionNodes);
 
   // Build Destination Nodes
-  const destinationNodes: Node[] = [
-    createNode('destination-header', 'header', columnPostions['destinations'], 0, {
-      icon: `${HEADER_ICON_PATH}destinations.svg`,
-      title: 'Destinations',
-      tagValue: destinations.length,
-    }),
-    ...(!destinations.length
-      ? [
-          createNode('destination-0', 'add', columnPostions['destinations'], nodeHeight, {
-            type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
-            status: STATUSES.HEALTHY,
-            title: 'ADD DESTIONATION',
-            subTitle: 'Add first destination to monitor OpenTelemetry data',
-          }),
-        ]
-      : destinations.map((destination, idx) => {
-          const metric = metrics?.destinations.find(({ id }) => id === destination.id);
+  if (!destinations.length) {
+    tempNodes['destinations'].push(
+      createNode('destination-0', 'add', postions['destination']['x'], postions['rule']['y'](), {
+        type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
+        status: STATUSES.HEALTHY,
+        title: 'ADD DESTIONATION',
+        subTitle: 'Add first destination to monitor OpenTelemetry data',
+      })
+    );
+  } else {
+    destinations.forEach((destination, idx) => {
+      const metric = metrics?.destinations.find(({ id }) => id === destination.id);
 
-          return createNode(`destination-${idx}`, 'base', columnPostions['destinations'], nodeHeight * (idx + 1), {
-            id: destination.id,
-            type: OVERVIEW_ENTITY_TYPES.DESTINATION,
-            status: getHealthStatus(destination),
-            title: destination.name || destination.destinationType.displayName,
-            subTitle: destination.destinationType.displayName,
-            imageUri: destination.destinationType.imageUrl,
-            monitors: extractMonitors(destination.exportedSignals),
-            metric,
-          });
-        })),
-  ];
-  nodes.push(...destinationNodes);
+      tempNodes['destinations'].push(
+        createNode(`destination-${idx}`, 'base', postions['destination']['x'], postions['rule']['y'](idx), {
+          id: destination.id,
+          type: OVERVIEW_ENTITY_TYPES.DESTINATION,
+          status: getHealthStatus(destination),
+          title: destination.name || destination.destinationType.displayName,
+          subTitle: destination.destinationType.displayName,
+          imageUri: destination.destinationType.imageUrl,
+          monitors: extractMonitors(destination.exportedSignals),
+          metric,
+        })
+      );
+    });
+  }
 
   // Connect sources to actions
   if (!sources.length) {
     edges.push(createEdge('source-0-to-action-0'));
   } else {
-    sourceNodes.forEach((node, idx) => {
+    tempNodes['sources'].forEach((node, idx) => {
       if (idx > 0) {
         const sourceIndex = idx - 1;
         const actionIndex = actions.length ? 'group' : 0;
@@ -326,7 +341,7 @@ export const buildNodesAndEdges = ({
   if (!destinations.length) {
     edges.push(createEdge('action-0-to-destination-0'));
   } else {
-    destinationNodes.forEach((node, idx) => {
+    tempNodes['destinations'].forEach((node, idx) => {
       if (idx > 0) {
         const destinationIndex = idx - 1;
         const actionIndex = actions.length ? 'group' : 0;
@@ -342,6 +357,8 @@ export const buildNodesAndEdges = ({
       }
     });
   }
+
+  Object.values(tempNodes).forEach((arr) => nodes.push(...arr));
 
   return { nodes, edges };
 };
