@@ -19,10 +19,11 @@ const (
 	LogsDir    = "Logs"
 	CRDsDir    = "CRDs"
 	ProfileDir = "Profile"
+	MetricsDir = "Metrics"
 )
 
 var (
-	diagnoseDirs = []string{LogsDir, CRDsDir, ProfileDir}
+	diagnoseDirs = []string{LogsDir, CRDsDir, ProfileDir, MetricsDir}
 )
 
 var diagnoseCmd = &cobra.Command{
@@ -76,6 +77,15 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 		defer wg.Done()
 		if err = diagnose_util.FetchOdigosProfiles(ctx, client, filepath.Join(mainTempDir, ProfileDir)); err != nil {
 			fmt.Printf("Error calculating Odigos Profile: %v\n", err)
+		}
+	}()
+
+	// Fetch Odigos Collector Metrics
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err = diagnose_util.FetchOdigosCollectorMetrics(ctx, client, filepath.Join(mainTempDir, MetricsDir)); err != nil {
+			fmt.Printf("Error calculating Odigos Metrics: %v\n", err)
 		}
 	}()
 
