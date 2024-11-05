@@ -45,7 +45,6 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 	}
 
 	if len(pods) == 0 {
-		logger.Info("No Running pods found for the workload", "name", object.GetName())
 		return errNoPodsFound
 	}
 
