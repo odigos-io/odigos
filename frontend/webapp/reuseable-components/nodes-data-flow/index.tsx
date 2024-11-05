@@ -12,18 +12,18 @@ interface NodeBaseDataFlowProps {
   nodes: any[];
   edges: any[];
   onNodeClick?: (event: React.MouseEvent, object: any) => void;
-  columnWidth: number;
+  nodeWidth: number;
 }
 
-export function NodeBaseDataFlow({ nodes, edges, onNodeClick, columnWidth }: NodeBaseDataFlowProps) {
+export function NodeBaseDataFlow({ nodes, edges, onNodeClick, nodeWidth }: NodeBaseDataFlowProps) {
   const nodeTypes = useMemo(
     () => ({
-      header: (props) => <HeaderNode {...props} columnWidth={columnWidth} />,
-      add: (props) => <AddNode {...props} columnWidth={columnWidth} />,
-      base: (props) => <BaseNode {...props} columnWidth={columnWidth} />,
+      header: (props) => <HeaderNode {...props} nodeWidth={nodeWidth} />,
+      add: (props) => <AddNode {...props} nodeWidth={nodeWidth} />,
+      base: (props) => <BaseNode {...props} nodeWidth={nodeWidth} />,
       group: GroupNode,
     }),
-    [columnWidth]
+    [nodeWidth]
   );
 
   const edgeTypes = useMemo(

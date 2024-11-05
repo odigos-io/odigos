@@ -4,8 +4,8 @@ import styled from 'styled-components';
 import { Text } from '@/reuseable-components';
 import { Handle, Position } from '@xyflow/react';
 
-const BaseNodeContainer = styled.div<{ columnWidth: number }>`
-  width: ${({ columnWidth }) => `${columnWidth}px`};
+const BaseNodeContainer = styled.div<{ nodeWidth: number }>`
+  width: ${({ nodeWidth }) => `${nodeWidth}px`};
   padding: 16px 24px 16px 16px;
   display: flex;
   flex-direction: column;
@@ -65,12 +65,12 @@ interface BaseNodeProps {
   sourcePosition?: any;
   targetPosition?: any;
 
-  columnWidth: number;
+  nodeWidth: number;
 }
 
-const AddNode = ({ id, isConnectable, data, columnWidth }: BaseNodeProps) => {
+const AddNode = ({ id, isConnectable, data, nodeWidth }: BaseNodeProps) => {
   return (
-    <BaseNodeContainer columnWidth={columnWidth}>
+    <BaseNodeContainer nodeWidth={nodeWidth}>
       <TitleWrapper>
         <Image src='/icons/common/plus.svg' width={16} height={16} alt='plus' />
         <Title>{data.title}</Title>

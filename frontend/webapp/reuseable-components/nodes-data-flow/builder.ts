@@ -15,7 +15,6 @@ import {
   type OverviewMetricsResponse,
 } from '@/types';
 
-const NODE_HEIGHT = 80;
 const HEADER_ICON_PATH = '/icons/overview/';
 
 const extractMonitors = (exportedSignals: Record<string, boolean>) => {
@@ -24,9 +23,9 @@ const extractMonitors = (exportedSignals: Record<string, boolean>) => {
   return filtered;
 };
 
-const getDifference = (containerWidth: number, columnWidth: number) => {
+const getDifference = (containerWidth: number, nodeWidth: number) => {
   const minWidth = 1500;
-  const diff = (containerWidth <= minWidth ? minWidth : containerWidth) - columnWidth;
+  const diff = (containerWidth <= minWidth ? minWidth : containerWidth) - nodeWidth;
 
   return diff;
 };
@@ -95,17 +94,22 @@ export const buildNodesAndEdges = ({
   actions,
   destinations,
   metrics,
-  columnWidth,
   containerWidth,
+  nodeWidth,
+  nodeHeight,
 }: {
   rules: InstrumentationRuleSpec[];
   sources: K8sActualSource[];
   actions: ActionData[];
   destinations: ActualDestination[];
   metrics?: OverviewMetricsResponse;
-  columnWidth: number;
   containerWidth: number;
+  nodeWidth: number;
+  nodeHeight: number;
 }) => {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
   if (!containerWidth) {
     return {
       nodes: [],
@@ -114,7 +118,7 @@ export const buildNodesAndEdges = ({
   }
 
   // Calculate x positions for each column
-  const difference = getDifference(containerWidth, columnWidth);
+  const difference = getDifference(containerWidth, nodeWidth);
   const columnPostions = {
     rules: 0,
     sources:
@@ -143,15 +147,15 @@ export const buildNodesAndEdges = ({
     }),
     ...(!rules.length
       ? [
-          createNode('rule-0', 'add', columnPostions['rules'], NODE_HEIGHT, {
+          createNode('rule-0', 'add', columnPostions['rules'], nodeHeight, {
             type: OVERVIEW_NODE_TYPES.ADD_RULE,
             status: STATUSES.HEALTHY,
             title: 'ADD RULE',
             subTitle: 'Add first rule to modify the OpenTelemetry data',
           }),
         ]
-      : rules.map((rule, index) =>
-          createNode(`rule-${index}`, 'base', columnPostions['rules'], NODE_HEIGHT * (index + 1), {
+      : rules.map((rule, idx) =>
+          createNode(`rule-${idx}`, 'base', columnPostions['rules'], nodeHeight * (idx + 1), {
             id: rule.ruleId,
             type: OVERVIEW_ENTITY_TYPES.RULE,
             status: STATUSES.HEALTHY,
@@ -162,6 +166,7 @@ export const buildNodesAndEdges = ({
           })
         )),
   ];
+  nodes.push(...ruleNodes);
 
   // Build Source Nodes
   const sourceNodes: Node[] = [
@@ -172,19 +177,19 @@ export const buildNodesAndEdges = ({
     }),
     ...(!sources.length
       ? [
-          createNode('source-0', 'add', columnPostions['sources'], NODE_HEIGHT, {
+          createNode('source-0', 'add', columnPostions['sources'], nodeHeight, {
             type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
             status: STATUSES.HEALTHY,
             title: 'ADD SOURCE',
             subTitle: 'Add first source to collect OpenTelemetry data',
           }),
         ]
-      : sources.map((source, index) => {
+      : sources.map((source, idx) => {
           const metric = metrics?.sources.find(
             ({ kind, name, namespace }) => kind === source.kind && name === source.name && namespace === source.namespace
           );
 
-          return createNode(`source-${index}`, 'base', columnPostions['sources'], NODE_HEIGHT * (index + 1), {
+          return createNode(`source-${idx}`, 'base', columnPostions['sources'], nodeHeight * (idx + 1), {
             id: { kind: source.kind, name: source.name, namespace: source.namespace },
             type: OVERVIEW_ENTITY_TYPES.SOURCE,
             status: getHealthStatus(source),
@@ -195,6 +200,7 @@ export const buildNodesAndEdges = ({
           });
         })),
   ];
+  nodes.push(...sourceNodes);
 
   // Build Action Nodes
   const actionNodes: Node[] = [
@@ -205,17 +211,17 @@ export const buildNodesAndEdges = ({
     }),
     ...(!actions.length
       ? [
-          createNode('action-0', 'add', columnPostions['actions'], NODE_HEIGHT, {
+          createNode('action-0', 'add', columnPostions['actions'], nodeHeight, {
             type: OVERVIEW_NODE_TYPES.ADD_ACTION,
             status: STATUSES.HEALTHY,
             title: 'ADD ACTION',
             subTitle: 'Add first action to modify the OpenTelemetry data',
           }),
         ]
-      : actions.map((action, index) => {
+      : actions.map((action, idx) => {
           const actionSpec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
 
-          return createNode(`action-${index}`, 'base', columnPostions['actions'], NODE_HEIGHT * (index + 1), {
+          return createNode(`action-${idx}`, 'base', columnPostions['actions'], nodeHeight * (idx + 1), {
             id: action.id,
             type: OVERVIEW_ENTITY_TYPES.ACTION,
             status: STATUSES.HEALTHY,
@@ -231,22 +237,19 @@ export const buildNodesAndEdges = ({
   // Create group for actions
   if (actions.length) {
     const padding = 15;
-    const getDifference = (x: number) => {
-      const a = 23.24; // coefficient
-      const b = -0.589; // exponent
-      return a * Math.pow(x, b);
-    };
+    const widthMultiplier = 4.5;
+    const heightMultiplier = 1.5;
 
     actionNodes.push(
       createNode(
         'action-group',
         'group',
         columnPostions['actions'] - padding,
-        NODE_HEIGHT - padding,
+        nodeHeight - padding,
         {},
         {
-          width: columnWidth + padding * getDifference(padding),
-          height: NODE_HEIGHT * actions.length + padding,
+          width: nodeWidth + padding * widthMultiplier,
+          height: nodeHeight * actions.length + padding * heightMultiplier,
           background: 'transparent',
           border: `1px dashed ${theme.colors.border}`,
           borderRadius: 24,
@@ -255,6 +258,7 @@ export const buildNodesAndEdges = ({
       )
     );
   }
+  nodes.push(...actionNodes);
 
   // Build Destination Nodes
   const destinationNodes: Node[] = [
@@ -265,21 +269,21 @@ export const buildNodesAndEdges = ({
     }),
     ...(!destinations.length
       ? [
-          createNode('destination-0', 'add', columnPostions['destinations'], NODE_HEIGHT, {
+          createNode('destination-0', 'add', columnPostions['destinations'], nodeHeight, {
             type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
             status: STATUSES.HEALTHY,
             title: 'ADD DESTIONATION',
             subTitle: 'Add first destination to monitor OpenTelemetry data',
           }),
         ]
-      : destinations.map((destination, index) => {
+      : destinations.map((destination, idx) => {
           const metric = metrics?.destinations.find(({ id }) => id === destination.id);
 
-          return createNode(`destination-${index}`, 'base', columnPostions['destinations'], NODE_HEIGHT * (index + 1), {
+          return createNode(`destination-${idx}`, 'base', columnPostions['destinations'], nodeHeight * (idx + 1), {
             id: destination.id,
             type: OVERVIEW_ENTITY_TYPES.DESTINATION,
             status: getHealthStatus(destination),
-            title: destination.name,
+            title: destination.name || destination.destinationType.displayName,
             subTitle: destination.destinationType.displayName,
             imageUri: destination.destinationType.imageUrl,
             monitors: extractMonitors(destination.exportedSignals),
@@ -287,12 +291,7 @@ export const buildNodesAndEdges = ({
           });
         })),
   ];
-
-  // Combine all nodes
-  const nodes = [...ruleNodes, ...sourceNodes, ...actionNodes, ...destinationNodes];
-
-  // Build edges - connecting sources to actions, and actions to destinations
-  const edges: Edge[] = [];
+  nodes.push(...destinationNodes);
 
   // Connect sources to actions
   if (!sources.length) {
@@ -305,6 +304,7 @@ export const buildNodesAndEdges = ({
 
         edges.push(
           createEdge(`source-${sourceIndex}-to-action-${actionIndex}`, {
+            animated: false,
             isMultiTarget: false,
             label: formatBytes(node.data.metric?.throughput),
             isError: node.data.status === STATUSES.UNHEALTHY,
@@ -333,6 +333,7 @@ export const buildNodesAndEdges = ({
 
         edges.push(
           createEdge(`action-${actionIndex}-to-destination-${destinationIndex}`, {
+            animated: true,
             isMultiTarget: true,
             label: formatBytes(node.data.metric?.throughput),
             isError: node.data.status === STATUSES.UNHEALTHY,

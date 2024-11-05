@@ -4,8 +4,8 @@ import Image from 'next/image';
 import styled from 'styled-components';
 import { Text } from '@/reuseable-components';
 
-const ColumnContainer = styled.div<{ columnWidth: number }>`
-  width: ${({ columnWidth }) => `${columnWidth + 40}px`};
+const ColumnContainer = styled.div<{ nodeWidth: number }>`
+  width: ${({ nodeWidth }) => `${nodeWidth + 40}px`};
   padding: 12px 0px 16px 0px;
   gap: 8px;
   display: flex;
@@ -39,12 +39,12 @@ interface Column {
 
 interface HeaderNodeProps {
   data: Column;
-  columnWidth: number;
+  nodeWidth: number;
 }
 
-const HeaderNode = ({ data, columnWidth }: HeaderNodeProps) => {
+const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
   return (
-    <ColumnContainer columnWidth={columnWidth}>
+    <ColumnContainer nodeWidth={nodeWidth}>
       <Image src={data.icon} width={16} height={16} alt={data.title} />
       <Title size={14}>{data.title}</Title>
       <TagValueContainer>

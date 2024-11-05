@@ -22,6 +22,9 @@ export const OverviewDataFlowWrapper = styled.div`
   position: relative;
 `;
 
+const NODE_WIDTH = 255;
+const NODE_HEIGHT = 80;
+
 export function OverviewDataFlowContainer() {
   const { actions } = useGetActions();
   const { sources } = useActualSources();
@@ -37,7 +40,6 @@ export function OverviewDataFlowContainer() {
 
   // TODO: remove mockup data from "useMetrics"
   const { metrics } = useMetrics({ sources, destinations });
-  const columnWidth = 255;
 
   // Memoized node and edge builder to improve performance
   const { nodes, edges } = useMemo(() => {
@@ -47,15 +49,16 @@ export function OverviewDataFlowContainer() {
       actions,
       destinations,
       metrics,
-      columnWidth,
       containerWidth,
+      nodeWidth: NODE_WIDTH,
+      nodeHeight: NODE_HEIGHT,
     });
-  }, [instrumentationRules, sources, actions, destinations, metrics, columnWidth, containerWidth]);
+  }, [instrumentationRules, sources, actions, destinations, metrics, containerWidth]);
 
   return (
     <OverviewDataFlowWrapper ref={containerRef}>
       <OverviewActionMenuContainer />
-      <NodeBaseDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} columnWidth={columnWidth} />
+      <NodeBaseDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} nodeWidth={NODE_WIDTH} />
 
       <AllDrawers />
       <AllModals />
