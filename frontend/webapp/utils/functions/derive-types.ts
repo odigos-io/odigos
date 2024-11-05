@@ -1,6 +1,6 @@
 import { InstrumentationRuleType, type InstrumentationRuleSpec } from '@/types';
 
-const deriveTypeFromRule = (rule: InstrumentationRuleSpec): InstrumentationRuleType | undefined => {
+export const deriveTypeFromRule = (rule: InstrumentationRuleSpec): InstrumentationRuleType | undefined => {
   if (rule.payloadCollection) {
     return InstrumentationRuleType.PAYLOAD_COLLECTION;
   }
@@ -8,4 +8,4 @@ const deriveTypeFromRule = (rule: InstrumentationRuleSpec): InstrumentationRuleT
   return undefined;
 };
 
-export { deriveTypeFromRule };
+// TODO: add "deriveTypeFromAction"

@@ -1,3 +1,9 @@
+export interface ExportedSignals {
+  logs: boolean;
+  metrics: boolean;
+  traces: boolean;
+}
+
 export interface Condition {
   type: string;
   status: string;

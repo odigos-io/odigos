@@ -1,7 +1,6 @@
 import theme from '@/styles/theme';
-import { getActionIcon } from '@/utils';
 import { Node, Edge } from 'react-flow-renderer';
-import { getRuleIcon } from '@/utils/functions';
+import { extractMonitors, formatBytes, getActionIcon, getRuleIcon, getValueForRange } from '@/utils';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 import {
   OVERVIEW_ENTITY_TYPES,
@@ -16,28 +15,6 @@ import {
 } from '@/types';
 
 const HEADER_ICON_PATH = '/icons/overview/';
-
-const extractMonitors = (exportedSignals: Record<string, boolean>) => {
-  const filtered = Object.keys(exportedSignals).filter((signal) => exportedSignals[signal] === true);
-
-  return filtered;
-};
-
-const getValueForRange = (current: number, matrix: (number | null)[][]) => {
-  const found = matrix.find(([min, max]) => (min === null || current >= min) && (max === null || current <= max));
-
-  return found?.[2] || 0;
-};
-
-const formatBytes = (bytes?: number) => {
-  if (!bytes) return '0 KB/s';
-
-  const sizes = ['Bytes', 'KB/s', 'MB/s', 'GB/s', 'TB/s'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  const value = bytes / Math.pow(1024, i);
-
-  return `${value.toFixed(1)} ${sizes[i]}`;
-};
 
 const getHealthStatus = (item: K8sActualSource | ActualDestination) => {
   const conditions = (item as K8sActualSource)?.instrumentedApplicationDetails?.conditions || (item as ActualDestination)?.conditions;

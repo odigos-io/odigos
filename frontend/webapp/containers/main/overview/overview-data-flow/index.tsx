@@ -4,9 +4,15 @@ import dynamic from 'next/dynamic';
 import styled from 'styled-components';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
 import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
-import { useGetActions, useActualSources, useContainerWidth, useActualDestination, useNodeDataFlowHandlers } from '@/hooks';
-import { useGetInstrumentationRules } from '@/hooks/instrumentation-rules/useGetInstrumentationRules';
-import { useMetrics } from '@/hooks/overview/useMetrics';
+import {
+  useMetrics,
+  useGetActions,
+  useActualSources,
+  useContainerWidth,
+  useActualDestination,
+  useNodeDataFlowHandlers,
+  useGetInstrumentationRules,
+} from '@/hooks';
 
 const AllDrawers = dynamic(() => import('../all-drawers'), {
   ssr: false,

@@ -13,7 +13,7 @@ export function useMetrics({ sources, destinations }: { sources: K8sActualSource
     const interval = setInterval(async () => {
       await refetch();
       setCount((n) => n + 1);
-    }, 1000);
+    }, 3000);
 
     return () => {
       clearInterval(interval);
