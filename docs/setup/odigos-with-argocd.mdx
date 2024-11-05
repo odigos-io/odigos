@@ -1,0 +1,68 @@
+---
+title: "Configure Odigos with Argo CD"
+sidebarTitle: "Odigos with Argo CD"
+---
+
+This guide explains how to configure Argo CD to work alongside Odigos without overwriting custom labels, annotations, or other fields that Odigos injects into workloads. To achieve this, we’ll use the `ignoreDifferences` setting in Argo CD to prevent it from syncing specific fields added by Odigos.
+
+## Setting up `ignoreDifferences` at the System Level
+
+To configure Argo CD to ignore specific differences at a **system-wide level**, follow the [Argo CD documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/#system-level-configuration) on configuring `ignoreDifferences`. This approach ensures that fields injected by Odigos will not be removed or modified during Argo CD sync operations.
+
+### Configuration Example
+
+In your Argo CD configuration, add the following entries under `resource.customizations.ignoreDifferences.all` in the `data` section:
+
+```yaml
+data:
+  resource.customizations.ignoreDifferences.all: |
+    jsonPointers:
+    - /metadata/labels/odigos-instrumentation
+    - /metadata/annotations/odigos.io~1reported-name
+    - /metadata/annotations/odigos.io~1manifest-env-original-val
+    - /spec/template/metadata/labels/odigos.io~1inject-instrumentation
+    - /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1python-native-community
+    - /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1go-ebpf-community
+    - /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1javascript-native-community
+    - /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1java-native-community
+    - /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1dotnet-native-community
+```
+
+
+These paths specify fields added by Odigos that you want Argo CD to ignore during synchronization.
+
+If your workloads contain multiple containers with instrumentation applied, you will need to add entries for each container individually, based on the maximum number of containers within any instrumented workload.   
+For each container, include the appropriate containers/X paths, where X is the container index.
+
+For example:
+
+- If your workloads have **up to two containers** each, your configuration should include paths for `containers/0` and `containers/1`.
+- If your workloads have **up to three containers**, add entries for `containers/0`, `containers/1`, and `containers/2`, and so on.
+
+
+For a setup with two containers, the configuration would look like this:
+
+
+```yaml
+data:
+  resource.customizations.ignoreDifferences.all: |
+    jsonPointers:
+    - /metadata/labels/odigos-instrumentation
+    - /metadata/annotations/odigos.io~1reported-name
+    - /metadata/annotations/odigos.io~1manifest-env-original-val
+    - /spec/template/metadata/labels/odigos.io~1inject-instrumentation
+    - /spec/template/spec/containers/0/resources/limits/instrumentation.odigos.io~1python-native-community
+    - /spec/template/spec/containers/1/resources/limits/instrumentation.odigos.io~1python-native-community
+    ...
+
+```
+
+In this example:
+
+- `containers/0` and `containers/1` correspond to the two containers within a pod.
+- Ensure your list includes `containers/0` through `containers/N-1` based on the highest number of containers in any instrumented workload.
+
+
+Refer to the [Argo CD documentation on diffing](https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/) for further guidance on configuring `ignoreDifferences`.
+
+By setting up `ignoreDifferences` in this way, Argo CD will avoid syncing the fields injected by Odigos, allowing the instrumentation to function without interference.
