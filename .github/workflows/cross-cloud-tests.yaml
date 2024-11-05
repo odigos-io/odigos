@@ -205,7 +205,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: run-details
+          name: run-details-${{ matrix.cloud-provider }}-${{ matrix.test-scenario }}
           path: odigos_debug*.tar.gz
         continue-on-error: true
 
