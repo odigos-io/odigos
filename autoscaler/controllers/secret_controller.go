@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 
+	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,6 +20,7 @@ type SecretReconciler struct {
 	Scheme           *runtime.Scheme
 	ImagePullSecrets []string
 	OdigosVersion    string
+	Config           *controllerconfig.ControllerConfig
 }
 
 type secretPredicate struct {
@@ -52,7 +54,7 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Secret")
 
-	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
+	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.Config.MetricsServerEnabled)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
