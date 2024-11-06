@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import styled from 'styled-components';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
-import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
+import { buildNodesAndEdges, NodeBaseDataFlow, ToastList } from '@/reuseable-components';
 import {
   useMetrics,
   useGetActions,
@@ -32,6 +32,7 @@ const NODE_WIDTH = 255;
 const NODE_HEIGHT = 80;
 
 export function OverviewDataFlowContainer() {
+  const { metrics } = useMetrics();
   const { actions } = useGetActions();
   const { sources } = useActualSources();
   const { destinations } = useActualDestination();
@@ -43,9 +44,6 @@ export function OverviewDataFlowContainer() {
     actions,
     destinations,
   });
-
-  // TODO: remove mockup data from "useMetrics"
-  const { metrics } = useMetrics({ sources, destinations });
 
   // Memoized node and edge builder to improve performance
   const { nodes, edges } = useMemo(() => {
@@ -68,6 +66,7 @@ export function OverviewDataFlowContainer() {
 
       <AllDrawers />
       <AllModals />
+      <ToastList />
     </OverviewDataFlowWrapper>
   );
 }

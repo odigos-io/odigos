@@ -1,8 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Notification } from '@/types';
-import { useNotificationStore } from '@/store';
 import { NotificationNote } from '@/reuseable-components';
+import { Notification, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { DrawerBaseItem, useDrawerStore, useNotificationStore } from '@/store';
+import { useActualDestination, useActualSources, useGetActions, useGetInstrumentationRules } from '@/hooks';
 
 const Container = styled.div`
   position: fixed;
@@ -32,27 +33,53 @@ export const ToastList: React.FC = () => {
 
 const Toast: React.FC<Notification> = ({ id, type, title, message, crdType, target }) => {
   const { markAsDismissed, markAsSeen } = useNotificationStore();
-  // const router = useRouter();
+
+  const { actions } = useGetActions();
+  const { sources } = useActualSources();
+  const { destinations } = useActualDestination();
+  const { instrumentationRules } = useGetInstrumentationRules();
+  const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
 
   const onClick = () => {
-    markAsDismissed(id);
-    markAsSeen(id);
+    const drawerItem: Partial<DrawerBaseItem> = {};
 
-    alert('TODO');
+    console.log('crdType', crdType);
+    console.log('target', target);
 
-    // switch (crdType) {
-    //   case 'Destination':
-    //     // TODO: open drawer
-    //     // router.push(`${ROUTES.UPDATE_DESTINATION}${target}`);
-    //     break;
-    //   case 'InstrumentedApplication':
-    //   case 'InstrumentationInstance':
-    //     // TODO: open drawer
-    //     // router.push(`${ROUTES.MANAGE_SOURCE}?${target}`);
-    //     break;
-    //   default:
-    //     break;
-    // }
+    switch (crdType) {
+      case 'Rule':
+        drawerItem['type'] = OVERVIEW_ENTITY_TYPES.RULE;
+        // drawerItem['id'] = '';
+        // drawerItem['item'] = instrumentationRules.find((item) => item.ruleId === drawerItem['id']);
+        break;
+      case 'InstrumentedApplication':
+      case 'InstrumentationInstance':
+        drawerItem['type'] = OVERVIEW_ENTITY_TYPES.SOURCE;
+        // drawerItem['id'] = {};
+        // drawerItem['item'] = sources.find((item) => item.kind === drawerItem['id']?.['kind'] && item.name === drawerItem['id']?.['name'] && item.namespace === drawerItem['id']?.['namespace']);
+        break;
+      case 'Action':
+        drawerItem['type'] = OVERVIEW_ENTITY_TYPES.ACTION;
+        // drawerItem['id'] = '';
+        // drawerItem['item'] = actions.find((item) => item.id === drawerItem['id']);
+        break;
+      case 'Destination':
+        drawerItem['type'] = OVERVIEW_ENTITY_TYPES.DESTINATION;
+        // drawerItem['id'] = '';
+        // drawerItem['item'] = destinations.find((item) => item.id === drawerItem['id']);
+        break;
+
+      default:
+        break;
+    }
+
+    console.log('drawerItem', drawerItem);
+
+    if (!!drawerItem.item) {
+      setSelectedItem(drawerItem as DrawerBaseItem);
+      markAsSeen(id);
+      markAsDismissed(id);
+    }
   };
 
   return (
