@@ -94,11 +94,9 @@ export const OVERVIEW = {
   ACTION_DANGER_ZONE_TITLE: 'Delete this action',
   SOURCE_DANGER_ZONE_SUBTITLE:
     'Uninstrument this source, and delete all odigos associated data. You can always re-instrument this source later with odigos.',
-  ACTION_DANGER_ZONE_SUBTITLE:
-    'This action cannot be undone. This will permanently delete the action and all associated data.',
+  ACTION_DANGER_ZONE_SUBTITLE: 'This action cannot be undone. This will permanently delete the action and all associated data.',
   DELETE_MODAL_TITLE: 'Delete this destination',
-  DELETE_MODAL_SUBTITLE:
-    'This action cannot be undone. This will permanently delete the destination and all associated data.',
+  DELETE_MODAL_SUBTITLE: 'This action cannot be undone. This will permanently delete the destination and all associated data.',
   DELETE_BUTTON: 'I want to delete this destination',
   CONFIRM_SOURCE_DELETE: 'I want to delete this source',
   CONFIRM_DELETE_ACTION: 'I want to delete this action',
@@ -110,8 +108,7 @@ export const OVERVIEW = {
     'Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your Odigos Destinations.',
   CREATE_INSTRUMENTATION_RULE: 'Create Instrumentation Rule',
   EDIT_INSTRUMENTATION_RULE: 'Edit Instrumentation Rule',
-  INSTRUMENTATION_RULE_DESCRIPTION:
-    'Instrumentation Rules control how telemetry is recorded from your application.',
+  INSTRUMENTATION_RULE_DESCRIPTION: 'Instrumentation Rules control how telemetry is recorded from your application.',
 };
 
 export const ACTION = {
@@ -119,11 +116,18 @@ export const ACTION = {
   CONTACT_US: 'Contact Us',
   LEARN_MORE: 'Learn more',
   LINK_TO_DOCS: 'Link to docs',
+  ENABLE: 'Enable',
   DISABLE: 'Disable',
   RUNNING: 'Running',
   APPLIED: 'Applied',
-  ENABLE: 'Enable',
   DELETE_ALL: 'Delete All',
+  CREATE: 'Create',
+  UPDATE: 'Update',
+  DELETE: 'Delete',
+};
+
+export const FORM_ALERTS = {
+  REQUIRED_FIELDS: 'Required fields are missing!',
 };
 
 export const NOTIFICATION = {

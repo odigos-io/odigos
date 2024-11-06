@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { getActionIcon } from '@/utils';
+import { ACTION, FORM_ALERTS, getActionIcon } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import type { ActionDataParsed } from '@/types';
@@ -71,8 +71,8 @@ const ActionDrawer: React.FC<Props> = () => {
     if (!validateForm()) {
       notify({
         type: 'error',
-        title: 'Update',
-        message: 'Required fields are missing!',
+        title: ACTION.UPDATE,
+        message: FORM_ALERTS.REQUIRED_FIELDS,
       });
     } else {
       const payload = {
