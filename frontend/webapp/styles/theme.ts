@@ -13,10 +13,16 @@ const colors = {
   card: '#F9F9F90A',
   dropdown_bg: '#242424',
   blank_background: '#11111100',
-  warning: '#E9CF35',
-  danger: '#EF7676',
+
   dark_red: '#802828',
   dark_green: '#2d4323',
+
+  warning: '#472300',
+  error: '#431919',
+  success: '#172013',
+  info: '#242424',
+  default: '#181944',
+
   white_opacity: {
     '004': 'rgba(249, 249, 249, 0.04)',
     '008': 'rgba(249, 249, 249, 0.08)',
@@ -118,8 +124,12 @@ const text = {
   dark_grey: '#7A7A7A',
   light_grey: '#CCD0D2',
   dark_button: '#0A1824',
-  success: '#81AF65',
+
+  warning: '#E9CF35',
   error: '#EF7676',
+  success: '#81AF65',
+  info: '#B8B8B8',
+  default: '#AABEF7',
 };
 
 const font_family = {

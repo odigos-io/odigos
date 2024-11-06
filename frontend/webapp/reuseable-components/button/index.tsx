@@ -51,30 +51,30 @@ const variantStyles = {
   `,
   danger: css`
     border-color: transparent;
-    background: ${({ theme }) => theme.colors.danger};
+    background: ${({ theme }) => theme.text.error};
     &:hover {
-      background: ${({ theme }) => theme.colors.danger};
+      background: ${({ theme }) => theme.text.error};
       opacity: 0.9;
     }
     &:active {
-      background: ${({ theme }) => theme.colors.danger};
+      background: ${({ theme }) => theme.text.error};
     }
     &:focus {
-      background: ${({ theme }) => theme.colors.danger};
+      background: ${({ theme }) => theme.text.error};
     }
   `,
   warning: css`
     border-color: transparent;
-    background: ${({ theme }) => theme.colors.warning};
+    background: ${({ theme }) => theme.text.warning};
     &:hover {
-      background: ${({ theme }) => theme.colors.warning};
+      background: ${({ theme }) => theme.text.warning};
       opacity: 0.9;
     }
     &:active {
-      background: ${({ theme }) => theme.colors.warning};
+      background: ${({ theme }) => theme.text.warning};
     }
     &:focus {
-      background: ${({ theme }) => theme.colors.warning};
+      background: ${({ theme }) => theme.text.warning};
     }
   `,
 };

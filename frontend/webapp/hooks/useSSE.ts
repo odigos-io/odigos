@@ -36,11 +36,11 @@ export function useSSE() {
 
         // Dispatch the notification to the store
         notify({
-          message: eventBuffer.current[key].message,
-          title: eventBuffer.current[key].title,
           type: eventBuffer.current[key].type,
-          target: eventBuffer.current[key].target,
+          title: eventBuffer.current[key].title,
+          message: eventBuffer.current[key].message,
           crdType: eventBuffer.current[key].crdType,
+          target: eventBuffer.current[key].target,
         });
 
         // Reset retry count on successful connection
@@ -66,11 +66,9 @@ export function useSSE() {
             console.error('Max retries reached. Could not reconnect to EventSource.');
 
             notify({
-              message: 'Connection to the server failed. Please reboot the application.',
-              title: 'Connection Error',
               type: 'error',
-              target: 'system',
-              crdType: 'connection',
+              title: 'Connection Error',
+              message: 'Connection to the server failed. Please reboot the application.',
             });
 
             return prevRetryCount;

@@ -1,7 +1,7 @@
 import { useDrawerStore } from '@/store';
 import { useNotify } from '../useNotify';
 import { useMutation } from '@apollo/client';
-import type { ActionInput, ActionsType } from '@/types';
+import type { ActionInput, ActionsType, NotificationType } from '@/types';
 import { useComputePlatform } from '../compute-platform';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
 
@@ -15,33 +15,42 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
   const { refetch } = useComputePlatform();
   const notify = useNotify();
 
-  const notifyUser = (title: string, message: string, type: 'error' | 'success') => {
-    notify({ title, message, type, target: 'notification', crdType: 'notification' });
+  const notifyUser = (type: NotificationType, title: string, message: string) => {
+    notify({ type, title, message });
   };
 
   const handleError = (title: string, message: string) => {
-    notifyUser(title, message, 'error');
+    notifyUser('error', title, message);
     params?.onError?.();
   };
 
   const handleComplete = (title: string, message: string) => {
-    notifyUser(title, message, 'success');
+    notifyUser('success', title, message);
     setDrawerItem(null);
     refetch();
     params?.onSuccess?.();
   };
 
   const [createAction, cState] = useMutation<{ createAction: { id: string } }>(CREATE_ACTION, {
-    onError: (error) => handleError('Create Action', error.message),
-    onCompleted: () => handleComplete('Create Action', 'successfully created'),
+    onError: (error) => handleError('Create', error.message),
+    onCompleted: (_, req) => {
+      const name = req?.variables?.action.name || req?.variables?.action.type;
+      handleComplete('Create', `action "${name}" was created`);
+    },
   });
   const [updateAction, uState] = useMutation<{ updateAction: { id: string } }>(UPDATE_ACTION, {
-    onError: (error) => handleError('Update Action', error.message),
-    onCompleted: () => handleComplete('Update Action', 'successfully updated'),
+    onError: (error) => handleError('Update', error.message),
+    onCompleted: (_, req) => {
+      const name = req?.variables?.action.name || req?.variables?.action.type;
+      handleComplete('Update', `action "${name}" was updated`);
+    },
   });
   const [deleteAction, dState] = useMutation<{ deleteAction: boolean }>(DELETE_ACTION, {
-    onError: (error) => handleError('Delete Action', error.message),
-    onCompleted: () => handleComplete('Delete Action', 'successfully deleted'),
+    onError: (error) => handleError('Delete', error.message),
+    onCompleted: (_, req) => {
+      const name = req?.variables?.id;
+      handleComplete('Delete', `action "${name}" was deleted`);
+    },
   });
 
   return {

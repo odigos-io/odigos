@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { useKeyDown } from '@/hooks';
 import styled from 'styled-components';
-import { fade, Overlay } from '@/styles';
+import { slide, Overlay } from '@/styles';
 
 interface DrawerProps {
   isOpen: boolean;
@@ -28,7 +28,7 @@ const DrawerContainer = styled.div<{
   background: ${({ theme }) => theme.colors.translucent_bg};
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   overflow-y: auto;
-  animation: ${({ isOpen, position = 'right' }) => (isOpen ? fade.in[position] : fade.out[position])} 0.3s ease;
+  animation: ${({ isOpen, position = 'right' }) => (isOpen ? slide.in[position] : slide.out[position])} 0.3s ease;
 `;
 
 export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, position = 'right', width = '300px', children, closeOnEscape = true }) => {

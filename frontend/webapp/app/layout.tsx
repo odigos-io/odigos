@@ -4,8 +4,8 @@ import React from 'react';
 import { useSSE } from '@/hooks';
 import theme from '@/styles/theme';
 import { ApolloWrapper } from '@/lib';
-import { ToastList } from '@/components';
 import { ThemeProvider } from 'styled-components';
+import { ToastList } from '@/reuseable-components';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
 const LAYOUT_STYLE: React.CSSProperties = {

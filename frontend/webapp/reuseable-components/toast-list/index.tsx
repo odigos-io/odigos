@@ -1,23 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import type { Notification } from '@/types';
+import React from 'react';
+import styled from 'styled-components';
+import { Notification } from '@/types';
 import { useNotificationStore } from '@/store';
 import { NotificationNote } from '@/reuseable-components';
 
-interface Props extends Notification {}
+const Container = styled.div`
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 600px;
+`;
 
-const Toast: React.FC<Props> = ({ id, message, type, title, crdType, target }) => {
-  // const router = useRouter();
+export const ToastList: React.FC = () => {
+  const { notifications } = useNotificationStore();
+
+  return (
+    <Container>
+      {notifications
+        .filter(({ dismissed }) => !dismissed)
+        .map((notif) => (
+          <Toast key={`toast-${notif.id}`} {...notif} />
+        ))}
+    </Container>
+  );
+};
+
+const Toast: React.FC<Notification> = ({ id, type, title, message, crdType, target }) => {
   const { markAsDismissed, markAsSeen } = useNotificationStore();
-  const [isLeaving, setIsLeaving] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLeaving(true);
-      setTimeout(() => markAsDismissed(id), 500);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [id, markAsDismissed]);
+  // const router = useRouter();
 
   const onClick = () => {
     markAsDismissed(id);
@@ -42,6 +57,7 @@ const Toast: React.FC<Props> = ({ id, message, type, title, crdType, target }) =
 
   return (
     <NotificationNote
+      id={id}
       type={type}
       title={title}
       message={message}
@@ -56,5 +72,3 @@ const Toast: React.FC<Props> = ({ id, message, type, title, crdType, target }) =
     />
   );
 };
-
-export default Toast;
