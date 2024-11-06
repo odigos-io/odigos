@@ -22,6 +22,9 @@ const API = {
   INSTRUMENTATION_RULES: `${BASE_URL}/instrumentation-rules`,
   INSTRUMENTATION_RULE: (id: string) =>
     `${BASE_URL}/instrumentation-rules/${id}`,
+  DESCRIBE_ODIGOS: `${BASE_URL}/describe/odigos`,
+  DESCRIBE_SOURCE: (namespace: string, kind: string, name: string) =>
+    `${BASE_URL}/describe/source/namespace/${namespace}/kind/${kind}/name/${name}`,
 };
 
 const QUERIES = {
