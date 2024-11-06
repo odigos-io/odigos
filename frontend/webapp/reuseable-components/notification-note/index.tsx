@@ -1,14 +1,19 @@
-import React from 'react';
-import styled, { css } from 'styled-components';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Text } from '../text';
-
-// Define the notification types
-type NotificationType = 'warning' | 'error' | 'success' | 'info' | 'default';
+import theme from '@/styles/theme';
+import { Divider } from '../divider';
+import styled from 'styled-components';
+import { getStatusIcon } from '@/utils';
+import { progress, slide } from '@/styles';
+import { useNotificationStore } from '@/store';
+import type { Notification, NotificationType } from '@/types';
 
 interface NotificationProps {
+  id?: string;
   type: NotificationType;
-  text: string;
+  title?: Notification['title'];
+  message?: Notification['message'];
   action?: {
     label: string;
     onClick: () => void;
@@ -16,106 +21,164 @@ interface NotificationProps {
   style?: React.CSSProperties;
 }
 
-const NotificationContainer = styled.div<{ type: NotificationType }>`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-radius: 32px;
+const TOAST_DURATION = 5000;
+const TRANSITION_DURATION = 500;
 
-  background-color: ${({ type }) => {
-    switch (type) {
-      case 'warning':
-        return '#472300'; // Orange
-      case 'error':
-        return 'rgba(226, 90, 90, 0.12);';
-      case 'success':
-        return '#28A745'; // Green
-      case 'info':
-        return '#F9F9F90A'; // Default to info color
-      case 'default':
-      default:
-        return '#181944'; // Blue
-    }
-  }};
+const Container = styled.div<{ isLeaving?: boolean }>`
+  position: relative;
+  &.animated {
+    overflow: hidden;
+    padding-bottom: 1px;
+    border-radius: 32px;
+    animation: ${({ isLeaving }) => (isLeaving ? slide.out['bottom'] : slide.in['bottom'])} ${TRANSITION_DURATION}ms forwards;
+  }
 `;
 
-const IconWrapper = styled.div`
-  margin-right: 12px;
+const DurationAnimation = styled.div<{ type: NotificationType }>`
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  border-radius: 32px;
+  background-color: ${({ type, theme }) => theme.text[type]};
+  animation: ${progress.out} ${TOAST_DURATION - TRANSITION_DURATION}ms forwards;
+`;
+
+const Content = styled.div<{ type: NotificationType }>`
   display: flex;
-  justify-content: center;
   align-items: center;
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 32px;
+  background-color: ${({ type, theme }) => theme.colors[type]};
+`;
+
+const TextWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  margin: 0 auto 0 12px;
+  height: 12px;
 `;
 
 const Title = styled(Text)<{ type: NotificationType }>`
   font-size: 14px;
-  color: ${({ type }) => {
-    switch (type) {
-      case 'warning':
-        return '#E9CF35';
-      case 'error':
-        return '#E25A5A';
-      case 'success':
-        return '#28A745';
-      case 'info':
-        return '#B8B8B8';
-      case 'default':
-      default:
-        return '#AABEF7';
-    }
-  }};
+  color: ${({ type, theme }) => theme.text[type]};
 `;
 
-const TitleWrapper = styled.div`
+const Message = styled(Text)<{ type: NotificationType }>`
+  font-size: 12px;
+  color: ${({ type, theme }) => theme.text[type]};
+`;
+
+const ButtonsWrapper = styled.div`
+  margin-left: 12px;
   display: flex;
   align-items: center;
+  justify-content: center;
 `;
 
-const ActionButtonWrapper = styled.div`
+const ActionButton = styled(Text)`
+  text-transform: uppercase;
+  text-decoration: underline;
+  font-size: 14px;
+  font-family: ${({ theme }) => theme.font_family.secondary};
+  cursor: pointer;
+`;
+
+const CloseButton = styled(Image)`
+  margin-left: 12px;
+  width: 18px;
+  height: 18px;
+  padding: 4px;
+  border-radius: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-`;
-
-const ActionButton = styled(Text)`
-  text-decoration: underline;
-  text-transform: uppercase;
-  font-size: 14px;
-  font-weight: 400;
-  font-family: ${({ theme }) => theme.font_family.secondary};
-`;
-
-const NotificationIcon = ({ type }: { type: NotificationType }) => {
-  switch (type) {
-    case 'warning':
-      return <Image src='/icons/notification/warning-icon.svg' alt='warning' width={16} height={16} />;
-    case 'error':
-      return <Image src='/icons/notification/error-icon.svg' alt='error' width={16} height={16} />;
-    case 'success':
-      return <Image src='/icons/notification/success-icon.svg' alt='success' width={16} height={16} />;
-    case 'info':
-      return <Image src='/icons/common/info.svg' alt='info' width={16} height={16} />;
-    default:
-      return <Image src='/brand/odigos-icon.svg' alt='info' width={16} height={16} />;
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.white_opacity['10']};
   }
-};
+`;
 
-const NotificationNote: React.FC<NotificationProps> = ({ type, text, action, style }) => {
+const NotificationNote: React.FC<NotificationProps> = ({ id, type, title, message, action, style }) => {
+  const { markAsDismissed, markAsSeen } = useNotificationStore();
+
+  // These are for handling transitions:
+  // isEntering - to stop the progress bar from rendering before the toast is fully slide-in
+  // isLeaving - to trigger the slide-out animation
+  const [isEntering, setIsEntering] = useState(true);
+  const [isLeaving, setIsLeaving] = useState(false);
+
+  // These are for handling on-hover events (pause/resume the progress bar animation & timeout for auto-close/dismiss)
+  const timerForClosure = useRef<NodeJS.Timeout | null>(null);
+  const progress = useRef<HTMLDivElement | null>(null);
+
+  const closeToast = useCallback(
+    (params?: { asSeen: boolean }) => {
+      if (!!id) {
+        setIsLeaving(true);
+        setTimeout(() => {
+          markAsDismissed(id);
+          if (params?.asSeen) markAsSeen(id);
+        }, TRANSITION_DURATION);
+      }
+    },
+    [id]
+  );
+
+  useEffect(() => {
+    const t = setTimeout(() => setIsEntering(false), TRANSITION_DURATION);
+
+    return () => {
+      clearTimeout(t);
+    };
+  }, []);
+
+  useEffect(() => {
+    timerForClosure.current = setTimeout(closeToast, TOAST_DURATION);
+
+    return () => {
+      if (timerForClosure.current) clearTimeout(timerForClosure.current);
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (timerForClosure.current) clearTimeout(timerForClosure.current);
+    if (progress.current) progress.current.style.animationPlayState = 'paused';
+  };
+
+  const handleMouseLeave = () => {
+    if (progress.current) {
+      const remainingTime = (progress.current.offsetWidth / (progress.current.parentElement as HTMLDivElement).offsetWidth) * 4000;
+
+      timerForClosure.current = setTimeout(closeToast, remainingTime);
+      progress.current.style.animationPlayState = 'running';
+    }
+  };
+
   return (
-    <NotificationContainer type={type} style={style}>
-      <TitleWrapper>
-        <IconWrapper>
-          <NotificationIcon type={type} />
-        </IconWrapper>
-        <Title type={type}>{text}</Title>
-      </TitleWrapper>
-      {action && (
-        <ActionButtonWrapper onClick={action.onClick}>
-          <ActionButton decoration='under'>{action.label}</ActionButton>
-        </ActionButtonWrapper>
-      )}
-    </NotificationContainer>
+    <Container className={id ? 'animated' : ''} isLeaving={isLeaving} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <Content type={type} style={style}>
+        <Image src={getStatusIcon(type)} alt={type} width={16} height={16} />
+
+        <TextWrapper>
+          {title && <Title type={type}>{title}</Title>}
+          {title && message && <Divider orientation='vertical' color={theme.text[type] + '4D'} thickness={1} />}
+          {message && <Message type={type}>{message}</Message>}
+        </TextWrapper>
+
+        {(action || id) && (
+          <ButtonsWrapper>
+            {action && <ActionButton onClick={action.onClick}>{action.label}</ActionButton>}
+            {id && <CloseButton src='/icons/common/x.svg' alt='x' width={12} height={12} onClick={() => closeToast({ asSeen: true })} />}
+          </ButtonsWrapper>
+        )}
+      </Content>
+
+      {!!id && !isEntering && !isLeaving && <DurationAnimation ref={progress} type={type} />}
+    </Container>
   );
 };
 

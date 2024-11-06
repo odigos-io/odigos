@@ -70,7 +70,7 @@ export const AddRuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
         />
         <NotificationNote
           type='info'
-          text='We currently support one rule. We’ll be adding new rule types in the near future.'
+          message='We currently support one rule. We’ll be adding new rule types in the near future.'
           style={{ marginTop: '24px' }}
         />
         <AutocompleteInput

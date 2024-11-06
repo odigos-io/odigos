@@ -4,7 +4,7 @@ import { Text } from '../text';
 import ReactDOM from 'react-dom';
 import { useKeyDown } from '@/hooks';
 import styled from 'styled-components';
-import { fade, Overlay } from '@/styles';
+import { slide, Overlay } from '@/styles';
 
 interface ModalProps {
   isOpen: boolean;
@@ -30,7 +30,7 @@ const ModalWrapper = styled.div<{ isOpen: ModalProps['isOpen'] }>`
   border-radius: 40px;
   box-shadow: 0px 1px 1px 0px rgba(17, 17, 17, 0.8), 0px 2px 2px 0px rgba(17, 17, 17, 0.8), 0px 5px 5px 0px rgba(17, 17, 17, 0.8),
     0px 10px 10px 0px rgba(17, 17, 17, 0.8), 0px 0px 8px 0px rgba(17, 17, 17, 0.8);
-  animation: ${({ isOpen }) => (isOpen ? fade.in['center'] : fade.out['center'])} 0.3s ease;
+  animation: ${({ isOpen }) => (isOpen ? slide.in['center'] : slide.out['center'])} 0.3s ease;
 `;
 
 const ModalHeader = styled.div`

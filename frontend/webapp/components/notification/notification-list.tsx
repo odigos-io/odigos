@@ -1,13 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, markAsSeen } from '@/store';
-
 import styled from 'styled-components';
 import theme from '@/styles/palette';
 import { BellIcon } from '@keyval-dev/design-system';
 import { KeyvalText } from '@/design.system';
 import { useOnClickOutside } from '@/hooks';
 import NotificationListItem from './notification-list-item';
+import { useNotificationStore } from '@/store';
 
 const NotificationListContainer = styled.div`
   position: absolute;
@@ -58,18 +56,12 @@ const NotificationHeader = styled.div`
 
 export const NotificationList: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const { notifications, markAsSeen } = useNotificationStore();
 
-  const notifications = useSelector(
-    (state: RootState) => state.notification.notifications
-  );
-
-  const dispatch = useDispatch();
   const containerRef = useRef(null);
   const isInitialRender = useRef(true);
   useOnClickOutside(containerRef, () => setShowNotifications(false));
-  const unseenCount = notifications.filter(
-    (notification) => !notification.seen
-  ).length;
+  const unseenCount = notifications.filter((notification) => !notification.seen).length;
 
   useEffect(() => {
     if (isInitialRender.current) {
@@ -85,7 +77,7 @@ export const NotificationList: React.FC = () => {
   function markAllAsSeen() {
     notifications.forEach((notification) => {
       if (!notification.seen) {
-        dispatch(markAsSeen(notification.id));
+        markAsSeen(notification.id);
       }
     });
   }
@@ -93,11 +85,7 @@ export const NotificationList: React.FC = () => {
   return notifications.length > 0 ? (
     <div ref={containerRef}>
       <BellIconWrapper>
-        <BellIcon
-          style={{ cursor: 'pointer' }}
-          size={20}
-          onClick={() => setShowNotifications(!showNotifications)}
-        />
+        <BellIcon style={{ cursor: 'pointer' }} size={20} onClick={() => setShowNotifications(!showNotifications)} />
         {unseenCount > 0 && (
           <NotificationBadge>
             <KeyvalText size={10}>{unseenCount}</KeyvalText>

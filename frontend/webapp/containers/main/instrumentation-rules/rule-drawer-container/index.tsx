@@ -68,11 +68,9 @@ const RuleDrawer: React.FC<Props> = () => {
   const handleSave = async (newTitle: string) => {
     if (!validateForm()) {
       notify({
-        message: 'Required fields are missing!',
-        title: 'Update Rule Error',
         type: 'error',
-        target: 'notification',
-        crdType: 'notification',
+        title: 'Update',
+        message: 'Required fields are missing!',
       });
     } else {
       const payload = {

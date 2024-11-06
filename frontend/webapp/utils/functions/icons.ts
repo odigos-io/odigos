@@ -1,28 +1,37 @@
-import type { ActionsType, InstrumentationRuleType } from '@/types';
+import type { ActionsType, InstrumentationRuleType, NotificationType } from '@/types';
 
 const BRAND_ICON = '/brand/odigos-icon.svg';
 
-export const getStatusIcon = (active?: boolean) => {
-  const path = '/icons/notification/';
+export const getStatusIcon = (status?: NotificationType) => {
+  if (!status) return BRAND_ICON;
 
-  return `${path}${active ? 'success-icon' : 'error-icon2'}.svg`;
+  switch (status) {
+    case 'success':
+      return '/icons/notification/success-icon.svg';
+    case 'error':
+      return '/icons/notification/error-icon2.svg';
+    case 'warning':
+      return '/icons/notification/warning-icon.svg';
+    case 'info':
+      return '/icons/common/info.svg';
+    default:
+      return BRAND_ICON;
+  }
 };
 
 export const getRuleIcon = (type?: InstrumentationRuleType) => {
   if (!type) return BRAND_ICON;
 
-  const path = '/icons/rules/';
   const typeLowerCased = type.replaceAll('-', '').toLowerCase();
 
-  return `${path}${typeLowerCased}.svg`;
+  return `/icons/rules/${typeLowerCased}.svg`;
 };
 
 export const getActionIcon = (type?: ActionsType | 'sampler') => {
   if (!type) return BRAND_ICON;
 
-  const path = '/icons/actions/';
   const typeLowerCased = type.toLowerCase();
   const isSampler = typeLowerCased.includes('sampler');
 
-  return `${path}${isSampler ? 'sampler' : typeLowerCased}.svg`;
+  return `/icons/actions/${isSampler ? 'sampler' : typeLowerCased}.svg`;
 };

@@ -72,7 +72,7 @@ const Status: React.FC<Props> = (props) => {
     <StatusWrapper {...props}>
       {withIcon && (
         <IconWrapper {...props}>
-          <Image src={getStatusIcon(isActive)} alt='status' width={withSmaller ? 14 : 16} height={withSmaller ? 14 : 16} />
+          <Image src={getStatusIcon(isActive ? 'success' : 'error')} alt='status' width={withSmaller ? 14 : 16} height={withSmaller ? 14 : 16} />
         </IconWrapper>
       )}
 

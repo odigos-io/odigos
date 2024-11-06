@@ -13,6 +13,8 @@ export interface SingleDestinationMetricsResponse {
 }
 
 export interface OverviewMetricsResponse {
-  sources: SingleSourceMetricsResponse[];
-  destinations: SingleDestinationMetricsResponse[];
+  getOverviewMetrics: {
+    sources: SingleSourceMetricsResponse[];
+    destinations: SingleDestinationMetricsResponse[];
+  };
 }

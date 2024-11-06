@@ -186,7 +186,7 @@ export const buildNodesAndEdges = ({
     );
   } else {
     sources.forEach((source, idx) => {
-      const metric = metrics?.sources.find(
+      const metric = metrics?.getOverviewMetrics.sources.find(
         ({ kind, name, namespace }) => kind === source.kind && name === source.name && namespace === source.namespace
       );
 
@@ -268,7 +268,7 @@ export const buildNodesAndEdges = ({
     );
   } else {
     destinations.forEach((destination, idx) => {
-      const metric = metrics?.destinations.find(({ id }) => id === destination.id);
+      const metric = metrics?.getOverviewMetrics.destinations.find(({ id }) => id === destination.id);
 
       tempNodes['destinations'].push(
         createNode(`destination-${idx}`, 'base', postions['destinations']['x'], postions['rules']['y'](idx), {

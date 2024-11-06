@@ -141,7 +141,7 @@ const BaseNode = ({ nodeWidth, isConnectable, data }: BaseNodeProps) => {
           {renderStatus()}
         </FooterWrapper>
       </BodyWrapper>
-      {isError ? <Image src={getStatusIcon(false)} alt='' width={20} height={20} /> : null}
+      {isError ? <Image src={getStatusIcon('error')} alt='' width={20} height={20} /> : null}
       {renderHandles()}
     </BaseNodeContainer>
   );
