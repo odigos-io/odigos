@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	autoscaling "k8s.io/api/autoscaling/v2beta2"
+	autoscaling "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,8 +24,9 @@ const (
 )
 
 var (
-	minReplicas = intPtr(1)
-	maxReplicas = int32(10)
+	minReplicas                = intPtr(1)
+	maxReplicas                = int32(10)
+	stabilizationWindowSeconds = intPtr(300) // cooldown period for scaling down
 )
 
 func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) error {
@@ -34,7 +35,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 	metricQuantity := resource.MustParse(fmt.Sprintf("%dMi", memLimit))
 	hpa := &autoscaling.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "autoscaling/v2beta2",
+			APIVersion: "autoscaling/v2",
 			Kind:       "HorizontalPodAutoscaler",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -61,8 +62,14 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 					},
 				},
 			},
+			Behavior: &autoscaling.HorizontalPodAutoscalerBehavior{
+				ScaleDown: &autoscaling.HPAScalingRules{
+					StabilizationWindowSeconds: stabilizationWindowSeconds,
+				},
+			},
 		},
 	}
+
 	if err := controllerutil.SetControllerReference(gateway, hpa, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference")
 		return err
