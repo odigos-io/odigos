@@ -5,7 +5,6 @@ import { useSSE } from '@/hooks';
 import theme from '@/styles/theme';
 import { ApolloWrapper } from '@/lib';
 import { ThemeProvider } from 'styled-components';
-import { ToastList } from '@/reuseable-components';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
 const LAYOUT_STYLE: React.CSSProperties = {
@@ -35,7 +34,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ThemeProvider theme={theme}>
             <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
               {children}
-              <ToastList />
             </body>
           </ThemeProvider>
         </QueryClientProvider>

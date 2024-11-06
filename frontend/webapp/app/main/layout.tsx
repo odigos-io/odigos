@@ -2,6 +2,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { MainHeader } from '@/components';
+import { ToastList } from '@/reuseable-components';
 
 const LayoutContainer = styled.div`
   width: 100%;
@@ -20,16 +21,13 @@ const MainContent = styled.div`
   align-items: center;
 `;
 
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <LayoutContainer>
       <MainContent>
         <MainHeader />
         {children}
+        <ToastList />
       </MainContent>
     </LayoutContainer>
   );
