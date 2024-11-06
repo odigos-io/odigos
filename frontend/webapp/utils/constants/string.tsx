@@ -1,3 +1,5 @@
+import type { NotificationType } from '@/types';
+
 export const SETUP = {
   STEPS: {
     CHOOSE_SOURCE: 'Choose Source',
@@ -130,7 +132,9 @@ export const FORM_ALERTS = {
   REQUIRED_FIELDS: 'Required fields are missing!',
 };
 
-export const NOTIFICATION = {
+export const NOTIFICATION: {
+  [key: string]: NotificationType;
+} = {
   ERROR: 'error',
   SUCCESS: 'success',
 };

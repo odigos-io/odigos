@@ -1,8 +1,8 @@
 import { useDrawerStore } from '@/store';
 import { useNotify } from '../useNotify';
 import { useMutation } from '@apollo/client';
-import { getSseTargetFromId } from '@/utils';
 import { useComputePlatform } from '../compute-platform';
+import { ACTION, getSseTargetFromId, NOTIFICATION } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, type DestinationInput, type NotificationType } from '@/types';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
 
@@ -27,38 +27,38 @@ export const useDestinationCRUD = (params?: Params) => {
   };
 
   const handleError = (title: string, message: string, id?: string) => {
-    notifyUser('error', title, message, id);
+    notifyUser(NOTIFICATION.ERROR, title, message, id);
     params?.onError?.();
   };
 
   const handleComplete = (title: string, message: string, id?: string) => {
-    notifyUser('success', title, message, id);
+    notifyUser(NOTIFICATION.SUCCESS, title, message, id);
     setDrawerItem(null);
     refetch();
     params?.onSuccess?.();
   };
 
   const [createDestination, cState] = useMutation<{ createNewDestination: { id: string } }>(CREATE_DESTINATION, {
-    onError: (error) => handleError('Create', error.message),
+    onError: (error) => handleError(ACTION.CREATE, error.message),
     onCompleted: (res, req) => {
       const id = res.createNewDestination.id;
       const name = req?.variables?.destination.name || req?.variables?.destination.type;
-      handleComplete('Create', `destination "${name}" was created`, id);
+      handleComplete(ACTION.CREATE, `destination "${name}" was created`, id);
     },
   });
   const [updateDestination, uState] = useMutation<{ updateDestination: { id: string } }>(UPDATE_DESTINATION, {
-    onError: (error) => handleError('Update', error.message),
+    onError: (error) => handleError(ACTION.UPDATE, error.message),
     onCompleted: (res, req) => {
       const id = res.updateDestination.id;
       const name = req?.variables?.destination.name || req?.variables?.destination.type;
-      handleComplete('Update', `destination "${name}" was updated`, id);
+      handleComplete(ACTION.UPDATE, `destination "${name}" was updated`, id);
     },
   });
   const [deleteDestination, dState] = useMutation<{ deleteDestination: boolean }>(DELETE_DESTINATION, {
-    onError: (error) => handleError('Delete', error.message),
+    onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
-      handleComplete('Delete', `destination "${id}" was deleted`);
+      handleComplete(ACTION.DELETE, `destination "${id}" was deleted`);
     },
   });
 

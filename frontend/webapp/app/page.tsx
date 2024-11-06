@@ -1,9 +1,9 @@
 'use client';
 import { useEffect } from 'react';
-import { ROUTES, CONFIG } from '@/utils';
 import { useRouter } from 'next/navigation';
 import { useConfig, useNotify } from '@/hooks';
 import { Loader } from '@keyval-dev/design-system';
+import { ROUTES, CONFIG, NOTIFICATION } from '@/utils';
 
 export default function App() {
   const router = useRouter();
@@ -13,7 +13,7 @@ export default function App() {
   useEffect(() => {
     if (error) {
       notify({
-        type: 'error',
+        type: NOTIFICATION.ERROR,
         title: error.name,
         message: error.message,
       });

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { ACTION, FORM_ALERTS, getRuleIcon } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import { ChooseRuleBody } from '../choose-rule-body';
@@ -8,6 +7,7 @@ import type { InstrumentationRuleSpec } from '@/types';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { RULE_OPTIONS } from '../add-rule-modal/rule-options';
 import buildCardFromRuleSpec from './build-card-from-rule-spec';
+import { ACTION, FORM_ALERTS, getRuleIcon, NOTIFICATION } from '@/utils';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useNotify } from '@/hooks';
 
 interface Props {}
@@ -68,7 +68,7 @@ const RuleDrawer: React.FC<Props> = () => {
   const handleSave = async (newTitle: string) => {
     if (!validateForm()) {
       notify({
-        type: 'error',
+        type: NOTIFICATION.ERROR,
         title: ACTION.UPDATE,
         message: FORM_ALERTS.REQUIRED_FIELDS,
       });

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { ACTION, FORM_ALERTS, getActionIcon } from '@/utils';
+import { ACTION, FORM_ALERTS, getActionIcon, NOTIFICATION } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import type { ActionDataParsed } from '@/types';
@@ -70,7 +70,7 @@ const ActionDrawer: React.FC<Props> = () => {
   const handleSave = async (newTitle: string) => {
     if (!validateForm()) {
       notify({
-        type: 'error',
+        type: NOTIFICATION.ERROR,
         title: ACTION.UPDATE,
         message: FORM_ALERTS.REQUIRED_FIELDS,
       });

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { API } from '@/utils';
+import { API, NOTIFICATION } from '@/utils';
 import { useNotify } from './useNotify';
 
 export function useSSE() {
@@ -66,7 +66,7 @@ export function useSSE() {
             console.error('Max retries reached. Could not reconnect to EventSource.');
 
             notify({
-              type: 'error',
+              type: NOTIFICATION.ERROR,
               title: 'Connection Error',
               message: 'Connection to the server failed. Please reboot the application.',
             });
