@@ -4,6 +4,7 @@ import { NotificationNote } from '@/reuseable-components';
 import { Notification, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { DrawerBaseItem, useDrawerStore, useNotificationStore } from '@/store';
 import { useActualDestination, useActualSources, useGetActions, useGetInstrumentationRules } from '@/hooks';
+import { getIdFromSseTarget } from '@/utils';
 
 const Container = styled.div`
   position: fixed;
@@ -41,45 +42,53 @@ const Toast: React.FC<Notification> = ({ id, type, title, message, crdType, targ
   const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
 
   const onClick = () => {
-    const drawerItem: Partial<DrawerBaseItem> = {};
+    if (crdType && target) {
+      const drawerItem: Partial<DrawerBaseItem> = {};
 
-    console.log('crdType', crdType);
-    console.log('target', target);
+      switch (crdType) {
+        case OVERVIEW_ENTITY_TYPES.RULE:
+          drawerItem['type'] = OVERVIEW_ENTITY_TYPES.RULE;
+          drawerItem['id'] = getIdFromSseTarget(target, OVERVIEW_ENTITY_TYPES.RULE);
+          drawerItem['item'] = instrumentationRules.find((item) => item.ruleId === drawerItem['id']);
+          break;
 
-    switch (crdType) {
-      case 'Rule':
-        drawerItem['type'] = OVERVIEW_ENTITY_TYPES.RULE;
-        // drawerItem['id'] = '';
-        // drawerItem['item'] = instrumentationRules.find((item) => item.ruleId === drawerItem['id']);
-        break;
-      case 'InstrumentedApplication':
-      case 'InstrumentationInstance':
-        drawerItem['type'] = OVERVIEW_ENTITY_TYPES.SOURCE;
-        // drawerItem['id'] = {};
-        // drawerItem['item'] = sources.find((item) => item.kind === drawerItem['id']?.['kind'] && item.name === drawerItem['id']?.['name'] && item.namespace === drawerItem['id']?.['namespace']);
-        break;
-      case 'Action':
-        drawerItem['type'] = OVERVIEW_ENTITY_TYPES.ACTION;
-        // drawerItem['id'] = '';
-        // drawerItem['item'] = actions.find((item) => item.id === drawerItem['id']);
-        break;
-      case 'Destination':
-        drawerItem['type'] = OVERVIEW_ENTITY_TYPES.DESTINATION;
-        // drawerItem['id'] = '';
-        // drawerItem['item'] = destinations.find((item) => item.id === drawerItem['id']);
-        break;
+        case OVERVIEW_ENTITY_TYPES.SOURCE:
+        case 'InstrumentedApplication':
+        case 'InstrumentationInstance':
+          drawerItem['type'] = OVERVIEW_ENTITY_TYPES.SOURCE;
+          drawerItem['id'] = getIdFromSseTarget(target, OVERVIEW_ENTITY_TYPES.SOURCE);
+          drawerItem['item'] = sources.find(
+            (item) =>
+              item.kind === drawerItem['id']?.['kind'] &&
+              item.name === drawerItem['id']?.['name'] &&
+              item.namespace === drawerItem['id']?.['namespace']
+          );
+          break;
 
-      default:
-        break;
+        case OVERVIEW_ENTITY_TYPES.ACTION:
+          drawerItem['type'] = OVERVIEW_ENTITY_TYPES.ACTION;
+          drawerItem['id'] = getIdFromSseTarget(target, OVERVIEW_ENTITY_TYPES.ACTION);
+          drawerItem['item'] = actions.find((item) => item.id === drawerItem['id']);
+          break;
+
+        case OVERVIEW_ENTITY_TYPES.DESTINATION:
+        case 'Destination':
+          drawerItem['type'] = OVERVIEW_ENTITY_TYPES.DESTINATION;
+          drawerItem['id'] = getIdFromSseTarget(target, OVERVIEW_ENTITY_TYPES.DESTINATION);
+          drawerItem['item'] = destinations.find((item) => item.id === drawerItem['id']);
+          break;
+
+        default:
+          break;
+      }
+
+      if (!!drawerItem.item) {
+        setSelectedItem(drawerItem as DrawerBaseItem);
+      }
     }
 
-    console.log('drawerItem', drawerItem);
-
-    if (!!drawerItem.item) {
-      setSelectedItem(drawerItem as DrawerBaseItem);
-      markAsSeen(id);
-      markAsDismissed(id);
-    }
+    markAsSeen(id);
+    markAsDismissed(id);
   };
 
   return (

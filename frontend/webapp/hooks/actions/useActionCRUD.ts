@@ -1,9 +1,10 @@
 import { useDrawerStore } from '@/store';
 import { useNotify } from '../useNotify';
 import { useMutation } from '@apollo/client';
-import type { ActionInput, ActionsType, NotificationType } from '@/types';
+import { getSseTargetFromId } from '@/utils';
 import { useComputePlatform } from '../compute-platform';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
+import { OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType, type NotificationType } from '@/types';
 
 interface UseActionCrudParams {
   onSuccess?: () => void;
@@ -15,17 +16,23 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
   const { refetch } = useComputePlatform();
   const notify = useNotify();
 
-  const notifyUser = (type: NotificationType, title: string, message: string) => {
-    notify({ type, title, message });
+  const notifyUser = (type: NotificationType, title: string, message: string, id?: string) => {
+    notify({
+      type,
+      title,
+      message,
+      crdType: OVERVIEW_ENTITY_TYPES.ACTION,
+      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.ACTION) : undefined,
+    });
   };
 
-  const handleError = (title: string, message: string) => {
-    notifyUser('error', title, message);
+  const handleError = (title: string, message: string, id?: string) => {
+    notifyUser('error', title, message, id);
     params?.onError?.();
   };
 
-  const handleComplete = (title: string, message: string) => {
-    notifyUser('success', title, message);
+  const handleComplete = (title: string, message: string, id?: string) => {
+    notifyUser('success', title, message, id);
     setDrawerItem(null);
     refetch();
     params?.onSuccess?.();
@@ -33,23 +40,25 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
 
   const [createAction, cState] = useMutation<{ createAction: { id: string } }>(CREATE_ACTION, {
     onError: (error) => handleError('Create', error.message),
-    onCompleted: (_, req) => {
+    onCompleted: (res, req) => {
+      const id = res.createAction.id;
       const name = req?.variables?.action.name || req?.variables?.action.type;
-      handleComplete('Create', `action "${name}" was created`);
+      handleComplete('Create', `action "${name}" was created`, id);
     },
   });
   const [updateAction, uState] = useMutation<{ updateAction: { id: string } }>(UPDATE_ACTION, {
     onError: (error) => handleError('Update', error.message),
-    onCompleted: (_, req) => {
+    onCompleted: (res, req) => {
+      const id = res.updateAction.id;
       const name = req?.variables?.action.name || req?.variables?.action.type;
-      handleComplete('Update', `action "${name}" was updated`);
+      handleComplete('Update', `action "${name}" was updated`, id);
     },
   });
   const [deleteAction, dState] = useMutation<{ deleteAction: boolean }>(DELETE_ACTION, {
     onError: (error) => handleError('Delete', error.message),
-    onCompleted: (_, req) => {
-      const name = req?.variables?.id;
-      handleComplete('Delete', `action "${name}" was deleted`);
+    onCompleted: (res, req) => {
+      const id = req?.variables?.id;
+      handleComplete('Delete', `action "${id}" was deleted`);
     },
   });
 
