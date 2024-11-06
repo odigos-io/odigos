@@ -3,13 +3,12 @@ import Image from 'next/image';
 import { Text } from '../text';
 import { Divider } from '../divider';
 import styled from 'styled-components';
-
-type NotificationType = 'warning' | 'error' | 'success' | 'info' | 'default';
+import type { Notification, NotificationType } from '@/types';
 
 interface NotificationProps {
   type: NotificationType;
-  title?: string;
-  message?: string;
+  title: Notification['title'];
+  message: Notification['message'];
   action?: {
     label: string;
     onClick: () => void;
