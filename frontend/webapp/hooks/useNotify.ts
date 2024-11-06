@@ -26,7 +26,7 @@ export const useNotify = () => {
       message,
       crdType,
       target,
-      isNew: true,
+      dismissed: false,
       seen: false,
       time: date.toISOString(),
     });
