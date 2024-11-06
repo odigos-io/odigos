@@ -1,4 +1,4 @@
-import { OVERVIEW_ENTITY_TYPES, WorkloadId } from '@/types';
+import { ExportedSignals, OVERVIEW_ENTITY_TYPES, WorkloadId } from '@/types';
 
 export const formatBytes = (bytes?: number) => {
   if (!bytes) return '0 KB/s';
@@ -8,6 +8,12 @@ export const formatBytes = (bytes?: number) => {
   const value = bytes / Math.pow(1024, i);
 
   return `${value.toFixed(1)} ${sizes[i]}`;
+};
+
+export const extractMonitors = (exportedSignals: ExportedSignals) => {
+  const filtered = Object.keys(exportedSignals).filter((signal) => exportedSignals[signal] === true);
+
+  return filtered;
 };
 
 export const getIdFromSseTarget = (target: string, type: OVERVIEW_ENTITY_TYPES) => {
