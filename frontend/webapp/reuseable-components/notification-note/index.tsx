@@ -121,3 +121,4 @@ const NotificationNote: React.FC<NotificationProps> = ({ type, title, message, a
 };
 
 export { NotificationNote };
+
