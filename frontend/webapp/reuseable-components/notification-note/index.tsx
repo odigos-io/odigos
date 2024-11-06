@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Text } from '../text';
-import { progress, slide } from '@/styles';
 import theme from '@/styles/theme';
 import { Divider } from '../divider';
 import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
+import { progress, slide } from '@/styles';
 import { useNotificationStore } from '@/store';
 import type { Notification, NotificationType } from '@/types';
 
