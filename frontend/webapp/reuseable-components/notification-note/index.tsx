@@ -1,14 +1,15 @@
 import React from 'react';
-import styled, { css } from 'styled-components';
 import Image from 'next/image';
 import { Text } from '../text';
+import { Divider } from '../divider';
+import styled from 'styled-components';
 
-// Define the notification types
 type NotificationType = 'warning' | 'error' | 'success' | 'info' | 'default';
 
 interface NotificationProps {
   type: NotificationType;
-  text: string;
+  title?: string;
+  message?: string;
   action?: {
     label: string;
     onClick: () => void;
@@ -16,103 +17,104 @@ interface NotificationProps {
   style?: React.CSSProperties;
 }
 
+const getTextColor = ({ type }: { type: NotificationType }) => {
+  switch (type) {
+    case 'warning':
+      return '#E9CF35';
+    case 'error':
+      return '#E25A5A';
+    case 'success':
+      return '#81AF65';
+    case 'info':
+      return '#B8B8B8';
+    case 'default':
+    default:
+      return '#AABEF7';
+  }
+};
+
+const getBackgroundColor = ({ type }: { type: NotificationType }) => {
+  switch (type) {
+    case 'warning':
+      return '#472300';
+    case 'error':
+      return '#431919';
+    case 'success':
+      return '#172013';
+    case 'info':
+      return '#242424';
+    case 'default':
+    default:
+      return '#181944';
+  }
+};
+
+const getIconSource = ({ type }: { type: NotificationType }) => {
+  switch (type) {
+    case 'warning':
+      return '/icons/notification/warning-icon.svg';
+    case 'error':
+      return '/icons/notification/error-icon.svg';
+    case 'success':
+      return '/icons/notification/success-icon.svg';
+    case 'info':
+      return '/icons/common/info.svg';
+    default:
+      return '/brand/odigos-icon.svg';
+  }
+};
+
 const NotificationContainer = styled.div<{ type: NotificationType }>`
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 12px 16px;
   border-radius: 32px;
-
-  background-color: ${({ type }) => {
-    switch (type) {
-      case 'warning':
-        return '#472300'; // Orange
-      case 'error':
-        return 'rgba(226, 90, 90, 0.12);';
-      case 'success':
-        return '#28A745'; // Green
-      case 'info':
-        return '#F9F9F90A'; // Default to info color
-      case 'default':
-      default:
-        return '#181944'; // Blue
-    }
-  }};
+  background-color: ${getBackgroundColor};
 `;
 
-const IconWrapper = styled.div`
-  margin-right: 12px;
+const TextWrapper = styled.div`
   display: flex;
-  justify-content: center;
   align-items: center;
+  margin: 0 12px;
+  height: 12px;
 `;
 
 const Title = styled(Text)<{ type: NotificationType }>`
   font-size: 14px;
-  color: ${({ type }) => {
-    switch (type) {
-      case 'warning':
-        return '#E9CF35';
-      case 'error':
-        return '#E25A5A';
-      case 'success':
-        return '#28A745';
-      case 'info':
-        return '#B8B8B8';
-      case 'default':
-      default:
-        return '#AABEF7';
-    }
-  }};
+  color: ${getTextColor};
 `;
 
-const TitleWrapper = styled.div`
-  display: flex;
-  align-items: center;
+const Message = styled(Text)<{ type: NotificationType }>`
+  font-size: 12px;
+  color: ${getTextColor};
 `;
 
 const ActionButtonWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+  margin-left: 40px;
 `;
 
 const ActionButton = styled(Text)`
-  text-decoration: underline;
   text-transform: uppercase;
+  text-decoration: underline;
   font-size: 14px;
-  font-weight: 400;
   font-family: ${({ theme }) => theme.font_family.secondary};
+  cursor: pointer;
 `;
 
-const NotificationIcon = ({ type }: { type: NotificationType }) => {
-  switch (type) {
-    case 'warning':
-      return <Image src='/icons/notification/warning-icon.svg' alt='warning' width={16} height={16} />;
-    case 'error':
-      return <Image src='/icons/notification/error-icon.svg' alt='error' width={16} height={16} />;
-    case 'success':
-      return <Image src='/icons/notification/success-icon.svg' alt='success' width={16} height={16} />;
-    case 'info':
-      return <Image src='/icons/common/info.svg' alt='info' width={16} height={16} />;
-    default:
-      return <Image src='/brand/odigos-icon.svg' alt='info' width={16} height={16} />;
-  }
-};
-
-const NotificationNote: React.FC<NotificationProps> = ({ type, text, action, style }) => {
+const NotificationNote: React.FC<NotificationProps> = ({ type, title, message, action, style }) => {
   return (
     <NotificationContainer type={type} style={style}>
-      <TitleWrapper>
-        <IconWrapper>
-          <NotificationIcon type={type} />
-        </IconWrapper>
-        <Title type={type}>{text}</Title>
-      </TitleWrapper>
+      <Image src={getIconSource({ type })} alt={type} width={16} height={16} />
+
+      <TextWrapper>
+        {title && <Title type={type}>{title}</Title>}
+        {title && message && <Divider orientation='vertical' color={getTextColor({ type }) + '4D'} thickness={1} />}
+        {message && <Message type={type}>{message}</Message>}
+      </TextWrapper>
+
       {action && (
         <ActionButtonWrapper onClick={action.onClick}>
-          <ActionButton decoration='under'>{action.label}</ActionButton>
+          <ActionButton>{action.label}</ActionButton>
         </ActionButtonWrapper>
       )}
     </NotificationContainer>

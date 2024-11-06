@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { API } from '@/utils';
-import { addNotification, store } from '@/store';
+import { useNotify } from './useNotify';
 
 export function useSSE() {
+  const notify = useNotify();
   const eventBuffer = useRef({});
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 10;
@@ -25,10 +26,7 @@ export function useSSE() {
         };
 
         // Check if the event is already in the buffer
-        if (
-          eventBuffer.current[key] &&
-          eventBuffer.current[key].id > Date.now() - 2000
-        ) {
+        if (eventBuffer.current[key] && eventBuffer.current[key].id > Date.now() - 2000) {
           eventBuffer.current[key] = notification;
           return;
         } else {
@@ -37,16 +35,13 @@ export function useSSE() {
         }
 
         // Dispatch the notification to the store
-        store.dispatch(
-          addNotification({
-            id: eventBuffer.current[key].id,
-            message: eventBuffer.current[key].message,
-            title: eventBuffer.current[key].title,
-            type: eventBuffer.current[key].type,
-            target: eventBuffer.current[key].target,
-            crdType: eventBuffer.current[key].crdType,
-          })
-        );
+        notify({
+          message: eventBuffer.current[key].message,
+          title: eventBuffer.current[key].title,
+          type: eventBuffer.current[key].type,
+          target: eventBuffer.current[key].target,
+          crdType: eventBuffer.current[key].crdType,
+        });
 
         // Reset retry count on successful connection
         setRetryCount(0);
@@ -60,10 +55,7 @@ export function useSSE() {
         setRetryCount((prevRetryCount) => {
           if (prevRetryCount < maxRetries) {
             const newRetryCount = prevRetryCount + 1;
-            const retryTimeout = Math.min(
-              10000,
-              1000 * Math.pow(2, newRetryCount)
-            );
+            const retryTimeout = Math.min(10000, 1000 * Math.pow(2, newRetryCount));
 
             setTimeout(() => {
               connect();
@@ -71,20 +63,16 @@ export function useSSE() {
 
             return newRetryCount;
           } else {
-            console.error(
-              'Max retries reached. Could not reconnect to EventSource.'
-            );
-            store.dispatch(
-              addNotification({
-                id: Date.now().toString(),
-                message:
-                  'Connection to the server failed. Please reboot the application.',
-                title: 'Connection Error',
-                type: 'error',
-                target: 'system',
-                crdType: 'connection',
-              })
-            );
+            console.error('Max retries reached. Could not reconnect to EventSource.');
+
+            notify({
+              message: 'Connection to the server failed. Please reboot the application.',
+              title: 'Connection Error',
+              type: 'error',
+              target: 'system',
+              crdType: 'connection',
+            });
+
             return prevRetryCount;
           }
         });
