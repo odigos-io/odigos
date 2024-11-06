@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Text } from '../text';
 import theme from '@/styles/theme';
@@ -107,20 +107,16 @@ const NotificationNote: React.FC<NotificationProps> = ({ id, type, title, messag
   const [isEntering, setIsEntering] = useState(true);
   const [isLeaving, setIsLeaving] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsEntering(false), TRANSITION_DURATION);
-    return () => clearTimeout(timer);
-  }, []);
+  const timerForClosure = useRef<NodeJS.Timeout | null>(null);
+  const progress = useRef<HTMLDivElement | null>(null);
 
   const closeToast = useCallback(
     (params?: { asSeen: boolean }) => {
       if (!!id) {
         setIsLeaving(true);
-
-        const timer = setTimeout(() => {
-          if (params?.asSeen) markAsSeen(id);
+        setTimeout(() => {
           markAsDismissed(id);
-          clearTimeout(timer);
+          if (params?.asSeen) markAsSeen(id);
         }, TRANSITION_DURATION);
       }
     },
@@ -128,12 +124,37 @@ const NotificationNote: React.FC<NotificationProps> = ({ id, type, title, messag
   );
 
   useEffect(() => {
-    const timer = setTimeout(closeToast, TOAST_DURATION);
-    return () => clearTimeout(timer);
-  }, [closeToast]);
+    const t = setTimeout(() => setIsEntering(false), TRANSITION_DURATION);
+
+    return () => {
+      clearTimeout(t);
+    };
+  }, []);
+
+  useEffect(() => {
+    timerForClosure.current = setTimeout(closeToast, TOAST_DURATION);
+
+    return () => {
+      if (timerForClosure.current) clearTimeout(timerForClosure.current);
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (timerForClosure.current) clearTimeout(timerForClosure.current);
+    if (progress.current) progress.current.style.animationPlayState = 'paused';
+  };
+
+  const handleMouseLeave = () => {
+    if (progress.current) {
+      const remainingTime = (progress.current.offsetWidth / (progress.current.parentElement as HTMLDivElement).offsetWidth) * 4000;
+
+      timerForClosure.current = setTimeout(closeToast, remainingTime);
+      progress.current.style.animationPlayState = 'running';
+    }
+  };
 
   return (
-    <Container className={id ? 'animated' : ''} isLeaving={isLeaving}>
+    <Container className={id ? 'animated' : ''} isLeaving={isLeaving} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <Content type={type} style={style}>
         <Image src={getStatusIcon(type)} alt={type} width={16} height={16} />
 
@@ -151,7 +172,7 @@ const NotificationNote: React.FC<NotificationProps> = ({ id, type, title, messag
         )}
       </Content>
 
-      {id && !isEntering && <DurationAnimation type={type} />}
+      {id && !isEntering && <DurationAnimation ref={progress} type={type} />}
     </Container>
   );
 };
