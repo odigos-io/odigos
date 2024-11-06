@@ -104,9 +104,14 @@ const CloseButton = styled(Image)`
 
 const NotificationNote: React.FC<NotificationProps> = ({ id, type, title, message, action, style }) => {
   const { markAsDismissed, markAsSeen } = useNotificationStore();
+
+  // These are for handling transitions:
+  // isEntering - to stop the progress bar from rendering before the toast is fully slide-in
+  // isLeaving - to trigger the slide-out animation
   const [isEntering, setIsEntering] = useState(true);
   const [isLeaving, setIsLeaving] = useState(false);
 
+  // These are for handling on-hover events (pause/resume the progress bar animation & timeout for auto-close/dismiss)
   const timerForClosure = useRef<NodeJS.Timeout | null>(null);
   const progress = useRef<HTMLDivElement | null>(null);
 
@@ -172,7 +177,7 @@ const NotificationNote: React.FC<NotificationProps> = ({ id, type, title, messag
         )}
       </Content>
 
-      {id && !isEntering && <DurationAnimation ref={progress} type={type} />}
+      {!!id && !isEntering && !isLeaving && <DurationAnimation ref={progress} type={type} />}
     </Container>
   );
 };
