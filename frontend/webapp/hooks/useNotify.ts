@@ -12,24 +12,12 @@ export const useNotify = () => {
     target,
   }: {
     type: Notification['type'];
-    title: Notification['title'];
-    message: Notification['message'];
-    crdType: Notification['crdType'];
-    target: Notification['target'];
+    title?: Notification['title'];
+    message?: Notification['message'];
+    crdType?: Notification['crdType'];
+    target?: Notification['target'];
   }) => {
-    const date = new Date();
-
-    addNotification({
-      id: date.getTime().toString(),
-      type,
-      title,
-      message,
-      crdType,
-      target,
-      dismissed: false,
-      seen: false,
-      time: date.toISOString(),
-    });
+    addNotification({ type, title, message, crdType, target });
   };
 
   return notify;

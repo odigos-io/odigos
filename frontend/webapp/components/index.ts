@@ -6,4 +6,3 @@ export * from './destinations';
 export * from './main';
 export * from './modals';
 export * from './notification/notification-list'; // old
-export * from './notification/toast-list'; // new

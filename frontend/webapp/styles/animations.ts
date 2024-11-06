@@ -2,7 +2,7 @@ import { keyframes } from 'styled-components';
 
 type Position = 'left' | 'right' | 'top' | 'bottom' | 'center';
 
-export const fade = {
+export const slide = {
   in: {
     left: keyframes<{ position: Position }>`
       from { transform: translateX(-100%); }
@@ -47,4 +47,15 @@ export const fade = {
       to { transform: translate(-50%, 100%); }
     `,
   },
+};
+
+export const progress = {
+  in: keyframes`
+    from { width: 0%; }
+    to { width: 100%; }
+  `,
+  out: keyframes`
+    from { width: 100%; }
+    to { width: 0%; }
+  `,
 };

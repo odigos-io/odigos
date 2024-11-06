@@ -20,11 +20,7 @@ const MainContent = styled.div`
   align-items: center;
 `;
 
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <LayoutContainer>
       <MainContent>

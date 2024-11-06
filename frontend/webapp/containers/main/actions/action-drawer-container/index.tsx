@@ -70,11 +70,9 @@ const ActionDrawer: React.FC<Props> = () => {
   const handleSave = async (newTitle: string) => {
     if (!validateForm()) {
       notify({
-        message: 'Required fields are missing!',
-        title: 'Update Action Error',
         type: 'error',
-        target: 'notification',
-        crdType: 'notification',
+        title: 'Update',
+        message: 'Required fields are missing!',
       });
     } else {
       const payload = {

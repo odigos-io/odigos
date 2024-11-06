@@ -13,11 +13,9 @@ export default function App() {
   useEffect(() => {
     if (error) {
       notify({
-        message: 'An error occurred',
-        title: 'Error',
         type: 'error',
-        target: 'notification',
-        crdType: 'notification',
+        title: error.name,
+        message: error.message,
       });
 
       router.push(ROUTES.OVERVIEW);
