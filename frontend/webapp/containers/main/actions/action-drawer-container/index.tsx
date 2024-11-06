@@ -1,19 +1,18 @@
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { ACTION, FORM_ALERTS, getActionIcon, NOTIFICATION } from '@/utils';
+import { getActionIcon } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import type { ActionDataParsed } from '@/types';
 import { ChooseActionBody } from '../choose-action-body';
+import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import buildCardFromActionSpec from './build-card-from-action-spec';
-import { useActionCRUD, useActionFormData, useNotify } from '@/hooks';
 import { ACTION_OPTIONS } from '../choose-action-modal/action-options';
 
 interface Props {}
 
 const ActionDrawer: React.FC<Props> = () => {
-  const notify = useNotify();
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -68,13 +67,7 @@ const ActionDrawer: React.FC<Props> = () => {
   };
 
   const handleSave = async (newTitle: string) => {
-    if (!validateForm()) {
-      notify({
-        type: NOTIFICATION.ERROR,
-        title: ACTION.UPDATE,
-        message: FORM_ALERTS.REQUIRED_FIELDS,
-      });
-    } else {
+    if (validateForm({ withAlert: true })) {
       const payload = {
         ...formData,
         name: newTitle,
