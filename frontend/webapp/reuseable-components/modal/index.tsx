@@ -4,7 +4,7 @@ import { Text } from '../text';
 import ReactDOM from 'react-dom';
 import { useKeyDown } from '@/hooks';
 import styled from 'styled-components';
-import { slide, Overlay } from '@/styles';
+import { slide, Overlay, CenterThis } from '@/styles';
 
 interface ModalProps {
   isOpen: boolean;
@@ -55,7 +55,7 @@ const HeaderActionsWrapper = styled.div`
   gap: 8px;
 `;
 
-const ModalContent = styled.div``;
+const ModalContent = styled(CenterThis)``;
 
 const ModalTitleContainer = styled.div`
   position: absolute;
@@ -83,7 +83,7 @@ const CancelText = styled(Text)`
   cursor: pointer;
 `;
 
-const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, onClose, children, actionComponent }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, actionComponent, onClose, children }) => {
   useKeyDown(
     {
       key: 'Escape',
@@ -96,7 +96,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, onClose, child
 
   return ReactDOM.createPortal(
     <>
-      <Overlay hideOverlay={noOverlay} onClick={onClose} />
+      <Overlay onClick={onClose} style={{ opacity: noOverlay ? 0 : 1 }} />
 
       <ModalWrapper isOpen={isOpen}>
         {header && (
@@ -111,6 +111,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, onClose, child
             <HeaderActionsWrapper>{actionComponent}</HeaderActionsWrapper>
           </ModalHeader>
         )}
+
         <ModalContent>{children}</ModalContent>
       </ModalWrapper>
     </>,

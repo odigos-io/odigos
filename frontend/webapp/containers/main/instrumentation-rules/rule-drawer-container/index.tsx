@@ -8,12 +8,11 @@ import type { InstrumentationRuleSpec } from '@/types';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { RULE_OPTIONS } from '../add-rule-modal/rule-options';
 import buildCardFromRuleSpec from './build-card-from-rule-spec';
-import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useNotify } from '@/hooks';
+import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
 
 interface Props {}
 
 const RuleDrawer: React.FC<Props> = () => {
-  const notify = useNotify();
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -66,13 +65,7 @@ const RuleDrawer: React.FC<Props> = () => {
   };
 
   const handleSave = async (newTitle: string) => {
-    if (!validateForm()) {
-      notify({
-        type: 'error',
-        title: 'Update',
-        message: 'Required fields are missing!',
-      });
-    } else {
+    if (validateForm({ withAlert: true })) {
       const payload = {
         ...formData,
         ruleName: newTitle,
