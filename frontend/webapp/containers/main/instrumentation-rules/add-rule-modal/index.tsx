@@ -1,6 +1,6 @@
 import { ChooseRuleBody } from '../choose-rule-body';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
 import {
   AutocompleteInput,
@@ -22,11 +22,7 @@ interface Props {
 export const AddRuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { formData, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
   const { createInstrumentationRule, loading } = useInstrumentationRuleCRUD({ onSuccess: handleClose });
-  const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(undefined);
-
-  useEffect(() => {
-    if (!selectedItem) handleSelect(RULE_OPTIONS[0]);
-  }, [selectedItem]);
+  const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(RULE_OPTIONS[0]);
 
   const isFormOk = useMemo(() => !!selectedItem && validateForm(), [selectedItem, formData]);
 
