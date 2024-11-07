@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import type { ActionDataParsed, ActionInput } from '@/types';
+import { useNotify } from '../useNotify';
 import { DrawerBaseItem } from '@/store';
+import { ACTION, FORM_ALERTS, NOTIFICATION } from '@/utils';
+import type { ActionDataParsed, ActionInput } from '@/types';
 
 const INITIAL: ActionInput = {
   type: '',
@@ -12,6 +14,7 @@ const INITIAL: ActionInput = {
 };
 
 export function useActionFormData() {
+  const notify = useNotify();
   const [formData, setFormData] = useState({ ...INITIAL });
 
   const handleFormChange = (key: keyof typeof INITIAL, val: any) => {
@@ -25,7 +28,7 @@ export function useActionFormData() {
     setFormData({ ...INITIAL });
   };
 
-  const validateForm = () => {
+  const validateForm = (params?: { withAlert?: boolean }) => {
     let ok = true;
 
     Object.entries(formData).forEach(([k, v]) => {
@@ -40,6 +43,14 @@ export function useActionFormData() {
           break;
       }
     });
+
+    if (!ok && params?.withAlert) {
+      notify({
+        type: NOTIFICATION.ERROR,
+        title: ACTION.UPDATE,
+        message: FORM_ALERTS.REQUIRED_FIELDS,
+      });
+    }
 
     return ok;
   };

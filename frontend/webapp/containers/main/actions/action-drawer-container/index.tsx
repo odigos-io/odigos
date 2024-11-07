@@ -5,15 +5,14 @@ import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import type { ActionDataParsed } from '@/types';
 import { ChooseActionBody } from '../choose-action-body';
+import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import buildCardFromActionSpec from './build-card-from-action-spec';
-import { useActionCRUD, useActionFormData, useNotify } from '@/hooks';
 import { ACTION_OPTIONS } from '../choose-action-modal/action-options';
 
 interface Props {}
 
 const ActionDrawer: React.FC<Props> = () => {
-  const notify = useNotify();
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -68,13 +67,7 @@ const ActionDrawer: React.FC<Props> = () => {
   };
 
   const handleSave = async (newTitle: string) => {
-    if (!validateForm()) {
-      notify({
-        type: 'error',
-        title: 'Update',
-        message: 'Required fields are missing!',
-      });
-    } else {
+    if (validateForm({ withAlert: true })) {
       const payload = {
         ...formData,
         name: newTitle,
