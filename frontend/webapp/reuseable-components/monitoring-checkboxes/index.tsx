@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import { Checkbox } from '../checkbox';
 import { FieldLabel } from '../field-label';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MONITORING_OPTIONS, SignalLowercase, SignalUppercase } from '@/utils';
 
 interface MonitoringCheckboxesProps {
@@ -28,7 +28,8 @@ const isSelected = (type: SignalLowercase, selectedSignals: MonitoringCheckboxes
 };
 
 const MonitoringCheckboxes: React.FC<MonitoringCheckboxesProps> = ({ isVertical, allowedSignals, selectedSignals, setSelectedSignals }) => {
-  const [isLastSelection, setIsLastSelection] = useState(false);
+  const [isLastSelection, setIsLastSelection] = useState(selectedSignals.length === 1);
+  const recordedRows = useRef(JSON.stringify(selectedSignals));
 
   useEffect(() => {
     const payload: SignalUppercase[] = [];
@@ -39,8 +40,13 @@ const MonitoringCheckboxes: React.FC<MonitoringCheckboxesProps> = ({ isVertical,
       }
     });
 
-    setSelectedSignals(payload);
-    setIsLastSelection(payload.length === 1);
+    const stringified = JSON.stringify(payload);
+
+    if (recordedRows.current !== stringified) {
+      recordedRows.current = stringified;
+      setSelectedSignals(payload);
+      setIsLastSelection(payload.length === 1);
+    }
     // eslint-disable-next-line
   }, [allowedSignals]);
 

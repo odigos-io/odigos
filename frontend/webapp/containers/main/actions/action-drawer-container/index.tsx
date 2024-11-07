@@ -15,6 +15,7 @@ interface Props {}
 const ActionDrawer: React.FC<Props> = () => {
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const [isEditing, setIsEditing] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
 
   const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
   const { updateAction, deleteAction } = useActionCRUD();
@@ -82,14 +83,23 @@ const ActionDrawer: React.FC<Props> = () => {
       title={(item as ActionDataParsed).spec.actionName}
       imageUri={getActionIcon((item as ActionDataParsed).type)}
       isEdit={isEditing}
-      clickEdit={handleEdit}
-      clickSave={handleSave}
-      clickDelete={handleDelete}
-      clickCancel={handleCancel}
+      isFormDirty={isFormDirty}
+      onEdit={handleEdit}
+      onSave={handleSave}
+      onDelete={handleDelete}
+      onCancel={handleCancel}
     >
       {isEditing && thisAction ? (
         <FormContainer>
-          <ChooseActionBody isUpdate action={thisAction} formData={formData} handleFormChange={handleFormChange} />
+          <ChooseActionBody
+            isUpdate
+            action={thisAction}
+            formData={formData}
+            handleFormChange={(...params) => {
+              setIsFormDirty(true);
+              handleFormChange(...params);
+            }}
+          />
         </FormContainer>
       ) : (
         <CardDetails data={cardData} />
