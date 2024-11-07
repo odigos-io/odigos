@@ -6,8 +6,11 @@ import { Divider } from '../divider';
 import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
 import { progress, slide } from '@/styles';
-import { useNotificationStore } from '@/store';
 import type { Notification, NotificationType } from '@/types';
+
+interface OnCloseParams {
+  asSeen: boolean;
+}
 
 interface NotificationProps {
   id?: string;
@@ -18,6 +21,7 @@ interface NotificationProps {
     label: string;
     onClick: () => void;
   };
+  onClose?: (params: OnCloseParams) => void;
   style?: React.CSSProperties;
 }
 
@@ -102,9 +106,7 @@ const CloseButton = styled(Image)`
   }
 `;
 
-const NotificationNote: React.FC<NotificationProps> = ({ id, type, title, message, action, style }) => {
-  const { markAsDismissed, markAsSeen } = useNotificationStore();
-
+const NotificationNote: React.FC<NotificationProps> = ({ type, title, message, action, onClose, style }) => {
   // These are for handling transitions:
   // isEntering - to stop the progress bar from rendering before the toast is fully slide-in
   // isLeaving - to trigger the slide-out animation
@@ -116,16 +118,15 @@ const NotificationNote: React.FC<NotificationProps> = ({ id, type, title, messag
   const progress = useRef<HTMLDivElement | null>(null);
 
   const closeToast = useCallback(
-    (params?: { asSeen: boolean }) => {
-      if (!!id) {
+    (params: OnCloseParams) => {
+      if (onClose) {
         setIsLeaving(true);
         setTimeout(() => {
-          markAsDismissed(id);
-          if (params?.asSeen) markAsSeen(id);
+          onClose({ asSeen: params?.asSeen });
         }, TRANSITION_DURATION);
       }
     },
-    [id]
+    [onClose]
   );
 
   useEffect(() => {
@@ -137,7 +138,7 @@ const NotificationNote: React.FC<NotificationProps> = ({ id, type, title, messag
   }, []);
 
   useEffect(() => {
-    timerForClosure.current = setTimeout(closeToast, TOAST_DURATION);
+    timerForClosure.current = setTimeout(() => closeToast({ asSeen: false }), TOAST_DURATION);
 
     return () => {
       if (timerForClosure.current) clearTimeout(timerForClosure.current);
@@ -153,13 +154,13 @@ const NotificationNote: React.FC<NotificationProps> = ({ id, type, title, messag
     if (progress.current) {
       const remainingTime = (progress.current.offsetWidth / (progress.current.parentElement as HTMLDivElement).offsetWidth) * 4000;
 
-      timerForClosure.current = setTimeout(closeToast, remainingTime);
+      timerForClosure.current = setTimeout(() => closeToast({ asSeen: false }), remainingTime);
       progress.current.style.animationPlayState = 'running';
     }
   };
 
   return (
-    <Container className={id ? 'animated' : ''} isLeaving={isLeaving} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+    <Container className={onClose ? 'animated' : ''} isLeaving={isLeaving} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <Content type={type} style={style}>
         <Image src={getStatusIcon(type)} alt={type} width={16} height={16} />
 
@@ -169,15 +170,15 @@ const NotificationNote: React.FC<NotificationProps> = ({ id, type, title, messag
           {message && <Message type={type}>{message}</Message>}
         </TextWrapper>
 
-        {(action || id) && (
+        {(action || onClose) && (
           <ButtonsWrapper>
             {action && <ActionButton onClick={action.onClick}>{action.label}</ActionButton>}
-            {id && <CloseButton src='/icons/common/x.svg' alt='x' width={12} height={12} onClick={() => closeToast({ asSeen: true })} />}
+            {onClose && <CloseButton src='/icons/common/x.svg' alt='x' width={12} height={12} onClick={() => closeToast({ asSeen: true })} />}
           </ButtonsWrapper>
         )}
       </Content>
 
-      {!!id && !isEntering && !isLeaving && <DurationAnimation ref={progress} type={type} />}
+      {onClose && !isEntering && !isLeaving && <DurationAnimation ref={progress} type={type} />}
     </Container>
   );
 };

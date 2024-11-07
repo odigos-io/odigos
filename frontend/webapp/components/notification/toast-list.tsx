@@ -91,6 +91,11 @@ const Toast: React.FC<Notification> = ({ id, type, title, message, crdType, targ
     markAsDismissed(id);
   };
 
+  const onClose = ({ asSeen }) => {
+    markAsDismissed(id);
+    if (asSeen) markAsSeen(id);
+  };
+
   return (
     <NotificationNote
       id={id}
@@ -105,6 +110,7 @@ const Toast: React.FC<Notification> = ({ id, type, title, message, crdType, targ
             }
           : undefined
       }
+      onClose={onClose}
     />
   );
 };

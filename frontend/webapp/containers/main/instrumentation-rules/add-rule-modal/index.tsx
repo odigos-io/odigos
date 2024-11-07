@@ -1,18 +1,9 @@
+import { CenterThis, ModalBody } from '@/styles';
 import { ChooseRuleBody } from '../choose-rule-body';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
 import React, { useMemo, useState } from 'react';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
-import {
-  AutocompleteInput,
-  Center,
-  Divider,
-  FadeLoader,
-  Modal,
-  ModalContent,
-  NavigationButtons,
-  NotificationNote,
-  SectionTitle,
-} from '@/reuseable-components';
+import { AutocompleteInput, Divider, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@/reuseable-components';
 
 interface Props {
   isOpen: boolean;
@@ -59,7 +50,7 @@ export const AddRuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
         />
       }
     >
-      <ModalContent>
+      <ModalBody>
         <SectionTitle
           title='Define Instrumentation Rule'
           description='Instrumentation rules control how telemetry is recorded from your application. Choose a rule type and provide necessary information.'
@@ -82,15 +73,15 @@ export const AddRuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <Divider margin='16px 0' />
 
             {loading ? (
-              <Center>
+              <CenterThis>
                 <FadeLoader cssOverride={{ scale: 2 }} />
-              </Center>
+              </CenterThis>
             ) : (
               <ChooseRuleBody rule={selectedItem} formData={formData} handleFormChange={handleFormChange} />
             )}
           </div>
         ) : null}
-      </ModalContent>
+      </ModalBody>
     </Modal>
   );
 };
