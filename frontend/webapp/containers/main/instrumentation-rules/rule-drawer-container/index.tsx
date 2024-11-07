@@ -15,6 +15,7 @@ interface Props {}
 const RuleDrawer: React.FC<Props> = () => {
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const [isEditing, setIsEditing] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
 
   const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
   const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
@@ -80,14 +81,23 @@ const RuleDrawer: React.FC<Props> = () => {
       title={(item as InstrumentationRuleSpec).ruleName}
       imageUri={getRuleIcon((item as InstrumentationRuleSpec).type)}
       isEdit={isEditing}
-      clickEdit={handleEdit}
-      clickSave={handleSave}
-      clickDelete={handleDelete}
-      clickCancel={handleCancel}
+      isFormDirty={isFormDirty}
+      onEdit={handleEdit}
+      onSave={handleSave}
+      onDelete={handleDelete}
+      onCancel={handleCancel}
     >
       {isEditing && thisRule ? (
         <FormContainer>
-          <ChooseRuleBody isUpdate rule={thisRule} formData={formData} handleFormChange={handleFormChange} />
+          <ChooseRuleBody
+            isUpdate
+            rule={thisRule}
+            formData={formData}
+            handleFormChange={(...params) => {
+              setIsFormDirty(true);
+              handleFormChange(...params);
+            }}
+          />
         </FormContainer>
       ) : (
         <CardDetails data={cardData} />

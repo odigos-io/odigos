@@ -12,10 +12,11 @@ interface Props {
   title: string;
   imageUri: string;
   isEdit: boolean;
-  clickEdit: (bool?: boolean) => void;
-  clickSave: (newTitle: string) => void;
-  clickDelete: () => void;
-  clickCancel: () => void;
+  isFormDirty: boolean;
+  onEdit: (bool?: boolean) => void;
+  onSave: (newTitle: string) => void;
+  onDelete: () => void;
+  onCancel: () => void;
 }
 
 const DrawerContent = styled.div`
@@ -35,10 +36,11 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({
   title,
   imageUri,
   isEdit,
-  clickEdit,
-  clickSave,
-  clickDelete,
-  clickCancel,
+  isFormDirty,
+  onEdit,
+  onSave,
+  onDelete,
+  onCancel,
 }) => {
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
@@ -50,7 +52,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({
 
   const closeDrawer = () => {
     setSelectedItem(null);
-    clickEdit(false);
+    onEdit(false);
     setIsDeleteModalOpen(false);
     setIsCancelModalOpen(false);
   };
@@ -60,48 +62,61 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({
     setIsCancelModalOpen(false);
   };
 
-  const handleCancel = () => setIsCancelModalOpen(true);
-  const handleDelete = () => setIsDeleteModalOpen(true);
+  const handleCancel = () => {
+    titleRef.current?.clearTitle();
+    onCancel();
+    closeWarningModals();
+  };
+
+  const clickCancel = () => {
+    const isTitleDirty = titleRef.current?.getTitle() !== title;
+    if (isFormDirty || isTitleDirty) {
+      setIsCancelModalOpen(true);
+    } else {
+      handleCancel();
+    }
+  };
+
+  const handleDelete = () => {
+    onDelete();
+    closeWarningModals();
+  };
+
+  const clickDelete = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const clickSave = () => {
+    onSave(titleRef.current?.getTitle() || '');
+  };
 
   return (
     <>
-      <Drawer isOpen onClose={closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen && !isCancelModalOpen}>
+      <Drawer isOpen onClose={isEdit ? clickCancel : closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen && !isCancelModalOpen}>
         <DrawerContent>
           <DrawerHeader
             ref={titleRef}
             title={title}
             imageUri={imageUri}
             isEdit={isEdit}
-            onEdit={() => clickEdit(true)}
-            onClose={isEdit ? handleCancel : closeDrawer}
+            onEdit={() => onEdit(true)}
+            onClose={isEdit ? clickCancel : closeDrawer}
           />
 
           <ContentArea>{children}</ContentArea>
 
-          {isEdit && <DrawerFooter onSave={() => clickSave(titleRef.current?.getTitle() || '')} onCancel={handleCancel} onDelete={handleDelete} />}
+          {isEdit && <DrawerFooter onSave={clickSave} onCancel={clickCancel} onDelete={clickDelete} />}
         </DrawerContent>
       </Drawer>
 
       <DeleteWarning
         isOpen={isDeleteModalOpen}
         name={`${selectedItem?.type}${title ? ` (${title})` : ''}`}
-        onApprove={() => {
-          clickDelete();
-          closeWarningModals();
-        }}
+        onApprove={handleDelete}
         onDeny={closeWarningModals}
       />
 
-      <CancelWarning
-        isOpen={isCancelModalOpen}
-        name='edit mode'
-        onApprove={() => {
-          titleRef.current?.clearTitle();
-          clickCancel();
-          closeWarningModals();
-        }}
-        onDeny={closeWarningModals}
-      />
+      <CancelWarning isOpen={isCancelModalOpen} name='edit mode' onApprove={handleCancel} onDeny={closeWarningModals} />
     </>
   );
 };

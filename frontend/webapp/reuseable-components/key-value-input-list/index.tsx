@@ -4,7 +4,7 @@ import { Input } from '../input';
 import { Button } from '../button';
 import styled from 'styled-components';
 import { FieldLabel } from '../field-label';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 
 interface KeyValueInputsListProps {
   initialKeyValuePairs?: { key: string; value: string }[];
@@ -65,29 +65,29 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
   tooltip,
   required,
 }) => {
-  const [keyValuePairs, setKeyValuePairs] = useState<{ key: string; value: string }[]>(value || initialKeyValuePairs);
+  const [rows, setRows] = useState<{ key: string; value: string }[]>(value || initialKeyValuePairs);
 
   useEffect(() => {
-    if (!keyValuePairs.length) setKeyValuePairs(INITIAL);
+    if (!rows.length) setRows(INITIAL);
   }, []);
 
-  const recordedPairs = useRef('');
+  // Filter out rows where either key or value is empty
+  const validRows = useMemo(() => rows.filter(({ key, value }) => !!key.trim() && !!value.trim()), [rows]);
+  const recordedRows = useRef(JSON.stringify(validRows));
 
   useEffect(() => {
-    // Filter out rows where either key or value is empty
-    const validKeyValuePairs = keyValuePairs.filter((pair) => pair.key.trim() !== '' && pair.value.trim() !== '');
-    const stringified = JSON.stringify(validKeyValuePairs);
+    const stringified = JSON.stringify(validRows);
 
     // Only trigger onChange if valid key-value pairs have changed
-    if (recordedPairs.current !== stringified) {
-      recordedPairs.current = stringified;
+    if (recordedRows.current !== stringified) {
+      recordedRows.current = stringified;
 
-      if (onChange) onChange(validKeyValuePairs);
+      if (onChange) onChange(validRows);
     }
-  }, [keyValuePairs, onChange]);
+  }, [validRows, onChange]);
 
   const handleAddRow = () => {
-    setKeyValuePairs((prev) => {
+    setRows((prev) => {
       const payload = [...prev];
       payload.push({ key: '', value: '' });
       return payload;
@@ -95,11 +95,11 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
   };
 
   const handleDeleteRow = (idx: number) => {
-    setKeyValuePairs((prev) => prev.filter((_, i) => i !== idx));
+    setRows((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleChange = (key: 'key' | 'value', val: string, idx: number) => {
-    setKeyValuePairs((prev) => {
+    setRows((prev) => {
       const payload = [...prev];
       payload[idx][key] = val;
       return payload;
@@ -107,20 +107,20 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
   };
 
   // Check if any key or value field is empty
-  const isAddButtonDisabled = keyValuePairs.some((pair) => pair.key.trim() === '' || pair.value.trim() === '');
-  const isDelButtonDisabled = keyValuePairs.length <= 1;
+  const isAddButtonDisabled = rows.some((pair) => pair.key.trim() === '' || pair.value.trim() === '');
+  const isDelButtonDisabled = rows.length <= 1;
 
   return (
     <Container>
       <FieldLabel title={title} required={required} tooltip={tooltip} />
 
-      {keyValuePairs.map((pair, idx) => (
+      {rows.map((pair, idx) => (
         <Row key={`key-value-input-list-${idx}`}>
           <Input
             placeholder='Define attribute'
             value={pair.key}
             onChange={(e) => handleChange('key', e.target.value, idx)}
-            autoFocus={keyValuePairs.length > 1 && idx === keyValuePairs.length - 1}
+            autoFocus={rows.length > 1 && idx === rows.length - 1}
           />
           <Image src='/icons/common/arrow-right.svg' alt='Arrow' width={16} height={16} />
           <Input placeholder='Define value' value={pair.value} onChange={(e) => handleChange('value', e.target.value, idx)} />

@@ -7,9 +7,9 @@ import { K8sActualSource, PatchSourceRequestInput, WorkloadId } from '@/types';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 
 const SourceDrawer: React.FC = () => {
-  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
-  const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
+  const { selectedItem, setSelectedItem } = useDrawerStore((store) => store);
   const [isEditing, setIsEditing] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
 
   const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
 
@@ -89,10 +89,11 @@ const SourceDrawer: React.FC = () => {
       title={(item as K8sActualSource).reportedName}
       imageUri={getMainContainerLanguageLogo(item as K8sActualSource)}
       isEdit={isEditing}
-      clickEdit={handleEdit}
-      clickSave={handleSave}
-      clickDelete={handleDelete}
-      clickCancel={handleCancel}
+      isFormDirty={isFormDirty}
+      onEdit={handleEdit}
+      onSave={handleSave}
+      onDelete={handleDelete}
+      onCancel={handleCancel}
     >
       <CardDetails data={cardData} />
     </OverviewDrawer>
