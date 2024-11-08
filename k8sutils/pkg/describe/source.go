@@ -58,18 +58,15 @@ func printInstrumentedApplicationInfo(analyze *source.SourceAnalyze, sb *strings
 	printProperty(sb, 1, &analyze.InstrumentedApplication.Created)
 	printProperty(sb, 1, analyze.InstrumentedApplication.CreateTime)
 
-	if analyze.RuntimeInfo != nil {
-		printProperty(sb, 1, &analyze.RuntimeInfo.Generation)
-		describeText(sb, 1, "Detected Containers:")
-		for _, container := range analyze.RuntimeInfo.Containers {
-			printProperty(sb, 2, &container.ContainerName)
-			printProperty(sb, 3, &container.Language)
-			printProperty(sb, 3, &container.RuntimeVersion)
-			if len(container.EnvVars) > 0 {
-				describeText(sb, 3, "Relevant Environment Variables:")
-				for _, envVar := range container.EnvVars {
-					describeText(sb, 4, fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
-				}
+	describeText(sb, 1, "Detected Containers:")
+	for _, container := range analyze.InstrumentedApplication.Containers {
+		printProperty(sb, 2, &container.ContainerName)
+		printProperty(sb, 3, &container.Language)
+		printProperty(sb, 3, &container.RuntimeVersion)
+		if len(container.EnvVars) > 0 {
+			describeText(sb, 3, "Relevant Environment Variables:")
+			for _, envVar := range container.EnvVars {
+				describeText(sb, 4, fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
 			}
 		}
 	}
