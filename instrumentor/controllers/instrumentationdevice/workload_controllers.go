@@ -5,6 +5,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,9 +45,19 @@ func reconcileSingleInstrumentedApplicationByName(ctx context.Context, k8sClient
 	var instrumentedApplication odigosv1.InstrumentedApplication
 	err := k8sClient.Get(ctx, types.NamespacedName{Name: instrumentedAppName, Namespace: namespace}, &instrumentedApplication)
 	if err != nil {
-		// changes in workload when there is no instrumented application is not interesting
-		return client.IgnoreNotFound(err)
+		if apierrors.IsNotFound(err) {
+			// changes in workload when there is no instrumented application is not interesting
+			workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instrumentedAppName)
+			if err != nil {
+				return err
+			}
+			err = removeInstrumentationDeviceFromWorkload(ctx, k8sClient, namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonNoRuntimeDetails)
+			return err
+		} else {
+			return err
+		}
 	}
 	isNodeCollectorReady := isDataCollectionReady(ctx, k8sClient)
+
 	return reconcileSingleWorkload(ctx, k8sClient, &instrumentedApplication, isNodeCollectorReady)
 }

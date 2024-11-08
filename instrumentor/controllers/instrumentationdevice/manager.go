@@ -27,7 +27,12 @@ type workloadPodTemplatePredicate struct {
 }
 
 func (w workloadPodTemplatePredicate) Create(e event.CreateEvent) bool {
-	return false
+	// when instrumentor restarts, this case will be triggered as workloads objects are being added to the cache.
+	// in this case, we need to reconcile the workload, and guarantee that the device is injected or removed
+	// based on the current state of the cluster.
+	// if the instrumented application is deleted but the device is not cleaned,
+	// the instrumented application controller will not be invoked after restart, which is why we need to handle this case here.
+	return true
 }
 
 func (w workloadPodTemplatePredicate) Update(e event.UpdateEvent) bool {
