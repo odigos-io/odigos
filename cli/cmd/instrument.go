@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/odigos-io/odigos/cli/pkg/lifecycle"
 
 	"github.com/odigos-io/odigos/common/consts"
@@ -117,7 +119,13 @@ func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, ex
 			continue
 		}
 
-		orchestrator.Apply(ctx, &dep, &dep.Spec.Template)
+		orchestrator.Apply(ctx, &dep, func(ctx context.Context, name string, namespace string) (*corev1.PodTemplateSpec, error) {
+			dep, err := client.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			return &dep.Spec.Template, nil
+		})
 	}
 }
 

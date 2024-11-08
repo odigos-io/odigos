@@ -33,6 +33,8 @@ const (
 	InstrumentedState         State = "Instrumented"
 )
 
+type PodTemplateSpecFetcher func(ctx context.Context, name string, namespace string) (*v1.PodTemplateSpec, error)
+
 type Orchestrator struct {
 	Client          *kube.Client
 	OdigosNamespace string
@@ -57,12 +59,24 @@ func NewOrchestrator(client *kube.Client, ctx context.Context) (*Orchestrator, e
 	}, nil
 }
 
-func (o *Orchestrator) Apply(ctx context.Context, obj client.Object, templateSpec *v1.PodTemplateSpec) {
+func (o *Orchestrator) Apply(ctx context.Context, obj client.Object, templateSpecFetcher PodTemplateSpecFetcher) {
+	templateSpec, err := templateSpecFetcher(ctx, obj.GetName(), obj.GetNamespace())
+	if err != nil {
+		o.log(fmt.Sprintf("Error fetching pod template spec: %s", err))
+		return
+	}
+
 	state := o.getCurrentState(ctx, obj, templateSpec)
 	o.log(fmt.Sprintf("Current state: %s", state))
 	nextTransition := o.TransitionsMap[string(state)]
 	for nextTransition != nil {
-		err := nextTransition.Execute(ctx, obj, templateSpec)
+		templateSpec, err := templateSpecFetcher(ctx, obj.GetName(), obj.GetNamespace())
+		if err != nil {
+			o.log(fmt.Sprintf("Error fetching pod template spec: %s", err))
+			return
+		}
+
+		err = nextTransition.Execute(ctx, obj, templateSpec)
 		if err != nil {
 			o.log(fmt.Sprintf("Error executing transition: %s", err))
 			return
