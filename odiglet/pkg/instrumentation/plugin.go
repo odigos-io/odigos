@@ -10,7 +10,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/devices"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
-	"github.com/pingcap/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
@@ -93,7 +93,7 @@ func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest)
 	if err != nil {
 		// we should have collectors group created for odigos device to trigger.
 		// however if we don't, just log and do not populate the enabled signals.
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Logger.V(3).Info("pod with odigos device started, but collectors group not created. disabling all signals for this pod", "collectorGroupName", k8sconsts.OdigosNodeCollectorCollectorGroupName)
 		} else {
 			log.Logger.Error(err, "error getting node collectors group, no enabled signals are set")
