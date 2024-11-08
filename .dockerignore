@@ -5,3 +5,5 @@ odiglet/Dockerfile
 odiglet/base.Dockerfile
 odiglet/debug.Dockerfile
 tests # not needed in context for odigos components builds
+go.work
+go.work.sum
