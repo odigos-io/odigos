@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { KeyvalText } from '@/design.system';
 import { NotificationList } from '@/components';
 import { BackIcon } from '@keyval-dev/design-system';
+import { OdigosDescriptionDrawer } from '@/containers';
 
 export interface OverviewHeaderProps {
   title?: string;
@@ -51,8 +52,10 @@ export function OverviewHeader({ title, onBackClick }: OverviewHeaderProps) {
           {title}
         </KeyvalText>
       </HeaderTop>
-
-      {!onBackClick && <NotificationList />}
+      <div style={{ display: 'flex', gap: 8 }}>
+        {!onBackClick && <NotificationList />}
+        {title === 'Overview' && <OdigosDescriptionDrawer />}
+      </div>
     </OverviewHeaderContainer>
   );
 }

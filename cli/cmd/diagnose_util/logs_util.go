@@ -44,17 +44,28 @@ func FetchOdigosComponentsLogs(ctx context.Context, client *kube.Client, logDir 
 
 func fetchPodLogs(ctx context.Context, client *kube.Client, odigosNamespace string, pod v1.Pod, logDir string) {
 	for _, container := range pod.Spec.Containers {
-		fetchingContainerLogs(ctx, client, odigosNamespace, pod, container, logDir)
+		fetchingContainerLogs(ctx, client, odigosNamespace, pod, container, logDir, false)
+
+		// Check if the pod has been restarted
+		if pod.Status.ContainerStatuses != nil {
+			for _, status := range pod.Status.ContainerStatuses {
+				if status.RestartCount > 0 {
+					// Fetch logs from the previous instance of the container
+					fetchingContainerLogs(ctx, client, odigosNamespace, pod, container, logDir, true)
+				}
+			}
+		}
 
 	}
 }
 
-func fetchingContainerLogs(ctx context.Context, client *kube.Client, odigosNamespace string, pod v1.Pod, container v1.Container, logDir string) {
+func fetchingContainerLogs(ctx context.Context, client *kube.Client, odigosNamespace string, pod v1.Pod, container v1.Container, logDir string, previous bool) {
 	logPrefix := fmt.Sprintf("Fetching logs for Pod: %s, Container: %s, Node: %s", pod.Name, container.Name, pod.Spec.NodeName)
 	fmt.Printf(logPrefix + "\n")
 
 	// Define the log file path for saving compressed logs
-	logFilePath := filepath.Join(logDir, pod.Name+"_"+container.Name+"_"+pod.Spec.NodeName+".log.gz")
+	logFileName := getLogFileName(pod, container, previous)
+	logFilePath := filepath.Join(logDir, logFileName)
 	logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		fmt.Printf(logPrefix+" - Failed - Error creating log file: %v\n", err)
@@ -62,7 +73,7 @@ func fetchingContainerLogs(ctx context.Context, client *kube.Client, odigosNames
 	}
 	defer logFile.Close()
 
-	req := client.CoreV1().Pods(odigosNamespace).GetLogs(pod.Name, &v1.PodLogOptions{})
+	req := client.CoreV1().Pods(odigosNamespace).GetLogs(pod.Name, &v1.PodLogOptions{Previous: previous})
 	logStream, err := req.Stream(ctx)
 	if err != nil {
 		fmt.Printf(logPrefix+" - Failed - Error creating log stream: %v\n", err)
@@ -74,6 +85,13 @@ func fetchingContainerLogs(ctx context.Context, client *kube.Client, odigosNames
 		fmt.Printf(logPrefix+" - Failed - Error saving logs to file: %v\n", err)
 		return
 	}
+}
+
+func getLogFileName(pod v1.Pod, container v1.Container, previous bool) string {
+	if previous {
+		return pod.Name + "_" + container.Name + "_" + pod.Spec.NodeName + "_previous.log.gz"
+	}
+	return pod.Name + "_" + container.Name + "_" + pod.Spec.NodeName + ".log.gz"
 }
 
 func saveLogsToGzipFileInBatches(logFile *os.File, logStream io.ReadCloser, bufferSize int) error {
