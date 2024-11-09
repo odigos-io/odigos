@@ -34,4 +34,5 @@ var allTransitions = []Transition{
 	&RequestLangDetection{},
 	&WaitForLangDetection{},
 	&InstrumentationStarted{},
+	&InstrumentationEnded{},
 }

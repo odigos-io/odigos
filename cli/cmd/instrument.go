@@ -28,6 +28,7 @@ const (
 	excludeNamespacesFileFlag = "exclude-namespaces-file"
 	excludeAppsFileFlag       = "exclude-apps-file"
 	skipPreflightCheckFlag    = "skip-preflight-checks"
+	dryRunFlag                = "dry-run"
 )
 
 // instrumentCmd represents the instrument command
@@ -56,8 +57,12 @@ Odigos CLI and monitor the instrumentation status.`,
 			fmt.Printf("\033[31mERROR\033[0m Cannot read exclude-apps-file: %s\n", err)
 			os.Exit(1)
 		}
+		dryRun := cmd.Flag(dryRunFlag).Changed && cmd.Flag(dryRunFlag).Value.String() == "true"
 
 		fmt.Printf("About to instrument an entire cluster with Odigos\n")
+		if dryRun {
+			fmt.Printf("Dry-Run mode ENABLED - No changes will be made\n")
+		}
 		fmt.Printf("Excluded Namespaces:   %d\n", len(excludedNs))
 		fmt.Printf("Excluded Applications: %d\n", len(excludedApps))
 		fmt.Printf("%-50s", "Checking if Kubernetes cluster is reachable")
@@ -73,11 +78,11 @@ Odigos CLI and monitor the instrumentation status.`,
 		runPreflightChecks(cmd.Context(), cmd, client)
 
 		fmt.Printf("Starting instrumentation ...\n")
-		instrumentCluster(cmd.Context(), client, excludedNs, excludedApps)
+		instrumentCluster(cmd.Context(), client, excludedNs, excludedApps, dryRun)
 	},
 }
 
-func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, excludedApps map[string]struct{}) {
+func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, excludedApps map[string]struct{}, dryRun bool) {
 	systemNs := sliceToMap(consts.SystemNamespaces)
 	nsList, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -100,11 +105,11 @@ func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, exc
 			continue
 		}
 
-		instrumentNamespace(ctx, client, ns.Name, excludedApps, orchestrator)
+		instrumentNamespace(ctx, client, ns.Name, excludedApps, orchestrator, dryRun)
 	}
 }
 
-func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, excludedApps map[string]struct{}, orchestrator *lifecycle.Orchestrator) {
+func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, excludedApps map[string]struct{}, orchestrator *lifecycle.Orchestrator, dryRun bool) {
 	deps, err := client.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("  - \033[31mERROR\033[0m Cannot list deployments: %s\n", err)
@@ -116,6 +121,11 @@ func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, ex
 		_, excluded := excludedApps[dep.Name]
 		if excluded {
 			fmt.Printf("    - Skipping deployment due to exclusion file\n")
+			continue
+		}
+
+		if dryRun {
+			fmt.Printf("    - Dry-Run mode ENABLED - No changes will be made\n")
 			continue
 		}
 
@@ -180,6 +190,7 @@ func init() {
 	clusterCmd.Flags().String(excludeNamespacesFileFlag, "", "File containing namespaces to exclude from instrumentation. Each namespace should be on a new line.")
 	clusterCmd.Flags().String(excludeAppsFileFlag, "", "File containing applications to exclude from instrumentation. Each application should be on a new line.")
 	clusterCmd.Flags().Bool(skipPreflightCheckFlag, false, "Skip preflight checks")
+	clusterCmd.Flags().Bool(dryRunFlag, false, "Dry run mode")
 }
 
 func sliceToMap(slice []string) map[string]struct{} {

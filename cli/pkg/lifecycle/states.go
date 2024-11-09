@@ -154,7 +154,13 @@ func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object, t
 		return LangDetectedState
 	}
 
-	if !k8sutils.IsRolloutCompleted(obj) {
+	instrumented, err := k8sutils.VerifyAllPodsAreInstrumented(ctx, o.Client, obj)
+	if err != nil {
+		o.log(fmt.Sprintf("Error verifying all pods are instrumented: %s", err))
+		return UnknownState
+	}
+
+	if !instrumented {
 		return InstrumentationInProgress
 	}
 

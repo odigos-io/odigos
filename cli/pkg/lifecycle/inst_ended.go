@@ -25,9 +25,14 @@ func (i *InstrumentationEnded) To() State {
 
 func (i *InstrumentationEnded) Execute(ctx context.Context, obj client.Object, templateSpec *corev1.PodTemplateSpec) error {
 	return wait.PollUntilContextTimeout(ctx, 5*time.Second, 30*time.Minute, true, func(ctx context.Context) (bool, error) {
-		rolloutCompleted := utils.IsRolloutCompleted(obj)
+		rolloutCompleted, err := utils.VerifyAllPodsAreInstrumented(ctx, i.client, obj)
+		if err != nil {
+			i.log("Error verifying all pods are instrumented")
+			return false, err
+		}
+
 		if rolloutCompleted {
-			i.log("Rollout completed , all running pods contains the new instrumentation")
+			i.log("Rollout completed, all running pods contains the new instrumentation")
 		}
 
 		return rolloutCompleted, nil
