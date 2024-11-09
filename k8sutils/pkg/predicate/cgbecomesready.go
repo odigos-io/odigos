@@ -11,6 +11,10 @@ import (
 type CgBecomesReadyPredicate struct{}
 
 func (i *CgBecomesReadyPredicate) Create(e event.CreateEvent) bool {
+	if e.Object == nil {
+		return false
+	}
+
 	cg, ok := e.Object.(*odigosv1.CollectorsGroup)
 	if !ok {
 		return false
@@ -19,6 +23,10 @@ func (i *CgBecomesReadyPredicate) Create(e event.CreateEvent) bool {
 }
 
 func (i *CgBecomesReadyPredicate) Update(e event.UpdateEvent) bool {
+
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
 
 	oldCollectorGroup, ok := e.ObjectOld.(*odigosv1.CollectorsGroup)
 	if !ok {

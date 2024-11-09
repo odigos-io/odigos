@@ -12,18 +12,30 @@ type ObjectNamePredicate struct {
 }
 
 func (o ObjectNamePredicate) Create(e event.CreateEvent) bool {
+	if e.Object == nil {
+		return false
+	}
 	return e.Object.GetName() == o.AllowedObjectName
 }
 
 func (i ObjectNamePredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectNew == nil || e.ObjectOld == nil {
+		return false
+	}
 	return e.ObjectNew.GetName() == i.AllowedObjectName
 }
 
 func (i ObjectNamePredicate) Delete(e event.DeleteEvent) bool {
+	if e.Object == nil {
+		return false
+	}
 	return e.Object.GetName() == i.AllowedObjectName
 }
 
 func (i ObjectNamePredicate) Generic(e event.GenericEvent) bool {
+	if e.Object == nil {
+		return false
+	}
 	return e.Object.GetName() == i.AllowedObjectName
 }
 
