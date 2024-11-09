@@ -110,19 +110,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("instrumentationdevice-configmaps").
-		For(&corev1.ConfigMap{}).
-		WithEventFilter(&odigospredicate.OnlyUpdatesPredicate{}).
-		Complete(&OdigosConfigReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-		})
-	if err != nil {
-		return err
-	}
-
-	err = builder.
-		ControllerManagedBy(mgr).
 		Named("instrumentationdevice-deployment").
 		For(&appsv1.Deployment{}).
 		WithEventFilter(workloadPodTemplatePredicate{}).
