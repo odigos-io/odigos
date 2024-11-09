@@ -77,6 +77,8 @@ type NamespaceReconciler struct {
 func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
+	logger.Info("namespace reconcile - will delete instrumentation for workloads that are not labeled in this namespace", "namespace", req.Name)
+
 	var ns corev1.Namespace
 	err := r.Get(ctx, client.ObjectKey{Name: req.Name}, &ns)
 	if client.IgnoreNotFound(err) != nil {
@@ -137,6 +139,8 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind workload.WorkloadKind, key client.ObjectKey) error {
 
+	// it is very important that we make the changes based on a fresh copy of the workload object
+	// if a list operation pulled in state and is now slowly iterating over it, we might be working with stale data
 	freshWorkloadCopy := workload.ClientObjectFromWorkloadKind(kind)
 	workloadGetErr := c.Get(ctx, key, freshWorkloadCopy)
 	if workloadGetErr != nil {
