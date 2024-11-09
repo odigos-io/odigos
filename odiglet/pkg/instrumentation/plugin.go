@@ -2,6 +2,7 @@ package instrumentation
 
 import (
 	"context"
+	"errors"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
@@ -94,7 +95,7 @@ func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest)
 		// we should have collectors group created for odigos device to trigger.
 		// however if we don't, just log and do not populate the enabled signals.
 		if apierrors.IsNotFound(err) {
-			log.Logger.V(3).Info("pod with odigos device started, but collectors group not created. disabling all signals for this pod", "collectorGroupName", k8sconsts.OdigosNodeCollectorCollectorGroupName)
+			log.Logger.Error(errors.New("pod with odigos device started, but collectors group not created. disabling all signals for this pod"), "collectorGroupName", k8sconsts.OdigosNodeCollectorCollectorGroupName)
 		} else {
 			log.Logger.Error(err, "error getting node collectors group, no enabled signals are set")
 		}
