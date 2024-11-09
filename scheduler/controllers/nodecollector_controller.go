@@ -15,6 +15,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 type NodeCollectorsGroupReconciler struct {
@@ -95,8 +96,7 @@ func (r *NodeCollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.CollectorsGroup{}).
 		Named("nodecollectorgroup-collectorsgroup").
-		WithEventFilter(&odigospredicates.OdigosCollectorsGroupCluster).
-		WithEventFilter(&odigospredicates.CgBecomesReadyPredicate{}).
+		WithEventFilter(predicate.And(&odigospredicates.OdigosCollectorsGroupCluster, &odigospredicates.CgBecomesReadyPredicate{})).
 		Complete(r)
 	if err != nil {
 		return err
