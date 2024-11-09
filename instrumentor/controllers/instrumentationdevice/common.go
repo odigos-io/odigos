@@ -15,6 +15,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -147,44 +148,46 @@ func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient cli
 		return errors.New("unknown kind")
 	}
 
-	err := kubeClient.Get(ctx, client.ObjectKey{
-		Namespace: namespace,
-		Name:      workloadName,
-	}, workloadObj)
-	if err != nil {
-		return client.IgnoreNotFound(err)
-	}
-
-	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, workloadObj, func() error {
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		err := kubeClient.Get(ctx, client.ObjectKey{
+			Namespace: namespace,
+			Name:      workloadName,
+		}, workloadObj)
+		if err != nil {
+			return client.IgnoreNotFound(err)
+		}
 
 		podSpec, err := getPodSpecFromObject(workloadObj)
 		if err != nil {
 			return err
 		}
 		// If instrumentation device is removed successfully, remove odigos.io/inject-instrumentation label to disable the webhook
-		instrumentation.RemoveInjectInstrumentationLabel(podSpec)
-
-		instrumentation.RevertInstrumentationDevices(podSpec)
-
-		err = instrumentation.RevertEnvOverwrites(workloadObj, podSpec)
+		webhookLabelRemoved := instrumentation.RemoveInjectInstrumentationLabel(podSpec)
+		deviceRemoved := instrumentation.RevertInstrumentationDevices(podSpec)
+		envChanged, err := instrumentation.RevertEnvOverwrites(workloadObj, podSpec)
 		if err != nil {
 			return err
 		}
 
+		// if we didn't change anything, we don't need to update the object
+		// skip the api-server call, return no-op and skip the log message
+		if !webhookLabelRemoved && !deviceRemoved && !envChanged {
+			return nil
+		}
+
+		err = kubeClient.Update(ctx, workloadObj)
+		if err != nil {
+			// if the update fails due to a conflict, we will retry
+			return err
+		}
+
+		logger := log.FromContext(ctx)
+		logger.V(0).Info("removed instrumentation device from workload", "namespace", workloadObj.GetNamespace(), "kind", workloadObj.GetObjectKind(), "name", workloadObj.GetName(), "reason", uninstrumentReason)
+
 		return nil
 	})
 
-	if err != nil {
-		return err
-	}
-
-	modified := result != controllerutil.OperationResultNone
-	if modified {
-		logger := log.FromContext(ctx)
-		logger.V(0).Info("removed instrumentation device from workload", "namespace", workloadObj.GetNamespace(), "kind", workloadObj.GetObjectKind(), "name", workloadObj.GetName(), "reason", uninstrumentReason)
-	}
-
-	return nil
+	return err
 }
 
 func getWorkloadObject(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) (client.Object, error) {
