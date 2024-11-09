@@ -8,6 +8,7 @@ import (
 
 // this event filter will only trigger reconciliation when the collectors group was not ready and now it is ready.
 // some controllers in odigos reacts to this specific event, and should not be triggered by other events such as spec updates or status conditions changes.
+// for create events, it will only trigger reconciliation if the collectors group is ready.
 type CgBecomesReadyPredicate struct{}
 
 func (i *CgBecomesReadyPredicate) Create(e event.CreateEvent) bool {
