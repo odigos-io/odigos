@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils/versionsupport"
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
@@ -39,15 +38,6 @@ var (
 	// can be overridden in tests
 	GetDefaultSDKs = sdks.GetDefaultSDKs
 )
-
-func clearInstrumentationEbpf(obj client.Object) {
-	annotations := obj.GetAnnotations()
-	if annotations == nil {
-		return
-	}
-
-	delete(annotations, consts.EbpfInstrumentationAnnotation)
-}
 
 func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	logger := log.FromContext(ctx)
@@ -167,8 +157,6 @@ func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient cli
 
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, workloadObj, func() error {
 
-		// clear old ebpf instrumentation annotation, just in case it still exists
-		clearInstrumentationEbpf(workloadObj)
 		podSpec, err := getPodSpecFromObject(workloadObj)
 		if err != nil {
 			return err
