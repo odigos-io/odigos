@@ -4,9 +4,9 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	consts "github.com/odigos-io/odigos/common/consts"
 	k8sutilsconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	odigospredicates "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	nodeCollectorGroupUtil "github.com/odigos-io/odigos/scheduler/controllers/collectorgroups"
 	corev1 "k8s.io/api/core/v1"
@@ -14,9 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 type NodeCollectorsGroupReconciler struct {
@@ -25,87 +23,6 @@ type NodeCollectorsGroupReconciler struct {
 	ImagePullSecrets []string
 	OdigosVersion    string
 }
-
-// makes sure that the controller only reacts to events related to the odigos-config configmap
-// and does not trigger on other configmaps
-type odigosConfigPredicate struct{}
-
-func (i *odigosConfigPredicate) Create(e event.CreateEvent) bool {
-	return e.Object.GetName() == consts.OdigosConfigurationName
-}
-
-func (i *odigosConfigPredicate) Update(e event.UpdateEvent) bool {
-	return e.ObjectNew.GetName() == consts.OdigosConfigurationName
-}
-
-func (i *odigosConfigPredicate) Delete(e event.DeleteEvent) bool {
-	return e.Object.GetName() == consts.OdigosConfigurationName
-}
-
-func (i *odigosConfigPredicate) Generic(e event.GenericEvent) bool {
-	return e.Object.GetName() == consts.OdigosConfigurationName
-}
-
-var _ predicate.Predicate = &odigosConfigPredicate{}
-
-// For instrumentation configs, we only care if the object exists or not, since we count if there are more than 0.
-// thus, we can filter out all updates events which will not affect reconciliation
-type existingPredicate struct{}
-
-func (i *existingPredicate) Create(e event.CreateEvent) bool {
-	return true
-}
-
-func (i *existingPredicate) Update(e event.UpdateEvent) bool {
-	return false
-}
-
-func (i *existingPredicate) Delete(e event.DeleteEvent) bool {
-	return true
-}
-
-func (i *existingPredicate) Generic(e event.GenericEvent) bool {
-	return false
-}
-
-var _ predicate.Predicate = &existingPredicate{}
-
-// this predicate filters collectorsgroup events.
-// it will only forward events that are:
-// 1. for cluster collector group
-// 2. If the cluster collector group was not ready and now it is ready
-type clusterCollectorBecomesReadyPredicate struct{}
-
-func (i *clusterCollectorBecomesReadyPredicate) Create(e event.CreateEvent) bool {
-	return false
-}
-
-func (i *clusterCollectorBecomesReadyPredicate) Update(e event.UpdateEvent) bool {
-	if e.ObjectNew.GetName() != k8sutilsconsts.OdigosClusterCollectorCollectorGroupName {
-		return false
-	}
-
-	oldCollectorGroup, ok := e.ObjectOld.(*odigosv1.CollectorsGroup)
-	if !ok {
-		return false
-	}
-	newCollectorGroup, ok := e.ObjectNew.(*odigosv1.CollectorsGroup)
-	if !ok {
-		return false
-	}
-
-	return !oldCollectorGroup.Status.Ready && newCollectorGroup.Status.Ready
-}
-
-func (i *clusterCollectorBecomesReadyPredicate) Delete(e event.DeleteEvent) bool {
-	return false
-}
-
-func (i *clusterCollectorBecomesReadyPredicate) Generic(e event.GenericEvent) bool {
-	return false
-}
-
-var _ predicate.Predicate = &clusterCollectorBecomesReadyPredicate{}
 
 func (r *NodeCollectorsGroupReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
@@ -160,7 +77,7 @@ func (r *NodeCollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error
 	err := ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.InstrumentationConfig{}).
 		Named("nodecollectorgroup-instrumentationconfig").
-		WithEventFilter(&existingPredicate{}).
+		WithEventFilter(&odigospredicates.ExistencePredicate{}).
 		Complete(r)
 	if err != nil {
 		return err
@@ -169,7 +86,7 @@ func (r *NodeCollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.ConfigMap{}).
 		Named("nodecollectorgroup-odigosconfig").
-		WithEventFilter(&odigosConfigPredicate{}).
+		WithEventFilter(&odigospredicates.OdigosConfigMapPredicate).
 		Complete(r)
 	if err != nil {
 		return err
@@ -178,7 +95,8 @@ func (r *NodeCollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.CollectorsGroup{}).
 		Named("nodecollectorgroup-collectorsgroup").
-		WithEventFilter(&clusterCollectorBecomesReadyPredicate{}).
+		WithEventFilter(&odigospredicates.OdigosCollectorsGroupCluster).
+		WithEventFilter(&odigospredicates.CgBecomesReadyPredicate{}).
 		Complete(r)
 	if err != nil {
 		return err
